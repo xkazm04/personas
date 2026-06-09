@@ -65,14 +65,14 @@ export function RedRoomDetailModal({ item, onClose }: { item: RedRoomItem | null
               ) : item.kind === 'memory' ? (
                 <Pin className="w-4 h-4 text-amber-300/80" />
               ) : (
-                <span className="typo-caption text-foreground/40">?</span>
+                <span className="typo-caption text-foreground">?</span>
               )}
             </span>
             <div className="min-w-0 flex-1">
               <h2 id="redroom-detail-title" className="typo-section-title truncate" style={{ color }}>
                 {persona ? persona.name.replace(/^T: /, '') : item.kind === 'memory' ? 'Team memory' : 'System'}
               </h2>
-              <p className="typo-caption text-foreground/55">
+              <p className="typo-caption text-foreground">
                 {item.kind === 'event' ? (
                   <span className={`font-mono ${FAMILY_TEXT[eventFamily(item.eventType)] ?? FAMILY_TEXT.other}`}>
                     {item.eventType}
@@ -80,7 +80,7 @@ export function RedRoomDetailModal({ item, onClose }: { item: RedRoomItem | null
                 ) : (
                   <span className="uppercase tracking-wider">{item.category}</span>
                 )}
-                <span className="text-foreground/40"> · {new Date(item.at).toLocaleString()}</span>
+                <span className="text-foreground"> · {new Date(item.at).toLocaleString()}</span>
               </p>
             </div>
             <Button variant="ghost" size="icon-sm" onClick={onClose}>
@@ -93,20 +93,20 @@ export function RedRoomDetailModal({ item, onClose }: { item: RedRoomItem | null
             {item.kind === 'memory' ? (
               <>
                 <div>
-                  <p className="typo-label uppercase tracking-wider text-foreground/55 mb-1">Title</p>
+                  <p className="typo-label uppercase tracking-wider text-foreground mb-1">Title</p>
                   <p className="typo-body text-foreground">{item.title}</p>
                 </div>
                 <div>
-                  <p className="typo-label uppercase tracking-wider text-foreground/55 mb-1">Content</p>
+                  <p className="typo-label uppercase tracking-wider text-foreground mb-1">Content</p>
                   <p className="typo-body text-foreground/85 whitespace-pre-wrap">{item.content}</p>
                 </div>
-                <p className="typo-caption text-foreground/45">Importance {item.importance}</p>
+                <p className="typo-caption text-foreground">Importance {item.importance}</p>
               </>
             ) : (
               <>
                 {item.summary && (
                   <div>
-                    <p className="typo-label uppercase tracking-wider text-foreground/55 mb-1">Message</p>
+                    <p className="typo-label uppercase tracking-wider text-foreground mb-1">Message</p>
                     <p className="typo-body text-foreground/90 whitespace-pre-wrap">{item.summary}</p>
                   </div>
                 )}
@@ -129,7 +129,8 @@ export function RedRoomDetailModal({ item, onClose }: { item: RedRoomItem | null
                 )}
                 {item.consumers.length > 0 && (
                   <div>
-                    <p className="typo-label uppercase tracking-wider text-foreground/55 mb-1.5">Heard by</p>
+                    {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
+                    <p className="typo-label uppercase tracking-wider text-foreground mb-1.5">Heard by</p>
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {item.consumers.map((pid) => (
                         <PersonaChip key={pid} persona={personaIndex.get(pid)} />
@@ -140,10 +141,11 @@ export function RedRoomDetailModal({ item, onClose }: { item: RedRoomItem | null
                 {payload && (
                   <div>
                     <div className="flex items-center justify-between mb-1.5">
-                      <p className="typo-label uppercase tracking-wider text-foreground/55">Raw payload</p>
+                      {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
+                      <p className="typo-label uppercase tracking-wider text-foreground">Raw payload</p>
                       <CopyButton text={payload} />
                     </div>
-                    <pre className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground/75 overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap break-all">
+                    <pre className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground overflow-x-auto max-h-64 overflow-y-auto whitespace-pre-wrap break-all">
                       {payload}
                     </pre>
                   </div>

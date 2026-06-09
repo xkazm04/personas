@@ -76,10 +76,10 @@ export function SettingRow({
           // Description: one step up the type ramp (typo-caption → typo-body,
           // +2px at base scale) for readability, dimmed to 70% so it stays
           // secondary to the full-opacity label.
-          <div className="typo-body text-foreground/70 mt-1.5">{description}</div>
+          <div className="typo-body text-foreground mt-1.5">{description}</div>
         ) : null}
         {countLabel ? (
-          <div className="typo-caption text-foreground/50 mt-1">{countLabel}</div>
+          <div className="typo-caption text-foreground mt-1">{countLabel}</div>
         ) : null}
       </div>
       <div className="shrink-0" onClick={(e) => e.stopPropagation()}>

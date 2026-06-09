@@ -81,7 +81,7 @@ export function ValueRollupSection({ days }: Props) {
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-1 pt-1">
         {OUTCOME_ORDER.filter((o) => o.count(rollup) > 0).map((o) => (
-          <span key={o.key} className="inline-flex items-center gap-1.5 typo-body text-foreground/80">
+          <span key={o.key} className="inline-flex items-center gap-1.5 typo-body text-foreground">
             <BusinessOutcomeBadge outcome={o.key} variant="compact" />
             <Numeric>{o.count(rollup)}</Numeric>
           </span>

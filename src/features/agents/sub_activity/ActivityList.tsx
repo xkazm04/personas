@@ -91,10 +91,10 @@ function useColumns(
         return sa - sb;
       },
       render: (item) => {
-        if (item.type !== 'execution') return <span className="typo-body text-foreground/30">—</span>;
+        if (item.type !== 'execution') return <span className="typo-body text-foreground">—</span>;
         const score = (item.raw as PersonaExecution).director_score;
         if (score == null) {
-          return <span className="typo-body text-foreground/30" title={t.agents.activity.verdict_none}>—</span>;
+          return <span className="typo-body text-foreground" title={t.agents.activity.verdict_none}>—</span>;
         }
         return (
           <span

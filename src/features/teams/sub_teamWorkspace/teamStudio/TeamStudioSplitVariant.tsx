@@ -222,7 +222,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               onToggle={(ucId, enabled) => void toggleUseCase(selected.personaId, ucId, enabled)}
             />
           ) : (
-            <div className="h-full flex items-center justify-center typo-body text-foreground/40">
+            <div className="h-full flex items-center justify-center typo-body text-foreground">
               {ts.select_member}
             </div>
           )}
@@ -256,7 +256,7 @@ function RosterRow({
       <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
       <div className="min-w-0 flex-1">
         <div className="typo-body font-medium text-foreground truncate">{member.name}</div>
-        <div className="typo-caption text-foreground/50">
+        <div className="typo-caption text-foreground">
           {tx(t.pipeline.team_studio.capabilities_active, {
             active: member.activeUseCaseCount,
             total: member.useCases.length,
@@ -290,7 +290,7 @@ function MemberAdjustPane({
           </div>
           <div className="flex items-center gap-2 mt-1">
             {member.presetRole && (
-              <span className="typo-caption text-foreground/55 uppercase tracking-wider">
+              <span className="typo-caption text-foreground uppercase tracking-wider">
                 {member.presetRole}
               </span>
             )}
@@ -301,9 +301,9 @@ function MemberAdjustPane({
 
       {/* Capabilities */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <SlidersHorizontal className="w-4 h-4 text-foreground/60" />
-        <h4 className="typo-label uppercase tracking-wider text-foreground/80">{t.pipeline.team_studio.capabilities}</h4>
-        <span className="typo-caption text-foreground/50">
+        <SlidersHorizontal className="w-4 h-4 text-foreground" />
+        <h4 className="typo-label uppercase tracking-wider text-foreground">{t.pipeline.team_studio.capabilities}</h4>
+        <span className="typo-caption text-foreground">
           {tx(t.pipeline.team_studio.capabilities_active, {
             active: member.activeUseCaseCount,
             total: member.useCases.length,
@@ -313,7 +313,7 @@ function MemberAdjustPane({
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 pr-1">
         {member.useCases.length === 0 ? (
-          <p className="typo-body text-foreground/40 px-2">{t.pipeline.team_studio.no_capabilities_persona}</p>
+          <p className="typo-body text-foreground px-2">{t.pipeline.team_studio.no_capabilities_persona}</p>
         ) : (
           member.useCases.map((uc) => (
             <div key={uc.id} className="rounded-card border border-primary/8 bg-secondary/15">

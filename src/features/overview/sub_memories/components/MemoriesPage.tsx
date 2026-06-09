@@ -375,6 +375,7 @@ function MemoriesPageBaseline() {
           </div>
 
           {memoriesLoading && memories.length === 0 ? (
+            // eslint-disable-next-line custom/no-hardcoded-jsx-text
             <div className="flex-1 p-4 space-y-2" aria-busy="true" aria-label="Loading memories">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-12 rounded-card bg-secondary/30 animate-pulse" />

@@ -431,7 +431,7 @@ export function DeadLetterTab() {
               ({totalEvents} event{totalEvents !== 1 ? 's' : ''})
             </span>
             {filtersDirty && (
-              <span className="typo-caption text-foreground/70">
+              <span className="typo-caption text-foreground">
                 · {tx(t.triggers.dead_letter_filtered_summary, { visible: filtered.length, total: totalEvents })}
               </span>
             )}
@@ -507,7 +507,7 @@ export function DeadLetterTab() {
             </div>
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="typo-caption text-foreground/70">
+                <span className="typo-caption text-foreground">
                   {t.triggers.dead_letter_filter_age}:
                 </span>
                 {(['any', '15m', '1h', '24h', 'old'] as const).map((age) => (
@@ -527,7 +527,7 @@ export function DeadLetterTab() {
               {filtersDirty && (
                 <button
                   onClick={() => setFilters(EMPTY_FILTERS)}
-                  className="flex items-center gap-1 px-2 py-0.5 typo-caption text-foreground/70 hover:text-foreground"
+                  className="flex items-center gap-1 px-2 py-0.5 typo-caption text-foreground hover:text-foreground"
                 >
                   <X className="w-3 h-3" />
                   {t.triggers.dead_letter_filters_clear}
@@ -563,7 +563,7 @@ export function DeadLetterTab() {
               </button>
               <button
                 onClick={clearSelection}
-                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-foreground/70 hover:bg-secondary/50 transition-colors"
+                className="flex items-center gap-1 px-2 py-1 typo-caption rounded-input text-foreground hover:bg-secondary/50 transition-colors"
               >
                 <X className="w-3 h-3" />
                 {t.triggers.dead_letter_clear_selection}
@@ -603,7 +603,7 @@ export function DeadLetterTab() {
                   className="rounded-input border-border accent-primary"
                   aria-label={t.triggers.dead_letter_select_visible}
                 />
-                <span className="typo-caption text-foreground/70">
+                <span className="typo-caption text-foreground">
                   {t.triggers.dead_letter_select_visible}
                 </span>
               </div>
@@ -719,9 +719,9 @@ export function DeadLetterTab() {
                       title={expanded ? t.triggers.dead_letter_group_collapse : t.triggers.dead_letter_group_expand}
                     >
                       {expanded ? (
-                        <ChevronDown className="w-4 h-4 text-foreground/70 shrink-0 mt-0.5" />
+                        <ChevronDown className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
                       ) : (
-                        <ChevronRight className="w-4 h-4 text-foreground/70 shrink-0 mt-0.5" />
+                        <ChevronRight className="w-4 h-4 text-foreground shrink-0 mt-0.5" />
                       )}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -786,10 +786,10 @@ export function DeadLetterTab() {
                               className="rounded-input border-border accent-primary disabled:opacity-40"
                             />
                             <span className="typo-caption font-medium truncate flex-1">{evt.event_type}</span>
-                            <span className="typo-caption text-foreground/60">
+                            <span className="typo-caption text-foreground">
                               {evt.source_type} · {evt.retry_count}/{maxManualRetries}
                             </span>
-                            <span className="typo-caption text-foreground/60 hidden md:inline">
+                            <span className="typo-caption text-foreground hidden md:inline">
                               {formatDate(evt.created_at)}
                             </span>
                             {exhausted ? (

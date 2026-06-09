@@ -74,7 +74,9 @@ describe('devToolsTaskSlice — bounded output ring', () => {
     h.get().appendTaskOutput('done', 'y');
     expect(h.buffer('done')).toEqual(['x', 'y']);
     h.get().clearTaskOutput('done');
-    expect(h.buffer('done')).toBeUndefined();
+    // Read the raw map (not the buffer() helper, which coalesces undefined -> []):
+    // clearTaskOutput must delete the key outright, not leave an empty array.
+    expect(h.get().taskOutputBuffers['done']).toBeUndefined();
     expect('done' in h.get().taskOutputBuffers).toBe(false);
   });
 });

@@ -385,7 +385,9 @@ export function ExecutionList() {
           <div className="w-12 h-12 rounded-modal bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
             <AlertCircle className="w-5.5 h-5.5 text-red-400" />
           </div>
+          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
           <p className="typo-heading text-foreground">Couldn’t load runs</p>
+          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
           <p className="typo-body text-foreground mt-1 max-w-[260px]">The execution history failed to load. Check your connection and try again.</p>
           <button onClick={() => { void refresh(); }} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
             Retry

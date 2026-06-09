@@ -14,6 +14,21 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 | What's New | Release notes and roadmap | `sub_releases/*` |
 | System Check | Dev-only diagnostics entry. `SystemHealthPanel` ships environment checks, a dev-only `CrashLogsSection`, and an always-visible `LogDiskUsageSection` (powered by `get_log_directory_stats`) that reports tracing-log + crash-log directory bytes/file counts and the configured retention caps. | added to `homeItems` only in `import.meta.env.DEV` |
 
+### Quick-Navigation live status chips
+
+The Welcome quick-nav cards are no longer illustration-only — each surfaces its module's current state as compact corner chips (number + type-icon + tone, plus a 24h-vs-prior-24h trend arrow where it applies). Driven by `sub_welcome/lib/useNavCardStatus.ts`, rendered by `sub_welcome/NavStatChips.tsx`:
+
+| Card | Chips |
+| --- | --- |
+| Overview | open incidents · unread messages · pending reviews (non-zero only) |
+| Teams | number of teams (this card was added to the grid) |
+| Agents | distinct agents active in the last 24h + trend vs prior day |
+| Events | event volume in the last 24h + trend vs prior day |
+| Connections | external (3rd-party) connections + built-in/local connectors |
+| Templates / Plugins / Settings | none |
+
+Attention counts (messages/reviews) come from the shared attention registry (the Sidebar already polls them); incidents, executions, events, and credentials are fetched once when the Welcome surface mounts. The local-vs-3rd-party split for Connections is a coarse display-only label (`sub_welcome/lib/connectorScope.ts`) — the canonical readiness model is the backend `ConnectorClass`.
+
 ## Resume and prefetch
 
 `sub_welcome/useResumeContext.ts` detects unfinished work and drives the resume banner/cards. `lib/prefetch.ts` preloads likely next views so the home-to-workflow transition is fast.
@@ -22,9 +37,15 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 
 `HomeReleases.tsx` and `HomeRoadmapView.tsx` render bundled releases plus the live roadmap. `useLiveRoadmap.ts` calls the Rust live-roadmap command, falls back to bundled data, and surfaces status through `LiveRoadmapStatusPill`.
 
-### Release picker lives in the sidebar Level 3 push pane
+### Release picker is a left rail inside the content
 
-As of 2026-05-17 the in-page `ReleasesNavBar` (top-of-page pill row) was retired. Clicking "What's New" in the Home sidebar (Level 2) now slides the sidebar into a Level 3 panel listing each release plus the roadmap entry — see `src/features/shared/components/layout/sidebar/SidebarLevel3.tsx` (the generic primitive) and the `HomeRoadmapL3` sub-component in `SidebarLevel2.tsx`. The selected version is held in `systemStore.homeReleaseVersion` and persisted to `sessionStorage` (`home-releases-selected-version`); `HomeReleases.tsx` reads from the store and is purely a renderer for whichever release the sidebar has selected. The back-arrow header returns to the Home L2 list.
+As of 2026-06-09 the release picker lives in the content area as a left rail (`sub_releases/ReleaseNavRail.tsx`), beside the release/roadmap content it scopes. This replaced the sidebar **Level 3 push pane** (2026-05-17 → 2026-06-09), which in turn had replaced the in-page `ReleasesNavBar` pill row. The Home **Level 2** list now stays visible the whole time — clicking "What's New" just selects the tab; it no longer pushes a pane over the sidebar.
+
+The rail lists each release plus the roadmap entry. The selected version is held in `systemStore.homeReleaseVersion` and persisted to `sessionStorage` (`home-releases-selected-version`) via `sub_releases/releaseSelection.ts`. `HomeReleases.tsx` lays out the rail beside a `ContentBody` and renders whichever release is selected (`HomeRoadmapView` for the roadmap entry, `ReleaseDetailView` for a shipped release).
+
+### "What's New" update dot
+
+When the running app version (`getVersion()`) differs from the version the user last acknowledged (`systemStore.whatsNewSeenVersion`, persisted), a dismissable cyan dot lights on the **Home** (Level 1) and **Roadmap** (Level 2) sidebar entries — a nudge to check the release notes after an update. A fresh install records a silent baseline (no dot); the dot only appears after a genuine version change. Clicking the dot, or simply opening the "What's New" page, re-acknowledges the current version and clears it. Logic lives in `src/hooks/sidebar/useWhatsNewIndicator.ts`; the L2 dot rides the generic `indicators` prop on `SidebarSubNav`.
 
 Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadmap.md).
 

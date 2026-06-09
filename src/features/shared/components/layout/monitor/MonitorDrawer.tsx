@@ -199,7 +199,7 @@ function EmptySection({ icon: Icon, text }: { icon: React.ComponentType<{ classN
   return (
     <div className="h-full min-h-[160px] flex flex-col items-center justify-center gap-2 text-center">
       <div className="w-11 h-11 rounded-full bg-secondary/40 border border-primary/10 flex items-center justify-center">
-        <Icon className="w-5 h-5 text-foreground/50" />
+        <Icon className="w-5 h-5 text-foreground" />
       </div>
       <p className="typo-body text-foreground">{text}</p>
     </div>

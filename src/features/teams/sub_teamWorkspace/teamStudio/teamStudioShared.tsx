@@ -80,7 +80,7 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
             : 'border-foreground/25 text-transparent'
         }`}
       >
-        {busy ? <Loader2 className="w-2.5 h-2.5 animate-spin text-foreground/60" /> : <Check className="w-2.5 h-2.5" />}
+        {busy ? <Loader2 className="w-2.5 h-2.5 animate-spin text-foreground" /> : <Check className="w-2.5 h-2.5" />}
       </span>
       <span className="min-w-0 flex-1">
         <span
@@ -91,7 +91,7 @@ export function UseCaseToggleRow({ useCase, busy, onToggle, compact }: UseCaseTo
           {useCase.title}
         </span>
         {!compact && (useCase.capabilitySummary || useCase.description) && (
-          <span className="block truncate typo-caption text-foreground/50">
+          <span className="block truncate typo-caption text-foreground">
             {useCase.capabilitySummary || useCase.description}
           </span>
         )}
@@ -153,7 +153,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         type="button"
         data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
-        className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground/60 hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
       >
         <Plus className="w-4 h-4" />
         {ts.add_persona}
@@ -184,7 +184,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
               className="absolute right-0 z-30 mt-1 w-64 max-h-80 overflow-y-auto rounded-card border border-primary/20 bg-background shadow-elevation-3 p-1"
             >
               {available.length === 0 ? (
-                <p className="px-3 py-3 typo-caption text-foreground/50">
+                <p className="px-3 py-3 typo-caption text-foreground">
                   {ts.add_persona_none}
                 </p>
               ) : (
@@ -203,7 +203,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 ))
               )}
               {excludedDrafts > 0 && (
-                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground/50">
+                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground">
                   {ts.add_persona_draft_hint}
                 </p>
               )}
@@ -346,8 +346,8 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
         <Sparkles className="w-4 h-4 text-violet-300" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
-        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
+        <h3 className="typo-label uppercase tracking-wider text-foreground">{ts.orchestrate}</h3>
+        <span className="typo-caption text-foreground">{ts.orchestrate_subtitle}</span>
       </div>
 
       <textarea
@@ -412,11 +412,11 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
               className="flex flex-col gap-2"
             >
               <div className="flex items-center justify-between">
-                <span className="typo-label uppercase tracking-wider text-foreground/70">{ts.checklist_heading}</span>
-                <span className="typo-caption text-foreground/50">{ts.checklist_background_note}</span>
+                <span className="typo-label uppercase tracking-wider text-foreground">{ts.checklist_heading}</span>
+                <span className="typo-caption text-foreground">{ts.checklist_background_note}</span>
               </div>
               {(liveDetail?.steps ?? []).length === 0 ? (
-                <p className="typo-body text-foreground/50 px-1">{ts.assignment_dispatched}</p>
+                <p className="typo-body text-foreground px-1">{ts.assignment_dispatched}</p>
               ) : (
                 (liveDetail?.steps ?? []).map((step, i) => {
                   const who = personaName(step.assignedPersonaId);
@@ -435,7 +435,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
                         <StepStatusBadge status={step.status} />
                       </div>
                       {step.description && (
-                        <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">{step.description}</p>
+                        <p className="mt-1 pl-7 typo-caption text-foreground line-clamp-2">{step.description}</p>
                       )}
                     </div>
                   );
@@ -452,7 +452,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
               className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2"
             >
               {steps.length === 0 ? (
-                <p className="typo-body text-foreground/50 px-1">{ts.no_routing}</p>
+                <p className="typo-body text-foreground px-1">{ts.no_routing}</p>
               ) : (
                 steps.map((step, i) => {
                   const who = personaName(step.suggestedPersonaId);
@@ -477,7 +477,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
                         )}
                       </div>
                       {step.description && (
-                        <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">
+                        <p className="mt-1 pl-7 typo-caption text-foreground line-clamp-2">
                           {step.description}
                         </p>
                       )}

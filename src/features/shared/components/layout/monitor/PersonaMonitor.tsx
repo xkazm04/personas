@@ -219,7 +219,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           )}
           {viewMode === 'fleet' && (
             <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
               <input
                 type="text"
                 value={search}
@@ -232,7 +232,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                 <button
                   type="button"
                   onClick={() => setSearch('')}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/80 transition-colors"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground hover:text-foreground/80 transition-colors"
                   aria-label={t.monitor.clear_filter}
                 >
                   <X className="w-3.5 h-3.5" />

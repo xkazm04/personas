@@ -16,7 +16,7 @@ export function VerdictTrendCell({ scores }: { scores: number[] | undefined }) {
   const list = scores ?? [];
 
   if (list.length === 0) {
-    return <span className="typo-caption text-foreground/35">—</span>;
+    return <span className="typo-caption text-foreground">—</span>;
   }
 
   const latest = list[list.length - 1]!;

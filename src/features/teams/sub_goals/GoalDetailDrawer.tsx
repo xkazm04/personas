@@ -591,14 +591,14 @@ function DepGroup({
 }) {
   return (
     <div>
-      <p className="typo-caption uppercase tracking-[0.16em] text-foreground/70 mb-1">{label}</p>
+      <p className="typo-caption uppercase tracking-[0.16em] text-foreground mb-1">{label}</p>
       {rows.length > 0 ? (
         <ul className="space-y-1 mb-1.5">
           {rows.map((d) => {
             const linked = goalById.get(d.depends_on_id);
             return (
               <li key={d.id} className="group flex items-center gap-2 typo-body">
-                <ArrowRight className="w-3.5 h-3.5 text-foreground/60 shrink-0" />
+                <ArrowRight className="w-3.5 h-3.5 text-foreground shrink-0" />
                 <span className="flex-1 text-foreground truncate">{linked?.title ?? d.depends_on_id}</span>
                 {linked && <GoalStatusBadge status={linked.status} />}
                 <button
@@ -614,7 +614,7 @@ function DepGroup({
           })}
         </ul>
       ) : (
-        <p className="typo-caption text-foreground/60 italic mb-1.5">{emptyLabel}</p>
+        <p className="typo-caption text-foreground italic mb-1.5">{emptyLabel}</p>
       )}
       {candidates.length > 0 && (
         <ThemedSelect value="" onValueChange={(v) => { if (v) onAdd(v); }}>

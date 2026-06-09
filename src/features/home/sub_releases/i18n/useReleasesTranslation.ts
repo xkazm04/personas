@@ -31,6 +31,8 @@ export interface ReleasesTranslation {
   title: string;
   subtitle: { roadmap: string; changelog: string };
   navBar: { roadmapLabel: string };
+  /** Header label for the in-content `ReleaseNavRail`. */
+  navRailLabel: string;
   status: { released: string; active: string; planned: string; roadmap: string };
   type: { feature: string; fix: string; security: string; docs: string; chore: string; breaking: string };
   itemStatus: { in_progress: string; planned: string; completed: string };
@@ -54,6 +56,7 @@ export function useReleasesTranslation(): { t: ReleasesTranslation; language: st
     navBar: {
       roadmapLabel: r.nav_bar_roadmap_label,
     },
+    navRailLabel: r.nav_rail_label,
     status: {
       released: r.status_released,
       active: r.status_active,

@@ -63,8 +63,9 @@ function parseModelTier(modelProfile: string | null): string {
   try {
     const parsed = JSON.parse(modelProfile) as { model?: string };
     if (parsed && typeof parsed.model === 'string') model = parsed.model;
-  } catch {
+  } catch (err) {
     /* model_profile may be a bare string */
+    silentCatch('teamStudio/useTeamStudioData:parseModelTier')(err);
   }
   const m = model.toLowerCase();
   if (m.includes('opus')) return 'Opus';

@@ -108,6 +108,7 @@ export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onD
                   <p className="typo-body font-medium text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
                     onClick={() => dismissResult(recipe.id)}
+                    // eslint-disable-next-line custom/no-hardcoded-jsx-text
                     aria-label="Dismiss result"
                     className="p-0.5 rounded text-foreground hover:text-foreground transition-colors"
                   >

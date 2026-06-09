@@ -9,7 +9,13 @@ import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSumma
 
 (globalThis as Record<string, unknown>).__IPC_TOKEN = 'test-token';
 
-vi.mock('@/api/fleet/fleet', () => ({ readTranscript: vi.fn() }));
+// The component prefers the incremental `sessionMetadata` rollup and falls
+// back to `readTranscript` when it returns null. Default the rollup to null so
+// the existing assertions (which drive `readTranscript`) exercise the fallback.
+vi.mock('@/api/fleet/fleet', () => ({
+  sessionMetadata: vi.fn().mockResolvedValue(null),
+  readTranscript: vi.fn(),
+}));
 
 import * as fleetApi from '@/api/fleet/fleet';
 import { FleetSessionInsights } from '../FleetSessionInsights';

@@ -179,19 +179,19 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
         {/* Members */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <Users className="w-3.5 h-3.5 text-foreground/60" />
-            <h3 className="typo-label uppercase tracking-wider text-foreground/70">
+            <Users className="w-3.5 h-3.5 text-foreground" />
+            <h3 className="typo-label uppercase tracking-wider text-foreground">
               {t.plugins.dev_projects.team_preview_members}
             </h3>
             {members && (
-              <span className="typo-label text-foreground/50">({members.length})</span>
+              <span className="typo-label text-foreground">({members.length})</span>
             )}
           </div>
           {loading && (
-            <p className="typo-body text-foreground/60">{t.plugins.dev_projects.team_preview_loading}</p>
+            <p className="typo-body text-foreground">{t.plugins.dev_projects.team_preview_loading}</p>
           )}
           {!loading && members && members.length === 0 && (
-            <p className="typo-body text-foreground/60">
+            <p className="typo-body text-foreground">
               {t.plugins.dev_projects.team_preview_no_members}
             </p>
           )}
@@ -221,25 +221,25 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                       <div className="min-w-0 flex-1">
                         <div className="typo-body text-foreground/90 truncate">
                           {persona?.name ?? (
-                            <span className="text-foreground/50">
+                            <span className="text-foreground">
                               {t.plugins.dev_projects.team_preview_unknown_persona}
                             </span>
                           )}
                         </div>
                         {m.role && (
-                          <div className="typo-caption text-foreground/60 truncate">{m.role}</div>
+                          <div className="typo-caption text-foreground truncate">{m.role}</div>
                         )}
                       </div>
                       {persona && (
                         <ChevronDown
-                          className={`w-3.5 h-3.5 text-foreground/50 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
                         />
                       )}
                     </button>
                     {isExpanded && persona && (
                       <div className="px-3 pb-3 pt-1 space-y-2 border-t border-primary/10">
                         {persona.description && (
-                          <p className="typo-caption text-foreground/80 leading-relaxed">
+                          <p className="typo-caption text-foreground leading-relaxed">
                             {persona.description}
                           </p>
                         )}
@@ -288,23 +288,23 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 typo-caption text-foreground/60">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 typo-caption text-foreground">
                           <span>
                             {t.plugins.dev_projects.team_preview_member_trust}:{' '}
-                            <span className="font-mono text-foreground/80">
+                            <span className="font-mono text-foreground">
                               {persona.trust_score?.toFixed(2) ?? '—'}
                             </span>
                           </span>
                           <span>
                             {t.plugins.dev_projects.team_preview_member_last_run}:{' '}
-                            <span className="text-foreground/80">
+                            <span className="text-foreground">
                               {lastRun ? formatRelativeTime(lastRun) : t.plugins.dev_projects.team_preview_member_never_run}
                             </span>
                           </span>
                           {persona.max_budget_usd != null && (
                             <span>
                               {t.plugins.dev_projects.team_preview_member_budget}:{' '}
-                              <span className="text-foreground/80">${persona.max_budget_usd}</span>
+                              <span className="text-foreground">${persona.max_budget_usd}</span>
                             </span>
                           )}
                         </div>
@@ -330,12 +330,12 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
         {/* Recent runs */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <Activity className="w-3.5 h-3.5 text-foreground/60" />
-            <h3 className="typo-label uppercase tracking-wider text-foreground/70">
+            <Activity className="w-3.5 h-3.5 text-foreground" />
+            <h3 className="typo-label uppercase tracking-wider text-foreground">
               {t.plugins.dev_projects.team_preview_recent_runs}
             </h3>
             {runs && (
-              <span className="typo-label text-foreground/50">
+              <span className="typo-label text-foreground">
                 {tx(t.plugins.dev_projects.team_preview_recent_runs_total, { count: runs.length })}
               </span>
             )}
@@ -353,10 +353,10 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
             )}
           </div>
           {loading && (
-            <p className="typo-body text-foreground/60">{t.plugins.dev_projects.team_preview_loading}</p>
+            <p className="typo-body text-foreground">{t.plugins.dev_projects.team_preview_loading}</p>
           )}
           {!loading && runs && runs.length === 0 && (
-            <p className="typo-body text-foreground/60">
+            <p className="typo-body text-foreground">
               {t.plugins.dev_projects.team_preview_no_runs}
             </p>
           )}
@@ -382,10 +382,10 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                               : 'bg-foreground/30'
                       }`}
                     />
-                    <span className="typo-caption text-foreground/70 capitalize w-16 flex-shrink-0">
+                    <span className="typo-caption text-foreground capitalize w-16 flex-shrink-0">
                       {r.status}
                     </span>
-                    <span className="typo-caption text-foreground/60 flex-1 truncate">
+                    <span className="typo-caption text-foreground flex-1 truncate">
                       {dateStr}
                     </span>
                     {isFinished && r.error_message && (

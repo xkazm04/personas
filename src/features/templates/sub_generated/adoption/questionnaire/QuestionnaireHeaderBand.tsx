@@ -54,6 +54,7 @@ export function QuestionnaireHeaderBand({
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-4 h-4 text-primary" />
+            {/* reduced-motion-ok: aria-hidden decorative ring pulse around the header icon; purely ornamental */}
             <motion.span
               aria-hidden
               className="absolute inset-0 rounded-full border border-primary/30"

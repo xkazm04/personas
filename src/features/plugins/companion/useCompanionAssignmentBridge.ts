@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { getTeamAssignmentDetail } from '@/api/pipeline/assignments';
+import { silentCatch } from '@/lib/silentCatch';
 import { useCompanionStore, type AthenaAssignmentRef } from './companionStore';
 
 /** Listens to TEAM_ASSIGNMENT_PROGRESS globally and surfaces Athena-
@@ -33,9 +34,10 @@ export function useCompanionAssignmentBridge() {
             updatedAt: Date.now(),
           };
           upsert(ref);
-        } catch {
+        } catch (e) {
           // Detail fetch failures don't break the chat — the card just
           // won't update this turn. Next event will retry.
+          silentCatch('companion.assignmentBridge.fetchDetail')(e);
         }
       },
     ).then((u) => {

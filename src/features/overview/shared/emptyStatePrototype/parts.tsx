@@ -17,7 +17,7 @@ export function EmptyStateActions({
       {action && (
         <button
           onClick={action.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-primary/10 border border-primary/20 text-primary hover:bg-primary/15 transition-colors focus-ring"
         >
           {action.icon && <action.icon className="w-3.5 h-3.5" />}
           {action.label}
@@ -26,7 +26,7 @@ export function EmptyStateActions({
       {secondaryAction && (
         <button
           onClick={secondaryAction.onClick}
-          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-xl text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal text-foreground hover:text-foreground hover:bg-primary/8 border border-primary/10 transition-colors focus-ring"
         >
           {secondaryAction.icon && <secondaryAction.icon className="w-3.5 h-3.5" />}
           {secondaryAction.label}

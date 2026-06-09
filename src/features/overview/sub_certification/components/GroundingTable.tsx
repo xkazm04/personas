@@ -30,7 +30,7 @@ export function GroundingTable({ grounding }: { grounding: GroundingEntry[] }) {
       width: '110px',
       align: 'right',
       render: (row) => (
-        <span className="typo-caption text-foreground/80">
+        <span className="typo-caption text-foreground">
           {row.valid ?? 0}/{row.total ?? 0}
         </span>
       ),
@@ -44,7 +44,7 @@ export function GroundingTable({ grounding }: { grounding: GroundingEntry[] }) {
       sortFn: (a, b) => (a.pct ?? -1) - (b.pct ?? -1),
       render: (row) =>
         row.pct == null ? (
-          <span className="typo-caption text-foreground/40" title={c.grounding_na}>
+          <span className="typo-caption text-foreground" title={c.grounding_na}>
             n/a
           </span>
         ) : (
@@ -58,7 +58,7 @@ export function GroundingTable({ grounding }: { grounding: GroundingEntry[] }) {
       align: 'right',
       render: (row) =>
         row.invalid.length === 0 ? (
-          <span className="typo-caption text-foreground/40">0</span>
+          <span className="typo-caption text-foreground">0</span>
         ) : (
           <Tooltip content={row.invalid.join(', ')}>
             <span className="typo-caption text-rose-400 underline decoration-dotted cursor-help">

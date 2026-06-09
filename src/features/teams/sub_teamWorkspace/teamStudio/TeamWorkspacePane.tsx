@@ -104,16 +104,16 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
   }, [team, teamId, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
 
   if (!team) {
-    return <div className="h-full flex items-center justify-center typo-body text-foreground/40">{ts.workspace}</div>;
+    return <div className="h-full flex items-center justify-center typo-body text-foreground">{ts.workspace}</div>;
   }
 
   return (
     <div className="h-full flex flex-col gap-4 overflow-y-auto pr-1">
       <div className="flex items-center gap-2 flex-shrink-0">
-        <Settings className="w-4 h-4 text-foreground/70" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.workspace_settings}</h3>
+        <Settings className="w-4 h-4 text-foreground" />
+        <h3 className="typo-label uppercase tracking-wider text-foreground">{ts.workspace_settings}</h3>
       </div>
-      <p className="typo-caption text-foreground/55 -mt-2">{ts.workspace_hint}</p>
+      <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
 
       {/* Shared instructions */}
       <label className="flex flex-col gap-1.5">

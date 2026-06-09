@@ -45,7 +45,7 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
         <span className="flex-1 truncate text-foreground" title={title}>
           {title}
         </span>
-        {note && <span className="text-foreground/55 shrink-0 tabular-nums">{note}</span>}
+        {note && <span className="text-foreground shrink-0 tabular-nums">{note}</span>}
         <span className={`shrink-0 ${tone}`}>{statusLabel}</span>
       </div>
       {pct != null && running && (

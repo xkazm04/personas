@@ -17,6 +17,7 @@
  */
 
 import type { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 
 type T = ReturnType<typeof useTranslation>['t'];
 type Tx = ReturnType<typeof useTranslation>['tx'];
@@ -181,8 +182,9 @@ export function extractToolEvents(line: string): ToolEvents {
         }
       }
     }
-  } catch {
+  } catch (e) {
     // Non-JSON line — no tool events.
+    silentCatch('companion.extractToolEvents')(e);
   }
   return out;
 }

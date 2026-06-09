@@ -2,6 +2,7 @@ import { silentCatch } from "@/lib/silentCatch";
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
+// eslint-disable-next-line no-restricted-imports -- Sidebar footer shows the app version (native-only metadata); lifting this single read into a feature module is out of scope for this lint pass.
 import { getVersion } from '@tauri-apps/api/app';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";

@@ -183,7 +183,7 @@ function ModeButton({
         <Icon className={`w-3.5 h-3.5 ${active ? 'text-amber-400' : 'text-foreground/60'}`} />
         {label}
       </span>
-      <span className="typo-caption text-foreground/60 leading-snug">{hint}</span>
+      <span className="typo-caption text-foreground leading-snug">{hint}</span>
     </button>
   );
 }

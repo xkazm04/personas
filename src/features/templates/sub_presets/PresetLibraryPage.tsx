@@ -35,14 +35,14 @@ export default function PresetLibraryPage() {
     <div className="flex-1 min-h-0 overflow-y-auto p-6" data-testid="preset-library-page">
       <div className="max-w-5xl mx-auto">
         {presets === null && (
-          <p className="typo-body text-foreground/60 text-center py-8">
+          <p className="typo-body text-foreground text-center py-8">
             {t.templates.presets.loading}
           </p>
         )}
 
         {presets && presets.length === 0 && (
           <div className="text-center py-12">
-            <Layers className="w-10 h-10 mx-auto text-foreground/30 mb-3" />
+            <Layers className="w-10 h-10 mx-auto text-foreground mb-3" />
             <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">
               {t.templates.presets.empty_title}
             </h2>
@@ -128,7 +128,7 @@ function PresetCard({
       {/* Meta row — member count (icon) + optional group binding. Description
           moved to the preview modal; tags moved to their own row below so a
           long member/group line never squeezes them out. */}
-      <div className="flex items-center gap-3 typo-caption text-foreground/60">
+      <div className="flex items-center gap-3 typo-caption text-foreground">
         <span className="inline-flex items-center gap-1" title={tx(
           preset.members.length === 1
             ? t.templates.presets.card_member_count_one
@@ -158,7 +158,7 @@ function PresetCard({
           {preset.category.map((c) => (
             <span
               key={c}
-              className="px-1.5 py-0.5 rounded-full border border-primary/10 bg-secondary/40 typo-label text-foreground/60"
+              className="px-1.5 py-0.5 rounded-full border border-primary/10 bg-secondary/40 typo-label text-foreground"
             >
               {c}
             </span>

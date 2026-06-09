@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Power, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import {
@@ -48,6 +49,7 @@ export function UseCaseRow({
   policySlot,
 }: UseCaseRowProps) {
   const { t, tx } = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
   const [hovered, setHovered] = useState(false);
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null);
   const isRunning = runStartedAt !== null;
@@ -111,26 +113,36 @@ export function UseCaseRow({
           <CapabilitySigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
           <AnimatePresence>
             {isRunning && (
-              <motion.span
-                key="run-halo"
-                aria-hidden
-                className="absolute inset-0 m-auto rounded-full pointer-events-none"
-                style={{ width: SIGIL_SIZE, height: SIGIL_SIZE }}
-                initial={{ opacity: 0 }}
-                exit={{ opacity: 0, transition: { duration: 0.25 } }}
-                animate={{
-                  opacity: [0.85, 0],
-                  boxShadow: [
-                    `0 0 0 2px ${stateHex}77`,
-                    `0 0 0 14px ${stateHex}00`,
-                  ],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: [0.32, 0.72, 0, 1],
-                }}
-              />
+              prefersReducedMotion ? (
+                // Static "running" affordance — a steady ring instead of the pulsing halo.
+                <span
+                  key="run-halo"
+                  aria-hidden
+                  className="absolute inset-0 m-auto rounded-full pointer-events-none"
+                  style={{ width: SIGIL_SIZE, height: SIGIL_SIZE, boxShadow: `0 0 0 2px ${stateHex}77` }}
+                />
+              ) : (
+                <motion.span
+                  key="run-halo"
+                  aria-hidden
+                  className="absolute inset-0 m-auto rounded-full pointer-events-none"
+                  style={{ width: SIGIL_SIZE, height: SIGIL_SIZE }}
+                  initial={{ opacity: 0 }}
+                  exit={{ opacity: 0, transition: { duration: 0.25 } }}
+                  animate={{
+                    opacity: [0.85, 0],
+                    boxShadow: [
+                      `0 0 0 2px ${stateHex}77`,
+                      `0 0 0 14px ${stateHex}00`,
+                    ],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: [0.32, 0.72, 0, 1],
+                  }}
+                />
+              )
             )}
           </AnimatePresence>
         </div>

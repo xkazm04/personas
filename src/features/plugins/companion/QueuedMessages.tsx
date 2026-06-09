@@ -27,15 +27,15 @@ export function QueuedMessages() {
           className="flex items-center gap-2 rounded-input border border-foreground/10 bg-secondary/40 px-2.5 py-1.5 typo-caption"
           data-queued-mode={m.mode}
         >
-          <Clock className="w-3.5 h-3.5 shrink-0 text-foreground/50" />
+          <Clock className="w-3.5 h-3.5 shrink-0 text-foreground" />
           <span className="flex-1 truncate text-foreground" title={m.text}>
             {m.text}
           </span>
-          <span className="shrink-0 text-foreground/45">{t.plugins.companion.queued_badge}</span>
+          <span className="shrink-0 text-foreground">{t.plugins.companion.queued_badge}</span>
           <button
             type="button"
             onClick={() => remove(m.id)}
-            className="shrink-0 text-foreground/45 hover:text-foreground focus-ring rounded-interactive"
+            className="shrink-0 text-foreground hover:text-foreground focus-ring rounded-interactive"
             aria-label={t.plugins.companion.queued_remove}
           >
             <X className="w-3 h-3" />

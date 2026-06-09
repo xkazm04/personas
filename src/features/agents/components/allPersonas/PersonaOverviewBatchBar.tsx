@@ -95,7 +95,7 @@ export function PersonaOverviewBatchBar({
               className="absolute top-full mt-1 left-0 min-w-[220px] z-30 rounded-modal border border-primary/15 bg-background shadow-elevation-3 py-1 max-h-72 overflow-y-auto"
             >
               {sortedGroups.length === 0 && (
-                <p className="px-3 py-2 typo-caption text-foreground/60">
+                <p className="px-3 py-2 typo-caption text-foreground">
                   {t.agents.persona_list.batch_move_to_group_empty}
                 </p>
               )}
@@ -119,7 +119,7 @@ export function PersonaOverviewBatchBar({
                 type="button"
                 role="menuitem"
                 onClick={() => void handleMove(null)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground/70 hover:bg-secondary/60 transition-colors text-left"
+                className="w-full flex items-center gap-2 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/60 transition-colors text-left"
               >
                 <span className="w-2 h-2 rounded-full bg-foreground/30 flex-shrink-0" />
                 {t.agents.persona_list.batch_move_to_ungrouped}

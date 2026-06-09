@@ -9,9 +9,9 @@ import type { JudgePersona } from '@/lib/bindings/JudgePersona';
 function Stat({ label, value }: { label: string; value: number | null }) {
   return (
     <div className="flex flex-col items-center px-3 py-1.5 rounded-card bg-secondary/30 border border-primary/10">
-      <span className="typo-caption text-foreground/60">{label}</span>
+      <span className="typo-caption text-foreground">{label}</span>
       {value == null ? (
-        <span className="typo-heading text-foreground/50">—</span>
+        <span className="typo-heading text-foreground">—</span>
       ) : (
         <Numeric value={value} unit="plain" className="typo-heading text-foreground/90" />
       )}
@@ -41,7 +41,7 @@ function PersonaRow({ persona }: { persona: JudgePersona }) {
       </div>
       <div className="flex flex-wrap gap-x-4 gap-y-1">
         {dimEntries.map(([label, val]) => (
-          <span key={label} className="typo-caption text-foreground/70">
+          <span key={label} className="typo-caption text-foreground">
             {label}: {val == null ? '—' : <Numeric value={val} unit="plain" className="text-foreground/90" />}
           </span>
         ))}
@@ -49,13 +49,13 @@ function PersonaRow({ persona }: { persona: JudgePersona }) {
       {persona.evidence.length > 0 && (
         <ul className="list-disc pl-4 space-y-1">
           {persona.evidence.map((e, i) => (
-            <li key={i} className="typo-caption text-foreground/70">
+            <li key={i} className="typo-caption text-foreground">
               {e}
             </li>
           ))}
         </ul>
       )}
-      {persona.note && <p className="typo-caption text-foreground/55 italic">{persona.note}</p>}
+      {persona.note && <p className="typo-caption text-foreground italic">{persona.note}</p>}
     </div>
   );
 }
@@ -87,7 +87,7 @@ export function JudgePanel({ judge }: { judge: Judge }) {
                 </Badge>
               ))}
             </div>
-            {pb.note && <p className="typo-caption text-foreground/60 italic">{pb.note}</p>}
+            {pb.note && <p className="typo-caption text-foreground italic">{pb.note}</p>}
           </div>
         )}
 
@@ -102,7 +102,7 @@ export function JudgePanel({ judge }: { judge: Judge }) {
         {judge.judgeNotes && (
           <div className="flex gap-2 rounded-card border border-primary/10 bg-secondary/20 p-3">
             <Gavel className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-            <p className="typo-caption text-foreground/75">{judge.judgeNotes}</p>
+            <p className="typo-caption text-foreground">{judge.judgeNotes}</p>
           </div>
         )}
       </div>

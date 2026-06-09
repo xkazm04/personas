@@ -29,6 +29,7 @@ import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researc
 import { useTranslation } from '@/i18n/useTranslation';
 import SidebarLevel3, { type SidebarLevel3Item } from '../SidebarLevel3';
 import { debtText } from '@/i18n/DebtText';
+import { PLUGIN_ICONS } from '@/features/plugins/PluginIcons';
 
 
 interface PluginMeta {
@@ -173,6 +174,7 @@ export function PluginsSidebarNav() {
             <div className="space-y-1">
               {sortedPlugins.map((plugin) => {
                 const Icon = plugin.icon;
+                const CustomIcon = PLUGIN_ICONS[plugin.id];
                 const isActive = pluginTab === plugin.id;
                 const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
                 const showTwinStudioRunning = plugin.id === 'twin' && studioJobActive;
@@ -193,7 +195,9 @@ export function PluginsSidebarNav() {
                         : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />
+                    {CustomIcon
+                      ? <CustomIcon active={isActive} className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />
+                      : <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />}
                     <span className="flex-1 text-left truncate">{plugin.label}</span>
                     {plugin.id === 'dev-tools' && fleetWaitingCount > 0 && (
                       <span

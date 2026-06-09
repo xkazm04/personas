@@ -7,6 +7,7 @@ import { OrbitDots } from './OrbitDots';
 import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useSystemStore } from "@/stores/systemStore";
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
+import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import type { SidebarSection } from '@/lib/types/types';
 import { IS_MOBILE, MOBILE_SECTIONS } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -47,6 +48,7 @@ export default function SidebarLevel1({
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
+  const { hasUpdate: whatsNewUpdate, dismiss: dismissWhatsNew } = useWhatsNewIndicator();
   const isDev = import.meta.env.DEV;
   const isDark = useIsDarkTheme();
   const tier = useTier();
@@ -62,6 +64,17 @@ export default function SidebarLevel1({
   // 4 = transforms, 5 = scan active, 6 = completion dots.
   const badgesBySection = useMemo(() => {
     const map: Partial<Record<SidebarSection, BadgeDefinition[]>> = {
+      home: [
+        {
+          id: 'whats-new-update',
+          priority: 6,
+          active: whatsNewUpdate,
+          label: t.shared.sidebar_extra.whats_new_update,
+          variant: 'dot',
+          color: 'bg-cyan-400 border border-cyan-500/50',
+          onClick: (e: React.MouseEvent) => { e.stopPropagation(); dismissWhatsNew(); },
+        },
+      ],
       overview: [
         {
           id: 'pending-reviews',
@@ -135,6 +148,7 @@ export default function SidebarLevel1({
     pendingReviewCount, unreadMessageCount,
     contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning, studioJobActive,
+    whatsNewUpdate, dismissWhatsNew, t,
   ]);
 
   // Per-persona activity dots for Agents — one per task (draft / exec / lab).

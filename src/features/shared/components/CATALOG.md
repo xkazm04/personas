@@ -166,7 +166,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `BackgroundServices` | _(add a `@catalog` tag)_ |
 | `BadgeSlot` | Click handler (e. |
 | `BreadcrumbTrail` | Renders a single breadcrumb segment (clickable or current). |
-| `ChannelTimelineWorkspace` | A draggable vertical divider that reports horizontal deltas. |
+| `ChannelTimelineWorkspace` | A draggable vertical divider — reports horizontal deltas, no re-render. |
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
 | `DesktopFooter` | _(add a `@catalog` tag)_ |

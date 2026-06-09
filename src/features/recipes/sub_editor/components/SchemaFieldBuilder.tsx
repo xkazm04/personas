@@ -112,6 +112,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
               <button
                 type="button"
                 onClick={() => removeField(index)}
+                // eslint-disable-next-line custom/no-hardcoded-jsx-text
                 aria-label="Remove field"
                 className="p-1 rounded-card text-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
               >

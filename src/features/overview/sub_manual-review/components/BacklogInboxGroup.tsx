@@ -66,7 +66,7 @@ export function BacklogInboxGroup() {
         <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full bg-amber-500/15 text-amber-300 typo-caption font-medium tabular-nums">
           {ideas.length}
         </span>
-        <ChevronDown className={`w-3.5 h-3.5 text-foreground/40 ml-auto transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-foreground ml-auto transition-transform ${collapsed ? '-rotate-90' : ''}`} />
       </button>
 
       {!collapsed && (
@@ -75,7 +75,7 @@ export function BacklogInboxGroup() {
             <li key={idea.id} className="flex items-center gap-2.5 px-4 py-2">
               <span className="min-w-0 flex-1">
                 <span className="typo-caption text-foreground truncate block">{idea.title}</span>
-                <span className="typo-caption text-foreground/50 truncate block">
+                <span className="typo-caption text-foreground truncate block">
                   {(idea.project_id && projectName.get(idea.project_id)) || '—'} · {idea.category}
                   {idea.effort != null && ` · E${idea.effort}`}
                   {idea.impact != null && ` I${idea.impact}`}

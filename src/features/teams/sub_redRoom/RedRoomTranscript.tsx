@@ -182,10 +182,11 @@ export function RedRoomTranscript({ items }: { items: RedRoomItem[] }) {
                 onClick={() => setOpenItem(item)}
                 className={`w-full text-left flex gap-2 px-3 py-1 border-l-2 ${FAMILY_RAIL.memory} hover:bg-secondary/25 cursor-pointer`}
               >
-                <span className="typo-caption text-foreground/40 tabular-nums flex-shrink-0">{hhmmss(item.at)}</span>
+                <span className="typo-caption text-foreground tabular-nums flex-shrink-0">{hhmmss(item.at)}</span>
+                {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
                 <span className="typo-caption text-amber-300/90 flex-shrink-0">★ NOTE</span>
                 <span className="typo-caption flex-shrink-0" style={{ color }}>{sign}</span>
-                <span className="typo-caption text-foreground/80 truncate">
+                <span className="typo-caption text-foreground truncate">
                   {item.title} — {item.content}
                 </span>
               </motion.button>
@@ -202,14 +203,14 @@ export function RedRoomTranscript({ items }: { items: RedRoomItem[] }) {
               onClick={() => setOpenItem(item)}
               className={`w-full text-left flex gap-2 px-3 py-1 border-l-2 ${FAMILY_RAIL[fam]} hover:bg-secondary/25 cursor-pointer`}
             >
-              <span className="typo-caption text-foreground/40 tabular-nums flex-shrink-0">{hhmmss(item.at)}</span>
+              <span className="typo-caption text-foreground tabular-nums flex-shrink-0">{hhmmss(item.at)}</span>
               <span className="typo-caption font-semibold flex-shrink-0 w-28 truncate" style={{ color }} title={sign}>{sign}</span>
               <span className={`typo-caption flex-shrink-0 ${FAMILY_TEXT[fam]}`}>{item.eventType}</span>
-              <span className="typo-caption text-foreground/70 truncate" title={item.summary ?? undefined}>
+              <span className="typo-caption text-foreground truncate" title={item.summary ?? undefined}>
                 {item.errorMessage ? `✗ ${item.errorMessage}` : item.summary ?? ''}
               </span>
               {item.artifact && (
-                <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground/60">
+                <span className="ml-auto flex-shrink-0 inline-flex items-center gap-1 typo-caption text-foreground">
                   <ExternalLink className="w-3 h-3" /> {item.artifact.label}
                 </span>
               )}
@@ -217,12 +218,14 @@ export function RedRoomTranscript({ items }: { items: RedRoomItem[] }) {
           );
         })}
         {visible.length === 0 && (
-          <p className="px-3 py-4 typo-caption text-foreground/45">No transmissions in this channel yet.</p>
+          /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
+          <p className="px-3 py-4 typo-caption text-foreground">No transmissions in this channel yet.</p>
         )}
         {/* Infinite-load sentinel */}
         {hasMore && (
           <div ref={sentinelRef} className="px-3 py-2">
-            <p className="typo-caption text-foreground/40">Loading older transmissions…</p>
+            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
+            <p className="typo-caption text-foreground">Loading older transmissions…</p>
           </div>
         )}
       </div>

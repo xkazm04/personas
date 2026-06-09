@@ -22,7 +22,7 @@ export function CertOverview({ certStatus, onSelectRun }: CertOverviewProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 typo-caption text-foreground/60">
+      <div className="flex items-center gap-2 typo-caption text-foreground">
         <ShieldCheck className="w-4 h-4 text-emerald-400" />
         <span>
           {certifiedCount}/{certStatus.length} {c.teams_certified}

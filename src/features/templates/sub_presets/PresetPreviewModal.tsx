@@ -68,7 +68,6 @@ interface PresetPreviewModalProps {
 export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModalProps) {
   const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setAgentTab = useSystemStore((s) => s.setAgentTab);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const addToast = useToastStore((s) => s.addToast);
@@ -210,7 +209,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     useSystemStore.getState().setSidebarSection('teams');
     useSystemStore.getState().setTeamsTab('workspace');
     onClose();
-  }, [setSidebarSection, setAgentTab, onClose]);
+  }, [setSidebarSection, onClose]);
 
   /**
    * Retry the currently-failed rows in place. The IPC reuses the same
@@ -406,16 +405,16 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             trailing element. */}
         <section>
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="typo-label uppercase tracking-wider text-foreground/70">
+            <h3 className="typo-label uppercase tracking-wider text-foreground">
               {t.templates.presets.preview_members_heading}
             </h3>
-            <span className="typo-label text-foreground/50">
+            <span className="typo-label text-foreground">
               {adoptionState === 'preview'
                 ? `(${selectedRoles.size}/${preset.members.length})`
                 : `(${preset.members.length})`}
             </span>
             {adoptionState === 'preview' && (
-              <span className="typo-caption text-foreground/45 ml-auto">
+              <span className="typo-caption text-foreground ml-auto">
                 {t.templates.presets.preview_members_select_hint}
               </span>
             )}
@@ -447,7 +446,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                     selected ? (
                       <CheckSquare className="w-4 h-4 flex-shrink-0" style={{ color: teamColor }} />
                     ) : (
-                      <Square className="w-4 h-4 flex-shrink-0 text-foreground/30" />
+                      <Square className="w-4 h-4 flex-shrink-0 text-foreground" />
                     )
                   )}
                   <span
@@ -461,7 +460,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
                       {meta?.name ?? row.templateId}
                     </span>
                     {meta?.description && (
-                      <span className="typo-caption text-foreground/55 block truncate">
+                      <span className="typo-caption text-foreground block truncate">
                         {meta.description}
                       </span>
                     )}
@@ -476,7 +475,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
 
       {/* Footer — adoption gate or "open team" CTA */}
       <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-between gap-2">
-        <p className="typo-caption text-foreground/60">
+        <p className="typo-caption text-foreground">
           {adoptionState === 'preview' && t.templates.presets.footer_preview_hint}
           {adoptionState === 'adopting' && t.templates.presets.footer_adopting_hint}
           {adoptionState === 'done' && result && (
@@ -567,7 +566,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
 function StatusBadge({ row, t }: { row: MemberRowState; t: ReturnType<typeof useTranslation>['t'] }) {
   if (row.status === 'queued') {
     return (
-      <span className="typo-caption text-foreground/40 uppercase tracking-wider">
+      <span className="typo-caption text-foreground uppercase tracking-wider">
         {t.templates.presets.status_queued}
       </span>
     );

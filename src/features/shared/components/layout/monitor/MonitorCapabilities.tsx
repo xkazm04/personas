@@ -8,6 +8,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Play, Loader2 } from 'lucide-react';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import type { DisplayUseCase } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 import { executePersona } from '@/api/agents/executions';
@@ -26,6 +27,7 @@ interface MonitorCapabilitiesProps {
 
 export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilitiesProps) {
   const { t } = useTranslation();
+  const prefersReducedMotion = useReducedMotion();
   const [executing, setExecuting] = useState<Set<string>>(new Set());
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
@@ -92,13 +94,21 @@ export function MonitorCapabilities({ personaId, useCases }: MonitorCapabilities
               </div>
               {isExecuting ? (
                 <>
-                  <motion.span
-                    aria-hidden
-                    className="absolute inset-0 rounded-full border-2 border-primary/55"
-                    animate={{ opacity: [0.25, 0.8, 0.25], scale: [0.9, 1.05, 0.9] }}
-                    transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                  />
-                  <Loader2 className="absolute w-5 h-5 text-primary animate-spin" />
+                  {prefersReducedMotion ? (
+                    // Static "in-progress" affordance — a steady ring at the pulse's mid opacity.
+                    <span
+                      aria-hidden
+                      className="absolute inset-0 rounded-full border-2 border-primary/55 opacity-80"
+                    />
+                  ) : (
+                    <motion.span
+                      aria-hidden
+                      className="absolute inset-0 rounded-full border-2 border-primary/55"
+                      animate={{ opacity: [0.25, 0.8, 0.25], scale: [0.9, 1.05, 0.9] }}
+                      transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
+                  <Loader2 className="absolute w-5 h-5 text-primary animate-spin motion-reduce:animate-none" />
                 </>
               ) : runnable ? (
                 <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/0 opacity-0 group-hover:opacity-100 group-hover:bg-background/55 transition-all">

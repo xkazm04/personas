@@ -80,7 +80,7 @@ export function QuickAnswerReviewStepper({
           <span className={`w-1.5 h-1.5 rounded-full ${sev.dot}`} aria-hidden />
           <span className="typo-caption font-medium">{severityLabel(t, bucket)}</span>
         </span>
-        <span className="typo-body text-foreground/60 tabular-nums">
+        <span className="typo-body text-foreground tabular-nums">
           {tx(t.monitor.quick_decision_position, { current: safeIdx + 1, total: reviews.length })}
         </span>
         <div className="ml-auto flex items-center gap-0.5">
@@ -88,7 +88,7 @@ export function QuickAnswerReviewStepper({
             type="button"
             disabled={safeIdx === 0}
             onClick={() => setIdx((i) => Math.max(0, i - 1))}
-            className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.monitor.quick_prev_decision}
           >
             <ChevronLeft className="w-4 h-4" />
@@ -97,7 +97,7 @@ export function QuickAnswerReviewStepper({
             type="button"
             disabled={safeIdx >= reviews.length - 1}
             onClick={() => setIdx((i) => Math.min(reviews.length - 1, i + 1))}
-            className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+            className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/50 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
             aria-label={t.monitor.quick_next_decision}
           >
             <ChevronRight className="w-4 h-4" />
@@ -111,7 +111,7 @@ export function QuickAnswerReviewStepper({
           <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
           <div className="min-w-0 flex-1">
             <h3 className="typo-body-lg font-semibold text-foreground leading-snug">{review.title}</h3>
-            {review.persona_name && <p className="typo-caption text-foreground/55 mt-0.5">{review.persona_name}</p>}
+            {review.persona_name && <p className="typo-caption text-foreground mt-0.5">{review.persona_name}</p>}
           </div>
         </div>
 
@@ -124,7 +124,7 @@ export function QuickAnswerReviewStepper({
       <div className="px-4 py-3 border-t border-card-border bg-secondary/10 flex flex-col gap-2">
         {actions.length > 0 && (
           <>
-            <p className="typo-label uppercase tracking-wider text-foreground/55">
+            <p className="typo-label uppercase tracking-wider text-foreground">
               {onDispatchAction ? t.monitor.quick_choose_carry_out : t.monitor.quick_choose_action}
             </p>
             <div className="flex flex-col gap-1.5">
@@ -139,9 +139,9 @@ export function QuickAnswerReviewStepper({
                   className="group flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-interactive border border-card-border bg-card-bg/60 hover:border-emerald-500/45 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
                 >
                   {onDispatchAction ? (
-                    <Play className="w-4 h-4 flex-shrink-0 text-foreground/35 group-hover:text-emerald-400 transition-colors" />
+                    <Play className="w-4 h-4 flex-shrink-0 text-foreground group-hover:text-emerald-400 transition-colors" />
                   ) : (
-                    <CornerDownRight className="w-4 h-4 flex-shrink-0 text-foreground/35 group-hover:text-emerald-400 transition-colors" />
+                    <CornerDownRight className="w-4 h-4 flex-shrink-0 text-foreground group-hover:text-emerald-400 transition-colors" />
                   )}
                   <span className="typo-body text-foreground leading-snug">{a}</span>
                 </button>

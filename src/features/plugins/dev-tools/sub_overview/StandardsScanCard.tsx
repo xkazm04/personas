@@ -64,7 +64,7 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
         <ShieldCheck className="w-3.5 h-3.5 text-amber-400/80 flex-shrink-0" />
         <span className="typo-card-label">{dp.standards_scan_title}</span>
         {compliancePct !== null && (
-          <span className="typo-caption text-foreground/60 tabular-nums">
+          <span className="typo-caption text-foreground tabular-nums">
             {compliancePct}% {dp.standards_compliance}
           </span>
         )}
@@ -81,7 +81,7 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
       </div>
 
       {standards.length === 0 ? (
-        <p className="px-4 py-4 typo-caption text-foreground/50 text-center">
+        <p className="px-4 py-4 typo-caption text-foreground text-center">
           {scanning ? dp.standards_scan_running : dp.standards_scan_empty}
         </p>
       ) : (
@@ -92,10 +92,10 @@ export function StandardsScanCard({ projectId }: { projectId: string }) {
               <span className="min-w-0 flex-1">
                 <span className="typo-caption text-foreground truncate block">{s.title}</span>
                 {s.recommendation && s.status !== 'present' && (
-                  <span className="typo-caption text-foreground/50 truncate block">{s.recommendation}</span>
+                  <span className="typo-caption text-foreground truncate block">{s.recommendation}</span>
                 )}
               </span>
-              <span className="typo-caption text-foreground/40 shrink-0">{s.category}</span>
+              <span className="typo-caption text-foreground shrink-0">{s.category}</span>
             </li>
           ))}
         </ul>

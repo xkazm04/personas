@@ -155,7 +155,7 @@ export function CreateTeamForm({
             <Code2 className="w-3.5 h-3.5 text-indigo-300/80 flex-shrink-0" />
             <span className="typo-card-label">{t.pipeline.team_codebase_heading}</span>
           </div>
-          <p className="typo-caption text-foreground/60 mb-3">{t.pipeline.team_codebase_hint}</p>
+          <p className="typo-caption text-foreground mb-3">{t.pipeline.team_codebase_hint}</p>
 
           <div className="space-y-3">
             <div>
@@ -174,7 +174,7 @@ export function CreateTeamForm({
               <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                 <GitFork className="w-3 h-3 text-indigo-300/70" />
                 {dp.main_branch_label}
-                <span className="typo-caption text-foreground/50 font-normal">({dp.team_binding_optional})</span>
+                <span className="typo-caption text-foreground font-normal">({dp.team_binding_optional})</span>
               </label>
               <input
                 type="text"

@@ -52,7 +52,7 @@ function RuleRow({ rule }: { rule: StandardsRule }) {
       </span>
       {rule.basis && (
         <Tooltip content={rule.basis}>
-          <span className="ml-auto typo-caption text-foreground/55 underline decoration-dotted cursor-help truncate max-w-[18rem]">
+          <span className="ml-auto typo-caption text-foreground underline decoration-dotted cursor-help truncate max-w-[18rem]">
             {rule.basis}
           </span>
         </Tooltip>
@@ -78,13 +78,13 @@ export function StandardsCard({ compliance }: { compliance: unknown }) {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <ShieldCheck className={`w-4 h-4 ${full ? 'text-emerald-400' : 'text-amber-400'}`} />
-        <span className="typo-caption text-foreground/70">{c.standards_compliance}:</span>
+        <span className="typo-caption text-foreground">{c.standards_compliance}:</span>
         {data.pct != null ? (
           <span className={`typo-body ${full ? 'text-emerald-400' : 'text-amber-400'}`}>
             <Numeric value={data.pct} unit="percent" />
           </span>
         ) : (
-          <span className="typo-caption text-foreground/50">{c.standards_na}</span>
+          <span className="typo-caption text-foreground">{c.standards_na}</span>
         )}
       </div>
       <div className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-1.5 divide-y divide-primary/5">

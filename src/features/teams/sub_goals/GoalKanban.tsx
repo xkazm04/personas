@@ -146,11 +146,11 @@ function GoalCard({
               {item.done ? (
                 <CheckCircle2 className="mt-px w-3.5 h-3.5 shrink-0 text-emerald-400" />
               ) : (
-                <Circle className="mt-px w-3.5 h-3.5 shrink-0 text-foreground/30 group-hover/todo:text-foreground/50 transition-colors" />
+                <Circle className="mt-px w-3.5 h-3.5 shrink-0 text-foreground group-hover/todo:text-foreground/50 transition-colors" />
               )}
               <span className={[
                 'text-[11px] leading-snug',
-                item.done ? 'text-foreground/40 line-through' : 'text-foreground/80',
+                item.done ? 'text-foreground line-through' : 'text-foreground',
               ].join(' ')}>
                 {item.title}
               </span>
@@ -178,7 +178,7 @@ function GoalCard({
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <span className="text-[9px] text-foreground/70 tabular-nums whitespace-nowrap">
+          <span className="text-[9px] text-foreground tabular-nums whitespace-nowrap">
             {tx(dl.goal_card_todos_done, { done: doneCount, total: items.length })}
           </span>
         </div>

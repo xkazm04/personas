@@ -124,9 +124,9 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
       {cronPreview?.valid && cronPreview.next_runs.length > 0 && <NextRunsPreview preview={cronPreview} />}
 
       {useCaseTitle && personaName && (
-        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-card bg-amber-500/5 border border-amber-500/10">
           <Info className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
-          <span className="text-sm text-muted-foreground/70">
+          <span className="typo-body text-foreground">
             {tx(ucT.schedule_will_run, { title: useCaseTitle, persona: personaName })}
           </span>
         </div>

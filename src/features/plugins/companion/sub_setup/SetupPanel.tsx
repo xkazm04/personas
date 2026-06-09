@@ -298,7 +298,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground/60 mt-1.5">
+            <div className="typo-caption text-foreground mt-1.5">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -335,7 +335,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.tracking_master_label}
             </div>
-            <div className="typo-caption text-foreground/60 mt-1.5">
+            <div className="typo-caption text-foreground mt-1.5">
               {trackingEnabled === null
                 ? t.plugins.companion.loading
                 : trackingEnabled

@@ -135,6 +135,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         data-testid="glyph-compose-summon"
         className="flex flex-col items-center gap-2 px-6 pointer-events-auto cursor-pointer disabled:is-disabled group bg-transparent border-none outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-full"
       >
+        {/* reduced-motion-ok: subtle decorative opacity/scale pulse on the compose-summon glyph; no vestibular hazard and it conveys no information */}
         <motion.div
           animate={{ opacity: [0.55, 1, 0.55], scale: [0.96, 1.06, 0.96] }}
           transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
@@ -231,7 +232,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
           </motion.div>
         </div>
         <span className="typo-heading-sm text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
-        <span className="typo-caption text-foreground/70">{t.agents.glyph_promoted_ready}</span>
+        <span className="typo-caption text-foreground">{t.agents.glyph_promoted_ready}</span>
         <button
           type="button"
           onClick={onViewAgent}

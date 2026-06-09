@@ -449,7 +449,7 @@ describe("useLifecycle", () => {
         await result.current.handlePromote();
       });
 
-      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
+      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1", undefined);
     });
 
     it("uses Rust promote path when session exists even without rich draft fields", async () => {
@@ -469,7 +469,7 @@ describe("useLifecycle", () => {
         await result.current.handlePromote();
       });
 
-      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1");
+      expect(mockPromoteBuildDraft).toHaveBeenCalledWith("session-123", "persona-1", undefined);
     });
 
     it("transitions to promoted phase on success", async () => {

@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./types";
@@ -22,6 +23,7 @@ interface GlyphPetalIconsProps {
 export function GlyphPetalIcons({
   size, petalStates, hoveredDim, activeDim, dimmed = false, sweepDim = null,
 }: GlyphPetalIconsProps) {
+  const prefersReducedMotion = useReducedMotion();
   const center = size / 2;
   const iconR = size * 0.34;
   // Labels sit just outside the petal ring so they don't overlap the
@@ -117,7 +119,7 @@ export function GlyphPetalIcons({
               color: state === "resolved" || state === "pending" ? "#fff" : meta.color,
             }}
           >
-            {state === "pending" ? (
+            {state === "pending" && !prefersReducedMotion ? (
               <motion.span
                 className="absolute inset-0 rounded-full pointer-events-none"
                 animate={{ opacity: [0.6, 1, 0.6] }}

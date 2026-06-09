@@ -42,6 +42,7 @@ export function PowerRail({
     <div className="relative rounded-card ring-1 ring-border/80 bg-gradient-to-b from-foreground/[0.035] to-foreground/[0.015] overflow-hidden shadow-elevation-1">
       <div className="flex items-center gap-1 px-6 pt-2.5">
         {Array.from({ length: 14 }).map((_, i) => (
+          // reduced-motion-ok: decorative power-rail opacity pulse shown only while firing; the static bar color already conveys powered/firing state
           <motion.span
             key={i}
             className={`h-1 flex-1 rounded-full ${powered ? 'bg-primary/70' : 'bg-foreground/15'}`}

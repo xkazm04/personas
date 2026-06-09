@@ -13,6 +13,7 @@ import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';
 import { EventTypeChip } from './EventTypeChip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 const STREAM_WINDOW_MS = 60_000; // rolling window for events/min calculation
 const STREAM_TIMESTAMP_CAP = 10_000; // hard cap on timestamp buffer to prevent OOM under sustained bursts
@@ -21,6 +22,7 @@ const defaultStatus = { bg: 'bg-amber-500/10', text: 'text-amber-400', border: '
 
 export function LiveStreamTab() {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
 
   const STATUS_OPTIONS = [
     { value: 'all', label: t.triggers.all_statuses },
@@ -324,9 +326,9 @@ export function LiveStreamTab() {
               <motion.span
                 key="ring-live"
                 initial={{ opacity: 0.3 }}
-                animate={{ opacity: [0.4, 1, 0.4] }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: [0.4, 1, 0.4] }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
                 className="pointer-events-none absolute inset-0 rounded-full border-2 border-emerald-400"
               />
             ) : (

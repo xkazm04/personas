@@ -401,7 +401,7 @@ export default function FleetGridPage() {
   // to the single view rather than showing an empty fullscreen grid.
   useEffect(() => {
     if (gridOpen && liveSessions.length === 0) setGridOpen(false);
-  }, [gridOpen, liveSessions.length]);
+  }, [gridOpen, liveSessions.length, setGridOpen]);
 
   const handleSpawn = useCallback(async () => {
     if (!activeProject || spawning) return;

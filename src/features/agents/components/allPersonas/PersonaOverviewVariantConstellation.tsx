@@ -316,8 +316,9 @@ export function PersonaOverviewVariantConstellation({
     }
     try {
       (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-    } catch {
+    } catch (err) {
       // Pointer wasn't captured (e.g. a programmatic invocation) — harmless.
+      silentCatch('features/agents/components/allPersonas/PersonaOverviewVariantConstellation:releasePointerCapture')(err);
     }
     if (!state.moved) {
       setDraggingId(null);

@@ -228,7 +228,7 @@ export default function SetupPanel() {
                     <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
                     <div className="min-w-0">
                       <p className="typo-heading typo-card-label truncate">{v.name}</p>
-                      <p className="typo-caption text-foreground/60 truncate">{v.path}</p>
+                      <p className="typo-caption text-foreground truncate">{v.path}</p>
                     </div>
                   </div>
                 </button>
@@ -271,7 +271,7 @@ export default function SetupPanel() {
                 {connectionResult.valid ? (
                   <>
                     <p className="typo-heading text-emerald-400">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
-                    <p className="typo-caption text-foreground/60">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
+                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
                   <p className="typo-heading text-red-400">{connectionResult.error}</p>
@@ -350,7 +350,7 @@ export default function SetupPanel() {
               </div>
             ))}
           </div>
-          <div className="space-y-1.5 typo-caption text-foreground/60">
+          <div className="space-y-1.5 typo-caption text-foreground">
             <p><DebtText k="auto_preview_4bf30626" /></p>
             <code className="block text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
             {syncConnectors && (

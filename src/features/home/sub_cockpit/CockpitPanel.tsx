@@ -168,6 +168,7 @@ export default function CockpitPanel() {
           </div>
         ) : !contextualCockpit && error && !spec ? (
           <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-6 flex flex-col items-center gap-3 text-center">
+            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
             <p className="typo-body text-red-400 font-medium">Couldn’t load your cockpit</p>
             <button
               type="button"

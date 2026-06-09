@@ -184,7 +184,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           />
           <div className="flex-1">
             <div className="typo-body text-foreground">{t.plugins.langfuse.push_lab_scores_label}</div>
-            <div className="typo-caption text-foreground/80">{t.plugins.langfuse.push_lab_scores_desc}</div>
+            <div className="typo-caption text-foreground">{t.plugins.langfuse.push_lab_scores_desc}</div>
           </div>
         </label>
       </div>

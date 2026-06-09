@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+// eslint-disable-next-line no-restricted-imports -- TitleBar owns the native window chrome (minimize/maximize/close); the Tauri window API is intrinsic to this primitive and cannot be lifted without moving the window controls themselves out of the design-system layer.
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, X, Copy, Bell, CalendarClock, ArrowLeft, Search } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';

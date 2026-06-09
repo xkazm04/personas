@@ -33,10 +33,10 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
       ) : (
         <AlertTriangle className="w-3 h-3 text-orange-400 flex-shrink-0" />
       )}
-      <span className="font-mono text-foreground/80 w-14 flex-shrink-0">{pid}</span>
-      <span className="text-foreground/70 w-14 flex-shrink-0">{fmtMem(memoryBytes)}</span>
+      <span className="font-mono text-foreground w-14 flex-shrink-0">{pid}</span>
+      <span className="text-foreground w-14 flex-shrink-0">{fmtMem(memoryBytes)}</span>
       <span className="flex-1 min-w-0">
-        <TruncateWithTooltip text={cwd ?? cmd} className="text-foreground/60 font-mono" />
+        <TruncateWithTooltip text={cwd ?? cmd} className="text-foreground font-mono" />
       </span>
       <span className={`text-[12px] flex-shrink-0 ${tracked ? 'text-emerald-400' : 'text-orange-300'}`}>
         {tracked ? 'Fleet' : 'orphan'}

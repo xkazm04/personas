@@ -286,6 +286,7 @@ describe('E2E: TerminalStrip -- rendering', () => {
       );
 
       fireEvent.click(screen.getByTitle('Copy log'));
+      // eslint-disable-next-line custom/prefer-shared-clipboard -- asserting the clipboard spy was called, not performing a real copy
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Line 1\nLine 2');
     });
   });

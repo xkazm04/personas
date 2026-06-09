@@ -607,6 +607,10 @@ export type Translations = {
         label: string;
         description: string;
       };
+      teams: {
+        label: string;
+        description: string;
+      };
       cloud: {
         label: string;
         description: string;
@@ -619,6 +623,27 @@ export type Translations = {
         label: string;
         description: string;
       };
+    };
+    nav_status: {
+      incidents: string;
+      incidents_other: string;
+      messages: string;
+      messages_other: string;
+      reviews: string;
+      reviews_other: string;
+      teams: string;
+      teams_other: string;
+      agents_active: string;
+      agents_active_other: string;
+      events_today: string;
+      events_today_other: string;
+      connections_external: string;
+      connections_external_other: string;
+      connections_builtin: string;
+      connections_builtin_other: string;
+      trend_up: string;
+      trend_down: string;
+      trend_flat: string;
     };
     learning: {
       title: string;
@@ -14657,6 +14682,7 @@ export type Translations = {
       research_lab: string;
       back_to_home: string;
       whats_new: string;
+      whats_new_update: string;
       back_to_plugins: string;
       roadmap: string;
       teams_label: string;
@@ -14744,6 +14770,7 @@ export type Translations = {
       subtitle_roadmap: string;
       subtitle_changelog: string;
       nav_bar_roadmap_label: string;
+      nav_rail_label: string;
       empty: string;
       status_released: string;
       status_active: string;

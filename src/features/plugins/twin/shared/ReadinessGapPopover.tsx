@@ -148,7 +148,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
                   >
                     {showAll
                       ? t.gaps.showFewer
-                      : tx(t.gaps.showAllGaps, { count: gaps.length })}
+                      : tx(t.gaps.moreCount, { count: gaps.length - 3 })}
                   </button>
                 </li>
               )}

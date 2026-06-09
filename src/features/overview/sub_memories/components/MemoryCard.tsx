@@ -125,7 +125,7 @@ export function MemoryRow({
 
   const archivedBadge = isArchived ? (
     <span
-      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/60 border border-primary/15 text-foreground/60 typo-body"
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-secondary/60 border border-primary/15 text-foreground typo-body"
       title={t.overview.memory_filter.tier_archived}
     >
       <Archive className="w-3 h-3" />
@@ -137,7 +137,7 @@ export function MemoryRow({
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       <button
         onClick={onRestore}
-        className="p-1 rounded hover:bg-violet-500/10 text-foreground/60 hover:text-violet-300 transition-colors"
+        className="p-1 rounded hover:bg-violet-500/10 text-foreground hover:text-violet-300 transition-colors"
         title={t.overview.memory_card.restore}
         aria-label={t.overview.memory_card.restore}
       >

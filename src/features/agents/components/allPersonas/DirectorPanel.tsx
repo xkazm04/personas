@@ -28,23 +28,23 @@ export function DirectorPanel() {
       <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-4 h-4" />
       <div className="min-w-0 flex-1">
         <div className="typo-body font-medium text-foreground/90">{t.director.panel_title}</div>
-        <div className="typo-caption text-foreground/60 flex items-center gap-1.5 flex-wrap">
+        <div className="typo-caption text-foreground flex items-center gap-1.5 flex-wrap">
           <span className="inline-flex items-center gap-1">
             <Star className="w-3 h-3 text-violet-400/70" />
             {inScope > 0 ? tx(t.director.scope_summary, { count: inScope }) : t.director.scope_empty}
           </span>
           {avg != null && (
             <>
-              <span className="text-foreground/30">·</span>
+              <span className="text-foreground">·</span>
               <span>
-                {t.director.kpi_avg_score} <Numeric value={avg} precision={1} className="text-foreground/80" />
+                {t.director.kpi_avg_score} <Numeric value={avg} precision={1} className="text-foreground" />
               </span>
             </>
           )}
           {lastVerdictAt && (
             <>
-              <span className="text-foreground/30">·</span>
-              <span className="text-foreground/55">{t.director.last_review}</span>
+              <span className="text-foreground">·</span>
+              <span className="text-foreground">{t.director.last_review}</span>
               <RelativeTime timestamp={lastVerdictAt} />
             </>
           )}

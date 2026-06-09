@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { useId } from 'react';
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -24,12 +25,33 @@ export interface SubNavBadge {
   className: string;
 }
 
+/**
+ * A small status dot pinned to the right edge of a sub-nav row — e.g. the
+ * "What's New" update nudge on the Roadmap item. Distinct from {@link SubNavBadge}
+ * (a numeric count pill); this is a presence indicator with an optional pulse.
+ */
+export interface SubNavIndicator {
+  /** Tailwind classes for the dot (bg + optional border/shadow). */
+  color: string;
+  /** Accessible label / tooltip text describing what the dot means. */
+  label: string;
+  /** Soft ping ring to draw the eye (use for genuinely new, time-sensitive cues). */
+  pulse?: boolean;
+  /**
+   * Optional dismiss handler. When provided the dot becomes clickable and the
+   * click is kept from triggering the row's `onSelect`. When omitted the dot is
+   * decorative and is expected to clear via a side effect of selecting the row.
+   */
+  onClick?: (e: React.MouseEvent) => void;
+}
+
 export default function SidebarSubNav({
   items,
   activeId,
   onSelect,
   onHoverItem,
   badges = {},
+  indicators = {},
   variant = 'compact',
   devItems,
   accents,
@@ -42,6 +64,8 @@ export default function SidebarSubNav({
   /** Fires on pointerenter for an item — use for route-level prefetch. */
   onHoverItem?: (id: string) => void;
   badges?: Record<string, SubNavBadge>;
+  /** Per-item presence dots keyed by item id (e.g. the "What's New" nudge). */
+  indicators?: Record<string, SubNavIndicator>;
   variant?: 'overview' | 'compact';
   devItems?: Set<string>;
   /** Per-item domain accents — when present, the active item is tinted with the accent. */
@@ -75,6 +99,7 @@ export default function SidebarSubNav({
         const Icon = item.icon;
         const isActive = activeId === item.id;
         const badge = badges[item.id];
+        const indicator = indicators[item.id];
         const isDevItem = devItems?.has(item.id);
         const accent = accents?.[item.id];
 
@@ -127,6 +152,20 @@ export default function SidebarSubNav({
               <span className={`ml-auto px-1.5 py-0.5 typo-heading leading-none rounded-full ${badge.className}`}>
                 {badge.count}
               </span>
+            )}
+            {indicator && (
+              <Tooltip content={indicator.label} placement="right" delay={300}>
+                <span
+                  className={`${badge && badge.count > 0 ? 'ml-1.5' : 'ml-auto'} relative inline-flex h-2.5 w-2.5 flex-shrink-0 items-center justify-center ${indicator.onClick ? 'cursor-pointer' : ''}`}
+                  aria-label={indicator.label}
+                  onClick={indicator.onClick ? (e) => { e.stopPropagation(); indicator.onClick!(e); } : undefined}
+                >
+                  {indicator.pulse && (
+                    <span className={`absolute inset-0 rounded-full animate-ping ${indicator.color} opacity-60`} />
+                  )}
+                  <span className={`relative h-2 w-2 rounded-full shadow-elevation-1 ${indicator.color}`} />
+                </span>
+              </Tooltip>
             )}
           </button>
         );

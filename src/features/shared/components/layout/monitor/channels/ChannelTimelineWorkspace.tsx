@@ -31,7 +31,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 function readLS(k: string, d: number): number {
   try { const v = Number(localStorage.getItem(k)); return Number.isFinite(v) && v > 0 ? v : d; } catch { return d; }
 }
-function writeLS(k: string, v: number) { try { localStorage.setItem(k, String(Math.round(v))); } catch { /* private mode */ } }
+function writeLS(k: string, v: number) { try { localStorage.setItem(k, String(Math.round(v))); } catch (e) { silentCatch('channelWs.writeLS')(e); } }
 
 /* ---------------------------------------------------------------------------
  * Performance model
@@ -102,14 +102,14 @@ const TeamSidebar = memo(function TeamSidebar({
   return (
     <div className="h-full flex flex-col min-h-0 bg-foreground/[0.012]">
       <div className="flex-shrink-0 h-9 px-3 flex items-center gap-2 border-b border-border">
-        <Users className="w-3.5 h-3.5 text-foreground/45" />
-        <span className="typo-label uppercase tracking-wider text-foreground/55">{t.monitor.channels_teams_label}</span>
+        <Users className="w-3.5 h-3.5 text-foreground" />
+        <span className="typo-label uppercase tracking-wider text-foreground">{t.monitor.channels_teams_label}</span>
         {teams.length > 1 && (
-          <button type="button" onClick={() => onSetAll(!allOn)} className="ml-auto typo-caption text-foreground/45 hover:text-foreground/80 transition-colors">
+          <button type="button" onClick={() => onSetAll(!allOn)} className="ml-auto typo-caption text-foreground hover:text-foreground/80 transition-colors">
             {allOn ? t.monitor.channels_none : t.monitor.channels_all}
           </button>
         )}
-        <button type="button" onClick={onCollapse} title={t.monitor.channels_hide_panel} className="p-1 rounded-interactive text-foreground/40 hover:text-foreground/80 transition-colors">
+        <button type="button" onClick={onCollapse} title={t.monitor.channels_hide_panel} className="p-1 rounded-interactive text-foreground hover:text-foreground/80 transition-colors">
           <PanelLeftClose className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -128,7 +128,7 @@ const TeamSidebar = memo(function TeamSidebar({
                 {tm.selected && <Check className="w-3 h-3 text-background" />}
               </span>
               <span className={`typo-body truncate ${tm.selected ? 'text-foreground' : 'text-foreground/55'}`}>{cleanName(tm.teamName)}</span>
-              {tm.selected && count > 0 && <span className="ml-auto typo-caption text-foreground/40 tabular-nums">{count}</span>}
+              {tm.selected && count > 0 && <span className="ml-auto typo-caption text-foreground tabular-nums">{count}</span>}
             </button>
           );
         })}
@@ -164,8 +164,8 @@ const QuickAnswerSidebar = memo(function QuickAnswerSidebar({ onCollapse }: { on
   return (
     <div className="h-full flex flex-col min-h-0 bg-foreground/[0.012]">
       <div className="flex-shrink-0 h-9 px-3 flex items-center gap-2 border-b border-border">
-        <span className="typo-label uppercase tracking-wider text-foreground/55">{t.monitor.quick_title}</span>
-        <button type="button" onClick={onCollapse} title={t.monitor.channels_hide_panel} className="ml-auto p-1 rounded-interactive text-foreground/40 hover:text-foreground/80 transition-colors">
+        <span className="typo-label uppercase tracking-wider text-foreground">{t.monitor.quick_title}</span>
+        <button type="button" onClick={onCollapse} title={t.monitor.channels_hide_panel} className="ml-auto p-1 rounded-interactive text-foreground hover:text-foreground/80 transition-colors">
           <PanelRightClose className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -216,7 +216,7 @@ const Composer = memo(function Composer({ feedTeams }: { feedTeams: WorkspaceTea
         >
           <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: targetTeam?.teamColor ?? 'var(--color-foreground)' }} />
           <span className="max-w-[120px] truncate">{targetTeam ? cleanName(targetTeam.teamName) : t.monitor.channels_composer_pick}</span>
-          <ChevronDown className="w-3.5 h-3.5 text-foreground/50" />
+          <ChevronDown className="w-3.5 h-3.5 text-foreground" />
         </button>
         {teamMenu && feedTeams.length > 0 && (
           <>
@@ -317,8 +317,8 @@ function WorkspaceInner({
           <Radio className="w-3.5 h-3.5 text-status-error" />
         </div>
         <span className="typo-body font-semibold text-foreground">{t.monitor.channels_combined_title}</span>
-        <span className="flex items-center gap-3 typo-data text-foreground/70 tabular-nums ml-1">
-          <span className="flex items-center gap-1.5" title="Transmissions"><Activity className="w-4 h-4 text-foreground/40" /> {merged.length}</span>
+        <span className="flex items-center gap-3 typo-data text-foreground tabular-nums ml-1">
+          <span className="flex items-center gap-1.5" title="Transmissions"><Activity className="w-4 h-4 text-foreground" /> {merged.length}</span>
           {working > 0 && <span className="text-status-info">{working} working</span>}
         </span>
         <div className="ml-auto flex items-center gap-2">
@@ -343,11 +343,11 @@ function WorkspaceInner({
       <div className="flex-1 min-h-0 flex">
         {leftCollapsed ? (
           <div className="flex-shrink-0 w-9 border-r border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
-            <button type="button" onClick={expandLeft} title={t.monitor.channels_teams_label} className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
+            <button type="button" onClick={expandLeft} title={t.monitor.channels_teams_label} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
               <PanelLeftOpen className="w-4 h-4" />
             </button>
-            <Users className="w-4 h-4 text-foreground/30" />
-            <span className="typo-caption text-foreground/40 tabular-nums">{feedTeams.length}</span>
+            <Users className="w-4 h-4 text-foreground" />
+            <span className="typo-caption text-foreground tabular-nums">{feedTeams.length}</span>
           </div>
         ) : (
           <>
@@ -362,7 +362,7 @@ function WorkspaceInner({
 
         {rightCollapsed ? (
           <div className="flex-shrink-0 w-9 border-l border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
-            <button type="button" onClick={expandRight} title={t.monitor.quick_title} className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
+            <button type="button" onClick={expandRight} title={t.monitor.quick_title} className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
               <PanelRightOpen className="w-4 h-4" />
             </button>
           </div>

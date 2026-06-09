@@ -165,14 +165,14 @@ export function GoalGraphMap({
           <span className="w-2.5 h-2.5 rounded-full ring-2 ring-blue-400/60" style={{ backgroundColor: goalStatusMeta('open').map.fill }} />
           {dl.goal_map_next} · {dl.goal_map_next_desc} ({nextCount})
         </span>
-        <span className="text-foreground/40">|</span>
+        <span className="text-foreground">|</span>
         {GOAL_STATUSES.map((status) => (
           <span key={status} className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: goalStatusMeta(status).map.fill }} />
             {goalStatusLabel(dl, status)}
           </span>
         ))}
-        <span className="ml-auto text-foreground/50">{dl.goal_map_drag_hint}</span>
+        <span className="ml-auto text-foreground">{dl.goal_map_drag_hint}</span>
         <button
           type="button"
           onClick={handleTidy}

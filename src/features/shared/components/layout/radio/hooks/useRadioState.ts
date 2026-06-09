@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+// eslint-disable-next-line no-restricted-imports -- the radio widget subscribes to native now-playing events; lifting this would require relocating the entire radio feature out of shared/layout, which is out of scope for this lint pass.
 import { listen } from '@tauri-apps/api/event';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { RadioState } from '@/lib/bindings/RadioState';

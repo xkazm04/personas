@@ -1,69 +1,60 @@
 /**
  * Top-level "What's New" view.
  *
- * Selection (which release / roadmap entry is shown) used to live in a local
- * `useState` here and be picked via the in-page `ReleasesNavBar` at the top.
- * Both moved into the sidebar Level 3 push pane on 2026-05-17 — see
- * `SidebarLevel2.tsx` → `HomeRoadmapL3`. This component now reads the
- * selection from the system store and is responsible only for rendering the
- * chosen release.
+ * Layout: a left `ReleaseNavRail` (release picker) beside the content pane.
+ * The rail replaced the sidebar Level 3 push pane on 2026-06-09 — selection
+ * now lives next to the content it scopes, and the Home Level 2 list stays
+ * visible throughout. This component reads the selected version from the
+ * system store and renders the chosen release; the rail owns writes.
  *
- * Selection persistence:
- * - First mount → read `sessionStorage`, fall back to `releasesConfig.active`
- *   if no stored value exists. Hydrated into `systemStore.homeReleaseVersion`
- *   so the sidebar L3 highlight matches the page on cold boot.
- * - User picks a tab in the sidebar → store update + `sessionStorage` write
- *   live in the sidebar's `handleSelect` so the page stays purely read-only
- *   for selection state.
+ * Selection persistence (see `releaseSelection.ts`):
+ * - First mount → read `sessionStorage`, fall back to the active release.
+ *   Hydrated into `systemStore.homeReleaseVersion` so the rail highlight
+ *   matches the page on cold boot.
  * - Session-scoped (not localStorage) so a new session lands on the active
  *   release rather than wherever the user last clicked.
+ *
+ * Viewing this page acknowledges the running app version (clears the
+ * "What's New" update dot on the Home / Roadmap sidebar entries).
+ *
+ * i18n: see `.claude/CLAUDE.md` → "Internationalization".
  */
 import { Rocket } from 'lucide-react';
 import { useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getActiveRelease, getReleaseByVersion } from '@/data/releases';
-import { silentCatch } from '@/lib/silentCatch';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import ReleaseDetailView from './ReleaseDetailView';
+import ReleaseNavRail from './ReleaseNavRail';
 import HomeRoadmapView from './HomeRoadmapView';
 import { useLiveRoadmap } from './useLiveRoadmap';
-
-const SELECTION_STORAGE_KEY = 'home-releases-selected-version';
-
-function readInitialSelection(): string {
-  if (typeof window === 'undefined') return getActiveRelease().version;
-  try {
-    const stored = window.sessionStorage.getItem(SELECTION_STORAGE_KEY);
-    if (stored) {
-      if (getReleaseByVersion(stored)) return stored;
-      // Stored version no longer exists (e.g. dropped from releases.json
-      // in a later build). Drop the stale value so we don't re-read it on
-      // every mount and keep flashing the wrong tab before the fallback.
-      window.sessionStorage.removeItem(SELECTION_STORAGE_KEY);
-    }
-  } catch (err) {
-    silentCatch('HomeReleases:readInitialSelection')(err);
-  }
-  return getActiveRelease().version;
-}
+import { readInitialReleaseSelection } from './releaseSelection';
 
 export default function HomeReleases() {
   const { t } = useReleasesTranslation();
   const homeReleaseVersion = useSystemStore((s) => s.homeReleaseVersion);
   const setHomeReleaseVersion = useSystemStore((s) => s.setHomeReleaseVersion);
   const live = useLiveRoadmap();
+  const { dismiss: dismissWhatsNew } = useWhatsNewIndicator();
 
   // Hydrate the store from sessionStorage on first mount. The store default
-  // is 'roadmap' (so the sidebar L3 lands on the timeline if the user just
-  // clicked "What's New" with no prior session); if a stored selection
-  // exists we honour it instead.
+  // is 'roadmap' (so a fresh visit lands on the timeline); a stored selection
+  // is honoured instead when present.
   useEffect(() => {
-    const initial = readInitialSelection();
+    const initial = readInitialReleaseSelection();
     if (initial !== useSystemStore.getState().homeReleaseVersion) {
       setHomeReleaseVersion(initial);
     }
   }, [setHomeReleaseVersion]);
+
+  // Reaching the "What's New" page is the natural acknowledgement of an
+  // update — clear the dot. `dismiss` is a no-op until the app version loads,
+  // then its identity changes and this effect re-runs to record it.
+  useEffect(() => {
+    dismissWhatsNew();
+  }, [dismissWhatsNew]);
 
   const selected = getReleaseByVersion(homeReleaseVersion) ?? getActiveRelease();
 
@@ -78,20 +69,23 @@ export default function HomeReleases() {
         title={t.title}
         subtitle={subtitle}
       />
-      <ContentBody centered>
-        {selected.status === 'roadmap' ? (
-          <HomeRoadmapView
-            release={selected}
-            liveOverride={live.roadmap}
-            liveStatus={live.status}
-            liveFetchedAt={live.fetchedAt}
-            liveRefreshing={live.refreshing}
-            onRefresh={live.refresh}
-          />
-        ) : (
-          <ReleaseDetailView release={selected} />
-        )}
-      </ContentBody>
+      <div className="flex flex-1 min-h-0">
+        <ReleaseNavRail />
+        <ContentBody>
+          {selected.status === 'roadmap' ? (
+            <HomeRoadmapView
+              release={selected}
+              liveOverride={live.roadmap}
+              liveStatus={live.status}
+              liveFetchedAt={live.fetchedAt}
+              liveRefreshing={live.refreshing}
+              onRefresh={live.refresh}
+            />
+          ) : (
+            <ReleaseDetailView release={selected} />
+          )}
+        </ContentBody>
+      </div>
     </ContentBox>
   );
 }

@@ -79,12 +79,12 @@ export function StandardsStep({ config, onChange, mainBranch, testEnvBranch }: S
               <AccessibleToggle checked={config.branching.automerge.enabled} onChange={toggleAutomerge} label={dp.standards_automerge} size="sm" data-testid="standards-automerge-toggle" />
               <span className="min-w-0 flex-1">
                 <span className="typo-caption font-medium text-foreground">{dp.standards_automerge}</span>
-                <span className="block typo-caption text-foreground/60 leading-snug">{dp.standards_automerge_hint}</span>
+                <span className="block typo-caption text-foreground leading-snug">{dp.standards_automerge_hint}</span>
               </span>
             </div>
             {config.branching.automerge.enabled && (
               <div className="mt-2.5 pl-12">
-                <label className="typo-caption text-foreground/70 mb-1 block">{dp.standards_automerge_target}</label>
+                <label className="typo-caption text-foreground mb-1 block">{dp.standards_automerge_target}</label>
                 <ThemedSelect value={config.branching.automerge.target} onValueChange={(v) => setAutomergeTarget(v as BranchSel)}>
                   <option value="main">{dp.standards_branch_main}{` (${branchLabel('main')})`}</option>
                   <option value="test">{dp.standards_branch_test}{` (${branchLabel('test')})`}</option>
@@ -109,10 +109,10 @@ function PrecommitRow({
 }) {
   return (
     <div className="flex items-center gap-3 px-3 py-2.5">
-      <Icon className="w-3.5 h-3.5 text-foreground/50 flex-shrink-0" />
+      <Icon className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
       <span className="min-w-0 flex-1">
         <span className="typo-caption font-medium text-foreground">{label}</span>
-        <span className="block typo-caption text-foreground/60 leading-snug">{hint}</span>
+        <span className="block typo-caption text-foreground leading-snug">{hint}</span>
       </span>
       <AccessibleToggle checked={checked} onChange={onToggle} label={label} size="sm" />
     </div>

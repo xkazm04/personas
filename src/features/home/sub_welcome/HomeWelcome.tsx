@@ -1,14 +1,16 @@
-import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle } from 'lucide-react';
+import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle, Users } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
 import WelcomeLayout from './WelcomeLayout';
+import { useNavCardStatus } from './lib/useNavCardStatus';
 
 import type { NavCard } from './NavigationGrid';
 
 const NAV_CARDS: NavCard[] = [
   { id: 'overview', icon: BarChart3, color: 'indigo', gradFrom: 'from-indigo-500/8', gradTo: 'to-violet-500/4', glowColor: 'bg-indigo-500/20', accentBorder: 'border-indigo-500/20 hover:border-indigo-400/40', iconBg: 'bg-indigo-500/15', iconText: 'text-indigo-400' },
+  { id: 'teams', icon: Users, color: 'sky', gradFrom: 'from-sky-500/8', gradTo: 'to-blue-500/4', glowColor: 'bg-sky-500/20', accentBorder: 'border-sky-500/20 hover:border-sky-400/40', iconBg: 'bg-sky-500/15', iconText: 'text-sky-400' },
   { id: 'personas', icon: Bot, color: 'cyan', gradFrom: 'from-cyan-500/8', gradTo: 'to-blue-500/4', glowColor: 'bg-cyan-500/20', accentBorder: 'border-cyan-500/20 hover:border-cyan-400/40', iconBg: 'bg-cyan-500/15', iconText: 'text-cyan-400' },
   { id: 'events', icon: Zap, color: 'amber', gradFrom: 'from-amber-500/8', gradTo: 'to-orange-500/4', glowColor: 'bg-amber-500/20', accentBorder: 'border-amber-500/20 hover:border-amber-400/40', iconBg: 'bg-amber-500/15', iconText: 'text-amber-400' },
   { id: 'credentials', icon: Key, color: 'emerald', gradFrom: 'from-emerald-500/8', gradTo: 'to-teal-500/4', glowColor: 'bg-emerald-500/20', accentBorder: 'border-emerald-500/20 hover:border-emerald-400/40', iconBg: 'bg-emerald-500/15', iconText: 'text-emerald-400' },
@@ -35,6 +37,8 @@ export default function HomeWelcome() {
   // prefix above stays dynamic (Good Morning / Afternoon / Evening).
   const displayName = t.commander;
 
+  const navStatus = useNavCardStatus();
+
   useEffect(() => schedulePrefetchOtherHomeTabs(), []);
 
   return (
@@ -44,6 +48,7 @@ export default function HomeWelcome() {
       quickNavLabel={t.quick_navigation}
       navCards={NAV_CARDS}
       navTranslations={t.nav}
+      navStatus={navStatus}
       onCardClick={(id) => setSidebarSection(id as import('@/lib/types/types').SidebarSection)}
     />
   );

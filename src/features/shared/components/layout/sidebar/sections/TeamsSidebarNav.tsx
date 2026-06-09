@@ -70,7 +70,7 @@ export function TeamsSidebarNav() {
         <Users className="w-4 h-4 flex-shrink-0" />
         {t.shared.sidebar_extra.teams_label}
         {teams.length > 0 && (
-          <span className="ml-auto typo-caption text-foreground/45 font-mono">{teams.length}</span>
+          <span className="ml-auto typo-caption text-foreground font-mono">{teams.length}</span>
         )}
       </button>
 
@@ -116,7 +116,7 @@ export function TeamsSidebarNav() {
           <Target className="w-4 h-4 flex-shrink-0" />
           {t.sidebar.goals}
           {activeGoalCount > 0 && (
-            <span className="ml-auto typo-caption text-foreground/45 font-mono">{activeGoalCount}</span>
+            <span className="ml-auto typo-caption text-foreground font-mono">{activeGoalCount}</span>
           )}
         </button>
         {/* View submenu — always expanded; clicking a view also navigates into

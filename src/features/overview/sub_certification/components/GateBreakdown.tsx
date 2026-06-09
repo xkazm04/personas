@@ -27,7 +27,7 @@ function GateRow({ label, step }: { label: string; step: CodeTrackStep | null })
       {step?.tail && (
         <div className="ml-auto flex items-center gap-1.5">
           <Tooltip content={step.tail}>
-            <span className="typo-caption text-foreground/60 underline decoration-dotted cursor-help">
+            <span className="typo-caption text-foreground underline decoration-dotted cursor-help">
               {c.gate_log}
             </span>
           </Tooltip>
@@ -65,13 +65,13 @@ export function GateBreakdown({
             <GitCommit className="w-3.5 h-3.5" />
             <span>{c.delivered}</span>
             {increment.masterHead && (
-              <code className="font-data text-foreground/70">{increment.masterHead.slice(0, 10)}</code>
+              <code className="font-data text-foreground">{increment.masterHead.slice(0, 10)}</code>
             )}
           </div>
           {increment.sourceFiles.length > 0 && (
             <ul className="pl-5 space-y-0.5">
               {increment.sourceFiles.map((f) => (
-                <li key={f} className="typo-caption font-data text-foreground/70">
+                <li key={f} className="typo-caption font-data text-foreground">
                   {f}
                 </li>
               ))}

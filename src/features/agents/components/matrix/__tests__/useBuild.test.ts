@@ -227,7 +227,14 @@ describe("useBuild", () => {
         await result.current.handleGenerate("Build a Slack bot");
       });
 
-      expect(mockStartSession).toHaveBeenCalledWith("Build a Slack bot", undefined, undefined, undefined);
+      expect(mockStartSession).toHaveBeenCalledWith(
+        "Build a Slack bot",
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      );
     });
   });
 
@@ -244,6 +251,8 @@ describe("useBuild", () => {
       expect(mockAnswerQuestion).toHaveBeenCalledWith(
         "connectors",
         "Use Slack API",
+        undefined,
+        undefined,
       );
     });
   });

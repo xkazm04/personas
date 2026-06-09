@@ -40,7 +40,8 @@ function toIsoUtc(s: string): string {
 export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
-  const assignments = usePipelineStore((s) => s.assignmentsByTeam[teamId]) ?? [];
+  const assignmentsRaw = usePipelineStore((s) => s.assignmentsByTeam[teamId]);
+  const assignments = useMemo(() => assignmentsRaw ?? [], [assignmentsRaw]);
   const refreshAssignments = useRefreshAssignments(teamId);
   const pauseAssignment = usePipelineStore((s) => s.pauseAssignment);
   const resumeAssignment = usePipelineStore((s) => s.resumeAssignment);
@@ -80,8 +81,8 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
   if (assignments.length === 0) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
-        <Inbox className="w-8 h-8 text-foreground/30" />
-        <p className="typo-body text-foreground/50">{ts.deck_empty}</p>
+        <Inbox className="w-8 h-8 text-foreground" />
+        <p className="typo-body text-foreground">{ts.deck_empty}</p>
       </div>
     );
   }
@@ -93,7 +94,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
         {grouped.map((g) => (
           <div key={g.id}>
             <p className={`px-1 mb-1.5 typo-label uppercase tracking-wider ${g.tone}`}>
-              {ts[g.labelKey]} <span className="text-foreground/40 font-mono">{g.items.length}</span>
+              {ts[g.labelKey]} <span className="text-foreground font-mono">{g.items.length}</span>
             </p>
             <div className="space-y-1.5">
               {g.items.map((a) => (
@@ -146,7 +147,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
               <span className={`typo-caption ${stepMeta(selected.status === 'awaiting_review' ? 'awaiting_review' : selected.status === 'running' ? 'running' : 'pending').tone}`}>
                 {selected.status.replace('_', ' ')}
               </span>
-              <span className="typo-caption text-foreground/45">
+              <span className="typo-caption text-foreground">
                 <RelativeTime timestamp={toIsoUtc(selected.createdAt)} />
               </span>
               <PersonaStack ids={steps.map((s) => s.assignedPersonaId)} index={personaIndex} />
@@ -161,11 +162,11 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 }}
               />
             ) : (
-              <p className="typo-body text-foreground/45">{ts.deck_decomposing}</p>
+              <p className="typo-body text-foreground">{ts.deck_decomposing}</p>
             )}
           </>
         ) : (
-          <p className="typo-body text-foreground/45">{ts.deck_select}</p>
+          <p className="typo-body text-foreground">{ts.deck_select}</p>
         )}
       </div>
     </div>
@@ -201,7 +202,7 @@ function MissionRow({
       </h4>
       <div className="mt-2 flex items-center justify-between gap-2">
         <StepProgressStrip steps={steps} />
-        <span className="typo-caption text-foreground/40 flex-shrink-0">
+        <span className="typo-caption text-foreground flex-shrink-0">
           <RelativeTime timestamp={toIsoUtc(assignment.createdAt)} />
         </span>
       </div>

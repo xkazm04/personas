@@ -64,6 +64,7 @@ export function PhaseIndicator({ phase }: PhaseIndicatorProps) {
               <div className="relative flex items-center justify-center">
                 {/* Active ring pulse */}
                 {isActive && (
+                  // reduced-motion-ok: decorative active-phase ring pulse (scale/opacity), conveys no information beyond the static colored dot beside it
                   <motion.div
                     layoutId="phase-ring"
                     className={`absolute w-4 h-4 rounded-full ${

@@ -120,7 +120,7 @@ export default function CloudSyncCard() {
         {loading ? (
           <span className="h-[26px] w-24 rounded-full bg-secondary/30 animate-pulse" aria-hidden />
         ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground/80">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground">
             <LiveStatusDot tone={state} />
             {stateLabel}
           </span>
@@ -184,13 +184,13 @@ export default function CloudSyncCard() {
               )}
             </span>
             {!!status?.rowsSyncedLast && (
-              <span className="typo-caption text-foreground/60 inline-flex items-center gap-1">
+              <span className="typo-caption text-foreground inline-flex items-center gap-1">
                 <span aria-hidden>·</span>
                 <Numeric><SpringCount value={Number(status.rowsSyncedLast)} /></Numeric> {s.cloud_sync_rows}
               </span>
             )}
             {!!status?.totalRowsSynced && (
-              <span className="typo-caption text-foreground/60 inline-flex items-center gap-1">
+              <span className="typo-caption text-foreground inline-flex items-center gap-1">
                 <span aria-hidden>·</span>
                 <Numeric><SpringCount value={Number(status.totalRowsSynced)} /></Numeric> {s.cloud_sync_total}
               </span>
@@ -200,7 +200,7 @@ export default function CloudSyncCard() {
           {/* Device chip */}
           {status?.deviceId && (
             <Tooltip content={status.deviceId}>
-              <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/55">
+              <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
                 <MonitorSmartphone className="w-3.5 h-3.5" />
                 {interpolate(s.cloud_sync_device, { id: status.deviceId.slice(0, 8) })}
               </span>
@@ -214,10 +214,10 @@ export default function CloudSyncCard() {
                 type="button"
                 onClick={() => setShowDetails((v) => !v)}
                 aria-expanded={showDetails}
-                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption font-medium text-foreground/80 hover:bg-secondary/20 transition-colors"
+                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption font-medium text-foreground hover:bg-secondary/20 transition-colors"
               >
                 <span>{s.cloud_sync_tables_title}</span>
-                <span className="inline-flex items-center gap-1.5 text-foreground/55">
+                <span className="inline-flex items-center gap-1.5 text-foreground">
                   {showDetails ? s.cloud_sync_hide_details : s.cloud_sync_show_details}
                   <ChevronDown
                     className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-180' : ''}`}
@@ -240,7 +240,7 @@ export default function CloudSyncCard() {
                           key={tbl.table}
                           className="flex items-center justify-between gap-3 px-4 py-2"
                         >
-                          <span className="typo-caption font-medium text-foreground/80 truncate">
+                          <span className="typo-caption font-medium text-foreground truncate">
                             {tableLabels[tbl.table] ?? tbl.table}
                           </span>
                           {tbl.error ? (
@@ -249,8 +249,8 @@ export default function CloudSyncCard() {
                               <span className="truncate max-w-[14rem]">{tbl.error}</span>
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-2 typo-caption text-foreground/55 whitespace-nowrap">
-                              <span className="text-foreground/75 inline-flex items-center gap-1">
+                            <span className="inline-flex items-center gap-2 typo-caption text-foreground whitespace-nowrap">
+                              <span className="text-foreground inline-flex items-center gap-1">
                                 <Numeric value={Number(tbl.rowsLast)} /> {s.cloud_sync_rows}
                               </span>
                               <span aria-hidden>·</span>

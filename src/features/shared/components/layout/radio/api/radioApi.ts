@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports -- the radio widget's API layer is intrinsically an IPC client; lifting it would require relocating the entire radio feature out of shared/layout, which is out of scope for this lint pass.
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { NowPlaying } from '@/lib/bindings/NowPlaying';
 import type { PlayStatus } from '@/lib/bindings/PlayStatus';

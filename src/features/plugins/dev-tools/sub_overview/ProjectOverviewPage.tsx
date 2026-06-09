@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, type DragEvent } from 'react';
 import { motion } from 'framer-motion';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import {
   GitBranch, RefreshCw,
   CircleDot, GitPullRequest, GitCommitHorizontal,
@@ -574,14 +575,17 @@ function VitalTile({
 }
 
 function PulseDot({ tone }: { tone: Tone }) {
+  const { shouldAnimate } = useMotion();
   const colour = tone === 'success' ? 'bg-status-success' : tone === 'warning' ? 'bg-status-warning' : tone === 'error' ? 'bg-status-error' : 'bg-status-neutral';
   return (
     <span className="absolute -top-0.5 -right-0.5 flex w-2.5 h-2.5">
-      <motion.span
-        className={`absolute inline-flex h-full w-full rounded-full ${colour} opacity-75`}
-        animate={{ scale: [1, 2, 1], opacity: [0.75, 0, 0.75] }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
-      />
+      {shouldAnimate && (
+        <motion.span
+          className={`absolute inline-flex h-full w-full rounded-full ${colour} opacity-75`}
+          animate={{ scale: [1, 2, 1], opacity: [0.75, 0, 0.75] }}
+          transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
+        />
+      )}
       <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${colour}`} />
     </span>
   );

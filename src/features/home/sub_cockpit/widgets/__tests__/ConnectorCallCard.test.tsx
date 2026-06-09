@@ -69,7 +69,11 @@ describe('ConnectorCallCard', () => {
       />,
     );
     expect(screen.getByText(/failed/i)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button'));
+    // A failed card renders two buttons — the expandable header AND the
+    // Retry button. Click the header (the card's first button) to reveal
+    // the error body; getByRole('button') alone is now ambiguous.
+    const card = screen.getByTestId('companion-connector-call-card');
+    fireEvent.click(card.querySelector('button')!);
     expect(screen.getByText('auth_token missing')).toBeInTheDocument();
   });
 

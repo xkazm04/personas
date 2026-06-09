@@ -118,11 +118,11 @@ export function PresetQuestionnaireForm({
       data-testid="preset-questionnaire-form"
     >
       <header className="flex items-center gap-2 pb-1 border-b border-primary/10">
-        <Settings2 className="w-4 h-4 text-foreground/70" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground/80 flex-1">
+        <Settings2 className="w-4 h-4 text-foreground" />
+        <h3 className="typo-label uppercase tracking-wider text-foreground flex-1">
           {t.templates.presets.questionnaire_heading}
         </h3>
-        <span className="typo-caption text-foreground/60">
+        <span className="typo-caption text-foreground">
           {tx(t.templates.presets.questionnaire_summary, {
             configurable: schema.configurable_member_count,
             total: schema.member_count,
@@ -188,7 +188,7 @@ function MemberSection({
       >
         {hasQuestions ? (
           <ChevronRight
-            className={`w-3.5 h-3.5 text-foreground/60 flex-shrink-0 transition-transform duration-200 ${
+            className={`w-3.5 h-3.5 text-foreground flex-shrink-0 transition-transform duration-200 ${
               expanded ? 'rotate-90' : ''
             }`}
           />
@@ -198,10 +198,10 @@ function MemberSection({
         <span className="typo-body font-medium text-foreground/90 uppercase tracking-wider text-[11px] min-w-[100px]">
           {member.role}
         </span>
-        <span className="typo-body text-foreground/80 flex-1 truncate">
+        <span className="typo-body text-foreground flex-1 truncate">
           {member.template_name}
         </span>
-        <span className="typo-caption text-foreground/50 flex-shrink-0">
+        <span className="typo-caption text-foreground flex-shrink-0">
           {hasQuestions
             ? overrideCount > 0
               ? tx(t.templates.presets.questionnaire_member_summary_customized, {
@@ -227,7 +227,7 @@ function MemberSection({
           >
             <div className="px-3 pb-3 pt-2 space-y-3 border-t border-primary/10">
               {member.template_description && (
-                <p className="typo-caption text-foreground/55 italic leading-relaxed">
+                <p className="typo-caption text-foreground italic leading-relaxed">
                   {member.template_description}
                 </p>
               )}
@@ -262,7 +262,7 @@ function QuestionField({ question, value, onChange }: QuestionFieldProps) {
   return (
     <div data-testid={`preset-question-${question.id}`} className="space-y-1">
       <label className="typo-label text-foreground/85 block">{label}</label>
-      {hint && <p className="typo-caption text-foreground/55">{hint}</p>}
+      {hint && <p className="typo-caption text-foreground">{hint}</p>}
       {typeLower === 'select' && Array.isArray(question.options) ? (
         <SelectControl
           options={question.options}
@@ -324,7 +324,7 @@ function BooleanControl({
     value === '1' ||
     value === 'yes';
   return (
-    <label className="inline-flex items-center gap-2 typo-body text-foreground/80 cursor-pointer">
+    <label className="inline-flex items-center gap-2 typo-body text-foreground cursor-pointer">
       <input
         type="checkbox"
         checked={checked}

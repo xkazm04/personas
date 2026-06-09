@@ -58,10 +58,10 @@ export function SmokeTraceButton({ config, onSent }: SmokeTraceButtonProps) {
     <section className="rounded-card border border-primary/10 bg-secondary/10 p-4 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="typo-caption uppercase tracking-widest text-foreground/80">
+          <div className="typo-caption uppercase tracking-widest text-foreground">
             {t.plugins.langfuse.smoke_trace_section}
           </div>
-          <div className="typo-caption text-foreground/80 mt-1">
+          <div className="typo-caption text-foreground mt-1">
             {t.plugins.langfuse.smoke_trace_intro}
           </div>
         </div>

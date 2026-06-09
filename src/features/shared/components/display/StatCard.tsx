@@ -68,7 +68,7 @@ export function StatCard({
         style={{ background: `linear-gradient(90deg, ${t.line}, transparent 70%)` }}
       />
       <div className="flex items-center justify-between gap-2">
-        <span className="typo-label uppercase tracking-wider text-foreground/55">{label}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{label}</span>
         {Icon && (
           <span className={`w-6 h-6 rounded-md border flex items-center justify-center ${t.chip}`}>
             <Icon className={`w-3.5 h-3.5 ${t.icon}`} />
@@ -87,7 +87,7 @@ export function StatCard({
         )}
       </div>
       {spark && <div className="mt-0.5">{spark}</div>}
-      {hint && <span className="typo-caption text-foreground/45">{hint}</span>}
+      {hint && <span className="typo-caption text-foreground">{hint}</span>}
     </div>
   );
 

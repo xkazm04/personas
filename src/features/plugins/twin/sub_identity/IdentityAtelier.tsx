@@ -113,7 +113,7 @@ export default function IdentityAtelier() {
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-[0.22em] text-foreground font-medium"><DebtText k="auto_identity_manuscript_58ff3b34" /></p>
             <h1 className="typo-heading-lg text-foreground/95 truncate">{activeTwin.name || t.identity.promptNoName}</h1>
-            <p className="typo-caption text-foreground/60 mt-0.5">{role || t.identity.subtitle}</p>
+            <p className="typo-caption text-foreground mt-0.5">{role || t.identity.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="fields" value={`${fieldsFilled}/5`} />
@@ -185,7 +185,7 @@ export default function IdentityAtelier() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-2 p-3 rounded-card border border-violet-500/25 bg-violet-500/5 space-y-3"
                   >
-                    <p className="typo-caption text-foreground/60">{t.identity.bioGenHint}</p>
+                    <p className="typo-caption text-foreground">{t.identity.bioGenHint}</p>
                     <input type="text" placeholder={t.identity.bioKeywordsPlaceholder} value={bioKeywords} onChange={(e) => setBioKeywords(e.target.value)} className={INPUT_FIELD} autoFocus />
                     <div className="flex justify-end">
                       <Button onClick={handleGenerateBio} disabled={generating || !bioKeywords.trim()} size="sm" variant="accent" accentColor="violet">
@@ -317,7 +317,7 @@ function Field({ label, hint, icon: Icon, action, className = '', children }: { 
         {action}
       </div>
       {children}
-      {hint && <p className="typo-caption text-foreground/60 mt-1">{hint}</p>}
+      {hint && <p className="typo-caption text-foreground mt-1">{hint}</p>}
     </label>
   );
 }

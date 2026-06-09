@@ -138,7 +138,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
       {behaviorCore?.mission && (
         <div className="rounded-modal border border-border/30 bg-foreground/5 px-3 py-2">
           {behaviorCore.identity?.role && (
-            <div className="typo-caption uppercase tracking-[0.16em] text-foreground/70 mb-0.5 truncate">
+            <div className="typo-caption uppercase tracking-[0.16em] text-foreground mb-0.5 truncate">
               {behaviorCore.identity.role}
             </div>
           )}

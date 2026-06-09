@@ -70,7 +70,7 @@ export function RunHistoryView({ runs, onSelectRun }: RunHistoryViewProps) {
       width: 'minmax(160px, 1.6fr)',
       sortable: true,
       render: (row) => (
-        <span className="font-data typo-caption text-foreground/70 truncate">{row.seed ?? '—'}</span>
+        <span className="font-data typo-caption text-foreground truncate">{row.seed ?? '—'}</span>
       ),
     },
     {
@@ -91,7 +91,7 @@ export function RunHistoryView({ runs, onSelectRun }: RunHistoryViewProps) {
       sortFn: (a, b) => (a.teamScore ?? -1) - (b.teamScore ?? -1),
       render: (row) =>
         row.teamScore == null ? (
-          <span className="typo-caption text-foreground/40">—</span>
+          <span className="typo-caption text-foreground">—</span>
         ) : (
           <Numeric value={row.teamScore} unit="plain" align="right" className="text-foreground/90" />
         ),
@@ -109,7 +109,7 @@ export function RunHistoryView({ runs, onSelectRun }: RunHistoryViewProps) {
       sortable: true,
       sortFn: (a, b) => (a.startedAt ?? '').localeCompare(b.startedAt ?? ''),
       render: (row) => (
-        <RelativeTime timestamp={row.startedAt} className="typo-caption text-foreground/60" />
+        <RelativeTime timestamp={row.startedAt} className="typo-caption text-foreground" />
       ),
     },
   ];

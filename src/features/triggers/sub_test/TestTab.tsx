@@ -231,7 +231,7 @@ export function TestTab() {
               showDescription={false}
               placeholder={t.triggers.test_select_persona_placeholder}
             />
-            <p className="typo-caption text-foreground/80 mt-1">{t.triggers.test_source_persona_help}</p>
+            <p className="typo-caption text-foreground mt-1">{t.triggers.test_source_persona_help}</p>
           </div>
 
           <div>
@@ -246,7 +246,7 @@ export function TestTab() {
               placeholder={t.triggers.test_select_event_placeholder}
               wrapperClassName={`w-full ${hasPersona ? '' : 'opacity-50 pointer-events-none'}`}
             />
-            <p className="typo-caption text-foreground/80 mt-1">{t.triggers.test_output_event_help}</p>
+            <p className="typo-caption text-foreground mt-1">{t.triggers.test_output_event_help}</p>
             {hasPersona && !eventOptionsAvailable && (
               <p className="typo-caption text-amber-400/90 mt-1.5 flex items-start gap-1.5">
                 <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />

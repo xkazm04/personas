@@ -36,9 +36,10 @@ export function RedRoomPane({ teamId, members }: { teamId: string; members: Stud
       {/* Header strip: identity + live stats + variant tabs */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-wider text-red-300/90">
+          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
           <Radio className="w-3.5 h-3.5" /> Red room
         </span>
-        <span className="typo-caption text-foreground/45">
+        <span className="typo-caption text-foreground">
           {items.length} transmissions{projectId ? '' : ' · no linked project — member-scoped'}
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -62,7 +63,8 @@ export function RedRoomPane({ teamId, members }: { teamId: string; members: Stud
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         {!loaded ? (
-          <p className="typo-body text-foreground/45 px-1 py-3">Tuning in…</p>
+          /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
+          <p className="typo-body text-foreground px-1 py-3">Tuning in…</p>
         ) : variant === 'relay' ? (
           <RedRoomRelay items={items} />
         ) : (

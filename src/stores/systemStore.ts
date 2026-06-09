@@ -66,6 +66,9 @@ export const useSystemStore = create<SystemStore>()(
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,
         fleetTerminalTheme: state.fleetTerminalTheme,
         homeTab: state.homeTab,
+        // Acknowledged "What's New" version — persisted so the update dot
+        // doesn't re-light on every relaunch after the user has seen it.
+        whatsNewSeenVersion: state.whatsNewSeenVersion,
         editorTab: state.editorTab,
         designSubTab: state.designSubTab,
         cloudTab: state.cloudTab,

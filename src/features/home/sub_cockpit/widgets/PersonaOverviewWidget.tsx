@@ -21,6 +21,7 @@ import { ArrowRight, Bot, Coins, Compass, Gauge, Shield, Sparkles } from 'lucide
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useIllustration } from '@/features/plugins/companion/inbox/hooks/useIllustration';
 import { firstGrapheme } from '@/features/plugins/companion/inbox/_shared/grapheme';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -39,6 +40,7 @@ import {
 
 export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
   const { t } = useTranslation();
+  const reduceMotion = useReducedMotion();
   const limit = (config?.limit as number) ?? 6;
   const filter = ((config?.filter as string) ?? 'active') === 'all' ? 'all' : 'active';
   const heroId = config?.hero as string | undefined;
@@ -111,8 +113,8 @@ export function PersonaOverviewWidget({ config, title }: CockpitWidgetProps) {
               aria-hidden
               className={`absolute inset-0 rounded-full border ${heroTier.borderClass}`}
               initial={{ scale: 1, opacity: 0.5 }}
-              animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeOut' }}
+              animate={reduceMotion ? { scale: 1, opacity: 0.5 } : { scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+              transition={reduceMotion ? { duration: 0 } : { duration: 3, repeat: Infinity, ease: 'easeOut' }}
             />
           </div>
           <div className="flex-1 min-w-0">

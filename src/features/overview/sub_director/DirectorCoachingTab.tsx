@@ -256,7 +256,7 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
                     <span className="typo-caption text-foreground tabular-nums">{band.count}</span>
                     <div className="w-full flex-1 flex items-end">
                       <div
-                        className="w-full rounded-t-md animate-fade-slide-in"
+                        className="w-full rounded-t-input animate-fade-slide-in"
                         style={{
                           height: `${Math.max(hPct, band.count > 0 ? 6 : 0)}%`,
                           minHeight: band.count > 0 ? 6 : 0,

@@ -1,4 +1,5 @@
-import { Sparkles, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { IconTwin } from '@/features/plugins/PluginIcons';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -24,7 +25,7 @@ export function TwinEmptyState({ icon: Icon, title }: { icon: LucideIcon; title:
       <ContentBody centered>
         <div className="flex flex-col items-center justify-center py-16">
           <div className="w-16 h-16 rounded-card bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mb-4">
-            <Sparkles className="w-8 h-8 text-violet-400/50" />
+            <IconTwin className="w-8 h-8 text-violet-400/50" />
           </div>
           <p className="typo-body text-primary mb-1">{t.emptyState.noTwinSelected}</p>
           <p className="typo-caption text-foreground mb-4">{t.emptyState.createFirstTwin}</p>

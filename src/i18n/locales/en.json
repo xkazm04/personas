@@ -601,6 +601,10 @@
         "label": "Teams",
         "description": "Combine multiple agents into a team that works together on multi-step workflows"
       },
+      "teams": {
+        "label": "Teams",
+        "description": "Combine multiple agents into a team that works together on multi-step workflows"
+      },
       "cloud": {
         "label": "Cloud",
         "description": "Run your agents in the cloud so they work even when your computer is off"
@@ -613,6 +617,27 @@
         "label": "Plugins",
         "description": "Extend your agents with third-party plugins and custom extensions"
       }
+    },
+    "nav_status": {
+      "incidents": "{count} open incident",
+      "incidents_other": "{count} open incidents",
+      "messages": "{count} unread message",
+      "messages_other": "{count} unread messages",
+      "reviews": "{count} pending review",
+      "reviews_other": "{count} pending reviews",
+      "teams": "{count} team",
+      "teams_other": "{count} teams",
+      "agents_active": "{count} agent active in the last 24h",
+      "agents_active_other": "{count} agents active in the last 24h",
+      "events_today": "{count} event in the last 24h",
+      "events_today_other": "{count} events in the last 24h",
+      "connections_external": "{count} external connection",
+      "connections_external_other": "{count} external connections",
+      "connections_builtin": "{count} built-in connector",
+      "connections_builtin_other": "{count} built-in connectors",
+      "trend_up": "up {pct}% vs the prior 24h",
+      "trend_down": "down {pct}% vs the prior 24h",
+      "trend_flat": "no change vs the prior 24h"
     },
     "learning": {
       "title": "Learning Center",
@@ -14651,6 +14676,7 @@
       "research_lab": "Research Lab",
       "back_to_home": "Home",
       "whats_new": "What's New",
+      "whats_new_update": "Updated — see what's new",
       "back_to_plugins": "Plugins",
       "roadmap": "Roadmap",
       "teams_label": "Teams",
@@ -14738,6 +14764,7 @@
       "subtitle_roadmap": "What we're building now and what comes next.",
       "subtitle_changelog": "What's new in your version of Personas.",
       "nav_bar_roadmap_label": "Roadmap",
+      "nav_rail_label": "Releases",
       "empty": "Nothing to share for this release yet — check back soon.",
       "status_released": "Released",
       "status_active": "Current",

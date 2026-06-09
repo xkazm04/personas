@@ -16,7 +16,7 @@ import type { EvalRunDetail } from '@/lib/bindings/EvalRunDetail';
 function Stat({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col px-3 py-1.5 rounded-card bg-secondary/30 border border-primary/10 min-w-[5rem]">
-      <span className="typo-caption text-foreground/55">{label}</span>
+      <span className="typo-caption text-foreground">{label}</span>
       <span className="typo-body text-foreground/90">{children}</span>
     </div>
   );
@@ -39,7 +39,7 @@ export function RunDetailView({ detail, onBack }: RunDetailViewProps) {
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="w-4 h-4" /> {c.back}
         </Button>
-        <RelativeTime timestamp={detail.startedAt} className="typo-caption text-foreground/55" />
+        <RelativeTime timestamp={detail.startedAt} className="typo-caption text-foreground" />
       </div>
 
       {/* Header */}
@@ -48,13 +48,13 @@ export function RunDetailView({ detail, onBack }: RunDetailViewProps) {
           <h2 className="typo-heading-lg text-foreground/90">{detail.team ?? detail.runId}</h2>
           <VerdictBadge verdict={detail.verdict} provisional={detail.provisional} />
           {detail.teamScore != null && (
-            <span className="typo-caption text-foreground/60">
+            <span className="typo-caption text-foreground">
               {c.team_score}: <Numeric value={detail.teamScore} unit="plain" className="text-foreground/90" />
             </span>
           )}
         </div>
-        {detail.seed && <p className="font-data typo-caption text-foreground/60">{detail.seed}</p>}
-        {detail.goal && <p className="typo-body text-foreground/70">{detail.goal}</p>}
+        {detail.seed && <p className="font-data typo-caption text-foreground">{detail.seed}</p>}
+        {detail.goal && <p className="typo-body text-foreground">{detail.goal}</p>}
       </div>
 
       {/* Facts */}
@@ -130,7 +130,7 @@ export function RunDetailView({ detail, onBack }: RunDetailViewProps) {
       {detail.judge && <JudgePanel judge={detail.judge} />}
 
       {detail.note && (
-        <p className="typo-caption text-foreground/50 italic border-t border-primary/10 pt-3">{detail.note}</p>
+        <p className="typo-caption text-foreground italic border-t border-primary/10 pt-3">{detail.note}</p>
       )}
     </div>
   );

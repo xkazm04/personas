@@ -96,7 +96,7 @@ export function PersonaChip({ persona, dim }: { persona: Persona | undefined; di
       title={short}
     >
       <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
-      <span className="typo-caption text-foreground/80 truncate">{short}</span>
+      <span className="typo-caption text-foreground truncate">{short}</span>
     </span>
   );
 }
@@ -122,7 +122,7 @@ export function PersonaStack({ ids, index, max = 4 }: { ids: Array<string | null
         );
       })}
       {unique.length > max && (
-        <span className="pl-2 typo-caption text-foreground/50">+{unique.length - max}</span>
+        <span className="pl-2 typo-caption text-foreground">+{unique.length - max}</span>
       )}
     </div>
   );
@@ -264,7 +264,7 @@ export function StepRelay({
                       type="button"
                       disabled={busy === s.id}
                       onClick={() => void intervene(s.id, 'skip')}
-                      className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/15 bg-secondary/40 typo-caption text-foreground/80 hover:bg-secondary/60 transition-colors disabled:opacity-50"
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/15 bg-secondary/40 typo-caption text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50"
                     >
                       <SkipForward className="w-3 h-3" /> {ts.deck_skip}
                     </button>
@@ -286,7 +286,7 @@ export function StepRelay({
                   <button
                     type="button"
                     onClick={() => setExpanded(isOpen ? null : s.id)}
-                    className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground/85 transition-colors"
+                    className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/85 transition-colors"
                   >
                     {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                     {ts.deck_output}

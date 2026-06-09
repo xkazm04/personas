@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface TeamGraphPreviewProps {
   members: PersonaTeamMember[];
@@ -233,8 +234,9 @@ export function TeamGraphPreview({
     panRef.current = null;
     try {
       (e.currentTarget as Element).releasePointerCapture(e.pointerId);
-    } catch {
+    } catch (err) {
       // Not captured (release on a non-down event). Harmless.
+      silentCatch('features/plugins/dev-tools/sub_projects/TeamGraphPreview:releasePointerCapture')(err);
     }
   }, []);
 
@@ -245,11 +247,11 @@ export function TeamGraphPreview({
   return (
     <section>
       <div className="flex items-center gap-2 mb-2">
-        <h3 className="typo-label uppercase tracking-wider text-foreground/70">
+        <h3 className="typo-label uppercase tracking-wider text-foreground">
           {t.plugins.dev_projects.team_preview_canvas}
         </h3>
         {layout.allUnplaced && (
-          <span className="typo-caption text-foreground/50">
+          <span className="typo-caption text-foreground">
             ({t.plugins.dev_projects.team_preview_canvas_unplaced})
           </span>
         )}
@@ -258,14 +260,14 @@ export function TeamGraphPreview({
             <button
               type="button"
               onClick={resetView}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground/60 hover:text-foreground/90 hover:bg-secondary/40 rounded-card transition-colors"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-caption text-foreground hover:text-foreground/90 hover:bg-secondary/40 rounded-card transition-colors"
               title={t.plugins.dev_projects.team_preview_canvas_reset_title}
             >
               <Maximize2 className="w-3 h-3" />
               {t.plugins.dev_projects.team_preview_canvas_reset}
             </button>
           )}
-          <span className="typo-caption text-foreground/40 font-mono tabular-nums">
+          <span className="typo-caption text-foreground font-mono tabular-nums">
             {Math.round(scale * 100)}%
           </span>
         </span>

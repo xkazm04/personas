@@ -24,6 +24,9 @@ vi.mock('@/api/fleet/fleet', () => ({
   resizeSession: vi.fn(),
   killSession: vi.fn(),
   removeSession: vi.fn(),
+  // fleetRefresh + the auto-hibernate setters push the persisted policy to
+  // Rust; resolve so the fire-and-forget call doesn't throw on access.
+  setAutoHibernate: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';

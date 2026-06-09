@@ -100,7 +100,7 @@ export default function GalleryPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-[17px] h-[17px] absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/60" />
+          <Search className="w-[17px] h-[17px] absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -114,7 +114,7 @@ export default function GalleryPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-2 py-1.5 rounded-card bg-transparent border border-transparent text-md text-foreground/60 focus-ring"
+            className="px-2 py-1.5 rounded-card bg-transparent border border-transparent text-md text-foreground focus-ring"
           >
             <option value="date">{t.plugins.artist.sort_date}</option>
             <option value="name">{t.plugins.artist.sort_name}</option>
@@ -167,7 +167,7 @@ export default function GalleryPage() {
 
       {/* Folder info */}
       {artistFolder && (
-        <p className="text-md text-foreground/50 font-mono truncate">
+        <p className="text-md text-foreground font-mono truncate">
           {t.plugins.artist.watching} {artistFolder}
         </p>
       )}
@@ -182,8 +182,9 @@ export default function GalleryPage() {
           <div className="w-14 h-14 rounded-2xl bg-red-500/5 border border-red-500/15 flex items-center justify-center">
             <AlertTriangle className="w-7 h-7 text-red-400" />
           </div>
+          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
           <p className="typo-section-title">Could not load assets</p>
-          <p className="typo-body text-foreground/70 max-w-xs text-center">{error}</p>
+          <p className="typo-body text-foreground max-w-xs text-center">{error}</p>
           <button
             onClick={() => void loadAssets()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition-colors"
@@ -215,7 +216,7 @@ export default function GalleryPage() {
             <section key={group.labelKey} className="space-y-2">
               <header className="flex items-baseline gap-2 sticky top-0 z-10 bg-background/95 backdrop-blur py-1 -mx-2 px-2">
                 <h3 className="typo-section-title">{groupLabel(group.labelKey)}</h3>
-                <span className="text-md text-foreground/60 tabular-nums">{group.assets.length}</span>
+                <span className="text-md text-foreground tabular-nums">{group.assets.length}</span>
               </header>
               {galleryMode === '2d' ? (
                 <Gallery2D

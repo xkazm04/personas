@@ -21,6 +21,12 @@ vi.mock('@/api/fleet/fleet', () => ({
   checkHooks: vi.fn(),
   installHooks: vi.fn(),
   uninstallHooks: vi.fn(),
+  // The page renders <FleetProcessScanner/>, which scans the OS process table
+  // on mount. Resolve to an empty list so the mount-effect doesn't throw on a
+  // missing mock member; the scanner's behaviour is covered by its own tests.
+  detectProcesses: vi.fn().mockResolvedValue([]),
+  killPid: vi.fn().mockResolvedValue(undefined),
+  resumeOrphan: vi.fn().mockResolvedValue(undefined),
 }));
 
 import * as fleetApi from '@/api/fleet/fleet';

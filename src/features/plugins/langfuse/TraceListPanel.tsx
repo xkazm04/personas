@@ -103,7 +103,7 @@ export function TraceListPanel({ config, limit = DEFAULT_LIMIT }: TraceListPanel
           <h2 className="typo-heading text-foreground">
             {t.plugins.langfuse.recent_traces_section}
           </h2>
-          <p className="typo-caption text-foreground/80 mt-1">
+          <p className="typo-caption text-foreground mt-1">
             {tx(t.plugins.langfuse.recent_traces_intro, { count: limit })}
           </p>
         </div>
@@ -111,7 +111,7 @@ export function TraceListPanel({ config, limit = DEFAULT_LIMIT }: TraceListPanel
           type="button"
           onClick={onRefresh}
           disabled={loading || refreshing}
-          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-modal border border-primary/15 bg-secondary/40 text-foreground/80 hover:bg-secondary/60 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-1 typo-caption rounded-modal border border-primary/15 bg-secondary/40 text-foreground hover:bg-secondary/60 disabled:opacity-40 transition-colors"
           aria-label={t.plugins.langfuse.recent_traces_refresh}
         >
           {refreshing || loading ? (
@@ -137,7 +137,7 @@ export function TraceListPanel({ config, limit = DEFAULT_LIMIT }: TraceListPanel
       )}
 
       {!loading && !error && traces !== null && traces.length === 0 && (
-        <div className="px-3 py-4 typo-caption text-foreground/80 text-center rounded-card border border-primary/10 bg-secondary/5">
+        <div className="px-3 py-4 typo-caption text-foreground text-center rounded-card border border-primary/10 bg-secondary/5">
           {t.plugins.langfuse.recent_traces_empty}
         </div>
       )}
@@ -166,7 +166,7 @@ export function TraceListPanel({ config, limit = DEFAULT_LIMIT }: TraceListPanel
                   <div className="typo-body text-foreground truncate">
                     {trace.name ?? t.plugins.langfuse.recent_traces_no_name}
                   </div>
-                  <div className="typo-caption text-foreground/80 truncate">{subline}</div>
+                  <div className="typo-caption text-foreground truncate">{subline}</div>
                 </div>
                 <button
                   type="button"

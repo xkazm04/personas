@@ -3377,6 +3377,69 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Allow the 'oauth_keepalive' policy_type. The OAuth keepalive auto-provision
+    // (engine::rotation::auto_provision_oauth_rotation_policies) inserts policies
+    // with policy_type='oauth_keepalive' and the rotation tick + dedup logic key
+    // off that value — but the original CHECK constraint never listed it, so every
+    // OAuth credential without a policy failed the insert with "CHECK constraint
+    // failed" at every startup and keepalive rotation was never provisioned.
+    // SQLite can't ALTER a CHECK in place, so rebuild the table with the value
+    // added (mirrors the n8n_transform_sessions rebuild above). UNIQUE(credential_id,
+    // policy_type) is preserved so a keepalive policy can coexist with a user's
+    // 'scheduled' policy on the same credential. Nothing references this table, so
+    // the drop/rename has no foreign-key fallout.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "credential_rotation_policies.oauth_keepalive_policy_type",
+            description: "Add 'oauth_keepalive' to credential_rotation_policies.policy_type CHECK",
+            already_applied: |conn| {
+                // Skip when the table is absent (fresh DB → schema.rs creates it with
+                // the value already) or its stored CHECK already lists the value.
+                // Counts only a present table whose SQL still lacks 'oauth_keepalive'.
+                let stale: i64 = conn
+                    .prepare(
+                        "SELECT COUNT(*) FROM sqlite_master \
+                         WHERE type='table' AND name='credential_rotation_policies' \
+                         AND sql NOT LIKE '%oauth_keepalive%'",
+                    )?
+                    .query_row([], |row| row.get(0))?;
+                Ok(stale == 0)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "DROP TABLE IF EXISTS credential_rotation_policies_new;
+                     CREATE TABLE credential_rotation_policies_new (
+                         id                TEXT PRIMARY KEY,
+                         credential_id     TEXT NOT NULL REFERENCES persona_credentials(id) ON DELETE CASCADE,
+                         enabled           INTEGER NOT NULL DEFAULT 1,
+                         rotation_interval_days INTEGER NOT NULL DEFAULT 90,
+                         policy_type       TEXT NOT NULL DEFAULT 'scheduled'
+                                           CHECK(policy_type IN ('scheduled','on_suspicious','on_member_departure','manual','oauth_keepalive')),
+                         last_rotated_at   TEXT,
+                         next_rotation_at  TEXT,
+                         created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                         updated_at        TEXT NOT NULL DEFAULT (datetime('now')),
+                         UNIQUE(credential_id, policy_type)
+                     );
+                     INSERT INTO credential_rotation_policies_new
+                         (id, credential_id, enabled, rotation_interval_days, policy_type,
+                          last_rotated_at, next_rotation_at, created_at, updated_at)
+                     SELECT id, credential_id, enabled, rotation_interval_days, policy_type,
+                            last_rotated_at, next_rotation_at, created_at, updated_at
+                     FROM credential_rotation_policies;
+                     DROP TABLE credential_rotation_policies;
+                     ALTER TABLE credential_rotation_policies_new RENAME TO credential_rotation_policies;
+                     CREATE INDEX IF NOT EXISTS idx_crp_credential ON credential_rotation_policies(credential_id);
+                     CREATE INDEX IF NOT EXISTS idx_crp_next       ON credential_rotation_policies(next_rotation_at);
+                     CREATE INDEX IF NOT EXISTS idx_crp_enabled    ON credential_rotation_policies(enabled);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

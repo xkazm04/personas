@@ -101,14 +101,14 @@ export function TeamCertCard({ status, onSelectRun }: TeamCertCardProps) {
 
       <div className="flex items-center justify-between">
         <StreakPips streak={status.streak} certified={status.certified} />
-        <span className="typo-caption text-foreground/60">
+        <span className="typo-caption text-foreground">
           {status.certified ? c.certified : `${status.streak}/${CERT_TARGET} ${c.streak_label}`}
         </span>
       </div>
 
       <DistributionBar counts={status.verdictCounts} />
 
-      <div className="typo-caption text-foreground/50">
+      <div className="typo-caption text-foreground">
         {status.heldOutRuns} {c.held_out_runs}
       </div>
     </div>

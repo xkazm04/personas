@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { Puzzle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getBrandTokens } from '@/lib/connectors/brandTokens';
+import { PLUGIN_ICONS } from './PluginIcons';
 
 interface PluginDef {
   id: PluginTab;
@@ -48,6 +49,7 @@ export default function PluginBrowsePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pb-6">
           {PLUGINS.map((plugin) => {
             const Icon = plugin.icon;
+            const CustomIcon = PLUGIN_ICONS[plugin.id];
             const enabled = enabledPlugins.has(plugin.id);
             const brand = getBrandTokens(plugin.id);
             return (
@@ -60,8 +62,10 @@ export default function PluginBrowsePage() {
                 }`}
               >
                 <div className="flex items-start gap-4 p-5">
-                  <div className={`w-10 h-10 rounded-modal ${brand.badgeBg} ${brand.badgeBorder} border flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={`w-5 h-5 ${brand.icon}`} />
+                  <div className={`w-10 h-10 rounded-modal ${brand.badgeBg} ${brand.badgeBorder} border flex items-center justify-center flex-shrink-0 ${brand.icon}`}>
+                    {CustomIcon
+                      ? <CustomIcon active={enabled} className="w-5 h-5" />
+                      : <Icon className={`w-5 h-5 ${brand.icon}`} />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">

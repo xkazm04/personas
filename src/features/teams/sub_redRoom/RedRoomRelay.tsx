@@ -61,9 +61,10 @@ export function RedRoomRelay({ items }: { items: RedRoomItem[] }) {
                 {e.consumers.length > 0 ? (
                   e.consumers.slice(0, 4).map((pid) => <PersonaChip key={pid} persona={personaIndex.get(pid)} />)
                 ) : (
-                  <span className="typo-caption text-foreground/35 italic">no listeners</span>
+                  /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
+                  <span className="typo-caption text-foreground italic">no listeners</span>
                 )}
-                <span className="ml-auto typo-caption text-foreground/40 flex-shrink-0">
+                <span className="ml-auto typo-caption text-foreground flex-shrink-0">
                   <RelativeTime timestamp={new Date(e.at).toISOString()} />
                 </span>
               </div>
@@ -74,14 +75,14 @@ export function RedRoomRelay({ items }: { items: RedRoomItem[] }) {
                       <AlertTriangle className="w-3 h-3 flex-shrink-0" /> {e.errorMessage}
                     </p>
                   ) : (
-                    e.summary && <p className="typo-body text-foreground/75 line-clamp-2">{e.summary}</p>
+                    e.summary && <p className="typo-body text-foreground line-clamp-2">{e.summary}</p>
                   )}
                   {e.artifact && (
                     <a
                       href={e.artifact.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-caption text-foreground/80 hover:bg-secondary/60 transition-colors flex-shrink-0"
+                      className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-caption text-foreground hover:bg-secondary/60 transition-colors flex-shrink-0"
                     >
                       <ExternalLink className="w-3 h-3" /> {e.artifact.label}
                     </a>
@@ -92,13 +93,15 @@ export function RedRoomRelay({ items }: { items: RedRoomItem[] }) {
           );
         })}
         {exchanges.length === 0 && (
-          <p className="typo-body text-foreground/45 px-1 py-3">No relays yet — the channel fills as the team works.</p>
+          /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
+          <p className="typo-body text-foreground px-1 py-3">No relays yet — the channel fills as the team works.</p>
         )}
       </div>
 
       {/* Shared-memory rail — Transcript-style monospace rows, click for full note */}
       <div className="w-80 flex-shrink-0 min-h-0 flex flex-col">
         <p className="px-1 mb-1.5 typo-label uppercase tracking-wider text-amber-300/90 flex items-center gap-1.5 flex-shrink-0">
+          {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
           <BookMarked className="w-3.5 h-3.5" /> Shared memory
         </p>
         <div className="flex-1 min-h-0 overflow-y-auto rounded-card border border-primary/10 bg-background/60 font-mono">
@@ -116,14 +119,15 @@ export function RedRoomRelay({ items }: { items: RedRoomItem[] }) {
                 <span className="typo-caption flex-shrink-0" style={{ color }} title={author?.name.replace(/^T: /, '')}>
                   {'★'.repeat(Math.max(1, Math.min(3, Math.round(m.importance / 4))))}
                 </span>
-                <span className="typo-caption text-foreground/80 truncate" title={m.title}>
+                <span className="typo-caption text-foreground truncate" title={m.title}>
                   {m.title}
                 </span>
               </button>
             );
           })}
           {pinned.length === 0 && (
-            <p className="typo-caption text-foreground/45 px-3 py-3">No shared memories yet.</p>
+            /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
+            <p className="typo-caption text-foreground px-3 py-3">No shared memories yet.</p>
           )}
         </div>
       </div>

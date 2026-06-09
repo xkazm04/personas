@@ -44,9 +44,9 @@ export function ActivityTray() {
       <button
         type="button"
         onClick={() => setCollapsed((v) => !v)}
-        className="flex items-center gap-2 w-full px-2.5 py-1.5 typo-caption text-foreground/80 focus-ring rounded-card"
+        className="flex items-center gap-2 w-full px-2.5 py-1.5 typo-caption text-foreground focus-ring rounded-card"
       >
-        <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground/50" />
+        <Chevron className="w-3.5 h-3.5 shrink-0 text-foreground" />
         <Activity className="w-3.5 h-3.5 shrink-0 text-blue-300/90 animate-pulse" />
         <span className="flex-1 text-left font-medium">
           {tx(

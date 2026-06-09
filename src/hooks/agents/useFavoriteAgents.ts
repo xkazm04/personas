@@ -48,8 +48,8 @@ export function useFavoriteAgents() {
       /* corrupt legacy value — drop it */
       try {
         localStorage.removeItem(LEGACY_KEY);
-      } catch {
-        /* ignore */
+      } catch (e) {
+        silentCatch('useFavoriteAgents:removeLegacyKey')(e);
       }
     }
   }, [personas]);

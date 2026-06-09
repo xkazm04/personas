@@ -715,7 +715,7 @@ CREATE TABLE IF NOT EXISTS credential_rotation_policies (
     enabled           INTEGER NOT NULL DEFAULT 1,
     rotation_interval_days INTEGER NOT NULL DEFAULT 90,
     policy_type       TEXT NOT NULL DEFAULT 'scheduled'
-                      CHECK(policy_type IN ('scheduled','on_suspicious','on_member_departure','manual')),
+                      CHECK(policy_type IN ('scheduled','on_suspicious','on_member_departure','manual','oauth_keepalive')),
     last_rotated_at   TEXT,
     next_rotation_at  TEXT,
     created_at        TEXT NOT NULL DEFAULT (datetime('now')),

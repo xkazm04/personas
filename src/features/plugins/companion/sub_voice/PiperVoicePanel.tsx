@@ -223,13 +223,13 @@ export default function PiperVoicePanel() {
           {!hasVoicesForUserLocale && voices !== null && (
             <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 flex items-start gap-2">
               <Globe className="w-4 h-4 mt-0.5 shrink-0 text-amber-400" />
-              <p className="typo-caption text-foreground/60">
+              <p className="typo-caption text-foreground">
                 {t.plugins.companion.voice_piper_no_voices_for_language}
               </p>
             </div>
           )}
           {voicesLoading && voices === null ? (
-            <div className="flex items-center gap-3 typo-caption text-foreground/60">
+            <div className="flex items-center gap-3 typo-caption text-foreground">
               <LoadingSpinner size="sm" />
               <span>{t.plugins.companion.loading}</span>
             </div>
@@ -305,11 +305,11 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
         </div>
         {!installed && engine && (
           <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-            <p className="typo-caption text-foreground/60">
+            <p className="typo-caption text-foreground">
               {t.plugins.companion.voice_piper_engine_install_hint_release}
             </p>
             <div>
-              <div className="typo-caption text-foreground/60">
+              <div className="typo-caption text-foreground">
                 {t.plugins.companion.voice_piper_engine_install_hint_path_label}
               </div>
               <code className="block typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 mt-1 break-all">
@@ -349,7 +349,7 @@ function LanguageGroup(props: LanguageGroupProps) {
       <div className="flex items-baseline gap-2">
         <span className="typo-caption font-semibold text-foreground">{label}</span>
         {native && native !== label && (
-          <span className="typo-caption text-foreground/60">· {native}</span>
+          <span className="typo-caption text-foreground">· {native}</span>
         )}
         {isUserLanguage && (
           <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
@@ -419,7 +419,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="typo-body font-medium">{voice.speaker}</span>
-            <span className="typo-caption text-foreground/60">
+            <span className="typo-caption text-foreground">
               · {genderLabel[voice.gender]} · {qualityLabel[voice.quality]} · {voice.approxSizeMb} MB
             </span>
             {selected && (
@@ -429,7 +429,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
               </span>
             )}
           </div>
-          <p className="typo-caption text-foreground/60 mt-0.5">{voice.description}</p>
+          <p className="typo-caption text-foreground mt-0.5">{voice.description}</p>
           {downloading && (
             <DownloadProgressBar progress={progress!} />
           )}
@@ -505,7 +505,7 @@ function DownloadProgressBar({ progress }: { progress: TtsDownloadProgress }) {
           style={pct !== null ? { width: `${pct}%` } : undefined}
         />
       </div>
-      <div className="typo-caption text-foreground/60 text-[11px]">
+      <div className="typo-caption text-foreground text-[11px]">
         {pct !== null ? `${pct}% — ` : ''}
         {mbDownloaded} MB{mbTotal ? ` / ${mbTotal} MB` : ''}
       </div>

@@ -18,7 +18,7 @@ function DimBar({ label, value }: { label: string; value: number | null }) {
       <div className="flex items-center justify-between typo-caption text-foreground">
         <span>{label}</span>
         {value == null ? (
-          <span className="text-foreground/50">—</span>
+          <span className="text-foreground">—</span>
         ) : (
           <Numeric value={value} unit="plain" className="text-foreground/90" />
         )}

@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PipelineRail } from './PipelineRail';
 import type { PipelineStage, SourceMode } from './pipelineTypes';
 import { parseStandards, resolveBranchName } from './standardsConfig';
+import { silentCatch } from '@/lib/silentCatch';
 
 interface ProjectPipelineViewProps {
   name: string;
@@ -116,8 +117,8 @@ function KvRow({
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-2 min-w-0">
-      <Icon className="w-3 h-3 text-foreground/40 flex-shrink-0" />
-      <span className="typo-caption text-foreground/55 flex-shrink-0">{label}</span>
+      <Icon className="w-3 h-3 text-foreground flex-shrink-0" />
+      <span className="typo-caption text-foreground flex-shrink-0">{label}</span>
       <span
         className={`typo-caption truncate ml-auto text-right min-w-0 ${value ? 'text-foreground' : 'text-foreground/35 italic'} ${mono && value ? 'font-mono' : ''}`}
         title={value ?? undefined}
@@ -134,7 +135,10 @@ function shortRepo(url?: string): string | null {
   try {
     const parts = new URL(url).pathname.split('/').filter(Boolean);
     if (parts.length >= 2) return `${parts[0]}/${parts[parts.length - 1]!.replace(/\.git$/, '')}`;
-  } catch { /* fall through to raw */ }
+  } catch (err) {
+    /* fall through to raw */
+    silentCatch('features/plugins/dev-tools/sub_projects/pipeline/ProjectPipelineView:shortRepo')(err);
+  }
   return url;
 }
 

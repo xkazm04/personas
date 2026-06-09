@@ -71,14 +71,14 @@ export function ExportHealthBar() {
   return (
     <section className="rounded-card border border-primary/10 bg-secondary/10 p-4 space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className="typo-caption uppercase tracking-widest text-foreground/80">
+        <h3 className="typo-caption uppercase tracking-widest text-foreground">
           {t.plugins.langfuse.health_section}
         </h3>
         <button
           type="button"
           onClick={onRefresh}
           disabled={refreshing}
-          className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-modal border border-primary/15 bg-secondary/40 text-foreground/80 hover:bg-secondary/60 disabled:opacity-40 transition-colors"
+          className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-modal border border-primary/15 bg-secondary/40 text-foreground hover:bg-secondary/60 disabled:opacity-40 transition-colors"
         >
           <RefreshCw
             className={`w-3 h-3 ${refreshing ? "animate-spin" : ""}`}
@@ -108,7 +108,7 @@ export function ExportHealthBar() {
       </div>
 
       {/* Last-export line */}
-      <div className="typo-caption text-foreground/80">
+      <div className="typo-caption text-foreground">
         {lastExport
           ? tx(t.plugins.langfuse.health_last_export, { when: lastExport })
           : t.plugins.langfuse.health_last_export_never}
@@ -131,7 +131,7 @@ export function ExportHealthBar() {
       {errorsOpen && (
         <div className="rounded-card border border-amber-500/20 bg-amber-500/5 overflow-hidden">
           {stats.recentFailures.length === 0 ? (
-            <div className="px-3 py-2 typo-caption text-foreground/80">
+            <div className="px-3 py-2 typo-caption text-foreground">
               {t.plugins.langfuse.health_recent_failures_empty}
             </div>
           ) : (
@@ -141,7 +141,7 @@ export function ExportHealthBar() {
                   key={`${f.at.toString()}-${f.message.slice(0, 16)}`}
                   className="px-3 py-2 typo-caption text-amber-200/90"
                 >
-                  <div className="text-foreground/60 typo-caption">
+                  <div className="text-foreground typo-caption">
                     {formatRelative(f.at) ?? "—"}
                   </div>
                   <div className="break-words">{f.message}</div>
@@ -219,7 +219,7 @@ function StatTile({
   const body = (
     <>
       <div className={`typo-heading ${toneClass}`}>{value}</div>
-      <div className="typo-caption text-foreground/80 mt-0.5 flex items-center justify-center gap-1">
+      <div className="typo-caption text-foreground mt-0.5 flex items-center justify-center gap-1">
         {label}
         {onClick &&
           (expanded ? (

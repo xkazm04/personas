@@ -185,7 +185,7 @@ export function OrbDecisionBubble() {
               </p>
               <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />
               {decision.detail && (
-                <p className="mt-1.5 typo-caption text-foreground/60 leading-relaxed">
+                <p className="mt-1.5 typo-caption text-foreground leading-relaxed">
                   {decision.detail}
                 </p>
               )}
@@ -224,7 +224,7 @@ export function OrbDecisionBubble() {
               data-testid="athena-decision-option-0"
               onClick={() => explainDecision()}
               title={t.plugins.companion.decision_explain_hint}
-              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground/80 px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
+              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
             >
               <span
                 className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-foreground/10"

@@ -4,6 +4,7 @@ import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import HeroHeader from './HeroHeader';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
+import type { NavStatChip } from './lib/useNavCardStatus';
 import ResumeBanner from './ResumeBanner';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -25,6 +26,7 @@ interface WelcomeLayoutProps {
   quickNavLabel: string;
   navCards: NavCard[];
   navTranslations: Record<string, { label: string; description: string }>;
+  navStatus: Record<string, NavStatChip[]>;
   onCardClick: (id: string) => void;
 }
 
@@ -34,6 +36,7 @@ export default function WelcomeLayout({
   quickNavLabel,
   navCards,
   navTranslations,
+  navStatus,
   onCardClick
 }: WelcomeLayoutProps) {
   const { t } = useTranslation();
@@ -52,7 +55,7 @@ export default function WelcomeLayout({
               soon as the first paint is on screen. */}
           <DeferUntilIdle priority="next-frame">
             <SectionDivider label={quickNavLabel} />
-            <NavigationGrid cards={navCards} translations={navTranslations} onCardClick={onCardClick} />
+            <NavigationGrid cards={navCards} translations={navTranslations} status={navStatus} onCardClick={onCardClick} />
 
             <SectionDivider label={wl.language} />
             <Suspense fallback={<SuspenseFallback />}>

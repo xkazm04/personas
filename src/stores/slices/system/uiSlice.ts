@@ -57,12 +57,23 @@ export interface UiSlice {
   teamsTab: TeamsTab;
   /**
    * Selected release version on the Home → "What's New" surface. Driven by
-   * the sidebar Level 3 release nav; the page-body `<ReleasesNavBar>` was
-   * retired in favour of putting the release picker into the sidebar push
-   * pane. Defaults to `'roadmap'` so first-launch lands on the roadmap
-   * timeline view, matching the L2 entry users click to enter L3.
+   * the in-content `ReleaseNavRail` (the left rail inside `HomeReleases`).
+   * The earlier sidebar Level 3 push pane and the still-earlier page-body
+   * `<ReleasesNavBar>` were both retired — selection now lives next to the
+   * content it scopes. Defaults to `'roadmap'` so first-launch lands on the
+   * roadmap timeline view. Persisted to `sessionStorage`
+   * (`home-releases-selected-version`) for in-session continuity.
    */
   homeReleaseVersion: string;
+  /**
+   * The app version (from `getVersion()`) the user last acknowledged on the
+   * "What's New" surface. `null` until the first launch records a baseline.
+   * When this differs from the running version the "What's New" dot lights
+   * up on the Home (L1) and Roadmap (L2) sidebar entries; viewing the page
+   * or clicking the dot re-acknowledges the current version and clears it.
+   * Persisted so the dot doesn't re-appear on every relaunch.
+   */
+  whatsNewSeenVersion: string | null;
   templateTab: TemplateTab;
   agentTab: AgentTab;
   editorTab: EditorTab;
@@ -151,6 +162,8 @@ export interface UiSlice {
   setGoalsTab: (tab: GoalsTab) => void;
   setTeamsTab: (tab: TeamsTab) => void;
   setHomeReleaseVersion: (version: string) => void;
+  /** Record `version` as the acknowledged "What's New" version (clears the dot). */
+  markWhatsNewSeen: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
   /** Accepts current EditorTab values plus legacy 'prompt' | 'connectors' | 'health', which are migrated to `design` with the matching sub-tab. */
@@ -265,6 +278,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   goalsTab: "board" as GoalsTab,
   teamsTab: "workspace" as TeamsTab,
   homeReleaseVersion: "roadmap",
+  whatsNewSeenVersion: null,
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
   editorTab: "activity" as EditorTab,
@@ -352,6 +366,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
   setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
   setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
+  markWhatsNewSeen: (version) => set((state) =>
+    state.whatsNewSeenVersion === version ? state : { whatsNewSeenVersion: version }
+  ),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),
   setEditorTab: (tab) => startTransition(() => {

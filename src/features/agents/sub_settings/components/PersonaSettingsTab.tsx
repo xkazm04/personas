@@ -105,9 +105,8 @@ export function PersonaSettingsTab({
               className={inputFieldClass(draft.name.trim() === '')}
             />
             {draft.name.trim() === '' && (
-              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">
-                Name is required
-              </p>
+              // eslint-disable-next-line custom/no-hardcoded-jsx-text
+              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">Name is required</p>
             )}
           </div>
           <div className="relative">

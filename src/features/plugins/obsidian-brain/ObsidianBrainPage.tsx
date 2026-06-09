@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
-import { Brain } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { IconObsidianBrain } from '@/features/plugins/PluginIcons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
@@ -19,7 +19,7 @@ export default function ObsidianBrainPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Brain className="w-5 h-5 text-violet-400" />}
+        icon={<IconObsidianBrain active className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title={t.plugins.obsidian_brain.title}
         subtitle={t.plugins.obsidian_brain.subtitle}

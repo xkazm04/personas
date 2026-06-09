@@ -97,7 +97,7 @@ export function PersonaGroupDropRail({
       aria-label={rail.aria_label}
       className="flex items-center gap-2 px-3 py-2 border-b border-primary/5"
     >
-      <span className="flex items-center gap-1.5 typo-label text-foreground/60 uppercase tracking-wider flex-shrink-0">
+      <span className="flex items-center gap-1.5 typo-label text-foreground uppercase tracking-wider flex-shrink-0">
         <Users className="w-3 h-3" />
         {rail.heading}
       </span>
@@ -127,7 +127,7 @@ export function PersonaGroupDropRail({
               <span className="truncate">{triggerLabel}</span>
             </span>
             <ChevronDown
-              className={`w-3.5 h-3.5 flex-shrink-0 text-foreground/50 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+              className={`w-3.5 h-3.5 flex-shrink-0 text-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
             />
           </button>
         )}
@@ -161,7 +161,7 @@ export function PersonaGroupDropRail({
                       <span className="truncate">{opt.label}</span>
                     </span>
                     <span className="inline-flex items-center gap-1.5 flex-shrink-0">
-                      <span className="typo-label font-mono text-foreground/50">{opt.count}</span>
+                      <span className="typo-label font-mono text-foreground">{opt.count}</span>
                       {isSelected && <Check className="w-3.5 h-3.5 text-primary" />}
                     </span>
                   </button>

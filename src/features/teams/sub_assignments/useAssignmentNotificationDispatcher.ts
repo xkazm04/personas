@@ -4,6 +4,7 @@ import { EventName } from '@/lib/eventRegistry';
 import { notifyProcessComplete } from '@/lib/notifications/notifyProcessComplete';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getTeamAssignmentDetail } from '@/api/pipeline/assignments';
+import { silentCatch } from '@/lib/silentCatch';
 
 /** Global listener that dispatches notifications when an assignment
  *  transitions to `awaiting_review`. Mounted at App level (BackgroundServices)
@@ -60,9 +61,10 @@ export function useAssignmentNotificationDispatcher() {
             },
             t,
           );
-        } catch {
+        } catch (err) {
           // Detail fetch failures here are not fatal — the user can still see
           // the awaiting_review status in the panel itself.
+          silentCatch('teams/useAssignmentNotificationDispatcher')(err);
         }
       },
     ).then((u) => {

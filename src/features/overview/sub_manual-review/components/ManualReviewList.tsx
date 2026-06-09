@@ -90,6 +90,10 @@ export default function ManualReviewList() {
     status: filter === 'all' ? undefined : filter,
     personaId: selectedPersonaId || undefined,
   });
+  // `reload` is a stable useCallback from useLayeredList; destructure it so the
+  // memoized handlers below can depend on the function itself rather than the
+  // per-render `reviewQueue` object (which would defeat their memoization).
+  const reloadQueue = reviewQueue.reload;
 
   const localReviews = useMemo(
     () => reviewQueue.rows.map(shapeReview),
@@ -189,9 +193,9 @@ export default function ManualReviewList() {
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct!.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
-      reviewQueue.reload();
+      reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue.reload]);
+  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reloadQueue]);
 
   // Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
   // (the same action model as the Quick Answer stepper). Cloud reviews record
@@ -208,9 +212,9 @@ export default function ManualReviewList() {
       }
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
-      reviewQueue.reload();
+      reloadQueue();
     } finally { setIsProcessing(false); }
-  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue.reload]);
+  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reloadQueue]);
 
   const handleBulkAction = useCallback(async (status: ManualReviewStatus) => {
     setIsBulkProcessing(true);
@@ -224,18 +228,18 @@ export default function ManualReviewList() {
       }));
       setSelectedIds(new Set());
       setConfirmAction(null);
-      reviewQueue.reload();
+      reloadQueue();
     } finally { setIsBulkProcessing(false); }
-  }, [selectedIds, reviewMap, respondToCloudReview, reviewQueue.reload]);
+  }, [selectedIds, reviewMap, respondToCloudReview, reloadQueue]);
 
   const activeSelectionCount = useMemo(() => Array.from(selectedIds).filter((id) => selectablePendingIds.has(id)).length, [selectedIds, selectablePendingIds]);
 
   const { shouldAnimate } = useMotion();
 
   const handleSeedReview = useCallback(async () => {
-    try { await seedMockManualReview(); reviewQueue.reload(); }
+    try { await seedMockManualReview(); reloadQueue(); }
     catch (err) { logger.error('Failed to seed mock review', { error: err }); }
-  }, [reviewQueue.reload]);
+  }, [reloadQueue]);
 
   // A-grade Phase 8 (2026-05-04) — on-demand stale-review GC. The same
   // sweep runs once at startup via `engine::background`, but giving the
@@ -248,7 +252,7 @@ export default function ManualReviewList() {
     setIsGcing(true);
     try {
       const resolved = await gcStaleManualReviews();
-      reviewQueue.reload();
+      reloadQueue();
       const toastStore = useToastStore.getState();
       if (resolved > 0) {
         toastStore.addToast(
@@ -269,7 +273,7 @@ export default function ManualReviewList() {
     } finally {
       setIsGcing(false);
     }
-  }, [isGcing, reviewQueue.reload]);
+  }, [isGcing, reloadQueue]);
 
   // Hard-delete ALL local manual reviews (confirm-gated). Distinct from the
   // "Clear stale" sweep above, which only auto-resolves old pending rows.
@@ -278,14 +282,14 @@ export default function ManualReviewList() {
     setIsDeletingAll(true);
     try {
       await deleteAllManualReviews();
-      reviewQueue.reload();
+      reloadQueue();
     } catch (err) {
       toastCatch('ManualReviewList:deleteAll', 'Failed to delete all reviews')(err);
     } finally {
       setIsDeletingAll(false);
       setConfirmingDeleteAll(false);
     }
-  }, [isDeletingAll, reviewQueue.reload]);
+  }, [isDeletingAll, reloadQueue]);
 
   return (
     <ContentBox>

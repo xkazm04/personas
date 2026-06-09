@@ -95,4 +95,4 @@ function stop(): void {
 // querySelectorAll('*') it runs on every stall — which itself worsened jank.
 try {
   if (localStorage.getItem(FLAG)) start();
-} catch { /* localStorage unavailable — stay off */ }
+} catch (err) { silentCatch("lib/debug/freezeDetector:initFromFlag")(err); }

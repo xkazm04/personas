@@ -60,13 +60,13 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
       <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 h-12 border-b border-primary/10 bg-secondary/15">
         <div className="flex items-baseline gap-2 min-w-0">
           <span className="typo-heading-lg font-semibold text-foreground">{t.monitor.quick_title}</span>
-          {total > 0 && <span className="typo-caption text-foreground/50 tabular-nums">{total}</span>}
+          {total > 0 && <span className="typo-caption text-foreground tabular-nums">{total}</span>}
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={onOpenMonitor}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/20 typo-caption text-foreground/80 hover:text-foreground hover:bg-secondary/40 transition-colors"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/15 bg-secondary/20 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors"
             data-testid="quick-answer-open-monitor"
           >
             <Activity className="w-3.5 h-3.5" />
@@ -76,7 +76,7 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
             type="button"
             onClick={onClose}
             aria-label={t.monitor.quick_close}
-            className="p-1.5 rounded-modal border border-primary/15 text-foreground/70 hover:text-foreground hover:bg-secondary/30 transition-colors"
+            className="p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

@@ -162,7 +162,7 @@ export default function TeamList() {
           <EmptyState onCreate={() => setShowCreate(true)} onAuto={() => setShowAutoTeam(true)} t={t} />
         ) : (
           <div className="rounded-card border border-primary/12 overflow-hidden">
-            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground/55">
+            <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
               <span>{t.pipeline.agent_teams}</span>
               <span className="text-right w-20">{ts.col_members}</span>
               <span className="text-right w-20">{ts.col_status}</span>
@@ -221,20 +221,20 @@ function TeamRow({
           className="flex-shrink-0 w-7 h-7 rounded-interactive flex items-center justify-center border"
           style={{ backgroundColor: `${team.color}1f`, borderColor: `${team.color}40`, color: team.color }}
         >
-          {team.icon ? <span className="text-sm leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
+          {team.icon ? <span className="typo-body leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
         </span>
         <span className="min-w-0">
           <span className="block typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
             {team.name}
           </span>
           {team.description && (
-            <span className="block typo-caption text-foreground/50 truncate">{team.description}</span>
+            <span className="block typo-caption text-foreground truncate">{team.description}</span>
           )}
         </span>
       </button>
 
-      <span className="w-20 text-right inline-flex items-center justify-end gap-1 typo-body text-foreground/70">
-        <Users className="w-3.5 h-3.5 text-foreground/40" />
+      <span className="w-20 text-right inline-flex items-center justify-end gap-1 typo-body text-foreground">
+        <Users className="w-3.5 h-3.5 text-foreground" />
         {memberCount}
       </span>
 
@@ -263,7 +263,7 @@ function TeamRow({
             <button
               type="button"
               onClick={onCancelDisband}
-              className="px-2 py-1 rounded-interactive border border-primary/15 text-foreground/60 typo-caption hover:bg-secondary/40 transition-colors"
+              className="px-2 py-1 rounded-interactive border border-primary/15 text-foreground typo-caption hover:bg-secondary/40 transition-colors"
             >
               {ts.cancel}
             </button>
@@ -282,7 +282,7 @@ function TeamRow({
               onClick={onRequestDisband}
               aria-label={ts.disband}
               title={ts.disband_title}
-              className="p-1 rounded-interactive text-foreground/40 hover:bg-red-500/15 hover:text-red-300 transition-colors"
+              className="p-1 rounded-interactive text-foreground hover:bg-red-500/15 hover:text-red-300 transition-colors"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>

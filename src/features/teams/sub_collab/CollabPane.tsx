@@ -30,7 +30,7 @@ export function CollabPane({ teamId, members }: { teamId: string; members: Studi
   return (
     <div className="h-full flex flex-col gap-2 min-h-0" data-testid="collab-pane">
       <div className="flex items-center gap-2 flex-shrink-0">
-        <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-wider text-foreground/80">
+        <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-wider text-foreground">
           <MessagesSquare className="w-3.5 h-3.5" /> Collab
         </span>
         {/* C5 prototype variant strip — Correspondence (winner) vs Baseline (A/B) */}

@@ -461,6 +461,7 @@ function SigilTile({
           <MiniSigil uc={uc} size={SIGIL_SIZE} isHovered={hovered} petalStyle="wedge" />
           <AnimatePresence>
             {isRunning && (
+              // reduced-motion-ok: aria-hidden decorative running halo (opacity/box-shadow pulse); the static colored sigil already conveys the running state
               <motion.span
                 key="run-halo"
                 aria-hidden

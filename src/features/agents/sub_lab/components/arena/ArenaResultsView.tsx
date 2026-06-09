@@ -327,7 +327,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                           }`}
                         >
                           {r.status === 'running' || r.status === 'queued' || r.status === 'pending' ? (
-                            <span className="flex items-center gap-1 typo-caption text-foreground/70">
+                            <span className="flex items-center gap-1 typo-caption text-foreground">
                               <Loader2 className="w-3.5 h-3.5 animate-spin" /> running
                             </span>
                           ) : r.status === 'failed' || r.status === 'error' ? (

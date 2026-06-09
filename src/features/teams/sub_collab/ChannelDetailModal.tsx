@@ -80,16 +80,16 @@ export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | 
               ) : item.kind === 'athena' || item.kind === 'director' ? (
                 (() => { const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director']; return <M.Icon className={`w-4 h-4 ${M.iconColor}`} />; })()
               ) : (
-                <span className="typo-caption text-foreground/40">·</span>
+                <span className="typo-caption text-foreground">·</span>
               )}
             </span>
             <div className="min-w-0 flex-1">
               <h2 id="channel-detail-title" className="typo-section-title truncate" style={{ color: accent }}>
                 {authorName(item, persona)}
               </h2>
-              <p className="typo-caption text-foreground/55">
+              <p className="typo-caption text-foreground">
                 <span className="font-mono">{eventLabel}</span>
-                <span className="text-foreground/40"> · </span>
+                <span className="text-foreground"> · </span>
                 <RelativeTime timestamp={item.at} />
               </p>
             </div>
@@ -102,13 +102,13 @@ export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | 
             {detail.text ? (
               <MarkdownRenderer content={detail.text} className="typo-body leading-relaxed" />
             ) : detail.fields.length === 0 ? (
-              <p className="typo-body text-foreground/45">{t.monitor.channel_no_body}</p>
+              <p className="typo-body text-foreground">{t.monitor.channel_no_body}</p>
             ) : null}
             {detail.fields.length > 0 && (
               <dl className="rounded-card border border-primary/10 bg-secondary/15 divide-y divide-primary/8">
                 {detail.fields.map(([k, v]) => (
                   <div key={k} className="flex gap-3 px-3 py-2">
-                    <dt className="typo-caption uppercase tracking-wider text-foreground/50 flex-shrink-0 w-32 truncate">{k}</dt>
+                    <dt className="typo-caption uppercase tracking-wider text-foreground flex-shrink-0 w-32 truncate">{k}</dt>
                     <dd className="typo-body text-foreground/85 min-w-0 whitespace-pre-wrap break-words">{v}</dd>
                   </div>
                 ))}
@@ -122,10 +122,10 @@ export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | 
             {raw && (
               <details className="group">
                 <summary className="flex items-center justify-between cursor-pointer list-none select-none">
-                  <span className="typo-label uppercase tracking-wider text-foreground/45 group-hover:text-foreground/70 transition-colors">{t.monitor.channel_raw_payload}</span>
+                  <span className="typo-label uppercase tracking-wider text-foreground group-hover:text-foreground transition-colors">{t.monitor.channel_raw_payload}</span>
                   <CopyButton text={raw} />
                 </summary>
-                <pre className="mt-1.5 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground/75 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
+                <pre className="mt-1.5 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
                   {raw}
                 </pre>
               </details>

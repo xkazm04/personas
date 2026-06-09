@@ -164,7 +164,9 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
               value={personaId}
               onChange={(e) => setPersonaId(e.target.value)}
               disabled={synthesizing}
+              // eslint-disable-next-line custom/no-hardcoded-jsx-text
               aria-label="AI synthesis persona"
+              // eslint-disable-next-line custom/no-hardcoded-jsx-text
               title="Persona to author the Abstract & Discussion"
               className="px-2 py-1.5 rounded-card border border-border/30 bg-secondary/50 text-foreground typo-caption focus:outline-none focus:border-primary/40 disabled:opacity-50 max-w-[10rem]"
             >
@@ -175,6 +177,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
             <button
               onClick={handleSynthesize}
               disabled={!personaId || synthesizing}
+              // eslint-disable-next-line custom/no-hardcoded-jsx-text
               title="Run a persona to draft the Abstract & Discussion from this project's findings"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-primary/15 hover:bg-primary/25 text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >

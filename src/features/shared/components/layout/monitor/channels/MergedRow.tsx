@@ -70,19 +70,19 @@ export const MergedRow = memo(function MergedRow({
       className="w-full text-left flex items-center gap-2 rounded-card px-2.5 hover:bg-foreground/[0.04] transition-colors"
     >
       {showTeam && (
-        <span className="inline-flex items-center gap-1 flex-shrink-0 typo-caption text-foreground/60" title={team.teamName}>
+        <span className="inline-flex items-center gap-1 flex-shrink-0 typo-caption text-foreground" title={team.teamName}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: team.teamColor }} />
           <span className="max-w-[88px] truncate">{team.teamName.replace(/^SDLC[ —-]*/i, '') || team.teamName}</span>
         </span>
       )}
       <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary/60 flex-shrink-0">
-        {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" /> : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" /> : alert ? <AlertCircle className="w-3 h-3 text-status-warning" /> : <span className="typo-caption text-foreground/40">·</span>}
+        {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" /> : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" /> : alert ? <AlertCircle className="w-3 h-3 text-status-warning" /> : <span className="typo-caption text-foreground">·</span>}
       </span>
       <span className="typo-caption font-medium flex-shrink-0 max-w-[110px] truncate" style={{ color: accent }}>{source}</span>
       <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${tone}`}>{event}</span>
       {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
       {artifact && <span className="inline-flex items-center gap-0.5 typo-caption text-status-info flex-shrink-0"><ExternalLink className="w-3 h-3" />{artifact.label}</span>}
-      <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
+      <span className="ml-auto typo-caption text-foreground flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
     </button>
   );
 });

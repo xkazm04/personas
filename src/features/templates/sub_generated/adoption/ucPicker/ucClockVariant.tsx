@@ -110,6 +110,7 @@ export function ClockVariant({ display, firing }: { display: TriggerDisplay; fir
           />
           <line x1={60} y1={60} x2={60} y2={14} stroke="var(--color-foreground)" strokeOpacity={0.75} strokeWidth={2} strokeLinecap="round" />
           {firing && (
+            // reduced-motion-ok: decorative spinning second-hand on the clock glyph shown only while a trigger is firing; conveys no information beyond the static "firing" state
             <motion.line
               x1={60}
               y1={60}

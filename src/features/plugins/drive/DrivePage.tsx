@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { Copy, HardDrive, Scissors, Trash2, Upload, X } from "lucide-react";
+import { Copy, Scissors, Trash2, Upload, X } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
+import { IconDrive } from "@/features/plugins/PluginIcons";
 import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
@@ -442,7 +443,7 @@ export default function DrivePage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<HardDrive className="w-5 h-5 text-cyan-300" />}
+        icon={<IconDrive active className="w-5 h-5 text-cyan-300" />}
         iconColor="cyan"
         title={t.plugins.drive.title}
         subtitle={t.plugins.drive.subtitle}

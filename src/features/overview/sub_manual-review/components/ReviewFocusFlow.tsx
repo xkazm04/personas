@@ -324,7 +324,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="typo-caption font-normal text-foreground/80 ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <span className="typo-caption font-normal text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
                 )}
               </button>
             );

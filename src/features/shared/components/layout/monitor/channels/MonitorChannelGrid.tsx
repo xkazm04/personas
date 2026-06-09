@@ -106,8 +106,8 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
 
   if (channelTeams.length === 0) {
     return (
-      <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground/50">
-        <MessagesSquare className="w-8 h-8 text-foreground/25" />
+      <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground">
+        <MessagesSquare className="w-8 h-8 text-foreground" />
         <span className="typo-body">{t.monitor.channels_no_teams}</span>
       </div>
     );
@@ -132,7 +132,7 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 border-b border-primary/10 bg-secondary/10 overflow-x-auto">
-        <span className="typo-label uppercase tracking-wider text-foreground/50 flex-shrink-0">{t.monitor.channels_teams_label}</span>
+        <span className="typo-label uppercase tracking-wider text-foreground flex-shrink-0">{t.monitor.channels_teams_label}</span>
         {channelTeams.map((tm) => {
           const on = selected.has(tm.id);
           return (
@@ -154,7 +154,7 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
           <button
             type="button"
             onClick={() => setAll(!allOn)}
-            className="flex-shrink-0 ml-1 px-2 py-1 rounded-full border border-primary/10 typo-caption text-foreground/55 hover:text-foreground/85 hover:bg-secondary/30 transition-colors"
+            className="flex-shrink-0 ml-1 px-2 py-1 rounded-full border border-primary/10 typo-caption text-foreground hover:text-foreground/85 hover:bg-secondary/30 transition-colors"
           >
             {allOn ? t.monitor.channels_none : t.monitor.channels_all}
           </button>
@@ -164,7 +164,7 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
 
       <div className="flex-1 min-h-0">
         {shown.length === 0 ? (
-          <div className="h-full flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_select_prompt}</div>
+          <div className="h-full flex items-center justify-center typo-body text-foreground">{t.monitor.channels_select_prompt}</div>
         ) : (
           <div className="h-full overflow-y-auto p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">

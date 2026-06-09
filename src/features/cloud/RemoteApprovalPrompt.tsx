@@ -87,7 +87,7 @@ export default function RemoteApprovalPrompt() {
             {s.from_dashboard}
           </span>
           {queue.length > 1 && (
-            <span className="rounded-full bg-secondary/40 border border-primary/10 px-2 py-0.5 typo-caption font-medium text-foreground/70">
+            <span className="rounded-full bg-secondary/40 border border-primary/10 px-2 py-0.5 typo-caption font-medium text-foreground">
               {interpolate(s.queue_count, { index: 1, total: queue.length })}
             </span>
           )}
@@ -102,19 +102,19 @@ export default function RemoteApprovalPrompt() {
             <h2 id="remote-approval-title" className="typo-body-lg font-semibold text-foreground truncate">
               {personaLabel}
             </h2>
-            <p className="typo-caption text-foreground/55">
+            <p className="typo-caption text-foreground">
               <RelativeTime timestamp={current.requestedAt} />
             </p>
           </div>
         </div>
 
-        <p className="typo-body text-foreground/80">
+        <p className="typo-body text-foreground">
           {interpolate(s.body, { persona: personaLabel })}
         </p>
 
         {/* Prompt detail */}
         <div className="space-y-1.5">
-          <p className="typo-caption font-medium text-foreground/55 uppercase tracking-wide">
+          <p className="typo-caption font-medium text-foreground uppercase tracking-wide">
             {s.prompt_label}
           </p>
           <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 max-h-40 overflow-y-auto">
@@ -127,7 +127,7 @@ export default function RemoteApprovalPrompt() {
         {/* Safety framing */}
         <div className="flex items-start gap-2 rounded-card border border-emerald-500/15 bg-emerald-500/5 p-3">
           <ShieldCheck className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-          <p className="typo-caption text-foreground/70">{s.safety_note}</p>
+          <p className="typo-caption text-foreground">{s.safety_note}</p>
         </div>
 
         {/* Actions */}

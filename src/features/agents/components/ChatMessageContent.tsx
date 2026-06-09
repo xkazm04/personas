@@ -7,7 +7,7 @@ import { Check, Copy, FlaskConical } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
-import { silentCatch } from '@/lib/silentCatch';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 
 interface ChatMessageContentProps {
@@ -60,12 +60,11 @@ function CodeBlock({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(rawText);
-      setCopied(true);
-      addToast(t.agents.chat_thread.code_copied, 'success');
-      setTimeout(() => setCopied(false), 1800);
-    } catch (err) { silentCatch("features/agents/components/ChatMessageContent:catch1")(err); }
+    const ok = await copyText(rawText);
+    if (!ok) return;
+    setCopied(true);
+    addToast(t.agents.chat_thread.code_copied, 'success');
+    setTimeout(() => setCopied(false), 1800);
   }, [rawText, addToast, t.agents.chat_thread.code_copied]);
 
   const showSendToLab = !!onSendToLab && (language ? LAB_ELIGIBLE_LANGUAGES.has(language) : false);

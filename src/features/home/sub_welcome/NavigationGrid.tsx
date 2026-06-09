@@ -6,6 +6,8 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';
 import { prefetchNavTarget } from '../lib/prefetch';
+import NavStatChips from './NavStatChips';
+import type { NavStatChip } from './lib/useNavCardStatus';
 
 export interface NavCard {
   id: string;
@@ -23,10 +25,12 @@ interface NavigationGridProps {
   cards: NavCard[];
   translations: Record<string, { label: string; description: string }>;
   onCardClick: (id: string) => void;
+  /** Live status chips keyed by card id (Overview counts, Agents/Events trends, …). */
+  status?: Record<string, NavStatChip[]>;
 }
 
-/** Larger illustration-only card with label overlay; no description. */
-const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, onCardClick }: { card: NavCard; i: number; cardT: { label: string; description: string }; onCardClick: (id: string) => void }) {
+/** Larger illustration-only card with label overlay + live status chips. */
+const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, chips, onCardClick }: { card: NavCard; i: number; cardT: { label: string; description: string }; chips: NavStatChip[]; onCardClick: (id: string) => void }) {
   const [hovered, setHovered] = useState(false);
   const CustomIcon = SIDEBAR_ICONS[card.id];
   const { shouldAnimate, staggerDelay } = useMotion();
@@ -50,6 +54,9 @@ const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, onCardClic
       <div className={`relative w-full aspect-[4/3] rounded-modal border overflow-hidden bg-gradient-to-br ${card.gradFrom} ${card.gradTo} ${card.accentBorder} shadow-elevation-1 group-hover:shadow-elevation-3 transition-all duration-400`}>
         {/* Glow blob */}
         <div className={`absolute inset-0 ${card.glowColor} blur-3xl rounded-full opacity-0 group-hover:opacity-40 transition-opacity duration-500 pointer-events-none scale-75`} />
+
+        {/* Live status chips (top-left) */}
+        <NavStatChips chips={chips} />
 
         {/* Large centered custom icon */}
         {CustomIcon && (
@@ -82,7 +89,7 @@ const NavCardWrapper = memo(function NavCardWrapper({ card, i, cardT, onCardClic
   );
 });
 
-export default function NavigationGrid({ cards, translations, onCardClick }: NavigationGridProps) {
+export default function NavigationGrid({ cards, translations, onCardClick, status }: NavigationGridProps) {
   const { isStarter: isSimple, isBuilder: isDevMode } = useTier();
   const visibleCards = useMemo(
     () => {
@@ -105,6 +112,7 @@ export default function NavigationGrid({ cards, translations, onCardClick }: Nav
               card={card}
               i={i}
               cardT={cardT}
+              chips={status?.[card.id] ?? []}
               onCardClick={onCardClick}
             />
           );

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, LineChart } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { ContentBox, ContentHeader, ContentBody } from "@/features/shared/components/layout/ContentLayout";
+import { IconLangfuse } from "@/features/plugins/PluginIcons";
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ConnectionForm } from "./ConnectionForm";
@@ -41,7 +42,7 @@ export default function LangfusePage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<LineChart className="w-5 h-5 text-indigo-400" />}
+        icon={<IconLangfuse active className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
         title={t.plugins.langfuse.title}
         subtitle={t.plugins.langfuse.subtitle}

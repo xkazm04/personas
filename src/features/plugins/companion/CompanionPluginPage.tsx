@@ -1,10 +1,10 @@
 import { lazy, Suspense } from 'react';
-import { Bot } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
+import { IconCompanion } from '@/features/plugins/PluginIcons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
@@ -30,7 +30,7 @@ export default function CompanionPluginPage() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Bot className="w-5 h-5 text-cyan-400" />}
+        icon={<IconCompanion active className="w-5 h-5 text-cyan-400" />}
         iconColor="cyan"
         title={t.plugins.companion.page_title}
         subtitle={t.plugins.companion.page_subtitle}
