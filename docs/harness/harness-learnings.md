@@ -383,3 +383,26 @@
 - **Report synthesis doesn't persist** — add `research_lab_update_report` (+ a `content`/`synthesis` column or section row + ts-rs binding) so AI-authored Abstract/Discussion survive a reload, then save from ReportPreviewDrawer instead of only live-compiling.
 - **OCR→KB/Obsidian sink (idea #1) was rejected this round** — still a real dead-end (OCR text never reaches the KB or vault); revisit if document search matters.
 - **Crossref dedup is create-time only** — no backfill of `citation_count`/`doi` for sources already in the table, and no periodic citation refresh.
+
+## Layered audit — Bug Hunter + UI Perfectionist, all 30 contexts (Pipeline B, 2026-06-09)
+
+Full audit at `docs/harness/audit-2026-06-09/` — `INDEX.md` (triage) + 60 per-context reports (`bug__*.md`, `ui__*.md`) + `FIXES-WAVE-1.md`. 354 findings (60 critical / 169 high / 106 medium / 19 low). Wave 1 closed all 8 lost-update criticals (commits `41f54b4d4`..`720dc2d5b` on `vibeman/audit-2026-06-09`).
+
+### Structural facts
+- **2026-06-09** — `cargo test --lib` BUILD is broken on master (pre-existing, NOT a regression): `DevIdea` missing field `priority` at `commands/infrastructure/dev_tools/triage.rs:63`, and `CreateManualReviewInput` missing `assignment_id`/`step_id` at `db/repos/communication/manual_reviews.rs:721,791,835,926` — `#[cfg(test)]` struct-init drift. `cargo check --features desktop` compiles fine; only the test target fails. Fix these before relying on Rust unit tests.
+- **2026-06-09** — `vitest run` is NOT green on master (26 failed / 1907, 9 files): `fleetSlice`, `FleetSettingsPage`, `FleetSessionInsights`, lab matrix `useBuild`/`useLifecycle`, `devToolsTaskSlice`, `ConnectorCallCard`, twin `ReadinessGapPopover`, `customRules` — mostly Vitest mock drift + struct-field drift. Establish a baseline before treating vitest failures as regressions.
+- **2026-06-09** — `design_context` has TWO write paths: the frontend `writeQueue` (`hooks/design/core/useDesignContextMutator.ts`, full-document RMW) and backend commands (`commands/core/use_cases.rs`) that did their own RMW. Backend RMW must be transaction-wrapped; the two paths are not mutually serialized (open follow-up).
+- **2026-06-09** — Context-map paths are stale in several places (see INDEX provenance): team canvas `pipeline/components/TeamCanvas` is a STUB, live canvas at `src/features/teams/sub_canvas` (orphaned — no host mounts `<ReactFlow>`); chat surface is `sub_editor/.../ChatThread.tsx` not `components/chat`; triggers cron builder in `sub_triggers/` not `sub_builder/`; evolution/genome UI was removed (headless Athena); dev-tools UI in `sub_runner`/`sub_scanner`/`sub_triage`; `testSlice` actions have NO UI consumer (test surface is the Lab tab).
+
+### Conventions enforced (catalogue — see FIXES-WAVE-1.md for detail)
+- Read-then-write of a shared SQLite blob/row goes in ONE transaction (`transaction_with_behavior(Immediate)` for `&mut Connection`, `unchecked_transaction()` for `&Connection`). Reading outside the write tx is a silent lost-update.
+- Long-running edits (LLM/CLI between read and write) use optimistic-lock CAS: `WHERE id=? AND updated_at=?expected`, 0 rows ⇒ abort. Capture the token at read time, thread it through. False-reject safe; false-accept is the bug.
+- Never `REPLACE`/`LIKE` on a JSON column — use JSON1 `json_extract`/`json_set` guarded by `json_valid`.
+- If a pull/import path conflict-checks, the push/export path must too (`three_way_compare` is the shared mediator in `commands/obsidian_brain/conflict.rs`).
+
+## Open follow-ups (from Layered Audit Wave 1, 2026-06-09)
+- **use-cases #1** — unify the direct-command and `writeQueue` design_context paths so the post-commit refetch gap closes (backend now atomic; frontend already `fetchDetail`s).
+- **evolution #2** — add a per-persona evolution mutex (mirror `healing_personas`) so two cycles don't both run to completion; the CAS only makes the outcome safe.
+- **creative/obsidian #1** — add `conflicts: Vec<SyncConflict>` to `PushSyncResult` so SyncBridge can offer resolve actions on a push conflict (now surfaced only via `skipped` + sync log); consider auto-pull on conflict.
+- **Remaining audit waves (per INDEX)**: Tier-1 criticals — Wave 2 status-transition guards & lock leaks (7), Wave 3 success theater (7), Wave 4 orphaned processes (5), Wave 5 security (7), Wave 6 corruption loops & stream/graph integrity (7); Tier-2 UI waves 7–9 (19); Tier-3 the 169 highs.
+- **Pre-existing test debt** — fix the `DevIdea`/`CreateManualReviewInput` test-build drift and the 9 failing vitest files so future waves have a green baseline to regress against.
