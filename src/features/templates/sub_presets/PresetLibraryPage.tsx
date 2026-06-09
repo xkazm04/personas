@@ -104,10 +104,10 @@ function PresetCard({
       type="button"
       onClick={onOpen}
       data-testid={`preset-card-${preset.id}`}
-      className="group text-left p-4 rounded-modal bg-secondary/30 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
+      className="group relative overflow-hidden text-left p-4 rounded-modal bg-secondary/30 backdrop-blur-sm border border-primary/15 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_20px_rgba(99,102,241,0.08)]"
     >
       <div
-        className="absolute-top-strip h-[2px] rounded-full opacity-60 mb-3"
+        className="absolute top-0 inset-x-0 h-[3px] opacity-80"
         style={{ backgroundColor: color }}
       />
       <div className="flex items-start gap-3 mb-3">
