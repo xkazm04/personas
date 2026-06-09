@@ -56,7 +56,13 @@ function ExecutionListRowImpl({
     ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
     : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />;
   const statusEntry = getStatusEntry(execution.status);
-  const statusBadge = <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
+  const StatusIcon = statusEntry.icon;
+  const statusBadge = (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>
+      <StatusIcon className={`w-3 h-3 ${statusEntry.pulse ? 'motion-safe:animate-spin' : ''}`} />
+      {statusEntry.label}
+    </span>
+  );
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={tx(e.healing_retry, { count: execution.retry_count })}>
       <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-status-info/10 text-status-info border border-status-info/20">
