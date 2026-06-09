@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} स्मृति",
   "timeline_memories_other": "{count} स्मृतियाँ",
   "timeline_runs_one": "{count} रन",
-  "timeline_runs_other": "{count} रन"
+  "timeline_runs_other": "{count} रन",
+  "relay_no_listeners": "कोई श्रोता नहीं",
+  "relay_wire_listener": "श्रोता जोड़ें",
+  "relay_listener_added": "{name} अब {event} सुन रहा है",
+  "relay_empty": "अभी कोई रिले नहीं — टीम के काम करते ही चैनल भरता जाएगा।",
+  "relay_shared_memory": "साझा स्मृति",
+  "relay_no_memories": "अभी कोई साझा स्मृति नहीं।"
 }

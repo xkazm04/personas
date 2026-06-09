@@ -14462,6 +14462,12 @@
     "timeline_memories_other": "{count} memories",
     "timeline_runs_one": "{count} run",
     "timeline_runs_other": "{count} runs",
+    "relay_no_listeners": "no listeners",
+    "relay_wire_listener": "Add a listener",
+    "relay_listener_added": "{name} now listens to {event}",
+    "relay_empty": "No relays yet — the channel fills as the team works.",
+    "relay_shared_memory": "Shared memory",
+    "relay_no_memories": "No shared memories yet.",
     "clear_all_filters": "Clear all filters",
     "diff_legend": "Green entries are new in the newer run; red entries are gone since the older run."
   },

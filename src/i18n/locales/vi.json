@@ -13522,7 +13522,13 @@
     "timeline_memories_one": "{count} ghi nhớ",
     "timeline_memories_other": "{count} ghi nhớ",
     "timeline_runs_one": "{count} lần chạy",
-    "timeline_runs_other": "{count} lần chạy"
+    "timeline_runs_other": "{count} lần chạy",
+    "relay_no_listeners": "không có người nghe",
+    "relay_wire_listener": "Thêm người nghe",
+    "relay_listener_added": "{name} hiện đang lắng nghe {event}",
+    "relay_empty": "Chưa có lượt chuyển tiếp — kênh sẽ đầy dần khi nhóm làm việc.",
+    "relay_shared_memory": "Bộ nhớ chung",
+    "relay_no_memories": "Chưa có ghi nhớ chung nào."
   },
   "auth": {
     "login_timed_out": "Đăng nhập hết thời gian. Vui lòng thử lại."

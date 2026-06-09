@@ -13522,7 +13522,13 @@
     "timeline_memories_one": "メモリー {count} 件",
     "timeline_memories_other": "メモリー {count} 件",
     "timeline_runs_one": "実行 {count} 回",
-    "timeline_runs_other": "実行 {count} 回"
+    "timeline_runs_other": "実行 {count} 回",
+    "relay_no_listeners": "リスナーなし",
+    "relay_wire_listener": "リスナーを追加",
+    "relay_listener_added": "{name} が {event} をリッスンするようになりました",
+    "relay_empty": "まだリレーはありません — チームが動き出すとチャンネルが埋まっていきます。",
+    "relay_shared_memory": "共有メモリー",
+    "relay_no_memories": "まだ共有メモリーはありません。"
   },
   "auth": {
     "login_timed_out": "ログインがタイムアウトしました。もう一度お試しください。"

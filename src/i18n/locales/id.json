@@ -13522,7 +13522,13 @@
     "timeline_memories_one": "{count} memori",
     "timeline_memories_other": "{count} memori",
     "timeline_runs_one": "{count} run",
-    "timeline_runs_other": "{count} run"
+    "timeline_runs_other": "{count} run",
+    "relay_no_listeners": "tidak ada pendengar",
+    "relay_wire_listener": "Tambah pendengar",
+    "relay_listener_added": "{name} kini mendengarkan {event}",
+    "relay_empty": "Belum ada relai — saluran terisi saat tim bekerja.",
+    "relay_shared_memory": "Memori bersama",
+    "relay_no_memories": "Belum ada memori bersama."
   },
   "auth": {
     "login_timed_out": "Login habis waktu. Silakan coba lagi."

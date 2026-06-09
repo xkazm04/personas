@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} Eintrag",
   "timeline_memories_other": "{count} Einträge",
   "timeline_runs_one": "{count} Lauf",
-  "timeline_runs_other": "{count} Läufe"
+  "timeline_runs_other": "{count} Läufe",
+  "relay_no_listeners": "keine Zuhörer",
+  "relay_wire_listener": "Zuhörer hinzufügen",
+  "relay_listener_added": "{name} hört jetzt auf {event}",
+  "relay_empty": "Noch keine Übergaben — der Kanal füllt sich, während das Team arbeitet.",
+  "relay_shared_memory": "Geteiltes Gedächtnis",
+  "relay_no_memories": "Noch keine geteilten Einträge."
 }

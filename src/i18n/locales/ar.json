@@ -13522,7 +13522,13 @@
     "timeline_memories_one": "ذاكرة واحدة",
     "timeline_memories_other": "{count} ذكريات",
     "timeline_runs_one": "تشغيل واحد",
-    "timeline_runs_other": "{count} تشغيلات"
+    "timeline_runs_other": "{count} تشغيلات",
+    "relay_no_listeners": "لا مستمعين",
+    "relay_wire_listener": "إضافة مستمع",
+    "relay_listener_added": "{name} يستمع الآن إلى {event}",
+    "relay_empty": "لا توجد تمريرات بعد — تمتلئ القناة أثناء عمل الفريق.",
+    "relay_shared_memory": "الذاكرة المشتركة",
+    "relay_no_memories": "لا توجد ذكريات مشتركة بعد."
   },
   "auth": {
     "login_timed_out": "انتهت مهلة تسجيل الدخول. يرجى المحاولة مجدداً."

@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} запись",
   "timeline_memories_other": "Записей: {count}",
   "timeline_runs_one": "{count} запуск",
-  "timeline_runs_other": "Запусков: {count}"
+  "timeline_runs_other": "Запусков: {count}",
+  "relay_no_listeners": "нет слушателей",
+  "relay_wire_listener": "Добавить слушателя",
+  "relay_listener_added": "{name} теперь слушает {event}",
+  "relay_empty": "Передач пока нет — канал заполняется по мере работы команды.",
+  "relay_shared_memory": "Общая память",
+  "relay_no_memories": "Общих записей пока нет."
 }

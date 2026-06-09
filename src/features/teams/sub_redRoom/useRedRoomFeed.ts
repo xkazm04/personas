@@ -210,8 +210,9 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
       .catch(silentCatch('teams/redRoom:channel'));
   }, [projectId, teamId, memberSet]);
 
-  // Subscriptions change rarely — fetch once per member set.
-  useEffect(() => {
+  // Subscriptions change rarely — fetch once per member set; re-fetchable on
+  // demand (the Relay's wire-a-listener action creates new subscriptions).
+  const refreshSubscriptions = useCallback(() => {
     if (memberPersonaIds.length === 0) return;
     Promise.all(
       memberPersonaIds.map((pid) =>
@@ -233,6 +234,10 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
       .catch(silentCatch('teams/redRoom:subs'));
     // join() gives a stable dependency for the same member set
   }, [memberPersonaIds.join('|')]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    refreshSubscriptions();
+  }, [refreshSubscriptions]);
 
   useEffect(() => {
     setLoaded(false);
@@ -292,5 +297,5 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
     return [...evItems, ...memItems, ...chanItems].sort((a, b) => b.at - a.at);
   }, [events, memories, channelMsgs, consumersByType]);
 
-  return { items, memories, loaded, refresh, projectId };
+  return { items, memories, loaded, refresh, refreshSubscriptions, projectId };
 }

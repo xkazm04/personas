@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} memoria",
   "timeline_memories_other": "{count} memorias",
   "timeline_runs_one": "{count} ejecución",
-  "timeline_runs_other": "{count} ejecuciones"
+  "timeline_runs_other": "{count} ejecuciones",
+  "relay_no_listeners": "sin oyentes",
+  "relay_wire_listener": "Añadir un oyente",
+  "relay_listener_added": "{name} ahora escucha {event}",
+  "relay_empty": "Aún no hay relevos: el canal se llena a medida que el equipo trabaja.",
+  "relay_shared_memory": "Memoria compartida",
+  "relay_no_memories": "Aún no hay memorias compartidas."
 }

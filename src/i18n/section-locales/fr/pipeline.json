@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} mémoire",
   "timeline_memories_other": "{count} mémoires",
   "timeline_runs_one": "{count} exécution",
-  "timeline_runs_other": "{count} exécutions"
+  "timeline_runs_other": "{count} exécutions",
+  "relay_no_listeners": "aucun auditeur",
+  "relay_wire_listener": "Ajouter un auditeur",
+  "relay_listener_added": "{name} écoute désormais {event}",
+  "relay_empty": "Pas encore de relais — le canal se remplit à mesure que l'équipe travaille.",
+  "relay_shared_memory": "Mémoire partagée",
+  "relay_no_memories": "Pas encore de mémoires partagées."
 }

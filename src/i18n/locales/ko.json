@@ -13522,7 +13522,13 @@
     "timeline_memories_one": "메모리 {count}개",
     "timeline_memories_other": "메모리 {count}개",
     "timeline_runs_one": "실행 {count}회",
-    "timeline_runs_other": "실행 {count}회"
+    "timeline_runs_other": "실행 {count}회",
+    "relay_no_listeners": "리스너 없음",
+    "relay_wire_listener": "리스너 추가",
+    "relay_listener_added": "{name}이(가) 이제 {event}을(를) 수신합니다",
+    "relay_empty": "아직 릴레이가 없습니다 — 팀이 일하면서 채널이 채워집니다.",
+    "relay_shared_memory": "공유 메모리",
+    "relay_no_memories": "아직 공유 메모리가 없습니다."
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."

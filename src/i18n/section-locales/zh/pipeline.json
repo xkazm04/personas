@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} 条记忆",
   "timeline_memories_other": "{count} 条记忆",
   "timeline_runs_one": "{count} 次运行",
-  "timeline_runs_other": "{count} 次运行"
+  "timeline_runs_other": "{count} 次运行",
+  "relay_no_listeners": "无监听者",
+  "relay_wire_listener": "添加监听者",
+  "relay_listener_added": "{name} 现在监听 {event}",
+  "relay_empty": "还没有接力——团队开始工作后这里会逐渐填满。",
+  "relay_shared_memory": "共享记忆",
+  "relay_no_memories": "还没有共享记忆。"
 }

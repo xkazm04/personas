@@ -14468,6 +14468,12 @@ export type Translations = {
     timeline_memories_other: string;
     timeline_runs_one: string;
     timeline_runs_other: string;
+    relay_no_listeners: string;
+    relay_wire_listener: string;
+    relay_listener_added: string;
+    relay_empty: string;
+    relay_shared_memory: string;
+    relay_no_memories: string;
     clear_all_filters: string;
     diff_legend: string;
   };

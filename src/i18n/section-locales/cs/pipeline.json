@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count} záznam",
   "timeline_memories_other": "{count} záznamů",
   "timeline_runs_one": "{count} běh",
-  "timeline_runs_other": "{count} běhů"
+  "timeline_runs_other": "{count} běhů",
+  "relay_no_listeners": "žádní posluchači",
+  "relay_wire_listener": "Přidat posluchače",
+  "relay_listener_added": "{name} nyní naslouchá {event}",
+  "relay_empty": "Zatím žádné předávky — kanál se plní, jak tým pracuje.",
+  "relay_shared_memory": "Sdílená paměť",
+  "relay_no_memories": "Zatím žádné sdílené záznamy."
 }

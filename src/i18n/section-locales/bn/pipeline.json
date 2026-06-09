@@ -304,5 +304,11 @@
   "timeline_memories_one": "{count}টি স্মৃতি",
   "timeline_memories_other": "{count}টি স্মৃতি",
   "timeline_runs_one": "{count}টি রান",
-  "timeline_runs_other": "{count}টি রান"
+  "timeline_runs_other": "{count}টি রান",
+  "relay_no_listeners": "কোনো শ্রোতা নেই",
+  "relay_wire_listener": "শ্রোতা যোগ করুন",
+  "relay_listener_added": "{name} এখন {event} শুনছে",
+  "relay_empty": "এখনো কোনো রিলে নেই — টিম কাজ করলে চ্যানেল ভরে উঠবে।",
+  "relay_shared_memory": "ভাগ করা স্মৃতি",
+  "relay_no_memories": "এখনো কোনো ভাগ করা স্মৃতি নেই।"
 }
