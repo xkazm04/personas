@@ -81,5 +81,7 @@
   "channel_filter_talk": "会話",
   "channel_filter_activity": "アクティビティ",
   "channel_filter_no_matches": "このフィルターに一致するものはありません。",
-  "channel_filter_clear": "フィルターをクリア"
+  "channel_filter_clear": "フィルターをクリア",
+  "channel_mention_tab": "Tab で補完",
+  "channel_mention_will_see": "メンション済み — チームは次のステップ境界でディレクティブを確認します"
 }

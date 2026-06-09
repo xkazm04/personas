@@ -81,5 +81,7 @@
   "channel_filter_talk": "Unterhaltung",
   "channel_filter_activity": "Aktivität",
   "channel_filter_no_matches": "Nichts passt zu diesen Filtern.",
-  "channel_filter_clear": "Filter zurücksetzen"
+  "channel_filter_clear": "Filter zurücksetzen",
+  "channel_mention_tab": "Tab zum Vervollständigen",
+  "channel_mention_will_see": "Erwähnt — das Team sieht Direktiven an der nächsten Schrittgrenze"
 }

@@ -81,5 +81,7 @@
   "channel_filter_talk": "Conversación",
   "channel_filter_activity": "Actividad",
   "channel_filter_no_matches": "Nada coincide con estos filtros.",
-  "channel_filter_clear": "Borrar filtros"
+  "channel_filter_clear": "Borrar filtros",
+  "channel_mention_tab": "Tab para completar",
+  "channel_mention_will_see": "Mencionado: el equipo ve las directivas en el siguiente límite de paso"
 }

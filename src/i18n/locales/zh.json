@@ -153,7 +153,9 @@
     "channel_filter_talk": "对话",
     "channel_filter_activity": "活动",
     "channel_filter_no_matches": "没有符合筛选条件的内容。",
-    "channel_filter_clear": "清除筛选"
+    "channel_filter_clear": "清除筛选",
+    "channel_mention_tab": "按 Tab 补全",
+    "channel_mention_will_see": "已提及——团队会在下一个步骤边界看到指令"
   },
   "common": {
     "loading": "加载中...",

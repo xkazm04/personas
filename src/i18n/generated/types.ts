@@ -212,6 +212,8 @@ export type Translations = {
     channel_filter_activity: string;
     channel_filter_no_matches: string;
     channel_filter_clear: string;
+    channel_mention_tab: string;
+    channel_mention_will_see: string;
     quick_choose_action: string;
     quick_dismiss: string;
     quick_prev_decision: string;

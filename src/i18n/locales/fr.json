@@ -153,7 +153,9 @@
     "channel_filter_talk": "Conversation",
     "channel_filter_activity": "Activité",
     "channel_filter_no_matches": "Rien ne correspond à ces filtres.",
-    "channel_filter_clear": "Effacer les filtres"
+    "channel_filter_clear": "Effacer les filtres",
+    "channel_mention_tab": "Tab pour compléter",
+    "channel_mention_will_see": "Mentionné — l'équipe voit les directives à la prochaine limite d'étape"
   },
   "common": {
     "loading": "Chargement...",

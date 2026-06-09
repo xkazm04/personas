@@ -206,6 +206,8 @@
     "channel_filter_activity": "Activity",
     "channel_filter_no_matches": "Nothing matches these filters.",
     "channel_filter_clear": "Clear filters",
+    "channel_mention_tab": "Tab to complete",
+    "channel_mention_will_see": "Mentioned — the team sees directives at the next step boundary",
     "quick_choose_action": "Choose an action",
     "quick_dismiss": "Dismiss",
     "quick_prev_decision": "Previous decision",

@@ -81,5 +81,7 @@
   "channel_filter_talk": "কথোপকথন",
   "channel_filter_activity": "কার্যকলাপ",
   "channel_filter_no_matches": "এই ফিল্টারে কিছু মেলেনি।",
-  "channel_filter_clear": "ফিল্টার মুছুন"
+  "channel_filter_clear": "ফিল্টার মুছুন",
+  "channel_mention_tab": "সম্পূর্ণ করতে Tab চাপুন",
+  "channel_mention_will_see": "উল্লেখ করা হয়েছে — পরবর্তী ধাপের সীমায় টিম নির্দেশ দেখতে পায়"
 }

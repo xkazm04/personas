@@ -153,7 +153,9 @@
     "channel_filter_talk": "대화",
     "channel_filter_activity": "활동",
     "channel_filter_no_matches": "이 필터에 맞는 항목이 없습니다.",
-    "channel_filter_clear": "필터 지우기"
+    "channel_filter_clear": "필터 지우기",
+    "channel_mention_tab": "Tab로 완성",
+    "channel_mention_will_see": "멘션됨 — 팀은 다음 단계 경계에서 지시문을 확인합니다"
   },
   "common": {
     "loading": "로딩 중...",

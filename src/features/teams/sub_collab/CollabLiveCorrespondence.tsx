@@ -159,15 +159,27 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     }
   };
 
-  // @ath → @athena autocomplete: a trailing @-token that prefixes "athena".
-  const athenaSuggest = useMemo(() => {
-    const m = draft.match(/(?:^|\s)@([a-z]{1,5})$/i);
+  // @-mention autocomplete: a trailing @-token matches Athena or any team
+  // member (full name or first-word prefix, case-insensitive). Completing a
+  // member inserts @FirstWord — directives already deliver to every member at
+  // the next step boundary; the mention is the addressing affordance on top.
+  const mentionCandidates = useMemo(() => {
+    const m = draft.match(/(?:^|\s)@([\p{L}\d_-]{1,24})$/iu);
     if (!m) return null;
     const partial = m[1]!.toLowerCase();
-    return 'athena'.startsWith(partial) ? partial : null;
-  }, [draft]);
-  const completeAthena = () => {
-    setDraft((d) => d.replace(/(^|\s)@([a-z]{1,5})$/i, (_full, pre: string) => `${pre}@athena `));
+    const list: { key: string; label: string; insert: string; athena?: boolean; icon?: string | null; color?: string | null }[] = [];
+    if ('athena'.startsWith(partial)) list.push({ key: 'athena', label: '@athena', insert: '@athena ', athena: true });
+    for (const mem of members) {
+      const name = mem.name.replace(/^T: /, '');
+      const slug = name.split(/\s+/)[0]!;
+      if (name.toLowerCase().startsWith(partial) || slug.toLowerCase().startsWith(partial)) {
+        list.push({ key: mem.memberId, label: `@${name}`, insert: `@${slug} `, icon: mem.icon, color: mem.color });
+      }
+    }
+    return list.length > 0 ? list.slice(0, 4) : null;
+  }, [draft, members]);
+  const completeMention = (insert: string) => {
+    setDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
   };
 
   const workingNames = members
@@ -225,7 +237,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
       {/* ── Filter bar: text search · kind · author ── */}
       <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border bg-foreground/[0.01]">
         <div className="relative flex-1 min-w-0 max-w-[240px]">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/50 pointer-events-none" />
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -320,6 +332,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
               key={item.id}
               item={item}
               personaIndex={personaIndex}
+              members={members}
               parent={item.replyTo ? byId.get(item.replyTo) : undefined}
               onReply={() => setReplyTarget(item)}
               onOpenDetail={() => setDetailItem(item)}
@@ -369,22 +382,36 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
             </button>
           </div>
         )}
-        {athenaSuggest && (
-          <button
-            type="button"
-            onClick={completeAthena}
-            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-200 hover:bg-violet-500/20 transition-colors"
-          >
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <Sparkles className="w-3.5 h-3.5" /> @athena <span className="text-foreground">— Tab to complete</span>
-          </button>
+        {mentionCandidates && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {mentionCandidates.map((c, idx) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => completeMention(c.insert)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border typo-caption transition-colors ${
+                  c.athena
+                    ? 'border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20'
+                    : 'border-border bg-secondary/30 text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                {c.athena ? (
+                  <Sparkles className="w-3.5 h-3.5" />
+                ) : (
+                  <PersonaIcon icon={c.icon ?? null} color={c.color ?? null} size="w-3.5 h-3.5" />
+                )}
+                {c.label}
+                {idx === 0 && <span className="text-foreground">— {t.monitor.channel_mention_tab}</span>}
+              </button>
+            ))}
+          </div>
         )}
         <div className="flex items-center gap-2">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Tab' && athenaSuggest) { e.preventDefault(); completeAthena(); return; }
+            if (e.key === 'Tab' && mentionCandidates) { e.preventDefault(); completeMention(mentionCandidates[0]!.insert); return; }
             if (e.key === 'Enter') send();
           }}
           placeholder={replyTarget ? 'Write your reply…' : 'Say something to the team… Tag @athena to bring her in'}
@@ -451,13 +478,15 @@ function resolveRow(item: TeamChannelItem) {
  *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
  * A "Needs your review" row carries the inline ReviewInterventionCard below.
  */
-function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }: {
+function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpenDetail }: {
   item: TeamChannelItem;
   personaIndex: ReturnType<typeof usePersonaIndex>;
+  members?: ChannelMember[];
   parent?: TeamChannelItem;
   onReply?: () => void;
   onOpenDetail?: () => void;
 }) {
+  const { t } = useTranslation();
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
   const source = authorName(item, persona);
@@ -476,6 +505,15 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
 
   const deliveries = isUser ? parseDeliveries(item) : [];
   const seenIds = [...new Set(deliveries.map((d) => d.persona_id))];
+  // Members addressed via @FirstWord in this directive — surfaced as chips so
+  // the author sees who the message was aimed at.
+  const mentioned = isUser && members
+    ? members.filter((m) => {
+        const slug = m.name.replace(/^T: /, '').split(/\s+/)[0]!;
+        const safe = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`@${safe}(?![\\p{L}\\d_-])`, 'iu').test(item.body ?? '');
+      })
+    : [];
 
   // Row-2 container tint: tinted for human/agent voices, subtle for system rows.
   let bodyClass = 'border-primary/12 bg-secondary/15';
@@ -595,6 +633,18 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
                       <Sparkles className="w-3 h-3" /> Athena notified
                     </span>
                   )}
+                  {mentioned.map((m) => (
+                    <span
+                      key={m.memberId}
+                      title={t.monitor.channel_mention_will_see}
+                      className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border"
+                    >
+                      <PersonaIcon icon={m.icon} color={m.color} size="w-3 h-3" />
+                      <span className="typo-caption" style={{ color: m.color ?? undefined }}>
+                        @{m.name.replace(/^T: /, '').split(/\s+/)[0]}
+                      </span>
+                    </span>
+                  ))}
                 </p>
               )}
             </div>

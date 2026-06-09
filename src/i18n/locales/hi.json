@@ -153,7 +153,9 @@
     "channel_filter_talk": "बातचीत",
     "channel_filter_activity": "गतिविधि",
     "channel_filter_no_matches": "इन फ़िल्टरों से कुछ नहीं मिला।",
-    "channel_filter_clear": "फ़िल्टर साफ़ करें"
+    "channel_filter_clear": "फ़िल्टर साफ़ करें",
+    "channel_mention_tab": "पूरा करने के लिए Tab दबाएँ",
+    "channel_mention_will_see": "उल्लेख किया गया — टीम अगली स्टेप सीमा पर निर्देश देखती है"
   },
   "common": {
     "loading": "लोड हो रहा है...",

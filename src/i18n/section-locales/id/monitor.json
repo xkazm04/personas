@@ -81,5 +81,7 @@
   "channel_filter_talk": "Percakapan",
   "channel_filter_activity": "Aktivitas",
   "channel_filter_no_matches": "Tidak ada yang cocok dengan filter ini.",
-  "channel_filter_clear": "Hapus filter"
+  "channel_filter_clear": "Hapus filter",
+  "channel_mention_tab": "Tab untuk melengkapi",
+  "channel_mention_will_see": "Disebut — tim melihat arahan pada batas langkah berikutnya"
 }
