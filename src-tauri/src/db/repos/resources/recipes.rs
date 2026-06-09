@@ -480,6 +480,7 @@ pub fn accept_version(
     sample_inputs: Option<&str>,
     description: Option<&str>,
     changes_summary: Option<&str>,
+    expected_updated_at: Option<&str>,
 ) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::accept_version", {
         // BEGIN IMMEDIATE: take the write lock up front so two concurrent
@@ -536,12 +537,29 @@ pub fn accept_version(
         )
         .map_err(map_version_conflict)?;
 
-        // 4. Update the recipe definition with the new data
+        // 4. Update the recipe definition with the new data. When the caller
+        //    supplies expected_updated_at (the recipe's updated_at captured when
+        //    generation started), guard the write with a compare-and-swap: if the
+        //    recipe changed under us during the long LLM generation window, the
+        //    UPDATE matches 0 rows and we abort — rolling back the version rows
+        //    inserted above — instead of silently clobbering the concurrent edit.
         let now = chrono::Utc::now().to_rfc3339();
-        tx.execute(
-            "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
-            rusqlite::params![prompt_template, input_schema, sample_inputs, description, now, recipe_id],
-        )?;
+        let updated_rows = match expected_updated_at {
+            Some(expected) => tx.execute(
+                "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6 AND updated_at = ?7",
+                rusqlite::params![prompt_template, input_schema, sample_inputs, description, now, recipe_id, expected],
+            )?,
+            None => tx.execute(
+                "UPDATE recipe_definitions SET prompt_template = ?1, input_schema = ?2, sample_inputs = ?3, description = ?4, updated_at = ?5 WHERE id = ?6",
+                rusqlite::params![prompt_template, input_schema, sample_inputs, description, now, recipe_id],
+            )?,
+        };
+        if updated_rows == 0 {
+            // Dropping tx without commit rolls back the snapshot/version inserts.
+            return Err(AppError::Validation(
+                "Recipe changed since this version was generated — discard and regenerate so the newer edit isn't overwritten.".into(),
+            ));
+        }
 
         // 5. Read the updated recipe within the transaction
         let recipe = tx

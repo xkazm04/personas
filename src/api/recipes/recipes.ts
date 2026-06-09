@@ -99,9 +99,12 @@ export const acceptRecipeVersion = (
   sampleInputs: string | null,
   description: string | null,
   changesSummary: string | null,
+  /** Recipe updated_at captured when generation started — optimistic-lock token
+   *  so an edit during the generation window is rejected, not clobbered. */
+  expectedUpdatedAt: string | null,
 ) =>
   invoke<RecipeDefinition>("accept_recipe_version", {
-    recipeId, promptTemplate, inputSchema, sampleInputs, description, changesSummary,
+    recipeId, promptTemplate, inputSchema, sampleInputs, description, changesSummary, expectedUpdatedAt,
   });
 
 export const revertRecipeVersion = (recipeId: string, versionId: string) =>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Sparkles, Check, RotateCcw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -30,6 +30,11 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
   const [error, setError] = useState<string | null>(null);
 
   const versioning = useRecipeVersioning();
+  // Recipe updated_at captured when generation starts — the base the LLM diff is
+  // computed against. Passed to acceptRecipeVersion as an optimistic-lock token
+  // so an edit landing during the long generation window is detected and
+  // rejected ("regenerate") instead of being silently overwritten.
+  const baseUpdatedAtRef = useRef<string | null>(null);
 
   const loadVersions = useCallback(async () => {
     try {
@@ -54,8 +59,9 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
     if (!requirements.trim()) return;
     setError(null);
     setTerminalExpanded(false);
+    baseUpdatedAtRef.current = recipe.updated_at;
     await versioning.start(recipe.id, requirements.trim());
-  }, [recipe.id, requirements, versioning]);
+  }, [recipe.id, recipe.updated_at, requirements, versioning]);
 
   const handleAccept = useCallback(async () => {
     if (!versioning.draft) return;
@@ -70,6 +76,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
         draft.sample_inputs ?? null,
         draft.description ?? null,
         draft.changes_summary ?? null,
+        baseUpdatedAtRef.current,
       );
       onRecipeUpdated(updated);
       versioning.reset();

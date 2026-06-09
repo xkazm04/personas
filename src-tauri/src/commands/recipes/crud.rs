@@ -490,6 +490,7 @@ pub fn accept_recipe_version(
     sample_inputs: Option<String>,
     description: Option<String>,
     changes_summary: Option<String>,
+    expected_updated_at: Option<String>,
 ) -> Result<RecipeDefinition, AppError> {
     require_auth_sync(&state)?;
     repo::accept_version(
@@ -500,6 +501,7 @@ pub fn accept_recipe_version(
         sample_inputs.as_deref(),
         description.as_deref(),
         changes_summary.as_deref(),
+        expected_updated_at.as_deref(),
     )
 }
 
