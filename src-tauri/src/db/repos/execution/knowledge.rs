@@ -47,16 +47,24 @@ pub fn upsert(
     execution_id: &str,
 ) -> Result<(), AppError> {
     timed_query!("knowledge_entries", "knowledge_entries::upsert", {
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
         let now = chrono::Utc::now().to_rfc3339();
         let id = uuid::Uuid::new_v4().to_string();
+
+        // Serialize the recentResults read-modify-write with the upsert: a SELECT
+        // on one pooled connection followed by an INSERT...ON CONFLICT on another
+        // races concurrent executions of the same (persona, type, key), silently
+        // dropping one outcome from the sparkline and desyncing it from the
+        // success/failure counters. IMMEDIATE takes the write lock up front so the
+        // read + write land as one atomic step.
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
 
         // Merge recentResults into pattern_data (keep last 10 execution outcomes)
         let merged_pattern_data = {
             let mut new_data: serde_json::Value = serde_json::from_str(pattern_data)
                 .unwrap_or_else(|_| serde_json::Value::Object(Default::default()));
 
-            let existing: Option<String> = conn
+            let existing: Option<String> = tx
             .query_row(
                 "SELECT pattern_data FROM execution_knowledge WHERE persona_id = ?1 AND knowledge_type = ?2 AND pattern_key = ?3",
                 params![persona_id, knowledge_type, pattern_key],
@@ -81,7 +89,7 @@ pub fn upsert(
         };
 
         // Use INSERT OR REPLACE with computed running averages
-        conn.execute(
+        tx.execute(
         "INSERT INTO execution_knowledge
             (id, persona_id, use_case_id, knowledge_type, pattern_key, pattern_data,
              success_count, failure_count, avg_cost_usd, avg_duration_ms,
@@ -124,6 +132,8 @@ pub fn upsert(
             now,
         ],
     )?;
+
+        tx.commit()?;
 
         Ok(())
     })
