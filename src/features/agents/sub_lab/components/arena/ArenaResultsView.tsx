@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Trophy, Target, FileText, Shield, DollarSign, Clock, TrendingUp, TrendingDown, Minus, MessageSquare, Lightbulb, ChevronDown } from 'lucide-react';
+import { Trophy, Target, FileText, Shield, DollarSign, Clock, TrendingUp, TrendingDown, Minus, MessageSquare, Lightbulb, ChevronDown, Loader2, AlertTriangle } from 'lucide-react';
 import type { LabArenaResult } from '@/lib/bindings/LabArenaResult';
 import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
@@ -317,7 +317,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     const dur = r.durationMs;
                     const isSelected = selectedCell?.scenario === scenario && selectedCell?.model === mid;
                     return (
-                      <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''}`}>
+                      <td key={mid} className={`px-3 py-1.5 ${index % 2 === 1 ? 'bg-secondary/10' : ''} ${r.status === 'failed' || r.status === 'error' ? 'bg-red-500/5' : ''}`}>
                         <button
                           onClick={() => setSelectedCell(isSelected ? null : { scenario, model: mid })}
                           className={`w-full flex flex-col items-center gap-0.5 rounded-card px-2 py-1.5 transition-all ${
@@ -326,16 +326,28 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                               : 'hover:bg-secondary/40'
                           }`}
                         >
-                          <span className={`typo-body-lg font-bold ${scoreColor(comp)}`}>{comp ?? '—'}</span>
-                          <div className="flex gap-2 text-[10px] text-foreground">
-                            <span>TA {ta ?? '—'}</span>
-                            <span>OQ {oq ?? '—'}</span>
-                            <span>PC {pc ?? '—'}</span>
-                          </div>
-                          <div className="flex gap-2 text-[9px] text-foreground">
-                            <span>${cost.toFixed(4)}</span>
-                            <span>{(dur / 1000).toFixed(1)}s</span>
-                          </div>
+                          {r.status === 'running' || r.status === 'queued' || r.status === 'pending' ? (
+                            <span className="flex items-center gap-1 typo-caption text-foreground/70">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> running
+                            </span>
+                          ) : r.status === 'failed' || r.status === 'error' ? (
+                            <span className="flex items-center gap-1 typo-caption text-status-error">
+                              <AlertTriangle className="w-3.5 h-3.5" /> failed
+                            </span>
+                          ) : (
+                            <>
+                              <span className={`typo-body-lg font-bold ${scoreColor(comp)}`}>{comp ?? '—'}</span>
+                              <div className="flex gap-2 text-[10px] text-foreground">
+                                <span>TA {ta ?? '—'}</span>
+                                <span>OQ {oq ?? '—'}</span>
+                                <span>PC {pc ?? '—'}</span>
+                              </div>
+                              <div className="flex gap-2 text-[9px] text-foreground">
+                                <span>${cost.toFixed(4)}</span>
+                                <span>{(dur / 1000).toFixed(1)}s</span>
+                              </div>
+                            </>
+                          )}
                         </button>
                       </td>
                     );
