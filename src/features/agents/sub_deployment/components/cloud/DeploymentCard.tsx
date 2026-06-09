@@ -5,7 +5,7 @@ import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConica
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
-import { statusColor, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
+import { statusColor, statusIcon, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import type { TestResult } from '../../hooks/useDeploymentTest';
 import { ApiPlayground } from './ApiPlayground';
@@ -61,9 +61,15 @@ export function DeploymentCard({
           <span className="typo-body font-medium text-foreground/90">
             {d.label || personaName}
           </span>
-          <span className={`typo-caption px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
-            {d.status}
-          </span>
+          {(() => {
+            const StatusIcon = statusIcon(d.status);
+            return (
+              <span className={`inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card border font-medium ${statusColor(d.status)}`}>
+                <StatusIcon className="w-3 h-3" aria-hidden="true" />
+                {d.status}
+              </span>
+            );
+          })()}
         </div>
 
         {/* Actions */}

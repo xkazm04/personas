@@ -1,4 +1,6 @@
 import type { CloudDeployment } from '@/api/system/cloud';
+import type { LucideIcon } from 'lucide-react';
+import { CheckCircle2, PauseCircle, XCircle, Circle } from 'lucide-react';
 
 export const BUDGET_PRESETS = [
   { label: 'No limit', value: undefined },
@@ -32,6 +34,20 @@ export function statusColor(status: string) {
       return 'bg-red-500/10 border-red-500/20 text-red-400';
     default:
       return 'bg-secondary/40 border-primary/15 text-foreground';
+  }
+}
+
+// Shape cue so status isn't conveyed by color alone (WCAG 1.4.1).
+export function statusIcon(status: string): LucideIcon {
+  switch (status) {
+    case 'active':
+      return CheckCircle2;
+    case 'paused':
+      return PauseCircle;
+    case 'failed':
+      return XCircle;
+    default:
+      return Circle;
   }
 }
 
