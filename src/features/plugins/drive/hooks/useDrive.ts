@@ -167,6 +167,12 @@ export interface UseDriveResult {
    */
   cachedEntriesFor: (path: string) => DriveEntry[] | null;
 
+  // Per-folder scroll memory — Back/Up restores where you were instead of
+  // jumping to the top. Views record on scroll and recall after the folder's
+  // entries have loaded. Session-scoped (clears with the component).
+  rememberScroll: (path: string, top: number) => void;
+  recallScroll: (path: string) => number;
+
   // Recursive search across the entire managed drive. The local
   // `searchQuery` filter is per-folder; when it produces no results, the
   // UI escalates to this — a backend walk via drive_search.
@@ -258,6 +264,16 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const cachedEntriesFor = useCallback((path: string): DriveEntry[] | null => {
     return pathCacheRef.current.get(path) ?? null;
+  }, []);
+
+  // Scroll offsets per visited path. A ref (not state) — recording on every
+  // scroll event must not re-render the Finder.
+  const scrollCacheRef = useRef<Map<string, number>>(new Map());
+  const rememberScroll = useCallback((path: string, top: number) => {
+    scrollCacheRef.current.set(path, top);
+  }, []);
+  const recallScroll = useCallback((path: string): number => {
+    return scrollCacheRef.current.get(path) ?? 0;
   }, []);
 
   const refreshTree = useCallback(() => {
@@ -692,6 +708,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     recentlyWritten,
 
     cachedEntriesFor,
+    rememberScroll,
+    recallScroll,
 
     recursiveResults,
     recursiveQuery,

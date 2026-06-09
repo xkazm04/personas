@@ -267,6 +267,17 @@ function ListView({
     bottomShadow,
   } = useScrollShadows<HTMLDivElement>();
 
+  // Restore the folder's remembered scroll offset once its entries are in.
+  // Refreshes within the same folder restore the live position (a no-op);
+  // Back/Up navigation restores where the user left that folder.
+  const { currentPath, loading, recallScroll } = drive;
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = recallScroll(currentPath);
+  }, [currentPath, loading, recallScroll, scrollRef]);
+
   const SortHeader = ({
     column,
     label,
@@ -386,6 +397,11 @@ function ListView({
     <div
       ref={scrollRef}
       className="flex-1 overflow-auto"
+      onScroll={(e) => {
+        // Don't record while a navigation's entries are still loading — the
+        // visible content (and its scroll height) belongs to the old folder.
+        if (!loading) drive.rememberScroll(currentPath, e.currentTarget.scrollTop);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu(null, e.clientX, e.clientY);
@@ -631,6 +647,17 @@ function IconsView({
   onCommitPendingCreate,
   onCancelPendingCreate,
 }: Props) {
+  // Same per-folder scroll memory as the list view. The hook must run
+  // before the early returns below (rules-of-hooks).
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { currentPath, loading, recallScroll } = drive;
+  useEffect(() => {
+    if (loading) return;
+    const el = gridRef.current;
+    if (!el) return;
+    el.scrollTop = recallScroll(currentPath);
+  }, [currentPath, loading, recallScroll]);
+
   if (drive.loading && drive.entries.length === 0) {
     return <LoadingState />;
   }
@@ -639,7 +666,11 @@ function IconsView({
   }
   return (
     <div
+      ref={gridRef}
       className="flex-1 overflow-auto p-5"
+      onScroll={(e) => {
+        if (!loading) drive.rememberScroll(currentPath, e.currentTarget.scrollTop);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu(null, e.clientX, e.clientY);
