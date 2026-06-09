@@ -445,6 +445,37 @@ async fn relay_sse_core(
                 use_case_id: None,
             };
 
+            // Rate-limit smee/webhook origins on the BUS, not just the IPC
+            // command. smee.io has no authenticity guarantee — a leaked channel
+            // URL lets anyone flood events. publish_event (the IPC path) is
+            // throttled per source, but this internal relay — the highest-volume,
+            // attacker-reachable producer — had no cap. Drop over-limit events.
+            {
+                use tauri::Manager;
+                let app_state = app.state::<std::sync::Arc<crate::AppState>>();
+                let event_source_max = app_state
+                    .tier_config
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .event_source_max;
+                let rate_key = format!("event:smee_relay:{}", params.relay_key);
+                if app_state
+                    .rate_limiter
+                    .check(
+                        &rate_key,
+                        event_source_max,
+                        crate::engine::rate_limiter::EVENT_SOURCE_WINDOW,
+                    )
+                    .is_err()
+                {
+                    tracing::warn!(
+                        relay_key = %params.relay_key,
+                        "Smee relay: event-source rate limit exceeded — dropping event"
+                    );
+                    continue;
+                }
+            }
+
             match event_repo::publish(pool, input) {
                 Ok(event) => {
                     emit_event_bus(app, &event);
