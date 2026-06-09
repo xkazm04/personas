@@ -1510,6 +1510,7 @@ impl ExecutionEngine {
             self.log_dir.clone(),
             self.circuit_breaker.clone(),
             self.healing_personas.clone(),
+            true, // command path: slot already acquired via try_start_healing
         );
     }
 }
@@ -2724,6 +2725,7 @@ fn evaluate_healing_and_retry(
                     log_dir,
                     circuit_breaker,
                     healing_personas,
+                    false, // auto path: this task acquires the slot itself
                 );
             }
         }
@@ -2890,11 +2892,19 @@ fn spawn_healing_chain(
     log_dir: PathBuf,
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
     healing_personas: Arc<Mutex<HashSet<String>>>,
+    // True when the caller already acquired the healing_personas slot (the command
+    // path pre-acquires via try_start_healing). In that case this task must NOT
+    // re-acquire — re-inserting self-collides, hits the already-in-progress guard,
+    // and early-returns BEFORE the cleanup paths, leaking the slot forever (healing
+    // then silently bricked for that persona until restart). It still releases the
+    // slot on every exit path either way.
+    slot_already_held: bool,
 ) {
     tokio::spawn(async move {
-        // Per-persona concurrency guard: prevent overlapping healing sessions.
-        // If another session is already in progress, skip silently.
-        if !healing_personas.lock().await.insert(persona_id.clone()) {
+        // Per-persona concurrency guard: prevent overlapping healing sessions. If
+        // another session is already in progress, skip silently. Skip the acquire
+        // when the caller already holds the slot (see slot_already_held doc above).
+        if !slot_already_held && !healing_personas.lock().await.insert(persona_id.clone()) {
             tracing::info!(
                 persona_id = %persona_id,
                 "AI healing: session already in progress, skipping",
