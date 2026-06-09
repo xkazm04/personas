@@ -644,7 +644,16 @@
     "feasibility_assessment": "실현 가능성 평가",
     "confirmed_capabilities": "확인된 기능",
     "issues_label": "이슈",
-    "suggested_next_steps": "제안된 다음 단계"
+    "suggested_next_steps": "제안된 다음 단계",
+    "summary": {
+      "connectors": "커넥터",
+      "tools": "도구",
+      "events": "이벤트",
+      "channels": "채널",
+      "ready": "준비됨",
+      "partial": "부분",
+      "blocked": "차단됨"
+    }
   },
   "card": {
     "use_cases_label": "사용 사례",

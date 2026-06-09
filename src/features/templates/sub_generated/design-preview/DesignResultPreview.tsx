@@ -1,4 +1,5 @@
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
+import { DesignSummaryBar } from './DesignSummaryBar';
 import { ConnectorsSection } from './ConnectorsSection';
 import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';
@@ -62,6 +63,13 @@ export function DesignResultPreview({
 
   return (
     <div className="space-y-6">
+      <DesignSummaryBar
+        result={result}
+        channelCount={suggestedChannels.length}
+        subscriptionCount={suggestedSubscriptions?.length ?? 0}
+        feasibility={feasibility}
+      />
+
       <PromptTabsPreview designResult={result} />
 
       {!hideConnectors && (

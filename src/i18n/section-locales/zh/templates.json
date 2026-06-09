@@ -644,7 +644,16 @@
     "feasibility_assessment": "可行性评估",
     "confirmed_capabilities": "已确认的能力",
     "issues_label": "问题",
-    "suggested_next_steps": "建议的后续步骤"
+    "suggested_next_steps": "建议的后续步骤",
+    "summary": {
+      "connectors": "连接器",
+      "tools": "工具",
+      "events": "事件",
+      "channels": "渠道",
+      "ready": "就绪",
+      "partial": "部分",
+      "blocked": "受阻"
+    }
   },
   "card": {
     "use_cases_label": "用例",

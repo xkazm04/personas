@@ -7329,7 +7329,16 @@
       "feasibility_assessment": "実現可能性評価",
       "confirmed_capabilities": "確認された機能",
       "issues_label": "問題",
-      "suggested_next_steps": "推奨される次のステップ"
+      "suggested_next_steps": "推奨される次のステップ",
+      "summary": {
+        "connectors": "コネクタ",
+        "tools": "ツール",
+        "events": "イベント",
+        "channels": "チャネル",
+        "ready": "準備完了",
+        "partial": "一部",
+        "blocked": "ブロック"
+      }
     },
     "card": {
       "use_cases_label": "ユースケース",

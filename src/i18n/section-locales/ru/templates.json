@@ -644,7 +644,16 @@
     "feasibility_assessment": "Оценка осуществимости",
     "confirmed_capabilities": "Подтверждённые возможности",
     "issues_label": "Проблемы",
-    "suggested_next_steps": "Предлагаемые следующие шаги"
+    "suggested_next_steps": "Предлагаемые следующие шаги",
+    "summary": {
+      "connectors": "Коннекторы",
+      "tools": "Инструменты",
+      "events": "События",
+      "channels": "Каналы",
+      "ready": "Готово",
+      "partial": "Частично",
+      "blocked": "Заблокировано"
+    }
   },
   "card": {
     "use_cases_label": "Сценарии",

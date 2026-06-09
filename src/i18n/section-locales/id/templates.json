@@ -644,7 +644,16 @@
     "feasibility_assessment": "Penilaian Kelayakan",
     "confirmed_capabilities": "Kemampuan Terkonfirmasi",
     "issues_label": "Masalah",
-    "suggested_next_steps": "Langkah Berikutnya yang Disarankan"
+    "suggested_next_steps": "Langkah Berikutnya yang Disarankan",
+    "summary": {
+      "connectors": "Konektor",
+      "tools": "Alat",
+      "events": "Peristiwa",
+      "channels": "Saluran",
+      "ready": "Siap",
+      "partial": "Sebagian",
+      "blocked": "Terhalang"
+    }
   },
   "card": {
     "use_cases_label": "Kasus Penggunaan",

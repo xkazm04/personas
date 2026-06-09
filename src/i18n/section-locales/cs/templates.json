@@ -644,7 +644,16 @@
     "feasibility_assessment": "Posouzení proveditelnosti",
     "confirmed_capabilities": "Potvrzené schopnosti",
     "issues_label": "Problémy",
-    "suggested_next_steps": "Navrhované další kroky"
+    "suggested_next_steps": "Navrhované další kroky",
+    "summary": {
+      "connectors": "Konektory",
+      "tools": "Nástroje",
+      "events": "Události",
+      "channels": "Kanály",
+      "ready": "Připraveno",
+      "partial": "Částečné",
+      "blocked": "Blokováno"
+    }
   },
   "card": {
     "use_cases_label": "Případy užití",

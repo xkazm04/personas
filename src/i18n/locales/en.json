@@ -7858,7 +7858,16 @@
       "feasibility_assessment": "Feasibility Assessment",
       "confirmed_capabilities": "Confirmed Capabilities",
       "issues_label": "Issues",
-      "suggested_next_steps": "Suggested Next Steps"
+      "suggested_next_steps": "Suggested Next Steps",
+      "summary": {
+        "connectors": "Connectors",
+        "tools": "Tools",
+        "events": "Events",
+        "channels": "Channels",
+        "ready": "Ready",
+        "partial": "Partial",
+        "blocked": "Blocked"
+      }
     },
     "card": {
       "use_cases_label": "Use Cases",

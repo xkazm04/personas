@@ -644,7 +644,16 @@
     "feasibility_assessment": "Đánh giá tính khả thi",
     "confirmed_capabilities": "Khả năng đã xác nhận",
     "issues_label": "Vấn đề",
-    "suggested_next_steps": "Các bước tiếp theo đề xuất"
+    "suggested_next_steps": "Các bước tiếp theo đề xuất",
+    "summary": {
+      "connectors": "Trình kết nối",
+      "tools": "Công cụ",
+      "events": "Sự kiện",
+      "channels": "Kênh",
+      "ready": "Sẵn sàng",
+      "partial": "Một phần",
+      "blocked": "Bị chặn"
+    }
   },
   "card": {
     "use_cases_label": "Trường hợp sử dụng",

@@ -644,7 +644,16 @@
     "feasibility_assessment": "تقييم الجدوى",
     "confirmed_capabilities": "القدرات المؤكدة",
     "issues_label": "المشاكل",
-    "suggested_next_steps": "الخطوات التالية المقترحة"
+    "suggested_next_steps": "الخطوات التالية المقترحة",
+    "summary": {
+      "connectors": "الموصلات",
+      "tools": "الأدوات",
+      "events": "الأحداث",
+      "channels": "القنوات",
+      "ready": "جاهز",
+      "partial": "جزئي",
+      "blocked": "محظور"
+    }
   },
   "card": {
     "use_cases_label": "حالات الاستخدام",

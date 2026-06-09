@@ -7329,7 +7329,16 @@
       "feasibility_assessment": "Évaluation de faisabilité",
       "confirmed_capabilities": "Capacités confirmées",
       "issues_label": "Problèmes",
-      "suggested_next_steps": "Prochaines étapes suggérées"
+      "suggested_next_steps": "Prochaines étapes suggérées",
+      "summary": {
+        "connectors": "Connecteurs",
+        "tools": "Outils",
+        "events": "Événements",
+        "channels": "Canaux",
+        "ready": "Prêt",
+        "partial": "Partiel",
+        "blocked": "Bloqué"
+      }
     },
     "card": {
       "use_cases_label": "Cas d'usage",

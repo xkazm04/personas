@@ -7865,6 +7865,15 @@ export type Translations = {
       confirmed_capabilities: string;
       issues_label: string;
       suggested_next_steps: string;
+      summary: {
+        connectors: string;
+        tools: string;
+        events: string;
+        channels: string;
+        ready: string;
+        partial: string;
+        blocked: string;
+      };
     };
     card: {
       use_cases_label: string;

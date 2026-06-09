@@ -7329,7 +7329,16 @@
       "feasibility_assessment": "व्यवहार्यता मूल्यांकन",
       "confirmed_capabilities": "पुष्टि की गई क्षमताएं",
       "issues_label": "समस्याएं",
-      "suggested_next_steps": "सुझाए गए अगले कदम"
+      "suggested_next_steps": "सुझाए गए अगले कदम",
+      "summary": {
+        "connectors": "कनेक्टर",
+        "tools": "टूल",
+        "events": "इवेंट",
+        "channels": "चैनल",
+        "ready": "तैयार",
+        "partial": "आंशिक",
+        "blocked": "अवरुद्ध"
+      }
     },
     "card": {
       "use_cases_label": "उपयोग मामले",
