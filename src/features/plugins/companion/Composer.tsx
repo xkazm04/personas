@@ -278,6 +278,12 @@ export function Composer({
             )}
           </button>
         )}
+        {/* a11y — announce when the mic goes hot; the visual cue is color-only. */}
+        {dictation.supported && (
+          <span className="sr-only" aria-live="assertive">
+            {dictation.listening ? t.plugins.companion.dictate_listening_hint : ''}
+          </span>
+        )}
         {improveEnabled && (
           <button
             onClick={submitImprove}

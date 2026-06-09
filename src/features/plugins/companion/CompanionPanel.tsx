@@ -1927,6 +1927,23 @@ function Body(props: BodyProps) {
               );
             });
           })()}
+          {/*
+            a11y — the chat bubbles are not inside a live region, so a
+            screen reader never hears an assistant reply land. Mirror the
+            latest *completed* assistant turn into a visually-hidden polite
+            region; it updates (and is announced) once streaming finishes
+            and the full reply is in `messages`.
+          */}
+          <span className="sr-only" aria-live="polite" aria-atomic="true">
+            {!streaming
+              ? (() => {
+                  for (let i = messages.length - 1; i >= 0; i--) {
+                    if (messages[i]?.role === 'assistant') return messages[i]?.content ?? '';
+                  }
+                  return '';
+                })()
+              : ''}
+          </span>
           <AnimatePresence initial={false}>
             {streaming && (
               <motion.div
@@ -1960,7 +1977,7 @@ function Body(props: BodyProps) {
                     {/* Athena's own progress beat (Variant B) wins over the
                         derived phase; fall back to phase, then "Thinking…".
                         Animated dots signal "in progress" alongside the label. */}
-                    <span className="inline-flex items-center gap-2">
+                    <span className="inline-flex items-center gap-2" role="status" aria-live="polite">
                       <span>
                         {streamingBeat ??
                           (streamingPhase
