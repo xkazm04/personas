@@ -5,7 +5,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import type { GlyphRow, GlyphDimension } from './types';
 import { DIM_META } from './dimMeta';
-import { DimContent } from './dimContent';
+import { DimContent, isDimEmpty } from './dimContent';
+import { useGlyphDimText } from './persona-sigil';
 
 
 interface DimensionPanelProps {
@@ -30,10 +31,12 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
   const { t } = useTranslation();
   const c = t.templates.chronology;
   const motion_ = useMotion();
+  const dimText = useGlyphDimText();
   const meta = DIM_META[dim];
   const Icon = meta.icon;
   const [refineText, setRefineText] = useState('');
   const canRefine = !!onRefine && !isBuilding;
+  const dimEmpty = isDimEmpty(dim, row);
 
   const submitRefine = () => {
     if (!canRefine || !refineText.trim()) return;
@@ -76,6 +79,23 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-thin">
         <DimContent dim={dim} row={row} t={t} />
+        {/* Teaching block for empty dims — "no trigger configured" alone
+            teaches nothing; the dim's plain-language description tells the
+            user what adding one would mean, and (when refine is available)
+            points them at the composer below. */}
+        {dimEmpty && dimText.desc[dim] && (
+          <div
+            className="mt-3 flex flex-col gap-1 rounded-card border border-card-border p-3"
+            style={{ background: `linear-gradient(135deg, ${meta.color}0d, transparent 70%)` }}
+          >
+            <span className="typo-body text-foreground">{dimText.desc[dim]}</span>
+            {canRefine && (
+              <span className="typo-caption text-foreground italic">
+                {c.empty_dim_refine_hint}
+              </span>
+            )}
+          </div>
+        )}
       </div>
       {canRefine && (
         <div

@@ -7630,7 +7630,8 @@
       "empty_memory": "未配置记忆",
       "empty_events": "无事件订阅",
       "empty_error": "无错误处理器",
-      "empty_generic": "无内容"
+      "empty_generic": "无内容",
+      "empty_dim_refine_hint": "需要它？在下方描述 — 将在下次重建时添加。"
     },
     "diagrams": {
       "no_flow_data": "没有可用的流程数据",

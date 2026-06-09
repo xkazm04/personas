@@ -941,7 +941,8 @@
     "empty_memory": "Mémoire non configurée",
     "empty_events": "Aucun abonnement aux événements",
     "empty_error": "Aucun gestionnaire d’erreurs",
-    "empty_generic": "Aucun contenu"
+    "empty_generic": "Aucun contenu",
+    "empty_dim_refine_hint": "Vous le voulez ? Décrivez-le ci-dessous — ajouté à la prochaine reconstruction."
   },
   "diagrams": {
     "no_flow_data": "Aucune donnée de flux disponible",

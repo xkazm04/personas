@@ -7630,7 +7630,8 @@
       "empty_memory": "Memori belum dikonfigurasi",
       "empty_events": "Tidak ada langganan acara",
       "empty_error": "Tidak ada penangan kesalahan",
-      "empty_generic": "Tidak ada konten"
+      "empty_generic": "Tidak ada konten",
+      "empty_dim_refine_hint": "Mau? Jelaskan di bawah — ditambahkan saat pembangunan ulang berikutnya."
     },
     "diagrams": {
       "no_flow_data": "Tidak ada data aliran yang tersedia",

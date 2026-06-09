@@ -7630,7 +7630,8 @@
       "empty_memory": "Memoria sin configurar",
       "empty_events": "Sin suscripciones a eventos",
       "empty_error": "Sin gestor de errores",
-      "empty_generic": "Sin contenido"
+      "empty_generic": "Sin contenido",
+      "empty_dim_refine_hint": "¿Lo quieres? Descríbelo abajo — se añadirá en la próxima reconstrucción."
     },
     "diagrams": {
       "no_flow_data": "Sin datos de flujo disponibles",

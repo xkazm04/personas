@@ -8159,7 +8159,8 @@
       "empty_memory": "Memory not configured",
       "empty_events": "No event subscriptions",
       "empty_error": "No error handler",
-      "empty_generic": "No content"
+      "empty_generic": "No content",
+      "empty_dim_refine_hint": "Want it? Describe it below — it's added on the next rebuild."
     },
     "diagrams": {
       "no_flow_data": "No flow data available",

@@ -7630,7 +7630,8 @@
       "empty_memory": "الذاكرة غير مُهيأة",
       "empty_events": "لا توجد اشتراكات أحداث",
       "empty_error": "لا يوجد معالج أخطاء",
-      "empty_generic": "لا يوجد محتوى"
+      "empty_generic": "لا يوجد محتوى",
+      "empty_dim_refine_hint": "تريده؟ صفه أدناه — سيُضاف عند إعادة البناء التالية."
     },
     "diagrams": {
       "no_flow_data": "لا توجد بيانات تدفق",

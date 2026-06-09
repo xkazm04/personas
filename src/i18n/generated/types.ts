@@ -8166,6 +8166,7 @@ export type Translations = {
       empty_events: string;
       empty_error: string;
       empty_generic: string;
+      empty_dim_refine_hint: string;
     };
     diagrams: {
       no_flow_data: string;

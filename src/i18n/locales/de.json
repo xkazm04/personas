@@ -7630,7 +7630,8 @@
       "empty_memory": "Speicher nicht konfiguriert",
       "empty_events": "Keine Ereignis-Abonnements",
       "empty_error": "Kein Fehler-Handler",
-      "empty_generic": "Kein Inhalt"
+      "empty_generic": "Kein Inhalt",
+      "empty_dim_refine_hint": "Gewünscht? Unten beschreiben — wird beim nächsten Neuaufbau ergänzt."
     },
     "diagrams": {
       "no_flow_data": "Keine Flow-Daten verfügbar",

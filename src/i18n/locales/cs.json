@@ -7630,7 +7630,8 @@
       "empty_memory": "Paměť nenastavena",
       "empty_events": "Žádné odběry událostí",
       "empty_error": "Žádná obsluha chyb",
-      "empty_generic": "Žádný obsah"
+      "empty_generic": "Žádný obsah",
+      "empty_dim_refine_hint": "Chcete to? Popište níže — přidá se při příštím sestavení."
     },
     "diagrams": {
       "no_flow_data": "Žádná data toku nejsou k dispozici",

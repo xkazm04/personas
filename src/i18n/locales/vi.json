@@ -7630,7 +7630,8 @@
       "empty_memory": "Chưa cấu hình bộ nhớ",
       "empty_events": "Không có đăng ký sự kiện",
       "empty_error": "Không có trình xử lý lỗi",
-      "empty_generic": "Không có nội dung"
+      "empty_generic": "Không có nội dung",
+      "empty_dim_refine_hint": "Muốn có? Mô tả bên dưới — sẽ được thêm ở lần xây lại tiếp theo."
     },
     "diagrams": {
       "no_flow_data": "Không có dữ liệu luồng",

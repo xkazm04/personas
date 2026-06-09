@@ -7630,7 +7630,8 @@
       "empty_memory": "メモリ未設定",
       "empty_events": "イベント購読なし",
       "empty_error": "エラーハンドラーなし",
-      "empty_generic": "コンテンツなし"
+      "empty_generic": "コンテンツなし",
+      "empty_dim_refine_hint": "必要なら下に記入 — 次回の再ビルドで追加されます。"
     },
     "diagrams": {
       "no_flow_data": "フローデータがありません",

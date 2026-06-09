@@ -8,6 +8,24 @@ function EmptyNote({ label }: { label: string }) {
   return <span className="typo-label text-foreground italic">{label}</span>;
 }
 
+/** True when the dim has no concrete content for this row — i.e. DimContent
+ *  would render only an EmptyNote. Mirrors the switch below; keep the two
+ *  in sync when a dim's data shape changes. DimensionPanel uses this to
+ *  show the dim's plain-language description as teaching content. */
+export function isDimEmpty(dim: GlyphDimension, row: GlyphRow): boolean {
+  switch (dim) {
+    case 'trigger': return !row.triggers.length;
+    case 'task': return !row.steps.length;
+    case 'connector': return !row.connectors.length;
+    case 'message': return !parseChannels(row.messageSummary).length;
+    case 'review': return !row.reviewSummary;
+    case 'memory': return !row.memorySummary;
+    case 'event': return !row.events.length;
+    case 'error': return !row.errorSummary;
+    default: return true;
+  }
+}
+
 /** Renders the body of the DimensionPanel for a given dim. Each branch
  *  mirrors a matrix cell — label + concrete template data, trimmed to
  *  what fits comfortably in the overlay frame. */
