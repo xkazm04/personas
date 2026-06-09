@@ -285,6 +285,17 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       set((state) => {
         const next = new Map(state.threadReplies);
         next.set(threadId, rawReplies);
+        // Bound the cache — it's deliberately kept across collapse for fast
+        // re-expand, so it would otherwise accumulate one entry (with all its
+        // replies) per thread ever opened. Map preserves insertion order; drop
+        // the oldest past the cap, never the thread just opened.
+        const CAP = 30;
+        if (next.size > CAP) {
+          for (const key of [...next.keys()]) {
+            if (next.size <= CAP) break;
+            if (key !== threadId) next.delete(key);
+          }
+        }
         return { threadReplies: next };
       });
     } catch (err) {

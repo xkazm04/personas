@@ -33,6 +33,10 @@ export const ALERT_SEVERITY_OPTIONS: { value: AlertSeverity; label: string; colo
 ];
 
 export const MAX_ALERT_HISTORY = 200;
+/** Cap the in-memory active-toast queue. The container only ever shows 5; this
+ *  just stops undismissed toasts accumulating without bound when alerts fire
+ *  faster than the user clears them. */
+export const MAX_ACTIVE_TOASTS = 20;
 
 // -- Evaluation Engine (client-side, fires alerts to backend) ----------------
 
@@ -424,7 +428,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
           return {
             alertHistory: history,
             alertFiredCooldowns: cooldowns,
-            activeToasts: [...state.activeToasts, ...newAlerts],
+            activeToasts: [...state.activeToasts, ...newAlerts].slice(-MAX_ACTIVE_TOASTS),
             pendingSyncAlertIds: pending,
             alertEvalHealth: {
               lastEvalAt: new Date().toISOString(),
