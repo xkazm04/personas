@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef } from 'react';
 import type { ModelProfile } from '@/lib/types/frontendTypes';
 import { useAgentStore } from "@/stores/agentStore";
+import { useToastStore } from '@/stores/toastStore';
 import { capturePersonaToken } from '@/lib/personas/personaToken';
 import { type PersonaDraft, draftChanged, SETTINGS_KEYS, MODEL_KEYS } from './PersonaDraft';
 import { OLLAMA_CLOUD_BASE_URL, getOllamaPreset } from '../../sub_model_config/libs/OllamaCloudPresets';
@@ -17,6 +18,63 @@ function pickKeys<K extends keyof PersonaDraft>(d: PersonaDraft, keys: readonly 
   const out = {} as Pick<PersonaDraft, K>;
   for (const k of keys) out[k] = d[k];
   return out;
+}
+
+/** Build the UpdateSettings op from a draft. Shared by the debounced save and
+ *  by undo/redo so a restore persists exactly the way a normal save does. */
+function buildSettingsOp(d: PersonaDraft): PersonaOperation {
+  return {
+    kind: 'UpdateSettings',
+    name: d.name,
+    description: d.description || null,
+    icon: d.icon || null,
+    color: d.color || null,
+    max_concurrent: d.maxConcurrent,
+    timeout_ms: d.timeout,
+    enabled: d.enabled,
+    sensitive: d.sensitive,
+    cli_awareness_enabled: d.cliAwarenessEnabled,
+    langfuse_export_enabled: d.langfuseExportEnabled,
+  };
+}
+
+/** Build the SwitchModel op (incl. serialised model_profile) from a draft.
+ *  Shared by the debounced save and by undo/redo. */
+function buildModelOp(d: PersonaDraft): PersonaOperation {
+  let profile: string | null;
+  const cachePolicy = d.promptCachePolicy !== 'none' ? d.promptCachePolicy : undefined;
+  const ollamaPreset = getOllamaPreset(d.selectedModel);
+  if (ollamaPreset) {
+    // Ollama Cloud presets need the user's API key to authenticate — serialise
+    // draft.authToken or the just-typed key is dropped and execution 401s.
+    profile = JSON.stringify({
+      model: ollamaPreset.modelId,
+      provider: 'ollama',
+      base_url: OLLAMA_CLOUD_BASE_URL,
+      auth_token: d.authToken || undefined,
+      prompt_cache_policy: cachePolicy,
+    } satisfies ModelProfile);
+  } else if (d.selectedModel === 'custom') {
+    profile = JSON.stringify({
+      model: d.customModelName || undefined,
+      provider: d.selectedProvider,
+      base_url: d.baseUrl || undefined,
+      auth_token: d.authToken || undefined,
+      prompt_cache_policy: cachePolicy,
+    } satisfies ModelProfile);
+  } else {
+    profile = JSON.stringify({
+      model: d.selectedModel,
+      provider: 'anthropic',
+      prompt_cache_policy: cachePolicy,
+    } satisfies ModelProfile);
+  }
+  return {
+    kind: 'SwitchModel',
+    model_profile: profile,
+    max_budget_usd: d.maxBudget === '' ? null : d.maxBudget,
+    max_turns: d.maxTurns === '' ? null : d.maxTurns,
+  };
 }
 
 interface UseEditorSaveOptions {
@@ -58,46 +116,52 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
    *  silently corrupting B and lying that "All saved" while disk holds the
    *  original values. */
   const makeUndoEntry = useCallback(
-    (op: PersonaOperation, prev: PersonaDraft, next: PersonaDraft, keys: readonly (keyof PersonaDraft)[]): UndoEntry => {
-      const token = capturePersonaToken(selectedPersonaId ?? null);
+    (
+      buildOp: (d: PersonaDraft) => PersonaOperation,
+      prev: PersonaDraft,
+      next: PersonaDraft,
+      keys: readonly (keyof PersonaDraft)[],
+    ): UndoEntry => {
+      const personaId = selectedPersonaId ?? null;
+      const token = capturePersonaToken(personaId);
+      // Undo/redo must be a real persistence round-trip, not just an in-memory
+      // draft+baseline swap. Moving baseline alone made settingsDirty false, so
+      // the debounced autosave never reconciled disk with the undone state — the
+      // DB silently kept the post-save value while the header read "All saved",
+      // and the undo was discarded on the next reload. Persist first, then move
+      // baseline; on failure leave the tab dirty and surface the error.
+      const applyState = async (target: PersonaDraft) => {
+        if (!token.isStillCurrent() || !personaId) return;
+        const patch: Partial<PersonaDraft> = {};
+        for (const k of keys) (patch as Record<string, unknown>)[k] = target[k];
+        try {
+          await applyPersonaOp(personaId, buildOp(target));
+        } catch (err) {
+          useToastStore.getState().addToast(
+            `Undo failed to save: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          );
+          return;
+        }
+        // Re-check after the IPC await — the user may have switched personas.
+        if (!token.isStillCurrent()) return;
+        setDraft((d) => ({ ...d, ...patch }));
+        setBaseline((b) => ({ ...b, ...patch }));
+      };
       return {
-        operation: op,
-        restore: async () => {
-          if (!token.isStillCurrent()) return;
-          const patch: Partial<PersonaDraft> = {};
-          for (const k of keys) (patch as Record<string, unknown>)[k] = prev[k];
-          setDraft((d) => ({ ...d, ...patch }));
-          setBaseline((b) => ({ ...b, ...patch }));
-        },
-        reapply: async () => {
-          if (!token.isStillCurrent()) return;
-          const patch: Partial<PersonaDraft> = {};
-          for (const k of keys) (patch as Record<string, unknown>)[k] = next[k];
-          setDraft((d) => ({ ...d, ...patch }));
-          setBaseline((b) => ({ ...b, ...patch }));
-        },
+        operation: buildOp(next),
+        restore: () => applyState(prev),
+        reapply: () => applyState(next),
       };
     },
-    [selectedPersonaId, setDraft, setBaseline],
+    [selectedPersonaId, applyPersonaOp, setDraft, setBaseline],
   );
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersonaId) return;
     const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
-    const op: PersonaOperation = {
-      kind: 'UpdateSettings',
-      name: d.name,
-      description: d.description || null,
-      icon: d.icon || null,
-      color: d.color || null,
-      max_concurrent: d.maxConcurrent,
-      timeout_ms: d.timeout,
-      enabled: d.enabled,
-      sensitive: d.sensitive,
-      cli_awareness_enabled: d.cliAwarenessEnabled,
-      langfuse_export_enabled: d.langfuseExportEnabled,
-    };
+    const op = buildSettingsOp(d);
     await applyPersonaOp(savePersonaId, op);
     // Guard: bail if persona switched during the IPC await. The setBaseline /
     // pushUndo setters are persona-agnostic — they always mutate the currently-
@@ -106,58 +170,19 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
     // and the undo entry would attach to B's history.
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, ...pickKeys(d, SETTINGS_KEYS) }));
-    pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
+    pushUndo(makeUndoEntry(buildSettingsOp, prevBaseline, { ...d } as PersonaDraft, SETTINGS_KEYS));
   }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const performModelSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersonaId) return;
     const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
-
-    let profile: string | null;
-    const cachePolicy = d.promptCachePolicy !== 'none' ? d.promptCachePolicy : undefined;
-    const ollamaPreset = getOllamaPreset(d.selectedModel);
-    if (ollamaPreset) {
-      // Ollama Cloud presets need the user's API key to authenticate. The
-      // auth field is shown in the UI and bound to draft.authToken; without
-      // serialising it here, the keystroke the user just typed is silently
-      // dropped on save. The first execution then fails with a generic 401
-      // and the field appears empty after reload — confusing because the
-      // user remembers entering it.
-      profile = JSON.stringify({
-        model: ollamaPreset.modelId,
-        provider: 'ollama',
-        base_url: OLLAMA_CLOUD_BASE_URL,
-        auth_token: d.authToken || undefined,
-        prompt_cache_policy: cachePolicy,
-      } satisfies ModelProfile);
-    } else if (d.selectedModel === 'custom') {
-      profile = JSON.stringify({
-        model: d.customModelName || undefined,
-        provider: d.selectedProvider,
-        base_url: d.baseUrl || undefined,
-        auth_token: d.authToken || undefined,
-        prompt_cache_policy: cachePolicy,
-      } satisfies ModelProfile);
-    } else {
-      profile = JSON.stringify({
-        model: d.selectedModel,
-        provider: 'anthropic',
-        prompt_cache_policy: cachePolicy,
-      } satisfies ModelProfile);
-    }
-
-    const op: PersonaOperation = {
-      kind: 'SwitchModel',
-      model_profile: profile,
-      max_budget_usd: d.maxBudget === '' ? null : d.maxBudget,
-      max_turns: d.maxTurns === '' ? null : d.maxTurns,
-    };
+    const op = buildModelOp(d);
     await applyPersonaOp(savePersonaId, op);
     // Guard: bail if persona switched during the IPC await — see performSettingsSave.
     if (useAgentStore.getState().selectedPersona?.id !== savePersonaId) return;
     setBaseline((prev) => ({ ...prev, ...pickKeys(d, MODEL_KEYS) }));
-    pushUndo(makeUndoEntry(op, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
+    pushUndo(makeUndoEntry(buildModelOp, prevBaseline, { ...d } as PersonaDraft, MODEL_KEYS));
   }, [selectedPersonaId, applyPersonaOp, setBaseline, pushUndo, makeUndoEntry]);
 
   const handleSaveSettings = useDebouncedSaveGroup({
