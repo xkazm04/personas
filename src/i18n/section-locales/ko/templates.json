@@ -31,7 +31,9 @@
     "review_error": "오류",
     "used_references": "참조 패턴 사용됨",
     "no_design_data": "디자인 데이터 없음",
-    "no_design_data_hint": "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다."
+    "no_design_data_hint": "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다.",
+    "tab_use_cases": "사용 사례",
+    "open_diagram": "전체 다이어그램 열기"
   },
   "detail_overview": {
     "use_case_flows": "사용 사례 흐름",

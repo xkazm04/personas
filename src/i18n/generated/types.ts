@@ -7252,6 +7252,8 @@ export type Translations = {
       used_references: string;
       no_design_data: string;
       no_design_data_hint: string;
+      tab_use_cases: string;
+      open_diagram: string;
     };
     detail_overview: {
       use_case_flows: string;

@@ -6716,7 +6716,9 @@
       "review_error": "エラー",
       "used_references": "参照パターンを使用",
       "no_design_data": "デザインデータがありません",
-      "no_design_data_hint": "このテンプレートのデザインデータは利用できません。"
+      "no_design_data_hint": "このテンプレートのデザインデータは利用できません。",
+      "tab_use_cases": "ユースケース",
+      "open_diagram": "完全な図を開く"
     },
     "detail_overview": {
       "use_case_flows": "ユースケースフロー",

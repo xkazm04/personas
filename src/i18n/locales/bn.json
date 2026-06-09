@@ -6716,7 +6716,9 @@
       "review_error": "ত্রুটি",
       "used_references": "রেফারেন্স প্যাটার্ন ব্যবহৃত",
       "no_design_data": "কোনো ডিজাইন ডাটা নেই",
-      "no_design_data_hint": "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।"
+      "no_design_data_hint": "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।",
+      "tab_use_cases": "ব্যবহারের ক্ষেত্র",
+      "open_diagram": "সম্পূর্ণ ডায়াগ্রাম খুলুন"
     },
     "detail_overview": {
       "use_case_flows": "ব্যবহারের ক্ষেত্র ফ্লো",

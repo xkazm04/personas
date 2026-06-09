@@ -13,6 +13,7 @@ import {
   Layers,
   FileCode,
   GraduationCap,
+  Workflow,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -32,13 +33,15 @@ import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import { parseJsonSafe } from '@/lib/utils/parseJson';
 import { getCachedDesignResult } from '../cards/reviewParseCache';
 import { OverviewTab } from './OverviewTab';
+import { UseCasesTab } from './UseCasesTab';
 
-type DetailTab = 'overview' | 'prompt' | 'connectors';
+type DetailTab = 'overview' | 'use_cases' | 'prompt' | 'connectors';
 
 function useTabConfig() {
   const { t } = useTranslation();
   return [
     { key: 'overview' as DetailTab, label: t.templates.detail.tab_overview, icon: Eye },
+    { key: 'use_cases' as DetailTab, label: t.templates.detail.tab_use_cases, icon: Workflow },
     { key: 'prompt' as DetailTab, label: t.templates.detail.tab_prompt, icon: FileCode },
     { key: 'connectors' as DetailTab, label: t.templates.detail.tab_features, icon: Layers },
   ];
@@ -69,9 +72,21 @@ export function TemplateDetailModal({
   const [activeTab, setActiveTab] = useState<DetailTab>('overview');
   const TAB_CONFIG = useTabConfig();
 
+  const flows = useMemo(
+    () => (review ? parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []) : []),
+    [review],
+  );
+  // Hide the use-cases tab when the template has no flows; if the active tab
+  // disappears (review switched under an open modal), fall back to overview.
+  const visibleTabs = useMemo(
+    () => (flows.length > 0 ? TAB_CONFIG : TAB_CONFIG.filter((tab) => tab.key !== 'use_cases')),
+    [TAB_CONFIG, flows.length],
+  );
+  const effectiveTab: DetailTab = visibleTabs.some((tab) => tab.key === activeTab) ? activeTab : 'overview';
+
   const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    const keys = TAB_CONFIG.map(t => t.key);
-    const idx = keys.indexOf(activeTab);
+    const keys = visibleTabs.map(t => t.key);
+    const idx = keys.indexOf(effectiveTab);
     let next: number;
 
     switch (e.key) {
@@ -98,7 +113,7 @@ export function TemplateDetailModal({
     setActiveTab(nextTab);
     const target = e.currentTarget.querySelector<HTMLElement>(`[data-tab="${nextTab}"]`);
     target?.focus();
-  }, [TAB_CONFIG, activeTab]);
+  }, [visibleTabs, effectiveTab]);
 
   const difficulty = useMemo(() => review ? computeDifficulty(review) : null, [review]);
   const difficultyMeta = difficulty ? DIFFICULTY_META[difficulty] : null;
@@ -107,7 +122,6 @@ export function TemplateDetailModal({
   if (!isOpen || !review) return null;
 
   const designResult = getCachedDesignResult(review);
-  const flows = parseJsonSafe<UseCaseFlow[]>(review.use_case_flows, []);
   const adjustment = parseJsonSafe<{
     suggestion: string;
     reason: string;
@@ -191,9 +205,9 @@ export function TemplateDetailModal({
           onKeyDown={handleTabKeyDown}
           className="px-8 border-b border-primary/8 flex gap-1 flex-shrink-0 bg-secondary/20"
         >
-          {TAB_CONFIG.map((tab) => {
+          {visibleTabs.map((tab) => {
             const TabIcon = tab.icon;
-            const isActive = activeTab === tab.key;
+            const isActive = effectiveTab === tab.key;
             return (
               <button
                 key={tab.key}
@@ -224,12 +238,12 @@ export function TemplateDetailModal({
             on small viewports so overflow-y-auto actually takes effect */}
         <div
           role="tabpanel"
-          id={`tabpanel-${activeTab}`}
-          aria-labelledby={`tab-${activeTab}`}
+          id={`tabpanel-${effectiveTab}`}
+          aria-labelledby={`tab-${effectiveTab}`}
           className="flex-1 min-h-0 overflow-y-auto px-8 py-8"
         >
-          <TabTransition tabKey={activeTab}>
-            {activeTab === 'overview' && (
+          <TabTransition tabKey={effectiveTab}>
+            {effectiveTab === 'overview' && (
               <OverviewTab
                 designResult={designResult}
                 flows={flows}
@@ -238,13 +252,16 @@ export function TemplateDetailModal({
                 onViewFlows={() => onViewFlows(review)}
               />
             )}
-            {activeTab === 'prompt' && designResult && (
+            {effectiveTab === 'use_cases' && (
+              <UseCasesTab flows={flows} onViewFlows={() => onViewFlows(review)} />
+            )}
+            {effectiveTab === 'prompt' && designResult && (
               <PromptTabsPreview designResult={designResult} />
             )}
-            {activeTab === 'connectors' && designResult && (
+            {effectiveTab === 'connectors' && designResult && (
               <ConnectorsTabBody designResult={designResult} />
             )}
-            {!designResult && (
+            {!designResult && effectiveTab !== 'use_cases' && (
               <div className="flex flex-col items-center justify-center py-20 typo-body text-foreground gap-3">
                 <div className="w-12 h-12 rounded-modal bg-secondary/40 border border-primary/10 flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-foreground" />

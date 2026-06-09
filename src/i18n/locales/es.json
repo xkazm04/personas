@@ -6716,7 +6716,9 @@
       "review_error": "Error",
       "used_references": "Usó patrones de referencia",
       "no_design_data": "No hay datos de diseño disponibles",
-      "no_design_data_hint": "Datos de diseño no disponibles para esta plantilla."
+      "no_design_data_hint": "Datos de diseño no disponibles para esta plantilla.",
+      "tab_use_cases": "Casos de uso",
+      "open_diagram": "Abrir diagrama completo"
     },
     "detail_overview": {
       "use_case_flows": "Flujos de casos de uso",

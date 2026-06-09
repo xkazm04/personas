@@ -31,7 +31,9 @@
     "review_error": "Fehler",
     "used_references": "Referenzmuster verwendet",
     "no_design_data": "Keine Designdaten verfügbar",
-    "no_design_data_hint": "Designdaten für diese Vorlage nicht verfügbar."
+    "no_design_data_hint": "Designdaten für diese Vorlage nicht verfügbar.",
+    "tab_use_cases": "Anwendungsfälle",
+    "open_diagram": "Vollständiges Diagramm öffnen"
   },
   "detail_overview": {
     "use_case_flows": "Anwendungsfall-Abläufe",

@@ -6716,7 +6716,9 @@
       "review_error": "Chyba",
       "used_references": "Použité referenční vzory",
       "no_design_data": "Žádná design data k dispozici",
-      "no_design_data_hint": "Pro tuto šablonu nejsou design data dostupná."
+      "no_design_data_hint": "Pro tuto šablonu nejsou design data dostupná.",
+      "tab_use_cases": "Případy užití",
+      "open_diagram": "Otevřít celý diagram"
     },
     "detail_overview": {
       "use_case_flows": "Toky případů užití",

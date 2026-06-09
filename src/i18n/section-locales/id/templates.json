@@ -31,7 +31,9 @@
     "review_error": "Kesalahan",
     "used_references": "Menggunakan pola referensi",
     "no_design_data": "Tidak ada data desain tersedia",
-    "no_design_data_hint": "Data desain tidak tersedia untuk templat ini."
+    "no_design_data_hint": "Data desain tidak tersedia untuk templat ini.",
+    "tab_use_cases": "Kasus penggunaan",
+    "open_diagram": "Buka diagram lengkap"
   },
   "detail_overview": {
     "use_case_flows": "Alur Kasus Penggunaan",

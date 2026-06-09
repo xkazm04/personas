@@ -6716,7 +6716,9 @@
       "review_error": "त्रुटि",
       "used_references": "संदर्भ पैटर्न का उपयोग किया गया",
       "no_design_data": "कोई डिज़ाइन डेटा उपलब्ध नहीं",
-      "no_design_data_hint": "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।"
+      "no_design_data_hint": "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।",
+      "tab_use_cases": "उपयोग के मामले",
+      "open_diagram": "पूरा आरेख खोलें"
     },
     "detail_overview": {
       "use_case_flows": "उपयोग मामला फ़्लो",

@@ -7245,7 +7245,9 @@
       "review_error": "Error",
       "used_references": "Used reference patterns",
       "no_design_data": "No design data available",
-      "no_design_data_hint": "Design data unavailable for this template."
+      "no_design_data_hint": "Design data unavailable for this template.",
+      "tab_use_cases": "Use cases",
+      "open_diagram": "Open full diagram"
     },
     "detail_overview": {
       "use_case_flows": "Use Case Flows",

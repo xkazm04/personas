@@ -31,7 +31,9 @@
     "review_error": "خطأ",
     "used_references": "استخدم أنماطًا مرجعية",
     "no_design_data": "لا تتوفر بيانات تصميم",
-    "no_design_data_hint": "بيانات التصميم غير متوفرة لهذا القالب."
+    "no_design_data_hint": "بيانات التصميم غير متوفرة لهذا القالب.",
+    "tab_use_cases": "حالات الاستخدام",
+    "open_diagram": "فتح المخطط الكامل"
   },
   "detail_overview": {
     "use_case_flows": "تدفقات حالات الاستخدام",

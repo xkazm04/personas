@@ -31,7 +31,9 @@
     "review_error": "Lỗi",
     "used_references": "Đã sử dụng mẫu tham chiếu",
     "no_design_data": "Không có dữ liệu thiết kế",
-    "no_design_data_hint": "Dữ liệu thiết kế không khả dụng cho mẫu này."
+    "no_design_data_hint": "Dữ liệu thiết kế không khả dụng cho mẫu này.",
+    "tab_use_cases": "Trường hợp sử dụng",
+    "open_diagram": "Mở sơ đồ đầy đủ"
   },
   "detail_overview": {
     "use_case_flows": "Luồng trường hợp sử dụng",

@@ -6716,7 +6716,9 @@
       "review_error": "Erreur",
       "used_references": "Modèles de référence utilisés",
       "no_design_data": "Aucune donnée de conception disponible",
-      "no_design_data_hint": "Données de conception indisponibles pour ce modèle."
+      "no_design_data_hint": "Données de conception indisponibles pour ce modèle.",
+      "tab_use_cases": "Cas d'usage",
+      "open_diagram": "Ouvrir le diagramme complet"
     },
     "detail_overview": {
       "use_case_flows": "Flux de cas d'utilisation",

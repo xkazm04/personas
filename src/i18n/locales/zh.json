@@ -6716,7 +6716,9 @@
       "review_error": "错误",
       "used_references": "使用了参考模式",
       "no_design_data": "无设计数据",
-      "no_design_data_hint": "此模板的设计数据不可用。"
+      "no_design_data_hint": "此模板的设计数据不可用。",
+      "tab_use_cases": "用例",
+      "open_diagram": "打开完整流程图"
     },
     "detail_overview": {
       "use_case_flows": "用例流程",
