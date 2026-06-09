@@ -22,7 +22,9 @@ import {
 import {
   listManualReviews,
   updateManualReviewStatus,
+  dispatchReviewAction,
 } from '@/api/overview/reviews';
+import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { SidebarSection } from '@/lib/types/types';
 import { useCompanionStore } from '../companionStore';
@@ -195,7 +197,22 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
     }
   };
 
+  // Phase 5b — surface the suggested actions as dispatching options: picking one
+  // resolves the review AND runs the persona to carry it out (shared action
+  // model). Capped so the orb's numbered chips stay legible.
+  const carryOut = async (action: string): Promise<void> => {
+    try {
+      await dispatchReviewAction(review.id, action);
+    } catch (err) {
+      silentCatch('companion/decision:review-action')(err);
+    }
+  };
+  const actionOptions: DecisionOption[] = parseSuggestedActions(review.suggested_actions)
+    .slice(0, 4)
+    .map((action, i) => ({ key: `action-${i}`, label: action, run: () => carryOut(action) }));
+
   const options: DecisionOption[] = [
+    ...actionOptions,
     {
       key: 'approve',
       label: c.decision_approve,

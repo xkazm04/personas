@@ -15,7 +15,7 @@ import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
-import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus, deleteAllManualReviews } from '@/api/overview/reviews';
+import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus, dispatchReviewAction, deleteAllManualReviews } from '@/api/overview/reviews';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
@@ -189,6 +189,25 @@ export default function ManualReviewList() {
       const nextPending = filteredReviews.find((r) => r.id !== reviewToAct!.id && r.status === 'pending');
       if (nextPending) setActiveReviewId(nextPending.id);
       // Refresh L0 counts + L1 page so the acted-on row leaves the list.
+      reviewQueue.reload();
+    } finally { setIsProcessing(false); }
+  }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue.reload]);
+
+  // Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
+  // (the same action model as the Quick Answer stepper). Cloud reviews record
+  // the choice as an approval (no dispatch path).
+  const handleDispatchAction = useCallback(async (id: string, action: string) => {
+    const reviewToAct = allReviews.find((r) => r.id === id) ?? activeReview;
+    if (!reviewToAct || isProcessing) return;
+    setIsProcessing(true);
+    try {
+      if (reviewToAct.source === 'cloud') {
+        await respondToCloudReview(reviewToAct.id, reviewToAct.execution_id, 'approve', action);
+      } else {
+        await dispatchReviewAction(reviewToAct.id, action);
+      }
+      const nextPending = filteredReviews.find((r) => r.id !== reviewToAct.id && r.status === 'pending');
+      if (nextPending) setActiveReviewId(nextPending.id);
       reviewQueue.reload();
     } finally { setIsProcessing(false); }
   }, [activeReview, allReviews, isProcessing, respondToCloudReview, filteredReviews, reviewQueue.reload]);
@@ -373,6 +392,7 @@ export default function ManualReviewList() {
               reviews={filteredReviews as TriageReview[]}
               onApprove={(id: string, notes?: string) => handleAction(id, 'approved' as ManualReviewStatus, notes)}
               onReject={(id: string, notes?: string) => handleAction(id, 'rejected' as ManualReviewStatus, notes)}
+              onDispatchAction={handleDispatchAction}
               isProcessing={isProcessing}
             />
           </motion.div>

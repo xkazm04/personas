@@ -57,6 +57,9 @@ interface ReviewFocusFlowProps {
   reviews: TriageReview[];
   onApprove: (id: string, notes?: string) => void;
   onReject: (id: string, notes?: string) => void;
+  /** Phase 5b — choose a suggested action: resolve + dispatch a follow-up run
+   *  (the shared action model). Falls back to pre-filling the approve note. */
+  onDispatchAction?: (id: string, action: string) => void;
   isProcessing: boolean;
 }
 
@@ -64,7 +67,7 @@ interface ReviewFocusFlowProps {
 // Main component
 // ---------------------------------------------------------------------------
 
-export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: ReviewFocusFlowProps) {
+export function ReviewFocusFlow({ reviews, onApprove, onReject, onDispatchAction, isProcessing }: ReviewFocusFlowProps) {
   const { t } = useTranslation();
   const pending = useMemo(() => reviews.filter((r) => r.status === 'pending'), [reviews]);
   const [reviewIdx, setReviewIdx] = useState(0);
@@ -505,11 +508,17 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                           <button
                             key={i}
                             type="button"
+                            disabled={isProcessing}
+                            title={onDispatchAction ? t.overview.review_focus.carry_out_hint : undefined}
                             onClick={() => {
-                              setActiveAction('approve');
-                              setActionNotes(action);
+                              if (onDispatchAction) {
+                                onDispatchAction(current!.id, action);
+                              } else {
+                                setActiveAction('approve');
+                                setActionNotes(action);
+                              }
                             }}
-                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 transition-colors text-left"
+                            className="flex items-center gap-2 px-3 py-2 rounded-card typo-body text-foreground bg-primary/5 border border-primary/10 hover:bg-primary/10 hover:border-primary/20 disabled:opacity-50 transition-colors text-left"
                           >
                             <span className="w-5 h-5 rounded-full bg-primary/20 text-primary flex items-center justify-center typo-heading font-bold flex-shrink-0">{i + 1}</span>
                             {action}

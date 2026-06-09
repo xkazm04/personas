@@ -142,9 +142,13 @@ Overview = deep workspace) but make them feel like one system:
    - ⏳ A single shared "review body" *component* (markdown + context/decisions +
      media + action branches) is the larger follow-up; for now the surfaces share
      the renderer + parser, not one component.
-2. ⏳ **One action model.** Adopt `dispatch_review_action` (Phase 4) in the
-   Overview triage action bar + the orb bubble, so picking an action carries it
-   out everywhere (today only the Quick Answer stepper dispatches).
+2. ✅ **One action model (5b).** `dispatch_review_action` (Phase 4) is now wired
+   into all three surfaces: the Quick Answer stepper, the **Overview** triage
+   player (`ReviewFocusFlow` suggested actions → `ManualReviewList.handleDispatchAction`),
+   and the **orb** bubble (`useDecisionQueue` surfaces a review's suggested
+   actions as numbered dispatching options, capped at 4). Picking a suggested
+   action carries it out everywhere; plain approve/reject stays the no-action
+   path. Cloud reviews record the choice (no dispatch).
 3. ⏳ Drop dead code (`TriagePlayer.tsx` — still referenced for its `TriageReview`
    type + a cast in `ManualReviewList`, so it needs the type relocated first);
    restore `use_case_id` to the `ManualReviewItem` UI type for attribution.

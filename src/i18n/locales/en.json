@@ -6805,7 +6805,8 @@
       "reject_all": "Reject all",
       "accept_all": "Accept all",
       "retry_with_changes": "Retry with changes",
-      "video_not_supported": "Your browser does not support video playback."
+      "video_not_supported": "Your browser does not support video playback.",
+      "carry_out_hint": "Approves the review and runs the persona to carry this out"
     },
     "bulk_action_bar": {
       "pending_reviews_selected_one": "{count} pending review selected",

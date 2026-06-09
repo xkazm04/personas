@@ -6812,6 +6812,7 @@ export type Translations = {
       accept_all: string;
       retry_with_changes: string;
       video_not_supported: string;
+      carry_out_hint: string;
     };
     bulk_action_bar: {
       pending_reviews_selected_one: string;
