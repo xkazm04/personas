@@ -169,8 +169,20 @@ pending queue, then diffed the DB for the expected reactions.
 memory is written (team `decision`/imp-7); the `review_decision.approved` event
 is published to the bus.
 
-**Gaps uncovered (the user-expected "reaction" — channel / goal / carry-out —
-mostly does NOT materialise):**
+**Status: all five gaps fixed + verified live (2026-06-09).** Each was reproduced
+against the live queue, fixed, and re-tested end-to-end:
+- GAP 1 → blocked dispatch now emits `REVIEW_DISPATCH_BLOCKED` → warning toast.
+- GAP 2 → resume targets the assignment's *failed* step(s); verified an
+  `awaiting_review` assignment went → `running`, its failed step `failed`→`running`.
+- GAP 3 → `bridge_review_decision_to_channel` posts "🧑 Human approved …" to the
+  team channel; verified a new channel message on approval.
+- GAP 4 → held-team approvals no longer spawn a detached run (resume IS the
+  carry-out); verified persona executions unchanged.
+- GAP 5 → `record_review_goal_signal` writes a `human_review_approved`
+  `dev_goal_signal` immediately; verified the goal's signal count incremented.
+  Progress advance still flows via GAP 2 → completion → `apply_resolved_goal_progress`.
+
+**Original gaps (as uncovered — for reference):**
 
 - **GAP 1 — silent failure on `needs_credentials` personas (~38%: 11/29 pending).**
   `execute_persona_inner` returns `Err` when `persona.setup_status ==

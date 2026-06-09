@@ -1074,6 +1074,8 @@ pub fn update_manual_review_status(
 
         // GAP 3: surface the decision in the source persona's team channel.
         bridge_review_decision_to_channel(&state, &review);
+        // GAP 5: mark the human decision on the linked goal timeline.
+        record_review_goal_signal(&state, &review);
 
         // Resume-loop (Phase 1): if this review gated a team step that is still
         // held, an APPROVAL resumes the blocked assignment. Shared with the
@@ -1219,6 +1221,8 @@ pub async fn dispatch_review_action(
 
     // GAP 3: surface the decision in the source persona's team channel.
     bridge_review_decision_to_channel(&state, &review);
+    // GAP 5: mark the human decision on the linked goal timeline.
+    record_review_goal_signal(&state, &review);
 
     // If this gated a held team step, resuming IS carrying out the action — don't
     // also spawn a standalone run. Otherwise dispatch a follow-up persona run.
@@ -1335,6 +1339,50 @@ pub(crate) fn bridge_review_decision_to_channel(
         },
     ) {
         tracing::warn!(review_id = %review.id, error = %e, "failed to bridge review decision to team channel");
+    }
+}
+
+/// GAP 5 — goal management. When a resolved review's assignment is linked to a
+/// goal, record an immediate `dev_goal_signal` so the goal timeline reflects
+/// the human's call the moment it's made ("human approved/rejected X"). The
+/// actual progress advance still flows through the existing
+/// orchestrator → `apply_resolved_goal_progress` loop when the (now-resumed,
+/// per GAP 2) assignment completes — this is the *immediate* marker on top.
+/// No-op for reviews not tied to a goal-bearing assignment. Best-effort.
+pub(crate) fn record_review_goal_signal(
+    state: &State<'_, Arc<AppState>>,
+    review: &crate::db::models::PersonaManualReview,
+) {
+    use crate::db::models::ManualReviewStatus;
+    let Some(assignment_id) = review.assignment_id.as_deref() else {
+        return;
+    };
+    let goal_id: Option<String> = state.db.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT goal_id FROM team_assignments WHERE id = ?1",
+            rusqlite::params![assignment_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+    });
+    let Some(goal_id) = goal_id.filter(|s| !s.is_empty()) else {
+        return; // assignment isn't tied to a goal
+    };
+    let signal_type = match review.status {
+        ManualReviewStatus::Approved => "human_review_approved",
+        ManualReviewStatus::Rejected => "human_review_rejected",
+        _ => "human_review_resolved",
+    };
+    if let Err(e) = crate::db::repos::dev_tools::create_goal_signal(
+        &state.db,
+        &goal_id,
+        signal_type,
+        Some(&review.id),
+        None, // timeline marker, not a progress delta — completion advances progress
+        Some(&review.title),
+    ) {
+        tracing::warn!(review_id = %review.id, error = %e, "failed to record review goal signal");
     }
 }
 
