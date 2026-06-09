@@ -9,6 +9,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Surface | Behavior | Main files |
 | --- | --- | --- |
 | Finder shell | Sidebar tree, toolbar, list/icons/columns views, details pane, context menu | `DrivePage.tsx`, `DriveSidebar.tsx`, `DriveToolbar.tsx`, `DriveFileList.tsx`, `DriveDetailsPane.tsx` |
+| Details quick actions | With a single entry selected, the details-pane hero shows an icon-button row — Open, Reveal, and (for files) Sign, Verify, Extract-text — mirroring the right-click menu so per-file actions don't require a context menu | `DriveDetailsPane.tsx` |
 | Navigation | Back/forward/up history over relative paths | `hooks/useDrive.ts` |
 | Selection | Single, additive, range, select-all | `hooks/useDrive.ts` |
 | Clipboard | Copy/cut selected paths, paste into current folder | `hooks/useDrive.ts` |

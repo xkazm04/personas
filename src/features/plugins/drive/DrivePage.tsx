@@ -538,6 +538,14 @@ export default function DrivePage() {
             entries={selectedEntries}
             currentPath={drive.currentPath}
             onPreviewClick={(entry) => setLightboxPath(entry.path)}
+            onOpen={handleOpen}
+            onReveal={handleReveal}
+            onSign={(entry) => {
+              if (entry.kind === "file") setSignEntry(entry);
+            }}
+            onVerify={(entry) => setVerifyEntry(entry)}
+            onExtractText={(entry) => setOcrEntry(entry)}
+            hasGemini={ocr.hasGemini}
           />
         </div>
 
