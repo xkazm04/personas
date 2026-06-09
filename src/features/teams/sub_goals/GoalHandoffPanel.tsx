@@ -8,7 +8,7 @@
  * real (token-spending) work is a deliberate, understood choice.
  */
 import { useState } from 'react';
-import { Bot, ArrowRight } from 'lucide-react';
+import { Bot, ArrowRight, Ban } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -19,12 +19,18 @@ interface Props {
   advancing: boolean;
   /** Fire the hand-off (parent calls advanceTeamGoal + refresh). */
   onAdvance: () => void;
+  /** Stop the team working this goal (parent aborts the active assignment(s)).
+   *  Omitted → no stop control (e.g. when the caller can't abort). */
+  onAbort?: () => void;
+  /** The abort request is in flight. */
+  aborting?: boolean;
 }
 
-export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance }: Props) {
+export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance, onAbort, aborting = false }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const [confirming, setConfirming] = useState(false);
+  const [stopConfirm, setStopConfirm] = useState(false);
 
   return (
     <div className="pt-3 mt-3 border-t border-primary/10">
@@ -34,12 +40,35 @@ export function GoalHandoffPanel({ hasActiveAssignment, advancing, onAdvance }: 
       </div>
 
       {hasActiveAssignment ? (
-        <div className="flex items-center gap-2.5 rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-2">
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400/60 motion-reduce:hidden" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
-          </span>
-          <p className="typo-caption text-foreground">{dl.goal_handoff_active}</p>
+        <div className="rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-2.5 space-y-2.5">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400/60 motion-reduce:hidden" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+            </span>
+            <p className="typo-caption text-foreground flex-1">{dl.goal_handoff_active}</p>
+            {onAbort && !stopConfirm && (
+              <Button variant="ghost" size="sm" icon={<Ban className="w-3.5 h-3.5 text-red-400" />} onClick={() => setStopConfirm(true)}>
+                {dl.goal_handoff_stop}
+              </Button>
+            )}
+          </div>
+          {/* Stop-the-team confirm — explains the gate-close semantics (in-flight
+              step finishes, no new steps) so it's an understood, deliberate action. */}
+          {onAbort && stopConfirm && (
+            <div className="space-y-2 border-t border-violet-500/20 pt-2.5">
+              <p className="typo-body text-foreground font-medium">{dl.goal_handoff_stop_confirm_q}</p>
+              <p className="typo-caption text-foreground leading-relaxed">{dl.goal_handoff_stop_explain}</p>
+              <div className="flex items-center gap-2">
+                <Button variant="accent" accentColor="rose" size="sm" icon={<Ban className="w-3.5 h-3.5" />} disabled={aborting} onClick={onAbort}>
+                  {aborting ? dl.goal_handoff_stopping : dl.goal_handoff_stop}
+                </Button>
+                <Button variant="ghost" size="sm" disabled={aborting} onClick={() => setStopConfirm(false)}>
+                  {t.common.cancel}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       ) : confirming ? (
         <div className="rounded-card border border-violet-500/25 bg-violet-500/5 px-3 py-3 space-y-2.5">
