@@ -824,6 +824,22 @@ pub fn apply_persona_memory_review_proposal(
         });
     }
 
+    // Compare-and-swap the status to `applied` BEFORE mutating: mark_applied does
+    // UPDATE ... WHERE status='pending_review' and returns whether it transitioned.
+    // Only the winner proceeds — a concurrent Apply / double-click / re-apply after
+    // a crash gets `false` and bails, so the mutation set runs at most once (no
+    // double-delete, no double importance-bump, no proposal stuck pending_review).
+    if !proposal_repo::mark_applied(&state.db, &proposal_id)? {
+        return Ok(ApplyMemoryReviewProposalResult {
+            proposal_id,
+            deleted: 0,
+            updated: 0,
+            errors: vec![
+                "proposal was already applied by a concurrent action — no action taken".into(),
+            ],
+        });
+    }
+
     let mut deleted = 0usize;
     let mut updated = 0usize;
     let mut errors: Vec<String> = Vec::new();
@@ -860,7 +876,9 @@ pub fn apply_persona_memory_review_proposal(
         }
     }
 
-    proposal_repo::mark_applied(&state.db, &proposal_id)?;
+    // Status was already flipped to `applied` up front (CAS); entries that failed
+    // are surfaced in `errors`. Full per-batch transactional rollback on a
+    // mid-apply crash is a remaining follow-up.
     Ok(ApplyMemoryReviewProposalResult {
         proposal_id,
         deleted,
