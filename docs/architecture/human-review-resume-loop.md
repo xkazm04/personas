@@ -88,11 +88,12 @@ it is **silent and unverifiable**.
    raises a **"🧠 Learned: _{title}_"** toast (guardrail / decision / generic by
    category) — so the feedback loop is visible the moment a review resolves.
    Fires only when a NEW memory was written (dedup-skips carry no `learned`).
-2. ⏳ **2b (follow-up).** Make the toast actionable — a **View** affordance that
-   deep-links to the created memory (team memory surface / persona memory) where
-   it is already **editable/deletable**, so a wrong lesson is correctable. Needs
-   a toast variant with an action (the current `StandardToast` has none) +
-   memory deep-link routing.
+2. ✅ **2b (shipped).** The toast is now **actionable** — `StandardToast` gained
+   an optional `action {label, onClick}` (rendered as an underlined link in
+   `ToastContainer`); the Learned toast's **View** navigates to the Knowledge
+   (memories) surface where the lesson is **editable/deletable**, so a wrong
+   memory is correctable. (Refinement: deep-link to the *exact* memory row /
+   the team-memory panel for `scope==team`, rather than the list.)
 3. Athena's auto-resolution path also writes the memory but does not yet emit the
    toast event (it resolves in the background); wire it if surfacing is wanted.
 

@@ -122,6 +122,15 @@ function StandardToastItem({ toast, onDismiss }: { toast: StandardToast; onDismi
           {friendly?.suggestion && (
             <span className="typo-caption opacity-70 block mt-0.5">{friendly.suggestion}</span>
           )}
+          {toast.action && (
+            <button
+              type="button"
+              onClick={() => { toast.action!.onClick(); onDismiss(toast.id); }}
+              className="mt-1 typo-caption font-medium underline underline-offset-2 opacity-90 hover:opacity-100 transition-opacity"
+            >
+              {toast.action.label}
+            </button>
+          )}
         </div>
         <span className="typo-caption opacity-50 tabular-nums flex-shrink-0">{elapsedLabel}</span>
         <button

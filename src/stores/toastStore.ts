@@ -14,8 +14,16 @@ export interface BaseToast {
   priority: number;
 }
 
+/** Optional inline action on a standard toast (e.g. "View" → navigate). */
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface StandardToast extends BaseToast {
   kind: 'standard';
+  /** Optional inline action button rendered in the toast. */
+  action?: ToastAction;
   /**
    * Visual tone of the toast. `warning` (added Stage 6 for the
    * team-preset partial-failure path) sits between success and error:
@@ -80,7 +88,7 @@ export const MAX_VISIBLE_TOASTS = 3;
 
 interface ToastStore {
   toasts: Toast[];
-  addToast: (message: string, type: 'success' | 'error' | 'warning', duration?: number) => void;
+  addToast: (message: string, type: 'success' | 'error' | 'warning', duration?: number, action?: ToastAction) => void;
   addHealingToast: (opts: {
     issueId: string;
     personaId: string;
@@ -97,7 +105,7 @@ let nextId = 0;
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
 
-  addToast: (message, type, duration) => {
+  addToast: (message, type, duration, action) => {
     const id = `toast-${++nextId}`;
     const toast: StandardToast = {
       id,
@@ -107,6 +115,7 @@ export const useToastStore = create<ToastStore>((set) => ({
       timestamp: Date.now(),
       duration: duration ?? DEFAULT_DURATION[type],
       priority: STANDARD_PRIORITY[type],
+      action,
     };
     set((s) => ({
       toasts: [...s.toasts, toast].slice(-MAX_TOASTS),

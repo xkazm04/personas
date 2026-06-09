@@ -463,7 +463,15 @@ const registry: EventRegistration[] = [
               ? t.monitor.learned_decision
               : t.monitor.learned_generic;
         const title = learned.title.length > 90 ? `${learned.title.slice(0, 90)}…` : learned.title;
-        useToastStore.getState().addToast(`🧠 ${prefix} — ${title}`, "success", 5000);
+        // "View" → the Knowledge (memories) surface, where the learned memory is
+        // listed and editable/deletable (Phase 2b — makes the lesson correctable).
+        useToastStore.getState().addToast(`🧠 ${prefix} — ${title}`, "success", 6000, {
+          label: t.monitor.learned_view,
+          onClick: () => {
+            useSystemStore.getState().setSidebarSection("overview");
+            useOverviewStore.getState().setOverviewTab("knowledge");
+          },
+        });
       });
       return [unlisten];
     },
