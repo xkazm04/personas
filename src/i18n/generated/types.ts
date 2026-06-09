@@ -5526,6 +5526,11 @@ export type Translations = {
       groups_collapse_all: string;
       groups_expand_all: string;
       group_no_persona: string;
+      group_by_label: string;
+      group_by_agent: string;
+      group_by_severity: string;
+      group_by_source: string;
+      group_by_none: string;
       urgency_critical: string;
       urgency_high: string;
       urgency_medium: string;

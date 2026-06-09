@@ -1,7 +1,8 @@
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
-import { severityShapeStatus, severityUrgencyLabel } from '../libs/incidentTaxonomy';
+import { severityShapeStatus, severityUrgencyLabel, sourceTableLabel } from '../libs/incidentTaxonomy';
 import type { IncidentGroup } from '../libs/groupIncidents';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
@@ -19,10 +20,12 @@ interface Props {
 const ACTIVE_STATUSES = new Set(['open', 'acknowledged', 'in_progress']);
 
 /**
- * One collapsible per-agent section in the incidents inbox. The header carries
- * the agent name, a count badge, a colourblind-safe shape for the group's worst
+ * One collapsible section in the incidents inbox. The header carries the group
+ * label (agent name, severity tier, or source kind — depending on the active
+ * group-by lens), a count badge, a colourblind-safe shape for the group's worst
  * severity, and one-click "acknowledge / resolve all" actions so a user can
- * clear an agent's incidents without opening each row.
+ * clear a whole group without opening each row. In flat ("none") mode there is
+ * no header — the rows render directly.
  */
 export function IncidentAgentGroup({
   group,
@@ -33,7 +36,23 @@ export function IncidentAgentGroup({
   renderRow,
 }: Props) {
   const { t } = useTranslation();
-  const name = group.personaName ?? t.overview.incidents.group_no_persona;
+
+  // Flat mode has a single group with no meaningful header — render rows directly.
+  if (group.mode === 'none') {
+    return (
+      <div className="divide-y divide-primary/5">
+        {group.incidents.map((incident) => renderRow(incident))}
+      </div>
+    );
+  }
+
+  // The header label depends on which dimension we're grouped by.
+  const name =
+    group.mode === 'severity'
+      ? tokenLabel(t, 'severity', group.labelToken ?? group.worstSeverity)
+      : group.mode === 'source'
+        ? sourceTableLabel(t, group.labelToken ?? '')
+        : (group.personaName ?? t.overview.incidents.group_no_persona);
   const urgency = severityUrgencyLabel(t, group.worstSeverity);
 
   const ackableIds = group.incidents.filter((i) => i.status === 'open').map((i) => i.id);

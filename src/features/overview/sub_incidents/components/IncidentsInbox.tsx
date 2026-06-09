@@ -18,7 +18,7 @@ import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
 import { IncidentAgentGroup } from './IncidentAgentGroup';
 import { IncidentDetailModal } from './IncidentDetailModal';
-import { groupIncidentsByAgent } from '../libs/groupIncidents';
+import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
@@ -31,6 +31,23 @@ const DEFAULT_FILTERS: IncidentFilters = {
 };
 
 const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
+const GROUP_MODE_KEY = 'incidents:group-mode';
+const GROUP_MODES: IncidentGroupMode[] = ['agent', 'severity', 'source', 'none'];
+
+/** Whether a persisted value is a valid group mode (guards against stale storage). */
+function isGroupMode(value: string): value is IncidentGroupMode {
+  return (GROUP_MODES as string[]).includes(value);
+}
+
+/** User-facing label for a group-by lens. */
+function groupModeLabel(t: ReturnType<typeof useTranslation>['t'], mode: IncidentGroupMode): string {
+  switch (mode) {
+    case 'agent': return t.overview.incidents.group_by_agent;
+    case 'severity': return t.overview.incidents.group_by_severity;
+    case 'source': return t.overview.incidents.group_by_source;
+    case 'none': return t.overview.incidents.group_by_none;
+  }
+}
 
 export default function IncidentsInbox() {
   const { t } = useTranslation();
@@ -41,6 +58,14 @@ export default function IncidentsInbox() {
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
   const [oldestFirst, setOldestFirst] = useState(false);
+  const [groupMode, setGroupMode] = useState<IncidentGroupMode>(() => {
+    try {
+      const raw = localStorage.getItem(GROUP_MODE_KEY);
+      return raw && isGroupMode(raw) ? raw : 'agent';
+    } catch {
+      return 'agent';
+    }
+  });
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
@@ -130,11 +155,12 @@ export default function IncidentsInbox() {
     });
   }, []);
 
-  // Group open incidents by the agent they belong to so the inbox answers
-  // "which of my agents needs me?" — worst-severity agents float to the top.
+  // Group incidents by the active lens — agent ("which of my agents needs me?"),
+  // severity ("what's most urgent?"), source ("what kind of thing is failing?"),
+  // or a flat recency list (none). Worst-severity groups float to the top.
   const groups = useMemo(
-    () => groupIncidentsByAgent(incidents, oldestFirst),
-    [incidents, oldestFirst],
+    () => groupIncidents(incidents, groupMode, oldestFirst),
+    [incidents, groupMode, oldestFirst],
   );
 
   // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
@@ -145,6 +171,15 @@ export default function IncidentsInbox() {
       silentCatch('incidents.collapsed-groups.persist')(e);
     }
   }, [collapsedGroups]);
+
+  // Remember the chosen lens so the inbox reopens the way the user left it.
+  useEffect(() => {
+    try {
+      localStorage.setItem(GROUP_MODE_KEY, groupMode);
+    } catch (e) {
+      silentCatch('incidents.group-mode.persist')(e);
+    }
+  }, [groupMode]);
 
   const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
   const toggleAllGroups = useCallback(() => {
@@ -377,8 +412,27 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div>
-            <div className="flex items-center justify-between px-4 py-1.5">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="typo-caption text-foreground mr-1">
+                  {t.overview.incidents.group_by_label}:
+                </span>
+                {GROUP_MODES.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setGroupMode(mode)}
+                    aria-pressed={groupMode === mode}
+                    className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                      groupMode === mode
+                        ? 'bg-primary/15 text-primary border-primary/25'
+                        : 'text-foreground border-transparent hover:bg-secondary/40'
+                    }`}
+                  >
+                    {groupModeLabel(t, mode)}
+                  </button>
+                ))}
+                <span className="mx-1 h-4 w-px bg-primary/10" />
                 <button
                   type="button"
                   onClick={() => setOldestFirst(false)}
