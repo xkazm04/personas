@@ -13,7 +13,6 @@ import {
   relativeTime,
   statusLabel,
 } from '../libs/incidentTaxonomy';
-import { incidentRowSubtext } from '../libs/incidentDetail';
 
 interface Props {
   incident: AuditIncident;
@@ -45,9 +44,6 @@ export function IncidentRow({
   // red, medium reads amber, and closed incidents are muted to neutral so the
   // open work stands out.
   const rank = severityRank(incident.severity);
-  // Human-readable inline subtext: prose detail shows, structured (JSON /
-  // key=value) payloads are suppressed here and broken down in the detail modal.
-  const subtext = incidentRowSubtext(incident.detail);
   const stale = isStaleIncident(incident);
   const accent = isClosed
     ? 'border-l-transparent'
@@ -107,10 +103,6 @@ export function IncidentRow({
             </>
           )}
         </div>
-
-        {subtext && (
-          <p className="mt-1 typo-caption text-foreground line-clamp-1">{subtext}</p>
-        )}
 
         {isClosed && incident.resolutionNote && (
           <p className="mt-1 typo-caption text-foreground line-clamp-1">
