@@ -4,7 +4,7 @@ import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./types";
-import { DIM_LABEL } from "./dimLabel";
+import { useGlyphDimText } from "./useGlyphDimText";
 
 interface GlyphPetalIconsProps {
   size: number;
@@ -24,6 +24,7 @@ export function GlyphPetalIcons({
   size, petalStates, hoveredDim, activeDim, dimmed = false, sweepDim = null,
 }: GlyphPetalIconsProps) {
   const prefersReducedMotion = useReducedMotion();
+  const dimText = useGlyphDimText();
   const center = size / 2;
   const iconR = size * 0.34;
   // Labels sit just outside the petal ring so they don't overlap the
@@ -201,7 +202,7 @@ export function GlyphPetalIcons({
             }}
           >
             <span className="typo-caption font-semibold uppercase tracking-[0.14em] whitespace-nowrap">
-              {DIM_LABEL[dim]}
+              {dimText.label[dim]}
             </span>
           </div>
           </Fragment>

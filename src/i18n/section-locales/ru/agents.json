@@ -2542,5 +2542,9 @@
     "moved_toast": "{persona} перемещена в {group}",
     "filter_clear_title": "Нажмите, чтобы снять этот фильтр",
     "filter_all": "Нет preference"
-  }
+  },
+  "sigil_edit_active": "Активно для этой возможности",
+  "sigil_edit_inactive": "Неактивно — включите, чтобы активировать",
+  "sigil_edit_enable": "Включить для этой возможности",
+  "sigil_edit_disable": "Отключить для этой возможности"
 }

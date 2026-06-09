@@ -2542,5 +2542,9 @@
     "moved_toast": "Đã chuyển {persona} sang {group}",
     "filter_clear_title": "Nhấp để xóa bộ lọc này",
     "filter_all": "Không có preference"
-  }
+  },
+  "sigil_edit_active": "Đang bật cho khả năng này",
+  "sigil_edit_inactive": "Tắt — bật để kích hoạt",
+  "sigil_edit_enable": "Bật cho khả năng này",
+  "sigil_edit_disable": "Tắt cho khả năng này"
 }

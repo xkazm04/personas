@@ -189,8 +189,8 @@ export function PersonaHero({
           className="absolute inset-0 pointer-events-none opacity-60"
           style={{
             background:
-              'radial-gradient(ellipse 35% 90% at 5% 50%, rgba(96,165,250,0.10) 0%, transparent 70%),' +
-              'radial-gradient(ellipse 35% 90% at 95% 50%, rgba(52,211,153,0.07) 0%, transparent 70%)',
+              'radial-gradient(ellipse 35% 90% at 5% 50%, color-mix(in srgb, var(--primary) 10%, transparent) 0%, transparent 70%),' +
+              'radial-gradient(ellipse 35% 90% at 95% 50%, color-mix(in srgb, var(--status-success) 7%, transparent) 0%, transparent 70%)',
           }}
         />
 
@@ -278,7 +278,7 @@ export function PersonaHero({
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(96,165,250,0.06) 0%, transparent 70%)',
+              'radial-gradient(ellipse 50% 70% at 50% 50%, color-mix(in srgb, var(--primary) 6%, transparent) 0%, transparent 70%)',
           }}
         />
         <div className="relative" style={{ width: Math.round(measuredSize * sizeScale) }}>

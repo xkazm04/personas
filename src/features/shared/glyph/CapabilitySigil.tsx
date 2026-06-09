@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
+import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
+import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
+import { SigilPatternDefs, petalPatternFill } from '@/features/shared/glyph/dimPatterns';
+import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   getHealthMeta,
@@ -46,6 +51,9 @@ export function CapabilitySigil({
   uc, size = 84, isHovered = false, isActive = false, petalStyle = 'wedge',
 }: CapabilitySigilProps) {
   const { t } = useTranslation();
+  const dimText = useGlyphDimText();
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
+  const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const center = size / 2;
   const present = new Set(uc.dimensions);
   const isDisabled = uc.health === 'disabled';
@@ -81,15 +89,24 @@ export function CapabilitySigil({
   })();
 
   const coreId = `mini-core-${uc.id}-${size}`;
+  const uid = `${uc.id}-${size}`;
   const dimOpacityActive = 0.85;
   const dimOpacityIdle = 0.62;
   const ghostOpacity = 0.16;
 
+  // Health colours ride the status tokens so theme calibration AND the
+  // CVD-safe status remap apply to the sigil automatically. The disabled
+  // slate stays literal — it's a neutral, not a status.
+  const healthColor = isAttention
+    ? 'var(--status-warning)'
+    : isDisabled
+      ? '#94a3b8'
+      : 'var(--status-success)';
   const ringStroke = isAttention
-    ? '#fbbf24'
+    ? 'var(--status-warning)'
     : isDisabled
       ? 'rgb(148 163 184 / 0.4)'
-      : 'rgb(52 211 153 / 0.7)';
+      : 'color-mix(in srgb, var(--status-success) 70%, transparent)';
 
   return (
     <svg
@@ -103,16 +120,20 @@ export function CapabilitySigil({
       <defs>
         <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#fff" stopOpacity={isDisabled ? 0.18 : 0.55} />
-          <stop offset="55%" stopColor={isAttention ? '#fbbf24' : isDisabled ? '#94a3b8' : '#34d399'} stopOpacity={isDisabled ? 0.18 : 0.4} />
-          <stop offset="100%" stopColor={isAttention ? '#fbbf24' : isDisabled ? '#94a3b8' : '#34d399'} stopOpacity={0.04} />
+          <stop offset="55%" style={{ stopColor: healthColor }} stopOpacity={isDisabled ? 0.18 : 0.4} />
+          <stop offset="100%" style={{ stopColor: healthColor }} stopOpacity={0.04} />
         </radialGradient>
+        {/* CVD-safe mode: dim-tinted textures so present petals read by
+            pattern, not hue alone (the eight dim colours include several
+            confusable pairs under deuteranopia/protanopia). */}
+        {cvdSafe && <SigilPatternDefs uid={uid} />}
       </defs>
 
       {/* Outer health ring */}
       <circle
         cx={center} cy={center} r={ringR}
         fill="none"
-        stroke={ringStroke}
+        style={{ stroke: ringStroke }}
         strokeOpacity={isActive ? 0.95 : 0.6}
         strokeWidth={isActive ? 1.6 : 1.2}
         strokeDasharray={isDisabled ? '2 4' : undefined}
@@ -136,16 +157,28 @@ export function CapabilitySigil({
         const angle = PETAL_ANGLES[dim];
         const meta = DIM_META[dim];
         const isPresent = present.has(dim);
+        // Hover-to-name: the <title> gives every petal a never-clipped
+        // tooltip (robust at 68px tiles where a styled overlay would
+        // overflow) + names it in the a11y tree; the hover brighten gives
+        // instant feedback before the OS tooltip appears.
+        const isPetalHover = hoveredDim === dim;
 
         if (petalStyle === 'wedge') {
           return (
-            <g key={dim} transform={`translate(${center}, ${center}) rotate(${angle})`}>
+            <g
+              key={dim}
+              transform={`translate(${center}, ${center}) rotate(${angle})`}
+              style={{ pointerEvents: 'all', cursor: 'default' }}
+              onMouseEnter={() => setHoveredDim(dim)}
+              onMouseLeave={() => setHoveredDim(null)}
+            >
+              <title>{dimText.label[dim]}</title>
               <path
                 d={wedgePath}
-                fill={isPresent ? meta.color : 'transparent'}
-                fillOpacity={isPresent ? (isActive ? dimOpacityActive : dimOpacityIdle) : 0}
-                stroke={isPresent ? meta.color : 'currentColor'}
-                strokeOpacity={isPresent ? 0.85 : ghostOpacity}
+                fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
+                fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
+                stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+                strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
                 strokeWidth={isPresent ? 0.8 : 0.6}
               />
             </g>
@@ -160,10 +193,15 @@ export function CapabilitySigil({
             key={dim}
             cx={x}
             cy={y}
-            r={petalDotR}
-            fill={isPresent ? meta.color : 'currentColor'}
-            fillOpacity={isPresent ? (isActive ? dimOpacityActive : dimOpacityIdle) : ghostOpacity}
-          />
+            r={isPetalHover ? petalDotR * 1.35 : petalDotR}
+            fill={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+            fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : isPetalHover ? 0.5 : ghostOpacity}
+            style={{ pointerEvents: 'all', cursor: 'default' }}
+            onMouseEnter={() => setHoveredDim(dim)}
+            onMouseLeave={() => setHoveredDim(null)}
+          >
+            <title>{dimText.label[dim]}</title>
+          </circle>
         );
       })}
 
@@ -173,7 +211,7 @@ export function CapabilitySigil({
       <circle
         cx={center} cy={center} r={coreR}
         fill="none"
-        stroke={isAttention ? '#fbbf24' : isDisabled ? '#94a3b8' : '#34d399'}
+        style={{ stroke: healthColor }}
         strokeOpacity={isActive ? 0.95 : 0.55}
         strokeWidth={1.2}
       />
