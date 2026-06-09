@@ -114,15 +114,17 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
       isOpen={isOpen}
       onClose={handleClose}
       titleId="goal-editor-title"
-      maxWidthClass="max-w-lg"
+      maxWidthClass="max-w-xl"
       panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-9 h-9 rounded-interactive bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shrink-0">
-            <Target className="w-4 h-4 text-violet-400" />
+      {/* Header — mirrors GoalDetailDrawer's treatment (w-10 violet chip +
+          typo-section-title) so the edit modal reads as the same surface. */}
+      <div className="flex items-start justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-interactive bg-violet-500/10 border border-violet-500/25 flex items-center justify-center shrink-0">
+            <Target className="w-5 h-5 text-violet-400" />
           </div>
-          <h2 id="goal-editor-title" className="typo-heading-lg font-semibold text-foreground">
+          <h2 id="goal-editor-title" className="typo-section-title text-foreground">
             {isEdit ? dl.goal_edit_title : dl.goal_new_title}
           </h2>
         </div>
