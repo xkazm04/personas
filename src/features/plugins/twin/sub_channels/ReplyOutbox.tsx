@@ -4,6 +4,7 @@ import { Inbox, Sparkles, Send, Trash2, Loader2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
@@ -38,6 +39,7 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
   const [directions, setDirections] = useState('');
   const [contacts, setContacts] = useState<TwinContact[]>([]);
   const [approving, setApproving] = useState(false);
+  const [confirmSend, setConfirmSend] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   // The channel + contact the current draft was generated for. Approve logs
   // against THIS frozen tuple, not the live selectors, so changing the dropdowns
@@ -244,7 +246,7 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
               Discard
             </Button>
             <Button
-              onClick={handleApprove}
+              onClick={() => setConfirmSend(true)}
               disabled={approving || !replyDraft.trim()}
               size="sm"
               variant="accent"
@@ -258,6 +260,23 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
       )}
 
       {localError && <p className="typo-caption text-red-400 mt-3">{localError}</p>}
+
+      {confirmSend && (
+        <ConfirmDialog
+          title="Log this reply as sent by you?"
+          body={
+            draftContext
+              ? `This records an outbound reply attributed to you on ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''}.`
+              : 'This records an outbound reply attributed to you.'
+          }
+          confirmLabel="Approve & log"
+          onConfirm={() => {
+            setConfirmSend(false);
+            void handleApprove();
+          }}
+          onCancel={() => setConfirmSend(false)}
+        />
+      )}
     </motion.div>
   );
 }
