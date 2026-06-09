@@ -107,23 +107,13 @@ pub async fn fleet_resize_session(
 /// the exit and emits `fleet-session-exited`.
 #[tauri::command]
 pub async fn fleet_kill_session(app: AppHandle, session_id: String) -> Result<(), String> {
-    // We don't hold the child here — the reaper task owns it. The cleanest
-    // kill is "drop the writer" (closes the PTY → child reads EOF →
-    // shuts down). For a hard kill we'd need to plumb the child handle
-    // back; that lands when phase 6 adds the cancellation token.
-    //
-    // Until then: closing the writer slot is a soft kill that works for
-    // `claude` (it shuts down on stdin EOF when in `-p` mode; in
-    // interactive mode it lingers but stops accepting input).
-    let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some(session) = map.get(&session_id) {
-        if let Ok(mut w) = session.writer.lock() { *w = None; }
-        // Also close the master so the reader sees EOF on the slave side.
-        if let Ok(mut m) = session.master.lock() { *m = None; }
-    } else {
+    // Hard kill via the session's kill handle, then drop the PTY handles. A soft
+    // "drop the writer" EOF does NOT stop interactive `claude` (it ignores stdin
+    // EOF and lingers as a zombie shell), so route through close_pty_handles,
+    // which calls killer.kill() first. The reaper picks up the exit and emits.
+    if !registry().close_pty_handles(&session_id) {
         return Err(format!("session not found: {session_id}"));
     }
-    drop(map);
     pty::emit_registry_changed(&app, "updated", &session_id);
     Ok(())
 }

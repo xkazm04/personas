@@ -217,6 +217,11 @@ pub struct FleetSessionInner {
     /// (`Arc`) with the reader task, which pushes every chunk here and forwards
     /// over IPC only while subscribed. See [`OutputRing`].
     pub output: Arc<Mutex<OutputRing>>,
+    /// Kill handle cloned from the child at spawn (the reaper task owns the child
+    /// itself). Lets close/hibernate actually TERMINATE the process — interactive
+    /// `claude` ignores stdin EOF, so dropping the PTY handles alone leaves a
+    /// zombie shell that keeps burning tokens. `None` only in test fixtures.
+    pub killer: Option<Mutex<Box<dyn portable_pty::ChildKiller + Send + Sync>>>,
 }
 
 impl FleetSessionInner {
@@ -459,6 +464,9 @@ impl FleetRegistry {
             });
             if let Ok(mut w) = session.writer.lock() { *w = None; }
             if let Ok(mut m) = session.master.lock() { *m = None; }
+            // Confirmed exit: clear the tracked PID now (not on hibernate-intent),
+            // so process_scan tracks the live PID for the session's whole life.
+            session.child_pid = None;
         }
     }
 
@@ -478,6 +486,17 @@ impl FleetRegistry {
         true
     }
 
+    /// Clear the tracked child PID once the reaper confirms the process is gone.
+    /// `mark_exited` handles the normal-exit path; the reaper's hibernation branch
+    /// calls this so the live PID stays tracked through the whole kill→exit window
+    /// and `process_scan` never mislabels it as an orphan.
+    pub fn clear_child_pid(&self, session_id: &str) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            session.child_pid = None;
+        }
+    }
+
     /// Soft-kill: drop the writer + master so the PTY child sees EOF on
     /// its slave fd. Mirrors the fleet UI's close-session behavior and
     /// is what Athena's `fleet_kill` dispatcher action calls. The reaper
@@ -486,6 +505,11 @@ impl FleetRegistry {
     pub fn close_pty_handles(&self, session_id: &str) -> bool {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get(session_id) else { return false; };
+        // Terminate the child first — interactive `claude` ignores stdin EOF, so
+        // dropping the PTY handles alone leaves a zombie. The reaper then fires.
+        if let Some(k) = &session.killer {
+            if let Ok(mut k) = k.lock() { let _ = k.kill(); }
+        }
         if let Ok(mut w) = session.writer.lock() { *w = None; }
         if let Ok(mut m) = session.master.lock() { *m = None; }
         true
@@ -531,7 +555,13 @@ impl FleetRegistry {
         session.state = FleetSessionState::Hibernated;
         session.last_activity_ms = now_ms();
         session.state_reason = Some("Hibernated — process freed; resume with claude --resume".to_string());
-        session.child_pid = None;
+        // Terminate the child (interactive claude won't exit on stdin EOF). KEEP
+        // child_pid until the reaper confirms exit (cleared via clear_child_pid in
+        // the reaper's hibernation branch) so process_scan doesn't mislabel the
+        // still-live process as an untracked orphan during the kill→exit window.
+        if let Some(k) = &session.killer {
+            if let Ok(mut k) = k.lock() { let _ = k.kill(); }
+        }
         if let Ok(mut w) = session.writer.lock() { *w = None; }
         if let Ok(mut m) = session.master.lock() { *m = None; }
         true
@@ -624,6 +654,7 @@ mod tests {
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
             output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
+            killer: None,
         }
     }
 

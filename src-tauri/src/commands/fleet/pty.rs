@@ -218,6 +218,10 @@ pub fn spawn_session(
         .spawn_command(cmd)
         .map_err(|e| format!("spawn `claude` failed: {e}"))?;
     let child_pid = child.process_id();
+    // Clone a kill handle BEFORE the child is moved into the reaper task, so
+    // close/hibernate can terminate the process directly. Interactive `claude`
+    // ignores stdin EOF, so dropping the PTY alone would leave a zombie shell.
+    let killer = child.clone_killer();
 
     // Slave is no longer needed in our process — the child owns its own fd.
     drop(pair.slave);
@@ -261,6 +265,7 @@ pub fn spawn_session(
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
         output: output.clone(),
+        killer: Some(Mutex::new(killer)),
     };
     registry().insert(inner);
 
@@ -516,6 +521,9 @@ fn reaper_loop(
     // runs — the process really is gone.
     if registry().is_hibernating(&session_id) {
         tracing::debug!(session_id = %session_id, "fleet reaper: child exited for hibernation");
+        // Confirmed gone — now drop the PID record (hibernate kept it so
+        // process_scan tracked the live process through the kill→exit window).
+        registry().clear_child_pid(&session_id);
         emit_registry_changed(&app, "updated", &session_id);
         return;
     }
