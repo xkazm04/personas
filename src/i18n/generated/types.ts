@@ -196,6 +196,17 @@ export type Translations = {
     channels_filter_alerts: string;
     channel_no_body: string;
     channel_raw_payload: string;
+    channel_loading_history: string;
+    channel_start_of_conversation: string;
+    channel_tuning_in: string;
+    channel_empty_title: string;
+    channel_empty_body: string;
+    channel_empty_directive_hint: string;
+    channel_empty_athena_before: string;
+    channel_empty_athena_after: string;
+    channel_jump_latest: string;
+    channel_new_messages_one: string;
+    channel_new_messages_other: string;
     quick_choose_action: string;
     quick_dismiss: string;
     quick_prev_decision: string;

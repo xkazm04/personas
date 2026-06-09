@@ -65,5 +65,16 @@
   "caption_draft_many": "{count} drafts ready",
   "caption_queued_many": "{count} queued",
   "open_reviews_with_count": "Open {count} review(s)",
-  "open_messages_with_count": "Open {count} message(s)"
+  "open_messages_with_count": "Open {count} message(s)",
+  "channel_loading_history": "memuat riwayat sebelumnya…",
+  "channel_start_of_conversation": "— awal percakapan —",
+  "channel_tuning_in": "Menyambungkan…",
+  "channel_empty_title": "Saluran tim sedang sepi",
+  "channel_empty_body": "Di sinilah tim berbicara — serah terima, PR, putusan QA, dan arahan Director semuanya muncul di sini saat terjadi.",
+  "channel_empty_directive_hint": "Kirim arahan di bawah untuk memandu langkah berikutnya",
+  "channel_empty_athena_before": "Tandai",
+  "channel_empty_athena_after": "untuk mengajaknya bergabung dalam percakapan",
+  "channel_jump_latest": "Lompat ke terbaru",
+  "channel_new_messages_one": "1 pesan baru",
+  "channel_new_messages_other": "{count} pesan baru"
 }

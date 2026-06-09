@@ -65,5 +65,16 @@
   "caption_draft_many": "{count} drafts ready",
   "caption_queued_many": "{count} queued",
   "open_reviews_with_count": "Open {count} review(s)",
-  "open_messages_with_count": "Open {count} message(s)"
+  "open_messages_with_count": "Open {count} message(s)",
+  "channel_loading_history": "загрузка более ранней истории…",
+  "channel_start_of_conversation": "— начало разговора —",
+  "channel_tuning_in": "Подключение…",
+  "channel_empty_title": "В командном канале тихо",
+  "channel_empty_body": "Здесь общается команда — передачи, PR, вердикты QA и наставления Director появляются здесь в реальном времени.",
+  "channel_empty_directive_hint": "Опубликуйте директиву ниже, чтобы направить следующие шаги",
+  "channel_empty_athena_before": "Отметьте",
+  "channel_empty_athena_after": "чтобы пригласить её в разговор",
+  "channel_jump_latest": "К последним",
+  "channel_new_messages_one": "1 новое сообщение",
+  "channel_new_messages_other": "Новых сообщений: {count}"
 }

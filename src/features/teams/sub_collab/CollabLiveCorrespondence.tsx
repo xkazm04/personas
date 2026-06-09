@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X } from 'lucide-react';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
@@ -33,12 +34,16 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
+  const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const { items, loaded, exhausted, posting, presence, loadOlder, sendDirective } = useTeamChannel(teamId);
   const [draft, setDraft] = useState('');
   const topSentinel = useRef<HTMLDivElement | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
   const stickBottom = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const [unseen, setUnseen] = useState(0);
+  const lastSeenIdRef = useRef<string | null>(null);
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
   const ordered = useMemo(() => [...items].reverse(), [items]);
@@ -50,6 +55,21 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     const box = scrollBox.current;
     if (box && stickBottom.current) box.scrollTop = box.scrollHeight;
   }, [ordered.length]);
+
+  // Unseen-while-scrolled-up: remember the newest item seen while pinned to the
+  // bottom; when the user scrolls up, anything past that marker counts as new.
+  // findIndex (not a length delta) keeps loadOlder() prepends from inflating it.
+  useEffect(() => {
+    const latest = ordered[ordered.length - 1];
+    if (!latest) return;
+    if (stickBottom.current) {
+      lastSeenIdRef.current = latest.id;
+      setUnseen(0);
+      return;
+    }
+    const idx = lastSeenIdRef.current ? ordered.findIndex((i) => i.id === lastSeenIdRef.current) : -1;
+    setUnseen(idx >= 0 ? ordered.length - 1 - idx : 0);
+  }, [ordered]);
 
   useEffect(() => {
     const el = topSentinel.current;
@@ -65,7 +85,20 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const onScroll = () => {
     const box = scrollBox.current;
     if (!box) return;
-    stickBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    const near = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    stickBottom.current = near;
+    setAtBottom(near);
+    if (near && ordered.length > 0) {
+      lastSeenIdRef.current = ordered[ordered.length - 1]!.id;
+      setUnseen(0);
+    }
+  };
+
+  const jumpToLatest = () => {
+    const box = scrollBox.current;
+    if (!box) return;
+    stickBottom.current = true;
+    box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   };
 
   const send = () => {
@@ -157,50 +190,71 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
       </div>
 
       {/* ── Conversation ── */}
-      <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
-        {/* Pending manual reviews (Director coaching / triage) for this team's
-            personas — the quick-answer card, cross-referenced into the channel. */}
-        <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
-        {!exhausted && ordered.length > 0 && (
-          <div ref={topSentinel} className="py-1 text-center">
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <span className="typo-caption text-foreground">loading earlier history…</span>
-          </div>
-        )}
-        {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-        {exhausted && ordered.length > 0 && <p className="py-1 text-center typo-caption text-foreground">— start of the conversation —</p>}
-        {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-        {!loaded && <p className="typo-body text-foreground py-3">Tuning in…</p>}
-        {loaded && ordered.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center py-14 px-6">
-            <div className="relative flex items-center justify-center mb-4" style={{ width: 96, height: 96 }}>
-              <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(248,113,113,0.14), transparent 70%)' }} />
-              <div className="relative w-14 h-14 rounded-full bg-status-error/12 border border-status-error/20 flex items-center justify-center">
-                <Radio className="w-7 h-7 text-status-error/80" />
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
+          {/* Pending manual reviews (Director coaching / triage) for this team's
+              personas — the quick-answer card, cross-referenced into the channel. */}
+          <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
+          {!exhausted && ordered.length > 0 && (
+            <div ref={topSentinel} className="py-1 text-center">
+              <span className="typo-caption text-foreground">{t.monitor.channel_loading_history}</span>
+            </div>
+          )}
+          {exhausted && ordered.length > 0 && <p className="py-1 text-center typo-caption text-foreground">{t.monitor.channel_start_of_conversation}</p>}
+          {!loaded && <p className="typo-body text-foreground py-3">{t.monitor.channel_tuning_in}</p>}
+          {loaded && ordered.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center py-14 px-6">
+              <div className="relative flex items-center justify-center mb-4" style={{ width: 96, height: 96 }}>
+                <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(248,113,113,0.14), transparent 70%)' }} />
+                <div className="relative w-14 h-14 rounded-full bg-status-error/12 border border-status-error/20 flex items-center justify-center">
+                  <Radio className="w-7 h-7 text-status-error/80" />
+                </div>
+              </div>
+              <h3 className="typo-section-title text-foreground">{t.monitor.channel_empty_title}</h3>
+              <p className="typo-body text-foreground mt-1.5 max-w-sm">{t.monitor.channel_empty_body}</p>
+              <div className="mt-3 flex flex-col gap-1.5 typo-caption text-foreground">
+                <span className="inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-status-success" /> {t.monitor.channel_empty_directive_hint}</span>
+                {/* "@athena" is the literal tag users type — not translatable. */}
+                {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
+                <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-300" /> {t.monitor.channel_empty_athena_before} <span className="text-violet-300 font-medium">@athena</span> {t.monitor.channel_empty_athena_after}</span>
               </div>
             </div>
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <h3 className="typo-section-title text-foreground">The team channel is quiet</h3>
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <p className="typo-body text-foreground mt-1.5 max-w-sm">This is where the team talks — handoffs, PRs, QA verdicts, and Director coaching all land here as they happen.</p>
-            <div className="mt-3 flex flex-col gap-1.5 typo-caption text-foreground">
-              {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-              <span className="inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-status-success" /> Post a directive below to steer the next steps</span>
-              {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-              <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-300" /> Tag <span className="text-violet-300 font-medium">@athena</span> to bring her into the conversation</span>
-            </div>
-          </div>
-        )}
-        {ordered.map((item) => (
-          <CorrespondenceRow
-            key={item.id}
-            item={item}
-            personaIndex={personaIndex}
-            parent={item.replyTo ? byId.get(item.replyTo) : undefined}
-            onReply={() => setReplyTarget(item)}
-            onOpenDetail={() => setDetailItem(item)}
-          />
-        ))}
+          )}
+          {ordered.map((item) => (
+            <CorrespondenceRow
+              key={item.id}
+              item={item}
+              personaIndex={personaIndex}
+              parent={item.replyTo ? byId.get(item.replyTo) : undefined}
+              onReply={() => setReplyTarget(item)}
+              onOpenDetail={() => setDetailItem(item)}
+            />
+          ))}
+        </div>
+        {/* Jump-to-latest pill — appears when scrolled away from the live edge;
+            carries the unseen count when new messages land while reading history. */}
+        <AnimatePresence>
+          {!atBottom && loaded && ordered.length > 0 && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.16 }}
+              onClick={jumpToLatest}
+              className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-elevation-2 backdrop-blur-sm typo-caption transition-colors ${
+                unseen > 0
+                  ? 'border-status-info/40 bg-status-info/15 text-status-info hover:bg-status-info/25'
+                  : 'border-border bg-secondary/80 text-foreground hover:bg-secondary'
+              }`}
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+              {unseen > 0
+                ? (unseen === 1 ? t.monitor.channel_new_messages_one : tx(t.monitor.channel_new_messages_other, { count: unseen }))
+                : t.monitor.channel_jump_latest}
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Composer ── */}

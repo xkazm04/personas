@@ -137,7 +137,18 @@
     "caption_draft_many": "{count} drafts ready",
     "caption_queued_many": "{count} queued",
     "open_reviews_with_count": "Open {count} review(s)",
-    "open_messages_with_count": "Open {count} message(s)"
+    "open_messages_with_count": "Open {count} message(s)",
+    "channel_loading_history": "以前の履歴を読み込み中…",
+    "channel_start_of_conversation": "— 会話の始まり —",
+    "channel_tuning_in": "接続中…",
+    "channel_empty_title": "チームチャンネルは静かです",
+    "channel_empty_body": "ここはチームが会話する場所です — ハンドオフ、PR、QA の判定、Director のコーチングがリアルタイムで表示されます。",
+    "channel_empty_directive_hint": "下にディレクティブを投稿して次のステップを導きましょう",
+    "channel_empty_athena_before": "",
+    "channel_empty_athena_after": "をタグ付けして会話に招きましょう",
+    "channel_jump_latest": "最新へ移動",
+    "channel_new_messages_one": "新着メッセージ 1 件",
+    "channel_new_messages_other": "新着メッセージ {count} 件"
   },
   "common": {
     "loading": "読み込み中...",

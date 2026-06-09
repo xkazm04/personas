@@ -137,7 +137,18 @@
     "caption_draft_many": "{count} drafts ready",
     "caption_queued_many": "{count} queued",
     "open_reviews_with_count": "Open {count} review(s)",
-    "open_messages_with_count": "Open {count} message(s)"
+    "open_messages_with_count": "Open {count} message(s)",
+    "channel_loading_history": "이전 기록을 불러오는 중…",
+    "channel_start_of_conversation": "— 대화의 시작 —",
+    "channel_tuning_in": "연결 중…",
+    "channel_empty_title": "팀 채널이 조용합니다",
+    "channel_empty_body": "팀의 대화는 모두 여기에서 이루어집니다 — 핸드오프, PR, QA 판정, Director 코칭이 실시간으로 표시됩니다.",
+    "channel_empty_directive_hint": "아래에 지시문을 남겨 다음 단계를 이끌어 보세요",
+    "channel_empty_athena_before": "",
+    "channel_empty_athena_after": "을(를) 태그하면 대화에 참여합니다",
+    "channel_jump_latest": "최신으로 이동",
+    "channel_new_messages_one": "새 메시지 1개",
+    "channel_new_messages_other": "새 메시지 {count}개"
   },
   "common": {
     "loading": "로딩 중...",

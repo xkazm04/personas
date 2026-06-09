@@ -137,7 +137,18 @@
     "caption_draft_many": "{count} drafts ready",
     "caption_queued_many": "{count} queued",
     "open_reviews_with_count": "Open {count} review(s)",
-    "open_messages_with_count": "Open {count} message(s)"
+    "open_messages_with_count": "Open {count} message(s)",
+    "channel_loading_history": "cargando historial anterior…",
+    "channel_start_of_conversation": "— inicio de la conversación —",
+    "channel_tuning_in": "Sintonizando…",
+    "channel_empty_title": "El canal del equipo está tranquilo",
+    "channel_empty_body": "Aquí es donde habla el equipo: traspasos, PR, veredictos de QA y coaching del Director aparecen aquí en tiempo real.",
+    "channel_empty_directive_hint": "Publica una directiva abajo para guiar los próximos pasos",
+    "channel_empty_athena_before": "Etiqueta a",
+    "channel_empty_athena_after": "para traerla a la conversación",
+    "channel_jump_latest": "Ir a lo último",
+    "channel_new_messages_one": "1 mensaje nuevo",
+    "channel_new_messages_other": "{count} mensajes nuevos"
   },
   "common": {
     "loading": "Cargando...",
