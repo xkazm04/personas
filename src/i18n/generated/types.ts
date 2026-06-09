@@ -12918,6 +12918,10 @@ export type Translations = {
       competition_title_placeholder: string;
       competition_desc_placeholder: string;
       regenerate_strategies_title: string;
+      winning_genes_title: string;
+      winning_genes_analyze: string;
+      winning_genes_sample: string;
+      winning_genes_empty: string;
       winner_label: string;
       rematch_with_winner: string;
       rematch_hint: string;

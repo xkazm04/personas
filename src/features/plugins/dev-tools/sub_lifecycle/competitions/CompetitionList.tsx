@@ -6,6 +6,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listCompetitions } from '@/api/devTools/devTools';
 import { CompetitionCard } from './CompetitionCard';
 import { StrategyLeaderboard } from './StrategyLeaderboard';
+import { WinningGeneProfile } from './WinningGeneProfile';
 import { NewCompetitionModal } from './NewCompetitionModal';
 import type { StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
@@ -95,6 +96,9 @@ export function CompetitionList() {
 
       {/* Strategy leaderboard */}
       <StrategyLeaderboard projectId={activeProjectId} />
+
+      {/* Winning gene profile — what emphasis tends to win for this project */}
+      <WinningGeneProfile projectId={activeProjectId} />
 
       {activeCompetitions.length > 0 && (
         <div className="space-y-2">
