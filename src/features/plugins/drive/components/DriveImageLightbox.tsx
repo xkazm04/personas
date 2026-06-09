@@ -28,6 +28,7 @@ import { driveRead, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { BaseModal } from "@/lib/ui/BaseModal";
 import { silentCatch } from "@/lib/silentCatch";
+import { visualForEntry } from "../designTokens";
 
 interface Props {
   entries: DriveEntry[];
@@ -270,6 +271,16 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     [kind, zoomBy],
   );
 
+  // Keep the active filmstrip thumbnail scrolled into view as the user cycles
+  // entries (arrows, prev/next, or clicking a distant thumb).
+  const stripRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip) return;
+    const active = strip.querySelector<HTMLElement>('[data-active="true"]');
+    active?.scrollIntoView({ inline: "center", block: "nearest", behavior: "smooth" });
+  }, [index]);
+
   if (!current) return null;
 
   const isZoomed = kind === "image" && transform.zoom > MIN_ZOOM;
@@ -441,7 +452,126 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           </button>
         )}
       </div>
+
+      {/* Thumbnail filmstrip — fast visual jumping across the previewable set.
+          Image tiles lazy-load (and free) their bytes as they scroll in/out of
+          view so a folder of hundreds of images doesn't hold N blobs at once. */}
+      {total > 1 && (
+        <div
+          ref={stripRef}
+          className="flex items-center gap-2 px-4 py-2 border-t border-primary/10 bg-background/80 overflow-x-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {entries.map((entry, i) => (
+            <FilmstripThumb
+              key={entry.path}
+              entry={entry}
+              active={i === index}
+              onClick={() => setIndex(i)}
+            />
+          ))}
+        </div>
+      )}
     </BaseModal>
+  );
+}
+
+/**
+ * One filmstrip tile. Images lazy-load a thumbnail via IntersectionObserver
+ * and revoke it again when scrolled out of view, so the strip stays cheap on
+ * large folders; non-image kinds render their kind icon (no fetch). The
+ * filename rides as the accessible label (user content — not translated).
+ */
+function FilmstripThumb({
+  entry,
+  active,
+  onClick,
+}: {
+  entry: DriveEntry;
+  active: boolean;
+  onClick: () => void;
+}) {
+  const visual = visualForEntry(entry);
+  const Icon = visual.Icon;
+  const isImage = (entry.mime ?? "").startsWith("image/");
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [url, setUrl] = useState<string | null>(null);
+  const urlRef = useRef<string | null>(null);
+  urlRef.current = url;
+
+  useEffect(() => {
+    if (!isImage) return;
+    const el = btnRef.current;
+    if (!el) return;
+    let cancelled = false;
+    const io = new IntersectionObserver(
+      (records) => {
+        const rec = records[0];
+        if (!rec) return;
+        if (rec.isIntersecting) {
+          if (urlRef.current || cancelled) return;
+          driveRead(entry.path)
+            .then((bytes) => {
+              if (cancelled) return;
+              const u = URL.createObjectURL(
+                new Blob([new Uint8Array(bytes)], {
+                  type: entry.mime ?? "application/octet-stream",
+                }),
+              );
+              urlRef.current = u;
+              setUrl(u);
+            })
+            .catch(silentCatch("drive:filmstrip-thumb"));
+        } else if (urlRef.current) {
+          // Off-screen → free the blob to bound memory on large image sets.
+          URL.revokeObjectURL(urlRef.current);
+          urlRef.current = null;
+          setUrl(null);
+        }
+      },
+      { root: el.parentElement, rootMargin: "300px" },
+    );
+    io.observe(el);
+    return () => {
+      cancelled = true;
+      io.disconnect();
+      if (urlRef.current) {
+        URL.revokeObjectURL(urlRef.current);
+        urlRef.current = null;
+      }
+    };
+  }, [entry.path, entry.mime, isImage]);
+
+  return (
+    <button
+      ref={btnRef}
+      type="button"
+      onClick={onClick}
+      data-active={active ? "true" : undefined}
+      aria-current={active}
+      aria-label={entry.name}
+      title={entry.name}
+      className={`relative flex-shrink-0 w-14 h-14 rounded-input overflow-hidden border transition-all focus-ring ${
+        active
+          ? "border-cyan-400/70 ring-2 ring-cyan-400/50"
+          : "border-primary/15 opacity-70 hover:opacity-100 hover:border-primary/30"
+      }`}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span
+          className={`w-full h-full flex items-center justify-center bg-gradient-to-br ${visual.gradient}`}
+        >
+          <Icon className={`w-5 h-5 ${visual.text}`} />
+        </span>
+      )}
+    </button>
   );
 }
 
