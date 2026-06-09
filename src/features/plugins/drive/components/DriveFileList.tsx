@@ -44,6 +44,11 @@ interface Props {
   onDragSelectionEnd?: () => void;
   // Drive-relative paths carrying a signature record — list rows badge these.
   signedPaths?: Set<string>;
+  // OS-file drag targeting: the folder path currently hovered during an
+  // external drag (highlights that row), and the callback rows use to
+  // report hover. The actual file write happens in DrivePage's drop handler.
+  externalDropPath?: string | null;
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
 export function DriveFileList({
@@ -62,6 +67,8 @@ export function DriveFileList({
   onDragSelectionStart,
   onDragSelectionEnd,
   signedPaths,
+  externalDropPath = null,
+  onExternalFolderDragOver,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -113,6 +120,8 @@ export function DriveFileList({
       onDragSelectionStart={onDragSelectionStart}
       onDragSelectionEnd={onDragSelectionEnd}
       signedPaths={signedPaths}
+      externalDropPath={externalDropPath}
+      onExternalFolderDragOver={onExternalFolderDragOver}
     />
   );
 }
@@ -247,6 +256,8 @@ function ListView({
   onDragSelectionStart,
   onDragSelectionEnd,
   signedPaths,
+  externalDropPath = null,
+  onExternalFolderDragOver,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -433,7 +444,8 @@ function ListView({
         {drive.visibleEntries.map((entry, idx) => {
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
-          const drop = dragTarget === entry.path;
+          const drop =
+            dragTarget === entry.path || externalDropPath === entry.path;
           const zebra = idx % 2 === 1;
           const bucket = buckets?.[idx] ?? null;
           const showGroupHeader =
@@ -455,13 +467,26 @@ function ListView({
                 onDragStart={(e) => handleDragStart(e, entry)}
                 onDragEnd={() => onDragSelectionEnd?.()}
                 onDragOver={(e) => {
-                  if (entry.kind === "folder") {
+                  if (entry.kind !== "folder") return;
+                  // OS-file drags carry a "Files" payload: report this folder
+                  // as the drop target (the page-level drop handler writes
+                  // into it). Drive-internal drags use the local highlight.
+                  if (e.dataTransfer?.types?.includes("Files")) {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    setDragTarget(entry.path);
+                    e.dataTransfer.dropEffect = "copy";
+                    onExternalFolderDragOver?.(entry.path);
+                    return;
+                  }
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragTarget(entry.path);
+                }}
+                onDragLeave={() => {
+                  setDragTarget(null);
+                  if (externalDropPath === entry.path) {
+                    onExternalFolderDragOver?.(null);
                   }
                 }}
-                onDragLeave={() => setDragTarget(null)}
                 onDrop={(e) => handleDropOn(e, entry)}
                 onClick={(e) => {
                   if (e.shiftKey) drive.selectRange(entry.path);

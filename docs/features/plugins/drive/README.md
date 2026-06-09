@@ -15,7 +15,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Selection | Single, additive, range, select-all | `hooks/useDrive.ts` |
 | Clipboard | Copy/cut selected paths, paste into current folder | `hooks/useDrive.ts` |
 | Mutations | Create folder/file, rename, delete, move, copy | `hooks/useDrive.ts`, `src/api/drive.ts` |
-| OS file ingest | OS-native drag-drop into the current folder; cap 50 MB per file | `DrivePage.tsx` |
+| OS file ingest | OS-native drag-drop; cap 50 MB per file. Dropping on a folder row (list) or sidebar tree node writes into that folder; anywhere else targets the open folder — the drag banner names the live destination | `DrivePage.tsx`, `DriveFileList.tsx`, `DriveSidebar.tsx` |
 | Recursive search | Local folder filter escalates to a backend `drive_search` walk via a "Search all of Drive" CTA when there are no in-folder hits | `hooks/useDrive.ts`, `components/DriveFileList.tsx`, `commands/drive.rs::drive_search` |
 | Kind filter | Chips above the list (list/icons views) narrow the current folder to one resolved kind — Images / Docs / Code / … — alongside the name search; resets on navigation | `components/DriveKindFilterBar.tsx`, `hooks/useDrive.ts` |
 | Icons-view thumbnails | Image tiles in the icons view render real thumbnails, lazy-loaded and freed as they scroll in/out of view (`useLazyImageThumb`, shared with the lightbox filmstrip); other kinds keep their kind icon | `components/DriveFileList.tsx`, `hooks/useLazyImageThumb.ts` |

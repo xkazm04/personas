@@ -26,9 +26,16 @@ interface Props {
    *  (null when no drag). Used to render a faint "drop available" hint on
    *  every tree node so the user has a map of valid targets. */
   activeDragCount?: number | null;
+  /** Reports which tree-node folder an OS-file drag is hovering (null on
+   *  leave). The page-level drop handler writes the files into it. */
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
-export function DriveSidebar({ drive, activeDragCount = null }: Props) {
+export function DriveSidebar({
+  drive,
+  activeDragCount = null,
+  onExternalFolderDragOver,
+}: Props) {
   const { t, tx } = useTranslation();
   const {
     ref: scrollRef,
@@ -146,6 +153,7 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
             depth={0}
             initiallyOpen
             activeDragCount={activeDragCount}
+            onExternalFolderDragOver={onExternalFolderDragOver}
           />
         ) : (
           <div className="px-3 py-2 typo-body text-foreground">
@@ -259,6 +267,7 @@ interface TreeNodeProps {
   depth: number;
   initiallyOpen?: boolean;
   activeDragCount?: number | null;
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
 function TreeNode({
@@ -267,6 +276,7 @@ function TreeNode({
   depth,
   initiallyOpen = false,
   activeDragCount = null,
+  onExternalFolderDragOver,
 }: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
@@ -288,20 +298,44 @@ function TreeNode({
   // so the sidebar stops feeling decorative.
   const acceptsDrop = (e: React.DragEvent) =>
     Array.from(e.dataTransfer?.types ?? []).includes("application/x-drive-move");
+  // OS-file drags (a "Files" payload) are also valid targets: the node only
+  // reports the hover; DrivePage's drop handler does the actual write.
+  const hasFilesPayload = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (!acceptsDrop(e)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDropActive(true);
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (hasFilesPayload(e)) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setDropActive(true);
+        onExternalFolderDragOver?.(node.path);
+        return;
+      }
+      if (!acceptsDrop(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setDropActive(true);
+    },
+    [node.path, onExternalFolderDragOver],
+  );
 
-  const handleDragLeave = useCallback(() => {
-    setDropActive(false);
-  }, []);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      setDropActive(false);
+      if (hasFilesPayload(e)) onExternalFolderDragOver?.(null);
+    },
+    [onExternalFolderDragOver],
+  );
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
+      if (hasFilesPayload(e)) {
+        // Clear the local halo and let the event bubble to DrivePage's
+        // onDrop, which writes the files into the reported target folder.
+        setDropActive(false);
+        return;
+      }
       if (!acceptsDrop(e)) return;
       e.preventDefault();
       e.stopPropagation();

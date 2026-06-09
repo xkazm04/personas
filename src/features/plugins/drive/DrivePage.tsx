@@ -72,6 +72,13 @@ export default function DrivePage() {
   // when the cursor crosses a child boundary.
   const [externalDragActive, setExternalDragActive] = useState(false);
   const dragCounterRef = useRef(0);
+  // Folder the cursor is currently over during an OS-file drag (list row or
+  // sidebar tree node). Null = drop targets the open folder. The rows/nodes
+  // report hover via onExternalFolderDragOver; the page-level drop handler
+  // resolves the destination from this.
+  const [externalDropTarget, setExternalDropTarget] = useState<string | null>(
+    null,
+  );
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -361,7 +368,10 @@ export default function DrivePage() {
   const handleExternalDragLeave = useCallback((e: React.DragEvent) => {
     if (!hasFilesPayload(e)) return;
     dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
-    if (dragCounterRef.current === 0) setExternalDragActive(false);
+    if (dragCounterRef.current === 0) {
+      setExternalDragActive(false);
+      setExternalDropTarget(null);
+    }
   }, []);
 
   const handleExternalDrop = useCallback(
@@ -370,6 +380,11 @@ export default function DrivePage() {
       e.preventDefault();
       dragCounterRef.current = 0;
       setExternalDragActive(false);
+      // Resolve the destination before clearing the hover state: a drop on a
+      // folder row / tree node writes into that folder, anywhere else into
+      // the open folder.
+      const dest = externalDropTarget ?? drive.currentPath;
+      setExternalDropTarget(null);
 
       const files = Array.from(e.dataTransfer?.files ?? []);
       if (files.length === 0) return;
@@ -384,9 +399,7 @@ export default function DrivePage() {
         }
         try {
           const buf = new Uint8Array(await file.arrayBuffer());
-          const rel = drive.currentPath
-            ? `${drive.currentPath}/${file.name}`
-            : file.name;
+          const rel = dest ? `${dest}/${file.name}` : file.name;
           await driveWrite(rel, buf);
           success += 1;
         } catch (err) {
@@ -396,6 +409,9 @@ export default function DrivePage() {
       }
       drive.refresh();
       drive.refreshStorage();
+      // Dropped files are by definition the newest content — keep the
+      // sidebar's Recent rail in step.
+      drive.refreshRecent();
 
       if (success > 0) {
         addToast(tx(t.plugins.drive.drop_added_n, { count: success }), "success");
@@ -413,7 +429,7 @@ export default function DrivePage() {
         );
       }
     },
-    [drive, addToast, t, tx],
+    [drive, addToast, t, tx, externalDropTarget],
   );
 
   // ---------------------------------------------------------------------
@@ -524,7 +540,11 @@ export default function DrivePage() {
           activeDragCount={activeDragCount}
         />
         <div className="flex-1 min-h-0 flex">
-          <DriveSidebar drive={drive} activeDragCount={activeDragCount} />
+          <DriveSidebar
+            drive={drive}
+            activeDragCount={activeDragCount}
+            onExternalFolderDragOver={setExternalDropTarget}
+          />
           <div className="flex-1 min-w-0 flex flex-col">
             <DriveKindFilterBar drive={drive} />
             <DriveFileList
@@ -543,6 +563,8 @@ export default function DrivePage() {
               onDragSelectionStart={handleDragSelectionStart}
               onDragSelectionEnd={handleDragSelectionEnd}
               signedPaths={signing.signedPaths}
+              externalDropPath={externalDropTarget}
+              onExternalFolderDragOver={setExternalDropTarget}
             />
           </div>
           <DriveDetailsPane
@@ -564,17 +586,22 @@ export default function DrivePage() {
         {externalDragActive && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-500/15 backdrop-blur-sm border-4 border-dashed border-cyan-400/60 rounded-card"
+            className="pointer-events-none absolute inset-0 z-40 flex items-end justify-center pb-6 bg-cyan-500/5 border-4 border-dashed border-cyan-400/60 rounded-card"
           >
-            <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-modal bg-background/85 border border-cyan-500/40 shadow-elevation-3">
-              <Upload className="w-8 h-8 text-cyan-200" />
-              <div className="typo-section-title text-cyan-100">
-                {t.plugins.drive.drop_overlay_title}
-              </div>
-              <div className="typo-body text-foreground">
-                {tx(t.plugins.drive.drop_overlay_subtitle, {
-                  path: drive.currentPath || "/",
-                })}
+            {/* Bottom pill instead of a centered blur card — folder rows and
+                tree nodes stay visible so they can be targeted mid-drag. The
+                path updates live as the cursor hovers a folder. */}
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-background/90 border border-cyan-500/40 shadow-elevation-3">
+              <Upload className="w-5 h-5 text-cyan-200 flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="typo-body font-semibold text-cyan-100">
+                  {t.plugins.drive.drop_overlay_title}
+                </span>{" "}
+                <span className="typo-body text-foreground">
+                  {tx(t.plugins.drive.drop_overlay_subtitle, {
+                    path: (externalDropTarget ?? drive.currentPath) || "/",
+                  })}
+                </span>
               </div>
             </div>
           </div>
