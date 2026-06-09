@@ -73,7 +73,7 @@ export default function ChannelsAtelier() {
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
 
-  const { lastByChannel, staleByChannel } = useChannelActivity(activeTwinId);
+  const { lastByChannel, sentByChannel, staleByChannel } = useChannelActivity(activeTwinId);
 
   const channelDef = CHANNEL_TYPES.find((c) => c.id === newType);
   const filteredCredentials = useMemo(() => {
@@ -333,6 +333,7 @@ export default function ChannelsAtelier() {
                       {(() => {
                         const isStale = staleByChannel.get(ch.channel_type) === true;
                         const hasLast = !!lastByChannel.get(ch.channel_type);
+                        const sentCount = sentByChannel.get(ch.channel_type) ?? 0;
                         return (
                           <p className={`flex items-center gap-1.5 mt-2 pt-2 border-t border-primary/5 text-[10px] italic ${isStale ? 'text-amber-300/90' : 'text-foreground/85'}`}>
                             <span className="relative flex-shrink-0 inline-flex">
@@ -342,6 +343,11 @@ export default function ChannelsAtelier() {
                               )}
                             </span>
                             <span className="truncate">{formatLastBridged(lastByChannel.get(ch.channel_type))}</span>
+                            {sentCount > 0 && (
+                              <span className="flex-shrink-0 not-italic tabular-nums text-emerald-300/90">
+                                · {tx(t.channels.sentCount, { count: sentCount })}
+                              </span>
+                            )}
                             {isStale && (
                               <span className="ml-1 px-1.5 py-0.5 text-[9px] not-italic uppercase tracking-wider rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/25 flex-shrink-0">
                                 {t.channels.staleTag}

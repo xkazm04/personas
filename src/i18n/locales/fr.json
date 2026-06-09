@@ -14008,6 +14008,7 @@
       "sentTitle": "Envoyés récemment",
       "sentTo": "à {handle}",
       "sentReuse": "Adapter dans la boîte d'envoi",
+      "sentCount": "{count} envoyés",
       "toneRegister": "Voix du brouillon",
       "toneAuto": "Selon le canal",
       "steerLabel": "Ajustement rapide",

@@ -93,6 +93,7 @@
     "sentTitle": "সম্প্রতি পাঠানো",
     "sentTo": "{handle}-কে",
     "sentReuse": "আউটবক্সে সম্পাদনা করুন",
+    "sentCount": "{count}টি পাঠানো",
     "toneRegister": "খসড়ার কণ্ঠস্বর",
     "toneAuto": "চ্যানেল অনুযায়ী",
     "steerLabel": "দ্রুত নির্দেশনা",

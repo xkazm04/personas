@@ -14008,6 +14008,7 @@
       "sentTitle": "Недавно отправлено",
       "sentTo": "для {handle}",
       "sentReuse": "Использовать как черновик",
+      "sentCount": "отправлено: {count}",
       "toneRegister": "Голос черновика",
       "toneAuto": "Как у канала",
       "steerLabel": "Быстрая правка",

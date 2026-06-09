@@ -93,6 +93,7 @@
     "sentTitle": "Kürzlich gesendet",
     "sentTo": "an {handle}",
     "sentReuse": "In der Outbox anpassen",
+    "sentCount": "{count} gesendet",
     "toneRegister": "Entwurfsstimme",
     "toneAuto": "Wie der Kanal",
     "steerLabel": "Schnell-Steuerung",

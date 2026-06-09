@@ -14008,6 +14008,7 @@
       "sentTitle": "Enviado recientemente",
       "sentTo": "a {handle}",
       "sentReuse": "Adaptar en la bandeja",
+      "sentCount": "{count} enviados",
       "toneRegister": "Voz del borrador",
       "toneAuto": "Según el canal",
       "steerLabel": "Ajuste rápido",

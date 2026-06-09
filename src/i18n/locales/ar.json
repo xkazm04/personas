@@ -14008,6 +14008,7 @@
       "sentTitle": "المُرسَل مؤخرًا",
       "sentTo": "إلى {handle}",
       "sentReuse": "تعديل في صندوق الرد",
+      "sentCount": "{count} مُرسَلة",
       "toneRegister": "نبرة المسودة",
       "toneAuto": "حسب القناة",
       "steerLabel": "توجيه سريع",

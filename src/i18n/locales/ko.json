@@ -14008,6 +14008,7 @@
       "sentTitle": "최근 보냄",
       "sentTo": "{handle}에게",
       "sentReuse": "아웃박스에서 수정",
+      "sentCount": "{count}건 보냄",
       "toneRegister": "초안 톤",
       "toneAuto": "채널에 맞춤",
       "steerLabel": "빠른 조정",

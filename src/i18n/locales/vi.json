@@ -14008,6 +14008,7 @@
       "sentTitle": "Đã gửi gần đây",
       "sentTo": "tới {handle}",
       "sentReuse": "Chỉnh sửa trong hộp gửi",
+      "sentCount": "{count} đã gửi",
       "toneRegister": "Giọng bản nháp",
       "toneAuto": "Theo kênh",
       "steerLabel": "Chỉnh nhanh",

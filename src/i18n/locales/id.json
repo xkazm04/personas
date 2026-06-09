@@ -14008,6 +14008,7 @@
       "sentTitle": "Baru dikirim",
       "sentTo": "ke {handle}",
       "sentReuse": "Adaptasi di outbox",
+      "sentCount": "{count} terkirim",
       "toneRegister": "Suara draf",
       "toneAuto": "Ikuti kanal",
       "steerLabel": "Arahan cepat",

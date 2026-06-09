@@ -15003,6 +15003,7 @@
       "sentTitle": "Recently sent",
       "sentTo": "to {handle}",
       "sentReuse": "Adapt in outbox",
+      "sentCount": "{count} sent",
       "toneRegister": "Draft voice",
       "toneAuto": "Match channel",
       "steerLabel": "Quick steer",
