@@ -11234,6 +11234,11 @@ export type Translations = {
       signatures_button: string;
       signed: string;
       sidebar_trash: string;
+      trash_banner: string;
+      trash_restore: string;
+      trash_empty: string;
+      trash_empty_confirm_title: string;
+      trash_empty_confirm_body: string;
       ctx_sign_file: string;
       ctx_verify_file: string;
       ctx_extract_text: string;

@@ -254,7 +254,12 @@
     "group_signatures": "Chữ ký",
     "group_other": "Khác",
     "signed": "Đã ký",
-    "sidebar_trash": "Thùng rác"
+    "sidebar_trash": "Thùng rác",
+    "trash_banner": "Các mục đã xóa được giữ ở đây 7 ngày, sau đó bị xóa vĩnh viễn.",
+    "trash_restore": "Khôi phục",
+    "trash_empty": "Dọn sạch thùng rác",
+    "trash_empty_confirm_title": "Xóa vĩnh viễn {count} mục?",
+    "trash_empty_confirm_body": "Thao tác này sẽ dọn sạch thùng rác. Không thể khôi phục các mục này."
   },
   "artist": {
     "title": "Artist",

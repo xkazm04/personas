@@ -10411,7 +10411,12 @@
       "group_signatures": "স্বাক্ষর",
       "group_other": "অন্যান্য",
       "signed": "স্বাক্ষরিত",
-      "sidebar_trash": "ট্র্যাশ"
+      "sidebar_trash": "ট্র্যাশ",
+      "trash_banner": "মুছে ফেলা আইটেম এখানে ৭ দিন রাখা হয়, তারপর স্থায়ীভাবে সরানো হয়।",
+      "trash_restore": "পুনরুদ্ধার",
+      "trash_empty": "ট্র্যাশ খালি করুন",
+      "trash_empty_confirm_title": "{count}টি আইটেম স্থায়ীভাবে মুছবেন?",
+      "trash_empty_confirm_body": "এটি ট্র্যাশ খালি করবে। এই আইটেমগুলি পুনরুদ্ধার করা যাবে না।"
     },
     "artist": {
       "title": "Artist",

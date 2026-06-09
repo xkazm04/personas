@@ -254,7 +254,12 @@
     "group_signatures": "Firmas",
     "group_other": "Otro",
     "signed": "Firmado",
-    "sidebar_trash": "Papelera"
+    "sidebar_trash": "Papelera",
+    "trash_banner": "Los elementos eliminados se conservan aquí 7 días y luego se eliminan permanentemente.",
+    "trash_restore": "Restaurar",
+    "trash_empty": "Vaciar papelera",
+    "trash_empty_confirm_title": "¿Eliminar permanentemente {count} elementos?",
+    "trash_empty_confirm_body": "Esto vaciará la papelera. Los elementos no se podrán recuperar."
   },
   "artist": {
     "title": "Artista",

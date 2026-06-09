@@ -26,6 +26,7 @@ import { DriveToolbar } from "./components/DriveToolbar";
 import { DriveSidebar } from "./components/DriveSidebar";
 import { DriveFileList } from "./components/DriveFileList";
 import { DriveKindFilterBar } from "./components/DriveKindFilterBar";
+import { DriveTrashBanner } from "./components/DriveTrashBanner";
 import { DriveDetailsPane } from "./components/DriveDetailsPane";
 import {
   DriveContextMenu,
@@ -40,12 +41,20 @@ import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 import { useOcr } from "./ocr/useOcr";
 import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
 
-// Only the delete confirmation still uses a real modal — create + rename
-// went inline in cycles 9/10/24/27. Keeping the discriminated-union shape
-// in case a future dialog kind needs it.
+// Only the confirmations use a real modal — create + rename went inline in
+// cycles 9/10/24/27. The discriminated union carries each dialog kind.
 type Dialog =
   | { kind: "delete"; paths: string[] }
+  | { kind: "emptyTrash" }
   | null;
+
+// Trash entries are named `<UTC stamp>[-counter]-<original name>` by the
+// backend's move_to_trash. Strips that prefix to recover the display /
+// restore name; returns the input unchanged if it doesn't match.
+const TRASH_NAME_RE = /^\d{8}T\d{6}(?:-\d+)?-(.+)$/;
+function trashOriginalName(name: string): string {
+  return TRASH_NAME_RE.exec(name)?.[1] ?? name;
+}
 
 // Hard limit on a single drag-drop file. Mirrors MAX_WRITE_BYTES on the
 // Rust side — files larger than this are rejected with a toast rather
@@ -347,6 +356,30 @@ export default function DrivePage() {
   }, [dialog, drive]);
 
   // ---------------------------------------------------------------------
+  // Trash actions — active while browsing the trash root.
+  // ---------------------------------------------------------------------
+  const inTrashRoot = drive.currentPath === ".trash";
+
+  // Move each selected trash entry back to the drive root under its
+  // original name (timestamp prefix stripped). Name collisions surface as
+  // per-item toasts via drive.move's own error handling.
+  const handleRestoreSelection = useCallback(async () => {
+    const paths = Array.from(drive.selection);
+    for (const p of paths) {
+      const base = p.split("/").pop() ?? p;
+      await drive.move(p, trashOriginalName(base));
+    }
+    drive.clearSelection();
+  }, [drive]);
+
+  // Hard-delete everything in the trash. Items already inside .trash
+  // hard-delete on a second drive_delete — no dedicated backend command.
+  const confirmEmptyTrash = useCallback(async () => {
+    await drive.remove(drive.entries.map((e) => e.path));
+    setDialog(null);
+  }, [drive]);
+
+  // ---------------------------------------------------------------------
   // OS → Drive drag-drop
   // ---------------------------------------------------------------------
   const hasFilesPayload = (e: React.DragEvent) =>
@@ -546,6 +579,14 @@ export default function DrivePage() {
             onExternalFolderDragOver={setExternalDropTarget}
           />
           <div className="flex-1 min-w-0 flex flex-col">
+            {inTrashRoot && (
+              <DriveTrashBanner
+                itemCount={drive.entries.length}
+                selectionCount={drive.selection.size}
+                onRestoreSelection={handleRestoreSelection}
+                onRequestEmpty={() => setDialog({ kind: "emptyTrash" })}
+              />
+            )}
             <DriveKindFilterBar drive={drive} />
             <DriveFileList
               drive={drive}
@@ -697,6 +738,18 @@ export default function DrivePage() {
           />
         );
       })()}
+
+      {dialog?.kind === "emptyTrash" && (
+        <DriveConfirm
+          title={tx(t.plugins.drive.trash_empty_confirm_title, {
+            count: drive.entries.length,
+          })}
+          body={t.plugins.drive.trash_empty_confirm_body}
+          danger
+          onConfirm={() => confirmEmptyTrash()}
+          onCancel={() => setDialog(null)}
+        />
+      )}
 
       {dialog?.kind === "delete" && (
         <DriveConfirm
