@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, Inbox } from 'lucide-react';
+import { RefreshCw, Inbox, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -32,11 +32,38 @@ const DEFAULT_FILTERS: IncidentFilters = {
 
 const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
 const GROUP_MODE_KEY = 'incidents:group-mode';
+const FILTERS_KEY = 'incidents:filters';
+const SORT_KEY = 'incidents:oldest-first';
+const LAST_SEEN_KEY = 'incidents:last-seen';
 const GROUP_MODES: IncidentGroupMode[] = ['agent', 'severity', 'source', 'none'];
 
 /** Whether a persisted value is a valid group mode (guards against stale storage). */
 function isGroupMode(value: string): value is IncidentGroupMode {
   return (GROUP_MODES as string[]).includes(value);
+}
+
+/**
+ * Restore the persisted filter view, but only the stable dimensions
+ * (status / severity / source). `since` is an absolute timestamp that would go
+ * stale between sessions, and `persona_id` is a transient detail-modal drill-in
+ * — both reset to null on load so the inbox never reopens into a stale or
+ * surprising deep-filter.
+ */
+function loadPersistedFilters(): IncidentFilters {
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const saved = JSON.parse(raw) as Partial<IncidentFilters>;
+    return {
+      statuses: saved.statuses ?? DEFAULT_FILTERS.statuses,
+      severities: saved.severities ?? null,
+      source_tables: saved.source_tables ?? null,
+      persona_id: null,
+      since: null,
+    };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
 }
 
 /** User-facing label for a group-by lens. */
@@ -51,13 +78,28 @@ function groupModeLabel(t: ReturnType<typeof useTranslation>['t'], mode: Inciden
 
 export default function IncidentsInbox() {
   const { t } = useTranslation();
-  const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<IncidentFilters>(loadPersistedFilters);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [justCleared, setJustCleared] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const [oldestFirst, setOldestFirst] = useState(false);
+  const [oldestFirst, setOldestFirst] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(SORT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  // The timestamp the user last marked the inbox "seen" — incidents created
+  // after it count as new. Null on first-ever visit (no marker shown).
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LAST_SEEN_KEY);
+    } catch {
+      return null;
+    }
+  });
   const [groupMode, setGroupMode] = useState<IncidentGroupMode>(() => {
     try {
       const raw = localStorage.getItem(GROUP_MODE_KEY);
@@ -181,6 +223,38 @@ export default function IncidentsInbox() {
     }
   }, [groupMode]);
 
+  // Persist the stable filter view (status/severity/source) + sort order so the
+  // inbox reopens where the user left it. since/persona_id are intentionally
+  // excluded (see loadPersistedFilters).
+  useEffect(() => {
+    try {
+      const { statuses, severities, source_tables } = filters;
+      localStorage.setItem(FILTERS_KEY, JSON.stringify({ statuses, severities, source_tables }));
+    } catch (e) {
+      silentCatch('incidents.filters.persist')(e);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_KEY, oldestFirst ? '1' : '0');
+    } catch (e) {
+      silentCatch('incidents.sort.persist')(e);
+    }
+  }, [oldestFirst]);
+
+  // On leaving the inbox, stamp "now" as the last-seen mark so the next visit
+  // highlights only what arrived while away. Runs once on unmount.
+  useEffect(() => {
+    return () => {
+      try {
+        localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+      } catch (e) {
+        silentCatch('incidents.last-seen.persist')(e);
+      }
+    };
+  }, []);
+
   const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
   const toggleAllGroups = useCallback(() => {
     setCollapsedGroups(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)));
@@ -192,6 +266,25 @@ export default function IncidentsInbox() {
     () => groups.filter((g) => !collapsedGroups.has(g.key)).flatMap((g) => g.incidents),
     [groups, collapsedGroups],
   );
+
+  // How many currently-listed incidents arrived after the user last marked the
+  // inbox seen — surfaced as a "N new since your last visit" marker.
+  const newCount = useMemo(() => {
+    if (!lastSeenAt) return 0;
+    const cutoff = new Date(lastSeenAt).getTime();
+    if (Number.isNaN(cutoff)) return 0;
+    return incidents.filter((i) => new Date(i.createdAt).getTime() > cutoff).length;
+  }, [incidents, lastSeenAt]);
+
+  const markSeen = useCallback(() => {
+    const now = new Date().toISOString();
+    setLastSeenAt(now);
+    try {
+      localStorage.setItem(LAST_SEEN_KEY, now);
+    } catch (e) {
+      silentCatch('incidents.last-seen.persist')(e);
+    }
+  }, []);
 
   // Latest-value refs so the global keydown listener can stay mounted once
   // without re-binding on every focus change or refresh.
@@ -412,6 +505,21 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div>
+            {newCount > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                <span className="typo-caption text-primary">
+                  {t.overview.incidents.new_since_last_visit.replace('{count}', String(newCount))}
+                </span>
+                <button
+                  type="button"
+                  onClick={markSeen}
+                  className="ml-auto px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {t.overview.incidents.mark_seen}
+                </button>
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
               <div className="flex flex-wrap items-center gap-1">
                 <span className="typo-caption text-foreground mr-1">

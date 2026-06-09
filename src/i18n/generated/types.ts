@@ -5592,6 +5592,8 @@ export type Translations = {
       loading: string;
       load_failed: string;
       refresh: string;
+      new_since_last_visit: string;
+      mark_seen: string;
       just_now: string;
       resolved_at_label: string;
       acknowledged_at_label: string;

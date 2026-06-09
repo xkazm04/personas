@@ -5586,6 +5586,8 @@
       "loading": "Loading incidents…",
       "load_failed": "Failed to load incidents",
       "refresh": "Refresh",
+      "new_since_last_visit": "{count} new since your last visit",
+      "mark_seen": "Mark seen",
       "just_now": "just now",
       "resolved_at_label": "Resolved",
       "acknowledged_at_label": "Acked",
