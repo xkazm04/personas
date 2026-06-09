@@ -9,6 +9,11 @@ export interface RunPersonaResult {
   execution: PersonaExecution;
   output: string | null;
   passed: boolean;
+  /** 'terminal' = we observed a terminal status; 'timeout' = we stopped polling
+   *  before it finished (the execution may still be running in the backend). The
+   *  caller MUST NOT persist a 'timeout' as a failed run — that records a false
+   *  negative for a run that may still be succeeding. */
+  kind: 'terminal' | 'timeout';
 }
 
 export interface RunPersonaOptions {
@@ -41,6 +46,7 @@ export async function runPersonaAndWait(opts: RunPersonaOptions): Promise<RunPer
       execution: started,
       output: started.output_data,
       passed: started.status === 'completed',
+      kind: 'terminal',
     };
   }
 
@@ -55,10 +61,14 @@ export async function runPersonaAndWait(opts: RunPersonaOptions): Promise<RunPer
     } catch (err) { silentCatch("features/plugins/research-lab/shared/runPersona:catch1")(err); }
   }
 
+  // If we exited because the deadline passed, latest.status is still non-terminal
+  // — distinguish "didn't finish observing" (timeout) from "finished and failed"
+  // so the caller never records a false negative for a run still in flight.
   return {
     execution: latest,
     output: latest.output_data,
     passed: latest.status === 'completed',
+    kind: TERMINAL.has(latest.status) ? 'terminal' : 'timeout',
   };
 }
 

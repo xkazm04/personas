@@ -67,10 +67,19 @@ export default function ExperimentsPanel() {
 
     setRunningId(exp.id);
     try {
-      const { execution, output, passed: statusPassed } = await runPersonaAndWait({
+      const { execution, output, passed: statusPassed, kind } = await runPersonaAndWait({
         personaId: config.linkedPersonaId,
         input: config.inputDataTemplate ?? '',
       });
+
+      // Timeout != failure: the execution may still be running in the backend.
+      // Recording it now would persist a false "failed" run that pollutes
+      // findings/reports. Skip persistence; the user can re-run to capture it.
+      // (Durable create-before-dispatch + crash reconciliation is research #1.)
+      if (kind === 'timeout') {
+        addToast('Run still in progress — not recorded yet; re-run later to capture the result.', 'warning');
+        return;
+      }
 
       const passed = evaluatePass(output, config.passPattern, statusPassed);
 
