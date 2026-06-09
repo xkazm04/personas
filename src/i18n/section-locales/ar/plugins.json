@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "يحتاج أولًا",
     "goal_dep_follows": "يأتي بعد",
     "goal_dep_add_depends_on": "+ أضف هدفًا يحتاجه هذا أولًا…",
-    "goal_dep_add_follows": "+ أضف هدفًا يأتي هذا بعده…"
+    "goal_dep_add_follows": "+ أضف هدفًا يأتي هذا بعده…",
+    "goal_starters_label": "أو ابدأ بهدف شائع:",
+    "goal_starter_created": "أُضيف \"{title}\" إلى أهدافك",
+    "goal_starter_release_title": "إطلاق الإصدار الأول",
+    "goal_starter_release_desc": "أوصل نسخة أولى إلى المستخدمين — حدد المحتوى وأنجزه وانشره.",
+    "goal_starter_bugs_title": "إصلاح أكثر الأخطاء إزعاجًا",
+    "goal_starter_bugs_desc": "اجمع المشكلات الأكثر إيلامًا للمستخدمين وعالجها واحدة تلو الأخرى.",
+    "goal_starter_docs_title": "كتابة دليل البدء",
+    "goal_starter_docs_desc": "اشرح ما يفعله المشروع وكيف يشغّله شخص جديد.",
+    "goal_starter_quality_title": "جعل المشروع أكثر موثوقية",
+    "goal_starter_quality_desc": "أضف فحوصات واختبارات حول الأجزاء الأكثر خطورة حتى تتوقف التغييرات عن إفساد الأشياء."
   },
   "dev_projects": {
     "active_goals": "الأهداف النشطة",

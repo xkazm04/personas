@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "আগে দরকার",
     "goal_dep_follows": "পরে আসে",
     "goal_dep_add_depends_on": "+ আগে দরকার এমন একটি লক্ষ্য যোগ করুন…",
-    "goal_dep_add_follows": "+ যার পরে এটি আসে এমন লক্ষ্য যোগ করুন…"
+    "goal_dep_add_follows": "+ যার পরে এটি আসে এমন লক্ষ্য যোগ করুন…",
+    "goal_starters_label": "অথবা একটি সাধারণ লক্ষ্য দিয়ে শুরু করুন:",
+    "goal_starter_created": "\"{title}\" আপনার লক্ষ্যে যোগ হয়েছে",
+    "goal_starter_release_title": "প্রথম রিলিজ প্রকাশ করুন",
+    "goal_starter_release_desc": "প্রথম সংস্করণ ব্যবহারকারীদের হাতে পৌঁছে দিন — কী থাকবে ঠিক করুন, শেষ করুন, প্রকাশ করুন।",
+    "goal_starter_bugs_title": "সবচেয়ে বিরক্তিকর বাগ ঠিক করুন",
+    "goal_starter_bugs_desc": "ব্যবহারকারীদের সবচেয়ে ভোগায় এমন সমস্যাগুলো জড়ো করে একে একে সমাধান করুন।",
+    "goal_starter_docs_title": "শুরু করার গাইড লিখুন",
+    "goal_starter_docs_desc": "প্রকল্পটি কী করে এবং নতুন কেউ কীভাবে চালাবে তা ব্যাখ্যা করুন।",
+    "goal_starter_quality_title": "প্রকল্পকে আরও নির্ভরযোগ্য করুন",
+    "goal_starter_quality_desc": "সবচেয়ে ঝুঁকিপূর্ণ অংশে পরীক্ষা ও যাচাই যোগ করুন যাতে পরিবর্তনে আর কিছু না ভাঙে।"
   },
   "dev_projects": {
     "active_goals": "সক্রিয় লক্ষ্য",

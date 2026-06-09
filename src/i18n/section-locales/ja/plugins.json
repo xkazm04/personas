@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "先に必要",
     "goal_dep_follows": "後に続く",
     "goal_dep_add_depends_on": "+ 先に必要なゴールを追加…",
-    "goal_dep_add_follows": "+ このゴールが続くゴールを追加…"
+    "goal_dep_add_follows": "+ このゴールが続くゴールを追加…",
+    "goal_starters_label": "またはよくあるゴールから始める：",
+    "goal_starter_created": "「{title}」をゴールに追加しました",
+    "goal_starter_release_title": "最初のリリースを出す",
+    "goal_starter_release_desc": "最初のバージョンをユーザーに届けましょう — 範囲を決め、仕上げて、公開します。",
+    "goal_starter_bugs_title": "最も困っているバグを直す",
+    "goal_starter_bugs_desc": "ユーザーを最も困らせている問題を集め、ひとつずつ解決します。",
+    "goal_starter_docs_title": "はじめてガイドを書く",
+    "goal_starter_docs_desc": "プロジェクトが何をするものか、新しい人がどう動かすかを説明します。",
+    "goal_starter_quality_title": "プロジェクトの信頼性を高める",
+    "goal_starter_quality_desc": "最もリスクの高い部分にチェックとテストを追加し、変更で壊れないようにします。"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",

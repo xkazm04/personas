@@ -12034,7 +12034,17 @@
       "goal_dep_depends_on": "À faire avant",
       "goal_dep_follows": "Vient après",
       "goal_dep_add_depends_on": "+ Ajouter un objectif à faire avant…",
-      "goal_dep_add_follows": "+ Ajouter un objectif que celui-ci suit…"
+      "goal_dep_add_follows": "+ Ajouter un objectif que celui-ci suit…",
+      "goal_starters_label": "Ou partez d’un objectif courant :",
+      "goal_starter_created": "« {title} » ajouté à vos objectifs",
+      "goal_starter_release_title": "Publier la première version",
+      "goal_starter_release_desc": "Mettez une première version entre les mains des utilisateurs — décidez du contenu, terminez et publiez.",
+      "goal_starter_bugs_title": "Corriger les bugs les plus gênants",
+      "goal_starter_bugs_desc": "Rassemblez les problèmes qui gênent le plus les utilisateurs et traitez-les un par un.",
+      "goal_starter_docs_title": "Rédiger un guide de démarrage",
+      "goal_starter_docs_desc": "Expliquez ce que fait le projet et comment une nouvelle personne le lance.",
+      "goal_starter_quality_title": "Rendre le projet plus fiable",
+      "goal_starter_quality_desc": "Ajoutez des vérifications et des tests autour des parties les plus risquées pour que les changements ne cassent plus rien."
     },
     "dev_projects": {
       "active_goals": "objectifs actifs",

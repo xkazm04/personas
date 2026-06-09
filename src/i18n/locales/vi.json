@@ -12034,7 +12034,17 @@
       "goal_dep_depends_on": "Cần trước",
       "goal_dep_follows": "Đến sau",
       "goal_dep_add_depends_on": "+ Thêm mục tiêu cần hoàn thành trước…",
-      "goal_dep_add_follows": "+ Thêm mục tiêu mà mục tiêu này theo sau…"
+      "goal_dep_add_follows": "+ Thêm mục tiêu mà mục tiêu này theo sau…",
+      "goal_starters_label": "Hoặc bắt đầu với một mục tiêu phổ biến:",
+      "goal_starter_created": "Đã thêm \"{title}\" vào mục tiêu của bạn",
+      "goal_starter_release_title": "Phát hành phiên bản đầu tiên",
+      "goal_starter_release_desc": "Đưa phiên bản đầu tiên đến tay người dùng — quyết định phạm vi, hoàn thiện và phát hành.",
+      "goal_starter_bugs_title": "Sửa những lỗi gây khó chịu nhất",
+      "goal_starter_bugs_desc": "Thu thập các vấn đề làm phiền người dùng nhất và xử lý từng cái một.",
+      "goal_starter_docs_title": "Viết hướng dẫn bắt đầu",
+      "goal_starter_docs_desc": "Giải thích dự án làm gì và người mới chạy nó như thế nào.",
+      "goal_starter_quality_title": "Làm dự án đáng tin cậy hơn",
+      "goal_starter_quality_desc": "Thêm kiểm tra và thử nghiệm quanh những phần rủi ro nhất để thay đổi không còn phá hỏng mọi thứ."
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",

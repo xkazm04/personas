@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "पहले चाहिए",
     "goal_dep_follows": "बाद में आता है",
     "goal_dep_add_depends_on": "+ ऐसा लक्ष्य जोड़ें जो पहले चाहिए…",
-    "goal_dep_add_follows": "+ ऐसा लक्ष्य जोड़ें जिसके बाद यह आता है…"
+    "goal_dep_add_follows": "+ ऐसा लक्ष्य जोड़ें जिसके बाद यह आता है…",
+    "goal_starters_label": "या किसी सामान्य लक्ष्य से शुरू करें:",
+    "goal_starter_created": "\"{title}\" आपके लक्ष्यों में जुड़ गया",
+    "goal_starter_release_title": "पहला रिलीज़ शिप करें",
+    "goal_starter_release_desc": "पहला संस्करण उपयोगकर्ताओं तक पहुँचाएँ — तय करें क्या शामिल है, पूरा करें और प्रकाशित करें।",
+    "goal_starter_bugs_title": "सबसे तकलीफ़देह बग ठीक करें",
+    "goal_starter_bugs_desc": "उपयोगकर्ताओं को सबसे ज़्यादा परेशान करने वाली समस्याएँ इकट्ठा करें और एक-एक करके हल करें।",
+    "goal_starter_docs_title": "शुरुआती गाइड लिखें",
+    "goal_starter_docs_desc": "समझाएँ कि प्रोजेक्ट क्या करता है और नया व्यक्ति इसे कैसे चलाए।",
+    "goal_starter_quality_title": "प्रोजेक्ट को और भरोसेमंद बनाएँ",
+    "goal_starter_quality_desc": "सबसे जोखिम भरे हिस्सों पर जाँच और टेस्ट जोड़ें ताकि बदलाव चीज़ें न तोड़ें।"
   },
   "dev_projects": {
     "active_goals": "सक्रिय goals",

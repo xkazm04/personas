@@ -65,6 +65,7 @@ export default function GoalsPage() {
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchAllGoals = useSystemStore((s) => s.fetchAllGoals);
+  const createGoal = useSystemStore((s) => s.createGoal);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -126,6 +127,29 @@ export default function GoalsPage() {
   const handleAskAthena = () => {
     useCompanionStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
     useCompanionStore.getState().setState('open');
+  };
+
+  // Starter goals — one-click seeds for the empty state, so a non-technical
+  // user gets a concrete first goal instead of a blank form.
+  const [starterBusy, setStarterBusy] = useState(false);
+  const starters = [
+    { title: dl.goal_starter_release_title, desc: dl.goal_starter_release_desc },
+    { title: dl.goal_starter_bugs_title, desc: dl.goal_starter_bugs_desc },
+    { title: dl.goal_starter_docs_title, desc: dl.goal_starter_docs_desc },
+    { title: dl.goal_starter_quality_title, desc: dl.goal_starter_quality_desc },
+  ];
+  const addStarter = async (title: string, desc: string) => {
+    if (!activeProjectId || starterBusy) return;
+    setStarterBusy(true);
+    try {
+      await createGoal(activeProjectId, title, desc);
+      addToast(tx(dl.goal_starter_created, { title }), 'success');
+    } catch (err) {
+      // createGoal already reports to the store's error channel.
+      silentCatch('GoalsPage.addStarter')(err);
+    } finally {
+      setStarterBusy(false);
+    }
   };
 
   return (
@@ -213,6 +237,25 @@ export default function GoalsPage() {
                 {dl.goal_ask_athena}
               </Button>
             </div>
+            {/* One-click starter goals — concrete first steps beat a blank form */}
+            {activeProjectId && (
+              <div className="mt-6 flex flex-col items-center gap-2">
+                <p className="typo-caption text-foreground">{dl.goal_starters_label}</p>
+                <div className="flex flex-wrap justify-center gap-1.5 max-w-lg">
+                  {starters.map((s) => (
+                    <button
+                      key={s.title}
+                      type="button"
+                      disabled={starterBusy}
+                      onClick={() => void addStarter(s.title, s.desc)}
+                      className="px-2.5 py-1 rounded-full border border-violet-500/25 bg-violet-500/5 typo-caption text-foreground hover:bg-violet-500/15 hover:text-violet-200 transition-colors disabled:opacity-50"
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4 pb-6">

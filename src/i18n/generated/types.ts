@@ -12802,6 +12802,16 @@ export type Translations = {
       goal_detail_checklist: string;
       goal_detail_subgoals: string;
       goal_detail_dependencies: string;
+      goal_starters_label: string;
+      goal_starter_created: string;
+      goal_starter_release_title: string;
+      goal_starter_release_desc: string;
+      goal_starter_bugs_title: string;
+      goal_starter_bugs_desc: string;
+      goal_starter_docs_title: string;
+      goal_starter_docs_desc: string;
+      goal_starter_quality_title: string;
+      goal_starter_quality_desc: string;
       goal_dep_depends_on: string;
       goal_dep_follows: string;
       goal_dep_add_depends_on: string;

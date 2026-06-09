@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "需要先完成",
     "goal_dep_follows": "排在其后",
     "goal_dep_add_depends_on": "+ 添加一个需要先完成的目标…",
-    "goal_dep_add_follows": "+ 添加一个排在其前的目标…"
+    "goal_dep_add_follows": "+ 添加一个排在其前的目标…",
+    "goal_starters_label": "或从一个常见目标开始：",
+    "goal_starter_created": "“{title}”已加入你的目标",
+    "goal_starter_release_title": "发布第一个版本",
+    "goal_starter_release_desc": "把第一个版本交到用户手中——确定范围、完成并发布。",
+    "goal_starter_bugs_title": "修复最让人头疼的问题",
+    "goal_starter_bugs_desc": "收集最影响用户的问题，逐一解决。",
+    "goal_starter_docs_title": "编写入门指南",
+    "goal_starter_docs_desc": "说明这个项目是做什么的，以及新人如何把它跑起来。",
+    "goal_starter_quality_title": "让项目更可靠",
+    "goal_starter_quality_desc": "在最容易出错的地方加上检查和测试，让改动不再破坏功能。"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

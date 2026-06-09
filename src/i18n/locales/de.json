@@ -12034,7 +12034,17 @@
       "goal_dep_depends_on": "Braucht zuerst",
       "goal_dep_follows": "Kommt danach",
       "goal_dep_add_depends_on": "+ Ziel hinzufügen, das zuerst nötig ist…",
-      "goal_dep_add_follows": "+ Ziel hinzufügen, auf das dieses folgt…"
+      "goal_dep_add_follows": "+ Ziel hinzufügen, auf das dieses folgt…",
+      "goal_starters_label": "Oder mit einem typischen Ziel starten:",
+      "goal_starter_created": "„{title}\" zu deinen Zielen hinzugefügt",
+      "goal_starter_release_title": "Das erste Release veröffentlichen",
+      "goal_starter_release_desc": "Bring eine erste Version zu den Nutzern — Umfang festlegen, fertigstellen, veröffentlichen.",
+      "goal_starter_bugs_title": "Die schmerzhaftesten Bugs beheben",
+      "goal_starter_bugs_desc": "Sammle die Probleme, die Nutzer am meisten stören, und arbeite sie nacheinander ab.",
+      "goal_starter_docs_title": "Eine Einstiegsanleitung schreiben",
+      "goal_starter_docs_desc": "Erkläre, was das Projekt tut und wie eine neue Person es zum Laufen bringt.",
+      "goal_starter_quality_title": "Das Projekt zuverlässiger machen",
+      "goal_starter_quality_desc": "Füge Prüfungen und Tests an den riskantesten Stellen hinzu, damit Änderungen nichts mehr kaputt machen."
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

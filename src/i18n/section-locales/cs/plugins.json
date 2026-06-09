@@ -1866,7 +1866,17 @@
     "goal_dep_depends_on": "Nejprve potřebuje",
     "goal_dep_follows": "Následuje po",
     "goal_dep_add_depends_on": "+ Přidat cíl, který je potřeba nejdřív…",
-    "goal_dep_add_follows": "+ Přidat cíl, po kterém tento následuje…"
+    "goal_dep_add_follows": "+ Přidat cíl, po kterém tento následuje…",
+    "goal_starters_label": "Nebo začněte běžným cílem:",
+    "goal_starter_created": "„{title}\" přidán mezi vaše cíle",
+    "goal_starter_release_title": "Vydat první verzi",
+    "goal_starter_release_desc": "Dostaňte první verzi k uživatelům — rozhodněte, co obsahuje, dokončete ji a publikujte.",
+    "goal_starter_bugs_title": "Opravit nejpalčivější chyby",
+    "goal_starter_bugs_desc": "Sesbírejte problémy, které uživatele nejvíc trápí, a řešte je jeden po druhém.",
+    "goal_starter_docs_title": "Napsat úvodní příručku",
+    "goal_starter_docs_desc": "Vysvětlete, co projekt dělá a jak ho nový člověk rozběhne.",
+    "goal_starter_quality_title": "Zvýšit spolehlivost projektu",
+    "goal_starter_quality_desc": "Přidejte kontroly a testy kolem nejrizikovějších částí, aby změny přestaly věci rozbíjet."
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

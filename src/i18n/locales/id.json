@@ -12034,7 +12034,17 @@
       "goal_dep_depends_on": "Perlu lebih dulu",
       "goal_dep_follows": "Setelahnya",
       "goal_dep_add_depends_on": "+ Tambah sasaran yang diperlukan lebih dulu…",
-      "goal_dep_add_follows": "+ Tambah sasaran yang mendahuluinya…"
+      "goal_dep_add_follows": "+ Tambah sasaran yang mendahuluinya…",
+      "goal_starters_label": "Atau mulai dengan sasaran umum:",
+      "goal_starter_created": "\"{title}\" ditambahkan ke sasaran Anda",
+      "goal_starter_release_title": "Rilis versi pertama",
+      "goal_starter_release_desc": "Sampaikan versi pertama ke pengguna — tentukan isinya, selesaikan, dan terbitkan.",
+      "goal_starter_bugs_title": "Perbaiki bug paling mengganggu",
+      "goal_starter_bugs_desc": "Kumpulkan masalah yang paling menyakitkan bagi pengguna dan selesaikan satu per satu.",
+      "goal_starter_docs_title": "Tulis panduan memulai",
+      "goal_starter_docs_desc": "Jelaskan apa fungsi proyek ini dan bagaimana orang baru menjalankannya.",
+      "goal_starter_quality_title": "Buat proyek lebih andal",
+      "goal_starter_quality_desc": "Tambahkan pemeriksaan dan pengujian di bagian paling berisiko agar perubahan tidak merusak."
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",
