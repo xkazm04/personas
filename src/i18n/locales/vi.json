@@ -14147,6 +14147,7 @@
       "impactHeading": "Phiên này đã bổ sung gì",
       "impactCount": "+{count}",
       "impactPending": "Các câu trả lời đang chờ duyệt — phê duyệt trong Knowledge để tăng độ phủ.",
+      "momentumSessions": "phiên",
       "draftAsTwin": "Soạn thử như bản sao",
       "draftingAsTwin": "Đang soạn như {name}…",
       "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",

@@ -232,6 +232,7 @@
     "impactHeading": "Ce que cette session a apporté",
     "impactCount": "+{count}",
     "impactPending": "Ces réponses sont en attente de relecture — approuvez-les dans Connaissances pour faire croître la couverture.",
+    "momentumSessions": "sessions",
     "draftAsTwin": "Brouillon comme le jumeau",
     "draftingAsTwin": "Rédaction en tant que {name}…",
     "twinDraftLabel": "Brouillon du jumeau — relire et modifier",

@@ -232,6 +232,7 @@
     "impactHeading": "Что дала эта сессия",
     "impactCount": "+{count}",
     "impactPending": "Эти ответы ждут проверки — одобрите их в «Знаниях», чтобы покрытие выросло.",
+    "momentumSessions": "сессий",
     "draftAsTwin": "Черновик от двойника",
     "draftingAsTwin": "Черновик от имени {name}…",
     "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",

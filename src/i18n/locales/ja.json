@@ -14147,6 +14147,7 @@
       "impactHeading": "このセッションの貢献",
       "impactCount": "+{count}",
       "impactPending": "これらの回答はレビュー待ちです — Knowledge で承認するとカバレッジに反映されます。",
+      "momentumSessions": "セッション",
       "draftAsTwin": "ツインとして下書き",
       "draftingAsTwin": "{name}として下書き中…",
       "twinDraftLabel": "ツインの下書き — 確認して編集",

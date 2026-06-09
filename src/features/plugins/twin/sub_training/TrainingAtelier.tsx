@@ -7,6 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
+import { useTrainingMomentum } from './useTrainingMomentum';
 import { NextMovesPanel } from './NextMovesPanel';
 import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
@@ -48,6 +49,9 @@ export default function TrainingAtelier() {
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const session = useTrainingSession();
+  // Re-fetches as the session advances so the count is fresh right after a
+  // session completes (the summary lands at the topic→complete transition).
+  const momentum = useTrainingMomentum(activeTwinId, session.phase);
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenComment, setRegenComment] = useState('');
   const [mode, setMode] = useState<'classic' | 'studio'>('classic');
@@ -111,6 +115,13 @@ export default function TrainingAtelier() {
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="grounding" value={session.groundingFacts.length} accent={groundingTier === 'strong' ? 'emerald' : groundingTier === 'medium' ? 'amber' : 'violet'} />
+            {momentum.sessions > 0 && (<>
+              <span className="w-px h-6 bg-primary/15" />
+              {/* Date tooltip mirrors RelativeTime's locale-string pattern. */}
+              <span title={momentum.lastTrainedAt ? new Date(momentum.lastTrainedAt).toLocaleString() : undefined}>
+                <Stat label={t.training.momentumSessions} value={momentum.sessions} accent="violet" />
+              </span>
+            </>)}
             {session.phase !== 'topic' && (<>
               <span className="w-px h-6 bg-primary/15" />
               <Stat label="answered" value={`${session.savedCount}/${session.questions.length}`} accent="emerald" />

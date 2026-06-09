@@ -14147,6 +14147,7 @@
       "impactHeading": "এই সেশন কী যোগ করেছে",
       "impactCount": "+{count}",
       "impactPending": "এই উত্তরগুলি পর্যালোচনার অপেক্ষায় — কভারেজ বাড়াতে Knowledge-এ অনুমোদন করুন।",
+      "momentumSessions": "সেশন",
       "draftAsTwin": "টুইন হিসেবে খসড়া",
       "draftingAsTwin": "{name} হিসেবে খসড়া তৈরি হচ্ছে…",
       "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",

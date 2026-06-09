@@ -15138,6 +15138,7 @@ export type Translations = {
       impactHeading: string;
       impactCount: string;
       impactPending: string;
+      momentumSessions: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;

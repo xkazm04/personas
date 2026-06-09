@@ -15132,6 +15132,7 @@
       "impactHeading": "What this session fed",
       "impactCount": "+{count}",
       "impactPending": "These answers are pending review — approve them in Knowledge to grow coverage.",
+      "momentumSessions": "sessions",
       "groundingHint": "Already known: {count} memories — questions will avoid duplicates.",
       "followupBadge": "Follow-up",
       "followupCta": "Go deeper",
