@@ -169,13 +169,17 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // Fleet rollup powers the live-cost chip.
   const fleet = useMemo(() => summarizeFleet(displayCards), [displayCards]);
 
+  // The overlay is fully opaque (was bg-background/98 + backdrop-blur-xl): the
+  // blur was invisible at 98% opacity but forced the GPU to re-composite the
+  // whole app underneath every frame. A full-screen opaque overlay that
+  // occludes the layers below lets the browser skip painting them entirely.
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.16 }}
-      className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background/98 backdrop-blur-xl flex flex-col"
+      className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background flex flex-col"
       data-testid="persona-monitor"
     >
       {/* Faint interconnected-agents backdrop (dark mode only). */}

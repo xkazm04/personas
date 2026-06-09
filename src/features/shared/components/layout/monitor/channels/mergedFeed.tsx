@@ -51,7 +51,8 @@ export function MergedChannels({
     const grouped = new Map<string, TaggedItem[]>();
     for (const team of teams) {
       const rows = (itemsByTeam.get(team.teamId) ?? []).map((item) => ({ item, team }));
-      grouped.set(team.teamId, [...rows].sort((a, b) => b.item.at.localeCompare(a.item.at)));
+      // `byTeam` is consumed only for per-team counts now — no per-team sort.
+      grouped.set(team.teamId, rows);
       flat.push(...rows);
     }
     flat.sort((a, b) => b.item.at.localeCompare(a.item.at));
