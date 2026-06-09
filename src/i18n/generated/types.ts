@@ -13286,6 +13286,9 @@ export type Translations = {
       auto_scan_failed_status: string;
       auto_scan_completed_status: string;
       select_all_btn: string;
+      agent_recommended_tip: string;
+      select_recommended_btn: string;
+      select_recommended_tip: string;
       clear_all_btn: string;
       no_results_yet: string;
       no_ideas_match_filter: string;

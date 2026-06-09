@@ -7,7 +7,7 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp, Star } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -104,11 +104,14 @@ export function AgentCard({
   agent,
   selected,
   onToggle,
+  recommended = false,
 }: {
   agent: ScanAgentDef;
   selected: boolean;
   onToggle: () => void;
+  recommended?: boolean;
 }) {
+  const { t } = useTranslation();
   const ac = agentColor(agent);
   const Icon = agent.icon;
   return (
@@ -153,6 +156,15 @@ export function AgentCard({
           <Info className="w-3.5 h-3.5 text-foreground hover:text-foreground transition-colors" />
         </Tooltip>
       </span>
+
+      {/* Recommended star — bottom-right, from the agent scoreboard's accept rate */}
+      {recommended && (
+        <span className="absolute bottom-1.5 right-1.5 z-10" onClick={(e) => e.stopPropagation()}>
+          <Tooltip content={t.plugins.dev_scanner.agent_recommended_tip} placement="top">
+            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/40" />
+          </Tooltip>
+        </span>
+      )}
     </motion.button>
   );
 }
