@@ -21,6 +21,45 @@ const BLOCKED_PREFIXES_WINDOWS: &[&str] = &[
     "c:/$recycle.bin",
 ];
 
+/// Returns true if `path` points at a well-known secret / private-key / wallet
+/// location that must never be read by a privileged flow (e.g. signing). Mirrors
+/// the renderer's `SENSITIVE_PATH_PATTERNS` (src/api/signing/index.ts) so a
+/// direct IPC caller (a persona tool, a future feature) can't bypass the
+/// frontend guard and turn `sign_document` into an exfil oracle over SSH keys /
+/// cloud credentials / wallets. Normalises separators + case; matches on path
+/// segments and key-bearing extensions.
+pub fn is_sensitive_credential_path(path: &str) -> bool {
+    let n = path.replace('\\', "/").to_lowercase();
+
+    // Directory-scoped secrets.
+    if n.contains("/.ssh/")
+        || n.contains("/.gnupg/")
+        || n.contains("/.aws/credentials")
+        || n.contains("/.config/gcloud/")
+    {
+        return true;
+    }
+
+    // Key-bearing file extensions.
+    const KEY_EXTS: &[&str] = &[".pem", ".p12", ".pfx", ".key", ".jks", ".keystore"];
+    if KEY_EXTS.iter().any(|e| n.ends_with(e)) {
+        return true;
+    }
+
+    // Final path component checks.
+    let file = n.rsplit('/').next().unwrap_or(n.as_str());
+    const SSH_KEYS: &[&str] = &["id_rsa", "id_ed25519", "id_ecdsa", "id_dsa"];
+    const PRIVATE_KEY_NAMES: &[&str] = &["private_key", "private-key", "privatekey"];
+    if SSH_KEYS
+        .iter()
+        .chain(PRIVATE_KEY_NAMES.iter())
+        .any(|k| file == *k || file.starts_with(&format!("{k}.")))
+    {
+        return true;
+    }
+    matches!(file, "wallet.dat" | ".npmrc" | ".netrc")
+}
+
 /// Validate a single watch path.
 ///
 /// Returns `Ok(())` if the path is safe to watch, or `Err(reason)` if it

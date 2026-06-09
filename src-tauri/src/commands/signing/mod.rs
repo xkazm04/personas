@@ -11,7 +11,9 @@ use crate::db::models::{
 };
 use crate::db::repos::resources::signing as repo;
 use crate::engine::identity;
-use crate::engine::path_safety::{validate_file_access_path, ALLOWED_SIDECAR_EXTENSIONS};
+use crate::engine::path_safety::{
+    is_sensitive_credential_path, validate_file_access_path, ALLOWED_SIDECAR_EXTENSIONS,
+};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -43,6 +45,18 @@ pub fn sign_document(
     let path = validate_file_access_path(&file_path, None).map_err(AppError::Validation)?;
     if !path.exists() {
         return Err(AppError::Validation(format!("File not found: {file_path}")));
+    }
+
+    // Backend enforcement of the sensitive-credential denylist (the renderer's
+    // SENSITIVE_PATH_PATTERNS is bypassable by any direct IPC caller). Checked on
+    // the RESOLVED path so a symlink / relative path can't smuggle past it. This
+    // is now the PRIMARY gate; the TS guard is defense-in-depth.
+    if is_sensitive_credential_path(&path.to_string_lossy()) {
+        return Err(AppError::Validation(
+            "Refusing to sign a sensitive credential file (private key / vault / cloud credentials). \
+             Pick a different file."
+                .into(),
+        ));
     }
 
     let file_name = path
