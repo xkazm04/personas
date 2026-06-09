@@ -527,6 +527,27 @@ pub fn get_by_use_case_id(
     )
 }
 
+/// Persist the Claude session id WITHOUT touching the status column, guarded to
+/// `running`. The session-id capture runs on a detached, retrying task; if the
+/// execution already reached a terminal status (completed/cancelled/failed) by
+/// the time this fires, a status-writing `update_status` would resurrect the row
+/// to `running` and orphan it as a permanent zombie. Column-scoped + status-guard
+/// makes that impossible.
+pub fn set_claude_session_id(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::set_claude_session_id",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_executions SET claude_session_id = ?1 WHERE id = ?2 AND status = 'running'",
+                params![session_id, id],
+            )?;
+            Ok(())
+        }
+    )
+}
+
 pub fn update_status(
     pool: &DbPool,
     id: &str,

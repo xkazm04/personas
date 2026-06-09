@@ -1888,14 +1888,15 @@ pub async fn run_execution(
                                     // Persist session_id with retry — losing this silently
                                     // breaks warm session reuse (cost optimization).
                                     tokio::spawn(async move {
-                                        let update = || exec_repo::update_status(
+                                        // Column-scoped + status-guarded: this detached, retrying
+                                        // write must NEVER touch the status column. A fast run can
+                                        // reach a terminal status before this fires; a status-writing
+                                        // update would flip it back to `running` and orphan it as a
+                                        // permanent zombie (bug-hunt execution #2).
+                                        let update = || exec_repo::set_claude_session_id(
                                             &pool_ref,
                                             &exec_id_ref,
-                                            UpdateExecutionStatus {
-                                                status: ExecutionState::Running,
-                                                claude_session_id: Some(sid_clone.clone()),
-                                                ..Default::default()
-                                            },
+                                            &sid_clone,
                                         );
                                         if let Err(e) = update() {
                                             tracing::warn!(
