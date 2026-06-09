@@ -16,6 +16,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | Mutations | Create folder/file, rename, delete, move, copy | `hooks/useDrive.ts`, `src/api/drive.ts` |
 | OS file ingest | OS-native drag-drop into the current folder; cap 50 MB per file | `DrivePage.tsx` |
 | Recursive search | Local folder filter escalates to a backend `drive_search` walk via a "Search all of Drive" CTA when there are no in-folder hits | `hooks/useDrive.ts`, `components/DriveFileList.tsx`, `commands/drive.rs::drive_search` |
+| Kind filter | Chips above the list (list/icons views) narrow the current folder to one resolved kind — Images / Docs / Code / … — alongside the name search; resets on navigation | `components/DriveKindFilterBar.tsx`, `hooks/useDrive.ts` |
 | OCR drawer | Gemini OCR through Vault credentials or Claude CLI OCR through local CLI | `ocr/DriveOcrDrawer.tsx`, `ocr/useOcr.ts`, `src/api/drive.ts` |
 | Signing | Generate/attach/verify document signatures and sidecars. The signatures-history panel can re-verify any record in place — "Verify now" re-hashes the live file against the record's exported sidecar and shows valid / modified / invalid inline. Signed files carry a badge in the details pane + a marker on list rows (signature records loaded eagerly on Drive open; their stored absolute paths are mapped back to drive-relative for matching) | `signing/*`, `src/api/signing` |
 

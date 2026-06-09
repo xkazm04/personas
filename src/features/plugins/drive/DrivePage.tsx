@@ -25,6 +25,7 @@ import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
 import { DriveSidebar } from "./components/DriveSidebar";
 import { DriveFileList } from "./components/DriveFileList";
+import { DriveKindFilterBar } from "./components/DriveKindFilterBar";
 import { DriveDetailsPane } from "./components/DriveDetailsPane";
 import {
   DriveContextMenu,
@@ -525,6 +526,7 @@ export default function DrivePage() {
         <div className="flex-1 min-h-0 flex">
           <DriveSidebar drive={drive} activeDragCount={activeDragCount} />
           <div className="flex-1 min-w-0 flex flex-col">
+            <DriveKindFilterBar drive={drive} />
             <DriveFileList
               drive={drive}
               onOpen={handleOpen}
