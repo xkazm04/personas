@@ -28,6 +28,7 @@ import { driveFormatBytes, driveRead, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { BaseModal } from "@/lib/ui/BaseModal";
 import { silentCatch } from "@/lib/silentCatch";
+import { useLazyImageThumb } from "../hooks/useLazyImageThumb";
 import { formatRelativeTime, visualForEntry } from "../designTokens";
 
 interface Props {
@@ -509,8 +510,8 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
 }
 
 /**
- * One filmstrip tile. Images lazy-load a thumbnail via IntersectionObserver
- * and revoke it again when scrolled out of view, so the strip stays cheap on
+ * One filmstrip tile. Images lazy-load a thumbnail via useLazyImageThumb
+ * (IntersectionObserver in, blob-revoke out) so the strip stays cheap on
  * large folders; non-image kinds render their kind icon (no fetch). The
  * filename rides as the accessible label (user content — not translated).
  */
@@ -526,53 +527,11 @@ function FilmstripThumb({
   const visual = visualForEntry(entry);
   const Icon = visual.Icon;
   const isImage = (entry.mime ?? "").startsWith("image/");
-  const btnRef = useRef<HTMLButtonElement>(null);
-  const [url, setUrl] = useState<string | null>(null);
-  const urlRef = useRef<string | null>(null);
-  urlRef.current = url;
-
-  useEffect(() => {
-    if (!isImage) return;
-    const el = btnRef.current;
-    if (!el) return;
-    let cancelled = false;
-    const io = new IntersectionObserver(
-      (records) => {
-        const rec = records[0];
-        if (!rec) return;
-        if (rec.isIntersecting) {
-          if (urlRef.current || cancelled) return;
-          driveRead(entry.path)
-            .then((bytes) => {
-              if (cancelled) return;
-              const u = URL.createObjectURL(
-                new Blob([new Uint8Array(bytes)], {
-                  type: entry.mime ?? "application/octet-stream",
-                }),
-              );
-              urlRef.current = u;
-              setUrl(u);
-            })
-            .catch(silentCatch("drive:filmstrip-thumb"));
-        } else if (urlRef.current) {
-          // Off-screen → free the blob to bound memory on large image sets.
-          URL.revokeObjectURL(urlRef.current);
-          urlRef.current = null;
-          setUrl(null);
-        }
-      },
-      { root: el.parentElement, rootMargin: "300px" },
-    );
-    io.observe(el);
-    return () => {
-      cancelled = true;
-      io.disconnect();
-      if (urlRef.current) {
-        URL.revokeObjectURL(urlRef.current);
-        urlRef.current = null;
-      }
-    };
-  }, [entry.path, entry.mime, isImage]);
+  const { ref: btnRef, url } = useLazyImageThumb<HTMLButtonElement>(
+    entry.path,
+    entry.mime,
+    isImage,
+  );
 
   return (
     <button
