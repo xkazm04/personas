@@ -14138,6 +14138,7 @@
       "coverageThin": "정보 부족",
       "coverageSome": "일부 포함",
       "coverageCovered": "충분히 포함",
+      "recommendedNext": "다음 학습 추천",
       "draftAsTwin": "트윈으로 초안 작성",
       "draftingAsTwin": "{name}(으)로 초안 작성 중…",
       "twinDraftLabel": "트윈 초안 — 검토 및 편집",

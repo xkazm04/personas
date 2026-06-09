@@ -14138,6 +14138,7 @@
       "coverageThin": "Wenig abgedeckt",
       "coverageSome": "Teilweise abgedeckt",
       "coverageCovered": "Gut abgedeckt",
+      "recommendedNext": "Als Nächstes trainieren",
       "draftAsTwin": "Als Twin entwerfen",
       "draftingAsTwin": "Entwurf als {name}…",
       "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",

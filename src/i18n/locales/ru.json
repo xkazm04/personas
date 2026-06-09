@@ -14138,6 +14138,7 @@
       "coverageThin": "Мало данных",
       "coverageSome": "Частично охвачено",
       "coverageCovered": "Хорошо охвачено",
+      "recommendedNext": "Тренируйте следующим",
       "draftAsTwin": "Черновик от двойника",
       "draftingAsTwin": "Черновик от имени {name}…",
       "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",

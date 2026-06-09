@@ -14138,6 +14138,7 @@
       "coverageThin": "情報が少なめ",
       "coverageSome": "ある程度カバー",
       "coverageCovered": "十分にカバー",
+      "recommendedNext": "次はこれ",
       "draftAsTwin": "ツインとして下書き",
       "draftingAsTwin": "{name}として下書き中…",
       "twinDraftLabel": "ツインの下書き — 確認して編集",

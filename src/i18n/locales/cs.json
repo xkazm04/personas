@@ -14138,6 +14138,7 @@
       "coverageThin": "Málo pokryto",
       "coverageSome": "Částečně pokryto",
       "coverageCovered": "Dobře pokryto",
+      "recommendedNext": "Trénujte jako další",
       "draftAsTwin": "Návrh jako dvojče",
       "draftingAsTwin": "Vytváří se návrh jako {name}…",
       "twinDraftLabel": "Návrh dvojčete — zkontrolovat a upravit",

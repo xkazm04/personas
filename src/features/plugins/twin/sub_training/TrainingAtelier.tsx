@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight, Briefcase, Lightbulb, MessageSquare, Compass, Rocket, Heart, Quote, Bot, Wand2 } from 'lucide-react';
+import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight, Briefcase, Lightbulb, MessageSquare, Compass, Rocket, Heart, Quote, Bot, Star, Wand2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -70,6 +70,13 @@ export default function TrainingAtelier() {
   const coverageById = new Map(session.topicCoverage.map((c) => [c.id, c]));
   const coverageLabel = (tier: CoverageTier) =>
     tier === 'covered' ? t.training.coverageCovered : tier === 'some' ? t.training.coverageSome : t.training.coverageThin;
+  // Star the thinnest-covered preset — same ranking NextMovesPanel uses after a
+  // session, surfaced on the deck up front. Meaningless with zero approved
+  // memories (every topic ties at 0), so it waits for the first grounding fact.
+  const recommendedId =
+    session.groundingFacts.length > 0 && session.topicCoverage.length > 0
+      ? [...session.topicCoverage].sort((a, b) => a.count - b.count || a.id.localeCompare(b.id))[0]!.id
+      : null;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -143,6 +150,7 @@ export default function TrainingAtelier() {
                   const Icon = TOPIC_ICONS[topic.id] ?? Sparkles;
                   const tint = TOPIC_TINTS[topic.id] ?? 'from-violet-500/15 to-fuchsia-500/10';
                   const cov = coverageById.get(topic.id);
+                  const recommended = topic.id === recommendedId;
                   return (
                     <motion.button
                       key={topic.id}
@@ -150,8 +158,16 @@ export default function TrainingAtelier() {
                       disabled={session.generating}
                       whileHover={{ y: -2 }}
                       whileTap={{ scale: 0.99 }}
-                      className={`group relative p-5 rounded-card border border-primary/10 bg-gradient-to-br ${tint} hover:border-violet-500/30 hover:shadow-elevation-2 transition-all text-left overflow-hidden`}
+                      className={`group relative p-5 rounded-card border bg-gradient-to-br ${tint} hover:shadow-elevation-2 transition-all text-left overflow-hidden ${
+                        recommended ? 'border-violet-500/40 shadow-elevation-1 hover:border-violet-500/55' : 'border-primary/10 hover:border-violet-500/30'
+                      }`}
                     >
+                      {recommended && (
+                        <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-violet-500/15 border border-violet-500/35 text-violet-300 text-[9px] uppercase tracking-wider font-medium">
+                          <Star className="w-2.5 h-2.5 fill-current" />
+                          {t.training.recommendedNext}
+                        </span>
+                      )}
                       <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-violet-500/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                       <div className="relative flex items-start gap-3">
                         <div className="w-10 h-10 rounded-card bg-card/60 border border-primary/15 flex items-center justify-center flex-shrink-0">

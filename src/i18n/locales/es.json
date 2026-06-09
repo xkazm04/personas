@@ -14138,6 +14138,7 @@
       "coverageThin": "Poca cobertura",
       "coverageSome": "Cobertura parcial",
       "coverageCovered": "Bien cubierto",
+      "recommendedNext": "Entrena esto ahora",
       "draftAsTwin": "Borrador como gemelo",
       "draftingAsTwin": "Redactando como {name}…",
       "twinDraftLabel": "Borrador del gemelo: revisa y edita",

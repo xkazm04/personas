@@ -15123,6 +15123,7 @@
       "coverageThin": "Thin coverage",
       "coverageSome": "Some coverage",
       "coverageCovered": "Well covered",
+      "recommendedNext": "Train this next",
       "groundingHint": "Already known: {count} memories — questions will avoid duplicates.",
       "followupBadge": "Follow-up",
       "followupCta": "Go deeper",

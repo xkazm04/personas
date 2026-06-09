@@ -14138,6 +14138,7 @@
       "coverageThin": "覆盖较少",
       "coverageSome": "部分覆盖",
       "coverageCovered": "覆盖充分",
+      "recommendedNext": "建议下一个训练",
       "draftAsTwin": "以分身起草",
       "draftingAsTwin": "正在以{name}起草…",
       "twinDraftLabel": "分身草稿 — 审阅并编辑",

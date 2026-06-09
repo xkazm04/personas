@@ -223,6 +223,7 @@
     "coverageThin": "Peu couvert",
     "coverageSome": "Partiellement couvert",
     "coverageCovered": "Bien couvert",
+    "recommendedNext": "À entraîner ensuite",
     "draftAsTwin": "Brouillon comme le jumeau",
     "draftingAsTwin": "Rédaction en tant que {name}…",
     "twinDraftLabel": "Brouillon du jumeau — relire et modifier",

@@ -14138,6 +14138,7 @@
       "coverageThin": "Ít dữ liệu",
       "coverageSome": "Bao phủ một phần",
       "coverageCovered": "Bao phủ tốt",
+      "recommendedNext": "Huấn luyện tiếp theo",
       "draftAsTwin": "Soạn thử như bản sao",
       "draftingAsTwin": "Đang soạn như {name}…",
       "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",

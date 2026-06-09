@@ -223,6 +223,7 @@
     "coverageThin": "কম কভারেজ",
     "coverageSome": "আংশিক কভারেজ",
     "coverageCovered": "ভালোভাবে কভার",
+    "recommendedNext": "এটি পরবর্তীতে প্রশিক্ষণ দিন",
     "draftAsTwin": "টুইন হিসেবে খসড়া",
     "draftingAsTwin": "{name} হিসেবে খসড়া তৈরি হচ্ছে…",
     "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",

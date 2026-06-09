@@ -223,6 +223,7 @@
     "coverageThin": "تغطية ضئيلة",
     "coverageSome": "تغطية جزئية",
     "coverageCovered": "تغطية جيدة",
+    "recommendedNext": "درّب هذا تاليًا",
     "draftAsTwin": "صياغة كالتوأم",
     "draftingAsTwin": "جارٍ الصياغة كـ {name}…",
     "twinDraftLabel": "مسودة التوأم — راجع وحرّر",
