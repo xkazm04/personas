@@ -14398,6 +14398,12 @@ export type Translations = {
     auto_team_subtitle: string;
     auto_team_placeholder: string;
     generate_team: string;
+    blueprint_role_label: string;
+    blueprint_remove_member: string;
+    auto_team_agents_one: string;
+    auto_team_agents_other: string;
+    auto_team_connections_one: string;
+    auto_team_connections_other: string;
     assembling_team: string;
     try_different: string;
     creating_team: string;

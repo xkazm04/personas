@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} eliminada",
   "removed_memories_other": "{count} eliminadas",
   "clear_all_filters": "Borrar todos los filtros",
-  "diff_legend": "Las entradas verdes son nuevas en la ejecución más reciente; las rojas desaparecieron desde la anterior."
+  "diff_legend": "Las entradas verdes son nuevas en la ejecución más reciente; las rojas desaparecieron desde la anterior.",
+  "blueprint_role_label": "Rol",
+  "blueprint_remove_member": "Quitar del plano",
+  "auto_team_agents_one": "{count} agente",
+  "auto_team_agents_other": "{count} agentes",
+  "auto_team_connections_one": "{count} conexión",
+  "auto_team_connections_other": "{count} conexiones"
 }

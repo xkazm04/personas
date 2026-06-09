@@ -13511,7 +13511,13 @@
     "removed_memories_one": "{count} محذوفة",
     "removed_memories_other": "{count} محذوفة",
     "clear_all_filters": "مسح كل عوامل التصفية",
-    "diff_legend": "الإدخالات الخضراء جديدة في التشغيل الأحدث؛ والإدخالات الحمراء اختفت منذ التشغيل الأقدم."
+    "diff_legend": "الإدخالات الخضراء جديدة في التشغيل الأحدث؛ والإدخالات الحمراء اختفت منذ التشغيل الأقدم.",
+    "blueprint_role_label": "الدور",
+    "blueprint_remove_member": "إزالة من المخطط",
+    "auto_team_agents_one": "وكيل واحد",
+    "auto_team_agents_other": "{count} وكلاء",
+    "auto_team_connections_one": "اتصال واحد",
+    "auto_team_connections_other": "{count} اتصالات"
   },
   "auth": {
     "login_timed_out": "انتهت مهلة تسجيل الدخول. يرجى المحاولة مجدداً."

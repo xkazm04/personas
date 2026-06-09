@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} हटाई गई",
   "removed_memories_other": "{count} हटाई गईं",
   "clear_all_filters": "सभी फ़िल्टर साफ़ करें",
-  "diff_legend": "हरी प्रविष्टियाँ नए रन में नई हैं; लाल प्रविष्टियाँ पुराने रन के बाद से हट चुकी हैं।"
+  "diff_legend": "हरी प्रविष्टियाँ नए रन में नई हैं; लाल प्रविष्टियाँ पुराने रन के बाद से हट चुकी हैं।",
+  "blueprint_role_label": "भूमिका",
+  "blueprint_remove_member": "ब्लूप्रिंट से हटाएँ",
+  "auto_team_agents_one": "{count} एजेंट",
+  "auto_team_agents_other": "{count} एजेंट",
+  "auto_team_connections_one": "{count} कनेक्शन",
+  "auto_team_connections_other": "{count} कनेक्शन"
 }

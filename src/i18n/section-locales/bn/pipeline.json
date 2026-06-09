@@ -293,5 +293,11 @@
   "removed_memories_one": "{count}টি সরানো হয়েছে",
   "removed_memories_other": "{count}টি সরানো হয়েছে",
   "clear_all_filters": "সব ফিল্টার মুছুন",
-  "diff_legend": "সবুজ এন্ট্রিগুলি নতুন রানে যুক্ত হয়েছে; লাল এন্ট্রিগুলি পুরনো রানের পর থেকে নেই।"
+  "diff_legend": "সবুজ এন্ট্রিগুলি নতুন রানে যুক্ত হয়েছে; লাল এন্ট্রিগুলি পুরনো রানের পর থেকে নেই।",
+  "blueprint_role_label": "ভূমিকা",
+  "blueprint_remove_member": "ব্লুপ্রিন্ট থেকে সরান",
+  "auto_team_agents_one": "{count}টি এজেন্ট",
+  "auto_team_agents_other": "{count}টি এজেন্ট",
+  "auto_team_connections_one": "{count}টি সংযোগ",
+  "auto_team_connections_other": "{count}টি সংযোগ"
 }

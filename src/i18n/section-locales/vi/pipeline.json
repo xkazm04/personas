@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} đã xóa",
   "removed_memories_other": "{count} đã xóa",
   "clear_all_filters": "Xóa tất cả bộ lọc",
-  "diff_legend": "Mục màu xanh là mới trong lần chạy mới hơn; mục màu đỏ đã biến mất kể từ lần chạy cũ hơn."
+  "diff_legend": "Mục màu xanh là mới trong lần chạy mới hơn; mục màu đỏ đã biến mất kể từ lần chạy cũ hơn.",
+  "blueprint_role_label": "Vai trò",
+  "blueprint_remove_member": "Xóa khỏi bản thiết kế",
+  "auto_team_agents_one": "{count} tác nhân",
+  "auto_team_agents_other": "{count} tác nhân",
+  "auto_team_connections_one": "{count} kết nối",
+  "auto_team_connections_other": "{count} kết nối"
 }

@@ -33,6 +33,10 @@ export interface AutoTeamState {
   apply: () => void;
   /** Reset to idle. */
   reset: () => void;
+  /** Drop a suggested member (previewing only); re-indexes connections. */
+  removeMember: (index: number) => void;
+  /** Override a suggested member's role (previewing only). */
+  setMemberRole: (index: number, role: string) => void;
 }
 
 export function useAutoTeam(): AutoTeamState {
@@ -213,6 +217,31 @@ export function useAutoTeam(): AutoTeamState {
     }
   }, [blueprint, query, createTeam, fetchTeams, selectTeam]);
 
+  const removeMember = useCallback((index: number) => {
+    setBlueprint((bp) => {
+      if (!bp || bp.members.length <= 1) return bp;
+      const members = bp.members.filter((_, i) => i !== index);
+      // Connections reference members by index: drop edges touching the removed
+      // member, shift indices past it down by one.
+      const connections = bp.connections
+        .filter((c) => c.source_index !== index && c.target_index !== index)
+        .map((c) => ({
+          ...c,
+          source_index: c.source_index > index ? c.source_index - 1 : c.source_index,
+          target_index: c.target_index > index ? c.target_index - 1 : c.target_index,
+        }));
+      return { ...bp, members, connections };
+    });
+  }, []);
+
+  const setMemberRole = useCallback((index: number, role: string) => {
+    setBlueprint((bp) => {
+      if (!bp) return bp;
+      const members = bp.members.map((m, i) => (i === index ? { ...m, role } : m));
+      return { ...bp, members };
+    });
+  }, []);
+
   const reset = useCallback(() => {
     cancelledRef.current = true;
     setPhase('idle');
@@ -238,5 +267,7 @@ export function useAutoTeam(): AutoTeamState {
     suggest,
     apply,
     reset,
+    removeMember,
+    setMemberRole,
   };
 }

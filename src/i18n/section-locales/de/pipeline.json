@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} entfernt",
   "removed_memories_other": "{count} entfernt",
   "clear_all_filters": "Alle Filter zurücksetzen",
-  "diff_legend": "Grüne Einträge sind im neueren Lauf neu; rote Einträge sind seit dem älteren Lauf verschwunden."
+  "diff_legend": "Grüne Einträge sind im neueren Lauf neu; rote Einträge sind seit dem älteren Lauf verschwunden.",
+  "blueprint_role_label": "Rolle",
+  "blueprint_remove_member": "Aus dem Entwurf entfernen",
+  "auto_team_agents_one": "{count} Agent",
+  "auto_team_agents_other": "{count} Agenten",
+  "auto_team_connections_one": "{count} Verbindung",
+  "auto_team_connections_other": "{count} Verbindungen"
 }

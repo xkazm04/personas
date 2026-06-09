@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} odstraněn",
   "removed_memories_other": "{count} odstraněno",
   "clear_all_filters": "Vymazat všechny filtry",
-  "diff_legend": "Zelené záznamy jsou nové v novějším běhu; červené záznamy od staršího běhu zmizely."
+  "diff_legend": "Zelené záznamy jsou nové v novějším běhu; červené záznamy od staršího běhu zmizely.",
+  "blueprint_role_label": "Role",
+  "blueprint_remove_member": "Odebrat z návrhu",
+  "auto_team_agents_one": "{count} agent",
+  "auto_team_agents_other": "{count} agentů",
+  "auto_team_connections_one": "{count} spojení",
+  "auto_team_connections_other": "{count} spojení"
 }

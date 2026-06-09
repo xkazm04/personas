@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} удалена",
   "removed_memories_other": "Удалено: {count}",
   "clear_all_filters": "Сбросить все фильтры",
-  "diff_legend": "Зелёные записи появились в более новом запуске; красные исчезли после более старого."
+  "diff_legend": "Зелёные записи появились в более новом запуске; красные исчезли после более старого.",
+  "blueprint_role_label": "Роль",
+  "blueprint_remove_member": "Убрать из шаблона",
+  "auto_team_agents_one": "{count} агент",
+  "auto_team_agents_other": "Агентов: {count}",
+  "auto_team_connections_one": "{count} связь",
+  "auto_team_connections_other": "Связей: {count}"
 }

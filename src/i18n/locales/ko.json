@@ -13511,7 +13511,13 @@
     "removed_memories_one": "{count}개 제거됨",
     "removed_memories_other": "{count}개 제거됨",
     "clear_all_filters": "모든 필터 지우기",
-    "diff_legend": "초록색 항목은 최신 실행에서 새로 추가된 것이고, 빨간색 항목은 이전 실행 이후 사라진 것입니다."
+    "diff_legend": "초록색 항목은 최신 실행에서 새로 추가된 것이고, 빨간색 항목은 이전 실행 이후 사라진 것입니다.",
+    "blueprint_role_label": "역할",
+    "blueprint_remove_member": "블루프린트에서 제거",
+    "auto_team_agents_one": "에이전트 {count}명",
+    "auto_team_agents_other": "에이전트 {count}명",
+    "auto_team_connections_one": "연결 {count}개",
+    "auto_team_connections_other": "연결 {count}개"
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."

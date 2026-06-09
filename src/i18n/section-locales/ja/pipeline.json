@@ -293,5 +293,11 @@
   "removed_memories_one": "{count} 件削除",
   "removed_memories_other": "{count} 件削除",
   "clear_all_filters": "すべてのフィルターをクリア",
-  "diff_legend": "緑のエントリは新しい実行で追加されたもの、赤のエントリは古い実行以降に消えたものです。"
+  "diff_legend": "緑のエントリは新しい実行で追加されたもの、赤のエントリは古い実行以降に消えたものです。",
+  "blueprint_role_label": "ロール",
+  "blueprint_remove_member": "ブループリントから削除",
+  "auto_team_agents_one": "エージェント {count} 体",
+  "auto_team_agents_other": "エージェント {count} 体",
+  "auto_team_connections_one": "接続 {count} 件",
+  "auto_team_connections_other": "接続 {count} 件"
 }
