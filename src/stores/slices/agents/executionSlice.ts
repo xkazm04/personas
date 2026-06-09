@@ -90,6 +90,9 @@ export interface ExecutionSlice {
   executions: ExecutionListItem[];
   /** Whether the execution list is currently being fetched. */
   executionsLoading: boolean;
+  /** True when the last executions fetch failed — lets the list show an error +
+   *  retry instead of the "no runs yet" empty state. */
+  executionsError: boolean;
   /** The personaId whose executions are currently loaded (for cache coherence). */
   executionsPersonaId: string | null;
   executionsCache: Record<string, ExecutionListItem[]>;
@@ -223,6 +226,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   return ({
     executions: [],
     executionsLoading: false,
+    executionsError: false,
     executionsPersonaId: null,
     executionsCache: {},
     executionsCacheAt: {},
@@ -502,11 +506,12 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         executions: cached,
         executionsPersonaId: personaId,
         executionsLoading: false,
+        executionsError: false,
       });
       return;
     }
     const doFetch = async () => {
-      set({ executionsLoading: true });
+      set({ executionsLoading: true, executionsError: false });
       try {
         const executions = await listExecutionsSummary(personaId);
         set((state) => ({
@@ -517,6 +522,7 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         }));
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });
+        set({ executionsError: true });
       } finally {
         set({ executionsLoading: false });
         inflightFetch = null;

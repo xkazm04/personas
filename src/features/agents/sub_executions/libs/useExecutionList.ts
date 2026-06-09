@@ -37,11 +37,13 @@ export function formatTokens(tokens: number): string {
 export function useExecutionList(personaId: string): {
   executions: ExecutionListItem[];
   loading: boolean;
+  error: boolean;
   refresh: () => Promise<void>;
   typicalDurationMs: number | null;
 } {
   const executions = useAgentStore((s) => s.executions);
   const loading = useAgentStore((s) => s.executionsLoading);
+  const error = useAgentStore((s) => s.executionsError);
   const isExecuting = useAgentStore((s) => s.isExecuting);
   const fetchExecutions = useAgentStore((s) => s.fetchExecutions);
 
@@ -78,5 +80,5 @@ export function useExecutionList(personaId: string): {
 
   const refresh = useAgentStore((s) => s.fetchExecutions);
 
-  return { executions, loading, refresh: () => refresh(personaId), typicalDurationMs };
+  return { executions, loading, error, refresh: () => refresh(personaId), typicalDurationMs };
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import { Rocket, Play, Clock } from 'lucide-react';
+import { Rocket, Play, Clock, AlertCircle } from 'lucide-react';
 import { getExecution } from '@/api/agents/executions';
 import { getRetryChain } from '@/api/overview/healing';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
@@ -45,7 +45,7 @@ export function ExecutionList() {
   const setRerunInputData = useSystemStore((state) => state.setRerunInputData);
 
   const personaId = selectedPersona?.id || '';
-  const { executions: rawExecutions, loading } = useExecutionList(personaId);
+  const { executions: rawExecutions, loading, error, refresh } = useExecutionList(personaId);
   const useCases = useSelectedUseCases();
   const useCaseTitleById = useMemo(() => {
     const m = new Map<string, string>();
@@ -380,7 +380,18 @@ export function ExecutionList() {
         />
       )}
 
-      {executions.length === 0 ? (
+      {error && executions.length === 0 ? (
+        <div className="animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 bg-red-500/5 border border-red-500/20 rounded-modal">
+          <div className="w-12 h-12 rounded-modal bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+            <AlertCircle className="w-5.5 h-5.5 text-red-400" />
+          </div>
+          <p className="typo-heading text-foreground">Couldn’t load runs</p>
+          <p className="typo-body text-foreground mt-1 max-w-[260px]">The execution history failed to load. Check your connection and try again.</p>
+          <button onClick={() => { void refresh(); }} className="mt-4 flex items-center gap-2 px-4 py-2 typo-heading rounded-modal bg-primary/10 text-primary/80 border border-primary/20 hover:bg-primary/20 hover:text-primary transition-colors">
+            Retry
+          </button>
+        </div>
+      ) : executions.length === 0 ? (
         <div
           className="animate-fade-slide-in flex flex-col items-center text-center py-12 px-6 bg-secondary/40 backdrop-blur-sm border border-primary/20 rounded-modal">
           <div className="w-12 h-12 rounded-modal bg-primary/8 border border-primary/20 flex items-center justify-center mb-4">
