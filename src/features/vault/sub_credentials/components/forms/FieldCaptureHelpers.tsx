@@ -123,6 +123,9 @@ export function FieldActionButtons({
           onClick={() => setIsVisible((v) => !v)}
           className="p-0.5 text-foreground hover:text-foreground/80 transition-colors"
           data-testid={testIdBase ? `${testIdBase}-eye-btn` : undefined}
+          aria-label={isVisible ? 'Hide value' : 'Show value'}
+          aria-pressed={isVisible}
+          title={isVisible ? 'Hide value' : 'Show value'}
         >
           {isVisible ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
         </button>
