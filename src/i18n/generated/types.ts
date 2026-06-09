@@ -15135,6 +15135,9 @@ export type Translations = {
       coverageSome: string;
       coverageCovered: string;
       recommendedNext: string;
+      impactHeading: string;
+      impactCount: string;
+      impactPending: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;

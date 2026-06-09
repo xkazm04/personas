@@ -10,7 +10,7 @@ import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession
 import { NextMovesPanel } from './NextMovesPanel';
 import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
-import type { CoverageTier } from './topicCoverage';
+import { scoreTopicTexts, type CoverageTier } from './topicCoverage';
 
 
 /* ------------------------------------------------------------------ *
@@ -77,6 +77,13 @@ export default function TrainingAtelier() {
     session.groundingFacts.length > 0 && session.topicCoverage.length > 0
       ? [...session.topicCoverage].sort((a, b) => a.count - b.count || a.id.localeCompare(b.id))[0]!.id
       : null;
+  // Certificate impact recap: which topics this session's saved answers fed.
+  // Scored with the same keyword matcher as the deck pills; the answers are
+  // PENDING memories until reviewed, so this is framed as a pending
+  // contribution, not a coverage change.
+  const sessionImpact = scoreTopicTexts(
+    session.questions.filter((q) => q.saved).map((q) => `${q.question} ${q.answer}`),
+  ).filter((c) => c.count > 0);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -407,6 +414,37 @@ export default function TrainingAtelier() {
                   <div className="p-5 md:p-6">
                     <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{session.sessionSummary}</p>
                     <p className="typo-caption text-foreground italic mt-4 pt-4 border-t border-violet-500/10">{t.training.summarySaved}</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {sessionImpact.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="mt-6 rounded-card border border-primary/15 bg-card/40 overflow-hidden"
+                >
+                  <div className="px-5 py-3 border-b border-primary/10 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-300" />
+                    <span className="text-[10px] uppercase tracking-[0.2em] text-emerald-300 font-medium">{t.training.impactHeading}</span>
+                  </div>
+                  <div className="p-4">
+                    <ul className="flex flex-wrap gap-2">
+                      {sessionImpact.map((c) => {
+                        const preset = TRAINING_TOPIC_PRESETS.find((p) => p.id === c.id);
+                        const Icon = TOPIC_ICONS[c.id] ?? Sparkles;
+                        const label = preset ? (t.training[preset.labelKey as keyof typeof t.training] as string) : c.id;
+                        return (
+                          <li key={c.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/25 bg-emerald-500/8">
+                            <Icon className="w-3 h-3 text-emerald-300" />
+                            <span className="typo-caption text-foreground">{label}</span>
+                            <span className="text-[10px] font-medium tabular-nums text-emerald-300">{tx(t.training.impactCount, { count: c.count })}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <p className="text-[11px] text-foreground mt-3">{t.training.impactPending}</p>
                   </div>
                 </motion.div>
               )}

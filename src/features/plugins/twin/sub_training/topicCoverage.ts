@@ -42,15 +42,22 @@ export function tierForCount(count: number): CoverageTier {
   return 'thin';
 }
 
-/** Count keyword-matched approved memories per preset, with a derived tier. */
-export function scoreTopicCoverage(memories: TwinPendingMemory[]): TopicCoverage[] {
+/** Count keyword-matched texts per preset, with a derived tier. The generic
+ *  form also scores a session's own saved Q&A (TrainingAtelier's certificate
+ *  impact recap), not just persisted memories. */
+export function scoreTopicTexts(texts: string[]): TopicCoverage[] {
   return TRAINING_TOPIC_PRESETS.map((preset) => {
     const kws = TOPIC_KEYWORDS[preset.id] ?? [];
     let count = 0;
-    for (const m of memories) {
-      const hay = `${m.title ?? ''} ${m.content}`.toLowerCase();
+    for (const text of texts) {
+      const hay = text.toLowerCase();
       if (kws.some((kw) => hay.includes(kw))) count += 1;
     }
     return { id: preset.id, count, tier: tierForCount(count) };
   });
+}
+
+/** Count keyword-matched approved memories per preset, with a derived tier. */
+export function scoreTopicCoverage(memories: TwinPendingMemory[]): TopicCoverage[] {
+  return scoreTopicTexts(memories.map((m) => `${m.title ?? ''} ${m.content}`));
 }
