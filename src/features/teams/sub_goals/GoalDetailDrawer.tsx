@@ -56,6 +56,9 @@ interface Props {
   goalId: string | null;
   /** Opens the GoalEditorModal in edit mode for this goal. */
   onEdit: (goal: DevGoal) => void;
+  /** Fallback goal object for goals NOT in the active-project store (e.g. the
+   *  cross-project channel sidebar). Used when the store lookup misses. */
+  goalFallback?: DevGoal | null;
 }
 
 /** Neutral chip for team-side statuses (queued/running/awaiting_review/…). */
@@ -66,11 +69,13 @@ function isActiveAssignment(status: string) {
   return status === 'queued' || status === 'running' || status === 'awaiting_review';
 }
 
-export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
+export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback = null }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const allGoals = useSystemStore((s) => s.goals);
-  const goal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
+  const storeGoal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
+  // Fall back to the passed object for cross-project goals not in the store.
+  const goal = storeGoal ?? (goalFallback && goalFallback.id === goalId ? goalFallback : null);
   const updateGoal = useSystemStore((s) => s.updateGoal);
   const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const projects = useSystemStore((s) => s.projects);

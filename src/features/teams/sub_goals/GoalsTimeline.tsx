@@ -165,6 +165,7 @@ export function GoalsTimeline({ showProject = false, compact = false, allProject
       <GoalDetailDrawer
         isOpen={!!detailGoalId}
         goalId={detailGoalId}
+        goalFallback={goals.find((g) => g.id === detailGoalId) ?? null}
         onClose={() => setDetailGoalId(null)}
         onEdit={(g) => { setDetailGoalId(null); setEditGoal(g); }}
       />
