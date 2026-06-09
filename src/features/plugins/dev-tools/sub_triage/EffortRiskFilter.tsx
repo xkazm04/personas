@@ -52,8 +52,10 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
               <button
                 key={p.label}
                 title={p.label}
+                aria-label={p.label}
+                aria-pressed={isActive}
                 onClick={() => onEffortChange(isActive ? allRange : p.range)}
-                className={`flex-1 flex items-center justify-center p-2 rounded-card border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex items-center justify-center p-2 rounded-card border transition-colors ${isActive ? `ring-2 ring-inset ring-current/40 ${colors.active}` : colors.inactive}`}
               >
                 <Icon className="w-4.5 h-4.5" />
               </button>
@@ -79,8 +81,10 @@ export function EffortRiskFilter({ effortRange, riskRange, onEffortChange, onRis
               <button
                 key={p.label}
                 title={p.label}
+                aria-label={p.label}
+                aria-pressed={isActive}
                 onClick={() => onRiskChange(isActive ? allRange : p.range)}
-                className={`flex-1 flex items-center justify-center p-2 rounded-card border transition-colors ${isActive ? colors.active : colors.inactive}`}
+                className={`flex-1 flex items-center justify-center p-2 rounded-card border transition-colors ${isActive ? `ring-2 ring-inset ring-current/40 ${colors.active}` : colors.inactive}`}
               >
                 <Icon className="w-4.5 h-4.5" />
               </button>
