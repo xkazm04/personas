@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
+  AlertCircle,
   Lightbulb, Play,
   BrainCircuit,
   Zap,
@@ -590,7 +591,17 @@ export default function IdeaScannerPage() {
               </div>
             </div>
 
-            {filteredIdeas.length === 0 ? (
+            {scanPhase === 'error' ? (
+              <div className="border border-red-500/20 bg-red-500/5 rounded-modal p-4 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-md text-red-400 font-medium">Last scan failed</p>
+                  <p className="typo-body text-foreground mt-0.5">
+                    The scan didn’t complete (CLI error, timeout, or cancelled). Adjust your selection and run it again.
+                  </p>
+                </div>
+              </div>
+            ) : filteredIdeas.length === 0 ? (
               <div className="text-center py-16 border border-dashed border-primary/10 rounded-modal">
                 <Lightbulb className="w-8 h-8 text-foreground mx-auto mb-2" />
                 <p className="text-md text-foreground">
