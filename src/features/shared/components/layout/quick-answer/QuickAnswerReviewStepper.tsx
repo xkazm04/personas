@@ -61,6 +61,12 @@ export function QuickAnswerReviewStepper({
     if (!teamId) return null;
     return teams.find((tm) => tm.id === teamId)?.name ?? null;
   }, [personas, teams, review?.persona_id]);
+  // Prefer the joined persona_name; fall back to resolving by id from the store
+  // (the join is sometimes empty), then to the generic label.
+  const personaName = useMemo(
+    () => review?.persona_name || personas.find((p) => p.id === review?.persona_id)?.name || null,
+    [personas, review?.persona_name, review?.persona_id],
+  );
 
   if (reviews.length === 0 || !review) return null;
   const bucket = severityBucket(review.severity);
@@ -123,7 +129,7 @@ export function QuickAnswerReviewStepper({
       <div className="flex items-center gap-2.5 px-4 py-2 border-b border-card-border bg-secondary/15">
         <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
         <div className="min-w-0 flex-1 leading-tight">
-          <div className="typo-body font-semibold text-foreground truncate">{review.persona_name ?? t.monitor.quick_source_unknown}</div>
+          <div className="typo-body font-semibold text-foreground truncate">{personaName ?? t.monitor.quick_source_unknown}</div>
           {teamName && (
             <div className="inline-flex items-center gap-1 typo-caption text-foreground/55 truncate">
               <Users className="w-3 h-3 flex-shrink-0" /> {teamName}

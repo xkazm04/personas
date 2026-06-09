@@ -39,7 +39,7 @@ export function VirtualStream({
     [data, labels],
   );
 
-  const { virtualizer, activeStickyRef } = useGroupedVirtualizer({
+  const { virtualizer } = useGroupedVirtualizer({
     count: rows.length,
     headerIndexes,
     getScrollElement: () => scrollRef.current,
@@ -67,7 +67,9 @@ export function VirtualStream({
                   key={`h:${v.index}:${row.key}`}
                   label={row.label}
                   count={row.count}
-                  pinned={activeStickyRef.current === v.index}
+                  // Non-sticky: the day header scrolls with its rows instead of
+                  // pinning to the top (the pinned "Today" lingered unhelpfully).
+                  pinned={false}
                   start={v.start}
                   height={GROUP_HEADER_SIZE}
                 />
