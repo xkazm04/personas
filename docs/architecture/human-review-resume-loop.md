@@ -150,9 +150,30 @@ Overview = deep workspace) but make them feel like one system:
    actions as numbered dispatching options, capped at 4). Picking a suggested
    action carries it out everywhere; plain approve/reject stays the no-action
    path. Cloud reviews record the choice (no dispatch).
-3. ⏳ Drop dead code (`TriagePlayer.tsx` — still referenced for its `TriageReview`
-   type + a cast in `ManualReviewList`, so it needs the type relocated first);
-   restore `use_case_id` to the `ManualReviewItem` UI type for attribution.
+3. ◑ Dead code / attribution.
+   - ✅ **Deleted `TriagePlayer.tsx`** (256 lines: a third duplicate
+     `parseSuggestedActions` + a duplicate `TriageReview`); `ManualReviewList`
+     repointed to the canonical `TriageReview` in `reviewFocusHelpers`.
+   - ⏳ Restore `use_case_id` to the `ManualReviewItem` UI type — **speculative**:
+     the data exists on the binding but nothing consumes it yet (it would enable
+     a future capability filter). Defer until that filter is built.
+
+## Deferred — pending a driver
+
+Two items are intentionally NOT built yet because they have no current consumer
+and would add ripple/cost for speculative value:
+
+- **Typed action intents** (`regenerate`/`edit`/`escalate`/`dispatch:<op>`):
+  requires personas to *emit* structured `suggested_actions` (a prompt + adoption
+  cycle) and would change `parseSuggestedActions`'s return type across all three
+  surfaces. Today every picked action dispatches the generic carry-out run, which
+  is correct for the common case. Build when a concrete intent (e.g. "escalate
+  → raise an incident instead of running") is actually needed.
+- **One shared review-*body component*** (beyond the shared renderer + parser +
+  action model already in place): the three surfaces are *deliberately* divergent
+  — ambient orb bubble vs fast popover vs deep workspace (media, multi-decision,
+  thread). A single body component that fits all three is low-ROI; the meaningful
+  convergence (markdown, parser, dispatch action model) is done.
 
 ---
 
