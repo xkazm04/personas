@@ -71,6 +71,11 @@ export function useEditorDraft() {
       setBaseline(d);
       prevPersonaIdRef.current = selectedPersona.id;
       setDismissedWarnings(false);
+      // Reset the delete-confirm dialog on a persona SWITCH too — it's
+      // persona-agnostic UI state, and handleDelete resolves the target lazily
+      // from the live store, so a dialog left open for persona A would otherwise
+      // delete whichever persona (B) is now selected.
+      setShowDeleteConfirm(false);
       clearHistory();
     }
   }, [selectedPersona?.id, pendingPersonaId, clearHistory, selectedPersona]);
