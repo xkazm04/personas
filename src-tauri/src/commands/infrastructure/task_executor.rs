@@ -860,14 +860,21 @@ async fn run_task_execution(
     })
     .await;
 
-    let exit_status = child.wait().await.ok();
-    let exit_code = exit_status.and_then(|s| s.code());
-
+    // On timeout the child may be hung — kill it FIRST and reap with a bound,
+    // rather than awaiting an unbounded child.wait() on a process we've already
+    // decided to abandon (for a hung CLI that wait() never returns, leaving the
+    // task stuck `running` and the process orphaned). Mirrors idea_scanner /
+    // context_generation, which kill immediately on a stream error.
     if stream_result.is_err() {
+        let _ = child.kill().await;
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
         return Err(AppError::Internal(
             "Task execution timed out after 10 minutes".into(),
         ));
     }
+
+    let exit_status = child.wait().await.ok();
+    let exit_code = exit_status.and_then(|s| s.code());
 
     // Surface up to the last 10 stderr lines when the CLI exits non-zero.
     // Without this, a `--worktree` collision (or any other CLI-side error)
