@@ -1,6 +1,6 @@
 import { BookOpen, Brain, CheckCircle2, ChevronRight, Mic, Radio, User, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { buildGaps } from '../shared/readinessGaps';
+import { buildGaps, gapScoreDelta } from '../shared/readinessGaps';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinReadiness } from '../useTwinReadiness';
@@ -78,6 +78,11 @@ export function CompleteTwinChecklist({ readiness, onJump }: { readiness: TwinRe
                     <span className="block typo-caption text-foreground font-medium truncate">{t.progress[key]}</span>
                     <span className="block text-[11px] text-foreground leading-snug truncate">{detail}</span>
                   </span>
+                  {!complete && gap && (
+                    <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+                      {tx(t.profiles.scoreDelta, { pct: gapScoreDelta(gap) })}
+                    </span>
+                  )}
                   {!complete && (
                     <ChevronRight className="w-3.5 h-3.5 text-violet-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   )}
