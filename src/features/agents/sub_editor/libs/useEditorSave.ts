@@ -159,6 +159,10 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
 
   const performSettingsSave = useCallback(async (d: PersonaDraft) => {
     if (!selectedPersonaId) return;
+    // Name is the one required field — never autosave an empty name (it would
+    // persist a nameless persona that renders blank in the sidebar/header/resume
+    // row). Skip the save; the tab stays dirty so the user fixes it first.
+    if (d.name.trim() === '') return;
     const savePersonaId = selectedPersonaId;
     const prevBaseline = { ...baselineRef.current };
     const op = buildSettingsOp(d);

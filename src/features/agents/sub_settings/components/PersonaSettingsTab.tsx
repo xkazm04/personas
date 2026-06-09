@@ -16,7 +16,7 @@ import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorP
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
-import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { INPUT_FIELD, inputFieldClass } from '@/lib/utils/designTokens';
 import { SettingsStatusBar } from './SettingsStatusBar';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
@@ -97,8 +97,17 @@ export function PersonaSettingsTab({
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
               data-testid="agent-name"
-              className={INPUT_FIELD}
+              required
+              aria-required="true"
+              aria-invalid={draft.name.trim() === ''}
+              aria-describedby={draft.name.trim() === '' ? 'persona-name-error' : undefined}
+              className={inputFieldClass(draft.name.trim() === '')}
             />
+            {draft.name.trim() === '' && (
+              <p id="persona-name-error" className="mt-1 typo-caption text-red-400">
+                Name is required
+              </p>
+            )}
           </div>
           <div className="relative">
             <label className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
