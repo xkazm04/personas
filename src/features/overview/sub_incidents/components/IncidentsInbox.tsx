@@ -348,7 +348,7 @@ export default function IncidentsInbox() {
         </div>
 
         <div className="px-4 pt-3 pb-2">
-          <IncidentsInboxKpiHeader summary={summary} />
+          <IncidentsInboxKpiHeader summary={summary} filters={filters} onApplyFilters={setFilters} />
         </div>
 
         <IncidentSeverityLegend />
