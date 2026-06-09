@@ -18,8 +18,10 @@ import type { FleetTerminalPreview } from '@/lib/bindings/FleetTerminalPreview';
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
  * Returns the freshly-minted internal session id (UUID v4).
  *
- * The Rust side enforces one session per cwd; calling twice with the
- * same cwd before the first session exits throws.
+ * Multiple sessions per cwd are allowed (the Rust side pre-binds each fresh
+ * spawn's claude session id, so concurrent sessions in one cwd never
+ * cross-bind). Extra `args` are appended to the `claude` argv verbatim —
+ * a positional string becomes the session's first prompt.
  */
 export const spawnSession = (
   cwd: string,

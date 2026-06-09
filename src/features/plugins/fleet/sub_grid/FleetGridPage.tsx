@@ -21,6 +21,7 @@ import {
   Moon,
   Sun,
   Keyboard,
+  ListTodo,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -51,6 +52,7 @@ import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { useFleetHotkeys } from '../useFleetHotkeys';
 import { FleetHotkeysHelp } from '../FleetHotkeysHelp';
+import { FleetSpawnTaskModal } from '../FleetSpawnTaskModal';
 import { FleetSummaryPills } from '../FleetSummaryPills';
 import { FleetStatusLegend } from '../FleetStatusLegend';
 import type { FleetLabelKey } from '../FleetStatusDots';
@@ -127,6 +129,8 @@ export default function FleetGridPage() {
 
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  // Spawn-with-a-first-task composer (seeds the new session's prompt via argv).
+  const [spawnTaskOpen, setSpawnTaskOpen] = useState(false);
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
   // single-pane view showing the last-selected session). Driven by the store
   // so the footer Fleet toggle can close it from outside this component.
@@ -423,6 +427,22 @@ export default function FleetGridPage() {
     }
   }, [activeProject, spawning, refresh, setActiveSession]);
 
+  // Spawn seeded with a first task — the prompt rides as a positional argv
+  // (`claude "<task>"`), so the session starts working the moment it boots.
+  // Returns success so the modal keeps the draft open on failure for a retry.
+  const handleSpawnWithTask = useCallback(async (prompt: string): Promise<boolean> => {
+    if (!activeProject) return false;
+    try {
+      const id = await spawnSession(activeProject.root_path, [prompt]);
+      setActiveSession(id);
+      refresh();
+      return true;
+    } catch (e) {
+      toastCatch('FleetGridPage:spawnTask', 'Failed to spawn Claude Code session')(e);
+      return false;
+    }
+  }, [activeProject, refresh, setActiveSession]);
+
   // Count sessions in every lifecycle state — feeds the summary pills and
   // the header subtitle. A full Record keeps the pill component honest about
   // states the subtitle previously ignored (spawning, stale).
@@ -604,6 +624,17 @@ export default function FleetGridPage() {
             title={activeProject ? `Spawn at ${activeProject.root_path}` : 'Pick a project first'}
           >
             {spawning ? 'Spawning…' : 'Spawn'}
+          </Button>
+          <Button
+            data-testid="fleet-spawn-task-open"
+            variant="secondary"
+            size="sm"
+            icon={<ListTodo className="w-3.5 h-3.5" />}
+            disabled={!activeProject}
+            onClick={() => setSpawnTaskOpen(true)}
+            title={t.plugins.fleet.spawn_task_title}
+          >
+            {t.plugins.fleet.spawn_with_task}
           </Button>
           <Button
             data-testid="fleet-broadcast-open"
@@ -836,6 +867,15 @@ export default function FleetGridPage() {
       <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
 
       <FleetHotkeysHelp open={hotkeysHelpOpen} onClose={() => setHotkeysHelpOpen(false)} />
+
+      {activeProject && (
+        <FleetSpawnTaskModal
+          open={spawnTaskOpen}
+          onClose={() => setSpawnTaskOpen(false)}
+          projectPath={activeProject.root_path}
+          onSpawn={handleSpawnWithTask}
+        />
+      )}
 
       <FleetTerminalOverlay
         open={gridOpen}

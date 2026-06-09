@@ -10830,6 +10830,12 @@ export type Translations = {
       hotkey_toggle_grid: string;
       hotkey_show_help: string;
       hotkeys_typing_note: string;
+      spawn_with_task: string;
+      spawn_task_title: string;
+      spawn_task_desc: string;
+      spawn_task_placeholder: string;
+      spawn_task_submit: string;
+      spawn_task_spawning: string;
       legend_process: string;
       legend_activity: string;
       state_awaiting_input: string;
