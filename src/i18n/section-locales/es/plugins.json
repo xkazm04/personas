@@ -2118,6 +2118,13 @@
     "history_filter_clear": "Limpiar filtro"
   },
   "dev_triage": {
+    "suggested_rules_label": "Sugerido según tu historial",
+    "suggestion_evidence": "{matched}/{total} decisiones pasadas coinciden",
+    "suggestion_add": "Añadir regla",
+    "suggestion_name_reject_heavy": "Rechazar ideas pesadas",
+    "suggestion_name_accept_quick": "Aceptar victorias rápidas",
+    "suggestion_name_reject_risky": "Rechazar ideas arriesgadas",
+    "suggestion_name_reject_category": "Rechazar ideas de {category}",
     "auto_triage_rules": "Reglas de Triaje Automático",
     "add_condition": "+ Agregar condición",
     "action_label": "Acción:",

@@ -13318,6 +13318,13 @@
       "history_filter_clear": "Clear filter"
     },
     "dev_triage": {
+      "suggested_rules_label": "Suggested from your history",
+      "suggestion_evidence": "{matched}/{total} past decisions match",
+      "suggestion_add": "Add rule",
+      "suggestion_name_reject_heavy": "Reject heavy ideas",
+      "suggestion_name_accept_quick": "Accept quick wins",
+      "suggestion_name_reject_risky": "Reject risky ideas",
+      "suggestion_name_reject_category": "Reject {category} ideas",
       "auto_triage_rules": "Auto-Triage Rules",
       "add_condition": "+ Add condition",
       "action_label": "Action:",

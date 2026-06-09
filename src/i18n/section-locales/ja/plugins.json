@@ -2118,6 +2118,13 @@
     "history_filter_clear": "クリアフィルター"
   },
   "dev_triage": {
+    "suggested_rules_label": "履歴からの提案",
+    "suggestion_evidence": "過去の判断 {matched}/{total} 件が一致",
+    "suggestion_add": "ルールを追加",
+    "suggestion_name_reject_heavy": "重いアイデアを却下",
+    "suggestion_name_accept_quick": "クイックウィンを採用",
+    "suggestion_name_reject_risky": "リスクの高いアイデアを却下",
+    "suggestion_name_reject_category": "{category} のアイデアを却下",
     "auto_triage_rules": "自動トリアージルール",
     "add_condition": "+ 条件を追加",
     "action_label": "アクション:",

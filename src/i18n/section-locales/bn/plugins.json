@@ -2118,6 +2118,13 @@
     "history_filter_clear": "ফিল্টার পরিষ্কার করুন"
   },
   "dev_triage": {
+    "suggested_rules_label": "আপনার ইতিহাস থেকে প্রস্তাবিত",
+    "suggestion_evidence": "{matched}/{total} অতীত সিদ্ধান্ত মিলে যায়",
+    "suggestion_add": "নিয়ম যোগ করুন",
+    "suggestion_name_reject_heavy": "ভারী ধারণা প্রত্যাখ্যান",
+    "suggestion_name_accept_quick": "দ্রুত জয় গ্রহণ",
+    "suggestion_name_reject_risky": "ঝুঁকিপূর্ণ ধারণা প্রত্যাখ্যান",
+    "suggestion_name_reject_category": "{category} ধারণা প্রত্যাখ্যান",
     "auto_triage_rules": "স্বয়ংক্রিয়-ট্রায়াজ নিয়ম",
     "add_condition": "+ শর্ত যোগ করুন",
     "action_label": "ক্রিয়া:",

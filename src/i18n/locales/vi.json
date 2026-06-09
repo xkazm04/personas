@@ -12275,6 +12275,13 @@
       "history_filter_clear": "Xóa bộ lọc"
     },
     "dev_triage": {
+      "suggested_rules_label": "Đề xuất từ lịch sử của bạn",
+      "suggestion_evidence": "{matched}/{total} quyết định trước khớp",
+      "suggestion_add": "Thêm quy tắc",
+      "suggestion_name_reject_heavy": "Từ chối ý tưởng nặng",
+      "suggestion_name_accept_quick": "Chấp nhận thắng nhanh",
+      "suggestion_name_reject_risky": "Từ chối ý tưởng rủi ro",
+      "suggestion_name_reject_category": "Từ chối ý tưởng {category}",
       "auto_triage_rules": "Quy tắc phân loại tự động",
       "add_condition": "+ Thêm điều kiện",
       "action_label": "Hành động:",

@@ -2118,6 +2118,13 @@
     "history_filter_clear": "फ़िल्टर साफ़ करें"
   },
   "dev_triage": {
+    "suggested_rules_label": "आपके इतिहास से सुझाया गया",
+    "suggestion_evidence": "{matched}/{total} पिछले निर्णय मेल खाते हैं",
+    "suggestion_add": "नियम जोड़ें",
+    "suggestion_name_reject_heavy": "भारी विचार अस्वीकारें",
+    "suggestion_name_accept_quick": "त्वरित जीत स्वीकारें",
+    "suggestion_name_reject_risky": "जोखिम भरे विचार अस्वीकारें",
+    "suggestion_name_reject_category": "{category} विचार अस्वीकारें",
     "auto_triage_rules": "Auto-Triage नियम",
     "add_condition": "+ शर्त जोड़ें",
     "action_label": "कार्य:",

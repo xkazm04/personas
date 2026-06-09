@@ -12275,6 +12275,13 @@
       "history_filter_clear": "필터 지우기"
     },
     "dev_triage": {
+      "suggested_rules_label": "기록 기반 제안",
+      "suggestion_evidence": "과거 결정 {matched}/{total}건 일치",
+      "suggestion_add": "규칙 추가",
+      "suggestion_name_reject_heavy": "무거운 아이디어 거부",
+      "suggestion_name_accept_quick": "빠른 성과 수락",
+      "suggestion_name_reject_risky": "위험한 아이디어 거부",
+      "suggestion_name_reject_category": "{category} 아이디어 거부",
       "auto_triage_rules": "자동 트리아지 규칙",
       "add_condition": "+ 조건 추가",
       "action_label": "작업:",

@@ -2118,6 +2118,13 @@
     "history_filter_clear": "Filter löschen"
   },
   "dev_triage": {
+    "suggested_rules_label": "Aus deinem Verlauf vorgeschlagen",
+    "suggestion_evidence": "{matched}/{total} frühere Entscheidungen passen",
+    "suggestion_add": "Regel hinzufügen",
+    "suggestion_name_reject_heavy": "Aufwendige Ideen ablehnen",
+    "suggestion_name_accept_quick": "Schnelle Erfolge annehmen",
+    "suggestion_name_reject_risky": "Riskante Ideen ablehnen",
+    "suggestion_name_reject_category": "{category}-Ideen ablehnen",
     "auto_triage_rules": "Auto-Triage-Regeln",
     "add_condition": "+ Bedingung hinzufügen",
     "action_label": "Aktion:",

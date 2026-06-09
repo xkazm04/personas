@@ -12275,6 +12275,13 @@
       "history_filter_clear": "مسح الفلتر"
     },
     "dev_triage": {
+      "suggested_rules_label": "مقترح من سجلك",
+      "suggestion_evidence": "{matched}/{total} من قراراتك السابقة مطابقة",
+      "suggestion_add": "أضف قاعدة",
+      "suggestion_name_reject_heavy": "رفض الأفكار الثقيلة",
+      "suggestion_name_accept_quick": "قبول المكاسب السريعة",
+      "suggestion_name_reject_risky": "رفض الأفكار الخطرة",
+      "suggestion_name_reject_category": "رفض أفكار {category}",
       "auto_triage_rules": "قواعد الفرز التلقائي",
       "add_condition": "+ إضافة شرط",
       "action_label": "الإجراء:",

@@ -12275,6 +12275,13 @@
       "history_filter_clear": "Очистить фильтр"
     },
     "dev_triage": {
+      "suggested_rules_label": "Предложено по вашей истории",
+      "suggestion_evidence": "{matched}/{total} прошлых решений совпадают",
+      "suggestion_add": "Добавить правило",
+      "suggestion_name_reject_heavy": "Отклонять трудоёмкие идеи",
+      "suggestion_name_accept_quick": "Принимать быстрые победы",
+      "suggestion_name_reject_risky": "Отклонять рискованные идеи",
+      "suggestion_name_reject_category": "Отклонять идеи «{category}»",
       "auto_triage_rules": "Правила автосортировки",
       "add_condition": "+ Добавить условие",
       "action_label": "Действие:",

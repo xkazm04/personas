@@ -13324,6 +13324,13 @@ export type Translations = {
       history_filter_clear: string;
     };
     dev_triage: {
+      suggested_rules_label: string;
+      suggestion_evidence: string;
+      suggestion_add: string;
+      suggestion_name_reject_heavy: string;
+      suggestion_name_accept_quick: string;
+      suggestion_name_reject_risky: string;
+      suggestion_name_reject_category: string;
       auto_triage_rules: string;
       add_condition: string;
       action_label: string;

@@ -12275,6 +12275,13 @@
       "history_filter_clear": "Effacer le filtre"
     },
     "dev_triage": {
+      "suggested_rules_label": "Suggéré d'après votre historique",
+      "suggestion_evidence": "{matched}/{total} décisions passées correspondent",
+      "suggestion_add": "Ajouter la règle",
+      "suggestion_name_reject_heavy": "Rejeter les idées lourdes",
+      "suggestion_name_accept_quick": "Accepter les gains rapides",
+      "suggestion_name_reject_risky": "Rejeter les idées risquées",
+      "suggestion_name_reject_category": "Rejeter les idées {category}",
       "auto_triage_rules": "Règles de triage automatique",
       "add_condition": "+ Ajouter une condition",
       "action_label": "Action :",

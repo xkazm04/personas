@@ -2118,6 +2118,13 @@
     "history_filter_clear": "清除过滤器"
   },
   "dev_triage": {
+    "suggested_rules_label": "根据你的历史推荐",
+    "suggestion_evidence": "{matched}/{total} 条过往决定相符",
+    "suggestion_add": "添加规则",
+    "suggestion_name_reject_heavy": "拒绝高投入创意",
+    "suggestion_name_accept_quick": "接受速赢创意",
+    "suggestion_name_reject_risky": "拒绝高风险创意",
+    "suggestion_name_reject_category": "拒绝{category}类创意",
     "auto_triage_rules": "自动分类规则",
     "add_condition": "+ 添加条件",
     "action_label": "操作：",

@@ -12275,6 +12275,13 @@
       "history_filter_clear": "Vymazat filtr"
     },
     "dev_triage": {
+      "suggested_rules_label": "Navrženo podle vaší historie",
+      "suggestion_evidence": "{matched}/{total} dřívějších rozhodnutí odpovídá",
+      "suggestion_add": "Přidat pravidlo",
+      "suggestion_name_reject_heavy": "Odmítat náročné nápady",
+      "suggestion_name_accept_quick": "Přijímat rychlé výhry",
+      "suggestion_name_reject_risky": "Odmítat rizikové nápady",
+      "suggestion_name_reject_category": "Odmítat nápady {category}",
       "auto_triage_rules": "Pravidla automatického triage",
       "add_condition": "+ Přidat podmínku",
       "action_label": "Akce:",

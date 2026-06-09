@@ -2118,6 +2118,13 @@
     "history_filter_clear": "Hapus penyaring"
   },
   "dev_triage": {
+    "suggested_rules_label": "Disarankan dari riwayat Anda",
+    "suggestion_evidence": "{matched}/{total} keputusan lampau cocok",
+    "suggestion_add": "Tambah aturan",
+    "suggestion_name_reject_heavy": "Tolak ide berat",
+    "suggestion_name_accept_quick": "Terima kemenangan cepat",
+    "suggestion_name_reject_risky": "Tolak ide berisiko",
+    "suggestion_name_reject_category": "Tolak ide {category}",
     "auto_triage_rules": "Aturan Triase Otomatis",
     "add_condition": "+ Tambah kondisi",
     "action_label": "Tindakan:",
