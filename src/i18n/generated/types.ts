@@ -5577,6 +5577,9 @@ export type Translations = {
       detail_no_detail: string;
       detail_note_label: string;
       detail_no_persona: string;
+      siblings_label: string;
+      siblings_none: string;
+      view_all_from_agent: string;
       action_failed_prefix: string;
       bulk_acknowledge_count: string;
       bulk_resolve_count: string;

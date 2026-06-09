@@ -491,6 +491,16 @@ export default function IncidentsInbox() {
             setSelectedIds(new Set());
             void refresh();
           }}
+          onOpenIncident={(inc) => setDetailIncident(inc)}
+          onFilterPersona={(personaId) =>
+            setFilters({
+              statuses: null,
+              severities: null,
+              source_tables: null,
+              persona_id: personaId,
+              since: null,
+            })
+          }
         />
       )}
     </ContentBox>
