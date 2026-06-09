@@ -79,7 +79,6 @@ function groupModeLabel(t: ReturnType<typeof useTranslation>['t'], mode: Inciden
 export default function IncidentsInbox() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<IncidentFilters>(loadPersistedFilters);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [justCleared, setJustCleared] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
@@ -125,7 +124,6 @@ export default function IncidentsInbox() {
   const actions = useIncidentActions({
     onAfterChange: async () => {
       clearedByActionRef.current = true;
-      setSelectedIds(new Set());
       await refresh();
     },
   });
@@ -171,18 +169,6 @@ export default function IncidentsInbox() {
       cancelled = true;
       unsubscribe();
     };
-  }, []);
-
-  const toggleSelect = useCallback((id: string, selected: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (selected) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-      return next;
-    });
   }, []);
 
   const toggleGroup = useCallback((key: string) => {
@@ -374,9 +360,7 @@ export default function IncidentsInbox() {
       <IncidentRow
         key={incident.id}
         incident={incident}
-        selected={selectedIds.has(incident.id)}
         focused={focusedId === incident.id}
-        onSelectChange={(sel) => toggleSelect(incident.id, sel)}
         onAcknowledge={() => void actions.acknowledge(incident.id)}
         onResolve={() => void actions.resolve(incident.id)}
         onDismiss={() => void actions.dismiss(incident.id)}
@@ -384,7 +368,7 @@ export default function IncidentsInbox() {
         onOpenDetail={() => setDetailIncident(incident)}
       />
     ),
-    [selectedIds, focusedId, toggleSelect, actions],
+    [focusedId, actions],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
@@ -412,9 +396,6 @@ export default function IncidentsInbox() {
     if (clearedByActionRef.current && !isNarrowed) setJustCleared(true);
     clearedByActionRef.current = false;
   }, [loading, incidents.length, isNarrowed]);
-
-  const selectedArray = Array.from(selectedIds);
-  const hasSelection = selectedArray.length > 0;
 
   return (
     <ContentBox>
@@ -447,32 +428,6 @@ export default function IncidentsInbox() {
         <IncidentSeverityLegend />
 
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
-
-        {hasSelection && (
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
-            <span className="typo-caption text-foreground">
-              {selectedArray.length} selected
-            </span>
-            <button
-              onClick={() => void actions.bulkAck(selectedArray)}
-              className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_acknowledge_count.replace('{count}', String(selectedArray.length))}
-            </button>
-            <button
-              onClick={() => void actions.bulkResolve(selectedArray)}
-              className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_resolve_count.replace('{count}', String(selectedArray.length))}
-            </button>
-            <button
-              onClick={() => setSelectedIds(new Set())}
-              className="px-2 py-0.5 typo-caption rounded-card border border-transparent text-foreground hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_clear_selection}
-            </button>
-          </div>
-        )}
 
         {error && (
           <div className="px-4 py-3">
@@ -582,8 +537,6 @@ export default function IncidentsInbox() {
                 group={group}
                 collapsed={collapsedGroups.has(group.key)}
                 onToggle={() => toggleGroup(group.key)}
-                onAckAll={(ids) => void actions.bulkAck(ids)}
-                onResolveAll={(ids) => void actions.bulkResolve(ids)}
                 renderRow={renderRow}
               />
             ))}
@@ -595,10 +548,7 @@ export default function IncidentsInbox() {
         <IncidentDetailModal
           incident={detailIncident}
           onClose={() => setDetailIncident(null)}
-          onChanged={() => {
-            setSelectedIds(new Set());
-            void refresh();
-          }}
+          onChanged={() => void refresh()}
           onOpenIncident={(inc) => setDetailIncident(inc)}
           onFilterPersona={(personaId) =>
             setFilters({
