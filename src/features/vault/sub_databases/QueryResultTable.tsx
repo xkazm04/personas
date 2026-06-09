@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState, type KeyboardEvent } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { QueryResult } from '@/api/vault/database/dbSchema';
 import { AlertTriangle, Clock, Copy, Check, CheckCircle2 } from 'lucide-react';
@@ -17,6 +17,7 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
   const db = t.vault.databases;
   const { copiedKey: copiedCell, copy } = useKeyedCopyFlag<string>();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [copyAnnounce, setCopyAnnounce] = useState('');
 
   const rowVirtualizer = useVirtualizer({
     count: result.rows.length,
@@ -27,7 +28,17 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
 
   const copyToClipboard = useCallback((text: string, key: string) => {
     copy(key, text);
-  }, [copy]);
+    const preview = text.length > 60 ? `${text.slice(0, 60)}…` : text;
+    setCopyAnnounce(`${db.copied}: ${preview}`);
+  }, [copy, db.copied]);
+
+  // Enter/Space activate the copy affordance for keyboard users.
+  const onCopyKey = useCallback((e: KeyboardEvent<HTMLElement>, run: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      run();
+    }
+  }, []);
 
   const handleColumnClick = useCallback((col: string, colIdx: number) => {
     copyToClipboard(col, `col-${colIdx}`);
@@ -62,7 +73,11 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                     <th
                       key={i}
                       onClick={() => handleColumnClick(col, i)}
-                      className="px-3 py-2 text-left font-semibold text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 transition-colors group relative"
+                      onKeyDown={(e) => onCopyKey(e, () => handleColumnClick(col, i))}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={tx(db.click_copy_column, { name: col })}
+                      className="px-3 py-2 text-left font-semibold text-foreground whitespace-nowrap cursor-pointer select-none hover:bg-primary/8 focus:bg-primary/8 focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 transition-colors group relative"
                       title={tx(db.click_copy_column, { name: col })}
                     >
                       <span className="flex items-center gap-1.5">
@@ -121,7 +136,11 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
                           <td
                             key={colIdx}
                             onClick={() => handleCellClick(cell, rowIdx, colIdx)}
-                            className={`px-3 py-1.5 max-w-[300px] cursor-pointer transition-all duration-150 select-text ${
+                            onKeyDown={(e) => onCopyKey(e, () => handleCellClick(cell, rowIdx, colIdx))}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={tx(db.click_copy_cell, { value: formatCell(cell) })}
+                            className={`px-3 py-1.5 max-w-[300px] cursor-pointer transition-all duration-150 select-text focus:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 ${
                               isCellCopied
                                 ? 'bg-emerald-500/10 text-emerald-400'
                                 : isNull
@@ -166,6 +185,9 @@ export function QueryResultTable({ result }: QueryResultTableProps) {
           </span>
         )}
       </div>
+
+      {/* Screen-reader announcement for click/keyboard copy (visual badge is in-cell). */}
+      <span className="sr-only" role="status" aria-live="polite">{copyAnnounce}</span>
     </div>
   );
 }
