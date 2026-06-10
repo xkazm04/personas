@@ -3,6 +3,7 @@ pub mod drive;
 pub mod graph;
 pub mod lint;
 pub mod markdown;
+pub mod revitalize;
 pub mod semantic_lint;
 
 #[cfg(test)]

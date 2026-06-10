@@ -245,6 +245,10 @@ event_names! {
     // the persona's draft so the user can review what landed.
     BUILD_ONESHOT_TERMINAL     => "build-oneshot-terminal",
 
+    // Obsidian Brain — Revitalize (background vault memory optimization)
+    OBSIDIAN_REVITALIZE_STATUS => "obsidian-revitalize-status",
+    OBSIDIAN_REVITALIZE_OUTPUT => "obsidian-revitalize-output",
+
     // Fleet plugin (DEV-only Claude Code session aggregator)
     FLEET_SESSION_OUTPUT       => "fleet-session-output",
     FLEET_SESSION_STATE        => "fleet-session-state",
