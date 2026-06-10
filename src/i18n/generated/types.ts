@@ -421,12 +421,6 @@ export type Translations = {
     tray_schedules_today: string;
     tray_notifications: string;
     tray_notifications_unread: string;
-    tray_signals: string;
-    tray_word_today: string;
-    tray_word_to_answer: string;
-    tray_word_fleet: string;
-    tray_word_unread: string;
-    tray_word_running: string;
     system_load: {
       label: string;
       cpu: string;
@@ -476,6 +470,11 @@ export type Translations = {
       close_overlay: string;
       nav_mode: string;
       nav_mode_back: string;
+      nav_mode_search: string;
+      nav_mode_schedules: string;
+      nav_mode_review: string;
+      nav_mode_monitor: string;
+      nav_mode_notifications: string;
       toggle_sidebar: string;
       toggle_monitor: string;
       toggle_athena: string;
@@ -8126,6 +8125,8 @@ export type Translations = {
       persona_layout_no_capabilities: string;
       _comment_left_connections_heading: string;
       left_connections_heading: string;
+      _comment_left_messages_heading: string;
+      left_messages_heading: string;
       _comment_left_empty_placeholder: string;
       left_empty_placeholder: string;
       _comment_capabilities_aria: string;
@@ -12421,6 +12422,8 @@ export type Translations = {
       help_capabilities: string;
       analyze_fleet: string;
       analyze_fleet_started: string;
+      daily_brief: string;
+      daily_brief_started: string;
       voice_enable: string;
       voice_disable: string;
       voice_controls_label: string;

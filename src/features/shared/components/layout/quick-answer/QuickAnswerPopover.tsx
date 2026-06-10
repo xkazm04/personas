@@ -2,8 +2,8 @@
 // adoption questions and human reviews without leaving the current screen.
 //
 // Sibling to the full-screen PersonaMonitor: this is the fast "a question is
-// waiting — answer it and keep working" path. Mounted from
-// ProcessActivityIndicator when headerOverlay === 'quick-answer'.
+// waiting — answer it and keep working" path. Mounted from the title-bar
+// dock's TrayOverlays when headerOverlay === 'quick-answer'.
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
