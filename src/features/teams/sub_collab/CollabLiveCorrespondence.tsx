@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown, Search } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -43,6 +43,32 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
 function sameLocalDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * Render @mention tokens inside a message body as colored inline emphasis:
+ * @athena in her violet voice, member handles (@FirstWord) in that member's
+ * color. Non-matching @tokens stay plain text. Whitespace is preserved by the
+ * surrounding `whitespace-pre-wrap`.
+ */
+function renderWithMentions(text: string, members?: ChannelMember[]): ReactNode {
+  const parts = text.split(/(@[\p{L}\d_-]+)/u);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) => {
+    if (part.startsWith('@')) {
+      const token = part.slice(1).toLowerCase();
+      if (token === 'athena') {
+        return <span key={i} className="text-violet-300 font-medium">{part}</span>;
+      }
+      const member = members?.find(
+        (m) => m.name.replace(/^T: /, '').split(/\s+/)[0]!.toLowerCase() === token,
+      );
+      if (member) {
+        return <span key={i} className="font-medium" style={{ color: member.color ?? undefined }}>{part}</span>;
+      }
+    }
+    return part;
+  });
 }
 
 /**
@@ -810,7 +836,7 @@ function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpe
               title={!isUser && onOpenDetail ? 'Open full detail' : undefined}
             >
               {message && (
-                <p className={`typo-body whitespace-pre-wrap ${!isUser ? 'line-clamp-4' : ''} ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{message}</p>
+                <p className={`typo-body whitespace-pre-wrap ${!isUser ? 'line-clamp-4' : ''} ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{renderWithMentions(message, members)}</p>
               )}
               {artifact && (
                 <a href={artifact.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border typo-caption text-status-info hover:bg-secondary/60 transition-colors">
