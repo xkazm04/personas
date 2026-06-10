@@ -180,7 +180,10 @@ Director/Athena orchestration discussion).
   text query is deliberately ephemeral). Any conversational row (hover pin)
   or system event (Pin action in the detail modal) can be **pinned as a team
   memory** via `create_team_memory` — the channel read-model unions memories
-  back in, so the pin reappears as a memory row in the conversation.
+  back in, so the pin reappears as a memory row in the conversation. Messages
+  from different days are divided by Today/Yesterday/date separators, the
+  header crest wears the team's own icon and color, and teams holding an
+  unsent composer draft show a pen hint on the Teams table.
 - **Workspace settings guard**: the Team Studio's workspace pane (identity +
   shared instructions + defaults) reports unsaved edits up to the studio
   shell; switching modes, clicking a roster member, or navigating back while
