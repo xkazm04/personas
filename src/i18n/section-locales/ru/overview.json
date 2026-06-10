@@ -308,7 +308,8 @@
     "failures": "Сбоев",
     "avg_cost": "Средняя стоимость",
     "avg_duration": "Средняя длительность",
-    "pattern_data": "Данные паттерна"
+    "pattern_data": "Данные паттерна",
+    "patterns_tab": "Паттерны"
   },
   "conflicts": {
     "dismissed": "Конфликт отклонён",

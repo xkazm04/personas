@@ -5412,7 +5412,8 @@
       "failures": "إخفاقات",
       "avg_cost": "متوسط التكلفة",
       "avg_duration": "متوسط المدة",
-      "pattern_data": "بيانات النمط"
+      "pattern_data": "بيانات النمط",
+      "patterns_tab": "الأنماط"
     },
     "conflicts": {
       "dismissed": "تم تجاهل التعارض",

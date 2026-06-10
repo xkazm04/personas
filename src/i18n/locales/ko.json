@@ -5412,7 +5412,8 @@
       "failures": "실패",
       "avg_cost": "평균 비용",
       "avg_duration": "평균 소요 시간",
-      "pattern_data": "패턴 데이터"
+      "pattern_data": "패턴 데이터",
+      "patterns_tab": "패턴"
     },
     "conflicts": {
       "dismissed": "충돌이 무시되었습니다",

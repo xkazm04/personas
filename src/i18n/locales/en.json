@@ -5761,6 +5761,7 @@
     },
     "knowledge": {
       "title": "Knowledge",
+      "patterns_tab": "Patterns",
       "subtitle": "{count} things learned from past runs",
       "total_patterns": "Total Learnings",
       "tool_sequences": "Action Sequences",

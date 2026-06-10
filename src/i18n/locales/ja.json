@@ -5412,7 +5412,8 @@
       "failures": "失敗",
       "avg_cost": "平均コスト",
       "avg_duration": "平均所要時間",
-      "pattern_data": "パターンデータ"
+      "pattern_data": "パターンデータ",
+      "patterns_tab": "パターン"
     },
     "conflicts": {
       "dismissed": "競合を非表示にしました",

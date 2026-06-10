@@ -308,7 +308,8 @@
     "failures": "Selhání",
     "avg_cost": "Průměrné náklady",
     "avg_duration": "Průměrná doba",
-    "pattern_data": "Data vzoru"
+    "pattern_data": "Data vzoru",
+    "patterns_tab": "Vzory"
   },
   "conflicts": {
     "dismissed": "Konflikt zamítnut",

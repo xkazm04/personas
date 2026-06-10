@@ -308,7 +308,8 @@
     "failures": "ব্যর্থ",
     "avg_cost": "গড় খরচ",
     "avg_duration": "গড় সময়কাল",
-    "pattern_data": "প্যাটার্ন ডাটা"
+    "pattern_data": "প্যাটার্ন ডাটা",
+    "patterns_tab": "প্যাটার্ন"
   },
   "conflicts": {
     "dismissed": "দ্বন্দ্ব বাতিল",

@@ -5412,7 +5412,8 @@
       "failures": "Thất bại",
       "avg_cost": "Chi phí TB",
       "avg_duration": "Thời lượng TB",
-      "pattern_data": "Dữ liệu mẫu"
+      "pattern_data": "Dữ liệu mẫu",
+      "patterns_tab": "Mẫu"
     },
     "conflicts": {
       "dismissed": "Đã bỏ qua xung đột",

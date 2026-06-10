@@ -308,7 +308,8 @@
     "failures": "失败",
     "avg_cost": "平均成本",
     "avg_duration": "平均时长",
-    "pattern_data": "模式数据"
+    "pattern_data": "模式数据",
+    "patterns_tab": "模式"
   },
   "conflicts": {
     "dismissed": "冲突已忽略",

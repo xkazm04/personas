@@ -5412,7 +5412,8 @@
       "failures": "Échecs",
       "avg_cost": "Coût moyen",
       "avg_duration": "Durée moyenne",
-      "pattern_data": "Données du modèle"
+      "pattern_data": "Données du modèle",
+      "patterns_tab": "Motifs"
     },
     "conflicts": {
       "dismissed": "Conflit ignoré",

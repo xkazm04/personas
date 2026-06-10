@@ -308,7 +308,8 @@
     "failures": "Gagal",
     "avg_cost": "Biaya Rata-rata",
     "avg_duration": "Durasi Rata-rata",
-    "pattern_data": "Data Pola"
+    "pattern_data": "Data Pola",
+    "patterns_tab": "Pola"
   },
   "conflicts": {
     "dismissed": "Konflik diabaikan",

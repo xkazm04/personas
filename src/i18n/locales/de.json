@@ -5412,7 +5412,8 @@
       "failures": "Fehler",
       "avg_cost": "Durchschn. Kosten",
       "avg_duration": "Durchschn. Dauer",
-      "pattern_data": "Musterdaten"
+      "pattern_data": "Musterdaten",
+      "patterns_tab": "Muster"
     },
     "conflicts": {
       "dismissed": "Konflikt verworfen",

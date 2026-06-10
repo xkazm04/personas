@@ -5412,7 +5412,8 @@
       "failures": "विफलताएँ",
       "avg_cost": "औसत लागत",
       "avg_duration": "औसत अवधि",
-      "pattern_data": "पैटर्न डेटा"
+      "pattern_data": "पैटर्न डेटा",
+      "patterns_tab": "पैटर्न"
     },
     "conflicts": {
       "dismissed": "विवाद खारिज किया गया",

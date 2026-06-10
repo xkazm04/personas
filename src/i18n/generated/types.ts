@@ -5767,6 +5767,7 @@ export type Translations = {
     };
     knowledge: {
       title: string;
+      patterns_tab: string;
       subtitle: string;
       total_patterns: string;
       tool_sequences: string;
