@@ -310,10 +310,12 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   // Clicking a presence avatar addresses that member: append @FirstWord to
   // the draft (the same insert shape the autocomplete uses) and focus the
   // composer so the user can keep typing.
-  const insertMention = (member: ChannelMember) => {
-    const slug = member.name.replace(/^T: /, '').split(/\s+/)[0]!;
+  const insertHandle = (slug: string) => {
     updateDraft((d) => `${d}${d === '' || /\s$/.test(d) ? '' : ' '}@${slug} `);
     composerRef.current?.focus();
+  };
+  const insertMention = (member: ChannelMember) => {
+    insertHandle(member.name.replace(/^T: /, '').split(/\s+/)[0]!);
   };
 
   // Pin a channel item into the team's long-term memory. The channel
@@ -399,6 +401,16 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
               </button>
             );
           })}
+          {/* Athena — always present, summonable with one click */}
+          <button
+            type="button"
+            onClick={() => insertHandle('athena')}
+            className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-500/15 border border-violet-500/30 ring-2 ring-background transition-transform hover:scale-110 hover:z-10 focus-visible:scale-110 focus-visible:z-10 focus:outline-none"
+            title="Athena"
+            aria-label={tx(t.monitor.channel_avatar_mention, { name: 'Athena' })}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+          </button>
         </div>
         {/* Data glance */}
         <div className="flex items-center gap-3.5 typo-data text-foreground tabular-nums pl-2 border-l border-border ml-1">
