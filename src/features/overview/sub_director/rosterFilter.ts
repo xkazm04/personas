@@ -1,21 +1,25 @@
 import type { AttentionFlag } from './attention';
+import type { Momentum } from './momentum';
 
 /**
  * Shared coaching-table facet filter. One facet is active at a time and any of
- * three surfaces can drive it: the attention-triage chips (a flag), the score
- * distribution bands (a score), or the table's own "only flagged" toggle. The
- * state lives in DirectorCoachingTab so all three stay in sync.
+ * four surfaces can drive it: the attention-triage chips (a flag), the score
+ * distribution bands (a score), the momentum summary (a momentum bucket), or the
+ * table's own "only flagged" toggle. The state lives in DirectorCoachingTab so
+ * all of them stay in sync.
  */
 export type RosterFilter =
   | { type: 'flagged' }
   | { type: 'flag'; flag: AttentionFlag }
-  | { type: 'score'; score: number };
+  | { type: 'score'; score: number }
+  | { type: 'momentum'; momentum: Momentum };
 
-/** Whether a roster row (its attention flags + latest score) passes the facet. */
+/** Whether a roster row passes the active facet, given its derived signals. */
 export function rosterRowMatches(
   filter: RosterFilter | null,
   flags: AttentionFlag[],
   latestScore: number | null,
+  momentum: Momentum,
 ): boolean {
   if (!filter) return true;
   switch (filter.type) {
@@ -25,6 +29,8 @@ export function rosterRowMatches(
       return flags.includes(filter.flag);
     case 'score':
       return latestScore === filter.score;
+    case 'momentum':
+      return momentum === filter.momentum;
   }
 }
 
@@ -34,6 +40,7 @@ export function sameFilter(a: RosterFilter | null, b: RosterFilter | null): bool
   if (a.type !== b.type) return false;
   if (a.type === 'flag' && b.type === 'flag') return a.flag === b.flag;
   if (a.type === 'score' && b.type === 'score') return a.score === b.score;
+  if (a.type === 'momentum' && b.type === 'momentum') return a.momentum === b.momentum;
   return true;
 }
 

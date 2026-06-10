@@ -10,7 +10,7 @@ import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
 import { attentionFlags, attentionRank, primaryFlag, FLAG_TONE, type AttentionFlag } from '../attention';
 import { rosterRowMatches, toggleFilter, type RosterFilter } from '../rosterFilter';
-import { rosterScoreDelta, MOMENTUM_TONE } from '../momentum';
+import { rosterScoreDelta, rosterMomentum, MOMENTUM_TONE, type Momentum } from '../momentum';
 import type { DirectorRosterEntry } from '@/api/director';
 
 // Shared column template so the header and every row line up.
@@ -53,10 +53,15 @@ export function PersonaCoachingTable({
     declining: t.director.group_declining_hint,
     stale: t.director.group_stale_hint,
   };
+  const MOMENTUM_LABEL: Record<Momentum, string> = {
+    improving: t.director.momentum_improving,
+    flat: t.director.momentum_flat,
+    declining: t.director.momentum_declining,
+  };
 
   const rows = useMemo(() => {
     const decorated = roster.map((r) => ({ r, flags: attentionFlags(r, now) }));
-    const filtered = decorated.filter((d) => rosterRowMatches(filter, d.flags, d.r.latestScore));
+    const filtered = decorated.filter((d) => rosterRowMatches(filter, d.flags, d.r.latestScore, rosterMomentum(d.r)));
     // Flagged first (by urgency), then by ascending score, then name.
     return filtered.sort((a, b) => {
       const ra = attentionRank(a.flags);
@@ -107,7 +112,11 @@ export function PersonaCoachingTable({
           onClick={() => onFilterChange(null)}
           className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill typo-caption text-foreground bg-secondary/40 hover:bg-secondary/60 transition-colors focus-ring"
         >
-          {filter.type === 'flag' ? FLAG_LABEL[filter.flag] : tx(t.director.distribution_band_short, { score: filter.score })}
+          {filter.type === 'flag'
+            ? FLAG_LABEL[filter.flag]
+            : filter.type === 'score'
+              ? tx(t.director.distribution_band_short, { score: filter.score })
+              : MOMENTUM_LABEL[filter.momentum]}
           <X className="w-3 h-3" />
         </button>
       )}

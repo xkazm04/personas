@@ -267,7 +267,7 @@ function Scorecard({
         />
       </div>
 
-      <MomentumSummary roster={p.roster} />
+      <MomentumSummary roster={p.roster} filter={filter} onSelect={onFilterChange} />
 
       <DirectorSection label={t.director.value_leak_title} icon={Layers}>
         <ValueLeakBar rollup={rollup} />
