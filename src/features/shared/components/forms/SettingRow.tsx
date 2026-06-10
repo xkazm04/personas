@@ -73,10 +73,15 @@ export function SettingRow({
           <span className="typo-body font-medium">{label}</span>
         </div>
         {description ? (
-          // Description: one step up the type ramp (typo-caption → typo-body,
-          // +2px at base scale) for readability, dimmed to 70% so it stays
-          // secondary to the full-opacity label.
-          <div className="typo-body text-foreground mt-1.5">{description}</div>
+          // Description: one step DOWN the type ramp from the label
+          // (typo-body/medium → typo-caption/normal) and dimmed to /85 —
+          // the deepest muting the no-low-contrast-text rule allows — so
+          // the label/description pair reads as two distinct tiers instead
+          // of two near-identical lines. leading-relaxed keeps multi-line
+          // descriptions breathable at the smaller size.
+          <div className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
+            {description}
+          </div>
         ) : null}
         {countLabel ? (
           <div className="typo-caption text-foreground mt-1">{countLabel}</div>

@@ -305,11 +305,11 @@ function EngineStatusCard({ engine, loading, onRecheck }: EngineStatusCardProps)
         </div>
         {!installed && engine && (
           <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
-            <p className="typo-caption text-foreground">
+            <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
               {t.plugins.companion.voice_piper_engine_install_hint_release}
             </p>
             <div>
-              <div className="typo-caption text-foreground">
+              <div className="typo-caption font-medium text-foreground">
                 {t.plugins.companion.voice_piper_engine_install_hint_path_label}
               </div>
               <code className="block typo-code text-[11px] text-foreground bg-secondary/40 rounded-input px-2 py-1 mt-1 break-all">
@@ -349,7 +349,7 @@ function LanguageGroup(props: LanguageGroupProps) {
       <div className="flex items-baseline gap-2">
         <span className="typo-caption font-semibold text-foreground">{label}</span>
         {native && native !== label && (
-          <span className="typo-caption text-foreground">· {native}</span>
+          <span className="typo-caption font-normal text-foreground/85">· {native}</span>
         )}
         {isUserLanguage && (
           <span className="inline-flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300">
@@ -419,7 +419,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="typo-body font-medium">{voice.speaker}</span>
-            <span className="typo-caption text-foreground">
+            <span className="typo-caption font-normal text-foreground/85">
               · {genderLabel[voice.gender]} · {qualityLabel[voice.quality]} · {voice.approxSizeMb} MB
             </span>
             {selected && (
@@ -429,7 +429,7 @@ function VoiceRow({ voice, selected, progress, onDownload, onDelete, onSelect, t
               </span>
             )}
           </div>
-          <p className="typo-caption text-foreground mt-0.5">{voice.description}</p>
+          <p className="typo-caption font-normal text-foreground/85 leading-relaxed mt-0.5">{voice.description}</p>
           {downloading && (
             <DownloadProgressBar progress={progress!} />
           )}

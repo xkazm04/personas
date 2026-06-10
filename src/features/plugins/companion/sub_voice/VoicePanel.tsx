@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -85,7 +85,7 @@ function EngineSelectorCard() {
           voice popover (both bind `companionVoiceVolume`). */}
       <div className="px-1 pt-1 pb-2 space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="typo-caption text-foreground font-medium">
+          <label className="typo-body font-medium text-foreground">
             {t.plugins.companion.voice_volume_label}
           </label>
           <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
@@ -132,7 +132,9 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
           {label}
         </span>
       </div>
-      <p className="typo-caption text-foreground mt-1">{caption}</p>
+      <p className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
+        {caption}
+      </p>
     </button>
   );
 }
@@ -312,7 +314,7 @@ function ElevenLabsVoicePanel() {
                   <div className="typo-body font-medium text-foreground">
                     {t.plugins.companion.voice_empty_title}
                   </div>
-                  <p className="typo-caption text-foreground mt-1">
+                  <p className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
                     {t.plugins.companion.voice_empty_desc}
                   </p>
                   <button
@@ -390,7 +392,7 @@ function ElevenLabsVoicePanel() {
       >
         <div className="px-1 py-2 space-y-2">
           {!credentialId ? (
-            <p className="typo-caption text-foreground">
+            <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
               {t.plugins.companion.voice_credential_pick}
             </p>
           ) : (
@@ -434,7 +436,7 @@ function ElevenLabsVoicePanel() {
                 )}
               </div>
 
-              <p className="typo-caption text-foreground">
+              <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
                 {hasScope
                   ? t.plugins.companion.voice_pick_scoped_hint
                   : t.plugins.companion.voice_pick_unscoped_hint}
@@ -465,7 +467,7 @@ function ElevenLabsVoicePanel() {
                     className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-code focus-ring"
                     aria-label={t.plugins.companion.voice_id_label}
                   />
-                  <p className="typo-caption text-foreground">
+                  <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
                     {t.plugins.companion.voice_id_hint}
                   </p>
                 </div>
@@ -482,31 +484,24 @@ function ElevenLabsVoicePanel() {
         subtitle={t.plugins.companion.voice_enable_desc}
         titleClassName="text-primary"
       >
-        <div className="flex items-start gap-3 px-1 py-2">
-          <Mic
-            className={`w-4 h-4 mt-0.5 shrink-0 ${enabled ? 'text-cyan-400' : 'text-foreground'}`}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium">
-              {t.plugins.companion.voice_enable_label}
-            </div>
-            <div className="typo-caption text-foreground mt-0.5">
-              {!canEnable
-                ? t.plugins.companion.voice_enable_blocked
-                : enabled
-                  ? t.plugins.companion.voice_enable_on
-                  : t.plugins.companion.voice_enable_off}
-            </div>
-          </div>
-          <div className="shrink-0">
-            <AccessibleToggle
-              checked={enabled}
-              onChange={() => canEnable && setEnabled(!enabled)}
-              label={t.plugins.companion.voice_enable_label}
-              disabled={!canEnable}
+        <SettingRow
+          icon={
+            <Mic
+              className={`w-4 h-4 ${enabled ? 'text-cyan-400' : 'text-foreground'}`}
             />
-          </div>
-        </div>
+          }
+          label={t.plugins.companion.voice_enable_label}
+          description={
+            !canEnable
+              ? t.plugins.companion.voice_enable_blocked
+              : enabled
+                ? t.plugins.companion.voice_enable_on
+                : t.plugins.companion.voice_enable_off
+          }
+          checked={enabled}
+          disabled={!canEnable}
+          onChange={() => canEnable && setEnabled(!enabled)}
+        />
       </SectionCard>
     </div>
   );
@@ -561,7 +556,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
       <div className="px-1 py-2 space-y-4">
         {/* Model dropdown */}
         <div className="space-y-1">
-          <label className="typo-caption text-foreground font-medium">
+          <label className="typo-body font-medium text-foreground">
             {t.plugins.companion.voice_settings_model_label}
           </label>
           <ThemedSelect
@@ -580,7 +575,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
             }
             aria-label={t.plugins.companion.voice_settings_model_label}
           />
-          <p className="typo-caption text-foreground">
+          <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
             {t.plugins.companion.voice_settings_model_hint}
           </p>
         </div>
@@ -665,7 +660,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <label className="typo-caption text-foreground font-medium">{label}</label>
+        <label className="typo-body font-medium text-foreground">{label}</label>
         <span className="typo-code text-foreground text-[11px]">{display}</span>
       </div>
       <div className="flex items-center gap-2">
@@ -691,7 +686,9 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
           </button>
         )}
       </div>
-      <p className="typo-caption text-foreground">{hint}</p>
+      <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
+        {hint}
+      </p>
     </div>
   );
 }
