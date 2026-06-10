@@ -39,7 +39,7 @@ export function RecipeGuardrailsCard({ recipe }: RecipeGuardrailsCardProps) {
       : { label: t.recipes_catalog.memory_off_label, cls: 'border-card-border bg-secondary/40 text-foreground' };
 
   return (
-    <section className="mx-4 mb-6 rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
+    <section className="mx-4 mb-6 rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1" data-testid="recipe-guardrails-card">
       <h4 className="typo-label uppercase tracking-wider text-foreground mb-3">
         {t.recipes_catalog.guardrails_heading}
       </h4>

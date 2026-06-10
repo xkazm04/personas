@@ -57,6 +57,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
                 <Tooltip key={tag} content={t.recipes_catalog.tag_filter_tooltip}>
                   <button
                     type="button"
+                    data-testid={`recipe-tag-${tag}`}
                     onClick={() => onTagClick(tag)}
                     className="typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/30 text-foreground hover:border-primary/40 hover:text-primary cursor-pointer transition-colors"
                   >

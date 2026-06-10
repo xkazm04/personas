@@ -30,7 +30,7 @@ export function RecipeDetailHeader({
 
   return (
     <>
-      <div className="relative flex items-start gap-3 px-4 py-4 border-b border-card-border/60 flex-shrink-0 bg-secondary/20 overflow-hidden">
+      <div className="relative flex items-start gap-3 px-4 py-4 border-b border-card-border/60 flex-shrink-0 bg-secondary/20 overflow-hidden" data-testid="recipe-detail-header">
         {/* Connector-tinted wash so each recipe's header carries its brand */}
         {accent && (
           <div

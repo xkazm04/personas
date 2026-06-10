@@ -81,7 +81,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, onOpen
   };
 
   return (
-    <div className="rounded-card border border-card-border bg-secondary/15 overflow-hidden">
+    <div className="rounded-card border border-card-border bg-secondary/15 overflow-hidden" data-testid="recipes-table">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-secondary/85 backdrop-blur-sm">
@@ -215,6 +215,7 @@ function RecipeRow({ recipe, eligibility, highlight, onOpenDetail }: RecipeRowPr
   return (
     <tr
       onClick={onOpenDetail}
+      data-testid={`recipe-row-${recipe.slug}`}
       className={`group h-10 border-b border-card-border/30 last:border-b-0 transition-colors cursor-pointer ${
         incompatible ? 'opacity-65 hover:bg-secondary/30' : 'hover:bg-secondary/40'
       }`}

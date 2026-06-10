@@ -50,6 +50,7 @@ function unpackError(e: unknown): string {
 
 interface TestBridge {
   navigate(section: string): { success: boolean; section?: string; error?: string };
+  setTemplateTab(tab: string): { success: boolean; tab?: string; error?: string };
   getState(): Record<string, unknown>;
   click(selector: string): { success: boolean; error?: string };
   typeText(selector: string, text: string): { success: boolean; error?: string };
@@ -233,6 +234,22 @@ const bridge: TestBridge = {
 
   getArtistTab() {
     return { success: true, tab: useSystemStore.getState().artistTab };
+  },
+
+  // Templates-area tab switch — pairs with /navigate('templates') so tests
+  // can drop straight onto the recipes catalog (or n8n/generated/presets)
+  // without clicking through the second-level sidebar. Mirrors setArtistTab.
+  setTemplateTab(tab: string) {
+    const VALID_TEMPLATE_TABS = ['n8n', 'generated', 'recipes', 'presets'] as const;
+    if (!(VALID_TEMPLATE_TABS as readonly string[]).includes(tab)) {
+      return {
+        success: false,
+        error: `Invalid template tab: ${tab}. Valid: ${VALID_TEMPLATE_TABS.join(', ')}`,
+      };
+    }
+    useSystemStore.getState().setSidebarSection('templates');
+    useSystemStore.getState().setTemplateTab(tab as typeof VALID_TEMPLATE_TABS[number]);
+    return { success: true, tab };
   },
 
   // Generic plugin-tab switch — pairs with /navigate('plugins') for tests
