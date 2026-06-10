@@ -17,6 +17,7 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 | Team config | Per-team settings panel | `TeamConfigPanel.tsx` |
 | Drag panel | Drag-source for adding personas to the canvas | `TeamDragPanel.tsx`, `canvas/useCanvasDragDrop.ts` |
 | Auto-team | LLM-assisted team composition | `AutoTeamModal.tsx`, `useAutoTeam.ts` |
+| Preset team | "Preset Team" button (+ empty-state CTA) opens `TeamPresetPickerModal` — a gallery of best-practice, pre-wired presets shipped under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**). Picking one opens the shared `PresetPreviewModal` where the user selects/unselects members and adopts the whole bundle in one pass. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamPresetPickerModal.tsx`, `sub_presets/PresetPreviewModal.tsx` |
 | Pipeline templates | Curated multi-persona starters | `templates/PipelineTemplateGallery.tsx`, `templates/MiniCanvas.tsx`, `templates/pipelineTemplateData.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
 

@@ -134,7 +134,7 @@ export function CreateTeamForm({
                   className={`flex flex-col items-center gap-1 group`}
                 >
                   <span
-                    className={`w-9 h-9 rounded-card transition-all flex items-center justify-center ${isSelected ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'}`}
+                    className={`w-9 h-9 rounded-card transition-all flex items-center justify-center ${isSelected ? 'scale-110' : 'hover:scale-105'}`}
                     style={{ backgroundColor: hex }}
                   >
                     {isSelected && (
@@ -161,12 +161,16 @@ export function CreateTeamForm({
           <div className="space-y-3">
             <div>
               <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.pipeline.team_connector_label}</label>
-              <ThemedSelect value={prCredentialId ?? ''} onValueChange={(v) => onCredChange(v || null)}>
-                <option value="">{dp.team_binding_none}</option>
-                {githubCreds.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </ThemedSelect>
+              <ThemedSelect
+                filterable
+                value={prCredentialId ?? ''}
+                onValueChange={(v) => onCredChange(v || null)}
+                placeholder={dp.team_binding_none}
+                options={[
+                  { value: '', label: dp.team_binding_none },
+                  ...githubCreds.map((c) => ({ value: c.id, label: c.name })),
+                ]}
+              />
             </div>
 
             <GitHubRepoSelector value={githubUrl} onChange={onGithubUrlChange} credentialId={prCredentialId} />

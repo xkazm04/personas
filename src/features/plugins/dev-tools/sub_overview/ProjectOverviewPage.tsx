@@ -20,7 +20,7 @@ import {
 } from './OverviewParts';
 import { useOverviewData } from './useOverviewData';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { ProjectPipelineView } from '../sub_projects/pipeline/ProjectPipelineView';
+import { EditableProjectPipeline } from './EditableProjectPipeline';
 import { StandardsScanCard } from './StandardsScanCard';
 
 // Re-export shared helpers so existing call sites keep resolving.
@@ -268,17 +268,11 @@ export default function ProjectOverviewPage() {
         <section className="mb-6">
           <h2 className="typo-label text-foreground mb-3">{po.pipeline_heading}</h2>
           <div className="rounded-card border border-primary/10 bg-card/20 p-4">
-            <ProjectPipelineView
-              name={activeProject.name}
-              path={activeProject.root_path}
-              sourceMode={activeProject.team_id ? 'team' : 'standalone'}
-              teamName={activeProject.team_id ? (teams.find((tm) => tm.id === activeProject.team_id)?.name ?? null) : null}
-              connectorName={activeProject.pr_credential_id ? (credentials.find((c) => c.id === activeProject.pr_credential_id)?.name ?? null) : null}
-              githubUrl={activeProject.github_url ?? undefined}
-              mainBranch={activeProject.main_branch ?? undefined}
-              testEnvUrl={activeProject.test_env_url ?? undefined}
-              testEnvBranch={activeProject.test_env_branch ?? undefined}
-              standardsConfig={activeProject.standards_config ?? undefined}
+            <EditableProjectPipeline
+              project={activeProject}
+              teams={teams}
+              credentials={credentials}
+              onSaved={refresh}
             />
           </div>
           <StandardsScanCard projectId={activeProjectId} />

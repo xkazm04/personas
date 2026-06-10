@@ -112,6 +112,26 @@ both are false, the component renders the questionnaire inline (NOT as
 a nested portal — this avoids the two-stacked-modals problem that
 trapped the questionnaire behind the wizard frame in early Wave 4).
 
+### Editable dimensions (Persona Layout pre-seed)
+
+The pre-seed surface is `persona-layout/PersonaLayoutAdoption.tsx` — a
+Persona Sigil whose petals are directly editable, mirroring the
+from-scratch glyph builder (`agents/sub_glyph`):
+
+| Petal | Click behavior |
+| --- | --- |
+| **When** (trigger) | opens `ComposerSchedulePickerModal` (reused from the builder); the pick maps to a `TriggerSelection` via `composerScheduleToTriggerSelection.ts` |
+| **Events** | opens `ComposerEventPickerModal` — cross-persona event subscriptions |
+| **Memory** / **Review** | toggle **on/off** in place (no card) |
+| **Apps** / **What** / **Messages** | open the inline `AdoptionAnswerCard` (questions) |
+| **Errors** | opens `ErrorPolicyCard` (post-error routing) |
+
+Capabilities live in a **single** control — the top `CapabilityTagSwitcher`
+(select + per-tag include/skip power toggle); the active tag's description
+renders beneath it and the old bottom row-list is gone (`hideCapabilityRows`).
+The always-rendered `AdoptionLeftPanel` (connector card + value summary)
+reserves its column so the hero never re-centers between empty/filled states.
+
 ### Parsing the design result
 
 ```ts
@@ -179,7 +199,13 @@ three effects:
 `(questionsComplete || !hasAdoptionQuestions)` and `designResult` is
 available.
 
-**Effect**:
+**Effect**: the user's editable-dimension choices are baked onto the design
+IR before cell extraction (each mirrors `applyErrorPolicies`):
+`applyTriggerSelections` (When) → `applyGenerationSettings` (Memory/Review →
+`use_cases[].generation_settings`, the envelope `engine/dispatch.rs` reads) →
+`applyEventSubscriptions` (Events → `use_cases[].event_subscriptions`, plus a
+prose hint appended to the seed `intent`). The result is the
+`effectiveDesignResult` passed to `create_adoption_session`.
 
 ```ts
 const dimensionData = extractDimensionData(designResult);

@@ -35,6 +35,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { TriggerSelection } from "./useCasePickerShared";
+import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch } from '@/lib/silentCatch';
@@ -371,6 +372,77 @@ function applyErrorPolicies(
   return { ...designResult, use_cases: nextUseCases };
 }
 
+/**
+ * Bake the user's per-capability Memory/Review on-off toggles onto the IR as
+ * `generation_settings` — the canonical envelope the runtime dispatcher reads
+ * (engine/dispatch.rs). Only touched capabilities are rewritten so a template's
+ * own policy survives where the user didn't intervene. Mirrors
+ * `applyErrorPolicies`.
+ */
+function applyGenerationSettings(
+  designResult: Record<string, unknown>,
+  byCap: Record<string, { memory?: boolean; review?: boolean }>,
+): Record<string, unknown> {
+  if (Object.keys(byCap).length === 0) return designResult;
+  const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+  const nextUseCases = ucRaw.map((uc) => {
+    const id = String(uc.id ?? "");
+    const policy = byCap[id];
+    if (!policy || (policy.memory === undefined && policy.review === undefined)) return uc;
+    const prev = (uc.generation_settings ?? {}) as Record<string, unknown>;
+    const gen: Record<string, unknown> = { ...prev };
+    if (policy.memory !== undefined) gen.memories = policy.memory ? "on" : "off";
+    if (policy.review !== undefined) gen.reviews = policy.review ? "on" : "off";
+    return { ...uc, generation_settings: gen };
+  });
+  return { ...designResult, use_cases: nextUseCases };
+}
+
+/**
+ * Bake the user's per-capability cross-persona event subscriptions onto the IR
+ * as `use_cases[].event_subscriptions` (UseCaseEventSubscription shape) — the
+ * suggestion lifecycle the backend already understands. `source_filter` carries
+ * the emitting persona id so the subscription stays scoped to that persona
+ * (the glyph builder's prose-only path loses this). Mirrors `applyErrorPolicies`.
+ */
+function applyEventSubscriptions(
+  designResult: Record<string, unknown>,
+  byCap: Record<string, EventSubscription[]>,
+): Record<string, unknown> {
+  const entries = Object.entries(byCap).filter(([, subs]) => subs.length > 0);
+  if (entries.length === 0) return designResult;
+  const subsById = new Map(entries);
+  const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+  const nextUseCases = ucRaw.map((uc) => {
+    const id = String(uc.id ?? "");
+    const subs = subsById.get(id);
+    if (!subs || subs.length === 0) return uc;
+    const prev = (uc.event_subscriptions ?? []) as Array<Record<string, unknown>>;
+    const seen = new Set(prev.map((e) => `${e.event_type}:${e.source_filter ?? ""}`));
+    const added = subs
+      .map((s) => ({ event_type: s.triggerId, source_filter: s.personaId, enabled: true }))
+      .filter((e) => !seen.has(`${e.event_type}:${e.source_filter}`));
+    return { ...uc, event_subscriptions: [...prev, ...added] };
+  });
+  return { ...designResult, use_cases: nextUseCases };
+}
+
+/** One-line human summary of the picked event subscriptions, appended to the
+ *  seed intent so the backend LLM has the cross-persona context too. */
+function eventSubscriptionsHint(byCap: Record<string, EventSubscription[]>): string {
+  const all = Object.values(byCap).flat();
+  if (all.length === 0) return "";
+  const seen = new Set<string>();
+  const descs: string[] = [];
+  for (const s of all) {
+    const key = `${s.personaId}:${s.triggerId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    descs.push(`${s.description} (from ${s.personaName})`);
+  }
+  return `\nEvent triggers: ${descs.join(", ")}`;
+}
+
 function applyTriggerSelections(
   designResult: Record<string, unknown>,
   perUseCase: Record<string, TriggerSelection>,
@@ -554,16 +626,37 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const [useCasesPicked, setUseCasesPicked] = useState(false);
   const useCaseStepDone = !showUseCasePicker || useCasesPicked;
 
-  // Trigger composition — merged onto the UC picker page. The user's
-  // per-UC selections are materialized onto designResult before the
-  // persona is seeded (via applyTriggerSelections). No separate step.
-  // Per-UC trigger selections still feed the seed (applyTriggerSelections);
-  // the picker UI that set them was removed with the Classic layout, so the
-  // setter is gone and the map stays at its default.
-  const [perUseCaseTriggerSelections] = useState<Record<string, TriggerSelection>>({});
+  // Trigger composition — per-UC "When" selections, set via the schedule petal
+  // (ComposerSchedulePickerModal) and materialized onto designResult before the
+  // persona is seeded (applyTriggerSelections).
+  const [perUseCaseTriggerSelections, setPerUseCaseTriggerSelections] =
+    useState<Record<string, TriggerSelection>>({});
   const triggerSelections = useMemo(
     () => ({ perUseCase: perUseCaseTriggerSelections }),
     [perUseCaseTriggerSelections],
+  );
+  const handleTriggerChange = useCallback((capId: string, sel: TriggerSelection) => {
+    setPerUseCaseTriggerSelections((prev) => ({ ...prev, [capId]: sel }));
+  }, []);
+
+  // Per-capability cross-persona event subscriptions, set via the Events petal
+  // (ComposerEventPickerModal). Baked onto use_cases[].event_subscriptions at
+  // seed time (applyEventSubscriptions) + summarized into the seed intent.
+  const [eventSubsByCap, setEventSubsByCap] = useState<Record<string, EventSubscription[]>>({});
+  const handleEventSubsChange = useCallback((capId: string, subs: EventSubscription[]) => {
+    setEventSubsByCap((prev) => ({ ...prev, [capId]: subs }));
+  }, []);
+
+  // Per-capability Memory/Review on-off overrides (undefined = template
+  // default). Baked into use_cases[].generation_settings at seed time
+  // (applyGenerationSettings) so the runtime dispatcher honours the toggle.
+  const [dimPolicyByCap, setDimPolicyByCap] =
+    useState<Record<string, { memory?: boolean; review?: boolean }>>({});
+  const handleDimPolicyChange = useCallback(
+    (capId: string, dim: 'memory' | 'review', on: boolean) => {
+      setDimPolicyByCap((prev) => ({ ...prev, [capId]: { ...prev[capId], [dim]: on } }));
+    },
+    [],
   );
 
   // Per-capability "Errors" sigil routing policy. Edited via the Error petal
@@ -812,8 +905,13 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     const withTriggers = triggerSelections?.perUseCase
       ? applyTriggerSelections(designResult, triggerSelections.perUseCase, t, tx)
       : designResult;
-    // Also bake the per-capability Error-sigil routing policy onto the IR.
-    const effectiveDesignResult = applyErrorPolicies(withTriggers, errorPolicyByCap);
+    // Bake the per-capability Error-sigil routing policy onto the IR.
+    const withErrorPolicies = applyErrorPolicies(withTriggers, errorPolicyByCap);
+    // Bake the Memory/Review on-off toggles as generation_settings (the
+    // envelope the runtime dispatcher reads).
+    const withGenSettings = applyGenerationSettings(withErrorPolicies, dimPolicyByCap);
+    // Bake the cross-persona event subscriptions onto use_cases[].event_subscriptions.
+    const effectiveDesignResult = applyEventSubscriptions(withGenSettings, eventSubsByCap);
     const dimensionData = extractDimensionData(
       effectiveDesignResult,
       credentialBindings,
@@ -865,7 +963,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         const resolvedCellsJson = JSON.stringify(dimensionData);
         const sessionId = await invokeWithTimeout<string>("create_adoption_session", {
           personaId: persona.id,
-          intent: review.instruction || templateName,
+          // Append a prose hint for the picked cross-persona event
+          // subscriptions so the backend LLM has the context the structured
+          // event_subscriptions can't fully convey (matches the glyph
+          // builder's serializeQuickConfig approach).
+          intent: (review.instruction || templateName) + eventSubscriptionsHint(eventSubsByCap),
           agentIrJson,
           resolvedCellsJson,
         });
@@ -936,7 +1038,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         seedInFlight.current = false;
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, t, tx]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, dimPolicyByCap, eventSubsByCap, t, tx]);
 
   const build = useBuild({ personaId });
   const lifecycle = useLifecycle({ personaId });
@@ -1208,6 +1310,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onClose={onClose}
         errorPolicyByCap={errorPolicyByCap}
         onErrorPolicyChange={handleErrorPolicyChange}
+        triggerSelections={perUseCaseTriggerSelections}
+        onTriggerChange={handleTriggerChange}
+        eventSubsByCap={eventSubsByCap}
+        onEventSubsChange={handleEventSubsChange}
+        dimPolicyByCap={dimPolicyByCap}
+        onDimPolicyChange={handleDimPolicyChange}
       />
     );
 

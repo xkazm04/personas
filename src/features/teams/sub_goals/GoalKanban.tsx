@@ -116,18 +116,37 @@ function GoalCard({
           <h4 className="typo-card-label leading-snug break-words">{goal.title}</h4>
         </div>
         {onOpen && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpen(); }}
-            aria-label={dl.goal_open_detail}
-            title={dl.goal_open_detail}
-            className={[
-              'shrink-0 w-5 h-5 rounded-interactive flex items-center justify-center text-foreground transition-opacity',
-              hovered ? 'opacity-100 hover:bg-primary/10' : 'opacity-0 pointer-events-none',
-            ].join(' ')}
-          >
-            <Maximize2 className="w-3 h-3" />
-          </button>
+          <div className="flex items-center gap-0.5 shrink-0">
+            {/* Add to-dos — sits to the left of the expand affordance in the
+                top-right corner; shown on hover only when the card has no
+                checklist yet (opening the detail drawer is where to-dos live). */}
+            {!hasTodos && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onOpen(); }}
+                aria-label={dl.goal_card_add_todos}
+                title={dl.goal_card_add_todos}
+                className={[
+                  'w-5 h-5 rounded-interactive flex items-center justify-center text-primary/70 hover:text-primary transition-opacity',
+                  hovered ? 'opacity-100 hover:bg-primary/10' : 'opacity-0 pointer-events-none',
+                ].join(' ')}
+              >
+                <ListChecks className="w-3 h-3" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpen(); }}
+              aria-label={dl.goal_open_detail}
+              title={dl.goal_open_detail}
+              className={[
+                'w-5 h-5 rounded-interactive flex items-center justify-center text-foreground transition-opacity',
+                hovered ? 'opacity-100 hover:bg-primary/10' : 'opacity-0 pointer-events-none',
+              ].join(' ')}
+            >
+              <Maximize2 className="w-3 h-3" />
+            </button>
+          </div>
         )}
       </div>
 
@@ -221,30 +240,20 @@ function GoalCard({
       )}
 
       {/* Meta row — status is conveyed by the left accent edge, so no badge
-          here; just the target date (red when an ongoing goal is overdue) and a
-          subtle hover "add to-dos" affordance. Rendered only when it has
-          content so empty cards don't carry a dead gap. */}
-      {(goal.target_date || (!hasTodos && onOpen)) && (
+          here; just the target date (red when an ongoing goal is overdue). The
+          "add to-dos" affordance lives in the top-right corner. Rendered only
+          when there's a target date so empty cards don't carry a dead gap. */}
+      {goal.target_date && (
         <div className="flex items-center gap-2 mt-2">
-          {goal.target_date && (() => {
-            const overdue = isOngoing(goal.status) && new Date(goal.target_date).getTime() < Date.now();
+          {(() => {
+            const overdue = isOngoing(goal.status) && new Date(goal.target_date!).getTime() < Date.now();
             return (
               <span className={`text-[9px] flex items-center gap-0.5 ${overdue ? 'text-red-400 font-medium' : 'text-foreground'}`}>
                 <Clock className="w-2.5 h-2.5" />
-                <RelativeTime timestamp={goal.target_date} />
+                <RelativeTime timestamp={goal.target_date!} />
               </span>
             );
           })()}
-          {!hasTodos && onOpen && hovered && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onOpen(); }}
-              className="ml-auto text-[9px] flex items-center gap-0.5 text-primary/70 hover:text-primary transition-colors"
-            >
-              <ListChecks className="w-2.5 h-2.5" />
-              {dl.goal_card_add_todos}
-            </button>
-          )}
         </div>
       )}
     </div>

@@ -2,8 +2,17 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
-import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
+import type { PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
 import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
+import { AdoptionLeftPanel, type AdoptionConnectorCard } from './AdoptionLeftPanel';
+import { scheduleLabelFromSelection } from './adoptionDimHelpers';
+import {
+  composerScheduleToTriggerSelection,
+  triggerSelectionToComposerSchedule,
+} from './composerScheduleToTriggerSelection';
+import { ComposerSchedulePickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerSchedulePickerModal';
+import { ComposerEventPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal';
+import type { EventSubscription } from '@/features/agents/shared/quickConfig/quickConfigTypes';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
@@ -16,6 +25,7 @@ import {
 } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
 import type { DesignUseCase, UseCaseErrorPolicy } from '@/lib/types/frontendTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
+import type { TriggerSelection } from '../useCasePickerShared';
 
 /** Loose template design-result shape. The n8n transform's output doesn't
  *  conform to the strict `AgentIR` interface (use_cases lives at the top
@@ -26,6 +36,9 @@ import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { AdoptionAnswerCard } from './AdoptionAnswerCard';
 import { ErrorPolicyCard } from './ErrorPolicyCard';
 import { groupQuestionsByDimension, questionToDimension } from './questionDimMap';
+
+/** Dims that toggle on/off directly on petal click (no card / picker). */
+const POLICY_TOGGLE_DIMS = new Set<GlyphDimension>(['memory', 'review']);
 
 interface PersonaLayoutAdoptionProps {
   /** Template parsed design result — source of use cases for the rows. */
@@ -68,27 +81,35 @@ interface PersonaLayoutAdoptionProps {
   /** Persist a capability's error-routing policy (lifted to the parent so it
    *  rides onto the design IR at seed time). */
   onErrorPolicyChange?: (capabilityId: string, policy: UseCaseErrorPolicy) => void;
+
+  // ---- Editable dimensions (glyph-builder parity) ----------------------
+  /** Per-capability trigger ("When") selections. Drives the schedule petal. */
+  triggerSelections: Record<string, TriggerSelection>;
+  /** Set a capability's trigger selection (from the schedule picker). */
+  onTriggerChange: (capabilityId: string, sel: TriggerSelection) => void;
+  /** Per-capability cross-persona event subscriptions (the Events petal). */
+  eventSubsByCap: Record<string, EventSubscription[]>;
+  /** Set a capability's event subscriptions (from the event picker). */
+  onEventSubsChange: (capabilityId: string, subs: EventSubscription[]) => void;
+  /** Per-capability Memory/Review on-off overrides (undefined = template default). */
+  dimPolicyByCap: Record<string, { memory?: boolean; review?: boolean }>;
+  /** Toggle a capability's Memory/Review on-off (petal click). */
+  onDimPolicyChange: (capabilityId: string, dim: 'memory' | 'review', on: boolean) => void;
 }
 
 /**
- * Persona Layout adoption surface (phase 2 / refined in 2026-05-17).
- *
- * One screen replaces the picker + questionnaire steps:
- *   • Top — QuestionnaireHeaderBand stepper (reused from Classic)
- *   • Hero — Persona Sigil at 640px (canonical), petals reflect template
- *     coverage and any pending adoption questions (amber = pending)
- *   • Right rail — QuestionnaireStoryThread (reused from Classic). Click
- *     a thread item to open its dim's answer card on the sigil.
- *   • Below hero — Continue button + reasons-disabled microcopy
- *   • Capability rows — each template use case as a row, power button =
- *     include/skip toggle
- *
- * Inline question answering: clicking a pending petal opens an
- * AdoptionAnswerCard overlay in the sigil center. The card reuses
- * QuestionnaireHeroQuestion for widget parity with Classic, and lets the
- * user step through every question landing on that dim (prev / next /
- * done). When all questions for a dim are answered, the petal flips to
- * resolved and the card auto-flips to a done state.
+ * Persona Layout adoption surface. One screen replaces the picker +
+ * questionnaire steps, with every dimension directly editable on the sigil:
+ *   • Capability tags (top) — select + include/skip toggle; active tag's
+ *     description renders below. This is the only capability control (the
+ *     old bottom row-list is gone).
+ *   • Hero — Persona Sigil. Petal routing:
+ *       trigger → schedule picker · event → cross-persona event picker
+ *       memory / review → on/off toggle on click
+ *       task / connector / message → inline answer card · error → policy card
+ *   • Left — always-on AdoptionLeftPanel (connector card + value summary),
+ *     so the hero never re-centers between empty / filled states.
+ *   • Right — QuestionnaireStoryThread.
  */
 export function PersonaLayoutAdoption({
   designResult,
@@ -109,43 +130,31 @@ export function PersonaLayoutAdoption({
   onClose,
   errorPolicyByCap,
   onErrorPolicyChange,
+  triggerSelections,
+  onTriggerChange,
+  eventSubsByCap,
+  onEventSubsChange,
+  dimPolicyByCap,
+  onDimPolicyChange,
 }: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
-  // Tracks which specific question within `activeDim` is on screen. Story-
-  // thread clicks set both this AND activeDim so the answer card lands on
-  // the EXACT question the user picked, not just the first one for its
-  // dim. Without this, clicking the 2nd/3rd question in a dim's bucket
-  // would silently route to the dim's first question (the bug Classic
-  // didn't have because it indexed questions absolutely, not by dim).
-  // Cleared whenever the dim changes via petal click (the card defaults
-  // to first-unanswered in the new dim).
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
-
-  // Active capability for the per-cap tab strip. Default = first item;
-  // re-anchor when items load or the prior pick disappears. Drives:
-  //   - which capability the hero glyph renders
-  //   - which capability's questions feed the questionnaire flow
-  //   - which capability the left summary describes
-  // Single-cap templates skip the tab strip entirely (see capabilityTabs
-  // below) so a template like Email Morning Digest doesn't waste header
-  // height on a one-item nav.
   const [activeCapabilityId, setActiveCapabilityId] = useState<string | null>(null);
 
-  // Per-capability disabled-dims map — drives the petal-disabled state +
-  // question filtering. Toggle UX in adoption lives inside the existing
-  // AdoptionAnswerCard (added as a footer affordance) rather than a
-  // separate SigilEditModal, since the AnswerCard already occupies the
-  // hero's wideOverlay slot during the questionnaire flow. Persists to
-  // the build session row via updateBuildSessionDisabledDims so the
-  // runner reads the same shape the View mode persists on the persona.
+  // Reused-from-glyph-builder picker modals (open over the adoption modal).
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [eventsOpen, setEventsOpen] = useState(false);
+
+  // Per-capability disabled-dims map — drives question filtering + petal idle
+  // for the CARD dims (task / connector / message) via the AnswerCard footer
+  // toggle. Memory/Review use the explicit `dimPolicyByCap` instead (so they
+  // can be forced ON even for templates that didn't ship them).
   const [disabledDimsByCap, setDisabledDimsByCap] = useState<Record<string, Set<GlyphDimension>>>({});
   const sessionId = useAgentStore((s) => s.buildSessionId);
   const sessionDisabledDims = useAgentStore((s) => s.activeBuildSessionId
     ? (s.buildSessions[s.activeBuildSessionId] as unknown as { disabledDims?: Record<string, string[]> } | undefined)?.disabledDims
     : undefined);
-  // Hydrate from session on first render or session change. Failures
-  // (malformed shape) leave the map empty rather than blocking the panel.
   useEffect(() => {
     if (!sessionDisabledDims) {
       setDisabledDimsByCap({});
@@ -175,8 +184,6 @@ export function PersonaLayoutAdoption({
         if (nextActive) cur.delete(dim);
         else cur.add(dim);
         const next = { ...prev, [activeCapabilityId]: cur };
-        // Serialise and persist; empty sets stripped so the wire shape
-        // stays clean.
         const wire: Record<string, GlyphDimension[]> = {};
         for (const [capId, set] of Object.entries(next)) {
           if (set.size > 0) wire[capId] = [...set];
@@ -205,9 +212,6 @@ export function PersonaLayoutAdoption({
       .filter((u): u is DisplayUseCase => u !== null);
   }, [designResult, selectedUseCaseIds]);
 
-  // Re-anchor active capability when items load / change. Preserve the
-  // user's choice when still valid; only fall back to items[0] when the
-  // prior pick disappears (e.g. template re-fetch dropped a cap).
   useEffect(() => {
     if (items.length === 0) {
       setActiveCapabilityId(null);
@@ -218,44 +222,74 @@ export function PersonaLayoutAdoption({
     }
   }, [items, activeCapabilityId]);
 
-  // Questions filtered by the active capability AND skipping any whose
-  // dim has been toggled off via the SigilEditModal toggle. Each template
-  // question carries `use_case_id` (sigil migration §1) and `dimension`
-  // (sigil migration §2), so the filter is a single lookup. Questions
-  // without `use_case_id` (legacy fallback) show under every cap; same
-  // for ones without `dimension` (treat them as ungated).
+  // Caps that ship at least one question per dim — feeds the Memory/Review
+  // template-default (a question on a dim means the template intends it ON).
+  const capDimsWithQuestions = useMemo(() => {
+    const s = new Set<string>();
+    for (const q of questions) {
+      const ucId = (q as { use_case_id?: string }).use_case_id;
+      if (!ucId) continue;
+      s.add(`${ucId}:${questionToDimension(q)}`);
+    }
+    return s;
+  }, [questions]);
+
+  // Template-default ON for a Memory/Review dim on a capability.
+  const templateDimOn = useCallback(
+    (capId: string, dim: 'memory' | 'review') => {
+      const uc = items.find((u) => u.id === capId);
+      if (uc?.dimensions.includes(dim)) return true;
+      return capDimsWithQuestions.has(`${capId}:${dim}`);
+    },
+    [items, capDimsWithQuestions],
+  );
+
+  // Resolved Memory/Review on-off for a capability (explicit override wins).
+  const dimOnForCap = useCallback(
+    (capId: string, dim: 'memory' | 'review') => {
+      const explicit = dimPolicyByCap[capId]?.[dim];
+      if (explicit !== undefined) return explicit;
+      return templateDimOn(capId, dim);
+    },
+    [dimPolicyByCap, templateDimOn],
+  );
+
+  // True when a question's dim is switched OFF for its capability (Memory/
+  // Review policy). Drives question filtering + gating so an off dim's
+  // questions neither show nor block.
+  const isQuestionDimOff = useCallback(
+    (q: TransformQuestionResponse) => {
+      const dim = questionToDimension(q);
+      if (dim !== 'memory' && dim !== 'review') return false;
+      const ucId = (q as { use_case_id?: string }).use_case_id;
+      if (!ucId) return false;
+      return !dimOnForCap(ucId, dim);
+    },
+    [dimOnForCap],
+  );
+
   const filteredQuestions = useMemo(() => {
     return questions.filter((q) => {
       const ucId = (q as { use_case_id?: string }).use_case_id;
       const dim = (q as { dimension?: string }).dimension;
-      // Cap scope (skip when activeCapabilityId is set and cap differs)
       if (ucId && activeCapabilityId && items.length > 1 && ucId !== activeCapabilityId) {
         return false;
       }
-      // Disabled-dim gate
       if (ucId && dim) {
         const dis = disabledDimsByCap[ucId];
         if (dis && dis.has(dim as GlyphDimension)) return false;
       }
+      if (isQuestionDimOff(q)) return false;
       return true;
     });
-  }, [questions, activeCapabilityId, items.length, disabledDimsByCap]);
+  }, [questions, activeCapabilityId, items.length, disabledDimsByCap, isQuestionDimOff]);
 
-  // Questions grouped by their target dim — drives petal state + the
-  // answer-card's question stack on click. Built from the cap-filtered
-  // set so the hero glyph + answer card see only the active cap's
-  // questions.
   const questionsByDim = useMemo(
     () => groupQuestionsByDimension(filteredQuestions),
     [filteredQuestions],
   );
 
-  // Petal states: pending when any question for the dim is unanswered,
-  // else resolved when the template has design data on that dim or a
-  // question landed answered.
   const petalStates = useMemo<Record<GlyphDimension, PetalState>>(() => {
-    // Dims touched by enabled template capabilities (so coverage stays
-    // visible even without questions).
     const designDims = new Set<GlyphDimension>();
     for (const uc of items) {
       if (uc.health === 'disabled') continue;
@@ -264,17 +298,27 @@ export function PersonaLayoutAdoption({
 
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
-      // Error handling (retry + self-healing) is a built-in, automatic part
-      // of every persona — the Error petal is always resolved and clickable
-      // to configure post-error escalation routing (incident / lab).
+      // Error handling is always a built-in — petal stays resolved + clickable
+      // to configure post-error routing.
       if (dim === 'error') {
         out[dim] = 'resolved';
         continue;
       }
-      // Disabled-dim trumps everything — render as idle so the petal
-      // visually communicates "off" regardless of underlying question
-      // state. The dim's questions are already filtered out of
-      // `filteredQuestions` (and thus `questionsByDim`) above.
+      // Memory / Review switched OFF → idle (off), regardless of questions.
+      if ((dim === 'memory' || dim === 'review') && activeCapabilityId && !dimOnForCap(activeCapabilityId, dim)) {
+        out[dim] = 'idle';
+        continue;
+      }
+      // When / Events with a user selection → resolved (lit).
+      if (dim === 'trigger') {
+        const sel = activeCapabilityId ? triggerSelections[activeCapabilityId] : undefined;
+        if (sel?.time || sel?.customCron) { out[dim] = 'resolved'; continue; }
+      }
+      if (dim === 'event') {
+        const subs = activeCapabilityId ? eventSubsByCap[activeCapabilityId] : undefined;
+        const sel = activeCapabilityId ? triggerSelections[activeCapabilityId] : undefined;
+        if ((subs?.length ?? 0) > 0 || sel?.event) { out[dim] = 'resolved'; continue; }
+      }
       if (disabledDimsForActive.has(dim)) {
         out[dim] = 'idle';
         continue;
@@ -293,31 +337,26 @@ export function PersonaLayoutAdoption({
       }
     }
     return out;
-  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive]);
+  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive, activeCapabilityId, dimOnForCap, triggerSelections, eventSubsByCap]);
 
   const handlePetalClick = useCallback(
     (dim: GlyphDimension) => {
-      // Petal click clears any explicit question pin — the card lands on
-      // the new dim's first-unanswered. The two paths into the card need
-      // to disagree here: story-thread clicks pick a specific question;
-      // petal clicks pick a dim and let the card choose.
-      setActiveQuestionId(null);
-      if (questionsByDim[dim].length === 0) {
-        setActiveDim((prev) => (prev === dim ? null : dim));
+      // When / Events → reuse the from-scratch builder's pickers.
+      if (dim === 'trigger') { setScheduleOpen(true); return; }
+      if (dim === 'event') { setEventsOpen(true); return; }
+      // Memory / Review → toggle on/off in place (no card).
+      if (dim === 'memory' || dim === 'review') {
+        if (!activeCapabilityId) return;
+        onDimPolicyChange(activeCapabilityId, dim, !dimOnForCap(activeCapabilityId, dim));
         return;
       }
+      // task / connector / message / error → open the inline card.
+      setActiveQuestionId(null);
       setActiveDim((prev) => (prev === dim ? null : dim));
     },
-    [questionsByDim],
+    [activeCapabilityId, dimOnForCap, onDimPolicyChange],
   );
 
-  // Story-thread item click → jump to the EXACT question the user clicked,
-  // not just its dim. Both activeDim (drives which card opens) and
-  // activeQuestionId (drives which entry inside the card is active) are
-  // set in the same tick so the card lands precisely. Without this pair,
-  // clicking the 2nd/3rd question in a dim's bucket silently routed to
-  // the dim's first question — the bug Classic didn't have because it
-  // indexed questions absolutely.
   const handleStoryJumpTo = useCallback(
     (idx: number) => {
       const q = filteredQuestions[idx];
@@ -333,17 +372,7 @@ export function PersonaLayoutAdoption({
     [filteredQuestions, userAnswers],
   );
   const totalCount = filteredQuestions.length;
-  // `blockedQuestionIds` is derived from the VAULT (matchVaultToQuestions)
-  // and never inspects user answers — once a question has been picked
-  // from the stackable options, the user has explicitly resolved it,
-  // even if the chosen service_type doesn't yet have a credential in
-  // the vault (the credential add can happen post-adoption). Subtract
-  // answered questions from the blocking set so picking a valid option
-  // actually clears the gate.
-  // ---- Per-capability + cross-capability state -------------------------
-  // Whether a question belongs to a capability's tab — mirrors the
-  // `filteredQuestions` rule: untagged questions show under every cap; a
-  // question whose dim is disabled for its cap is excluded.
+
   const matchesCap = useCallback(
     (q: TransformQuestionResponse, capId: string) => {
       const ucId = (q as { use_case_id?: string }).use_case_id;
@@ -353,13 +382,14 @@ export function PersonaLayoutAdoption({
         const dis = disabledDimsByCap[ucId];
         if (dis && dis.has(dim as GlyphDimension)) return false;
       }
+      if (isQuestionDimOff(q)) return false;
       return true;
     },
-    [items.length, disabledDimsByCap],
+    [items.length, disabledDimsByCap, isQuestionDimOff],
   );
 
   // One tag per capability: title + answered/total + per-question segments
-  // for that capability's individual stepper.
+  // + include/skip state.
   const perCapability = useMemo(
     () =>
       items.map((uc) => {
@@ -371,22 +401,22 @@ export function PersonaLayoutAdoption({
           if (blockedQuestionIds.has(q.id)) { blocked++; return 'blocked' as const; }
           return 'pending' as const;
         });
-        return { id: uc.id, title: uc.title, total: capQs.length, answered, blocked, segments };
+        return {
+          id: uc.id,
+          title: uc.title,
+          total: capQs.length,
+          answered,
+          blocked,
+          enabled: selectedUseCaseIds.has(uc.id),
+          segments,
+        };
       }),
-    [items, questions, matchesCap, userAnswers, blockedQuestionIds],
+    [items, questions, matchesCap, userAnswers, blockedQuestionIds, selectedUseCaseIds],
   );
 
-  // Cross-capability gate: every mandatory question across ALL enabled
-  // capabilities must be answered before Continue is allowed — not just the
-  // active capability's. A question is gated unless its dim is disabled for
-  // its own capability. The parent already provides a flat, deduped set.
   const gatedQuestions = useMemo(
     () =>
       questions.filter((q) => {
-        // Optional questions (e.g. a nice-to-have codebase/source connector)
-        // never gate the build — the user may answer them but adoption must
-        // proceed without them. This drops them from both globalRemaining and
-        // globalBlocked below.
         if ((q as { optional?: boolean }).optional) return false;
         const ucId = (q as { use_case_id?: string }).use_case_id;
         const dim = (q as { dimension?: string }).dimension;
@@ -394,9 +424,10 @@ export function PersonaLayoutAdoption({
           const dis = disabledDimsByCap[ucId];
           if (dis && dis.has(dim as GlyphDimension)) return false;
         }
+        if (isQuestionDimOff(q)) return false;
         return true;
       }),
-    [questions, disabledDimsByCap],
+    [questions, disabledDimsByCap, isQuestionDimOff],
   );
   const globalRemaining = useMemo(
     () => gatedQuestions.filter((q) => !userAnswers[q.id]).length,
@@ -407,11 +438,6 @@ export function PersonaLayoutAdoption({
     [gatedQuestions, blockedQuestionIds, userAnswers],
   );
 
-  // Templates without declared use_cases (recipe-driven templates) produce
-  // an empty `items` array — there's nothing for the user to enable. Don't
-  // gate Continue on `selectedUseCaseIds.size > 0` in that case. Otherwise
-  // require every capability's mandatory questions answered (cross-cap), so
-  // an unanswered question in a non-active capability still blocks build.
   const canContinue =
     globalRemaining === 0 &&
     globalBlocked === 0 &&
@@ -419,10 +445,6 @@ export function PersonaLayoutAdoption({
 
   const activeStoryIdx = useMemo(() => {
     if (!activeDim) return -1;
-    // Prefer the explicit question pin (set by story-thread / header-band
-    // clicks) so the highlighted item matches what the user actually
-    // clicked. Falls back to the first question for the dim when the dim
-    // was opened via petal click (no specific question targeted).
     if (activeQuestionId) {
       const exact = filteredQuestions.findIndex((q) => q.id === activeQuestionId);
       if (exact >= 0) return exact;
@@ -430,11 +452,8 @@ export function PersonaLayoutAdoption({
     return filteredQuestions.findIndex((q) => questionToDimension(q) === activeDim);
   }, [filteredQuestions, activeDim, activeQuestionId]);
 
-  // Summary sidebar entries — one row per dim with at least one answered
-  // question. Each row shows the dim label (colored to match the petal)
-  // and a `·`-joined list of the user's picked values, so the user can
-  // see what they've decided at a glance while the sigil itself stays
-  // colour-coded for "still pending vs resolved".
+  // Summary sidebar entries — answered-question values plus the editable-dim
+  // state (Memory/Review on-off, schedule, event count) for the active cap.
   const summaryEntries = useMemo<Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>>>(() => {
     const dimLabels: Record<GlyphDimension, string> = {
       trigger: t.templates.chronology.dim_trigger,
@@ -451,9 +470,6 @@ export function PersonaLayoutAdoption({
       const ans = userAnswers[q.id];
       if (!ans) continue;
       const dim = questionToDimension(q);
-      // Skip the "Task" (What) dimension in the left summary — it's usually a
-      // long free-form description that's better surfaced elsewhere and just
-      // clutters the at-a-glance value list.
       if (dim === 'task') continue;
       const list = byDim.get(dim);
       if (list) list.push(ans);
@@ -463,21 +479,54 @@ export function PersonaLayoutAdoption({
     for (const [dim, values] of byDim) {
       out[dim] = { label: dimLabels[dim], value: values.join(' · ') };
     }
+
+    // Editable-dim reflection for the active capability.
+    if (activeCapabilityId) {
+      for (const dim of ['memory', 'review'] as const) {
+        const explicit = dimPolicyByCap[activeCapabilityId]?.[dim];
+        const relevant = explicit !== undefined || templateDimOn(activeCapabilityId, dim);
+        if (!relevant) continue;
+        const on = dimOnForCap(activeCapabilityId, dim);
+        const stateLabel = on ? t.templates.adopt_modal.policy_on : t.templates.adopt_modal.policy_off;
+        const detail = out[dim]?.value;
+        out[dim] = {
+          label: dimLabels[dim],
+          value: on && detail ? `${stateLabel} · ${detail}` : stateLabel,
+        };
+      }
+      const schedLabel = scheduleLabelFromSelection(triggerSelections[activeCapabilityId], t, tx);
+      if (schedLabel) out.trigger = { label: dimLabels.trigger, value: schedLabel };
+      const subs = eventSubsByCap[activeCapabilityId];
+      if (subs && subs.length > 0) {
+        out.event = {
+          label: dimLabels.event,
+          value: tx(
+            subs.length === 1
+              ? t.templates.adopt_modal.events_count_one
+              : t.templates.adopt_modal.events_count_other,
+            { count: subs.length },
+          ),
+        };
+      }
+    }
     return out;
-  }, [filteredQuestions, userAnswers, t]);
+  }, [filteredQuestions, userAnswers, t, tx, activeCapabilityId, dimPolicyByCap, templateDimOn, dimOnForCap, triggerSelections, eventSubsByCap]);
 
-  const leftSlot = Object.keys(summaryEntries).length > 0 ? (
-    <PersonaSigilSummary entries={summaryEntries} heading={null} onSelectDim={handlePetalClick} />
-  ) : null;
+  // Connector card source — the active capability's primary connector.
+  const connectorsForActive = useMemo<AdoptionConnectorCard[]>(() => {
+    const uc = items.find((u) => u.id === activeCapabilityId);
+    if (uc?.connectorKey) return [{ key: uc.connectorKey, label: uc.connector }];
+    return [];
+  }, [items, activeCapabilityId]);
 
-  // topSlot is defined below the `continueDisabledReason` derivation so
-  // we can fold the Continue action into the header band. User feedback
-  // (2026-05-17): the action panel below the sigil and the band above
-  // it were doing two-bar duty; merge into one.
+  const leftSlot = (
+    <AdoptionLeftPanel
+      connectors={connectorsForActive}
+      summaryEntries={summaryEntries}
+      onSelectDim={handlePetalClick}
+    />
+  );
 
-  // Always rendered — even when the active capability has no questions — so
-  // the user can see "no questions for this capability" instead of the rail
-  // silently vanishing.
   const rightSlot = (
     <QuestionnaireStoryThread
       questions={filteredQuestions}
@@ -501,13 +550,6 @@ export function PersonaLayoutAdoption({
           : null
     : null;
 
-  // Tab strip rendered above the questionnaire header band when the
-  // template ships more than one capability. Single-cap templates skip
-  // the strip (zero-info nav). On tab click, swap the active cap; the
-  // questionnaire below auto-filters via `filteredQuestions`. The
-  // existing pin state (activeDim + activeQuestionId) is cleared on
-  // cap change so the answer card lands fresh on the new cap's first
-  // unanswered question.
   const handleActiveCapChange = useCallback(
     (id: string) => {
       setActiveCapabilityId(id);
@@ -517,22 +559,29 @@ export function PersonaLayoutAdoption({
     [],
   );
 
-  // The capability switcher is the ONLY thing above the glyph now: name
-  // tags with an answered/total count (coloured per state) and each
-  // capability's own progress stepper underneath. This replaces both the
-  // sigil-tab strip and the single consolidated stepper — per-capability
-  // state lives in each tag. The Continue action lives in the sigil center.
+  const activeUc = items.find((u) => u.id === activeCapabilityId) ?? null;
+
+  // Top slot — the SINGLE capability control: tags (select + include/skip)
+  // plus the active capability's description. Replaces the old bottom list.
   const topSlot = items.length > 0 ? (
-    <CapabilityTagSwitcher
-      items={perCapability}
-      activeId={activeCapabilityId}
-      onActiveChange={handleActiveCapChange}
-    />
+    <div className="flex flex-col gap-3">
+      <CapabilityTagSwitcher
+        items={perCapability}
+        activeId={activeCapabilityId}
+        onActiveChange={handleActiveCapChange}
+        onToggleEnabled={onToggleUseCase}
+      />
+      {activeUc && (
+        <div className="rounded-card border border-card-border/50 bg-secondary/15 px-4 py-3">
+          <h3 className="typo-body-lg font-medium text-foreground">{activeUc.title}</h3>
+          {activeUc.description && (
+            <p className="typo-caption text-foreground mt-1 leading-relaxed">{activeUc.description}</p>
+          )}
+        </div>
+      )}
+    </div>
   ) : null;
 
-  // Open the first unanswered question across ALL capabilities when the user
-  // clicks the center count-button — switching capability first when the
-  // next unanswered question lives in a non-active one.
   const openFirstUnanswered = useCallback(() => {
     const next = gatedQuestions.find((q) => !userAnswers[q.id]);
     if (!next) return;
@@ -544,11 +593,7 @@ export function PersonaLayoutAdoption({
     setActiveQuestionId(next.id);
   }, [gatedQuestions, userAnswers, activeCapabilityId, items]);
 
-  // Wide overlay — the answer card, positioned absolute over the sigil
-  // stage so it can be wider than the sigil itself (target: ~1280px on
-  // desktop, capped by PersonaHero's overlay container). The Error petal
-  // opens the ErrorPolicyCard instead (no questions — it's a routing config).
-  const activeCapTitle = items.find((u) => u.id === activeCapabilityId)?.title ?? templateName;
+  const activeCapTitle = activeUc?.title ?? templateName;
   const wideOverlay = activeDim === 'error' ? (
     <ErrorPolicyCard
       capabilityTitle={activeCapTitle}
@@ -571,8 +616,18 @@ export function PersonaLayoutAdoption({
       onAnswerUpdated={onAnswerUpdated}
       pinnedQuestionId={activeQuestionId}
       onQuestionChange={setActiveQuestionId}
-      isDimActive={!disabledDimsForActive.has(activeDim)}
-      onToggleDim={(next) => toggleDimDisabled(activeDim, next)}
+      isDimActive={
+        POLICY_TOGGLE_DIMS.has(activeDim) && activeCapabilityId
+          ? dimOnForCap(activeCapabilityId, activeDim as 'memory' | 'review')
+          : !disabledDimsForActive.has(activeDim)
+      }
+      onToggleDim={(next) => {
+        if (POLICY_TOGGLE_DIMS.has(activeDim) && activeCapabilityId) {
+          onDimPolicyChange(activeCapabilityId, activeDim as 'memory' | 'review', next);
+        } else {
+          toggleDimDisabled(activeDim, next);
+        }
+      }}
       onClose={() => {
         setActiveDim(null);
         setActiveQuestionId(null);
@@ -580,12 +635,6 @@ export function PersonaLayoutAdoption({
     />
   ) : undefined;
 
-  // Center overlay — sits inside the sigil's inner core and is the single
-  // home for the flow's primary action (the header "Continue to build"
-  // button was removed):
-  //   • pending questions → a click-to-open count button ("start here")
-  //   • all answered + unblocked + caps chosen → the Continue-to-build CTA
-  //   • answered but still blocked / no caps → the disabled reason
   const unansweredCount = globalRemaining;
   const centerOverlay = activeDim ? (
     <span aria-hidden />
@@ -630,6 +679,10 @@ export function PersonaLayoutAdoption({
     <span aria-hidden />
   );
 
+  const composerSchedule = triggerSelectionToComposerSchedule(
+    activeCapabilityId ? triggerSelections[activeCapabilityId] : undefined,
+  );
+
   return (
     <div className="flex flex-col h-full min-h-0">
       <div className="flex-1 min-h-0">
@@ -637,15 +690,13 @@ export function PersonaLayoutAdoption({
           mode="adoption"
           personaName={templateName}
           items={items}
-          onRowOpen={() => {
-            // Detail editing pre-seed is a no-op; in-card answering covers
-            // the per-question flow.
-          }}
+          onRowOpen={() => { /* in-card answering covers per-question flow */ }}
           onRowToggle={(uc) => onToggleUseCase(uc.id)}
           topSlot={topSlot}
           leftSlot={leftSlot}
           rightSlot={rightSlot}
           hideMetadataBand
+          hideCapabilityRows={items.length > 0}
           sigilSizeScale={0.8}
           heroPetalStatesOverride={petalStates}
           onHeroPetalClick={handlePetalClick}
@@ -671,6 +722,33 @@ export function PersonaLayoutAdoption({
           {t.templates.adopt_modal.cancel}
         </button>
       </div>
+
+      <ComposerSchedulePickerModal
+        open={scheduleOpen}
+        onClose={() => setScheduleOpen(false)}
+        frequency={composerSchedule.frequency}
+        days={composerSchedule.days}
+        monthDay={composerSchedule.monthDay}
+        time={composerSchedule.time}
+        onApply={(next) => {
+          if (activeCapabilityId) {
+            onTriggerChange(
+              activeCapabilityId,
+              composerScheduleToTriggerSelection(next, triggerSelections[activeCapabilityId]),
+            );
+          }
+          setScheduleOpen(false);
+        }}
+      />
+      <ComposerEventPickerModal
+        open={eventsOpen}
+        onClose={() => setEventsOpen(false)}
+        selected={activeCapabilityId ? (eventSubsByCap[activeCapabilityId] ?? []) : []}
+        onApply={(next) => {
+          if (activeCapabilityId) onEventSubsChange(activeCapabilityId, next);
+          setEventsOpen(false);
+        }}
+      />
     </div>
   );
 }

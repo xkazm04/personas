@@ -13,10 +13,13 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
+import { TeamPresetPickerModal } from './TeamPresetPickerModal';
+import { PresetPreviewModal } from '@/features/templates/sub_presets';
 import { usePersonaIndex } from './teamStudio/boardShared';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
+import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 
 /**
  * Teams management table — the landing view of the "Teams" sidebar
@@ -50,6 +53,10 @@ export default function TeamList() {
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [confirmDisbandId, setConfirmDisbandId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
+  // Preset-team onboarding: the picker lists best-practice presets; choosing
+  // one opens the shared PresetPreviewModal (select/unselect members → adopt).
+  const [showPresetPicker, setShowPresetPicker] = useState(false);
+  const [presetToPreview, setPresetToPreview] = useState<TeamPreset | null>(null);
   const personaIndex = usePersonaIndex();
 
   useEffect(() => {
@@ -145,6 +152,9 @@ export default function TeamList() {
         subtitle={countLabel}
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setShowPresetPicker(true)}>
+              {t.pipeline.preset_team}
+            </Button>
             <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
               {t.pipeline.auto_team}
             </Button>
@@ -176,7 +186,12 @@ export default function TeamList() {
         )}
 
         {sortedTeams.length === 0 && !showCreate ? (
-          <EmptyState onCreate={() => setShowCreate(true)} onAuto={() => setShowAutoTeam(true)} t={t} />
+          <EmptyState
+            onCreate={() => setShowCreate(true)}
+            onAuto={() => setShowAutoTeam(true)}
+            onPreset={() => setShowPresetPicker(true)}
+            t={t}
+          />
         ) : (
           <div className="rounded-card border border-primary/12 overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
@@ -205,6 +220,24 @@ export default function TeamList() {
       </ContentBody>
 
       <AutoTeamModal open={showAutoTeam} onClose={() => setShowAutoTeam(false)} />
+
+      <TeamPresetPickerModal
+        open={showPresetPicker}
+        onClose={() => setShowPresetPicker(false)}
+        onSelect={(preset) => {
+          // Close the gallery and hand the preset to the shared preview/
+          // adoption modal — keeps both modals from stacking on screen.
+          setShowPresetPicker(false);
+          setPresetToPreview(preset);
+        }}
+      />
+      {presetToPreview && (
+        <PresetPreviewModal
+          open
+          preset={presetToPreview}
+          onClose={() => setPresetToPreview(null)}
+        />
+      )}
     </ContentBox>
   );
 }
@@ -380,10 +413,12 @@ function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
 function EmptyState({
   onCreate,
   onAuto,
+  onPreset,
   t,
 }: {
   onCreate: () => void;
   onAuto: () => void;
+  onPreset: () => void;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
   return (
@@ -393,11 +428,14 @@ function EmptyState({
       </div>
       <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button variant="primary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={onPreset}>
+          {t.pipeline.preset_team}
+        </Button>
         <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={onAuto}>
           {t.pipeline.auto_team}
         </Button>
-        <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
+        <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
           {t.pipeline.create_blank_team}
         </Button>
       </div>
