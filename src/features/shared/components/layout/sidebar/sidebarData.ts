@@ -99,7 +99,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
-  { id: 'studio', label: 'Chain Studio', icon: GitBranch, devOnly: true },
+  { id: 'studio', label: 'Chain Studio', icon: GitBranch },
   { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
 ];
 
