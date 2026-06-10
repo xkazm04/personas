@@ -111,9 +111,14 @@ Browse/adopt surface for the 298 seeded recipe definitions (derived use cases pa
   policies. Categories funnel through a 42-alias map (`CATEGORY_ALIASES`) into the 9-bucket
   `RecipeCategory` taxonomy (monitoring / reporting / automation / communication / data-sync /
   analysis / development / content / productivity); labels resolve via `libs/categoryLabels.ts`.
-- **Table** (`RecipesTableResults.tsx`): sortable columns — name, category badge
-  (translated label), required-connector icon strip (up to 3 + overflow), version,
-  eligibility. Row click opens detail; hover reveals Adopt.
+- **Table** (`RecipesTableResults.tsx`): sortable columns — name (search matches
+  highlighted), category badge (translated label), required-connector icon strip
+  (up to 3 + overflow), version, eligibility. Row click opens detail; hover reveals
+  Adopt. Eligibility is a per-persona verdict: before a persona is selected the
+  column shows a neutral dash (no LOCKED stamping, no row dimming). Rows the
+  selected persona already adopted carry a green **Adopted** chip, driven by
+  `DesignUseCase.source_recipe_id` — stamped at adoption time by `useAdoption`
+  and persisted on both the TS and Rust shapes.
 - **Detail** (`RecipeDetailPanel.tsx` + `components/detail/*`): connector-tinted hero header
   (eligibility chip, category/version badges, author; publish time hidden for builtins),
   About + tags, "What it does" (trigger/cron, branded channel chips, tool hints), "What it
