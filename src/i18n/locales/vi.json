@@ -13688,7 +13688,11 @@
       "replay_duration": "{seconds} giây",
       "identity_section": "Danh tính nhóm",
       "identity_icon_label": "Biểu tượng",
-      "identity_hint": "Đổi tên hoặc đổi màu áp dụng ở mọi nơi nhóm xuất hiện. Trường bị xóa trống sẽ giữ nguyên."
+      "identity_hint": "Đổi tên hoặc đổi màu áp dụng ở mọi nơi nhóm xuất hiện. Trường bị xóa trống sẽ giữ nguyên.",
+      "workspace_unsaved_title": "Thay đổi không gian làm việc chưa lưu",
+      "workspace_unsaved_body": "Bạn đã chỉnh sửa cài đặt không gian làm việc nhưng chưa lưu. Rời đi và bỏ các thay đổi?",
+      "workspace_unsaved_discard": "Bỏ thay đổi",
+      "workspace_unsaved_stay": "Tiếp tục chỉnh sửa"
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",

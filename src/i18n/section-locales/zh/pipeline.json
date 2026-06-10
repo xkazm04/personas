@@ -301,7 +301,11 @@
     "replay_duration": "{seconds} 秒",
     "identity_section": "团队标识",
     "identity_icon_label": "图标",
-    "identity_hint": "重命名或换色会应用到该团队出现的所有位置。清空的字段保持不变。"
+    "identity_hint": "重命名或换色会应用到该团队出现的所有位置。清空的字段保持不变。",
+    "workspace_unsaved_title": "工作区更改未保存",
+    "workspace_unsaved_body": "您编辑了工作区设置但尚未保存。要离开并放弃更改吗？",
+    "workspace_unsaved_discard": "放弃更改",
+    "workspace_unsaved_stay": "继续编辑"
   },
   "memory_created": "记忆已保存到团队记录",
   "memory_updated": "记忆已更新",

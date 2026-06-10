@@ -301,7 +301,11 @@
     "replay_duration": "{seconds} s",
     "identity_section": "Identidad del equipo",
     "identity_icon_label": "Icono",
-    "identity_hint": "Renombrar o recolorear se aplica en todos los lugares donde aparece el equipo. Los campos vaciados quedan sin cambios."
+    "identity_hint": "Renombrar o recolorear se aplica en todos los lugares donde aparece el equipo. Los campos vaciados quedan sin cambios.",
+    "workspace_unsaved_title": "Cambios del espacio de trabajo sin guardar",
+    "workspace_unsaved_body": "Editaste la configuración del espacio de trabajo pero no la guardaste. ¿Salir y descartar los cambios?",
+    "workspace_unsaved_discard": "Descartar cambios",
+    "workspace_unsaved_stay": "Seguir editando"
   },
   "memory_created": "Memoria guardada en el registro del equipo",
   "memory_updated": "Memoria actualizada",

@@ -14448,6 +14448,10 @@ export type Translations = {
       workspace_saved: string;
       workspace_save_failed: string;
       workspace_inherit: string;
+      workspace_unsaved_title: string;
+      workspace_unsaved_body: string;
+      workspace_unsaved_discard: string;
+      workspace_unsaved_stay: string;
       deck_phase_active: string;
       deck_phase_review: string;
       deck_phase_queued: string;

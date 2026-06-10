@@ -13688,7 +13688,11 @@
       "replay_duration": "{seconds} s",
       "identity_section": "Identita týmu",
       "identity_icon_label": "Ikona",
-      "identity_hint": "Přejmenování nebo změna barvy se projeví všude, kde se tým objevuje. Vyprázdněná pole zůstávají beze změny."
+      "identity_hint": "Přejmenování nebo změna barvy se projeví všude, kde se tým objevuje. Vyprázdněná pole zůstávají beze změny.",
+      "workspace_unsaved_title": "Neuložené změny pracovního prostoru",
+      "workspace_unsaved_body": "Upravili jste nastavení pracovního prostoru, ale neuložili je. Odejít a zahodit změny?",
+      "workspace_unsaved_discard": "Zahodit změny",
+      "workspace_unsaved_stay": "Pokračovat v úpravách"
     },
     "memory_created": "Záznam uložen do týmové paměti",
     "memory_updated": "Záznam aktualizován",

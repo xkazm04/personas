@@ -36,7 +36,11 @@ function modelKeyFromProfile(profile: string | null): string {
   return 'inherit';
 }
 
-export function TeamWorkspacePane({ teamId }: { teamId: string }) {
+export function TeamWorkspacePane({ teamId, onDirtyChange }: {
+  teamId: string;
+  /** Reports unsaved-edit state so the studio can guard navigation away. */
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
   const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
@@ -91,6 +95,13 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
       turnsNum !== (team.default_max_turns ?? null)
     );
   }, [team, identityDirty, instructions, modelKey, budget, turns]);
+
+  // Mirror the dirty flag up to the studio shell; clear it on unmount so a
+  // discarded pane doesn't leave a stale guard behind.
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const handleSave = useCallback(async () => {
     if (!team) return;
