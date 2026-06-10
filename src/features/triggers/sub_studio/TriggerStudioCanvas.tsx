@@ -38,6 +38,8 @@ import {
   type ChainEdgeData,
 } from './libs/triggerStudioConstants';
 import { silentCatch } from '@/lib/silentCatch';
+import { StudioSwitchboard } from './StudioSwitchboard';
+import { StudioComposer } from './StudioComposer';
 
 
 const nodeTypes = {
@@ -151,10 +153,48 @@ function exportChainAsJson(nodes: Node[], edges: Edge[]): string {
 }
 
 // ---------------------------------------------------------------------------
-// Main component
+// Prototype tab switcher — A/B between the canvas baseline and the two
+// canvas-less directional variants. Throwaway scaffold; removed at
+// consolidation when a winner is declared.
 // ---------------------------------------------------------------------------
 
+const PROTOTYPE_VARIANTS = [
+  { id: 'canvas', label: 'Canvas (baseline)', subtitle: 'React Flow node editor' },
+  { id: 'switchboard', label: 'Switchboard', subtitle: 'Patch sources to targets across two rails' },
+  { id: 'composer', label: 'Composer', subtitle: 'Build the chain as a sentence' },
+] as const;
+type PrototypeVariantId = typeof PROTOTYPE_VARIANTS[number]['id'];
+
 export function TriggerStudioCanvas() {
+  const [variant, setVariant] = useState<PrototypeVariantId>('canvas');
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-card/30">
+        {PROTOTYPE_VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVariant(v.id)}
+            title={v.subtitle}
+            className={`px-3 py-1.5 typo-caption font-medium rounded-interactive transition-colors ${
+              variant === v.id
+                ? 'bg-primary/10 text-primary'
+                : 'text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+        <span className="ml-auto typo-caption text-foreground/70">prototype</span>
+      </div>
+      {variant === 'canvas' && <CanvasBaseline />}
+      {variant === 'switchboard' && <StudioSwitchboard />}
+      {variant === 'composer' && <StudioComposer />}
+    </div>
+  );
+}
+
+function CanvasBaseline() {
   return <ReactFlowProvider><TriggerStudioInner /></ReactFlowProvider>;
 }
 
