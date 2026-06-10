@@ -177,6 +177,12 @@ pub enum ProtocolMessage {
         /// `upstream_down`, `ambiguous_requirement`). Defaults to `persona_blocker`.
         kind: Option<String>,
     },
+    /// Persona CLOSES an open incident its work just fixed (the other half of
+    /// the incident loop — without it incidents only ever accumulate; live
+    /// audit found 98 open / 0 resolved). `id` is the incident id (a unique
+    /// prefix >= 8 chars is accepted); `note` says what fixed it. Personas see
+    /// open incidents (with ids) in their team-alignment block.
+    ResolveIncident { id: String, note: Option<String> },
     /// Persona surfaces a concrete FUTURE-WORK item into the project's backlog
     /// (`dev_ideas`) — a follow-up, refactor, test gap, or hardening that is worth
     /// doing but is NOT part of the current increment. Scoped to the persona's

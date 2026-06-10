@@ -187,6 +187,7 @@ impl MockProtocol {
                 ProtocolMessage::AgentMemory { .. } => "AgentMemory",
                 ProtocolMessage::ManualReview { .. } => "ManualReview",
                 ProtocolMessage::RaiseIncident { .. } => "RaiseIncident",
+                ProtocolMessage::ResolveIncident { .. } => "ResolveIncident",
                 ProtocolMessage::ProposeBacklog { .. } => "ProposeBacklog",
                 ProtocolMessage::ExecutionFlow { .. } => "ExecutionFlow",
                 ProtocolMessage::KnowledgeAnnotation { .. } => "KnowledgeAnnotation",

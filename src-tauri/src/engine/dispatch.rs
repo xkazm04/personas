@@ -755,6 +755,73 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
         }
+        ProtocolMessage::ResolveIncident { id, note } => {
+            // Persona closes an incident its work fixed — the missing half of
+            // the incident loop (raise existed since P2.3; nothing ever
+            // resolved). Accept a unique id PREFIX (>= 8 chars) against OPEN
+            // incidents only; ambiguous or unknown prefixes are logged and
+            // ignored (never guess which incident to close).
+            let id = id.trim();
+            if id.len() < 8 {
+                ctx.logger.log(&format!(
+                    "[INCIDENT] resolve_incident ignored — id prefix too short ({id})"
+                ));
+            } else if ctx.is_simulation {
+                ctx.logger.log("[SIM] resolve_incident skipped (simulation run)");
+            } else {
+                let matches: Vec<String> = ctx
+                    .pool
+                    .get()
+                    .ok()
+                    .and_then(|conn| {
+                        conn.prepare(
+                            "SELECT id FROM audit_incidents WHERE status = 'open' AND id LIKE ?1 LIMIT 2",
+                        )
+                        .ok()
+                        .and_then(|mut stmt| {
+                            stmt.query_map(
+                                rusqlite::params![format!("{id}%")],
+                                |r| r.get::<_, String>(0),
+                            )
+                            .ok()
+                            .map(|rows| rows.filter_map(Result::ok).collect())
+                        })
+                    })
+                    .unwrap_or_default();
+                match matches.as_slice() {
+                    [full_id] => {
+                        let resolution = format!(
+                            "Resolved by {} (execution {}): {}",
+                            ctx.persona_name,
+                            ctx.execution_id,
+                            note.as_deref().unwrap_or("fixed in this run")
+                        );
+                        match crate::db::repos::execution::audit_incidents::resolve(
+                            ctx.pool,
+                            full_id,
+                            Some(&resolution),
+                        ) {
+                            Ok(true) => ctx.logger.log(&format!(
+                                "[INCIDENT] Resolved {full_id}: {}",
+                                note.as_deref().unwrap_or("")
+                            )),
+                            Ok(false) => ctx.logger.log(&format!(
+                                "[INCIDENT] resolve_incident no-op (not open?): {full_id}"
+                            )),
+                            Err(e) => ctx.logger.log(&format!(
+                                "[INCIDENT] resolve_incident failed for {full_id}: {e}"
+                            )),
+                        }
+                    }
+                    [] => ctx.logger.log(&format!(
+                        "[INCIDENT] resolve_incident: no OPEN incident matches prefix {id}"
+                    )),
+                    _ => ctx.logger.log(&format!(
+                        "[INCIDENT] resolve_incident: prefix {id} is ambiguous — be more specific"
+                    )),
+                }
+            }
+        }
         ProtocolMessage::ProposeBacklog {
             title,
             description,
