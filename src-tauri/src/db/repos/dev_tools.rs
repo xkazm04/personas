@@ -4,7 +4,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{
     AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
-    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
+    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiMeasurement, DevIdea,
     DevProject, DevScan, DevStandard, DevTask, GoalProgressSuggestion, PortfolioProjectSummary,
     PortfolioSummary, TriageRule,
 };
@@ -4024,4 +4024,253 @@ mod goal_progress_tests {
         let s = compute_suggested_progress("g1", 0, 2, 3, 0, 0, 0, 0);
         assert_eq!(s.suggested, 67);
     }
+}
+
+// ============================================================================
+// KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
+// ============================================================================
+
+fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
+    Ok(DevKpi {
+        id: row.get("id")?,
+        project_id: row.get("project_id")?,
+        context_group_id: row.get("context_group_id")?,
+        name: row.get("name")?,
+        description: row.get("description")?,
+        category: row.get("category")?,
+        measure_kind: row.get("measure_kind")?,
+        measure_config: row.get("measure_config")?,
+        unit: row.get("unit")?,
+        direction: row.get("direction")?,
+        baseline_value: row.get("baseline_value")?,
+        target_value: row.get("target_value")?,
+        target_date: row.get("target_date")?,
+        current_value: row.get("current_value")?,
+        last_measured_at: row.get("last_measured_at")?,
+        cadence: row.get("cadence")?,
+        status: row.get("status")?,
+        created_by: row.get("created_by")?,
+        rationale: row.get("rationale")?,
+        needed_connector: row.get("needed_connector")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+fn row_to_kpi_measurement(row: &Row) -> rusqlite::Result<DevKpiMeasurement> {
+    Ok(DevKpiMeasurement {
+        id: row.get("id")?,
+        kpi_id: row.get("kpi_id")?,
+        value: row.get("value")?,
+        measured_at: row.get("measured_at")?,
+        source: row.get("source")?,
+        evidence: row.get("evidence")?,
+        note: row.get("note")?,
+    })
+}
+
+/// List a project's KPIs, optionally filtered by status. Active first, then
+/// proposed (review queue), then paused/archived; newest within each band.
+pub fn list_kpis(
+    pool: &DbPool,
+    project_id: &str,
+    status: Option<&str>,
+) -> Result<Vec<DevKpi>, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::list_kpis", {
+        let conn = pool.get()?;
+        let mut sql = String::from(
+            "SELECT * FROM dev_kpis WHERE project_id = ?1",
+        );
+        if status.is_some() {
+            sql.push_str(" AND status = ?2");
+        }
+        sql.push_str(
+            " ORDER BY CASE status
+                 WHEN 'active' THEN 0 WHEN 'proposed' THEN 1
+                 WHEN 'paused' THEN 2 ELSE 3 END,
+               created_at DESC",
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = match status {
+            Some(st) => stmt.query_map(params![project_id, st], row_to_kpi)?,
+            None => stmt.query_map(params![project_id], row_to_kpi)?,
+        };
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+pub fn get_kpi(pool: &DbPool, id: &str) -> Result<DevKpi, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::get_kpi", {
+        let conn = pool.get()?;
+        conn.query_row("SELECT * FROM dev_kpis WHERE id = ?1", params![id], row_to_kpi)
+            .map_err(|_| AppError::NotFound(format!("KPI {id} not found")))
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn create_kpi(
+    pool: &DbPool,
+    project_id: &str,
+    name: &str,
+    description: Option<&str>,
+    context_group_id: Option<&str>,
+    category: &str,
+    measure_kind: &str,
+    measure_config: &str,
+    unit: &str,
+    direction: &str,
+    baseline_value: Option<f64>,
+    target_value: Option<f64>,
+    target_date: Option<&str>,
+    cadence: &str,
+    status: Option<&str>,
+    created_by: &str,
+    rationale: Option<&str>,
+    needed_connector: Option<&str>,
+) -> Result<DevKpi, AppError> {
+    if name.trim().is_empty() {
+        return Err(AppError::Validation("KPI name cannot be empty".into()));
+    }
+    timed_query!("dev_kpis", "dev_kpis::create_kpi", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_kpis (id, project_id, context_group_id, name, description,
+                category, measure_kind, measure_config, unit, direction,
+                baseline_value, target_value, target_date, cadence, status,
+                created_by, rationale, needed_connector)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)",
+            params![
+                id, project_id, context_group_id, name.trim(), description,
+                category, measure_kind, measure_config, unit, direction,
+                baseline_value, target_value, target_date, cadence,
+                status.unwrap_or("proposed"), created_by, rationale, needed_connector
+            ],
+        )?;
+        drop(conn);
+        get_kpi(pool, &id)
+    })
+}
+
+/// Field-wise update; `Option<Option<...>>` distinguishes "leave unchanged"
+/// from "set NULL" (mirrors update_goal).
+#[allow(clippy::too_many_arguments)]
+pub fn update_kpi(
+    pool: &DbPool,
+    id: &str,
+    name: Option<&str>,
+    description: Option<Option<&str>>,
+    context_group_id: Option<Option<&str>>,
+    category: Option<&str>,
+    measure_kind: Option<&str>,
+    measure_config: Option<&str>,
+    unit: Option<&str>,
+    direction: Option<&str>,
+    baseline_value: Option<Option<f64>>,
+    target_value: Option<Option<f64>>,
+    target_date: Option<Option<&str>>,
+    cadence: Option<&str>,
+    status: Option<&str>,
+    needed_connector: Option<Option<&str>>,
+) -> Result<DevKpi, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::update_kpi", {
+        let conn = pool.get()?;
+        // Build SET clause field-by-field (small N; clarity over cleverness).
+        let mut sets: Vec<String> = vec!["updated_at = datetime('now')".into()];
+        let mut vals: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+        let mut push = |sets: &mut Vec<String>, col: &str, v: Box<dyn rusqlite::types::ToSql>, vals: &mut Vec<Box<dyn rusqlite::types::ToSql>>| {
+            vals.push(v);
+            sets.push(format!("{col} = ?{}", vals.len()));
+        };
+        if let Some(v) = name { push(&mut sets, "name", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = description { push(&mut sets, "description", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = context_group_id { push(&mut sets, "context_group_id", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = category { push(&mut sets, "category", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = measure_kind { push(&mut sets, "measure_kind", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = measure_config { push(&mut sets, "measure_config", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = unit { push(&mut sets, "unit", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = direction { push(&mut sets, "direction", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = baseline_value { push(&mut sets, "baseline_value", Box::new(v), &mut vals); }
+        if let Some(v) = target_value { push(&mut sets, "target_value", Box::new(v), &mut vals); }
+        if let Some(v) = target_date { push(&mut sets, "target_date", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = cadence { push(&mut sets, "cadence", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = status { push(&mut sets, "status", Box::new(v.to_string()), &mut vals); }
+        if let Some(v) = needed_connector { push(&mut sets, "needed_connector", Box::new(v.map(str::to_string)), &mut vals); }
+        let sql = format!(
+            "UPDATE dev_kpis SET {} WHERE id = ?{}",
+            sets.join(", "),
+            vals.len() + 1
+        );
+        vals.push(Box::new(id.to_string()));
+        let n = conn.execute(
+            &sql,
+            rusqlite::params_from_iter(vals.iter().map(|b| b.as_ref())),
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("KPI {id} not found")));
+        }
+        drop(conn);
+        get_kpi(pool, id)
+    })
+}
+
+pub fn delete_kpi(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::delete_kpi", {
+        let conn = pool.get()?;
+        let n = conn.execute("DELETE FROM dev_kpis WHERE id = ?1", params![id])?;
+        Ok(n > 0)
+    })
+}
+
+/// Newest-first measurement history (bounded).
+pub fn list_kpi_measurements(
+    pool: &DbPool,
+    kpi_id: &str,
+    limit: Option<i64>,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    timed_query!("dev_kpi_measurements", "dev_kpis::list_kpi_measurements", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_kpi_measurements WHERE kpi_id = ?1
+             ORDER BY datetime(measured_at) DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![kpi_id, limit.unwrap_or(100)], row_to_kpi_measurement)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Record a measurement and roll the KPI's live state forward
+/// (current_value + last_measured_at) in the same call.
+pub fn record_kpi_measurement(
+    pool: &DbPool,
+    kpi_id: &str,
+    value: f64,
+    source: &str,
+    evidence: Option<&str>,
+    note: Option<&str>,
+) -> Result<DevKpiMeasurement, AppError> {
+    timed_query!("dev_kpi_measurements", "dev_kpis::record_kpi_measurement", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_kpi_measurements (id, kpi_id, value, source, evidence, note)
+             VALUES (?1,?2,?3,?4,?5,?6)",
+            params![id, kpi_id, value, source, evidence, note],
+        )?;
+        let n = conn.execute(
+            "UPDATE dev_kpis SET current_value = ?1, last_measured_at = datetime('now'),
+                 updated_at = datetime('now')
+             WHERE id = ?2",
+            params![value, kpi_id],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("KPI {kpi_id} not found")));
+        }
+        conn.query_row(
+            "SELECT * FROM dev_kpi_measurements WHERE id = ?1",
+            params![id],
+            row_to_kpi_measurement,
+        )
+        .map_err(AppError::Database)
+    })
 }

@@ -13,7 +13,7 @@ pub use competitions::*;
 
 use crate::db::models::{
     AttentionQueue, ContextHealthSnapshot, CrossProjectRelation, DevContext, DevContextGroup,
-    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
+    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiMeasurement, DevIdea,
     DevPipeline, DevProject, DevScan, DevTask, GitOperationResult, GoalProgressSuggestion,
     PortfolioHealthSummary, PortfolioSummary, RiskMatrixEntry, TechRadarEntry, TestRunResult,
     TriageRule,
@@ -2603,3 +2603,151 @@ pub async fn dev_tools_get_dependency_graph(
     }))
 }
 
+
+// ============================================================================
+// KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_list_kpis(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    status: Option<String>,
+) -> Result<Vec<DevKpi>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpis(&state.db, &project_id, status.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_get_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_kpi(&state.db, &id)
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_create_kpi(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    name: String,
+    description: Option<String>,
+    context_group_id: Option<String>,
+    category: String,
+    measure_kind: String,
+    measure_config: Option<String>,
+    unit: Option<String>,
+    direction: Option<String>,
+    baseline_value: Option<f64>,
+    target_value: Option<f64>,
+    target_date: Option<String>,
+    cadence: Option<String>,
+    status: Option<String>,
+    created_by: Option<String>,
+    rationale: Option<String>,
+    needed_connector: Option<String>,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_kpi(
+        &state.db,
+        &project_id,
+        &name,
+        description.as_deref(),
+        context_group_id.as_deref(),
+        &category,
+        &measure_kind,
+        measure_config.as_deref().unwrap_or("{}"),
+        unit.as_deref().unwrap_or(""),
+        direction.as_deref().unwrap_or("up"),
+        baseline_value,
+        target_value,
+        target_date.as_deref(),
+        cadence.as_deref().unwrap_or("manual"),
+        status.as_deref(),
+        created_by.as_deref().unwrap_or("user"),
+        rationale.as_deref(),
+        needed_connector.as_deref(),
+    )
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_update_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    name: Option<String>,
+    description: Option<Option<String>>,
+    context_group_id: Option<Option<String>>,
+    category: Option<String>,
+    measure_kind: Option<String>,
+    measure_config: Option<String>,
+    unit: Option<String>,
+    direction: Option<String>,
+    baseline_value: Option<Option<f64>>,
+    target_value: Option<Option<f64>>,
+    target_date: Option<Option<String>>,
+    cadence: Option<String>,
+    status: Option<String>,
+    needed_connector: Option<Option<String>>,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_kpi(
+        &state.db,
+        &id,
+        name.as_deref(),
+        description.as_ref().map(|o| o.as_deref()),
+        context_group_id.as_ref().map(|o| o.as_deref()),
+        category.as_deref(),
+        measure_kind.as_deref(),
+        measure_config.as_deref(),
+        unit.as_deref(),
+        direction.as_deref(),
+        baseline_value,
+        target_value,
+        target_date.as_ref().map(|o| o.as_deref()),
+        cadence.as_deref(),
+        status.as_deref(),
+        needed_connector.as_ref().map(|o| o.as_deref()),
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_delete_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_kpi(&state.db, &id)
+}
+
+#[tauri::command]
+pub fn dev_tools_list_kpi_measurements(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_measurements(&state.db, &kpi_id, limit)
+}
+
+#[tauri::command]
+pub fn dev_tools_record_kpi_measurement(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    value: f64,
+    source: Option<String>,
+    evidence: Option<String>,
+    note: Option<String>,
+) -> Result<DevKpiMeasurement, AppError> {
+    require_auth_sync(&state)?;
+    repo::record_kpi_measurement(
+        &state.db,
+        &kpi_id,
+        value,
+        source.as_deref().unwrap_or("manual"),
+        evidence.as_deref(),
+        note.as_deref(),
+    )
+}

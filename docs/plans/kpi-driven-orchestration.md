@@ -80,6 +80,8 @@ CREATE TABLE dev_kpis (
                    CHECK(status IN ('proposed','active','paused','archived')),
   created_by       TEXT NOT NULL DEFAULT 'user' CHECK(created_by IN ('user','scan')),
   rationale        TEXT,                     -- scan's why-this-KPI (shown in review queue)
+  needed_connector TEXT,                     -- connector name this KPI needs to be measurable
+                                             -- (drives the "Connect <service>" catalog CTA on parked KPIs)
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -280,13 +282,18 @@ certification campaign.
 6. **`context_health_snapshots` is absorbed, not duplicated** — technical
    group-KPIs write it; the reserved `health_score` finally gets a writer.
 
-**Open for discussion:**
-- **Q1 — Where does traffic/value data come from for the xprice repos?** Most
-  have no analytics connector today. v1 likely ships technical+derived KPIs
-  measuring immediately, with traffic/value KPIs proposed but parked `manual`
-  until a connector lands. Acceptable?
-- **Q2 — Should Director fold in?** Director scores personas; KPIs score the
-  *product*. A later bridge could feed Director's per-team verdict trends in as
-  `derived` KPIs ("team quality score") — v2 candidate, not in this plan.
-- **Q3 — Evaluation cadence default**: weekly feels right for code KPIs
-  (matches the weekly context-scan rhythm); daily only for cheap `derived` ones?
+**Resolved with the user (2026-06-10):**
+- **Q1 — Traffic/value data**: YES — v1 ships technical+derived measuring
+  immediately; traffic/value KPIs are proposed but parked `manual` until their
+  connector exists. **Design addition (user)**: a parked KPI carries a
+  **"Connect <service>" CTA deep-linking into the vault credential catalog**
+  (`src/features/vault/sub_catalog`) so onboarding the missing connector is
+  one click from the KPI card; and the connector catalog itself is extendable
+  (via `/add-credential`) with analytics/traffic connectors (GA4, Plausible,
+  PostHog, Stripe metrics, …) as KPI use cases demand them. The proposal scan
+  should emit the *needed connector name* with the proposal so the CTA knows
+  what to link.
+- **Q2 — Director bridge**: agreed, v2 (Director team-verdict trends as a
+  `derived` "team quality" KPI later; out of v1).
+- **Q3 — Cadence defaults**: agreed — `weekly` default for codebase KPIs,
+  `daily` permitted for cheap `derived` ones, `manual` for everything parked.

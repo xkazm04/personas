@@ -2681,6 +2681,14 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- KPIs (outcome layer above goals)
+            commands::infrastructure::dev_tools::dev_tools_list_kpis,
+            commands::infrastructure::dev_tools::dev_tools_get_kpi,
+            commands::infrastructure::dev_tools::dev_tools_create_kpi,
+            commands::infrastructure::dev_tools::dev_tools_update_kpi,
+            commands::infrastructure::dev_tools::dev_tools_delete_kpi,
+            commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements,
+            commands::infrastructure::dev_tools::dev_tools_record_kpi_measurement,
             // Dev Tools -- Goal Dependencies
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies,
             commands::infrastructure::dev_tools::dev_tools_add_goal_dependency,

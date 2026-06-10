@@ -47,6 +47,18 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
+- Started: 2026-06-10 21:30. Master, atomic commits.
+- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
+- Note: dev_kpis + dev_kpi_measurements tables, dev_goals.kpi_id, repo CRUD, Tauri commands, ts-rs bindings. Design: docs/plans/kpi-driven-orchestration.md.
+
+### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage
+- Started: 2026-06-10 18:20
+- Status: started
+- Branch: worktree-athena-signal-economy (worktree .claude/worktrees/athena-signal-economy, off master)
+- Paths: src/features/plugins/companion/orb/OrbDecisionBubble.tsx, src/features/plugins/companion/{ProactiveCard.tsx,athenaLabels.ts}, src-tauri/src/companion/proactive/{execution_review.rs,message_triage.rs(new),mod.rs}, src-tauri/src/companion/athena_reaction.rs (pub(crate) helpers only), src-tauri/src/commands/companion/mod.rs, src-tauri/src/db/{settings_keys.rs,repos/communication/messages.rs}, src/i18n/locales/en.json (plugins.companion keys), docs/features/companion/
+- Note: (1) hide orb decision bubble + arrow while chat open; (2) replace per-exec proactive chat turns with headless batch triage → digest nudge + ≤1 deep-dive turn; (3) replicate review procedure for Messages (done/digest/attention + message_digest nudge).
+
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
 - Status: completed (commit: 3194e4c25) — cargo check + tsc + ts-rs bindings test all green; runtime not yet observed (needs dev rebuild)
