@@ -38,6 +38,9 @@ export interface UseDirector {
   verdicts: DirectorVerdictRow[];
   brainEnabled: boolean;
   vaultConfigured: boolean;
+  /** Selected value-rollup window in days, or null to use the backend default (30). */
+  period: number | null;
+  setPeriod: (days: number | null) => void;
   refresh: () => void;
   runBatch: () => Promise<void>;
   runOnPersona: (personaId: string) => Promise<void>;
@@ -63,11 +66,12 @@ export function useDirector(): UseDirector {
   const [vaultConfigured, setVaultConfigured] = useState(false);
   const [ready, setReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [period, setPeriodState] = useState<number | null>(null);
 
   const refresh = useCallback(() => {
     setRefreshing(true);
     Promise.allSettled([
-      getDirectorPortfolio(),
+      getDirectorPortfolio(period ?? undefined),
       listDirectorVerdicts(),
       getDirectorBrainEnabled(),
       obsidianAvailable(),
@@ -82,11 +86,15 @@ export function useDirector(): UseDirector {
         setReady(true);
         setRefreshing(false);
       });
-  }, []);
+  }, [period]);
 
+  // Refetch on mount and whenever the selected period changes (refresh closes
+  // over `period`, so it's a fresh callback per window).
   useEffect(() => {
     refresh();
   }, [refresh]);
+
+  const setPeriod = useCallback((days: number | null) => setPeriodState(days), []);
 
   const runBatch = useCallback(async () => {
     try {
@@ -143,6 +151,8 @@ export function useDirector(): UseDirector {
     verdicts,
     brainEnabled,
     vaultConfigured,
+    period,
+    setPeriod,
     refresh,
     runBatch,
     runOnPersona,

@@ -2653,6 +2653,7 @@ pub fn run() {
             commands::infrastructure::director::get_director_portfolio,
             commands::infrastructure::director::get_director_brain_enabled,
             commands::infrastructure::director::set_director_brain_enabled,
+            commands::infrastructure::director::get_director_brain_history,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project,

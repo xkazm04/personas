@@ -68,5 +68,7 @@
   "unread_messages_sr_other": "{count} pesan belum dibaca",
   "pending_events_sr": "{count} peristiwa tertunda",
   "pending_events_sr_other": "{count} peristiwa tertunda",
-  "cockpit": "Cockpit"
+  "cockpit": "Cockpit",
+  "director_attention_sr": "{count} agen perlu pembinaan",
+  "director_attention_sr_other": "{count} agen perlu pembinaan"
 }

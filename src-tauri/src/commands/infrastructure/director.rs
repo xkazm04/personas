@@ -134,3 +134,21 @@ pub fn set_director_brain_enabled(
         if enabled { "true" } else { "false" },
     )
 }
+
+/// Read the persona's most recent Director coaching notes from the Obsidian
+/// Brain vault as markdown, newest-first separated by horizontal rules — or
+/// `None` when Brain is off, no vault is configured, or the persona has no
+/// notes yet. Lets the coaching detail modal surface the long-term memory the
+/// Director writes back after each review. Best-effort, read-only.
+#[tauri::command]
+pub fn get_director_brain_history(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Option<String>, AppError> {
+    require_auth_sync(&state)?;
+    if !crate::engine::director_brain::brain_enabled(&state.db) {
+        return Ok(None);
+    }
+    let persona = crate::db::repos::core::personas::get_by_id(&state.db, &persona_id)?;
+    Ok(crate::engine::director_brain::read_brain_history(&state.db, &persona.name))
+}
