@@ -43,12 +43,12 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: src/features/vault/sub_credentials/manager/, src/features/vault/shared/hooks/health/useBulkHealthcheck.ts, src/api/vault/credentials.ts, src-tauri/src/engine/{healthcheck.rs,subscription.rs,background.rs}, src-tauri/src/commands/credentials/crud.rs, src-tauri/src/db/{settings_keys.rs,repos/resources/credentials.rs}, src-tauri/src/ipc_auth.rs, src-tauri/src/lib.rs, docs/features/connections/README.md
 - Note: Root-caused the "7 healthy/17 degraded" — bulk Test-all fires ~24 concurrent privileged healthcheck_credential IPC calls; the x-ipc-token monkey-patch races the stampede (81 rejections in DB logs today) → JS catches rejection as success:false → false "degraded" while keys stay valid + table (persisted last_success) shows healthy. Fix: daily in-process CredentialHealthcheckSubscription (no IPC boundary) + single healthcheck_all_credentials command behind manual Test-all + remove on-visit auto-test.
 
-### feature — Explain-in-Cockpit (orb decision 0 → Athena composes explanation in Cockpit)
+### feature — Explain-in-Cockpit (orb decision 0 → Athena composes explanation in Cockpit) — COMPLETED
 - Started: 2026-06-10 17:05
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout — live dev:test QA loop requires it)
-- Paths: src/features/home/sub_cockpit/ (widgets/, widgetRegistry, CockpitPanel), src/features/plugins/companion/{orb/,decision/,companionStore.ts}, src/api/companion.ts, src-tauri/src/companion/{dispatcher.rs,session.rs,templates/constitution.md}, src-tauri/src/commands/companion/, test bridge, src/i18n/locales/en.json (cockpit/companion keys), docs/features/{cockpit.md,companion/}
-- Note: 5 phases — explainer widget palette (verdict/flow_steps/comparison_cards/timeline/stat_grid/log_excerpt), explain_in_cockpit op (ephemeral contextual overlay, no DB write), companion_explain_decision synthetic turn + orb 'composing' state (athena_shows_loop.mp4), test-bridge + live QA on :17320, docs. Atomic commit per phase.
+- Status: completed (commits: 928a06c95 widgets, 9abd5428c op, 635eb175c escalation+orb, 4a8d91353 QA bridge, 91729625d always-mounted listener fix, 8e79d7203 constitution v31 + subtitle [on master post-merge]; docs swept into foreign checkpoint 8894c5adb)
+- Branch: started on vibeman/audit-2026-06-09; branch merged to master mid-session (5929d2f5a) — final commits on master
+- Paths: src/features/home/sub_cockpit/, src/features/plugins/companion/{orb/,decision/,companionStore.ts,CompanionPanel.tsx,AthenaAvatar.tsx}, src/api/companion.ts, src-tauri/src/companion/{dispatcher.rs,session.rs,templates/}, src/test/automation/bridge.ts, en.json, docs/features/{cockpit.md,companion/athena-decision-layer-plan.md}
+- Note: LIVE-QA'd on isolated instance (detached worktree + e2e cargo target, ports 1440/17340; worktree removed junction-first, ports verified clear). 3 scenarios PASS: verdict-first overlays grounded in payload (approval: stat_grid/flow_steps/issue_list; incident: timeline/log_excerpt; review: comparison_cards/log_excerpt), arrivals 20-50s, instant composing feedback. QA caught: listener was in open-only Body (moved to always-mounted CompanionPanel), CONSTITUTION_VERSION needed bump 30→31, explain-flavored header subtitle.
 
 ### test — obsidian-brain tour live E2E (isolated instance)
 - Started: 2026-06-10
