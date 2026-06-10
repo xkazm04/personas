@@ -9,6 +9,8 @@
 | `obsidian_brain_detect_vaults` | Scan OS-known Obsidian config paths for vaults |
 | `obsidian_brain_test_connection` | Validate a folder is a real vault, count notes |
 | `obsidian_brain_save_config` / `_get_config` | Persist active vault config in settings table |
+| `obsidian_brain_list_saved_vaults` / `_set_saved_vaults` | Saved-vault roster (settings table, survives sessions) |
+| `obsidian_revitalize_start` / `_snapshot` / `_active` / `_cancel` | Background Claude CLI vault-optimization pass |
 | `obsidian_brain_push_sync` / `_pull_sync` | Bidirectional markdown sync, scoped optionally to persona IDs |
 | `obsidian_brain_get_sync_log` | Read the rolling sync history |
 | `obsidian_brain_resolve_conflict` | Apply Keep-App / Keep-Vault / Skip to a 3-way conflict |
@@ -29,7 +31,8 @@
 src/features/plugins/obsidian-brain/
 ├── ObsidianBrainPage.tsx              # tab host
 ├── SavedConfigsSidebar.tsx            # multi-vault switcher (right rail)
-├── useSavedVaultConfigs.ts            # localStorage-backed saved configs
+├── useSavedVaultConfigs.ts            # DB-backed saved configs (one-time localStorage migration)
+├── useObsidianVaultRehydration.ts     # restores active vault from persisted config at startup
 ├── useVisibleConnectorDefinitions.ts  # plugin-gated connector filter hook
 ├── openInObsidian.ts                  # shared obsidian:// deep-link helper (Graph + Browse)
 ├── sub_setup/SetupPanel.tsx           # detect/test/save flow
@@ -40,7 +43,11 @@ src/features/plugins/obsidian-brain/
 ├── sub_browse/BrowsePanel.tsx         # vault tree + markdown preview (word count, copy-path, frontmatter)
 ├── sub_browse/parseNote.ts            # frontmatter + word-count parser
 ├── sub_graph/GraphPanel.tsx           # search, stats, orphans/MOCs, journal, meeting capture
-└── sub_cloud/CloudSyncPanel.tsx       # Google Drive backup + sign-in CTA
+├── sub_cloud/CloudSyncPanel.tsx       # Google Drive backup + sign-in CTA
+├── sub_revitalize/RevitalizePanel.tsx # background memory-consolidation pass (goals + log + summary)
+├── sub_revitalize/RevitalizeProgress.tsx     # live streaming log + cancel
+├── sub_revitalize/RevitalizeSummaryCard.tsx  # end-of-pass stats (removed/merged/tokens saved/...)
+└── sub_revitalize/useRevitalizeJob.ts # job lifecycle, event stream, snapshot re-attach
 ```
 
 ```
