@@ -18,5 +18,7 @@
   "category_triggers": "Disparadores",
   "category_credentials": "Credenciales",
   "category_memory": "Memoria",
-  "category_usefulness": "Utilidad"
+  "category_usefulness": "Utilidad",
+  "period_label": "Período de revisión",
+  "period_days": "{count}d"
 }

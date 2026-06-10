@@ -18,5 +18,7 @@
   "category_triggers": "Pemicu",
   "category_credentials": "Kredensial",
   "category_memory": "Memori",
-  "category_usefulness": "Kegunaan"
+  "category_usefulness": "Kegunaan",
+  "period_label": "Periode tinjauan",
+  "period_days": "{count}h"
 }

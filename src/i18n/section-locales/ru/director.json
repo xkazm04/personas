@@ -18,5 +18,7 @@
   "category_triggers": "Триггеры",
   "category_credentials": "Учётные данные",
   "category_memory": "Память",
-  "category_usefulness": "Полезность"
+  "category_usefulness": "Полезность",
+  "period_label": "Период обзора",
+  "period_days": "{count}д"
 }

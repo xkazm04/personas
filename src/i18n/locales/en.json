@@ -3460,7 +3460,9 @@
     "category_triggers": "Triggers",
     "category_credentials": "Credentials",
     "category_memory": "Memory",
-    "category_usefulness": "Usefulness"
+    "category_usefulness": "Usefulness",
+    "period_label": "Review period",
+    "period_days": "{count}d"
   },
   "vault": {
     "title": "Vault",

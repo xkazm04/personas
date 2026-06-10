@@ -18,5 +18,7 @@
   "category_triggers": "ट्रिगर",
   "category_credentials": "क्रेडेंशियल",
   "category_memory": "स्मृति",
-  "category_usefulness": "उपयोगिता"
+  "category_usefulness": "उपयोगिता",
+  "period_label": "समीक्षा अवधि",
+  "period_days": "{count} दिन"
 }

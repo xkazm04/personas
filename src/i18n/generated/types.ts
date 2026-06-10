@@ -3467,6 +3467,8 @@ export type Translations = {
     category_credentials: string;
     category_memory: string;
     category_usefulness: string;
+    period_label: string;
+    period_days: string;
   };
   vault: {
     title: string;

@@ -18,5 +18,7 @@
   "category_triggers": "触发器",
   "category_credentials": "凭据",
   "category_memory": "记忆",
-  "category_usefulness": "有用性"
+  "category_usefulness": "有用性",
+  "period_label": "评估周期",
+  "period_days": "{count}天"
 }

@@ -15257,6 +15257,8 @@
     "category_triggers": "트리거",
     "category_credentials": "자격 증명",
     "category_memory": "메모리",
-    "category_usefulness": "유용성"
+    "category_usefulness": "유용성",
+    "period_label": "검토 기간",
+    "period_days": "{count}일"
   }
 }

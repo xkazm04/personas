@@ -15257,6 +15257,8 @@
     "category_triggers": "ট্রিগার",
     "category_credentials": "ক্রেডেনশিয়াল",
     "category_memory": "স্মৃতি",
-    "category_usefulness": "উপযোগিতা"
+    "category_usefulness": "উপযোগিতা",
+    "period_label": "পর্যালোচনার সময়কাল",
+    "period_days": "{count} দিন"
   }
 }

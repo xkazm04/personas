@@ -15257,6 +15257,8 @@
     "category_triggers": "Auslöser",
     "category_credentials": "Anmeldedaten",
     "category_memory": "Speicher",
-    "category_usefulness": "Nützlichkeit"
+    "category_usefulness": "Nützlichkeit",
+    "period_label": "Bewertungszeitraum",
+    "period_days": "{count}T"
   }
 }

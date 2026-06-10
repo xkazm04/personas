@@ -18,5 +18,7 @@
   "category_triggers": "Spouštěče",
   "category_credentials": "Přihlašovací údaje",
   "category_memory": "Paměť",
-  "category_usefulness": "Užitečnost"
+  "category_usefulness": "Užitečnost",
+  "period_label": "Období hodnocení",
+  "period_days": "{count}d"
 }

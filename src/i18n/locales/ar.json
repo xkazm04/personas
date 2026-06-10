@@ -15257,6 +15257,8 @@
     "category_triggers": "المُحفّزات",
     "category_credentials": "بيانات الاعتماد",
     "category_memory": "الذاكرة",
-    "category_usefulness": "الفائدة"
+    "category_usefulness": "الفائدة",
+    "period_label": "فترة المراجعة",
+    "period_days": "{count} يوم"
   }
 }

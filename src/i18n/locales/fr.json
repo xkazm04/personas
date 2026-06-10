@@ -15257,6 +15257,8 @@
     "category_triggers": "Déclencheurs",
     "category_credentials": "Identifiants",
     "category_memory": "Mémoire",
-    "category_usefulness": "Utilité"
+    "category_usefulness": "Utilité",
+    "period_label": "Période d'évaluation",
+    "period_days": "{count}j"
   }
 }

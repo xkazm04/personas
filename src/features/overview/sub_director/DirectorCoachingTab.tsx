@@ -19,6 +19,7 @@ import { PersonaCoachingTable } from './components/PersonaCoachingTable';
 import { PersonaDetailModal } from './components/PersonaDetailModal';
 import { AddToScopeModal } from './components/AddToScopeModal';
 import { ValueLeakBar } from './components/ValueLeakBar';
+import { PeriodSelect } from './components/PeriodSelect';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -133,6 +134,7 @@ export default function DirectorCoachingTab() {
             {/* Thin subheader: secondary stats + Memory toggle */}
             <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
               <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
+                <PeriodSelect value={d.period ?? p.periodDays} onChange={d.setPeriod} />
                 {p.avgScore != null && (
                   <span className="inline-flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-violet-300" />
