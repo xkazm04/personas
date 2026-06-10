@@ -15264,6 +15264,8 @@
     "avg_label": "moy.",
     "distribution_band_short": "Score {score}",
     "filter_empty": "Aucun agent ne correspond à ce filtre",
-    "triage_chip_hint": "Filtrer le tableau sur ces agents"
+    "triage_chip_hint": "Filtrer le tableau sur ces agents",
+    "category_rollup_title": "Problèmes par catégorie",
+    "category_rollup_empty": "Aucun verdict de coaching pour l'instant"
   }
 }

@@ -25,5 +25,7 @@
   "avg_label": "сред.",
   "distribution_band_short": "Оценка {score}",
   "filter_empty": "Нет агентов, соответствующих этому фильтру",
-  "triage_chip_hint": "Отфильтровать таблицу по этим агентам"
+  "triage_chip_hint": "Отфильтровать таблицу по этим агентам",
+  "category_rollup_title": "Проблемы по категориям",
+  "category_rollup_empty": "Пока нет оценок"
 }

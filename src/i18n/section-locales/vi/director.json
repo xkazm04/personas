@@ -25,5 +25,7 @@
   "avg_label": "TB",
   "distribution_band_short": "Điểm {score}",
   "filter_empty": "Không có tác nhân nào khớp với bộ lọc này",
-  "triage_chip_hint": "Lọc bảng theo các tác nhân này"
+  "triage_chip_hint": "Lọc bảng theo các tác nhân này",
+  "category_rollup_title": "Vấn đề theo danh mục",
+  "category_rollup_empty": "Chưa có đánh giá huấn luyện"
 }

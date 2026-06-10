@@ -25,5 +25,7 @@
   "avg_label": "المتوسط",
   "distribution_band_short": "الدرجة {score}",
   "filter_empty": "لا يوجد وكلاء يطابقون هذه التصفية",
-  "triage_chip_hint": "تصفية الجدول إلى هؤلاء الوكلاء"
+  "triage_chip_hint": "تصفية الجدول إلى هؤلاء الوكلاء",
+  "category_rollup_title": "المشكلات حسب الفئة",
+  "category_rollup_empty": "لا توجد أحكام إرشادية بعد"
 }

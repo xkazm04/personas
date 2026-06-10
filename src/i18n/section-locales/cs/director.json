@@ -25,5 +25,7 @@
   "avg_label": "prům.",
   "distribution_band_short": "Skóre {score}",
   "filter_empty": "Tomuto filtru neodpovídají žádní agenti",
-  "triage_chip_hint": "Filtrovat tabulku na tyto agenty"
+  "triage_chip_hint": "Filtrovat tabulku na tyto agenty",
+  "category_rollup_title": "Problémy podle kategorie",
+  "category_rollup_empty": "Zatím žádné hodnocení koučinku"
 }

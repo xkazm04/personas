@@ -15264,6 +15264,8 @@
     "avg_label": "গড়",
     "distribution_band_short": "স্কোর {score}",
     "filter_empty": "এই ফিল্টারের সাথে কোনো এজেন্ট মেলে না",
-    "triage_chip_hint": "টেবিলকে এই এজেন্টগুলিতে ফিল্টার করুন"
+    "triage_chip_hint": "টেবিলকে এই এজেন্টগুলিতে ফিল্টার করুন",
+    "category_rollup_title": "বিভাগ অনুযায়ী সমস্যা",
+    "category_rollup_empty": "এখনও কোনো কোচিং রায় নেই"
   }
 }

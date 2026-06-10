@@ -15264,6 +15264,8 @@
     "avg_label": "Ø",
     "distribution_band_short": "Bewertung {score}",
     "filter_empty": "Keine Agenten entsprechen diesem Filter",
-    "triage_chip_hint": "Tabelle auf diese Agenten filtern"
+    "triage_chip_hint": "Tabelle auf diese Agenten filtern",
+    "category_rollup_title": "Probleme nach Kategorie",
+    "category_rollup_empty": "Noch keine Coaching-Bewertungen"
   }
 }

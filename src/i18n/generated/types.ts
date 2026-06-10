@@ -3474,6 +3474,8 @@ export type Translations = {
     avg_label: string;
     filter_empty: string;
     triage_chip_hint: string;
+    category_rollup_title: string;
+    category_rollup_empty: string;
   };
   vault: {
     title: string;

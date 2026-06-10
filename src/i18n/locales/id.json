@@ -15264,6 +15264,8 @@
     "avg_label": "rata-rata",
     "distribution_band_short": "Skor {score}",
     "filter_empty": "Tidak ada agen yang cocok dengan filter ini",
-    "triage_chip_hint": "Saring tabel ke agen-agen ini"
+    "triage_chip_hint": "Saring tabel ke agen-agen ini",
+    "category_rollup_title": "Masalah menurut kategori",
+    "category_rollup_empty": "Belum ada penilaian pembinaan"
   }
 }

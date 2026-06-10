@@ -15264,6 +15264,8 @@
     "avg_label": "平均",
     "distribution_band_short": "评分 {score}",
     "filter_empty": "没有智能体符合此筛选条件",
-    "triage_chip_hint": "将表格筛选为这些智能体"
+    "triage_chip_hint": "将表格筛选为这些智能体",
+    "category_rollup_title": "按类别分类的问题",
+    "category_rollup_empty": "尚无辅导评定"
   }
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers } from 'lucide-react';
+import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -22,6 +22,7 @@ import { ValueLeakBar } from './components/ValueLeakBar';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ScoreDistribution } from './components/ScoreDistribution';
 import { AttentionTriageBar } from './components/AttentionTriageBar';
+import { CategoryRollup } from './components/CategoryRollup';
 import type { RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
@@ -300,6 +301,12 @@ function Scorecard({
           </DirectorSection>
         )}
       </div>
+
+      {d.verdicts.length > 0 && (
+        <DirectorSection label={t.director.category_rollup_title} icon={Tags}>
+          <CategoryRollup verdicts={d.verdicts} />
+        </DirectorSection>
+      )}
     </>
   );
 }
