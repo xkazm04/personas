@@ -157,7 +157,10 @@
     "channel_mention_tab": "Tab pour compléter",
     "channel_mention_will_see": "Mentionné — l'équipe voit les directives à la prochaine limite d'étape",
     "channel_composer_newline_hint": "Shift+Entrée pour une nouvelle ligne",
-    "channel_composer_reply_placeholder": "Écrivez votre réponse…"
+    "channel_composer_reply_placeholder": "Écrivez votre réponse…",
+    "channel_pin_memory": "Épingler comme mémoire d'équipe",
+    "channel_pinned_memory": "Épinglé dans la mémoire d'équipe",
+    "channel_pin_failed": "Impossible d'épingler dans la mémoire d'équipe"
   },
   "common": {
     "loading": "Chargement...",

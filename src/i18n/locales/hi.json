@@ -157,7 +157,10 @@
     "channel_mention_tab": "पूरा करने के लिए Tab दबाएँ",
     "channel_mention_will_see": "उल्लेख किया गया — टीम अगली स्टेप सीमा पर निर्देश देखती है",
     "channel_composer_newline_hint": "नई पंक्ति के लिए Shift+Enter",
-    "channel_composer_reply_placeholder": "अपना जवाब लिखें…"
+    "channel_composer_reply_placeholder": "अपना जवाब लिखें…",
+    "channel_pin_memory": "टीम मेमोरी के रूप में पिन करें",
+    "channel_pinned_memory": "टीम मेमोरी में पिन किया गया",
+    "channel_pin_failed": "टीम मेमोरी में पिन नहीं हो सका"
   },
   "common": {
     "loading": "लोड हो रहा है...",

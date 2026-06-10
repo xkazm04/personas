@@ -157,7 +157,10 @@
     "channel_mention_tab": "Tab para completar",
     "channel_mention_will_see": "Mencionado: el equipo ve las directivas en el siguiente límite de paso",
     "channel_composer_newline_hint": "Shift+Enter para nueva línea",
-    "channel_composer_reply_placeholder": "Escribe tu respuesta…"
+    "channel_composer_reply_placeholder": "Escribe tu respuesta…",
+    "channel_pin_memory": "Fijar como memoria del equipo",
+    "channel_pinned_memory": "Fijado en la memoria del equipo",
+    "channel_pin_failed": "No se pudo fijar en la memoria del equipo"
   },
   "common": {
     "loading": "Cargando...",

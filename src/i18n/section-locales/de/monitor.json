@@ -85,5 +85,8 @@
   "channel_mention_tab": "Tab zum Vervollständigen",
   "channel_mention_will_see": "Erwähnt — das Team sieht Direktiven an der nächsten Schrittgrenze",
   "channel_composer_newline_hint": "Shift+Enter für eine neue Zeile",
-  "channel_composer_reply_placeholder": "Schreibe deine Antwort…"
+  "channel_composer_reply_placeholder": "Schreibe deine Antwort…",
+  "channel_pin_memory": "Als Team-Gedächtnis anheften",
+  "channel_pinned_memory": "Im Team-Gedächtnis angeheftet",
+  "channel_pin_failed": "Konnte nicht im Team-Gedächtnis angeheftet werden"
 }

@@ -157,7 +157,10 @@
     "channel_mention_tab": "Tab untuk melengkapi",
     "channel_mention_will_see": "Disebut — tim melihat arahan pada batas langkah berikutnya",
     "channel_composer_newline_hint": "Shift+Enter untuk baris baru",
-    "channel_composer_reply_placeholder": "Tulis balasan Anda…"
+    "channel_composer_reply_placeholder": "Tulis balasan Anda…",
+    "channel_pin_memory": "Sematkan sebagai memori tim",
+    "channel_pinned_memory": "Disematkan ke memori tim",
+    "channel_pin_failed": "Tidak dapat menyematkan ke memori tim"
   },
   "common": {
     "loading": "Memuat...",

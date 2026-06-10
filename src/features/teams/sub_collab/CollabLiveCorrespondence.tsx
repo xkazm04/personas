@@ -17,7 +17,9 @@ import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ChannelDetailModal } from './ChannelDetailModal';
 import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
+import { createTeamMemory } from '@/api/pipeline/teamMemories';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -39,7 +41,8 @@ const DRAFT_PREFIX = 'personas.channel.draft.';
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
-  const { items, loaded, exhausted, posting, presence, loadOlder, sendDirective } = useTeamChannel(teamId);
+  const { items, loaded, exhausted, posting, presence, refreshHead, loadOlder, sendDirective } = useTeamChannel(teamId);
+  const addToast = useToastStore((s) => s.addToast);
   const [draft, setDraft] = useState('');
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const topSentinel = useRef<HTMLDivElement | null>(null);
@@ -217,6 +220,36 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     updateDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
   };
 
+  // Pin a channel item into the team's long-term memory. The channel
+  // read-model unions memories back in, so the pin reappears as a memory row
+  // on the next head refresh — visible confirmation where the action happened.
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  useEffect(() => setPinnedIds(new Set()), [teamId]);
+  const pinItem = async (item: TeamChannelItem) => {
+    const body = (item.body ?? '').trim();
+    const firstLine = body.split('\n')[0] ?? '';
+    const title = (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine) || item.label;
+    try {
+      await createTeamMemory({
+        team_id: teamId,
+        run_id: null,
+        member_id: null,
+        persona_id: item.personaId,
+        title,
+        content: body || item.label,
+        category: 'observation',
+        importance: 5,
+        tags: JSON.stringify({ source: 'channel_pin', item_id: item.id }),
+      });
+      setPinnedIds((prev) => new Set(prev).add(item.id));
+      addToast(t.monitor.channel_pinned_memory, 'success');
+      refreshHead();
+    } catch (err) {
+      silentCatch('collab/correspondence:pinMemory')(err);
+      addToast(t.monitor.channel_pin_failed, 'error');
+    }
+  };
+
   const workingNames = members
     .filter((m) => presence.get(m.personaId) === 'working')
     .map((m) => m.name.replace(/^T: /, ''));
@@ -371,6 +404,8 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
               parent={item.replyTo ? byId.get(item.replyTo) : undefined}
               onReply={() => setReplyTarget(item)}
               onOpenDetail={() => setDetailItem(item)}
+              onPin={() => void pinItem(item)}
+              pinned={pinnedIds.has(item.id)}
             />
           ))}
         </div>
@@ -466,7 +501,12 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         </div>
       </div>
 
-      <ChannelDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+      <ChannelDetailModal
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
+        onPin={(it) => void pinItem(it)}
+        pinned={detailItem ? pinnedIds.has(detailItem.id) : false}
+      />
     </div>
   );
 }
@@ -516,13 +556,15 @@ function resolveRow(item: TeamChannelItem) {
  *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
  * A "Needs your review" row carries the inline ReviewInterventionCard below.
  */
-function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpenDetail }: {
+function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpenDetail, onPin, pinned }: {
   item: TeamChannelItem;
   personaIndex: ReturnType<typeof usePersonaIndex>;
   members?: ChannelMember[];
   parent?: TeamChannelItem;
   onReply?: () => void;
   onOpenDetail?: () => void;
+  onPin?: () => void;
+  pinned?: boolean;
 }) {
   const { t } = useTranslation();
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
@@ -538,6 +580,9 @@ function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpe
   const intervene = item.kind === 'step' && item.label === 'status_awaiting_review' && !!item.assignmentId;
   // A message you can reply to — the conversational kinds (not raw step/event rows).
   const replyable = !!onReply && (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director' || item.kind === 'directive' || item.kind === 'memory');
+  // Pinnable: anything worth keeping except rows that already ARE memories.
+  // System rows pin from the detail modal (their strip is a single button).
+  const pinnable = !!onPin && item.kind !== 'memory' && !isSystem;
   const isReply = !!item.replyTo;
   const parentPersona = parent?.personaId ? personaIndex.get(parent.personaId) : undefined;
 
@@ -634,6 +679,22 @@ function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpe
             aria-label="Reply"
           >
             <Reply className="w-3 h-3" /> reply
+          </button>
+        )}
+        {pinnable && (
+          <button
+            type="button"
+            onClick={pinned ? undefined : onPin}
+            disabled={pinned}
+            className={`inline-flex items-center gap-1 typo-caption transition-all ${
+              pinned
+                ? 'text-amber-300/90 opacity-100'
+                : 'opacity-0 group-hover:opacity-100 text-foreground hover:text-amber-300/90'
+            }`}
+            aria-label={pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+            title={pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+          >
+            <Pin className="w-3 h-3" />
           </button>
         )}
         <span className="ml-auto typo-caption text-foreground flex-shrink-0"><RelativeTime timestamp={item.at} /></span>

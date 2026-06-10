@@ -157,7 +157,10 @@
     "channel_mention_tab": "Tab로 완성",
     "channel_mention_will_see": "멘션됨 — 팀은 다음 단계 경계에서 지시문을 확인합니다",
     "channel_composer_newline_hint": "줄바꿈은 Shift+Enter",
-    "channel_composer_reply_placeholder": "답장을 작성하세요…"
+    "channel_composer_reply_placeholder": "답장을 작성하세요…",
+    "channel_pin_memory": "팀 메모리로 고정",
+    "channel_pinned_memory": "팀 메모리에 고정됨",
+    "channel_pin_failed": "팀 메모리에 고정하지 못했습니다"
   },
   "common": {
     "loading": "로딩 중...",

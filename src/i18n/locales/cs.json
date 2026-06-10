@@ -157,7 +157,10 @@
     "channel_mention_tab": "Tab pro doplnění",
     "channel_mention_will_see": "Zmíněno — tým vidí direktivy na hranici dalšího kroku",
     "channel_composer_newline_hint": "Shift+Enter pro nový řádek",
-    "channel_composer_reply_placeholder": "Napište odpověď…"
+    "channel_composer_reply_placeholder": "Napište odpověď…",
+    "channel_pin_memory": "Připnout jako týmovou paměť",
+    "channel_pinned_memory": "Připnuto do týmové paměti",
+    "channel_pin_failed": "Nepodařilo se připnout do týmové paměti"
   },
   "common": {
     "loading": "Načítání...",

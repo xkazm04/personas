@@ -157,7 +157,10 @@
     "channel_mention_tab": "Nhấn Tab để hoàn thành",
     "channel_mention_will_see": "Đã nhắc đến — nhóm thấy chỉ thị ở ranh giới bước tiếp theo",
     "channel_composer_newline_hint": "Shift+Enter để xuống dòng",
-    "channel_composer_reply_placeholder": "Viết câu trả lời của bạn…"
+    "channel_composer_reply_placeholder": "Viết câu trả lời của bạn…",
+    "channel_pin_memory": "Ghim làm bộ nhớ nhóm",
+    "channel_pinned_memory": "Đã ghim vào bộ nhớ nhóm",
+    "channel_pin_failed": "Không thể ghim vào bộ nhớ nhóm"
   },
   "common": {
     "loading": "Đang tải...",
