@@ -121,12 +121,12 @@ const STOPS: NavStop[] = [
   // L1 sections (sidebar top-level)
   { id: 'L1/home',            group: 'L1', description: 'Home dashboard',         setup: () => navigate('home') },
   { id: 'L1/overview',        group: 'L1', description: 'Overview dashboard',     setup: () => navigate('overview') },
+  { id: 'L1/teams',           group: 'L1', description: 'Teams workspace',        setup: () => navigate('teams') },
   { id: 'L1/personas',        group: 'L1', description: 'Personas list',          setup: () => navigate('personas') },
   { id: 'L1/events',          group: 'L1', description: 'Events / Triggers',      setup: () => navigate('events') },
   { id: 'L1/credentials',     group: 'L1', description: 'Credentials vault',      setup: () => navigate('credentials') },
   { id: 'L1/design-reviews',  group: 'L1', description: 'Templates / recipes',    setup: () => navigate('design-reviews') },
   { id: 'L1/plugins',         group: 'L1', description: 'Plugins (browse)',       setup: () => navigate('plugins') },
-  { id: 'L1/schedules',       group: 'L1', description: 'Schedules',              setup: () => navigate('schedules') },
   { id: 'L1/settings',        group: 'L1', description: 'Settings (default tab)', setup: () => navigate('settings') },
 
   // Plugin tabs (setPluginTab + navigate('plugins'))
@@ -147,6 +147,8 @@ const STOPS: NavStop[] = [
   { id: 'settings/engine',        group: 'settings', description: 'Settings → Engine',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'engine' }); } },
   { id: 'settings/byom',          group: 'settings', description: 'Settings → BYOM',          setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'byom' }); } },
   { id: 'settings/portability',   group: 'settings', description: 'Settings → Portability',   setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'portability' }); } },
+  { id: 'settings/limits',        group: 'settings', description: 'Settings → Limits',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'limits' }); } },
+  { id: 'settings/api-keys',      group: 'settings', description: 'Settings → API Keys',      setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'api-keys' }); } },
   { id: 'settings/config',        group: 'settings', description: 'Settings → Config',        setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'config' }); } },
 
   // Twin sub-tabs (when twin plugin is active)
@@ -154,6 +156,8 @@ const STOPS: NavStop[] = [
   { id: 'twin/identity',  group: 'twin', description: 'Twin → Identity',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'identity' }); } },
   { id: 'twin/brain',     group: 'twin', description: 'Twin → Brain',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'brain' }); } },
   { id: 'twin/voice',     group: 'twin', description: 'Twin → Voice',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'voice' }); } },
+  { id: 'twin/channels',  group: 'twin', description: 'Twin → Channels',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'channels' }); } },
+  { id: 'twin/training',  group: 'twin', description: 'Twin → Training',  setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); await bridgeExec('setTwinTab', { tab: 'training' }); } },
 
   // Artist sub-tabs (when artist plugin is active)
   { id: 'artist/blender',      group: 'artist', description: 'Artist → Blender',     setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'artist' }); await bridgeExec('setArtistTab', { tab: 'blender' }); } },

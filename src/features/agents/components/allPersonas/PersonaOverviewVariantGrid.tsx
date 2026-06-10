@@ -164,11 +164,11 @@ const PersonaGridCard = memo(function PersonaGridCard({
       {/* Connector icons — top-left corner, no tooltips */}
       {connectors.length > 0 && (
         <div className="absolute top-2.5 left-2.5 flex items-center gap-1">
-          {connectors.slice(0, MAX_CONNECTORS_VISIBLE).map((name) => {
+          {connectors.slice(0, MAX_CONNECTORS_VISIBLE).map((name, i) => {
             const meta = getConnectorMeta(name);
             return (
               <div
-                key={name}
+                key={`${name}-${i}`}
                 className="w-5 h-5 rounded-input bg-secondary/40 border border-primary/10 flex items-center justify-center"
               >
                 <ConnectorIcon meta={meta} size="w-3 h-3" />

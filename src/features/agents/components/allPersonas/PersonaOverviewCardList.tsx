@@ -220,11 +220,11 @@ const PersonaOverviewCardItem = memo(function PersonaOverviewCardItem({
       {/* Connectors row */}
       {connectors.length > 0 ? (
         <div className="flex items-center gap-1 px-3 pb-3 flex-wrap">
-          {connectors.slice(0, 6).map((name) => {
+          {connectors.slice(0, 6).map((name, i) => {
             const meta = getConnectorMeta(name);
             return (
               <div
-                key={name}
+                key={`${name}-${i}`}
                 title={meta.label}
                 className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center"
               >
