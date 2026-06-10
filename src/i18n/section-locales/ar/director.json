@@ -11,5 +11,12 @@
   "value_leak_partial_hint": "عمليات التشغيل التي قدّمت بعض القيمة المرجوة وليس كلها",
   "value_leak_precondition_hint": "عمليات التشغيل التي تعذّر إنجازها لعدم استيفاء شرط مسبق",
   "value_leak_no_input_hint": "عمليات التشغيل التي لا تتوفر لها مدخلات لتقييم القيمة",
-  "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها"
+  "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها",
+  "category_all": "الكل",
+  "category_prompt": "الموجّه",
+  "category_health": "الصحة",
+  "category_triggers": "المُحفّزات",
+  "category_credentials": "بيانات الاعتماد",
+  "category_memory": "الذاكرة",
+  "category_usefulness": "الفائدة"
 }

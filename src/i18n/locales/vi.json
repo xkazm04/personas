@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "Các lần chạy đạt một phần chứ không toàn bộ giá trị mong đợi",
     "value_leak_precondition_hint": "Các lần chạy không thể hoàn thành vì điều kiện tiên quyết chưa được đáp ứng",
     "value_leak_no_input_hint": "Các lần chạy không có đầu vào để đánh giá giá trị",
-    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại"
+    "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại",
+    "category_all": "Tất cả",
+    "category_prompt": "Lời nhắc",
+    "category_health": "Tình trạng",
+    "category_triggers": "Trình kích hoạt",
+    "category_credentials": "Thông tin xác thực",
+    "category_memory": "Bộ nhớ",
+    "category_usefulness": "Tính hữu ích"
   }
 }

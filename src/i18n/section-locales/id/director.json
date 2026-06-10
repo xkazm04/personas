@@ -11,5 +11,12 @@
   "value_leak_partial_hint": "Eksekusi yang memberikan sebagian, bukan seluruh nilai yang diharapkan",
   "value_leak_precondition_hint": "Eksekusi yang gagal karena prasyarat tidak terpenuhi",
   "value_leak_no_input_hint": "Eksekusi tanpa masukan untuk menilai nilai",
-  "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai"
+  "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai",
+  "category_all": "Semua",
+  "category_prompt": "Prompt",
+  "category_health": "Kesehatan",
+  "category_triggers": "Pemicu",
+  "category_credentials": "Kredensial",
+  "category_memory": "Memori",
+  "category_usefulness": "Kegunaan"
 }

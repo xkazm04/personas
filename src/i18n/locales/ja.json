@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "意図した価値の一部のみを提供した実行",
     "value_leak_precondition_hint": "前提条件が満たされず提供できなかった実行",
     "value_leak_no_input_hint": "価値を評価する入力がなかった実行",
-    "value_leak_unknown_hint": "評価者が分類できなかった実行"
+    "value_leak_unknown_hint": "評価者が分類できなかった実行",
+    "category_all": "すべて",
+    "category_prompt": "プロンプト",
+    "category_health": "健全性",
+    "category_triggers": "トリガー",
+    "category_credentials": "認証情報",
+    "category_memory": "メモリ",
+    "category_usefulness": "有用性"
   }
 }

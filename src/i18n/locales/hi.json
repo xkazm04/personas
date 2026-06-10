@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "वे रन जिन्होंने इच्छित मूल्य का कुछ हिस्सा दिया, पूरा नहीं",
     "value_leak_precondition_hint": "वे रन जो पूर्व-शर्त पूरी न होने के कारण वितरित नहीं हो सके",
     "value_leak_no_input_hint": "वे रन जिनके लिए मूल्य आँकने हेतु कोई इनपुट उपलब्ध नहीं",
-    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका"
+    "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका",
+    "category_all": "सभी",
+    "category_prompt": "प्रॉम्प्ट",
+    "category_health": "स्वास्थ्य",
+    "category_triggers": "ट्रिगर",
+    "category_credentials": "क्रेडेंशियल",
+    "category_memory": "स्मृति",
+    "category_usefulness": "उपयोगिता"
   }
 }

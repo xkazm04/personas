@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "Запуски, давшие часть, но не всю ожидаемую ценность",
     "value_leak_precondition_hint": "Запуски, не выполненные из-за несоблюдённого предусловия",
     "value_leak_no_input_hint": "Запуски без входных данных для оценки ценности",
-    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать"
+    "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать",
+    "category_all": "Все",
+    "category_prompt": "Промпт",
+    "category_health": "Здоровье",
+    "category_triggers": "Триггеры",
+    "category_credentials": "Учётные данные",
+    "category_memory": "Память",
+    "category_usefulness": "Полезность"
   }
 }

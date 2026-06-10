@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "Ejecuciones que entregaron parte, pero no todo, el valor previsto",
     "value_leak_precondition_hint": "Ejecuciones que no pudieron entregar porque no se cumplió un requisito previo",
     "value_leak_no_input_hint": "Ejecuciones sin entrada disponible para evaluar el valor",
-    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar"
+    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar",
+    "category_all": "Todas",
+    "category_prompt": "Prompt",
+    "category_health": "Salud",
+    "category_triggers": "Disparadores",
+    "category_credentials": "Credenciales",
+    "category_memory": "Memoria",
+    "category_usefulness": "Utilidad"
   }
 }

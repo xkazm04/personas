@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "交付了部分而非全部预期价值的运行",
     "value_leak_precondition_hint": "因前置条件未满足而无法交付的运行",
     "value_leak_no_input_hint": "没有可用于评估价值的输入的运行",
-    "value_leak_unknown_hint": "评估器无法明确归类的运行"
+    "value_leak_unknown_hint": "评估器无法明确归类的运行",
+    "category_all": "全部",
+    "category_prompt": "提示词",
+    "category_health": "健康度",
+    "category_triggers": "触发器",
+    "category_credentials": "凭据",
+    "category_memory": "记忆",
+    "category_usefulness": "有用性"
   }
 }

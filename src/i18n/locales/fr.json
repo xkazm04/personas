@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "Exécutions ayant livré une partie, mais pas la totalité, de la valeur attendue",
     "value_leak_precondition_hint": "Exécutions n'ayant pu aboutir car une condition préalable n'était pas remplie",
     "value_leak_no_input_hint": "Exécutions sans entrée disponible pour évaluer la valeur",
-    "value_leak_unknown_hint": "Exécutions que l'évaluateur n'a pas pu classer"
+    "value_leak_unknown_hint": "Exécutions que l'évaluateur n'a pas pu classer",
+    "category_all": "Toutes",
+    "category_prompt": "Prompt",
+    "category_health": "Santé",
+    "category_triggers": "Déclencheurs",
+    "category_credentials": "Identifiants",
+    "category_memory": "Mémoire",
+    "category_usefulness": "Utilité"
   }
 }

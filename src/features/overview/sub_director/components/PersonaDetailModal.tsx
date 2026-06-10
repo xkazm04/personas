@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Play, Eraser } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -14,6 +14,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
 import { attentionFlags, FLAG_TONE, type AttentionFlag } from '../attention';
+import { categoryMeta, categoryLabel } from '../categoryMeta';
 
 const SEVERITY_LINE: Record<string, string> = {
   error: 'var(--status-error)',
@@ -54,17 +55,28 @@ export function PersonaDetailModal({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [catFilter, setCatFilter] = useState<string | null>(null);
   const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     if (!entry) return;
     setLoading(true);
     setExpanded(null);
+    setCatFilter(null);
     listDirectorVerdicts(entry.personaId)
       .then(setVerdicts)
       .catch(silentCatch('PersonaDetailModal:verdicts'))
       .finally(() => setLoading(false));
   }, [entry]);
+
+  // Distinct categories present in this persona's history (first-seen order),
+  // for the filter strip. Only worth showing when there's more than one.
+  const presentCategories = useMemo(() => {
+    const seen: string[] = [];
+    for (const v of verdicts) if (v.category && !seen.includes(v.category)) seen.push(v.category);
+    return seen;
+  }, [verdicts]);
+  const shownVerdicts = catFilter ? verdicts.filter((v) => v.category === catFilter) : verdicts;
 
   if (!entry) return null;
 
@@ -196,13 +208,48 @@ export function PersonaDetailModal({
         {/* verdict history */}
         <div className="space-y-1.5">
           <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.detail_history}</span>
+          {/* category filter — only when the history spans more than one kind */}
+          {presentCategories.length > 1 && (
+            <div className="flex flex-wrap items-center gap-1.5 pb-0.5">
+              <button
+                type="button"
+                onClick={() => setCatFilter(null)}
+                className={`px-2 py-0.5 rounded-pill typo-caption transition-colors focus-ring ${
+                  catFilter === null ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
+                }`}
+              >
+                {t.director.category_all}
+              </button>
+              {presentCategories.map((c) => {
+                const meta = categoryMeta(c);
+                const active = catFilter === c;
+                const Icon = meta.icon;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setCatFilter(active ? null : c)}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-pill typo-caption transition-colors focus-ring border"
+                    style={
+                      active
+                        ? { color: meta.color, backgroundColor: toneFill(meta.color, 16), borderColor: meta.color }
+                        : { color: 'var(--foreground)', borderColor: 'transparent' }
+                    }
+                  >
+                    <Icon className="w-3 h-3" />
+                    {categoryLabel(t, c)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {loading ? (
             <p className="typo-body text-foreground py-2">…</p>
           ) : verdicts.length === 0 ? (
             <p className="typo-body text-foreground py-2">{t.director.no_verdicts}</p>
           ) : (
             <ul className="space-y-1.5">
-              {verdicts.map((v) => {
+              {shownVerdicts.map((v) => {
                 const open = expanded === v.reviewId;
                 const Chevron = open ? ChevronDown : ChevronRight;
                 return (
@@ -220,6 +267,19 @@ export function PersonaDetailModal({
                       <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide shrink-0 ${SEVERITY_CHIP[v.severity] ?? SEVERITY_CHIP.info}`}>
                         {tokenLabel(t, 'severity', v.severity)}
                       </span>
+                      {v.category && (() => {
+                        const meta = categoryMeta(v.category);
+                        const Icon = meta.icon;
+                        return (
+                          <span
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] shrink-0"
+                            style={{ color: meta.color, backgroundColor: toneFill(meta.color, 14) }}
+                          >
+                            <Icon className="w-3 h-3" />
+                            {categoryLabel(t, v.category)}
+                          </span>
+                        );
+                      })()}
                       <span className="typo-body text-foreground truncate flex-1">{v.title}</span>
                       <RelativeTime timestamp={v.createdAt} className="typo-caption text-foreground shrink-0" />
                     </button>

@@ -11,5 +11,12 @@
   "value_leak_partial_hint": "Läufe, die einen Teil, aber nicht den gesamten erwarteten Wert lieferten",
   "value_leak_precondition_hint": "Läufe, die scheiterten, weil eine Voraussetzung nicht erfüllt war",
   "value_leak_no_input_hint": "Läufe ohne verfügbare Eingabe zur Wertbewertung",
-  "value_leak_unknown_hint": "Läufe, die der Bewerter nicht einordnen konnte"
+  "value_leak_unknown_hint": "Läufe, die der Bewerter nicht einordnen konnte",
+  "category_all": "Alle",
+  "category_prompt": "Prompt",
+  "category_health": "Zustand",
+  "category_triggers": "Auslöser",
+  "category_credentials": "Anmeldedaten",
+  "category_memory": "Speicher",
+  "category_usefulness": "Nützlichkeit"
 }

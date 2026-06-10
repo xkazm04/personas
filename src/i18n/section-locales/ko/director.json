@@ -11,5 +11,12 @@
   "value_leak_partial_hint": "의도한 가치의 일부만 달성한 실행",
   "value_leak_precondition_hint": "전제 조건이 충족되지 않아 달성하지 못한 실행",
   "value_leak_no_input_hint": "가치를 평가할 입력이 없는 실행",
-  "value_leak_unknown_hint": "평가자가 분류하지 못한 실행"
+  "value_leak_unknown_hint": "평가자가 분류하지 못한 실행",
+  "category_all": "전체",
+  "category_prompt": "프롬프트",
+  "category_health": "상태",
+  "category_triggers": "트리거",
+  "category_credentials": "자격 증명",
+  "category_memory": "메모리",
+  "category_usefulness": "유용성"
 }

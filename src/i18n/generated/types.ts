@@ -3460,6 +3460,13 @@ export type Translations = {
     value_leak_precondition_hint: string;
     value_leak_no_input_hint: string;
     value_leak_unknown_hint: string;
+    category_all: string;
+    category_prompt: string;
+    category_health: string;
+    category_triggers: string;
+    category_credentials: string;
+    category_memory: string;
+    category_usefulness: string;
   };
   vault: {
     title: string;

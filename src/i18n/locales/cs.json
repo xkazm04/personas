@@ -15250,6 +15250,13 @@
     "value_leak_partial_hint": "Běhy, které dodaly část, ale ne celou očekávanou hodnotu",
     "value_leak_precondition_hint": "Běhy, které nemohly uspět, protože nebyla splněna podmínka",
     "value_leak_no_input_hint": "Běhy bez dostupného vstupu pro hodnocení hodnoty",
-    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit"
+    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit",
+    "category_all": "Vše",
+    "category_prompt": "Prompt",
+    "category_health": "Stav",
+    "category_triggers": "Spouštěče",
+    "category_credentials": "Přihlašovací údaje",
+    "category_memory": "Paměť",
+    "category_usefulness": "Užitečnost"
   }
 }
