@@ -8067,6 +8067,24 @@ export type Translations = {
       persona_layout_continue_no_capabilities: string;
       _comment_persona_layout_no_capabilities: string;
       persona_layout_no_capabilities: string;
+      _comment_left_connections_heading: string;
+      left_connections_heading: string;
+      _comment_left_empty_placeholder: string;
+      left_empty_placeholder: string;
+      _comment_capabilities_aria: string;
+      capabilities_aria: string;
+      _comment_capability_include: string;
+      capability_include: string;
+      _comment_capability_skip: string;
+      capability_skip: string;
+      _comment_policy_on: string;
+      policy_on: string;
+      policy_off: string;
+      _comment_schedule_hourly: string;
+      schedule_hourly: string;
+      _comment_events_count: string;
+      events_count_one: string;
+      events_count_other: string;
       story_no_questions: string;
       error_policy: {
         title: string;
@@ -11491,6 +11509,7 @@ export type Translations = {
       no_goals_kanban: string;
       no_goals_here: string;
       lifecycle_title: string;
+      competition_title: string;
       lifecycle_subtitle: string;
       teardown: string;
       auto_setup: string;
@@ -13157,6 +13176,9 @@ export type Translations = {
       pipeline_next: string;
       pipeline_back: string;
       pipeline_not_set: string;
+      pipeline_edit_field: string;
+      pipeline_field_saved: string;
+      pipeline_field_save_failed: string;
       source_mode_team: string;
       source_mode_standalone: string;
       source_mode_team_hint: string;
