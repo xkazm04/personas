@@ -175,6 +175,8 @@ Director/Athena orchestration discussion).
   reference to their parent. The composer is a multiline autosizing textarea
   (Enter sends, Shift+Enter breaks) with per-team draft persistence and an
   @-mention autocomplete covering Athena and every roster member. A filter bar
+  (clicking a presence avatar in the header band also inserts the mention and
+  focuses the composer). A filter bar
   (text search · Conversation/Activity kind toggle · author select) narrows
   the feed; the kind + author filters persist per team across sessions (the
   text query is deliberately ephemeral). Any conversational row (hover pin)
