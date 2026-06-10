@@ -6456,6 +6456,7 @@ export type Translations = {
       showing: string;
       load_more: string;
       col_status: string;
+      col_model: string;
       col_duration: string;
       col_started: string;
       col_id: string;

@@ -18,7 +18,8 @@ import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaC
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
-import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { formatDuration, formatModelShort, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -38,6 +39,7 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 const EXEC_COLUMNS: { key: string; width: string }[] = [
   { key: 'persona', width: 'minmax(280px,2fr)' },
   { key: 'status', width: 'minmax(0,1fr)' },
+  { key: 'model', width: '110px' },
   { key: 'duration', width: '120px' },
   { key: 'started', width: '160px' },
 ];
@@ -310,6 +312,14 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         onReset={() => colWidths.clearColumn('status')}
                       />
                     </div>
+                    <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
+                      {t.overview.activity.col_model}
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
+                        onReset={() => colWidths.clearColumn('model')}
+                      />
+                    </div>
                     <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
                       {t.overview.activity.col_duration}
                       <ColumnResizeHandle
@@ -333,6 +343,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   scrollRestoreKey={scrollRestoreKey}
                   renderItem={(exec, index) => {
                     const status = getStatusEntry(exec.status);
+                    const modelShort = formatModelShort(exec.model_used);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
                         : exec.status === 'completed' ? 'border-l-emerald-400'
@@ -356,6 +367,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
                           <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
+                          {modelShort && <span className="font-mono truncate">{modelShort}</span>}
                           <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
                         </div>
                       </div>
@@ -376,6 +388,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             {status.pulse && (<span className="relative flex h-1.5 w-1.5"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" /><span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" /></span>)}
                             {status.label}
                           </span>
+                        </div>
+                        <div className="px-4 min-w-0">
+                          {modelShort ? (
+                            <Tooltip content={exec.model_used ?? ''}>
+                              <span className="block typo-code text-foreground font-mono truncate">{modelShort}</span>
+                            </Tooltip>
+                          ) : (
+                            <span className="typo-code text-foreground font-mono">{'—'}</span>
+                          )}
                         </div>
                         <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
                         <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>

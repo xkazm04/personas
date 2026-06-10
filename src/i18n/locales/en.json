@@ -6450,6 +6450,7 @@
       "showing": "Showing {count} of {total}",
       "load_more": "Load More",
       "col_status": "Status",
+      "col_model": "Model",
       "col_duration": "Duration",
       "col_started": "Started",
       "col_id": "ID",
