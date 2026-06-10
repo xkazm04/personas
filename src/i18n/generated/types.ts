@@ -8545,6 +8545,7 @@ export type Translations = {
       targets_title: string;
       targets_subtitle: string;
       group_signals: string;
+      group_personas: string;
       group_after_persona: string;
       source_persona_hint: string;
       persona_completes: string;
@@ -12649,13 +12650,6 @@ export type Translations = {
       decisions_panel_unscoped: string;
       decisions_panel_currently_designing: string;
       decisions_panel_show_all: string;
-      decisions_variant_strip_label: string;
-      decisions_variant_baseline: string;
-      decisions_variant_baseline_hint: string;
-      decisions_variant_ledger: string;
-      decisions_variant_ledger_hint: string;
-      decisions_variant_atlas: string;
-      decisions_variant_atlas_hint: string;
       decisions_atlas_contexts: string;
       decisions_atlas_all_contexts: string;
       dashboard_empty_title: string;

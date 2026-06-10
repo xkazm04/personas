@@ -13,6 +13,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
 import {
   loadDraft, saveDraft, newLinkId, findTrigger, personaName,
@@ -32,12 +33,15 @@ function conditionLabel(t: T, condition: LinkCondition): string {
   }
 }
 
+type SourceRailKind = 'signals' | 'personas';
+
 export function StudioSwitchboard() {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [draft, setDraft] = useState<ChainDraft>(() => loadDraft());
   const [armedSource, setArmedSource] = useState<DraftSource | null>(null);
   const [armedTarget, setArmedTarget] = useState<string | null>(null);
+  const [sourceKind, setSourceKind] = useState<SourceRailKind>('signals');
   const [sourceQuery, setSourceQuery] = useState('');
   const [targetQuery, setTargetQuery] = useState('');
 
@@ -87,16 +91,23 @@ export function StudioSwitchboard() {
     <div className="flex-1 flex min-h-0" data-testid="studio-switchboard">
       {/* ── Sources rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-r border-border flex flex-col min-h-0 bg-card/30">
-        <RailHeader
-          icon={<Zap className="w-4 h-4 text-amber-400" />}
-          title={t.triggers.studio.sources_title}
-          subtitle={t.triggers.studio.sources_subtitle}
-          query={sourceQuery}
-          onQuery={setSourceQuery}
-        />
+        <div className="px-3 pt-3 pb-2 space-y-2">
+          <SegmentedTabs<SourceRailKind>
+            tabs={[
+              { id: 'signals', label: <><Zap className="w-3.5 h-3.5 text-amber-400" />{t.triggers.studio.group_signals}</> },
+              { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{t.triggers.studio.group_personas}</> },
+            ]}
+            activeTab={sourceKind}
+            onTabChange={setSourceKind}
+            ariaLabel={t.triggers.studio.sources_title}
+          />
+          <p className="typo-caption text-foreground px-1">
+            {sourceKind === 'signals' ? t.triggers.studio.sources_subtitle : t.triggers.studio.group_after_persona}
+          </p>
+          <SearchField query={sourceQuery} onQuery={setSourceQuery} />
+        </div>
         <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
-          <RailGroupLabel label={t.triggers.studio.group_signals} />
-          {filteredTriggers.map((tpl) => (
+          {sourceKind === 'signals' && filteredTriggers.map((tpl) => (
             <TriggerOptionCard
               key={tpl.id}
               template={tpl}
@@ -105,8 +116,7 @@ export function StudioSwitchboard() {
               onPick={() => setArmedSource((s) => (s?.kind === 'trigger' && s.triggerType === tpl.triggerType ? null : { kind: 'trigger', triggerType: tpl.triggerType }))}
             />
           ))}
-          <RailGroupLabel label={t.triggers.studio.group_after_persona} />
-          {filteredSourcePersonas.map((p) => (
+          {sourceKind === 'personas' && filteredSourcePersonas.map((p) => (
             <PersonaOptionCard
               key={p.id}
               persona={p}
@@ -116,8 +126,11 @@ export function StudioSwitchboard() {
               onPick={() => setArmedSource((s) => (s?.kind === 'persona' && s.personaId === p.id ? null : { kind: 'persona', personaId: p.id }))}
             />
           ))}
-          {filteredTriggers.length === 0 && filteredSourcePersonas.length === 0 && (
+          {sourceKind === 'signals' && filteredTriggers.length === 0 && (
             <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_sources_match, { query: sourceQuery })}</p>
+          )}
+          {sourceKind === 'personas' && filteredSourcePersonas.length === 0 && (
+            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: sourceQuery })}</p>
           )}
         </div>
       </div>
@@ -247,7 +260,6 @@ function RailHeader({ icon, title, subtitle, query, onQuery }: {
   icon: ReactNode; title: string; subtitle: string;
   query: string; onQuery: (v: string) => void;
 }) {
-  const { t } = useTranslation();
   return (
     <div className="px-3 pt-3 pb-2 space-y-2">
       <div className="flex items-center gap-2">
@@ -255,21 +267,24 @@ function RailHeader({ icon, title, subtitle, query, onQuery }: {
         <span className="typo-heading text-foreground">{title}</span>
         <span className="typo-caption text-foreground">{subtitle}</span>
       </div>
-      <div className="relative">
-        <Search className="w-3.5 h-3.5 text-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
-        <input
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder={t.triggers.studio.filter_placeholder}
-          className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-border focus:border-primary/40 focus:outline-none text-foreground placeholder:text-muted-foreground"
-        />
-      </div>
+      <SearchField query={query} onQuery={onQuery} />
     </div>
   );
 }
 
-function RailGroupLabel({ label }: { label: string }) {
-  return <div className="typo-label text-foreground pt-2 pb-0.5 px-1">{label}</div>;
+function SearchField({ query, onQuery }: { query: string; onQuery: (v: string) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="relative">
+      <Search className="w-3.5 h-3.5 text-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+      <input
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        placeholder={t.triggers.studio.filter_placeholder}
+        className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-border focus:border-primary/40 focus:outline-none text-foreground placeholder:text-muted-foreground"
+      />
+    </div>
+  );
 }
 
 function SourceChip({ source, personas, completesLabel }: { source: DraftSource; personas: Persona[]; completesLabel: string }) {
