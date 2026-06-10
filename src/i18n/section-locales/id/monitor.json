@@ -90,5 +90,6 @@
   "channel_pinned_memory": "Disematkan ke memori tim",
   "channel_pin_failed": "Tidak dapat menyematkan ke memori tim",
   "channel_day_today": "Hari ini",
-  "channel_day_yesterday": "Kemarin"
+  "channel_day_yesterday": "Kemarin",
+  "channel_avatar_mention": "Sebut {name}"
 }

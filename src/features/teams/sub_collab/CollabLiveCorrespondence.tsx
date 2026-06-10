@@ -281,6 +281,15 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     updateDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
   };
 
+  // Clicking a presence avatar addresses that member: append @FirstWord to
+  // the draft (the same insert shape the autocomplete uses) and focus the
+  // composer so the user can keep typing.
+  const insertMention = (member: ChannelMember) => {
+    const slug = member.name.replace(/^T: /, '').split(/\s+/)[0]!;
+    updateDraft((d) => `${d}${d === '' || /\s$/.test(d) ? '' : ' '}@${slug} `);
+    composerRef.current?.focus();
+  };
+
   // Pin a channel item into the team's long-term memory. The channel
   // read-model unions memories back in, so the pin reappears as a memory row
   // on the next head refresh — visible confirmation where the action happened.
@@ -346,18 +355,22 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         <div className="flex items-center -space-x-1.5">
           {members.slice(0, 8).map((m) => {
             const st = presence.get(m.personaId);
+            const cleanName = m.name.replace(/^T: /, '');
             return (
-              <span
+              <button
                 key={m.memberId}
-                className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/80 ring-2 ring-background"
-                title={`${m.name.replace(/^T: /, '')}${st ? ` — ${st}` : ''}`}
+                type="button"
+                onClick={() => insertMention(m)}
+                className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/80 ring-2 ring-background transition-transform hover:scale-110 hover:z-10 focus-visible:scale-110 focus-visible:z-10 focus:outline-none"
+                title={`${cleanName}${st ? ` — ${st}` : ''}`}
+                aria-label={tx(t.monitor.channel_avatar_mention, { name: cleanName })}
                 style={st === 'working' ? { boxShadow: `0 0 0 2px ${m.color ?? '#60a5fa'}` } : undefined}
               >
                 <PersonaIcon icon={m.icon} color={m.color} size="w-4 h-4" />
                 {st && (
                   <span className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-background ${st === 'working' ? 'bg-status-info' : 'bg-status-warning'}`} />
                 )}
-              </span>
+              </button>
             );
           })}
         </div>

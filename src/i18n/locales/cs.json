@@ -162,7 +162,8 @@
     "channel_pinned_memory": "Připnuto do týmové paměti",
     "channel_pin_failed": "Nepodařilo se připnout do týmové paměti",
     "channel_day_today": "Dnes",
-    "channel_day_yesterday": "Včera"
+    "channel_day_yesterday": "Včera",
+    "channel_avatar_mention": "Zmínit {name}"
   },
   "common": {
     "loading": "Načítání...",

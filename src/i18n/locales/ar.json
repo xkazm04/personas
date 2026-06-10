@@ -162,7 +162,8 @@
     "channel_pinned_memory": "تم التثبيت في ذاكرة الفريق",
     "channel_pin_failed": "تعذّر التثبيت في ذاكرة الفريق",
     "channel_day_today": "اليوم",
-    "channel_day_yesterday": "أمس"
+    "channel_day_yesterday": "أمس",
+    "channel_avatar_mention": "الإشارة إلى {name}"
   },
   "common": {
     "loading": "جارٍ التحميل...",

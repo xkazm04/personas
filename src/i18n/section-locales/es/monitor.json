@@ -90,5 +90,6 @@
   "channel_pinned_memory": "Fijado en la memoria del equipo",
   "channel_pin_failed": "No se pudo fijar en la memoria del equipo",
   "channel_day_today": "Hoy",
-  "channel_day_yesterday": "Ayer"
+  "channel_day_yesterday": "Ayer",
+  "channel_avatar_mention": "Mencionar a {name}"
 }

@@ -90,5 +90,6 @@
   "channel_pinned_memory": "টিম মেমোরিতে পিন করা হয়েছে",
   "channel_pin_failed": "টিম মেমোরিতে পিন করা যায়নি",
   "channel_day_today": "আজ",
-  "channel_day_yesterday": "গতকাল"
+  "channel_day_yesterday": "গতকাল",
+  "channel_avatar_mention": "{name}-কে উল্লেখ করুন"
 }

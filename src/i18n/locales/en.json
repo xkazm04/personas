@@ -207,6 +207,7 @@
     "channel_filter_no_matches": "Nothing matches these filters.",
     "channel_filter_clear": "Clear filters",
     "channel_mention_tab": "Tab to complete",
+    "channel_avatar_mention": "Mention {name}",
     "channel_mention_will_see": "Mentioned — the team sees directives at the next step boundary",
     "channel_composer_newline_hint": "Shift+Enter for a new line",
     "channel_composer_reply_placeholder": "Write your reply…",

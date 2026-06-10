@@ -162,7 +162,8 @@
     "channel_pinned_memory": "已固定到团队记忆",
     "channel_pin_failed": "无法固定到团队记忆",
     "channel_day_today": "今天",
-    "channel_day_yesterday": "昨天"
+    "channel_day_yesterday": "昨天",
+    "channel_avatar_mention": "提及 {name}"
   },
   "common": {
     "loading": "加载中...",

@@ -213,6 +213,7 @@ export type Translations = {
     channel_filter_no_matches: string;
     channel_filter_clear: string;
     channel_mention_tab: string;
+    channel_avatar_mention: string;
     channel_mention_will_see: string;
     channel_composer_newline_hint: string;
     channel_composer_reply_placeholder: string;

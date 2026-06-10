@@ -162,7 +162,8 @@
     "channel_pinned_memory": "Épinglé dans la mémoire d'équipe",
     "channel_pin_failed": "Impossible d'épingler dans la mémoire d'équipe",
     "channel_day_today": "Aujourd'hui",
-    "channel_day_yesterday": "Hier"
+    "channel_day_yesterday": "Hier",
+    "channel_avatar_mention": "Mentionner {name}"
   },
   "common": {
     "loading": "Chargement...",
