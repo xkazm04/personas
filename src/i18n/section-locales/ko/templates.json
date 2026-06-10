@@ -343,7 +343,9 @@
     "search_suggestions_aria": "검색 제안",
     "clear_search_aria": "검색 지우기",
     "search_with_ai_aria": "AI로 검색",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "초안"
   },
   "list": {
     "template_name": "템플릿 이름",
@@ -807,7 +809,25 @@
       "lab_desc": "실패가 반복될 때 이 페르소나에 대해 Lab 자동 개선(프롬프트 진화)을 켭니다.",
       "escalate_after_label": "다음 이후 에스컬레이션",
       "escalate_after_desc": "인시던트를 생성하거나 Lab으로 보내기 전의 연속 실패 횟수입니다."
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "연결",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "각 항목을 설정하면 선택 내용이 여기에 표시됩니다.",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "기능",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "기능 포함",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "기능 건너뛰기",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "켜짐",
+    "policy_off": "꺼짐",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "매시간",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count}개 이벤트",
+    "events_count_other": "{count}개 이벤트"
   },
   "scan": {
     "scanning_draft": "페르소나 초안 검사 중...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count}개 질문, 모두 기본값",
     "questionnaire_member_summary_customized": "{count}개 질문, {customized}개 맞춤설정",
     "questionnaire_member_no_config": "구성 불필요",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "자동 처리",
+    "graph_legend_feedback": "피드백 전송"
   },
   "compare": {
     "compare": "비교",

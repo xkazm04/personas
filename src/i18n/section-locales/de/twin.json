@@ -400,7 +400,15 @@
     "nextStep": "Nächster Schritt",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Vervollständige deinen Twin",
-    "rosterFoundations": "{twins} Twins · {identities} mit Identität · {brains} mit Wissensdatenbank"
+    "rosterFoundations": "{twins} Twins · {identities} mit Identität · {brains} mit Wissensdatenbank",
+    "ready": "Bereit",
+    "satellites": "Satelliten",
+    "rosterSpread": "Roster-Verteilung",
+    "twinsConfigured": "Konfigurierte Twins",
+    "avgReadiness": "Ø Bereitschaft",
+    "activeChannels": "Aktive Kanäle",
+    "memoriesApproved": "Genehmigte Erinnerungen",
+    "channelsInUse": "Verwendete Kanäle"
   },
   "variantTabs": {
     "prototype": "Prototype",

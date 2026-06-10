@@ -29,7 +29,43 @@
     "updates_current_version": "আপনি v{version} ব্যবহার করছেন",
     "updates_last_checked": "সর্বশেষ পরীক্ষা {time}",
     "updates_history_title": "সাম্প্রতিক আপডেট",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "ক্লাউড ড্যাশবোর্ড সিঙ্ক",
+    "cloud_sync_description": "আপনার personas, রান এবং কার্যকলাপের একটি রিড-অনলি কপি আপনার ব্যক্তিগত ক্লাউডে সিঙ্ক করুন যাতে আপনি ওয়েব ড্যাশবোর্ডে সেগুলো দেখতে পারেন। আপনার কানেক্টর ক্রেডেনশিয়াল কখনো এই ডিভাইস ছাড়ে না।",
+    "cloud_sync_toggle": "ক্লাউড ড্যাশবোর্ডে সিঙ্ক করুন",
+    "cloud_sync_on": "আপনার ডেটা ক্লাউড ড্যাশবোর্ডে সিঙ্ক হচ্ছে।",
+    "cloud_sync_off": "আপনার ডেটা শুধুমাত্র এই ডিভাইসে থাকবে।",
+    "cloud_sync_toggle_aria": "ক্লাউড ড্যাশবোর্ড সিঙ্ক টগল করুন",
+    "cloud_sync_now": "এখনই সিঙ্ক করুন",
+    "cloud_sync_syncing": "সিঙ্ক হচ্ছে...",
+    "cloud_sync_last": "সর্বশেষ সিঙ্ক",
+    "cloud_sync_never": "এখনো সিঙ্ক হয়নি",
+    "cloud_sync_error": "সর্বশেষ সিঙ্ক ব্যর্থ হয়েছে: {error}",
+    "cloud_sync_enable_failed": "সিঙ্ক সেটিং আপডেট করা যায়নি",
+    "cloud_sync_now_failed": "সিঙ্ক ব্যর্থ হয়েছে। সংযোগ পরীক্ষা করুন এবং আবার চেষ্টা করুন।",
+    "cloud_sync_now_done": "{count} টি রেকর্ড সিঙ্ক হয়েছে",
+    "cloud_sync_state_off": "বন্ধ",
+    "cloud_sync_state_active": "সক্রিয়",
+    "cloud_sync_state_syncing": "সিঙ্ক হচ্ছে…",
+    "cloud_sync_total": "সর্বকালীন সিঙ্ক হয়েছে",
+    "cloud_sync_device": "ডিভাইস {id}",
+    "cloud_sync_tables_title": "সিঙ্ক করা ডেটা",
+    "cloud_sync_show_details": "বিস্তারিত দেখুন",
+    "cloud_sync_hide_details": "বিস্তারিত লুকান",
+    "cloud_sync_retry": "পুনরায় চেষ্টা করুন",
+    "cloud_sync_rows": "সারি",
+    "cloud_sync_table_pending": "প্রথম সিঙ্কের অপেক্ষায়",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "এক্সিকিউশন",
+      "synced_events": "ইভেন্ট",
+      "synced_manual_reviews": "রিভিউ",
+      "synced_messages": "বার্তা",
+      "synced_metrics_snapshots": "মেট্রিক্স",
+      "synced_tool_usage": "টুল ব্যবহার",
+      "synced_memories": "স্মৃতি",
+      "synced_knowledge_patterns": "জ্ঞান"
+    }
   },
   "appearance_extra": {
     "simple": "সহজ",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "টিম মেমোরি",
+    "import_team_memories": "{count} টি টিম মেমোরি",
+    "include_memories_label": "মেমোরি অন্তর্ভুক্ত করুন",
+    "include_memories_note": "Persona এবং টিম মেমোরি এক্সপোর্টের সাথে যাবে। এজেন্ট ও টিম তাদের সঞ্চিত মেমোরি ছাড়া এক্সপোর্ট করতে এটি বন্ধ করুন।"
   },
   "config": {
     "title": "কনফিগ রেজোলিউশন",
@@ -510,7 +550,12 @@
     "over_budget": "আপনি আপনার মাসিক সীমা অতিক্রম করেছেন। পর্যায় ২ এমন হলে নতুন এক্সিকিউশন ব্লক করবে; আপাতত, এটিকে একটি সতর্কতা হিসেবে বিবেচনা করুন।",
     "approaching_budget": "আপনি আপনার মাসিক সীমার কাছাকাছি পৌঁছাচ্ছেন। সাম্প্রতিক রানগুলি পর্যালোচনা করার কথা বিবেচনা করুন।",
     "no_ceiling_hint": "কোনো সীমা নির্ধারিত নেই। একটি বাজেটের বিপরীতে ট্র্যাকিং শুরু করতে উপরে USD পরিমাণ লিখুন।",
-    "stage1_note": "পর্যায় ১: শুধুমাত্র তথ্যমূলক। পর্যায় ২ সীমা অতিক্রম হলে এক্সিকিউশন ডিসপ্যাচ গেট করবে।"
+    "stage1_note": "পর্যায় ১: শুধুমাত্র তথ্যমূলক। পর্যায় ২ সীমা অতিক্রম হলে এক্সিকিউশন ডিসপ্যাচ গেট করবে।",
+    "concurrency_section": "সমান্তরাল এক্সিকিউশন",
+    "concurrency_hint": "একই সময়ে কতটি personas চলতে পারবে। অতিরিক্ত রান একটি কিউতে অপেক্ষা করে এবং স্লট খালি হলে স্বয়ংক্রিয়ভাবে শুরু হয়। পরিবর্তন তাৎক্ষণিকভাবে প্রযোজ্য — পুনরায় চালু করার প্রয়োজন নেই।",
+    "concurrency_aria": "সর্বোচ্চ সমান্তরাল এক্সিকিউশন",
+    "concurrency_range": "{min} থেকে {max} টি একযোগে রানের মধ্যে।",
+    "concurrency_queued_note": "এই সীমার বাইরের রানগুলো কিউতে যায় এবং চলমান রান শেষ হলে অগ্রাধিকার ও আগমনের ক্রম অনুযায়ী প্রমোট হয়।"
   },
   "recent_change": {
     "label": "সর্বশেষ {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "সেটিংস অনুসন্ধান করুন…",
+    "recommended": "প্রস্তাবিত",
+    "section": "সেটিংস",
+    "trigger_hint": "সেটিংস অনুসন্ধান  ·  Ctrl / ⌘ K",
+    "trigger_aria": "সেটিংস অনুসন্ধান খুলুন",
+    "reduce_motion": "গতি কমান",
+    "dim": "রঙের তীব্রতা কমান",
+    "cvd_safe": "বর্ণান্ধ-নিরাপদ প্যালেট",
+    "high_contrast": "উচ্চ কনট্রাস্ট",
+    "ambient": "দিনের সময়ভিত্তিক হেডার আর্ট",
+    "theme": "থিম ও রং",
+    "text_size": "টেক্সটের আকার",
+    "brightness": "উজ্জ্বলতা",
+    "density": "লেআউট ঘনত্ব",
+    "timezone": "সময় অঞ্চল",
+    "tabs": {
+      "limits": "সীমা",
+      "api_keys": "API কী",
+      "history": "ইতিহাস"
+    }
   }
 }

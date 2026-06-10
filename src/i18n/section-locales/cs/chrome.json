@@ -44,6 +44,27 @@
     "section_workspace": "Pracovní prostor",
     "toggle_sidebar": "Sbalit / rozbalit postranní panel",
     "toggle_monitor": "Otevřít / zavřít Monitor person",
-    "toggle_athena": "Otevřít / zavřít chat Athena"
+    "toggle_athena": "Otevřít / zavřít chat Athena",
+    "nav_mode": "Přepnout režim klávesové navigace",
+    "nav_mode_back": "Přejít o stránku zpět (v navigačním režimu)"
+  },
+  "tray_schedules": "Plány",
+  "tray_schedules_today": "{count} naplánováno dnes",
+  "tray_notifications": "Oznámení",
+  "tray_notifications_unread": "{count} nepřečtených oznámení",
+  "tray_signals": "Signály pozornosti",
+  "tray_word_today": "dnes",
+  "tray_word_to_answer": "k zodpovězení",
+  "tray_word_fleet": "ve flotile",
+  "tray_word_unread": "nepřečteno",
+  "tray_word_running": "běží",
+  "system_load": {
+    "label": "Zatížení systému",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB volné)",
+    "measuring": "Měření zatížení systému…",
+    "headroom_green": "Dostatek kapacity pro další práci",
+    "headroom_amber": "Systém je vytížený — zvažte snížení zátěže",
+    "headroom_red": "Na hranici kapacity — zvažte zpomalení"
   }
 }

@@ -219,7 +219,9 @@
     "stage_generating": "जनरेट हो रहा है",
     "stage_completed": "पूर्ण",
     "stage_failed": "विफल",
-    "tool_calls": "{count} टूल कॉल"
+    "tool_calls": "{count} टूल कॉल",
+    "connect_cloud_cta": "क्लाउड लक्ष्य कनेक्ट करें",
+    "connect_gitlab_cta": "GitLab कनेक्ट करें"
   },
   "cloud_trigger_schedule": "शेड्यूल्ड (Cron)",
   "cloud_trigger_polling": "पोलिंग",

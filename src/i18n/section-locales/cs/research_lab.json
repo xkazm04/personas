@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "Žádné arXiv články neodpovídají vašemu dotazu. Zkuste širší nebo jiná klíčová slova.",
+  "arxiv_error_title": "Vyhledávání selhalo",
+  "arxiv_error_timeout": "arXiv reagoval příliš pomalu — možná omezuje požadavky. Zkuste to za chvíli.",
+  "arxiv_error_rate_limited": "arXiv momentálně omezuje požadavky. Počkejte pár sekund a zkuste znovu.",
+  "arxiv_error_http": "arXiv vrátil chybu (HTTP {status}). Zkuste to za chvíli.",
+  "arxiv_error_network": "Nepodařilo se spojit s arXiv. Zkontrolujte připojení a zkuste znovu.",
+  "arxiv_error_feed": "arXiv nemohl zpracovat tento dotaz. Zkuste jiná nebo jednodušší klíčová slova.",
+  "arxiv_error_generic": "Vyhledávání arXiv selhalo. Zkuste to znovu."
 }

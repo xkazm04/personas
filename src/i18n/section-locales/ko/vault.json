@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "새로 고침",
+    "tool_count_one": "도구 {count}개",
+    "tool_count_other": "도구 {count}개",
+    "tab_documents": "문서",
+    "tab_search": "검색",
+    "tab_settings": "설정"
   },
   "manager": {
     "title": "자격 증명",
@@ -845,7 +851,10 @@
     "enabling": "활성화 중...",
     "enable_rotation": "교체 활성화",
     "enable_failed": "교체 활성화 실패: {error}",
-    "last_rotated": "마지막 교체: {time}"
+    "last_rotated": "마지막 교체: {time}",
+    "ring_aria_label": "{countdown} 후 교체",
+    "history_empty_title": "아직 교체 이력 없음",
+    "history_empty_subtitle": "이 자격증명이 교체되면 여기에 교체 이벤트가 표시됩니다."
   },
   "event_config": {
     "event_triggers": "이벤트 트리거",
@@ -950,11 +959,24 @@
     "catalog_description": "Slack, GitHub, OpenAI 등 알려진 서비스 선택. 사전 구성된 필드 및 상태 확인.",
     "ai_heading": "AI 설계 자격 증명",
     "ai_description": "임의의 서비스를 설명하면 AI가 필드, 인증 유형, 상태 확인을 구성합니다.",
-    "works_with_any": "모든 API와 호환"
+    "works_with_any": "모든 API와 호환",
+    "recommended": "추천"
   },
   "credential_list": {
     "no_match": "일치하는 자격 증명 없음",
-    "no_match_hint": "필터 또는 검색어를 조정해 보세요"
+    "no_match_hint": "필터 또는 검색어를 조정해 보세요",
+    "col_name": "이름",
+    "col_status": "상태",
+    "col_type": "유형",
+    "col_category": "카테고리",
+    "col_health": "건강 상태",
+    "col_last_used": "마지막 사용",
+    "col_created": "생성일",
+    "filter_all": "전체",
+    "filter_all_health": "모든 건강 상태",
+    "health_healthy": "정상",
+    "health_failing": "오류",
+    "health_untested": "미테스트"
   },
   "wizard_detect": {
     "no_services": "\"{search}\"와 일치하는 서비스 없음",

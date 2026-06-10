@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "आपकी query से कोई arXiv पेपर नहीं मिला। व्यापक या अलग कीवर्ड आज़माएं।",
+  "arxiv_error_title": "खोज विफल",
+  "arxiv_error_timeout": "arXiv प्रतिक्रिया में बहुत देर लगी — यह अनुरोधों को rate-limit कर सकता है। एक पल में दोबारा कोशिश करें।",
+  "arxiv_error_rate_limited": "arXiv अभी अनुरोधों को rate-limit कर रहा है। कुछ सेकंड प्रतीक्षा करें और दोबारा कोशिश करें।",
+  "arxiv_error_http": "arXiv ने त्रुटि दी (HTTP {status})। थोड़ी देर बाद दोबारा कोशिश करें।",
+  "arxiv_error_network": "arXiv तक नहीं पहुंचा जा सका। अपना कनेक्शन जांचें और दोबारा कोशिश करें।",
+  "arxiv_error_feed": "arXiv उस query को प्रोसेस नहीं कर सका। अलग या सरल कीवर्ड आज़माएं।",
+  "arxiv_error_generic": "arXiv खोज विफल हुई। दोबारा कोशिश करें।"
 }

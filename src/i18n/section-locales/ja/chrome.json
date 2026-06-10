@@ -44,6 +44,27 @@
     "section_workspace": "ワークスペース",
     "toggle_sidebar": "サイドバーを折りたたむ / 展開する",
     "toggle_monitor": "Persona Monitor を開く / 閉じる",
-    "toggle_athena": "Athena チャットを開く / 閉じる"
+    "toggle_athena": "Athena チャットを開く / 閉じる",
+    "nav_mode": "キーボードナビゲーションモードの切り替え",
+    "nav_mode_back": "一つ前のページに戻る（ナビモード時）"
+  },
+  "tray_schedules": "スケジュール",
+  "tray_schedules_today": "本日 {count} 件のスケジュール",
+  "tray_notifications": "通知",
+  "tray_notifications_unread": "{count} 件の未読通知",
+  "tray_signals": "注意シグナル",
+  "tray_word_today": "本日",
+  "tray_word_to_answer": "回答待ち",
+  "tray_word_fleet": "フリート内",
+  "tray_word_unread": "未読",
+  "tray_word_running": "実行中",
+  "system_load": {
+    "label": "システム負荷",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}%（残り {free} GB）",
+    "measuring": "システム負荷を計測中…",
+    "headroom_green": "余裕あり — さらに作業を追加できます",
+    "headroom_amber": "混雑してきました — 負荷を下げることを検討してください",
+    "headroom_red": "容量に達しました — 処理を減らすことを検討してください"
   }
 }

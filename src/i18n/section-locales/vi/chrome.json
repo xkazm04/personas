@@ -44,6 +44,27 @@
     "section_workspace": "Không gian làm việc",
     "toggle_sidebar": "Thu gọn / mở rộng thanh bên",
     "toggle_monitor": "Mở / đóng Persona Monitor",
-    "toggle_athena": "Mở / đóng trò chuyện Athena"
+    "toggle_athena": "Mở / đóng trò chuyện Athena",
+    "nav_mode": "Bật/tắt chế độ điều hướng bàn phím",
+    "nav_mode_back": "Quay lại trang trước (trong chế độ điều hướng)"
+  },
+  "tray_schedules": "Lịch biểu",
+  "tray_schedules_today": "{count} được lên lịch hôm nay",
+  "tray_notifications": "Thông báo",
+  "tray_notifications_unread": "{count} thông báo chưa đọc",
+  "tray_signals": "Tín hiệu chú ý",
+  "tray_word_today": "hôm nay",
+  "tray_word_to_answer": "cần trả lời",
+  "tray_word_fleet": "trong đội nhóm",
+  "tray_word_unread": "chưa đọc",
+  "tray_word_running": "đang chạy",
+  "system_load": {
+    "label": "Tải hệ thống",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB trống)",
+    "measuring": "Đang đo tải hệ thống…",
+    "headroom_green": "Còn nhiều dư địa để làm thêm việc",
+    "headroom_amber": "Đang bận — cân nhắc giảm bớt tải",
+    "headroom_red": "Đã đầy tải — cân nhắc chạy chậm lại"
   }
 }

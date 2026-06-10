@@ -400,7 +400,15 @@
     "nextStep": "Étape suivante",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Complétez votre jumeau",
-    "rosterFoundations": "{twins} jumeaux · {identities} avec identité · {brains} avec base de connaissances"
+    "rosterFoundations": "{twins} jumeaux · {identities} avec identité · {brains} avec base de connaissances",
+    "ready": "Prêt",
+    "satellites": "Satellites",
+    "rosterSpread": "Répartition du groupe",
+    "twinsConfigured": "Jumeaux configurés",
+    "avgReadiness": "Disponibilité moy.",
+    "activeChannels": "Canaux actifs",
+    "memoriesApproved": "Mémoires approuvées",
+    "channelsInUse": "Canaux utilisés"
   },
   "variantTabs": {
     "prototype": "Prototype",

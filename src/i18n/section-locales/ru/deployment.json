@@ -219,7 +219,9 @@
     "stage_generating": "Генерация",
     "stage_completed": "Завершено",
     "stage_failed": "Сбой",
-    "tool_calls": "{count} вызовов инструментов"
+    "tool_calls": "{count} вызовов инструментов",
+    "connect_cloud_cta": "Подключить облачный сервер",
+    "connect_gitlab_cta": "Подключить GitLab"
   },
   "cloud_trigger_schedule": "По расписанию (Cron)",
   "cloud_trigger_polling": "Опрос",

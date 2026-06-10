@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "未找到匹配的 arXiv 论文。请尝试更宽泛或不同的关键词。",
+  "arxiv_error_title": "搜索失败",
+  "arxiv_error_timeout": "arXiv 响应超时 — 可能正在限速。请稍后重试。",
+  "arxiv_error_rate_limited": "arXiv 当前正在限速。请等待几秒后重试。",
+  "arxiv_error_http": "arXiv 返回错误（HTTP {status}）。请稍后重试。",
+  "arxiv_error_network": "无法连接到 arXiv。请检查网络连接后重试。",
+  "arxiv_error_feed": "arXiv 无法处理该查询。请尝试不同或更简单的关键词。",
+  "arxiv_error_generic": "arXiv 搜索失败。请重试。"
 }

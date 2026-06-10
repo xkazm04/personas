@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "هوية التوقيع غير متاحة",
+  "identity_degraded_hint": "تعذّر تحميل مفتاح توقيع جهازك — ربما أُعيد ضبط سلسلة مفاتيح نظام التشغيل. ثقة الأجهزة المتناظرة والمزامنة معطّلتان حتى تُعيد تهيئة هويتك."
 }

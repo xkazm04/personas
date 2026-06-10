@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "Keine arXiv-Paper entsprechen Ihrer Suchanfrage. Versuchen Sie breitere oder andere Schlüsselwörter.",
+  "arxiv_error_title": "Suche fehlgeschlagen",
+  "arxiv_error_timeout": "arXiv hat zu lange nicht geantwortet — möglicherweise werden Anfragen begrenzt. Versuchen Sie es gleich erneut.",
+  "arxiv_error_rate_limited": "arXiv begrenzt derzeit Anfragen. Warten Sie einige Sekunden und versuchen Sie es erneut.",
+  "arxiv_error_http": "arXiv hat einen Fehler zurückgegeben (HTTP {status}). Versuchen Sie es gleich erneut.",
+  "arxiv_error_network": "arXiv konnte nicht erreicht werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+  "arxiv_error_feed": "arXiv konnte diese Suchanfrage nicht verarbeiten. Versuchen Sie andere oder einfachere Schlüsselwörter.",
+  "arxiv_error_generic": "Die arXiv-Suche ist fehlgeschlagen. Versuchen Sie es erneut."
 }

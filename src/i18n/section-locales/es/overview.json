@@ -133,7 +133,25 @@
     "source_provider": "Proveedor",
     "source_policy": "Política",
     "source_healing_issue": "Problema de reparación",
-    "source_execution_error": "Error de ejecución"
+    "source_execution_error": "Error de ejecución",
+    "action_start_work": "Iniciar trabajo",
+    "action_back_to_open": "Volver a abiertos",
+    "filter_status_in_progress": "En progreso",
+    "detail_title": "Detalle del incidente",
+    "detail_label_status": "Estado",
+    "detail_label_kind": "Tipo",
+    "detail_label_source": "Fuente",
+    "detail_label_persona": "Agente",
+    "detail_label_detail": "Detalles",
+    "detail_label_resolution_note": "Nota de resolución",
+    "detail_label_created": "Creado",
+    "detail_label_acknowledged": "Reconocido",
+    "detail_label_resolved": "Resuelto",
+    "detail_no_detail": "Sin detalles adicionales.",
+    "detail_note_label": "Nota de resolución (opcional)",
+    "detail_no_persona": "Sin agente",
+    "empty_open_title": "Todo en orden",
+    "empty_filtered_title": "Sin incidentes coincidentes"
   },
   "observability": {
     "title": "Observabilidad",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Eliminar todo",
+    "delete_all_confirm_title": "¿Eliminar todas las memorias?",
+    "delete_all_confirm_body": "Esto elimina permanentemente las {count} memorias. Esta acción no se puede deshacer.",
+    "delete_all_confirm_cta": "Eliminar todo"
   },
   "memory_review": {
     "all_conflicts_resolved": "Todos los conflictos resueltos",
@@ -473,7 +495,18 @@
     "select_action_first": "Selecciona primero una acción sugerida",
     "review_detail": "Detalle de Revisión",
     "select_review": "Selecciona una revisión para ver",
-    "technical_context": "Contexto Técnico"
+    "technical_context": "Contexto Técnico",
+    "split": "Dividido",
+    "split_tooltip": "Vista dividida — lista con panel de detalles",
+    "table": "Tabla",
+    "table_tooltip": "Vista de tabla — todas las revisiones en una cuadrícula",
+    "backlog_group_title": "Backlog de Dev Tools",
+    "backlog_accept": "Aceptar",
+    "backlog_reject": "Rechazar",
+    "delete_all": "Eliminar todo",
+    "delete_all_confirm_title": "¿Eliminar todas las revisiones?",
+    "delete_all_confirm_body": "Esto elimina permanentemente las {count} reseñas. Esta acción no se puede deshacer.",
+    "delete_all_confirm_cta": "Eliminar todo"
   },
   "messages_view": {
     "title": "Mensajes",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Eliminar todo",
+    "delete_all_confirm_title": "¿Eliminar todos los mensajes?",
+    "delete_all_confirm_body": "Esto elimina permanentemente los {count} mensajes. Esta acción no se puede deshacer.",
+    "delete_all_confirm_cta": "Eliminar todo"
   },
   "events": {
     "title": "Eventos",
@@ -809,7 +846,13 @@
     "create_persona": "Crear Persona",
     "from_templates": "Desde Plantillas",
     "execution_label": "Ejecución",
-    "unknown": "Desconocido"
+    "unknown": "Desconocido",
+    "value_section_title": "Valor de negocio",
+    "value_delivered_rate": "Tasa de valor entregado",
+    "cost_per_value": "Coste / ejecución de valor",
+    "value_delivered_count": "Valor entregado",
+    "all_models": "Todos los modelos",
+    "col_model": "Modelo"
   },
   "analytics_dashboard": {
     "title": "Análisis",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "ahora",
+    "rotation_countdown_days_hours": "{days}d {hours}h",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Buscar memorias...",
     "all_agents": "Todos los agentes",
-    "all_categories": "Todas las categorías"
+    "all_categories": "Todas las categorías",
+    "tier_all": "Conjunto activo",
+    "tier_core": "Principal",
+    "tier_active": "Activo",
+    "tier_working": "En uso",
+    "tier_archived": "Archivado"
   },
   "memory_actions": {
     "dismiss_suggestion": "Descartar sugerencia",
@@ -1246,7 +1297,8 @@
     "reject_all": "Rechazar todo",
     "accept_all": "Aceptar todo",
     "retry_with_changes": "Reintentar con cambios",
-    "video_not_supported": "Tu navegador no soporta la reproducción de video."
+    "video_not_supported": "Tu navegador no soporta la reproducción de video.",
+    "carry_out_hint": "Aprueba la revisión y ejecuta la persona para llevarla a cabo"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} revisión pendiente seleccionada",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Confirmar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "restore": "Restaurar al conjunto activo"
   },
   "memory_detail": {
     "title_label": "Título",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my personas — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my personas — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena ha redactado esta explicación para ti — ciérrala para volver a tu propio cockpit.",
+    "context_explaining": "Athena explica: {title}",
+    "widget_empty": "Nada que mostrar todavía.",
+    "verdict_title": "Veredicto de Athena",
+    "verdict_confidence": "Confianza",
+    "verdict_confidence_high": "Alta",
+    "verdict_confidence_medium": "Media",
+    "verdict_confidence_low": "Baja",
+    "verdict_resolve": "Resolver ahora",
+    "comparison_recommended": "Recomendado",
+    "flow_title": "Cómo se desarrolla",
+    "timeline_title": "Cronología",
+    "log_title": "Evidencia"
+  },
+  "certification": {
+    "title": "Centro de mando de certificación",
+    "subtitle": "Ejecuciones de evaluación de autonomía de equipo y estado de certificación (solo dev)",
+    "updated": "Actualizado",
+    "refresh": "Actualizar",
+    "error_title": "No se pudieron cargar las ejecuciones de evaluación",
+    "loading": "Cargando ejecuciones de evaluación…",
+    "loading_detail": "Cargando detalle de ejecución…",
+    "tab_overview": "Resumen",
+    "tab_history": "Historial de ejecuciones",
+    "back": "Atrás",
+    "empty_title": "Sin ejecuciones de evaluación",
+    "empty_desc": "Ejecuta el arnés de evaluación (scripts/test/) para poblar docs/test/runs/.",
+    "teams_certified": "equipos certificados",
+    "certified": "Certificado",
+    "streak_label": "racha",
+    "held_out_runs": "ejecuciones de reserva",
+    "provisional": "Veredicto provisional (juez aún sin puntuar)",
+    "final": "Veredicto final",
+    "team_score": "Puntuación del equipo",
+    "cost": "Coste",
+    "dims_title": "Dimensiones deterministas",
+    "dim_cascade": "Completado en cascada",
+    "dim_density": "Densidad de trabajo",
+    "dim_handoff": "Salud del traspaso",
+    "dim_learning": "Bucle de aprendizaje",
+    "dim_grounding": "Fundamentación",
+    "dim_correctness": "Corrección",
+    "dim_actionability": "Aplicabilidad",
+    "dim_specificity": "Especificidad",
+    "dim_role_fidelity": "Fidelidad de rol",
+    "gates_title": "Puertas de compilación / lint / test",
+    "gate_build": "Compilación",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "pasado",
+    "gate_fail": "fallido",
+    "gate_log": "log",
+    "gate_copy_log": "Copiar log",
+    "gate_code_track": "Ejecución con seguimiento de código",
+    "delivered": "Entregado a master",
+    "cascade_stalled": "Cascada detenida",
+    "self_vetoed": "Auto-vetado",
+    "self_veto_capped": "El equipo limitó el veredicto a",
+    "grounding_title": "Fundamentación de citas",
+    "grounding_file": "Archivo",
+    "grounding_valid": "Válido",
+    "grounding_pct": "%",
+    "grounding_invalid": "Inválido",
+    "grounding_na": "Sin citas que verificar",
+    "standards_title": "Conformidad con estándares y ramas",
+    "standards_subtitle": "En qué medida la ejecución respetó la política de pre-commit y ramas del proyecto",
+    "standards_compliance": "Conformidad",
+    "standards_rule": "Regla",
+    "standards_basis": "Base",
+    "standards_na": "n/d",
+    "trajectory_title": "Trayectoria de puntuación",
+    "judge_title": "Panel de jueces",
+    "judge_mean": "Media",
+    "judge_min": "Salida mínima",
+    "judge_balance": "Equilibrio",
+    "fact_executions": "Completadas",
+    "fact_failed": "Fallidas",
+    "fact_members": "Miembros",
+    "fact_reviews": "Reseñas",
+    "fact_memories": "Memorias",
+    "fact_cost": "Coste",
+    "fact_window": "Ventana",
+    "col_team": "Equipo",
+    "col_seed": "Semilla",
+    "col_verdict": "Veredicto",
+    "col_score": "Puntuación",
+    "col_gates": "Puertas",
+    "col_started": "Iniciado"
+  },
+  "fleet_optimization": {
+    "title": "Optimización de flota",
+    "open_lab": "Abrir Lab",
+    "open_lab_hint": "Prueba modelos alternativos para {persona} en el Lab",
+    "ask_athena": "Preguntar a Athena",
+    "ask_athena_hint": "Reenviar esta sugerencia a Athena para que la investigue",
+    "ask_athena_prompt": "Estoy revisando una sugerencia de optimización de flota para mis agentes: \"{title}\". {description} Acción sugerida: {action}. {focus}",
+    "ask_athena_focus_persona": "Por favor, investiga el agente \"{persona}\" y, si fuera útil, abre su Lab para probar modelos alternativos y luego infórmame de lo que encuentres.",
+    "ask_athena_focus_general": "Por favor, investiga esto y recomienda qué cambiar."
   }
 }

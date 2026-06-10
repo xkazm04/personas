@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Плагины",
       "description": "Расширяйте агентов плагинами и пользовательскими расширениями"
+    },
+    "teams": {
+      "label": "Команды",
+      "description": "Объединяйте несколько агентов в команду для совместной работы над многоэтапными рабочими процессами"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Начать заново",
     "start_tour": "Начать тур",
     "steps_count": "{count} шагов",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Ключевые приёмы",
+    "moves_used": "{used}/{total} использовано",
+    "try_it": "Попробовать",
+    "used_badge": "Использовано",
+    "group_save_time": "Экономия времени",
+    "group_prevent_failures": "Предотвращение сбоев",
+    "group_level_up": "Прокачка агентов",
+    "group_orchestrate": "Оркестрация",
+    "pm_monitor_triage_title": "Мониторинг всего флота из строки заголовка",
+    "pm_schedule_delay_title": "Пропустить или отложить запланированный запуск",
+    "pm_bulk_rerun_title": "Массовый перезапуск неудачных выполнений",
+    "pm_dead_letter_title": "Восстановление событий из очереди мёртвых писем",
+    "pm_annotate_golden_title": "Отмечать лучшие запуски, помечать регрессии",
+    "pm_credential_health_title": "Разрешить ИИ восстанавливать сломанные учётные данные",
+    "pm_lab_measure_title": "Измерять промпты на разных моделях",
+    "pm_prompt_rollback_title": "Откатить неудачный промпт в один клик",
+    "pm_director_coaching_title": "Получить советы по портфолио от Director",
+    "pm_event_chain_title": "Связывать агентов через прослушиватели событий",
+    "pm_live_stream_title": "Наблюдать за каскадом цепочек в реальном времени",
+    "pm_athena_fleet_title": "Попросить Athena проанализировать ваш флот"
   },
   "setup_stepper": {
     "your_profile": "Ваш профиль",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
     "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Непрочитанный сбой в {personaName} — требует изучения",
+    "tour": "Продолжить {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Продолжить редактирование {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} открытый инцидент",
+    "incidents_other": "{count} открытых инцидентов",
+    "messages": "{count} непрочитанное сообщение",
+    "messages_other": "{count} непрочитанных сообщений",
+    "reviews": "{count} ожидающая проверка",
+    "reviews_other": "{count} ожидающих проверок",
+    "teams": "{count} команда",
+    "teams_other": "{count} команд",
+    "agents_active": "{count} агент активен за последние 24 ч",
+    "agents_active_other": "{count} агентов активны за последние 24 ч",
+    "events_today": "{count} событие за последние 24 ч",
+    "events_today_other": "{count} событий за последние 24 ч",
+    "connections_external": "{count} внешнее подключение",
+    "connections_external_other": "{count} внешних подключений",
+    "connections_builtin": "{count} встроенный коннектор",
+    "connections_builtin_other": "{count} встроенных коннекторов",
+    "trend_up": "+{pct}% по сравнению с предыдущими 24 ч",
+    "trend_down": "-{pct}% по сравнению с предыдущими 24 ч",
+    "trend_flat": "без изменений по сравнению с предыдущими 24 ч"
+  }
 }

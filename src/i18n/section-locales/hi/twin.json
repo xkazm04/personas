@@ -400,7 +400,15 @@
     "nextStep": "अगला कदम",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "अपना ट्विन पूरा करें",
-    "rosterFoundations": "{twins} ट्विन · {identities} में पहचान · {brains} में ज्ञानकोष"
+    "rosterFoundations": "{twins} ट्विन · {identities} में पहचान · {brains} में ज्ञानकोष",
+    "ready": "तैयार",
+    "satellites": "सैटेलाइट",
+    "rosterSpread": "रोस्टर विस्तार",
+    "twinsConfigured": "Twins कॉन्फ़िगर्ड",
+    "avgReadiness": "औसत तत्परता",
+    "activeChannels": "सक्रिय चैनल",
+    "memoriesApproved": "स्वीकृत यादें",
+    "channelsInUse": "उपयोग में चैनल"
   },
   "variantTabs": {
     "prototype": "Prototype",

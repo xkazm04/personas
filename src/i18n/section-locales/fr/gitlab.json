@@ -114,5 +114,7 @@
   "trigger_on": "Déclencher sur",
   "connecting_to_gitlab": "Connexion à GitLab...",
   "deploying_to_gitlab": "Déploiement sur GitLab...",
-  "pipeline_hash": "Pipeline n°"
+  "pipeline_hash": "Pipeline n°",
+  "notification_ask_athena": "Demander à Athena d'analyser",
+  "notification_athena_prompt": "Veuillez analyser cette notification que j'ai reçue et le problème sous-jacent : « {title} » — {body} (statut : {status}). Analysez ce qui s'est passé, la cause probable, et dites-moi clairement si une action de ma part est nécessaire."
 }

@@ -133,7 +133,25 @@
     "view_all_from_agent": "Voir tout de cet agent",
     "distribution_aria": "Incidents ouverts par gravité",
     "new_since_last_visit": "{count} nouveaux depuis votre dernière visite",
-    "mark_seen": "Marquer comme vu"
+    "mark_seen": "Marquer comme vu",
+    "action_start_work": "Commencer le travail",
+    "action_back_to_open": "Retour aux incidents ouverts",
+    "filter_status_in_progress": "En cours",
+    "detail_title": "Détail de l'incident",
+    "detail_label_status": "Statut",
+    "detail_label_kind": "Type",
+    "detail_label_source": "Source",
+    "detail_label_persona": "Agent",
+    "detail_label_detail": "Détails",
+    "detail_label_resolution_note": "Note de résolution",
+    "detail_label_created": "Créé",
+    "detail_label_acknowledged": "Pris en compte",
+    "detail_label_resolved": "Résolu",
+    "detail_no_detail": "Aucun détail supplémentaire.",
+    "detail_note_label": "Note de résolution (facultative)",
+    "detail_no_persona": "Aucun agent",
+    "empty_open_title": "Tout est en ordre",
+    "empty_filtered_title": "Aucun incident correspondant"
   },
   "observability": {
     "title": "Observabilité",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Tout supprimer",
+    "delete_all_confirm_title": "Supprimer toutes les mémoires ?",
+    "delete_all_confirm_body": "Cette action supprime définitivement les {count} mémoires. Elle est irréversible.",
+    "delete_all_confirm_cta": "Tout supprimer"
   },
   "memory_review": {
     "all_conflicts_resolved": "Tous les conflits résolus",
@@ -473,7 +495,18 @@
     "select_action_first": "Sélectionnez d'abord une action suggérée",
     "review_detail": "Détail de la révision",
     "select_review": "Sélectionnez une révision à afficher",
-    "technical_context": "Contexte technique"
+    "technical_context": "Contexte technique",
+    "split": "Divisé",
+    "split_tooltip": "Vue divisée — liste avec un panneau de détails",
+    "table": "Tableau",
+    "table_tooltip": "Vue tableau — toutes les révisions dans une grille",
+    "backlog_group_title": "Backlog Dev Tools",
+    "backlog_accept": "Accepter",
+    "backlog_reject": "Rejeter",
+    "delete_all": "Tout supprimer",
+    "delete_all_confirm_title": "Supprimer toutes les révisions ?",
+    "delete_all_confirm_body": "Cette action supprime définitivement les {count} avis. Impossible d'annuler.",
+    "delete_all_confirm_cta": "Tout supprimer"
   },
   "messages_view": {
     "title": "Messages",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Tout supprimer",
+    "delete_all_confirm_title": "Supprimer tous les messages ?",
+    "delete_all_confirm_body": "Cette action supprime définitivement les {count} messages. Impossible d'annuler.",
+    "delete_all_confirm_cta": "Tout supprimer"
   },
   "events": {
     "title": "Événements",
@@ -809,7 +846,13 @@
     "create_persona": "Créer un persona",
     "from_templates": "Depuis les modèles",
     "execution_label": "Exécution",
-    "unknown": "Inconnu"
+    "unknown": "Inconnu",
+    "value_section_title": "Valeur métier",
+    "value_delivered_rate": "Taux de valeur livrée",
+    "cost_per_value": "Coût / exécution de valeur",
+    "value_delivered_count": "Valeur livrée",
+    "all_models": "Tous les modèles",
+    "col_model": "Modèle"
   },
   "analytics_dashboard": {
     "title": "Analytiques",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "dû maintenant",
+    "rotation_countdown_days_hours": "{days}j {hours}h",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Rechercher des mémoires...",
     "all_agents": "Tous les agents",
-    "all_categories": "Toutes les catégories"
+    "all_categories": "Toutes les catégories",
+    "tier_all": "Ensemble actif",
+    "tier_core": "Noyau",
+    "tier_active": "Actif",
+    "tier_working": "En cours",
+    "tier_archived": "Archivé"
   },
   "memory_actions": {
     "dismiss_suggestion": "Ignorer la suggestion",
@@ -1246,7 +1297,8 @@
     "reject_all": "Tout rejeter",
     "accept_all": "Tout accepter",
     "retry_with_changes": "Réessayer avec des modifications",
-    "video_not_supported": "Votre navigateur ne prend pas en charge la lecture vidéo."
+    "video_not_supported": "Votre navigateur ne prend pas en charge la lecture vidéo.",
+    "carry_out_hint": "Approuve la révision et exécute le persona pour la mettre en œuvre"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} révision en attente sélectionnée",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Confirmer",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "restore": "Restaurer dans l'ensemble actif"
   },
   "memory_detail": {
     "title_label": "Titre",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my personas — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my personas — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena a composé cette explication pour vous — quittez pour revenir à votre propre cockpit.",
+    "context_explaining": "Athena explique : {title}",
+    "widget_empty": "Rien à afficher pour l'instant.",
+    "verdict_title": "Verdict d'Athena",
+    "verdict_confidence": "Confiance",
+    "verdict_confidence_high": "Élevée",
+    "verdict_confidence_medium": "Moyenne",
+    "verdict_confidence_low": "Faible",
+    "verdict_resolve": "Résoudre maintenant",
+    "comparison_recommended": "Recommandé",
+    "flow_title": "Comment ça se déroule",
+    "timeline_title": "Chronologie",
+    "log_title": "Preuves"
+  },
+  "certification": {
+    "title": "Centre de commande de certification",
+    "subtitle": "Évaluations d'autonomie d'équipe et statut de certification (dev uniquement)",
+    "updated": "Mis à jour",
+    "refresh": "Actualiser",
+    "error_title": "Impossible de charger les évaluations",
+    "loading": "Chargement des évaluations…",
+    "loading_detail": "Chargement du détail…",
+    "tab_overview": "Vue d'ensemble",
+    "tab_history": "Historique des évaluations",
+    "back": "Retour",
+    "empty_title": "Aucune évaluation",
+    "empty_desc": "Lancez le harnais d'évaluation (scripts/test/) pour alimenter docs/test/runs/.",
+    "teams_certified": "équipes certifiées",
+    "certified": "Certifié",
+    "streak_label": "série",
+    "held_out_runs": "évaluations retenues",
+    "provisional": "Verdict provisoire (juge non encore noté)",
+    "final": "Verdict final",
+    "team_score": "Score d'équipe",
+    "cost": "Coût",
+    "dims_title": "Dimensions déterministes",
+    "dim_cascade": "Complétion en cascade",
+    "dim_density": "Densité de travail",
+    "dim_handoff": "Santé des transferts",
+    "dim_learning": "Boucle d'apprentissage",
+    "dim_grounding": "Ancrage",
+    "dim_correctness": "Exactitude",
+    "dim_actionability": "Exploitabilité",
+    "dim_specificity": "Spécificité",
+    "dim_role_fidelity": "Fidélité au rôle",
+    "gates_title": "Portes build / lint / test",
+    "gate_build": "Build",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "réussi",
+    "gate_fail": "échoué",
+    "gate_log": "journal",
+    "gate_copy_log": "Copier le journal",
+    "gate_code_track": "Évaluation code-track",
+    "delivered": "Livré sur master",
+    "cascade_stalled": "Cascade bloquée",
+    "self_vetoed": "Auto-véto",
+    "self_veto_capped": "L'équipe a plafonné son verdict à",
+    "grounding_title": "Ancrage des citations",
+    "grounding_file": "Fichier",
+    "grounding_valid": "Valide",
+    "grounding_pct": "%",
+    "grounding_invalid": "Invalide",
+    "grounding_na": "Aucune citation à vérifier",
+    "standards_title": "Conformité aux normes et aux branches",
+    "standards_subtitle": "Respect de la politique de pre-commit et de gestion des branches du projet",
+    "standards_compliance": "Conformité",
+    "standards_rule": "Règle",
+    "standards_basis": "Base",
+    "standards_na": "n/a",
+    "trajectory_title": "Trajectoire des scores",
+    "judge_title": "Panel de juges",
+    "judge_mean": "Moyenne",
+    "judge_min": "Production min",
+    "judge_balance": "Équilibre",
+    "fact_executions": "Terminées",
+    "fact_failed": "Échouées",
+    "fact_members": "Membres",
+    "fact_reviews": "Avis",
+    "fact_memories": "Mémoires",
+    "fact_cost": "Coût",
+    "fact_window": "Fenêtre",
+    "col_team": "Équipe",
+    "col_seed": "Amorce",
+    "col_verdict": "Verdict",
+    "col_score": "Score",
+    "col_gates": "Portes",
+    "col_started": "Démarré"
+  },
+  "fleet_optimization": {
+    "title": "Optimisation de la flotte",
+    "open_lab": "Ouvrir le Lab",
+    "open_lab_hint": "Tester d'autres modèles pour {persona} dans le Lab",
+    "ask_athena": "Demander à Athena",
+    "ask_athena_hint": "Transmettre cette suggestion à Athena pour investigation",
+    "ask_athena_prompt": "Je passe en revue une suggestion d'optimisation de flotte pour mes agents : « {title} ». {description} Action suggérée : {action}. {focus}",
+    "ask_athena_focus_persona": "Merci d'examiner l'agent « {persona} » et, si cela peut aider, d'ouvrir son Lab pour tester d'autres modèles, puis de me faire part de vos conclusions.",
+    "ask_athena_focus_general": "Merci d'examiner cela et de recommander les modifications à apporter."
   }
 }

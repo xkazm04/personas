@@ -114,5 +114,7 @@
   "trigger_on": "on:",
   "connecting_to_gitlab": "GitLab에 연결 중...",
   "deploying_to_gitlab": "페르소나를 GitLab에 배포 중...",
-  "pipeline_hash": "파이프라인 #"
+  "pipeline_hash": "파이프라인 #",
+  "notification_ask_athena": "Athena에게 분석 요청",
+  "notification_athena_prompt": "제가 받은 알림과 관련 이슈를 분석해 주세요: \"{title}\" — {body} (상태: {status}). 무슨 일이 있었는지, 가능한 근본 원인, 그리고 제가 조치를 취해야 하는지 명확히 알려주세요."
 }

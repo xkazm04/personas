@@ -400,7 +400,15 @@
     "nextStep": "下一步",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "完善你的分身",
-    "rosterFoundations": "{twins} 个分身 · {identities} 个有身份 · {brains} 个有知识库"
+    "rosterFoundations": "{twins} 个分身 · {identities} 个有身份 · {brains} 个有知识库",
+    "ready": "就绪",
+    "satellites": "卫星节点",
+    "rosterSpread": "名单分布",
+    "twinsConfigured": "已配置 Twins",
+    "avgReadiness": "平均就绪度",
+    "activeChannels": "活跃频道",
+    "memoriesApproved": "已批准记忆",
+    "channelsInUse": "使用中频道"
   },
   "variantTabs": {
     "prototype": "Prototype",

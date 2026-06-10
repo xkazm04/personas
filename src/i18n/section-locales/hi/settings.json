@@ -29,7 +29,43 @@
     "updates_current_version": "आप v{version} पर हैं",
     "updates_last_checked": "अंतिम जाँच {time}",
     "updates_history_title": "हाल के अपडेट",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "क्लाउड डैशबोर्ड सिंक",
+    "cloud_sync_description": "अपने personas, रन्स और गतिविधि की एक रीड-ओनली प्रति अपने निजी क्लाउड में सिंक करें ताकि आप उन्हें वेब डैशबोर्ड में देख सकें। आपकी कनेक्टर क्रेडेंशियल इस डिवाइस से बाहर नहीं जातीं।",
+    "cloud_sync_toggle": "क्लाउड डैशबोर्ड से सिंक करें",
+    "cloud_sync_on": "आपका डेटा क्लाउड डैशबोर्ड से सिंक हो रहा है।",
+    "cloud_sync_off": "आपका डेटा केवल इस डिवाइस पर रहता है।",
+    "cloud_sync_toggle_aria": "क्लाउड डैशबोर्ड सिंक टॉगल करें",
+    "cloud_sync_now": "अभी सिंक करें",
+    "cloud_sync_syncing": "सिंक हो रहा है...",
+    "cloud_sync_last": "अंतिम बार सिंक हुआ",
+    "cloud_sync_never": "अभी तक सिंक नहीं हुआ",
+    "cloud_sync_error": "अंतिम सिंक विफल: {error}",
+    "cloud_sync_enable_failed": "सिंक सेटिंग अपडेट नहीं हो सकी",
+    "cloud_sync_now_failed": "सिंक विफल। अपना कनेक्शन जांचें और पुनः प्रयास करें।",
+    "cloud_sync_now_done": "{count} रिकॉर्ड सिंक हुए",
+    "cloud_sync_state_off": "बंद",
+    "cloud_sync_state_active": "सक्रिय",
+    "cloud_sync_state_syncing": "सिंक हो रहा है…",
+    "cloud_sync_total": "कुल सिंक किए गए",
+    "cloud_sync_device": "डिवाइस {id}",
+    "cloud_sync_tables_title": "सिंक किया गया डेटा",
+    "cloud_sync_show_details": "विवरण दिखाएं",
+    "cloud_sync_hide_details": "विवरण छुपाएं",
+    "cloud_sync_retry": "पुनः प्रयास",
+    "cloud_sync_rows": "पंक्तियां",
+    "cloud_sync_table_pending": "पहले सिंक की प्रतीक्षा में",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "एक्जीक्यूशन",
+      "synced_events": "इवेंट",
+      "synced_manual_reviews": "समीक्षाएं",
+      "synced_messages": "संदेश",
+      "synced_metrics_snapshots": "मेट्रिक्स",
+      "synced_tool_usage": "टूल उपयोग",
+      "synced_memories": "यादें",
+      "synced_knowledge_patterns": "ज्ञान"
+    }
   },
   "appearance_extra": {
     "simple": "सरल",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "टीम की यादें",
+    "import_team_memories": "{count} टीम मेमोरी",
+    "include_memories_label": "यादें शामिल करें",
+    "include_memories_note": "Persona और टीम की यादें एक्सपोर्ट के साथ जाती हैं। एजेंट और टीमों को उनकी संचित यादों के बिना एक्सपोर्ट करने के लिए इसे बंद करें।"
   },
   "config": {
     "title": "कॉन्फ़िग रिज़ॉल्यूशन",
@@ -510,7 +550,12 @@
     "over_budget": "आपने अपनी मासिक सीमा पार कर दी है। चरण 2 ऐसा होने पर नए निष्पादन को रोकेगा; अभी के लिए, इसे एक चेतावनी के रूप में लें।",
     "approaching_budget": "आप अपनी मासिक सीमा के करीब पहुँच रहे हैं। हाल के रनों की समीक्षा करने पर विचार करें।",
     "no_ceiling_hint": "कोई सीमा निर्धारित नहीं है। बजट के विरुद्ध ट्रैकिंग शुरू करने के लिए ऊपर USD राशि दर्ज करें।",
-    "stage1_note": "चरण 1: केवल सूचनात्मक। चरण 2 सीमा पार होने पर निष्पादन डिस्पैच को रोकेगा।"
+    "stage1_note": "चरण 1: केवल सूचनात्मक। चरण 2 सीमा पार होने पर निष्पादन डिस्पैच को रोकेगा।",
+    "concurrency_section": "समानांतर एक्जीक्यूशन",
+    "concurrency_hint": "एक साथ कितने personas चल सकते हैं। अतिरिक्त रन्स कतार में प्रतीक्षा करते हैं और स्लॉट खाली होने पर स्वतः शुरू होते हैं। परिवर्तन तुरंत लागू होते हैं — पुनः प्रारंभ की आवश्यकता नहीं।",
+    "concurrency_aria": "अधिकतम समानांतर एक्जीक्यूशन",
+    "concurrency_range": "{min} और {max} समवर्ती रन्स के बीच।",
+    "concurrency_queued_note": "इस सीमा से अधिक रन्स कतारबद्ध होते हैं और चल रहे रन्स समाप्त होने पर प्राथमिकता, फिर आगमन क्रम से बढ़ाए जाते हैं।"
   },
   "recent_change": {
     "label": "अंतिम {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "सेटिंग्स खोजें…",
+    "recommended": "अनुशंसित",
+    "section": "सेटिंग्स",
+    "trigger_hint": "सेटिंग्स खोजें  ·  Ctrl / ⌘ K",
+    "trigger_aria": "सेटिंग्स खोज खोलें",
+    "reduce_motion": "मोशन कम करें",
+    "dim": "रंग तीव्रता कम करें",
+    "cvd_safe": "वर्णांधता-सुरक्षित पैलेट",
+    "high_contrast": "उच्च कंट्रास्ट",
+    "ambient": "दिन के समय के अनुसार हेडर कला",
+    "theme": "थीम और रंग",
+    "text_size": "टेक्स्ट आकार",
+    "brightness": "चमक",
+    "density": "लेआउट घनत्व",
+    "timezone": "समय क्षेत्र",
+    "tabs": {
+      "limits": "सीमाएं",
+      "api_keys": "API Keys",
+      "history": "इतिहास"
+    }
   }
 }

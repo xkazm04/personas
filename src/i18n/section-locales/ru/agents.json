@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} мс",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "Версии и рейтинги",
+    "vr_subtitle": "Каждая версия промпта × модель, которую вы измеряли. Одна строка активна.",
+    "vr_col_version": "Версия",
+    "vr_col_model": "Модель",
+    "vr_col_rating": "Рейтинг",
+    "vr_col_delta": "Базовая линия",
+    "vr_col_cost": "Стоимость",
+    "vr_col_status": "Статус",
+    "vr_col_actions": "Действия",
+    "vr_status_active": "Активна",
+    "vr_status_baseline": "Базовая",
+    "vr_status_archived": "В архиве",
+    "vr_status_measured": "Измерена",
+    "vr_status_unmeasured": "Не измерена",
+    "vr_action_activate": "Активировать эту версию + модель",
+    "vr_action_active": "Активна сейчас",
+    "vr_action_measure": "Измерить на всех моделях (Arena)",
+    "vr_action_measuring": "Измерение…",
+    "vr_action_improve": "Улучшить с Athena",
+    "vr_action_diff": "Сравнить промпт с активным",
+    "vr_action_archive": "Архивировать версию",
+    "vr_action_unarchive": "Разархивировать версию",
+    "vr_action_pin_baseline": "Закрепить как базовую для регрессии",
+    "vr_action_unpin_baseline": "Открепить базовую линию",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} образец",
+    "vr_samples_other": "{count} образцов",
+    "vr_empty_title": "Версий пока нет",
+    "vr_empty_desc": "Отредактируйте и сохраните промпт персоны, чтобы создать первую версию, затем измерьте её здесь.",
+    "vr_measuring_toast": "Измерение v{version} по моделям…",
+    "vr_measure_modal_title": "Измерить v{version}",
+    "vr_measure_scope_banner": "Измерение версии {version} — её промпт запускается на выбранных моделях. Результаты появятся в таблице рейтингов.",
+    "vr_diff_title": "v{version} vs активная",
+    "vr_diff_no_active": "Нет активной версии для сравнения.",
+    "vr_improve_seed_measured": "Улучшить персону «{name}» v{version}. Слабейшая измеренная метрика: {metric} {score}/100 на {model}. На чём сосредоточиться? ",
+    "vr_improve_seed_plain": "Улучшить персону «{name}» v{version} — ещё не измерялась. На чём сосредоточиться? ",
+    "vr_metric_tool": "точность инструментов",
+    "vr_metric_quality": "качество вывода",
+    "vr_metric_protocol": "соответствие протоколу"
   },
   "design": {
     "select_agent": "Выберите агента для анализа дизайна",
@@ -903,7 +944,9 @@
     "next": "Далее",
     "go_back_hint": "Вернитесь назад и ответьте на вопросы для настройки агента.",
     "additional_instructions": "Дополнительные инструкции или контекст (необязательно)",
-    "additional_instructions_placeholder": "Добавьте конкретные требования, знания предметной области или ограничения..."
+    "additional_instructions_placeholder": "Добавьте конкретные требования, знания предметной области или ограничения...",
+    "role_user": "Пользователь",
+    "role_ai": "ИИ"
   },
   "connectors": {
     "connectors_label": "Коннекторы",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "Это запустит {title} для {persona}"
+    "schedule_will_run": "Это запустит {title} для {persona}",
+    "_comment_manual_run_in_progress": "Подсказка кнопки «Запустить сейчас», пока выполняется ручной запуск",
+    "manual_run_in_progress": "Выполняется ручной запуск",
+    "_comment_run_now_tooltip": "Подсказка кнопки «Запустить сейчас» — отличает реальное выполнение от тестирования",
+    "run_now_tooltip": "Запустить этот сценарий сейчас — инициирует реальное выполнение и последующие события",
+    "_comment_run_now": "Метка кнопки «Запустить сейчас» (панель деталей + вкладка возможностей)",
+    "run_now": "Запустить",
+    "_comment_event_type_options": "Метки вариантов выпадающего списка типов событий в UseCaseSubscriptionForm",
+    "event_type_webhook_received": "Webhook получен",
+    "event_type_execution_completed": "Выполнение завершено",
+    "event_type_execution_failed": "Ошибка выполнения",
+    "event_type_persona_action": "Действие персоны",
+    "event_type_file_changed": "Файл изменён",
+    "event_type_schedule_triggered": "Расписание запущено",
+    "_comment_dim_review_title": "Заголовок ReviewDimCard",
+    "dim_review_title": "Проверка",
+    "_comment_pill_on": "Пилюля состояния ВКЛ в ToggleDimCard (память/события)",
+    "pill_on": "ВКЛ",
+    "_comment_pill_off": "Пилюля состояния ВЫКЛ, используется в ToggleDimCard и ReviewDimCard (выкл)",
+    "pill_off": "ВЫКЛ",
+    "_comment_review_pill_queue": "Пилюля состояния ОЧЕРЕДЬ в ReviewDimCard",
+    "review_pill_queue": "ОЧЕРЕДЬ",
+    "_comment_review_pill_trust": "Пилюля состояния ДОВЕРИЕ в ReviewDimCard",
+    "review_pill_trust": "ДОВЕРИЕ",
+    "_comment_dim_status_activated": "Значение в PersonaSigilSummary, когда булева характеристика (память/проверка/событие/ошибка) активна для возможности",
+    "dim_status_activated": "Активировано"
   },
   "tools": {
     "no_persona": "Агент не выбран",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "Вердикт",
+    "verdict_none": "Ещё не проверено Director’ом",
+    "verdict_tooltip": "Вердикт Director: {score}/5"
   },
   "chat": {
     "select_persona": "Выберите агента для начала разговора",
@@ -2293,7 +2364,8 @@
     "delete_agents": "Удалить {count} агент(ов)",
     "delete_agents_message": "{count} агент(ов) и вся их конфигурация будут удалены навсегда.",
     "delete_drafts": "Удалить {count} черновик(ов)",
-    "delete_drafts_message": "{count} черновых агент(ов) будут удалены навсегда."
+    "delete_drafts_message": "{count} черновых агент(ов) будут удалены навсегда.",
+    "system_persona_undeletable": "Director — системная персона, её нельзя удалить."
   },
   "persona_list": {
     "all_personas": "Все агенты",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "Групп пока нет — создайте в Агенты → Группы",
     "batch_move_to_ungrouped": "Без группы",
     "batch_moved_success": "Перемещено {count} персон в {group}",
-    "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось"
+    "batch_moved_partial": "Перемещено {ok} в {group}; {failed} не удалось",
+    "render_cap_notice": "Показано {shown} из {total} — уточните поиск или фильтры, чтобы увидеть остальные.",
+    "star_director_add": "Отметить звёздочкой, чтобы добавить в область коучинга Director",
+    "star_director_remove": "Отмечено звёздочкой — в области коучинга Director. Нажмите, чтобы убрать."
   },
   "design_preview": {
     "preview": "Предпросмотр",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Опрашивать входящие сообщения Slack",
+    "slack_poll_inbound_help": "Если включено, персона читает новые сообщения в этом канале каждые 5 сек и отвечает в треде результатом запуска. Сначала добавьте бота в канал."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "Активно для этой возможности",
   "sigil_edit_inactive": "Неактивно — включите, чтобы активировать",
   "sigil_edit_enable": "Включить для этой возможности",
-  "sigil_edit_disable": "Отключить для этой возможности"
+  "sigil_edit_disable": "Отключить для этой возможности",
+  "design_subtabs": {
+    "use_cases": "Сценарии",
+    "prompt": "Промпт",
+    "connectors": "Коннекторы и инструменты",
+    "triggers": "События и триггеры",
+    "messaging": "Сообщения",
+    "automations": "Автоматизации",
+    "triggers_desc": "Подписки на события и настройка триггеров для каждой персоны появятся в этой вкладке.",
+    "messaging_desc": "Каналы уведомлений и маршрутизация входящих для этого агента будут здесь.",
+    "automations_desc": "Отдельные правила автоматизации для этого агента будут здесь."
+  },
+  "parameters_card": {
+    "title": "Параметры",
+    "saved": "Сохранено",
+    "apply": "Применить",
+    "on": "Вкл",
+    "off": "Выкл",
+    "reset": "сбросить"
+  },
+  "editor_empty": {
+    "title": "Персона не выбрана",
+    "subtitle": "Выберите агента из боковой панели для редактирования или создайте нового.",
+    "create": "Создать персону",
+    "resume_label": "Вернуться к работе"
+  },
+  "build_template_match_label": "Быстрый путь",
+  "build_template_match_title": "«{name}» похоже на совпадение",
+  "build_template_match_body": "Этот готовый шаблон охватывает то, что вы описали — используйте его, чтобы пропустить эти вопросы. Он уже настроен и протестирован.",
+  "build_template_match_adopt": "Использовать шаблон",
+  "build_template_match_dismiss": "Продолжить создание",
+  "build_template_match_loading": "Поиск подходящих шаблонов…",
+  "build_template_match_more": "Или начать с",
+  "_comment_glyph_db_scope": "Панель ограничения таблиц коннектора базы данных в выборщике коннекторов",
+  "glyph_db_scope_heading": "Таблицы базы данных",
+  "glyph_db_scope_all": "Все таблицы",
+  "glyph_db_scope_loading": "Загрузка таблиц…",
+  "glyph_db_scope_error": "Не удалось загрузить таблицы — повторить",
+  "glyph_db_scope_empty": "Таблицы не найдены",
+  "glyph_db_scope_selected": "{count} из {total} таблиц"
 }

@@ -29,7 +29,43 @@
     "updates_current_version": "Bạn đang dùng v{version}",
     "updates_last_checked": "Kiểm tra lần cuối {time}",
     "updates_history_title": "Cập nhật gần đây",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Đồng bộ Bảng Điều Khiển Đám Mây",
+    "cloud_sync_description": "Đồng bộ bản sao chỉ đọc về personas, lần chạy và hoạt động của bạn lên đám mây riêng tư để xem trong bảng điều khiển web. Thông tin xác thực kết nối của bạn không bao giờ rời khỏi thiết bị này.",
+    "cloud_sync_toggle": "Đồng bộ lên bảng điều khiển đám mây",
+    "cloud_sync_on": "Dữ liệu của bạn đang được đồng bộ lên bảng điều khiển đám mây.",
+    "cloud_sync_off": "Dữ liệu của bạn chỉ lưu trên thiết bị này.",
+    "cloud_sync_toggle_aria": "Bật/tắt đồng bộ bảng điều khiển đám mây",
+    "cloud_sync_now": "Đồng bộ ngay",
+    "cloud_sync_syncing": "Đang đồng bộ...",
+    "cloud_sync_last": "Đồng bộ lần cuối",
+    "cloud_sync_never": "Chưa đồng bộ lần nào",
+    "cloud_sync_error": "Đồng bộ lần cuối thất bại: {error}",
+    "cloud_sync_enable_failed": "Không thể cập nhật cài đặt đồng bộ",
+    "cloud_sync_now_failed": "Đồng bộ thất bại. Kiểm tra kết nối và thử lại.",
+    "cloud_sync_now_done": "Đã đồng bộ {count} bản ghi",
+    "cloud_sync_state_off": "Tắt",
+    "cloud_sync_state_active": "Đang hoạt động",
+    "cloud_sync_state_syncing": "Đang đồng bộ…",
+    "cloud_sync_total": "đã đồng bộ toàn thời gian",
+    "cloud_sync_device": "Thiết bị {id}",
+    "cloud_sync_tables_title": "Dữ liệu đã đồng bộ",
+    "cloud_sync_show_details": "Hiển thị chi tiết",
+    "cloud_sync_hide_details": "Ẩn chi tiết",
+    "cloud_sync_retry": "Thử lại",
+    "cloud_sync_rows": "hàng",
+    "cloud_sync_table_pending": "Chờ đồng bộ lần đầu",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "Lần thực thi",
+      "synced_events": "Sự kiện",
+      "synced_manual_reviews": "Đánh giá",
+      "synced_messages": "Tin nhắn",
+      "synced_metrics_snapshots": "Số liệu",
+      "synced_tool_usage": "Sử dụng công cụ",
+      "synced_memories": "Ký ức",
+      "synced_knowledge_patterns": "Kiến thức"
+    }
   },
   "appearance_extra": {
     "simple": "Đơn giản",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Ký ức Nhóm",
+    "import_team_memories": "{count} ký ức nhóm",
+    "include_memories_label": "Bao gồm ký ức",
+    "include_memories_note": "Ký ức của persona và nhóm sẽ đi kèm khi xuất. Tắt tùy chọn này để xuất tác nhân và nhóm mà không có ký ức tích lũy của họ."
   },
   "config": {
     "title": "Giải quyết cấu hình",
@@ -510,7 +550,12 @@
     "over_budget": "Bạn đã vượt quá mức trần hằng tháng. Giai đoạn 2 sẽ chặn các lần thực thi mới khi điều này xảy ra; hiện tại, hãy xem đây là một cảnh báo.",
     "approaching_budget": "Bạn đang tiến gần đến mức trần hằng tháng. Hãy cân nhắc xem lại các lần chạy gần đây.",
     "no_ceiling_hint": "Chưa đặt mức trần nào. Nhập một số tiền USD ở trên để bắt đầu theo dõi theo ngân sách.",
-    "stage1_note": "Giai đoạn 1: chỉ mang tính thông tin. Giai đoạn 2 sẽ kiểm soát việc điều phối thực thi khi vượt qua mức trần."
+    "stage1_note": "Giai đoạn 1: chỉ mang tính thông tin. Giai đoạn 2 sẽ kiểm soát việc điều phối thực thi khi vượt qua mức trần.",
+    "concurrency_section": "Thực thi song song",
+    "concurrency_hint": "Số lượng personas có thể chạy cùng lúc. Các lần chạy vượt quá sẽ chờ trong hàng đợi và tự động bắt đầu khi có chỗ trống. Thay đổi áp dụng ngay — không cần khởi động lại.",
+    "concurrency_aria": "Số lần thực thi song song tối đa",
+    "concurrency_range": "Từ {min} đến {max} lần chạy đồng thời.",
+    "concurrency_queued_note": "Các lần chạy vượt giới hạn này sẽ được xếp hàng và ưu tiên theo mức độ ưu tiên, rồi thứ tự đến, khi các lần chạy hiện tại kết thúc."
   },
   "recent_change": {
     "label": "{action} gần nhất: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Tìm kiếm cài đặt…",
+    "recommended": "Được đề xuất",
+    "section": "Cài đặt",
+    "trigger_hint": "Tìm kiếm cài đặt  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Mở tìm kiếm cài đặt",
+    "reduce_motion": "Giảm chuyển động",
+    "dim": "Giảm cường độ màu sắc",
+    "cvd_safe": "Bảng màu an toàn cho người mù màu",
+    "high_contrast": "Độ tương phản cao",
+    "ambient": "Hình nền tiêu đề theo thời gian trong ngày",
+    "theme": "Giao diện & màu sắc",
+    "text_size": "Cỡ chữ",
+    "brightness": "Độ sáng",
+    "density": "Mật độ bố cục",
+    "timezone": "Múi giờ",
+    "tabs": {
+      "limits": "Giới hạn",
+      "api_keys": "API Keys",
+      "history": "Lịch sử"
+    }
   }
 }

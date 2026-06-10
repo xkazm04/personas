@@ -105,5 +105,12 @@
   "sparkline_aria": "実行履歴スパークライン、過去 {days} 日間",
   "sparkline_window": "過去 {days} 日",
   "sparkline_no_data": "期間内に実行なし",
-  "sparkline_failure_rate": "{total} 件の実行 · {rate}% 失敗"
+  "sparkline_failure_rate": "{total} 件の実行 · {rate}% 失敗",
+  "run_status_incomplete": "未完了",
+  "last24h_title": "過去24時間",
+  "last24h_empty": "過去24時間にスケジュール実行はありません。",
+  "last24h_failed_count": "{count}件失敗",
+  "last24h_show_all": "すべて表示 ({count})",
+  "last24h_show_less": "表示を減らす",
+  "last24h_retry_at": "自動再試行 {time}"
 }

@@ -29,7 +29,43 @@
     "updates_current_version": "Vous êtes en v{version}",
     "updates_last_checked": "Dernière vérification {time}",
     "updates_history_title": "Mises à jour récentes",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Synchronisation avec le tableau de bord cloud",
+    "cloud_sync_description": "Synchronisez une copie en lecture seule de vos personas, exécutions et activités vers votre cloud privé pour les consulter dans le tableau de bord web. Vos identifiants de connecteur ne quittent jamais cet appareil.",
+    "cloud_sync_toggle": "Synchroniser avec le tableau de bord cloud",
+    "cloud_sync_on": "Vos données sont synchronisées avec le tableau de bord cloud.",
+    "cloud_sync_off": "Vos données restent uniquement sur cet appareil.",
+    "cloud_sync_toggle_aria": "Activer/désactiver la synchronisation avec le tableau de bord cloud",
+    "cloud_sync_now": "Synchroniser maintenant",
+    "cloud_sync_syncing": "Synchronisation en cours...",
+    "cloud_sync_last": "Dernière synchronisation",
+    "cloud_sync_never": "Pas encore synchronisé",
+    "cloud_sync_error": "Échec de la dernière synchronisation : {error}",
+    "cloud_sync_enable_failed": "Impossible de mettre à jour le paramètre de synchronisation",
+    "cloud_sync_now_failed": "Échec de la synchronisation. Vérifiez votre connexion et réessayez.",
+    "cloud_sync_now_done": "{count} enregistrements synchronisés",
+    "cloud_sync_state_off": "Désactivée",
+    "cloud_sync_state_active": "Active",
+    "cloud_sync_state_syncing": "Synchronisation…",
+    "cloud_sync_total": "synchronisé au total",
+    "cloud_sync_device": "Appareil {id}",
+    "cloud_sync_tables_title": "Données synchronisées",
+    "cloud_sync_show_details": "Afficher le détail",
+    "cloud_sync_hide_details": "Masquer le détail",
+    "cloud_sync_retry": "Réessayer",
+    "cloud_sync_rows": "lignes",
+    "cloud_sync_table_pending": "En attente de la première synchronisation",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "Exécutions",
+      "synced_events": "Événements",
+      "synced_manual_reviews": "Révisions",
+      "synced_messages": "Messages",
+      "synced_metrics_snapshots": "Métriques",
+      "synced_tool_usage": "Utilisation des outils",
+      "synced_memories": "Mémoires",
+      "synced_knowledge_patterns": "Connaissances"
+    }
   },
   "appearance_extra": {
     "simple": "Simple",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Mémoires d'équipe",
+    "import_team_memories": "{count} mémoire(s) d'équipe",
+    "include_memories_label": "Inclure les mémoires",
+    "include_memories_note": "Les mémoires de persona et d'équipe accompagnent l'export. Désactivez cette option pour exporter les agents et équipes sans leurs mémoires accumulées."
   },
   "config": {
     "title": "Résolution de la configuration",
@@ -610,6 +650,33 @@
     "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
     "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
     "no_ceiling_hint": "Aucun ceiling is set. Enter a USD amount above to start tracking against a budget.",
-    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed.",
+    "concurrency_section": "Exécutions parallèles",
+    "concurrency_hint": "Nombre de personas pouvant s'exécuter simultanément. Les exécutions supplémentaires attendent dans une file et démarrent automatiquement lorsque des créneaux se libèrent. Les modifications s'appliquent immédiatement — aucun redémarrage nécessaire.",
+    "concurrency_aria": "Nombre maximal d'exécutions parallèles",
+    "concurrency_range": "Entre {min} et {max} exécutions simultanées.",
+    "concurrency_queued_note": "Les exécutions au-delà de cette limite sont mises en file d'attente et promues par priorité, puis par ordre d'arrivée, au fur et à mesure que les exécutions en cours se terminent."
+  },
+  "search": {
+    "placeholder": "Rechercher dans les paramètres…",
+    "recommended": "Recommandé",
+    "section": "Paramètres",
+    "trigger_hint": "Rechercher dans les paramètres  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Ouvrir la recherche des paramètres",
+    "reduce_motion": "Réduire les animations",
+    "dim": "Réduire l'intensité des couleurs",
+    "cvd_safe": "Palette adaptée aux daltoniens",
+    "high_contrast": "Contraste élevé",
+    "ambient": "Illustration d'en-tête selon l'heure",
+    "theme": "Thème et couleurs",
+    "text_size": "Taille du texte",
+    "brightness": "Luminosité",
+    "density": "Densité de la mise en page",
+    "timezone": "Fuseau horaire",
+    "tabs": {
+      "limits": "Limites",
+      "api_keys": "Clés API",
+      "history": "Historique"
+    }
   }
 }

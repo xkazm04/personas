@@ -219,7 +219,9 @@
     "stage_generating": "生成中",
     "stage_completed": "已完成",
     "stage_failed": "已失败",
-    "tool_calls": "{count} 次工具调用"
+    "tool_calls": "{count} 次工具调用",
+    "connect_cloud_cta": "连接云目标",
+    "connect_gitlab_cta": "连接 GitLab"
   },
   "cloud_trigger_schedule": "计划（Cron）",
   "cloud_trigger_polling": "轮询",

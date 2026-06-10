@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Erweitern Sie Ihre Agenten mit Drittanbieter-Plugins und eigenen Erweiterungen"
+    },
+    "teams": {
+      "label": "Teams",
+      "description": "Mehrere Agenten zu einem Team zusammenfassen, das gemeinsam mehrstufige Workflows bearbeitet"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Neu starten",
     "start_tour": "Tour starten",
     "steps_count": "{count} Schritte",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Power Moves",
+    "moves_used": "{used}/{total} verwendet",
+    "try_it": "Ausprobieren",
+    "used_badge": "Verwendet",
+    "group_save_time": "Zeit sparen",
+    "group_prevent_failures": "Fehler vermeiden",
+    "group_level_up": "Agenten verbessern",
+    "group_orchestrate": "Orchestrieren",
+    "pm_monitor_triage_title": "Gesamte Flotte über die Titelleiste verwalten",
+    "pm_schedule_delay_title": "Geplanten Lauf überspringen oder verzögern",
+    "pm_bulk_rerun_title": "Fehlgeschlagene Ausführungen massenweise neu starten",
+    "pm_dead_letter_title": "Ereignisse aus der Dead-Letter-Queue retten",
+    "pm_annotate_golden_title": "Goldene Läufe markieren, Regressionen taggen",
+    "pm_credential_health_title": "KI fehlerhafte Zugangsdaten reparieren lassen",
+    "pm_lab_measure_title": "Prompts über Modelle hinweg messen",
+    "pm_prompt_rollback_title": "Schlechten Prompt mit einem Klick zurücksetzen",
+    "pm_director_coaching_title": "Portfolio-Coaching vom Director erhalten",
+    "pm_event_chain_title": "Agenten mit Ereignis-Listenern verknüpfen",
+    "pm_live_stream_title": "Ketten in Echtzeit kaskadieren beobachten",
+    "pm_athena_fleet_title": "Athena zur Flottenanalyse befragen"
   },
   "setup_stepper": {
     "your_profile": "Ihr Profil",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
     "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Ungelesener Fehler in {personaName} — untersuchen",
+    "tour": "{tourTitle} fortsetzen ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Bearbeitung von {personaName} fortsetzen"
+  },
+  "nav_status": {
+    "incidents": "{count} offener Vorfall",
+    "incidents_other": "{count} offene Vorfälle",
+    "messages": "{count} ungelesene Nachricht",
+    "messages_other": "{count} ungelesene Nachrichten",
+    "reviews": "{count} ausstehende Überprüfung",
+    "reviews_other": "{count} ausstehende Überprüfungen",
+    "teams": "{count} Team",
+    "teams_other": "{count} Teams",
+    "agents_active": "{count} Agent in den letzten 24 Std. aktiv",
+    "agents_active_other": "{count} Agenten in den letzten 24 Std. aktiv",
+    "events_today": "{count} Ereignis in den letzten 24 Std.",
+    "events_today_other": "{count} Ereignisse in den letzten 24 Std.",
+    "connections_external": "{count} externe Verbindung",
+    "connections_external_other": "{count} externe Verbindungen",
+    "connections_builtin": "{count} integrierter Connector",
+    "connections_builtin_other": "{count} integrierte Connectors",
+    "trend_up": "+{pct}% gegenüber den letzten 24 Std.",
+    "trend_down": "-{pct}% gegenüber den letzten 24 Std.",
+    "trend_flat": "Keine Änderung gegenüber den letzten 24 Std."
+  }
 }

@@ -29,7 +29,43 @@
     "updates_current_version": "Tienes la v{version}",
     "updates_last_checked": "Última comprobación {time}",
     "updates_history_title": "Actualizaciones recientes",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Sincronización con panel en la nube",
+    "cloud_sync_description": "Sincroniza una copia de solo lectura de tus personas, ejecuciones y actividad en tu nube privada para verlos en el panel web. Las credenciales de tus conectores nunca abandonan este dispositivo.",
+    "cloud_sync_toggle": "Sincronizar con el panel en la nube",
+    "cloud_sync_on": "Tus datos se están sincronizando con el panel en la nube.",
+    "cloud_sync_off": "Tus datos permanecen solo en este dispositivo.",
+    "cloud_sync_toggle_aria": "Activar/desactivar sincronización con panel en la nube",
+    "cloud_sync_now": "Sincronizar ahora",
+    "cloud_sync_syncing": "Sincronizando...",
+    "cloud_sync_last": "Última sincronización",
+    "cloud_sync_never": "Aún no sincronizado",
+    "cloud_sync_error": "Error en la última sincronización: {error}",
+    "cloud_sync_enable_failed": "No se pudo actualizar la configuración de sincronización",
+    "cloud_sync_now_failed": "Error de sincronización. Comprueba tu conexión e inténtalo de nuevo.",
+    "cloud_sync_now_done": "Se sincronizaron {count} registros",
+    "cloud_sync_state_off": "Desactivado",
+    "cloud_sync_state_active": "Activo",
+    "cloud_sync_state_syncing": "Sincronizando…",
+    "cloud_sync_total": "sincronizados en total",
+    "cloud_sync_device": "Dispositivo {id}",
+    "cloud_sync_tables_title": "Datos sincronizados",
+    "cloud_sync_show_details": "Mostrar desglose",
+    "cloud_sync_hide_details": "Ocultar desglose",
+    "cloud_sync_retry": "Reintentar",
+    "cloud_sync_rows": "filas",
+    "cloud_sync_table_pending": "Esperando primera sincronización",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "Ejecuciones",
+      "synced_events": "Eventos",
+      "synced_manual_reviews": "Revisiones",
+      "synced_messages": "Mensajes",
+      "synced_metrics_snapshots": "Métricas",
+      "synced_tool_usage": "Uso de herramientas",
+      "synced_memories": "Memorias",
+      "synced_knowledge_patterns": "Conocimiento"
+    }
   },
   "appearance_extra": {
     "simple": "Simple",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Memorias del equipo",
+    "import_team_memories": "{count} memoria(s) de equipo",
+    "include_memories_label": "Incluir memorias",
+    "include_memories_note": "Las memorias de persona y equipo viajan con la exportación. Desactiva esto para exportar agentes y equipos sin sus memorias acumuladas."
   },
   "config": {
     "title": "Resolución de Configuración",
@@ -510,7 +550,12 @@
     "over_budget": "Has superado tu tope mensual. La Fase 2 bloqueará las nuevas ejecuciones cuando esto ocurra; por ahora, considéralo una advertencia.",
     "approaching_budget": "Te estás acercando a tu tope mensual. Considera revisar las ejecuciones recientes.",
     "no_ceiling_hint": "No se ha establecido ningún tope. Introduce un importe en USD arriba para empezar a hacer seguimiento frente a un presupuesto.",
-    "stage1_note": "Fase 1: solo informativa. La Fase 2 controlará el despacho de ejecuciones cuando se supere el tope."
+    "stage1_note": "Fase 1: solo informativa. La Fase 2 controlará el despacho de ejecuciones cuando se supere el tope.",
+    "concurrency_section": "Ejecuciones paralelas",
+    "concurrency_hint": "Cuántas personas pueden ejecutarse al mismo tiempo. Las ejecuciones adicionales esperan en cola y se inician automáticamente cuando se liberan espacios. Los cambios se aplican de inmediato, sin necesidad de reiniciar.",
+    "concurrency_aria": "Máximo de ejecuciones paralelas",
+    "concurrency_range": "Entre {min} y {max} ejecuciones simultáneas.",
+    "concurrency_queued_note": "Las ejecuciones que superan este límite se ponen en cola y se promueven por prioridad, luego por orden de llegada, a medida que las activas finalizan."
   },
   "recent_change": {
     "label": "Último {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Buscar configuración…",
+    "recommended": "Recomendado",
+    "section": "Configuración",
+    "trigger_hint": "Buscar configuración  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Abrir búsqueda de configuración",
+    "reduce_motion": "Reducir movimiento",
+    "dim": "Reducir intensidad de color",
+    "cvd_safe": "Paleta apta para daltonismo",
+    "high_contrast": "Alto contraste",
+    "ambient": "Arte de cabecera según hora del día",
+    "theme": "Tema y colores",
+    "text_size": "Tamaño de texto",
+    "brightness": "Brillo",
+    "density": "Densidad del diseño",
+    "timezone": "Zona horaria",
+    "tabs": {
+      "limits": "Límites",
+      "api_keys": "Claves API",
+      "history": "Historial"
+    }
   }
 }

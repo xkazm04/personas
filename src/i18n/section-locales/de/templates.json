@@ -343,7 +343,9 @@
     "search_suggestions_aria": "Suchvorschläge",
     "clear_search_aria": "Suche löschen",
     "search_with_ai_aria": "Mit KI suchen",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template-Galerie-Abdeckungsfilter-Chips — jeweils auf 1 Wort beschränken. 'Entwürfe' = unveröffentlichte Nur-Entwickler-Vorlagen.",
+    "coverage_drafts": "Entwürfe"
   },
   "list": {
     "template_name": "Vorlagenname",
@@ -807,7 +809,25 @@
       "lab_desc": "Lab-Auto-Verbesserung (Prompt-Evolution) für diese Persona aktivieren, wenn Fehler wiederholt auftreten.",
       "escalate_after_label": "Eskalieren nach",
       "escalate_after_desc": "Aufeinanderfolgende Fehler, bevor ein Incident erstellt oder an das Lab gesendet wird."
-    }
+    },
+    "_comment_left_connections_heading": "Überschrift über der Connector-Karte im linken Übernahme-Panel — auf 1 Wort beschränken",
+    "left_connections_heading": "Verbindungen",
+    "_comment_left_empty_placeholder": "Gedimmter Platzhalter im linken Übernahme-Panel, bevor etwas konfiguriert wurde",
+    "left_empty_placeholder": "Ihre Auswahl erscheint hier, während Sie jede Dimension konfigurieren.",
+    "_comment_capabilities_aria": "Barrierefreiheitsbeschriftung für den Funktions-Tab-Streifen bei der Übernahme",
+    "capabilities_aria": "Funktionen",
+    "_comment_capability_include": "Tooltip am Funktions-Umschalter, wenn die Funktion übersprungen wird — klicken zum Einbeziehen",
+    "capability_include": "Funktion einbeziehen",
+    "_comment_capability_skip": "Tooltip am Funktions-Umschalter, wenn die Funktion aktiv ist — klicken zum Überspringen",
+    "capability_skip": "Funktion überspringen",
+    "_comment_policy_on": "Ein/Aus-Status für die Speicher- und Überprüfungsdimensionen — auf 1 Wort beschränken",
+    "policy_on": "Ein",
+    "policy_off": "Aus",
+    "_comment_schedule_hourly": "Zeitplan-Zusammenfassungsbezeichnung für den stündlichen Rhythmus — kurz halten",
+    "schedule_hourly": "Stündlich",
+    "_comment_events_count": "Anzahl der für eine Funktion konfigurierten persona-übergreifenden Ereignisabonnements",
+    "events_count_one": "{count} Ereignis",
+    "events_count_other": "{count} Ereignisse"
   },
   "scan": {
     "scanning_draft": "Persona-Entwurf wird gescannt...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} Fragen, alle Standardwerte",
     "questionnaire_member_summary_customized": "{count} Fragen, {customized} angepasst",
     "questionnaire_member_no_config": "Keine Konfiguration nötig",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "Automatisch",
+    "graph_legend_feedback": "Rückmeldung"
   },
   "compare": {
     "compare": "Vergleichen",

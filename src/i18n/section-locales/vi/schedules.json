@@ -105,5 +105,12 @@
   "sparkline_aria": "Sparkline lịch sử chạy, {days} ngày gần nhất",
   "sparkline_window": "{days} ngày gần nhất",
   "sparkline_no_data": "Không có lần chạy trong khoảng",
-  "sparkline_failure_rate": "{total} lần chạy · {rate}% thất bại"
+  "sparkline_failure_rate": "{total} lần chạy · {rate}% thất bại",
+  "run_status_incomplete": "Chưa hoàn thành",
+  "last24h_title": "24 giờ qua",
+  "last24h_empty": "Không có lần chạy theo lịch nào trong 24 giờ qua.",
+  "last24h_failed_count": "{count} thất bại",
+  "last24h_show_all": "Hiện tất cả ({count})",
+  "last24h_show_less": "Hiển thị ít hơn",
+  "last24h_retry_at": "tự động thử lại {time}"
 }

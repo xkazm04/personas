@@ -114,5 +114,7 @@
   "trigger_on": "トリガー:",
   "connecting_to_gitlab": "GitLab に接続中...",
   "deploying_to_gitlab": "ペルソナを GitLab にデプロイ中...",
-  "pipeline_hash": "パイプライン #"
+  "pipeline_hash": "パイプライン #",
+  "notification_ask_athena": "Athena に分析を依頼",
+  "notification_athena_prompt": "受信したこの通知と関連する課題を分析してください：「{title}」— {body}（ステータス：{status}）。何が起きたか、根本原因として考えられることを調査し、対応が必要かどうかを明確に教えてください。"
 }

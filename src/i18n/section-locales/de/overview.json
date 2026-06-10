@@ -133,7 +133,25 @@
     "source_provider": "Anbieter",
     "source_policy": "Richtlinie",
     "source_healing_issue": "Healing-Problem",
-    "source_execution_error": "Ausführungsfehler"
+    "source_execution_error": "Ausführungsfehler",
+    "action_start_work": "Arbeit beginnen",
+    "action_back_to_open": "Zurück zu offen",
+    "filter_status_in_progress": "In Bearbeitung",
+    "detail_title": "Vorfalldetails",
+    "detail_label_status": "Status",
+    "detail_label_kind": "Art",
+    "detail_label_source": "Quelle",
+    "detail_label_persona": "Agent",
+    "detail_label_detail": "Details",
+    "detail_label_resolution_note": "Lösungshinweis",
+    "detail_label_created": "Erstellt",
+    "detail_label_acknowledged": "Bestätigt",
+    "detail_label_resolved": "Gelöst",
+    "detail_no_detail": "Keine weiteren Details.",
+    "detail_note_label": "Lösungshinweis (optional)",
+    "detail_no_persona": "Kein Agent",
+    "empty_open_title": "Alles in Ordnung",
+    "empty_filtered_title": "Keine passenden Vorfälle"
   },
   "observability": {
     "title": "Observability",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Alle löschen",
+    "delete_all_confirm_title": "Alle Erinnerungen löschen?",
+    "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Erinnerungen. Dies kann nicht rückgängig gemacht werden.",
+    "delete_all_confirm_cta": "Alle löschen"
   },
   "memory_review": {
     "all_conflicts_resolved": "Alle Konflikte gelöst",
@@ -473,7 +495,18 @@
     "select_action_first": "Zuerst eine vorgeschlagene Aktion auswählen",
     "review_detail": "Überprüfungsdetails",
     "select_review": "Überprüfung auswählen",
-    "technical_context": "Technischer Kontext"
+    "technical_context": "Technischer Kontext",
+    "split": "Geteilt",
+    "split_tooltip": "Geteilte Ansicht — Liste mit Detailbereich",
+    "table": "Tabelle",
+    "table_tooltip": "Tabellenansicht — alle Prüfungen in einem Raster",
+    "backlog_group_title": "Dev Tools-Rückstand",
+    "backlog_accept": "Annehmen",
+    "backlog_reject": "Ablehnen",
+    "delete_all": "Alle löschen",
+    "delete_all_confirm_title": "Alle Prüfungen löschen?",
+    "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Bewertungen. Dieser Vorgang kann nicht rückgängig gemacht werden.",
+    "delete_all_confirm_cta": "Alle löschen"
   },
   "messages_view": {
     "title": "Nachrichten",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Alle löschen",
+    "delete_all_confirm_title": "Alle Nachrichten löschen?",
+    "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Nachrichten. Dieser Vorgang kann nicht rückgängig gemacht werden.",
+    "delete_all_confirm_cta": "Alle löschen"
   },
   "events": {
     "title": "Ereignisse",
@@ -809,7 +846,13 @@
     "create_persona": "Persona erstellen",
     "from_templates": "Aus Vorlagen",
     "execution_label": "Ausführung",
-    "unknown": "Unbekannt"
+    "unknown": "Unbekannt",
+    "value_section_title": "Geschäftswert",
+    "value_delivered_rate": "Wertlieferungsrate",
+    "cost_per_value": "Kosten / Wertlauf",
+    "value_delivered_count": "Wert geliefert",
+    "all_models": "Alle Modelle",
+    "col_model": "Modell"
   },
   "analytics_dashboard": {
     "title": "Analytik",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "jetzt fällig",
+    "rotation_countdown_days_hours": "{days}T {hours}Std",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Erinnerungen suchen...",
     "all_agents": "Alle Agenten",
-    "all_categories": "Alle Kategorien"
+    "all_categories": "Alle Kategorien",
+    "tier_all": "Aktiver Satz",
+    "tier_core": "Kern",
+    "tier_active": "Aktiv",
+    "tier_working": "Arbeitsspeicher",
+    "tier_archived": "Archiviert"
   },
   "memory_actions": {
     "dismiss_suggestion": "Vorschlag verwerfen",
@@ -1246,7 +1297,8 @@
     "reject_all": "Alle ablehnen",
     "accept_all": "Alle akzeptieren",
     "retry_with_changes": "Mit Änderungen erneut versuchen",
-    "video_not_supported": "Ihr Browser unterstützt keine Videowiedergabe."
+    "video_not_supported": "Ihr Browser unterstützt keine Videowiedergabe.",
+    "carry_out_hint": "Genehmigt die Überprüfung und führt die Persona zur Ausführung aus"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} ausstehende Prüfung ausgewählt",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Bestätigen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "restore": "Im aktiven Satz wiederherstellen"
   },
   "memory_detail": {
     "title_label": "Titel",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my Personas — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my Personas — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena hat diese Erklärung für dich verfasst – verlasse sie, um zu deinem eigenen Cockpit zurückzukehren.",
+    "context_explaining": "Athena erklärt: {title}",
+    "widget_empty": "Noch nichts anzuzeigen.",
+    "verdict_title": "Athenas Urteil",
+    "verdict_confidence": "Konfidenz",
+    "verdict_confidence_high": "Hoch",
+    "verdict_confidence_medium": "Mittel",
+    "verdict_confidence_low": "Niedrig",
+    "verdict_resolve": "Jetzt beheben",
+    "comparison_recommended": "Empfohlen",
+    "flow_title": "So läuft es ab",
+    "timeline_title": "Zeitverlauf",
+    "log_title": "Belege"
+  },
+  "certification": {
+    "title": "Zertifizierungs-Kommandozentrale",
+    "subtitle": "Team-Autonomie-Evaluierungen und Zertifizierungsstatus (nur Dev)",
+    "updated": "Aktualisiert",
+    "refresh": "Aktualisieren",
+    "error_title": "Evaluierungsläufe konnten nicht geladen werden",
+    "loading": "Evaluierungsläufe werden geladen…",
+    "loading_detail": "Laufdetails werden geladen…",
+    "tab_overview": "Übersicht",
+    "tab_history": "Verlauf",
+    "back": "Zurück",
+    "empty_title": "Keine Evaluierungsläufe",
+    "empty_desc": "Führe das Eval-Harness (scripts/test/) aus, um docs/test/runs/ zu befüllen.",
+    "teams_certified": "Teams zertifiziert",
+    "certified": "Zertifiziert",
+    "streak_label": "Serie",
+    "held_out_runs": "Zurückgehaltene Läufe",
+    "provisional": "Vorläufiges Urteil (Richter noch nicht bewertet)",
+    "final": "Abschließendes Urteil",
+    "team_score": "Team-Punktzahl",
+    "cost": "Kosten",
+    "dims_title": "Deterministische Dimensionen",
+    "dim_cascade": "Kaskaden-Abschluss",
+    "dim_density": "Arbeitsdichte",
+    "dim_handoff": "Übergabequalität",
+    "dim_learning": "Lernschleife",
+    "dim_grounding": "Verankerung",
+    "dim_correctness": "Korrektheit",
+    "dim_actionability": "Umsetzbarkeit",
+    "dim_specificity": "Spezifität",
+    "dim_role_fidelity": "Rollentreue",
+    "gates_title": "Build / Lint / Test-Gates",
+    "gate_build": "Build",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "bestanden",
+    "gate_fail": "fehlgeschlagen",
+    "gate_log": "Protokoll",
+    "gate_copy_log": "Protokoll kopieren",
+    "gate_code_track": "Code-Track-Lauf",
+    "delivered": "An Master übertragen",
+    "cascade_stalled": "Kaskade unterbrochen",
+    "self_vetoed": "Selbst vetoisiert",
+    "self_veto_capped": "Team hat Urteil selbst begrenzt auf",
+    "grounding_title": "Quellenverankerung",
+    "grounding_file": "Datei",
+    "grounding_valid": "Gültig",
+    "grounding_pct": "%",
+    "grounding_invalid": "Ungültig",
+    "grounding_na": "Keine Zitate zu prüfen",
+    "standards_title": "Standards & Branching-Konformität",
+    "standards_subtitle": "Wie gut der Lauf die deklarierten Pre-Commit- und Branching-Richtlinien eingehalten hat",
+    "standards_compliance": "Konformität",
+    "standards_rule": "Regel",
+    "standards_basis": "Grundlage",
+    "standards_na": "k.A.",
+    "trajectory_title": "Punkte-Verlauf",
+    "judge_title": "Richterpanel",
+    "judge_mean": "Mittelwert",
+    "judge_min": "Mindestausgabe",
+    "judge_balance": "Balance",
+    "fact_executions": "Abgeschlossen",
+    "fact_failed": "Fehlgeschlagen",
+    "fact_members": "Mitglieder",
+    "fact_reviews": "Bewertungen",
+    "fact_memories": "Erinnerungen",
+    "fact_cost": "Kosten",
+    "fact_window": "Zeitfenster",
+    "col_team": "Team",
+    "col_seed": "Seed",
+    "col_verdict": "Urteil",
+    "col_score": "Punktzahl",
+    "col_gates": "Gates",
+    "col_started": "Gestartet"
+  },
+  "fleet_optimization": {
+    "title": "Flottenoptimierung",
+    "open_lab": "Lab öffnen",
+    "open_lab_hint": "Alternative Modelle für {persona} im Lab testen",
+    "ask_athena": "Athena fragen",
+    "ask_athena_hint": "Diesen Vorschlag zur Untersuchung an Athena weiterleiten",
+    "ask_athena_prompt": "Ich überprüfe einen Flottenoptimierungsvorschlag für meine Agenten: „{title}\". {description} Empfohlene Maßnahme: {action}. {focus}",
+    "ask_athena_focus_persona": "Bitte untersuche den Agenten „{persona}\" und öffne bei Bedarf dessen Lab, um alternative Modelle zu testen. Berichte anschließend über deine Erkenntnisse.",
+    "ask_athena_focus_general": "Bitte prüfe dies und empfehle, was geändert werden sollte."
   }
 }

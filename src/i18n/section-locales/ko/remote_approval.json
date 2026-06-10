@@ -1,1 +1,13 @@
-{}
+{
+  "title": "원격 실행 요청",
+  "body": "대시보드에서 이 기기의 {persona} 실행을 요청했습니다.",
+  "safety_note": "이 기기에서 자체 자격 증명으로 로컬 실행됩니다. 승인 전까지 아무것도 실행되지 않습니다.",
+  "approve": "승인 및 실행",
+  "approving": "시작 중…",
+  "reject": "거부",
+  "queue_count": "전체 {total}개 중 {index}번째 대기 중",
+  "prompt_label": "프롬프트",
+  "no_prompt": "제공된 프롬프트가 없습니다.",
+  "from_dashboard": "웹 대시보드에서 요청됨",
+  "later": "나중에 결정"
+}

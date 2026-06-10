@@ -229,7 +229,9 @@
     "teams_label": "Nhóm",
     "groups_label": "Nhóm",
     "cloud_label": "Đám mây",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "Không có nhóm",
+    "whats_new_update": "Đã cập nhật — xem có gì mới"
   },
   "execution_detail": {
     "copy": "Sao chép",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "Hôm nay",
+  "group_yesterday": "Hôm qua",
+  "group_this_week": "Tuần này",
+  "group_this_month": "Tháng này",
+  "group_older": "Cũ hơn",
+  "code_expand_block": "Mở rộng khối mã",
+  "code_collapse_block": "Thu gọn khối mã",
+  "code_show_lines": "Hiển thị tất cả {count} dòng"
 }

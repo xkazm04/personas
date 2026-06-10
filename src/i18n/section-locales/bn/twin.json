@@ -400,7 +400,15 @@
     "nextStep": "পরবর্তী ধাপ",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "আপনার টুইন সম্পূর্ণ করুন",
-    "rosterFoundations": "{twins}টি টুইন · {identities}টিতে পরিচয় · {brains}টিতে জ্ঞানভাণ্ডার"
+    "rosterFoundations": "{twins}টি টুইন · {identities}টিতে পরিচয় · {brains}টিতে জ্ঞানভাণ্ডার",
+    "ready": "প্রস্তুত",
+    "satellites": "স্যাটেলাইট",
+    "rosterSpread": "রোস্টার বিস্তার",
+    "twinsConfigured": "কনফিগার করা Twin",
+    "avgReadiness": "গড় প্রস্তুতি",
+    "activeChannels": "সক্রিয় চ্যানেল",
+    "memoriesApproved": "অনুমোদিত স্মৃতি",
+    "channelsInUse": "ব্যবহৃত চ্যানেল"
   },
   "variantTabs": {
     "prototype": "Prototype",

@@ -116,5 +116,10 @@
     "applied_toast": "Applied recipe: {name}",
     "run_now": "Run now",
     "run_now_toast": "Opening {name} in the recipe playground"
-  }
+  },
+  "discard": "버리기",
+  "yes": "예",
+  "no": "아니오",
+  "delete_confirm_question": "{name}을(를) 삭제할까요?",
+  "tag_input_placeholder": "태그를 입력하고 Enter를 누르세요..."
 }

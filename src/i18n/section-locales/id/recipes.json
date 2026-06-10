@@ -116,5 +116,10 @@
     "applied_toast": "Applied recipe: {name}",
     "run_now": "Run now",
     "run_now_toast": "Opening {name} in the recipe playground"
-  }
+  },
+  "discard": "Buang",
+  "yes": "Ya",
+  "no": "Tidak",
+  "delete_confirm_question": "Hapus {name}?",
+  "tag_input_placeholder": "Ketik tag dan tekan Enter..."
 }

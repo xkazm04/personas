@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "ताज़ा करें",
+    "tool_count_one": "{count} टूल",
+    "tool_count_other": "{count} टूल",
+    "tab_documents": "दस्तावेज़",
+    "tab_search": "खोज",
+    "tab_settings": "सेटिंग"
   },
   "manager": {
     "title": "क्रेडेंशियल",
@@ -845,7 +851,10 @@
     "enabling": "सक्षम हो रहा है...",
     "enable_rotation": "रोटेशन सक्षम करें",
     "enable_failed": "रोटेशन सक्षम करने में विफल: {error}",
-    "last_rotated": "अंतिम बार {time} घुमाया गया"
+    "last_rotated": "अंतिम बार {time} घुमाया गया",
+    "ring_aria_label": "{countdown} में रोटेशन",
+    "history_empty_title": "अभी तक कोई रोटेशन इतिहास नहीं",
+    "history_empty_subtitle": "एक बार यह क्रेडेंशियल रोटेट होने पर रोटेशन घटनाएं यहाँ दिखेंगी।"
   },
   "event_config": {
     "event_triggers": "इवेंट ट्रिगर",
@@ -950,11 +959,24 @@
     "catalog_description": "Slack, GitHub, या OpenAI जैसी ज्ञात सेवा चुनें। पूर्व-कॉन्फ़िगर्ड फ़ील्ड और हेल्थचेक।",
     "ai_heading": "AI-डिज़ाइन क्रेडेंशियल",
     "ai_description": "किसी भी सेवा का वर्णन करें और AI आपके लिए फ़ील्ड, auth प्रकार और हेल्थचेक कॉन्फ़िगर करेगा।",
-    "works_with_any": "किसी भी API के साथ काम करता है"
+    "works_with_any": "किसी भी API के साथ काम करता है",
+    "recommended": "अनुशंसित"
   },
   "credential_list": {
     "no_match": "कोई क्रेडेंशियल मेल नहीं",
-    "no_match_hint": "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें"
+    "no_match_hint": "अपने फ़िल्टर या खोज शब्द समायोजित करने का प्रयास करें",
+    "col_name": "नाम",
+    "col_status": "स्थिति",
+    "col_type": "प्रकार",
+    "col_category": "श्रेणी",
+    "col_health": "स्वास्थ्य",
+    "col_last_used": "अंतिम उपयोग",
+    "col_created": "बनाया गया",
+    "filter_all": "सभी",
+    "filter_all_health": "सभी स्वास्थ्य",
+    "health_healthy": "स्वस्थ",
+    "health_failing": "विफल",
+    "health_untested": "अपरीक्षित"
   },
   "wizard_detect": {
     "no_services": "\"{search}\" से मेल खाने वाली कोई सेवा नहीं",

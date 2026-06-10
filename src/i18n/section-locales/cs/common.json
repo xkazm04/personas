@@ -163,5 +163,7 @@
   "field_name_taken": "Již se používá",
   "field_name_taken_suggestion": "Already in use — try {name}",
   "form_error_summary_title_one": "{count} field needs your attention",
-  "form_error_summary_title_other": "{count} fields need your attention"
+  "form_error_summary_title_other": "{count} fields need your attention",
+  "error_boundary_chunk_subtitle": "Část aplikace se nepodařilo načíst -- to se může stát po aktualizaci nebo výpadku připojení. Vaše data jsou v bezpečí; opětovné načtení aplikace to obvykle vyřeší.",
+  "reload_app": "Znovu načíst aplikaci"
 }

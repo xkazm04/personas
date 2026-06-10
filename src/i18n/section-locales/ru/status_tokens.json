@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "Продакшен",
+    "promising": "Перспективный",
+    "not_ready": "Не готов",
+    "broken": "Сломан"
+  },
+  "deployment": {
+    "active": "Активно",
+    "paused": "Приостановлено",
+    "failed": "Ошибка",
+    "unknown": "Неизвестно"
+  },
+  "delivery": {
+    "delivered": "Доставлено",
+    "failed": "Ошибка",
+    "pending": "Ожидает",
+    "queued": "В очереди"
+  },
+  "rotation": {
+    "anomaly": "Аномалия",
+    "paused": "Приостановлена",
+    "disabled": "Отключена",
+    "perm_errors": "Постоянные ошибки",
+    "degrading": "Деградация",
+    "backoff": "Откат",
+    "fresh": "Свежий",
+    "active": "Активный"
   }
 }

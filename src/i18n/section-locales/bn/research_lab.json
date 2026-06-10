@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "আপনার কোয়েরিতে কোনো arXiv পেপার মেলেনি। আরো বিস্তৃত বা ভিন্ন কীওয়ার্ড দিয়ে চেষ্টা করুন।",
+  "arxiv_error_title": "অনুসন্ধান ব্যর্থ হয়েছে",
+  "arxiv_error_timeout": "arXiv সাড়া দিতে অনেক সময় নিয়েছে — রেট-লিমিটিং হতে পারে। একটু পরে আবার চেষ্টা করুন।",
+  "arxiv_error_rate_limited": "arXiv এখন রেট-লিমিটিং করছে। কয়েক সেকেন্ড অপেক্ষা করে আবার চেষ্টা করুন।",
+  "arxiv_error_http": "arXiv একটি ত্রুটি ফিরিয়েছে (HTTP {status})। সামান্য পরে আবার চেষ্টা করুন।",
+  "arxiv_error_network": "arXiv-এ পৌঁছানো যায়নি। আপনার সংযোগ পরীক্ষা করুন এবং আবার চেষ্টা করুন।",
+  "arxiv_error_feed": "arXiv এই কোয়েরি প্রক্রিয়া করতে পারেনি। ভিন্ন বা সহজ কীওয়ার্ড দিয়ে চেষ্টা করুন।",
+  "arxiv_error_generic": "arXiv অনুসন্ধান ব্যর্থ হয়েছে। আবার চেষ্টা করুন।"
 }

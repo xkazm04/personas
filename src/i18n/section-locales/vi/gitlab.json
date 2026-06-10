@@ -114,5 +114,7 @@
   "trigger_on": "trên:",
   "connecting_to_gitlab": "Đang kết nối với GitLab...",
   "deploying_to_gitlab": "Đang triển khai tác nhân tới GitLab...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "Nhờ Athena phân tích",
+  "notification_athena_prompt": "Hãy phân tích thông báo này tôi nhận được và vấn đề cơ bản: \"{title}\" — {body} (trạng thái: {status}). Điều tra những gì đã xảy ra, nguyên nhân gốc rễ có thể, và cho tôi biết rõ ràng liệu có điều gì cần hành động không."
 }

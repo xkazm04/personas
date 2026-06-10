@@ -70,5 +70,7 @@
   "pending_events_sr_other": "{count} eventos pendientes",
   "cockpit": "Cockpit",
   "director_attention_sr": "{count} agente necesita coaching",
-  "director_attention_sr_other": "{count} agentes necesitan coaching"
+  "director_attention_sr_other": "{count} agentes necesitan coaching",
+  "goals": "Objetivos",
+  "mission_control": "Centro de mando"
 }

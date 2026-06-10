@@ -44,6 +44,27 @@
     "section_workspace": "مساحة العمل",
     "toggle_sidebar": "طي / توسيع الشريط الجانبي",
     "toggle_monitor": "فتح / إغلاق مراقب الشخصيات",
-    "toggle_athena": "فتح / إغلاق دردشة Athena"
+    "toggle_athena": "فتح / إغلاق دردشة Athena",
+    "nav_mode": "تبديل وضع التنقل بلوحة المفاتيح",
+    "nav_mode_back": "العودة صفحة للخلف (في وضع التنقل)"
+  },
+  "tray_schedules": "الجداول الزمنية",
+  "tray_schedules_today": "{count} مجدول اليوم",
+  "tray_notifications": "الإشعارات",
+  "tray_notifications_unread": "{count} إشعار غير مقروء",
+  "tray_signals": "إشارات الانتباه",
+  "tray_word_today": "اليوم",
+  "tray_word_to_answer": "للإجابة",
+  "tray_word_fleet": "في الأسطول",
+  "tray_word_unread": "غير مقروء",
+  "tray_word_running": "يعمل",
+  "system_load": {
+    "label": "حمل النظام",
+    "cpu": "المعالج {pct}%",
+    "ram": "الذاكرة {pct}% ({free} جيجابايت متاح)",
+    "measuring": "جارٍ قياس حمل النظام…",
+    "headroom_green": "مساحة وفيرة لمزيد من العمل",
+    "headroom_amber": "يزداد الضغط — فكّر في التخفيف",
+    "headroom_red": "عند الطاقة القصوى — فكّر في التباطؤ"
   }
 }

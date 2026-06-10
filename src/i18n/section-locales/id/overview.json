@@ -133,7 +133,25 @@
     "source_provider": "Penyedia",
     "source_policy": "Kebijakan",
     "source_healing_issue": "Masalah pemulihan",
-    "source_execution_error": "Kesalahan eksekusi"
+    "source_execution_error": "Kesalahan eksekusi",
+    "action_start_work": "Mulai pekerjaan",
+    "action_back_to_open": "Kembali ke terbuka",
+    "filter_status_in_progress": "Sedang berjalan",
+    "detail_title": "Detail insiden",
+    "detail_label_status": "Status",
+    "detail_label_kind": "Jenis",
+    "detail_label_source": "Sumber",
+    "detail_label_persona": "Agen",
+    "detail_label_detail": "Detail",
+    "detail_label_resolution_note": "Catatan penyelesaian",
+    "detail_label_created": "Dibuat",
+    "detail_label_acknowledged": "Diakui",
+    "detail_label_resolved": "Diselesaikan",
+    "detail_no_detail": "Tidak ada detail tambahan.",
+    "detail_note_label": "Catatan penyelesaian (opsional)",
+    "detail_no_persona": "Tidak ada agen",
+    "empty_open_title": "Semua beres",
+    "empty_filtered_title": "Tidak ada insiden yang sesuai"
   },
   "observability": {
     "title": "Observabilitas",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Hapus semua",
+    "delete_all_confirm_title": "Hapus semua memori?",
+    "delete_all_confirm_body": "Ini akan menghapus semua {count} memori secara permanen. Tindakan ini tidak dapat dibatalkan.",
+    "delete_all_confirm_cta": "Hapus semua"
   },
   "memory_review": {
     "all_conflicts_resolved": "Semua konflik telah diselesaikan",
@@ -473,7 +495,18 @@
     "select_action_first": "Pilih tindakan yang disarankan terlebih dahulu",
     "review_detail": "Detail Ulasan",
     "select_review": "Pilih ulasan untuk dilihat",
-    "technical_context": "Konteks Teknis"
+    "technical_context": "Konteks Teknis",
+    "split": "Pisah",
+    "split_tooltip": "Tampilan pisah — daftar dengan panel detail",
+    "table": "Tabel",
+    "table_tooltip": "Tampilan tabel — semua ulasan dalam grid",
+    "backlog_group_title": "Backlog Dev Tools",
+    "backlog_accept": "Terima",
+    "backlog_reject": "Tolak",
+    "delete_all": "Hapus semua",
+    "delete_all_confirm_title": "Hapus semua ulasan?",
+    "delete_all_confirm_body": "Ini akan menghapus semua {count} ulasan secara permanen. Tindakan ini tidak dapat dibatalkan.",
+    "delete_all_confirm_cta": "Hapus semua"
   },
   "messages_view": {
     "title": "Pesan",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Hapus semua",
+    "delete_all_confirm_title": "Hapus semua pesan?",
+    "delete_all_confirm_body": "Ini akan menghapus semua {count} pesan secara permanen. Tindakan ini tidak dapat dibatalkan.",
+    "delete_all_confirm_cta": "Hapus semua"
   },
   "events": {
     "title": "Peristiwa",
@@ -809,7 +846,13 @@
     "create_persona": "Buat Persona",
     "from_templates": "Dari Templat",
     "execution_label": "Eksekusi",
-    "unknown": "Tidak diketahui"
+    "unknown": "Tidak diketahui",
+    "value_section_title": "Nilai bisnis",
+    "value_delivered_rate": "Tingkat nilai tersampaikan",
+    "cost_per_value": "Biaya / run nilai",
+    "value_delivered_count": "Nilai tersampaikan",
+    "all_models": "Semua model",
+    "col_model": "Model"
   },
   "analytics_dashboard": {
     "title": "Analitik",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "jatuh tempo sekarang",
+    "rotation_countdown_days_hours": "{days}h {hours}j",
+    "rotation_countdown_hours": "{hours}j"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Cari memori...",
     "all_agents": "Semua agen",
-    "all_categories": "Semua kategori"
+    "all_categories": "Semua kategori",
+    "tier_all": "Set aktif",
+    "tier_core": "Inti",
+    "tier_active": "Aktif",
+    "tier_working": "Bekerja",
+    "tier_archived": "Diarsipkan"
   },
   "memory_actions": {
     "dismiss_suggestion": "Abaikan saran",
@@ -1246,7 +1297,8 @@
     "reject_all": "Tolak semua",
     "accept_all": "Terima semua",
     "retry_with_changes": "Coba ulang dengan perubahan",
-    "video_not_supported": "Video tidak didukung di browser ini"
+    "video_not_supported": "Video tidak didukung di browser ini",
+    "carry_out_hint": "Menyetujui ulasan dan menjalankan persona untuk melaksanakannya"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} tinjauan tertunda dipilih",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Konfirmasi",
-    "cancel": "Batalkan"
+    "cancel": "Batalkan",
+    "restore": "Kembalikan ke set aktif"
   },
   "memory_detail": {
     "title_label": "Judul",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my persona — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my persona — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena menyusun penjelasan ini untuk Anda — keluar untuk kembali ke cockpit Anda sendiri.",
+    "context_explaining": "Athena sedang menjelaskan: {title}",
+    "widget_empty": "Belum ada yang ditampilkan.",
+    "verdict_title": "Vonis Athena",
+    "verdict_confidence": "Keyakinan",
+    "verdict_confidence_high": "Tinggi",
+    "verdict_confidence_medium": "Sedang",
+    "verdict_confidence_low": "Rendah",
+    "verdict_resolve": "Selesaikan sekarang",
+    "comparison_recommended": "Direkomendasikan",
+    "flow_title": "Cara kerjanya",
+    "timeline_title": "Linimasa",
+    "log_title": "Bukti"
+  },
+  "certification": {
+    "title": "Pusat Komando Sertifikasi",
+    "subtitle": "Evaluasi otonomi tim dan status sertifikasi (khusus dev)",
+    "updated": "Diperbarui",
+    "refresh": "Muat ulang",
+    "error_title": "Gagal memuat data evaluasi",
+    "loading": "Memuat data evaluasi…",
+    "loading_detail": "Memuat detail run…",
+    "tab_overview": "Ikhtisar",
+    "tab_history": "Riwayat Run",
+    "back": "Kembali",
+    "empty_title": "Tidak ada data evaluasi",
+    "empty_desc": "Jalankan eval harness (scripts/test/) untuk mengisi docs/test/runs/.",
+    "teams_certified": "tim tersertifikasi",
+    "certified": "Tersertifikasi",
+    "streak_label": "streak",
+    "held_out_runs": "run yang ditahan",
+    "provisional": "Vonis sementara (hakim belum memberi skor)",
+    "final": "Vonis akhir",
+    "team_score": "Skor tim",
+    "cost": "Biaya",
+    "dims_title": "Dimensi deterministik",
+    "dim_cascade": "Penyelesaian cascade",
+    "dim_density": "Kepadatan kerja",
+    "dim_handoff": "Kesehatan handoff",
+    "dim_learning": "Siklus pembelajaran",
+    "dim_grounding": "Grounding",
+    "dim_correctness": "Ketepatan",
+    "dim_actionability": "Actionability",
+    "dim_specificity": "Kekhususan",
+    "dim_role_fidelity": "Kesetiaan peran",
+    "gates_title": "Gate build / lint / test",
+    "gate_build": "Build",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "lulus",
+    "gate_fail": "gagal",
+    "gate_log": "log",
+    "gate_copy_log": "Salin log",
+    "gate_code_track": "Run code-track",
+    "delivered": "Dikirim ke master",
+    "cascade_stalled": "Cascade terhenti",
+    "self_vetoed": "Di-veto sendiri",
+    "self_veto_capped": "Tim membatasi vonis sendiri menjadi",
+    "grounding_title": "Grounding kutipan",
+    "grounding_file": "File",
+    "grounding_valid": "Valid",
+    "grounding_pct": "%",
+    "grounding_invalid": "Tidak valid",
+    "grounding_na": "Tidak ada kutipan untuk diperiksa",
+    "standards_title": "Kepatuhan standar & percabangan",
+    "standards_subtitle": "Seberapa baik run mengikuti kebijakan pre-commit dan percabangan yang dideklarasikan proyek",
+    "standards_compliance": "Kepatuhan",
+    "standards_rule": "Aturan",
+    "standards_basis": "Dasar",
+    "standards_na": "n/a",
+    "trajectory_title": "Trajektori skor",
+    "judge_title": "Panel hakim",
+    "judge_mean": "Rata-rata",
+    "judge_min": "Output minimum",
+    "judge_balance": "Keseimbangan",
+    "fact_executions": "Selesai",
+    "fact_failed": "Gagal",
+    "fact_members": "Anggota",
+    "fact_reviews": "Ulasan",
+    "fact_memories": "Memori",
+    "fact_cost": "Biaya",
+    "fact_window": "Jendela",
+    "col_team": "Tim",
+    "col_seed": "Seed",
+    "col_verdict": "Vonis",
+    "col_score": "Skor",
+    "col_gates": "Gate",
+    "col_started": "Dimulai"
+  },
+  "fleet_optimization": {
+    "title": "Optimasi armada",
+    "open_lab": "Buka Lab",
+    "open_lab_hint": "Uji model alternatif untuk {persona} di Lab",
+    "ask_athena": "Tanya Athena",
+    "ask_athena_hint": "Teruskan saran ini ke Athena untuk diselidiki",
+    "ask_athena_prompt": "Saya sedang meninjau saran optimasi armada untuk agen saya: \"{title}\". {description} Tindakan yang disarankan: {action}. {focus}",
+    "ask_athena_focus_persona": "Tolong selidiki agen \"{persona}\" dan, jika membantu, buka Lab-nya untuk menguji model alternatif, lalu laporkan apa yang kamu temukan.",
+    "ask_athena_focus_general": "Tolong selidiki ini dan rekomendasikan apa yang perlu diubah."
   }
 }

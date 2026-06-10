@@ -114,5 +114,7 @@
   "trigger_on": "bei:",
   "connecting_to_gitlab": "Verbinde mit GitLab...",
   "deploying_to_gitlab": "Stelle Persona auf GitLab bereit...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "Athena zur Analyse bitten",
+  "notification_athena_prompt": "Bitte analysiere diese Benachrichtigung, die ich erhalten habe, und das zugrunde liegende Problem: „{title}“ — {body} (Status: {status}). Untersuche, was passiert ist, die wahrscheinliche Ursache, und sag mir klar, ob ich handeln muss."
 }

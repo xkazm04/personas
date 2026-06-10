@@ -400,7 +400,15 @@
     "nextStep": "Следующий шаг",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Завершите настройку двойника",
-    "rosterFoundations": "{twins} двойников · {identities} с личностью · {brains} с базой знаний"
+    "rosterFoundations": "{twins} двойников · {identities} с личностью · {brains} с базой знаний",
+    "ready": "Готово",
+    "satellites": "Спутники",
+    "rosterSpread": "Охват состава",
+    "twinsConfigured": "Настроено двойников",
+    "avgReadiness": "Средняя готовность",
+    "activeChannels": "Активные каналы",
+    "memoriesApproved": "Одобрено воспоминаний",
+    "channelsInUse": "Каналов используется"
   },
   "variantTabs": {
     "prototype": "Prototype",

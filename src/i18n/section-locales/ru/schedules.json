@@ -105,5 +105,12 @@
   "sparkline_aria": "Спарклайн истории запусков, последние {days} дн.",
   "sparkline_window": "Последние {days} дн.",
   "sparkline_no_data": "Нет запусков в окне",
-  "sparkline_failure_rate": "{total} запусков · {rate}% с ошибками"
+  "sparkline_failure_rate": "{total} запусков · {rate}% с ошибками",
+  "run_status_incomplete": "Не завершено",
+  "last24h_title": "Последние 24 часа",
+  "last24h_empty": "Нет запланированных запусков за последние 24 часа.",
+  "last24h_failed_count": "{count} с ошибкой",
+  "last24h_show_all": "Показать все ({count})",
+  "last24h_show_less": "Свернуть",
+  "last24h_retry_at": "авто-повтор {time}"
 }

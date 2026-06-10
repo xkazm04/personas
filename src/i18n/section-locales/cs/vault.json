@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Obnovit",
+    "tool_count_one": "{count} nástroj",
+    "tool_count_other": "{count} nástrojů",
+    "tab_documents": "Dokumenty",
+    "tab_search": "Hledat",
+    "tab_settings": "Nastavení"
   },
   "manager": {
     "title": "Přihlašovací údaje",
@@ -845,7 +851,10 @@
     "enabling": "Zapínání...",
     "enable_rotation": "Zapnout rotaci",
     "enable_failed": "Zapnutí rotace selhalo: {error}",
-    "last_rotated": "Poslední rotace {time}"
+    "last_rotated": "Poslední rotace {time}",
+    "ring_aria_label": "Rotace za {countdown}",
+    "history_empty_title": "Zatím žádná historie rotace",
+    "history_empty_subtitle": "Události rotace se zobrazí zde, jakmile se toto přihlašovací údaje zrotuje."
   },
   "event_config": {
     "event_triggers": "Spouštěče událostí",
@@ -950,11 +959,24 @@
     "catalog_description": "Vyber známou službu jako Slack, GitHub nebo OpenAI. Předkonfigurovaná pole a healthchecky.",
     "ai_heading": "Přihlašovací údaj navržený AI",
     "ai_description": "Popiš jakoukoli službu a AI ti nakonfiguruje pole, typ autentizace a healthcheck.",
-    "works_with_any": "Funguje s libovolnou API"
+    "works_with_any": "Funguje s libovolnou API",
+    "recommended": "Doporučeno"
   },
   "credential_list": {
     "no_match": "Žádné přihlašovací údaje neodpovídají",
-    "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz"
+    "no_match_hint": "Zkus upravit filtry nebo vyhledávací výraz",
+    "col_name": "Název",
+    "col_status": "Stav",
+    "col_type": "Typ",
+    "col_category": "Kategorie",
+    "col_health": "Zdraví",
+    "col_last_used": "Naposledy použito",
+    "col_created": "Vytvořeno",
+    "filter_all": "Vše",
+    "filter_all_health": "Vše — zdraví",
+    "health_healthy": "Zdravé",
+    "health_failing": "Selhávající",
+    "health_untested": "Netestované"
   },
   "wizard_detect": {
     "no_services": "Žádné služby neodpovídají \"{search}\"",

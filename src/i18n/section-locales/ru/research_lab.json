@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "По вашему запросу статьи arXiv не найдены. Попробуйте более широкие или другие ключевые слова.",
+  "arxiv_error_title": "Поиск не удался",
+  "arxiv_error_timeout": "arXiv слишком долго не отвечал — возможно, применяется ограничение запросов. Повторите попытку через несколько секунд.",
+  "arxiv_error_rate_limited": "arXiv сейчас ограничивает запросы. Подождите несколько секунд и попробуйте снова.",
+  "arxiv_error_http": "arXiv вернул ошибку (HTTP {status}). Повторите попытку позже.",
+  "arxiv_error_network": "Не удалось связаться с arXiv. Проверьте подключение и попробуйте снова.",
+  "arxiv_error_feed": "arXiv не смог обработать этот запрос. Попробуйте другие или более простые ключевые слова.",
+  "arxiv_error_generic": "Поиск arXiv не удался. Попробуйте ещё раз."
 }

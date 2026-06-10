@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Plugin",
       "description": "Perluas agen Anda dengan plugin pihak ketiga dan ekstensi kustom"
+    },
+    "teams": {
+      "label": "Tim",
+      "description": "Gabungkan beberapa agen menjadi tim yang bekerja bersama dalam alur kerja multi-langkah"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Mulai Ulang",
     "start_tour": "Mulai Tur",
     "steps_count": "{count} langkah",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Gerakan Unggulan",
+    "moves_used": "{used}/{total} digunakan",
+    "try_it": "Coba",
+    "used_badge": "Digunakan",
+    "group_save_time": "Hemat waktu",
+    "group_prevent_failures": "Cegah kegagalan",
+    "group_level_up": "Tingkatkan agen",
+    "group_orchestrate": "Orkestrasi",
+    "pm_monitor_triage_title": "Triase seluruh armada dari bilah judul",
+    "pm_schedule_delay_title": "Lewati atau tunda jadwal proses",
+    "pm_bulk_rerun_title": "Jalankan ulang eksekusi gagal secara massal",
+    "pm_dead_letter_title": "Selamatkan acara dari antrean dead-letter",
+    "pm_annotate_golden_title": "Bintangi proses terbaik, tandai regresi",
+    "pm_credential_health_title": "Biarkan AI memperbaiki kredensial yang gagal",
+    "pm_lab_measure_title": "Ukur prompt di berbagai model",
+    "pm_prompt_rollback_title": "Kembalikan prompt buruk dengan satu klik",
+    "pm_director_coaching_title": "Dapatkan pelatihan portofolio dari Director",
+    "pm_event_chain_title": "Rantai agen dengan pendengar acara",
+    "pm_live_stream_title": "Saksikan rantai berjalan secara real time",
+    "pm_athena_fleet_title": "Minta Athena menganalisis armada Anda"
   },
   "setup_stepper": {
     "your_profile": "Profil Anda",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
     "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Kegagalan belum dibaca di {personaName} — selidiki",
+    "tour": "Lanjutkan {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Lanjutkan mengedit {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} insiden aktif",
+    "incidents_other": "{count} insiden aktif",
+    "messages": "{count} pesan belum dibaca",
+    "messages_other": "{count} pesan belum dibaca",
+    "reviews": "{count} ulasan tertunda",
+    "reviews_other": "{count} ulasan tertunda",
+    "teams": "{count} tim",
+    "teams_other": "{count} tim",
+    "agents_active": "{count} agen aktif dalam 24 jam terakhir",
+    "agents_active_other": "{count} agen aktif dalam 24 jam terakhir",
+    "events_today": "{count} acara dalam 24 jam terakhir",
+    "events_today_other": "{count} acara dalam 24 jam terakhir",
+    "connections_external": "{count} koneksi eksternal",
+    "connections_external_other": "{count} koneksi eksternal",
+    "connections_builtin": "{count} konektor bawaan",
+    "connections_builtin_other": "{count} konektor bawaan",
+    "trend_up": "naik {pct}% vs 24 jam sebelumnya",
+    "trend_down": "turun {pct}% vs 24 jam sebelumnya",
+    "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya"
+  }
 }

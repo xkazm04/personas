@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "アリーナ",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms}ミリ秒",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "バージョンと評価",
+    "vr_subtitle": "計測したすべてのプロンプトバージョン×モデルの一覧。1行がライブ状態です。",
+    "vr_col_version": "バージョン",
+    "vr_col_model": "モデル",
+    "vr_col_rating": "評価",
+    "vr_col_delta": "ベースライン",
+    "vr_col_cost": "コスト",
+    "vr_col_status": "ステータス",
+    "vr_col_actions": "アクション",
+    "vr_status_active": "アクティブ",
+    "vr_status_baseline": "ベースライン",
+    "vr_status_archived": "アーカイブ済み",
+    "vr_status_measured": "計測済み",
+    "vr_status_unmeasured": "未計測",
+    "vr_action_activate": "このバージョン+モデルをアクティブ化",
+    "vr_action_active": "現在ライブ",
+    "vr_action_measure": "モデル全体で計測（アリーナ）",
+    "vr_action_measuring": "計測中…",
+    "vr_action_improve": "Athenaで改善",
+    "vr_action_diff": "アクティブとプロンプトを比較",
+    "vr_action_archive": "バージョンをアーカイブ",
+    "vr_action_unarchive": "バージョンのアーカイブを解除",
+    "vr_action_pin_baseline": "リグレッションベースラインとしてピン留め",
+    "vr_action_unpin_baseline": "ベースラインのピン留めを解除",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} サンプル",
+    "vr_samples_other": "{count} サンプル",
+    "vr_empty_title": "バージョンはまだありません",
+    "vr_empty_desc": "ペルソナのプロンプトを編集して保存すると最初のバージョンが作成されます。ここで測定できます。",
+    "vr_measuring_toast": "v{version} を各モデルで測定中…",
+    "vr_measure_modal_title": "v{version} を測定",
+    "vr_measure_scope_banner": "バージョン {version} を測定中 — 選択したモデルに対してプロンプトが実行されます。スコアはレーティングテーブルに反映されます。",
+    "vr_diff_title": "v{version} とアクティブの比較",
+    "vr_diff_no_active": "比較できるアクティブバージョンがありません。",
+    "vr_improve_seed_measured": "ペルソナ「{name}」v{version} を改善します。最も弱い測定指標: {model} で {metric} {score}/100。何に集中すべきですか？ ",
+    "vr_improve_seed_plain": "ペルソナ「{name}」v{version} を改善します — まだ測定されていません。何に集中すべきですか？ ",
+    "vr_metric_tool": "ツール精度",
+    "vr_metric_quality": "出力品質",
+    "vr_metric_protocol": "プロトコル準拠"
   },
   "design": {
     "select_agent": "デザイン分析を開始するエージェントを選択",
@@ -903,7 +944,9 @@
     "next": "次へ",
     "go_back_hint": "戻って質問に回答し、エージェントを設定してください。",
     "additional_instructions": "追加の指示またはコンテキスト（任意）",
-    "additional_instructions_placeholder": "特定の要件、ドメイン知識、制約を追加..."
+    "additional_instructions_placeholder": "特定の要件、ドメイン知識、制約を追加...",
+    "role_user": "ユーザー",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "コネクタ",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "これは {persona} の {title} を実行します"
+    "schedule_will_run": "これは {persona} の {title} を実行します",
+    "_comment_manual_run_in_progress": "手動実行中の「今すぐ実行」ボタンのツールチップ",
+    "manual_run_in_progress": "手動実行中",
+    "_comment_run_now_tooltip": "「今すぐ実行」ボタンのツールチップ — テストと実際の実行を区別",
+    "run_now_tooltip": "このユースケースを今すぐ実行 — 実際の実行とダウンストリームイベントを発火します",
+    "_comment_run_now": "「今すぐ実行」ボタンラベル（詳細パネルと機能タブバー）",
+    "run_now": "今すぐ実行",
+    "_comment_event_type_options": "UseCaseSubscriptionForm のイベントタイプドロップダウンのオプションラベル",
+    "event_type_webhook_received": "Webhook 受信",
+    "event_type_execution_completed": "実行完了",
+    "event_type_execution_failed": "実行失敗",
+    "event_type_persona_action": "ペルソナアクション",
+    "event_type_file_changed": "ファイル変更",
+    "event_type_schedule_triggered": "スケジュール起動",
+    "_comment_dim_review_title": "ReviewDimCard の見出し",
+    "dim_review_title": "レビュー",
+    "_comment_pill_on": "ToggleDimCard のON状態ピル（メモリ/イベント）",
+    "pill_on": "ON",
+    "_comment_pill_off": "OFFステートのピル（ToggleDimCard と ReviewDimCard のOFF共通）",
+    "pill_off": "OFF",
+    "_comment_review_pill_queue": "ReviewDimCard のQUEUE状態ピル",
+    "review_pill_queue": "キュー",
+    "_comment_review_pill_trust": "ReviewDimCard のTRUST状態ピル",
+    "review_pill_trust": "信頼",
+    "_comment_dim_status_activated": "PersonaSigilSummary で論理ディム（メモリ/レビュー/イベント/エラー）がアクティブのときに表示される値",
+    "dim_status_activated": "有効"
   },
   "tools": {
     "no_persona": "ペルソナが選択されていません",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "評価",
+    "verdict_none": "Directorによる審査はまだありません",
+    "verdict_tooltip": "Director の評価: {score}/5"
   },
   "chat": {
     "select_persona": "ペルソナを選択してチャットを開始",
@@ -2293,7 +2364,8 @@
     "delete_agents": "{count} 件のエージェントを削除",
     "delete_agents_message": "{count} 件のエージェントとすべての設定が完全に削除されます。",
     "delete_drafts": "{count} 件の下書きを削除",
-    "delete_drafts_message": "{count} 件の下書きエージェントが完全に削除されます。"
+    "delete_drafts_message": "{count} 件の下書きエージェントが完全に削除されます。",
+    "system_persona_undeletable": "Director はシステムペルソナであり削除できません。"
   },
   "persona_list": {
     "all_personas": "すべてのペルソナ",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "まだグループがありません — エージェント → グループで作成してください",
     "batch_move_to_ungrouped": "グループなし",
     "batch_moved_success": "{count} 件のペルソナを {group} に移動しました",
-    "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗"
+    "batch_moved_partial": "{ok} 件を {group} に移動; {failed} 件失敗",
+    "render_cap_notice": "{total} 件中 {shown} 件を表示中 — 検索またはフィルタで絞り込んでください。",
+    "star_director_add": "スターを付けて Director のコーチング対象に追加",
+    "star_director_remove": "スター付き — Director のコーチング対象です。クリックして解除。"
   },
   "design_preview": {
     "preview": "プレビュー",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Slack の受信メッセージをポーリング",
+    "slack_poll_inbound_help": "チェックすると、ペルソナは5秒ごとにこのチャンネルの新着メッセージを読み取り、スレッドに実行結果を返信します。先にボットをチャンネルに招待してください。"
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "この機能で有効",
   "sigil_edit_inactive": "無効 — オンにして有効化",
   "sigil_edit_enable": "この機能で有効化",
-  "sigil_edit_disable": "この機能で無効化"
+  "sigil_edit_disable": "この機能で無効化",
+  "design_subtabs": {
+    "use_cases": "ユースケース",
+    "prompt": "プロンプト",
+    "connectors": "コネクターとツール",
+    "triggers": "イベントとトリガー",
+    "messaging": "メッセージング",
+    "automations": "オートメーション",
+    "triggers_desc": "ペルソナごとのイベントサブスクリプションとトリガー設定はこのタブに追加される予定です。",
+    "messaging_desc": "このエージェントの通知チャンネルと受信ボックスルーティングはここに配置される予定です。",
+    "automations_desc": "このエージェントのスタンドアロン自動化ルールはここに配置される予定です。"
+  },
+  "parameters_card": {
+    "title": "パラメーター",
+    "saved": "保存済み",
+    "apply": "適用",
+    "on": "オン",
+    "off": "オフ",
+    "reset": "リセット"
+  },
+  "editor_empty": {
+    "title": "ペルソナが選択されていません",
+    "subtitle": "サイドバーからエージェントを選択して編集を開始するか、新しく作成してください。",
+    "create": "ペルソナを作成",
+    "resume_label": "作業に戻る"
+  },
+  "build_template_match_label": "より速いルート",
+  "build_template_match_title": "「{name}」は一致するようです",
+  "build_template_match_body": "この既製テンプレートはご説明の内容をカバーしています。採用してこれらの質問をスキップしましょう。すでに設定済みでテスト済みです。",
+  "build_template_match_adopt": "このテンプレートを使用",
+  "build_template_match_dismiss": "構築を続ける",
+  "build_template_match_loading": "一致するテンプレートを確認中…",
+  "build_template_match_more": "または次から開始",
+  "_comment_glyph_db_scope": "コネクターピッカーのデータベースコネクターテーブルスコープパネル",
+  "glyph_db_scope_heading": "データベーステーブル",
+  "glyph_db_scope_all": "すべてのテーブル",
+  "glyph_db_scope_loading": "テーブルを読み込み中…",
+  "glyph_db_scope_error": "テーブルを読み込めませんでした — 再試行",
+  "glyph_db_scope_empty": "テーブルが見つかりません",
+  "glyph_db_scope_selected": "{total}件中{count}件のテーブル"
 }

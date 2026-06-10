@@ -114,5 +114,7 @@
   "trigger_on": "pada:",
   "connecting_to_gitlab": "Menghubungkan ke GitLab...",
   "deploying_to_gitlab": "Mendeploy persona ke GitLab...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "Minta Athena menganalisis",
+  "notification_athena_prompt": "Tolong analisis notifikasi yang saya terima ini dan masalah yang mendasarinya: \"{title}\" — {body} (status: {status}). Selidiki apa yang terjadi, kemungkinan akar penyebabnya, dan beri tahu saya dengan jelas apakah ada yang perlu tindakan saya."
 }

@@ -105,5 +105,12 @@
   "sparkline_aria": "Minigráfico de historial de ejecuciones, últimos {days} días",
   "sparkline_window": "Últimos {days} d",
   "sparkline_no_data": "Sin ejecuciones en la ventana",
-  "sparkline_failure_rate": "{total} ejecuciones · {rate}% fallidas"
+  "sparkline_failure_rate": "{total} ejecuciones · {rate}% fallidas",
+  "run_status_incomplete": "Incompleto",
+  "last24h_title": "Últimas 24 horas",
+  "last24h_empty": "No hay ejecuciones programadas en las últimas 24 horas.",
+  "last24h_failed_count": "{count} fallidas",
+  "last24h_show_all": "Ver todas ({count})",
+  "last24h_show_less": "Ver menos",
+  "last24h_retry_at": "reintento automático {time}"
 }

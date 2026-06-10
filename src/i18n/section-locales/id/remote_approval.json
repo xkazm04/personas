@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Permintaan jalankan jarak jauh",
+  "body": "Dasbor Anda meminta jalankan {persona} di perangkat ini.",
+  "safety_note": "Ini berjalan secara lokal di perangkat ini dengan kredensialnya sendiri. Tidak ada yang berjalan sampai Anda menyetujui.",
+  "approve": "Setujui & jalankan",
+  "approving": "Memulai…",
+  "reject": "Tolak",
+  "queue_count": "{index} dari {total} tertunda",
+  "prompt_label": "Prompt",
+  "no_prompt": "Tidak ada prompt yang diberikan.",
+  "from_dashboard": "Diminta dari dasbor web",
+  "later": "Putuskan nanti"
+}

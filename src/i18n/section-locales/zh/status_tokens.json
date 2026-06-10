@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "生产就绪",
+    "promising": "有潜力",
+    "not_ready": "未就绪",
+    "broken": "已损坏"
+  },
+  "deployment": {
+    "active": "活跃",
+    "paused": "已暂停",
+    "failed": "失败",
+    "unknown": "未知"
+  },
+  "delivery": {
+    "delivered": "已送达",
+    "failed": "失败",
+    "pending": "待处理",
+    "queued": "排队中"
+  },
+  "rotation": {
+    "anomaly": "异常",
+    "paused": "已暂停",
+    "disabled": "已禁用",
+    "perm_errors": "永久错误",
+    "degrading": "正在降级",
+    "backoff": "退避中",
+    "fresh": "全新",
+    "active": "活跃"
   }
 }

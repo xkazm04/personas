@@ -343,7 +343,9 @@
     "search_suggestions_aria": "搜索建议",
     "clear_search_aria": "清除搜索",
     "search_with_ai_aria": "使用 AI 搜索",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "模板库覆盖范围筛选标签 — 每项保持 1 个词。\"草稿\"= 未发布的仅限开发的模板。",
+    "coverage_drafts": "草稿"
   },
   "list": {
     "template_name": "模板名称",
@@ -807,7 +809,25 @@
       "lab_desc": "当故障反复出现时，为此 persona 启用 Lab 自动改进（提示词演化）。",
       "escalate_after_label": "升级处理时间",
       "escalate_after_desc": "创建事件或发送到 Lab 前的连续失败次数。"
-    }
+    },
+    "_comment_left_connections_heading": "采用左侧面板中连接器卡片上方的标题 — 保持 1 个词",
+    "left_connections_heading": "连接",
+    "_comment_left_empty_placeholder": "配置任何内容之前，采用左侧面板中的静音占位符",
+    "left_empty_placeholder": "配置每个维度时，您的选择将显示在此处。",
+    "_comment_capabilities_aria": "采用能力标签条的无障碍标签",
+    "capabilities_aria": "能力",
+    "_comment_capability_include": "跳过某项能力时，每项能力电源切换按钮上的提示 — 点击以启用",
+    "capability_include": "启用能力",
+    "_comment_capability_skip": "能力开启时，每项能力电源切换按钮上的提示 — 点击以跳过",
+    "capability_skip": "跳过能力",
+    "_comment_policy_on": "为记忆和审查维度显示的开/关状态 — 保持 1 个词",
+    "policy_on": "开启",
+    "policy_off": "关闭",
+    "_comment_schedule_hourly": "每小时节奏的计划摘要标签 — 保持简短",
+    "schedule_hourly": "每小时",
+    "_comment_events_count": "为某项能力配置的跨角色事件订阅数量",
+    "events_count_one": "{count} 个事件",
+    "events_count_other": "{count} 个事件"
   },
   "scan": {
     "scanning_draft": "扫描代理草稿中...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} 个问题，全部使用默认值",
     "questionnaire_member_summary_customized": "{count} 个问题，已自定义 {customized} 项",
     "questionnaire_member_no_config": "无需配置",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "单向传递",
+    "graph_legend_feedback": "回传反馈"
   },
   "compare": {
     "compare": "对比",

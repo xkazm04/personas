@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "আরেনা",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} মি.সে.",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "সংস্করণ ও রেটিং",
+    "vr_subtitle": "আপনার পরিমাপ করা প্রতিটি প্রম্পট সংস্করণ × মডেল। একটি সারি লাইভ।",
+    "vr_col_version": "সংস্করণ",
+    "vr_col_model": "মডেল",
+    "vr_col_rating": "রেটিং",
+    "vr_col_delta": "বেসলাইন",
+    "vr_col_cost": "খরচ",
+    "vr_col_status": "স্ট্যাটাস",
+    "vr_col_actions": "অ্যাকশন",
+    "vr_status_active": "সক্রিয়",
+    "vr_status_baseline": "বেসলাইন",
+    "vr_status_archived": "আর্কাইভড",
+    "vr_status_measured": "পরিমাপিত",
+    "vr_status_unmeasured": "পরিমাপ করা হয়নি",
+    "vr_action_activate": "এই সংস্করণ + মডেল সক্রিয় করুন",
+    "vr_action_active": "এখন লাইভ",
+    "vr_action_measure": "মডেলজুড়ে পরিমাপ করুন (Arena)",
+    "vr_action_measuring": "পরিমাপ হচ্ছে…",
+    "vr_action_improve": "Athena দিয়ে উন্নত করুন",
+    "vr_action_diff": "সক্রিয়টির সাথে প্রম্পট তুলনা করুন",
+    "vr_action_archive": "সংস্করণ আর্কাইভ করুন",
+    "vr_action_unarchive": "সংস্করণ আনআর্কাইভ করুন",
+    "vr_action_pin_baseline": "রিগ্রেশন বেসলাইন হিসেবে পিন করুন",
+    "vr_action_unpin_baseline": "বেসলাইন আনপিন করুন",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count}টি নমুনা",
+    "vr_samples_other": "{count}টি নমুনা",
+    "vr_empty_title": "এখনও কোনো সংস্করণ নেই",
+    "vr_empty_desc": "প্রথম সংস্করণ তৈরি করতে পার্সোনার প্রম্পট সম্পাদনা করুন এবং সংরক্ষণ করুন, তারপর এখানে পরিমাপ করুন।",
+    "vr_measuring_toast": "মডেলগুলি জুড়ে v{version} পরিমাপ করা হচ্ছে…",
+    "vr_measure_modal_title": "v{version} পরিমাপ করুন",
+    "vr_measure_scope_banner": "সংস্করণ {version} পরিমাপ করা হচ্ছে — আপনার বাছাই করা মডেলগুলিতে এর প্রম্পট চালানো হবে। স্কোরগুলি রেটিং টেবিলে ফিরে আসবে।",
+    "vr_diff_title": "v{version} বনাম সক্রিয়",
+    "vr_diff_no_active": "তুলনার জন্য কোনো সক্রিয় সংস্করণ নেই।",
+    "vr_improve_seed_measured": "পার্সোনা \"{name}\" v{version} উন্নত করুন। সবচেয়ে দুর্বল পরিমাপকৃত মেট্রিক: {model}-এ {metric} {score}/100। আমার কোথায় মনোযোগ দেওয়া উচিত? ",
+    "vr_improve_seed_plain": "পার্সোনা \"{name}\" v{version} উন্নত করুন — এখনও পরিমাপ করা হয়নি। আমার কোথায় মনোযোগ দেওয়া উচিত? ",
+    "vr_metric_tool": "টুলের নির্ভুলতা",
+    "vr_metric_quality": "আউটপুটের মান",
+    "vr_metric_protocol": "প্রোটোকল সম্মতি"
   },
   "design": {
     "select_agent": "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",
@@ -903,7 +944,9 @@
     "next": "পরবর্তী",
     "go_back_hint": "ফিরে যান এবং আপনার এজেন্ট কনফিগার করতে প্রশ্নের উত্তর দিন।",
     "additional_instructions": "অতিরিক্ত নির্দেশনা বা প্রেক্ষাপট (ঐচ্ছিক)",
-    "additional_instructions_placeholder": "যেকোনো নির্দিষ্ট প্রয়োজনীয়তা, ডোমেন জ্ঞান বা সীমাবদ্ধতা যোগ করুন..."
+    "additional_instructions_placeholder": "যেকোনো নির্দিষ্ট প্রয়োজনীয়তা, ডোমেন জ্ঞান বা সীমাবদ্ধতা যোগ করুন...",
+    "role_user": "ব্যবহারকারী",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "কানেক্টরসমূহ",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "এটি {persona}-এর জন্য {title} চালাবে"
+    "schedule_will_run": "এটি {persona}-এর জন্য {title} চালাবে",
+    "_comment_manual_run_in_progress": "ম্যানুয়াল রান চলাকালীন রান-নাউ বোতামের টুলটিপ",
+    "manual_run_in_progress": "ম্যানুয়াল রান চলছে",
+    "_comment_run_now_tooltip": "রান-নাউ বোতামের টুলটিপ — প্রকৃত এক্সিকিউশন এবং টেস্টের মধ্যে পার্থক্য দেখায়",
+    "run_now_tooltip": "এই ইউজ কেসটি এখনই চালান — প্রকৃত এক্সিকিউশন এবং পরবর্তী ইভেন্টগুলি ট্রিগার করে",
+    "_comment_run_now": "রান-নাউ বোতামের লেবেল (বিস্তারিত প্যানেল + ক্যাপাবিলিটি ট্যাব বার)",
+    "run_now": "এখন চালান",
+    "_comment_event_type_options": "UseCaseSubscriptionForm ইভেন্ট-টাইপ ড্রপডাউন অপশন লেবেল",
+    "event_type_webhook_received": "Webhook প্রাপ্ত",
+    "event_type_execution_completed": "এক্সিকিউশন সম্পন্ন",
+    "event_type_execution_failed": "এক্সিকিউশন ব্যর্থ",
+    "event_type_persona_action": "পার্সোনা অ্যাকশন",
+    "event_type_file_changed": "ফাইল পরিবর্তিত",
+    "event_type_schedule_triggered": "সিডিউল ট্রিগার হয়েছে",
+    "_comment_dim_review_title": "ReviewDimCard শিরোনাম",
+    "dim_review_title": "পর্যালোচনা",
+    "_comment_pill_on": "ToggleDimCard চালু-অবস্থার পিল (মেমরি/ইভেন্ট)",
+    "pill_on": "চালু",
+    "_comment_pill_off": "বন্ধ-অবস্থার পিল, ToggleDimCard এবং ReviewDimCard উভয়ের জন্য ব্যবহৃত",
+    "pill_off": "বন্ধ",
+    "_comment_review_pill_queue": "ReviewDimCard QUEUE-অবস্থার পিল",
+    "review_pill_queue": "সারি",
+    "_comment_review_pill_trust": "ReviewDimCard TRUST-অবস্থার পিল",
+    "review_pill_trust": "বিশ্বাস",
+    "_comment_dim_status_activated": "PersonaSigilSummary মান যখন একটি বুলিয়ান ডিম (মেমরি/রিভিউ/ইভেন্ট/এরর) ক্যাপাবিলিটির জন্য সক্রিয়",
+    "dim_status_activated": "সক্রিয় করা হয়েছে"
   },
   "tools": {
     "no_persona": "কোনো পার্সোনা নির্বাচিত নেই",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "রায়",
+    "verdict_none": "Director এখনও পর্যালোচনা করেননি",
+    "verdict_tooltip": "Director-এর রায়: {score}/5"
   },
   "chat": {
     "select_persona": "চ্যাট শুরু করতে একটি পার্সোনা নির্বাচন করুন",
@@ -2293,7 +2364,8 @@
     "delete_agents": "{count}টি এজেন্ট মুছুন",
     "delete_agents_message": "{count}টি এজেন্ট এবং তাদের সব কনফিগারেশন স্থায়ীভাবে সরানো হবে।",
     "delete_drafts": "{count}টি খসড়া মুছুন",
-    "delete_drafts_message": "{count}টি খসড়া এজেন্ট স্থায়ীভাবে সরানো হবে।"
+    "delete_drafts_message": "{count}টি খসড়া এজেন্ট স্থায়ীভাবে সরানো হবে।",
+    "system_persona_undeletable": "Director একটি সিস্টেম পার্সোনা এবং এটি মুছে ফেলা যাবে না।"
   },
   "persona_list": {
     "all_personas": "সব পার্সোনা",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "এখনো কোনো গ্রুপ নেই — এজেন্ট → গ্রুপ-এ তৈরি করুন",
     "batch_move_to_ungrouped": "গ্রুপবিহীন",
     "batch_moved_success": "{count}টি পার্সোনা {group}-এ সরানো হয়েছে",
-    "batch_moved_partial": "{ok}টি {group}-এ সরানো হয়েছে; {failed}টি ব্যর্থ"
+    "batch_moved_partial": "{ok}টি {group}-এ সরানো হয়েছে; {failed}টি ব্যর্থ",
+    "render_cap_notice": "{total}-এর মধ্যে {shown}টি দেখানো হচ্ছে — বাকিগুলি দেখতে অনুসন্ধান বা ফিল্টার দিয়ে সংকুচিত করুন।",
+    "star_director_add": "Director-এর কোচিং স্কোপে যোগ করতে তারকা চিহ্নিত করুন",
+    "star_director_remove": "তারকা চিহ্নিত — Director-এর কোচিং স্কোপে আছে। সরাতে ক্লিক করুন।"
   },
   "design_preview": {
     "preview": "প্রিভিউ",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "আগত Slack বার্তার জন্য পোল করুন",
+    "slack_poll_inbound_help": "চেক করা থাকলে, পার্সোনা প্রতি ৫ সেকেন্ডে এই চ্যানেলে নতুন বার্তা পড়ে এবং থ্রেডে রান আউটপুট দিয়ে উত্তর দেয়। আগে বট-কে চ্যানেলে আমন্ত্রণ জানান।"
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "এই সক্ষমতার জন্য সক্রিয়",
   "sigil_edit_inactive": "নিষ্ক্রিয় — সক্ষম করতে চালু করুন",
   "sigil_edit_enable": "এই সক্ষমতার জন্য সক্ষম করুন",
-  "sigil_edit_disable": "এই সক্ষমতার জন্য নিষ্ক্রিয় করুন"
+  "sigil_edit_disable": "এই সক্ষমতার জন্য নিষ্ক্রিয় করুন",
+  "design_subtabs": {
+    "use_cases": "ব্যবহারের ক্ষেত্র",
+    "prompt": "প্রম্পট",
+    "connectors": "কানেক্টর ও টুলস",
+    "triggers": "ইভেন্ট ও ট্রিগার",
+    "messaging": "মেসেজিং",
+    "automations": "অটোমেশন",
+    "triggers_desc": "প্রতি-পার্সোনা ইভেন্ট সাবস্ক্রিপশন ও ট্রিগার কনফিগারেশন এই ট্যাবে আসবে।",
+    "messaging_desc": "এই এজেন্টের নোটিফিকেশন চ্যানেল ও ইনবক্স রাউটিং এখানে থাকবে।",
+    "automations_desc": "এই এজেন্টের স্বতন্ত্র অটোমেশন নিয়মগুলো এখানে থাকবে।"
+  },
+  "parameters_card": {
+    "title": "প্যারামিটার",
+    "saved": "সংরক্ষিত",
+    "apply": "প্রয়োগ করুন",
+    "on": "চালু",
+    "off": "বন্ধ",
+    "reset": "রিসেট"
+  },
+  "editor_empty": {
+    "title": "কোনো পার্সোনা নির্বাচিত নেই",
+    "subtitle": "সম্পাদনা শুরু করতে সাইডবার থেকে একটি এজেন্ট বেছে নিন, বা নতুন একটি তৈরি করুন।",
+    "create": "পার্সোনা তৈরি করুন",
+    "resume_label": "আবার শুরু করুন"
+  },
+  "build_template_match_label": "দ্রুততর পথ",
+  "build_template_match_title": "\"{name}\" একটি ম্যাচ মনে হচ্ছে",
+  "build_template_match_body": "এই রেডিমেড টেমপ্লেটটি আপনার বর্ণনার সাথে মিলে যায় — এই প্রশ্নগুলো এড়িয়ে যেতে এটি গ্রহণ করুন। এটি ইতিমধ্যে সেটআপ ও পরীক্ষিত।",
+  "build_template_match_adopt": "এই টেমপ্লেট ব্যবহার করুন",
+  "build_template_match_dismiss": "তৈরি চালিয়ে যান",
+  "build_template_match_loading": "ম্যাচিং টেমপ্লেট খোঁজা হচ্ছে…",
+  "build_template_match_more": "বা শুরু করুন",
+  "_comment_glyph_db_scope": "কানেক্টর পিকারে ডেটাবেস কানেক্টর টেবিল-স্কোপিং প্যানেল",
+  "glyph_db_scope_heading": "ডেটাবেস টেবিল",
+  "glyph_db_scope_all": "সব টেবিল",
+  "glyph_db_scope_loading": "টেবিল লোড হচ্ছে…",
+  "glyph_db_scope_error": "টেবিল লোড করা যায়নি — আবার চেষ্টা করুন",
+  "glyph_db_scope_empty": "কোনো টেবিল পাওয়া যায়নি",
+  "glyph_db_scope_selected": "{total}টির মধ্যে {count}টি টেবিল"
 }

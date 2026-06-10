@@ -29,7 +29,43 @@
     "updates_current_version": "현재 버전 v{version}",
     "updates_last_checked": "마지막 확인 {time}",
     "updates_history_title": "최근 업데이트",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "클라우드 대시보드 동기화",
+    "cloud_sync_description": "페르소나, 실행 기록, 활동의 읽기 전용 사본을 개인 클라우드에 동기화하여 웹 대시보드에서 확인할 수 있습니다. 커넥터 자격 증명은 이 기기를 벗어나지 않습니다.",
+    "cloud_sync_toggle": "클라우드 대시보드에 동기화",
+    "cloud_sync_on": "데이터가 클라우드 대시보드에 동기화되고 있습니다.",
+    "cloud_sync_off": "데이터가 이 기기에만 저장됩니다.",
+    "cloud_sync_toggle_aria": "클라우드 대시보드 동기화 전환",
+    "cloud_sync_now": "지금 동기화",
+    "cloud_sync_syncing": "동기화 중...",
+    "cloud_sync_last": "마지막 동기화",
+    "cloud_sync_never": "아직 동기화되지 않음",
+    "cloud_sync_error": "마지막 동기화 실패: {error}",
+    "cloud_sync_enable_failed": "동기화 설정을 업데이트할 수 없습니다",
+    "cloud_sync_now_failed": "동기화에 실패했습니다. 연결 상태를 확인하고 다시 시도하세요.",
+    "cloud_sync_now_done": "{count}개 레코드 동기화됨",
+    "cloud_sync_state_off": "꺼짐",
+    "cloud_sync_state_active": "활성",
+    "cloud_sync_state_syncing": "동기화 중…",
+    "cloud_sync_total": "누적 동기화 완료",
+    "cloud_sync_device": "기기 {id}",
+    "cloud_sync_tables_title": "동기화된 데이터",
+    "cloud_sync_show_details": "세부 정보 표시",
+    "cloud_sync_hide_details": "세부 정보 숨기기",
+    "cloud_sync_retry": "다시 시도",
+    "cloud_sync_rows": "행",
+    "cloud_sync_table_pending": "첫 번째 동기화 대기 중",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "실행",
+      "synced_events": "이벤트",
+      "synced_manual_reviews": "검토",
+      "synced_messages": "메시지",
+      "synced_metrics_snapshots": "메트릭",
+      "synced_tool_usage": "도구 사용",
+      "synced_memories": "메모리",
+      "synced_knowledge_patterns": "지식"
+    }
   },
   "appearance_extra": {
     "simple": "Simple",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "팀 메모리",
+    "import_team_memories": "{count}개 팀 메모리",
+    "include_memories_label": "메모리 포함",
+    "include_memories_note": "페르소나 및 팀 메모리가 내보내기에 포함됩니다. 메모리 없이 에이전트와 팀만 내보내려면 이 옵션을 끄세요."
   },
   "config": {
     "title": "Config Resolution",
@@ -510,7 +550,12 @@
     "over_budget": "월간 상한을 초과했습니다. 2단계에서는 이 상황이 발생하면 새 실행이 차단되지만, 현재는 경고로만 처리됩니다.",
     "approaching_budget": "월간 상한에 근접하고 있습니다. 최근 실행을 검토해 보세요.",
     "no_ceiling_hint": "설정된 상한이 없습니다. 예산 대비 추적을 시작하려면 위에 USD 금액을 입력하세요.",
-    "stage1_note": "1단계: 정보 제공 전용. 2단계에서는 상한을 초과할 때 실행 디스패치가 차단됩니다."
+    "stage1_note": "1단계: 정보 제공 전용. 2단계에서는 상한을 초과할 때 실행 디스패치가 차단됩니다.",
+    "concurrency_section": "병렬 실행",
+    "concurrency_hint": "동시에 실행할 수 있는 페르소나 수입니다. 초과된 실행은 대기열에 들어가며, 슬롯이 비면 자동으로 시작됩니다. 변경 사항은 즉시 적용되며 재시작이 필요 없습니다.",
+    "concurrency_aria": "최대 병렬 실행 수",
+    "concurrency_range": "{min}에서 {max}개의 동시 실행.",
+    "concurrency_queued_note": "이 제한을 초과하는 실행은 대기열에 들어가며, 실행 중인 작업이 완료되면 우선순위와 도착 순서에 따라 승격됩니다."
   },
   "recent_change": {
     "label": "최근 {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "설정 검색…",
+    "recommended": "추천",
+    "section": "설정",
+    "trigger_hint": "설정 검색  ·  Ctrl / ⌘ K",
+    "trigger_aria": "설정 검색 열기",
+    "reduce_motion": "모션 줄이기",
+    "dim": "색상 강도 줄이기",
+    "cvd_safe": "색맹 안전 팔레트",
+    "high_contrast": "고대비",
+    "ambient": "시간대별 헤더 아트",
+    "theme": "테마 및 색상",
+    "text_size": "텍스트 크기",
+    "brightness": "밝기",
+    "density": "레이아웃 밀도",
+    "timezone": "시간대",
+    "tabs": {
+      "limits": "제한",
+      "api_keys": "API 키",
+      "history": "기록"
+    }
   }
 }

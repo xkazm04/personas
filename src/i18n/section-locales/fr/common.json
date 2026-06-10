@@ -163,5 +163,7 @@
   "field_name_taken": "Déjà utilisé",
   "field_name_taken_suggestion": "Already in use — try {name}",
   "form_error_summary_title_one": "{count} field needs your attention",
-  "form_error_summary_title_other": "{count} fields need your attention"
+  "form_error_summary_title_other": "{count} fields need your attention",
+  "error_boundary_chunk_subtitle": "Une partie de l'application n'a pas pu être chargée -- cela peut arriver après une mise à jour ou une interruption de connexion. Vos données sont en sécurité ; recharger l'application résout généralement le problème.",
+  "reload_app": "Recharger l'application"
 }

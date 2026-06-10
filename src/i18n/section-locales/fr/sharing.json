@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "Identité de signature indisponible",
+  "identity_degraded_hint": "La clé de signature de votre appareil n'a pas pu être chargée — le trousseau du système d'exploitation a peut-être été réinitialisé. La confiance entre pairs et la synchronisation sont interrompues jusqu'à ce que vous réinitialisiez votre identité."
 }

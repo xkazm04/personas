@@ -133,7 +133,25 @@
     "source_provider": "प्रदाता",
     "source_policy": "नीति",
     "source_healing_issue": "हीलिंग समस्या",
-    "source_execution_error": "निष्पादन त्रुटि"
+    "source_execution_error": "निष्पादन त्रुटि",
+    "action_start_work": "काम शुरू करें",
+    "action_back_to_open": "खुले पर वापस जाएं",
+    "filter_status_in_progress": "प्रगति में",
+    "detail_title": "घटना विवरण",
+    "detail_label_status": "स्थिति",
+    "detail_label_kind": "प्रकार",
+    "detail_label_source": "स्रोत",
+    "detail_label_persona": "एजेंट",
+    "detail_label_detail": "विवरण",
+    "detail_label_resolution_note": "समाधान नोट",
+    "detail_label_created": "बनाया गया",
+    "detail_label_acknowledged": "स्वीकृत",
+    "detail_label_resolved": "हल किया गया",
+    "detail_no_detail": "कोई अतिरिक्त विवरण नहीं।",
+    "detail_note_label": "समाधान नोट (वैकल्पिक)",
+    "detail_no_persona": "कोई एजेंट नहीं",
+    "empty_open_title": "सब ठीक है",
+    "empty_filtered_title": "कोई मिलती घटना नहीं"
   },
   "observability": {
     "title": "अवलोकनशीलता",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "सभी हटाएं",
+    "delete_all_confirm_title": "सभी स्मृतियां हटाएं?",
+    "delete_all_confirm_body": "यह सभी {count} स्मृतियां स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
+    "delete_all_confirm_cta": "सभी हटाएं"
   },
   "memory_review": {
     "all_conflicts_resolved": "सभी टकराव हल हो गए",
@@ -473,7 +495,18 @@
     "select_action_first": "पहले एक सुझाई गई कार्रवाई चुनें",
     "review_detail": "समीक्षा विवरण",
     "select_review": "देखने के लिए एक समीक्षा चुनें",
-    "technical_context": "तकनीकी संदर्भ"
+    "technical_context": "तकनीकी संदर्भ",
+    "split": "विभाजित",
+    "split_tooltip": "विभाजित दृश्य — विवरण पैनल के साथ सूची",
+    "table": "तालिका",
+    "table_tooltip": "तालिका दृश्य — ग्रिड में सभी समीक्षाएं",
+    "backlog_group_title": "Dev Tools बैकलॉग",
+    "backlog_accept": "स्वीकार करें",
+    "backlog_reject": "अस्वीकार करें",
+    "delete_all": "सभी हटाएं",
+    "delete_all_confirm_title": "सभी समीक्षाएं हटाएं?",
+    "delete_all_confirm_body": "यह सभी {count} समीक्षाओं को स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
+    "delete_all_confirm_cta": "सभी हटाएं"
   },
   "messages_view": {
     "title": "संदेश",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "सभी हटाएं",
+    "delete_all_confirm_title": "सभी संदेश हटाएं?",
+    "delete_all_confirm_body": "यह सभी {count} संदेशों को स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
+    "delete_all_confirm_cta": "सभी हटाएं"
   },
   "events": {
     "title": "इवेंट",
@@ -809,7 +846,13 @@
     "create_persona": "पर्सोना बनाएं",
     "from_templates": "टेम्पलेट से",
     "execution_label": "निष्पादन",
-    "unknown": "अज्ञात"
+    "unknown": "अज्ञात",
+    "value_section_title": "व्यावसायिक मूल्य",
+    "value_delivered_rate": "मूल्य-वितरण दर",
+    "cost_per_value": "लागत / मूल्य रन",
+    "value_delivered_count": "वितरित मूल्य",
+    "all_models": "सभी मॉडल",
+    "col_model": "मॉडल"
   },
   "analytics_dashboard": {
     "title": "एनालिटिक्स",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "अभी देय",
+    "rotation_countdown_days_hours": "{days}दि {hours}घं",
+    "rotation_countdown_hours": "{hours}घ"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "मेमोरी खोजें...",
     "all_agents": "सभी एजेंट",
-    "all_categories": "सभी श्रेणियाँ"
+    "all_categories": "सभी श्रेणियाँ",
+    "tier_all": "सक्रिय सेट",
+    "tier_core": "मूल",
+    "tier_active": "सक्रिय",
+    "tier_working": "कार्यशील",
+    "tier_archived": "संग्रहीत"
   },
   "memory_actions": {
     "dismiss_suggestion": "सुझाव खारिज करें",
@@ -1246,7 +1297,8 @@
     "reject_all": "सभी अस्वीकार करें",
     "accept_all": "सभी स्वीकार करें",
     "retry_with_changes": "बदलावों के साथ पुनः प्रयास करें",
-    "video_not_supported": "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।"
+    "video_not_supported": "आपका ब्राउज़र वीडियो प्लेबैक का समर्थन नहीं करता।",
+    "carry_out_hint": "समीक्षा स्वीकृत करता है और इसे पूरा करने के लिए persona चलाता है"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} लंबित समीक्षा चयनित",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "पुष्टि करें",
-    "cancel": "रद्द करें"
+    "cancel": "रद्द करें",
+    "restore": "सक्रिय सेट में पुनर्स्थापित करें"
   },
   "memory_detail": {
     "title_label": "शीर्षक",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my पर्सोनाs — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my पर्सोनाs — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena ने यह स्पष्टीकरण आपके लिए तैयार किया है — वापस अपने कॉकपिट पर जाने के लिए बाहर निकलें।",
+    "context_explaining": "Athena समझा रही है: {title}",
+    "widget_empty": "अभी दिखाने के लिए कुछ नहीं।",
+    "verdict_title": "Athena का निर्णय",
+    "verdict_confidence": "विश्वास स्तर",
+    "verdict_confidence_high": "उच्च",
+    "verdict_confidence_medium": "मध्यम",
+    "verdict_confidence_low": "निम्न",
+    "verdict_resolve": "अभी हल करें",
+    "comparison_recommended": "अनुशंसित",
+    "flow_title": "यह कैसे सामने आता है",
+    "timeline_title": "समयरेखा",
+    "log_title": "साक्ष्य"
+  },
+  "certification": {
+    "title": "प्रमाणन कमांड सेंटर",
+    "subtitle": "टीम-स्वायत्तता मूल्यांकन रन और प्रमाणन स्थिति (केवल dev)",
+    "updated": "अपडेट किया गया",
+    "refresh": "रीफ्रेश करें",
+    "error_title": "मूल्यांकन रन लोड नहीं हो सके",
+    "loading": "मूल्यांकन रन लोड हो रहे हैं…",
+    "loading_detail": "रन विवरण लोड हो रहा है…",
+    "tab_overview": "अवलोकन",
+    "tab_history": "रन इतिहास",
+    "back": "वापस",
+    "empty_title": "कोई मूल्यांकन रन नहीं",
+    "empty_desc": "docs/test/runs/ को भरने के लिए eval हार्नेस (scripts/test/) चलाएं।",
+    "teams_certified": "टीमें प्रमाणित",
+    "certified": "प्रमाणित",
+    "streak_label": "क्रम",
+    "held_out_runs": "held-out रन",
+    "provisional": "अनंतिम निर्णय (जज ने अभी स्कोर नहीं किया)",
+    "final": "अंतिम निर्णय",
+    "team_score": "टीम स्कोर",
+    "cost": "लागत",
+    "dims_title": "निर्धारक आयाम",
+    "dim_cascade": "कैस्केड पूर्णता",
+    "dim_density": "कार्य घनत्व",
+    "dim_handoff": "हैंडऑफ स्वास्थ्य",
+    "dim_learning": "लर्निंग लूप",
+    "dim_grounding": "ग्राउंडिंग",
+    "dim_correctness": "शुद्धता",
+    "dim_actionability": "क्रियाशीलता",
+    "dim_specificity": "विशिष्टता",
+    "dim_role_fidelity": "भूमिका निष्ठा",
+    "gates_title": "बिल्ड / lint / टेस्ट गेट्स",
+    "gate_build": "बिल्ड",
+    "gate_lint": "Lint",
+    "gate_test": "टेस्ट",
+    "gate_pass": "पास",
+    "gate_fail": "विफल",
+    "gate_log": "लॉग",
+    "gate_copy_log": "लॉग कॉपी करें",
+    "gate_code_track": "कोड-ट्रैक रन",
+    "delivered": "master को डिलीवर किया गया",
+    "cascade_stalled": "कैस्केड रुक गया",
+    "self_vetoed": "स्व-वीटो किया गया",
+    "self_veto_capped": "टीम ने निर्णय को स्व-सीमित किया",
+    "grounding_title": "उद्धरण ग्राउंडिंग",
+    "grounding_file": "फ़ाइल",
+    "grounding_valid": "मान्य",
+    "grounding_pct": "%",
+    "grounding_invalid": "अमान्य",
+    "grounding_na": "जांचने के लिए कोई उद्धरण नहीं",
+    "standards_title": "मानक और ब्रांचिंग अनुपालन",
+    "standards_subtitle": "रन ने प्रोजेक्ट की घोषित pre-commit + ब्रांचिंग नीति का कितनी अच्छी तरह पालन किया",
+    "standards_compliance": "अनुपालन",
+    "standards_rule": "नियम",
+    "standards_basis": "आधार",
+    "standards_na": "लागू नहीं",
+    "trajectory_title": "स्कोर प्रक्षेपवक्र",
+    "judge_title": "जज पैनल",
+    "judge_mean": "औसत",
+    "judge_min": "न्यूनतम आउटपुट",
+    "judge_balance": "संतुलन",
+    "fact_executions": "पूर्ण",
+    "fact_failed": "विफल",
+    "fact_members": "सदस्य",
+    "fact_reviews": "समीक्षाएं",
+    "fact_memories": "यादें",
+    "fact_cost": "लागत",
+    "fact_window": "विंडो",
+    "col_team": "टीम",
+    "col_seed": "सीड",
+    "col_verdict": "निर्णय",
+    "col_score": "स्कोर",
+    "col_gates": "गेट्स",
+    "col_started": "शुरू किया"
+  },
+  "fleet_optimization": {
+    "title": "फ्लीट अनुकूलन",
+    "open_lab": "Lab खोलें",
+    "open_lab_hint": "Lab में {persona} के लिए वैकल्पिक मॉडल परखें",
+    "ask_athena": "Athena से पूछें",
+    "ask_athena_hint": "यह सुझाव जांच के लिए Athena को भेजें",
+    "ask_athena_prompt": "मैं अपने agents के लिए एक फ्लीट अनुकूलन सुझाव की समीक्षा कर रहा हूँ: \"{title}\"। {description} सुझाया गया कार्य: {action}। {focus}",
+    "ask_athena_focus_persona": "कृपया agent \"{persona}\" की जांच करें और, यदि उपयोगी हो, वैकल्पिक मॉडल परखने के लिए उसका Lab खोलें, फिर जो मिले वह बताएं।",
+    "ask_athena_focus_general": "कृपया इसकी जांच करें और क्या बदलना है इसकी सिफ़ारिश करें।"
   }
 }

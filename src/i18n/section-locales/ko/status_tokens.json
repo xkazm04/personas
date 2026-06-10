@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "프로덕션",
+    "promising": "유망",
+    "not_ready": "준비 안 됨",
+    "broken": "오류"
+  },
+  "deployment": {
+    "active": "활성",
+    "paused": "일시 중지",
+    "failed": "실패",
+    "unknown": "알 수 없음"
+  },
+  "delivery": {
+    "delivered": "전달됨",
+    "failed": "실패",
+    "pending": "대기 중",
+    "queued": "큐에 있음"
+  },
+  "rotation": {
+    "anomaly": "이상 감지",
+    "paused": "일시 중지",
+    "disabled": "비활성화",
+    "perm_errors": "영구 오류",
+    "degrading": "저하 중",
+    "backoff": "백오프",
+    "fresh": "최신",
+    "active": "활성"
   }
 }

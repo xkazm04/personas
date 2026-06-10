@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Actualizar",
+    "tool_count_one": "{count} herramienta",
+    "tool_count_other": "{count} herramientas",
+    "tab_documents": "Documentos",
+    "tab_search": "Búsqueda",
+    "tab_settings": "Configuración"
   },
   "manager": {
     "title": "Credenciales",
@@ -845,7 +851,10 @@
     "enabling": "Habilitando...",
     "enable_rotation": "Habilitar rotación",
     "enable_failed": "Error al habilitar la rotación: {error}",
-    "last_rotated": "Última rotación {time}"
+    "last_rotated": "Última rotación {time}",
+    "ring_aria_label": "Rotación en {countdown}",
+    "history_empty_title": "Sin historial de rotación aún",
+    "history_empty_subtitle": "Los eventos de rotación aparecerán aquí cuando esta credencial rote."
   },
   "event_config": {
     "event_triggers": "Disparadores de eventos",
@@ -950,11 +959,24 @@
     "catalog_description": "Elige un servicio conocido como Slack, GitHub u OpenAI. Campos preconfigurados y verificaciones de salud.",
     "ai_heading": "Credencial diseñada con IA",
     "ai_description": "Describe cualquier servicio y la IA configurará los campos, el tipo de autenticación y la verificación de salud por ti.",
-    "works_with_any": "Funciona con cualquier API"
+    "works_with_any": "Funciona con cualquier API",
+    "recommended": "Recomendado"
   },
   "credential_list": {
     "no_match": "Ninguna credencial coincide",
-    "no_match_hint": "Intenta ajustar tus filtros o término de búsqueda"
+    "no_match_hint": "Intenta ajustar tus filtros o término de búsqueda",
+    "col_name": "Nombre",
+    "col_status": "Estado",
+    "col_type": "Tipo",
+    "col_category": "Categoría",
+    "col_health": "Salud",
+    "col_last_used": "Último uso",
+    "col_created": "Creado",
+    "filter_all": "Todos",
+    "filter_all_health": "Toda la salud",
+    "health_healthy": "Saludable",
+    "health_failing": "Con fallos",
+    "health_untested": "Sin probar"
   },
   "wizard_detect": {
     "no_services": "No hay servicios que coincidan con \\\"{search}\\\"",
