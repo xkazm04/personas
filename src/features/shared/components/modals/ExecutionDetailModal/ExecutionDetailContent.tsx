@@ -2,8 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Clock, Calendar, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
-import { formatTimestamp, formatDuration, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { Clock, Calendar, Cpu, Shield, RotateCw, RefreshCw, Check, Copy, Code, MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, Loader2, type LucideIcon } from 'lucide-react';
+import { formatTimestamp, formatDuration, formatModelShort, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useAgentStore } from "@/stores/agentStore";
 import { isTerminalState } from '@/lib/execution/executionState';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
@@ -93,6 +93,11 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           </span>
         )}
         <span className="flex items-center gap-1 typo-body text-foreground"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
+        {execution.model_used && (
+          <span className="flex items-center gap-1 typo-body text-foreground font-mono" title={execution.model_used}>
+            <Cpu className="w-3 h-3" /> {formatModelShort(execution.model_used)}
+          </span>
+        )}
         <span className="flex items-center gap-1 typo-body text-foreground"><Calendar className="w-3 h-3" /> {formatTimestamp(execution.started_at)}</span>
         <div className="ml-auto flex items-center gap-2">
           <button onClick={() => setShowRaw(!showRaw)} className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg typo-body transition-colors ${showRaw ? 'bg-amber-500/10 text-amber-400' : 'text-foreground hover:text-muted-foreground/70'}`}>

@@ -104,13 +104,6 @@
     "restart": "पुनः प्रारंभ",
     "start_tour": "टूर शुरू करें",
     "steps_count": "{count} चरण",
-    "tricks_tips": "ट्रिक्स और टिप्स",
-    "guides_count": "{count} गाइड",
-    "how_to_use": "उपयोग कैसे करें",
-    "pro_tip": "प्रो टिप: ",
-    "cat_agent_craft": "एजेंट क्राफ्ट",
-    "cat_observability": "ऑब्जर्वेबिलिटी और इवेंट",
-    "cat_platform": "प्लेटफ़ॉर्म और सेटअप",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

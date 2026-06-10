@@ -11,7 +11,7 @@
  *   Level 3 pane via {@link SidebarLevel3}. The L3 header shows
  *   "← Plugins" plus an optional context chip (active project for Dev
  *   Tools, active twin for Twin). The body is the plugin's sub-tab list.
- * - Plugins without sub-items (Browse, Brain, Drive, Langfuse) stay flat
+ * - Plugins without sub-items (Browse, Brain, Drive) stay flat
  *   on L2 — clicking them just sets `pluginTab` and the page renders the
  *   plugin's own surface.
  *
@@ -19,7 +19,7 @@
  * change. See {@link SidebarLevel3} for the primitive.
  */
 import { AnimatePresence } from 'framer-motion';
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart, type LucideIcon } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
@@ -76,6 +76,7 @@ export function PluginsSidebarNav() {
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
   const studioJobActive = useSystemStore((s) => s.studioJobActive);
+  const revitalizeRunning = useSystemStore((s) => s.obsidianRevitalizeRunning);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
@@ -94,7 +95,6 @@ export function PluginsSidebarNav() {
     { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
     { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
     { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true, devOnly: true },
-    { id: 'langfuse',        label: 'Langfuse',                            icon: LineChart, hasSubItems: false },
   ], [t]);
 
   const browseMeta = allPlugins.find((p) => p.id === 'browse')!;
@@ -139,6 +139,7 @@ export function PluginsSidebarNav() {
           fleetWaitingCount={fleetWaitingCount}
           pendingConflicts={pendingConflicts}
           studioJobActive={studioJobActive}
+          revitalizeRunning={revitalizeRunning}
         />
       ) : (
         <div key="plugin-l2" className="flex flex-col h-full">
@@ -178,6 +179,7 @@ export function PluginsSidebarNav() {
                 const isActive = pluginTab === plugin.id;
                 const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
                 const showTwinStudioRunning = plugin.id === 'twin' && studioJobActive;
+                const showBrainRevitalizing = plugin.id === 'obsidian-brain' && revitalizeRunning;
                 const showTwinMissing = plugin.id === 'twin' && !studioJobActive && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
                 const devBorder = plugin.devOnly ? 'border border-amber-400/60 ring-1 ring-amber-400/20' : 'border border-transparent';
                 return (
@@ -241,6 +243,12 @@ export function PluginsSidebarNav() {
                         <span className="relative w-2.5 h-2.5 rounded-full bg-violet-500 border border-violet-600/50" />
                       </span>
                     )}
+                    {showBrainRevitalizing && (
+                      <span className="relative flex h-2.5 w-2.5" title={t.plugins.obsidian_brain.revitalize_badge_running}>
+                        <span className="absolute inset-0 rounded-full animate-ping bg-fuchsia-500/40" />
+                        <span className="relative w-2.5 h-2.5 rounded-full bg-fuchsia-500 border border-fuchsia-600/50" />
+                      </span>
+                    )}
                     {showTwinMissing && (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
                     )}
@@ -278,6 +286,7 @@ interface PluginL3Props {
   fleetWaitingCount: number;
   pendingConflicts: number;
   studioJobActive: boolean;
+  revitalizeRunning: boolean;
 }
 
 function PluginL3(props: PluginL3Props) {
@@ -312,11 +321,17 @@ function PluginL3(props: PluginL3Props) {
           id: item.id,
           label: item.label,
           icon: item.icon,
-          rightSlot: item.id === 'sync' && props.pendingConflicts > 0 ? (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption font-medium border border-amber-500/30">
-              {props.pendingConflicts}
-            </span>
-          ) : null,
+          rightSlot:
+            item.id === 'sync' && props.pendingConflicts > 0 ? (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 typo-caption font-medium border border-amber-500/30">
+                {props.pendingConflicts}
+              </span>
+            ) : item.id === 'revitalize' && props.revitalizeRunning ? (
+              <span className="relative flex h-2.5 w-2.5" title={t.plugins.obsidian_brain.revitalize_badge_running}>
+                <span className="absolute inset-0 rounded-full animate-ping bg-fuchsia-500/40" />
+                <span className="relative w-2.5 h-2.5 rounded-full bg-fuchsia-500 border border-fuchsia-600/50" />
+              </span>
+            ) : null,
         }));
       case 'twin':
         return twinItems.map((item) => ({
@@ -345,7 +360,7 @@ function PluginL3(props: PluginL3Props) {
       default:
         return [];
     }
-  }, [plugin, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, t.twin.studioInProgress]);
+  }, [plugin, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, props.revitalizeRunning, t.twin.studioInProgress, t.plugins.obsidian_brain.revitalize_badge_running]);
 
   const activeId = pickActiveId(plugin, props);
   const onSelect = pickSelectHandler(plugin, props);

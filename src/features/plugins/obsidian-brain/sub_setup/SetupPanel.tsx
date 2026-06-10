@@ -178,6 +178,8 @@ export default function SetupPanel() {
       void fetchConnectorDefinitions();
       // A freshly-configured vault flips Obsidian availability → surface the mirror group.
       void refreshMirrorState();
+      // Completes the Brain tour's "Connect a Vault" step (no-op outside the tour).
+      useSystemStore.getState().emitTourEvent('tour:obsidian-vault-connected');
       addToast(t.plugins.obsidian_brain.config_saved, 'success');
     } catch (e) {
       addToast(tx(t.plugins.obsidian_brain.save_failed, { error: String(e) }), 'error');
@@ -196,6 +198,7 @@ export default function SetupPanel() {
             <button
               onClick={detectVaults}
               disabled={detecting}
+              data-testid="obsidian-detect-vaults"
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {detecting ? <LoadingSpinner size="sm" /> : <Search className="w-4 h-4" />}
@@ -243,11 +246,13 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
+              data-testid="obsidian-vault-path-input"
               className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <button
               onClick={testConnection}
               disabled={!vaultPath || testing}
+              data-testid="obsidian-test-connection"
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
@@ -306,7 +311,7 @@ export default function SetupPanel() {
           {/* Knowledge mirror — opt-in, only when Obsidian is available. Saves
               immediately (independent of the Save Configuration button). */}
           {availability?.available && mirrorConfig && (
-            <div className="pt-3 mt-1 border-t border-primary/10 space-y-3">
+            <div className="pt-3 mt-1 border-t border-primary/10 space-y-3" data-testid="obsidian-knowledge-mirror">
               <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.knowledge_mirror}</p>
               {[
                 { key: 'researchLab' as const, icon: <FlaskConical className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_research_lab, desc: t.plugins.obsidian_brain.mirror_research_lab_desc },
@@ -364,6 +369,7 @@ export default function SetupPanel() {
       <button
         onClick={saveConfig}
         disabled={saving || !connectionResult?.valid}
+        data-testid="obsidian-save-config"
         className="flex items-center gap-2 px-6 py-2.5 rounded-modal bg-violet-500/20 text-violet-300 border border-violet-500/30 hover:bg-violet-500/30 transition-colors disabled:opacity-40 focus-ring"
       >
         {saving ? <LoadingSpinner size="sm" /> : <Save className="w-4 h-4" />}

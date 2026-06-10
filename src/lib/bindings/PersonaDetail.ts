@@ -66,13 +66,6 @@ template_category: string | null,
  */
 cli_awareness_enabled: boolean, 
 /**
- * Per-persona gate for the Langfuse trace exporter. Defaults to `true`
- * so existing personas continue exporting if the user has the plugin
- * connected; turning it off keeps THIS persona's traces local without
- * disabling the integration globally.
- */
-langfuse_export_enabled: boolean, 
-/**
  * Adoption pre-flight signal. `ready` (default) means every declared
  * connector has a matching vault credential or is a built-in local
  * resource. `needs_credentials` means the persona was created but one

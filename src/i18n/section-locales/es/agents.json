@@ -2159,9 +2159,7 @@
     "no_twins_configured": "No hay gemelos configurados. Abre el plugin Gemelo para crear uno — esta persona podrá adoptarlo.",
     "twin_profile_aria": "Perfil gemelo que esta persona adopta",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export trazas to Langfuse",
-    "langfuse_export_desc": "Ship this persona's execution trazas to your configured Langfuse instance. Off keeps THIS persona's trazas local without disabling the integration globally — useful for personas handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "No hay herramientas asignadas a esta persona.",
@@ -2542,5 +2540,9 @@
     "moved_toast": "{persona} movida a {group}",
     "filter_clear_title": "Haz clic para borrar este filtro",
     "filter_all": "Sin preference"
-  }
+  },
+  "sigil_edit_active": "Activo para esta capacidad",
+  "sigil_edit_inactive": "Inactivo — actívalo para habilitar",
+  "sigil_edit_enable": "Habilitar para esta capacidad",
+  "sigil_edit_disable": "Deshabilitar para esta capacidad"
 }

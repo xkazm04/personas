@@ -149,6 +149,10 @@ export const EventName = {
   TWIN_STUDIO_PROGRESS: 'twin-studio-progress',
   TWIN_STUDIO_COMPLETE: 'twin-studio-complete',
 
+  // Obsidian Brain — Revitalize (background vault memory optimization)
+  OBSIDIAN_REVITALIZE_STATUS: 'obsidian-revitalize-status',
+  OBSIDIAN_REVITALIZE_OUTPUT: 'obsidian-revitalize-output',
+
   // Auto-run scheduler
   AUTO_RUN_STATUS: 'auto-run-status',
   AUTO_RUN_COMPLETE: 'auto-run-complete',
@@ -770,6 +774,10 @@ export interface EventPayloadMap {
   [EventName.TWIN_STUDIO_OUTPUT]: { job_id: string; line: string };
   [EventName.TWIN_STUDIO_PROGRESS]: { batch_id: string; phase: string; completed: number; total: number };
   [EventName.TWIN_STUDIO_COMPLETE]: { batch_id: string; status: string; phase: string; item_count: number };
+
+  // Obsidian Brain — Revitalize (BackgroundJob pattern)
+  [EventName.OBSIDIAN_REVITALIZE_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.OBSIDIAN_REVITALIZE_OUTPUT]: { job_id: string; line: string };
 
   // Auto-run scheduler
   [EventName.AUTO_RUN_STATUS]: { job_id: string; status: string; error?: string };

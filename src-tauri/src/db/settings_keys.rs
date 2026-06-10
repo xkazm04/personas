@@ -114,6 +114,11 @@ pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
 /// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset.
 pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = "claude-haiku-4-5-20251001";
 
+/// ISO 8601 timestamp of the last completed daily credential healthcheck sweep.
+/// Written by the in-process `CredentialHealthcheckSubscription` to gate the
+/// sweep to once per 24h (replaces the old per-Vault-visit frontend auto-test).
+pub const CREDENTIAL_HEALTHCHECK_LAST: &str = "credential_healthcheck_last";
+
 /// Whether the weekly health digest is enabled. Value: `"true"` or `"false"`.
 pub const HEALTH_DIGEST_ENABLED: &str = "health_digest_enabled";
 
@@ -138,6 +143,13 @@ pub const OBSIDIAN_BRAIN_CONFIG: &str = "obsidian_brain_config";
 /// Knowledge-mirror opt-in flags (JSON-encoded ObsidianMirrorConfig): which
 /// internal stores mirror into the Obsidian vault. All default false.
 pub const OBSIDIAN_MIRROR_CONFIG: &str = "obsidian_mirror_config";
+
+/// Saved Obsidian vault list (JSON-encoded Vec<ObsidianVaultConfig>). The
+/// user's quick-switch roster shown in the Brain plugin's "Saved vaults"
+/// sidebar. Lived in webview localStorage until 2026-06-10, which silently
+/// dropped the list whenever the webview profile was cleared — moved into
+/// app_settings so it survives app sessions like the active config does.
+pub const OBSIDIAN_BRAIN_SAVED_VAULTS: &str = "obsidian_brain_saved_vaults";
 
 /// Dev-tools cross-project metadata cache (JSON-encoded).
 /// Written by `infrastructure::dev_tools` to surface multi-project context to
@@ -380,6 +392,7 @@ const ALLOWED_KEYS: &[&str] = &[
     FILE_WATCHER_DEBOUNCE_MS,
     PERFORMANCE_DIGEST,
     PERFORMANCE_DIGEST_LAST,
+    CREDENTIAL_HEALTHCHECK_LAST,
     QUALITY_GATE_CONFIG,
     SMART_SEARCH_MODEL,
     SEMANTIC_LINT_MODEL,
@@ -391,6 +404,7 @@ const ALLOWED_KEYS: &[&str] = &[
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
     OBSIDIAN_BRAIN_CONFIG,
     OBSIDIAN_MIRROR_CONFIG,
+    OBSIDIAN_BRAIN_SAVED_VAULTS,
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,

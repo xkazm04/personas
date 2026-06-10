@@ -34,7 +34,6 @@ function buildSettingsOp(d: PersonaDraft): PersonaOperation {
     enabled: d.enabled,
     sensitive: d.sensitive,
     cli_awareness_enabled: d.cliAwarenessEnabled,
-    langfuse_export_enabled: d.langfuseExportEnabled,
   };
 }
 

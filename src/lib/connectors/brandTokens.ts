@@ -53,7 +53,7 @@ const FALLBACK: BrandTokens = {
 /**
  * Brand tokens keyed by connector / plugin id. Keys cover the plugin ids the
  * Browse grid iterates (`dev-tools`, `obsidian-brain`, `drive`, `twin`,
- * `companion`, `langfuse`, plus dev-only `artist`/`research-lab`/`fleet`), the
+ * `companion`, plus dev-only `artist`/`research-lab`/`fleet`), the
  * `gitlab` integration panel, and a handful of common service connectors whose
  * badges appear across the vault. Aliases (e.g. `obsidian` → obsidian-brain
  * tokens) keep lookups robust against id-vs-service_type drift.
@@ -133,15 +133,6 @@ export const BRAND_TOKENS: Record<string, BrandTokens> = {
     badgeBg: 'bg-cyan-500/10',
     badgeBorder: 'border-cyan-500/20',
     underline: 'bg-cyan-500',
-  },
-  // Langfuse plugin — indigo brand.
-  langfuse: {
-    hex: '#6366F1',
-    icon: 'text-indigo-400',
-    accent: 'text-indigo-300',
-    badgeBg: 'bg-indigo-500/10',
-    badgeBorder: 'border-indigo-500/20',
-    underline: 'bg-indigo-500',
   },
   // Artist plugin — fuchsia (creative).
   artist: {

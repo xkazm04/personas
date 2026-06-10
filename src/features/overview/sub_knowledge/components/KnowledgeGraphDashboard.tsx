@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen } from 'lucide-react';
+import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen, Search, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,6 +11,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
@@ -43,6 +44,9 @@ export default function KnowledgeGraphDashboard() {
   const [showAnnotateModal, setShowAnnotateModal] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showScopeDropdown, setShowScopeDropdown] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<'default' | 'confidence' | 'runs' | 'recent'>('default');
+  const [pendingOnly, setPendingOnly] = useState(false);
   const { failureDrilldownDate } = useOverviewFilterValues();
   const { setFailureDrilldownDate } = useOverviewFilterActions();
 
@@ -86,13 +90,44 @@ export default function KnowledgeGraphDashboard() {
     return () => { active = false; };
   }, [fetchData]);
 
-  const rawEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
+  const rawEntries = useMemo(
+    () => (selectedPersonaId ? entries : (summary?.top_patterns ?? [])),
+    [selectedPersonaId, entries, summary],
+  );
 
-  const { filtered: allEntries } = useFilteredCollection(rawEntries, {
-    exact: [{ field: 'scope_type', value: selectedScope }],
+  // Sort before filtering — filtering preserves order, so the displayed subset
+  // stays in the chosen order. 'default' keeps the backend ranking untouched.
+  const sortedRaw = useMemo(() => {
+    if (sortKey === 'default') return rawEntries;
+    return [...rawEntries].sort((a, b) => {
+      if (sortKey === 'confidence') return b.confidence - a.confidence;
+      if (sortKey === 'runs') return (b.success_count + b.failure_count) - (a.success_count + a.failure_count);
+      return b.updated_at.localeCompare(a.updated_at); // 'recent'
+    });
+  }, [rawEntries, sortKey]);
+
+  const { filtered: allEntries } = useFilteredCollection(sortedRaw, {
+    exact: [
+      { field: 'scope_type', value: selectedScope },
+      // Apply the type filter client-side too. The backend list query already
+      // narrows by type when a persona is selected, but the no-persona view
+      // renders summary.top_patterns (which the query never touches) — without
+      // this the type dropdown and the clickable KPI tiles silently no-op there.
+      { field: 'knowledge_type', value: selectedType },
+    ],
     custom: [
       failureDrilldownDate
         ? (entry) => entry.failure_count > 0 && entry.updated_at.slice(0, 10) >= failureDrilldownDate
+        : null,
+      search.trim()
+        ? (entry) => {
+            const q = search.trim().toLowerCase();
+            return entry.pattern_key.toLowerCase().includes(q)
+              || (entry.annotation_text?.toLowerCase().includes(q) ?? false);
+          }
+        : null,
+      pendingOnly
+        ? (entry) => (entry.knowledge_type === 'agent_annotation' || entry.knowledge_type === 'user_annotation') && !entry.is_verified
         : null,
     ],
   });
@@ -102,7 +137,7 @@ export default function KnowledgeGraphDashboard() {
   // sparkline), so spread mounting across ~2s after the frame lands rather
   // than dumping up to 100 rows on one frame. Resets when the filter changes.
   const entryReveal = useProgressiveReveal(allEntries.length, {
-    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`,
+    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}|${pendingOnly}`,
     initialCount: 16,
   });
   const revealedEntries = useMemo(
@@ -111,7 +146,7 @@ export default function KnowledgeGraphDashboard() {
   );
   // Per-item entrance guard for the (virtualized) entry list. Keyed to the
   // active filters; survives row remount so scrolling never replays the fade.
-  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`);
+  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}|${pendingOnly}`);
   const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(revealedEntries, ENTRY_ROW_ESTIMATE);
 
   const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
@@ -121,6 +156,14 @@ export default function KnowledgeGraphDashboard() {
     setFailureDrilldownDate(null);
     setSelectedType(null);
   };
+
+  // Single entry point for changing the type filter (KPI tiles + dropdown share
+  // it) so the failure-drilldown auto-clear logic lives in exactly one place.
+  const chooseType = useCallback((type: string | null) => {
+    setSelectedType(type);
+    setShowTypeDropdown(false);
+    if (failureDrilldownDate && type !== 'failure_pattern') setFailureDrilldownDate(null);
+  }, [failureDrilldownDate, setFailureDrilldownDate]);
 
   const handleSeedKnowledge = useCallback(async () => {
     try { await seedMockKnowledge(); await fetchData(); }
@@ -148,6 +191,20 @@ export default function KnowledgeGraphDashboard() {
                 <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
               </button>
             )}
+            {summary && summary.unverified_annotation_count > 0 && (
+              <button
+                type="button"
+                aria-pressed={pendingOnly}
+                onClick={() => { setPendingOnly((v) => !v); if (!pendingOnly) chooseType(null); }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-colors ${pendingOnly ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20'}`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                {t.overview.knowledge.needs_review}
+                <span className="px-1.5 rounded-full bg-amber-500/25 typo-caption tabular-nums">
+                  <Numeric>{summary.unverified_annotation_count}</Numeric>
+                </span>
+              </button>
+            )}
             <Button
               variant="ghost"
               size="sm"
@@ -173,15 +230,45 @@ export default function KnowledgeGraphDashboard() {
         <div className="space-y-6 pb-6">
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <KpiTile density="card-rich" icon={Network} label="Total Patterns" numericValue={summary.total_entries} compact language={language} color="primary" />
-              <KpiTile density="card-rich" icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} compact language={language} subtitle="Learned tool chains" color="emerald" />
-              <KpiTile density="card-rich" icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} compact language={language} subtitle="Known error signatures" color="red" />
-              <KpiTile density="card-rich" icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} compact language={language} subtitle="Performance by model" color="violet" />
+              {([
+                { type: null, icon: Network, label: 'Total Patterns', value: summary.total_entries, color: 'primary', subtitle: undefined },
+                { type: 'tool_sequence', icon: ArrowRight, label: 'Tool Sequences', value: summary.tool_sequence_count, color: 'emerald', subtitle: 'Learned tool chains' },
+                { type: 'failure_pattern', icon: AlertTriangle, label: 'Failure Patterns', value: summary.failure_pattern_count, color: 'red', subtitle: 'Known error signatures' },
+                { type: 'model_performance', icon: Cpu, label: 'Model Insights', value: summary.model_performance_count, color: 'violet', subtitle: 'Performance by model' },
+              ] as const).map((tile) => {
+                const active = selectedType === tile.type;
+                return (
+                  <button
+                    key={tile.label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => chooseType(tile.type)}
+                    className={`text-left rounded-modal transition-shadow focus-ring ${active ? 'ring-2 ring-primary/40' : 'hover:ring-1 hover:ring-primary/20'}`}
+                  >
+                    <KpiTile density="card-rich" icon={tile.icon} label={tile.label} numericValue={tile.value} compact language={language} subtitle={tile.subtitle} color={tile.color} />
+                  </button>
+                );
+              })}
               <KpiTile density="card-rich" icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} compact language={language} subtitle="Shared knowledge" color="cyan" />
             </div>
           )}
 
           <div className="flex items-center gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.overview.knowledge.search_placeholder}
+                className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} aria-label={t.common.clear} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <PersonaColumnFilter value={selectedPersonaId ?? ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
 
             <button
@@ -198,9 +285,9 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
+                <button onClick={() => chooseType(null)} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
-                  <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
+                  <button key={key} onClick={() => chooseType(key)}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}
@@ -229,7 +316,23 @@ export default function KnowledgeGraphDashboard() {
                 ))}
               </div>
             )}
+
+            <ThemedSelect
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+              aria-label={t.overview.knowledge.sort_aria}
+              wrapperClassName="ml-auto min-w-[150px] flex-shrink-0"
+            >
+              <option value="default">{t.overview.knowledge.sort_default}</option>
+              <option value="confidence">{t.overview.knowledge.sort_confidence}</option>
+              <option value="runs">{t.overview.knowledge.sort_runs}</option>
+              <option value="recent">{t.overview.knowledge.sort_recent}</option>
+            </ThemedSelect>
           </div>
+
+          {pendingOnly && !selectedPersonaId && summary && allEntries.length < summary.unverified_annotation_count && (
+            <p className="typo-caption text-amber-400/80 -mt-3">{t.overview.knowledge.pending_scope_hint}</p>
+          )}
 
           {failureDrilldownDate && (
             <div className="rounded-modal border border-red-500/20 bg-red-500/10 px-4 py-3">
@@ -278,7 +381,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : loading ? (
             <ListSkeleton rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />
-          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
+          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <MotionEmptyState
                 motif="knowledge"

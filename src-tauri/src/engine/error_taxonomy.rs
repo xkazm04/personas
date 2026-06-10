@@ -57,6 +57,31 @@ pub enum ErrorCategory {
 }
 
 // =============================================================================
+// UsageLimitInfo — parsed provider usage-limit details
+// =============================================================================
+
+/// Which usage-limit bucket a provider error refers to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UsageLimitScope {
+    /// Rolling window limit (Claude Code's ~5-hour session window). Resets on
+    /// its own — eligible for a scheduled retry at the reset time.
+    Window,
+    /// Weekly (or longer) cap. Too far out to auto-retry — the run stays
+    /// failed and a healing issue is created.
+    Weekly,
+}
+
+/// Details parsed from a provider usage-limit error message (see
+/// `parser::parse_usage_limit`). Carried on `ExecutionResult` so healing can
+/// schedule a retry at the actual reset time instead of blind backoff.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct UsageLimitInfo {
+    pub scope: UsageLimitScope,
+    /// When the limit resets, if the message carried a timestamp.
+    pub resets_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+// =============================================================================
 // ErrorSeverity — unified severity levels
 // =============================================================================
 

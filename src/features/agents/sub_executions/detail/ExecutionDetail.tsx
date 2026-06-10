@@ -5,7 +5,6 @@ import { ExecutionInspector } from '@/features/agents/sub_executions/detail/insp
 import { TraceInspector } from '@/features/agents/sub_executions/detail/inspector/TraceInspector';
 import { PipelineWaterfall } from '@/features/agents/sub_executions/replay/PipelineWaterfall';
 import { ReplaySandbox } from '@/features/agents/sub_executions/replay/ReplaySandbox';
-import { OpenInLangfuseButton } from '@/features/plugins/langfuse/OpenInLangfuseButton';
 import { hasNonEmptyJson } from './executionDetailTypes';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
@@ -58,7 +57,6 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
             <FlaskConical className="w-3 h-3" />
             {dryRun.loading ? t.agents.executions.dry_run.button_running : t.agents.executions.dry_run.button_label}
           </button>
-          <OpenInLangfuseButton executionId={execution.id} personaId={execution.persona_id} />
         </div>
       </div>
       <DryRunModal open={dryRun.open} loading={dryRun.loading} report={dryRun.report} errorMessage={dryRun.errorMessage} onClose={dryRun.close} />

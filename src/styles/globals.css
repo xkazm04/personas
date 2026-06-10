@@ -942,43 +942,6 @@ html {
   --brand-rose: var(--brand-rose-raw);
 }
 
-/* -- React Flow zoom controls --
-   The library ships white buttons with dark SVG fills — illegible on the dark
-   themes. Re-skin them with theme CSS variables so the zoom panel follows the
-   active dark/light skin. Applied via className="themed-flow-controls" on the
-   <Controls> element (e.g. the Lineage canvas). */
-.react-flow__controls.themed-flow-controls {
-  border: 1px solid var(--card-border);
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
-}
-.react-flow__controls.themed-flow-controls .react-flow__controls-button {
-  background: var(--secondary);
-  border-bottom: 1px solid var(--card-border);
-  color: var(--foreground);
-  width: 26px;
-  height: 26px;
-}
-.react-flow__controls.themed-flow-controls .react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-.react-flow__controls.themed-flow-controls .react-flow__controls-button:hover {
-  background: var(--primary);
-  color: var(--background);
-}
-.react-flow__controls.themed-flow-controls .react-flow__controls-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.react-flow__controls.themed-flow-controls .react-flow__controls-button svg {
-  fill: currentColor;
-  width: 14px;
-  height: 14px;
-  max-width: 14px;
-  max-height: 14px;
-}
-
 /* -- Icon Frame --
    Standardized container for PersonaIcon / PersonaAvatar.
    Use .icon-frame on the wrapper div, then let PersonaIcon fill it.

@@ -85,5 +85,11 @@
   "channel_mention_tab": "Tab — автодополнение",
   "channel_mention_will_see": "Упомянут — команда видит директивы на границе следующего шага",
   "channel_composer_newline_hint": "Shift+Enter — новая строка",
-  "channel_composer_reply_placeholder": "Напишите ответ…"
+  "channel_composer_reply_placeholder": "Напишите ответ…",
+  "channel_pin_memory": "Закрепить как память команды",
+  "channel_pinned_memory": "Закреплено в памяти команды",
+  "channel_pin_failed": "Не удалось закрепить в памяти команды",
+  "channel_day_today": "Сегодня",
+  "channel_day_yesterday": "Вчера",
+  "channel_avatar_mention": "Упомянуть {name}"
 }

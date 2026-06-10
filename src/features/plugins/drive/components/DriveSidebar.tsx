@@ -1,8 +1,8 @@
-import { useCallback, useState } from "react";
-import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Clock, Folder, FolderOpen, HardDrive, Trash2 } from "lucide-react";
 
 import type { DriveEntry, DriveTreeNode } from "@/api/drive";
-import { driveFormatBytes, driveParentPath } from "@/api/drive";
+import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult } from "../hooks/useDrive";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -12,6 +12,10 @@ import { DriveEmptyHint } from "./DriveEmptyHint";
 import { DropCountChip } from "./DropCountChip";
 
 const RECENT_COLLAPSED_KEY = "drive.sidebar.recentCollapsed";
+// Recoverable-deletes folder under the managed root (mirrors TRASH_DIRNAME
+// on the Rust side). It gets a dedicated sidebar node instead of posing as
+// an ordinary folder in the tree.
+const TRASH_PATH = ".trash";
 // Show ⌘ on Mac, Ctrl elsewhere — keyboard hints should match what the
 // user is actually pressing. The DrivePage handler accepts both modifiers.
 const MOD_KEY_LABEL =
@@ -26,9 +30,16 @@ interface Props {
    *  (null when no drag). Used to render a faint "drop available" hint on
    *  every tree node so the user has a map of valid targets. */
   activeDragCount?: number | null;
+  /** Reports which tree-node folder an OS-file drag is hovering (null on
+   *  leave). The page-level drop handler writes the files into it. */
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
-export function DriveSidebar({ drive, activeDragCount = null }: Props) {
+export function DriveSidebar({
+  drive,
+  activeDragCount = null,
+  onExternalFolderDragOver,
+}: Props) {
   const { t, tx } = useTranslation();
   const {
     ref: scrollRef,
@@ -56,8 +67,41 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
     });
   }, []);
 
+  // Hide the trash folder from the regular tree — it gets the dedicated
+  // node below instead. Only the root's direct children can contain it.
+  const tree = useMemo<DriveTreeNode | null>(() => {
+    if (!drive.tree) return null;
+    return {
+      ...drive.tree,
+      children: drive.tree.children.filter((c) => c.path !== TRASH_PATH),
+    };
+  }, [drive.tree]);
+
+  // Trash item count for the node's badge. drive.storage refreshes after
+  // every mutation (delete/paste/create), so keying the fetch on it keeps
+  // the count current without a dedicated subscription; a missing .trash
+  // folder (nothing ever deleted) just means zero.
+  const [trashCount, setTrashCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    driveList(TRASH_PATH)
+      .then((list) => {
+        if (!cancelled) setTrashCount(list.length);
+      })
+      .catch(() => {
+        if (!cancelled) setTrashCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [drive.storage]);
+
+  const inTrash =
+    drive.currentPath === TRASH_PATH ||
+    drive.currentPath.startsWith(`${TRASH_PATH}/`);
+
   return (
-    <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-gradient-to-b from-background via-background to-background/80 flex flex-col">
+    <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-background flex flex-col">
       {/* Brand header */}
       <div className="relative px-4 py-3 border-b border-primary/10 overflow-hidden">
         <div
@@ -139,19 +183,50 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
         <div className="px-2 mb-1.5 typo-label text-foreground">
           {t.plugins.drive.sidebar_folders_label}
         </div>
-        {drive.tree ? (
+        {tree ? (
           <TreeNode
-            node={drive.tree}
+            node={tree}
             drive={drive}
             depth={0}
             initiallyOpen
             activeDragCount={activeDragCount}
+            onExternalFolderDragOver={onExternalFolderDragOver}
           />
         ) : (
           <div className="px-3 py-2 typo-body text-foreground">
             {t.plugins.drive.loading}
           </div>
         )}
+
+        {/* Trash — recoverable deletes live here for 7 days. Always visible
+            so the existence of a safety net is discoverable, not only after
+            the user happens to delete something. */}
+        <div className="mt-3 pt-2 border-t border-primary/10">
+          <button
+            type="button"
+            onClick={() => drive.navigate(TRASH_PATH)}
+            className={`group w-full flex items-center gap-1.5 py-1.5 px-2 rounded-input text-left typo-body transition-all focus-ring ${
+              inTrash
+                ? "bg-gradient-to-r from-rose-500/20 via-rose-500/10 to-transparent text-rose-100 shadow-[inset_2px_0_0_rgba(251,113,133,0.8)]"
+                : "text-foreground hover:bg-secondary/50 hover:text-foreground"
+            }`}
+          >
+            <span className="w-3.5 flex-shrink-0" />
+            <Trash2
+              className={`w-3.5 h-3.5 flex-shrink-0 ${
+                inTrash ? "text-rose-300" : "text-foreground group-hover:text-rose-300"
+              }`}
+            />
+            <span className="truncate flex-1">
+              {t.plugins.drive.sidebar_trash}
+            </span>
+            {trashCount > 0 && (
+              <span className="typo-caption text-foreground tabular-nums">
+                {trashCount}
+              </span>
+            )}
+          </button>
+        </div>
         </div>
       </div>
 
@@ -259,6 +334,7 @@ interface TreeNodeProps {
   depth: number;
   initiallyOpen?: boolean;
   activeDragCount?: number | null;
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
 function TreeNode({
@@ -267,6 +343,7 @@ function TreeNode({
   depth,
   initiallyOpen = false,
   activeDragCount = null,
+  onExternalFolderDragOver,
 }: TreeNodeProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(initiallyOpen);
@@ -288,20 +365,44 @@ function TreeNode({
   // so the sidebar stops feeling decorative.
   const acceptsDrop = (e: React.DragEvent) =>
     Array.from(e.dataTransfer?.types ?? []).includes("application/x-drive-move");
+  // OS-file drags (a "Files" payload) are also valid targets: the node only
+  // reports the hover; DrivePage's drop handler does the actual write.
+  const hasFilesPayload = (e: React.DragEvent) =>
+    e.dataTransfer?.types?.includes("Files") ?? false;
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    if (!acceptsDrop(e)) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setDropActive(true);
-  }, []);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (hasFilesPayload(e)) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setDropActive(true);
+        onExternalFolderDragOver?.(node.path);
+        return;
+      }
+      if (!acceptsDrop(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setDropActive(true);
+    },
+    [node.path, onExternalFolderDragOver],
+  );
 
-  const handleDragLeave = useCallback(() => {
-    setDropActive(false);
-  }, []);
+  const handleDragLeave = useCallback(
+    (e: React.DragEvent) => {
+      setDropActive(false);
+      if (hasFilesPayload(e)) onExternalFolderDragOver?.(null);
+    },
+    [onExternalFolderDragOver],
+  );
 
   const handleDrop = useCallback(
     async (e: React.DragEvent) => {
+      if (hasFilesPayload(e)) {
+        // Clear the local halo and let the event bubble to DrivePage's
+        // onDrop, which writes the files into the reported target folder.
+        setDropActive(false);
+        return;
+      }
       if (!acceptsDrop(e)) return;
       e.preventDefault();
       e.stopPropagation();

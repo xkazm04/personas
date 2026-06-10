@@ -1,4 +1,4 @@
-import { Wrench, Brain, HardDrive, Sparkles, Bot, LineChart, type LucideIcon } from 'lucide-react';
+import { Wrench, Brain, HardDrive, Sparkles, Bot, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -31,7 +31,6 @@ export default function PluginBrowsePage() {
     { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive },
     { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles },
     { id: 'companion', label: t.plugins.companion_label, description: t.plugins.companion_desc, icon: Bot },
-    { id: 'langfuse', label: t.plugins.langfuse_label, description: t.plugins.langfuse_desc, icon: LineChart },
   ] satisfies PluginDef[]).slice().sort((a, b) => a.label.localeCompare(b.label));
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);

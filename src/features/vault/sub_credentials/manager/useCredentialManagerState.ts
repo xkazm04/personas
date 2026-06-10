@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useUndoDelete } from '@/features/vault/shared/hooks/useUndoDelete';
@@ -26,16 +26,12 @@ export function useCredentialManagerState() {
   const [credentialSearch, setCredentialSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Bulk Healthcheck — only include credentials whose service_type maps to a
-  // known connector definition. Orphaned credentials (no matching connector)
-  // would always fail healthcheck and inflate the failure count.
-  const healthcheckCredentials = useMemo(() => {
-    if (connectorDefinitions.length === 0) return credentials;
-    const connectorNames = new Set(connectorDefinitions.map((c) => c.name));
-    return credentials.filter((cred) => connectorNames.has(cred.service_type));
-  }, [credentials, connectorDefinitions]);
+  // Manual "Test all" runner. The automated daily healthcheck now runs
+  // in-process in the engine (CredentialHealthcheckSubscription); there is no
+  // longer a per-visit frontend auto-test. The old auto-test fired ~24
+  // concurrent privileged `healthcheck_credential` IPC calls and raced the
+  // `x-ipc-token` injection, surfacing valid credentials as false "degraded".
   const bulk = useBulkHealthcheck();
-  const [isDailyRun, setIsDailyRun] = useState(false);
 
   const { state: viewState, dispatch, filteredConnectors, catalogFormData, breadcrumbs } = useCredentialViewFSM(connectorDefinitions);
 
@@ -96,32 +92,9 @@ export function useCredentialManagerState() {
     init();
   }, [fetchCredentials, fetchConnectorDefinitions]);
 
-  // Daily auto-test: run healthchecks if not run today
-  useEffect(() => {
-    if (loading || healthcheckCredentials.length === 0 || bulk.isRunning) return;
-    const lastRun = bulk.summary?.completedAt;
-    const today = new Date().toDateString();
-    const alreadyRanToday = lastRun && new Date(lastRun).toDateString() === today;
-    if (alreadyRanToday) return;
-    // Defer bulk healthcheck to idle time to avoid competing with navigation renders
-    const run = () => { setIsDailyRun(true); bulk.run(healthcheckCredentials); };
-    if (typeof requestIdleCallback === 'function') {
-      const id = requestIdleCallback(run, { timeout: 5000 });
-      return () => cancelIdleCallback(id);
-    }
-    const timer = setTimeout(run, 3000);
-    return () => clearTimeout(timer);
-  }, [loading, healthcheckCredentials.length, healthcheckCredentials, bulk]);
-
-  // Clear daily-run flag when bulk finishes
-  useEffect(() => {
-    if (!bulk.isRunning && isDailyRun) setIsDailyRun(false);
-  }, [bulk.isRunning, isDailyRun]);
-
   return {
     // Data
     credentials,
-    healthcheckCredentials,
     connectorDefinitions,
     loading,
     bannerError,
@@ -134,7 +107,6 @@ export function useCredentialManagerState() {
     rotateAllResult,
     rotatableCount,
     bulk,
-    isDailyRun,
     // FSM
     viewState,
     dispatch,

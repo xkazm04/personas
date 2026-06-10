@@ -133,6 +133,11 @@ function approvalToDecision(approval: PendingApproval): PendingDecision {
     detail: approval.rationale || undefined,
     source: 'approval',
     sourceRef: approval.id,
+    payload: JSON.stringify({
+      action: approval.action,
+      params: approval.paramsJson,
+      created_at: approval.createdAt,
+    }),
   };
 }
 
@@ -179,6 +184,12 @@ function incidentToDecision(message: ProactiveMessage): PendingDecision {
     source: 'incident',
     sourceRef: message.id,
     navigateRoute: 'overview',
+    payload: JSON.stringify({
+      trigger_kind: message.triggerKind,
+      trigger_ref: message.triggerRef,
+      message: message.message,
+      created_at: message.createdAt,
+    }),
   };
 }
 
@@ -242,6 +253,15 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
     source: 'human_review',
     sourceRef: review.id,
     navigateRoute: 'overview',
+    payload: JSON.stringify({
+      title: review.title,
+      description: review.description,
+      severity: review.severity,
+      suggested_actions: review.suggested_actions,
+      context_data: review.context_data,
+      persona_id: review.persona_id,
+      created_at: review.created_at,
+    }),
   };
 }
 

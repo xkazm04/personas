@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
 import type { TodoStep } from './operationalSteps';
+import type { NarrationEntry, StoredNarration } from './narrationTimeline';
+import {
+  appendNarrationEntry as appendNarrationEntryPure,
+  completeNarrationTool as completeNarrationToolPure,
+  isTrailWorthKeeping,
+} from './narrationTimeline';
 import type { GuidanceWalkthrough } from './guidance/types';
 import type { PendingDecision } from './decision/types';
 import { ADHOC_TOPIC } from './guidance/walkthroughs';
@@ -333,6 +339,29 @@ interface CompanionStore {
   attachStepsToEpisode: (episodeId: string) => void;
   clearAllSteps: () => void;
 
+  /**
+   * Narration timeline (D2 in conversation-orchestration.md): the
+   * turn-scoped log of Athena's `PROGRESS:` beats + tool calls.
+   * `streamingNarration` accumulates while the turn runs (rendered as a
+   * dimmed live log under the streaming bubble); on `finished` it's
+   * promoted to `narrationByEpisodeId` so a collapsed "What I did" trail
+   * persists under the completed bubble. Trivial trails (one fast step,
+   * no beats) are dropped at attach time rather than pinned. Session-
+   * scoped, same model as recall/steps.
+   */
+  streamingNarration: NarrationEntry[];
+  streamingNarrationStartedAt: number | null;
+  narrationByEpisodeId: Record<string, StoredNarration>;
+  /** Reset the in-flight timeline at turn start. */
+  beginNarration: () => void;
+  appendNarrationEntry: (entry: NarrationEntry) => void;
+  completeNarrationTool: (id: string) => void;
+  /** Promote the in-flight timeline onto the persisted assistant episode. */
+  attachNarrationToEpisode: (episodeId: string) => void;
+  /** Drop the in-flight timeline without promoting (error/interrupt). */
+  resetStreamingNarration: () => void;
+  clearAllNarration: () => void;
+
   // Phase C2 — Athena-dispatched team assignments. Cards display inline
   // above the chat messages; each card is updated by the assignment
   // progress listener. Bounded to the 6 most-recent so the chat doesn't
@@ -416,6 +445,20 @@ interface CompanionStore {
   setPendingDecision: (decision: PendingDecision) => void;
   clearPendingDecision: () => void;
   markDecisionExplained: () => void;
+
+  /**
+   * Explain-in-Cockpit composing state. True from the moment `0` escalates
+   * into a `decision-explain` turn until either the `explain_in_cockpit`
+   * event lands (CompanionPanel listener clears it) or the turn finishes
+   * without emitting the op. Drives the orb's `composing` avatar clip and
+   * the bubble's processing row. `explainComposeError` is a short token
+   * (`'no-spec' | 'turn-failed'`) the bubble maps to a translated fallback
+   * line; reset on the next decision / next `0`.
+   */
+  explainComposing: boolean;
+  explainComposeError: string | null;
+  setExplainComposing: (v: boolean) => void;
+  setExplainComposeError: (v: string | null) => void;
 
   /**
    * Notify-only indicator for an autonomous fleet auto-decision (the "Notify
@@ -751,6 +794,62 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     }),
   clearAllSteps: () => set({ streamingSteps: [], stepsByEpisodeId: {} }),
 
+  streamingNarration: [],
+  streamingNarrationStartedAt: null,
+  narrationByEpisodeId: {},
+  beginNarration: () =>
+    set({ streamingNarration: [], streamingNarrationStartedAt: Date.now() }),
+  appendNarrationEntry: (entry) =>
+    set((s) => {
+      const next = appendNarrationEntryPure(s.streamingNarration, entry);
+      if (next === s.streamingNarration) return {};
+      return {
+        streamingNarration: next,
+        // Defensive: an entry arriving without a prior beginNarration
+        // (e.g. a backend-initiated turn racing the `started` handler)
+        // still gets a usable start anchor.
+        streamingNarrationStartedAt: s.streamingNarrationStartedAt ?? Date.now(),
+      };
+    }),
+  completeNarrationTool: (id) =>
+    set((s) => {
+      const next = completeNarrationToolPure(s.streamingNarration, id, Date.now());
+      return next === s.streamingNarration ? {} : { streamingNarration: next };
+    }),
+  attachNarrationToEpisode: (episodeId) =>
+    set((s) => {
+      const cleared = {
+        streamingNarration: [] as NarrationEntry[],
+        streamingNarrationStartedAt: null,
+      };
+      if (
+        !episodeId ||
+        s.streamingNarrationStartedAt == null ||
+        !isTrailWorthKeeping(s.streamingNarration)
+      ) {
+        return cleared;
+      }
+      return {
+        ...cleared,
+        narrationByEpisodeId: {
+          ...s.narrationByEpisodeId,
+          [episodeId]: {
+            startedAt: s.streamingNarrationStartedAt,
+            endedAt: Date.now(),
+            entries: s.streamingNarration,
+          },
+        },
+      };
+    }),
+  resetStreamingNarration: () =>
+    set({ streamingNarration: [], streamingNarrationStartedAt: null }),
+  clearAllNarration: () =>
+    set({
+      streamingNarration: [],
+      streamingNarrationStartedAt: null,
+      narrationByEpisodeId: {},
+    }),
+
   activeWalkthrough: null,
   guidanceStepIndex: 0,
   guidancePlaying: false,
@@ -822,11 +921,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   pendingDecision: null,
   decisionExplained: false,
   setPendingDecision: (decision) =>
-    set({ pendingDecision: decision, decisionExplained: false }),
+    set({ pendingDecision: decision, decisionExplained: false, explainComposeError: null }),
   clearPendingDecision: () =>
-    set({ pendingDecision: null, decisionExplained: false }),
+    set({ pendingDecision: null, decisionExplained: false, explainComposeError: null }),
   markDecisionExplained: () =>
     set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
+
+  explainComposing: false,
+  explainComposeError: null,
+  setExplainComposing: (explainComposing) => set({ explainComposing }),
+  setExplainComposeError: (explainComposeError) => set({ explainComposeError }),
 
   fleetAutoNotice: null,
   setFleetAutoNotice: (fleetAutoNotice) => set({ fleetAutoNotice }),

@@ -115,6 +115,12 @@ export default function GuidedTour() {
             setOverviewTab(step.nav.subTab as Parameters<typeof setOverviewTab>[0]);
           } else if (step.nav.subTabSetter === 'setEventBusTab') {
             setEventBusTab(step.nav.subTab as Parameters<typeof setEventBusTab>[0]);
+          } else if (step.nav.subTabSetter === 'setObsidianBrainTab') {
+            // Brain tabs live one level below the plugins section — open the
+            // obsidian-brain plugin surface first, then its sub-tab.
+            const sys = useSystemStore.getState();
+            sys.setPluginTab('obsidian-brain');
+            sys.setObsidianBrainTab(step.nav.subTab as Parameters<typeof sys.setObsidianBrainTab>[0]);
           }
         }, 100);
       }
@@ -138,6 +144,29 @@ export default function GuidedTour() {
           ?? null;
         if (createdId) useAgentStore.getState().selectPersona(createdId);
         scheduleTourTimeout(() => useSystemStore.getState().setEditorTab('use-cases'), 300);
+      } else if (step.id === 'obsidian-install') {
+        // Probe for the Obsidian desktop binary; when present the step
+        // completes itself ("recognize it"). If not installed, the step's
+        // copy guides the user to obsidian.md and the acknowledge button is
+        // the manual fallback after they install.
+        scheduleTourTimeout(() => {
+          void import('@/api/obsidianBrain')
+            .then(({ obsidianAvailable }) => obsidianAvailable())
+            .then((avail) => {
+              if (avail.binaryInstalled && tourActiveRef.current) {
+                useSystemStore.getState().emitTourEvent('tour:obsidian-detected');
+              }
+            })
+            .catch(() => { /* probe is best-effort; the acknowledge fallback covers it */ });
+        }, 400);
+      } else if (step.id === 'obsidian-vault-connect') {
+        // Already-connected vaults complete the step on entry; otherwise the
+        // SetupPanel emits the event when Save Configuration succeeds.
+        scheduleTourTimeout(() => {
+          if (useSystemStore.getState().obsidianConnected) {
+            useSystemStore.getState().emitTourEvent('tour:obsidian-vault-connected');
+          }
+        }, 400);
       }
 
       // Set initial spotlight

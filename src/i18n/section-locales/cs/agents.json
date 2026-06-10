@@ -2159,9 +2159,7 @@
     "no_twins_configured": "Žádné twins nejsou nastavené. Otevři plugin Twin a vytvoř si jeden — tato persona si ho pak bude moci osvojit.",
     "twin_profile_aria": "Twin profil, za který tato persona mluví",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export traces to Langfuse",
-    "langfuse_export_desc": "Ship this persona's execution traces to your configured Langfuse instance. Off keeps THIS persona's traces local without disabling the integration globally — useful for persony handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "K této personě nejsou přiřazeny žádné nástroje.",
@@ -2542,5 +2540,9 @@
     "moved_toast": "{persona} přesunuta do {group}",
     "filter_clear_title": "Kliknutím vymažete tento filtr",
     "filter_all": "Žádné preference"
-  }
+  },
+  "sigil_edit_active": "Aktivní pro tuto schopnost",
+  "sigil_edit_inactive": "Neaktivní — zapněte pro aktivaci",
+  "sigil_edit_enable": "Zapnout pro tuto schopnost",
+  "sigil_edit_disable": "Vypnout pro tuto schopnost"
 }

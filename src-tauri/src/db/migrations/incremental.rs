@@ -4052,6 +4052,39 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON dev_context_file_hashes(project_id);",
     )?;
 
+    // -- System-operation automations -------------------------------------------
+    // A trigger (schedule cron OR event listener) bound to a built-in system
+    // operation (NOT a persona execution). First op: `context_scan` (re-derive a
+    // dev-tools project's context map). Committed by the Chain Studio when a
+    // route runs `schedule|event → System event`, and by the Context Map "Plan
+    // update" button. The background event-bus tick runs due schedule rows and
+    // matches event rows; see `engine/system_ops.rs`.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS system_op_automations (
+            id                  TEXT PRIMARY KEY,
+            op_kind             TEXT NOT NULL,
+            params_json         TEXT NOT NULL DEFAULT '{}',
+            trigger_kind        TEXT NOT NULL,
+            cron                TEXT,
+            timezone            TEXT,
+            listen_event_type   TEXT,
+            source_filter       TEXT,
+            enabled             INTEGER NOT NULL DEFAULT 1,
+            next_run_at         TEXT,
+            last_run_at         TEXT,
+            last_status         TEXT,
+            last_detail         TEXT,
+            label               TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_system_op_automations_due
+            ON system_op_automations(trigger_kind, enabled, next_run_at);
+        CREATE INDEX IF NOT EXISTS idx_system_op_automations_event
+            ON system_op_automations(trigger_kind, enabled, listen_event_type);",
+    )?;
+
     // -- Research Lab plugin: defensive column ALTERs ---------------------------
     // The research_* tables are created with CREATE TABLE IF NOT EXISTS in
     // initial.rs. If a legacy DB has any of these tables with a drifted column
@@ -4548,5 +4581,59 @@ fn research_lab_align_columns(conn: &Connection) {
         conn,
         "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_team
             ON team_channel_messages(team_id, created_at);",
+    );
+
+    // Obsidian Brain — Revitalize run history. One row per finished pass
+    // (completed or failed) so the panel can show "last runs: when, which
+    // vault, what the cleaning achieved" after the in-memory job store's
+    // 30-minute TTL evicts the live job. Counts come from the model's
+    // REVITALIZE_SUMMARY line; notes/tokens before/after are measured scans.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS obsidian_revitalize_runs (
+            id                TEXT PRIMARY KEY,
+            vault_name        TEXT NOT NULL,
+            vault_path        TEXT NOT NULL,
+            status            TEXT NOT NULL,
+            error             TEXT,
+            files_deleted     INTEGER NOT NULL DEFAULT 0,
+            files_merged      INTEGER NOT NULL DEFAULT 0,
+            files_updated     INTEGER NOT NULL DEFAULT 0,
+            files_reviewed    INTEGER NOT NULL DEFAULT 0,
+            notes_before      INTEGER NOT NULL DEFAULT 0,
+            notes_after       INTEGER NOT NULL DEFAULT 0,
+            est_tokens_before INTEGER NOT NULL DEFAULT 0,
+            est_tokens_after  INTEGER NOT NULL DEFAULT 0,
+            duration_secs     INTEGER NOT NULL DEFAULT 0,
+            started_at        TEXT NOT NULL,
+            created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_obsidian_revitalize_runs_created
+            ON obsidian_revitalize_runs(created_at DESC);",
+    );
+
+    // Durable usage-limit retries. When a run fails on a provider usage-limit
+    // WINDOW (e.g. Claude's rolling ~5h cap), healing schedules a retry at the
+    // parsed reset time. In-memory tokio sleeps don't survive an app restart
+    // over a multi-hour horizon, so the schedule is persisted here and drained
+    // by the event-bus tick (ExecutionEngine::drain_due_scheduled_retries).
+    // One pending retry per failed execution; rows are deleted on dispatch.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS scheduled_retries (
+            execution_id  TEXT PRIMARY KEY,
+            persona_id    TEXT NOT NULL,
+            retry_at      TEXT NOT NULL,
+            reason        TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_scheduled_retries_due
+            ON scheduled_retries(retry_at);",
     );
 }

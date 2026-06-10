@@ -76,9 +76,9 @@ const EDITOR_TABS = ['activity', 'matrix', 'use-cases', 'lab', 'settings', 'chat
 const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messaging', 'automations'] as const satisfies readonly DesignSubTab[];
 const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
 const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'engine', 'byom', 'portability', 'network', 'admin', 'config', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
-const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'langfuse'] as const satisfies readonly PluginTab[];
+const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion'] as const satisfies readonly PluginTab[];
 const DEV_TOOLS_TABS = ['overview', 'projects', 'goals', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'lifecycle', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
-const EVENT_BUS_TABS = ['builder', 'studio', 'shared', 'lineage', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
+const EVENT_BUS_TABS = ['builder', 'studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
 const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 'experiments', 'findings', 'reports', 'graph'] as const satisfies readonly ResearchLabTab[];
 
 /**

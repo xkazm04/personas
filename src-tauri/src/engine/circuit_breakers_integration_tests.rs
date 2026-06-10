@@ -33,6 +33,7 @@ fn persona_ctx(consecutive_failures: u32) -> HealingContext<'static> {
         error: "Claude CLI not found",
         timed_out: false,
         session_limit_reached: false,
+        usage_limit: None,
         execution_state: "failed",
         timeout_ms: 600_000,
         consecutive_failures,

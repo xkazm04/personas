@@ -1,5 +1,11 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import {
+  render,
+  screen,
+  waitFor,
+  fireEvent,
+  within,
+} from '@testing-library/react';
 
 const companionListDesignDecisions = vi.fn();
 
@@ -72,9 +78,48 @@ describe('DecisionsPanel', () => {
     // Two groups, one per persona_context
     const sections = document.querySelectorAll('[data-context-key]');
     expect(sections.length).toBe(2);
-    // Counts on group headers
-    expect(screen.getByText(/\(2\)/)).toBeInTheDocument();
-    expect(screen.getByText(/\(1\)/)).toBeInTheDocument();
+    // Context rail lists every group with its decision count (all=3, A=2, B=1)
+    const rail = screen.getByRole('navigation');
+    expect(within(rail).getByText('3')).toBeInTheDocument();
+    expect(within(rail).getByText('2')).toBeInTheDocument();
+    expect(within(rail).getByText('1')).toBeInTheDocument();
+  });
+
+  it('narrows the reading pane to the selected rail context', async () => {
+    companionListDesignDecisions.mockResolvedValueOnce([
+      {
+        id: 'dec_1',
+        sessionId: 'default',
+        personaContext: 'persona_A',
+        label: 'Model tier',
+        choice: 'Sonnet',
+        rationale: 'r1',
+        decisionTimestamp: null,
+        createdAt: '2026-05-16T13:30:00Z',
+      },
+      {
+        id: 'dec_2',
+        sessionId: 'default',
+        personaContext: 'persona_B',
+        label: 'Use cases',
+        choice: 'Three',
+        rationale: 'r2',
+        decisionTimestamp: null,
+        createdAt: '2026-05-16T13:31:00Z',
+      },
+    ]);
+    render(<DecisionsPanel />);
+    await waitFor(() => {
+      expect(screen.getByText(/Model tier/)).toBeInTheDocument();
+    });
+    const rail = screen.getByRole('navigation');
+    // Selecting a context shows only that thread…
+    fireEvent.click(within(rail).getByText('persona_A'));
+    expect(document.querySelectorAll('[data-context-key]').length).toBe(1);
+    expect(screen.queryByText(/Use cases/)).toBeNull();
+    // …and "All contexts" restores the full pane.
+    fireEvent.click(within(rail).getByText(/All contexts/i));
+    expect(document.querySelectorAll('[data-context-key]').length).toBe(2);
   });
 
   it('puts unscoped rows under the "Unscoped" group', async () => {
@@ -92,7 +137,8 @@ describe('DecisionsPanel', () => {
     ]);
     render(<DecisionsPanel />);
     await waitFor(() => {
-      expect(screen.getByText(/Unscoped/i)).toBeInTheDocument();
+      // Appears in both the context rail and the thread heading.
+      expect(screen.getAllByText(/Unscoped/i).length).toBeGreaterThan(0);
     });
   });
 

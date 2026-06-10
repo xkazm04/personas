@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} 秒",
     "identity_section": "チームのアイデンティティ",
     "identity_icon_label": "アイコン",
-    "identity_hint": "名前や色の変更は、このチームが表示されるすべての場所に反映されます。空にしたフィールドは変更されません。"
+    "identity_hint": "名前や色の変更は、このチームが表示されるすべての場所に反映されます。空にしたフィールドは変更されません。",
+    "workspace_unsaved_title": "ワークスペースの未保存の変更",
+    "workspace_unsaved_body": "ワークスペース設定を編集しましたが保存していません。離れて変更を破棄しますか？",
+    "workspace_unsaved_discard": "変更を破棄",
+    "workspace_unsaved_stay": "編集を続ける",
+    "unsent_draft_hint": "未送信のチャンネル下書き",
+    "presence_working": "作業中…",
+    "presence_waiting": "レビュー待ち"
   },
   "memory_created": "メモリーをチーム台帳に保存しました",
   "memory_updated": "メモリーを更新しました",

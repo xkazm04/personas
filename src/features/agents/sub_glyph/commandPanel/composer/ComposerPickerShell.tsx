@@ -59,6 +59,11 @@ export function ComposerPickerShell({
   // the viewport: the modal's top/bottom got cut off and it was squeezed to
   // the panel's (compact) width. Rendering at the body level makes `fixed`
   // viewport-relative again for every caller.
+  //
+  // z-[10050] sits above the portaled BaseModal base (Z_INDEX_PORTAL_BASE =
+  // 10000) so these pickers stack over a modal that opened them — e.g. the
+  // template Adopt-Template modal reuses the Schedule/Event pickers, which
+  // were invisible behind it at the old z-[100].
   const overlay = (
     <AnimatePresence>
       {open && (
@@ -67,7 +72,7 @@ export function ComposerPickerShell({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100] bg-black/70 surface-blur-modal flex items-center justify-center p-3 sm:p-6"
+          className="fixed inset-0 z-[10050] bg-black/70 surface-blur-modal flex items-center justify-center p-3 sm:p-6"
           onClick={onClose}
         >
           <motion.div

@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { Copy, FileText, Info, Play } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  FileSignature,
+  FileText,
+  FolderOpen,
+  Info,
+  Play,
+  ScanLine,
+  ShieldCheck,
+} from "lucide-react";
 
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { isOcrEligible } from "../ocr/useOcr";
 import {
   formatRelativeTime,
   kindBucketWeight,
@@ -21,6 +32,18 @@ interface Props {
   entries: DriveEntry[];
   currentPath: string;
   onPreviewClick?: (entry: DriveEntry) => void;
+  // Single-entry quick actions — mirror the right-click context menu so the
+  // details pane can act on the selected file without a context menu. All
+  // optional; the action row renders only the buttons that are wired.
+  onOpen?: (entry: DriveEntry) => void;
+  onReveal?: (entry: DriveEntry) => void;
+  onSign?: (entry: DriveEntry) => void;
+  onVerify?: (entry: DriveEntry) => void;
+  onExtractText?: (entry: DriveEntry) => void;
+  hasGemini?: boolean;
+  // Drive-relative paths that carry a signature record — used to badge a
+  // signed file in the hero.
+  signedPaths?: Set<string>;
 }
 
 const TEXT_PREVIEW_MAX_BYTES = 256 * 1024; // 256 KB
@@ -30,6 +53,13 @@ export function DriveDetailsPane({
   entries,
   currentPath,
   onPreviewClick,
+  onOpen,
+  onReveal,
+  onSign,
+  onVerify,
+  onExtractText,
+  hasGemini = false,
+  signedPaths,
 }: Props) {
   const { t, tx } = useTranslation();
   const primary = entries[0] ?? null;
@@ -37,7 +67,7 @@ export function DriveDetailsPane({
 
   if (!primary) {
     return (
-      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 px-5 py-4 flex flex-col gap-3">
+      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-background px-5 py-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-cyan-300" />
           <span className="typo-section-title">
@@ -70,7 +100,7 @@ export function DriveDetailsPane({
   const Icon = visual.Icon;
 
   return (
-    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 flex flex-col overflow-hidden">
+    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-background flex flex-col overflow-hidden">
       {/* Hero */}
       <div className="relative px-5 pt-5 pb-4 overflow-hidden">
         <div
@@ -94,6 +124,25 @@ export function DriveDetailsPane({
                 ? t.plugins.drive.folder_kind
                 : kindLabel(t, visual)}
             </div>
+          )}
+          {!multi &&
+            primary.kind === "file" &&
+            signedPaths?.has(primary.path) && (
+              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption font-medium text-rose-100">
+                <FileSignature className="w-3 h-3 flex-shrink-0" />
+                <span>{t.plugins.drive.signed}</span>
+              </div>
+            )}
+          {!multi && (
+            <DetailsActionRow
+              entry={primary}
+              onOpen={onOpen}
+              onReveal={onReveal}
+              onSign={onSign}
+              onVerify={onVerify}
+              onExtractText={onExtractText}
+              hasGemini={hasGemini}
+            />
           )}
         </div>
       </div>
@@ -145,6 +194,106 @@ export function DriveDetailsPane({
         )}
       </div>
     </aside>
+  );
+}
+
+/**
+ * Per-file quick-action row in the details hero. Surfaces the same
+ * single-entry actions the right-click context menu offers — open, reveal,
+ * sign, verify, extract-text — so a user who already has a file selected
+ * doesn't have to right-click to reach them. Icon-only to fit the 288px
+ * pane; the labels ride as tooltips + aria-labels and reuse the context
+ * menu's i18n keys + icon vocabulary so the two surfaces read identically.
+ */
+function DetailsActionRow({
+  entry,
+  onOpen,
+  onReveal,
+  onSign,
+  onVerify,
+  onExtractText,
+  hasGemini = false,
+}: {
+  entry: DriveEntry;
+  onOpen?: (entry: DriveEntry) => void;
+  onReveal?: (entry: DriveEntry) => void;
+  onSign?: (entry: DriveEntry) => void;
+  onVerify?: (entry: DriveEntry) => void;
+  onExtractText?: (entry: DriveEntry) => void;
+  hasGemini?: boolean;
+}) {
+  const { t } = useTranslation();
+  const isFile = entry.kind === "file";
+  const ocrEligible = isFile && isOcrEligible(entry.mime, entry.extension);
+
+  const actions: Array<{
+    key: string;
+    icon: React.ComponentType<{ className?: string }>;
+    label: string;
+    onClick: () => void;
+    disabled?: boolean;
+  }> = [];
+  if (onOpen)
+    actions.push({
+      key: "open",
+      icon: ExternalLink,
+      label: t.plugins.drive.ctx_open,
+      onClick: () => onOpen(entry),
+    });
+  if (onReveal)
+    actions.push({
+      key: "reveal",
+      icon: FolderOpen,
+      label: t.plugins.drive.ctx_reveal,
+      onClick: () => onReveal(entry),
+    });
+  if (isFile && onSign)
+    actions.push({
+      key: "sign",
+      icon: FileSignature,
+      label: t.plugins.drive.ctx_sign_file,
+      onClick: () => onSign(entry),
+    });
+  if (isFile && onVerify)
+    actions.push({
+      key: "verify",
+      icon: ShieldCheck,
+      label: t.plugins.drive.ctx_verify_file,
+      onClick: () => onVerify(entry),
+    });
+  if (ocrEligible && onExtractText)
+    actions.push({
+      key: "ocr",
+      icon: ScanLine,
+      // Disabled-without-Gemini mirrors the context menu exactly: the OCR
+      // backend can fall back to the Claude CLI, but the existing gate ties
+      // the affordance to a connected Gemini credential — keep the two
+      // surfaces consistent rather than diverging here.
+      label: hasGemini
+        ? t.plugins.drive.ctx_extract_text
+        : t.plugins.drive.ctx_extract_text_no_gemini,
+      onClick: () => onExtractText(entry),
+      disabled: !hasGemini,
+    });
+
+  if (actions.length === 0) return null;
+
+  return (
+    <div className="mt-3 flex items-center justify-center gap-1 flex-wrap">
+      {actions.map(({ key, icon: ActionIcon, label, onClick, disabled }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          title={label}
+          aria-label={label}
+          className="p-2 rounded-input text-foreground bg-secondary/40 border border-primary/15 hover:text-cyan-100 hover:bg-cyan-500/15 hover:border-cyan-500/35 disabled:opacity-40 disabled:hover:bg-secondary/40 disabled:hover:text-foreground disabled:hover:border-primary/15 disabled:cursor-not-allowed transition-colors focus-ring"
+        >
+          <ActionIcon className="w-4 h-4" />
+        </button>
+      ))}
+    </div>
   );
 }
 

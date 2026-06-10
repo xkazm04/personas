@@ -28,12 +28,16 @@ import {
 import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
+import { NarrationLiveLog, NarrationTrail } from './NarrationThread';
 import { buildPointAtWalkthrough, buildComposedWalkthrough } from './guidance/composeAdHoc';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
   COMPANION_COMPOSE_COCKPIT_EVENT,
   COMPANION_COMPOSE_DASHBOARD_EVENT,
+  COMPANION_EXPLAIN_COCKPIT_EVENT,
+  type CompanionExplainCockpitEvent,
+  type CompanionCockpitSpecBody,
   COMPANION_NAVIGATE_EVENT,
   COMPANION_GUIDE_EVENT,
   type CompanionGuideEvent,
@@ -285,6 +289,48 @@ export default function CompanionPanel() {
     prevStreamingRef.current = streaming;
   }, [streaming, setApprovals]);
 
+  // explain_in_cockpit auto-fire — the orb decision `0` flow. MUST live in
+  // the always-mounted CompanionPanel (not the open-only Body): the user
+  // presses `0` on the orb with the panel CLOSED, so a Body-scoped listener
+  // would never hear the event (QA 2026-06-10 caught exactly that). The
+  // spec rides IN the payload (deliberately never persisted): set it as the
+  // contextual cockpit overlay, then navigate like compose_cockpit.
+  // Dismissing the overlay restores the user's persistent board untouched.
+  useTauriEvent<CompanionExplainCockpitEvent>(
+    COMPANION_EXPLAIN_COCKPIT_EVENT,
+    useCallback((event) => {
+      const raw = event.payload?.spec;
+      if (!raw) return;
+      let body: CompanionCockpitSpecBody & { decision_id?: string };
+      try {
+        body = JSON.parse(raw) as CompanionCockpitSpecBody & { decision_id?: string };
+      } catch (err) {
+        silentCatch('companion_explain_cockpit_parse')(err);
+        return;
+      }
+      if (!body || !Array.isArray(body.widgets) || body.widgets.length === 0) return;
+      // The explanation landed — drop the orb's composing posture.
+      useCompanionStore.getState().setExplainComposing(false);
+      useCompanionStore.getState().setExplainComposeError(null);
+      const sys = useSystemStore.getState();
+      sys.setContextualCockpit({
+        source: {
+          kind: 'explain',
+          decisionId: body.decision_id ?? '',
+          decisionTitle: body.title ?? '',
+        },
+        spec: body,
+      });
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
+      sys.setCompanionPanelCompact(true);
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
+    }, []),
+    'companion_explain_cockpit_listen',
+  );
+
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
@@ -418,6 +464,7 @@ export default function CompanionPanel() {
               useCompanionStore.getState().clearAllTurnSummaries();
               useCompanionStore.getState().clearAllConnectorJobs();
               useCompanionStore.getState().clearAllSteps();
+              useCompanionStore.getState().clearAllNarration();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -777,6 +824,10 @@ function Body(props: BodyProps) {
   // the in-flight bubble; `stepsByEpisodeId` under the completed one.
   const streamingSteps = useCompanionStore((s) => s.streamingSteps);
   const stepsByEpisodeId = useCompanionStore((s) => s.stepsByEpisodeId);
+  // Narration timeline (beats + tool calls). Live log under the streaming
+  // bubble; collapsed trail under the completed one.
+  const streamingNarration = useCompanionStore((s) => s.streamingNarration);
+  const narrationByEpisodeId = useCompanionStore((s) => s.narrationByEpisodeId);
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -967,6 +1018,8 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingBeat(null);
           beatFiredRef.current = false;
           progressFiredRef.current = 0;
+          // Fresh narration timeline for this turn (D2).
+          useCompanionStore.getState().beginNarration();
           // Drop any in-turn tool tasks/timers from a prior turn.
           clearToolTimers();
           useCompanionStore.getState().clearInTurnToolJobs();
@@ -977,8 +1030,19 @@ function Body(props: BodyProps) {
           // still flows through the phase/text handling below.
           const toolEvents = extractToolEvents(ev.payload);
           for (const ts of toolEvents.started) {
-            // TodoWrite is instant + has its own checklist UI — never a task.
-            if (ts.name === 'TodoWrite' || toolTimersRef.current.has(ts.id)) continue;
+            // TodoWrite is instant + has its own checklist UI — never a
+            // task and never a narration row (the checklist IS its surface).
+            if (ts.name === 'TodoWrite') continue;
+            // Narration timeline row (D2). The store dedupes by tool_use
+            // id, so a re-emitted block can't double-log.
+            useCompanionStore.getState().appendNarrationEntry({
+              id: ts.id,
+              kind: 'tool',
+              toolName: ts.name,
+              detail: ts.detail,
+              at: Date.now(),
+            });
+            if (toolTimersRef.current.has(ts.id)) continue;
             const startedAt = new Date().toISOString();
             const handle = window.setTimeout(() => {
               toolTimersRef.current.delete(ts.id);
@@ -1014,6 +1078,9 @@ function Body(props: BodyProps) {
               toolTimersRef.current.delete(doneId);
             }
             useCompanionStore.getState().completeInTurnToolJob(doneId);
+            // Stamp the matching narration row's duration (no-op for ids
+            // we never logged, e.g. TodoWrite).
+            useCompanionStore.getState().completeNarrationTool(doneId);
           }
           // Operational thread: a TodoWrite tool call republishes Athena's
           // full plan. Capture it (latest wins) so the inline checklist
@@ -1075,8 +1142,12 @@ function Body(props: BodyProps) {
               .attachPendingJobsToEpisode(ev.payload);
             // Pin the operational checklist under the completed bubble.
             useCompanionStore.getState().attachStepsToEpisode(ev.payload);
+            // Pin the narration trail under the completed bubble (D2).
+            // Trivial trails are dropped inside the attach.
+            useCompanionStore.getState().attachNarrationToEpisode(ev.payload);
           } else {
             useCompanionStore.getState().setStreamingRecall(null);
+            useCompanionStore.getState().resetStreamingNarration();
           }
           useCompanionStore.getState().setStreamingPhase(null);
           // Clear any in-flight checklist not promoted to an episode.
@@ -1104,6 +1175,7 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingRecall(null);
           useCompanionStore.getState().setStreamingPhase(null);
           useCompanionStore.getState().setStreamingSteps([]);
+          useCompanionStore.getState().resetStreamingNarration();
           currentTurnIdRef.current = null;
           // Backend-initiated turn that errored: clear the streaming flag
           // we raised at `started` so the panel doesn't hang on a thinking
@@ -1457,6 +1529,14 @@ function Body(props: BodyProps) {
     (text: string) => {
       beatFiredRef.current = true;
       useCompanionStore.getState().setStreamingBeat(text);
+      // Log the beat into the narration timeline (D2) so it survives in
+      // the live log + the post-turn trail instead of latest-wins only.
+      useCompanionStore.getState().appendNarrationEntry({
+        id: `beat_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        kind: 'beat',
+        text,
+        at: Date.now(),
+      });
       playProgressClip(text);
     },
     [playProgressClip],
@@ -1858,6 +1938,8 @@ function Body(props: BodyProps) {
                   : [];
               const steps =
                 m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
+              const narration =
+                m.role === 'assistant' ? narrationByEpisodeId[m.id] : undefined;
               return (
                 <div key={m.id} className="space-y-1 animate-fade-slide-in">
                   {daySep && (
@@ -1891,6 +1973,7 @@ function Body(props: BodyProps) {
                   {steps && steps.length > 0 && (
                     <OperationalThread steps={steps} />
                   )}
+                  {narration && <NarrationTrail narration={narration} />}
                   {connectorJobIds.map((jobId) => {
                     const job = jobsById[jobId];
                     if (!job) return null;
@@ -1998,6 +2081,14 @@ function Body(props: BodyProps) {
                     <Square className="w-3 h-3" fill="currentColor" />
                   </button>
                 </div>
+                {/*
+                  Live narration log (D2): the dimmed history of beats +
+                  tool calls so far this turn. The bubble's status line
+                  above is the bold "now"; this is how she got here.
+                */}
+                {streamingNarration.length > 0 && (
+                  <NarrationLiveLog entries={streamingNarration} />
+                )}
                 {streamingSteps.length > 0 && (
                   <OperationalThread steps={streamingSteps} />
                 )}

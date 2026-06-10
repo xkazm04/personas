@@ -15,7 +15,6 @@ pub mod freeze_monitor;
 mod gitlab;
 pub mod ipc_auth;
 pub mod keyed_pool;
-mod langfuse;
 mod local_http;
 mod logging;
 mod notifications;
@@ -837,18 +836,10 @@ pub fn run() {
             }
             st.checkpoint("gitlab_restore");
 
-            // Restore Langfuse exporter from keyring if previously enabled.
-            // No-op when not configured. Never blocks startup; export failures
-            // are logged at runtime, not at init.
-            langfuse::exporter::init_from_config();
-            st.checkpoint("langfuse_restore");
-
             // Start the in-app HTTP server (binds 127.0.0.1, free port at-or
             // above 17400). Hosts authenticated-redirect routes for the
-            // user's default browser — currently the Langfuse auto-login
-            // shim. Register routers BEFORE starting; later registrations
-            // are dropped with a warn.
-            local_http::register_router("langfuse", local_http::langfuse_routes::router());
+            // user's default browser. Register routers BEFORE starting;
+            // later registrations are dropped with a warn.
             local_http::register_router(
                 "project-tracking",
                 engine::project_tracking::push::router(),
@@ -1852,6 +1843,7 @@ pub fn run() {
             commands::credentials::crud::delete_credential_event,
             commands::credentials::crud::healthcheck_credential,
             commands::credentials::crud::healthcheck_credential_preview,
+            commands::credentials::crud::healthcheck_all_credentials,
             commands::credentials::crud::vault_status,
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,
@@ -2276,6 +2268,7 @@ pub fn run() {
             commands::tools::triggers::cron_fire_times_in_range,
             commands::tools::triggers::dry_run_trigger,
             commands::tools::triggers::list_cron_agents,
+            commands::tools::triggers::list_recent_schedule_runs,
             // Tools -- Webhook Request Inspector
             commands::tools::triggers::list_webhook_request_logs,
             commands::tools::triggers::clear_webhook_request_logs,
@@ -2392,6 +2385,8 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_test_connection,
             commands::obsidian_brain::obsidian_brain_save_config,
             commands::obsidian_brain::obsidian_brain_get_config,
+            commands::obsidian_brain::obsidian_brain_list_saved_vaults,
+            commands::obsidian_brain::obsidian_brain_set_saved_vaults,
             commands::obsidian_brain::obsidian_mirror_get_config,
             commands::obsidian_brain::obsidian_mirror_set_config,
             commands::obsidian_brain::obsidian_available,
@@ -2408,6 +2403,12 @@ pub fn run() {
             commands::obsidian_brain::obsidian_drive_status,
             commands::obsidian_brain::obsidian_drive_push_sync,
             commands::obsidian_brain::obsidian_drive_pull_sync,
+            // Obsidian Brain — Revitalize (background vault memory optimization)
+            commands::obsidian_brain::revitalize::obsidian_revitalize_start,
+            commands::obsidian_brain::revitalize::obsidian_revitalize_snapshot,
+            commands::obsidian_brain::revitalize::obsidian_revitalize_active,
+            commands::obsidian_brain::revitalize::obsidian_revitalize_cancel,
+            commands::obsidian_brain::revitalize::obsidian_revitalize_history,
             // Obsidian Brain — Graph (Obsidian Memory connector)
             commands::obsidian_brain::graph::obsidian_graph_search,
             commands::obsidian_brain::graph::obsidian_graph_outgoing_links,
@@ -2617,27 +2618,6 @@ pub fn run() {
             commands::infrastructure::gitlab::gitlab_setup_persona_branches,
             commands::infrastructure::gitlab::gitlab_list_deployment_history,
             commands::infrastructure::gitlab::gitlab_rollback_from_history,
-            // Infrastructure -- Langfuse (Phase 1a-1c — managed self-host)
-            commands::infrastructure::langfuse::langfuse_test_connection,
-            commands::infrastructure::langfuse::langfuse_save_config,
-            commands::infrastructure::langfuse::langfuse_get_config,
-            commands::infrastructure::langfuse::langfuse_clear_config,
-            commands::infrastructure::langfuse::langfuse_save_preferred_port,
-            commands::infrastructure::langfuse::langfuse_recent_traces,
-            commands::infrastructure::langfuse::langfuse_smoke_trace,
-            commands::infrastructure::langfuse::langfuse_get_export_stats,
-            commands::infrastructure::langfuse::langfuse_stack_get_info,
-            commands::infrastructure::langfuse::langfuse_stack_start,
-            commands::infrastructure::langfuse::langfuse_stack_stop,
-            commands::infrastructure::langfuse::langfuse_stack_get_admin_credentials,
-            commands::infrastructure::langfuse::langfuse_stack_open_ui,
-            commands::infrastructure::langfuse::langfuse_open_authenticated_ui,
-            #[cfg(feature = "test-automation")]
-            commands::infrastructure::langfuse::langfuse_make_authenticated_url,
-            commands::infrastructure::langfuse::langfuse_docker_download_installer,
-            commands::infrastructure::langfuse::langfuse_docker_run_installer,
-            commands::infrastructure::langfuse::langfuse_stack_reset,
-            commands::infrastructure::langfuse::langfuse_stack_refresh_images,
             // Workflows
             commands::infrastructure::workflows::get_workflows_overview,
             commands::infrastructure::workflows::get_workflow_job_output,
@@ -2683,6 +2663,7 @@ pub fn run() {
             commands::infrastructure::director::get_director_portfolio,
             commands::infrastructure::director::get_director_brain_enabled,
             commands::infrastructure::director::set_director_brain_enabled,
+            commands::infrastructure::director::get_director_brain_history,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project,
@@ -2740,6 +2721,13 @@ pub fn run() {
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
             commands::infrastructure::incremental_scan::dev_tools_compute_scan_delta,
+            // System operations (trigger → built-in op automations; Chain Studio + Context Map)
+            commands::infrastructure::system_ops::system_ops_list_kinds,
+            commands::infrastructure::system_ops::system_ops_list_automations,
+            commands::infrastructure::system_ops::system_ops_create_automation,
+            commands::infrastructure::system_ops::system_ops_set_enabled,
+            commands::infrastructure::system_ops::system_ops_delete_automation,
+            commands::infrastructure::system_ops::system_ops_run_now,
             // Dev Tools -- Context Group Relationships
             commands::infrastructure::dev_tools::dev_tools_list_context_group_relationships,
             commands::infrastructure::dev_tools::dev_tools_create_context_group_relationship,

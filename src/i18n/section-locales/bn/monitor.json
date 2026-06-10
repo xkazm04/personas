@@ -85,5 +85,11 @@
   "channel_mention_tab": "সম্পূর্ণ করতে Tab চাপুন",
   "channel_mention_will_see": "উল্লেখ করা হয়েছে — পরবর্তী ধাপের সীমায় টিম নির্দেশ দেখতে পায়",
   "channel_composer_newline_hint": "নতুন লাইনের জন্য Shift+Enter",
-  "channel_composer_reply_placeholder": "আপনার উত্তর লিখুন…"
+  "channel_composer_reply_placeholder": "আপনার উত্তর লিখুন…",
+  "channel_pin_memory": "টিম মেমোরি হিসেবে পিন করুন",
+  "channel_pinned_memory": "টিম মেমোরিতে পিন করা হয়েছে",
+  "channel_pin_failed": "টিম মেমোরিতে পিন করা যায়নি",
+  "channel_day_today": "আজ",
+  "channel_day_yesterday": "গতকাল",
+  "channel_avatar_mention": "{name}-কে উল্লেখ করুন"
 }

@@ -2,6 +2,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import TeamList from './TeamList';
 import { TeamStudioSplitVariant } from './teamStudio/TeamStudioSplitVariant';
+import { PresetStudio } from './presetStudio';
 
 /**
  * Selected-team view. The /prototype round (2026-05-23) replaced the
@@ -21,6 +22,13 @@ export default function TeamCanvas() {
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const teams = usePipelineStore((s) => s.teams);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
+  const presetFlowOpen = usePipelineStore((s) => s.presetFlowOpen);
+
+  // In-app preset-adoption flow takes over the content area when open
+  // (entered from the "Preset Team" affordances in TeamList).
+  if (presetFlowOpen) {
+    return <PresetStudio />;
+  }
 
   if (!selectedTeamId) {
     return <TeamList />;

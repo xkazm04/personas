@@ -20,6 +20,7 @@ import { useScheduleActions } from '../libs/useScheduleActions';
 import { getSchedulerStatus, startScheduler, stopScheduler } from '@/api/pipeline/scheduler';
 import type { SchedulerStats } from '@/api/pipeline/scheduler';
 import ScheduleRow from './ScheduleRow';
+import ScheduleRecentRuns from './ScheduleRecentRuns';
 
 const ScheduleCalendar = lazy(() => import('./ScheduleCalendar'));
 
@@ -279,7 +280,13 @@ export default function ScheduleTimeline() {
                 <ScheduleCalendar entries={entries} />
               </Suspense>
             ) : (
-              <GroupedView groups={grouped} renderEntries={renderEntries} />
+              <div className="space-y-5">
+                {/* Past runs first so the timeline reads past → future. The
+                 *  calendar view already marks past fires; this is the grouped
+                 *  view's equivalent. */}
+                <ScheduleRecentRuns filterIds={filter?.ids ?? null} />
+                <GroupedView groups={grouped} renderEntries={renderEntries} />
+              </div>
             )}
           </div>
         )}

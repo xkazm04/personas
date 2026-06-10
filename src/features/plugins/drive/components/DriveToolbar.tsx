@@ -160,7 +160,7 @@ export function DriveToolbar({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-gradient-to-b from-background/70 to-background/40 backdrop-blur-sm">
+    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-background">
       {/* Nav cluster */}
       <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10">
         <IconButton
@@ -423,11 +423,14 @@ function MovePopover({
   // Flatten the tree into a depth-tagged list. Filters out destinations
   // that would be invalid moves: any selection path itself, and any
   // descendant of a selection path (refuses ancestor-into-descendant —
-  // same guard the sidebar drop applies).
+  // same guard the sidebar drop applies), and the trash subtree ("move to
+  // trash" is the Delete action's job, not Move-to's).
   const candidates = useMemo(() => {
     const out: Array<{ node: DriveTreeNode; depth: number }> = [];
     if (!tree) return out;
     const isInvalid = (path: string) =>
+      path === ".trash" ||
+      path.startsWith(".trash/") ||
       selectionPaths.some(
         (p) => path === p || (p !== "" && path.startsWith(`${p}/`)),
       );

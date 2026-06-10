@@ -1,17 +1,30 @@
 # Athena conversation orchestration — replacing long-pause-then-big-bang
 
-**Status:** Variants **A + B + C all shipped.** (Step 1 — removing the raw token stream — also shipped.)
+**Status:** Variants **A + B + C all shipped.** (Step 1 — removing the raw token stream — also shipped.) Follow-ups **D1 (always-on narration) + D2 (narration timeline)** shipped 2026-06-10.
+
+## Shipped (D1 — narration unbundled from voice)
+
+The `PROGRESS:` grammar originally lived inside `prompt.rs`'s voice addendum, which meant **text-only users got no model-authored narration at all**, and proactive turns (spawned with `voice_enabled: false`) never narrated. It now lives in its own always-on `progress_addendum()` appended to every turn's system prompt — user, autonomous, and proactive alike. The copy is voice-agnostic (beats feed the visual timeline; voice playback layers on top when configured). The TTS grammar is unchanged and still voice-gated.
+
+## Shipped (D2 — narration timeline: live log + per-bubble trail)
+
+Beats and tool calls were ephemeral — a single latest-wins `streamingBeat` slot plus a transient phase line, all discarded at turn end. Now every completed `PROGRESS:` beat and every `tool_use`/`tool_result` pair (with per-tool durations) accumulates into a turn-scoped **narration timeline**:
+
+- **Live:** `NarrationLiveLog` renders under the streaming bubble — the history of what Athena has done this turn (last 5 rows, "+N earlier" overflow). The bubble's status line stays the bold "now"; the log is how she got there.
+- **After:** on `finished` the timeline promotes to `narrationByEpisodeId` (the same promote-on-finish model as the recall strip / operational thread) and `NarrationTrail` renders a collapsed **"What I did — N steps · 48s"** disclosure under the completed bubble. Trivial trails (a single fast tool call, no beats) are dropped at attach time. Session-scoped; lost on app restart.
+
+Data model + pure helpers: `src/features/plugins/companion/narrationTimeline.ts`. Views: `NarrationThread.tsx` (named differently from the data module because Windows' case-insensitive FS can't host both casings). TodoWrite is excluded (the `OperationalThread` checklist is its surface).
 
 ## Shipped (B — model-authored progress beats)
 
-Athena narrates long turns with `PROGRESS:` lines (taught in `prompt.rs`'s voice addendum, same family as `TTS:`):
+Athena narrates long turns with `PROGRESS:` lines (taught in `prompt.rs`'s always-on `progress_addendum()` since D1, same family as `TTS:`):
 
 ```
 PROGRESS: Pulling up your recent runs…
 PROGRESS: Found three failures — reading the logs…
 ```
 
-- **Live detection (frontend).** `CompanionPanel` scans the accumulating `streamingText` for *completed* `PROGRESS:` lines (a line is complete once a newline follows it) and fires each beat exactly once. Each beat is shown in the streaming bubble (`streamingBeat`, which outranks the derived phase) and spoken via the exclusive progress-audio channel — the latest beat interrupts the prior, and the real reply cuts them all off.
+- **Live detection (frontend).** `CompanionPanel` scans the accumulating `streamingText` for *completed* `PROGRESS:` lines (a line is complete once a newline follows it) and fires each beat exactly once. Each beat is shown in the streaming bubble (`streamingBeat`, which outranks the derived phase), logged into the narration timeline (D2), and spoken via the exclusive progress-audio channel — the latest beat interrupts the prior, and the real reply cuts them all off.
 - **Precedence.** A model beat suppresses the generic Variant C ack/heartbeat for that turn (`beatFiredRef`) — Athena's own words beat filler.
 - **Strip (backend).** `dispatcher.rs` drops `PROGRESS:` lines from the persisted reply (alongside `TTS:`/`QR:`/`OP:`), so they never appear in the final bubble. No constitution version bump — the grammar lives in the per-turn prompt.
 - This needs no new IPC: beats ride the existing token stream we already receive; we simply parse + act on them client-side and clean them server-side.

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Settings, Check, Layers } from 'lucide-react';
+import { Loader2, Settings, Check, Trash2, Layers } from 'lucide-react';
 import { TEAM_COLORS } from '../CreateTeamForm';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -36,11 +36,16 @@ function modelKeyFromProfile(profile: string | null): string {
   return 'inherit';
 }
 
-export function TeamWorkspacePane({ teamId }: { teamId: string }) {
+export function TeamWorkspacePane({ teamId, onDirtyChange }: {
+  teamId: string;
+  /** Reports unsaved-edit state so the studio can guard navigation away. */
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
   const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const deleteTeam = usePipelineStore((s) => s.deleteTeam);
   const addToast = useToastStore((s) => s.addToast);
 
   const [instructions, setInstructions] = useState('');
@@ -54,6 +59,10 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
   const [color, setColor] = useState('#6366f1');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
+  // Disband confirm: first click arms, second confirms. Auto-disarms after a
+  // few seconds so a stray click can't leave it primed.
+  const [confirmDisband, setConfirmDisband] = useState(false);
+  const [disbanding, setDisbanding] = useState(false);
 
   // Seed from the team whenever it loads / changes.
   useEffect(() => {
@@ -67,6 +76,13 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
     setIcon(team.icon ?? '');
     setColor(team.color ?? '#6366f1');
   }, [team]);
+
+  // Auto-disarm the disband confirm after a short window.
+  useEffect(() => {
+    if (!confirmDisband) return;
+    const timer = setTimeout(() => setConfirmDisband(false), 3500);
+    return () => clearTimeout(timer);
+  }, [confirmDisband]);
 
   const identityDirty = useMemo(() => {
     if (!team) return false;
@@ -91,6 +107,13 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
       turnsNum !== (team.default_max_turns ?? null)
     );
   }, [team, identityDirty, instructions, modelKey, budget, turns]);
+
+  // Mirror the dirty flag up to the studio shell; clear it on unmount so a
+  // discarded pane doesn't leave a stale guard behind.
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const handleSave = useCallback(async () => {
     if (!team) return;
@@ -125,6 +148,20 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
       setSaving(false);
     }
   }, [team, teamId, name, description, icon, color, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
+
+  // Disband: deletes the PersonaTeam (cascading membership + connections) but
+  // NOT the member personas — they survive ungrouped. The store's deleteTeam
+  // reports errors and, on success, clears selectedTeamId, which unmounts this
+  // pane and returns to the Teams table.
+  const handleDisband = useCallback(async () => {
+    setDisbanding(true);
+    try {
+      await deleteTeam(teamId);
+    } finally {
+      setDisbanding(false);
+      setConfirmDisband(false);
+    }
+  }, [deleteTeam, teamId]);
 
   if (!team) {
     return <div className="h-full flex items-center justify-center typo-body text-foreground">{ts.workspace}</div>;
@@ -260,6 +297,47 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
         {savedAt > 0 && !dirty && (
           <span className="typo-caption text-emerald-300">{ts.workspace_saved}</span>
         )}
+      </div>
+
+      {/* Danger zone — disband the team (keeps personas). */}
+      <div className="mt-2 pt-4 border-t border-red-500/15 flex flex-col gap-2 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Trash2 className="w-4 h-4 text-red-400/80" />
+          <h3 className="typo-label uppercase tracking-wider text-red-300">{ts.disband_heading}</h3>
+        </div>
+        <p className="typo-caption text-foreground">{ts.disband_hint}</p>
+        <div className="flex items-center gap-2 mt-1">
+          {confirmDisband ? (
+            <>
+              <button
+                type="button"
+                disabled={disbanding}
+                onClick={() => void handleDisband()}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/40 bg-red-500/15 typo-body font-medium text-red-300 hover:bg-red-500/25 disabled:opacity-50 transition-colors"
+              >
+                {disbanding ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                {ts.disband_confirm}
+              </button>
+              <button
+                type="button"
+                disabled={disbanding}
+                onClick={() => setConfirmDisband(false)}
+                className="inline-flex items-center px-3 py-1.5 rounded-interactive border border-primary/15 typo-body text-foreground hover:bg-secondary/40 disabled:opacity-50 transition-colors"
+              >
+                {ts.cancel}
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDisband(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-red-500/30 typo-body font-medium text-red-300 hover:bg-red-500/15 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {ts.disband}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

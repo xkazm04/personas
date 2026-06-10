@@ -17,6 +17,7 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 | Team config | Per-team settings panel | `TeamConfigPanel.tsx` |
 | Drag panel | Drag-source for adding personas to the canvas | `TeamDragPanel.tsx`, `canvas/useCanvasDragDrop.ts` |
 | Auto-team | LLM-assisted team composition | `AutoTeamModal.tsx`, `useAutoTeam.ts` |
+| Preset team | "Preset Team" button (+ empty-state CTA) opens `TeamPresetPickerModal` — a gallery of best-practice, pre-wired presets shipped under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**). Picking one opens the shared `PresetPreviewModal` where the user selects/unselects members and adopts the whole bundle in one pass. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamPresetPickerModal.tsx`, `sub_presets/PresetPreviewModal.tsx` |
 | Pipeline templates | Curated multi-persona starters | `templates/PipelineTemplateGallery.tsx`, `templates/MiniCanvas.tsx`, `templates/pipelineTemplateData.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
 
@@ -172,7 +173,48 @@ Director/Athena orchestration discussion).
   `list_team_channel` carries `replyTo` (the channel table's column), the
   composer's per-message Reply affordance posts a directive with
   `post_team_directive(reply_to)`, and replies render indented under a quoted
-  reference to their parent.
+  reference to their parent. The composer is a multiline autosizing textarea
+  (Enter sends, Shift+Enter breaks) with per-team draft persistence and an
+  @-mention autocomplete covering Athena and every roster member. A filter bar
+  (clicking a presence avatar in the header band also inserts the mention and
+  focuses the composer). A filter bar
+  (text search · Conversation/Activity kind toggle · author select) narrows
+  the feed; the kind + author filters persist per team across sessions (the
+  text query is deliberately ephemeral). Any conversational row (hover pin)
+  or system event (Pin action in the detail modal) can be **pinned as a team
+  memory** via `create_team_memory` — the channel read-model unions memories
+  back in, so the pin reappears as a memory row in the conversation. Messages
+  from different days are divided by Today/Yesterday/date separators, the
+  header crest wears the team's own icon and color, and teams holding an
+  unsent composer draft show a pen hint on the Teams table.
+- **Workspace settings guard**: the Team Studio's workspace pane (identity +
+  shared instructions + defaults) reports unsaved edits up to the studio
+  shell; switching modes, clicking a roster member, or navigating back while
+  dirty raises a Discard-changes/Keep-editing confirm instead of silently
+  dropping the edits. The studio header also wears the team's identity — the
+  icon and color editable in Workspace settings render in the header chip —
+  and the roster shows live presence: members mid-step get a pulsing
+  "Working…" dot, members at a review gate a "Waiting for review" one, from
+  the same step-layer derivation the channel header uses (`useTeamPresence`).
+
+## sub_teamWorkspace — Settings (team workspace defaults + disband)
+
+Studio workspace mode, reached from the left rail's **Settings** entry
+(`TeamWorkspacePane.tsx`). A team *is* the workspace, so this pane edits the
+shared facets that apply to every member: **shared instructions** (appended to
+each member's prompt), a **default model**, **default budget (USD)**, and
+**default max turns**. Saving sends only the workspace facet of
+`UpdateTeamInput` (the other fields go as `null` = skip), so it never disturbs
+name/description/canvas.
+
+The pane also hosts the **Disband team** danger zone — a two-click confirm
+(arms, then **Confirm disband**; auto-disarms after a few seconds) wired to the
+store's `deleteTeam`. Disbanding deletes the `PersonaTeam` and cascades its
+membership + connections but **keeps the member personas** — they survive
+ungrouped. On success the store clears `selectedTeamId`, which returns the user
+to the Teams table. This mirrors the per-row Disband action in `TeamList`; the
+backend `delete_team` refuses while a pipeline is running or when the team is a
+dev project's canonical team.
 
 ## State and backend
 

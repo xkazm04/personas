@@ -11,9 +11,9 @@
 import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
-import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
 import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
+import { useObsidianVaultRehydration } from "@/features/plugins/obsidian-brain/useObsidianVaultRehydration";
 
 
 export default function BackgroundServices() {
@@ -26,10 +26,6 @@ export default function BackgroundServices() {
   // (lastEvaluation, evaluating, forceEvaluate, eventLog) isn't needed
   // at the app level; mount-side-effect is what matters here.
   useRemediationEvaluator();
-  // Subscribes to Langfuse stack lifecycle events globally so background
-  // start/stop/installer-download progress flows into the global store
-  // regardless of which page is currently mounted.
-  useLangfuseStackEvents();
   // Watches TEAM_ASSIGNMENT_PROGRESS globally and dispatches a notification
   // into the title-bar notification center when any assignment transitions
   // to awaiting_review. Fires regardless of which page is mounted so the
@@ -43,5 +39,8 @@ export default function BackgroundServices() {
   // Phase 4 — when an Athena-dispatched assignment finishes, record its outcome
   // into OperativeMemory so Athena's chat can reason about the team's result.
   useAthenaAssignmentReconciliation();
+  // Restore the active Obsidian vault from the persisted config so the Brain
+  // plugin and the obsidian_memory connector survive app restarts.
+  useObsidianVaultRehydration();
   return null;
 }

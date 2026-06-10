@@ -18,6 +18,22 @@ import type { LucideIcon } from 'lucide-react';
  */
 export type SourceMode = 'team' | 'standalone';
 
+/**
+ * Editable field ids the Overview's read-only pipeline exposes to its
+ * quick-edit popover. Each id maps to one KvRow; the orchestrator
+ * ({@link EditableProjectPipeline}) builds the matching editor + save call.
+ */
+export type PipelineFieldId =
+  | 'name'
+  | 'source-team'
+  | 'source-cred'
+  | 'github-url'
+  | 'main-branch'
+  | 'test-env'
+  | 'std-precommit'
+  | 'std-pr-base'
+  | 'std-automerge';
+
 /** A stage's progress state, used to tint its rail node. */
 export type StageStatus = 'complete' | 'active' | 'incomplete';
 

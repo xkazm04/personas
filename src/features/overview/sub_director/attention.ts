@@ -11,8 +11,9 @@ export type AttentionFlag = 'needs_review' | 'low' | 'declining' | 'stale';
 /** A review older than this is "stale". */
 export const STALE_MS = 14 * 24 * 60 * 60 * 1000;
 
-/** Priority order — lower index = more urgent. Drives sort + row accent. */
-const PRIORITY: AttentionFlag[] = ['needs_review', 'low', 'declining', 'stale'];
+/** Priority order — lower index = more urgent. Drives sort + row accent + the triage bar. */
+export const ATTENTION_ORDER: AttentionFlag[] = ['needs_review', 'low', 'declining', 'stale'];
+const PRIORITY = ATTENTION_ORDER;
 
 /** Tone (CSS color var) per flag. */
 export const FLAG_TONE: Record<AttentionFlag, string> = {
@@ -49,4 +50,19 @@ export function primaryFlag(flags: AttentionFlag[]): AttentionFlag | null {
 export function attentionRank(flags: AttentionFlag[]): number {
   const p = primaryFlag(flags);
   return p ? PRIORITY.indexOf(p) : PRIORITY.length;
+}
+
+/** Portfolio-wide tally of how many roster entries carry each attention flag. */
+export function attentionCounts(
+  roster: DirectorRosterEntry[],
+  now: number,
+): Record<AttentionFlag, number> {
+  const counts: Record<AttentionFlag, number> = { needs_review: 0, low: 0, declining: 0, stale: 0 };
+  for (const r of roster) for (const f of attentionFlags(r, now)) counts[f] += 1;
+  return counts;
+}
+
+/** Number of distinct agents carrying at least one attention flag (badge count). */
+export function flaggedAgentCount(roster: DirectorRosterEntry[], now: number): number {
+  return roster.reduce((n, r) => n + (attentionFlags(r, now).length > 0 ? 1 : 0), 0);
 }

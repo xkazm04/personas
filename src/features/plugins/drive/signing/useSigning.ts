@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   deleteDocumentSignature,
@@ -25,6 +25,22 @@ export interface SigningIdentity {
 }
 
 /**
+ * Convert a stored absolute signature path back to a drive-relative one so it
+ * can be matched against Finder entry paths. Signatures store the *absolute*
+ * path passed to `sign_document` (root + OS separator + relative); this strips
+ * the managed root and normalizes separators to "/". Returns null when the
+ * path isn't under the given root (e.g. a sidecar imported from elsewhere).
+ */
+function toDriveRelative(absPath: string, root: string): string | null {
+  if (!root) return null;
+  const normAbs = absPath.replace(/\\/g, "/");
+  const normRoot = root.replace(/\\/g, "/").replace(/\/+$/, "");
+  if (normAbs === normRoot) return "";
+  const prefix = `${normRoot}/`;
+  return normAbs.startsWith(prefix) ? normAbs.slice(prefix.length) : null;
+}
+
+/**
  * Bridge hook between the Drive plugin and the signing backend. Wraps the
  * absolute-path `sign_document` / `verify_document` commands with
  * drive-relative helpers so the Finder UI can sign any file in the managed
@@ -37,16 +53,27 @@ export function useSigning() {
   const [identity, setIdentity] = useState<SigningIdentity | null>(null);
   const [signatures, setSignatures] = useState<DocumentSignature[]>([]);
   const [loadingSignatures, setLoadingSignatures] = useState(false);
+  // Drive root in state (not just the ref) so `signedPaths` recomputes once it
+  // resolves — the ref alone wouldn't trigger a re-render.
+  const [root, setRoot] = useState<string | null>(null);
 
   // Cache the drive root so we don't hit Tauri on every sign/verify.
   const rootRef = useRef<string | null>(null);
 
   const resolveRoot = useCallback(async (): Promise<string> => {
     if (rootRef.current) return rootRef.current;
-    const root = await driveGetRoot();
-    rootRef.current = root;
-    return root;
+    const resolved = await driveGetRoot();
+    rootRef.current = resolved;
+    return resolved;
   }, []);
+
+  // Resolve the root once so the absolute → relative conversion in
+  // `signedPaths` has something to strip against.
+  useEffect(() => {
+    resolveRoot()
+      .then(setRoot)
+      .catch(silentCatch("signing:resolve-root"));
+  }, [resolveRoot]);
 
   const ensureIdentity = useCallback(async (): Promise<SigningIdentity> => {
     if (identity) return identity;
@@ -158,6 +185,21 @@ export function useSigning() {
     return exportSignatureSidecar(id);
   }, []);
 
+  // Drive-relative paths of every file that carries a signature record. Lets
+  // the Finder badge a signed file without each call site re-deriving the
+  // absolute → relative mapping. Empty until both the signatures list and the
+  // root have loaded; consumers should treat "not present" as "unknown".
+  const signedPaths = useMemo(() => {
+    const set = new Set<string>();
+    if (!root) return set;
+    for (const sig of signatures) {
+      if (!sig.file_path) continue;
+      const rel = toDriveRelative(sig.file_path, root);
+      if (rel !== null) set.add(rel);
+    }
+    return set;
+  }, [signatures, root]);
+
   // NOTE: consumers that put the returned object in a useEffect dep array
   // will re-fire the effect whenever `signatures` / `loadingSignatures`
   // change — which causes an infinite loop if the effect itself triggers
@@ -169,6 +211,7 @@ export function useSigning() {
     identity,
     signatures,
     loadingSignatures,
+    signedPaths,
     ensureIdentity,
     refreshSignatures,
     signDriveFile,

@@ -1,14 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch, Archive, CheckSquare, Square, X as XIcon, ExternalLink,
+  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, Archive, CheckSquare, Square, X as XIcon, ExternalLink,
 } from 'lucide-react';
 import { openLocalPath, openExternalUrl } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
-import { listCredentials } from '@/api/vault/credentials';
-import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
-import { isGitHubCred } from '../sub_overview/useOverviewData';
-import { GitHubIssueImportModal } from './GitHubIssueImportModal';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
@@ -63,23 +59,6 @@ export default function ProjectManagerPage() {
   const [showModal, setShowModal] = useState(false);
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
   const [editingProject, setEditingProject] = useState<EditProjectData | null>(null);
-  const [importProjectId, setImportProjectId] = useState<string | null>(null);
-  const importProject = projects.find((p) => p.id === importProjectId);
-
-  // GitHub PAT detection — the "Import GitHub issues as goals" row icon only
-  // shows when the vault contains at least one GitHub-typed credential.
-  // We refresh the lookup on each ProjectManager mount so newly-added PATs
-  // appear without a full reload.
-  const [hasGitHubPat, setHasGitHubPat] = useState(false);
-  useEffect(() => {
-    let cancelled = false;
-    listCredentials()
-      .then((creds: PersonaCredential[]) => {
-        if (!cancelled) setHasGitHubPat(creds.some(isGitHubCred));
-      })
-      .catch(() => { if (!cancelled) setHasGitHubPat(false); });
-    return () => { cancelled = true; };
-  }, []);
 
   // Bulk-archive selection — checkbox column + sticky action bar above the
   // table. Archive flows through updateProject({status: 'archived'}) per id
@@ -423,17 +402,6 @@ export default function ProjectManagerPage() {
                           <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       )}
-                      {project.githubUrl && hasGitHubPat && (
-                        <button
-                          type="button"
-                          onClick={() => setImportProjectId(project.id)}
-                          title={t.plugins.dev_tools.row_import_gh_issues}
-                          aria-label={t.plugins.dev_tools.row_import_gh_issues}
-                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                        >
-                          <GitBranch className="w-3.5 h-3.5" />
-                        </button>
-                      )}
                       <button
                         type="button"
                         onClick={() => { openLocalPath(`vscode://file/${project.path}`).catch(toastCatch('Failed to open in VS Code')); }}
@@ -481,16 +449,6 @@ export default function ProjectManagerPage() {
           open
           team={previewingTeam}
           onClose={() => setPreviewingTeam(null)}
-        />
-      )}
-
-      {importProject && importProject.githubUrl && (
-        <GitHubIssueImportModal
-          open={importProjectId !== null}
-          onClose={() => setImportProjectId(null)}
-          projectId={importProject.id}
-          projectName={importProject.name}
-          githubUrl={importProject.githubUrl}
         />
       )}
     </ContentBox>

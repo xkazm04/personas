@@ -33,9 +33,11 @@ export function CommandPanelToolsRow({
       <div className="flex flex-col gap-2">
         {connectorChips.length > 0 && (
           <div className="flex items-center gap-1.5 flex-wrap">
-            {connectorChips.map((c) => (
+            {connectorChips.map((c, i) => (
               <span
-                key={c.name}
+                // Composite key: persona connector lists can carry duplicate
+                // names (test-seeded adoptions) — name-only keys collide.
+                key={`${c.name}-${i}`}
                 className="flex items-center gap-1.5 pl-1 pr-2 py-0.5 rounded-full bg-primary/20 border border-primary/40 typo-caption text-foreground"
                 style={c.color ? { boxShadow: `0 0 10px ${c.color}26` } : undefined}
               >

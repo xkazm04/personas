@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { Translations } from '@/i18n/en';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -8,13 +9,38 @@ function EmptyNote({ label }: { label: string }) {
   return <span className="typo-label text-foreground italic">{label}</span>;
 }
 
+/** True when the dim has no concrete content for this row — i.e. DimContent
+ *  would render only an EmptyNote. Mirrors the switch below; keep the two
+ *  in sync when a dim's data shape changes. DimensionPanel uses this to
+ *  show the dim's plain-language description as teaching content. */
+export function isDimEmpty(dim: GlyphDimension, row: GlyphRow): boolean {
+  switch (dim) {
+    case 'trigger': return !row.triggers.length;
+    case 'task': return !row.steps.length;
+    case 'connector': return !row.connectors.length;
+    case 'message': return !parseChannels(row.messageSummary).length;
+    case 'review': return !row.reviewSummary;
+    case 'memory': return !row.memorySummary;
+    case 'event': return !row.events.length;
+    case 'error': return !row.errorSummary;
+    default: return true;
+  }
+}
+
 /** Renders the body of the DimensionPanel for a given dim. Each branch
  *  mirrors a matrix cell — label + concrete template data, trimmed to
  *  what fits comfortably in the overlay frame. */
 export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow; t: Translations }) {
+  // One flag serves whichever branch renders — only one dim shows at a
+  // time and the panel remounts per dim (AnimatePresence), so the
+  // expansion state naturally resets when switching dimensions.
+  const [showAll, setShowAll] = useState(false);
+  const moreLabel = (count: number) =>
+    t.templates.chronology.show_n_more.replace('{count}', String(count));
+
   switch (dim) {
     case 'trigger':
-      if (!row.triggers.length) return <EmptyNote label="No trigger configured" />;
+      if (!row.triggers.length) return <EmptyNote label={t.templates.chronology.empty_trigger} />;
       return (
         <div className="flex flex-col gap-2">
           {row.triggers.map((tr, i) => (
@@ -27,10 +53,10 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
       );
 
     case 'task':
-      if (!row.steps.length) return <EmptyNote label="No steps defined" />;
+      if (!row.steps.length) return <EmptyNote label={t.templates.chronology.empty_steps} />;
       return (
         <ol className="flex flex-col gap-1.5 list-none">
-          {row.steps.slice(0, 8).map((s, i) => (
+          {(showAll ? row.steps : row.steps.slice(0, 8)).map((s, i) => (
             <li key={s.id} className="flex gap-2">
               <span className="typo-label text-foreground tabular-nums shrink-0">{i + 1}.</span>
               <div className="flex flex-col min-w-0">
@@ -39,15 +65,25 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
               </div>
             </li>
           ))}
-          {row.steps.length > 8 && <li className="typo-label text-foreground italic">+{row.steps.length - 8} more</li>}
+          {row.steps.length > 8 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="typo-label text-foreground italic underline-offset-2 hover:underline cursor-pointer"
+              >
+                {showAll ? t.templates.chronology.show_less : moreLabel(row.steps.length - 8)}
+              </button>
+            </li>
+          )}
         </ol>
       );
 
     case 'connector':
-      if (!row.connectors.length) return <EmptyNote label="No connectors configured" />;
+      if (!row.connectors.length) return <EmptyNote label={t.templates.chronology.empty_connectors} />;
       return (
         <div className="grid grid-cols-2 gap-1.5">
-          {row.connectors.slice(0, 6).map((cn, i) => {
+          {(showAll ? row.connectors : row.connectors.slice(0, 6)).map((cn, i) => {
             const meta = getConnectorMeta(cn.name);
             return (
               <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-primary/5 border border-card-border">
@@ -62,16 +98,20 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
             );
           })}
           {row.connectors.length > 6 && (
-            <div className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground">
-              +{row.connectors.length - 6} more
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-colors"
+            >
+              {showAll ? t.templates.chronology.show_less : moreLabel(row.connectors.length - 6)}
+            </button>
           )}
         </div>
       );
 
     case 'message': {
       const channels = parseChannels(row.messageSummary);
-      if (!channels.length) return <EmptyNote label="No channels configured" />;
+      if (!channels.length) return <EmptyNote label={t.templates.chronology.empty_channels} />;
       return (
         <div className="flex flex-col gap-1.5">
           {channels.map((ch, i) => {
@@ -96,15 +136,15 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'review':
       return row.reviewSummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.reviewSummary}</p>
-        : <EmptyNote label="No review policy" />;
+        : <EmptyNote label={t.templates.chronology.empty_review} />;
 
     case 'memory':
       return row.memorySummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.memorySummary}</p>
-        : <EmptyNote label="Memory not configured" />;
+        : <EmptyNote label={t.templates.chronology.empty_memory} />;
 
     case 'event':
-      if (!row.events.length) return <EmptyNote label="No event subscriptions" />;
+      if (!row.events.length) return <EmptyNote label={t.templates.chronology.empty_events} />;
       return (
         <div className="flex flex-col gap-1.5">
           {row.events.map((e, i) => (
@@ -119,9 +159,9 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'error':
       return row.errorSummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.errorSummary}</p>
-        : <EmptyNote label="No error handler" />;
+        : <EmptyNote label={t.templates.chronology.empty_error} />;
 
     default:
-      return <EmptyNote label="No content" />;
+      return <EmptyNote label={t.templates.chronology.empty_generic} />;
   }
 }

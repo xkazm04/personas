@@ -656,10 +656,10 @@ const PersonaDossier = memo(function PersonaDossier({
           <div className="text-md text-foreground">{t.agents.persona_list.no_connectors}</div>
         ) : (
           <div className="flex flex-wrap items-center gap-1.5">
-            {connectors.map((name) => {
+            {connectors.map((name, i) => {
               const meta = getConnectorMeta(name);
               return (
-                <Tooltip key={name} content={meta.label}>
+                <Tooltip key={`${name}-${i}`} content={meta.label}>
                   <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-input bg-secondary/40 border border-primary/10 text-md text-foreground cursor-help">
                     <ConnectorIcon meta={meta} size="w-3.5 h-3.5" />
                     <span className="truncate max-w-[90px]">{meta.label}</span>

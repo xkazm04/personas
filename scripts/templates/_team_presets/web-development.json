@@ -1,0 +1,135 @@
+{
+  "id": "web-development",
+  "schema_version": 1,
+  "name": "Web Development Team",
+  "description": "A best-practice pod for shipping web applications, end to end on one codebase: a solution architect scopes the feature into a story-pointed plan, a design handoff coordinator turns that into UI/UX specs and assets, a dev clone implements the frontend + backend (writes the code and tests, runs them), a code reviewer guards quality, a QA guardian tests each PR in an isolated git worktree and merges it or returns it for fixes, a DevOps guardian builds, deploys, and monitors the release, a website conversion auditor audits the live site for performance and conversion, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory. (QA Guardian's PR-merge action and DevOps Guardian's deploy steps need a GitHub credential; without it they stay idle and the rest of the build cascade is unaffected.)",
+  "icon": "Globe",
+  "color": "#06b6d4",
+  "category": [
+    "development",
+    "web",
+    "frontend"
+  ],
+  "team": {
+    "name": "Web Development Team",
+    "description": "Scope → design → implement → review → QA-test/merge → deploy → audit — best-practice web delivery on one codebase.",
+    "color": "#06b6d4"
+  },
+  "group": {
+    "name": "Web Delivery",
+    "color": "#06b6d4",
+    "shared_instructions": "Every member operates on the same registered web codebase. Ground every assertion in codebase evidence — cite file:line rather than speculating. Hand work forward through events, not direct calls. Track decisions, design specs, and findings in memory so the team's knowledge compounds across runs instead of resetting each time. Prefer empirical findings over assumptions; when a precondition (codebase access, a deployed URL, a GitHub credential) is missing, say so explicitly rather than fabricating results. SHARED KNOWLEDGE GRAPH (Obsidian): the team shares an Obsidian vault knowledge graph. MCP tools are deferred, so FIRST call ToolSearch with `select:obsidian_vault_search,obsidian_vault_write_note` to load their schemas. BEFORE changing code or deciding, obsidian_vault_search for prior decisions/constraints touching the files/modules you will change and honor them (do not re-litigate settled decisions). AFTER a significant decision, write a durable decision-note via obsidian_vault_write_note (title \"Decision: <short-slug>\") that links related modules/constraints with [[wikilinks]] (e.g. [[Module: checkout]], [[Constraint: a11y]]) so the graph compounds across runs."
+  },
+  "members": [
+    {
+      "template_id": "solution-architect",
+      "role": "architect",
+      "x": 0,
+      "y": 120
+    },
+    {
+      "template_id": "design-handoff-coordinator",
+      "role": "designer",
+      "x": 0,
+      "y": 340
+    },
+    {
+      "template_id": "dev-clone",
+      "role": "engineer",
+      "x": 260,
+      "y": 230
+    },
+    {
+      "template_id": "code-reviewer",
+      "role": "reviewer",
+      "x": 520,
+      "y": 120
+    },
+    {
+      "template_id": "qa-guardian",
+      "role": "qa",
+      "x": 520,
+      "y": 340
+    },
+    {
+      "template_id": "devops-guardian",
+      "role": "devops",
+      "x": 780,
+      "y": 120
+    },
+    {
+      "template_id": "website-conversion-auditor",
+      "role": "optimizer",
+      "x": 1040,
+      "y": 120
+    },
+    {
+      "template_id": "docs-steward",
+      "role": "docs",
+      "x": 1040,
+      "y": 340
+    }
+  ],
+  "connections": [
+    {
+      "from": "architect",
+      "to": "designer",
+      "connection_type": "sequential",
+      "label": "scoped UI/UX requirements for design handoff (architecture.analysis.completed)"
+    },
+    {
+      "from": "architect",
+      "to": "engineer",
+      "connection_type": "sequential",
+      "label": "scoped, story-pointed task breakdown to implement (architecture.analysis.completed)"
+    },
+    {
+      "from": "designer",
+      "to": "engineer",
+      "connection_type": "sequential",
+      "label": "design specs + assets handed off to build (design.handoff.completed)"
+    },
+    {
+      "from": "engineer",
+      "to": "reviewer",
+      "connection_type": "sequential",
+      "label": "implemented changes + tests to review (implementation.completed)"
+    },
+    {
+      "from": "engineer",
+      "to": "qa",
+      "connection_type": "sequential",
+      "label": "opened PR to test in an isolated worktree + merge or return (dev-clone.pr.created)"
+    },
+    {
+      "from": "qa",
+      "to": "engineer",
+      "connection_type": "feedback",
+      "label": "tests failed — changes requested back to the author (qa.pr.changes_requested)"
+    },
+    {
+      "from": "reviewer",
+      "to": "devops",
+      "connection_type": "sequential",
+      "label": "reviewed + merged changes to build, deploy, and monitor (code_review.completed)"
+    },
+    {
+      "from": "devops",
+      "to": "optimizer",
+      "connection_type": "sequential",
+      "label": "deployed site ready for performance + conversion audit (deployment.completed)"
+    },
+    {
+      "from": "optimizer",
+      "to": "architect",
+      "connection_type": "feedback",
+      "label": "conversion + performance findings feed the next iteration (conversion.audit.completed)"
+    },
+    {
+      "from": "engineer",
+      "to": "docs",
+      "connection_type": "sequential",
+      "label": "shipped changes to document — README + changelog (implementation.completed)"
+    }
+  ]
+}

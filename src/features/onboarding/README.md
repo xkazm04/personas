@@ -24,8 +24,8 @@ Each step is a row in one of the `*_STEPS` arrays in `tourSlice.ts`:
   nav: {
     sidebarSection: 'settings',        // cast to SidebarSection
     subTab: 'appearance',              // optional; sub-tab value
-    subTabSetter:                      // optional; MUST be one of the three supported setters:
-      'setSettingsTab' | 'setOverviewTab' | 'setEventBusTab',
+    subTabSetter:                      // optional; MUST be one of the four supported setters:
+      'setSettingsTab' | 'setOverviewTab' | 'setEventBusTab' | 'setObsidianBrainTab',
   },
   completeOn: 'tour:appearance-changed',  // event key (see below). The step is marked complete when emitTourEvent() is called with this key while the step is active.
   subSteps: [
@@ -41,11 +41,13 @@ Each step is a row in one of the `*_STEPS` arrays in `tourSlice.ts`:
 When a step becomes active, `GuidedTour.navigateToStep()` runs:
 
 1. `setSidebarSection(nav.sidebarSection)` — immediate.
-2. If `nav.subTab` + `nav.subTabSetter`, the matching setter is called after a 100ms timeout (to let the section mount). **Only these three setters are wired**: `setSettingsTab`, `setOverviewTab`, `setEventBusTab`. If you need a fourth, extend the `if/else` ladder in `GuidedTour.tsx`.
+2. If `nav.subTab` + `nav.subTabSetter`, the matching setter is called after a 100ms timeout (to let the section mount). **Only these four setters are wired**: `setSettingsTab`, `setOverviewTab`, `setEventBusTab`, `setObsidianBrainTab` (the last also opens the obsidian-brain plugin surface first, since Brain tabs sit one level below the plugins section). If you need another, extend the `if/else` ladder in `GuidedTour.tsx`.
 3. Step-specific side effects (hard-coded by `step.id`):
    - `appearance-setup` → captures current theme as `tourAppearanceBaseline` so subsequent appearance changes can be detected.
    - `credentials-intro` → emits `tour:navigate-credential-view` on storeBus so the credentials screen switches to the correct sub-view.
    - `persona-creation` → opens the persona creation modal.
+   - `obsidian-install` → probes `obsidianAvailable()` and emits `tour:obsidian-detected` when the Obsidian binary is present, so the step self-completes ("recognize it"); the acknowledge button is the fallback after a mid-step install.
+   - `obsidian-vault-connect` → emits `tour:obsidian-vault-connected` on entry when a vault is already connected; otherwise `SetupPanel.saveConfig` emits it on success.
 4. Spotlight highlight: prefers `step.highlightTestId`, falls back to `subSteps[0].highlightTestId`. Set via `setHighlightTestId()` after 300ms.
 
 > If your new step needs side effects beyond the three hard-coded cases, add another `else if (step.id === '<your-id>')` branch in `GuidedTour.tsx`. Do not hang logic off `completeOn` — that's for completion, not entry.

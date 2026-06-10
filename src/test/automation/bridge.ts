@@ -102,6 +102,9 @@ interface TestBridge {
    */
   invokeCommand(command: string, params?: Record<string, unknown>): Promise<{ success: boolean; result?: unknown; error?: string }>;
   setTestFlag(key: string, value: unknown): { success: boolean; key?: string; value?: unknown };
+  // -- Explain-in-Cockpit QA helpers --
+  injectAdhocDecision(overrides?: Record<string, unknown>): { success: boolean; id?: string };
+  getExplainState(): Record<string, unknown>;
   // -- Artist plugin helpers --
   setArtistTab(tab: string): { success: boolean; tab?: string; error?: string };
   getArtistTab(): { success: boolean; tab: string };
@@ -127,7 +130,7 @@ interface TestBridge {
 }
 
 const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
-const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'langfuse'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin'] as const;
 const VALID_TWIN_TABS = ['profiles', 'identity', 'tone', 'brain', 'knowledge', 'voice', 'channels', 'training'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.
@@ -594,6 +597,63 @@ const bridge: TestBridge = {
   setTestFlag(key: string, value: unknown) {
     (globalThis as Record<string, unknown>)[key] = value;
     return { success: true, key, value };
+  },
+
+  /**
+   * Surface a synthetic orb decision (source `adhoc`) so the
+   * Explain-in-Cockpit flow can be driven without waiting for a real
+   * approval / incident / review. Options resolve as no-ops; `payload`
+   * (a JSON string) becomes the grounding data Athena receives when the
+   * test presses `0`.
+   */
+  injectAdhocDecision(overrides?: Record<string, unknown>) {
+    const o = overrides ?? {};
+    const id = (o.id as string) ?? `adhoc:test-${Date.now()}`;
+    const rawOptions =
+      (o.options as Array<{ label: string; hint?: string; danger?: boolean }> | undefined) ?? [
+        { label: 'Approve' },
+        { label: 'Reject', danger: true },
+      ];
+    useCompanionStore.getState().setPendingDecision({
+      id,
+      prompt: (o.prompt as string) ?? 'Synthetic decision (test harness)',
+      options: rawOptions.map((opt, i) => ({
+        key: `opt-${i}`,
+        label: opt.label,
+        hint: opt.hint,
+        danger: opt.danger,
+        run: () => {},
+      })),
+      recommendation: o.recommendation as string | undefined,
+      detail: o.detail as string | undefined,
+      source: 'adhoc',
+      sourceRef: o.sourceRef as string | undefined,
+      payload: o.payload as string | undefined,
+    });
+    return { success: true, id };
+  },
+
+  /** Snapshot of the Explain-in-Cockpit flow state for QA assertions. */
+  getExplainState() {
+    const c = useCompanionStore.getState();
+    const sys = useSystemStore.getState();
+    const ctx = sys.contextualCockpit;
+    return {
+      success: true,
+      composing: c.explainComposing,
+      composeError: c.explainComposeError,
+      decisionId: c.pendingDecision?.id ?? null,
+      decisionExplained: c.decisionExplained,
+      sidebarSection: sys.sidebarSection,
+      homeTab: sys.homeTab,
+      contextual: ctx
+        ? {
+            sourceKind: ctx.source.kind,
+            title: ctx.spec.title ?? null,
+            widgetKinds: (ctx.spec.widgets ?? []).map((w) => w.kind),
+          }
+        : null,
+    };
   },
 
   /** Type into a field identified by data-testid */

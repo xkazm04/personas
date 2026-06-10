@@ -133,6 +133,14 @@ export const obsidianBrainSaveConfig = (config: ObsidianVaultConfig) =>
 export const obsidianBrainGetConfig = () =>
   invoke<ObsidianVaultConfig | null>("obsidian_brain_get_config");
 
+// ── Saved vault roster (persisted in app settings, not localStorage) ─
+
+export const obsidianBrainListSavedVaults = () =>
+  invoke<ObsidianVaultConfig[]>("obsidian_brain_list_saved_vaults");
+
+export const obsidianBrainSetSavedVaults = (configs: ObsidianVaultConfig[]) =>
+  invoke<void>("obsidian_brain_set_saved_vaults", { configs });
+
 // ── Knowledge Mirror (opt-in, off by default) ────────────────────────
 
 export const obsidianMirrorGetConfig = () =>
@@ -380,6 +388,94 @@ export const obsidianGraphWriteMeetingNote = (
     attendees: attendees ?? null,
     body,
   });
+
+// ── Phase 8: Revitalize (background vault memory optimization) ─────
+
+export interface RevitalizeOptions {
+  /** Delete notes that are stale, superseded, or content-free. */
+  pruneStale: boolean;
+  /** Merge near-duplicate / overlapping notes into one canonical note. */
+  mergeDuplicates: boolean;
+  /** Refresh frontmatter, titles, and [[wiki-links]] on surviving notes. */
+  refreshStructure: boolean;
+  /** Optional free-form operator guidance appended to the prompt. */
+  instructions?: string | null;
+}
+
+export interface RevitalizeSummary {
+  filesDeleted: number;
+  filesMerged: number;
+  filesUpdated: number;
+  filesReviewed: number;
+  summary: string;
+  highlights: string[];
+  notesBefore: number;
+  notesAfter: number;
+  bytesBefore: number;
+  bytesAfter: number;
+  estTokensBefore: number;
+  estTokensAfter: number;
+  durationSecs: number;
+}
+
+/**
+ * BackgroundTaskSnapshot shape: common job fields are snake_case (no serde
+ * rename on the shared struct), the flattened extras are camelCase.
+ */
+export interface RevitalizeSnapshot {
+  job_id: string;
+  status: string;
+  error: string | null;
+  lines: string[];
+  elapsed_secs: number;
+  vaultPath: string;
+  vaultName: string;
+  summary: RevitalizeSummary | null;
+}
+
+/** Start a revitalize pass over the configured vault. Returns the job id. */
+export const obsidianRevitalizeStart = (options: RevitalizeOptions) =>
+  invoke<string>("obsidian_revitalize_start", { options });
+
+export const obsidianRevitalizeSnapshot = (jobId: string) =>
+  invoke<RevitalizeSnapshot>("obsidian_revitalize_snapshot", { jobId });
+
+/** The currently-running revitalize job id, if any (for panel re-attach). */
+export const obsidianRevitalizeActive = () =>
+  invoke<string | null>("obsidian_revitalize_active");
+
+export const obsidianRevitalizeCancel = (jobId: string) =>
+  invoke<void>("obsidian_revitalize_cancel", { jobId });
+
+/**
+ * One finished revitalize pass, persisted in `obsidian_revitalize_runs`.
+ * Mirrors the Rust `RevitalizeRunRecord` model (serde camelCase). Defined
+ * manually (not via the ts-rs binding) because ts-rs renders i64 as bigint
+ * while the IPC layer delivers plain JSON numbers.
+ */
+export interface RevitalizeRunRecord {
+  id: string;
+  vaultName: string;
+  vaultPath: string;
+  /** 'completed' | 'failed' (cancellation lands as failed). */
+  status: string;
+  error: string | null;
+  filesDeleted: number;
+  filesMerged: number;
+  filesUpdated: number;
+  filesReviewed: number;
+  notesBefore: number;
+  notesAfter: number;
+  estTokensBefore: number;
+  estTokensAfter: number;
+  durationSecs: number;
+  startedAt: string;
+  createdAt: string;
+}
+
+/** Last finished revitalize passes, newest first (default 20, max 100). */
+export const obsidianRevitalizeHistory = (limit?: number) =>
+  invoke<RevitalizeRunRecord[]>("obsidian_revitalize_history", { limit: limit ?? null });
 
 export const obsidianGraphStartWatcher = () =>
   invoke<void>("obsidian_graph_start_watcher");

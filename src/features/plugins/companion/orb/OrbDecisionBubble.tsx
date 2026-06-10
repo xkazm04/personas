@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Lightbulb, ChevronDown, ChevronUp, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
@@ -51,6 +51,8 @@ export function OrbDecisionBubble() {
   const reduceMotion = useReducedMotion();
   const decision = useCompanionStore((s) => s.pendingDecision);
   const explained = useCompanionStore((s) => s.decisionExplained);
+  const composing = useCompanionStore((s) => s.explainComposing);
+  const composeError = useCompanionStore((s) => s.explainComposeError);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   // Float above the Fleet grid overlay (z-200) while it's open — a key
@@ -174,6 +176,29 @@ export function OrbDecisionBubble() {
             <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90 leading-relaxed" />
           </div>
 
+          {/* Explain-in-Cockpit — composing / fallback states for the
+              escalated `0` turn. The static recommendation below stays
+              visible throughout (it's the floor). */}
+          {composing && (
+            <div
+              data-testid="athena-decision-composing"
+              className="mt-2.5 flex items-center gap-2 rounded-input border border-primary/20 bg-primary/5 px-3 py-2"
+            >
+              <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" aria-hidden />
+              <span className="typo-caption text-foreground">
+                {t.plugins.companion.decision_composing}
+              </span>
+            </div>
+          )}
+          {!composing && composeError && (
+            <p
+              data-testid="athena-decision-compose-failed"
+              className="mt-2.5 typo-caption text-status-warning"
+            >
+              {t.plugins.companion.decision_compose_failed}
+            </p>
+          )}
+
           {/* Slice 4 — `0` was picked: show the recommendation above the options. */}
           {explained && decision.recommendation && (
             <div
@@ -218,13 +243,16 @@ export function OrbDecisionBubble() {
               </button>
             ))}
 
-            {/* `0` — explain + recommend (slice 4). Does not clear the decision. */}
+            {/* `0` — explain + recommend (slice 4), escalating into the
+                Explain-in-Cockpit turn. Does not clear the decision;
+                disabled while a composition is already in flight. */}
             <button
               type="button"
               data-testid="athena-decision-option-0"
               onClick={() => explainDecision()}
+              disabled={composing}
               title={t.plugins.companion.decision_explain_hint}
-              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
+              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span
                 className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-foreground/10"

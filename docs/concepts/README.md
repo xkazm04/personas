@@ -13,8 +13,6 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal — descoped-reopenable (2026-04-15); blockers tracked |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal — design spec for *optional* server-side orchestrator deployment, not the Desktop app |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Doc retained as Phase 3+ design archive (banner cross-linked 2026-05-10) |
-| [langfuse-observability.md](langfuse-observability.md) | **Path A shipped** → see [`features/langfuse.md`](../features/langfuse.md). Doc retained as Path A+ design archive (banner cross-linked 2026-05-10) |
-| [langfuse-lab-score-push.md](langfuse-lab-score-push.md) | Backlog — Path A's known gap; Path 2 (synthesize trace) recommended |
 | [matrix-retire-glyph-only.md](matrix-retire-glyph-only.md) | Proposal — retire `<PersonaMatrix>` template-preview surface, default to GlyphGrid; reclaims ~25 files |
 | [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded (Android feature flag, Gradle project, responsive React started); LLM HTTP client + ForegroundService missing |
 | [personas-as-long-lived-processes.md](personas-as-long-lived-processes.md) | Shelved — kept for future consideration |

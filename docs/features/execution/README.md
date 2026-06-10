@@ -205,6 +205,26 @@ This doc set covers pillar 3. For pillar 1 see
    `--resume {session_id}` to reuse the prompt cache. Huge cost
    savings on repeated runs with identical config. See `session_pool`
    handling in `runner.rs`.
+7. **Rate limits vs usage limits are handled differently.** Transient
+   429s ("rate limit", "too many requests") classify as `RateLimit` and
+   auto-retry with exponential backoff (30s doubling, 5-min cap, 3-retry
+   budget). Claude **usage-limit** messages are parsed by
+   `parser::parse_usage_limit` (pipe-timestamp `…usage limit reached|<unix>`
+   and "resets at <rfc3339>" formats) into a window/weekly scope:
+   - **Window** (rolling ~5h cap): healing emits `HealingAction::RetryAt`
+     with the parsed reset time (+2-min buffer; fallback now+5h when no
+     timestamp). The retry is persisted to the `scheduled_retries` table —
+     NOT an in-memory sleep — and drained by the event-bus tick via
+     `ExecutionEngine::drain_due_scheduled_retries`, so it survives app
+     restarts. The schedules timeline shows an "auto-retry {time}" badge
+     on the failed run. Deliberately bypasses the `consecutive_failures<3`
+     auto-fix gate (usage limits are environmental); the persona circuit
+     breaker (5 consecutive) still wins.
+   - **Weekly**: stays a terminal failure + high-severity healing issue
+     ("Weekly usage limit reached") — too far out to auto-retry.
+   The runner persists usage-limit failures in a round-trippable error
+   message, so the manual `run_healing_analysis` path re-derives the same
+   diagnosis from `error_message` alone.
 
 ## Common operations
 

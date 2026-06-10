@@ -113,7 +113,9 @@ export default function CockpitPanel() {
     ? body?.title ?? t.overview.cockpit.title_default
     : body?.title ?? 'Cockpit';
   const headerSubtitle = contextualCockpit
-    ? t.overview.cockpit.subtitle_contextual
+    ? contextualCockpit.source.kind === 'explain'
+      ? t.overview.cockpit.subtitle_explaining
+      : t.overview.cockpit.subtitle_contextual
     : spec
       ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
       : 'Your companion-driven workspace';
@@ -147,9 +149,17 @@ export default function CockpitPanel() {
           >
             <Info className="w-4 h-4 text-primary/70 flex-shrink-0" />
             <span className="typo-body text-foreground/85 truncate">
-              {tx(t.overview.cockpit.context_for, {
-                title: contextualCockpit.source.messageTitle || t.overview.messages_view.message_label,
-              })}
+              {contextualCockpit.source.kind === 'explain'
+                ? tx(t.overview.cockpit.context_explaining, {
+                    title:
+                      contextualCockpit.source.decisionTitle ||
+                      t.overview.cockpit.title_default,
+                  })
+                : tx(t.overview.cockpit.context_for, {
+                    title:
+                      contextualCockpit.source.messageTitle ||
+                      t.overview.messages_view.message_label,
+                  })}
             </span>
             <button
               type="button"

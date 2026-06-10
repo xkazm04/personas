@@ -18,7 +18,7 @@ Onboarding covers guided tour state, first persona/template setup, credentials g
 
 ## Tour catalog
 
-Seven tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSlice.ts`) and all of them surface in Home > Learning. Each tour follows the same step schema described in [`src/features/onboarding/README.md`](../../src/features/onboarding/README.md).
+Nine tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSlice.ts`) and all of them surface in Home > Learning. Each tour follows the same step schema described in [`src/features/onboarding/README.md`](../../src/features/onboarding/README.md).
 
 | Tour id | Surface color | Purpose |
 | --- | --- | --- |
@@ -27,8 +27,10 @@ Seven tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSli
 | `execution-observability` | blue | Overview dashboard, activity, messages, health monitoring, Lab (5 steps). |
 | `orchestration-events` | teal | Event bus log, trigger types, chaining via the event canvas, live-stream + dead-letter (4 steps). |
 | `plugins-explorer` | amber | Catalog → Companion → Twin → Dev Tools → the supporting cast (5 steps). |
+| `obsidian-brain` | violet | Brain plugin end-to-end: detect/install Obsidian (auto-completes via `obsidian_available` probe), connect a vault, walk Sync / Browse / Graph / Cloud / Revitalize, then map where vault memory plugs into the app (8 steps). |
 | `schedules-mastery` | emerald | Schedules dashboard, timeline vs calendar views, attaching a schedule to an agent (3 steps). |
 | `templates-recipes` | indigo | Templates gallery, adoption flow, Recipes tab (3 steps). |
+| `teams-orchestration` | emerald | Team canvas, event-chains, goal-driven assignments, shared memory + oversight (4 steps). |
 
 Tour copy currently lives inline in `tourSlice.ts` (`*_STEPS` arrays). The 2026-04-19 retire pass folded the onboarding section back into the main i18n bundle, but the tour titles/descriptions/hints (and the spoken `narration` field below) have not been extracted yet — they remain English-only until the planned extraction. Don't block tour additions on that migration.
 

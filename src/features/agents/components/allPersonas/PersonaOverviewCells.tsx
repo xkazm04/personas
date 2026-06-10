@@ -165,10 +165,10 @@ export function ConnectorsCell({
 
   return (
     <div className="flex items-center gap-1 min-w-0">
-      {connectors.slice(0, MAX_VISIBLE_CONNECTORS).map((name) => {
+      {connectors.slice(0, MAX_VISIBLE_CONNECTORS).map((name, i) => {
         const meta = getConnectorMeta(name);
         return (
-          <Tooltip key={name} content={meta.label}>
+          <Tooltip key={`${name}-${i}`} content={meta.label}>
             <div
               className="w-6 h-6 rounded-input bg-secondary/30 border border-primary/10 flex items-center justify-center flex-shrink-0 cursor-help transition-colors hover:bg-secondary/60 hover:border-primary/25"
             >

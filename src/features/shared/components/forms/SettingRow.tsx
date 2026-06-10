@@ -70,13 +70,16 @@ export function SettingRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           {statusDot ? <ActivityDot tone={statusDot} size="xs" /> : null}
-          <span className="typo-body font-medium">{label}</span>
+          <span className="typo-title">{label}</span>
         </div>
         {description ? (
-          // Description: one step up the type ramp (typo-caption → typo-body,
-          // +2px at base scale) for readability, dimmed to 70% so it stays
-          // secondary to the full-opacity label.
-          <div className="typo-body text-foreground mt-1.5">{description}</div>
+          // Title/description ramp comes entirely from the tokens:
+          // .typo-title is semibold + theme-primary tinted, .typo-caption
+          // is body-sized but globally muted to 70% foreground. No local
+          // overrides — utilities can't beat the unlayered typo tokens
+          // anyway (that's how an earlier font-normal/85 patch silently
+          // failed here).
+          <div className="typo-caption mt-1">{description}</div>
         ) : null}
         {countLabel ? (
           <div className="typo-caption text-foreground mt-1">{countLabel}</div>

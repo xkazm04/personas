@@ -2159,9 +2159,7 @@
     "no_twins_configured": "Tidak ada kembaran yang dikonfigurasi. Buka plugin Kembaran untuk membuat satu — persona ini kemudian dapat mengadopsinya.",
     "twin_profile_aria": "Profil kembaran yang digunakan persona ini untuk berbicara",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export traces to Langfuse",
-    "langfuse_export_desc": "Ship this persona's execution traces to your configured Langfuse instance. Off keeps THIS persona's traces local without disabling the integration globally — useful for persona handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "Tidak ada alat yang ditetapkan untuk persona ini.",
@@ -2542,5 +2540,9 @@
     "moved_toast": "{persona} dipindahkan ke {group}",
     "filter_clear_title": "Klik untuk menghapus filter ini",
     "filter_all": "Tidak ada preference"
-  }
+  },
+  "sigil_edit_active": "Aktif untuk kapabilitas ini",
+  "sigil_edit_inactive": "Nonaktif — aktifkan untuk mengaktifkan",
+  "sigil_edit_enable": "Aktifkan untuk kapabilitas ini",
+  "sigil_edit_disable": "Nonaktifkan untuk kapabilitas ini"
 }

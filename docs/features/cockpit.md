@@ -52,6 +52,42 @@ CockpitPanel calls companionGetCockpit(), parses spec_json,
 | `src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind action buttons (approve/reject/resolve/mark-read). Uses `useInboxActions` from the companion inbox lib. |
 | `src/api/companion.ts` | `CompanionCockpitSpec`, `CompanionCockpitWidget`, `companionGetCockpit()`, `COMPANION_COMPOSE_COCKPIT_EVENT`. |
 
+## Explainer widgets + `explain_in_cockpit` (2026-06-10)
+
+Six generic, animated widgets exist for Athena to *explain* a situation
+visually instead of in prose. They're populated entirely from her reasoning
+(no per-widget fetch), registered in the same `widgetRegistry.ts`, and valid
+in both `compose_cockpit` and the dedicated `explain_in_cockpit` op:
+
+| Kind | Renders | Notable config |
+| --- | --- | --- |
+| `verdict` | The answer card: headline recommendation + reasoning + caveat. Renders the pending orb decision's own option chips (live, via `runDecisionOption`) so the user can resolve it from the Cockpit. | `headline`, `reasoning`, `confidence`, `intent`, `recommended_option`, `caveat` |
+| `flow_steps` | Causal/sequence chain with status nodes + draw-in connector rail. | `steps[{label, detail?, status}]` |
+| `comparison_cards` | Options side-by-side with pros/cons + recommended badge. | `options[{label, summary?, pros?, cons?, recommended?, intent?}]` |
+| `timeline` | Chronological events with intent dots + relative timestamps. | `events[{label, detail?, timestamp?, intent?}]` |
+| `stat_grid` | 2-4 column tile grid of labeled figures with deltas. | `stats[...]`, `columns` |
+| `log_excerpt` | Monospace evidence block with highlighted lines + caption. | `lines`, `highlight_lines`, `highlight_intent`, `caption`, `source` |
+
+**`explain_in_cockpit` — the orb decision `0` flow.** When the user presses
+`0` (Explain) on the orb decision bubble, `resolveDecision.ts` fires a
+synthetic `decision-explain` turn (`companion_send_message` with
+`systemSource`) carrying the decision's full context (prompt, options,
+prior recommendation, and the underlying approval/incident/review payload).
+Athena replies with one `explain_in_cockpit` op. Unlike `compose_cockpit`,
+the spec **rides in the event payload (`EXPLAIN_COCKPIT_EVENT`) and is never
+persisted** — the CompanionPanel listener sets it as the `contextualCockpit`
+overlay (source kind `'explain'`), navigates Home → Cockpit, and dismissal
+restores the user's persistent board untouched. The dispatcher validates
+widget kinds against the explainer set (plus `text_callout` / `metric_spark`
+/ `issue_list`) and drops unknown kinds with a warning.
+
+Latency UX while the turn runs: the orb plays the `composing` clip
+(`athena_shows_loop.mp4`, new `AthenaState`), the bubble shows a processing
+row and disables `0`; on failure the bubble falls back to a quiet line —
+the pre-baked static recommendation is always the floor. QA bridge methods
+`injectAdhocDecision` / `getExplainState` (test-automation builds) drive the
+flow synthetically.
+
 ## Inline chat cards (related but separate)
 
 Athena can also surface the same widgets *inside* the chat transcript without composing a full cockpit. Three additional ops (`show_persona_overview`, `show_connected_services`, `show_decisions`) auto-fire (no approval) per turn and emit `COMPANION_CHAT_CARDS_EVENT` carrying a `ChatCard[]` payload. The `InlineChatCard` component (`src/features/plugins/companion/InlineChatCard.tsx`) renders each card by looking up the kind in the cockpit widget registry — same component, compact size. One-shot: cleared on the next send.

@@ -465,6 +465,17 @@ pub(crate) fn launch_context_scan(
     let existing_summary = build_existing_context_summary(pool, &project_id);
     let is_rescan = existing_summary.is_some();
 
+    // Surface the scan on the persona-event bus (Live Stream) — covers BOTH
+    // manual scans and triggered system-op scans. No target persona, so it
+    // dispatches to nobody; it's just an observable lifecycle marker.
+    crate::engine::system_ops::publish_context_scan_event(
+        pool,
+        "started",
+        &project_id,
+        &project.name,
+        json!({ "delta_mode": delta_mode, "is_rescan": is_rescan }),
+    );
+
     let app_handle = app.clone();
     let pool = pool.clone();
     let scan_id_for_task = scan_id.clone();
@@ -503,6 +514,19 @@ pub(crate) fn launch_context_scan(
                     summary.error.clone(),
                 );
                 let _ = app_handle.emit(event_name::CONTEXT_GEN_COMPLETE, &summary);
+                crate::engine::system_ops::publish_context_scan_event(
+                    &pool,
+                    "completed",
+                    &project_id,
+                    &project_name,
+                    json!({
+                        "status": status_str,
+                        "groups_created": summary.groups_created,
+                        "contexts_created": summary.contexts_created,
+                        "files_mapped": summary.files_mapped,
+                        "scan_id": scan_id_for_task,
+                    }),
+                );
                 // OS notification
                 let title = if is_warning {
                     "Context Map Ready (with warning)"
@@ -534,6 +558,13 @@ pub(crate) fn launch_context_scan(
                     &app_handle,
                     &scan_id_for_task,
                     format!("[Error] {msg}"),
+                );
+                crate::engine::system_ops::publish_context_scan_event(
+                    &pool,
+                    "completed",
+                    &project_id,
+                    &project_name,
+                    json!({ "status": "failed", "error": msg, "scan_id": scan_id_for_task }),
                 );
                 crate::notifications::send(
                     &app_handle,

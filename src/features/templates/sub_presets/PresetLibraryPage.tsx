@@ -90,7 +90,7 @@ export default function PresetLibraryPage() {
   );
 }
 
-function PresetCard({
+export function PresetCard({
   preset,
   onOpen,
 }: {

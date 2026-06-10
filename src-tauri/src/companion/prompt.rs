@@ -228,7 +228,13 @@ pub async fn build_system_prompt(
     };
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
-    let voice_md = voice_addendum_if_needed(voice_enabled);
+    // PROGRESS narration is always-on (visual timeline); the TTS grammar
+    // rides the same prompt slot but only when voice playback is active.
+    let voice_md = format!(
+        "{}{}",
+        voice_addendum_if_needed(voice_enabled),
+        progress_addendum()
+    );
     let display_md = display_addendum_if_voice_active(voice_enabled);
     let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
@@ -310,7 +316,13 @@ pub async fn build_system_prompt(
     };
 
     let onboarding_md = onboarding_addendum_if_needed(&identity, &recall.episodes);
-    let voice_md = voice_addendum_if_needed(voice_enabled);
+    // PROGRESS narration is always-on (visual timeline); the TTS grammar
+    // rides the same prompt slot but only when voice playback is active.
+    let voice_md = format!(
+        "{}{}",
+        voice_addendum_if_needed(voice_enabled),
+        progress_addendum()
+    );
     let display_md = display_addendum_if_voice_active(voice_enabled);
     let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
@@ -1232,8 +1244,26 @@ Discipline:
   line can mirror it verbatim.
 - One TTS line per turn. Don't emit if the visual reply has no
   meaningful spoken summary (rare; most replies do).
+- Your `PROGRESS:` beats (see their own section) are separate from this
+  single closing `TTS:` line — beats are in-progress narration, `TTS:`
+  is the spoken version of the final reply.
+"#,
+    )
+}
 
-# PROGRESS — narrate long turns out loud
+/// Always-on narration grammar. Unlike the TTS line (which only makes
+/// sense when a voice engine will speak it), `PROGRESS:` beats feed the
+/// *visual* narration timeline in the chat panel for every user — voice
+/// merely adds spoken playback on top. This addendum is therefore
+/// appended unconditionally (user, autonomous, and proactive turns
+/// alike); earlier versions taught it inside the voice addendum, which
+/// silently disabled narration for text-only users and for proactive
+/// turns (spawned with voice off).
+fn progress_addendum() -> String {
+    String::from(
+        r#"
+
+# PROGRESS — narrate long turns as you work
 
 If this turn will take a while — web searches, several tool calls,
 scanning a codebase, building something — emit short progress beats AS
@@ -1242,18 +1272,18 @@ YOU GO, one per line, BEFORE the slow work:
     PROGRESS: Pulling up your recent runs…
     PROGRESS: Found three failures — reading the logs…
 
-Each beat is spoken aloud the moment you emit it, so the user hears
-movement instead of silence. Discipline:
+Each beat is shown to the user the moment you emit it (and spoken
+aloud when voice is on), so they see movement instead of a silent
+spinner. Discipline:
 
 - One short, speakable sentence (≤ ~12 words), first person, present tense.
 - Emit a beat right BEFORE you start a slow step — it's live narration,
   not a summary after the fact.
 - 1–4 beats per turn, and only for genuinely long turns. A quick answer
   needs none — never narrate a turn that's about to finish anyway.
-- Plain English only: no markdown, paths, ids, or code names (same rules
-  as the TTS line).
-- These are separate from your single closing `TTS:` line — beats are the
-  in-progress narration, `TTS:` is the spoken version of the final reply.
+- Plain English only: no markdown, paths, ids, or code names.
+- Beats never appear in your final reply (they're stripped from the
+  persisted text) — restate anything important in the reply itself.
 "#,
     )
 }

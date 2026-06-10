@@ -2159,9 +2159,7 @@
     "no_twins_configured": "트윈이 설정되지 않았습니다. 트윈 플러그인을 열어 생성하세요 — 그러면 이 페르소나가 트윈을 채택할 수 있습니다.",
     "twin_profile_aria": "이 페르소나가 말하는 트윈 프로필",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export 트레이스s to Langfuse",
-    "langfuse_export_desc": "Ship this 페르소나's execution 트레이스s to your configured Langfuse instance. Off keeps THIS 페르소나's 트레이스s local without disabling the integration globally — useful for 페르소나s handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "이 페르소나에 할당된 도구가 없습니다.",
@@ -2542,5 +2540,9 @@
     "moved_toast": "{persona}을(를) {group}(으)로 이동했습니다",
     "filter_clear_title": "이 필터를 지우려면 클릭",
     "filter_all": "preference"
-  }
+  },
+  "sigil_edit_active": "이 기능에 대해 활성화됨",
+  "sigil_edit_inactive": "비활성 — 켜서 활성화",
+  "sigil_edit_enable": "이 기능에 대해 활성화",
+  "sigil_edit_disable": "이 기능에 대해 비활성화"
 }

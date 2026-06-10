@@ -50,8 +50,11 @@ function WeeklyDigestToggle() {
     digestSetting.setValue(enabled ? 'false' : 'true');
   }, [enabled, digestSetting]);
 
-  // Auto-save (debounced to prevent race conditions from rapid toggles)
+  // Auto-save (debounced to prevent race conditions from rapid toggles).
+  // Scalar deps only — see the matching comment in NotificationSettings below;
+  // depending on the per-render `digestSetting` object caused a write loop.
   const digestLoadedOnce = useRef(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- digestSetting.save is stable (useCallback on key)
   useEffect(() => {
     if (!digestSetting.loaded) return;
     if (!digestLoadedOnce.current) {
@@ -60,7 +63,7 @@ function WeeklyDigestToggle() {
     }
     const timer = setTimeout(() => digestSetting.save(), 300);
     return () => clearTimeout(timer);
-  }, [digestSetting, digestSetting.value]);
+  }, [digestSetting.loaded, digestSetting.value]);
 
   if (!digestSetting.loaded) return null;
 
@@ -95,7 +98,13 @@ export default function NotificationSettings() {
   const { t, tx } = useTranslation();
   const s = t.settings.notifications;
 
-  // Auto-save whenever value changes (debounced to prevent race conditions from rapid toggles)
+  // Auto-save whenever value changes (debounced to prevent race conditions from
+  // rapid toggles). Deps must be the scalar fields, NOT the `setting` object —
+  // useAppSetting returns a fresh object every render, so depending on it made
+  // this effect re-run on every render and `save()` flips the `saved` flag
+  // (another render), producing an endless set_app_setting write loop while
+  // the tab was mounted.
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- setting.save is stable (useCallback on key)
   useEffect(() => {
     if (!setting.loaded) return;
     if (!hasLoadedOnce.current) {
@@ -104,7 +113,7 @@ export default function NotificationSettings() {
     }
     const timer = setTimeout(() => setting.save(), 300);
     return () => clearTimeout(timer);
-  }, [setting, setting.value]); // intentionally not including setting.save
+  }, [setting.loaded, setting.value]);
 
   const prefs = useMemo<NotificationPrefs>(() => {
     try {

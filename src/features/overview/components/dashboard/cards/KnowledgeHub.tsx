@@ -1,5 +1,43 @@
+import { Suspense, useState } from 'react';
+import { Brain, Network } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { lazyRetry } from '@/lib/lazyRetry';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import MemoriesPage from '@/features/overview/sub_memories/components/MemoriesPage';
 
+// The Patterns view (execution-extracted knowledge graph) is the non-default
+// branch and pulls a heavy component tree, so load it only when selected.
+const KnowledgeGraphDashboard = lazyRetry(() => import('@/features/overview/sub_knowledge'));
+
+type KnowledgeSubtab = 'memories' | 'patterns';
+
 export default function KnowledgeHub() {
-  return <MemoriesPage />;
+  const { t } = useTranslation();
+  const [subtab, setSubtab] = useState<KnowledgeSubtab>('memories');
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/10 flex-shrink-0">
+        <SegmentedTabs<KnowledgeSubtab>
+          tabs={[
+            { id: 'memories', label: <><Brain className="w-3.5 h-3.5" />{t.overview.memories.title}</>, ariaLabel: t.overview.memories.title },
+            { id: 'patterns', label: <><Network className="w-3.5 h-3.5" />{t.overview.knowledge.patterns_tab}</>, ariaLabel: t.overview.knowledge.patterns_tab },
+          ]}
+          activeTab={subtab}
+          onTabChange={setSubtab}
+          ariaLabel={t.overview.knowledge.title}
+          fullWidth={false}
+        />
+      </div>
+
+      {subtab === 'memories' ? (
+        <MemoriesPage />
+      ) : (
+        <Suspense fallback={<div className="flex items-center justify-center py-16"><LoadingSpinner /></div>}>
+          <KnowledgeGraphDashboard />
+        </Suspense>
+      )}
+    </div>
+  );
 }
