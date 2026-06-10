@@ -101,6 +101,20 @@ pub fn create_with_id(
     })
 }
 
+/// Flag a recipe as builtin (team-curated, shipped with the app). Only the
+/// boot-time seeder calls this — `CreateRecipeInput` deliberately has no
+/// `is_builtin` so user-facing create paths can't mint builtin rows.
+pub fn set_builtin(pool: &DbPool, id: &str, value: bool) -> Result<(), AppError> {
+    timed_query!("recipes", "recipes::set_builtin", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE recipe_definitions SET is_builtin = ?1 WHERE id = ?2",
+            params![value, id],
+        )?;
+        Ok(())
+    })
+}
+
 pub fn update(
     pool: &DbPool,
     id: &str,

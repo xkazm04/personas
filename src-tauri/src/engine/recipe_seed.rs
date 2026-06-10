@@ -171,13 +171,17 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
         &seed.source_use_case_id,
     )? {
         // One-time upgrade repair: bundles before 2026-06 seeded the
-        // technical `uc_*` id as the display name and a NULL category.
+        // technical `uc_*` id as the display name, a NULL category, and
+        // never set is_builtin (CreateRecipeInput has no such field).
         // The signature `name == source_use_case_id` identifies exactly
-        // those rows (a user rename breaks the equality, so renamed rows
-        // are never touched); NULL-category rows get the seed's category.
+        // the stale-name rows (a user rename breaks the equality, so
+        // renamed rows are never touched); NULL-category rows get the
+        // seed's category; un-flagged rows get is_builtin = 1 — this row
+        // IS in the shipped bundle, that's how we found it.
         let stale_name = existing.name == seed.source_use_case_id
             && seed.name != seed.source_use_case_id;
         let missing_category = existing.category.is_none() && seed.category.is_some();
+        let missing_builtin = !existing.is_builtin;
         if stale_name || missing_category {
             let update = UpdateRecipeInput {
                 name: stale_name.then(|| seed.name.clone()),
@@ -188,6 +192,11 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
                 ..Default::default()
             };
             recipe_repo::update(pool, &existing.id, update)?;
+        }
+        if missing_builtin {
+            recipe_repo::set_builtin(pool, &existing.id, true)?;
+        }
+        if stale_name || missing_category || missing_builtin {
             return Ok(InsertOutcome::Repaired);
         }
         return Ok(InsertOutcome::Existing);
@@ -215,7 +224,10 @@ fn insert_one(pool: &DbPool, seed: SeedRecipe) -> Result<InsertOutcome, AppError
         source_version: seed.source_version.or_else(|| Some("1.0.0".to_string())),
     };
 
-    recipe_repo::create_with_id(pool, &seed.id, input)?;
+    let created = recipe_repo::create_with_id(pool, &seed.id, input)?;
+    // `CreateRecipeInput` has no is_builtin (user create paths must not mint
+    // builtin rows) — flag the freshly seeded row explicitly.
+    recipe_repo::set_builtin(pool, &created.id, true)?;
     Ok(InsertOutcome::Created)
 }
 
@@ -298,12 +310,17 @@ mod tests {
         seed_recipes_from_bundle(&pool).expect("seed ok");
         let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON).unwrap();
         let target = bundle.recipes.first().expect("bundle non-empty");
+
+        // Fresh seeding must flag rows builtin.
+        let fresh = recipe_repo::get_by_id(&pool, &target.id).expect("row exists");
+        assert!(fresh.is_builtin, "seeded rows are flagged builtin on create");
+
         {
             let conn = pool.get().unwrap();
             conn.execute(
                 "UPDATE recipe_definitions
                  SET name = source_use_case_id, source_use_case_name = source_use_case_id,
-                     category = NULL
+                     category = NULL, is_builtin = 0
                  WHERE id = ?1",
                 [&target.id],
             )
@@ -317,6 +334,7 @@ mod tests {
         let healed = recipe_repo::get_by_id(&pool, &target.id).expect("row exists");
         assert_eq!(healed.name, target.name, "display name healed from seed");
         assert_eq!(healed.category, target.category, "category healed from seed");
+        assert!(healed.is_builtin, "builtin flag healed alongside name/category");
 
         // A user rename must never be overwritten by the repair.
         {
