@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "Desglose de valor",
+    "value_leak_empty": "Aún no hay ejecuciones evaluadas en este período",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "Entregado",
+    "value_leak_partial": "Parcial",
+    "value_leak_precondition": "Bloqueado",
+    "value_leak_no_input": "Sin entrada",
+    "value_leak_unknown": "Sin evaluar",
+    "value_leak_delivered_hint": "Ejecuciones que produjeron el resultado previsto",
+    "value_leak_partial_hint": "Ejecuciones que entregaron parte, pero no todo, el valor previsto",
+    "value_leak_precondition_hint": "Ejecuciones que no pudieron entregar porque no se cumplió un requisito previo",
+    "value_leak_no_input_hint": "Ejecuciones sin entrada disponible para evaluar el valor",
+    "value_leak_unknown_hint": "Ejecuciones que el evaluador no pudo clasificar"
   }
 }

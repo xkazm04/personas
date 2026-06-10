@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "가치 분석",
+    "value_leak_empty": "이 기간에 평가된 실행이 아직 없습니다",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "달성",
+    "value_leak_partial": "부분",
+    "value_leak_precondition": "차단됨",
+    "value_leak_no_input": "입력 없음",
+    "value_leak_unknown": "미평가",
+    "value_leak_delivered_hint": "의도한 결과를 낸 실행",
+    "value_leak_partial_hint": "의도한 가치의 일부만 달성한 실행",
+    "value_leak_precondition_hint": "전제 조건이 충족되지 않아 달성하지 못한 실행",
+    "value_leak_no_input_hint": "가치를 평가할 입력이 없는 실행",
+    "value_leak_unknown_hint": "평가자가 분류하지 못한 실행"
   }
 }

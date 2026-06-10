@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "Структура ценности",
+  "value_leak_empty": "За этот период ещё нет оценённых запусков",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "Доставлено",
+  "value_leak_partial": "Частично",
+  "value_leak_precondition": "Заблокировано",
+  "value_leak_no_input": "Нет входных данных",
+  "value_leak_unknown": "Не оценено",
+  "value_leak_delivered_hint": "Запуски, давшие ожидаемый результат",
+  "value_leak_partial_hint": "Запуски, давшие часть, но не всю ожидаемую ценность",
+  "value_leak_precondition_hint": "Запуски, не выполненные из-за несоблюдённого предусловия",
+  "value_leak_no_input_hint": "Запуски без входных данных для оценки ценности",
+  "value_leak_unknown_hint": "Запуски, которые оценщик не смог классифицировать"
+}

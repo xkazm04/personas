@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "মূল্যের বিশ্লেষণ",
+  "value_leak_empty": "এই সময়কালে এখনও কোনো মূল্যায়িত রান নেই",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "প্রদত্ত",
+  "value_leak_partial": "আংশিক",
+  "value_leak_precondition": "অবরুদ্ধ",
+  "value_leak_no_input": "কোনো ইনপুট নেই",
+  "value_leak_unknown": "অমূল্যায়িত",
+  "value_leak_delivered_hint": "যে রানগুলি প্রত্যাশিত ফলাফল দিয়েছে",
+  "value_leak_partial_hint": "যে রানগুলি প্রত্যাশিত মূল্যের অংশ দিয়েছে, পুরোটা নয়",
+  "value_leak_precondition_hint": "পূর্বশর্ত পূরণ না হওয়ায় যে রানগুলি ফল দিতে পারেনি",
+  "value_leak_no_input_hint": "মূল্য যাচাইয়ের জন্য কোনো ইনপুট নেই এমন রান",
+  "value_leak_unknown_hint": "মূল্যায়ক যে রানগুলি শ্রেণিবদ্ধ করতে পারেনি"
+}

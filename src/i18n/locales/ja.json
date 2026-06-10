@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "価値の内訳",
+    "value_leak_empty": "この期間に評価済みの実行はまだありません",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "提供済み",
+    "value_leak_partial": "部分的",
+    "value_leak_precondition": "ブロック",
+    "value_leak_no_input": "入力なし",
+    "value_leak_unknown": "未評価",
+    "value_leak_delivered_hint": "意図した成果を生み出した実行",
+    "value_leak_partial_hint": "意図した価値の一部のみを提供した実行",
+    "value_leak_precondition_hint": "前提条件が満たされず提供できなかった実行",
+    "value_leak_no_input_hint": "価値を評価する入力がなかった実行",
+    "value_leak_unknown_hint": "評価者が分類できなかった実行"
   }
 }

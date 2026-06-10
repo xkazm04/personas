@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "Rozklad hodnoty",
+    "value_leak_empty": "V tomto období zatím nejsou žádné hodnocené běhy",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "Dodáno",
+    "value_leak_partial": "Částečně",
+    "value_leak_precondition": "Zablokováno",
+    "value_leak_no_input": "Bez vstupu",
+    "value_leak_unknown": "Nehodnoceno",
+    "value_leak_delivered_hint": "Běhy, které přinesly zamýšlený výsledek",
+    "value_leak_partial_hint": "Běhy, které dodaly část, ale ne celou očekávanou hodnotu",
+    "value_leak_precondition_hint": "Běhy, které nemohly uspět, protože nebyla splněna podmínka",
+    "value_leak_no_input_hint": "Běhy bez dostupného vstupu pro hodnocení hodnoty",
+    "value_leak_unknown_hint": "Běhy, které hodnotitel nedokázal zařadit"
   }
 }

@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "تفصيل القيمة",
+    "value_leak_empty": "لا توجد عمليات تشغيل مُقيّمة في هذه الفترة بعد",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "مُنجَز",
+    "value_leak_partial": "جزئي",
+    "value_leak_precondition": "مُعطَّل",
+    "value_leak_no_input": "بلا مدخلات",
+    "value_leak_unknown": "غير مُقيَّم",
+    "value_leak_delivered_hint": "عمليات التشغيل التي حققت النتيجة المرجوة",
+    "value_leak_partial_hint": "عمليات التشغيل التي قدّمت بعض القيمة المرجوة وليس كلها",
+    "value_leak_precondition_hint": "عمليات التشغيل التي تعذّر إنجازها لعدم استيفاء شرط مسبق",
+    "value_leak_no_input_hint": "عمليات التشغيل التي لا تتوفر لها مدخلات لتقييم القيمة",
+    "value_leak_unknown_hint": "عمليات التشغيل التي تعذّر على المُقيِّم تصنيفها"
   }
 }

@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "मूल्य विश्लेषण",
+  "value_leak_empty": "इस अवधि में अभी तक कोई मूल्यांकित रन नहीं",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "वितरित",
+  "value_leak_partial": "आंशिक",
+  "value_leak_precondition": "अवरुद्ध",
+  "value_leak_no_input": "कोई इनपुट नहीं",
+  "value_leak_unknown": "अमूल्यांकित",
+  "value_leak_delivered_hint": "वे रन जिन्होंने इच्छित परिणाम दिया",
+  "value_leak_partial_hint": "वे रन जिन्होंने इच्छित मूल्य का कुछ हिस्सा दिया, पूरा नहीं",
+  "value_leak_precondition_hint": "वे रन जो पूर्व-शर्त पूरी न होने के कारण वितरित नहीं हो सके",
+  "value_leak_no_input_hint": "वे रन जिनके लिए मूल्य आँकने हेतु कोई इनपुट उपलब्ध नहीं",
+  "value_leak_unknown_hint": "वे रन जिन्हें मूल्यांकक वर्गीकृत नहीं कर सका"
+}

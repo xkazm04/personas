@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "Phân tích giá trị",
+  "value_leak_empty": "Chưa có lần chạy nào được đánh giá trong kỳ này",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "Đã đạt",
+  "value_leak_partial": "Một phần",
+  "value_leak_precondition": "Bị chặn",
+  "value_leak_no_input": "Không có đầu vào",
+  "value_leak_unknown": "Chưa đánh giá",
+  "value_leak_delivered_hint": "Các lần chạy tạo ra kết quả như mong đợi",
+  "value_leak_partial_hint": "Các lần chạy đạt một phần chứ không toàn bộ giá trị mong đợi",
+  "value_leak_precondition_hint": "Các lần chạy không thể hoàn thành vì điều kiện tiên quyết chưa được đáp ứng",
+  "value_leak_no_input_hint": "Các lần chạy không có đầu vào để đánh giá giá trị",
+  "value_leak_unknown_hint": "Các lần chạy mà bộ đánh giá không thể phân loại"
+}

@@ -3447,6 +3447,19 @@ export type Translations = {
     cleanup_done: string;
     cleanup_none: string;
     cleanup_failed: string;
+    value_leak_title: string;
+    value_leak_empty: string;
+    value_leak_share: string;
+    value_leak_delivered: string;
+    value_leak_partial: string;
+    value_leak_precondition: string;
+    value_leak_no_input: string;
+    value_leak_unknown: string;
+    value_leak_delivered_hint: string;
+    value_leak_partial_hint: string;
+    value_leak_precondition_hint: string;
+    value_leak_no_input_hint: string;
+    value_leak_unknown_hint: string;
   };
   vault: {
     title: string;

@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "Wertaufschlüsselung",
+  "value_leak_empty": "In diesem Zeitraum noch keine bewerteten Läufe",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "Geliefert",
+  "value_leak_partial": "Teilweise",
+  "value_leak_precondition": "Blockiert",
+  "value_leak_no_input": "Keine Eingabe",
+  "value_leak_unknown": "Unbewertet",
+  "value_leak_delivered_hint": "Läufe, die das beabsichtigte Ergebnis erzielten",
+  "value_leak_partial_hint": "Läufe, die einen Teil, aber nicht den gesamten erwarteten Wert lieferten",
+  "value_leak_precondition_hint": "Läufe, die scheiterten, weil eine Voraussetzung nicht erfüllt war",
+  "value_leak_no_input_hint": "Läufe ohne verfügbare Eingabe zur Wertbewertung",
+  "value_leak_unknown_hint": "Läufe, die der Bewerter nicht einordnen konnte"
+}

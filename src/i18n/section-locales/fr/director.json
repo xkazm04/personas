@@ -1,1 +1,15 @@
-{}
+{
+  "value_leak_title": "Répartition de la valeur",
+  "value_leak_empty": "Aucune exécution évaluée sur cette période pour l'instant",
+  "value_leak_share": "{pct}%",
+  "value_leak_delivered": "Livré",
+  "value_leak_partial": "Partiel",
+  "value_leak_precondition": "Bloqué",
+  "value_leak_no_input": "Sans entrée",
+  "value_leak_unknown": "Non évalué",
+  "value_leak_delivered_hint": "Exécutions ayant produit le résultat attendu",
+  "value_leak_partial_hint": "Exécutions ayant livré une partie, mais pas la totalité, de la valeur attendue",
+  "value_leak_precondition_hint": "Exécutions n'ayant pu aboutir car une condition préalable n'était pas remplie",
+  "value_leak_no_input_hint": "Exécutions sans entrée disponible pour évaluer la valeur",
+  "value_leak_unknown_hint": "Exécutions que l'évaluateur n'a pas pu classer"
+}

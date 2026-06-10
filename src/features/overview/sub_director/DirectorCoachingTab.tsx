@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink } from 'lucide-react';
+import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -18,6 +18,7 @@ import { scoreTone, toneFill } from './directorScore';
 import { PersonaCoachingTable } from './components/PersonaCoachingTable';
 import { PersonaDetailModal } from './components/PersonaDetailModal';
 import { AddToScopeModal } from './components/AddToScopeModal';
+import { ValueLeakBar } from './components/ValueLeakBar';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -241,6 +242,10 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
           hint={tx(t.director.kpi_in_scope_hint, { reviewed: p.reviewed, unreviewed: p.unreviewed })}
         />
       </div>
+
+      <DirectorSection label={t.director.value_leak_title} icon={Layers}>
+        <ValueLeakBar rollup={rollup} />
+      </DirectorSection>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DirectorSection label={t.director.score_distribution} icon={BarChart3}>

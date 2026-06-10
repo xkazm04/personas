@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "Rincian nilai",
+    "value_leak_empty": "Belum ada eksekusi yang dinilai pada periode ini",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "Tersampaikan",
+    "value_leak_partial": "Sebagian",
+    "value_leak_precondition": "Terblokir",
+    "value_leak_no_input": "Tanpa masukan",
+    "value_leak_unknown": "Belum dinilai",
+    "value_leak_delivered_hint": "Eksekusi yang menghasilkan keluaran yang diharapkan",
+    "value_leak_partial_hint": "Eksekusi yang memberikan sebagian, bukan seluruh nilai yang diharapkan",
+    "value_leak_precondition_hint": "Eksekusi yang gagal karena prasyarat tidak terpenuhi",
+    "value_leak_no_input_hint": "Eksekusi tanpa masukan untuk menilai nilai",
+    "value_leak_unknown_hint": "Eksekusi yang tidak dapat diklasifikasikan oleh penilai"
   }
 }

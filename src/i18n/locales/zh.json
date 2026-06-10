@@ -15236,5 +15236,20 @@
     "auto_your_browser_does_not_support_video_playba_8f8c2d0d": "Your browser does not support video playback.",
     "auto_your_cockpit_is_empty_88e25bb2": "Your cockpit is empty",
     "auto_your_turn_d9e169df": "your turn"
+  },
+  "director": {
+    "value_leak_title": "价值构成",
+    "value_leak_empty": "本期暂无已评估的运行",
+    "value_leak_share": "{pct}%",
+    "value_leak_delivered": "已交付",
+    "value_leak_partial": "部分交付",
+    "value_leak_precondition": "受阻",
+    "value_leak_no_input": "无输入",
+    "value_leak_unknown": "未评估",
+    "value_leak_delivered_hint": "产生了预期结果的运行",
+    "value_leak_partial_hint": "交付了部分而非全部预期价值的运行",
+    "value_leak_precondition_hint": "因前置条件未满足而无法交付的运行",
+    "value_leak_no_input_hint": "没有可用于评估价值的输入的运行",
+    "value_leak_unknown_hint": "评估器无法明确归类的运行"
   }
 }
