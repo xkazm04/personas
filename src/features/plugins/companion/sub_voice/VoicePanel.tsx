@@ -344,6 +344,8 @@ function ElevenLabsVoicePanel() {
         <div className="px-1 py-2 space-y-3">
           {elevenlabsCreds.length > 1 ? (
             <ThemedSelect
+              filterable
+              options={elevenlabsCreds.map((c) => ({ value: c.id, label: c.name }))}
               value={credentialId ?? ''}
               onValueChange={(v) => {
                 setCredentialId(v || null);
@@ -355,17 +357,9 @@ function ElevenLabsVoicePanel() {
                 setVoiceId(null);
                 setShowCustomId(false);
               }}
+              placeholder={t.plugins.companion.voice_credential_pick}
               aria-label={t.plugins.companion.voice_credential_picker_label}
-            >
-              <option value="">
-                {t.plugins.companion.voice_credential_pick}
-              </option>
-              {elevenlabsCreds.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </ThemedSelect>
+            />
           ) : (
             <div className="flex items-center gap-2 px-3 py-2 rounded-input bg-secondary/40 border border-foreground/10 typo-body">
               <KeyRound className="w-3.5 h-3.5 text-foreground" />
@@ -403,7 +397,12 @@ function ElevenLabsVoicePanel() {
             <>
               <div className="flex items-center gap-2">
                 <ThemedSelect
+                  filterable
                   wrapperClassName="flex-1"
+                  options={pickerVoices.map((v) => ({
+                    value: v.id,
+                    label: v.sublabel ? `${v.label} — ${v.sublabel}` : v.label,
+                  }))}
                   value={
                     voiceId && pickerVoices.some((v) => v.id === voiceId)
                       ? voiceId
@@ -411,22 +410,15 @@ function ElevenLabsVoicePanel() {
                   }
                   onValueChange={(v) => setVoiceId(v || null)}
                   disabled={voicesLoading || pickerVoices.length === 0}
-                  aria-label={t.plugins.companion.voice_pick_title}
-                >
-                  <option value="">
-                    {voicesLoading
+                  placeholder={
+                    voicesLoading
                       ? t.plugins.companion.voice_pick_loading
                       : pickerVoices.length === 0
                         ? t.plugins.companion.voice_pick_no_voices
-                        : t.plugins.companion.voice_pick_placeholder}
-                  </option>
-                  {pickerVoices.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {v.label}
-                      {v.sublabel ? ` — ${v.sublabel}` : ''}
-                    </option>
-                  ))}
-                </ThemedSelect>
+                        : t.plugins.companion.voice_pick_placeholder
+                  }
+                  aria-label={t.plugins.companion.voice_pick_title}
+                />
                 {!hasScope && (
                   <button
                     onClick={() => fetchLiveVoices(true)}
@@ -573,19 +565,21 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
             {t.plugins.companion.voice_settings_model_label}
           </label>
           <ThemedSelect
+            filterable
+            hideSearch
+            options={[
+              { value: '', label: t.plugins.companion.voice_settings_default },
+              ...modelOptions.map((m) => ({
+                value: m,
+                label: scopeLabelById.get(m) ?? modelLabel[m],
+              })),
+            ]}
             value={model ?? ''}
             onValueChange={(v) =>
               setModel(v === '' ? null : (v as CompanionVoiceModel))
             }
             aria-label={t.plugins.companion.voice_settings_model_label}
-          >
-            <option value="">{t.plugins.companion.voice_settings_default}</option>
-            {modelOptions.map((m) => (
-              <option key={m} value={m}>
-                {scopeLabelById.get(m) ?? modelLabel[m]}
-              </option>
-            ))}
-          </ThemedSelect>
+          />
           <p className="typo-caption text-foreground">
             {t.plugins.companion.voice_settings_model_hint}
           </p>
