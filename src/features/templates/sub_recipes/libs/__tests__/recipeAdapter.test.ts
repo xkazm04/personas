@@ -89,6 +89,38 @@ describe('recipeDefinitionToRecipe', () => {
     expect(r.summary).toBe('Tracks invoices end to end.');
   });
 
+  it('extracts review/memory policies and derives generation settings', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        review_policy: { mode: 'on_low_confidence', context: 'Reviewed when unsure.' },
+        memory_policy: { enabled: true, context: 'Remembers approver stats.' },
+        error_handling: 'Retry once, then flag.',
+      }),
+    );
+    expect(r.template.reviewPolicy).toEqual({ mode: 'on_low_confidence', context: 'Reviewed when unsure.' });
+    expect(r.template.memoryPolicy).toEqual({ enabled: true, context: 'Remembers approver stats.' });
+    expect(r.template.errorHandling).toBe('Retry once, then flag.');
+    expect(r.template.generationSettings).toEqual({ reviews: 'trust_llm', memories: 'on' });
+  });
+
+  it('maps never-review + disabled memory to off settings', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        review_policy: { mode: 'never' },
+        memory_policy: { enabled: false },
+      }),
+    );
+    expect(r.template.generationSettings).toEqual({ reviews: 'off', memories: 'off' });
+  });
+
+  it('leaves generation settings undefined when the UC declares no policies', () => {
+    const r = recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }));
+    expect(r.template.generationSettings).toBeUndefined();
+    expect(r.template.reviewPolicy).toBeUndefined();
+  });
+
   it('extracts tool_hints from the prompt_template UC', () => {
     const r = recipeDefinitionToRecipe(
       defWithPrompt({ id: 'uc', tool_hints: ['file_read', 'gmail_search'] }),

@@ -134,11 +134,23 @@ interface ParsedUseCase {
     reviews?: 'on' | 'off' | 'trust_llm';
     events?: 'on' | 'off';
   };
+  reviewPolicy?: { mode?: string; context?: string };
+  memoryPolicy?: { enabled?: boolean; context?: string };
+  errorHandling?: string;
   promptTemplate: string;
 }
 
 function nonEmptyString(v: unknown): string | undefined {
   return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
+}
+
+/** Collapse the UC review-mode vocabulary (always / never / conditional /
+ *  on_low_confidence / …) into the 3-state toggle the adoption flow knows. */
+function reviewModeToSetting(mode: string | undefined): 'on' | 'off' | 'trust_llm' | undefined {
+  if (!mode) return undefined;
+  if (mode === 'never' || mode === 'off') return 'off';
+  if (mode === 'always') return 'on';
+  return 'trust_llm';
 }
 
 function parsePromptTemplate(prompt: string): ParsedUseCase {
@@ -207,6 +219,31 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
       t === 'slack' || t === 'telegram' || t === 'email',
     );
 
+  let reviewPolicy: ParsedUseCase['reviewPolicy'];
+  if (uc.review_policy && typeof uc.review_policy === 'object') {
+    const rp = uc.review_policy as Record<string, unknown>;
+    reviewPolicy = { mode: nonEmptyString(rp.mode), context: nonEmptyString(rp.context) };
+  }
+  let memoryPolicy: ParsedUseCase['memoryPolicy'];
+  if (uc.memory_policy && typeof uc.memory_policy === 'object') {
+    const mp = uc.memory_policy as Record<string, unknown>;
+    memoryPolicy = {
+      enabled: typeof mp.enabled === 'boolean' ? mp.enabled : undefined,
+      context: nonEmptyString(mp.context),
+    };
+  }
+
+  // Derive the 3-state adoption toggles from the real policies so the
+  // detail view reflects what the recipe actually does instead of
+  // hardcoded ON defaults.
+  const reviews = reviewModeToSetting(reviewPolicy?.mode);
+  const memories = memoryPolicy?.enabled === undefined
+    ? undefined
+    : (memoryPolicy.enabled ? 'on' as const : 'off' as const);
+  const generationSettings = reviews || memories
+    ? { reviews, memories }
+    : undefined;
+
   return {
     title: nonEmptyString(uc.title),
     category: nonEmptyString(uc.category),
@@ -215,6 +252,10 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
     connectors,
     suggestedTrigger,
     notificationChannelTypes,
+    generationSettings,
+    reviewPolicy,
+    memoryPolicy,
+    errorHandling: nonEmptyString(uc.error_handling),
     promptTemplate: prompt,
   };
 }
@@ -261,6 +302,9 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
       toolHints: parsed.toolHints,
       notificationChannelTypes: parsed.notificationChannelTypes,
       generationSettings: parsed.generationSettings,
+      reviewPolicy: parsed.reviewPolicy,
+      memoryPolicy: parsed.memoryPolicy,
+      errorHandling: parsed.errorHandling,
       promptTemplate: parsed.promptTemplate,
     },
     bindings: [],

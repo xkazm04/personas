@@ -101,6 +101,14 @@ export interface RecipeUseCaseTemplate {
     reviews?: 'on' | 'off' | 'trust_llm';
     events?: 'on' | 'off';
   };
+  /** Prose explanation of when a human reviews this recipe's output —
+   *  extracted from the UC's review_policy. `mode` is the raw machine
+   *  token (always / never / on_low_confidence / …). */
+  reviewPolicy?: { mode?: string; context?: string };
+  /** What the agent persists across runs — from the UC's memory_policy. */
+  memoryPolicy?: { enabled?: boolean; context?: string };
+  /** Prose description of failure handling — from the UC. */
+  errorHandling?: string;
   /** LLM prompt template — `{{variable}}` placeholders for bindings. */
   promptTemplate: string;
 }
