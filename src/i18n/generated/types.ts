@@ -11502,6 +11502,13 @@ export type Translations = {
       context_goal_singular: string;
       context_goal_plural: string;
       context_goal_coverage_tooltip: string;
+      triage_build_now_title: string;
+      triage_build_queued: string;
+      context_idea_singular: string;
+      context_idea_plural: string;
+      context_idea_coverage_tooltip: string;
+      context_scan_ideas_tooltip: string;
+      context_scan_ideas_started: string;
       context_no_goal_label: string;
       context_no_goal_tooltip: string;
       group_show_all: string;
@@ -11751,6 +11758,12 @@ export type Translations = {
       reject: string;
       triage_title: string;
       triage_subtitle: string;
+      sidebar_sort: string;
+      sort_default: string;
+      sort_value: string;
+      sort_quick: string;
+      sort_value_tip: string;
+      sort_quick_tip: string;
       accepted_badge: string;
       rejected_badge: string;
       pending_badge: string;
@@ -13003,6 +13016,13 @@ export type Translations = {
       competition_title_placeholder: string;
       competition_desc_placeholder: string;
       regenerate_strategies_title: string;
+      winning_genes_title: string;
+      winning_genes_analyze: string;
+      winning_genes_sample: string;
+      winning_genes_empty: string;
+      winner_label: string;
+      rematch_with_winner: string;
+      rematch_hint: string;
       worktree_base_ref_label: string;
       worktree_base_ref_head: string;
       worktree_base_ref_fresh: string;
@@ -13318,6 +13338,7 @@ export type Translations = {
       no_tasks_queued: string;
       no_tasks_queued_sub: string;
       auto_run_all: string;
+      retry_all_failed: string;
       auto_run_progress: string;
       auto_run_complete: string;
       auto_run_started: string;
@@ -13367,6 +13388,13 @@ export type Translations = {
       auto_scan_failed_status: string;
       auto_scan_completed_status: string;
       select_all_btn: string;
+      build_task_btn: string;
+      build_task_tip: string;
+      build_task_done_tip: string;
+      build_task_queued: string;
+      agent_recommended_tip: string;
+      select_recommended_btn: string;
+      select_recommended_tip: string;
       clear_all_btn: string;
       no_results_yet: string;
       no_ideas_match_filter: string;
@@ -13375,6 +13403,10 @@ export type Translations = {
       level_effort: string;
       level_impact: string;
       level_risk: string;
+      value_high: string;
+      value_med: string;
+      value_low: string;
+      value_tip: string;
       history_col_agents: string;
       history_col_status: string;
       history_col_ideas: string;
@@ -13388,6 +13420,13 @@ export type Translations = {
       history_filter_clear: string;
     };
     dev_triage: {
+      suggested_rules_label: string;
+      suggestion_evidence: string;
+      suggestion_add: string;
+      suggestion_name_reject_heavy: string;
+      suggestion_name_accept_quick: string;
+      suggestion_name_reject_risky: string;
+      suggestion_name_reject_category: string;
       auto_triage_rules: string;
       add_condition: string;
       action_label: string;

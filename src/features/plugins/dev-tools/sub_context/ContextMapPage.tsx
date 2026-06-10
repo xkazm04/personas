@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Map as MapIcon, Plus, Search } from 'lucide-react';
 import type { Event } from '@tauri-apps/api/event';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -9,7 +9,9 @@ import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { matchAgentsToContext } from '../sub_scanner/ideaScannerHelpers';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { cancelScanCodebase } from '@/api/devTools/devTools';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
@@ -21,7 +23,7 @@ import ContextDetail from './ContextDetail';
 import GroupList from './GroupList';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 
 
 // ---------------------------------------------------------------------------
@@ -120,23 +122,31 @@ function finalizeContextScan(
 
 export default function ContextMapPage() {
   const { t, tx } = useTranslation();
-  const { fetchContextMap, createContextGroup, scanCodebase } = useDevToolsActions();
+  const { fetchContextMap, createContextGroup, scanCodebase, runScan } = useDevToolsActions();
 
   const storeGroups = useSystemStore((s) => s.contextGroups);
   const storeContexts = useSystemStore((s) => s.contexts);
   const storeGoals = useSystemStore((s) => s.goals);
+  const storeIdeas = useSystemStore((s) => s.ideas);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
+  const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
+  const scanPhase = useSystemStore((s) => s.scanPhase);
+  const addToast = useToastStore((s) => s.addToast);
+  const [scanningContextId, setScanningContextId] = useState<string | null>(null);
   const activeScanId = useSystemStore((s) => s.activeScanId);
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
   );
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
-  // Ensure goals are loaded so the per-context coverage badge has data even
-  // when the user opens ContextMap before ever visiting Lifecycle.
+  // Ensure goals + ideas are loaded so the per-context coverage badges have
+  // data even when the user opens ContextMap before visiting Lifecycle/Scanner.
   useEffect(() => {
-    if (activeProjectId) fetchGoals(activeProjectId);
-  }, [activeProjectId, fetchGoals]);
+    if (activeProjectId) {
+      fetchGoals(activeProjectId);
+      fetchIdeas(activeProjectId);
+    }
+  }, [activeProjectId, fetchGoals, fetchIdeas]);
 
   // contextId → { count, firstGoalId } so each ContextCard can show its
   // goal-coverage badge and seed the spotlight handoff in one click.
@@ -150,6 +160,17 @@ export default function ContextMapPage() {
     }
     return map;
   }, [storeGoals]);
+
+  // contextId → idea count, so each ContextCard shows how many ideas its
+  // context has produced (mirrors the goal-coverage badge).
+  const ideaCoverageByContext = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const i of storeIdeas) {
+      if (!i.context_id) continue;
+      map.set(i.context_id, (map.get(i.context_id) ?? 0) + 1);
+    }
+    return map;
+  }, [storeIdeas]);
 
   const codebaseScanPhase = useSystemStore((s) => s.codebaseScanPhase);
   const scanning = codebaseScanPhase === 'scanning';
@@ -344,6 +365,42 @@ export default function ContextMapPage() {
     createContextGroup({ name, color });
   };
 
+  // Inline per-context idea scan — reuses the scanner's agent matching + the
+  // contextId-scoped runScan. Progress shows in the global process drawer; the
+  // per-card spinner + idea-coverage badge resolve via the latch effect below.
+  const handleScanContext = useCallback((contextId: string) => {
+    if (!activeProjectId || useSystemStore.getState().scanPhase === 'running') return;
+    const raw = useSystemStore.getState().contexts.find((c) => c.id === contextId);
+    if (!raw) return;
+    const agents = matchAgentsToContext(raw);
+    setScanningContextId(contextId);
+    useOverviewStore.getState().processStarted(
+      'idea_scan', undefined, `Idea Scan — ${raw.name}`,
+      { section: 'plugins', tab: 'idea-scanner' },
+    );
+    addToast(tx(t.plugins.dev_tools.context_scan_ideas_started, { name: raw.name }), 'success');
+    runScan(agents, contextId).catch((err) => {
+      setScanningContextId(null);
+      useOverviewStore.getState().processEnded('idea_scan', 'failed');
+      toastCatch('ContextMapPage:scanContext')(err);
+    });
+  }, [activeProjectId, runScan, addToast, tx, t]);
+
+  // Latch: only clear the per-card spinner (and refresh idea coverage) once the
+  // scan we kicked off has actually been observed running, so the spinner isn't
+  // cleared before scanPhase flips to 'running'.
+  const sawScanRunningRef = useRef(false);
+  useEffect(() => {
+    if (!scanningContextId) return;
+    if (scanPhase === 'running') {
+      sawScanRunningRef.current = true;
+    } else if (sawScanRunningRef.current) {
+      sawScanRunningRef.current = false;
+      setScanningContextId(null);
+      if (activeProjectId) fetchIdeas(activeProjectId);
+    }
+  }, [scanPhase, scanningContextId, activeProjectId, fetchIdeas]);
+
   const selectedCtx = groups.flatMap((g) => g.contexts).find((c) => c.id === selectedCtxId);
 
   return (
@@ -372,6 +429,10 @@ export default function ContextMapPage() {
             onCreateGroup={handleCreateGroup}
             onScan={handleScan}
             goalCoverageByContext={goalCoverageByContext}
+            ideaCoverageByContext={ideaCoverageByContext}
+            onScanContext={handleScanContext}
+            scanningContextId={scanningContextId}
+            scanBusy={scanPhase === 'running'}
           />
 
           {selectedCtx && <ContextDetail ctx={selectedCtx} onClose={() => setSelectedCtxId(null)} />}

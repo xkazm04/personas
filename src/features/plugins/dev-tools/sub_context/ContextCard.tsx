@@ -1,6 +1,7 @@
-import { File, Tag, Target } from 'lucide-react';
+import { File, Tag, Target, Lightbulb, Sparkles } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { ContextItem } from './contextMapTypes';
 
 export default function ContextCard({
@@ -9,12 +10,20 @@ export default function ContextCard({
   onSelect,
   goalCount = 0,
   firstGoalId,
+  ideaCount = 0,
+  onScan,
+  scanning = false,
+  scanDisabled = false,
 }: {
   ctx: ContextItem;
   selected: boolean;
   onSelect: () => void;
   goalCount?: number;
   firstGoalId?: string;
+  ideaCount?: number;
+  onScan?: () => void;
+  scanning?: boolean;
+  scanDisabled?: boolean;
 }) {
   const { t } = useTranslation();
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -23,6 +32,10 @@ export default function ContextCard({
   const handleGoalsJump = () => {
     if (firstGoalId) setPendingGoalSpotlightId(firstGoalId);
     setDevToolsTab('goals');
+  };
+
+  const handleIdeasJump = () => {
+    setDevToolsTab('idea-triage');
   };
 
   return (
@@ -65,6 +78,28 @@ export default function ContextCard({
             <Target className="w-3 h-3" />
             {t.plugins.dev_tools.context_no_goal_label}
           </span>
+        )}
+        {ideaCount > 0 && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); handleIdeasJump(); }}
+            title={t.plugins.dev_tools.context_idea_coverage_tooltip}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+          >
+            <Lightbulb className="w-3 h-3" />
+            {ideaCount} {ideaCount === 1 ? t.plugins.dev_tools.context_idea_singular : t.plugins.dev_tools.context_idea_plural}
+          </button>
+        )}
+        {onScan && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); if (!scanDisabled) onScan(); }}
+            disabled={scanDisabled}
+            title={t.plugins.dev_tools.context_scan_ideas_tooltip}
+            className="ml-auto inline-flex items-center justify-center w-6 h-6 rounded-full border border-primary/15 bg-primary/5 text-foreground hover:bg-primary/10 hover:border-primary/30 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {scanning ? <LoadingSpinner size="xs" /> : <Sparkles className="w-3 h-3" />}
+          </button>
         )}
       </div>
     </div>

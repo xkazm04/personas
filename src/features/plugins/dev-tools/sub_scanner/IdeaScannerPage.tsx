@@ -4,7 +4,7 @@ import {
   AlertCircle,
   Lightbulb, Play,
   BrainCircuit,
-  Zap,
+  Zap, Star,
 } from 'lucide-react';
 import type { Event } from '@tauri-apps/api/event';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -15,6 +15,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { runStaticScan } from '@/api/devTools/devTools';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
@@ -25,11 +26,11 @@ import {
 } from '../constants/ideaColors';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { IdeaEvolutionPanel } from './IdeaEvolutionPanel';
-import { AgentScoreboard } from './AgentScoreboard';
+import { AgentScoreboard, computeAgentStats } from './AgentScoreboard';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import {
-  AgentCard, ScanProgress, IdeaCard, ScanHistoryTable,
+  AgentCard, ScanProgress, IdeaCard, ScanHistoryTable, ideaValueScore,
   type CategoryKey, type ScanIdea, type ScanHistoryEntry,
 } from './IdeaScannerCards';
 import { matchAgentsToContext } from './ideaScannerHelpers';
@@ -41,7 +42,7 @@ import { matchAgentsToContext } from './ideaScannerHelpers';
 export default function IdeaScannerPage() {
   const { t, tx } = useTranslation();
   const ds = t.plugins.dev_scanner;
-  const { runScan } = useDevToolsActions();
+  const { runScan, createTask } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation
   const storeIdeas = useSystemStore((s) => s.scanResults);
@@ -58,11 +59,16 @@ export default function IdeaScannerPage() {
   // the Task Runner yet this session.
   const fetchTasks = useSystemStore((s) => s.fetchTasks);
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
+  // Full idea/task history (not the live scan results) powers the agent
+  // scoreboard signal used to recommend high-yield agents in the picker.
+  const allIdeas = useSystemStore((s) => s.ideas);
+  const allTasks = useSystemStore((s) => s.tasks);
 
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
   const [currentAgentKey, setCurrentAgentKey] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
+  const [ideaSort, setIdeaSort] = useState<'default' | 'value' | 'quick'>('default');
   const [autoScanRunning, setAutoScanRunning] = useState(false);
   const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
   const [staticScanRunning, setStaticScanRunning] = useState(false);
@@ -428,9 +434,54 @@ export default function IdeaScannerPage() {
     return map;
   }, []);
 
+  // Ideas that already have a task pointing at them — their Build button
+  // flips to a "queued" state instead of creating duplicates.
+  const builtIdeaIds = useMemo(
+    () => new Set(allTasks.map((task) => task.source_idea_id).filter(Boolean) as string[]),
+    [allTasks],
+  );
+  const addToast = useToastStore((s) => s.addToast);
+  const handleBuildIdea = useCallback(async (idea: ScanIdea) => {
+    try {
+      await createTask({ title: idea.title, description: idea.description, sourceIdeaId: idea.id });
+      addToast(ds.build_task_queued, 'success');
+      const pid = useSystemStore.getState().activeProjectId;
+      if (pid) useSystemStore.getState().fetchTasks(pid);
+    } catch (err) {
+      toastCatch('IdeaScannerPage:buildIdea')(err);
+    }
+  }, [createTask, addToast, ds.build_task_queued]);
+
+  // Agents whose accepted ideas have landed well in past triage (>=50% accept
+  // rate over a meaningful sample). Drives the recommended star + quick-select.
+  const recommendedAgentKeys = useMemo(() => {
+    const stats = computeAgentStats(allIdeas, allTasks);
+    return new Set(
+      stats
+        .filter((s) => s.acceptRate !== null && s.acceptRate >= 0.5 && s.accepted + s.rejected >= 2)
+        .map((s) => s.agent.key),
+    );
+  }, [allIdeas, allTasks]);
+
   const filteredIdeas = filterCategory === 'all'
     ? ideas
     : ideas.filter((i) => i.category === filterCategory);
+
+  // Order the result grid. 'default' keeps agent/scan order; 'value' floats the
+  // best impact-for-effort ideas up; 'quick' surfaces low-effort wins first.
+  const displayedIdeas = (() => {
+    if (ideaSort === 'default') return filteredIdeas;
+    const copy = [...filteredIdeas];
+    if (ideaSort === 'value') copy.sort((a, b) => ideaValueScore(b) - ideaValueScore(a));
+    else copy.sort((a, b) => a.effort - b.effort || b.impact - a.impact);
+    return copy;
+  })();
+
+  const ideaSortOptions: { mode: typeof ideaSort; label: string }[] = [
+    { mode: 'default', label: t.plugins.dev_tools.sort_default },
+    { mode: 'value', label: t.plugins.dev_tools.sort_value },
+    { mode: 'quick', label: t.plugins.dev_tools.sort_quick },
+  ];
 
   const currentAgent = SCAN_AGENTS.find((a) => a.key === currentAgentKey) ?? null;
 
@@ -453,6 +504,17 @@ export default function IdeaScannerPage() {
           >
             {selectedAgents.size === SCAN_AGENTS.length ? ds.clear_all_btn : ds.select_all_btn}
           </Button>
+          {recommendedAgentKeys.size > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Star className="w-3.5 h-3.5" />}
+              title={ds.select_recommended_tip}
+              onClick={() => setSelectedAgents(new Set(recommendedAgentKeys))}
+            >
+              {ds.select_recommended_btn}
+            </Button>
+          )}
           <Button
             variant="accent"
             accentColor="amber"
@@ -550,6 +612,7 @@ export default function IdeaScannerPage() {
                         agent={agent}
                         selected={selectedAgents.has(agent.key)}
                         onToggle={() => toggleAgent(agent.key)}
+                        recommended={recommendedAgentKeys.has(agent.key)}
                       />
                     ))}
                   </div>
@@ -564,8 +627,24 @@ export default function IdeaScannerPage() {
               <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
                 {ds.results_header}{ideas.length} {ideas.length === 1 ? ds.ideas_count_one : ds.ideas_count_other})
               </h3>
-              {/* Category filter tabs */}
-              <div className="flex items-center gap-1">
+              {/* Sort + category filter tabs */}
+              <div className="flex items-center gap-1 flex-wrap justify-end">
+                {ideas.length > 1 && (
+                  <>
+                    {ideaSortOptions.map((opt) => (
+                      <Button
+                        key={`sort-${opt.mode}`}
+                        variant={ideaSort === opt.mode ? 'secondary' : 'ghost'}
+                        size="xs"
+                        onClick={() => setIdeaSort(opt.mode)}
+                        className={ideaSort === opt.mode ? 'bg-primary/15 border-primary/30' : ''}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                    <span className="w-px h-4 bg-border/20 mx-1" aria-hidden="true" />
+                  </>
+                )}
                 <Button
                   variant={filterCategory === 'all' ? 'secondary' : 'ghost'}
                   size="xs"
@@ -614,8 +693,14 @@ export default function IdeaScannerPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                {filteredIdeas.map((idea, i) => (
-                  <IdeaCard key={idea.id} idea={idea} index={i} />
+                {displayedIdeas.map((idea, i) => (
+                  <IdeaCard
+                    key={idea.id}
+                    idea={idea}
+                    index={i}
+                    onBuild={handleBuildIdea}
+                    built={builtIdeaIds.has(idea.id)}
+                  />
                 ))}
               </div>
             )}
