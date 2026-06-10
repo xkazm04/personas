@@ -289,6 +289,48 @@ export default function CompanionPanel() {
     prevStreamingRef.current = streaming;
   }, [streaming, setApprovals]);
 
+  // explain_in_cockpit auto-fire — the orb decision `0` flow. MUST live in
+  // the always-mounted CompanionPanel (not the open-only Body): the user
+  // presses `0` on the orb with the panel CLOSED, so a Body-scoped listener
+  // would never hear the event (QA 2026-06-10 caught exactly that). The
+  // spec rides IN the payload (deliberately never persisted): set it as the
+  // contextual cockpit overlay, then navigate like compose_cockpit.
+  // Dismissing the overlay restores the user's persistent board untouched.
+  useTauriEvent<CompanionExplainCockpitEvent>(
+    COMPANION_EXPLAIN_COCKPIT_EVENT,
+    useCallback((event) => {
+      const raw = event.payload?.spec;
+      if (!raw) return;
+      let body: CompanionCockpitSpecBody & { decision_id?: string };
+      try {
+        body = JSON.parse(raw) as CompanionCockpitSpecBody & { decision_id?: string };
+      } catch (err) {
+        silentCatch('companion_explain_cockpit_parse')(err);
+        return;
+      }
+      if (!body || !Array.isArray(body.widgets) || body.widgets.length === 0) return;
+      // The explanation landed — drop the orb's composing posture.
+      useCompanionStore.getState().setExplainComposing(false);
+      useCompanionStore.getState().setExplainComposeError(null);
+      const sys = useSystemStore.getState();
+      sys.setContextualCockpit({
+        source: {
+          kind: 'explain',
+          decisionId: body.decision_id ?? '',
+          decisionTitle: body.title ?? '',
+        },
+        spec: body,
+      });
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
+      sys.setCompanionPanelCompact(true);
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
+    }, []),
+    'companion_explain_cockpit_listen',
+  );
+
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
@@ -1358,45 +1400,6 @@ function Body(props: BodyProps) {
       });
     }, []),
     'companion_compose_cockpit_listen',
-  );
-
-  // explain_in_cockpit auto-fire — the orb decision `0` flow. The spec
-  // rides IN the payload (deliberately never persisted): set it as the
-  // contextual cockpit overlay, then navigate like compose_cockpit above.
-  // Dismissing the overlay restores the user's persistent board untouched.
-  useTauriEvent<CompanionExplainCockpitEvent>(
-    COMPANION_EXPLAIN_COCKPIT_EVENT,
-    useCallback((event) => {
-      const raw = event.payload?.spec;
-      if (!raw) return;
-      let body: CompanionCockpitSpecBody & { decision_id?: string };
-      try {
-        body = JSON.parse(raw) as CompanionCockpitSpecBody & { decision_id?: string };
-      } catch (err) {
-        silentCatch('companion_explain_cockpit_parse')(err);
-        return;
-      }
-      if (!body || !Array.isArray(body.widgets) || body.widgets.length === 0) return;
-      // The explanation landed — drop the orb's composing posture.
-      useCompanionStore.getState().setExplainComposing(false);
-      useCompanionStore.getState().setExplainComposeError(null);
-      const sys = useSystemStore.getState();
-      sys.setContextualCockpit({
-        source: {
-          kind: 'explain',
-          decisionId: body.decision_id ?? '',
-          decisionTitle: body.title ?? '',
-        },
-        spec: body,
-      });
-      sys.setSidebarSection('home');
-      sys.setHomeTab('cockpit');
-      sys.setCompanionPanelCompact(true);
-      useCompanionStore.getState().flashHighlight('cockpit-panel', {
-        label: getActiveTranslations().plugins.companion.guide_flash_composed,
-      });
-    }, []),
-    'companion_explain_cockpit_listen',
   );
 
   // Inline chat-cards (show_persona_overview / show_connected_services /
