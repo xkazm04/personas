@@ -14,6 +14,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { attentionFor } from '@/features/home/sub_cockpit/widgets/personaStats';
 import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
 import {
   loadDraft, saveDraft, newLinkId, findTrigger, personaName,
@@ -59,19 +60,24 @@ export function StudioSwitchboard() {
     }
   }, [armedSource, armedTarget]);
 
+  // Both rails offer only healthy personas — enabled, credentials ready,
+  // trust above the floor. Unhealthy personas can't reliably run a chain
+  // hop, so they don't belong in the patch bay.
+  const healthyPersonas = useMemo(() => personas.filter((p) => attentionFor(p) === null), [personas]);
+
   const sq = sourceQuery.trim().toLowerCase();
   const filteredTriggers = useMemo(
     () => TRIGGER_BLOCK_TEMPLATES.filter((tpl) => !sq || tpl.label.toLowerCase().includes(sq) || tpl.description.toLowerCase().includes(sq)),
     [sq],
   );
   const filteredSourcePersonas = useMemo(
-    () => personas.filter((p) => !sq || p.name.toLowerCase().includes(sq)),
-    [personas, sq],
+    () => healthyPersonas.filter((p) => !sq || p.name.toLowerCase().includes(sq)),
+    [healthyPersonas, sq],
   );
   const tq = targetQuery.trim().toLowerCase();
   const filteredTargets = useMemo(
-    () => personas.filter((p) => !tq || p.name.toLowerCase().includes(tq) || (p.description ?? '').toLowerCase().includes(tq)),
-    [personas, tq],
+    () => healthyPersonas.filter((p) => !tq || p.name.toLowerCase().includes(tq) || (p.description ?? '').toLowerCase().includes(tq)),
+    [healthyPersonas, tq],
   );
 
   const removeLink = (id: string) =>
@@ -101,7 +107,7 @@ export function StudioSwitchboard() {
             onTabChange={setSourceKind}
             ariaLabel={t.triggers.studio.sources_title}
           />
-          <p className="typo-caption text-foreground px-1">
+          <p className="typo-body opacity-80 text-foreground px-1">
             {sourceKind === 'signals' ? t.triggers.studio.sources_subtitle : t.triggers.studio.group_after_persona}
           </p>
           <SearchField query={sourceQuery} onQuery={setSourceQuery} />
@@ -127,10 +133,10 @@ export function StudioSwitchboard() {
             />
           ))}
           {sourceKind === 'signals' && filteredTriggers.length === 0 && (
-            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_sources_match, { query: sourceQuery })}</p>
+            <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(t.triggers.studio.no_sources_match, { query: sourceQuery })}</p>
           )}
           {sourceKind === 'personas' && filteredSourcePersonas.length === 0 && (
-            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: sourceQuery })}</p>
+            <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: sourceQuery })}</p>
           )}
         </div>
       </div>
@@ -145,7 +151,7 @@ export function StudioSwitchboard() {
               <button
                 type="button"
                 onClick={() => setDraft({ version: 1, links: [] })}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body opacity-80 rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" /> {t.triggers.studio.clear_all}
               </button>
@@ -201,7 +207,7 @@ export function StudioSwitchboard() {
                   type="button"
                   onClick={() => cycleCondition(link.id)}
                   title={t.triggers.studio.cycle_condition_hint}
-                  className={`typo-caption px-2 py-0.5 rounded-input border transition-colors ${
+                  className={`typo-body opacity-80 px-2 py-0.5 rounded-input border transition-colors ${
                     link.condition
                       ? 'border-status-warning/40 text-status-warning bg-status-warning/10'
                       : 'border-border text-foreground hover:border-foreground/30'
@@ -246,7 +252,7 @@ export function StudioSwitchboard() {
             />
           ))}
           {filteredTargets.length === 0 && (
-            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: targetQuery })}</p>
+            <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: targetQuery })}</p>
           )}
         </div>
       </div>
@@ -265,7 +271,7 @@ function RailHeader({ icon, title, subtitle, query, onQuery }: {
       <div className="flex items-center gap-2">
         {icon}
         <span className="typo-heading text-foreground">{title}</span>
-        <span className="typo-caption text-foreground">{subtitle}</span>
+        <span className="typo-body opacity-80 text-foreground">{subtitle}</span>
       </div>
       <SearchField query={query} onQuery={onQuery} />
     </div>
@@ -305,7 +311,7 @@ function SourceChip({ source, personas, completesLabel }: { source: DraftSource;
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
       <span className="typo-body font-medium text-foreground truncate">{p?.name ?? personaName(source.personaId, personas)}</span>
-      <span className="typo-caption text-foreground shrink-0">{completesLabel}</span>
+      <span className="typo-body opacity-80 text-foreground shrink-0">{completesLabel}</span>
     </span>
   );
 }

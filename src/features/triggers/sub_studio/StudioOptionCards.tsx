@@ -40,7 +40,7 @@ export function TriggerOptionCard({
       </div>
       <div className="min-w-0 flex-1">
         <div className={`${dense ? 'typo-body' : 'typo-body-lg'} font-medium text-foreground truncate`}>{template.label}</div>
-        <div className="typo-caption text-foreground truncate">{template.description}</div>
+        <div className="typo-body opacity-80 text-foreground truncate">{template.description}</div>
       </div>
     </button>
   );
@@ -80,18 +80,18 @@ export function PersonaOptionCard({
           <span className={`${dense ? 'typo-body' : 'typo-body-lg'} font-medium text-foreground truncate`}>{persona.name}</span>
           {persona.headless && <EyeOff className="w-3 h-3 text-foreground shrink-0" />}
         </div>
-        <div className="typo-caption text-foreground truncate">
+        <div className="typo-body opacity-80 text-foreground truncate">
           {hint ?? persona.description ?? t.triggers.studio.agent_fallback}
         </div>
         <div className="flex items-center gap-2 mt-1">
           <span className={`typo-label px-1.5 py-0.5 rounded-input ${tier.bgSoftClass} ${tier.textClass}`}>{tierLabel}</span>
           {trusted
-            ? <span className="flex items-center gap-1 typo-caption text-status-success"><ShieldCheck className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>
-            : <span className="flex items-center gap-1 typo-caption text-foreground"><ShieldAlert className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>}
+            ? <span className="flex items-center gap-1 typo-body opacity-80 text-status-success"><ShieldCheck className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>
+            : <span className="flex items-center gap-1 typo-body opacity-80 text-foreground"><ShieldAlert className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>}
           {attention && (
-            <span className={`typo-caption ${attention.tone === 'bad' ? 'text-status-error' : 'text-status-warning'}`}>{attention.label}</span>
+            <span className={`typo-body opacity-80 ${attention.tone === 'bad' ? 'text-status-error' : 'text-status-warning'}`}>{attention.label}</span>
           )}
-          {!dense && <span className="typo-caption text-foreground ml-auto">{relativeUpdated(persona.updated_at)}</span>}
+          {!dense && <span className="typo-body opacity-80 text-foreground ml-auto">{relativeUpdated(persona.updated_at)}</span>}
         </div>
       </div>
     </button>
