@@ -174,6 +174,25 @@ Director/Athena orchestration discussion).
   `post_team_directive(reply_to)`, and replies render indented under a quoted
   reference to their parent.
 
+## sub_teamWorkspace — Settings (team workspace defaults + disband)
+
+Studio workspace mode, reached from the left rail's **Settings** entry
+(`TeamWorkspacePane.tsx`). A team *is* the workspace, so this pane edits the
+shared facets that apply to every member: **shared instructions** (appended to
+each member's prompt), a **default model**, **default budget (USD)**, and
+**default max turns**. Saving sends only the workspace facet of
+`UpdateTeamInput` (the other fields go as `null` = skip), so it never disturbs
+name/description/canvas.
+
+The pane also hosts the **Disband team** danger zone — a two-click confirm
+(arms, then **Confirm disband**; auto-disarms after a few seconds) wired to the
+store's `deleteTeam`. Disbanding deletes the `PersonaTeam` and cascades its
+membership + connections but **keeps the member personas** — they survive
+ungrouped. On success the store clears `selectedTeamId`, which returns the user
+to the Teams table. This mirrors the per-row Disband action in `TeamList`; the
+backend `delete_team` refuses while a pipeline is running or when the team is a
+dev project's canonical team.
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.

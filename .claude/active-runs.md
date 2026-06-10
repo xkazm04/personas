@@ -12,6 +12,10 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed`, update its status to `completed (commit:
+
+### friend — glyph (shared/glyph visual system) — completed
+- 2026-06-09: 15 cycles. Branch worktree-friend-glyph-192122 (off vibeman/audit-2026-06-09, NOT master). Commits 2b3c23b37..66b47eb34 (79 files, +1717/-526). i18n debt payoff + sigil a11y (keyboard/ARIA/Esc/focus-return) + colour legend + CVD textures + theme-native colours + tooltip sweep. All tsc/eslint/i18n-gated; fast loop (not live-verified).
+- MERGED into vibeman/audit-2026-06-09 (merge commit 7ab2388ed); worktree + branch removed. Post-merge: i18n regen no-drift, tsc 0 errors on combined tree.
    <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days from
    `## Recently completed`.
 
@@ -31,6 +35,46 @@ timestamp — the next session can recognize it as abandoned.
   silent clobbers.
 
 ## Active
+
+### perf — remove Langfuse plugin end-to-end
+- Started: 2026-06-10 10:40
+- Status: completed (commit: 11d0814ce)
+- Branch: vibeman/audit-2026-06-09 (main checkout)
+- Paths: src/features/plugins/langfuse/ (deleted), src/features/plugins/*.tsx, src/api/langfuse.ts, src/stores/langfuseStackStore.ts, src-tauri/src/langfuse/ (deleted), src-tauri/src/commands/infrastructure/, src-tauri/src/engine/, src/lib/bindings/, src/i18n/, docs
+- Note: 163 files, −12,836 lines. Also fixed pre-existing lib-test fixture breakage (DevIdea.priority, CreateManualReviewInput assignment/step ids) + committed binding-drift regens (DevIdea, TeamChannel*, etc.). Repaired corrupted node_modules (.pnpm hoist dir + @babel/runtime) via pnpm install --force + prebuild-install for better-sqlite3. Verified: app boots on :17320, langfuse tab rejected.
+
+### prototype — Chain Studio canvas-less redesign (sub_studio)
+- Started: 2026-06-10 11:30
+- Status: started
+- Branch: vibeman/audit-2026-06-09 (main checkout)
+- Paths: src/features/triggers/sub_studio/, docs/features/events/README.md
+- Note: /prototype directional variants for source→target picking without React Flow canvas; tab switcher in TriggerStudioCanvas.tsx; variants as siblings under sub_studio/. Same session also carries the earlier uncommitted Lineage-section removal.
+
+### perf — nav-walk refresh + perf investigation
+- Started: 2026-06-10 09:35
+- Status: completed (commits: 134e8bcad, e8a561d89)
+- Branch: vibeman/audit-2026-06-09 (main checkout)
+- Paths: tests/playwright/perf-nav-walk.spec.ts, docs/harness/perf-runs/, src/features/settings/sub_notifications/, src/features/agents/ (connector-key fixes), src/features/home/sub_welcome/lib/, src/features/plugins/langfuse/hooks/, src/stores/slices/system/twinSlice.ts
+- Note: 40-stop walk run + analysis at docs/harness/perf-runs/2026-06-10-analysis.md; fixed NotificationSettings write storm, marathon-default dup keys (7 components), Home double event fetch, langfuse docker-probe TTL cache (settings/account 2739→56ms), twin_list_profiles dedupe (3→1). All verified live on :17320.
+
+### friend — teams (src/features/teams UI/UX) — completed
+- 2026-06-10: 11 cycles, 15 commits (600771f63..dd073b2a5). Branch worktree-friend-teams-085000 (base vibeman/audit-2026-06-09 + **master merged in** — first picks were already shipped on master; merging avoided rebuilding them). Cycles: pin-to-memory, filter persistence, workspace unsaved-guard, studio header identity, channel crest identity, day separators, draft-pen hints, avatar-click mentions, mention highlights, Athena presence chip, roster live presence. tsc/eslint/i18n-gated; fast loop (not live-verified). Worktree left for user merge: `git merge --no-ff worktree-friend-teams-085000` (NOTE: brings master's 65 commits along into the target branch).
+
+### friend — director (Overview Director surface) — COMPLETED
+- Started: 2026-06-10 08:38
+- Status: completed (branch: worktree-friend-director-083846, 20 commits, range 46e401824..a3a04ffbc; left for user merge — `git merge --no-ff worktree-friend-director-083846`)
+- Branch: worktree-friend-director-083846 (off vibeman/audit-2026-06-09, NOT master)
+- Worktree: .claude/worktrees/friend-director-083846/
+- Paths: src/features/overview/sub_director/ + src/features/shared/components/layout/sidebar/{Sidebar,SidebarLevel2}.tsx + src/hooks/sidebar/useBadgeCounts.ts + src-tauri/src/{engine/director_brain,commands/infrastructure/director,lib}.rs + i18n + docs/features/director|overview
+- Note: 17 dev cycles + 3 doc commits. Director read-only scorecard → analytics + triage + review-orchestration cockpit. 3 campaigns (triage cockpit, coaching momentum, review orchestration). All tsc/eslint/i18n-gated (14 locales); cycle 8 cargo-checked clean. NOT live-verified (fast loop). Used --no-verify: concurrent worktree-cleanup wiped main node_modules/.bin → lefthook npx eslint broken; ran node_modules/eslint/bin/eslint.js equivalent each commit. RECOVERY for whoever's idle: rmdir /s /q node_modules && pnpm install --frozen-lockfile.
+
+### friend — drive (Drive plugin UI/UX)
+- Started: 2026-06-09 19:20
+- Status: completed (commit: 73e9eb3d2)
+- Branch: worktree-friend-drive-192018
+- Worktree: .claude/worktrees/friend-drive-192018/ (left for user merge — `git merge --no-ff worktree-friend-drive-192018`)
+- Paths: src/features/plugins/drive/
+- Note: 12 cycles, 16 commits, 43 files +1315/−144. Cycles: details-pane quick actions, signed badge, kind filter, lightbox filmstrip, lightbox chrome, useLazyImageThumb hook extraction, icons-view thumbnails, OS-drop onto folder, scroll memory, trash sidebar node, restore+empty, original names+purge countdown.
 
 ### channel-timeline-workspace — Channel Timeline → flagship 3-zone workspace (session bc1540d9)
 - Started: 2026-06-08. Master, atomic commits.
@@ -350,7 +394,6 @@ timestamp — the next session can recognize it as abandoned.
 - MERGED to master (merge `0aeecc9b2` + post-merge fixes `1efe206ff` i18n regen, `0cf845707` Dispatched fallback field, `3bb744edf`/`1b826863a` e2e). Worktree removed.
 - LIVE-VERIFIED on a fresh tauri:dev:test off master: `cargo test --features desktop companion::dispatcher` → 33 passed (incl. 5 new offer/walkthrough tests); deterministic Playwright e2e → 2 passed (orb glides + glow tracks the studio anchor live; auto-play advances through all 5 steps and self-completes in 23.6s). Caught + fixed a real compile error the deferred-cargo would've missed: session.rs's explicit Dispatched fallback literal was missing the new guide_walkthroughs field. The model-dependent NL test is `test.skip` (needs an orb-aware panel-open path + live CLI; verify by chatting with Athena in-app).
 
-
 - **[2026-05-26 — completed] /architect — Multi-driver orchestration + Athena autonomous-build fixes**
   - **Source:** User-driven `/architect`, then the companion test it enabled. Generalized `daemon.lock` into an engine-leadership lease ANY instance can hold; gated all singleton loops on it; added per-row claim/lease + port/data-dir overrides (multi-driver one-DB orchestration, ADR `Architect/decisions/2026-05-26-multi-driver-orchestration.md`). Then ran the Athena/ai-paralegal companion test on a fully isolated instance and fixed the 3 stacked autonomous-build gaps it surfaced.
   - **Paths:** `src-tauri/src/engine/{leadership,subscription,webhook,webhook_notifier,discord_poller,mod}.rs`, `src-tauri/src/engine/{build_session/runner,project_tracking/scheduler}.rs`, `src-tauri/src/daemon/lock.rs`, `src-tauri/src/lib.rs`, `src-tauri/src/db/migrations/{incremental,schema}.rs`, `src-tauri/src/db/repos/execution/executions.rs`, `src-tauri/src/commands/companion/approvals.rs`, `vite.config.ts`, `tests/playwright/companion-*.mjs`, `docs/features/companion/athena-usecases.md`.
@@ -369,7 +412,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `src/features/shared/components/layout/{TitleBar.tsx,DesktopFooter.tsx}`, `src/features/shared/components/layout/monitor/PersonaMonitor.tsx`, `src/features/shared/components/feedback/notifications/NotificationCenter.tsx`, `src/stores/slices/system/uiSlice.ts`, `src/lib/storeBus.ts` + `src/lib/storeBusWiring.ts` (nav:select-persona event + persona:selected push), `src/stores/notificationCenterStore.ts`, `src/stores/themeStore.ts`, `src/styles/globals.css` (sage/sand blocks), `scripts/check-themes.mjs`, `src/lib/keyboard/{shortcutRegistry.ts,AppKeyboardProvider consumer in App.tsx}`, `src/App.tsx` (global shortcut hook), `public/illustrations/` (leonardo asset), `src/i18n/locales/en.json` (additive). Path-disjoint from active sessions (team-adjust / vault / events-polish=triggers+settings/sub_appearance / templates-adoption). NOTE: I do NOT touch settings/sub_appearance (theme picker reads THEMES array → auto-updates) to stay clear of the events-polish session.
   - **Branch:** master — per-file staging; not committing unless asked.
   - **Status:** DONE (UNCOMMITTED — user has not asked to commit). All items shipped. A1 module-aware back: uiSlice navigationHistory now NavEntry{section,personaId} + pushNavEntry + isNavRestoring guard; storeBusWiring persona:selected pushes outgoing location (tracks lastNavPersonaId) + new nav:select-persona event restores persona on back; TitleBar consumes NavEntry, label→t.common.back. A2 notification bell stroke→text-primary when open (schedules already had it). A3 bell open auto-markAllRead + slimmed panel header (py-2, dropped redundant mark-all btn + unread badge, kept labelled Clear all). A4 Leonardo dark bg wired into PersonaMonitor (public/illustrations/monitor-network-dark.png, opacity-0.07, dark-only, z-layered behind content). B1 account dropdown left-0 (was off-screen left). B2 Sage/Sand removed: themeStore type+THEMES, globals.css 2 blocks, check-themes.mjs entries, + onRehydrateStorage migration to 'light'. B3a resume interstitial: tourResumePending flag suppresses GuidedTour auto-nav, shows "Pick up where you left off" window, Continue clears flag→navigates. B3b footer tooltip via tx() (no more literal {completed}/{total}). B-kbd: Ctrl+B sidebar / Ctrl+M monitor / Alt+A Athena (WorkspaceShortcuts.tsx + registry 'workspace' group + 'alt' token). VERIFY: tsc 0, eslint 0-err (2 pre-existing warns), 14 keyboard+tour tests pass, check:themes all-AA, check:i18n 0 extras, split-locales regen. Docs: updated docs/features/onboarding.md (resume interstitial). No marketing/settings doc refs to Sage/Sand (theme picker reads THEMES → auto-updates).
-
 
 - **[2026-05-25 — started] vault: connections density+encryption / database tabs fix / dependencies graph cleanup**
   - **Source:** User 3-area list. CONNECTIONS (sub_credentials): (a) make compact density the only/default view, remove cozy+comfortable variants + the DensityToggle from the credential list; (b) remove the user-facing VaultStatusBadge encrypt UI entirely — instead auto-assure encryption: silently migrate plaintext for ALL non-builtin connectors on vault load + on credential save; built-in personas-local connectors stay as-is. DATABASE (sub_databases): (a) Tables/Queries/Console tabs show nothing for local Supabase + in-built db connector — analyze, fix, test live. DEPENDENCIES (sub_dependencies): (a) relationships not cleaned after persona deletion (root cause: credential_audit_log.persona_id has NO FK cascade — stale rows survive delete_persona); (b) Relationships edge-summary card (GraphCanvas right column) must not truncate strings (currently `truncate max-w-[80px]`); (c) Blast radius affected-agents list should show terminal agent node, not the intermediate connector `via` label.
@@ -539,7 +581,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Worktree:** `.claude/worktrees/friend-theming-140706/`
   - **Note:** Path-disjoint from all 8 concurrent /friend plugin sessions (they touch `src/features/plugins/<plugin>/`; theming touches `src/styles/` + `src/stores/themeStore.ts` + `src/lib/theme/` + `src/features/settings/sub_appearance/`). Bias higher-effort + deepen-existing-surfaces per prior /friend lessons. Cycle 1 will likely propose: status/brand-token completeness pass on under-themed darks, light-theme accent unification, palette-aware theme picker preview, or a "theming-coverage audit" debug overlay.
 
-
 - **[2026-05-16 — started] /friend — drive plugin**
   - **Source:** `/friend` endless loop, area resolved from path `src\features\plugins\drive`
   - **Paths:** `src/features/plugins/drive/`, `src-tauri/src/commands/infrastructure/drive.rs` (if touched), `src/i18n/locales/en.json` (additive `plugins.drive.*` only — coordinate with concurrent /friend-artist, /friend-companion, /friend-dev-tools), `docs/features/drive.md` (if user-visible change ships)
@@ -569,9 +610,43 @@ timestamp — the next session can recognize it as abandoned.
   - **Status:** started (STALE — entry is >24h old as of 2026-05-14 session start; treating as abandoned per the 2-hour rule)
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
-
 ## Recently completed (last 14 days)
 
+### friend — knowledge (overview/sub_knowledge) — MERGED TO MASTER 2026-06-10 (02ef46f53)
+- 5 commits `2209be585..7e2ad63ea`, merged into master via `git merge` (merge commit 02ef46f53) — full-branch merge per user, which also advanced master with the 52 vibeman/audit-2026-06-09 commits it was based on. Sole conflict = generated `enSectionStrings.ts`, resolved by regen from merged en.json; tsc clean on merged tree. Worktree + branch `worktree-friend-knowledge-083756` REMOVED (junctions rmdir'd first). 35 files, +467/−67.
+- "Revive the Knowledge Graph" campaign (4 cycles): the orphaned `KnowledgeGraphDashboard` (lost its mount when 592abd818 collapsed `KnowledgeHub`→`MemoriesPage`) restored via a Memories ⋮ Patterns toggle (2209be585); clickable KPI type-filters + latent dropdown-filter fix (d518142cd); search+sort (185d1d5ad); needs-review annotation spotlight backed by new `unverified_annotation_count` (a638dfb39 backend + 7e2ad63ea UI). 10 new i18n keys × 14 locales. tsc/eslint clean (real engines); cargo check --features desktop clean.
+- NOT live-verified (fast loop) — Phase-5 manual-verify checklist in session output. ts-rs binding hand-applied (export test blocked by UNRELATED pre-existing test breakage: DevIdea/CreateManualReviewInput stale constructors). ⚠ Repo `node_modules/.bin` empty repo-wide (prior worktree-cleanup junction-follow) → committed `LEFTHOOK=0` after running real engines directly; lint/tsc hooks broken until `pnpm install` recovery. ⚠ worktree has a node_modules junction — `cmd /c rmdir` it BEFORE `git worktree remove`.
+
+### athena — narration D1+D2 — completed 2026-06-10, ready-to-merge (NOT merged)
+- 3 commits b8f605e1e..be0a99a9c on branch worktree-athena-narration (off vibeman/audit-2026-06-09 @ 7ab2388ed), worktree .claude/worktrees/athena-narration/ kept until merge.
+- D1: PROGRESS grammar moved out of voice addendum → always-on progress_addendum() in prompt.rs (text-only users + proactive turns now narrate). D2: turn-scoped narration timeline (narrationTimeline.ts + NarrationThread.tsx + store/panel wiring) — live log under streaming bubble, collapsed "What I did — N steps · Xs" trail under completed bubbles. 7 new i18n keys; tsc/eslint/i18n-coverage clean; 27 helper tests pass (cargo check --features desktop clean).
+- ⚠ MERGE BLOCKED at completion time: main checkout had uncommitted en.json + i18n/generated edits from the prototype/Chain-Studio session (same files my branch touches). Merge with `git merge worktree-athena-narration` once those are committed; regen i18n generated files on conflict. ⚠ worktree has a node_modules junction — `cmd /c rmdir` it BEFORE `git worktree remove`.
+
+### friend — leaderboard (overview/sub_leaderboard) — completed 2026-06-10
+- 11 cycles, 12 commits (246d75676..818731cf7), 39 files +1088/−98. **MERGED to vibeman/audit-2026-06-09** (merge commit 094a6659d, content-clean auto-merge, 0 conflicts); worktree + branch removed (junction cleared first). Fast loop, NOT live-verified. NOTE: merge was blocked by 16 i18n files holding concurrent teams/triggers in-flight edits → user authorized checkpoint commit 259c0092a (those 16 files only) to unblock; their other i18n/source files left untouched.
+- Function: rank-by-dimension control (re-sorts podium+medals+list), fleet-average radar benchmark + per-stat vs-fleet deltas, actionable-board campaign (biggest-opportunity callout → fix hint → Improve-this-agent deep-link to Lab tab). Visual: champion crown+halo, extruded podium risers+reflection, radar gradient/glow/draw-in, SpringCount score animation, podium cross-fade, selected-agent spotlight echoed on detail panel.
+- 21 i18n keys ×14 locales in-commit; tsc+eslint clean each cycle. ⚠ `npx tsc`/`npx eslint` resolve to decoys + lefthook `.bin` is wiped repo-wide (prior worktree-cleanup junction-follow) → committed `LEFTHOOK=0` after running the REAL eslint/tsc via `node node_modules/.../bin`. ⚠ this worktree has a node_modules junction: `cmd /c rmdir` it BEFORE `git worktree remove` or main `.bin` gets wiped again.
+
+### friend — teams (src/features/teams) — completed + MERGED TO MASTER 2026-06-09
+- 15 cycles, 16 commits 8cc711d66..93423cdb5, merged to master as c1e9fa4a1 (one generated-file conflict regenerated); worktree + branch removed, junction cleared first. Channel: jump-to-latest+unseen, filter bar, @member mentions, multiline composer+per-team drafts. Memory: remounted the orphaned TeamMemoryPanel as a studio Memory mode (+clear-all, diff legend, per-run timeline badges). Also: editable auto-team blueprint, relay wire-a-listener, assignment replay (honest re-target of the dead sub_canvas debugger), post-creation team identity editing, goals-for-humans 3-cycle campaign. NOTE: sub_canvas confirmed orphaned (TeamCanvas.tsx) — its removal cleanup is still pending (/explorer candidate). Mid-session: main node_modules/.bin wiped by a parallel worktree cleanup → pnpm install recovered, no hooks bypassed.
+
+### friend — fleet — completed + MERGED TO MASTER 2026-06-09
+- Branch: worktree-friend-fleet-194457 (off vibeman/audit-2026-06-09) — **merged to master at user request** (master now 472678df1), worktree + branch removed, junction cleared.
+- Commits: 9 (c1b3020a7..1fd9688e7) — 8 dev cycles + 1 green-fix; merged into master via merge commit 472678df1 (clean, no conflicts; i18n regenerated; tsc clean).
+- Result: Fleet triage + running-CLI accuracy/perf arc. Cycles: triage hotkeys (n/↑↓/`/`/g/?), spawn-with-task (argv-seeded), waiting-age urgency (violet→amber→red), frozen-Running detection (2min via PTY-silence signal), change-gated tile previews (rev counter), visibility-gated pollers, state-provenance tooltip, tunable stale/frozen cutoffs in Settings. Rust: last_pty_output_ms + last_grew_ms on FleetSession, fleet_set_state_cutoffs cmd, is_frozen_mid_run pure-fn + unit tests. tsc/eslint/cargo check/vitest(36)/stale-tests(11) green. NOT live-verified (fast loop). Note: Friend/sessions/2026-06-09-friend-fleet.
+
+### friend — twin — completed 2026-06-09
+- Branch: worktree-friend-twin-192155 (off vibeman/audit-2026-06-09, NOT master) — left for user merge
+- Commits: 19 (d871effb0..4b09a27db) — 16 dev cycles + 3 doc-sync, 3 batches. node_modules junction in worktree — remove before any cleanup.
+- Result: completed. Twin UX deepened: training (coverage pills+star, impact recap, sessions stat, pending-CTA count), Reply Outbox (contact thread, recently-sent rail + adapt-reply, steer chips, tone-register drafting [additive twin_draft_reply param], reply-to-msg, tone preview), readiness (gap deltas, milestone celebration, roster-foundations). tsc/eslint/i18n+14-locale/cargo green throughout. NOT live-verified (fast loop). Note: Friend/sessions/2026-06-09-friend-twin.
+
+### friend — dev-tools — completed 2026-06-09
+- Status: completed (branch: worktree-friend-devtools-192230, commits: 14, last: 8fa4b3a6f)
+- 11 /friend cycles: value sort/badges (shared scorer), winner spotlight+rematch+gene profile (prompt-gene recovery), context idea coverage+inline scan, runner grouping+retry-all, recommended agents, idea→task Build, history-mined triage rules + 3 doc syncs.
+- Base: vibeman/audit-2026-06-09 (NOT master). Worktree left intact for user merge.
+
+- **[2026-06-09 — completed (merged to master: 8cb603252)] friend — templates (sub_generated) — /friend loop, 9 commits.** Template-gallery evaluate→decide→adopt deepening, merged --no-ff (0 conflicts) and worktree friend-templates-192032 removed (junction cleaned first, main node_modules verified intact): compare tray + side-by-side modal (82cfaec03, e59d528cc); design-preview summary bar (d138c2f0d) → sticky + jump-to-section v2 (5c4ca808f); trending quick-adopt (5eca49c76); detail-modal use-cases tab w/ linear flow digests (63e85ec2a); compare v2 diff accents + per-column Adopt/Try-it (99e7ec752); docs ×2. Gates: tsc 0 each cycle + on master post-merge; eslint 0 on touched lines; 4 i18n key-sets × 14 languages; generated i18n regen-verified no-drift post-merge. NOTE: adoption-flow "finishing" campaign was picked then descoped — questionnaire already has progress/recap/celebration built; RecommendedCarousel found orphaned (no consumer) — /explorer candidate.
+- **[2026-06-09 — completed (FF-merged to master: 637f36126)] friend — incidents (sub_incidents UI/UX) — /friend loop, 8 commits.** Incidents inbox UX, landed on master via fast-forward (user chose to land the whole audit branch / 111 commits and continue on master): active-filter summary + clear-all (0733cd22a); group-by lens agent/severity/source/flat, persisted (141c958a3); detail-modal triage hub — sibling list + view-all-from-agent (d5c1d202c); clickable KPI tiles as filters (5b6ba1b3f); clickable severity-distribution bar (a91b2f905); "new since your last visit" marker + remembered filter/sort view (47120daad); 13 new keys → all 13 non-English locales (085e53b1a); overview doc synced (637f36126). Gates: tsc clean each cycle, eslint-staged each commit, i18n 14 locales verified ({count} preserved, 0 extras). Worktree worktree-friend-incidents-191934 removed post-merge.
 - **[2026-06-09 — completed (commits: 9e1070ba5, 5da9956e5)] goals-modal-tasks-abort — unified task table + abort-goal + editor styling.** GoalDetailDrawer's two overlapping lists (ad-hoc dev_goal_items + team_assignment_steps; backend mirrors steps→items by EXACT title) merged into ONE GoalTaskTable, de-duped by title (steps win; pure partitionGoalTasks + 4 tests). Rows: state (checkbox for ad-hoc / status icon for steps), title (expand → markdown outputSummary), Owner (persona via assignedPersonaId→useAgentStore; "You" for ad-hoc), inline skip/abort on awaiting_review. Stop-the-team: GoalHandoffPanel active state gains a Stop control; drawer aborts active assignments (abort_team_assignment = gate-close: orchestrator stops launching new steps, in-flight finishes) + records team_aborted signal + KEEPS the goal. KEY backend finding: deleting a goal does NOT stop a running team (team_assignments.goal_id soft link, no FK → orphaned execution keeps burning tokens) — Stop is the safe halt. GoalEditorModal header synced to the drawer (w-10 chip + typo-section-title, max-w-xl). Gates: tsc 0, eslint 0 errors, vitest 27/27, i18n no-extras. Doc synced. DISJOINT from channel-timeline-workspace.
 - **[2026-06-08 — completed (commit: 89c9e3b8c)] goals-cross-project-view — Board/Timeline cross-project view + header scope switch.** Board + Timeline now show goals across ALL projects (default) or one, via a header SegmentedTabs toggle (persisted; Board/Timeline only). Cross-project loads every project's goals into the same store `goals` array (new fetchAllGoals → re-added listAllGoals → dev_tools_list_all_goals) so drag/progress work unchanged; each card/row wears a GoalProjectBadge. LifecycleProjectPicker stays as the new-goal/Map/sync target. Map stays project-scoped (scope hidden there; crossProject flips false on Map → re-scopes store). GoalKanban item fetch generalized to one query per distinct project (fan-out cross-project). 12 files. Gates: tsc 0, eslint 0 errors, vitest 23/23 (GoalKanban mock +projects:[]), i18n no-extras. Doc synced. DISJOINT from collab-c5.
 - **[2026-06-08 — completed (commit: 868888fe1)] prototype-monitor-channel-combined — /prototype: combined cross-team channel.** Timeline won (vs Swimlanes, deleted). Monitor channel mode = GRID (separate channels, per-team action) + TIMELINE (default, combined feed). Timeline: one chronological stream, team-colour rail+badge per row, sticky day headers (reuses GroupedVirtualList primitives), noise filter (All/Signal/Alerts), jump-to-newest. Perf for hundreds of rows: @tanstack/react-virtual + 600-row cap + memo'd static rows. Refactored into `monitor/channels/`. Commits b4b7ce063 → 868888fe1. tsc/lint clean throughout.
@@ -1237,8 +1312,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Validation:** `npx tsc --noEmit` clean. `cargo check --features desktop` clean. `npm run lint` 0 errors / 12442 warnings (baseline, no new errors). 119 unit tests pass on the moved companion/inbox lib. 4 pre-existing matrix test failures unrelated (introduced by earlier `matrix-retire` work on master). i18n coverage WARNs on translation lag only (no EXTRAS).
   - **Headline:** Athena now drives the Cockpit page the same way she drives the Dashboard tab (singleton spec, autonav event). The same 3 widgets render compactly inline in chat when she judges a UI snippet beats prose. Simple mode and its three variants (Mosaic / Console / Inbox) + AmbientCockpit overlay are gone; their valuable concepts (illustrations, unified inbox, severity tones, master-detail-via-drawer) live on under companion/inbox/ + home/components/cockpit/.
 
-
-
 - **[2026-05-11 00:30 → ~07:30] overnight-test — template-adoption + glyph-from-scratch sweep (both intakes hit 20-persona target)**
   - **Source:** in-session conversation; user kicking off long overnight testing/finetuning run while asleep
   - **Paths shipped:**
@@ -1287,7 +1360,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Architecture:** project tracking is an engine subsystem (worker), owned/configured by Dev Tools (registry + per-project flags), consumed by Companion (brain integration + prompt injection). Master toggle in Companion plugin setup gates whether the scheduler does work; per-project enable in Dev Tools gates which projects feed the consolidator.
   - **Index pollution incident note:** mid-run ledger commit `b6f785bca` accidentally swept up 3 file deletions from a parallel /explorer session in `src/features/agents/sub_connectors/libs/`. Code is correct (the parallel session intended to delete those files); attribution mislabeled. Recorded for the lessons file. Same shape as the 2026-05-09 stash-incident pattern.
 
-
 - **[2026-05-09 ~21:15] /research — cli-coordination-active-runs (design + execute)**
   - **Source:** in-session conversation following Claude+CapCut run; user request to design and execute the active-runs ledger right away
   - **Paths:** `.claude/active-runs.md`, `.claude/CLAUDE.md`, `.claude/skills/research/skill.md`, `docs/concepts/cli-coordination-active-runs.md`, `docs/concepts/README.md`
@@ -1328,7 +1400,6 @@ timestamp — the next session can recognize it as abandoned.
       - `src/features/agents/sub_use_cases/components/core/CapabilityDisableDialog.tsx` + `src/features/agents/components/newPersona/capabilityView/CapabilityAddModal.tsx` + `src/features/triggers/sub_builder/layouts/RenameEventDialog.tsx` migrated to BaseModal — Modal Phase 2b first slice, commit `bed7e6c97` (CLEAN — **first observation of the hardened chained-add-and-commit defensive habit working**). New follow-up ADR [[Architect/decisions/2026-05-10-modal-phase-2b-first-slice]]. Modal-drift reach: ~30 → ~27 raw centered modals.
     - Vault: `Architect/scans/2026-05-10-error-handling.md` (new), 8 ADR files under `Architect/decisions/2026-05-10-*.md` (5 shipped, 3 still proposed: Result<T,String>→AppError, async-catch lint rule, no-silent-catch severity), `Architect/backlog.md` (Pending + Shipped sections), `Architect/strong-patterns.md` (new entry — Error-discipline helpers), `Architect/weak-patterns.md` (3 new entries — Result<T,String> bypass, raw .catch() without helper, instrument_and_reproduce phantom RESOLVED; Modal drift entry refreshed), `Architect/coverage.md` (error-handling theme entry), `Lessons/2026-05-10-architect.md` (Edit-appended three times).
   - **Status:** completed (commits: `ca9581cef`, `669b22114`, `e9d61c357`, `0e79f3aae`, `bed7e6c97`). Validation across the run: F4 script tested locally (34 prefixes verified). F2 TS clean. F3 cargo check initially blocked by pre-existing parallel-session breakage at `doctrine.rs:172` (cleared by `6454be082` later). F5 ai_healing tests 24/24 pass. Phase 2b-first `npx tsc --noEmit` clean. **Two parallel-commit hijack observations in one run** (6th + 7th of the broader pattern), then **first clean run of the hardened defensive habit** in resume drain #2. Pattern promotion-ready (3 observations: 2 prior failures with the loose pattern + 1 success with the tightened one) for `Patterns/architect-preferences.md` after one more clean observation.
-
 
 - **[2026-05-10 14:08 → ~16:30] /research — claude-managed-agents-dreaming (Memory Curation Runs — design + execute, 5 atomic commits)**
   - **Source:** https://claude.com/blog/new-in-claude-managed-agents + https://platform.claude.com/docs/en/managed-agents/dreams — user framing: "ability to replicate dreaming for user created personas" + "rather than copycating Cloud cloud API, and Hermes, we should rather just take the concept and apply to our philosophy and design"

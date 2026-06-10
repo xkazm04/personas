@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   Archive, ExternalLink, Gauge, GitBranch, Network,
-  Radio, Store, Unplug, Webhook, Workflow, Zap, type LucideIcon,
+  Radio, Store, Unplug, Webhook, Zap, type LucideIcon,
 } from "lucide-react";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useAgentStore } from "@/stores/agentStore";
@@ -22,7 +22,6 @@ import { silentCatch } from '@/lib/silentCatch';
 
 const EventCanvas = lazy(() => import('./sub_builder/EventCanvas').then(m => ({ default: m.EventCanvas })));
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
-const TriggerLineageCanvas = lazy(() => import('./sub_lineage/TriggerLineageCanvas').then(m => ({ default: m.TriggerLineageCanvas })));
 const SharedEventsTab = lazy(() => import('./sub_shared/SharedEventsTab').then(m => ({ default: m.SharedEventsTab })));
 
 type BusHealth = "healthy" | "degraded" | "failing" | null;
@@ -79,7 +78,6 @@ export function TriggersPage() {
     'cloud-webhooks': { icon: Webhook, iconColor: 'blue', title: t.triggers.tab_cloud_webhooks, subtitle: t.triggers.tab_cloud_webhooks_subtitle },
     'dead-letter': { icon: Archive, iconColor: 'red', title: t.triggers.tab_dead_letter, subtitle: t.triggers.tab_dead_letter_subtitle },
     studio: { icon: GitBranch, iconColor: 'primary', title: t.triggers.tab_studio, subtitle: t.triggers.tab_studio_subtitle },
-    lineage: { icon: Workflow, iconColor: 'violet', title: t.triggers.tab_lineage, subtitle: t.triggers.tab_lineage_subtitle },
     shared: { icon: Store, iconColor: 'primary', title: t.triggers.tab_shared, subtitle: t.triggers.tab_shared_subtitle },
   }), [t]);
   const personas = useAgentStore((s) => s.personas);
@@ -131,7 +129,6 @@ export function TriggersPage() {
       <div key={eventBusTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
         {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} setHeaderExtra={setTabHeaderExtra} /></LazyWrap>}
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
-        {eventBusTab === "lineage" && <LazyWrap><TriggerLineageCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}
         {eventBusTab === "rate-limits" && <RateLimitDashboard triggers={allTriggers} />}
