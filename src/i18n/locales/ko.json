@@ -160,7 +160,9 @@
     "channel_composer_reply_placeholder": "답장을 작성하세요…",
     "channel_pin_memory": "팀 메모리로 고정",
     "channel_pinned_memory": "팀 메모리에 고정됨",
-    "channel_pin_failed": "팀 메모리에 고정하지 못했습니다"
+    "channel_pin_failed": "팀 메모리에 고정하지 못했습니다",
+    "channel_day_today": "오늘",
+    "channel_day_yesterday": "어제"
   },
   "common": {
     "loading": "로딩 중...",

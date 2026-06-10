@@ -160,7 +160,9 @@
     "channel_composer_reply_placeholder": "Tulis balasan Anda…",
     "channel_pin_memory": "Sematkan sebagai memori tim",
     "channel_pinned_memory": "Disematkan ke memori tim",
-    "channel_pin_failed": "Tidak dapat menyematkan ke memori tim"
+    "channel_pin_failed": "Tidak dapat menyematkan ke memori tim",
+    "channel_day_today": "Hari ini",
+    "channel_day_yesterday": "Kemarin"
   },
   "common": {
     "loading": "Memuat...",

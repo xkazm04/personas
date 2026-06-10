@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "返信を書く…",
   "channel_pin_memory": "チームメモリーとしてピン留め",
   "channel_pinned_memory": "チームメモリーにピン留めしました",
-  "channel_pin_failed": "チームメモリーへのピン留めに失敗しました"
+  "channel_pin_failed": "チームメモリーへのピン留めに失敗しました",
+  "channel_day_today": "今日",
+  "channel_day_yesterday": "昨日"
 }

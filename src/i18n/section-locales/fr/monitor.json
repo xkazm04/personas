@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "Écrivez votre réponse…",
   "channel_pin_memory": "Épingler comme mémoire d'équipe",
   "channel_pinned_memory": "Épinglé dans la mémoire d'équipe",
-  "channel_pin_failed": "Impossible d'épingler dans la mémoire d'équipe"
+  "channel_pin_failed": "Impossible d'épingler dans la mémoire d'équipe",
+  "channel_day_today": "Aujourd'hui",
+  "channel_day_yesterday": "Hier"
 }

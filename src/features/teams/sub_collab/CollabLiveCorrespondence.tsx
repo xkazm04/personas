@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown, Search } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -39,6 +39,24 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  */
 const DRAFT_PREFIX = 'personas.channel.draft.';
 const FILTER_PREFIX = 'personas.channel.filters.';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function sameLocalDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * Day-separator label: Today / Yesterday for the two most recent days
+ * (localized via the caller), otherwise a locale-formatted weekday + date —
+ * the same treatment the companion conversation uses.
+ */
+function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  if (sameLocalDay(d, now)) return todayLabel;
+  if (sameLocalDay(d, new Date(now.getTime() - ONE_DAY_MS))) return yesterdayLabel;
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
   const { t, tx } = useTranslation();
@@ -450,19 +468,33 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
               </button>
             </div>
           )}
-          {visible.map((item) => (
-            <CorrespondenceRow
-              key={item.id}
-              item={item}
-              personaIndex={personaIndex}
-              members={members}
-              parent={item.replyTo ? byId.get(item.replyTo) : undefined}
-              onReply={() => setReplyTarget(item)}
-              onOpenDetail={() => setDetailItem(item)}
-              onPin={() => void pinItem(item)}
-              pinned={pinnedIds.has(item.id)}
-            />
-          ))}
+          {visible.map((item, idx) => {
+            const prev = visible[idx - 1];
+            const daySep = !prev || !sameLocalDay(new Date(prev.at), new Date(item.at))
+              ? daySeparatorLabel(item.at, t.monitor.channel_day_today, t.monitor.channel_day_yesterday)
+              : null;
+            return (
+              <Fragment key={item.id}>
+                {daySep && (
+                  <div className="flex items-center gap-3 py-1.5" aria-hidden>
+                    <span className="flex-1 border-t border-border/60" />
+                    <span className="typo-caption text-foreground">{daySep}</span>
+                    <span className="flex-1 border-t border-border/60" />
+                  </div>
+                )}
+                <CorrespondenceRow
+                  item={item}
+                  personaIndex={personaIndex}
+                  members={members}
+                  parent={item.replyTo ? byId.get(item.replyTo) : undefined}
+                  onReply={() => setReplyTarget(item)}
+                  onOpenDetail={() => setDetailItem(item)}
+                  onPin={() => void pinItem(item)}
+                  pinned={pinnedIds.has(item.id)}
+                />
+              </Fragment>
+            );
+          })}
         </div>
         {/* Jump-to-latest pill — appears when scrolled away from the live edge;
             carries the unseen count when new messages land while reading history. */}

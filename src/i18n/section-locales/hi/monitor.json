@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "अपना जवाब लिखें…",
   "channel_pin_memory": "टीम मेमोरी के रूप में पिन करें",
   "channel_pinned_memory": "टीम मेमोरी में पिन किया गया",
-  "channel_pin_failed": "टीम मेमोरी में पिन नहीं हो सका"
+  "channel_pin_failed": "टीम मेमोरी में पिन नहीं हो सका",
+  "channel_day_today": "आज",
+  "channel_day_yesterday": "कल"
 }

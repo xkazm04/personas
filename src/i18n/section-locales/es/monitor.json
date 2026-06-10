@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "Escribe tu respuesta…",
   "channel_pin_memory": "Fijar como memoria del equipo",
   "channel_pinned_memory": "Fijado en la memoria del equipo",
-  "channel_pin_failed": "No se pudo fijar en la memoria del equipo"
+  "channel_pin_failed": "No se pudo fijar en la memoria del equipo",
+  "channel_day_today": "Hoy",
+  "channel_day_yesterday": "Ayer"
 }

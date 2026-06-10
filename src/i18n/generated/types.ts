@@ -216,6 +216,8 @@ export type Translations = {
     channel_mention_will_see: string;
     channel_composer_newline_hint: string;
     channel_composer_reply_placeholder: string;
+    channel_day_today: string;
+    channel_day_yesterday: string;
     channel_pin_memory: string;
     channel_pinned_memory: string;
     channel_pin_failed: string;

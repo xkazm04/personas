@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "اكتب ردك…",
   "channel_pin_memory": "تثبيت كذاكرة للفريق",
   "channel_pinned_memory": "تم التثبيت في ذاكرة الفريق",
-  "channel_pin_failed": "تعذّر التثبيت في ذاكرة الفريق"
+  "channel_pin_failed": "تعذّر التثبيت في ذاكرة الفريق",
+  "channel_day_today": "اليوم",
+  "channel_day_yesterday": "أمس"
 }

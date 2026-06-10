@@ -88,5 +88,7 @@
   "channel_composer_reply_placeholder": "写下你的回复…",
   "channel_pin_memory": "固定为团队记忆",
   "channel_pinned_memory": "已固定到团队记忆",
-  "channel_pin_failed": "无法固定到团队记忆"
+  "channel_pin_failed": "无法固定到团队记忆",
+  "channel_day_today": "今天",
+  "channel_day_yesterday": "昨天"
 }

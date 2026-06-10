@@ -210,6 +210,8 @@
     "channel_mention_will_see": "Mentioned — the team sees directives at the next step boundary",
     "channel_composer_newline_hint": "Shift+Enter for a new line",
     "channel_composer_reply_placeholder": "Write your reply…",
+    "channel_day_today": "Today",
+    "channel_day_yesterday": "Yesterday",
     "channel_pin_memory": "Pin as team memory",
     "channel_pinned_memory": "Pinned to team memory",
     "channel_pin_failed": "Couldn't pin to team memory",

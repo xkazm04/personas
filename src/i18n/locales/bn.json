@@ -160,7 +160,9 @@
     "channel_composer_reply_placeholder": "আপনার উত্তর লিখুন…",
     "channel_pin_memory": "টিম মেমোরি হিসেবে পিন করুন",
     "channel_pinned_memory": "টিম মেমোরিতে পিন করা হয়েছে",
-    "channel_pin_failed": "টিম মেমোরিতে পিন করা যায়নি"
+    "channel_pin_failed": "টিম মেমোরিতে পিন করা যায়নি",
+    "channel_day_today": "আজ",
+    "channel_day_yesterday": "গতকাল"
   },
   "common": {
     "loading": "লোড হচ্ছে...",

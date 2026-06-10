@@ -160,7 +160,9 @@
     "channel_composer_reply_placeholder": "Schreibe deine Antwort…",
     "channel_pin_memory": "Als Team-Gedächtnis anheften",
     "channel_pinned_memory": "Im Team-Gedächtnis angeheftet",
-    "channel_pin_failed": "Konnte nicht im Team-Gedächtnis angeheftet werden"
+    "channel_pin_failed": "Konnte nicht im Team-Gedächtnis angeheftet werden",
+    "channel_day_today": "Heute",
+    "channel_day_yesterday": "Gestern"
   },
   "common": {
     "loading": "Laden...",

@@ -160,7 +160,9 @@
     "channel_composer_reply_placeholder": "Napište odpověď…",
     "channel_pin_memory": "Připnout jako týmovou paměť",
     "channel_pinned_memory": "Připnuto do týmové paměti",
-    "channel_pin_failed": "Nepodařilo se připnout do týmové paměti"
+    "channel_pin_failed": "Nepodařilo se připnout do týmové paměti",
+    "channel_day_today": "Dnes",
+    "channel_day_yesterday": "Včera"
   },
   "common": {
     "loading": "Načítání...",
