@@ -26,19 +26,35 @@ The single tab stacks, top to bottom:
   (gated on a configured vault; otherwise a deep-link to the Obsidian Brain
   plugin), an **Add to scope** button, and **Review all in scope**.
 - **Scorecard** (the portfolio analytics): KPI cards for fleet value-delivered
-  rate, average verdict score, cost-per-value, and in-scope count; a 0–5
-  **score distribution** bar; and a **model efficiency** table. All from the
-  `get_director_portfolio` command, which finally surfaces the `ValueRollup`
-  that until now only ever reached the LLM payload.
+  rate, average verdict score, cost-per-value, and in-scope count; a **value
+  breakdown** bar (`ValueLeakBar`) that decomposes the headline value-rate into
+  the outcome taxonomy the rollup already carries — delivered / partial /
+  blocked / no-input / unassessed — so leaks are visible, not just the aggregate;
+  a 0–5 **score distribution** chart (`ScoreDistribution`) with per-band tooltips
+  and a dashed **portfolio-average marker**; a **model efficiency** table; and an
+  **Issues by category** rollup (`CategoryRollup`) tallying every coaching verdict
+  by category so the portfolio's issue mix reads at a glance. A **review-period
+  selector** (`PeriodSelect`, 7/30/90-day) in the subheader scopes the whole
+  scorecard by threading the `days` window into `get_director_portfolio` (default
+  30). All from the `get_director_portfolio` command, which surfaces the
+  `ValueRollup` that until now only ever reached the LLM payload.
 - **Coaching table** — one table consolidating what were three tabs (Roster +
   Attention + Reviews). Each in-scope agent is a row showing score · trend
   sparkline · value rate · **attention tags** · last review. Attention tags are
   the client-derived triage lenses (`sub_director/attention.ts`): awaiting first
-  review / low score ≤2 / declining trend / stale review >14d; an "only needs
-  attention" filter focuses triage. **Clicking a row opens a detail modal**
-  (`PersonaDetailModal`) with that agent's score trend, value signal, active
-  attention flags, and full **verdict history** (the Reviews surface, scoped to
-  the agent, expandable to rationale + suggested actions) plus Review-now.
+  review / low score ≤2 / declining trend / stale review >14d. The table header
+  carries an **attention-triage bar** (`AttentionTriageBar`) rolling those flags
+  up across the whole roster (N new · N low · N declining · N stale). Triage is a
+  **click-to-filter cockpit**: a triage chip filters the table to that flag, a
+  score-distribution bar filters to that score, and the header's "only flagged"
+  toggle filters to any-flagged — one shared facet at a time (`rosterFilter.ts`),
+  re-click to clear, with a clear-chip surfacing a facet whose trigger lives
+  elsewhere. **Clicking a row opens a detail modal** (`PersonaDetailModal`) with
+  that agent's score trend, value signal, active attention flags, and full
+  **verdict history** (the Reviews surface, scoped to the agent, expandable to
+  rationale + suggested actions) — each verdict tagged with its **category**
+  (prompt / health / triggers / credentials / memory / usefulness, via
+  `categoryMeta.ts`) and filterable by category — plus Review-now.
 
 **Add to scope** and **per-agent detail** are modals (`AddToScopeModal` /
 `PersonaDetailModal`) so the tab stays compact.
@@ -186,9 +202,12 @@ created in the first place.
   / `director_review_md` (migrations in `src-tauri/src/db/migrations/`).
 - Command center: `src/features/overview/sub_director/` —
   `DirectorCoachingTab.tsx` (the Overview sub-tab: subheader + scorecard +
-  table), `useDirector.ts` (shared data/actions hook), `attention.ts` (triage
-  lenses), `directorScore.ts` + `ScoreSparkline.tsx` (shared 0–5 score visual
-  language), `DirectorSection.tsx` (panel surface), `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal}.tsx`.
+  table), `useDirector.ts` (shared data/actions hook, owns the `period` window),
+  `attention.ts` (triage lenses + `attentionCounts` rollup), `directorScore.ts` +
+  `ScoreSparkline.tsx` (shared 0–5 score visual language), `categoryMeta.ts`
+  (verdict-category icon/tone/label palette), `rosterFilter.ts` (the shared
+  coaching-table facet filter), `DirectorSection.tsx` (panel surface),
+  `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal,ValueLeakBar,PeriodSelect,ScoreDistribution,AttentionTriageBar,CategoryRollup}.tsx`.
 - Shared primitive: `src/features/shared/components/display/StatCard.tsx` (KPI
   card, added with this feature).
 - Other UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx`
