@@ -1,216 +1,56 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ChevronRight,
-  GitBranch,
-  Loader2,
-  ScrollText,
-  Search,
-  Sparkles,
-  X,
-} from 'lucide-react';
+import { useState } from 'react';
+import { Layers, ScrollText } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import EmptyState, {
-  NoResults,
-} from '@/features/shared/components/feedback/EmptyState';
-import { useSystemStore } from '@/stores/systemStore';
+import { useDesignDecisions, type DecisionGroup } from './useDesignDecisions';
 import {
-  companionListDesignDecisions,
-  type CompanionDesignDecision,
-} from '@/api/companion';
-import { useCompanionStore } from '../companionStore';
-import DecisionsVariantLedger from './DecisionsVariantLedger';
-import DecisionsVariantAtlas from './DecisionsVariantAtlas';
-
-// ── Prototype scaffold (throwaway) ──────────────────────────────────
-// Tab switcher for A/B-ing directional variants of this panel. Removed
-// at consolidation when one direction wins; consumers are untouched
-// because the default export keeps its name and (empty) props shape.
-
-const PROTO_VARIANTS = ['baseline', 'ledger', 'atlas'] as const;
-type ProtoVariant = (typeof PROTO_VARIANTS)[number];
-const PROTO_STORAGE_KEY = 'proto.companion-decisions.variant';
-
-export default function DecisionsPanel() {
-  const { t } = useTranslation();
-  const [variant, setVariant] = useState<ProtoVariant>(() => {
-    const stored = localStorage.getItem(PROTO_STORAGE_KEY);
-    return PROTO_VARIANTS.includes(stored as ProtoVariant)
-      ? (stored as ProtoVariant)
-      : 'baseline';
-  });
-  const select = (next: ProtoVariant) => {
-    setVariant(next);
-    localStorage.setItem(PROTO_STORAGE_KEY, next);
-  };
-
-  const tabs: { id: ProtoVariant; label: string; hint: string }[] = [
-    {
-      id: 'baseline',
-      label: t.plugins.companion.decisions_variant_baseline,
-      hint: t.plugins.companion.decisions_variant_baseline_hint,
-    },
-    {
-      id: 'ledger',
-      label: t.plugins.companion.decisions_variant_ledger,
-      hint: t.plugins.companion.decisions_variant_ledger_hint,
-    },
-    {
-      id: 'atlas',
-      label: t.plugins.companion.decisions_variant_atlas,
-      hint: t.plugins.companion.decisions_variant_atlas_hint,
-    },
-  ];
-
-  return (
-    <div className="h-full flex flex-col">
-      <div
-        role="tablist"
-        aria-label={t.plugins.companion.decisions_variant_strip_label}
-        className="flex items-center gap-1.5 px-6 pt-3 shrink-0"
-      >
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            role="tab"
-            aria-selected={variant === tab.id}
-            onClick={() => select(tab.id)}
-            title={tab.hint}
-            className={`px-2.5 py-1 rounded-interactive border typo-caption font-medium transition-colors focus-ring ${
-              variant === tab.id
-                ? 'border-fuchsia-500/40 bg-fuchsia-500/15 text-foreground'
-                : 'border-foreground/10 bg-secondary/30 text-foreground hover:bg-secondary/50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex-1 min-h-0">
-        {variant === 'baseline' && <DecisionsBaseline />}
-        {variant === 'ledger' && <DecisionsVariantLedger />}
-        {variant === 'atlas' && <DecisionsVariantAtlas />}
-      </div>
-    </div>
-  );
-}
+  DecisionsEmpty,
+  DecisionsErrorRow,
+  DecisionsFilterInput,
+  DecisionsLoadingRow,
+  ScopeBanner,
+} from './sharedBlocks';
 
 /**
  * Retrospective view of every design decision Athena has logged across
- * sessions. Each row reads `<label>  →  <choice>` with rationale below;
- * a filter input narrows by `personaContext` (sent as the backend filter
- * AND used to highlight matches client-side for instant feedback).
+ * sessions — the "Atlas" layout (winner of the 2026-06-10 /prototype
+ * round; the old single-scroll baseline and the Ledger variant were
+ * retired at consolidation).
+ *
+ * Mental model: each persona context is a place, not a section of one
+ * long scroll. A left rail lists every context with its decision count;
+ * the right pane opens the selected context as a single spacious reading
+ * thread — choice as headline, rationale as full-width body — along a
+ * thin timeline. Scope-first navigation means the reading pane only ever
+ * holds one narrative at a time.
  *
  * Rows are immutable — there's no edit/delete UI here. To correct a
  * decision, the user asks Athena to re-emit a `show_decision_log` with
  * the updated entry; the original stays put as audit trail.
  *
- * Auto-scope: when `UnifiedBuildEntry` has a non-empty intent in the
- * system store's `activeBuildIntent` slot, the panel pre-fills the
- * filter to that intent on first mount and renders a "Currently
- * designing" banner with a "Show all" toggle. After the user clicks
- * "Show all" (or successfully launches the build), the panel reverts
- * to the unfiltered view.
+ * Data/interaction contract (server-side personaContext filter,
+ * auto-scope to the active build intent, "Unscoped" bucket, empty-state
+ * launchpad) lives in `useDesignDecisions`; the scope banner, filter
+ * input, and status blocks live in `sharedBlocks`.
  */
-function DecisionsBaseline() {
+export default function DecisionsPanel() {
   const { t } = useTranslation();
-  const activeBuildIntent = useSystemStore((s) => s.activeBuildIntent);
-  const setActiveBuildIntent = useSystemStore((s) => s.setActiveBuildIntent);
-  // Snapshot the build intent that was active when the panel first
-  // mounted so the banner persists even if the user later opens a new
-  // build slate (which would wipe activeBuildIntent on its empty mount
-  // sync). Reading via state-setter form so the initial value is
-  // captured exactly once.
-  const initialScopedIntentRef = useRef<string | null>(activeBuildIntent);
-  const [filter, setFilter] = useState(activeBuildIntent ?? '');
-  const [showAllOverride, setShowAllOverride] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [rows, setRows] = useState<CompanionDesignDecision[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const d = useDesignDecisions();
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
-  const scopedIntent = showAllOverride ? null : initialScopedIntentRef.current;
-  const showScopeBanner =
-    !!scopedIntent && filter.trim() === scopedIntent.trim();
-
-  // Server-side filter on the personaContext column. Empty filter → all
-  // rows. We refetch on every filter commit so reloads stay
-  // authoritative even if the user comes back hours later.
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    const trimmed = filter.trim();
-    const probe = trimmed.length > 0 ? trimmed : null;
-    companionListDesignDecisions(probe, 200)
-      .then((items) => {
-        if (cancelled) return;
-        setRows(items);
-        setLoading(false);
-      })
-      .catch((err: unknown) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : String(err));
-        setLoading(false);
-        silentCatch('companion_list_design_decisions')(err);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [filter]);
-
-  // Group by persona_context so a long retrospective doesn't blur into
-  // one undifferentiated stream. Decisions without a context get grouped
-  // under "Unscoped".
-  const grouped = useMemo(() => {
-    const buckets = new Map<string, CompanionDesignDecision[]>();
-    for (const row of rows) {
-      const key = row.personaContext?.trim() || '_unscoped';
-      const arr = buckets.get(key) ?? [];
-      arr.push(row);
-      buckets.set(key, arr);
-    }
-    return Array.from(buckets.entries()).map(([key, items]) => ({
-      key,
-      label:
-        key === '_unscoped'
-          ? t.plugins.companion.decisions_panel_unscoped
-          : key,
-      items,
-    }));
-  }, [rows, t]);
-
-  const handleShowAll = () => {
-    setShowAllOverride(true);
-    setFilter('');
-    // Also clear the slice so reopening the panel doesn't re-scope
-    // until the user starts a new build. (The build's still in flight,
-    // but the user explicitly said "show me everything.")
-    setActiveBuildIntent(null);
-  };
-
-  // Filtered-empty recovery: drop the filter (and pin show-all so the
-  // auto-scope doesn't snap it back on the next render).
-  const handleClearFilter = () => {
-    setShowAllOverride(true);
-    setFilter('');
-  };
-
-  // Empty-state launchpad: open Athena's chat with a first-person opener
-  // that asks her to walk the user through logging a design decision, then
-  // record it. Mirrors the WelcomeHero / CockpitPanel preset+open pattern so
-  // the empty Decisions view becomes the next obvious step instead of a dead
-  // end.
-  const askAthenaToLogDecision = () => {
-    useCompanionStore.getState().setPendingPrompt({
-      text: t.plugins.companion.decisions_panel_empty_prompt,
-      autoSend: true,
-    });
-    useCompanionStore.getState().setState('open');
-  };
+  // Reconcile inline: if the filter refetch dropped the selected context,
+  // fall back to "all" rather than rendering an empty pane.
+  const activeKey =
+    selectedKey && d.grouped.some((g) => g.key === selectedKey)
+      ? selectedKey
+      : null;
+  const visibleGroups = activeKey
+    ? d.grouped.filter((g) => g.key === activeKey)
+    : d.grouped;
+  const totalCount = d.rows.length;
 
   return (
-    <div className="flex flex-col gap-4 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-4 p-6 max-w-5xl mx-auto w-full">
       <header className="space-y-2">
         <h1 className="typo-h3 text-foreground/95 inline-flex items-center gap-2">
           <ScrollText className="w-5 h-5 text-fuchsia-400" />
@@ -220,119 +60,134 @@ function DecisionsBaseline() {
           {t.plugins.companion.decisions_panel_subtitle}
         </p>
       </header>
-      {showScopeBanner && scopedIntent && (
-        <div
-          className="flex items-start gap-2 rounded-card border border-fuchsia-500/30 bg-fuchsia-500/5 px-3 py-2"
-          data-testid="companion-decisions-scope-banner"
-        >
-          <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <div className="typo-caption text-foreground/90">
-              {t.plugins.companion.decisions_panel_currently_designing}
-            </div>
-            <div className="typo-body text-foreground truncate">
-              {scopedIntent}
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleShowAll}
-            className="shrink-0 inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground/90 rounded-interactive px-1.5 py-0.5 hover:bg-foreground/[0.06] focus-ring transition-colors"
-            data-testid="companion-decisions-show-all"
-          >
-            <X className="w-3 h-3" />
-            {t.plugins.companion.decisions_panel_show_all}
-          </button>
-        </div>
+
+      {d.showScopeBanner && d.scopedIntent && (
+        <ScopeBanner intent={d.scopedIntent} onShowAll={d.handleShowAll} />
       )}
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-foreground" />
-        <input
-          type="text"
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder={t.plugins.companion.decisions_panel_filter_placeholder}
-          className="w-full pl-8 pr-3 py-1.5 rounded-input bg-secondary/50 border border-foreground/15 typo-caption text-foreground/90 focus-ring"
-          data-testid="companion-decisions-filter"
+
+      <DecisionsFilterInput value={d.filter} onChange={d.setFilter} />
+
+      {d.loading && <DecisionsLoadingRow />}
+      {!d.loading && d.error && <DecisionsErrorRow message={d.error} />}
+      {!d.loading && !d.error && d.rows.length === 0 && (
+        <DecisionsEmpty
+          filtered={d.filter.trim().length > 0}
+          onClearFilter={d.handleClearFilter}
+          onAskAthena={d.askAthenaToLogDecision}
         />
-      </div>
-      {loading && (
-        <div className="flex items-center gap-2 typo-caption text-foreground">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          {t.plugins.companion.decisions_panel_loading}
-        </div>
       )}
-      {!loading && error && (
-        <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
-          {error}
-        </div>
-      )}
-      {!loading && !error && rows.length === 0 && (
-        filter.trim().length > 0 ? (
-          <NoResults
-            onReset={handleClearFilter}
-            subtitle={t.plugins.companion.decisions_panel_empty_filtered}
-          />
-        ) : (
-          <EmptyState
-            icon={ScrollText}
-            iconColor="text-fuchsia-400/80"
-            iconContainerClassName="bg-fuchsia-500/10 border-fuchsia-500/20"
-            title={t.plugins.companion.decisions_panel_empty_title}
-            subtitle={t.plugins.companion.decisions_panel_empty}
-            action={{
-              label: t.plugins.companion.decisions_panel_empty_cta,
-              onClick: askAthenaToLogDecision,
-              icon: Sparkles,
-            }}
-          />
-        )
-      )}
-      {!loading && rows.length > 0 && (
-        <div className="space-y-5">
-          {grouped.map((group) => (
-            <section
-              key={group.key}
-              className="space-y-2"
-              data-context-key={group.key}
-            >
-              <h2 className="typo-caption font-medium text-foreground uppercase tracking-wide">
-                {group.label}{' '}
-                <span className="text-foreground normal-case">
-                  ({group.items.length})
-                </span>
-              </h2>
-              <ol className="relative space-y-2 pl-4 border-l border-fuchsia-500/20">
-                {group.items.map((row) => (
-                  <li
-                    key={row.id}
-                    className="relative space-y-1 pl-2"
-                    data-decision-id={row.id}
-                  >
-                    <span
-                      aria-hidden
-                      className="absolute -left-[5px] top-2 w-2 h-2 rounded-full bg-fuchsia-500/45 ring-2 ring-fuchsia-500/20"
-                    />
-                    <div className="flex items-baseline gap-1.5 typo-body text-foreground/90">
-                      <span className="font-medium">{row.label}</span>
-                      <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
-                      <span>{row.choice}</span>
-                      <RelativeTime
-                        timestamp={row.decisionTimestamp ?? row.createdAt}
-                        className="text-foreground typo-caption ml-auto"
-                      />
-                    </div>
-                    <div className="flex items-baseline gap-1.5 typo-caption text-foreground">
-                      <GitBranch className="w-3 h-3 text-foreground shrink-0" />
-                      <span className="leading-relaxed">{row.rationale}</span>
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
+
+      {!d.loading && d.rows.length > 0 && (
+        <div className="flex items-start gap-6">
+          {/* Context rail */}
+          <nav
+            className="w-56 shrink-0 sticky top-2 space-y-0.5"
+            aria-label={t.plugins.companion.decisions_atlas_contexts}
+          >
+            <div className="flex items-center gap-1.5 px-2 pb-2">
+              <Layers className="w-3.5 h-3.5 text-fuchsia-400" />
+              <span className="typo-label text-foreground">
+                {t.plugins.companion.decisions_atlas_contexts}
+              </span>
+            </div>
+            <RailItem
+              label={t.plugins.companion.decisions_atlas_all_contexts}
+              count={totalCount}
+              active={activeKey === null}
+              onClick={() => setSelectedKey(null)}
+            />
+            {d.grouped.map((g) => (
+              <RailItem
+                key={g.key}
+                label={g.label}
+                count={g.items.length}
+                active={activeKey === g.key}
+                onClick={() => setSelectedKey(g.key)}
+              />
+            ))}
+          </nav>
+
+          {/* Reading pane */}
+          <div className="flex-1 min-w-0 space-y-8">
+            {visibleGroups.map((group) => (
+              <ContextThread key={group.key} group={group} />
+            ))}
+          </div>
         </div>
       )}
     </div>
+  );
+}
+
+function RailItem({
+  label,
+  count,
+  active,
+  onClick,
+}: {
+  label: string;
+  count: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border-l-2 text-left transition-colors focus-ring ${
+        active
+          ? 'border-l-fuchsia-400 bg-fuchsia-500/10 text-foreground'
+          : 'border-l-transparent text-foreground hover:bg-foreground/[0.05]'
+      }`}
+    >
+      <span className="typo-body truncate flex-1">{label}</span>
+      <span
+        className={`typo-caption shrink-0 ${
+          active ? 'text-fuchsia-300' : 'text-foreground'
+        }`}
+      >
+        {count}
+      </span>
+    </button>
+  );
+}
+
+function ContextThread({ group }: { group: DecisionGroup }) {
+  return (
+    <section data-context-key={group.key}>
+      <h2 className="typo-data font-semibold text-foreground truncate mb-3">
+        {group.label}
+      </h2>
+      <ol className="relative space-y-6 pl-5 border-l border-fuchsia-500/20">
+        {group.items.map((row) => (
+          <li
+            key={row.id}
+            data-decision-id={row.id}
+            className="relative space-y-1.5"
+          >
+            <span
+              aria-hidden
+              className="absolute -left-[27px] top-1.5 w-2.5 h-2.5 rounded-full bg-fuchsia-500/50 ring-2 ring-fuchsia-500/20"
+            />
+            <div className="flex items-baseline justify-between gap-3">
+              <span className="typo-label text-fuchsia-300/90 min-w-0 truncate">
+                {row.label}
+              </span>
+              <RelativeTime
+                timestamp={row.decisionTimestamp ?? row.createdAt}
+                className="typo-caption text-foreground shrink-0"
+              />
+            </div>
+            <div className="typo-body-lg font-medium text-foreground">
+              {row.choice}
+            </div>
+            <p className="typo-body text-foreground leading-relaxed">
+              {row.rationale}
+            </p>
+          </li>
+        ))}
+      </ol>
+    </section>
   );
 }
