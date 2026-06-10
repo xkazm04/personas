@@ -8,7 +8,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily } from '../sub_redRoom/useRedRoomFeed';
 import { payloadSummary } from './payloadView';
-import { useTeamChannel, parseDeliveries } from './useTeamChannel';
+import { useTeamChannel, parseDeliveries, CHANNEL_DRAFT_PREFIX } from './useTeamChannel';
 import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
   type ChannelMember,
@@ -37,7 +37,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * inline team-review intervention; pending manual reviews surface via the
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
-const DRAFT_PREFIX = 'personas.channel.draft.';
+const DRAFT_PREFIX = CHANNEL_DRAFT_PREFIX;
 const FILTER_PREFIX = 'personas.channel.filters.';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -14450,6 +14450,7 @@ export type Translations = {
       workspace_saved: string;
       workspace_save_failed: string;
       workspace_inherit: string;
+      unsent_draft_hint: string;
       workspace_unsaved_title: string;
       workspace_unsaved_body: string;
       workspace_unsaved_discard: string;

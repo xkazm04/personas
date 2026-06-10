@@ -13694,7 +13694,8 @@
       "workspace_unsaved_title": "ワークスペースの未保存の変更",
       "workspace_unsaved_body": "ワークスペース設定を編集しましたが保存していません。離れて変更を破棄しますか？",
       "workspace_unsaved_discard": "変更を破棄",
-      "workspace_unsaved_stay": "編集を続ける"
+      "workspace_unsaved_stay": "編集を続ける",
+      "unsent_draft_hint": "未送信のチャンネル下書き"
     },
     "memory_created": "メモリーをチーム台帳に保存しました",
     "memory_updated": "メモリーを更新しました",

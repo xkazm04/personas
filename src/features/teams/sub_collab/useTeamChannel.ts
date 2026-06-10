@@ -18,6 +18,18 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 const PAGE = 60;
 const POLL_MS = 15_000;
 
+/** Per-team composer-draft storage key prefix (see CollabLiveCorrespondence). */
+export const CHANNEL_DRAFT_PREFIX = 'personas.channel.draft.';
+
+/** Whether a team has an unsent channel draft persisted locally. */
+export function hasUnsentDraft(teamId: string): boolean {
+  try {
+    return !!localStorage.getItem(CHANNEL_DRAFT_PREFIX + teamId)?.trim();
+  } catch {
+    return false;
+  }
+}
+
 export interface DirectiveDelivery {
   step_id: string;
   persona_id: string;

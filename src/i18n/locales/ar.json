@@ -13694,7 +13694,8 @@
       "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة",
       "workspace_unsaved_body": "لقد عدّلت إعدادات مساحة العمل دون حفظها. هل تريد المغادرة وتجاهل التغييرات؟",
       "workspace_unsaved_discard": "تجاهل التغييرات",
-      "workspace_unsaved_stay": "متابعة التحرير"
+      "workspace_unsaved_stay": "متابعة التحرير",
+      "unsent_draft_hint": "مسودة قناة غير مرسلة"
     },
     "memory_created": "تم حفظ الذاكرة في سجل الفريق",
     "memory_updated": "تم تحديث الذاكرة",

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Users, Zap, Trash2, ArrowRight, Layers } from 'lucide-react';
+import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
@@ -75,6 +77,15 @@ export default function TeamList() {
 
   const sortedTeams = useMemo(
     () => [...teams].sort((a, b) => a.name.localeCompare(b.name)),
+    [teams],
+  );
+
+  // Teams with an unsent channel draft persisted locally — surfaced as a
+  // small pen hint on the row so a half-written directive isn't forgotten.
+  // localStorage is read on mount/teams-change; the list remounts on
+  // navigation, which is when drafts can have changed.
+  const draftTeamIds = useMemo(
+    () => new Set(teams.filter((tm) => hasUnsentDraft(tm.id)).map((tm) => tm.id)),
     [teams],
   );
 
@@ -179,6 +190,7 @@ export default function TeamList() {
                 key={team.id}
                 team={team}
                 counts={teamCounts[team.id]}
+                hasDraft={draftTeamIds.has(team.id)}
                 personaIndex={personaIndex}
                 confirmingDisband={confirmDisbandId === team.id}
                 onOpen={() => selectTeam(team.id)}
@@ -202,6 +214,7 @@ type TeamStudioStrings = ReturnType<typeof useTranslation>['t']['pipeline']['tea
 interface TeamRowProps {
   team: PersonaTeam;
   counts: { members: number; connections: number } | undefined;
+  hasDraft: boolean;
   personaIndex: ReturnType<typeof usePersonaIndex>;
   confirmingDisband: boolean;
   onOpen: () => void;
@@ -214,6 +227,7 @@ interface TeamRowProps {
 function TeamRow({
   team,
   counts,
+  hasDraft,
   personaIndex,
   confirmingDisband,
   onOpen,
@@ -233,8 +247,15 @@ function TeamRow({
           {team.icon ? <span className="typo-body leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
         </span>
         <span className="min-w-0">
-          <span className="block typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
-            {team.name}
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
+              {team.name}
+            </span>
+            {hasDraft && (
+              <Tooltip content={ts.unsent_draft_hint}>
+                <PenLine className="w-3 h-3 text-amber-300/80 flex-shrink-0" aria-label={ts.unsent_draft_hint} />
+              </Tooltip>
+            )}
           </span>
           {team.description && (
             <span className="block typo-caption text-foreground truncate">{team.description}</span>
