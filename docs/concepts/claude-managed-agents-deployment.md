@@ -1,6 +1,6 @@
 # Claude Managed Agents as a deployment target
 
-**Status:** Design (2026-06-10). Spike control-plane verified live; inference half pending account top-up — see [Spike results](#spike-results).
+**Status:** Design (2026-06-10). **Spike fully verified live** — all three risks (secret isolation, host-side credential pattern, MCP wiring) green; see [Spike results](#spike-results).
 **Owner direction:** add a third `DeployTarget` (`'claude'`) backed by Anthropic's Claude Managed Agents (CMA) API, positioned as the zero-infrastructure cloud deployment default. The existing self-hosted orchestrator (`cloud`) and GitLab targets stay.
 
 ---
@@ -79,7 +79,8 @@ Key loop rules (verified against SDK client patterns):
 
 - **Stream-first, then send** the kickoff — the stream has no replay.
 - Reconnect = re-open stream + `GET /events` + dedupe by event id (SSE has no replay; a dropped stream while a custom tool is pending deadlocks the session otherwise).
-- Break only on `status_terminated` or `status_idle` with `stop_reason.type != "requires_action"`; `requires_action` means *we* owe a tool result.
+- Break only on `status_terminated` or `status_idle` with `stop_reason.type != "requires_action"`; `requires_action` means *we* owe a tool result **or a tool confirmation**.
+- **MCP tool calls arrive with `evaluated_permission: "ask"` by default** (observed live, spike v3): the session idles on `requires_action` with `stop_reason.event_ids` pointing at the MCP tool-use until the client sends `user.tool_confirmation {tool_use_id, result: "allow"|"deny"}`. Without handling this, the session hangs indefinitely — spike v1/v2 stalled exactly here. This is also the natural hook for per-persona tool-approval policies (auto-allow for trusted connectors, surface-to-user for sensitive ones); `permission_policy: {type: "always_allow"}` on the `mcp_toolset` config should remove the prompt for trusted servers.
 - Post-idle status-write race: poll `sessions.retrieve` until `status != running` before archive.
 - One environment per workspace, created lazily and reused — environments are rate-limited to 60 RPM / 5 concurrent ops org-wide; sessions are 300 RPM create. Never create environments per run.
 
@@ -139,15 +140,13 @@ CMA has no cron. The desktop's existing trigger/scheduler engine remains the sou
 
 ## Spike results
 
-Spike artifacts: `tmp/cma-spike/` (gitignored). Run 2026-06-10 against the live API, real persona payload (*PR Security Guardian*, claude-sonnet-4-6, structured prompt + tools from the app DB):
+Spike artifacts: `tmp/cma-spike/` (gitignored), `spike.mjs` re-runnable. Final run 2026-06-10 (session `sesn_01QBQXxD2B7Pqj5VSWYN7jZy`) against the live API with a real persona payload (*PR Security Guardian*, claude-sonnet-4-6, structured prompt + tools from the app DB). End-to-end: **~50 s, 4 model requests, $0.052** (estimated from accumulated `model_usage`; matched `session.usage` exactly).
 
-| Step | Result |
+| Risk | Result |
 | --- | --- |
-| `environments.create` (cloud) | ✅ `env_01L4rixvsf3gfye3q7qinAp9` |
-| `agents.create` from persona payload (system from structured_prompt, MCP server + custom tool declared) | ✅ `agent_01Rqe4Lorcu6fjxN6gfCVumU` v1 |
-| `sessions.create` + SSE stream + kickoff | ✅ `sesn_01SZhV3fE4KfwC9XPSa6NHQV` |
-| Inference | ❌ `billing_error` (account unfunded) surfaced cleanly as `session.error` + `status_idle(retries_exhausted)` — exactly the failure shape we'd map to deployment `failed` |
-| Usage fields (`span.model_request_end.model_usage`, `session.usage`) | ✅ present (zero-valued) |
-| Cleanup (archive session, archive agent, delete environment) | ✅ |
-
-Pending on top-up: sandbox env secret probe, custom-tool credential round-trip, live MCP call, non-zero usage accumulation.
+| Control plane (env/agent/session CRUD, SSE, archive/delete cleanup) | ✅ all green across 3 runs |
+| **(a) Secret isolation** — agent ran `env \| sort` in its sandbox | ✅ zero credential-shaped vars; only `IS_SANDBOX=yes` marker. Nothing to leak |
+| **(a) Host-side credential pattern** — custom tool `github_list_open_prs` | ✅ full round-trip: `agent.custom_tool_use` → idle `requires_action` naming the event → `user.custom_tool_result` from host → agent resumed and summarized. Credential never left the desktop |
+| **(b) MCP wiring** — DeepWiki `ask_question` | ✅ succeeded **after** `user.tool_confirmation(allow)` — MCP calls default to `evaluated_permission: "ask"`; unhandled, the session hangs (cost spike v1/v2 their runs). Runner must implement the confirmation loop |
+| **(c) Usage/cost** — `span.model_request_end.model_usage` + `sessions.retrieve().usage` | ✅ per-request tokens incl. cache creation/read; accumulated total matched API session totals exactly — budget caps enforceable locally |
+| Billing-failure shape (run 1, unfunded account) | ✅ surfaced as `session.error {type: billing_error}` + `status_idle(retries_exhausted)` — maps directly to deployment `failed` |
