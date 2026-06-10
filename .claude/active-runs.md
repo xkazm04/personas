@@ -50,13 +50,6 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: src/features/plugins/langfuse/ (deleted), src/features/plugins/*.tsx, src/api/langfuse.ts, src/stores/langfuseStackStore.ts, src-tauri/src/langfuse/ (deleted), src-tauri/src/commands/infrastructure/, src-tauri/src/engine/, src/lib/bindings/, src/i18n/, docs
 - Note: 163 files, −12,836 lines. Also fixed pre-existing lib-test fixture breakage (DevIdea.priority, CreateManualReviewInput assignment/step ids) + committed binding-drift regens (DevIdea, TeamChannel*, etc.). Repaired corrupted node_modules (.pnpm hoist dir + @babel/runtime) via pnpm install --force + prebuild-install for better-sqlite3. Verified: app boots on :17320, langfuse tab rejected.
 
-### prototype — Chain Studio canvas-less redesign (sub_studio)
-- Started: 2026-06-10 11:30
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout)
-- Paths: src/features/triggers/sub_studio/, docs/features/events/README.md
-- Note: /prototype directional variants for source→target picking without React Flow canvas; tab switcher in TriggerStudioCanvas.tsx; variants as siblings under sub_studio/. Same session also carries the earlier uncommitted Lineage-section removal.
-
 ### perf — nav-walk refresh + perf investigation
 - Started: 2026-06-10 09:35
 - Status: completed (commits: 134e8bcad, e8a561d89)
@@ -618,6 +611,9 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### prototype — Chain Studio Switchboard — completed (commit: f3de2b6da)
+- 2026-06-10: /prototype 2 rounds. Round 1 (f08b1242c): Switchboard (patch-bay rails) + Composer (sentence builder) variants behind tab switcher, shared draft model + stat-rich option cards. Round 2 / consolidation (f3de2b6da): user picked Switchboard as production baseline; Composer AND the React Flow canvas deleted (nodes/edges/palette/hook), triggers.studio i18n rewritten (stale canvas+gate keys removed from en + 13 locales), docs/events README updated. Earlier same-session Lineage removal got swept into checkpoint 0652eb88f + Langfuse/friend-teams commits by concurrent sessions (work intact on branch).
 
 ### friend — knowledge (overview/sub_knowledge) — MERGED TO MASTER 2026-06-10 (02ef46f53)
 - 5 commits `2209be585..7e2ad63ea`, merged into master via `git merge` (merge commit 02ef46f53) — full-branch merge per user, which also advanced master with the 52 vibeman/audit-2026-06-09 commits it was based on. Sole conflict = generated `enSectionStrings.ts`, resolved by regen from merged en.json; tsc clean on merged tree. Worktree + branch `worktree-friend-knowledge-083756` REMOVED (junctions rmdir'd first). 35 files, +467/−67.
