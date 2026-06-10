@@ -15261,6 +15261,9 @@
     "period_label": "レビュー期間",
     "period_days": "{count}日",
     "distribution_band": "スコア {score}：{count} 体のエージェント",
-    "avg_label": "平均"
+    "avg_label": "平均",
+    "distribution_band_short": "スコア {score}",
+    "filter_empty": "このフィルターに一致するエージェントはありません",
+    "triage_chip_hint": "テーブルをこれらのエージェントに絞り込む"
   }
 }

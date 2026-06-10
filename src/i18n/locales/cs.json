@@ -15261,6 +15261,9 @@
     "period_label": "Období hodnocení",
     "period_days": "{count}d",
     "distribution_band": "Skóre {score}: {count} agentů",
-    "avg_label": "prům."
+    "avg_label": "prům.",
+    "distribution_band_short": "Skóre {score}",
+    "filter_empty": "Tomuto filtru neodpovídají žádní agenti",
+    "triage_chip_hint": "Filtrovat tabulku na tyto agenty"
   }
 }

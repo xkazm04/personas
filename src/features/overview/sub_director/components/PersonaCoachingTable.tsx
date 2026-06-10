@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { X, ChevronRight, ListFilter } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
 import { attentionFlags, attentionRank, primaryFlag, FLAG_TONE, type AttentionFlag } from '../attention';
+import { rosterRowMatches, toggleFilter, type RosterFilter } from '../rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
 // Shared column template so the header and every row line up.
@@ -25,13 +26,17 @@ export function PersonaCoachingTable({
   roster,
   onSelect,
   onRemove,
+  filter,
+  onFilterChange,
 }: {
   roster: DirectorRosterEntry[];
   onSelect: (entry: DirectorRosterEntry) => void;
   onRemove: (personaId: string) => void;
+  /** Active facet filter, shared with the triage bar + score distribution. */
+  filter: RosterFilter | null;
+  onFilterChange: (filter: RosterFilter | null) => void;
 }) {
-  const { t } = useTranslation();
-  const [onlyFlagged, setOnlyFlagged] = useState(false);
+  const { t, tx } = useTranslation();
   const reduceMotion = useReducedMotion();
   const now = Date.now();
 
@@ -50,7 +55,7 @@ export function PersonaCoachingTable({
 
   const rows = useMemo(() => {
     const decorated = roster.map((r) => ({ r, flags: attentionFlags(r, now) }));
-    const filtered = onlyFlagged ? decorated.filter((d) => d.flags.length > 0) : decorated;
+    const filtered = decorated.filter((d) => rosterRowMatches(filter, d.flags, d.r.latestScore));
     // Flagged first (by urgency), then by ascending score, then name.
     return filtered.sort((a, b) => {
       const ra = attentionRank(a.flags);
@@ -61,12 +66,13 @@ export function PersonaCoachingTable({
       if (sa !== sb) return sa - sb;
       return a.r.name.localeCompare(b.r.name);
     });
-  }, [roster, onlyFlagged, now]);
+  }, [roster, filter, now]);
 
   const flaggedCount = useMemo(
     () => roster.filter((r) => attentionFlags(r, now).length > 0).length,
     [roster, now],
   );
+  const onlyFlagged = filter?.type === 'flagged';
 
   return (
     <div>
@@ -80,7 +86,7 @@ export function PersonaCoachingTable({
         <span className="text-right">{t.director.roster_col_last}</span>
         <button
           type="button"
-          onClick={() => setOnlyFlagged((v) => !v)}
+          onClick={() => onFilterChange(toggleFilter(filter, { type: 'flagged' }))}
           disabled={flaggedCount === 0}
           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 focus-ring ${
             onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
@@ -92,7 +98,23 @@ export function PersonaCoachingTable({
         </button>
       </div>
 
+      {/* Active non-flagged facet (from a triage chip or score band) — show what's
+          filtering and a one-click clear, since its trigger lives elsewhere. */}
+      {filter && filter.type !== 'flagged' && (
+        <button
+          type="button"
+          onClick={() => onFilterChange(null)}
+          className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-pill typo-caption text-foreground bg-secondary/40 hover:bg-secondary/60 transition-colors focus-ring"
+        >
+          {filter.type === 'flag' ? FLAG_LABEL[filter.flag] : tx(t.director.distribution_band_short, { score: filter.score })}
+          <X className="w-3 h-3" />
+        </button>
+      )}
+
       <div className="mt-1 space-y-0.5">
+        {rows.length === 0 && (
+          <p className="typo-caption text-foreground py-4 text-center">{t.director.filter_empty}</p>
+        )}
         {rows.map(({ r, flags }, i) => {
           const tone = r.latestScore != null ? scoreTone(r.latestScore) : null;
           const pf = primaryFlag(flags);

@@ -22,5 +22,8 @@
   "period_label": "পর্যালোচনার সময়কাল",
   "period_days": "{count} দিন",
   "distribution_band": "স্কোর {score}: {count} এজেন্ট",
-  "avg_label": "গড়"
+  "avg_label": "গড়",
+  "distribution_band_short": "স্কোর {score}",
+  "filter_empty": "এই ফিল্টারের সাথে কোনো এজেন্ট মেলে না",
+  "triage_chip_hint": "টেবিলকে এই এজেন্টগুলিতে ফিল্টার করুন"
 }

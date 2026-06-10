@@ -15261,6 +15261,9 @@
     "period_label": "فترة المراجعة",
     "period_days": "{count} يوم",
     "distribution_band": "الدرجة {score}: {count} وكلاء",
-    "avg_label": "المتوسط"
+    "avg_label": "المتوسط",
+    "distribution_band_short": "الدرجة {score}",
+    "filter_empty": "لا يوجد وكلاء يطابقون هذه التصفية",
+    "triage_chip_hint": "تصفية الجدول إلى هؤلاء الوكلاء"
   }
 }

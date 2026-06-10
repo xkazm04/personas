@@ -3470,7 +3470,10 @@ export type Translations = {
     period_label: string;
     period_days: string;
     distribution_band: string;
+    distribution_band_short: string;
     avg_label: string;
+    filter_empty: string;
+    triage_chip_hint: string;
   };
   vault: {
     title: string;

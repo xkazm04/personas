@@ -22,5 +22,8 @@
   "period_label": "Periode tinjauan",
   "period_days": "{count}h",
   "distribution_band": "Skor {score}: {count} agen",
-  "avg_label": "rata-rata"
+  "avg_label": "rata-rata",
+  "distribution_band_short": "Skor {score}",
+  "filter_empty": "Tidak ada agen yang cocok dengan filter ini",
+  "triage_chip_hint": "Saring tabel ke agen-agen ini"
 }

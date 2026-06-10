@@ -15261,6 +15261,9 @@
     "period_label": "Période d'évaluation",
     "period_days": "{count}j",
     "distribution_band": "Score {score} : {count} agents",
-    "avg_label": "moy."
+    "avg_label": "moy.",
+    "distribution_band_short": "Score {score}",
+    "filter_empty": "Aucun agent ne correspond à ce filtre",
+    "triage_chip_hint": "Filtrer le tableau sur ces agents"
   }
 }

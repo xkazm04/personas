@@ -2,20 +2,26 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import { scoreTone, toneFill } from '../directorScore';
+import { toggleFilter, type RosterFilter } from '../rosterFilter';
 import type { DirectorScoreBand } from '@/api/director';
 
 /**
  * Score-distribution histogram — one bar per 0–5 band, tinted by its score
- * tone. Each band carries a tooltip with its exact count, and a dashed marker
- * line + label pins where the portfolio average falls across the bands, so the
- * distribution reads against its own mean at a glance.
+ * tone. Each band carries a tooltip with its exact count and, when populated,
+ * filters the coaching table to that score on click (re-click to clear). A
+ * dashed marker line + label pins where the portfolio average falls across the
+ * bands, so the distribution reads against its own mean at a glance.
  */
 export function ScoreDistribution({
   bands,
   avgScore,
+  filter,
+  onSelect,
 }: {
   bands: DirectorScoreBand[];
   avgScore: number | null;
+  filter: RosterFilter | null;
+  onSelect: (filter: RosterFilter | null) => void;
 }) {
   const { t, tx } = useTranslation();
   const total = bands.reduce((s, b) => s + b.count, 0);
@@ -44,9 +50,18 @@ export function ScoreDistribution({
       {bands.map((band, i) => {
         const tone = scoreTone(band.score);
         const hPct = (band.count / maxBand) * 100;
+        const active = filter?.type === 'score' && filter.score === band.score;
         return (
           <Tooltip key={band.score} content={tx(t.director.distribution_band, { score: band.score, count: band.count })}>
-            <div className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end cursor-default">
+            <button
+              type="button"
+              disabled={band.count === 0}
+              onClick={() => onSelect(toggleFilter(filter, { type: 'score', score: band.score }))}
+              aria-pressed={active}
+              className={`flex-1 flex flex-col items-center gap-1.5 h-full justify-end rounded transition-colors focus-ring ${
+                band.count === 0 ? 'cursor-default' : 'cursor-pointer'
+              } ${active ? 'bg-secondary/50' : band.count > 0 ? 'hover:bg-secondary/25' : ''}`}
+            >
               <span className="typo-caption text-foreground tabular-nums">{band.count}</span>
               <div className="w-full flex-1 flex items-end">
                 <div
@@ -63,7 +78,7 @@ export function ScoreDistribution({
               <span className="typo-caption tabular-nums px-1.5 rounded font-medium" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
                 {band.score}
               </span>
-            </div>
+            </button>
           </Tooltip>
         );
       })}

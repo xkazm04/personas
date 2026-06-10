@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
@@ -22,6 +22,7 @@ import { ValueLeakBar } from './components/ValueLeakBar';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ScoreDistribution } from './components/ScoreDistribution';
 import { AttentionTriageBar } from './components/AttentionTriageBar';
+import type { RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -41,6 +42,14 @@ export default function DirectorCoachingTab() {
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<DirectorRosterEntry | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter | null>(null);
+
+  // A facet (e.g. score-band 5) can become stale when the window changes and
+  // that band empties — clear the filter on period change so it never points at
+  // an absent facet, leaving a confusing empty table behind a live clear-chip.
+  useEffect(() => {
+    setRosterFilter(null);
+  }, [d.period]);
 
   const p = d.portfolio;
   const inScope = p?.inScope ?? 0;
@@ -178,14 +187,16 @@ export default function DirectorCoachingTab() {
             </div>
 
             {/* Scorecard */}
-            <Scorecard d={d} />
+            <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} />
 
             {/* Coaching table */}
-            <DirectorSection label={t.director.table_title} icon={Star} action={<AttentionTriageBar roster={p.roster} />}>
+            <DirectorSection label={t.director.table_title} icon={Star} action={<AttentionTriageBar roster={p.roster} filter={rosterFilter} onSelect={setRosterFilter} />}>
               <PersonaCoachingTable
                 roster={p.roster}
                 onSelect={setSelected}
                 onRemove={(id) => d.setStarred(id, false)}
+                filter={rosterFilter}
+                onFilterChange={setRosterFilter}
               />
             </DirectorSection>
           </div>
@@ -202,7 +213,15 @@ export default function DirectorCoachingTab() {
 }
 
 /** Portfolio scorecard — KPIs + score distribution + model efficiency. */
-function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
+function Scorecard({
+  d,
+  filter,
+  onFilterChange,
+}: {
+  d: ReturnType<typeof useDirector>;
+  filter: RosterFilter | null;
+  onFilterChange: (filter: RosterFilter | null) => void;
+}) {
   const { t, tx } = useTranslation();
   const p = d.portfolio!;
   const { rollup } = p;
@@ -252,7 +271,7 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
-          <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} />
+          <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} filter={filter} onSelect={onFilterChange} />
         </DirectorSection>
 
         {rollup.models.length > 0 && (

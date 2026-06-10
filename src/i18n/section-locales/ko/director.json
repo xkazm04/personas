@@ -22,5 +22,8 @@
   "period_label": "검토 기간",
   "period_days": "{count}일",
   "distribution_band": "점수 {score}: 에이전트 {count}개",
-  "avg_label": "평균"
+  "avg_label": "평균",
+  "distribution_band_short": "점수 {score}",
+  "filter_empty": "이 필터와 일치하는 에이전트가 없습니다",
+  "triage_chip_hint": "테이블을 이 에이전트로 필터링"
 }

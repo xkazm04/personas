@@ -15261,6 +15261,9 @@
     "period_label": "Bewertungszeitraum",
     "period_days": "{count}T",
     "distribution_band": "Bewertung {score}: {count} Agenten",
-    "avg_label": "Ø"
+    "avg_label": "Ø",
+    "distribution_band_short": "Bewertung {score}",
+    "filter_empty": "Keine Agenten entsprechen diesem Filter",
+    "triage_chip_hint": "Tabelle auf diese Agenten filtern"
   }
 }

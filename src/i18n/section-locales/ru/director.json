@@ -22,5 +22,8 @@
   "period_label": "Период обзора",
   "period_days": "{count}д",
   "distribution_band": "Оценка {score}: {count} агентов",
-  "avg_label": "сред."
+  "avg_label": "сред.",
+  "distribution_band_short": "Оценка {score}",
+  "filter_empty": "Нет агентов, соответствующих этому фильтру",
+  "triage_chip_hint": "Отфильтровать таблицу по этим агентам"
 }

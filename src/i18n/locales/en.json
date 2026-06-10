@@ -3464,7 +3464,10 @@
     "period_label": "Review period",
     "period_days": "{count}d",
     "distribution_band": "Score {score}: {count} agents",
-    "avg_label": "avg"
+    "distribution_band_short": "Score {score}",
+    "avg_label": "avg",
+    "filter_empty": "No agents match this filter",
+    "triage_chip_hint": "Filter the table to these agents"
   },
   "vault": {
     "title": "Vault",
