@@ -45,7 +45,7 @@ timestamp — the next session can recognize it as abandoned.
 
 ### prototype — companion Decisions panel (Atlas wins) + settings typography ramp
 - Started: 2026-06-10 13:41
-- Status: completed (commits: 48d86a4e4 voice themed selects, 00a5b7ff6 proto round 1, 78453de66 Atlas consolidation, c8780125e settings type ramp)
+- Status: completed (commits: 48d86a4e4 voice themed selects, 00a5b7ff6 proto round 1, 78453de66 Atlas consolidation, c8780125e settings type ramp, f320889f5 typo-title token + global muted typo-caption)
 - Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants had to render in the user's live dev server)
 - Paths: src/features/plugins/companion/{sub_decisions,sub_voice,sub_setup}/, src/features/shared/components/forms/{ThemedSelect,SettingRow}.tsx, src/i18n/locales/en.json (plugins.companion keys)
 - Note: Decisions panel = Atlas (context rail + reading thread; useDesignDecisions hook + sharedBlocks survive); Ledger/baseline/switcher deleted. VoicePanel selects → ThemedSelect filterable (new hideSearch/disabled). SettingRow description tier fixed once (typo-caption/normal /85) — inherited by companion + obsidian-brain panels; hand-rolled toggle rows (Setup tracking, Voice enable) converted to SettingRow. My en.json edits + regens were checkpoint-committed by a concurrent session (f4a6b9aae) — content correct, attribution mislabeled.
