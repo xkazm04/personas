@@ -104,13 +104,6 @@
     "restart": "Neu starten",
     "start_tour": "Tour starten",
     "steps_count": "{count} Schritte",
-    "tricks_tips": "Tricks & Tipps",
-    "guides_count": "{count} Anleitungen",
-    "how_to_use": "Verwendung",
-    "pro_tip": "Profi-Tipp: ",
-    "cat_agent_craft": "Agenten-Craft",
-    "cat_observability": "Observability & Ereignisse",
-    "cat_platform": "Plattform & Einrichtung",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

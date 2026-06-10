@@ -104,13 +104,6 @@
     "restart": "Начать заново",
     "start_tour": "Начать тур",
     "steps_count": "{count} шагов",
-    "tricks_tips": "Советы и приёмы",
-    "guides_count": "{count} руководств",
-    "how_to_use": "Как использовать",
-    "pro_tip": "Совет: ",
-    "cat_agent_craft": "Создание агентов",
-    "cat_observability": "Мониторинг и события",
-    "cat_platform": "Платформа и настройка",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

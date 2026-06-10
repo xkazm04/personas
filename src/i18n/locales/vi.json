@@ -561,13 +561,6 @@
       "restart": "Bắt đầu lại",
       "start_tour": "Bắt đầu tham quan",
       "steps_count": "{count} bước",
-      "tricks_tips": "Mẹo & thủ thuật",
-      "guides_count": "{count} hướng dẫn",
-      "how_to_use": "Cách sử dụng",
-      "pro_tip": "Mẹo chuyên gia: ",
-      "cat_agent_craft": "Xây dựng tác nhân",
-      "cat_observability": "Quan sát & Sự kiện",
-      "cat_platform": "Nền tảng & Cài đặt",
       "tour_steps_label": "What you'll learn"
     },
     "setup_stepper": {

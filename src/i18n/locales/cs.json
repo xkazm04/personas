@@ -561,13 +561,6 @@
       "restart": "Restartovat",
       "start_tour": "Spustit prohlídku",
       "steps_count": "{count} kroků",
-      "tricks_tips": "Tipy a triky",
-      "guides_count": "{count} návodů",
-      "how_to_use": "Jak používat",
-      "pro_tip": "Tip odborníka: ",
-      "cat_agent_craft": "Tvorba agentů",
-      "cat_observability": "Pozorovatelnost a události",
-      "cat_platform": "Platforma a nastavení",
       "tour_steps_label": "What you'll learn"
     },
     "setup_stepper": {
