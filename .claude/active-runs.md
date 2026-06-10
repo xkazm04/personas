@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — obsidian-brain: guided tour (Learning hub)
+- Started: 2026-06-10 (worktree worktree-brain-tour off vibeman/audit-2026-06-09)
+- Status: completed (merge: 8f0531e74; commit 958cf66a7)
+- Branch: merged into vibeman/audit-2026-06-09; worktree + branch removed
+- Paths: src/stores/slices/system/tourSlice.ts, src/features/onboarding/{README.md,components/GuidedTour.tsx,components/tourConstants.ts}, src/features/home/sub_learning/data.ts, src/features/plugins/obsidian-brain/ (ObsidianBrainPage dynamic panel testid + SetupPanel anchors/emit), scripts/docs/feature-doc-map.json, docs/features/{onboarding.md,plugins/brain/README.md}
+- Note: new 'obsidian-brain' tour — 8 steps across all Brain tabs; obsidian_available probe auto-completes the install step (install guidance + ack fallback); SetupPanel emits tour:obsidian-vault-connected on save (auto when already connected); fourth nav setter setObsidianBrainTab (opens plugin surface first); memory-dimensions step (curation loop / obsidian_memory connector / knowledge mirror / Director brain / Revitalize). Validated: tsc + eslint clean in worktree, tourSlice+eventBridge vitest (11) pass, check-doc-sync tests (30) pass. Main-tree tsc at merge time showed transient errors from a concurrent session's in-flight sub_studio edits (their scope, changing between runs) — not introduced by this merge.
+
 ### feature — obsidian-brain: Revitalize runs history
 - Started: 2026-06-10 (worktree worktree-revitalize-history off vibeman/audit-2026-06-09)
 - Status: completed (merge: ec8baaf40; commit 66afa8406)
