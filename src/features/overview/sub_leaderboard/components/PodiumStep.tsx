@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Crown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 import { headlineScore, type RankKey } from '../libs/leaderboardRanking';
@@ -92,9 +92,27 @@ export function PodiumStep({ entry, slot, selected, onClick, rankKey, activeDimL
         }`}
       >
         <div className={`relative rounded-card ${cfg.ringClass} transition-transform duration-300 group-hover:-translate-y-0.5`}>
-          <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
           {slot === 'gold' && (
-            <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-amber-300 animate-pulse" />
+            <motion.span
+              aria-hidden
+              className="pointer-events-none absolute -inset-3 rounded-full"
+              style={{ background: 'radial-gradient(circle, rgba(251,191,36,0.4) 0%, rgba(251,191,36,0.08) 45%, transparent 72%)' }}
+              animate={reduce ? { opacity: 0.5 } : { opacity: [0.45, 0.85, 0.45], scale: [0.94, 1.06, 0.94] }}
+              transition={reduce ? undefined : { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          )}
+          <span className="relative z-10 block">
+            <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="pop" frameSize="lg" />
+          </span>
+          {slot === 'gold' && (
+            <motion.span
+              aria-hidden
+              className="absolute -top-5 left-1/2 z-20 -translate-x-1/2 text-amber-300"
+              animate={reduce ? undefined : { y: [-1, -3, -1] }}
+              transition={reduce ? undefined : { duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              <Crown className="w-5 h-5 fill-amber-400/30 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" />
+            </motion.span>
           )}
         </div>
         <p className={`typo-heading font-semibold ${cfg.accentText} text-center max-w-[180px] truncate`}>
