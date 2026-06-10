@@ -328,3 +328,39 @@ her decisions *visible and trackable* over a campaign, not to gate a single run.
 
 The full per-axis breakdown is surfaced in `scorecard.athena_orchestration` and rendered in the
 in-app Certification dashboard's run detail.
+
+---
+
+## §9 Loop liveness (the autonomous loop itself, day-scale windows)
+
+§1–§8 grade a seeded RUN; the product claim — "works for **weeks** unattended" — is about the
+**loop**: goal-advance feeding teams from self-generated backlog, parked reviews draining,
+no silent stalls. The 2026-06-09 deadlock made the gap concrete: with every §1–§8 dimension
+healthy on the last run, the fleet produced **nothing for two days** (parked reviews held every
+goal slot → re-advance blocked → backlog promotion starved → goal-advance silently found zero
+candidates) and no surface said so. §9 certifies the loop directly.
+
+Scored by **`scripts/test/loop-certify.mjs`** (deterministic, read-only over the live DB, no
+LLM, no app dependency) over a `--hours N` window (default 24):
+
+| Dimension | Metric | Why |
+|---|---|---|
+| **Liveness** | progress-uptime (fraction of window hours with ≥ 1 execution start); stall episodes (gaps > 2h); ongoing-stall flag (gap reaches the window's end **while actionable work exists**) | The watchdog twin: `FleetLivenessWatchdog` raises the live incident; §9 grades the history. |
+| **Fairness** (X2) | per-team execution counts; top-2 share; idle-team count | The 2-hog/3-starve failure mode. Hoarding = top-2 > 60% with idle teams. |
+| **Drain** | parked `awaiting_review` now; `athena_review_resolution` events in window; oldest parked age | A parked review is a fleet-wide black hole (goal-slot held → promotion starved). Black hole = parked > 0, zero resolutions, oldest > 1 day. |
+| **Loop fuel** (X1) | goals + ideas created in window; `dev_goal_dependencies` written | Is the self-sustaining cycle (scan → ideas → goals → assignments) actually cycling? |
+| **Athena §8** | the §8 scorer over the window's fleet-wide channel trail | Same four axes, loop-scale. |
+
+**Verdict bands**: `LIVE` (uptime ≥ 50%, no unrecovered stall, parked draining) ·
+`DEGRADED` (moving, but recovered stalls / hoarding / parked-black-hole / uptime below floor) ·
+`STALLED` (an **ongoing** stall with work available, or zero executions all window). A loop
+certification claim should require **N consecutive LIVE day-windows** (mirroring §0's
+3-consecutive-PRODUCTION discipline for runs).
+
+Companion enforcement (in-app, this is what makes §9 *hold* rather than just measure):
+`FleetLivenessWatchdog` (deduped `fleet_stall` incident + notification at 2h of silence with
+work available), Athena **review resolution** (`autonomous_athena_review_resolution` —
+approve/incident/escalate on parked cap-outs, draining the black hole), the team-member
+circuit-breaker guard (members are never silently disabled; a `team_member_failing` incident
+is raised instead), and backlog backpressure (`IDEA_BACKLOG_CAP` — producers skip their round
+when a project holds ≥ 15 pending ideas).

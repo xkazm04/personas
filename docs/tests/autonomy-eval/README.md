@@ -143,6 +143,30 @@ To prevent cherry-picking, goals are drawn from a versioned `docs/test/seeds/` b
 
 Phases 1–4 build the *measuring instrument*; we do not get to claim anything until P4 produces honest baselines. P5 is where the real (possibly large) implementation effort lands — and where we expect to discover that the missing learning loops (§2.4) and metadata-validation (§2.1) need real product fixes, not just tuning.
 
+### Next-round backlog (2026-06-10 gap pass — A–E)
+
+Landed this pass: **§9 loop liveness** (`loop-certify.mjs` + `FleetLivenessWatchdog`), **Athena
+review resolution** (`autonomous_athena_review_resolution`: approve / incident / escalate on
+parked cap-outs), the **team-member circuit-breaker guard**, **backlog backpressure**
+(`IDEA_BACKLOG_CAP`), and the **adoption TRIGGER POLICY** (reactive roles are event-only).
+Deliberately deferred — the next round, in priority order:
+
+1. **Judge automation (§1.B).** 34 bundles, mostly deterministic-only "provisional" verdicts.
+   Automate the judge-packet → agent-judge → `judge.json` loop (headless CLI decision, same
+   pattern as the Athena reactions) so every gather gets a judged verdict without a human
+   driving the conversation.
+2. **§3 decay + 3-streak automation (P6 path).** `longitudinal.mjs` exists but nothing chases
+   the 3-consecutive-PRODUCTION streak or writes `certifications/<team>.json`. Wire a
+   streak-tracker that schedules the next held-out seed run automatically after each PRODUCTION.
+3. **Escalation-must-close for review cap-outs.** §6 enforces closure for incidents; Athena's
+   escalate outcome (and her `review_blocker` incidents) should carry the same discipline —
+   measure time-from-escalation-to-human-decision in §9 and cap LIVE on unbounded parking.
+4. **Incident-resolution → assignment auto-resume.** Athena's `incident` outcome parks the
+   assignment under a `review_blocker` incident; when the human resolves it, the assignment
+   should resume automatically (today: manual resume from the review modal).
+5. **W8 — second GitHub PAT** (user-owned): independent QA review identity remains blocked on
+   credential provisioning; until then QA review independence can't be claimed by any verdict.
+
 ---
 
 ## 7. Risks, limits, and what would make us stop
