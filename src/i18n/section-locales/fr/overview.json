@@ -621,7 +621,12 @@
     "fleet_average": "Moyenne de la flotte",
     "this_agent": "Cet agent",
     "biggest_opportunity": "Meilleure marge de progression",
-    "pts_to_gain": "pts à gagner"
+    "pts_to_gain": "pts à gagner",
+    "hint_success": "Réduisez les échecs : examinez les erreurs récentes et ajoutez des relances ou des garde-fous.",
+    "hint_health": "Résolvez les problèmes de réparation et les retours arrière pour améliorer le score de santé.",
+    "hint_speed": "Réduisez la latence avec des prompts plus légers ou un modèle plus rapide.",
+    "hint_cost": "Réduisez le coût par exécution avec un modèle moins cher ou un contexte plus court.",
+    "hint_activity": "Déclenchez ou planifiez cet agent plus souvent pour augmenter l'activité."
   },
   "analytics": {
     "title": "Analyses",

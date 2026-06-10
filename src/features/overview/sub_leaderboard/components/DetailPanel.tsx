@@ -58,6 +58,13 @@ export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: Detail
     cost: lb.dim_cost,
     activity: lb.dim_activity,
   };
+  const DIM_HINT: Record<DimensionKey, string> = {
+    success: lb.hint_success,
+    health: lb.hint_health,
+    speed: lb.hint_speed,
+    cost: lb.hint_cost,
+    activity: lb.hint_activity,
+  };
 
   return (
     <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03] overflow-hidden">
@@ -129,6 +136,7 @@ export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: Detail
                   {opportunity.dim.value}/100 · +{opportunity.potential} {lb.pts_to_gain}
                 </span>
               </div>
+              <p className="typo-caption text-foreground mt-1.5 leading-snug">{DIM_HINT[opportunity.dim.key]}</p>
             </div>
           )}
 

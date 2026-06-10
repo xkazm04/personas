@@ -5725,7 +5725,12 @@
       "fleet_average": "Průměr flotily",
       "this_agent": "Tento agent",
       "biggest_opportunity": "Největší příležitost",
-      "pts_to_gain": "bodů k zisku"
+      "pts_to_gain": "bodů k zisku",
+      "hint_success": "Omezte selhání – zkontrolujte nedávné chyby a přidejte opakování nebo pojistky.",
+      "hint_health": "Vyřešte problémy s opravami a vrácení, abyste zvýšili skóre stavu.",
+      "hint_speed": "Snižte latenci stručnějšími prompty nebo rychlejším modelem.",
+      "hint_cost": "Snižte náklady na běh levnějším modelem nebo kratším kontextem.",
+      "hint_activity": "Spouštějte nebo plánujte tohoto agenta častěji pro vyšší aktivitu."
     },
     "analytics": {
       "title": "Analytika",

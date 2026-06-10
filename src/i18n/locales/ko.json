@@ -5725,7 +5725,12 @@
       "fleet_average": "전체 평균",
       "this_agent": "이 에이전트",
       "biggest_opportunity": "가장 큰 개선 기회",
-      "pts_to_gain": "점 향상 가능"
+      "pts_to_gain": "점 향상 가능",
+      "hint_success": "실패 줄이기 — 최근 오류를 검토하고 재시도나 가드레일을 추가하세요.",
+      "hint_health": "자가 복구 문제와 롤백을 해결해 상태 점수를 높이세요.",
+      "hint_speed": "더 간결한 프롬프트나 빠른 모델로 지연을 줄이세요.",
+      "hint_cost": "더 저렴한 모델이나 짧은 컨텍스트로 실행당 비용을 낮추세요.",
+      "hint_activity": "이 에이전트를 더 자주 실행하거나 예약해 활동량을 높이세요."
     },
     "analytics": {
       "title": "분석",

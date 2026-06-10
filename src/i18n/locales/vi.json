@@ -5725,7 +5725,12 @@
       "fleet_average": "Trung bình đội",
       "this_agent": "Tác nhân này",
       "biggest_opportunity": "Cơ hội lớn nhất",
-      "pts_to_gain": "điểm có thể tăng"
+      "pts_to_gain": "điểm có thể tăng",
+      "hint_success": "Giảm lỗi — xem lại lỗi gần đây và thêm thử lại hoặc rào chắn.",
+      "hint_health": "Xử lý sự cố tự phục hồi và rollback để tăng điểm tình trạng.",
+      "hint_speed": "Giảm độ trễ bằng prompt gọn hơn hoặc mô hình nhanh hơn.",
+      "hint_cost": "Giảm chi phí mỗi lần chạy bằng mô hình rẻ hơn hoặc ngữ cảnh ngắn hơn.",
+      "hint_activity": "Kích hoạt hoặc lên lịch tác nhân này thường xuyên hơn để tăng hoạt động."
     },
     "analytics": {
       "title": "Phân tích",

@@ -621,7 +621,12 @@
     "fleet_average": "Promedio de flota",
     "this_agent": "Este agente",
     "biggest_opportunity": "Mayor oportunidad",
-    "pts_to_gain": "pts por ganar"
+    "pts_to_gain": "pts por ganar",
+    "hint_success": "Reduce los fallos: revisa los errores recientes y añade reintentos o salvaguardas.",
+    "hint_health": "Resuelve los problemas de recuperación y los rollbacks para subir la puntuación de salud.",
+    "hint_speed": "Reduce la latencia con prompts más concisos o un modelo más rápido.",
+    "hint_cost": "Reduce el costo por ejecución con un modelo más barato o un contexto más corto.",
+    "hint_activity": "Activa o programa este agente con más frecuencia para aumentar la actividad."
   },
   "analytics": {
     "title": "Análisis",

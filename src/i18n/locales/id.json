@@ -5725,7 +5725,12 @@
       "fleet_average": "Rata-rata armada",
       "this_agent": "Agen ini",
       "biggest_opportunity": "Peluang terbesar",
-      "pts_to_gain": "poin potensial"
+      "pts_to_gain": "poin potensial",
+      "hint_success": "Kurangi kegagalan — tinjau error terbaru dan tambahkan retry atau pembatas.",
+      "hint_health": "Atasi masalah penyembuhan dan rollback untuk menaikkan skor kesehatan.",
+      "hint_speed": "Kurangi latensi dengan prompt yang lebih ringkas atau model yang lebih cepat.",
+      "hint_cost": "Turunkan biaya per proses dengan model lebih murah atau konteks lebih pendek.",
+      "hint_activity": "Picu atau jadwalkan agen ini lebih sering untuk menaikkan aktivitas."
     },
     "analytics": {
       "title": "Analitik",

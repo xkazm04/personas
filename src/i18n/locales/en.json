@@ -6209,7 +6209,12 @@
       "fleet_average": "Fleet average",
       "this_agent": "This agent",
       "biggest_opportunity": "Biggest opportunity",
-      "pts_to_gain": "pts to gain"
+      "pts_to_gain": "pts to gain",
+      "hint_success": "Cut failures — review recent errors and add retries or guardrails.",
+      "hint_health": "Clear healing issues and rollbacks to lift the health score.",
+      "hint_speed": "Trim latency with leaner prompts or a faster model.",
+      "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
+      "hint_activity": "Trigger or schedule this agent more often to raise activity."
     },
     "analytics": {
       "title": "Analytics",

@@ -5725,7 +5725,12 @@
       "fleet_average": "全部平均",
       "this_agent": "此智能体",
       "biggest_opportunity": "最大提升空间",
-      "pts_to_gain": "分可提升"
+      "pts_to_gain": "分可提升",
+      "hint_success": "减少失败——检查近期错误并添加重试或防护措施。",
+      "hint_health": "处理自愈问题和回滚，以提升健康评分。",
+      "hint_speed": "通过精简提示或更快的模型来降低延迟。",
+      "hint_cost": "使用更便宜的模型或更短的上下文来降低单次运行成本。",
+      "hint_activity": "更频繁地触发或调度该智能体以提升活跃度。"
     },
     "analytics": {
       "title": "分析",

@@ -6216,6 +6216,11 @@ export type Translations = {
       this_agent: string;
       biggest_opportunity: string;
       pts_to_gain: string;
+      hint_success: string;
+      hint_health: string;
+      hint_speed: string;
+      hint_cost: string;
+      hint_activity: string;
     };
     analytics: {
       title: string;
