@@ -117,35 +117,41 @@ export function GlyphOrbitProgress({
         {/* Progress arc — CSS-driven during loading; motion-driven during
             completing so the tween picks up smoothly from whatever offset
             CSS left it at. */}
+        {/* Arc + glow follow the active theme's accent (was hardcoded
+            blue on all 13 themes). Colours live in `style` so var()/
+            color-mix resolve reliably. */}
         {mode === "loading" ? (
           <circle
             cx={center} cy={center} r={radius}
             fill="none"
-            stroke="rgba(96,165,250,0.55)"
             strokeWidth={2}
             strokeLinecap="round"
             strokeDasharray={circumference}
             style={{
+              stroke: "color-mix(in srgb, var(--primary) 55%, transparent)",
               strokeDashoffset: circumference,
               transformOrigin: `${center}px ${center}px`,
               transform: "rotate(-90deg)",
               animation: `${kfId} ${duration}s linear infinite`,
-              filter: "drop-shadow(0 0 6px rgba(96,165,250,0.6))",
+              filter: "drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 60%, transparent))",
             }}
           />
         ) : (
           <motion.circle
             cx={center} cy={center} r={radius}
             fill="none"
-            stroke="rgba(96,165,250,0.55)"
             strokeWidth={2}
             strokeLinecap="round"
             strokeDasharray={circumference}
             initial={false}
             animate={{ strokeDashoffset: 0 }}
             transition={{ duration: COMPLETION_DURATION_S, ease: [0.16, 1, 0.3, 1] }}
-            style={{ transformOrigin: `${center}px ${center}px`, transform: "rotate(-90deg)" }}
-            filter="drop-shadow(0 0 6px rgba(96,165,250,0.6))"
+            style={{
+              stroke: "color-mix(in srgb, var(--primary) 55%, transparent)",
+              transformOrigin: `${center}px ${center}px`,
+              transform: "rotate(-90deg)",
+              filter: "drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 60%, transparent))",
+            }}
           />
         )}
       </svg>
@@ -165,7 +171,8 @@ export function GlyphOrbitProgress({
             style={{
               left: center + radius - 4, top: center - 4,
               width: 8, height: 8,
-              boxShadow: "0 0 14px rgba(96,165,250,0.95), 0 0 26px rgba(96,165,250,0.5)",
+              boxShadow:
+                "0 0 14px color-mix(in srgb, var(--primary) 95%, transparent), 0 0 26px color-mix(in srgb, var(--primary) 50%, transparent)",
             }}
           />
         </div>
@@ -182,7 +189,8 @@ export function GlyphOrbitProgress({
             style={{
               left: center + radius - 4, top: center - 4,
               width: 8, height: 8,
-              boxShadow: "0 0 14px rgba(96,165,250,0.95), 0 0 26px rgba(96,165,250,0.5)",
+              boxShadow:
+                "0 0 14px color-mix(in srgb, var(--primary) 95%, transparent), 0 0 26px color-mix(in srgb, var(--primary) 50%, transparent)",
             }}
           />
         </motion.div>

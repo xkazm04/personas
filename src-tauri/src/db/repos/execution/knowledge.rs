@@ -486,32 +486,35 @@ pub fn get_summary(
             SUM(CASE WHEN knowledge_type = 'tool_sequence' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'failure_pattern' THEN 1 ELSE 0 END),
             SUM(CASE WHEN knowledge_type = 'model_performance' THEN 1 ELSE 0 END),
-            SUM(CASE WHEN knowledge_type IN ('agent_annotation','user_annotation') THEN 1 ELSE 0 END)
+            SUM(CASE WHEN knowledge_type IN ('agent_annotation','user_annotation') THEN 1 ELSE 0 END),
+            SUM(CASE WHEN knowledge_type IN ('agent_annotation','user_annotation') AND is_verified = 0 THEN 1 ELSE 0 END)
          FROM execution_knowledge {where_clause}"
     );
 
-        let (total, tool_seq, fail_pat, model_perf, annotation_cnt) = if let Some(pid) = persona_id
-        {
-            conn.query_row(&count_sql, params![pid], |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-                ))
-            })?
-        } else {
-            conn.query_row(&count_sql, [], |row| {
-                Ok((
-                    row.get::<_, i64>(0)?,
-                    row.get::<_, Option<i64>>(1)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(2)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(3)?.unwrap_or(0),
-                    row.get::<_, Option<i64>>(4)?.unwrap_or(0),
-                ))
-            })?
-        };
+        let (total, tool_seq, fail_pat, model_perf, annotation_cnt, unverified_cnt) =
+            if let Some(pid) = persona_id {
+                conn.query_row(&count_sql, params![pid], |row| {
+                    Ok((
+                        row.get::<_, i64>(0)?,
+                        row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(2)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(4)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(5)?.unwrap_or(0),
+                    ))
+                })?
+            } else {
+                conn.query_row(&count_sql, [], |row| {
+                    Ok((
+                        row.get::<_, i64>(0)?,
+                        row.get::<_, Option<i64>>(1)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(2)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(3)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(4)?.unwrap_or(0),
+                        row.get::<_, Option<i64>>(5)?.unwrap_or(0),
+                    ))
+                })?
+            };
 
         let top_sql = format!(
             "SELECT * FROM execution_knowledge {where_clause}
@@ -533,6 +536,7 @@ pub fn get_summary(
             failure_pattern_count: fail_pat,
             model_performance_count: model_perf,
             annotation_count: annotation_cnt,
+            unverified_annotation_count: unverified_cnt,
             top_patterns,
             recent_learnings,
         })

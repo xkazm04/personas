@@ -321,7 +321,16 @@
     "failures": "Gagal",
     "avg_cost": "Biaya Rata-rata",
     "avg_duration": "Durasi Rata-rata",
-    "pattern_data": "Data Pola"
+    "pattern_data": "Data Pola",
+    "patterns_tab": "Pola",
+    "search_placeholder": "Cari pola...",
+    "sort_aria": "Urutkan pola",
+    "sort_default": "Pola teratas",
+    "sort_confidence": "Keyakinan tertinggi",
+    "sort_runs": "Paling banyak dijalankan",
+    "sort_recent": "Terbaru",
+    "needs_review": "Perlu ditinjau",
+    "pending_scope_hint": "Pilih persona untuk meninjau semua anotasi yang tertunda."
   },
   "conflicts": {
     "dismissed": "Konflik diabaikan",

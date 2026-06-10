@@ -321,7 +321,16 @@
     "failures": "Échecs",
     "avg_cost": "Coût moyen",
     "avg_duration": "Durée moyenne",
-    "pattern_data": "Données du modèle"
+    "pattern_data": "Données du modèle",
+    "patterns_tab": "Motifs",
+    "search_placeholder": "Rechercher des motifs...",
+    "sort_aria": "Trier les motifs",
+    "sort_default": "Meilleurs motifs",
+    "sort_confidence": "Confiance la plus élevée",
+    "sort_runs": "Plus d'exécutions",
+    "sort_recent": "Plus récents",
+    "needs_review": "À vérifier",
+    "pending_scope_hint": "Sélectionnez un persona pour vérifier toutes les annotations en attente."
   },
   "conflicts": {
     "dismissed": "Conflit ignoré",

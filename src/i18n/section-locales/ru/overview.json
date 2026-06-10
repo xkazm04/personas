@@ -321,7 +321,16 @@
     "failures": "Сбоев",
     "avg_cost": "Средняя стоимость",
     "avg_duration": "Средняя длительность",
-    "pattern_data": "Данные паттерна"
+    "pattern_data": "Данные паттерна",
+    "patterns_tab": "Паттерны",
+    "search_placeholder": "Поиск паттернов...",
+    "sort_aria": "Сортировать паттерны",
+    "sort_default": "Топ паттернов",
+    "sort_confidence": "Наивысшая уверенность",
+    "sort_runs": "Больше всего запусков",
+    "sort_recent": "Самые новые",
+    "needs_review": "Требует проверки",
+    "pending_scope_hint": "Выберите персону, чтобы проверить все ожидающие аннотации."
   },
   "conflicts": {
     "dismissed": "Конфликт отклонён",

@@ -1,10 +1,10 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { X, Power, ChevronRight } from 'lucide-react';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
-import { DIM_LABEL } from '@/features/shared/glyph/persona-sigil';
+import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import { DebtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 export interface SigilEditModalProps {
@@ -64,20 +64,44 @@ export function SigilEditModal({
   onToggleActive,
   onClose,
 }: SigilEditModalProps) {
+  const { t } = useTranslation();
+  const dimText = useGlyphDimText();
+
+  // Dialog semantics: take focus on open so Esc closes for keyboard
+  // users. (Hero petals aren't focusable targets, so there's no petal
+  // focus-return here — focus simply falls back to the page.)
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (dim) panelRef.current?.focus();
+  }, [dim]);
+
   if (!dim) return null;
 
   const meta = DIM_META[dim];
   const Icon = meta.icon;
-  const dimLabel = DIM_LABEL[dim];
+  const dimLabel = dimText.label[dim];
 
   return (
     <motion.div
       key={`sigil-edit-${dim}`}
+      ref={panelRef}
+      // role=region (not dialog): the overlay is non-modal — empty regions
+      // stay click-through and the sigil underneath remains interactive,
+      // so BaseModal's backdrop/focus-trap semantics would be wrong here.
+      role="region"
+      aria-label={dimLabel}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full max-w-[560px] flex flex-col"
+      className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full max-w-[560px] flex flex-col outline-none"
       style={{
         borderColor: `${meta.color}66`,
         boxShadow: `0 0 24px ${meta.color}33, 0 8px 32px rgba(0,0,0,0.35)`,
@@ -96,15 +120,20 @@ export function SigilEditModal({
           <span className={`typo-label uppercase tracking-[0.18em] ${meta.colorClass}`}>
             {dimLabel}
           </span>
-          <p className="typo-caption text-foreground mt-0.5">
-            {isActive ? 'Active for this capability' : 'Inactive — toggle on to enable'}
+          {/* Plain-language "what this dimension does" — so editing Memory
+              or Review means something to a first-timer, not just a label. */}
+          {dimText.desc[dim] && (
+            <p className="typo-caption text-foreground mt-0.5">{dimText.desc[dim]}</p>
+          )}
+          <p className="typo-caption text-foreground italic mt-0.5">
+            {isActive ? t.agents.sigil_edit_active : t.agents.sigil_edit_inactive}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
           className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
-          aria-label="Close"
+          aria-label={t.common.close}
         >
           <X className="w-4 h-4" />
         </button>
@@ -115,7 +144,7 @@ export function SigilEditModal({
         {body ?? (
           <div className="flex items-center gap-2 typo-caption text-foreground italic">
             <ChevronRight className="w-3.5 h-3.5" />
-            <DebtText k="auto_no_editor_wired_for_this_dim_yet_toggle_be_84d10bc5" />
+            {t.templates.chronology.no_dim_editor_note}
           </div>
         )}
       </div>
@@ -134,7 +163,7 @@ export function SigilEditModal({
           }`}
         >
           <Power className="w-3.5 h-3.5" />
-          {isActive ? 'Disable for this capability' : 'Enable for this capability'}
+          {isActive ? t.agents.sigil_edit_disable : t.agents.sigil_edit_enable}
         </button>
       </div>
     </motion.div>

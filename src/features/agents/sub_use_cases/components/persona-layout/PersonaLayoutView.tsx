@@ -448,7 +448,16 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         }
         leftSlot={
           Object.keys(summaryEntries).length > 0 ? (
-            <PersonaSigilSummary entries={summaryEntries} heading={null} />
+            <PersonaSigilSummary
+              entries={summaryEntries}
+              heading={null}
+              onSelectDim={(dim) => {
+                // Mirrors onHeroPetalClick — a summary row is just an
+                // easier-to-hit handle for the same dim editor.
+                if (!activeCapability) return;
+                setEditingPetal((prev) => (prev === dim ? null : dim));
+              }}
+            />
           ) : null
         }
         detailNode={detailNode}

@@ -2542,5 +2542,9 @@
     "moved_toast": "{persona} を {group} に移動しました",
     "filter_clear_title": "クリックしてこのフィルターを解除",
     "filter_all": "preference"
-  }
+  },
+  "sigil_edit_active": "この機能で有効",
+  "sigil_edit_inactive": "無効 — オンにして有効化",
+  "sigil_edit_enable": "この機能で有効化",
+  "sigil_edit_disable": "この機能で無効化"
 }

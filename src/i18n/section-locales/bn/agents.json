@@ -2542,5 +2542,9 @@
     "moved_toast": "{persona} {group}-এ সরানো হয়েছে",
     "filter_clear_title": "এই ফিল্টার সাফ করতে ক্লিক করুন",
     "filter_all": "কোনো preference"
-  }
+  },
+  "sigil_edit_active": "এই সক্ষমতার জন্য সক্রিয়",
+  "sigil_edit_inactive": "নিষ্ক্রিয় — সক্ষম করতে চালু করুন",
+  "sigil_edit_enable": "এই সক্ষমতার জন্য সক্ষম করুন",
+  "sigil_edit_disable": "এই সক্ষমতার জন্য নিষ্ক্রিয় করুন"
 }

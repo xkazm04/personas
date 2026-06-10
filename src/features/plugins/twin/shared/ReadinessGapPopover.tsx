@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowRight, CheckCircle2, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { buildGaps } from './readinessGaps';
+import { buildGaps, gapScoreDelta } from './readinessGaps';
 import type { TwinTab } from '@/lib/types/types';
 import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
 
@@ -133,6 +133,9 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
                       <span className="flex-1 min-w-0">
                         <span className="block typo-caption text-foreground font-medium truncate">{title}</span>
                         <span className="block text-[11px] text-foreground leading-snug mt-0.5">{hint}</span>
+                      </span>
+                      <span className="flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+                        {tx(t.profiles.scoreDelta, { pct: gapScoreDelta(g) })}
                       </span>
                       <ArrowRight className="w-3.5 h-3.5 text-foreground flex-shrink-0 mt-1" />
                     </button>

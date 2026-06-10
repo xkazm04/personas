@@ -321,7 +321,16 @@
     "failures": "Fehler",
     "avg_cost": "Durchschn. Kosten",
     "avg_duration": "Durchschn. Dauer",
-    "pattern_data": "Musterdaten"
+    "pattern_data": "Musterdaten",
+    "patterns_tab": "Muster",
+    "search_placeholder": "Muster suchen...",
+    "sort_aria": "Muster sortieren",
+    "sort_default": "Top-Muster",
+    "sort_confidence": "Höchste Konfidenz",
+    "sort_runs": "Meiste Ausführungen",
+    "sort_recent": "Neueste",
+    "needs_review": "Zu prüfen",
+    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen."
   },
   "conflicts": {
     "dismissed": "Konflikt verworfen",

@@ -53,6 +53,9 @@ pub struct KnowledgeGraphSummary {
     pub model_performance_count: i64,
     #[ts(type = "number")]
     pub annotation_count: i64,
+    // Annotations (agent + user) still awaiting user verification.
+    #[ts(type = "number")]
+    pub unverified_annotation_count: i64,
     pub top_patterns: Vec<ExecutionKnowledge>,
     pub recent_learnings: Vec<ExecutionKnowledge>,
 }

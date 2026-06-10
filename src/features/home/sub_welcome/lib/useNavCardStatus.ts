@@ -128,11 +128,12 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
         : trend === 'down' ? tx(ns.trend_down, { pct: Math.abs(p) })
           : ns.trend_flat;
 
-    // Overview — only surface non-zero attention counts.
+    // Overview — non-zero attention counts, most-actionable first (the corner
+    // model shows the top two: incidents, then reviews, then messages).
     const ov: NavStatChip[] = [];
     if (incidents > 0) ov.push({ key: 'incidents', value: incidents, icon: AlertOctagon, tone: 'red', title: tx(incidents === 1 ? ns.incidents : ns.incidents_other, { count: incidents }) });
-    if (counts.unread_messages > 0) ov.push({ key: 'messages', value: counts.unread_messages, icon: MessageSquare, tone: 'blue', title: tx(counts.unread_messages === 1 ? ns.messages : ns.messages_other, { count: counts.unread_messages }) });
     if (counts.pending_reviews > 0) ov.push({ key: 'reviews', value: counts.pending_reviews, icon: ClipboardCheck, tone: 'amber', title: tx(counts.pending_reviews === 1 ? ns.reviews : ns.reviews_other, { count: counts.pending_reviews }) });
+    if (counts.unread_messages > 0) ov.push({ key: 'messages', value: counts.unread_messages, icon: MessageSquare, tone: 'blue', title: tx(counts.unread_messages === 1 ? ns.messages : ns.messages_other, { count: counts.unread_messages }) });
     if (ov.length) status.overview = ov;
 
     // Teams — always show the count (card only renders on Team+ tiers).

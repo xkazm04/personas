@@ -274,7 +274,16 @@
     "group_archives": "أرشيف",
     "group_documents": "وثائق",
     "group_signatures": "التوقيعات",
-    "group_other": "آخر"
+    "group_other": "آخر",
+    "signed": "موقّع",
+    "sidebar_trash": "سلة المهملات",
+    "trash_banner": "يتم الاحتفاظ بالعناصر المحذوفة هنا لمدة 7 أيام، ثم تُزال نهائيًا.",
+    "trash_restore": "استعادة",
+    "trash_empty": "إفراغ سلة المهملات",
+    "trash_empty_confirm_title": "حذف {count} عنصر نهائيًا؟",
+    "trash_empty_confirm_body": "سيؤدي هذا إلى إفراغ سلة المهملات. لا يمكن استعادة هذه العناصر.",
+    "trash_purges_in_days": "يُحذف خلال {days} يوم",
+    "trash_purges_soon": "يُحذف قريبًا"
   },
   "artist": {
     "title": "الفنان",

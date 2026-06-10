@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {
   getHealthMeta,
   STATE_HEX,
@@ -150,23 +151,24 @@ export function UseCaseRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             {connectorMeta && (
-              <span
-                className="shrink-0 inline-flex items-center justify-center rounded"
-                style={{
-                  width: 18,
-                  height: 18,
-                  background: isDisabled
-                    ? 'rgba(148,163,184,0.16)'
-                    : `${connectorMeta.color}1f`,
-                  border: `1px solid ${
-                    isDisabled ? 'rgba(148,163,184,0.32)' : connectorMeta.color + '4d'
-                  }`,
-                  opacity: isDisabled ? 0.7 : 1,
-                }}
-                title={uc.connector}
-              >
-                <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
-              </span>
+              <Tooltip content={uc.connector} placement="top">
+                <span
+                  className="shrink-0 inline-flex items-center justify-center rounded"
+                  style={{
+                    width: 18,
+                    height: 18,
+                    background: isDisabled
+                      ? 'rgba(148,163,184,0.16)'
+                      : `${connectorMeta.color}1f`,
+                    border: `1px solid ${
+                      isDisabled ? 'rgba(148,163,184,0.32)' : connectorMeta.color + '4d'
+                    }`,
+                    opacity: isDisabled ? 0.7 : 1,
+                  }}
+                >
+                  <ConnectorIcon meta={connectorMeta} size="w-3 h-3" />
+                </span>
+              </Tooltip>
             )}
             <div
               className="typo-heading font-semibold leading-tight truncate"
@@ -198,52 +200,60 @@ export function UseCaseRow({
 
         <div className="shrink-0 flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
           {onRun && (
-            <button
-              type="button"
-              data-testid={`uc-row-run-${uc.id}`}
-              onClick={handleRunClick}
-              disabled={isDisabled || isRunning}
-              className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:cursor-not-allowed ${
-                isRunning
-                  ? 'border-status-info/45 bg-status-info/15 text-status-info'
-                  : 'border-card-border bg-secondary/70 text-foreground/85 hover:text-status-info hover:border-status-info/45 hover:bg-status-info/10 disabled:opacity-40'
-              }`}
-              title={
+            <Tooltip
+              content={
                 isRunning
                   ? t.agents.use_cases.running_label
                   : tx(t.agents.use_cases.run_title, { title: uc.title })
               }
+              placement="top"
             >
-              {isRunning ? (
-                <span
-                  className="relative flex h-3.5 w-3.5 items-center justify-center"
-                  aria-hidden
-                >
-                  <span className="animate-ping absolute h-full w-full rounded-full bg-status-info opacity-50" />
-                  <span className="relative rounded-full h-2 w-2 bg-status-info" />
-                </span>
-              ) : (
-                <Play className="w-3.5 h-3.5" />
-              )}
-            </button>
+              <button
+                type="button"
+                data-testid={`uc-row-run-${uc.id}`}
+                onClick={handleRunClick}
+                disabled={isDisabled || isRunning}
+                className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:cursor-not-allowed ${
+                  isRunning
+                    ? 'border-status-info/45 bg-status-info/15 text-status-info'
+                    : 'border-card-border bg-secondary/70 text-foreground/85 hover:text-status-info hover:border-status-info/45 hover:bg-status-info/10 disabled:opacity-40'
+                }`}
+              >
+                {isRunning ? (
+                  <span
+                    className="relative flex h-3.5 w-3.5 items-center justify-center"
+                    aria-hidden
+                  >
+                    <span className="animate-ping absolute h-full w-full rounded-full bg-status-info opacity-50" />
+                    <span className="relative rounded-full h-2 w-2 bg-status-info" />
+                  </span>
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
+                )}
+              </button>
+            </Tooltip>
           )}
-          <button
-            type="button"
-            onClick={handleToggleClick}
-            disabled={isPendingToggle}
-            className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
-              isDisabled
-                ? 'border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20'
-                : 'border-card-border bg-secondary/80 text-foreground hover:text-foreground hover:border-primary/40'
-            }`}
-            title={
+          <Tooltip
+            content={
               isDisabled
                 ? t.agents.use_cases.activate_capability
                 : t.agents.use_cases.pause_capability
             }
+            placement="top"
           >
-            <Power className="w-3.5 h-3.5" />
-          </button>
+            <button
+              type="button"
+              onClick={handleToggleClick}
+              disabled={isPendingToggle}
+              className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
+                isDisabled
+                  ? 'border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20'
+                  : 'border-card-border bg-secondary/80 text-foreground hover:text-foreground hover:border-primary/40'
+              }`}
+            >
+              <Power className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

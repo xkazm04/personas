@@ -321,7 +321,16 @@
     "failures": "Thất bại",
     "avg_cost": "Chi phí TB",
     "avg_duration": "Thời lượng TB",
-    "pattern_data": "Dữ liệu mẫu"
+    "pattern_data": "Dữ liệu mẫu",
+    "patterns_tab": "Mẫu",
+    "search_placeholder": "Tìm mẫu...",
+    "sort_aria": "Sắp xếp mẫu",
+    "sort_default": "Mẫu hàng đầu",
+    "sort_confidence": "Độ tin cậy cao nhất",
+    "sort_runs": "Chạy nhiều nhất",
+    "sort_recent": "Mới nhất",
+    "needs_review": "Cần xem xét",
+    "pending_scope_hint": "Chọn một persona để xem xét tất cả chú thích đang chờ."
   },
   "conflicts": {
     "dismissed": "Đã bỏ qua xung đột",

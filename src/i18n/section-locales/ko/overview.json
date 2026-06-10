@@ -321,7 +321,16 @@
     "failures": "실패",
     "avg_cost": "평균 비용",
     "avg_duration": "평균 소요 시간",
-    "pattern_data": "패턴 데이터"
+    "pattern_data": "패턴 데이터",
+    "patterns_tab": "패턴",
+    "search_placeholder": "패턴 검색...",
+    "sort_aria": "패턴 정렬",
+    "sort_default": "상위 패턴",
+    "sort_confidence": "신뢰도 높은순",
+    "sort_runs": "실행 많은순",
+    "sort_recent": "최신순",
+    "needs_review": "검토 필요",
+    "pending_scope_hint": "대기 중인 모든 주석을 검토하려면 페르소나를 선택하세요."
   },
   "conflicts": {
     "dismissed": "충돌이 무시되었습니다",

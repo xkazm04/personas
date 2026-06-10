@@ -1,6 +1,7 @@
-import { BookOpen, Brain, CheckCircle2, ChevronRight, Mic, Radio, User, Volume2 } from 'lucide-react';
+import { BookOpen, Brain, CheckCircle2, ChevronRight, Mic, Radio, User, Users, Volume2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { buildGaps } from '../shared/readinessGaps';
+import { useSystemStore } from '@/stores/systemStore';
+import { buildGaps, gapScoreDelta } from '../shared/readinessGaps';
 import type { TwinTab } from '@/lib/types/types';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinReadiness } from '../useTwinReadiness';
@@ -35,12 +36,32 @@ export function CompleteTwinChecklist({ readiness, onJump }: { readiness: TwinRe
   const done = MILESTONE_META.filter((m) => readiness[m.key] === 'complete').length;
   const allSet = done === MILESTONE_META.length;
 
+  // Roster foundations strip (Stage 2). Full per-twin readiness needs each
+  // twin's tone/voice/channel/memory layers, which the store only holds for
+  // the active twin — so we summarise the two milestones derivable from the
+  // profile row alone across the whole roster: identity (bio ≥ 50 chars, the
+  // deriveReadiness "complete" threshold) and brain (a bound knowledge base or
+  // Obsidian path). Shown only with 2+ twins, where a roster view earns its keep.
+  const twinProfiles = useSystemStore((s) => s.twinProfiles);
+  const rosterCount = twinProfiles.length;
+  const rosterIdentities = twinProfiles.filter((p) => (p.bio ?? '').trim().length >= 50).length;
+  const rosterBrains = twinProfiles.filter((p) => !!p.knowledge_base_id || !!p.obsidian_subpath.trim()).length;
+
   return (
     <div className="rounded-card border border-primary/10 bg-card/40 p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
         <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.profiles.checklistHeading}</p>
         <span className="typo-caption tabular-nums text-foreground">{done}/{MILESTONE_META.length}</span>
       </div>
+
+      {rosterCount > 1 && (
+        <div className="flex items-start gap-2 mb-3 px-2.5 py-2 rounded-interactive bg-secondary/30 border border-primary/10">
+          <Users className="w-3.5 h-3.5 text-violet-300 mt-0.5 flex-shrink-0" />
+          <p className="text-[11px] text-foreground leading-snug">
+            {tx(t.profiles.rosterFoundations, { twins: rosterCount, identities: rosterIdentities, brains: rosterBrains })}
+          </p>
+        </div>
+      )}
 
       {allSet ? (
         <div className="flex flex-col items-center text-center gap-1.5 py-2">
@@ -78,6 +99,11 @@ export function CompleteTwinChecklist({ readiness, onJump }: { readiness: TwinRe
                     <span className="block typo-caption text-foreground font-medium truncate">{t.progress[key]}</span>
                     <span className="block text-[11px] text-foreground leading-snug truncate">{detail}</span>
                   </span>
+                  {!complete && gap && (
+                    <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+                      {tx(t.profiles.scoreDelta, { pct: gapScoreDelta(gap) })}
+                    </span>
+                  )}
                   {!complete && (
                     <ChevronRight className="w-3.5 h-3.5 text-violet-300 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
                   )}

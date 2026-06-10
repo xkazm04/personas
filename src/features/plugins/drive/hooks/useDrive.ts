@@ -123,6 +123,10 @@ export interface UseDriveResult {
   setSort: (key: SortKey, dir?: SortDir) => void;
   searchQuery: string;
   setSearchQuery: (q: string) => void;
+  // Kind-bucket filter (a `visualForEntry().labelKey`, e.g. "kind_image").
+  // Null = show all kinds. Transient — resets on navigation like selection.
+  kindFilter: string | null;
+  setKindFilter: (key: string | null) => void;
   visibleEntries: DriveEntry[];
 
   // View mode
@@ -163,6 +167,12 @@ export interface UseDriveResult {
    */
   cachedEntriesFor: (path: string) => DriveEntry[] | null;
 
+  // Per-folder scroll memory — Back/Up restores where you were instead of
+  // jumping to the top. Views record on scroll and recall after the folder's
+  // entries have loaded. Session-scoped (clears with the component).
+  rememberScroll: (path: string, top: number) => void;
+  recallScroll: (path: string) => number;
+
   // Recursive search across the entire managed drive. The local
   // `searchQuery` filter is per-folder; when it produces no results, the
   // UI escalates to this — a backend walk via drive_search.
@@ -201,6 +211,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     () => readPersistedViewState().sortDir ?? "asc",
   );
   const [searchQuery, setSearchQuery] = useState("");
+  const [kindFilter, setKindFilter] = useState<string | null>(null);
   const [viewMode, setViewModeRaw] = useState<ViewMode>(
     () => readPersistedViewState().viewMode ?? "list",
   );
@@ -255,6 +266,16 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     return pathCacheRef.current.get(path) ?? null;
   }, []);
 
+  // Scroll offsets per visited path. A ref (not state) — recording on every
+  // scroll event must not re-render the Finder.
+  const scrollCacheRef = useRef<Map<string, number>>(new Map());
+  const rememberScroll = useCallback((path: string, top: number) => {
+    scrollCacheRef.current.set(path, top);
+  }, []);
+  const recallScroll = useCallback((path: string): number => {
+    return scrollCacheRef.current.get(path) ?? 0;
+  }, []);
+
   const refreshTree = useCallback(() => {
     driveListTree("", 4)
       .then(setTree)
@@ -281,11 +302,25 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     refreshRecent();
   }, [refreshTree, refreshStorage, refreshRecent]);
 
-  // Clear selection on navigation.
+  // Clear selection + kind filter on navigation — both are scoped to the
+  // folder you're looking at, and a stale filter on a new folder is confusing.
   useEffect(() => {
     setSelection(new Set());
     lastAnchorRef.current = null;
+    setKindFilter(null);
   }, [currentPath]);
+
+  // Self-heal a stranded filter: if the active kind no longer exists in the
+  // folder (e.g. the last file of that kind was deleted or moved out), drop it
+  // so the list isn't stuck empty with the filter bar auto-hidden.
+  useEffect(() => {
+    if (
+      kindFilter &&
+      !entries.some((e) => visualForEntry(e).labelKey === kindFilter)
+    ) {
+      setKindFilter(null);
+    }
+  }, [entries, kindFilter]);
 
   // Recursive search — escalation path when the local folder filter has
   // no hits. Driven by the consumer (DriveFileList CTA), not auto-fired.
@@ -424,9 +459,18 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
 
   const visibleEntries = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const filtered = q
+    let filtered = q
       ? entries.filter((e) => e.name.toLowerCase().includes(q))
       : entries;
+    // Kind-bucket filter narrows to a single resolved kind (the same bucket
+    // the Kind column / sort uses), applied after the name filter. Skipped in
+    // columns view — that view is navigation-centric and hides the filter bar,
+    // so a dormant filter shouldn't silently prune its columns.
+    if (kindFilter && viewMode !== "columns") {
+      filtered = filtered.filter(
+        (e) => visualForEntry(e).labelKey === kindFilter,
+      );
+    }
     const sorted = [...filtered].sort((a, b) => {
       // Folders first regardless of sort key.
       if (a.kind !== b.kind) return a.kind === "folder" ? -1 : 1;
@@ -465,7 +509,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       return sortDir === "asc" ? cmp : -cmp;
     });
     return sorted;
-  }, [entries, searchQuery, sortKey, sortDir]);
+  }, [entries, searchQuery, kindFilter, viewMode, sortKey, sortDir]);
 
   // Clipboard
   const copySelection = useCallback(() => {
@@ -637,6 +681,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     setSort,
     searchQuery,
     setSearchQuery,
+    kindFilter,
+    setKindFilter,
     visibleEntries,
 
     viewMode,
@@ -662,6 +708,8 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     recentlyWritten,
 
     cachedEntriesFor,
+    rememberScroll,
+    recallScroll,
 
     recursiveResults,
     recursiveQuery,

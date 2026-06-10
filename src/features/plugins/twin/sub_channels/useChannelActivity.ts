@@ -27,6 +27,10 @@ const STALE_THRESHOLD_MS = 30 * 24 * 60 * 60 * 1000;
 export interface ChannelActivity {
   /** Latest `occurred_at` (ISO-8601) per channel_type. */
   lastByChannel: Map<string, string>;
+  /** Outbound (sent) communications per channel_type within the recent
+   *  window — "how much does the twin actually reply here", not just
+   *  when the channel was last touched. */
+  sentByChannel: Map<string, number>;
   /**
    * True for any active channel_type whose latest activity is older than
    * `STALE_THRESHOLD_MS`. Channels that have NEVER bridged are NOT marked
@@ -60,6 +64,16 @@ export function useChannelActivity(twinId: string | null): ChannelActivity {
     return map;
   }, [twinId, twinCommunications]);
 
+  const sentByChannel = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!twinId) return map;
+    for (const c of twinCommunications) {
+      if (c.twin_id !== twinId || c.direction !== 'out') continue;
+      map.set(c.channel, (map.get(c.channel) ?? 0) + 1);
+    }
+    return map;
+  }, [twinId, twinCommunications]);
+
   const staleByChannel = useMemo(() => {
     const map = new Map<string, boolean>();
     const now = Date.now();
@@ -71,5 +85,5 @@ export function useChannelActivity(twinId: string | null): ChannelActivity {
     return map;
   }, [lastByChannel]);
 
-  return { lastByChannel, staleByChannel, loading: twinCommsLoading };
+  return { lastByChannel, sentByChannel, staleByChannel, loading: twinCommsLoading };
 }

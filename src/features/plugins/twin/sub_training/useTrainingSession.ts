@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import * as twinApi from '@/api/twin/twin';
+import { scoreTopicCoverage, type TopicCoverage } from './topicCoverage';
 
 export interface QAPair {
   id: string;
@@ -49,6 +50,9 @@ export interface TrainingSession {
   /** The current answerDraft was produced by "Draft as twin" (and not yet submitted). */
   aiDrafted: boolean;
   groundingFacts: string[];
+  /** Per-preset coverage of the active twin's approved memories — powers the
+   *  topic deck's per-card pills and the NextMovesPanel recommendation. */
+  topicCoverage: TopicCoverage[];
   sessionSummary: string | null;
   savedCount: number;
   generateQuestions: (topicPrompt: string) => Promise<void>;
@@ -80,6 +84,7 @@ export function useTrainingSession(): TrainingSession {
   const [aiDrafted, setAiDrafted] = useState(false);
   const followupSpawnedFor = useRef<Set<string>>(new Set());
   const [groundingFacts, setGroundingFacts] = useState<string[]>([]);
+  const [topicCoverage, setTopicCoverage] = useState<TopicCoverage[]>([]);
   const [sessionSummary, setSessionSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const answerRef = useRef<HTMLTextAreaElement>(null);
@@ -87,11 +92,14 @@ export function useTrainingSession(): TrainingSession {
   const savedCount = questions.filter((q) => q.saved).length;
 
   useEffect(() => {
-    if (!activeTwinId) { setGroundingFacts([]); return; }
+    if (!activeTwinId) { setGroundingFacts([]); setTopicCoverage([]); return; }
     twinApi.listPendingMemories(activeTwinId, 'approved').then((mems) => {
       const facts = mems.slice(0, TRAINING_GROUNDING_LIMIT).map((m) => m.title ? `${m.title}: ${m.content}` : m.content);
       setGroundingFacts(facts);
-    }).catch(() => setGroundingFacts([]));
+      // Coverage scores the FULL approved set (not the grounding-capped slice)
+      // so the topic deck's per-card pills reflect everything the twin knows.
+      setTopicCoverage(scoreTopicCoverage(mems));
+    }).catch(() => { setGroundingFacts([]); setTopicCoverage([]); });
   }, [activeTwinId]);
 
   // Cross-tab handoff: Reflections panel populates pendingTrainingQuestions
@@ -265,7 +273,7 @@ export function useTrainingSession(): TrainingSession {
     phase, questions, currentIdx, answerDraft, setAnswerDraft,
     customTopic, setCustomTopic,
     generating, followupLoading, summarizing, saving, drafting, aiDrafted,
-    groundingFacts, sessionSummary, savedCount,
+    groundingFacts, topicCoverage, sessionSummary, savedCount,
     generateQuestions, draftAnswer, handleSubmitAnswer, handleSkipFollowup, handleReset, jumpTo,
     answerRef,
   };

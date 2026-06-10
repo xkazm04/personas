@@ -321,7 +321,16 @@
     "failures": "失敗",
     "avg_cost": "平均コスト",
     "avg_duration": "平均所要時間",
-    "pattern_data": "パターンデータ"
+    "pattern_data": "パターンデータ",
+    "patterns_tab": "パターン",
+    "search_placeholder": "パターンを検索...",
+    "sort_aria": "パターンを並べ替え",
+    "sort_default": "トップパターン",
+    "sort_confidence": "信頼度が高い順",
+    "sort_runs": "実行回数が多い順",
+    "sort_recent": "最新順",
+    "needs_review": "要確認",
+    "pending_scope_hint": "保留中の注釈をすべて確認するにはペルソナを選択してください。"
   },
   "conflicts": {
     "dismissed": "競合を非表示にしました",

@@ -321,7 +321,16 @@
     "failures": "Fallos",
     "avg_cost": "Costo promedio",
     "avg_duration": "Duración promedio",
-    "pattern_data": "Datos del patrón"
+    "pattern_data": "Datos del patrón",
+    "patterns_tab": "Patrones",
+    "search_placeholder": "Buscar patrones...",
+    "sort_aria": "Ordenar patrones",
+    "sort_default": "Patrones principales",
+    "sort_confidence": "Mayor confianza",
+    "sort_runs": "Más ejecuciones",
+    "sort_recent": "Más recientes",
+    "needs_review": "Requiere revisión",
+    "pending_scope_hint": "Selecciona un persona para revisar todas las anotaciones pendientes."
   },
   "conflicts": {
     "dismissed": "Conflicto descartado",

@@ -2542,5 +2542,9 @@
     "moved_toast": "{persona} movida a {group}",
     "filter_clear_title": "Haz clic para borrar este filtro",
     "filter_all": "Sin preference"
-  }
+  },
+  "sigil_edit_active": "Activo para esta capacidad",
+  "sigil_edit_inactive": "Inactivo — actívalo para habilitar",
+  "sigil_edit_enable": "Habilitar para esta capacidad",
+  "sigil_edit_disable": "Deshabilitar para esta capacidad"
 }
