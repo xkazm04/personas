@@ -37,6 +37,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
 const DRAFT_PREFIX = 'personas.channel.draft.';
+const FILTER_PREFIX = 'personas.channel.filters.';
 
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
   const { t, tx } = useTranslation();
@@ -91,9 +92,49 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const [detailItem, setDetailItem] = useState<TeamChannelItem | null>(null);
 
   // Channel filters — kind (conversation vs system activity), author, text.
+  // Kind + author persist per team (the text query is ephemeral by design).
+  // Like drafts, persisting happens in the handlers — not an effect — so a
+  // team switch can't race the restore and clobber another team's key.
   const [kindFilter, setKindFilter] = useState<'all' | 'talk' | 'activity'>('all');
   const [authorFilter, setAuthorFilter] = useState('all'); // 'all' | 'you' | 'athena' | personaId
   const [query, setQuery] = useState('');
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FILTER_PREFIX + teamId);
+      const saved = raw ? (JSON.parse(raw) as { kind?: string; author?: string }) : null;
+      setKindFilter(saved?.kind === 'talk' || saved?.kind === 'activity' ? saved.kind : 'all');
+      setAuthorFilter(saved?.author ?? 'all');
+    } catch (err) {
+      silentCatch('collab/correspondence:filterLoad')(err);
+    }
+    setQuery('');
+  }, [teamId]);
+  const persistFilters = (kind: string, author: string) => {
+    try {
+      if (kind === 'all' && author === 'all') localStorage.removeItem(FILTER_PREFIX + teamId);
+      else localStorage.setItem(FILTER_PREFIX + teamId, JSON.stringify({ kind, author }));
+    } catch (err) {
+      silentCatch('collab/correspondence:filterSave')(err);
+    }
+  };
+  const updateKindFilter = (kind: 'all' | 'talk' | 'activity') => {
+    setKindFilter(kind);
+    persistFilters(kind, authorFilter);
+  };
+  const updateAuthorFilter = (author: string) => {
+    setAuthorFilter(author);
+    persistFilters(kindFilter, author);
+  };
+  // A restored author filter can point at a persona that has since left the
+  // team — fall back to 'all' rather than silently filtering to nothing.
+  useEffect(() => {
+    if (authorFilter === 'all' || authorFilter === 'you' || authorFilter === 'athena') return;
+    if (members.length > 0 && !members.some((m) => m.personaId === authorFilter)) {
+      setAuthorFilter('all');
+      persistFilters(kindFilter, 'all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, authorFilter]);
   const filtersActive = kindFilter !== 'all' || authorFilter !== 'all' || query.trim() !== '';
   const visible = useMemo(() => {
     if (!filtersActive) return ordered;
@@ -120,6 +161,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     setKindFilter('all');
     setAuthorFilter('all');
     setQuery('');
+    persistFilters('all', 'all');
   };
 
   useEffect(() => {
@@ -322,7 +364,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
             <button
               key={k}
               type="button"
-              onClick={() => setKindFilter(k)}
+              onClick={() => updateKindFilter(k)}
               aria-pressed={kindFilter === k}
               className={`px-2 py-0.5 rounded-interactive typo-caption transition-colors ${
                 kindFilter === k ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/55 hover:text-foreground/85'
@@ -332,7 +374,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
             </button>
           ))}
         </div>
-        <ThemedSelect value={authorFilter} onValueChange={setAuthorFilter} className="w-32">
+        <ThemedSelect value={authorFilter} onValueChange={updateAuthorFilter} className="w-32">
           <option value="all">{t.monitor.channels_author_all}</option>
           <option value="you">{t.monitor.channels_author_you}</option>
           <option value="athena">{t.monitor.channels_author_athena}</option>
