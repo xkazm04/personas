@@ -15266,6 +15266,7 @@
     "filter_empty": "このフィルターに一致するエージェントはありません",
     "triage_chip_hint": "テーブルをこれらのエージェントに絞り込む",
     "category_rollup_title": "カテゴリ別の問題",
-    "category_rollup_empty": "コーチング評定はまだありません"
+    "category_rollup_empty": "コーチング評定はまだありません",
+    "brain_history_title": "過去のコーチング（長期記憶）"
   }
 }

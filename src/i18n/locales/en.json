@@ -3469,7 +3469,8 @@
     "filter_empty": "No agents match this filter",
     "triage_chip_hint": "Filter the table to these agents",
     "category_rollup_title": "Issues by category",
-    "category_rollup_empty": "No coaching verdicts yet"
+    "category_rollup_empty": "No coaching verdicts yet",
+    "brain_history_title": "Prior coaching (long-term memory)"
   },
   "vault": {
     "title": "Vault",

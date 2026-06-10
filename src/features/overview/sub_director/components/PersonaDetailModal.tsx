@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronRight, Play, Eraser } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Eraser, Brain } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -8,7 +9,7 @@ import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { listDirectorVerdicts, runDirectorMemoryCleanup, type DirectorRosterEntry, type DirectorVerdictRow, type MemoryCleanupReport } from '@/api/director';
+import { listDirectorVerdicts, runDirectorMemoryCleanup, getDirectorBrainHistory, type DirectorRosterEntry, type DirectorVerdictRow, type MemoryCleanupReport } from '@/api/director';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { ScoreSparkline } from '../ScoreSparkline';
@@ -56,6 +57,8 @@ export function PersonaDetailModal({
   const [running, setRunning] = useState(false);
   const [cleaning, setCleaning] = useState(false);
   const [catFilter, setCatFilter] = useState<string | null>(null);
+  const [brainHistory, setBrainHistory] = useState<string | null>(null);
+  const [brainOpen, setBrainOpen] = useState(false);
   const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
@@ -63,10 +66,16 @@ export function PersonaDetailModal({
     setLoading(true);
     setExpanded(null);
     setCatFilter(null);
+    setBrainHistory(null);
+    setBrainOpen(false);
     listDirectorVerdicts(entry.personaId)
       .then(setVerdicts)
       .catch(silentCatch('PersonaDetailModal:verdicts'))
       .finally(() => setLoading(false));
+    // Best-effort: returns null when Brain is off / no vault / no notes yet.
+    getDirectorBrainHistory(entry.personaId)
+      .then(setBrainHistory)
+      .catch(silentCatch('PersonaDetailModal:brainHistory'));
   }, [entry]);
 
   // Distinct categories present in this persona's history (first-seen order),
@@ -307,6 +316,27 @@ export function PersonaDetailModal({
             </ul>
           )}
         </div>
+
+        {/* prior coaching from long-term memory (Obsidian Brain), when enabled */}
+        {brainHistory && (
+          <div className="space-y-1.5">
+            <button
+              type="button"
+              onClick={() => setBrainOpen((o) => !o)}
+              aria-expanded={brainOpen}
+              className="inline-flex items-center gap-1.5 typo-caption uppercase tracking-wider text-foreground focus-ring rounded"
+            >
+              {brainOpen ? <ChevronDown className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
+              <Brain className="w-3.5 h-3.5 text-violet-300" />
+              {t.director.brain_history_title}
+            </button>
+            {brainOpen && (
+              <div className="rounded-card border border-primary/10 bg-secondary/15 px-3 py-2 animate-fade-slide-in">
+                <MarkdownRenderer content={brainHistory} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </BaseModal>
   );

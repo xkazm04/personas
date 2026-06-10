@@ -3476,6 +3476,7 @@ export type Translations = {
     triage_chip_hint: string;
     category_rollup_title: string;
     category_rollup_empty: string;
+    brain_history_title: string;
   };
   vault: {
     title: string;

@@ -15266,6 +15266,7 @@
     "filter_empty": "Ningún agente coincide con este filtro",
     "triage_chip_hint": "Filtrar la tabla a estos agentes",
     "category_rollup_title": "Problemas por categoría",
-    "category_rollup_empty": "Aún no hay veredictos de coaching"
+    "category_rollup_empty": "Aún no hay veredictos de coaching",
+    "brain_history_title": "Coaching anterior (memoria a largo plazo)"
   }
 }

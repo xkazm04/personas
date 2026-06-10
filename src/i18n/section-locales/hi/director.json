@@ -27,5 +27,6 @@
   "filter_empty": "इस फ़िल्टर से कोई एजेंट मेल नहीं खाता",
   "triage_chip_hint": "तालिका को इन एजेंटों तक फ़िल्टर करें",
   "category_rollup_title": "श्रेणी के अनुसार समस्याएँ",
-  "category_rollup_empty": "अभी तक कोई कोचिंग फैसला नहीं"
+  "category_rollup_empty": "अभी तक कोई कोचिंग फैसला नहीं",
+  "brain_history_title": "पूर्व कोचिंग (दीर्घकालिक स्मृति)"
 }

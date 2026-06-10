@@ -27,5 +27,6 @@
   "filter_empty": "لا يوجد وكلاء يطابقون هذه التصفية",
   "triage_chip_hint": "تصفية الجدول إلى هؤلاء الوكلاء",
   "category_rollup_title": "المشكلات حسب الفئة",
-  "category_rollup_empty": "لا توجد أحكام إرشادية بعد"
+  "category_rollup_empty": "لا توجد أحكام إرشادية بعد",
+  "brain_history_title": "الإرشاد السابق (الذاكرة طويلة المدى)"
 }

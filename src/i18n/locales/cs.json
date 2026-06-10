@@ -15266,6 +15266,7 @@
     "filter_empty": "Tomuto filtru neodpovídají žádní agenti",
     "triage_chip_hint": "Filtrovat tabulku na tyto agenty",
     "category_rollup_title": "Problémy podle kategorie",
-    "category_rollup_empty": "Zatím žádné hodnocení koučinku"
+    "category_rollup_empty": "Zatím žádné hodnocení koučinku",
+    "brain_history_title": "Předchozí koučink (dlouhodobá paměť)"
   }
 }
