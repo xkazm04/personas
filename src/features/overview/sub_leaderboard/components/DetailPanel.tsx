@@ -15,6 +15,9 @@ interface DetailPanelProps {
   onImproveAgent?: (personaId: string) => void;
   /** Fleet-wide averages, used to benchmark this agent on the radar + stats. */
   fleetBenchmark?: FleetBenchmark | null;
+  /** When true (an agent is explicitly selected), echo the selection with a
+   *  primary ring so the panel reads as linked to the highlighted row. */
+  highlighted?: boolean;
 }
 
 interface StatDelta {
@@ -38,7 +41,7 @@ function buildDelta(
   return { text: `${sign}${fmt(Math.abs(diff))}`, good };
 }
 
-export function DetailPanel({ entry, onNavigateToAgent, onImproveAgent, fleetBenchmark }: DetailPanelProps) {
+export function DetailPanel({ entry, onNavigateToAgent, onImproveAgent, fleetBenchmark, highlighted }: DetailPanelProps) {
   const { t } = useTranslation();
   const reduce = useReducedMotion();
 
@@ -69,7 +72,7 @@ export function DetailPanel({ entry, onNavigateToAgent, onImproveAgent, fleetBen
   };
 
   return (
-    <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03] overflow-hidden">
+    <div className={`p-4 rounded-modal border bg-secondary/[0.03] overflow-hidden transition-all duration-300 ${highlighted ? 'border-primary/30 ring-1 ring-primary/20' : 'border-primary/[0.08]'}`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={entry.personaId}

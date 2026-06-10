@@ -86,9 +86,9 @@ export function PodiumStep({ entry, slot, selected, onClick, rankKey, activeDimL
       data-testid={`podium-${slot}`}
     >
       <div
-        className={`p-4 rounded-modal border transition-colors duration-300 ${
+        className={`p-4 rounded-modal border transition-all duration-300 ${
           selected
-            ? 'bg-primary/10 border-primary/30'
+            ? 'bg-primary/10 border-primary/40 ring-2 ring-primary/30 shadow-elevation-3'
             : 'bg-secondary/[0.04] border-primary/10 group-hover:bg-primary/[0.05]'
         }`}
       >

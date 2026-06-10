@@ -106,12 +106,15 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, i
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduce ? 0 : 0.28, delay: reduce ? 0 : index * 0.035, ease: [0.22, 0.61, 0.36, 1] }}
       whileHover={reduce ? undefined : { y: -1 }}
-      className={`w-full text-left p-3.5 rounded-modal border transition-colors duration-200 ${
+      className={`relative w-full text-left p-3.5 rounded-modal border transition-colors duration-200 ${
         selected
-          ? 'bg-primary/8 border-primary/25 ring-1 ring-primary/15'
+          ? 'bg-primary/8 border-primary/30 ring-1 ring-primary/25 shadow-elevation-2'
           : 'bg-secondary/[0.03] border-primary/[0.08] hover:bg-primary/[0.04] hover:border-primary/15'
       }`}
     >
+      {selected && (
+        <span aria-hidden className="absolute left-0 top-2.5 bottom-2.5 w-1 rounded-full bg-primary" />
+      )}
       <div className="flex items-center gap-3">
         {/* Rank */}
         <div className="w-9 flex-shrink-0 text-center">
