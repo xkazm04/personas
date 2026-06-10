@@ -37,5 +37,7 @@
   "review_filtered": "Diese {count} bewerten",
   "review_filtered_progress": "Bewertung {done}/{total}…",
   "stale_sweep": "Veraltete prüfen ({count})",
-  "stale_sweep_hint": "Jeden seit über zwei Wochen nicht gecoachten Agenten erneut bewerten"
+  "stale_sweep_hint": "Jeden seit über zwei Wochen nicht gecoachten Agenten erneut bewerten",
+  "open_reviews": "{count} offene Bewertungen",
+  "open_reviews_hint": "Coaching-Bewertungen, die auf Ihre Entscheidung warten — Prüfwarteschlange öffnen"
 }

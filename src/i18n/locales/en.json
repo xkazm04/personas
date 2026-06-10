@@ -3481,7 +3481,9 @@
     "review_filtered": "Review these {count}",
     "review_filtered_progress": "Reviewing {done}/{total}…",
     "stale_sweep": "Stale sweep ({count})",
-    "stale_sweep_hint": "Re-review every agent not coached in over two weeks"
+    "stale_sweep_hint": "Re-review every agent not coached in over two weeks",
+    "open_reviews": "{count} open reviews",
+    "open_reviews_hint": "Coaching verdicts awaiting your decision — open the review queue"
   },
   "vault": {
     "title": "Vault",

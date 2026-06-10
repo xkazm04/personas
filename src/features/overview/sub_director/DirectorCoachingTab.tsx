@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags } from 'lucide-react';
+import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags, Inbox } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -11,6 +11,7 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
@@ -62,6 +63,8 @@ export default function DirectorCoachingTab() {
   const filteredAgents = rosterFilter && p ? filterRoster(p.roster, rosterFilter, Date.now()) : [];
   // Agents whose last review is stale (>14d) — the standing stale-sweep target.
   const staleAgents = p ? filterRoster(p.roster, { type: 'flag', flag: 'stale' }, Date.now()) : [];
+  // Director coaching verdicts still awaiting the user's decision in the queue.
+  const openReviewCount = d.verdicts.filter((v) => v.status === 'pending').length;
 
   const runAll = async () => {
     setRunning(true);
@@ -167,6 +170,18 @@ export default function DirectorCoachingTab() {
                     {t.director.last_review}
                     <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
                   </span>
+                )}
+                {openReviewCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
+                    title={t.director.open_reviews_hint}
+                    className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
+                    data-testid="director-open-reviews"
+                  >
+                    <Inbox className="w-3.5 h-3.5 text-amber-400" />
+                    {tx(t.director.open_reviews, { count: openReviewCount })}
+                  </button>
                 )}
               </div>
               {/* Memory toggle */}

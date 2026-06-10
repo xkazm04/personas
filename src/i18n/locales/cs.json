@@ -15278,6 +15278,8 @@
     "review_filtered": "Zhodnotit těchto {count}",
     "review_filtered_progress": "Hodnocení {done}/{total}…",
     "stale_sweep": "Prověření starých ({count})",
-    "stale_sweep_hint": "Znovu zhodnotit každého agenta bez koučinku déle než dva týdny"
+    "stale_sweep_hint": "Znovu zhodnotit každého agenta bez koučinku déle než dva týdny",
+    "open_reviews": "{count} otevřených hodnocení",
+    "open_reviews_hint": "Hodnocení koučinku čekající na vaše rozhodnutí — otevřete frontu kontroly"
   }
 }

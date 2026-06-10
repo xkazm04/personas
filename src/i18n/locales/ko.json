@@ -15278,6 +15278,8 @@
     "review_filtered": "이 {count}개 검토",
     "review_filtered_progress": "검토 중 {done}/{total}…",
     "stale_sweep": "오래된 항목 검토 ({count})",
-    "stale_sweep_hint": "2주 넘게 코칭하지 않은 모든 에이전트 재검토"
+    "stale_sweep_hint": "2주 넘게 코칭하지 않은 모든 에이전트 재검토",
+    "open_reviews": "미처리 검토 {count}건",
+    "open_reviews_hint": "결정을 기다리는 코칭 평가 — 검토 대기열 열기"
   }
 }
