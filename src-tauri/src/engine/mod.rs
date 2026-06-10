@@ -211,6 +211,7 @@ use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::execution::audit_incidents as incidents_repo;
+use crate::db::repos::execution::scheduled_retries as scheduled_retries_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
@@ -1479,7 +1480,96 @@ impl ExecutionEngine {
                     self.circuit_breaker.clone(),
                 );
             }
+            healing::HealingAction::RetryAt { retry_at } => {
+                // Durable: a multi-hour in-memory sleep would not survive an
+                // app restart. Persist and let the event-bus tick drain it.
+                tracing::info!(
+                    persona_id = %persona_id,
+                    execution_id = %exec_id,
+                    retry_at = %retry_at,
+                    "Healing analysis: persisting usage-limit retry",
+                );
+                if let Err(e) = scheduled_retries_repo::upsert(
+                    pool,
+                    exec_id,
+                    persona_id,
+                    &retry_at.to_rfc3339(),
+                    "usage_limit_window",
+                ) {
+                    tracing::error!(
+                        execution_id = %exec_id,
+                        error = %e,
+                        "Failed to persist scheduled usage-limit retry",
+                    );
+                }
+            }
             healing::HealingAction::AiHealing | healing::HealingAction::CreateIssue => {}
+        }
+    }
+
+    /// Drain due rows from `scheduled_retries` and dispatch each as an
+    /// immediate healing retry (delay 0 through the normal retry path, so
+    /// capacity checks, lineage, and circuit-breaker guards all apply).
+    ///
+    /// Called from the event-bus tick (2s active / 10s idle cadence) — ample
+    /// resolution for multi-hour usage-limit waits, and because the table is
+    /// the source of truth, retries survive app restarts.
+    pub async fn drain_due_scheduled_retries(&self, app: &AppHandle, pool: &DbPool) {
+        let now_iso = chrono::Utc::now().to_rfc3339();
+        let due = match scheduled_retries_repo::get_due(pool, &now_iso) {
+            Ok(rows) => rows,
+            Err(e) => {
+                tracing::warn!(error = %e, "scheduled_retries: failed to load due rows");
+                return;
+            }
+        };
+        for row in due {
+            // Claim by deleting first — a retry that fails to spawn must not
+            // re-fire on every subsequent tick.
+            if let Err(e) = scheduled_retries_repo::delete(pool, &row.execution_id) {
+                tracing::warn!(
+                    execution_id = %row.execution_id,
+                    error = %e,
+                    "scheduled_retries: failed to claim row",
+                );
+                continue;
+            }
+            let (original_exec_id, current_retry_count) =
+                match exec_repo::get_by_id(pool, &row.execution_id) {
+                    Ok(e) => (
+                        e.retry_of_execution_id
+                            .unwrap_or_else(|| row.execution_id.clone()),
+                        e.retry_count,
+                    ),
+                    Err(_) => (row.execution_id.clone(), 0),
+                };
+            if current_retry_count >= healing::MAX_RETRY_COUNT {
+                tracing::warn!(
+                    execution_id = %row.execution_id,
+                    "scheduled_retries: retry budget exhausted, dropping",
+                );
+                continue;
+            }
+            tracing::info!(
+                persona_id = %row.persona_id,
+                execution_id = %row.execution_id,
+                reason = ?row.reason,
+                "scheduled_retries: dispatching due usage-limit retry",
+            );
+            spawn_delayed_retry(
+                0,
+                None,
+                pool.clone(),
+                app.clone(),
+                row.persona_id,
+                original_exec_id,
+                current_retry_count + 1,
+                self.tracker.clone(),
+                self.child_pids.clone(),
+                self.cancelled_flags.clone(),
+                self.log_dir.clone(),
+                self.circuit_breaker.clone(),
+            );
         }
     }
 
@@ -2479,6 +2569,7 @@ fn evaluate_healing_and_retry(
         error: error_str,
         timed_out,
         session_limit_reached: result.session_limit_reached,
+        usage_limit: result.usage_limit.as_ref(),
         execution_state: exec_state_str,
         timeout_ms,
         consecutive_failures: consecutive,
@@ -2656,6 +2747,14 @@ fn evaluate_healing_and_retry(
             healing::HealingAction::RetryWithTimeout { new_timeout_ms } => (
                 Some(format!("Increased timeout to {new_timeout_ms}ms")),
                 Some(5u64),
+            ),
+            healing::HealingAction::RetryAt { retry_at } => (
+                Some("Scheduled retry at usage-limit reset".to_string()),
+                Some(
+                    (*retry_at - chrono::Utc::now())
+                        .num_seconds()
+                        .max(0) as u64,
+                ),
             ),
             _ => (None, None),
         }
@@ -2862,6 +2961,30 @@ fn spawn_healing_retry(
                 log_dir,
                 circuit_breaker,
             );
+        }
+        healing::HealingAction::RetryAt { retry_at } => {
+            // Durable: persisted to scheduled_retries and drained by the
+            // event-bus tick, so the retry survives app restarts across the
+            // multi-hour usage-limit wait.
+            tracing::info!(
+                persona_id = %persona_id,
+                execution_id = %exec_id,
+                retry_at = %retry_at,
+                "Healing: persisting usage-limit retry",
+            );
+            if let Err(e) = scheduled_retries_repo::upsert(
+                pool,
+                exec_id,
+                persona_id,
+                &retry_at.to_rfc3339(),
+                "usage_limit_window",
+            ) {
+                tracing::error!(
+                    execution_id = %exec_id,
+                    error = %e,
+                    "Failed to persist scheduled usage-limit retry",
+                );
+            }
         }
         _ => {}
     }
@@ -3654,6 +3777,10 @@ fn record_failure_to_knowledge_base(
     let recommended_delay = match &diagnosis.action {
         healing::HealingAction::RetryWithBackoff { delay_secs } => Some(*delay_secs as i64),
         healing::HealingAction::RetryWithTimeout { .. } => None,
+        // Unreachable through the category gate above (RetryAt only pairs
+        // with SessionLimit) — and an absolute reset time is not a learnable
+        // backoff delay anyway.
+        healing::HealingAction::RetryAt { .. } => return,
         healing::HealingAction::AiHealing | healing::HealingAction::CreateIssue => return,
     };
 

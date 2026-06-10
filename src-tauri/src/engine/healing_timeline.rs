@@ -185,7 +185,12 @@ pub fn run_healing_analysis(
     for exec in &failures {
         let error = exec.error_message.as_deref().unwrap_or("");
         let timed_out = error.contains("timed out");
-        let session_limit = error.contains("Session limit");
+        // The runner persists usage-limit failures in a round-trippable
+        // format ("Claude usage limit reached … resets at <rfc3339>"), so a
+        // manual analysis can re-derive the same retry-at-reset diagnosis the
+        // automatic path produced.
+        let usage_limit = crate::engine::parser::parse_usage_limit(error);
+        let session_limit = usage_limit.is_some() || error.contains("Session limit");
         // Use the configured timeout from the execution config snapshot, NOT
         // the actual duration (which is how long the execution ran, not the
         // configured limit). Falls back to the persona table default (300_000ms).
@@ -204,14 +209,17 @@ pub fn run_healing_analysis(
             tools.as_deref(),
             connectors.as_deref(),
         );
-        let diagnosis = healing::diagnose(
-            &category,
-            error,
-            timeout_ms,
-            consecutive,
-            exec.retry_count,
-            kb_hint.as_ref(),
-        );
+        let diagnosis = match usage_limit.as_ref() {
+            Some(ul) => healing::usage_limit_diagnosis(ul, error, exec.retry_count),
+            None => healing::diagnose(
+                &category,
+                error,
+                timeout_ms,
+                consecutive,
+                exec.retry_count,
+                kb_hint.as_ref(),
+            ),
+        };
 
         let issue = match repo::create(
             pool,
@@ -244,13 +252,19 @@ pub fn run_healing_analysis(
 
         created += 1;
 
-        let is_auto_fixable = healing::is_auto_fixable(&category)
-            && consecutive < 3
-            && exec.retry_count < MAX_RETRY_COUNT
-            && matches!(
-                diagnosis.action,
-                HealingAction::RetryWithBackoff { .. } | HealingAction::RetryWithTimeout { .. }
-            );
+        // RetryAt (usage-limit reset) is auto-schedulable regardless of the
+        // consecutive-failure gate — usage limits are environmental, every
+        // run in the window fails. Mirrors the orchestrator's step 3.5.
+        let is_usage_limit_retry = matches!(diagnosis.action, HealingAction::RetryAt { .. })
+            && exec.retry_count < MAX_RETRY_COUNT;
+        let is_auto_fixable = is_usage_limit_retry
+            || (healing::is_auto_fixable(&category)
+                && consecutive < 3
+                && exec.retry_count < MAX_RETRY_COUNT
+                && matches!(
+                    diagnosis.action,
+                    HealingAction::RetryWithBackoff { .. } | HealingAction::RetryWithTimeout { .. }
+                ));
 
         if is_auto_fixable {
             if let Err(e) = repo::mark_auto_fix_pending(pool, &issue.id) {

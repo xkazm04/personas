@@ -4581,4 +4581,26 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_obsidian_revitalize_runs_created
             ON obsidian_revitalize_runs(created_at DESC);",
     );
+
+    // Durable usage-limit retries. When a run fails on a provider usage-limit
+    // WINDOW (e.g. Claude's rolling ~5h cap), healing schedules a retry at the
+    // parsed reset time. In-memory tokio sleeps don't survive an app restart
+    // over a multi-hour horizon, so the schedule is persisted here and drained
+    // by the event-bus tick (ExecutionEngine::drain_due_scheduled_retries).
+    // One pending retry per failed execution; rows are deleted on dispatch.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS scheduled_retries (
+            execution_id  TEXT PRIMARY KEY,
+            persona_id    TEXT NOT NULL,
+            retry_at      TEXT NOT NULL,
+            reason        TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_scheduled_retries_due
+            ON scheduled_retries(retry_at);",
+    );
 }

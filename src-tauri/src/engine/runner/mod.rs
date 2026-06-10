@@ -2398,10 +2398,31 @@ pub async fn run_execution(
 
     // Build result
     let success = !timed_out && exit_code == 0;
+    // Usage-limit details can land on stderr (CLI errors) or in the streamed
+    // assistant/result text (stream-json runs) — check both on failure.
+    let usage_limit = if !timed_out && exit_code != 0 {
+        parser::parse_usage_limit(&stderr_text)
+            .or_else(|| parser::parse_usage_limit(&assistant_text))
+    } else {
+        None
+    };
     let error = if timed_out {
         Some(format!("Execution timed out after {}s", timeout_ms / 1000))
     } else if exit_code != 0 {
-        if parser::is_session_limit_error(&stderr_text) {
+        if let Some(ul) = &usage_limit {
+            let resets = ul
+                .resets_at
+                .map(|ts| format!(" — resets at {}", ts.to_rfc3339()))
+                .unwrap_or_default();
+            Some(match ul.scope {
+                crate::engine::error_taxonomy::UsageLimitScope::Weekly => {
+                    format!("Claude weekly usage limit reached{resets}")
+                }
+                crate::engine::error_taxonomy::UsageLimitScope::Window => {
+                    format!("Claude usage limit reached (rolling window){resets}")
+                }
+            })
+        } else if parser::is_session_limit_error(&stderr_text) {
             Some("Session limit reached".into())
         } else {
             Some(format!(
@@ -2461,10 +2482,11 @@ pub async fn run_execution(
         }
     }
 
-    let session_limit_reached = error
-        .as_ref()
-        .map(|e| e.contains("Session limit"))
-        .unwrap_or(false);
+    let session_limit_reached = usage_limit.is_some()
+        || error
+            .as_ref()
+            .map(|e| e.contains("Session limit"))
+            .unwrap_or(false);
 
     // Record circuit breaker outcome for the active provider
     if let Some(ref err) = error {
@@ -2635,6 +2657,7 @@ pub async fn run_execution(
         },
         error,
         session_limit_reached,
+        usage_limit,
         log_file_path: Some(log_file_path),
         claude_session_id: metrics.session_id.clone(),
         duration_ms,

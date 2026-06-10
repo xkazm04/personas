@@ -1182,6 +1182,12 @@ pub(crate) async fn event_bus_tick(
         }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
     }
+
+    // Durable usage-limit retries: dispatch any whose reset time has passed.
+    // Lives on this tick because it's the engine-aware loop with the right
+    // cadence (2s active / 10s idle); the table itself is written by the
+    // healing paths (HealingAction::RetryAt).
+    engine.drain_due_scheduled_retries(app, pool).await;
 }
 
 /// One tick of the trigger scheduler: fetch due triggers, evaluate, publish events.

@@ -586,14 +586,82 @@ pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &St
     }
 }
 
-/// Check if stderr text indicates a session/rate limit error.
+/// Check if stderr text indicates a session/usage limit error.
+///
+/// Deliberately does NOT match plain "rate limit" / "too many requests":
+/// those are transient 429s that `error_taxonomy::classify_error` routes to
+/// `ErrorCategory::RateLimit` (auto-retried with backoff). This function flags
+/// only account-level usage caps, which set `session_limit_reached` and take
+/// the `SessionLimit` healing path.
 pub fn is_session_limit_error(stderr: &str) -> bool {
     let lower = stderr.to_lowercase();
     lower.contains("session limit")
-        || lower.contains("rate limit")
         || lower.contains("usage limit")
         || lower.contains("quota exceeded")
-        || lower.contains("too many requests")
+}
+
+/// Parse provider usage-limit details (scope + reset time) from an error text.
+///
+/// Recognized shapes, all observed from the Claude Code CLI / Anthropic API:
+/// - `Claude AI usage limit reached|1736187600` — pipe-delimited unix reset ts
+/// - `5-hour limit reached ∙ resets 3am` / `usage limit reached` — window, no
+///   parseable timestamp (callers fall back to "now + 5h")
+/// - `weekly limit reached` / any limit message mentioning "week" — weekly cap
+///
+/// Returns `None` when the text doesn't look like a usage-limit error at all.
+pub fn parse_usage_limit(text: &str) -> Option<super::error_taxonomy::UsageLimitInfo> {
+    use super::error_taxonomy::{UsageLimitInfo, UsageLimitScope};
+
+    let lower = text.to_lowercase();
+    let mentions_limit = lower.contains("usage limit")
+        || lower.contains("weekly limit")
+        || lower.contains("hour limit")
+        || lower.contains("session limit");
+    if !mentions_limit {
+        return None;
+    }
+
+    let scope = if lower.contains("week") {
+        UsageLimitScope::Weekly
+    } else {
+        UsageLimitScope::Window
+    };
+
+    // Extract a unix reset timestamp from the classic pipe format (a `|`
+    // immediately followed by a 9-12 digit run), falling back to the
+    // "resets at <rfc3339>" phrasing the runner itself persists in
+    // error_message — that makes the stored message round-trippable when
+    // healing analysis re-parses it later.
+    let from_pipe = text.split('|').skip(1).filter_map(|chunk| {
+        let digits: String = chunk.chars().take_while(|c| c.is_ascii_digit()).collect();
+        if (9..=12).contains(&digits.len()) {
+            digits.parse::<i64>().ok()
+        } else {
+            None
+        }
+    });
+    // Case-sensitive on purpose: this matches the runner's own persisted
+    // wording, and indexing `text` with an index from `lower` would be
+    // unsound (lowercasing can shift byte offsets).
+    let from_rfc3339 = text.find("resets at ").and_then(|idx| {
+        let token = text[idx + "resets at ".len()..]
+            .split_whitespace()
+            .next()?;
+        chrono::DateTime::parse_from_rfc3339(token)
+            .ok()
+            .map(|ts| ts.timestamp())
+    });
+    let resets_at = from_pipe
+        .chain(from_rfc3339)
+        .filter_map(|secs| chrono::DateTime::from_timestamp(secs, 0))
+        .find(|ts| {
+            // Garbage guard: only trust timestamps in the future and within
+            // 8 days (covers the weekly cap plus slack).
+            let now = chrono::Utc::now();
+            *ts > now && *ts < now + chrono::Duration::days(8)
+        });
+
+    Some(UsageLimitInfo { scope, resets_at })
 }
 
 /// Count tool usage occurrences from a list of parsed stream line types.
@@ -1096,28 +1164,67 @@ Finished."#;
 
     #[test]
     fn test_is_session_limit_error() {
-        // Should match
+        // Should match — account-level usage caps
         assert!(is_session_limit_error("Error: session limit reached"));
-        assert!(is_session_limit_error("rate limit exceeded"));
         assert!(is_session_limit_error(
             "Usage Limit: you have exceeded your quota"
         ));
         assert!(is_session_limit_error(
             "Quota exceeded for this billing period"
         ));
-        assert!(is_session_limit_error(
-            "Too many requests, please slow down"
-        ));
 
         // Case insensitive
         assert!(is_session_limit_error("SESSION LIMIT HIT"));
-        assert!(is_session_limit_error("Rate Limit Error"));
+
+        // Transient 429s are NOT session limits — they take the retryable
+        // RateLimit path via error_taxonomy::classify_error.
+        assert!(!is_session_limit_error("rate limit exceeded"));
+        assert!(!is_session_limit_error("Too many requests, please slow down"));
 
         // Should not match
         assert!(!is_session_limit_error("Command not found"));
         assert!(!is_session_limit_error("File not found"));
         assert!(!is_session_limit_error(""));
         assert!(!is_session_limit_error("Everything is fine"));
+    }
+
+    #[test]
+    fn test_parse_usage_limit() {
+        use crate::engine::error_taxonomy::UsageLimitScope;
+
+        // Classic pipe format with a unix reset timestamp (must be in the
+        // future for the garbage guard, so build one relative to now).
+        let future = (chrono::Utc::now() + chrono::Duration::hours(3)).timestamp();
+        let msg = format!("Claude AI usage limit reached|{future}");
+        let parsed = parse_usage_limit(&msg).expect("should parse");
+        assert_eq!(parsed.scope, UsageLimitScope::Window);
+        assert_eq!(
+            parsed.resets_at.expect("ts").timestamp(),
+            future,
+        );
+
+        // Stale/garbage timestamps are discarded but the limit still parses.
+        let parsed = parse_usage_limit("usage limit reached|1000000000").expect("should parse");
+        assert!(parsed.resets_at.is_none());
+
+        // Window phrasing without a timestamp.
+        let parsed = parse_usage_limit("5-hour limit reached - resets 3am").expect("should parse");
+        assert_eq!(parsed.scope, UsageLimitScope::Window);
+        assert!(parsed.resets_at.is_none());
+
+        // Weekly cap.
+        let parsed = parse_usage_limit("You've hit your weekly limit").expect("should parse");
+        assert_eq!(parsed.scope, UsageLimitScope::Weekly);
+
+        // "usage limit" + week mention → weekly.
+        let parsed =
+            parse_usage_limit("usage limit reached, resets next week").expect("should parse");
+        assert_eq!(parsed.scope, UsageLimitScope::Weekly);
+
+        // Not usage-limit shaped.
+        assert!(parse_usage_limit("rate limit exceeded").is_none());
+        assert!(parse_usage_limit("Command not found").is_none());
+        assert!(parse_usage_limit("").is_none());
     }
 
     #[test]

@@ -258,6 +258,10 @@ pub struct ExecutionResult {
     pub output: Option<String>,
     pub error: Option<String>,
     pub session_limit_reached: bool,
+    /// Parsed usage-limit details when the failure was a provider usage cap
+    /// (scope + reset time). Lets healing schedule a retry at the actual
+    /// reset instead of giving up or blind-backoff.
+    pub usage_limit: Option<super::error_taxonomy::UsageLimitInfo>,
     pub log_file_path: Option<String>,
     pub claude_session_id: Option<String>,
     pub duration_ms: u64,

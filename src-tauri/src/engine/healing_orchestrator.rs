@@ -53,7 +53,9 @@
 //! `docs/architecture/circuit-breakers.md` for the full contract,
 //! precedence, and reset paths.
 
-use super::healing::{self, HealingDiagnosis, KnowledgeHint, MAX_RETRY_COUNT};
+use super::healing::{
+    self, HealingAction, HealingDiagnosis, KnowledgeHint, UsageLimitInfo, MAX_RETRY_COUNT,
+};
 
 /// Threshold of consecutive failures before the persona-level circuit breaker
 /// trips and disables the persona.
@@ -99,6 +101,9 @@ pub struct HealingContext<'a> {
     pub timed_out: bool,
     /// Whether a session limit was hit (pre-parsed flag).
     pub session_limit_reached: bool,
+    /// Parsed usage-limit details (scope + reset time) when the failure was a
+    /// provider usage cap. Enables the durable retry-at-reset path.
+    pub usage_limit: Option<&'a UsageLimitInfo>,
     /// Execution state string: "failed", "incomplete", etc.
     pub execution_state: &'a str,
     /// The persona's configured timeout in milliseconds.
@@ -137,6 +142,21 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
     // If the persona has too many consecutive failures, disable it.
     if ctx.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD {
         return HealingStrategy::CircuitBreakerTripped { diagnosis };
+    }
+
+    // Step 3.5: Usage-limit override. A parsed provider usage cap replaces the
+    // generic SessionLimit→CreateIssue rule: window caps get a durable retry
+    // at the reset time, weekly caps a flavored issue. Deliberately NOT gated
+    // on `consecutive_failures < 3` — usage limits are environmental (every
+    // run in the window fails), and piling failures doesn't make a retry at
+    // reset time any less likely to succeed. The circuit breaker above still
+    // wins as the safety valve.
+    if let Some(ul) = ctx.usage_limit {
+        let diagnosis = healing::usage_limit_diagnosis(ul, ctx.error, ctx.retry_count);
+        return match diagnosis.action {
+            HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
+            _ => HealingStrategy::CreateIssue { diagnosis },
+        };
     }
 
     // Step 4: Rule-based retry — second priority.
@@ -179,6 +199,7 @@ mod tests {
             error: "",
             timed_out: false,
             session_limit_reached: false,
+            usage_limit: None,
             execution_state: "failed",
             timeout_ms: 600_000,
             consecutive_failures: 0,
@@ -421,5 +442,88 @@ mod tests {
             ..base_ctx()
         };
         assert!(!evaluate(&issue_ctx).is_auto_action());
+    }
+
+    // --- Usage-limit override (step 3.5) ---
+
+    use super::super::healing::{UsageLimitInfo, UsageLimitScope};
+
+    #[test]
+    fn window_usage_limit_schedules_retry_even_with_consecutive_failures() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        // consecutive_failures = 3 would block the regular auto-fix gate, but
+        // usage limits are environmental — the retry-at-reset still applies.
+        let ctx = HealingContext {
+            error: "Claude usage limit reached (rolling window)",
+            session_limit_reached: true,
+            usage_limit: Some(&ul),
+            consecutive_failures: 3,
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            strategy.diagnosis().action,
+            HealingAction::RetryAt { .. }
+        ));
+    }
+
+    #[test]
+    fn weekly_usage_limit_creates_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Weekly,
+            resets_at: None,
+        };
+        let ctx = HealingContext {
+            error: "Claude weekly usage limit reached",
+            session_limit_reached: true,
+            usage_limit: Some(&ul),
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
+    }
+
+    #[test]
+    fn circuit_breaker_still_beats_usage_limit_retry() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let ctx = HealingContext {
+            error: "Claude usage limit reached (rolling window)",
+            session_limit_reached: true,
+            usage_limit: Some(&ul),
+            consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CircuitBreakerTripped { .. }
+        ));
+    }
+
+    #[test]
+    fn window_usage_limit_with_exhausted_budget_creates_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let ctx = HealingContext {
+            error: "Claude usage limit reached (rolling window)",
+            session_limit_reached: true,
+            usage_limit: Some(&ul),
+            retry_count: MAX_RETRY_COUNT,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CreateIssue { .. }
+        ));
     }
 }
