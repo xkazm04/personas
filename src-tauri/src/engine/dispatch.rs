@@ -192,6 +192,13 @@ impl<'a> DispatchContext<'a> {
 
 /// Route a single protocol message to the appropriate DB repo and emit events.
 ///
+/// Backlog backpressure cap: a project with this many `pending` dev_ideas is
+/// SATURATED — backlog producers (persona `propose_backlog`, scheduled scans)
+/// skip their round instead of stacking ideas faster than the triage +
+/// promotion loop can drain them. Sized ~2× the strategist triage trigger
+/// (≥ 6 pending) so triage always fires well before producers go quiet.
+pub const IDEA_BACKLOG_CAP: i64 = 15;
+
 /// This is the core dispatch function. It handles all 6 protocol message types:
 /// - `UserMessage` -> messages repo + frontend event + OS notification
 /// - `PersonaAction` -> events repo (persona_action event type)
@@ -777,28 +784,55 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 .and_then(|x| x.as_str())
                                 .map(String::from)
                         });
-                match crate::db::repos::dev_tools::create_idea(
-                    ctx.pool,
-                    project_id.as_deref(),
-                    None,
-                    "team_proposed",
-                    category.as_deref(),
-                    title,
-                    description.as_deref(),
-                    None,
-                    Some("pending"),
-                    *effort,
-                    *impact,
-                    *risk,
-                    None,
-                    None,
-                ) {
-                    Ok(idea) => ctx
-                        .logger
-                        .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
-                    Err(e) => ctx
-                        .logger
-                        .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                // Backlog backpressure: producers SKIP their round when the
+                // project's pending backlog is already saturated. Without this
+                // every scheduled scan / strategist run keeps stacking ideas
+                // faster than triage + promotion can drain them, and backlog
+                // size becomes a function of producer cadence instead of team
+                // throughput.
+                let saturated = project_id.as_deref().is_some_and(|pid| {
+                    ctx.pool
+                        .get()
+                        .ok()
+                        .and_then(|conn| {
+                            conn.query_row(
+                                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
+                                rusqlite::params![pid],
+                                |r| r.get::<_, i64>(0),
+                            )
+                            .ok()
+                        })
+                        .unwrap_or(0)
+                        >= IDEA_BACKLOG_CAP
+                });
+                if saturated {
+                    ctx.logger.log(&format!(
+                        "[BACKLOG] propose_backlog skipped — backlog saturated (≥ {IDEA_BACKLOG_CAP} pending): {title}"
+                    ));
+                } else {
+                    match crate::db::repos::dev_tools::create_idea(
+                        ctx.pool,
+                        project_id.as_deref(),
+                        None,
+                        "team_proposed",
+                        category.as_deref(),
+                        title,
+                        description.as_deref(),
+                        None,
+                        Some("pending"),
+                        *effort,
+                        *impact,
+                        *risk,
+                        None,
+                        None,
+                    ) {
+                        Ok(idea) => ctx
+                            .logger
+                            .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
+                        Err(e) => ctx
+                            .logger
+                            .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                    }
                 }
             }
         }

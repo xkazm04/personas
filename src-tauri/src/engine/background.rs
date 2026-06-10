@@ -529,6 +529,14 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Fleet liveness watchdog — raises ONE deduped fleet_stall incident +
+        // notification when autonomy is on, work is available, no quota
+        // cooldown applies, and nothing has executed for 2h (the 06-09 silent
+        // deadlock class). Always-on; spends nothing.
+        Box::new(subscription::FleetLivenessWatchdog {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

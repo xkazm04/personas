@@ -290,6 +290,21 @@ pub const AUTONOMOUS_ATHENA_REACTIONS: &str = "autonomous_athena_reactions";
 /// Default for [`AUTONOMOUS_ATHENA_REACTIONS`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ATHENA_REACTIONS_DEFAULT: bool = false;
 
+/// Athena autonomous REVIEW RESOLUTION: when on (and channel reactions are
+/// on), Athena doesn't just react to a parked `awaiting_review` cap-out — she
+/// RESOLVES it with a three-way decision: APPROVE acceptable work (posts her
+/// assessment as an inject-directive to the QA persona + grants exactly one
+/// extra QA round via the auto-resume machinery — QA keeps sole merge
+/// authority), transform into an INCIDENT when the blocker is access/
+/// credential/external-shaped (Incidents lifecycle + escalation-close), or
+/// ESCALATE to the human (channel + notification, the reactions-only
+/// behavior). One resolution per assignment (the `athena_review_resolution`
+/// assignment event is the guard); re-parked assignments escalate to human.
+/// Default OFF — opt-in. Read by `companion::athena_reaction`.
+pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION: &str = "autonomous_athena_review_resolution";
+/// Default for [`AUTONOMOUS_ATHENA_REVIEW_RESOLUTION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION_DEFAULT: bool = false;
+
 /// When `"true"`, the Director runs a focused coaching evaluation on a persona
 /// whose recent team work shows a STORM (a burst of step failures / QA
 /// change-requests). Default OFF — opt-in. Read by
@@ -392,6 +407,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_IDEA_SCAN,
     AUTONOMOUS_BACKLOG_TRIAGE,
     AUTONOMOUS_ATHENA_REACTIONS,
+    AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
     AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
@@ -499,6 +515,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_IDEA_SCAN
         | AUTONOMOUS_BACKLOG_TRIAGE
         | AUTONOMOUS_ATHENA_REACTIONS
+        | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
         | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {

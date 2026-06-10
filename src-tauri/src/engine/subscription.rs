@@ -2471,6 +2471,52 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
             return;
         }
 
+        // Review-resolution pass FIRST (B): parked awaiting_review cap-outs
+        // starve the whole pipeline (goal-slot held → re-advance blocked →
+        // backlog promotion starved — the 06-09 fleet deadlock), so draining
+        // them outranks commentary. Opt-in via its own setting; each candidate
+        // is one CLI decision + (on approve) one resumed QA round.
+        let resolution_on = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if resolution_on {
+            const MAX_RESOLUTIONS_PER_TICK: usize = 2;
+            let candidates = {
+                let pool = self.pool.clone();
+                tokio::task::spawn_blocking(move || {
+                    crate::companion::athena_reaction::find_review_resolution_candidates(
+                        &pool,
+                        MAX_RESOLUTIONS_PER_TICK,
+                    )
+                })
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .unwrap_or_default()
+            };
+            for candidate in candidates {
+                let team = candidate.team_name.clone();
+                let aid = candidate.assignment_id.clone();
+                match crate::companion::athena_reaction::run_athena_review_resolution(
+                    &self.app, &self.pool, candidate,
+                )
+                .await
+                {
+                    Ok(outcome) => {
+                        tracing::info!(team = %team, assignment = %aid, outcome, "athena_channel_reactions: review resolution done");
+                    }
+                    Err(e) => {
+                        tracing::warn!(team = %team, assignment = %aid, error = %e, "athena_channel_reactions: review resolution failed");
+                    }
+                }
+            }
+        }
+
         let signals = {
             let pool = self.pool.clone();
             tokio::task::spawn_blocking(move || {
@@ -2507,6 +2553,161 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
         }
         if posted > 0 {
             tracing::info!(posted, "athena_channel_reactions: posted Athena reactions to channels");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Fleet liveness watchdog — a stalled autonomous fleet must never be silent
+// ---------------------------------------------------------------------------
+
+/// Always-on stall detector for the autonomous fleet. The 06-09 deadlock —
+/// parked reviews holding goal slots, starving re-advance AND backlog
+/// promotion — left the fleet producing NOTHING for two days with autonomy
+/// fully on, and no surface said so. This watchdog closes that gap: when
+/// autonomous goal advancement is ON, actionable work exists (open goals,
+/// pending backlog, or parked reviews), no quota cooldown explains the
+/// silence, and NO persona execution has started in `FLEET_STALL_HOURS`,
+/// it raises ONE deduped `fleet_stall` incident (severity high) + a desktop
+/// notification. Not gated by a setting — it spends nothing and only speaks
+/// when the fleet that should be moving isn't.
+pub struct FleetLivenessWatchdog {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// Hours of zero execution starts (with work available) that count as a stall.
+const FLEET_STALL_HOURS: i64 = 2;
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for FleetLivenessWatchdog {
+    fn name(&self) -> &'static str {
+        "fleet_liveness_watchdog"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    // Deliberately NOT slower when idle — "idle" is precisely the state this
+    // watchdog exists to interrogate.
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+
+    async fn tick(&self) {
+        let advancement_on = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !advancement_on {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            return; // silence is explained — the provider limit is in cooldown
+        }
+
+        let pool = self.pool.clone();
+        let stall: Option<(i64, i64, i64)> = tokio::task::spawn_blocking(move || {
+            let conn = pool.get().ok()?;
+            // Zero executions started in the stall window? (RFC3339 'T'
+            // timestamps — datetime()-wrap before comparing, the recurring
+            // bit class.)
+            let recent: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM persona_executions
+                     WHERE datetime(created_at) > datetime('now', ?1)",
+                    rusqlite::params![format!("-{FLEET_STALL_HOURS} hours")],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            if recent > 0 {
+                return None;
+            }
+            // Actionable work that SHOULD be producing executions.
+            let open_goals: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_goals g
+                     JOIN dev_projects dp ON dp.id = g.project_id
+                     WHERE dp.team_id IS NOT NULL
+                       AND g.status NOT IN ('done','completed') AND g.progress < 100",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            let pending_ideas: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_ideas i
+                     JOIN dev_projects dp ON dp.id = i.project_id
+                     WHERE dp.team_id IS NOT NULL AND i.status = 'pending'",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            let parked: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM team_assignments
+                     WHERE status = 'awaiting_review' AND team_id IS NOT NULL",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            if open_goals + pending_ideas + parked == 0 {
+                return None; // genuinely nothing to do — not a stall
+            }
+            Some((open_goals, pending_ideas, parked))
+        })
+        .await
+        .ok()
+        .flatten();
+
+        let Some((open_goals, pending_ideas, parked)) = stall else {
+            return;
+        };
+
+        tracing::warn!(
+            open_goals,
+            pending_ideas,
+            parked,
+            "fleet_liveness_watchdog: FLEET STALL — autonomy on, work available, no executions in {FLEET_STALL_HOURS}h"
+        );
+        let detail = format!(
+            "Autonomous goal advancement is ON and work is available (open goals: {open_goals}, \
+             pending backlog ideas: {pending_ideas}, parked awaiting-review: {parked}), but NO \
+             persona execution has started in the last {FLEET_STALL_HOURS}h and no quota cooldown \
+             explains the silence. Likely causes: parked reviews holding every goal slot \
+             (resolve or enable Athena review resolution), disabled team members, or a \
+             subscription failure. The fleet is NOT making progress."
+        );
+        let promoted = crate::db::repos::execution::audit_incidents::promote(
+            &self.pool,
+            crate::db::models::CreateAuditIncidentInput {
+                source_table: "fleet".to_string(),
+                source_id: "fleet_stall".to_string(), // stable → dedupes to ONE open incident
+                persona_id: None,
+                persona_name: Some("Fleet watchdog".to_string()),
+                execution_id: None,
+                severity: "high".to_string(),
+                kind: "fleet_stall".to_string(),
+                title: format!("Fleet stalled: no executions in {FLEET_STALL_HOURS}h with work available"),
+                detail: Some(detail),
+            },
+        );
+        // Notify only when the incident is NEW (promote dedupes re-raises while
+        // one is open) — one stall, one page.
+        if let Ok(Some(_)) = promoted {
+            crate::notifications::send(
+                &self.app,
+                "Fleet stalled",
+                &format!(
+                    "No executions in {FLEET_STALL_HOURS}h with {open_goals} open goals, {pending_ideas} backlog ideas, {parked} parked reviews."
+                ),
+            );
         }
     }
 }

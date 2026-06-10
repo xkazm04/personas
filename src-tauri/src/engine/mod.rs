@@ -2744,6 +2744,57 @@ fn check_circuit_breaker(
     issue_id: &str,
     persona_name: &str,
 ) {
+    // NEVER silently disable a TEAM MEMBER. Disabled members swallow the bus
+    // handoff (skip, no DLQ) and stall the whole team's cascade — the 06-09
+    // fleet deadlock traced partly to this: quota-storm + restart-kill
+    // failures tripped this breaker on Dev Clone / QA Guardian / Release /
+    // Docs across two teams (the E1 no-op breaker already skips team members
+    // for the same reason; this failure-path breaker predated that lesson).
+    // For a team member, raise a visible INCIDENT instead and leave it
+    // enabled — a member that keeps failing is the team's problem to surface,
+    // not a unit to silently amputate.
+    let home_team: Option<String> = pool
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT home_team_id FROM personas WHERE id = ?1",
+                rusqlite::params![persona_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok()
+        })
+        .flatten();
+    if let Some(home_team_id) = home_team {
+        tracing::warn!(
+            persona_id = %persona_id,
+            persona_name = %persona_name,
+            home_team_id = %home_team_id,
+            consecutive,
+            "circuit breaker: team member NOT disabled — raising incident instead (disable would stall the team cascade)"
+        );
+        let _ = crate::db::repos::execution::audit_incidents::promote(
+            pool,
+            crate::db::models::CreateAuditIncidentInput {
+                source_table: "circuit_breaker".to_string(),
+                source_id: persona_id.to_string(),
+                persona_id: Some(persona_id.to_string()),
+                persona_name: Some(persona_name.to_string()),
+                execution_id: Some(exec_id.to_string()),
+                severity: "high".to_string(),
+                kind: "team_member_failing".to_string(),
+                title: format!("{persona_name}: {consecutive} consecutive failures"),
+                detail: Some(format!(
+                    "Team member hit the circuit-breaker threshold ({consecutive} consecutive \
+                     failures) but was NOT auto-disabled — disabling a team member silently \
+                     breaks the team's handoff chain. Investigate the failure cause (quota \
+                     storm? credential? prompt regression?); the member stays enabled."
+                )),
+            },
+        );
+        return;
+    }
+
     tracing::warn!(
         persona_id = %persona_id,
         consecutive = consecutive,

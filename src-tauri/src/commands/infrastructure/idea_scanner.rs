@@ -338,6 +338,30 @@ pub async fn run_scan_core(
 ) -> Result<serde_json::Value, AppError> {
     let project = repo::get_project_by_id(&db, &project_id)?;
 
+    // Backlog backpressure: skip the whole scan round when the project's
+    // pending backlog is already saturated — producers must not stack ideas
+    // faster than triage + promotion can drain them (mirrors the per-idea
+    // guard at the `propose_backlog` dispatch chokepoint).
+    let pending: i64 = db
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
+                rusqlite::params![project_id],
+                |r| r.get(0),
+            )
+            .ok()
+        })
+        .unwrap_or(0);
+    if pending >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+        return Err(AppError::Validation(format!(
+            "Idea scan skipped: backlog saturated ({pending} pending ideas ≥ cap {}). \
+             Triage / promote the existing backlog first.",
+            crate::engine::dispatch::IDEA_BACKLOG_CAP
+        )));
+    }
+
     // Resolve agents before creating any DB records to avoid orphaned "running" scans
     let all_agents = get_scan_agents();
     let selected_agents: Vec<&ScanAgentMeta> = all_agents
