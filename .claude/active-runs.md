@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype — companion Decisions panel variants (+ voice select refactor)
+- Started: 2026-06-10 13:41
+- Status: started
+- Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server; scope is contained)
+- Paths: src/features/plugins/companion/sub_decisions/ (incl. new DecisionsVariant*.tsx + shared hook), src/i18n/locales/en.json (plugins.companion keys), src/features/shared/components/forms/ThemedSelect.tsx, src/features/plugins/companion/sub_voice/VoicePanel.tsx
+- Note: /prototype skill — tab switcher + 2 directional variants (Ledger, Atlas) for the Decisions panel; variants removed at consolidation. Same session also converted VoicePanel selects to ThemedSelect filterable mode (themed options) with new hideSearch/disabled support.
+
 ### feature — obsidian-brain: vault persistence + sorted nav + Revitalize module
 - Started: 2026-06-10 (worktree worktree-obsidian-revitalize off vibeman/audit-2026-06-09)
 - Status: completed (merge: 5cd7be3d8; commits 35f1c93f1..86439b576)

@@ -20,6 +20,81 @@ import {
   type CompanionDesignDecision,
 } from '@/api/companion';
 import { useCompanionStore } from '../companionStore';
+import DecisionsVariantLedger from './DecisionsVariantLedger';
+import DecisionsVariantAtlas from './DecisionsVariantAtlas';
+
+// ── Prototype scaffold (throwaway) ──────────────────────────────────
+// Tab switcher for A/B-ing directional variants of this panel. Removed
+// at consolidation when one direction wins; consumers are untouched
+// because the default export keeps its name and (empty) props shape.
+
+const PROTO_VARIANTS = ['baseline', 'ledger', 'atlas'] as const;
+type ProtoVariant = (typeof PROTO_VARIANTS)[number];
+const PROTO_STORAGE_KEY = 'proto.companion-decisions.variant';
+
+export default function DecisionsPanel() {
+  const { t } = useTranslation();
+  const [variant, setVariant] = useState<ProtoVariant>(() => {
+    const stored = localStorage.getItem(PROTO_STORAGE_KEY);
+    return PROTO_VARIANTS.includes(stored as ProtoVariant)
+      ? (stored as ProtoVariant)
+      : 'baseline';
+  });
+  const select = (next: ProtoVariant) => {
+    setVariant(next);
+    localStorage.setItem(PROTO_STORAGE_KEY, next);
+  };
+
+  const tabs: { id: ProtoVariant; label: string; hint: string }[] = [
+    {
+      id: 'baseline',
+      label: t.plugins.companion.decisions_variant_baseline,
+      hint: t.plugins.companion.decisions_variant_baseline_hint,
+    },
+    {
+      id: 'ledger',
+      label: t.plugins.companion.decisions_variant_ledger,
+      hint: t.plugins.companion.decisions_variant_ledger_hint,
+    },
+    {
+      id: 'atlas',
+      label: t.plugins.companion.decisions_variant_atlas,
+      hint: t.plugins.companion.decisions_variant_atlas_hint,
+    },
+  ];
+
+  return (
+    <div className="h-full flex flex-col">
+      <div
+        role="tablist"
+        aria-label={t.plugins.companion.decisions_variant_strip_label}
+        className="flex items-center gap-1.5 px-6 pt-3 shrink-0"
+      >
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={variant === tab.id}
+            onClick={() => select(tab.id)}
+            title={tab.hint}
+            className={`px-2.5 py-1 rounded-interactive border typo-caption font-medium transition-colors focus-ring ${
+              variant === tab.id
+                ? 'border-fuchsia-500/40 bg-fuchsia-500/15 text-foreground'
+                : 'border-foreground/10 bg-secondary/30 text-foreground hover:bg-secondary/50'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'baseline' && <DecisionsBaseline />}
+        {variant === 'ledger' && <DecisionsVariantLedger />}
+        {variant === 'atlas' && <DecisionsVariantAtlas />}
+      </div>
+    </div>
+  );
+}
 
 /**
  * Retrospective view of every design decision Athena has logged across
@@ -38,7 +113,7 @@ import { useCompanionStore } from '../companionStore';
  * "Show all" (or successfully launches the build), the panel reverts
  * to the unfiltered view.
  */
-export default function DecisionsPanel() {
+function DecisionsBaseline() {
   const { t } = useTranslation();
   const activeBuildIntent = useSystemStore((s) => s.activeBuildIntent);
   const setActiveBuildIntent = useSystemStore((s) => s.setActiveBuildIntent);
