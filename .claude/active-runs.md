@@ -11,7 +11,13 @@ materially edits the working tree should touch this file twice:
    (options: abort, coordinate, or proceed-with-awareness). Then append
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
-   top of `## Recently completed`, update its status to `completed (commit:
+   top of `## Recently completed
+
+### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
+- Started: 2026-06-10 09:30. Completed: 2026-06-10 11:05. Commits: bcd293f05, 50281ce2d, 273b1782d. Live-verified (Athena resolved 4/6 parked; fleet resumed).
+- Paths: src-tauri/src/engine/{subscription.rs,background.rs,auto_rollback.rs?}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/{fleet-analyze.mjs,loop-certify.mjs(new),lib/eval/*}, scripts/templates/_team_presets/sdlc-lifecycle.json, docs/tests/autonomy-eval/*.
+- Note: B=Athena review resolution (approve/incident/escalate), C=trigger hygiene (QA event-only, backlog backpressure, disable root-cause), A=fleet-stall watchdog, D=loop certification. Rebuild expected (fleet is stalled anyway).
+`, update its status to `completed (commit:
    <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days from
    `## Recently completed`.
 
@@ -32,10 +38,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
-- Started: 2026-06-10 09:30. Master, atomic commits.
-- Paths: src-tauri/src/engine/{subscription.rs,background.rs,auto_rollback.rs?}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/{fleet-analyze.mjs,loop-certify.mjs(new),lib/eval/*}, scripts/templates/_team_presets/sdlc-lifecycle.json, docs/tests/autonomy-eval/*.
-- Note: B=Athena review resolution (approve/incident/escalate), C=trigger hygiene (QA event-only, backlog backpressure, disable root-cause), A=fleet-stall watchdog, D=loop certification. Rebuild expected (fleet is stalled anyway).
 
 ### channel-timeline-workspace — Channel Timeline → flagship 3-zone workspace (session bc1540d9)
 - Started: 2026-06-08. Master, atomic commits.
