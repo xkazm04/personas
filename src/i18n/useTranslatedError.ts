@@ -65,6 +65,11 @@ const ERROR_KEY_MAP: Array<{ match: string | RegExp; keyPrefix: string; category
   { match: 'OAuth authorization timed out', keyPrefix: 'oauth_timeout', category: 'user_action' },
   { match: 'permission denied', keyPrefix: 'permission_denied', category: 'user_action' },
   { match: 'Forbidden', keyPrefix: 'forbidden', category: 'user_action' },
+  // Usage-limit caps before the generic rate-limit rules — "usage limit
+  // reached" also contains no "rate limit" substring, but keep specificity
+  // ordering explicit. Weekly before window (both contain "usage limit").
+  { match: 'weekly usage limit reached', keyPrefix: 'usage_limit_weekly', category: 'user_action' },
+  { match: 'usage limit reached', keyPrefix: 'usage_limit_window', category: 'recoverable' },
   { match: 'rate limit exceeded', keyPrefix: 'rate_limit', category: 'recoverable' },
   { match: 'RateLimited', keyPrefix: 'rate_limited', category: 'recoverable' },
   { match: 'Budget limit exceeded', keyPrefix: 'budget_limit', category: 'user_action' },

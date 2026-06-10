@@ -1472,6 +1472,90 @@ pub fn list_cron_agents(state: State<'_, Arc<AppState>>) -> Result<Vec<CronAgent
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
+/// A single execution fired by a schedule trigger within the recent window.
+/// Powers the "Last 24 hours" section of the Schedule timeline.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct RecentScheduleRun {
+    pub execution_id: String,
+    pub persona_id: String,
+    pub persona_name: String,
+    pub persona_icon: Option<String>,
+    pub persona_color: Option<String>,
+    pub trigger_id: String,
+    pub status: String,
+    pub created_at: String,
+    pub started_at: Option<String>,
+    pub completed_at: Option<String>,
+    pub duration_ms: Option<i64>,
+    pub cost_usd: Option<f64>,
+    pub error_message: Option<String>,
+    /// RFC 3339 time of the pending durable retry, when the run failed on a
+    /// usage-limit window and healing scheduled a retry at the reset.
+    pub retry_at: Option<String>,
+}
+
+/// List executions fired by schedule triggers within the last `hours` (default
+/// 24, capped at 168). Newest first, capped at 200 rows. Simulations excluded.
+#[tauri::command]
+pub fn list_recent_schedule_runs(
+    state: State<'_, Arc<AppState>>,
+    hours: Option<u32>,
+) -> Result<Vec<RecentScheduleRun>, AppError> {
+    require_auth_sync(&state)?;
+
+    let hours = hours.unwrap_or(24).clamp(1, 168);
+    let conn = state.db.get()?;
+    let cutoff = (chrono::Utc::now() - chrono::Duration::hours(hours as i64)).to_rfc3339();
+
+    let mut stmt = conn.prepare(
+        "SELECT
+            e.id            AS execution_id,
+            e.persona_id    AS persona_id,
+            p.name          AS persona_name,
+            p.icon          AS persona_icon,
+            p.color         AS persona_color,
+            e.trigger_id    AS trigger_id,
+            e.status        AS status,
+            e.created_at    AS created_at,
+            e.started_at    AS started_at,
+            e.completed_at  AS completed_at,
+            e.duration_ms   AS duration_ms,
+            e.cost_usd      AS cost_usd,
+            e.error_message AS error_message,
+            sr.retry_at     AS retry_at
+         FROM persona_executions e
+         JOIN persona_triggers t ON t.id = e.trigger_id AND t.trigger_type = 'schedule'
+         JOIN personas p ON p.id = e.persona_id
+         LEFT JOIN scheduled_retries sr ON sr.execution_id = e.id
+         WHERE e.created_at >= ?1
+           AND COALESCE(e.is_simulation, 0) = 0
+         ORDER BY e.created_at DESC
+         LIMIT 200",
+    )?;
+
+    let rows = stmt.query_map([&cutoff], |row| {
+        Ok(RecentScheduleRun {
+            execution_id: row.get("execution_id")?,
+            persona_id: row.get("persona_id")?,
+            persona_name: row.get("persona_name")?,
+            persona_icon: row.get("persona_icon")?,
+            persona_color: row.get("persona_color")?,
+            trigger_id: row.get("trigger_id")?,
+            status: row.get("status")?,
+            created_at: row.get("created_at")?,
+            started_at: row.get("started_at")?,
+            completed_at: row.get("completed_at")?,
+            duration_ms: row.get("duration_ms")?,
+            cost_usd: row.get("cost_usd")?,
+            error_message: row.get("error_message")?,
+            retry_at: row.get("retry_at")?,
+        })
+    })?;
+
+    Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
 // -- Dev seed: mock schedule trigger -------------------------------------------
 // pending: seed command unwired in invoke_handler; cascade flags the table.
 

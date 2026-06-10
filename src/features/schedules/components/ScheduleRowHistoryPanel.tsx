@@ -238,29 +238,47 @@ function RunRow({ execution }: { execution: PersonaExecution }) {
 }
 
 // -- Status icons + labels -------------------------------------------------
+// Exported for reuse by ScheduleRecentRuns (the timeline's "Last 24 hours"
+// section) so both surfaces render execution statuses identically.
 
 type StatusLabelKey =
   | 'run_status_running'
   | 'run_status_queued'
   | 'run_status_succeeded'
   | 'run_status_failed'
+  | 'run_status_incomplete'
   | 'run_status_cancelled';
 
-interface StatusConfigEntry {
+export interface StatusConfigEntry {
   icon: typeof CheckCircle2;
   bg: string;
   text: string;
   labelKey: StatusLabelKey;
 }
 
-const UNKNOWN_STATUS: StatusConfigEntry = {
+export const UNKNOWN_STATUS: StatusConfigEntry = {
   icon: AlertCircle,
   bg: 'bg-primary/10',
   text: 'text-foreground',
   labelKey: 'run_status_failed',
 };
 
-const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
+export const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
+  // The engine persists 'completed' / 'incomplete'; older rows and other
+  // surfaces use 'succeeded' / 'success'. Map all spellings so finished runs
+  // never fall through to UNKNOWN_STATUS (which renders as "Failed").
+  completed: {
+    icon: CheckCircle2,
+    bg: 'bg-emerald-500/15',
+    text: 'text-emerald-400',
+    labelKey: 'run_status_succeeded',
+  },
+  incomplete: {
+    icon: AlertCircle,
+    bg: 'bg-amber-500/15',
+    text: 'text-amber-400',
+    labelKey: 'run_status_incomplete',
+  },
   succeeded: {
     icon: CheckCircle2,
     bg: 'bg-emerald-500/15',
@@ -314,10 +332,11 @@ const STATUS_CONFIG: Record<string, StatusConfigEntry> = {
 
 type Translations = ReturnType<typeof useTranslation>['t'];
 
-const STATUS_LABELS: Record<StatusLabelKey, (t: Translations) => string> = {
+export const STATUS_LABELS: Record<StatusLabelKey, (t: Translations) => string> = {
   run_status_running: (t) => t.schedules.run_status_running,
   run_status_queued: (t) => t.schedules.run_status_queued,
   run_status_succeeded: (t) => t.schedules.run_status_succeeded,
   run_status_failed: (t) => t.schedules.run_status_failed,
+  run_status_incomplete: (t) => t.schedules.run_status_incomplete,
   run_status_cancelled: (t) => t.schedules.run_status_cancelled,
 };

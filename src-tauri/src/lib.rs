@@ -2267,6 +2267,7 @@ pub fn run() {
             commands::tools::triggers::cron_fire_times_in_range,
             commands::tools::triggers::dry_run_trigger,
             commands::tools::triggers::list_cron_agents,
+            commands::tools::triggers::list_recent_schedule_runs,
             // Tools -- Webhook Request Inspector
             commands::tools::triggers::list_webhook_request_logs,
             commands::tools::triggers::clear_webhook_request_logs,
