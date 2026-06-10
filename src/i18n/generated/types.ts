@@ -12177,6 +12177,13 @@ export type Translations = {
       ops_status_pending: string;
       ops_status_in_progress: string;
       ops_status_completed: string;
+      narration_trail_label: string;
+      narration_steps_one: string;
+      narration_steps_other: string;
+      narration_earlier: string;
+      narration_show: string;
+      narration_hide: string;
+      narration_live_label: string;
       slow_progress_soft: string;
       slow_progress_firm: string;
       stop_turn: string;
