@@ -32,5 +32,6 @@
   "momentum_label": "गति",
   "momentum_improving": "सुधरते",
   "momentum_flat": "स्थिर",
-  "momentum_declining": "गिरते"
+  "momentum_declining": "गिरते",
+  "sparkline_scores": "हाल के स्कोर (पुराने से नए)"
 }

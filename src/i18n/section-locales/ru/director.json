@@ -32,5 +32,6 @@
   "momentum_label": "Динамика",
   "momentum_improving": "растут",
   "momentum_flat": "без изменений",
-  "momentum_declining": "падают"
+  "momentum_declining": "падают",
+  "sparkline_scores": "Недавние оценки (от старых к новым)"
 }

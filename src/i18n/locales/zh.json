@@ -15271,6 +15271,7 @@
     "momentum_label": "动向",
     "momentum_improving": "上升",
     "momentum_flat": "持平",
-    "momentum_declining": "下降"
+    "momentum_declining": "下降",
+    "sparkline_scores": "近期评分（从旧到新）"
   }
 }

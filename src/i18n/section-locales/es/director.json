@@ -32,5 +32,6 @@
   "momentum_label": "Tendencia",
   "momentum_improving": "mejorando",
   "momentum_flat": "estable",
-  "momentum_declining": "bajando"
+  "momentum_declining": "bajando",
+  "sparkline_scores": "Puntuaciones recientes (de más antigua a más reciente)"
 }

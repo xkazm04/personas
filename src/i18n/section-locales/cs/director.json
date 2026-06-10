@@ -32,5 +32,6 @@
   "momentum_label": "Vývoj",
   "momentum_improving": "zlepšení",
   "momentum_flat": "beze změny",
-  "momentum_declining": "pokles"
+  "momentum_declining": "pokles",
+  "sparkline_scores": "Nedávná skóre (od nejstaršího)"
 }

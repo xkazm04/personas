@@ -32,5 +32,6 @@
   "momentum_label": "Dynamique",
   "momentum_improving": "en hausse",
   "momentum_flat": "stable",
-  "momentum_declining": "en baisse"
+  "momentum_declining": "en baisse",
+  "sparkline_scores": "Scores récents (du plus ancien au plus récent)"
 }

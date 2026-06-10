@@ -3474,7 +3474,8 @@
     "momentum_label": "Momentum",
     "momentum_improving": "improving",
     "momentum_flat": "flat",
-    "momentum_declining": "declining"
+    "momentum_declining": "declining",
+    "sparkline_scores": "Recent scores (oldest→newest)"
   },
   "vault": {
     "title": "Vault",

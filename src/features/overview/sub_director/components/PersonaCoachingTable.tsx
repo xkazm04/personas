@@ -179,7 +179,7 @@ export function PersonaCoachingTable({
               {/* trend */}
               <span>
                 {r.scoreTrend.length >= 2 ? (
-                  <ScoreSparkline scores={r.scoreTrend} />
+                  <ScoreSparkline scores={r.scoreTrend} tooltip={`${t.director.sparkline_scores}: ${r.scoreTrend.join(' → ')}`} />
                 ) : (
                   <span className="typo-caption text-foreground">—</span>
                 )}

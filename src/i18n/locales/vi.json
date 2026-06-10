@@ -15271,6 +15271,7 @@
     "momentum_label": "Đà",
     "momentum_improving": "cải thiện",
     "momentum_flat": "ổn định",
-    "momentum_declining": "giảm sút"
+    "momentum_declining": "giảm sút",
+    "sparkline_scores": "Điểm gần đây (cũ đến mới)"
   }
 }

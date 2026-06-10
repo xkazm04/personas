@@ -32,5 +32,6 @@
   "momentum_label": "추세",
   "momentum_improving": "상승",
   "momentum_flat": "유지",
-  "momentum_declining": "하락"
+  "momentum_declining": "하락",
+  "sparkline_scores": "최근 점수 (오래된 순)"
 }

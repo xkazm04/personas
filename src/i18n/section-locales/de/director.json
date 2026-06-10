@@ -32,5 +32,6 @@
   "momentum_label": "Dynamik",
   "momentum_improving": "steigend",
   "momentum_flat": "unverändert",
-  "momentum_declining": "fallend"
+  "momentum_declining": "fallend",
+  "sparkline_scores": "Letzte Bewertungen (alt zu neu)"
 }

@@ -32,5 +32,6 @@
   "momentum_label": "الزخم",
   "momentum_improving": "تحسّن",
   "momentum_flat": "ثابت",
-  "momentum_declining": "تراجع"
+  "momentum_declining": "تراجع",
+  "sparkline_scores": "الدرجات الأخيرة (من الأقدم إلى الأحدث)"
 }

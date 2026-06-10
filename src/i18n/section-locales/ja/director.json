@@ -32,5 +32,6 @@
   "momentum_label": "勢い",
   "momentum_improving": "上昇",
   "momentum_flat": "横ばい",
-  "momentum_declining": "下降"
+  "momentum_declining": "下降",
+  "sparkline_scores": "最近のスコア（古い順）"
 }

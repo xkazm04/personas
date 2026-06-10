@@ -177,7 +177,7 @@ export function PersonaDetailModal({
           {entry.scoreTrend.length >= 2 && (
             <div className="flex items-center gap-2">
               <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.col_verdict}</span>
-              <ScoreSparkline scores={entry.scoreTrend} width={72} height={20} />
+              <ScoreSparkline scores={entry.scoreTrend} width={72} height={20} tooltip={`${t.director.sparkline_scores}: ${entry.scoreTrend.join(' → ')}`} />
             </div>
           )}
           <div className="flex items-center gap-2">

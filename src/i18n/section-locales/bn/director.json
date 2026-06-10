@@ -32,5 +32,6 @@
   "momentum_label": "গতি",
   "momentum_improving": "উন্নতি",
   "momentum_flat": "স্থির",
-  "momentum_declining": "অবনতি"
+  "momentum_declining": "অবনতি",
+  "sparkline_scores": "সাম্প্রতিক স্কোর (পুরনো থেকে নতুন)"
 }

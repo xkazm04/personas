@@ -3481,6 +3481,7 @@ export type Translations = {
     momentum_improving: string;
     momentum_flat: string;
     momentum_declining: string;
+    sparkline_scores: string;
   };
   vault: {
     title: string;

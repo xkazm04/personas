@@ -32,5 +32,6 @@
   "momentum_label": "Momentum",
   "momentum_improving": "membaik",
   "momentum_flat": "tetap",
-  "momentum_declining": "menurun"
+  "momentum_declining": "menurun",
+  "sparkline_scores": "Skor terbaru (lama ke baru)"
 }
