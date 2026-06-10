@@ -6134,6 +6134,17 @@ export type Translations = {
       subtitle_contextual: string;
       context_for: string;
       context_exit: string;
+      widget_empty: string;
+      verdict_title: string;
+      verdict_confidence: string;
+      verdict_confidence_high: string;
+      verdict_confidence_medium: string;
+      verdict_confidence_low: string;
+      verdict_resolve: string;
+      comparison_recommended: string;
+      flow_title: string;
+      timeline_title: string;
+      log_title: string;
       message_summary_title: string;
       message_unavailable: string;
       message_empty: string;
