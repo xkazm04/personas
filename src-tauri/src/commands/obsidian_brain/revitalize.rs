@@ -17,10 +17,13 @@ use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
+use chrono::Utc;
+
 use crate::background_job::{BackgroundJobManager, BackgroundTaskSnapshot, JobEntry};
 use crate::commands::design::analysis::extract_display_text;
-use crate::db::models::ObsidianVaultConfig;
+use crate::db::models::{ObsidianVaultConfig, RevitalizeRunRecord};
 use crate::db::repos::core::settings as settings_repo;
+use crate::db::repos::resources::obsidian_brain as history_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
@@ -410,8 +413,12 @@ pub async fn obsidian_revitalize_start(
 
     let prompt_text = build_revitalize_prompt(&config, &options);
     let app_for_task = app.clone();
+    let app_state = state.inner().clone();
     let job_for_task = job_id.clone();
     let token_for_task = cancel_token;
+    let vault_name = config.vault_name.clone();
+    let vault_path_str = config.vault_path.clone();
+    let started_at_iso = Utc::now().to_rfc3339();
 
     tokio::spawn(async move {
         let started = std::time::Instant::now();
@@ -444,15 +451,41 @@ pub async fn obsidian_revitalize_start(
             ) => res,
         };
 
+        // Measured regardless of outcome — a failed/cancelled pass may still
+        // have modified notes before it stopped.
+        let after = scan_vault_notes(&vault_dir);
+        let duration_secs = started.elapsed().as_secs() as i64;
+        let mut record = RevitalizeRunRecord {
+            id: job_for_task.clone(),
+            vault_name,
+            vault_path: vault_path_str,
+            status: "completed".into(),
+            error: None,
+            files_deleted: 0,
+            files_merged: 0,
+            files_updated: 0,
+            files_reviewed: 0,
+            notes_before: before.note_count as i64,
+            notes_after: after.note_count as i64,
+            est_tokens_before: before.est_tokens() as i64,
+            est_tokens_after: after.est_tokens() as i64,
+            duration_secs,
+            started_at: started_at_iso,
+            created_at: Utc::now().to_rfc3339(),
+        };
+
         match result {
             Ok(output) => {
-                let after = scan_vault_notes(&vault_dir);
                 let model_summary = parse_summary_line(&output);
+                record.files_deleted = u64_field(model_summary.as_ref(), "filesDeleted") as i64;
+                record.files_merged = u64_field(model_summary.as_ref(), "filesMerged") as i64;
+                record.files_updated = u64_field(model_summary.as_ref(), "filesUpdated") as i64;
+                record.files_reviewed = u64_field(model_summary.as_ref(), "filesReviewed") as i64;
                 let summary = serde_json::json!({
-                    "filesDeleted": u64_field(model_summary.as_ref(), "filesDeleted"),
-                    "filesMerged": u64_field(model_summary.as_ref(), "filesMerged"),
-                    "filesUpdated": u64_field(model_summary.as_ref(), "filesUpdated"),
-                    "filesReviewed": u64_field(model_summary.as_ref(), "filesReviewed"),
+                    "filesDeleted": record.files_deleted,
+                    "filesMerged": record.files_merged,
+                    "filesUpdated": record.files_updated,
+                    "filesReviewed": record.files_reviewed,
                     "summary": model_summary
                         .as_ref()
                         .and_then(|v| v.get("summary"))
@@ -469,7 +502,7 @@ pub async fn obsidian_revitalize_start(
                     "bytesAfter": after.total_bytes,
                     "estTokensBefore": before.est_tokens(),
                     "estTokensAfter": after.est_tokens(),
-                    "durationSecs": started.elapsed().as_secs(),
+                    "durationSecs": duration_secs,
                 });
                 REVITALIZE_JOBS.update_extra(&job_for_task, |extra| {
                     extra.summary = Some(summary);
@@ -478,12 +511,29 @@ pub async fn obsidian_revitalize_start(
             }
             Err(err) => {
                 tracing::warn!(job_id = %job_for_task, error = %err, "obsidian revitalize pass failed");
+                record.status = "failed".into();
+                record.error = Some(err.clone());
                 REVITALIZE_JOBS.set_status(&app_for_task, &job_for_task, "failed", Some(err));
             }
+        }
+
+        // Best-effort: history is observability, never a gate on the pass.
+        if let Err(e) = history_repo::insert_revitalize_run(&app_state.db, &record) {
+            tracing::warn!(job_id = %record.id, error = %e, "failed to persist revitalize run record");
         }
     });
 
     Ok(job_id)
+}
+
+/// Last finished revitalize passes, newest first (default 20, max 100).
+#[tauri::command]
+pub fn obsidian_revitalize_history(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<RevitalizeRunRecord>, AppError> {
+    require_auth_sync(&state)?;
+    history_repo::list_revitalize_runs(&state.db, limit.unwrap_or(20).clamp(1, 100))
 }
 
 #[tauri::command]

@@ -2406,6 +2406,7 @@ pub fn run() {
             commands::obsidian_brain::revitalize::obsidian_revitalize_snapshot,
             commands::obsidian_brain::revitalize::obsidian_revitalize_active,
             commands::obsidian_brain::revitalize::obsidian_revitalize_cancel,
+            commands::obsidian_brain::revitalize::obsidian_revitalize_history,
             // Obsidian Brain — Graph (Obsidian Memory connector)
             commands::obsidian_brain::graph::obsidian_graph_search,
             commands::obsidian_brain::graph::obsidian_graph_outgoing_links,

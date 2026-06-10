@@ -11,6 +11,7 @@
 | `obsidian_brain_save_config` / `_get_config` | Persist active vault config in settings table |
 | `obsidian_brain_list_saved_vaults` / `_set_saved_vaults` | Saved-vault roster (settings table, survives sessions) |
 | `obsidian_revitalize_start` / `_snapshot` / `_active` / `_cancel` | Background Claude CLI vault-optimization pass |
+| `obsidian_revitalize_history` | Persisted run history (`obsidian_revitalize_runs`, newest first) |
 | `obsidian_brain_push_sync` / `_pull_sync` | Bidirectional markdown sync, scoped optionally to persona IDs |
 | `obsidian_brain_get_sync_log` | Read the rolling sync history |
 | `obsidian_brain_resolve_conflict` | Apply Keep-App / Keep-Vault / Skip to a 3-way conflict |
@@ -47,6 +48,7 @@ src/features/plugins/obsidian-brain/
 ├── sub_revitalize/RevitalizePanel.tsx # background memory-consolidation pass (goals + log + summary)
 ├── sub_revitalize/RevitalizeProgress.tsx     # live streaming log + cancel
 ├── sub_revitalize/RevitalizeSummaryCard.tsx  # end-of-pass stats (removed/merged/tokens saved/...)
+├── sub_revitalize/RevitalizeHistoryTable.tsx # persisted Recent-passes table (when / vault / result)
 └── sub_revitalize/useRevitalizeJob.ts # job lifecycle, event stream, snapshot re-attach
 ```
 
