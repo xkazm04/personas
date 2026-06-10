@@ -5730,7 +5730,8 @@
       "hint_health": "Atasi masalah penyembuhan dan rollback untuk menaikkan skor kesehatan.",
       "hint_speed": "Kurangi latensi dengan prompt yang lebih ringkas atau model yang lebih cepat.",
       "hint_cost": "Turunkan biaya per proses dengan model lebih murah atau konteks lebih pendek.",
-      "hint_activity": "Picu atau jadwalkan agen ini lebih sering untuk menaikkan aktivitas."
+      "hint_activity": "Picu atau jadwalkan agen ini lebih sering untuk menaikkan aktivitas.",
+      "improve_agent": "Tingkatkan agen ini"
     },
     "analytics": {
       "title": "Analitik",

@@ -5730,7 +5730,8 @@
       "hint_health": "Vyřešte problémy s opravami a vrácení, abyste zvýšili skóre stavu.",
       "hint_speed": "Snižte latenci stručnějšími prompty nebo rychlejším modelem.",
       "hint_cost": "Snižte náklady na běh levnějším modelem nebo kratším kontextem.",
-      "hint_activity": "Spouštějte nebo plánujte tohoto agenta častěji pro vyšší aktivitu."
+      "hint_activity": "Spouštějte nebo plánujte tohoto agenta častěji pro vyšší aktivitu.",
+      "improve_agent": "Vylepšit tohoto agenta"
     },
     "analytics": {
       "title": "Analytika",

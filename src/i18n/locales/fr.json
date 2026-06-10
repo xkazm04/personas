@@ -5730,7 +5730,8 @@
       "hint_health": "Résolvez les problèmes de réparation et les retours arrière pour améliorer le score de santé.",
       "hint_speed": "Réduisez la latence avec des prompts plus légers ou un modèle plus rapide.",
       "hint_cost": "Réduisez le coût par exécution avec un modèle moins cher ou un contexte plus court.",
-      "hint_activity": "Déclenchez ou planifiez cet agent plus souvent pour augmenter l'activité."
+      "hint_activity": "Déclenchez ou planifiez cet agent plus souvent pour augmenter l'activité.",
+      "improve_agent": "Améliorer cet agent"
     },
     "analytics": {
       "title": "Analyses",

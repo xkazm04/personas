@@ -626,7 +626,8 @@
     "hint_health": "Xử lý sự cố tự phục hồi và rollback để tăng điểm tình trạng.",
     "hint_speed": "Giảm độ trễ bằng prompt gọn hơn hoặc mô hình nhanh hơn.",
     "hint_cost": "Giảm chi phí mỗi lần chạy bằng mô hình rẻ hơn hoặc ngữ cảnh ngắn hơn.",
-    "hint_activity": "Kích hoạt hoặc lên lịch tác nhân này thường xuyên hơn để tăng hoạt động."
+    "hint_activity": "Kích hoạt hoặc lên lịch tác nhân này thường xuyên hơn để tăng hoạt động.",
+    "improve_agent": "Cải thiện tác nhân này"
   },
   "analytics": {
     "title": "Phân tích",

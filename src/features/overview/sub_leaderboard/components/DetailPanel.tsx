@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ExternalLink, Target } from 'lucide-react';
+import { ExternalLink, Target, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { LeaderboardEntry, DimensionKey } from '../libs/leaderboardScoring';
 import type { FleetBenchmark } from '../libs/useLeaderboardData';
@@ -11,6 +11,8 @@ import { DebtText } from '@/i18n/DebtText';
 interface DetailPanelProps {
   entry: LeaderboardEntry | null;
   onNavigateToAgent: (personaId: string) => void;
+  /** Jump to the agent's Lab/Improve flow — wired from the opportunity CTA. */
+  onImproveAgent?: (personaId: string) => void;
   /** Fleet-wide averages, used to benchmark this agent on the radar + stats. */
   fleetBenchmark?: FleetBenchmark | null;
 }
@@ -36,7 +38,7 @@ function buildDelta(
   return { text: `${sign}${fmt(Math.abs(diff))}`, good };
 }
 
-export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: DetailPanelProps) {
+export function DetailPanel({ entry, onNavigateToAgent, onImproveAgent, fleetBenchmark }: DetailPanelProps) {
   const { t } = useTranslation();
   const reduce = useReducedMotion();
 
@@ -137,6 +139,15 @@ export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: Detail
                 </span>
               </div>
               <p className="typo-caption text-foreground mt-1.5 leading-snug">{DIM_HINT[opportunity.dim.key]}</p>
+              {onImproveAgent && (
+                <button
+                  onClick={() => onImproveAgent(entry.personaId)}
+                  className="mt-2.5 w-full flex items-center justify-center gap-1.5 typo-caption font-semibold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/15 py-1.5 rounded-card transition-colors"
+                >
+                  <Sparkles className="w-3 h-3" />
+                  {lb.improve_agent}
+                </button>
+              )}
             </div>
           )}
 

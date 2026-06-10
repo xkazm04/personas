@@ -6221,6 +6221,7 @@ export type Translations = {
       hint_speed: string;
       hint_cost: string;
       hint_activity: string;
+      improve_agent: string;
     };
     analytics: {
       title: string;

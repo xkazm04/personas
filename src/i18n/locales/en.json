@@ -6214,7 +6214,8 @@
       "hint_health": "Clear healing issues and rollbacks to lift the health score.",
       "hint_speed": "Trim latency with leaner prompts or a faster model.",
       "hint_cost": "Lower cost per run with a cheaper model or shorter context.",
-      "hint_activity": "Trigger or schedule this agent more often to raise activity."
+      "hint_activity": "Trigger or schedule this agent more often to raise activity.",
+      "improve_agent": "Improve this agent"
     },
     "analytics": {
       "title": "Analytics",

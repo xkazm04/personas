@@ -5730,7 +5730,8 @@
       "hint_health": "Resuelve los problemas de recuperación y los rollbacks para subir la puntuación de salud.",
       "hint_speed": "Reduce la latencia con prompts más concisos o un modelo más rápido.",
       "hint_cost": "Reduce el costo por ejecución con un modelo más barato o un contexto más corto.",
-      "hint_activity": "Activa o programa este agente con más frecuencia para aumentar la actividad."
+      "hint_activity": "Activa o programa este agente con más frecuencia para aumentar la actividad.",
+      "improve_agent": "Mejorar este agente"
     },
     "analytics": {
       "title": "Análisis",

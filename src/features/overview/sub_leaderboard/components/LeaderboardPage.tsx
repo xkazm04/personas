@@ -55,6 +55,14 @@ export default function LeaderboardPage() {
     useAgentStore.getState().selectPersona(personaId);
   }, []);
 
+  // Jump straight to the agent's Lab tab — where the Improve / Athena flow
+  // lives — so the surfaced opportunity leads directly to acting on it.
+  const handleImproveAgent = useCallback((personaId: string) => {
+    useSystemStore.getState().setSidebarSection('personas');
+    useAgentStore.getState().selectPersona(personaId);
+    useSystemStore.getState().setEditorTab('lab');
+  }, []);
+
   const topEntry = ranked[0] ?? null;
   const selectedEntry = selectedId
     ? ranked.find((e) => e.personaId === selectedId) ?? null
@@ -133,12 +141,12 @@ export default function LeaderboardPage() {
                   ))}
                 </div>
                 <div className="w-64 flex-shrink-0">
-                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} fleetBenchmark={fleetBenchmark} />
+                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} onImproveAgent={handleImproveAgent} fleetBenchmark={fleetBenchmark} />
                 </div>
               </div>
             ) : (
               <div className="max-w-sm mx-auto w-full">
-                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} fleetBenchmark={fleetBenchmark} />
+                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} onImproveAgent={handleImproveAgent} fleetBenchmark={fleetBenchmark} />
               </div>
             )}
           </div>

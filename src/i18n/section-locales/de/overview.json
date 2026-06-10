@@ -626,7 +626,8 @@
     "hint_health": "Behebe Heilungsprobleme und Rollbacks, um den Zustandswert zu steigern.",
     "hint_speed": "Senke die Latenz mit schlankeren Prompts oder einem schnelleren Modell.",
     "hint_cost": "Senke die Kosten pro Lauf mit einem günstigeren Modell oder kürzerem Kontext.",
-    "hint_activity": "Löse oder plane diesen Agenten häufiger aus, um die Aktivität zu steigern."
+    "hint_activity": "Löse oder plane diesen Agenten häufiger aus, um die Aktivität zu steigern.",
+    "improve_agent": "Diesen Agenten verbessern"
   },
   "analytics": {
     "title": "Analytik",
