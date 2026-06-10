@@ -172,7 +172,29 @@ Director/Athena orchestration discussion).
   `list_team_channel` carries `replyTo` (the channel table's column), the
   composer's per-message Reply affordance posts a directive with
   `post_team_directive(reply_to)`, and replies render indented under a quoted
-  reference to their parent.
+  reference to their parent. The composer is a multiline autosizing textarea
+  (Enter sends, Shift+Enter breaks) with per-team draft persistence and an
+  @-mention autocomplete covering Athena and every roster member. A filter bar
+  (clicking a presence avatar in the header band also inserts the mention and
+  focuses the composer). A filter bar
+  (text search · Conversation/Activity kind toggle · author select) narrows
+  the feed; the kind + author filters persist per team across sessions (the
+  text query is deliberately ephemeral). Any conversational row (hover pin)
+  or system event (Pin action in the detail modal) can be **pinned as a team
+  memory** via `create_team_memory` — the channel read-model unions memories
+  back in, so the pin reappears as a memory row in the conversation. Messages
+  from different days are divided by Today/Yesterday/date separators, the
+  header crest wears the team's own icon and color, and teams holding an
+  unsent composer draft show a pen hint on the Teams table.
+- **Workspace settings guard**: the Team Studio's workspace pane (identity +
+  shared instructions + defaults) reports unsaved edits up to the studio
+  shell; switching modes, clicking a roster member, or navigating back while
+  dirty raises a Discard-changes/Keep-editing confirm instead of silently
+  dropping the edits. The studio header also wears the team's identity — the
+  icon and color editable in Workspace settings render in the header chip —
+  and the roster shows live presence: members mid-step get a pulsing
+  "Working…" dot, members at a review gate a "Waiting for review" one, from
+  the same step-layer derivation the channel header uses (`useTeamPresence`).
 
 ## sub_teamWorkspace — Settings (team workspace defaults + disband)
 

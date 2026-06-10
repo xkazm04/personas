@@ -28,7 +28,7 @@ const VARIANT_TABS: Array<{ id: RedRoomVariant; label: string; hint: string }> =
 
 export function RedRoomPane({ teamId, members }: { teamId: string; members: StudioMember[] }) {
   const memberPersonaIds = useMemo(() => members.map((m) => m.personaId), [members]);
-  const { items, loaded, projectId } = useRedRoomFeed(teamId, memberPersonaIds);
+  const { items, loaded, projectId, refreshSubscriptions } = useRedRoomFeed(teamId, memberPersonaIds);
   const [variant, setVariant] = useState<RedRoomVariant>('transcript');
 
   return (
@@ -66,7 +66,7 @@ export function RedRoomPane({ teamId, members }: { teamId: string; members: Stud
           /* eslint-disable-next-line custom/no-hardcoded-jsx-text */
           <p className="typo-body text-foreground px-1 py-3">Tuning in…</p>
         ) : variant === 'relay' ? (
-          <RedRoomRelay items={items} />
+          <RedRoomRelay items={items} members={members} onSubscriptionsChanged={refreshSubscriptions} />
         ) : (
           <RedRoomTranscript items={items} />
         )}

@@ -50,6 +50,17 @@ state: FleetSessionState,
  */
 lastActivityMs: bigint, 
 /**
+ * When the PTY last produced ANY bytes — including idle status redraws
+ * (0 = never). Provenance signal for the state tooltip; total silence
+ * is what the frozen-process stall check keys on.
+ */
+lastPtyOutputMs: bigint, 
+/**
+ * When the transcript (JSONL) last actually grew, per the staleness
+ * ticker's size polling (0 = not yet observed). Provenance signal.
+ */
+lastGrewMs: bigint, 
+/**
  * Wall-clock ms since UNIX epoch when the PTY was spawned.
  */
 createdAtMs: bigint, 

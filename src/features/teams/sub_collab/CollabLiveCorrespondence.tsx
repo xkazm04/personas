@@ -1,21 +1,26 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X } from 'lucide-react';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown, Search } from 'lucide-react';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily } from '../sub_redRoom/useRedRoomFeed';
 import { payloadSummary } from './payloadView';
-import { useTeamChannel, parseDeliveries } from './useTeamChannel';
+import { useTeamChannel, parseDeliveries, CHANNEL_DRAFT_PREFIX } from './useTeamChannel';
 import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
   type ChannelMember,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { ChannelDetailModal } from './ChannelDetailModal';
 import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
+import { createTeamMemory } from '@/api/pipeline/teamMemories';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -32,13 +37,98 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * inline team-review intervention; pending manual reviews surface via the
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
+const DRAFT_PREFIX = CHANNEL_DRAFT_PREFIX;
+const FILTER_PREFIX = 'personas.channel.filters.';
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+function sameLocalDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+/**
+ * Render @mention tokens inside a message body as colored inline emphasis:
+ * @athena in her violet voice, member handles (@FirstWord) in that member's
+ * color. Non-matching @tokens stay plain text. Whitespace is preserved by the
+ * surrounding `whitespace-pre-wrap`.
+ */
+function renderWithMentions(text: string, members?: ChannelMember[]): ReactNode {
+  const parts = text.split(/(@[\p{L}\d_-]+)/u);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) => {
+    if (part.startsWith('@')) {
+      const token = part.slice(1).toLowerCase();
+      if (token === 'athena') {
+        return <span key={i} className="text-violet-300 font-medium">{part}</span>;
+      }
+      const member = members?.find(
+        (m) => m.name.replace(/^T: /, '').split(/\s+/)[0]!.toLowerCase() === token,
+      );
+      if (member) {
+        return <span key={i} className="font-medium" style={{ color: member.color ?? undefined }}>{part}</span>;
+      }
+    }
+    return part;
+  });
+}
+
+/**
+ * Day-separator label: Today / Yesterday for the two most recent days
+ * (localized via the caller), otherwise a locale-formatted weekday + date —
+ * the same treatment the companion conversation uses.
+ */
+function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  if (sameLocalDay(d, now)) return todayLabel;
+  if (sameLocalDay(d, new Date(now.getTime() - ONE_DAY_MS))) return yesterdayLabel;
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
+  const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
-  const { items, loaded, exhausted, posting, presence, loadOlder, sendDirective } = useTeamChannel(teamId);
+  const { items, loaded, exhausted, posting, presence, refreshHead, loadOlder, sendDirective } = useTeamChannel(teamId);
+  const addToast = useToastStore((s) => s.addToast);
   const [draft, setDraft] = useState('');
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const topSentinel = useRef<HTMLDivElement | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
   const stickBottom = useRef(true);
+
+  // Per-team draft persistence: a half-written directive survives switching
+  // teams or closing the app. Persisting happens in updateDraft (not an
+  // effect) so a team switch can't race the load and clobber another key.
+  useEffect(() => {
+    try {
+      setDraft(localStorage.getItem(DRAFT_PREFIX + teamId) ?? '');
+    } catch (err) {
+      silentCatch('collab/correspondence:draftLoad')(err);
+    }
+  }, [teamId]);
+
+  const updateDraft = (next: string | ((d: string) => string)) => {
+    setDraft((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      try {
+        if (value) localStorage.setItem(DRAFT_PREFIX + teamId, value);
+        else localStorage.removeItem(DRAFT_PREFIX + teamId);
+      } catch (err) {
+        silentCatch('collab/correspondence:draftSave')(err);
+      }
+      return value;
+    });
+  };
+
+  // Autosize the composer up to ~6 lines; beyond that it scrolls.
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [draft]);
+  const [atBottom, setAtBottom] = useState(true);
+  const [unseen, setUnseen] = useState(0);
+  const lastSeenIdRef = useRef<string | null>(null);
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
   const ordered = useMemo(() => [...items].reverse(), [items]);
@@ -46,10 +136,98 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const [replyTarget, setReplyTarget] = useState<TeamChannelItem | null>(null);
   const [detailItem, setDetailItem] = useState<TeamChannelItem | null>(null);
 
+  // Channel filters — kind (conversation vs system activity), author, text.
+  // Kind + author persist per team (the text query is ephemeral by design).
+  // Like drafts, persisting happens in the handlers — not an effect — so a
+  // team switch can't race the restore and clobber another team's key.
+  const [kindFilter, setKindFilter] = useState<'all' | 'talk' | 'activity'>('all');
+  const [authorFilter, setAuthorFilter] = useState('all'); // 'all' | 'you' | 'athena' | personaId
+  const [query, setQuery] = useState('');
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FILTER_PREFIX + teamId);
+      const saved = raw ? (JSON.parse(raw) as { kind?: string; author?: string }) : null;
+      setKindFilter(saved?.kind === 'talk' || saved?.kind === 'activity' ? saved.kind : 'all');
+      setAuthorFilter(saved?.author ?? 'all');
+    } catch (err) {
+      silentCatch('collab/correspondence:filterLoad')(err);
+    }
+    setQuery('');
+  }, [teamId]);
+  const persistFilters = (kind: string, author: string) => {
+    try {
+      if (kind === 'all' && author === 'all') localStorage.removeItem(FILTER_PREFIX + teamId);
+      else localStorage.setItem(FILTER_PREFIX + teamId, JSON.stringify({ kind, author }));
+    } catch (err) {
+      silentCatch('collab/correspondence:filterSave')(err);
+    }
+  };
+  const updateKindFilter = (kind: 'all' | 'talk' | 'activity') => {
+    setKindFilter(kind);
+    persistFilters(kind, authorFilter);
+  };
+  const updateAuthorFilter = (author: string) => {
+    setAuthorFilter(author);
+    persistFilters(kindFilter, author);
+  };
+  // A restored author filter can point at a persona that has since left the
+  // team — fall back to 'all' rather than silently filtering to nothing.
+  useEffect(() => {
+    if (authorFilter === 'all' || authorFilter === 'you' || authorFilter === 'athena') return;
+    if (members.length > 0 && !members.some((m) => m.personaId === authorFilter)) {
+      setAuthorFilter('all');
+      persistFilters(kindFilter, 'all');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members, authorFilter]);
+  const filtersActive = kindFilter !== 'all' || authorFilter !== 'all' || query.trim() !== '';
+  const visible = useMemo(() => {
+    if (!filtersActive) return ordered;
+    const q = query.trim().toLowerCase();
+    const TALK = new Set(['persona', 'athena', 'director', 'directive', 'memory']);
+    return ordered.filter((i) => {
+      if (kindFilter === 'talk' && !TALK.has(i.kind)) return false;
+      if (kindFilter === 'activity' && i.kind !== 'step' && i.kind !== 'event') return false;
+      if (authorFilter === 'you') {
+        if (i.kind !== 'directive') return false;
+      } else if (authorFilter === 'athena') {
+        if (i.kind !== 'athena') return false;
+      } else if (authorFilter !== 'all' && i.personaId !== authorFilter) {
+        return false;
+      }
+      if (q) {
+        const authorName = i.personaId ? personaIndex.get(i.personaId)?.name ?? '' : '';
+        if (!`${i.body ?? ''} ${i.label} ${authorName}`.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ordered, kindFilter, authorFilter, query, filtersActive, personaIndex]);
+  const clearFilters = () => {
+    setKindFilter('all');
+    setAuthorFilter('all');
+    setQuery('');
+    persistFilters('all', 'all');
+  };
+
   useEffect(() => {
     const box = scrollBox.current;
     if (box && stickBottom.current) box.scrollTop = box.scrollHeight;
   }, [ordered.length]);
+
+  // Unseen-while-scrolled-up: remember the newest item seen while pinned to the
+  // bottom; when the user scrolls up, anything past that marker counts as new.
+  // findIndex (not a length delta) keeps loadOlder() prepends from inflating it.
+  useEffect(() => {
+    const latest = ordered[ordered.length - 1];
+    if (!latest) return;
+    if (stickBottom.current) {
+      lastSeenIdRef.current = latest.id;
+      setUnseen(0);
+      return;
+    }
+    const idx = lastSeenIdRef.current ? ordered.findIndex((i) => i.id === lastSeenIdRef.current) : -1;
+    setUnseen(idx >= 0 ? ordered.length - 1 - idx : 0);
+  }, [ordered]);
 
   useEffect(() => {
     const el = topSentinel.current;
@@ -65,13 +243,26 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const onScroll = () => {
     const box = scrollBox.current;
     if (!box) return;
-    stickBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    const near = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    stickBottom.current = near;
+    setAtBottom(near);
+    if (near && ordered.length > 0) {
+      lastSeenIdRef.current = ordered[ordered.length - 1]!.id;
+      setUnseen(0);
+    }
+  };
+
+  const jumpToLatest = () => {
+    const box = scrollBox.current;
+    if (!box) return;
+    stickBottom.current = true;
+    box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' });
   };
 
   const send = () => {
     const text = draft.trim();
     if (!text || posting) return;
-    setDraft('');
+    updateDraft('');
     void sendDirective(text, replyTarget?.id);
     setReplyTarget(null);
     stickBottom.current = true;
@@ -93,15 +284,68 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     }
   };
 
-  // @ath → @athena autocomplete: a trailing @-token that prefixes "athena".
-  const athenaSuggest = useMemo(() => {
-    const m = draft.match(/(?:^|\s)@([a-z]{1,5})$/i);
+  // @-mention autocomplete: a trailing @-token matches Athena or any team
+  // member (full name or first-word prefix, case-insensitive). Completing a
+  // member inserts @FirstWord — directives already deliver to every member at
+  // the next step boundary; the mention is the addressing affordance on top.
+  const mentionCandidates = useMemo(() => {
+    const m = draft.match(/(?:^|\s)@([\p{L}\d_-]{1,24})$/iu);
     if (!m) return null;
     const partial = m[1]!.toLowerCase();
-    return 'athena'.startsWith(partial) ? partial : null;
-  }, [draft]);
-  const completeAthena = () => {
-    setDraft((d) => d.replace(/(^|\s)@([a-z]{1,5})$/i, (_full, pre: string) => `${pre}@athena `));
+    const list: { key: string; label: string; insert: string; athena?: boolean; icon?: string | null; color?: string | null }[] = [];
+    if ('athena'.startsWith(partial)) list.push({ key: 'athena', label: '@athena', insert: '@athena ', athena: true });
+    for (const mem of members) {
+      const name = mem.name.replace(/^T: /, '');
+      const slug = name.split(/\s+/)[0]!;
+      if (name.toLowerCase().startsWith(partial) || slug.toLowerCase().startsWith(partial)) {
+        list.push({ key: mem.memberId, label: `@${name}`, insert: `@${slug} `, icon: mem.icon, color: mem.color });
+      }
+    }
+    return list.length > 0 ? list.slice(0, 4) : null;
+  }, [draft, members]);
+  const completeMention = (insert: string) => {
+    updateDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
+  };
+
+  // Clicking a presence avatar addresses that member: append @FirstWord to
+  // the draft (the same insert shape the autocomplete uses) and focus the
+  // composer so the user can keep typing.
+  const insertHandle = (slug: string) => {
+    updateDraft((d) => `${d}${d === '' || /\s$/.test(d) ? '' : ' '}@${slug} `);
+    composerRef.current?.focus();
+  };
+  const insertMention = (member: ChannelMember) => {
+    insertHandle(member.name.replace(/^T: /, '').split(/\s+/)[0]!);
+  };
+
+  // Pin a channel item into the team's long-term memory. The channel
+  // read-model unions memories back in, so the pin reappears as a memory row
+  // on the next head refresh — visible confirmation where the action happened.
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+  useEffect(() => setPinnedIds(new Set()), [teamId]);
+  const pinItem = async (item: TeamChannelItem) => {
+    const body = (item.body ?? '').trim();
+    const firstLine = body.split('\n')[0] ?? '';
+    const title = (firstLine.length > 80 ? `${firstLine.slice(0, 77)}…` : firstLine) || item.label;
+    try {
+      await createTeamMemory({
+        team_id: teamId,
+        run_id: null,
+        member_id: null,
+        persona_id: item.personaId,
+        title,
+        content: body || item.label,
+        category: 'observation',
+        importance: 5,
+        tags: JSON.stringify({ source: 'channel_pin', item_id: item.id }),
+      });
+      setPinnedIds((prev) => new Set(prev).add(item.id));
+      addToast(t.monitor.channel_pinned_memory, 'success');
+      refreshHead();
+    } catch (err) {
+      silentCatch('collab/correspondence:pinMemory')(err);
+      addToast(t.monitor.channel_pin_failed, 'error');
+    }
   };
 
   const workingNames = members
@@ -109,12 +353,24 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     .map((m) => m.name.replace(/^T: /, ''));
   const reviewCount = members.filter((m) => presence.get(m.personaId) === 'waiting').length;
 
+  // The header crest wears the team's identity (icon + color, editable in
+  // Workspace settings) instead of a generic red radio glyph.
+  const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
+  const crestAccent = team?.color ?? '#f87171';
+
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
       {/* ── Header band: identity · live presence · data glance ── */}
       <div className="flex-shrink-0 border-b border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-3">
-        <div className="relative w-8 h-8 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
-          <Radio className="w-4 h-4 text-status-error" />
+        <div
+          className="relative w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${crestAccent}26`, borderColor: `${crestAccent}59` }}
+        >
+          {team?.icon ? (
+            <span aria-hidden className="typo-body leading-none">{team.icon}</span>
+          ) : (
+            <Radio className="w-4 h-4" style={{ color: crestAccent }} />
+          )}
         </div>
         <div className="min-w-0">
           <div className="typo-body-lg font-semibold text-foreground leading-tight truncate">{teamName ?? 'Team channel'}</div>
@@ -127,20 +383,34 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         <div className="flex items-center -space-x-1.5">
           {members.slice(0, 8).map((m) => {
             const st = presence.get(m.personaId);
+            const cleanName = m.name.replace(/^T: /, '');
             return (
-              <span
+              <button
                 key={m.memberId}
-                className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/80 ring-2 ring-background"
-                title={`${m.name.replace(/^T: /, '')}${st ? ` — ${st}` : ''}`}
+                type="button"
+                onClick={() => insertMention(m)}
+                className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/80 ring-2 ring-background transition-transform hover:scale-110 hover:z-10 focus-visible:scale-110 focus-visible:z-10 focus:outline-none"
+                title={`${cleanName}${st ? ` — ${st}` : ''}`}
+                aria-label={tx(t.monitor.channel_avatar_mention, { name: cleanName })}
                 style={st === 'working' ? { boxShadow: `0 0 0 2px ${m.color ?? '#60a5fa'}` } : undefined}
               >
                 <PersonaIcon icon={m.icon} color={m.color} size="w-4 h-4" />
                 {st && (
                   <span className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-background ${st === 'working' ? 'bg-status-info' : 'bg-status-warning'}`} />
                 )}
-              </span>
+              </button>
             );
           })}
+          {/* Athena — always present, summonable with one click */}
+          <button
+            type="button"
+            onClick={() => insertHandle('athena')}
+            className="relative inline-flex items-center justify-center w-7 h-7 rounded-full bg-violet-500/15 border border-violet-500/30 ring-2 ring-background transition-transform hover:scale-110 hover:z-10 focus-visible:scale-110 focus-visible:z-10 focus:outline-none"
+            title="Athena"
+            aria-label={tx(t.monitor.channel_avatar_mention, { name: 'Athena' })}
+          >
+            <Sparkles className="w-3.5 h-3.5 text-violet-300" />
+          </button>
         </div>
         {/* Data glance */}
         <div className="flex items-center gap-3.5 typo-data text-foreground tabular-nums pl-2 border-l border-border ml-1">
@@ -156,51 +426,151 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         </div>
       </div>
 
-      {/* ── Conversation ── */}
-      <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
-        {/* Pending manual reviews (Director coaching / triage) for this team's
-            personas — the quick-answer card, cross-referenced into the channel. */}
-        <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
-        {!exhausted && ordered.length > 0 && (
-          <div ref={topSentinel} className="py-1 text-center">
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <span className="typo-caption text-foreground">loading earlier history…</span>
-          </div>
+      {/* ── Filter bar: text search · kind · author ── */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border bg-foreground/[0.01]">
+        <div className="relative flex-1 min-w-0 max-w-[240px]">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.monitor.channel_filter_search}
+            className="w-full pl-7 pr-2 py-1 rounded-input bg-secondary/30 border border-border typo-caption text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+          />
+        </div>
+        <div className="flex items-center gap-0.5 rounded-input border border-border bg-secondary/20 p-0.5">
+          {([
+            ['all', t.monitor.channels_filter_all],
+            ['talk', t.monitor.channel_filter_talk],
+            ['activity', t.monitor.channel_filter_activity],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => updateKindFilter(k)}
+              aria-pressed={kindFilter === k}
+              className={`px-2 py-0.5 rounded-interactive typo-caption transition-colors ${
+                kindFilter === k ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/55 hover:text-foreground/85'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <ThemedSelect value={authorFilter} onValueChange={updateAuthorFilter} className="w-32">
+          <option value="all">{t.monitor.channels_author_all}</option>
+          <option value="you">{t.monitor.channels_author_you}</option>
+          <option value="athena">{t.monitor.channels_author_athena}</option>
+          {members.map((m) => (
+            <option key={m.memberId} value={m.personaId}>{m.name.replace(/^T: /, '')}</option>
+          ))}
+        </ThemedSelect>
+        {filtersActive && (
+          <>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors flex-shrink-0"
+            >
+              <X className="w-3 h-3" /> {t.monitor.channel_filter_clear}
+            </button>
+            <span className="ml-auto typo-caption text-foreground tabular-nums flex-shrink-0">
+              {visible.length}/{ordered.length}
+            </span>
+          </>
         )}
-        {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-        {exhausted && ordered.length > 0 && <p className="py-1 text-center typo-caption text-foreground">— start of the conversation —</p>}
-        {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-        {!loaded && <p className="typo-body text-foreground py-3">Tuning in…</p>}
-        {loaded && ordered.length === 0 && (
-          <div className="flex flex-col items-center justify-center text-center py-14 px-6">
-            <div className="relative flex items-center justify-center mb-4" style={{ width: 96, height: 96 }}>
-              <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(248,113,113,0.14), transparent 70%)' }} />
-              <div className="relative w-14 h-14 rounded-full bg-status-error/12 border border-status-error/20 flex items-center justify-center">
-                <Radio className="w-7 h-7 text-status-error/80" />
+      </div>
+
+      {/* ── Conversation ── */}
+      <div className="relative flex-1 min-h-0 flex flex-col">
+        <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
+          {/* Pending manual reviews (Director coaching / triage) for this team's
+              personas — the quick-answer card, cross-referenced into the channel. */}
+          <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
+          {!exhausted && ordered.length > 0 && (
+            <div ref={topSentinel} className="py-1 text-center">
+              <span className="typo-caption text-foreground">{t.monitor.channel_loading_history}</span>
+            </div>
+          )}
+          {exhausted && ordered.length > 0 && <p className="py-1 text-center typo-caption text-foreground">{t.monitor.channel_start_of_conversation}</p>}
+          {!loaded && <p className="typo-body text-foreground py-3">{t.monitor.channel_tuning_in}</p>}
+          {loaded && ordered.length === 0 && (
+            <div className="flex flex-col items-center justify-center text-center py-14 px-6">
+              <div className="relative flex items-center justify-center mb-4" style={{ width: 96, height: 96 }}>
+                <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(248,113,113,0.14), transparent 70%)' }} />
+                <div className="relative w-14 h-14 rounded-full bg-status-error/12 border border-status-error/20 flex items-center justify-center">
+                  <Radio className="w-7 h-7 text-status-error/80" />
+                </div>
+              </div>
+              <h3 className="typo-section-title text-foreground">{t.monitor.channel_empty_title}</h3>
+              <p className="typo-body text-foreground mt-1.5 max-w-sm">{t.monitor.channel_empty_body}</p>
+              <div className="mt-3 flex flex-col gap-1.5 typo-caption text-foreground">
+                <span className="inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-status-success" /> {t.monitor.channel_empty_directive_hint}</span>
+                {/* "@athena" is the literal tag users type — not translatable. */}
+                {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
+                <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-300" /> {t.monitor.channel_empty_athena_before} <span className="text-violet-300 font-medium">@athena</span> {t.monitor.channel_empty_athena_after}</span>
               </div>
             </div>
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <h3 className="typo-section-title text-foreground">The team channel is quiet</h3>
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <p className="typo-body text-foreground mt-1.5 max-w-sm">This is where the team talks — handoffs, PRs, QA verdicts, and Director coaching all land here as they happen.</p>
-            <div className="mt-3 flex flex-col gap-1.5 typo-caption text-foreground">
-              {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-              <span className="inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-status-success" /> Post a directive below to steer the next steps</span>
-              {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-              <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-300" /> Tag <span className="text-violet-300 font-medium">@athena</span> to bring her into the conversation</span>
+          )}
+          {filtersActive && visible.length === 0 && ordered.length > 0 && (
+            <div className="flex flex-col items-center gap-1.5 py-8 text-center">
+              <p className="typo-body text-foreground">{t.monitor.channel_filter_no_matches}</p>
+              <button type="button" onClick={clearFilters} className="typo-caption text-primary hover:underline">
+                {t.monitor.channel_filter_clear}
+              </button>
             </div>
-          </div>
-        )}
-        {ordered.map((item) => (
-          <CorrespondenceRow
-            key={item.id}
-            item={item}
-            personaIndex={personaIndex}
-            parent={item.replyTo ? byId.get(item.replyTo) : undefined}
-            onReply={() => setReplyTarget(item)}
-            onOpenDetail={() => setDetailItem(item)}
-          />
-        ))}
+          )}
+          {visible.map((item, idx) => {
+            const prev = visible[idx - 1];
+            const daySep = !prev || !sameLocalDay(new Date(prev.at), new Date(item.at))
+              ? daySeparatorLabel(item.at, t.monitor.channel_day_today, t.monitor.channel_day_yesterday)
+              : null;
+            return (
+              <Fragment key={item.id}>
+                {daySep && (
+                  <div className="flex items-center gap-3 py-1.5" aria-hidden>
+                    <span className="flex-1 border-t border-border/60" />
+                    <span className="typo-caption text-foreground">{daySep}</span>
+                    <span className="flex-1 border-t border-border/60" />
+                  </div>
+                )}
+                <CorrespondenceRow
+                  item={item}
+                  personaIndex={personaIndex}
+                  members={members}
+                  parent={item.replyTo ? byId.get(item.replyTo) : undefined}
+                  onReply={() => setReplyTarget(item)}
+                  onOpenDetail={() => setDetailItem(item)}
+                  onPin={() => void pinItem(item)}
+                  pinned={pinnedIds.has(item.id)}
+                />
+              </Fragment>
+            );
+          })}
+        </div>
+        {/* Jump-to-latest pill — appears when scrolled away from the live edge;
+            carries the unseen count when new messages land while reading history. */}
+        <AnimatePresence>
+          {!atBottom && loaded && ordered.length > 0 && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.16 }}
+              onClick={jumpToLatest}
+              className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border shadow-elevation-2 backdrop-blur-sm typo-caption transition-colors ${
+                unseen > 0
+                  ? 'border-status-info/40 bg-status-info/15 text-status-info hover:bg-status-info/25'
+                  : 'border-border bg-secondary/80 text-foreground hover:bg-secondary'
+              }`}
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+              {unseen > 0
+                ? (unseen === 1 ? t.monitor.channel_new_messages_one : tx(t.monitor.channel_new_messages_other, { count: unseen }))
+                : t.monitor.channel_jump_latest}
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── Composer ── */}
@@ -220,26 +590,43 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
             </button>
           </div>
         )}
-        {athenaSuggest && (
-          <button
-            type="button"
-            onClick={completeAthena}
-            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-200 hover:bg-violet-500/20 transition-colors"
-          >
-            {/* eslint-disable-next-line custom/no-hardcoded-jsx-text */}
-            <Sparkles className="w-3.5 h-3.5" /> @athena <span className="text-foreground">— Tab to complete</span>
-          </button>
+        {mentionCandidates && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {mentionCandidates.map((c, idx) => (
+              <button
+                key={c.key}
+                type="button"
+                onClick={() => completeMention(c.insert)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border typo-caption transition-colors ${
+                  c.athena
+                    ? 'border-violet-500/30 bg-violet-500/10 text-violet-200 hover:bg-violet-500/20'
+                    : 'border-border bg-secondary/30 text-foreground hover:bg-secondary/50'
+                }`}
+              >
+                {c.athena ? (
+                  <Sparkles className="w-3.5 h-3.5" />
+                ) : (
+                  <PersonaIcon icon={c.icon ?? null} color={c.color ?? null} size="w-3.5 h-3.5" />
+                )}
+                {c.label}
+                {idx === 0 && <span className="text-foreground">— {t.monitor.channel_mention_tab}</span>}
+              </button>
+            ))}
+          </div>
         )}
-        <div className="flex items-center gap-2">
-        <input
+        <div className="flex items-end gap-2">
+        <textarea
+          ref={composerRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          rows={1}
+          onChange={(e) => updateDraft(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Tab' && athenaSuggest) { e.preventDefault(); completeAthena(); return; }
-            if (e.key === 'Enter') send();
+            if (e.key === 'Tab' && mentionCandidates) { e.preventDefault(); completeMention(mentionCandidates[0]!.insert); return; }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
           }}
-          placeholder={replyTarget ? 'Write your reply…' : 'Say something to the team… Tag @athena to bring her in'}
-          className="flex-1 px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+          placeholder={replyTarget ? t.monitor.channel_composer_reply_placeholder : t.monitor.channels_composer_placeholder}
+          title={t.monitor.channel_composer_newline_hint}
+          className="flex-1 resize-none max-h-40 overflow-y-auto px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
         />
         <button
           type="button"
@@ -252,7 +639,12 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         </div>
       </div>
 
-      <ChannelDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
+      <ChannelDetailModal
+        item={detailItem}
+        onClose={() => setDetailItem(null)}
+        onPin={(it) => void pinItem(it)}
+        pinned={detailItem ? pinnedIds.has(detailItem.id) : false}
+      />
     </div>
   );
 }
@@ -302,13 +694,17 @@ function resolveRow(item: TeamChannelItem) {
  *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
  * A "Needs your review" row carries the inline ReviewInterventionCard below.
  */
-function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }: {
+function CorrespondenceRow({ item, personaIndex, members, parent, onReply, onOpenDetail, onPin, pinned }: {
   item: TeamChannelItem;
   personaIndex: ReturnType<typeof usePersonaIndex>;
+  members?: ChannelMember[];
   parent?: TeamChannelItem;
   onReply?: () => void;
   onOpenDetail?: () => void;
+  onPin?: () => void;
+  pinned?: boolean;
 }) {
+  const { t } = useTranslation();
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
   const source = authorName(item, persona);
@@ -322,11 +718,23 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
   const intervene = item.kind === 'step' && item.label === 'status_awaiting_review' && !!item.assignmentId;
   // A message you can reply to — the conversational kinds (not raw step/event rows).
   const replyable = !!onReply && (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director' || item.kind === 'directive' || item.kind === 'memory');
+  // Pinnable: anything worth keeping except rows that already ARE memories.
+  // System rows pin from the detail modal (their strip is a single button).
+  const pinnable = !!onPin && item.kind !== 'memory' && !isSystem;
   const isReply = !!item.replyTo;
   const parentPersona = parent?.personaId ? personaIndex.get(parent.personaId) : undefined;
 
   const deliveries = isUser ? parseDeliveries(item) : [];
   const seenIds = [...new Set(deliveries.map((d) => d.persona_id))];
+  // Members addressed via @FirstWord in this directive — surfaced as chips so
+  // the author sees who the message was aimed at.
+  const mentioned = isUser && members
+    ? members.filter((m) => {
+        const slug = m.name.replace(/^T: /, '').split(/\s+/)[0]!;
+        const safe = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        return new RegExp(`@${safe}(?![\\p{L}\\d_-])`, 'iu').test(item.body ?? '');
+      })
+    : [];
 
   // Row-2 container tint: tinted for human/agent voices, subtle for system rows.
   let bodyClass = 'border-primary/12 bg-secondary/15';
@@ -411,6 +819,22 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
             <Reply className="w-3 h-3" /> reply
           </button>
         )}
+        {pinnable && (
+          <button
+            type="button"
+            onClick={pinned ? undefined : onPin}
+            disabled={pinned}
+            className={`inline-flex items-center gap-1 typo-caption transition-all ${
+              pinned
+                ? 'text-amber-300/90 opacity-100'
+                : 'opacity-0 group-hover:opacity-100 text-foreground hover:text-amber-300/90'
+            }`}
+            aria-label={pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+            title={pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+          >
+            <Pin className="w-3 h-3" />
+          </button>
+        )}
         <span className="ml-auto typo-caption text-foreground flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
       </div>
 
@@ -424,7 +848,7 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
               title={!isUser && onOpenDetail ? 'Open full detail' : undefined}
             >
               {message && (
-                <p className={`typo-body whitespace-pre-wrap ${!isUser ? 'line-clamp-4' : ''} ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{message}</p>
+                <p className={`typo-body whitespace-pre-wrap ${!isUser ? 'line-clamp-4' : ''} ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{renderWithMentions(message, members)}</p>
               )}
               {artifact && (
                 <a href={artifact.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border typo-caption text-status-info hover:bg-secondary/60 transition-colors">
@@ -446,6 +870,18 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }
                       <Sparkles className="w-3 h-3" /> Athena notified
                     </span>
                   )}
+                  {mentioned.map((m) => (
+                    <span
+                      key={m.memberId}
+                      title={t.monitor.channel_mention_will_see}
+                      className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border"
+                    >
+                      <PersonaIcon icon={m.icon} color={m.color} size="w-3 h-3" />
+                      <span className="typo-caption" style={{ color: m.color ?? undefined }}>
+                        @{m.name.replace(/^T: /, '').split(/\s+/)[0]}
+                      </span>
+                    </span>
+                  ))}
                 </p>
               )}
             </div>

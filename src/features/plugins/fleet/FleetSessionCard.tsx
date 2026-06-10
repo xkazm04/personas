@@ -7,6 +7,8 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetStateSparkline } from './FleetStateSparkline';
 import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useNowTick, formatAgo } from './relativeAgo';
 
 
 /**
@@ -37,6 +39,24 @@ interface Props {
 function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }: Props) {
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const transitions = useSystemStore((s) => s.fleetTransitions[session.id]);
+  const { t } = useTranslation();
+  const now = useNowTick();
+
+  // State provenance — WHY the row shows this state, from the three signals
+  // the backend derives state from (hooks, PTY output, transcript growth).
+  // Rides the status-dot tooltip so diagnosing a mislabeled session no
+  // longer needs PERSONAS_FLEET_DEBUG and a dev console.
+  const f = t.plugins.fleet;
+  const sig = (ms: bigint | number) =>
+    Number(ms) > 0 ? formatAgo(t, Number(ms), now) : f.provenance_never;
+  const provenance = [
+    session.stateReason,
+    `${f.provenance_hook_activity} ${sig(session.lastActivityMs)}`,
+    `${f.provenance_console} ${sig(session.lastPtyOutputMs)}`,
+    `${f.provenance_transcript} ${sig(session.lastGrewMs)}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -114,7 +134,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       }`}
       title={session.cwd}
     >
-      <FleetStatusDots state={session.state} reason={session.stateReason} />
+      <FleetStatusDots state={session.state} reason={provenance} />
 
       {/* Label area — either the static "project · name" or the inline edit input. */}
       {editing ? (

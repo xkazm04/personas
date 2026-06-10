@@ -40,20 +40,32 @@ pub struct OutputRing {
     buf: VecDeque<u8>,
     cap: usize,
     subscribed: bool,
+    /// Bumped on every `push` — a cheap change cursor for the preview poll.
+    /// A caller that saw rev N and sees rev N again knows the ring hasn't
+    /// changed and can skip re-cooking/re-rendering that tile entirely.
+    /// Wrapping u32: only ever compared for equality, and a poller can't
+    /// miss 2^32 pushes inside one poll interval.
+    rev: u32,
 }
 
 impl OutputRing {
     pub fn new(cap: usize) -> Self {
-        Self { buf: VecDeque::new(), cap, subscribed: false }
+        Self { buf: VecDeque::new(), cap, subscribed: false, rev: 0 }
     }
 
     /// Append raw PTY bytes, trimming the oldest beyond `cap`.
     pub fn push(&mut self, bytes: &[u8]) {
+        self.rev = self.rev.wrapping_add(1);
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
             self.buf.drain(0..len - self.cap);
         }
+    }
+
+    /// Change cursor — see the `rev` field.
+    pub fn rev(&self) -> u32 {
+        self.rev
     }
 
     pub fn is_subscribed(&self) -> bool {
@@ -201,6 +213,15 @@ pub struct FleetSessionInner {
     pub args: Vec<String>,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
+    /// When the PTY last produced ANY bytes (including idle status redraws).
+    /// claude redraws its status line even when idle, so total PTY silence is
+    /// the "process is frozen" signal the staleness ticker's stall check keys
+    /// on — while output *presence* proves nothing about work. 0 until the
+    /// first byte. Never feeds `last_activity_ms`/freshness.
+    pub last_pty_output_ms: i64,
+    /// When the transcript last grew, written by the staleness ticker's size
+    /// polling (0 = not yet observed). Surfaced as a provenance signal.
+    pub last_grew_ms: i64,
     pub created_at_ms: i64,
     pub child_pid: Option<u32>,
     pub exit_code: Option<i32>,
@@ -235,6 +256,8 @@ impl FleetSessionInner {
             args: self.args.clone(),
             state: self.state,
             last_activity_ms: self.last_activity_ms,
+            last_pty_output_ms: self.last_pty_output_ms,
+            last_grew_ms: self.last_grew_ms,
             created_at_ms: self.created_at_ms,
             child_pid: self.child_pid,
             exit_code: self.exit_code,
@@ -354,6 +377,18 @@ impl FleetRegistry {
             .map_err(|e| format!("resize failed: {e}"))
     }
 
+    /// Record that the session's PTY produced output — any bytes, including
+    /// the idle status-line redraws. Deliberately does NOT touch
+    /// `last_activity_ms` or state (idle redraws would defeat staleness);
+    /// the ONLY consumer is the ticker's frozen-process stall check, where
+    /// total silence (claude stops redrawing entirely) is the signal.
+    pub fn note_pty_output(&self, session_id: &str) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            session.last_pty_output_ms = now_ms();
+        }
+    }
+
     /// First PTY output proves the child actually came up and reached its
     /// prompt. Promote a `Spawning` session to `Idle` (alive + ready for its
     /// first message) so it isn't mislabeled never-attached/stale before it
@@ -437,14 +472,28 @@ impl FleetRegistry {
     /// terminal instead). Unknown sessions are skipped. One map lock + a brief
     /// per-session ring lock; called at a low poll rate, so cheap even at 16
     /// tiles. `max_lines` caps each entry.
-    pub fn preview_outputs(&self, session_ids: &[String], max_lines: usize) -> Vec<(String, Vec<String>)> {
+    /// Cooked previews for the requested sessions, change-gated: each request
+    /// carries the ring rev the caller last rendered (`None` = never seen).
+    /// A session whose ring rev still equals the known rev is OMITTED from
+    /// the result — its tile hasn't changed, so there's nothing to re-cook,
+    /// re-serialize, or re-render. Idle tiles thus cost ~one u32 compare per
+    /// poll instead of a 64 KiB ANSI cook.
+    pub fn preview_outputs(
+        &self,
+        requests: &[(String, Option<u32>)],
+        max_lines: usize,
+    ) -> Vec<(String, u32, Vec<String>)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        session_ids
+        requests
             .iter()
-            .filter_map(|id| {
+            .filter_map(|(id, known_rev)| {
                 let session = map.get(id)?;
                 let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
-                Some((id.clone(), ring.preview_lines(max_lines)))
+                let rev = ring.rev();
+                if *known_rev == Some(rev) {
+                    return None; // unchanged since the caller last looked
+                }
+                Some((id.clone(), rev, ring.preview_lines(max_lines)))
             })
             .collect()
     }
@@ -646,6 +695,8 @@ mod tests {
             args: Vec::new(),
             state,
             last_activity_ms: now_ms(),
+            last_pty_output_ms: 0,
+            last_grew_ms: 0,
             created_at_ms: now_ms(),
             child_pid: Some(1234),
             exit_code: None,

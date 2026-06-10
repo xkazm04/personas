@@ -31,7 +31,9 @@
     "review_error": "ত্রুটি",
     "used_references": "রেফারেন্স প্যাটার্ন ব্যবহৃত",
     "no_design_data": "কোনো ডিজাইন ডাটা নেই",
-    "no_design_data_hint": "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।"
+    "no_design_data_hint": "এই টেমপ্লেটের জন্য ডিজাইন ডাটা নেই।",
+    "tab_use_cases": "ব্যবহারের ক্ষেত্র",
+    "open_diagram": "সম্পূর্ণ ডায়াগ্রাম খুলুন"
   },
   "detail_overview": {
     "use_case_flows": "ব্যবহারের ক্ষেত্র ফ্লো",
@@ -644,7 +646,16 @@
     "feasibility_assessment": "সম্ভাব্যতা মূল্যায়ন",
     "confirmed_capabilities": "নিশ্চিত সক্ষমতা",
     "issues_label": "সমস্যা",
-    "suggested_next_steps": "প্রস্তাবিত পরবর্তী পদক্ষেপ"
+    "suggested_next_steps": "প্রস্তাবিত পরবর্তী পদক্ষেপ",
+    "summary": {
+      "connectors": "কানেক্টর",
+      "tools": "টুল",
+      "events": "ইভেন্ট",
+      "channels": "চ্যানেল",
+      "ready": "প্রস্তুত",
+      "partial": "আংশিক",
+      "blocked": "অবরুদ্ধ"
+    }
   },
   "card": {
     "use_cases_label": "ব্যবহারের ক্ষেত্র",
@@ -1167,5 +1178,22 @@
     "questionnaire_member_summary_customized": "{count}টি প্রশ্ন, {customized}টি কাস্টমাইজড",
     "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "তুলনা করুন",
+    "selected": "{count}টি নির্বাচিত",
+    "clear": "সাফ করুন",
+    "title": "টেমপ্লেট তুলনা করুন",
+    "subtitle": "{count}টি টেমপ্লেট পাশাপাশি তুলনা",
+    "hint_min": "তুলনার জন্য অন্তত ২টি টেমপ্লেট নির্বাচন করুন",
+    "max_reached": "একসাথে সর্বোচ্চ {max}টি তুলনা করুন",
+    "add_to_compare": "তুলনায় যোগ করুন",
+    "remove_from_compare": "তুলনা থেকে সরান",
+    "col_category": "বিভাগ",
+    "col_goal": "লক্ষ্য",
+    "col_complexity": "জটিলতা",
+    "col_setup": "সেটআপ সময়",
+    "none": "—",
+    "differs": "ভিন্ন"
   }
 }

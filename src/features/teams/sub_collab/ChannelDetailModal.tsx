@@ -50,7 +50,13 @@ function prettyRaw(item: TeamChannelItem): string | null {
   }
 }
 
-export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | null; onClose: () => void }) {
+export function ChannelDetailModal({ item, onClose, onPin, pinned }: {
+  item: TeamChannelItem | null;
+  onClose: () => void;
+  /** Pin this item into the team's long-term memory (hidden for memory rows). */
+  onPin?: (item: TeamChannelItem) => void;
+  pinned?: boolean;
+}) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const persona = item?.personaId ? personaIndex.get(item.personaId) : undefined;
@@ -93,6 +99,18 @@ export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | 
                 <RelativeTime timestamp={item.at} />
               </p>
             </div>
+            {onPin && item.kind !== 'memory' && (
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={pinned}
+                onClick={() => onPin(item)}
+                className={pinned ? 'text-amber-300/90' : undefined}
+              >
+                <Pin className="w-3.5 h-3.5" />
+                {pinned ? t.monitor.channel_pinned_memory : t.monitor.channel_pin_memory}
+              </Button>
+            )}
             <Button variant="ghost" size="icon-sm" onClick={onClose}>
               <X className="w-4 h-4" />
             </Button>

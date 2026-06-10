@@ -154,7 +154,7 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                 key="preview"
                 className="animate-fade-slide-in space-y-4"
               >
-                <BlueprintPreview blueprint={at.blueprint} />
+                <BlueprintPreview blueprint={at.blueprint} onRoleChange={at.setMemberRole} onRemoveMember={at.removeMember} />
 
                 <div className="flex gap-2">
                   <Button
@@ -219,10 +219,10 @@ export function AutoTeamModal({ open, onClose }: AutoTeamModalProps) {
                   </div>
                   <div className="flex items-center gap-4 typo-caption text-foreground">
                     <span className="flex items-center gap-1">
-                      <Users className="w-3 h-3" /> {at.memberCount} agents
+                      <Users className="w-3 h-3" /> {tx(at.memberCount === 1 ? t.pipeline.auto_team_agents_one : t.pipeline.auto_team_agents_other, { count: at.memberCount })}
                     </span>
                     <span className="flex items-center gap-1">
-                      <GitBranch className="w-3 h-3" /> {at.connectionCount} connections
+                      <GitBranch className="w-3 h-3" /> {tx(at.connectionCount === 1 ? t.pipeline.auto_team_connections_one : t.pipeline.auto_team_connections_other, { count: at.connectionCount })}
                     </span>
                     {at.memoriesSeeded > 0 && (
                       <span className="flex items-center gap-1">

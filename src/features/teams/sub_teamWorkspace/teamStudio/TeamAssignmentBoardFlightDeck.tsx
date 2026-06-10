@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Radio, Inbox, Pause, Play } from 'lucide-react';
+import { Radio, Inbox, Pause, Play, History } from 'lucide-react';
+import { AssignmentReplay } from './AssignmentReplay';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -47,6 +48,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
   const resumeAssignment = usePipelineStore((s) => s.resumeAssignment);
   const personaIndex = usePersonaIndex();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [replaying, setReplaying] = useState(false);
 
   useEffect(() => {
     refreshAssignments();
@@ -68,6 +70,13 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
     selected?.id ?? null,
     selected ? isLiveAssignmentStatus(selected.status) : false,
   );
+
+  // Replay is a per-mission view state — leave it when the selection changes.
+  useEffect(() => {
+    setReplaying(false);
+  }, [selectedId]);
+
+  const isTerminal = selected ? ['done', 'failed', 'aborted'].includes(selected.status) : false;
 
   const grouped = useMemo(
     () =>
@@ -141,6 +150,16 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                     <Play className="w-3 h-3" /> {ts.deck_resume}
                   </button>
                 )}
+                {isTerminal && steps.length > 0 && !replaying && (
+                  <button
+                    type="button"
+                    onClick={() => setReplaying(true)}
+                    data-testid="deck-replay"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-300 hover:bg-violet-500/20 transition-colors"
+                  >
+                    <History className="w-3 h-3" /> {ts.deck_replay}
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex items-center gap-3 mb-4">
@@ -152,7 +171,9 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
               </span>
               <PersonaStack ids={steps.map((s) => s.assignedPersonaId)} index={personaIndex} />
             </div>
-            {steps.length > 0 ? (
+            {steps.length > 0 && replaying ? (
+              <AssignmentReplay steps={steps} personaIndex={personaIndex} onExit={() => setReplaying(false)} />
+            ) : steps.length > 0 ? (
               <StepRelay
                 steps={steps}
                 personaIndex={personaIndex}

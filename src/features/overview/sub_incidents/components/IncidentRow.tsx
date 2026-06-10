@@ -13,14 +13,11 @@ import {
   relativeTime,
   statusLabel,
 } from '../libs/incidentTaxonomy';
-import { incidentRowSubtext } from '../libs/incidentDetail';
 
 interface Props {
   incident: AuditIncident;
-  selected: boolean;
   /** Keyboard-triage focus — renders a focus ring and is the j/k cursor. */
   focused?: boolean;
-  onSelectChange: (selected: boolean) => void;
   onAcknowledge: () => void;
   onResolve: () => void;
   onDismiss: () => void;
@@ -30,9 +27,7 @@ interface Props {
 
 export function IncidentRow({
   incident,
-  selected,
   focused = false,
-  onSelectChange,
   onAcknowledge,
   onResolve,
   onDismiss,
@@ -49,9 +44,6 @@ export function IncidentRow({
   // red, medium reads amber, and closed incidents are muted to neutral so the
   // open work stands out.
   const rank = severityRank(incident.severity);
-  // Human-readable inline subtext: prose detail shows, structured (JSON /
-  // key=value) payloads are suppressed here and broken down in the detail modal.
-  const subtext = incidentRowSubtext(incident.detail);
   const stale = isStaleIncident(incident);
   const accent = isClosed
     ? 'border-l-transparent'
@@ -68,14 +60,6 @@ export function IncidentRow({
         focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
       }`}
     >
-      <input
-        type="checkbox"
-        checked={selected}
-        onChange={(e) => onSelectChange(e.target.checked)}
-        aria-label={`select-${incident.id}`}
-        className="mt-1.5 h-4 w-4 rounded-input border-primary/20"
-      />
-
       <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-card border ${severityBadgeClass(incident.severity)}`}>
         <SourceIcon className="h-4 w-4" />
       </div>
@@ -119,10 +103,6 @@ export function IncidentRow({
             </>
           )}
         </div>
-
-        {subtext && (
-          <p className="mt-1 typo-caption text-foreground line-clamp-1">{subtext}</p>
-        )}
 
         {isClosed && incident.resolutionNote && (
           <p className="mt-1 typo-caption text-foreground line-clamp-1">

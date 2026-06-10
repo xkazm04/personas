@@ -8,6 +8,7 @@ interface MessagesSectionProps {
   selectedChannelIndices: Set<number>;
   onChannelToggle?: (index: number) => void;
   readOnly: boolean;
+  anchorId?: string;
 }
 
 export function MessagesSection({
@@ -15,6 +16,7 @@ export function MessagesSection({
   selectedChannelIndices,
   onChannelToggle,
   readOnly,
+  anchorId,
 }: MessagesSectionProps) {
   const { t } = useTranslation();
   // Skip channels that have nothing meaningful to show. Older build sessions
@@ -30,7 +32,7 @@ export function MessagesSection({
   if (visibleChannels.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
         <Bell className="w-4 h-4 text-blue-400" />
         {t.templates.design.messages_and_notifications}

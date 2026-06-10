@@ -7,7 +7,7 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp, Star, Hammer, Check } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -60,6 +60,43 @@ export function LevelBadge({ label, value }: { label: string; value: number }) {
 }
 
 // ---------------------------------------------------------------------------
+// ValueBadge — synthesises effort/impact/risk into one glanceable verdict.
+// Shared scorer (also drives the scanner + triage queue ordering): reward
+// impact, charge for effort + risk.
+// ---------------------------------------------------------------------------
+
+export function ideaValueScore(i: { impact: number; effort: number; risk: number }): number {
+  return i.impact * 2 - i.effort - i.risk;
+}
+
+function valueTier(score: number): 'high' | 'med' | 'low' {
+  if (score >= 8) return 'high';
+  if (score >= 1) return 'med';
+  return 'low';
+}
+
+export function ValueBadge({ idea }: { idea: { impact: number; effort: number; risk: number } }) {
+  const { t } = useTranslation();
+  const ds = t.plugins.dev_scanner;
+  const tier = valueTier(ideaValueScore(idea));
+  const cfg = {
+    high: { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', label: ds.value_high },
+    med: { cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10', label: ds.value_med },
+    low: { cls: 'text-foreground border-primary/20 bg-primary/5', label: ds.value_low },
+  }[tier];
+  return (
+    <Tooltip content={ds.value_tip} placement="top">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${cfg.cls}`}
+      >
+        <TrendingUp className="w-3 h-3" />
+        {cfg.label}
+      </span>
+    </Tooltip>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // AgentCard
 // ---------------------------------------------------------------------------
 
@@ -67,11 +104,14 @@ export function AgentCard({
   agent,
   selected,
   onToggle,
+  recommended = false,
 }: {
   agent: ScanAgentDef;
   selected: boolean;
   onToggle: () => void;
+  recommended?: boolean;
 }) {
+  const { t } = useTranslation();
   const ac = agentColor(agent);
   const Icon = agent.icon;
   return (
@@ -116,6 +156,15 @@ export function AgentCard({
           <Info className="w-3.5 h-3.5 text-foreground hover:text-foreground transition-colors" />
         </Tooltip>
       </span>
+
+      {/* Recommended star — bottom-right, from the agent scoreboard's accept rate */}
+      {recommended && (
+        <span className="absolute bottom-1.5 right-1.5 z-10" onClick={(e) => e.stopPropagation()}>
+          <Tooltip content={t.plugins.dev_scanner.agent_recommended_tip} placement="top">
+            <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400/40" />
+          </Tooltip>
+        </span>
+      )}
     </motion.button>
   );
 }
@@ -172,7 +221,17 @@ export function ScanProgress({
 // IdeaCard
 // ---------------------------------------------------------------------------
 
-export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
+export function IdeaCard({
+  idea,
+  index,
+  onBuild,
+  built = false,
+}: {
+  idea: ScanIdea;
+  index: number;
+  onBuild?: (idea: ScanIdea) => void;
+  built?: boolean;
+}) {
   const { t } = useTranslation();
   const ds = t.plugins.dev_scanner;
   const { staggerDelay } = useMotion();
@@ -198,12 +257,34 @@ export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
+        <ValueBadge idea={idea} />
         <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
           {catLabel}
         </span>
         <LevelBadge label={ds.level_effort} value={idea.effort} />
         <LevelBadge label={ds.level_impact} value={idea.impact} />
         <LevelBadge label={ds.level_risk} value={idea.risk} />
+        {onBuild && (
+          built ? (
+            <span
+              title={ds.build_task_done_tip}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+            >
+              <Check className="w-3 h-3" />
+              {ds.build_task_btn}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onBuild(idea)}
+              title={ds.build_task_tip}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+            >
+              <Hammer className="w-3 h-3" />
+              {ds.build_task_btn}
+            </button>
+          )
+        )}
       </div>
     </motion.div>
   );

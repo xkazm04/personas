@@ -31,7 +31,9 @@
     "review_error": "Erreur",
     "used_references": "Modèles de référence utilisés",
     "no_design_data": "Aucune donnée de conception disponible",
-    "no_design_data_hint": "Données de conception indisponibles pour ce modèle."
+    "no_design_data_hint": "Données de conception indisponibles pour ce modèle.",
+    "tab_use_cases": "Cas d'usage",
+    "open_diagram": "Ouvrir le diagramme complet"
   },
   "detail_overview": {
     "use_case_flows": "Flux de cas d'utilisation",
@@ -644,7 +646,16 @@
     "feasibility_assessment": "Évaluation de faisabilité",
     "confirmed_capabilities": "Capacités confirmées",
     "issues_label": "Problèmes",
-    "suggested_next_steps": "Prochaines étapes suggérées"
+    "suggested_next_steps": "Prochaines étapes suggérées",
+    "summary": {
+      "connectors": "Connecteurs",
+      "tools": "Outils",
+      "events": "Événements",
+      "channels": "Canaux",
+      "ready": "Prêt",
+      "partial": "Partiel",
+      "blocked": "Bloqué"
+    }
   },
   "card": {
     "use_cases_label": "Cas d'usage",
@@ -1167,5 +1178,22 @@
     "questionnaire_member_summary_customized": "{count} questions, {customized} personnalisées",
     "questionnaire_member_no_config": "Aucune configuration requise",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "Comparer",
+    "selected": "{count} sélectionnés",
+    "clear": "Effacer",
+    "title": "Comparer les modèles",
+    "subtitle": "Comparaison côte à côte de {count} modèles",
+    "hint_min": "Sélectionnez au moins 2 modèles à comparer",
+    "max_reached": "Comparez jusqu'à {max} à la fois",
+    "add_to_compare": "Ajouter à la comparaison",
+    "remove_from_compare": "Retirer de la comparaison",
+    "col_category": "Catégorie",
+    "col_goal": "Objectif",
+    "col_complexity": "Complexité",
+    "col_setup": "Temps de configuration",
+    "none": "—",
+    "differs": "Diffère"
   }
 }

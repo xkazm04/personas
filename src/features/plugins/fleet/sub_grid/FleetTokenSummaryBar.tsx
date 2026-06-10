@@ -5,6 +5,7 @@ import { tokenSummary } from '@/api/fleet/fleet';
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 interface Props {
   /** Bound `claudeSessionId`s from the registry snapshot (unbound sessions
@@ -27,6 +28,7 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
   const { t, tx } = useTranslation();
   const f = t.plugins.fleet;
   const [agg, setAgg] = useState<FleetTokenAggregate | null>(null);
+  const visible = useDocumentVisibility();
 
   // Order-independent key so the effect only re-runs when the *set* of bound
   // sessions changes, not on every parent re-render.
@@ -37,6 +39,9 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
       setAgg(null);
       return;
     }
+    // Window hidden → keep showing the last aggregate but stop the transcript
+    // re-reads; the effect re-runs (with an immediate fetch) on return.
+    if (!visible) return;
     let cancelled = false;
     const ids = idsKey.split(',');
     const run = () => {
@@ -47,7 +52,7 @@ export function FleetTokenSummaryBar({ claudeSessionIds }: Props) {
     run();
     const h = setInterval(run, REFRESH_MS);
     return () => { cancelled = true; clearInterval(h); };
-  }, [idsKey]);
+  }, [idsKey, visible]);
 
   if (!agg || agg.sessionCount <= 0) return null;
 

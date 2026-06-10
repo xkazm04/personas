@@ -59,6 +59,14 @@ pub const STALE_AFTER_SECS: i64 = 6 * 60;
 /// within seconds when it comes up, so 2 min is a confident verdict.
 pub const NEVER_ATTACHED_SECS: i64 = 2 * 60;
 
+/// Frozen-process fast path: a `Running` session whose PTY has produced NO
+/// bytes at all for this long — alongside no transcript growth and no hooks —
+/// is hung, not thinking. claude redraws its status line continuously even
+/// when idle, so total PTY silence is a confident "the process is frozen"
+/// verdict at 2 min, instead of letting a dead session wear the blue spinner
+/// for the full 6-minute flat-log cutoff.
+pub const STALLED_AFTER_SECS: i64 = 2 * 60;
+
 /// How often the ticker runs. 30s is a good balance between
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
@@ -92,6 +100,34 @@ static AUTO_HIBERNATE_AFTER_SECS: AtomicU64 = AtomicU64::new(30 * 60);
 pub fn set_auto_hibernate(enabled: bool, after_secs: u64) {
     AUTO_HIBERNATE_ENABLED.store(enabled, Ordering::Relaxed);
     AUTO_HIBERNATE_AFTER_SECS.store(after_secs.max(60), Ordering::Relaxed);
+}
+
+// ---------------------------------------------------------------------------
+// User-tunable state cutoffs — set from Fleet → Settings via
+// `fleet_set_state_cutoffs`, mirroring the auto-hibernate plumbing (persisted
+// in the frontend slice, pushed on change + on every Fleet refresh). 0 = use
+// the built-in default. Env test knobs still take precedence so harnesses
+// keep working unchanged.
+// ---------------------------------------------------------------------------
+static STALE_OVERRIDE_SECS: AtomicU64 = AtomicU64::new(0);
+static STALLED_OVERRIDE_SECS: AtomicU64 = AtomicU64::new(0);
+
+/// Bounds for the user-tunable cutoffs. Stale below 1 min flaps while the
+/// user is composing; frozen below 30s false-positives on model latency gaps.
+const STALE_TUNE_RANGE: (u64, u64) = (60, 3600);
+const STALLED_TUNE_RANGE: (u64, u64) = (30, 3600);
+
+/// Update the user-tuned staleness / frozen cutoffs (seconds; clamped).
+pub fn set_state_cutoffs(stale_secs: u64, stalled_secs: u64) {
+    STALE_OVERRIDE_SECS.store(stale_secs.clamp(STALE_TUNE_RANGE.0, STALE_TUNE_RANGE.1), Ordering::Relaxed);
+    STALLED_OVERRIDE_SECS.store(stalled_secs.clamp(STALLED_TUNE_RANGE.0, STALLED_TUNE_RANGE.1), Ordering::Relaxed);
+}
+
+/// Effective cutoff in seconds: env test knob > user-tuned override > default.
+fn effective_secs(env_key: &str, override_atomic: &AtomicU64, default: i64) -> i64 {
+    let user = override_atomic.load(Ordering::Relaxed);
+    let base = if user > 0 { user as i64 } else { default };
+    env_secs(env_key, base)
 }
 
 #[derive(Serialize, Clone)]
@@ -152,6 +188,25 @@ fn staleness_transition(
     }
 }
 
+/// True when a `Running` session looks frozen mid-run: its PTY went totally
+/// silent (claude redraws even when idle, so zero bytes ⇒ the process is
+/// hung) AND no transcript growth / hook activity either, both past the
+/// stall threshold. `last_pty_output_ms == 0` (never produced a byte —
+/// covered by the never-attached check, and exempts PTY-less rows) and every
+/// non-Running state are left to the other rules.
+fn is_frozen_mid_run(
+    state: FleetSessionState,
+    last_pty_output_ms: i64,
+    idle_since_ms: i64,
+    now: i64,
+    threshold_ms: i64,
+) -> bool {
+    matches!(state, FleetSessionState::Running)
+        && last_pty_output_ms > 0
+        && now - last_pty_output_ms >= threshold_ms
+        && now - idle_since_ms >= threshold_ms
+}
+
 /// True when a session looks like it never attached: still `Spawning`, no
 /// Claude session id bound, and no activity for `idle_ms` past the threshold.
 /// The transcript watcher bumps activity (by cwd, even pre-cc-id) for sessions
@@ -182,9 +237,11 @@ fn is_never_attached(
 /// hook-driven `last_activity_ms` cutoff.
 fn tick_once(app: &AppHandle) {
     let now = now_ms();
-    let stale_secs = env_secs("PERSONAS_FLEET_STALE_SECS", STALE_AFTER_SECS);
+    let stale_secs = effective_secs("PERSONAS_FLEET_STALE_SECS", &STALE_OVERRIDE_SECS, STALE_AFTER_SECS);
     let cutoff_ms = stale_secs * 1000;
     let never_attached_ms = env_secs("PERSONAS_FLEET_NEVER_ATTACHED_SECS", NEVER_ATTACHED_SECS) * 1000;
+    let stalled_secs = effective_secs("PERSONAS_FLEET_STALLED_SECS", &STALLED_OVERRIDE_SECS, STALLED_AFTER_SECS);
+    let stalled_ms = stalled_secs * 1000;
 
     // Pass A — snapshot the sessions worth checking (no IO under the lock).
     let snaps: Vec<(String, Option<String>)> = {
@@ -264,6 +321,11 @@ fn tick_once(app: &AppHandle) {
             if grew {
                 session.last_activity_ms = now;
             }
+            // Persist the growth timestamp onto the row so the UI's state
+            // provenance tooltip can show "transcript grew Xs ago".
+            if let Some(&g) = last_grew.get(&session.id) {
+                session.last_grew_ms = g;
+            }
 
             // AwaitingInput robustness — revive on growth that happens strictly
             // AFTER the await began. The first tick that sees AwaitingInput
@@ -308,6 +370,26 @@ fn tick_once(app: &AppHandle) {
                 .copied()
                 .unwrap_or(0)
                 .max(session.last_activity_ms);
+
+            // Frozen-process fast path (before the generous flat-log cutoff):
+            // total PTY silence while Running means hung, not thinking — flag
+            // it at STALLED_AFTER_SECS with a verdict the operator can act on.
+            if is_frozen_mid_run(session.state, session.last_pty_output_ms, idle_since, now, stalled_ms) {
+                session.state = FleetSessionState::Stale;
+                session.state_reason = Some(if stalled_secs >= 60 {
+                    format!(
+                        "No console output for {} min — claude looks frozen mid-run. Safe to kill, or wake it with a prompt.",
+                        stalled_secs / 60
+                    )
+                } else {
+                    format!(
+                        "No console output for {stalled_secs}s — claude looks frozen mid-run. Safe to kill, or wake it with a prompt."
+                    )
+                });
+                newly_stale.push(session.id.clone());
+                continue;
+            }
+
             match staleness_transition(session.state, grew, idle_since, now, cutoff_ms) {
                 Some(FleetSessionState::Running) => {
                     session.state = FleetSessionState::Running;
@@ -362,13 +444,15 @@ fn tick_once(app: &AppHandle) {
             }
             let grew_at = g.get(&s.id).map(|&(_, t)| (now - t) / 1000).unwrap_or(-1);
             let size = g.get(&s.id).map(|&(sz, _)| sz).unwrap_or(0);
+            let out_ago = if s.last_pty_output_ms > 0 { (now - s.last_pty_output_ms) / 1000 } else { -1 };
             lines.push(format!(
-                "{} {:?} cc={} idle={}s grewAgo={}s size={} proj={}",
+                "{} {:?} cc={} idle={}s grewAgo={}s outAgo={}s size={} proj={}",
                 &s.id[..8.min(s.id.len())],
                 s.state,
                 s.claude_session_id.is_some(),
                 (now - s.last_activity_ms) / 1000,
                 grew_at,
+                out_ago,
                 size,
                 s.project_label,
             ));
@@ -482,6 +566,38 @@ mod tests {
         assert_eq!(staleness_transition(Stale, false, OLD, NOW, CUTOFF), None);
         assert_eq!(staleness_transition(Exited, false, OLD, NOW, CUTOFF), None);
         assert_eq!(staleness_transition(Hibernated, false, OLD, NOW, CUTOFF), None);
+    }
+
+    const STALL_MS: i64 = STALLED_AFTER_SECS * 1000;
+    const SILENT: i64 = NOW - STALL_MS; // PTY last emitted exactly at the threshold
+    const EMITTING: i64 = NOW - 5_000; // PTY emitted 5s ago (status redraws)
+
+    #[test]
+    fn frozen_running_session_is_flagged() {
+        use FleetSessionState::*;
+        // Running + total PTY silence + no growth/hooks past threshold → frozen.
+        assert!(is_frozen_mid_run(Running, SILENT, SILENT, NOW, STALL_MS));
+    }
+
+    #[test]
+    fn recent_output_or_activity_is_not_frozen() {
+        use FleetSessionState::*;
+        // Status line still redrawing → alive (even with flat logs).
+        assert!(!is_frozen_mid_run(Running, EMITTING, SILENT, NOW, STALL_MS));
+        // Recent growth/hook → working quietly (transcript flushed late).
+        assert!(!is_frozen_mid_run(Running, SILENT, NOW - 10_000, NOW, STALL_MS));
+    }
+
+    #[test]
+    fn frozen_check_only_applies_to_running_pty_sessions() {
+        use FleetSessionState::*;
+        // Never produced a byte (0) → never-attached's case, not ours.
+        assert!(!is_frozen_mid_run(Running, 0, SILENT, NOW, STALL_MS));
+        // Non-Running states are governed by the other rules.
+        assert!(!is_frozen_mid_run(Idle, SILENT, SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_mid_run(AwaitingInput, SILENT, SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_mid_run(Spawning, SILENT, SILENT, NOW, STALL_MS));
+        assert!(!is_frozen_mid_run(Stale, SILENT, SILENT, NOW, STALL_MS));
     }
 
     const ATTACH_MS: i64 = NEVER_ATTACHED_SECS * 1000;

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Loader2, Settings, Check, Trash2 } from 'lucide-react';
+import { Loader2, Settings, Check, Trash2, Layers } from 'lucide-react';
+import { TEAM_COLORS } from '../CreateTeamForm';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import { updateTeam } from '@/api/pipeline/teams';
@@ -35,7 +36,11 @@ function modelKeyFromProfile(profile: string | null): string {
   return 'inherit';
 }
 
-export function TeamWorkspacePane({ teamId }: { teamId: string }) {
+export function TeamWorkspacePane({ teamId, onDirtyChange }: {
+  teamId: string;
+  /** Reports unsaved-edit state so the studio can guard navigation away. */
+  onDirtyChange?: (dirty: boolean) => void;
+}) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
   const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
@@ -47,6 +52,11 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
   const [modelKey, setModelKey] = useState('inherit');
   const [budget, setBudget] = useState('');
   const [turns, setTurns] = useState('');
+  // Identity facet — editable post-creation (was frozen at create until now).
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [icon, setIcon] = useState('');
+  const [color, setColor] = useState('#6366f1');
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState(0);
   // Disband confirm: first click arms, second confirms. Auto-disarms after a
@@ -61,6 +71,10 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
     setModelKey(modelKeyFromProfile(team.default_model_profile ?? null));
     setBudget(team.default_max_budget_usd != null ? String(team.default_max_budget_usd) : '');
     setTurns(team.default_max_turns != null ? String(team.default_max_turns) : '');
+    setName(team.name);
+    setDescription(team.description ?? '');
+    setIcon(team.icon ?? '');
+    setColor(team.color ?? '#6366f1');
   }, [team]);
 
   // Auto-disarm the disband confirm after a short window.
@@ -70,31 +84,51 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
     return () => clearTimeout(timer);
   }, [confirmDisband]);
 
+  const identityDirty = useMemo(() => {
+    if (!team) return false;
+    return (
+      (name.trim() !== team.name && name.trim() !== '') ||
+      (description.trim() !== (team.description ?? '') && description.trim() !== '') ||
+      (icon.trim() !== (team.icon ?? '') && icon.trim() !== '') ||
+      color !== (team.color ?? '#6366f1')
+    );
+  }, [team, name, description, icon, color]);
+
   const dirty = useMemo(() => {
     if (!team) return false;
     const profile = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
     const budgetNum = budget.trim() === '' ? null : Number(budget);
     const turnsNum = turns.trim() === '' ? null : Number(turns);
     return (
+      identityDirty ||
       (instructions || null) !== (team.shared_instructions ?? null) ||
       profile !== (team.default_model_profile ? JSON.parse(team.default_model_profile).model ?? null : null) ||
       budgetNum !== (team.default_max_budget_usd ?? null) ||
       turnsNum !== (team.default_max_turns ?? null)
     );
-  }, [team, instructions, modelKey, budget, turns]);
+  }, [team, identityDirty, instructions, modelKey, budget, turns]);
+
+  // Mirror the dirty flag up to the studio shell; clear it on unmount so a
+  // discarded pane doesn't leave a stale guard behind.
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
 
   const handleSave = useCallback(async () => {
     if (!team) return;
     setSaving(true);
     const profileModel = MODEL_OPTIONS.find((m) => m.key === modelKey)?.model ?? null;
     const input: UpdateTeamInput = {
-      // null = skip for these (plain Option<Option> serde default).
-      name: null,
-      description: null,
+      // Identity facet: value sets, null skips (plain Option — no clear lane;
+      // description/icon lack the double_option deserializer, so an emptied
+      // field is treated as "unchanged", never as "clear").
+      name: name.trim() !== '' && name.trim() !== team.name ? name.trim() : null,
+      description: description.trim() !== '' && description.trim() !== (team.description ?? '') ? description.trim() : null,
       canvas_data: null,
       team_config: null,
-      icon: null,
-      color: null,
+      icon: icon.trim() !== '' && icon.trim() !== (team.icon ?? '') ? icon.trim() : null,
+      color: color !== (team.color ?? '#6366f1') ? color : null,
       enabled: null,
       // Workspace facet — value sets, null clears (double_option).
       shared_instructions: instructions.trim() === '' ? null : instructions,
@@ -113,7 +147,7 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
     } finally {
       setSaving(false);
     }
-  }, [team, teamId, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
+  }, [team, teamId, name, description, icon, color, instructions, modelKey, budget, turns, fetchTeams, addToast, ts]);
 
   // Disband: deletes the PersonaTeam (cascading membership + connections) but
   // NOT the member personas — they survive ungrouped. The store's deleteTeam
@@ -140,6 +174,65 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
         <h3 className="typo-label uppercase tracking-wider text-foreground">{ts.workspace_settings}</h3>
       </div>
       <p className="typo-caption text-foreground -mt-2">{ts.workspace_hint}</p>
+
+      {/* Team identity — name / description / icon / color, editable post-creation */}
+      <div className="rounded-card border border-primary/10 bg-secondary/10 p-3 space-y-3">
+        <div className="flex items-center gap-2">
+          <Layers className="w-3.5 h-3.5 text-indigo-300/80" />
+          <span className="typo-label uppercase tracking-wider text-foreground">{ts.identity_section}</span>
+        </div>
+        <div className="grid grid-cols-[1fr_88px] gap-3">
+          <label className="flex flex-col gap-1.5">
+            <span className="typo-label text-foreground/85">{t.pipeline.team_name}</span>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className="typo-label text-foreground/85">{ts.identity_icon_label}</span>
+            <input
+              type="text"
+              value={icon}
+              maxLength={4}
+              onChange={(e) => setIcon(e.target.value)}
+              className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 text-center focus:outline-none focus:border-primary/60"
+            />
+          </label>
+        </div>
+        <label className="flex flex-col gap-1.5">
+          <span className="typo-label text-foreground/85">{t.common.description}</span>
+          <input
+            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+          />
+        </label>
+        <div>
+          <span className="typo-label text-foreground/85 mb-1.5 block">{t.pipeline.color}</span>
+          <div className="flex gap-1.5 flex-wrap">
+            {Object.entries(TEAM_COLORS).map(([hex, colorName]) => (
+              <button
+                key={hex}
+                type="button"
+                onClick={() => setColor(hex)}
+                title={colorName}
+                aria-pressed={color === hex}
+                className={`w-7 h-7 rounded-card transition-all flex items-center justify-center ${
+                  color === hex ? 'ring-2 ring-offset-2 ring-offset-background scale-110' : 'hover:scale-105'
+                }`}
+                style={{ backgroundColor: hex }}
+              >
+                {color === hex && <Check className="w-3.5 h-3.5 text-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />}
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="typo-caption text-foreground">{ts.identity_hint}</p>
+      </div>
 
       {/* Shared instructions */}
       <label className="flex flex-col gap-1.5">

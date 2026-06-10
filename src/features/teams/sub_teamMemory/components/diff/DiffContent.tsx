@@ -56,6 +56,11 @@ export default function DiffContent({ diff }: DiffContentProps) {
         )}
       </div>
 
+      {/* Color-coding legend — the diff is unreadable without knowing what green/red mean */}
+      {(diff.added.length > 0 || diff.removed.length > 0) && (
+        <p className="typo-caption text-foreground px-1">{pt.diff_legend}</p>
+      )}
+
       {/* Category diffs */}
       {diff.categoryDiffs.length > 0 && (
         <div className="px-1">
@@ -110,7 +115,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
       {diff.removed.length > 0 && (
         <div className="px-1">
           <button onClick={() => setExpandedSection(expandedSection === 'removed' ? null : 'removed')} className="flex items-center gap-1 typo-caption font-medium text-red-400 mb-1 hover:text-red-300 transition-colors">
-            <Minus className="w-3 h-3" />{diff.removed.length} removed
+            <Minus className="w-3 h-3" />{diff.removed.length === 1 ? pt.removed_memories_one.replace('{count}', '1') : pt.removed_memories_other.replace('{count}', String(diff.removed.length))}
           </button>
           {expandedSection === 'removed' && (
             <div className="space-y-1 max-h-36 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/10">

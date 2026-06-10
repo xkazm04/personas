@@ -6,7 +6,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listCompetitions } from '@/api/devTools/devTools';
 import { CompetitionCard } from './CompetitionCard';
 import { StrategyLeaderboard } from './StrategyLeaderboard';
+import { WinningGeneProfile } from './WinningGeneProfile';
 import { NewCompetitionModal } from './NewCompetitionModal';
+import type { StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
 export function CompetitionList() {
@@ -15,6 +17,14 @@ export function CompetitionList() {
   const [competitions, setCompetitions] = useState<DevCompetition[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
+  // When the user picks "Rematch with winner" on a resolved competition, seed
+  // the New Competition modal with the winner's recovered genes (slot 1 bias).
+  const [rematchGenes, setRematchGenes] = useState<StrategyGenes | null>(null);
+
+  const handleRematch = useCallback((genes: StrategyGenes) => {
+    setRematchGenes(genes);
+    setShowNewModal(true);
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!activeProjectId) return;
@@ -68,7 +78,7 @@ export function CompetitionList() {
             accentColor="violet"
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
-            onClick={() => setShowNewModal(true)}
+            onClick={() => { setRematchGenes(null); setShowNewModal(true); }}
           >
             {t.plugins.dev_tools.new_competition}
           </Button>
@@ -87,6 +97,9 @@ export function CompetitionList() {
       {/* Strategy leaderboard */}
       <StrategyLeaderboard projectId={activeProjectId} />
 
+      {/* Winning gene profile — what emphasis tends to win for this project */}
+      <WinningGeneProfile projectId={activeProjectId} />
+
       {activeCompetitions.length > 0 && (
         <div className="space-y-2">
           <p className="typo-caption text-foreground">Active</p>
@@ -100,17 +113,17 @@ export function CompetitionList() {
         <div className="space-y-2">
           <p className="typo-caption text-foreground">Past</p>
           {pastCompetitions.map((c) => (
-            <CompetitionCard key={c.id} competition={c} onRefresh={refresh} />
+            <CompetitionCard key={c.id} competition={c} onRefresh={refresh} onRematch={handleRematch} />
           ))}
         </div>
       )}
 
       <NewCompetitionModal
         open={showNewModal}
-        onClose={() => setShowNewModal(false)}
+        onClose={() => { setShowNewModal(false); setRematchGenes(null); }}
         projectId={activeProjectId}
         onCreated={refresh}
-        previousWinnerGenes={null}
+        previousWinnerGenes={rematchGenes}
       />
     </div>
   );

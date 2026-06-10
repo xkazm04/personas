@@ -17,6 +17,20 @@ export function useNowTick(intervalMs = 30000): number {
   return now;
 }
 
+/**
+ * Urgency tier for a session blocked on the operator. The oldest waiting
+ * session is the costliest one — these tiers drive escalating accents in
+ * the "Needs you" banner so it pops without any per-second ticking.
+ */
+export type WaitTier = 'fresh' | 'aging' | 'stuck';
+
+export function waitTier(waitedMs: number): WaitTier {
+  const m = waitedMs / 60_000;
+  if (m < 5) return 'fresh';
+  if (m < 15) return 'aging';
+  return 'stuck';
+}
+
 /** Compact relative-time label ("just now" / "5s ago" / "3m ago" / "2h ago"). */
 export function formatAgo(t: Translations, fromMs: number, now: number): string {
   const s = Math.max(0, Math.floor((now - fromMs) / 1000));

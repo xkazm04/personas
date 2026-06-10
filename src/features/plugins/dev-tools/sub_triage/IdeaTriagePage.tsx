@@ -3,17 +3,18 @@ import {
   motion, AnimatePresence, useMotionValue, useTransform,
 } from 'framer-motion';
 import {
-  ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle,
+  ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle, Hammer,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { DEFAULT_CATEGORY_TW, CATEGORY_TW } from '../constants/ideaColors';
-import { LevelBadge } from '../sub_scanner/IdeaScannerCards';
+import { LevelBadge, ValueBadge } from '../sub_scanner/IdeaScannerCards';
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -47,6 +48,27 @@ interface TriageIdea {
 // ---------------------------------------------------------------------------
 
 const SWIPE_THRESHOLD = 150;
+
+type TriageSortMode = 'default' | 'value' | 'quick';
+
+// Value heuristic: reward impact, charge for effort + risk. Floats the
+// strongest ideas to the top of the swipe stack so triage attention lands
+// where it pays off most.
+function triageValueScore(i: { impact: number; effort: number; risk: number }): number {
+  return i.impact * 2 - i.effort - i.risk;
+}
+
+function applyTriageSort(list: TriageIdea[], mode: TriageSortMode): TriageIdea[] {
+  if (mode === 'default') return list;
+  const copy = [...list];
+  if (mode === 'value') {
+    copy.sort((a, b) => triageValueScore(b) - triageValueScore(a));
+  } else {
+    // Quick wins: lowest effort first, highest impact as the tiebreak.
+    copy.sort((a, b) => a.effort - b.effort || b.impact - a.impact);
+  }
+  return copy;
+}
 
 
 // ---------------------------------------------------------------------------
@@ -137,6 +159,7 @@ function SwipeCard({
           <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
+          <ValueBadge idea={idea} />
           {(['effort', 'impact', 'risk'] as const).map((key) => (
             <LevelBadge key={key} label={key} value={idea[key]} />
           ))}
@@ -191,7 +214,7 @@ function SwipeCard({
 export default function IdeaTriagePage() {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
-  const { triageIdea, deleteIdea } = useDevToolsActions();
+  const { triageIdea, deleteIdea, createTask } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeIdeas = useSystemStore((s) => s.ideas);
   const storeTasks = useSystemStore((s) => s.tasks);
@@ -221,6 +244,7 @@ export default function IdeaTriagePage() {
   const [filterScanType, setFilterScanType] = useState<string | null>(null);
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
+  const [sortMode, setSortMode] = useState<TriageSortMode>('default');
 
   // Load ideas + tasks from store on mount / project change. Tasks are
   // needed so the inline scoreboard rank on each triage card has signal
@@ -289,13 +313,16 @@ export default function IdeaTriagePage() {
     setSummaryFired(true);
   }, [pendingCount, acceptedCount, rejectedCount, sessionStart, summaryFired, addToastTriage, tx, dt.triage_session_summary]);
 
-  const visibleStack = pendingIdeas.slice(0, 3);
+  // Apply the chosen ordering on top of the filtered pending set. 'default'
+  // keeps store order (newest scan first); the others reorder the swipe stack.
+  const sortedPending = applyTriageSort(pendingIdeas, sortMode);
+  const visibleStack = sortedPending.slice(0, 3);
 
   // Keep a ref to always have the latest pending ideas — avoids stale closure
   // in the keyboard handler when the effect teardown/re-register races with
   // rapid keypresses after a triage action.
-  const pendingRef = useRef(pendingIdeas);
-  pendingRef.current = pendingIdeas;
+  const pendingRef = useRef(sortedPending);
+  pendingRef.current = sortedPending;
 
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
     const idea = pendingRef.current[0];
@@ -309,6 +336,20 @@ export default function IdeaTriagePage() {
     if (!idea) return;
     deleteIdea(idea.id);
   }, [deleteIdea]);
+
+  // "Build now": accept the top card AND queue a linked implementation task in
+  // one move — the direct idea→task path for obvious wins.
+  const handleBuildNow = useCallback(async () => {
+    const idea = pendingRef.current[0];
+    if (!idea) return;
+    try {
+      await createTask({ title: idea.title, description: idea.description, sourceIdeaId: idea.id });
+      triageIdea(idea.id, 'accepted');
+      addToastTriage(dt.triage_build_queued, 'success');
+    } catch (err) {
+      toastCatch('IdeaTriagePage:buildNow')(err);
+    }
+  }, [createTask, triageIdea, addToastTriage, dt.triage_build_queued]);
 
   // Keyboard shortcuts — stable listener (no dep on handleSwipe/pendingIdeas)
   useEffect(() => {
@@ -329,6 +370,12 @@ export default function IdeaTriagePage() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleSwipe]);
+
+  const sortOptions: { mode: TriageSortMode; label: string; tip?: string }[] = [
+    { mode: 'default', label: dt.sort_default },
+    { mode: 'value', label: dt.sort_value, tip: dt.sort_value_tip },
+    { mode: 'quick', label: dt.sort_quick, tip: dt.sort_quick_tip },
+  ];
 
   return (
     <ContentBox>
@@ -374,6 +421,31 @@ export default function IdeaTriagePage() {
         <div className="flex gap-2 h-full min-h-[500px]">
           {/* Left sidebar: category + scan type filters + effort/risk filter */}
           <div className="w-52 flex-shrink-0 space-y-1">
+            {/* Order — float the strongest ideas to the top of the swipe stack */}
+            <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
+              {dt.sidebar_sort}
+            </h3>
+            <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border/15">
+              {sortOptions.map((opt) => {
+                const active = sortMode === opt.mode;
+                return (
+                  <button
+                    key={opt.mode}
+                    onClick={() => setSortMode(opt.mode)}
+                    title={opt.tip}
+                    aria-pressed={active}
+                    className={`px-2 py-1 rounded-card typo-caption font-medium transition-colors ${
+                      active
+                        ? 'bg-primary/10 text-foreground border border-primary/25'
+                        : 'text-foreground hover:bg-primary/5 border border-transparent'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
               {dt.sidebar_category}
             </h3>
@@ -516,6 +588,16 @@ export default function IdeaTriagePage() {
                   title={dt.shortcuts_btn_delete_title}
                 >
                   <Trash2 className="w-4 h-4 text-foreground" />
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleBuildNow}
+                  className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center hover:bg-amber-500/20 transition-colors"
+                  title={dt.triage_build_now_title}
+                >
+                  <Hammer className="w-4 h-4 text-amber-400" />
                 </motion.button>
 
                 <motion.button

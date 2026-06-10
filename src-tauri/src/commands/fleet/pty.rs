@@ -257,6 +257,8 @@ pub fn spawn_session(
         args: args.clone(),
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
+        last_pty_output_ms: 0,
+        last_grew_ms: 0,
         created_at_ms: now,
         child_pid,
         exit_code: None,
@@ -425,6 +427,10 @@ fn reader_loop(
     // PTY (cursor/status) even when idle, so that would defeat staleness; real
     // work is tracked via transcript growth + hooks.
     let mut alive_marked = false;
+    // Throttled silence-tracker note: stamp `last_pty_output_ms` at most once
+    // a second so the frozen-process stall check (stale.rs) has a fresh "the
+    // PTY is still emitting" signal without per-chunk registry-lock churn.
+    let mut last_output_note: Option<std::time::Instant> = None;
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -437,6 +443,10 @@ fn reader_loop(
                     if registry().mark_alive(&session_id) {
                         emit_registry_changed(&app, "updated", &session_id);
                     }
+                }
+                if last_output_note.is_none_or(|t| t.elapsed().as_millis() >= 1000) {
+                    last_output_note = Some(std::time::Instant::now());
+                    registry().note_pty_output(&session_id);
                 }
                 // Always buffer (drains the PTY); learn whether to forward —
                 // both under one short ring lock, no registry-map contention.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { terminalPreviews } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 interface Options {
   /** Poll only while true (e.g. the grid overlay is open). */
@@ -30,6 +31,7 @@ export function useFleetTilePreviews(
   const enabled = opts?.enabled ?? true;
   const intervalMs = opts?.intervalMs ?? 1200;
   const lines = opts?.lines ?? 24;
+  const visible = useDocumentVisibility();
   const [previews, setPreviews] = useState<Map<string, string[]>>(new Map());
 
   // Keep the id list in a ref so the poll interval isn't torn down and rebuilt
@@ -38,25 +40,60 @@ export function useFleetTilePreviews(
   const idsRef = useRef<string[]>(sessionIds);
   idsRef.current = sessionIds;
 
+  // Ring revision last received per session — echoed back as `knownRevs` so
+  // the backend omits unchanged sessions (no re-cook, no re-serialize), and
+  // the state update is skipped entirely when nothing changed (no re-render).
+  const revsRef = useRef<Map<string, number>>(new Map());
+
   useEffect(() => {
     if (!enabled) {
+      revsRef.current.clear();
       setPreviews((prev) => (prev.size ? new Map() : prev));
       return;
     }
+    // Window hidden → stop polling but KEEP the current previews (nothing is
+    // on screen to go stale). Re-becoming visible re-runs the effect, whose
+    // immediate tick refreshes everything in one call.
+    if (!visible) return;
     let cancelled = false;
 
     const tick = async () => {
       const ids = idsRef.current;
       if (ids.length === 0) {
+        revsRef.current.clear();
         if (!cancelled) setPreviews((prev) => (prev.size ? new Map() : prev));
         return;
       }
       try {
-        const res = await terminalPreviews(ids, lines);
+        const knownRevs: Record<string, number> = {};
+        for (const id of ids) {
+          const rev = revsRef.current.get(id);
+          if (rev !== undefined) knownRevs[id] = rev;
+        }
+        const res = await terminalPreviews(ids, lines, knownRevs);
         if (cancelled) return;
-        const next = new Map<string, string[]>();
-        for (const p of res) next.set(p.sessionId, p.lines);
-        setPreviews(next);
+        // An omitted session is unchanged — keep what we have. Prune sessions
+        // that left the id list; bail without a state update when nothing did.
+        const idSet = new Set(ids);
+        for (const key of [...revsRef.current.keys()]) {
+          if (!idSet.has(key)) revsRef.current.delete(key);
+        }
+        for (const p of res) revsRef.current.set(p.sessionId, p.rev);
+        setPreviews((prev) => {
+          let changed = false;
+          const next = new Map(prev);
+          for (const key of next.keys()) {
+            if (!idSet.has(key)) {
+              next.delete(key);
+              changed = true;
+            }
+          }
+          for (const p of res) {
+            next.set(p.sessionId, p.lines);
+            changed = true;
+          }
+          return changed ? next : prev;
+        });
       } catch (e) {
         silentCatch('fleet/tilePreviews')(e);
       }
@@ -68,7 +105,7 @@ export function useFleetTilePreviews(
       cancelled = true;
       window.clearInterval(handle);
     };
-  }, [enabled, intervalMs, lines]);
+  }, [enabled, visible, intervalMs, lines]);
 
   return previews;
 }

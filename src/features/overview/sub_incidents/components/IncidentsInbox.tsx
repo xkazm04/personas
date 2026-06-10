@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { RefreshCw, Inbox } from 'lucide-react';
+import { RefreshCw, Inbox, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -18,7 +18,7 @@ import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
 import { IncidentAgentGroup } from './IncidentAgentGroup';
 import { IncidentDetailModal } from './IncidentDetailModal';
-import { groupIncidentsByAgent } from '../libs/groupIncidents';
+import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
@@ -31,16 +31,82 @@ const DEFAULT_FILTERS: IncidentFilters = {
 };
 
 const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
+const GROUP_MODE_KEY = 'incidents:group-mode';
+const FILTERS_KEY = 'incidents:filters';
+const SORT_KEY = 'incidents:oldest-first';
+const LAST_SEEN_KEY = 'incidents:last-seen';
+const GROUP_MODES: IncidentGroupMode[] = ['agent', 'severity', 'source', 'none'];
+
+/** Whether a persisted value is a valid group mode (guards against stale storage). */
+function isGroupMode(value: string): value is IncidentGroupMode {
+  return (GROUP_MODES as string[]).includes(value);
+}
+
+/**
+ * Restore the persisted filter view, but only the stable dimensions
+ * (status / severity / source). `since` is an absolute timestamp that would go
+ * stale between sessions, and `persona_id` is a transient detail-modal drill-in
+ * — both reset to null on load so the inbox never reopens into a stale or
+ * surprising deep-filter.
+ */
+function loadPersistedFilters(): IncidentFilters {
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const saved = JSON.parse(raw) as Partial<IncidentFilters>;
+    return {
+      statuses: saved.statuses ?? DEFAULT_FILTERS.statuses,
+      severities: saved.severities ?? null,
+      source_tables: saved.source_tables ?? null,
+      persona_id: null,
+      since: null,
+    };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
+/** User-facing label for a group-by lens. */
+function groupModeLabel(t: ReturnType<typeof useTranslation>['t'], mode: IncidentGroupMode): string {
+  switch (mode) {
+    case 'agent': return t.overview.incidents.group_by_agent;
+    case 'severity': return t.overview.incidents.group_by_severity;
+    case 'source': return t.overview.incidents.group_by_source;
+    case 'none': return t.overview.incidents.group_by_none;
+  }
+}
 
 export default function IncidentsInbox() {
   const { t } = useTranslation();
-  const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [filters, setFilters] = useState<IncidentFilters>(loadPersistedFilters);
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [justCleared, setJustCleared] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
-  const [oldestFirst, setOldestFirst] = useState(false);
+  const [oldestFirst, setOldestFirst] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(SORT_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
+  // The timestamp the user last marked the inbox "seen" — incidents created
+  // after it count as new. Null on first-ever visit (no marker shown).
+  const [lastSeenAt, setLastSeenAt] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem(LAST_SEEN_KEY);
+    } catch {
+      return null;
+    }
+  });
+  const [groupMode, setGroupMode] = useState<IncidentGroupMode>(() => {
+    try {
+      const raw = localStorage.getItem(GROUP_MODE_KEY);
+      return raw && isGroupMode(raw) ? raw : 'agent';
+    } catch {
+      return 'agent';
+    }
+  });
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
@@ -58,7 +124,6 @@ export default function IncidentsInbox() {
   const actions = useIncidentActions({
     onAfterChange: async () => {
       clearedByActionRef.current = true;
-      setSelectedIds(new Set());
       await refresh();
     },
   });
@@ -106,18 +171,6 @@ export default function IncidentsInbox() {
     };
   }, []);
 
-  const toggleSelect = useCallback((id: string, selected: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (selected) {
-        next.add(id);
-      } else {
-        next.delete(id);
-      }
-      return next;
-    });
-  }, []);
-
   const toggleGroup = useCallback((key: string) => {
     setCollapsedGroups((prev) => {
       const next = new Set(prev);
@@ -130,11 +183,12 @@ export default function IncidentsInbox() {
     });
   }, []);
 
-  // Group open incidents by the agent they belong to so the inbox answers
-  // "which of my agents needs me?" — worst-severity agents float to the top.
+  // Group incidents by the active lens — agent ("which of my agents needs me?"),
+  // severity ("what's most urgent?"), source ("what kind of thing is failing?"),
+  // or a flat recency list (none). Worst-severity groups float to the top.
   const groups = useMemo(
-    () => groupIncidentsByAgent(incidents, oldestFirst),
-    [incidents, oldestFirst],
+    () => groupIncidents(incidents, groupMode, oldestFirst),
+    [incidents, groupMode, oldestFirst],
   );
 
   // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
@@ -145,6 +199,47 @@ export default function IncidentsInbox() {
       silentCatch('incidents.collapsed-groups.persist')(e);
     }
   }, [collapsedGroups]);
+
+  // Remember the chosen lens so the inbox reopens the way the user left it.
+  useEffect(() => {
+    try {
+      localStorage.setItem(GROUP_MODE_KEY, groupMode);
+    } catch (e) {
+      silentCatch('incidents.group-mode.persist')(e);
+    }
+  }, [groupMode]);
+
+  // Persist the stable filter view (status/severity/source) + sort order so the
+  // inbox reopens where the user left it. since/persona_id are intentionally
+  // excluded (see loadPersistedFilters).
+  useEffect(() => {
+    try {
+      const { statuses, severities, source_tables } = filters;
+      localStorage.setItem(FILTERS_KEY, JSON.stringify({ statuses, severities, source_tables }));
+    } catch (e) {
+      silentCatch('incidents.filters.persist')(e);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SORT_KEY, oldestFirst ? '1' : '0');
+    } catch (e) {
+      silentCatch('incidents.sort.persist')(e);
+    }
+  }, [oldestFirst]);
+
+  // On leaving the inbox, stamp "now" as the last-seen mark so the next visit
+  // highlights only what arrived while away. Runs once on unmount.
+  useEffect(() => {
+    return () => {
+      try {
+        localStorage.setItem(LAST_SEEN_KEY, new Date().toISOString());
+      } catch (e) {
+        silentCatch('incidents.last-seen.persist')(e);
+      }
+    };
+  }, []);
 
   const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
   const toggleAllGroups = useCallback(() => {
@@ -157,6 +252,25 @@ export default function IncidentsInbox() {
     () => groups.filter((g) => !collapsedGroups.has(g.key)).flatMap((g) => g.incidents),
     [groups, collapsedGroups],
   );
+
+  // How many currently-listed incidents arrived after the user last marked the
+  // inbox seen — surfaced as a "N new since your last visit" marker.
+  const newCount = useMemo(() => {
+    if (!lastSeenAt) return 0;
+    const cutoff = new Date(lastSeenAt).getTime();
+    if (Number.isNaN(cutoff)) return 0;
+    return incidents.filter((i) => new Date(i.createdAt).getTime() > cutoff).length;
+  }, [incidents, lastSeenAt]);
+
+  const markSeen = useCallback(() => {
+    const now = new Date().toISOString();
+    setLastSeenAt(now);
+    try {
+      localStorage.setItem(LAST_SEEN_KEY, now);
+    } catch (e) {
+      silentCatch('incidents.last-seen.persist')(e);
+    }
+  }, []);
 
   // Latest-value refs so the global keydown listener can stay mounted once
   // without re-binding on every focus change or refresh.
@@ -246,9 +360,7 @@ export default function IncidentsInbox() {
       <IncidentRow
         key={incident.id}
         incident={incident}
-        selected={selectedIds.has(incident.id)}
         focused={focusedId === incident.id}
-        onSelectChange={(sel) => toggleSelect(incident.id, sel)}
         onAcknowledge={() => void actions.acknowledge(incident.id)}
         onResolve={() => void actions.resolve(incident.id)}
         onDismiss={() => void actions.dismiss(incident.id)}
@@ -256,7 +368,7 @@ export default function IncidentsInbox() {
         onOpenDetail={() => setDetailIncident(incident)}
       />
     ),
-    [selectedIds, focusedId, toggleSelect, actions],
+    [focusedId, actions],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
@@ -285,9 +397,6 @@ export default function IncidentsInbox() {
     clearedByActionRef.current = false;
   }, [loading, incidents.length, isNarrowed]);
 
-  const selectedArray = Array.from(selectedIds);
-  const hasSelection = selectedArray.length > 0;
-
   return (
     <ContentBox>
       <ContentHeader
@@ -313,38 +422,12 @@ export default function IncidentsInbox() {
         </div>
 
         <div className="px-4 pt-3 pb-2">
-          <IncidentsInboxKpiHeader summary={summary} />
+          <IncidentsInboxKpiHeader summary={summary} filters={filters} onApplyFilters={setFilters} />
         </div>
 
         <IncidentSeverityLegend />
 
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
-
-        {hasSelection && (
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
-            <span className="typo-caption text-foreground">
-              {selectedArray.length} selected
-            </span>
-            <button
-              onClick={() => void actions.bulkAck(selectedArray)}
-              className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_acknowledge_count.replace('{count}', String(selectedArray.length))}
-            </button>
-            <button
-              onClick={() => void actions.bulkResolve(selectedArray)}
-              className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_resolve_count.replace('{count}', String(selectedArray.length))}
-            </button>
-            <button
-              onClick={() => setSelectedIds(new Set())}
-              className="px-2 py-0.5 typo-caption rounded-card border border-transparent text-foreground hover:bg-secondary/40 focus-ring"
-            >
-              {t.overview.incidents.bulk_clear_selection}
-            </button>
-          </div>
-        )}
 
         {error && (
           <div className="px-4 py-3">
@@ -377,8 +460,42 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div>
-            <div className="flex items-center justify-between px-4 py-1.5">
-              <div className="flex items-center gap-1">
+            {newCount > 0 && (
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
+                <span className="typo-caption text-primary">
+                  {t.overview.incidents.new_since_last_visit.replace('{count}', String(newCount))}
+                </span>
+                <button
+                  type="button"
+                  onClick={markSeen}
+                  className="ml-auto px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {t.overview.incidents.mark_seen}
+                </button>
+              </div>
+            )}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-1.5">
+              <div className="flex flex-wrap items-center gap-1">
+                <span className="typo-caption text-foreground mr-1">
+                  {t.overview.incidents.group_by_label}:
+                </span>
+                {GROUP_MODES.map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setGroupMode(mode)}
+                    aria-pressed={groupMode === mode}
+                    className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                      groupMode === mode
+                        ? 'bg-primary/15 text-primary border-primary/25'
+                        : 'text-foreground border-transparent hover:bg-secondary/40'
+                    }`}
+                  >
+                    {groupModeLabel(t, mode)}
+                  </button>
+                ))}
+                <span className="mx-1 h-4 w-px bg-primary/10" />
                 <button
                   type="button"
                   onClick={() => setOldestFirst(false)}
@@ -420,8 +537,6 @@ export default function IncidentsInbox() {
                 group={group}
                 collapsed={collapsedGroups.has(group.key)}
                 onToggle={() => toggleGroup(group.key)}
-                onAckAll={(ids) => void actions.bulkAck(ids)}
-                onResolveAll={(ids) => void actions.bulkResolve(ids)}
                 renderRow={renderRow}
               />
             ))}
@@ -433,10 +548,17 @@ export default function IncidentsInbox() {
         <IncidentDetailModal
           incident={detailIncident}
           onClose={() => setDetailIncident(null)}
-          onChanged={() => {
-            setSelectedIds(new Set());
-            void refresh();
-          }}
+          onChanged={() => void refresh()}
+          onOpenIncident={(inc) => setDetailIncident(inc)}
+          onFilterPersona={(personaId) =>
+            setFilters({
+              statuses: null,
+              severities: null,
+              source_tables: null,
+              persona_id: personaId,
+              since: null,
+            })
+          }
         />
       )}
     </ContentBox>
