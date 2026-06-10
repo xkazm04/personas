@@ -77,6 +77,27 @@ src-tauri/src/engine/template_checksums.rs        (compiled-in checksum manifest
 src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
 ```
 
+### Gallery & preview UI surfaces
+
+- **Template comparison** (`gallery/cards/useTemplateCompare.ts`, `CompareTray.tsx`,
+  `gallery/modals/CompareModal.tsx`, `gallery/cards/buildComparison.ts`): in comfortable
+  density a per-row hover/selected checkbox adds up to 3 templates to a floating tray;
+  **Compare** opens a side-by-side modal contrasting category, goal, connectors (with
+  readiness), triggers, use-cases, complexity, setup time, and adoptions. Rows where the
+  templates disagree get an amber diff accent, and each column carries Adopt / Try-it
+  actions so the decision can be acted on in place. `buildComparison`
+  reuses the same cached-parse / complexity / connector-readiness helpers the cards use, so
+  the compare view never disagrees with what a card shows for the same template.
+- **Use-cases tab** (`gallery/modals/UseCasesTab.tsx`): fourth detail-modal tab rendering
+  each use-case flow as a linear digest (typed node chips walked along the flow's edges),
+  readable without leaving the modal; hidden for templates without flows.
+- **Trending quick-adopt** (`gallery/explore/TrendingCarousel.tsx`): trending cards carry a
+  hover-revealed adopt action that opens the adoption flow directly from the shelf.
+- **Design summary bar** (`design-preview/DesignSummaryBar.tsx`): `DesignResultPreview`
+  leads with count pills (connectors / tools / events / channels) plus the feasibility
+  verdict, so a reviewer grasps a generated design's shape before scrolling its full section
+  list. Self-hides when there is nothing to summarise.
+
 ## Common operations
 
 ### Add a new template

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
-  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon, Target,
+  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon, Target, RotateCcw,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -13,6 +13,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { SCAN_AGENTS } from '../constants/scanAgents';
+import { ValueBadge } from '../sub_scanner/IdeaScannerCards';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
@@ -84,6 +86,10 @@ const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Clock; className: string;
   failed: { icon: AlertCircle, className: 'bg-red-500/15 text-red-400 border-red-500/25' },
   cancelled: { icon: Ban, className: 'bg-primary/10 text-foreground border-primary/10' },
 };
+
+// Cluster the queue so running/queued/failed/done are visually grouped instead
+// of interleaved in creation order.
+const STATUS_ORDER: TaskStatus[] = ['running', 'queued', 'failed', 'completed', 'cancelled'];
 
 const PHASE_CONFIG: Record<TaskPhase, { color: string; range: [number, number] }> = {
   analyzing: { color: 'bg-blue-400', range: [0, 15] },
@@ -275,6 +281,15 @@ function TaskCard({
   const goal = useSystemStore((s) =>
     task.goalId ? s.goals.find((g) => g.id === task.goalId) ?? null : null,
   );
+  // Resolve the source idea so the card shows what the task came from
+  // (title + value + agent) instead of an opaque id. Falls back to the raw
+  // id when the idea has since been deleted.
+  const sourceIdea = useSystemStore((s) =>
+    task.source ? s.ideas.find((i) => i.id === task.source) ?? null : null,
+  );
+  const sourceAgentEmoji = sourceIdea
+    ? SCAN_AGENTS.find((a) => a.key === sourceIdea.scan_type)?.emoji ?? null
+    : null;
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const handleGoalJump = () => {
     setDevToolsTab('goals');
@@ -314,7 +329,18 @@ function TaskCard({
           {(task.source || goal) && (
             <div className="flex items-center gap-2 mt-0.5">
               {task.source && (
-                <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source}</p>
+                sourceIdea ? (
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] text-foreground shrink-0">{t.plugins.dev_runner.source_label}</span>
+                    {sourceAgentEmoji && <span className="text-[10px] shrink-0">{sourceAgentEmoji}</span>}
+                    <span className="text-[10px] text-foreground font-medium truncate max-w-[220px]" title={sourceIdea.description ?? sourceIdea.title}>
+                      {sourceIdea.title}
+                    </span>
+                    <ValueBadge idea={{ impact: sourceIdea.impact ?? 5, effort: sourceIdea.effort ?? 5, risk: sourceIdea.risk ?? 5 }} />
+                  </span>
+                ) : (
+                  <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source}</p>
+                )
               )}
               {goal && (
                 <button
@@ -421,6 +447,7 @@ export default function TaskRunnerPage() {
 
   const storeTasks = useSystemStore((s) => s.tasks);
   const fetchTasks = useSystemStore((s) => s.fetchTasks);
+  const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const taskOutputBuffers = useSystemStore((s) => s.taskOutputBuffers);
 
@@ -470,12 +497,14 @@ export default function TaskRunnerPage() {
     return () => window.clearTimeout(t);
   }, [pendingFocusId, storeTasks.length]);
 
-  // Fetch tasks on mount and when project changes
+  // Fetch tasks + ideas on mount and when project changes. Ideas power the
+  // source-idea resolution on task cards (title/value/agent instead of an id).
   useEffect(() => {
     if (activeProjectId) {
       fetchTasks(activeProjectId);
+      fetchIdeas(activeProjectId);
     }
-  }, [activeProjectId, fetchTasks]);
+  }, [activeProjectId, fetchTasks, fetchIdeas]);
 
   // Event listeners for task execution streaming — mount once to prevent accumulation
   useEffect(() => {
@@ -580,6 +609,21 @@ export default function TaskRunnerPage() {
     createTask(data);
   }, [createTask]);
 
+  // Bulk recovery: re-queue every failed task as a [Retry] copy (mirrors the
+  // per-task retry in SelfHealingPanel) so a botched auto-run can be re-run in
+  // one click rather than hunting failed cards individually.
+  const handleRetryAllFailed = useCallback(() => {
+    for (const task of tasks.filter((t) => t.status === 'failed')) {
+      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+    }
+  }, [tasks, createTask]);
+
+  // Group the queue by status for clustered rendering.
+  const tasksByStatus = tasks.reduce((acc, task) => {
+    (acc[task.status] ??= []).push(task);
+    return acc;
+  }, {} as Record<TaskStatus, RunnerTask[]>);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -628,6 +672,16 @@ export default function TaskRunnerPage() {
           >
             {t.plugins.dev_runner.auto_run_all}
           </Button>
+          {failedCount > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RotateCcw className="w-3.5 h-3.5" />}
+              onClick={handleRetryAllFailed}
+            >
+              {t.plugins.dev_runner.retry_all_failed} ({failedCount})
+            </Button>
+          )}
           <Button
             variant="danger"
             size="sm"
@@ -767,18 +821,30 @@ export default function TaskRunnerPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                {tasks.map((task, i) => {
-                  const raw = storeTasks.find((st) => st.id === task.id);
-                  if (!raw) return null;
+              <div className="space-y-4">
+                {STATUS_ORDER.map((status) => {
+                  const group = tasksByStatus[status];
+                  if (!group || group.length === 0) return null;
                   return (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      rawTask={raw}
-                      index={i}
-                      outputLines={taskOutputBuffers[task.id] ?? []}
-                    />
+                    <div key={status} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={status} />
+                        <span className="text-[10px] text-foreground tabular-nums">{group.length}</span>
+                      </div>
+                      {group.map((task, i) => {
+                        const raw = storeTasks.find((st) => st.id === task.id);
+                        if (!raw) return null;
+                        return (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            rawTask={raw}
+                            index={i}
+                            outputLines={taskOutputBuffers[task.id] ?? []}
+                          />
+                        );
+                      })}
+                    </div>
                   );
                 })}
               </div>

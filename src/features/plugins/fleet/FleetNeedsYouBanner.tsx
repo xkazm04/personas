@@ -2,7 +2,31 @@ import { useState } from 'react';
 import { Hourglass, MessageSquare, Send, X, Check, ShieldAlert, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
-import { useNowTick, formatAgo } from './relativeAgo';
+import { useNowTick, formatAgo, waitTier, type WaitTier } from './relativeAgo';
+
+// Escalating chip accents by how long a session has been blocked: violet
+// while fresh, amber past 5 minutes, red past 15. Driven by the banner's
+// existing 30s tick — passive escalation, no per-second churn.
+const TIER_CHIP: Record<WaitTier, { chip: string; hover: string; age: string; divider: string }> = {
+  fresh: {
+    chip: 'border-violet-400/30 bg-violet-400/10 text-violet-100',
+    hover: 'hover:bg-violet-400/20',
+    age: 'text-violet-300/80',
+    divider: 'border-violet-400/30',
+  },
+  aging: {
+    chip: 'border-amber-400/40 bg-amber-400/10 text-amber-100',
+    hover: 'hover:bg-amber-400/20',
+    age: 'text-amber-300/90',
+    divider: 'border-amber-400/40',
+  },
+  stuck: {
+    chip: 'border-red-400/45 bg-red-400/10 text-red-100',
+    hover: 'hover:bg-red-400/20',
+    age: 'text-red-300/90',
+    divider: 'border-red-400/45',
+  },
+};
 
 /** A pending companion approval, flattened for display in the attention banner. */
 export interface FleetApprovalItem {
@@ -117,26 +141,29 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
         <div className="flex flex-wrap items-center gap-1.5">
           {waiting.map((s) => {
             const name = s.name ?? s.projectLabel;
+            const tier = waitTier(now - Number(s.lastActivityMs));
+            const tc = TIER_CHIP[tier];
             return (
               <span
                 key={s.id}
-                className="flex items-center overflow-hidden rounded-interactive border border-violet-400/30 bg-violet-400/10 text-[13px] text-violet-100"
+                data-wait-tier={tier}
+                className={`flex items-center overflow-hidden rounded-interactive border text-[13px] ${tc.chip}`}
               >
                 <button
                   type="button"
                   data-testid={`fleet-needs-you-chip-${s.id}`}
                   onClick={() => onJump(s.id)}
                   title={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}
-                  className="flex items-center gap-1 px-2 py-0.5 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+                  className={`flex items-center gap-1 px-2 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60`}
                 >
                   <span className="truncate max-w-[140px]">{name}</span>
-                  {/* What Claude is waiting for (Notification message), or how
-                      long it's been blocked when no message was supplied. */}
-                  {s.stateReason ? (
-                    <span className="truncate max-w-[220px] text-violet-300/80">· {s.stateReason}</span>
-                  ) : (
-                    <span className="text-violet-300/80">· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
+                  {/* What Claude is waiting for (Notification message), plus
+                      how long it's been blocked — the age always shows so the
+                      oldest wait is visible at a glance. */}
+                  {s.stateReason && (
+                    <span className={`truncate max-w-[220px] ${tc.age}`}>· {s.stateReason}</span>
                   )}
+                  <span className={`whitespace-nowrap ${tc.age}`}>· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
                 </button>
                 <button
                   type="button"
@@ -144,7 +171,7 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
                   onClick={() => { setReplyTo(s.id); setText(''); }}
                   aria-label={tx(t.plugins.fleet.reply_to, { name })}
                   title={tx(t.plugins.fleet.reply_to, { name })}
-                  className="border-l border-violet-400/30 px-1.5 py-0.5 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+                  className={`border-l ${tc.divider} px-1.5 py-0.5 transition-colors ${tc.hover} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60`}
                 >
                   <MessageSquare className="w-3 h-3" aria-hidden="true" />
                 </button>

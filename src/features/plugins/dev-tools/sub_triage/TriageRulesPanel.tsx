@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ChevronDown, ChevronRight, Plus, Trash2, Zap, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Zap, ToggleLeft, ToggleRight, Sparkles } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { TriageRule } from '@/lib/bindings/TriageRule';
+import { suggestTriageRules, type RuleSuggestion } from './triageRuleSuggestions';
 
 const FIELD_OPTIONS = [
   { value: 'effort', label: 'Effort' },
@@ -36,7 +37,7 @@ interface TriageRulesPanelProps {
 }
 
 export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [creating, setCreating] = useState(false);
   const [ruleName, setRuleName] = useState('');
@@ -45,6 +46,7 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   const [runResult, setRunResult] = useState<{ applied: number; ideas_affected: number } | null>(null);
 
   const rules = useSystemStore((s) => s.triageRules);
+  const ideas = useSystemStore((s) => s.ideas);
   const fetchTriageRules = useSystemStore((s) => s.fetchTriageRules);
   const createTriageRule = useSystemStore((s) => s.createTriageRule);
   const updateTriageRule = useSystemStore((s) => s.updateTriageRule);
@@ -54,6 +56,24 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
   useEffect(() => {
     if (projectId) fetchTriageRules(projectId);
   }, [projectId, fetchTriageRules]);
+
+  // Rules implied by the user's own accept/reject history — already-covered
+  // patterns are filtered out, so adding one makes its suggestion disappear.
+  const suggestions = useMemo(() => suggestTriageRules(ideas, rules), [ideas, rules]);
+
+  const suggestionName = (s: RuleSuggestion): string => {
+    const dtr = t.plugins.dev_triage;
+    switch (s.kind) {
+      case 'reject_heavy': return dtr.suggestion_name_reject_heavy;
+      case 'accept_quick': return dtr.suggestion_name_accept_quick;
+      case 'reject_risky': return dtr.suggestion_name_reject_risky;
+      case 'reject_category': return tx(dtr.suggestion_name_reject_category, { category: s.category ?? '' });
+    }
+  };
+
+  const handleAddSuggestion = async (s: RuleSuggestion) => {
+    await createTriageRule(suggestionName(s), JSON.stringify(s.conditions), s.action, projectId);
+  };
 
   const isNumericField = (field: string) => ['effort', 'impact', 'risk'].includes(field);
 
@@ -149,6 +169,42 @@ export function TriageRulesPanel({ projectId }: TriageRulesPanelProps) {
               </button>
             </div>
           ))}
+
+          {/* Suggested rules — mined from the user's accept/reject history */}
+          {suggestions.length > 0 && !creating && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-wider text-primary font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                {t.plugins.dev_triage.suggested_rules_label}
+              </p>
+              {suggestions.map((s) => (
+                <div
+                  key={`${s.kind}-${s.category ?? ''}`}
+                  className="flex items-center gap-2 py-1.5 px-2 rounded-card bg-secondary/20 border border-dashed border-primary/15 typo-caption"
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="font-medium text-foreground">{suggestionName(s)}</span>
+                    <span className="text-foreground ml-2">
+                      {s.conditions.map((c) => `${c.field} ${c.op} ${c.value}`).join(' AND ')}
+                    </span>
+                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                      s.action === 'accept' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-red-500/15 text-red-400'
+                    }`}>{s.action}</span>
+                  </div>
+                  <span className="text-foreground text-[10px] shrink-0 tabular-nums">
+                    {tx(t.plugins.dev_triage.suggestion_evidence, { matched: s.matched, total: s.total })}
+                  </span>
+                  <button
+                    onClick={() => handleAddSuggestion(s)}
+                    className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors shrink-0"
+                  >
+                    <Plus className="w-2.5 h-2.5" />
+                    {t.plugins.dev_triage.suggestion_add}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Create form */}
           {creating ? (

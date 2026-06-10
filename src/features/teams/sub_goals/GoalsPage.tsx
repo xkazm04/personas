@@ -15,6 +15,7 @@ import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecyc
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
+import { GoalViewExplainer } from './GoalViewExplainer';
 import { isComplete } from './goalStatus';
 
 /** Board preference: whether the Done lane is visible. Hidden by default so
@@ -65,6 +66,7 @@ export default function GoalsPage() {
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchAllGoals = useSystemStore((s) => s.fetchAllGoals);
+  const createGoal = useSystemStore((s) => s.createGoal);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -128,6 +130,29 @@ export default function GoalsPage() {
     useCompanionStore.getState().setState('open');
   };
 
+  // Starter goals — one-click seeds for the empty state, so a non-technical
+  // user gets a concrete first goal instead of a blank form.
+  const [starterBusy, setStarterBusy] = useState(false);
+  const starters = [
+    { title: dl.goal_starter_release_title, desc: dl.goal_starter_release_desc },
+    { title: dl.goal_starter_bugs_title, desc: dl.goal_starter_bugs_desc },
+    { title: dl.goal_starter_docs_title, desc: dl.goal_starter_docs_desc },
+    { title: dl.goal_starter_quality_title, desc: dl.goal_starter_quality_desc },
+  ];
+  const addStarter = async (title: string, desc: string) => {
+    if (!activeProjectId || starterBusy) return;
+    setStarterBusy(true);
+    try {
+      await createGoal(activeProjectId, title, desc);
+      addToast(tx(dl.goal_starter_created, { title }), 'success');
+    } catch (err) {
+      // createGoal already reports to the store's error channel.
+      silentCatch('GoalsPage.addStarter')(err);
+    } finally {
+      setStarterBusy(false);
+    }
+  };
+
   return (
     <ContentBox>
       <ContentHeader
@@ -174,7 +199,10 @@ export default function GoalsPage() {
 
       <ContentBody>
         {goalsTab === 'timeline' ? (
-          <GoalsTimeline showProject={crossProject} />
+          <div className="space-y-3">
+            <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
+            <GoalsTimeline showProject={crossProject} />
+          </div>
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
@@ -213,12 +241,31 @@ export default function GoalsPage() {
                 {dl.goal_ask_athena}
               </Button>
             </div>
+            {/* One-click starter goals — concrete first steps beat a blank form */}
+            {activeProjectId && (
+              <div className="mt-6 flex flex-col items-center gap-2">
+                <p className="typo-caption text-foreground">{dl.goal_starters_label}</p>
+                <div className="flex flex-wrap justify-center gap-1.5 max-w-lg">
+                  {starters.map((s) => (
+                    <button
+                      key={s.title}
+                      type="button"
+                      disabled={starterBusy}
+                      onClick={() => void addStarter(s.title, s.desc)}
+                      className="px-2.5 py-1 rounded-full border border-violet-500/25 bg-violet-500/5 typo-caption text-foreground hover:bg-violet-500/15 hover:text-violet-200 transition-colors disabled:opacity-50"
+                    >
+                      {s.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="space-y-4 pb-6">
             <div className="flex items-center justify-between">
               <h3 className="typo-caption text-primary uppercase tracking-wider">
-                {t.plugins.dev_lifecycle.goal_constellation}({goals.length})
+                {t.plugins.dev_lifecycle.goal_constellation} ({goals.length})
               </h3>
               <div className="flex items-center gap-2">
                 {goalsTab === 'board' && (
@@ -244,6 +291,11 @@ export default function GoalsPage() {
                 </Button>
               </div>
             </div>
+            <GoalViewExplainer
+              key={goalsTab}
+              view={goalsTab === 'map' ? 'map' : 'board'}
+              text={goalsTab === 'map' ? dl.goal_explainer_map : dl.goal_explainer_board}
+            />
             <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} showProject={crossProject} />
           </div>
         )}

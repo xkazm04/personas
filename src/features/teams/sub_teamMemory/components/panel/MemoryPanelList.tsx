@@ -1,4 +1,4 @@
-import { Brain, Search, GitCommitVertical, X } from 'lucide-react';
+import { Brain, Search, GitCommitVertical, X, FilterX } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
@@ -13,9 +13,12 @@ interface MemoryPanelListProps {
   searchQuery: string;
   activeRunFilter: string | null;
   loadingMore: boolean;
+  /** Grow to fill the host (pane layout) instead of capping at max-h-80 (floating). */
+  fill?: boolean;
   onCategoryChange: (cat: string) => void;
   onSearchChange: (q: string) => void;
   onClearRunFilter: () => void;
+  onClearAll?: () => void;
   onLoadMore: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
@@ -29,9 +32,11 @@ export default function MemoryPanelList({
   searchQuery,
   activeRunFilter,
   loadingMore,
+  fill = false,
   onCategoryChange,
   onSearchChange,
   onClearRunFilter,
+  onClearAll,
   onLoadMore,
   onDelete,
   onImportanceChange,
@@ -39,6 +44,7 @@ export default function MemoryPanelList({
 }: MemoryPanelListProps) {
   const { t, tx } = useTranslation();
   const hasMore = memories.length < total;
+  const hasActiveFilters = activeCategory !== 'all' || searchQuery !== '' || !!activeRunFilter;
 
   return (
     <>
@@ -85,10 +91,18 @@ export default function MemoryPanelList({
             </button>
           </div>
         )}
+        {hasActiveFilters && onClearAll && (
+          <button
+            onClick={onClearAll}
+            className="flex items-center gap-1 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
+          >
+            <FilterX className="w-3 h-3" /> {t.pipeline.clear_all_filters}
+          </button>
+        )}
       </div>
 
       {/* Memory list */}
-      <div className="max-h-80 overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10">
+      <div className={`${fill ? 'flex-1 min-h-0' : 'max-h-80'} overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
         {memories.length === 0 ? (
           <div className="text-center py-6">
             <Brain className="w-8 h-8 mx-auto mb-2 text-foreground" />

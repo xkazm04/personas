@@ -120,7 +120,20 @@
     "source_provider": "প্রদানকারী",
     "source_policy": "নীতি",
     "source_healing_issue": "হিলিং সমস্যা",
-    "source_execution_error": "এক্সিকিউশন ত্রুটি"
+    "source_execution_error": "এক্সিকিউশন ত্রুটি",
+    "filters_active_aria": "{count} সক্রিয় ফিল্টার",
+    "filters_clear_all": "ফিল্টার মুছুন",
+    "group_by_label": "গ্রুপ করুন",
+    "group_by_agent": "এজেন্ট",
+    "group_by_severity": "গুরুত্ব",
+    "group_by_source": "উৎস",
+    "group_by_none": "কোনোটি নয়",
+    "siblings_label": "এই এজেন্টের অন্যান্য খোলা ঘটনা",
+    "siblings_none": "এই এজেন্টের আর কোনো খোলা ঘটনা নেই।",
+    "view_all_from_agent": "এই এজেন্টের সব দেখুন",
+    "distribution_aria": "গুরুত্ব অনুযায়ী খোলা ঘটনা",
+    "new_since_last_visit": "আপনার শেষ পরিদর্শনের পর থেকে {count} নতুন",
+    "mark_seen": "দেখা হয়েছে চিহ্নিত করুন"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",

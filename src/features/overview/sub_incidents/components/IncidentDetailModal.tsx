@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Lightbulb } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowRight, Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -7,15 +7,17 @@ import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
-import { toastCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import {
   setIncidentInProgress,
   resolveAuditIncident,
   dismissAuditIncident,
   reopenAuditIncident,
+  listAuditIncidents,
 } from '@/api/overview/incidents';
 import {
   incidentGuidance,
+  relativeTime,
   severityRank,
   severityShapeStatus,
   severityUrgencyLabel,
@@ -30,9 +32,17 @@ interface IncidentDetailModalProps {
   onClose: () => void;
   /** Called after a successful lifecycle mutation so the parent can re-fetch. */
   onChanged?: () => void;
+  /** Swap the modal to a sibling incident (clicking one in the triage hub). */
+  onOpenIncident?: (incident: AuditIncident) => void;
+  /** Filter the inbox to this agent and close the modal ("view all from this agent"). */
+  onFilterPersona?: (personaId: string) => void;
 }
 
 type Action = 'start' | 'resolve' | 'dismiss' | 'reopen';
+
+/** Active statuses for the "other open incidents from this agent" sibling list. */
+const SIBLING_STATUSES = ['open', 'acknowledged', 'in_progress'];
+const SIBLING_LIMIT = 20;
 
 const RESOLUTION_PRESETS = [
   'preset_fixed',
@@ -51,10 +61,48 @@ const RESOLUTION_PRESETS = [
  *   - in_progress         → Resolve (+ note), Dismiss (+ note), Back to open
  *   - resolved / dismissed → Reopen
  */
-export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDetailModalProps) {
+export function IncidentDetailModal({
+  incident,
+  onClose,
+  onChanged,
+  onOpenIncident,
+  onFilterPersona,
+}: IncidentDetailModalProps) {
   const { t } = useTranslation();
   const [note, setNote] = useState('');
   const [pending, setPending] = useState<Action | null>(null);
+  const [siblings, setSiblings] = useState<AuditIncident[]>([]);
+
+  const personaId = incident.personaId;
+
+  // Reset the draft note + any in-flight action when the modal swaps to a
+  // sibling incident (the component stays mounted, only the prop changes).
+  useEffect(() => {
+    setNote('');
+    setPending(null);
+  }, [incident.id]);
+
+  // Pull the agent's other still-active incidents so the user can triage the
+  // whole cluster in context instead of closing the modal to hunt for siblings.
+  useEffect(() => {
+    if (!personaId) {
+      setSiblings([]);
+      return;
+    }
+    let cancelled = false;
+    listAuditIncidents(
+      { statuses: SIBLING_STATUSES, severities: null, source_tables: null, persona_id: personaId, since: null },
+      SIBLING_LIMIT,
+      0,
+    )
+      .then((rows) => {
+        if (!cancelled) setSiblings(rows.filter((r) => r.id !== incident.id));
+      })
+      .catch(silentCatch('incidents.detail.siblings'));
+    return () => {
+      cancelled = true;
+    };
+  }, [personaId, incident.id]);
 
   const status = incident.status;
   const isActive = status === 'open' || status === 'acknowledged' || status === 'in_progress';
@@ -142,10 +190,10 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
       title={incident.title}
       subtitle={incident.personaName ?? undefined}
       onClose={onClose}
-      maxWidthClass="max-w-2xl"
+      maxWidthClass="max-w-4xl"
       actions={footer}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge variant={severityVariant}>
             <span className="inline-flex items-center gap-1.5">
@@ -157,44 +205,88 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
           <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
         </div>
 
-        <div className="flex items-start gap-2 rounded-card border border-primary/15 bg-primary/5 px-3 py-2">
+        <div className="flex items-start gap-2.5 rounded-card border border-primary/15 bg-primary/5 px-3.5 py-3">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
           <div className="min-w-0">
-            <span className="typo-overline text-foreground block">
+            <span className="typo-overline text-foreground mb-0.5 block">
               {t.overview.incidents.guidance_label}
             </span>
             <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t.overview.incidents.detail_label_status}>
-            {statusLabel(t, incident.status)}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_kind}>{incident.kind}</Field>
-          <Field label={t.overview.incidents.detail_label_source}>
-            {sourceTableLabel(t, incident.sourceTable)}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_persona}>
-            {incident.personaName ?? t.overview.incidents.detail_no_persona}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_created}>
-            <RelativeTime timestamp={incident.createdAt} />
-          </Field>
-          {incident.acknowledgedAt && (
-            <Field label={t.overview.incidents.detail_label_acknowledged}>
-              <RelativeTime timestamp={incident.acknowledgedAt} />
+        <div className="rounded-card border border-primary/10 bg-secondary/20 p-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+            <Field label={t.overview.incidents.detail_label_status}>
+              {statusLabel(t, incident.status)}
             </Field>
-          )}
-          {incident.resolvedAt && (
-            <Field label={t.overview.incidents.detail_label_resolved}>
-              <RelativeTime timestamp={incident.resolvedAt} />
+            <Field label={t.overview.incidents.detail_label_kind}>{incident.kind}</Field>
+            <Field label={t.overview.incidents.detail_label_source}>
+              {sourceTableLabel(t, incident.sourceTable)}
             </Field>
-          )}
+            <Field label={t.overview.incidents.detail_label_persona}>
+              {incident.personaName ?? t.overview.incidents.detail_no_persona}
+            </Field>
+            <Field label={t.overview.incidents.detail_label_created}>
+              <RelativeTime timestamp={incident.createdAt} />
+            </Field>
+            {incident.acknowledgedAt && (
+              <Field label={t.overview.incidents.detail_label_acknowledged}>
+                <RelativeTime timestamp={incident.acknowledgedAt} />
+              </Field>
+            )}
+            {incident.resolvedAt && (
+              <Field label={t.overview.incidents.detail_label_resolved}>
+                <RelativeTime timestamp={incident.resolvedAt} />
+              </Field>
+            )}
+          </div>
         </div>
 
+        {personaId && (
+          <div>
+            <h3 className="typo-overline text-foreground mb-1.5">
+              {t.overview.incidents.siblings_label}
+            </h3>
+            {siblings.length === 0 ? (
+              <p className="typo-caption text-foreground">{t.overview.incidents.siblings_none}</p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {siblings.map((sib) => (
+                  <li key={sib.id}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenIncident?.(sib)}
+                      className="flex w-full items-center gap-2 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 text-left hover:bg-secondary/40 transition-colors focus-ring"
+                    >
+                      <StatusShape status={severityShapeStatus(sib.severity)} size="sm" />
+                      <span className="typo-body text-foreground truncate flex-1 min-w-0">{sib.title}</span>
+                      <span className="typo-caption text-foreground shrink-0">
+                        {sourceTableLabel(t, sib.sourceTable)} · {relativeTime(t, sib.createdAt)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {onFilterPersona && (
+              <button
+                type="button"
+                onClick={() => {
+                  onFilterPersona(personaId);
+                  onClose();
+                }}
+                className="mt-2 inline-flex items-center gap-1 typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
+              >
+                {t.overview.incidents.view_all_from_agent}
+                <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        )}
+
         <div>
-          <h3 className="typo-overline text-foreground mb-1">
+          <h3 className="typo-overline text-foreground mb-1.5">
             {t.overview.incidents.detail_label_detail}
           </h3>
           <IncidentDetailBreakdown detail={incident.detail} />
@@ -202,7 +294,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
 
         {incident.resolutionNote && (
           <div>
-            <h3 className="typo-overline text-foreground mb-1">
+            <h3 className="typo-overline text-foreground mb-1.5">
               {t.overview.incidents.detail_label_resolution_note}
             </h3>
             <p className="typo-body text-foreground whitespace-pre-wrap break-words">
@@ -215,7 +307,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
           <div>
             <label
               htmlFor="incident-resolution-note"
-              className="typo-overline text-foreground mb-1 block"
+              className="typo-overline text-foreground mb-1.5 block"
             >
               {t.overview.incidents.detail_note_label}
             </label>
@@ -249,7 +341,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground mb-1">{label}</h3>
+      <h3 className="typo-overline text-foreground mb-1.5">{label}</h3>
       <span className="typo-body text-foreground">{children}</span>
     </div>
   );

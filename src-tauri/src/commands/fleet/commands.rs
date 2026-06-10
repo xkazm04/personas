@@ -77,16 +77,30 @@ pub async fn fleet_unsubscribe_terminal(session_id: String) -> Result<(), String
 /// from that session's output ring (ANSI/cursor sequences resolved). Unknown
 /// sessions are omitted. The watched/active tile renders a real terminal and is
 /// not polled here.
+///
+/// Change-gated: `known_revs` maps session id → the `rev` the caller received
+/// last poll. Sessions whose ring rev is unchanged are omitted from the result
+/// (keep rendering what you have) — so a mostly-idle 16-tile grid costs a few
+/// u32 compares per poll instead of 16 ANSI cooks + serializes.
 #[tauri::command]
 pub async fn fleet_terminal_previews(
     session_ids: Vec<String>,
     lines: Option<usize>,
+    known_revs: Option<std::collections::HashMap<String, u32>>,
 ) -> Result<Vec<super::types::FleetTerminalPreview>, String> {
     let max_lines = lines.unwrap_or(24).clamp(1, 200);
-    let previews = registry()
-        .preview_outputs(&session_ids, max_lines)
+    let known = known_revs.unwrap_or_default();
+    let requests: Vec<(String, Option<u32>)> = session_ids
         .into_iter()
-        .map(|(session_id, lines)| super::types::FleetTerminalPreview { session_id, lines })
+        .map(|id| {
+            let rev = known.get(&id).copied();
+            (id, rev)
+        })
+        .collect();
+    let previews = registry()
+        .preview_outputs(&requests, max_lines)
+        .into_iter()
+        .map(|(session_id, rev, lines)| super::types::FleetTerminalPreview { session_id, rev, lines })
         .collect();
     Ok(previews)
 }
@@ -188,6 +202,17 @@ pub async fn fleet_wake_session(
 #[tauri::command]
 pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Result<(), String> {
     super::stale::set_auto_hibernate(enabled, (after_minutes as u64) * 60);
+    Ok(())
+}
+
+/// Tune the staleness cutoffs (in seconds; clamped server-side): how long a
+/// flat-log session may sit before flipping `Stale`, and how long total PTY
+/// silence may last before a `Running` session is flagged frozen. Same
+/// plumbing as auto-hibernate: the frontend owns the persisted values and
+/// pushes them here on change + on every Fleet refresh.
+#[tauri::command]
+pub async fn fleet_set_state_cutoffs(stale_secs: u32, stalled_secs: u32) -> Result<(), String> {
+    super::stale::set_state_cutoffs(stale_secs as u64, stalled_secs as u64);
     Ok(())
 }
 

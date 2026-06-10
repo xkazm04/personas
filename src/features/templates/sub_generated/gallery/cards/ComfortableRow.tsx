@@ -1,11 +1,14 @@
 import { memo, useCallback } from 'react';
 import {
+  CheckSquare,
   ChevronDown,
   ChevronRight,
   Download,
   Sparkles,
+  Square,
   Workflow,
 } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { highlightMatch } from '@/lib/ui/highlightMatch';
 import { deriveConnectorReadiness } from '../../shared/ConnectorReadiness';
 import { RowActionMenu } from './RowActionMenu';
@@ -38,6 +41,9 @@ interface ComfortableRowProps {
   previewReviewId: string | null;
   previewPhase: string;
   onResetPreview: () => void;
+  isCompareSelected: boolean;
+  compareDisabled: boolean;
+  onToggleCompare: (review: PersonaDesignReview) => void;
 }
 
 function ComfortableRowImpl({
@@ -58,7 +64,11 @@ function ComfortableRowImpl({
   previewReviewId,
   previewPhase,
   onResetPreview,
+  isCompareSelected,
+  compareDisabled,
+  onToggleCompare,
 }: ComfortableRowProps) {
+  const { t } = useTranslation();
   const { connectors, flowCount } = getCachedLightFields(review);
   const designResult = isExpanded ? getCachedDesignResult(review) : null;
 
@@ -82,7 +92,27 @@ function ComfortableRowImpl({
         className="group flex items-center border-b border-primary/5 hover:bg-secondary/30 cursor-pointer transition-colors"
         data-testid={`template-row-${review.id}`}
       >
-        <div className="w-14 px-6 py-4 flex-shrink-0">
+        <div className="w-20 px-4 py-4 flex-shrink-0 flex items-center gap-1.5">
+          <button
+            onClick={(e) => { e.stopPropagation(); if (!compareDisabled) onToggleCompare(review); }}
+            disabled={compareDisabled}
+            aria-pressed={isCompareSelected}
+            aria-label={isCompareSelected ? t.templates.compare.remove_from_compare : t.templates.compare.add_to_compare}
+            data-testid={`compare-toggle-${review.id}`}
+            className={`flex-shrink-0 rounded outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)] ${
+              isCompareSelected
+                ? 'opacity-100'
+                : compareDisabled
+                  ? 'opacity-0 group-hover:opacity-30 focus-visible:opacity-30 cursor-not-allowed'
+                  : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'
+            }`}
+          >
+            {isCompareSelected ? (
+              <CheckSquare className="w-4 h-4 text-primary" />
+            ) : (
+              <Square className="w-4 h-4 text-foreground" />
+            )}
+          </button>
           {isExpanded ? (
             <ChevronDown className="w-4.5 h-4.5 text-foreground" />
           ) : (

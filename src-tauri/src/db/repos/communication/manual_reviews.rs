@@ -740,6 +740,8 @@ mod tests {
                 context_data: Some(r#"{"key":"value"}"#.into()),
                 suggested_actions: Some("Verify manually".into()),
                 use_case_id: None,
+                assignment_id: None,
+                step_id: None,
             },
         )
         .unwrap();
@@ -810,6 +812,8 @@ mod tests {
                 context_data: None,
                 suggested_actions: None,
                 use_case_id: None,
+                assignment_id: None,
+                step_id: None,
             },
         )
         .unwrap();
@@ -854,6 +858,8 @@ mod tests {
                 context_data: None,
                 suggested_actions: None,
                 use_case_id: None,
+                assignment_id: None,
+                step_id: None,
             },
         )
         .unwrap()
@@ -945,6 +951,8 @@ mod tests {
                     context_data: None,
                     suggested_actions: None,
                     use_case_id: None,
+                    assignment_id: None,
+                    step_id: None,
                 },
             )
             .unwrap();

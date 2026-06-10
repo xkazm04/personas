@@ -10,6 +10,7 @@ import { FleetMobilePreview } from '../FleetMobilePreview';
 import { FleetPairDevice } from '../FleetPairDevice';
 import { FleetTerminalSettings } from './FleetTerminalSettings';
 import { FleetAutoHibernateSettings } from './FleetAutoHibernateSettings';
+import { FleetStateCutoffSettings } from './FleetStateCutoffSettings';
 import { FleetProcessScanner } from './FleetProcessScanner';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -195,6 +196,9 @@ export default function FleetSettingsPage() {
 
           {/* Auto-hibernate policy (F3/P3.2) — always-on idle-session sleep */}
           <FleetAutoHibernateSettings />
+
+          {/* Tunable stale/frozen cutoffs — pushed to the Rust ticker */}
+          <FleetStateCutoffSettings />
 
           {/* Terminal appearance + behaviour (font, copy-on-select, theme) */}
           <FleetTerminalSettings />

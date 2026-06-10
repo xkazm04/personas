@@ -5,6 +5,7 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { TeamMemoryStats } from '@/lib/bindings/TeamMemoryStats';
 import { RunMarker, type RunGroup } from './TimelineControls';
 import { ManualGroup } from './TimelineItem';
+import { useRunDiffSummaries } from '../../libs/useRunDiffSummaries';
 
 interface TimelineEntry {
   type: 'run' | 'manual';
@@ -72,10 +73,16 @@ interface MemoryTimelineProps {
 }
 
 export default function MemoryTimeline({ memories, stats, onFilterRun, activeRunFilter }: MemoryTimelineProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const pt = t.pipeline;
   const [expandedRuns, setExpandedRuns] = useState<Set<string>>(new Set());
   const timeline = useMemo(() => buildTimeline(memories), [memories]);
+  // Timeline entries are newest-first; the diff hook wants chronological order.
+  const runIdsChronological = useMemo(
+    () => timeline.filter((e) => e.type === 'run' && e.runGroup).map((e) => e.runGroup!.runId).reverse(),
+    [timeline],
+  );
+  const diffSummaries = useRunDiffSummaries(runIdsChronological);
   const runCounts = useMemo(() => {
     if (!stats?.run_counts) return new Map<string, number>();
     return new Map(stats.run_counts);
@@ -102,7 +109,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
         <div className="flex items-center gap-2 px-2 py-1">
           <GitCommitVertical className="w-3 h-3 text-violet-400/60" />
           <span className="typo-body text-foreground">
-            {totalRuns} run{totalRuns !== 1 ? 's' : ''}
+            {tx(totalRuns === 1 ? pt.timeline_runs_one : pt.timeline_runs_other, { count: totalRuns })}
           </span>
           {activeRunFilter && (
             <button onClick={() => onFilterRun(null)} className="typo-body text-violet-400 hover:text-violet-300 transition-colors ml-auto">
@@ -118,7 +125,7 @@ export default function MemoryTimeline({ memories, stats, onFilterRun, activeRun
           if (entry.type === 'run' && entry.runGroup) {
             const rg = entry.runGroup;
             return (
-              <RunMarker key={rg.runId} group={rg} isExpanded={expandedRuns.has(rg.runId)} onToggle={() => toggleRun(rg.runId)} onFilterRun={onFilterRun} isFiltered={activeRunFilter === rg.runId} />
+              <RunMarker key={rg.runId} group={rg} diff={diffSummaries.get(rg.runId)} isExpanded={expandedRuns.has(rg.runId)} onToggle={() => toggleRun(rg.runId)} onFilterRun={onFilterRun} isFiltered={activeRunFilter === rg.runId} />
             );
           }
           if (entry.type === 'manual' && entry.manualGroup) {

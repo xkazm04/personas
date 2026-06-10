@@ -65,6 +65,7 @@ interface EventsSectionProps {
   readOnly: boolean;
   actualTriggers: PersonaTrigger[];
   onTriggerEnabledToggle?: (triggerId: string, enabled: boolean) => void;
+  anchorId?: string;
 }
 
 export function EventsSection({
@@ -77,6 +78,7 @@ export function EventsSection({
   readOnly,
   actualTriggers,
   onTriggerEnabledToggle,
+  anchorId,
 }: EventsSectionProps) {
   const { t } = useTranslation();
   const suggestedTriggers = result?.suggested_triggers ?? [];
@@ -86,7 +88,7 @@ export function EventsSection({
   if (!hasTriggers && !hasSubscriptions) return null;
 
   return (
-    <div className="space-y-3">
+    <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         {t.templates.design.events_and_triggers}

@@ -18,8 +18,10 @@ import type { FleetTerminalPreview } from '@/lib/bindings/FleetTerminalPreview';
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
  * Returns the freshly-minted internal session id (UUID v4).
  *
- * The Rust side enforces one session per cwd; calling twice with the
- * same cwd before the first session exits throws.
+ * Multiple sessions per cwd are allowed (the Rust side pre-binds each fresh
+ * spawn's claude session id, so concurrent sessions in one cwd never
+ * cross-bind). Extra `args` are appended to the `claude` argv verbatim —
+ * a positional string becomes the session's first prompt.
  */
 export const spawnSession = (
   cwd: string,
@@ -65,9 +67,16 @@ export const unsubscribeTerminal = (sessionId: string) =>
  * Batched cooked previews (last `lines` plain-text lines, ANSI resolved) for
  * the given sessions — the grid's unwatched tiles poll this in one call instead
  * of each mounting a live xterm. Unknown sessions are omitted from the result.
+ *
+ * Change-gated: pass `knownRevs` (session id → the `rev` from the previous
+ * poll) and sessions with unchanged output are omitted too — keep rendering
+ * what you already have for those.
  */
-export const terminalPreviews = (sessionIds: string[], lines?: number) =>
-  invoke<FleetTerminalPreview[]>('fleet_terminal_previews', { sessionIds, lines });
+export const terminalPreviews = (
+  sessionIds: string[],
+  lines?: number,
+  knownRevs?: Record<string, number>,
+) => invoke<FleetTerminalPreview[]>('fleet_terminal_previews', { sessionIds, lines, knownRevs });
 
 /**
  * Kill a session's child process. Idempotent (already-exited sessions
@@ -144,6 +153,14 @@ export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
  */
 export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
   invoke<null>('fleet_set_auto_hibernate', { enabled, afterMinutes });
+
+/**
+ * Tune the staleness cutoffs (seconds; clamped server-side): flat-log time
+ * before `Stale`, and total PTY silence before a `Running` session is flagged
+ * frozen. Same push-on-change + push-on-refresh plumbing as auto-hibernate.
+ */
+export const setStateCutoffs = (staleSecs: number, stalledSecs: number) =>
+  invoke<null>('fleet_set_state_cutoffs', { staleSecs, stalledSecs });
 
 /**
  * Read + summarize a session's Claude Code transcript

@@ -1,15 +1,20 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
+import { listTeamMembers } from '@/api/pipeline/teams';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
+import { usePersonaIndex } from './teamStudio/boardShared';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 
 /**
  * Teams management table — the landing view of the "Teams" sidebar
@@ -43,6 +48,7 @@ export default function TeamList() {
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [confirmDisbandId, setConfirmDisbandId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
+  const personaIndex = usePersonaIndex();
 
   useEffect(() => {
     if (!confirmDisbandId) return;
@@ -173,6 +179,7 @@ export default function TeamList() {
                 key={team.id}
                 team={team}
                 counts={teamCounts[team.id]}
+                personaIndex={personaIndex}
                 confirmingDisband={confirmDisbandId === team.id}
                 onOpen={() => selectTeam(team.id)}
                 onRequestDisband={() => setConfirmDisbandId(team.id)}
@@ -195,6 +202,7 @@ type TeamStudioStrings = ReturnType<typeof useTranslation>['t']['pipeline']['tea
 interface TeamRowProps {
   team: PersonaTeam;
   counts: { members: number; connections: number } | undefined;
+  personaIndex: ReturnType<typeof usePersonaIndex>;
   confirmingDisband: boolean;
   onOpen: () => void;
   onRequestDisband: () => void;
@@ -206,6 +214,7 @@ interface TeamRowProps {
 function TeamRow({
   team,
   counts,
+  personaIndex,
   confirmingDisband,
   onOpen,
   onRequestDisband,
@@ -233,10 +242,7 @@ function TeamRow({
         </span>
       </button>
 
-      <span className="w-20 text-right inline-flex items-center justify-end gap-1 typo-body text-foreground">
-        <Users className="w-3.5 h-3.5 text-foreground" />
-        {memberCount}
-      </span>
+      <MembersHoverPreview teamId={team.id} memberCount={memberCount} personaIndex={personaIndex} />
 
       <span className="w-20 text-right">
         <span
@@ -290,6 +296,63 @@ function TeamRow({
         )}
       </span>
     </div>
+  );
+}
+
+/**
+ * Member-count cell with a lazy hover popover: who's on this team and in what
+ * role, without opening the studio. Members fetch once per row on first hover.
+ */
+function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
+  teamId: string;
+  memberCount: number;
+  personaIndex: ReturnType<typeof usePersonaIndex>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [members, setMembers] = useState<PersonaTeamMember[] | null>(null);
+  const fetchedRef = useRef(false);
+
+  const onEnter = () => {
+    setOpen(true);
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+    listTeamMembers(teamId)
+      .then(setMembers)
+      .catch(silentCatch('TeamList:membersPreview'));
+  };
+
+  return (
+    <span
+      className="relative w-20 text-right inline-flex items-center justify-end gap-1 typo-body text-foreground"
+      onMouseEnter={onEnter}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <Users className="w-3.5 h-3.5 text-foreground" />
+      {memberCount}
+      {open && memberCount > 0 && (
+        <div className="absolute right-0 top-full mt-1 z-30 min-w-52 rounded-card border border-border bg-secondary/95 backdrop-blur-md shadow-elevation-3 p-1.5 flex flex-col gap-0.5 text-left">
+          {members === null ? (
+            <div className="flex justify-center py-1.5"><LoadingSpinner size="xs" /></div>
+          ) : (
+            <>
+              {members.slice(0, 8).map((m) => {
+                const p = personaIndex.get(m.persona_id);
+                return (
+                  <div key={m.id} className="flex items-center gap-2 px-1.5 py-0.5">
+                    <PersonaIcon icon={p?.icon ?? null} color={p?.color ?? null} size="w-4 h-4" />
+                    <span className="typo-caption text-foreground truncate flex-1">{p?.name.replace(/^T: /, '') ?? m.persona_id}</span>
+                    <span className="typo-caption font-mono text-foreground bg-secondary/50 px-1.5 py-0.5 rounded flex-shrink-0">{m.role}</span>
+                  </div>
+                );
+              })}
+              {members.length > 8 && (
+                <span className="px-1.5 typo-caption text-foreground tabular-nums">+{members.length - 8}</span>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </span>
   );
 }
 

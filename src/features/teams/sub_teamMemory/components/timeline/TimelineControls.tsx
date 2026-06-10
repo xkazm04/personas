@@ -2,6 +2,7 @@ import { GitCommitVertical, ChevronRight } from 'lucide-react';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import { MemoryEntry, formatTime } from './TimelineItem';
 import { useTranslation } from '@/i18n/useTranslation';
+import type { RunDiffSummary } from '../../libs/useRunDiffSummaries';
 
 interface RunGroup {
   runId: string;
@@ -17,18 +18,20 @@ function shortRunId(runId: string): string {
 
 export function RunMarker({
   group,
+  diff,
   isExpanded,
   onToggle,
   onFilterRun,
   isFiltered,
 }: {
   group: RunGroup;
+  diff?: RunDiffSummary;
   isExpanded: boolean;
   onToggle: () => void;
   onFilterRun: (runId: string) => void;
   isFiltered: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   return (
     <div className="relative">
       {/* Run header */}
@@ -49,8 +52,15 @@ export function RunMarker({
               {shortRunId(group.runId)}
             </span>
             <span className="typo-body text-violet-400/80 font-medium">
-              {group.memories.length} memor{group.memories.length !== 1 ? 'ies' : 'y'}
+              {tx(group.memories.length === 1 ? t.pipeline.timeline_memories_one : t.pipeline.timeline_memories_other, { count: group.memories.length })}
             </span>
+            {/* What this run changed vs its predecessor (full per-run sets, not the paged list) */}
+            {diff && (diff.added > 0 || diff.removed > 0) && (
+              <span className="flex items-center gap-1 typo-caption flex-shrink-0" title={t.pipeline.timeline_diff_tooltip}>
+                {diff.added > 0 && <span className="text-emerald-400">+{diff.added}</span>}
+                {diff.removed > 0 && <span className="text-red-400">−{diff.removed}</span>}
+              </span>
+            )}
           </div>
           <span className="typo-body text-foreground">{formatTime(group.firstCreatedAt)}</span>
         </div>
