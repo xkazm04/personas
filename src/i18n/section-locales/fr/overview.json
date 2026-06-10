@@ -619,7 +619,9 @@
     "stat_avg_latency": "Latence moy.",
     "stat_daily_burn": "Coût quotidien",
     "fleet_average": "Moyenne de la flotte",
-    "this_agent": "Cet agent"
+    "this_agent": "Cet agent",
+    "biggest_opportunity": "Meilleure marge de progression",
+    "pts_to_gain": "pts à gagner"
   },
   "analytics": {
     "title": "Analyses",

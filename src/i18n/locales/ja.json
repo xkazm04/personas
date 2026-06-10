@@ -5723,7 +5723,9 @@
       "stat_avg_latency": "平均レイテンシ",
       "stat_daily_burn": "日次消費",
       "fleet_average": "全体平均",
-      "this_agent": "このエージェント"
+      "this_agent": "このエージェント",
+      "biggest_opportunity": "最大の改善余地",
+      "pts_to_gain": "ポイント改善可能"
     },
     "analytics": {
       "title": "分析",

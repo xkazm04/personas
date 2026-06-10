@@ -5723,7 +5723,9 @@
       "stat_avg_latency": "Ø Latenz",
       "stat_daily_burn": "Tägl. Verbrauch",
       "fleet_average": "Flottendurchschnitt",
-      "this_agent": "Dieser Agent"
+      "this_agent": "Dieser Agent",
+      "biggest_opportunity": "Größtes Potenzial",
+      "pts_to_gain": "mögliche Pkt."
     },
     "analytics": {
       "title": "Analytik",

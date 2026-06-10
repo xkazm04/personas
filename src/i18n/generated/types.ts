@@ -6214,6 +6214,8 @@ export type Translations = {
       stat_daily_burn: string;
       fleet_average: string;
       this_agent: string;
+      biggest_opportunity: string;
+      pts_to_gain: string;
     };
     analytics: {
       title: string;

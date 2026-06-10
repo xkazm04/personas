@@ -7,7 +7,7 @@
  * re-medals existing entries, it never mutates the underlying dimension data.
  */
 
-import type { LeaderboardEntry, Medal, DimensionKey } from './leaderboardScoring';
+import type { LeaderboardEntry, Medal, DimensionKey, ScoreDimension } from './leaderboardScoring';
 
 export type RankKey = 'overall' | DimensionKey;
 
@@ -63,4 +63,30 @@ export function rankBy(entries: LeaderboardEntry[], key: RankKey): LeaderboardEn
  */
 export function headlineScore(entry: LeaderboardEntry, key: RankKey): number {
   return key === 'overall' ? entry.compositeScore : dimensionValue(entry, key);
+}
+
+export interface Opportunity {
+  dim: ScoreDimension;
+  /** Composite points recoverable if this dimension reached 100 (weight × gap). */
+  potential: number;
+}
+
+/**
+ * The dimension dragging an agent's composite score the most — the largest
+ * weighted gap from a perfect 100. This is where improvement buys the most
+ * overall score, so it's the most actionable thing to surface. Returns null
+ * when the agent is effectively maxed out (no meaningful gap).
+ */
+export function biggestOpportunity(entry: LeaderboardEntry): Opportunity | null {
+  let bestDim: ScoreDimension | null = null;
+  let bestGap = -1;
+  for (const dim of entry.dimensions) {
+    const gap = dim.weight * (100 - dim.value);
+    if (gap > bestGap) {
+      bestGap = gap;
+      bestDim = dim;
+    }
+  }
+  if (!bestDim || bestGap < 0.5) return null;
+  return { dim: bestDim, potential: Math.round(bestGap) };
 }

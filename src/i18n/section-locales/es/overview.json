@@ -619,7 +619,9 @@
     "stat_avg_latency": "Latencia media",
     "stat_daily_burn": "Gasto diario",
     "fleet_average": "Promedio de flota",
-    "this_agent": "Este agente"
+    "this_agent": "Este agente",
+    "biggest_opportunity": "Mayor oportunidad",
+    "pts_to_gain": "pts por ganar"
   },
   "analytics": {
     "title": "Análisis",

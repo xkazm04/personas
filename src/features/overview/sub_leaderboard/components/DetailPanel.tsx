@@ -1,8 +1,9 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Target } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { LeaderboardEntry } from '../libs/leaderboardScoring';
+import type { LeaderboardEntry, DimensionKey } from '../libs/leaderboardScoring';
 import type { FleetBenchmark } from '../libs/useLeaderboardData';
+import { biggestOpportunity } from '../libs/leaderboardRanking';
 import { ScoreRadar } from './ScoreRadar';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -49,6 +50,14 @@ export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: Detail
 
   const lb = t.overview.leaderboard;
   const showBenchmark = !!fleetBenchmark;
+  const opportunity = biggestOpportunity(entry);
+  const DIM_LABEL: Record<DimensionKey, string> = {
+    success: lb.dim_success,
+    health: lb.dim_health,
+    speed: lb.dim_speed,
+    cost: lb.dim_cost,
+    activity: lb.dim_activity,
+  };
 
   return (
     <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03] overflow-hidden">
@@ -107,6 +116,22 @@ export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: Detail
               delta={showBenchmark && entry.dailyBurnRate > 0 ? buildDelta(entry.dailyBurnRate, fleetBenchmark?.dailyBurnRate, false, (n) => `$${n.toFixed(3)}`) : null}
             />
           </div>
+
+          {opportunity && (
+            <div className="mt-4 p-3 rounded-card border border-amber-500/25 bg-amber-500/[0.06]">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Target className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                <span className="typo-caption font-semibold text-amber-300">{lb.biggest_opportunity}</span>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="typo-body font-semibold text-foreground truncate">{DIM_LABEL[opportunity.dim.key]}</span>
+                <span className="typo-caption text-foreground tabular-nums flex-shrink-0">
+                  {opportunity.dim.value}/100 · +{opportunity.potential} {lb.pts_to_gain}
+                </span>
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => onNavigateToAgent(entry.personaId)}
             className="mt-4 w-full flex items-center justify-center gap-1.5 typo-caption font-medium text-primary/70 hover:text-primary hover:bg-primary/5 py-1.5 rounded-card transition-colors"

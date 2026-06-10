@@ -6207,7 +6207,9 @@
       "stat_avg_latency": "Avg latency",
       "stat_daily_burn": "Daily burn",
       "fleet_average": "Fleet average",
-      "this_agent": "This agent"
+      "this_agent": "This agent",
+      "biggest_opportunity": "Biggest opportunity",
+      "pts_to_gain": "pts to gain"
     },
     "analytics": {
       "title": "Analytics",

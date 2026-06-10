@@ -619,7 +619,9 @@
     "stat_avg_latency": "평균 지연",
     "stat_daily_burn": "일일 소모",
     "fleet_average": "전체 평균",
-    "this_agent": "이 에이전트"
+    "this_agent": "이 에이전트",
+    "biggest_opportunity": "가장 큰 개선 기회",
+    "pts_to_gain": "점 향상 가능"
   },
   "analytics": {
     "title": "분석",

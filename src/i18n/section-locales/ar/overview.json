@@ -619,7 +619,9 @@
     "stat_avg_latency": "متوسط الكمون",
     "stat_daily_burn": "الإنفاق اليومي",
     "fleet_average": "متوسط الأسطول",
-    "this_agent": "هذا الوكيل"
+    "this_agent": "هذا الوكيل",
+    "biggest_opportunity": "أكبر فرصة للتحسين",
+    "pts_to_gain": "نقطة محتملة"
   },
   "analytics": {
     "title": "التحليلات",

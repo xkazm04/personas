@@ -619,7 +619,9 @@
     "stat_avg_latency": "औसत विलंबता",
     "stat_daily_burn": "दैनिक खर्च",
     "fleet_average": "फ्लीट औसत",
-    "this_agent": "यह एजेंट"
+    "this_agent": "यह एजेंट",
+    "biggest_opportunity": "सबसे बड़ा अवसर",
+    "pts_to_gain": "अंक संभावित"
   },
   "analytics": {
     "title": "एनालिटिक्स",

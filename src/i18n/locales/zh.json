@@ -5723,7 +5723,9 @@
       "stat_avg_latency": "平均延迟",
       "stat_daily_burn": "每日消耗",
       "fleet_average": "全部平均",
-      "this_agent": "此智能体"
+      "this_agent": "此智能体",
+      "biggest_opportunity": "最大提升空间",
+      "pts_to_gain": "分可提升"
     },
     "analytics": {
       "title": "分析",

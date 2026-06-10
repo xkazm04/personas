@@ -619,7 +619,9 @@
     "stat_avg_latency": "Độ trễ TB",
     "stat_daily_burn": "Chi tiêu hàng ngày",
     "fleet_average": "Trung bình đội",
-    "this_agent": "Tác nhân này"
+    "this_agent": "Tác nhân này",
+    "biggest_opportunity": "Cơ hội lớn nhất",
+    "pts_to_gain": "điểm có thể tăng"
   },
   "analytics": {
     "title": "Phân tích",

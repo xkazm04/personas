@@ -5723,7 +5723,9 @@
       "stat_avg_latency": "Ср. задержка",
       "stat_daily_burn": "Расход в день",
       "fleet_average": "Среднее по флоту",
-      "this_agent": "Этот агент"
+      "this_agent": "Этот агент",
+      "biggest_opportunity": "Главная возможность",
+      "pts_to_gain": "возможных баллов"
     },
     "analytics": {
       "title": "Аналитика",

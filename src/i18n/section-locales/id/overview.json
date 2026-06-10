@@ -619,7 +619,9 @@
     "stat_avg_latency": "Latensi rata-rata",
     "stat_daily_burn": "Pemakaian harian",
     "fleet_average": "Rata-rata armada",
-    "this_agent": "Agen ini"
+    "this_agent": "Agen ini",
+    "biggest_opportunity": "Peluang terbesar",
+    "pts_to_gain": "poin potensial"
   },
   "analytics": {
     "title": "Analitik",

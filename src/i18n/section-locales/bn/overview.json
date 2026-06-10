@@ -619,7 +619,9 @@
     "stat_avg_latency": "গড় বিলম্ব",
     "stat_daily_burn": "দৈনিক খরচ",
     "fleet_average": "ফ্লিট গড়",
-    "this_agent": "এই এজেন্ট"
+    "this_agent": "এই এজেন্ট",
+    "biggest_opportunity": "সবচেয়ে বড় সুযোগ",
+    "pts_to_gain": "পয়েন্ট সম্ভাব্য"
   },
   "analytics": {
     "title": "অ্যানালিটিক্স",

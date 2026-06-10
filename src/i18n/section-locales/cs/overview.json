@@ -619,7 +619,9 @@
     "stat_avg_latency": "Prům. latence",
     "stat_daily_burn": "Denní spotřeba",
     "fleet_average": "Průměr flotily",
-    "this_agent": "Tento agent"
+    "this_agent": "Tento agent",
+    "biggest_opportunity": "Největší příležitost",
+    "pts_to_gain": "bodů k zisku"
   },
   "analytics": {
     "title": "Analytika",
