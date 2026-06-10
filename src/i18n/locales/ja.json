@@ -15276,6 +15276,8 @@
     "momentum_declining": "下降",
     "sparkline_scores": "最近のスコア（古い順）",
     "review_filtered": "この {count} 件を評価",
-    "review_filtered_progress": "評価中 {done}/{total}…"
+    "review_filtered_progress": "評価中 {done}/{total}…",
+    "stale_sweep": "古い分の再評価（{count}）",
+    "stale_sweep_hint": "2週間以上コーチングしていないエージェントをすべて再評価"
   }
 }

@@ -35,5 +35,7 @@
   "momentum_declining": "menurun",
   "sparkline_scores": "Skor terbaru (lama ke baru)",
   "review_filtered": "Tinjau {count} ini",
-  "review_filtered_progress": "Meninjau {done}/{total}…"
+  "review_filtered_progress": "Meninjau {done}/{total}…",
+  "stale_sweep": "Sapu kedaluwarsa ({count})",
+  "stale_sweep_hint": "Tinjau ulang setiap agen yang tidak dibina lebih dari dua minggu"
 }

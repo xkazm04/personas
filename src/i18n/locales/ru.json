@@ -15276,6 +15276,8 @@
     "momentum_declining": "падают",
     "sparkline_scores": "Недавние оценки (от старых к новым)",
     "review_filtered": "Оценить эти {count}",
-    "review_filtered_progress": "Оценка {done}/{total}…"
+    "review_filtered_progress": "Оценка {done}/{total}…",
+    "stale_sweep": "Проверка устаревших ({count})",
+    "stale_sweep_hint": "Повторно оценить всех агентов без наставничества более двух недель"
   }
 }

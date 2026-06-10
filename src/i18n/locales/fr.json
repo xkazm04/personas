@@ -15276,6 +15276,8 @@
     "momentum_declining": "en baisse",
     "sparkline_scores": "Scores récents (du plus ancien au plus récent)",
     "review_filtered": "Évaluer ces {count}",
-    "review_filtered_progress": "Évaluation {done}/{total}…"
+    "review_filtered_progress": "Évaluation {done}/{total}…",
+    "stale_sweep": "Balayage des obsolètes ({count})",
+    "stale_sweep_hint": "Réévaluer chaque agent non coaché depuis plus de deux semaines"
   }
 }

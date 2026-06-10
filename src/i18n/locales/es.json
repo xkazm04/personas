@@ -15276,6 +15276,8 @@
     "momentum_declining": "bajando",
     "sparkline_scores": "Puntuaciones recientes (de más antigua a más reciente)",
     "review_filtered": "Revisar estos {count}",
-    "review_filtered_progress": "Revisando {done}/{total}…"
+    "review_filtered_progress": "Revisando {done}/{total}…",
+    "stale_sweep": "Barrido de obsoletos ({count})",
+    "stale_sweep_hint": "Volver a revisar cada agente sin coaching desde hace más de dos semanas"
   }
 }

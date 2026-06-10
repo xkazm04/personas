@@ -35,5 +35,7 @@
   "momentum_declining": "pokles",
   "sparkline_scores": "Nedávná skóre (od nejstaršího)",
   "review_filtered": "Zhodnotit těchto {count}",
-  "review_filtered_progress": "Hodnocení {done}/{total}…"
+  "review_filtered_progress": "Hodnocení {done}/{total}…",
+  "stale_sweep": "Prověření starých ({count})",
+  "stale_sweep_hint": "Znovu zhodnotit každého agenta bez koučinku déle než dva týdny"
 }

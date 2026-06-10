@@ -15276,6 +15276,8 @@
     "momentum_declining": "下降",
     "sparkline_scores": "近期评分（从旧到新）",
     "review_filtered": "评测这 {count} 个",
-    "review_filtered_progress": "评测中 {done}/{total}…"
+    "review_filtered_progress": "评测中 {done}/{total}…",
+    "stale_sweep": "过期复检（{count}）",
+    "stale_sweep_hint": "重新评测所有两周以上未辅导的智能体"
   }
 }

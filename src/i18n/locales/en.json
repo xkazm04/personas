@@ -3479,7 +3479,9 @@
     "momentum_declining": "declining",
     "sparkline_scores": "Recent scores (oldest→newest)",
     "review_filtered": "Review these {count}",
-    "review_filtered_progress": "Reviewing {done}/{total}…"
+    "review_filtered_progress": "Reviewing {done}/{total}…",
+    "stale_sweep": "Stale sweep ({count})",
+    "stale_sweep_hint": "Re-review every agent not coached in over two weeks"
   },
   "vault": {
     "title": "Vault",

@@ -15276,6 +15276,8 @@
     "momentum_declining": "गिरते",
     "sparkline_scores": "हाल के स्कोर (पुराने से नए)",
     "review_filtered": "इन {count} की समीक्षा करें",
-    "review_filtered_progress": "समीक्षा हो रही है {done}/{total}…"
+    "review_filtered_progress": "समीक्षा हो रही है {done}/{total}…",
+    "stale_sweep": "पुराने की जाँच ({count})",
+    "stale_sweep_hint": "दो सप्ताह से अधिक समय से बिना कोचिंग वाले हर एजेंट की पुनः समीक्षा करें"
   }
 }

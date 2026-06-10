@@ -15276,6 +15276,8 @@
     "momentum_declining": "تراجع",
     "sparkline_scores": "الدرجات الأخيرة (من الأقدم إلى الأحدث)",
     "review_filtered": "راجِع هؤلاء {count}",
-    "review_filtered_progress": "جارٍ المراجعة {done}/{total}…"
+    "review_filtered_progress": "جارٍ المراجعة {done}/{total}…",
+    "stale_sweep": "مسح القديم ({count})",
+    "stale_sweep_hint": "أعد مراجعة كل وكيل لم يُرشَد منذ أكثر من أسبوعين"
   }
 }

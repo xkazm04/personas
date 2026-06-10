@@ -3486,6 +3486,8 @@ export type Translations = {
     sparkline_scores: string;
     review_filtered: string;
     review_filtered_progress: string;
+    stale_sweep: string;
+    stale_sweep_hint: string;
   };
   vault: {
     title: string;

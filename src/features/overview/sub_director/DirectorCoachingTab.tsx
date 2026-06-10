@@ -25,6 +25,7 @@ import { AttentionTriageBar } from './components/AttentionTriageBar';
 import { CategoryRollup } from './components/CategoryRollup';
 import { MomentumSummary } from './components/MomentumSummary';
 import { ReviewFilteredAction } from './components/ReviewFilteredAction';
+import { StaleSweepButton } from './components/StaleSweepButton';
 import { filterRoster, type RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
@@ -59,6 +60,8 @@ export default function DirectorCoachingTab() {
   const lastReviewAt = d.verdicts[0]?.createdAt ?? null;
   // Agents the active facet narrowed the table to — the "Review these N" target.
   const filteredAgents = rosterFilter && p ? filterRoster(p.roster, rosterFilter, Date.now()) : [];
+  // Agents whose last review is stale (>14d) — the standing stale-sweep target.
+  const staleAgents = p ? filterRoster(p.roster, { type: 'flag', flag: 'stale' }, Date.now()) : [];
 
   const runAll = async () => {
     setRunning(true);
@@ -88,6 +91,7 @@ export default function DirectorCoachingTab() {
       >
         {t.director.add_to_scope}
       </Button>
+      <StaleSweepButton agents={staleAgents} onReview={d.runOnPersona} />
       <AsyncButton
         variant="accent"
         accentColor="violet"

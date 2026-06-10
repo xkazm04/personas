@@ -15276,6 +15276,8 @@
     "momentum_declining": "giảm sút",
     "sparkline_scores": "Điểm gần đây (cũ đến mới)",
     "review_filtered": "Đánh giá {count} mục này",
-    "review_filtered_progress": "Đang đánh giá {done}/{total}…"
+    "review_filtered_progress": "Đang đánh giá {done}/{total}…",
+    "stale_sweep": "Quét tồn đọng ({count})",
+    "stale_sweep_hint": "Đánh giá lại mọi tác nhân chưa được huấn luyện hơn hai tuần"
   }
 }

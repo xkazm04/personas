@@ -35,5 +35,7 @@
   "momentum_declining": "fallend",
   "sparkline_scores": "Letzte Bewertungen (alt zu neu)",
   "review_filtered": "Diese {count} bewerten",
-  "review_filtered_progress": "Bewertung {done}/{total}…"
+  "review_filtered_progress": "Bewertung {done}/{total}…",
+  "stale_sweep": "Veraltete prüfen ({count})",
+  "stale_sweep_hint": "Jeden seit über zwei Wochen nicht gecoachten Agenten erneut bewerten"
 }
