@@ -4,6 +4,7 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTeamStudioData } from './useTeamStudioData';
 import { TeamWorkspacePane } from './TeamWorkspacePane';
 import { TeamAssignmentBoard } from './TeamAssignmentBoard';
@@ -49,6 +50,11 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   const { members, toggleUseCase, busyUseCases } = useTeamStudioData();
   const [mode, setMode] = useState<RightMode>({ kind: 'orchestrate' });
 
+  // The studio header wears the team's identity — the icon and color that
+  // became editable in Workspace settings show up where the user works.
+  const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
+  const teamAccent = team?.color ?? '#6366f1';
+
   // Unsaved-changes guard: the workspace pane reports its dirty flag up; any
   // navigation away while dirty detours through a confirm instead of silently
   // unmounting the pane (and the edits with it).
@@ -89,8 +95,18 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   return (
     <>
       <ContentHeader
-        icon={<Users className="w-5 h-5 text-indigo-300" />}
-        iconColor="indigo"
+        icon={
+          <span
+            className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${teamAccent}26`, borderColor: `${teamAccent}59` }}
+          >
+            {team?.icon ? (
+              <span aria-hidden className="typo-body-lg leading-none">{team.icon}</span>
+            ) : (
+              <Users className="w-5 h-5" style={{ color: teamAccent }} />
+            )}
+          </span>
+        }
         title={ts.header_label}
         subtitle={teamName}
         actions={
