@@ -64,8 +64,8 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: tests/playwright/perf-nav-walk.spec.ts, docs/harness/perf-runs/, src/features/settings/sub_notifications/, src/features/agents/ (connector-key fixes), src/features/home/sub_welcome/lib/, src/features/plugins/langfuse/hooks/, src/stores/slices/system/twinSlice.ts
 - Note: 40-stop walk run + analysis at docs/harness/perf-runs/2026-06-10-analysis.md; fixed NotificationSettings write storm, marathon-default dup keys (7 components), Home double event fetch, langfuse docker-probe TTL cache (settings/account 2739→56ms), twin_list_profiles dedupe (3→1). All verified live on :17320.
 
-### friend — teams (src/features/teams UI/UX) — completed
-- 2026-06-10: 11 cycles, 15 commits (600771f63..dd073b2a5). Branch worktree-friend-teams-085000 (base vibeman/audit-2026-06-09 + **master merged in** — first picks were already shipped on master; merging avoided rebuilding them). Cycles: pin-to-memory, filter persistence, workspace unsaved-guard, studio header identity, channel crest identity, day separators, draft-pen hints, avatar-click mentions, mention highlights, Athena presence chip, roster live presence. tsc/eslint/i18n-gated; fast loop (not live-verified). Worktree left for user merge: `git merge --no-ff worktree-friend-teams-085000` (NOTE: brings master's 65 commits along into the target branch).
+### friend — teams (src/features/teams UI/UX) — completed + MERGED
+- 2026-06-10: 11 cycles, 15 commits (600771f63..dd073b2a5). MERGED into vibeman/audit-2026-06-09 as 6f2f1b389 (brings master's 2026-06-09 teams session along — branch base lacked it). Merge conflicts resolved: TeamWorkspacePane grafted disband-team (parallel session) onto identity-editing+unsaved-guard version; en.json union; 3 generated files regenerated. Post-merge tsc 0 errors. Worktree + branch removed. Cycles: pin-to-memory, filter persistence, workspace unsaved-guard, studio+channel identity, day separators, draft-pen hints, avatar/Athena mentions, mention highlights, roster live presence. Fast loop (not live-verified).
 
 ### friend — director (Overview Director surface) — COMPLETED
 - Started: 2026-06-10 08:38
