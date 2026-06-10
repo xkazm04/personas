@@ -208,6 +208,9 @@ def build_seed_entry(template_id: str, payload: dict, uc: dict) -> dict | None:
         return None
 
     uc_name = extract_uc_name(uc)
+    # None-check (not truthiness) to mirror Rust's `.or_else` exactly: an
+    # empty-string UC category does NOT fall back to the template category.
+    uc_category = extract_uc_category(uc)
     return {
         "id": derive_recipe_id(template_id, uc_id),
         "source_template_id": template_id,
@@ -216,7 +219,7 @@ def build_seed_entry(template_id: str, payload: dict, uc: dict) -> dict | None:
         "source_version": "1.0.0",
         "name": uc_name or uc_id,
         "description": extract_uc_description(uc),
-        "category": extract_uc_category(uc) or extract_category(payload),
+        "category": uc_category if uc_category is not None else extract_category(payload),
         "prompt_template": synthesize_prompt_template(uc),
         "tool_requirements": extract_uc_tools_json(uc),
         "tags": json.dumps([template_id, "derived"], separators=(",", ":")),
