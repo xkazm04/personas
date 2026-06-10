@@ -29,6 +29,15 @@ Idempotent: re-running over the same commit produces byte-identical
 output. Re-running with a different `--from-ref` regenerates the seeds
 against that commit's templates instead.
 
+CAUTION — the checked-in bundle is no longer a pure function of the
+default ref. Nine recipes (qa-guardian, solution-architect, code-reviewer,
+release-manager, security-sentinel, docs-steward UCs) were appended after
+34f483f1f^ from templates converted later; a blind re-run from the default
+ref DROPS them (291 vs 298 rows). Before regenerating, diff the output's
+id set against the checked-in bundle and re-merge anything missing, or
+prefer an in-place transform of the checked-in file for field-level fixes
+(see the 2026-06-10 title/category rewrite).
+
 Usage:
   python scripts/generate-recipe-seeds.py             # default ref
   python scripts/generate-recipe-seeds.py --from-ref <sha>
@@ -108,13 +117,27 @@ def read_template_at_ref(ref: str, path: str) -> dict:
 # -- Mirrors of Rust extractors in commands/recipes/recipe_derivation.rs ----
 
 def extract_uc_name(uc: dict) -> str | None:
+    """Mirror of Rust's `extract_uc_name`: name → title → id. Inline UCs
+    name themselves with `title` (the DesignUseCase shape); without that
+    arm every derived recipe falls through to the technical `uc_*` id.
+    """
     name = uc.get("name")
     if isinstance(name, str):
         return name
+    title = uc.get("title")
+    if isinstance(title, str):
+        return title
     uc_id = uc.get("id")
     if isinstance(uc_id, str):
         return uc_id
     return None
+
+
+def extract_uc_category(uc: dict) -> str | None:
+    """Mirror of Rust's `extract_uc_category`: the UC-level category wins
+    over the template-level one (the UC declares what the work is)."""
+    cat = uc.get("category")
+    return cat if isinstance(cat, str) else None
 
 
 def extract_uc_description(uc: dict) -> str | None:
@@ -193,7 +216,7 @@ def build_seed_entry(template_id: str, payload: dict, uc: dict) -> dict | None:
         "source_version": "1.0.0",
         "name": uc_name or uc_id,
         "description": extract_uc_description(uc),
-        "category": extract_category(payload),
+        "category": extract_uc_category(uc) or extract_category(payload),
         "prompt_template": synthesize_prompt_template(uc),
         "tool_requirements": extract_uc_tools_json(uc),
         "tags": json.dumps([template_id, "derived"], separators=(",", ":")),
@@ -272,6 +295,15 @@ def self_test() -> int:
         failures.append("string category extraction broken")
     if extract_category({}) is not None:
         failures.append("missing-category should be None")
+
+    if extract_uc_name({"id": "uc_x", "title": "Approval Workflow"}) != "Approval Workflow":
+        failures.append("uc title fallback broken")
+    if extract_uc_name({"id": "uc_x", "name": "Custom", "title": "T"}) != "Custom":
+        failures.append("explicit uc name should beat title")
+    if extract_uc_category({"category": "analysis"}) != "analysis":
+        failures.append("uc category extraction broken")
+    if extract_uc_category({"category": 3}) is not None:
+        failures.append("non-string uc category should be None")
 
     if failures:
         print("FAILED:", file=sys.stderr)
