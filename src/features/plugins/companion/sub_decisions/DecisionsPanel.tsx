@@ -142,11 +142,7 @@ function RailItem({
       }`}
     >
       <span className="typo-body truncate flex-1">{label}</span>
-      <span
-        className={`typo-caption shrink-0 ${
-          active ? 'text-fuchsia-300' : 'text-foreground'
-        }`}
-      >
+      <span className={`typo-caption shrink-0${active ? ' text-fuchsia-300' : ''}`}>
         {count}
       </span>
     </button>
@@ -156,9 +152,7 @@ function RailItem({
 function ContextThread({ group }: { group: DecisionGroup }) {
   return (
     <section data-context-key={group.key}>
-      <h2 className="typo-data font-semibold text-foreground truncate mb-3">
-        {group.label}
-      </h2>
+      <h2 className="typo-title truncate mb-3">{group.label}</h2>
       <ol className="relative space-y-6 pl-5 border-l border-fuchsia-500/20">
         {group.items.map((row) => (
           <li
@@ -176,12 +170,10 @@ function ContextThread({ group }: { group: DecisionGroup }) {
               </span>
               <RelativeTime
                 timestamp={row.decisionTimestamp ?? row.createdAt}
-                className="typo-caption text-foreground shrink-0"
+                className="typo-caption shrink-0"
               />
             </div>
-            <div className="typo-body-lg font-medium text-foreground">
-              {row.choice}
-            </div>
+            <div className="typo-title-lg">{row.choice}</div>
             <p className="typo-body text-foreground leading-relaxed">
               {row.rationale}
             </p>

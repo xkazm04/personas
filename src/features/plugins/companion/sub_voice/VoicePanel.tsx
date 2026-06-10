@@ -85,7 +85,7 @@ function EngineSelectorCard() {
           voice popover (both bind `companionVoiceVolume`). */}
       <div className="px-1 pt-1 pb-2 space-y-1.5">
         <div className="flex items-center justify-between">
-          <label className="typo-body font-medium text-foreground">
+          <label className="typo-title">
             {t.plugins.companion.voice_volume_label}
           </label>
           <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
@@ -132,9 +132,7 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
           {label}
         </span>
       </div>
-      <p className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
-        {caption}
-      </p>
+      <p className="typo-caption mt-1">{caption}</p>
     </button>
   );
 }
@@ -314,7 +312,7 @@ function ElevenLabsVoicePanel() {
                   <div className="typo-body font-medium text-foreground">
                     {t.plugins.companion.voice_empty_title}
                   </div>
-                  <p className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
+                  <p className="typo-caption mt-1">
                     {t.plugins.companion.voice_empty_desc}
                   </p>
                   <button
@@ -392,7 +390,7 @@ function ElevenLabsVoicePanel() {
       >
         <div className="px-1 py-2 space-y-2">
           {!credentialId ? (
-            <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
+            <p className="typo-caption">
               {t.plugins.companion.voice_credential_pick}
             </p>
           ) : (
@@ -436,7 +434,7 @@ function ElevenLabsVoicePanel() {
                 )}
               </div>
 
-              <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
+              <p className="typo-caption">
                 {hasScope
                   ? t.plugins.companion.voice_pick_scoped_hint
                   : t.plugins.companion.voice_pick_unscoped_hint}
@@ -467,7 +465,7 @@ function ElevenLabsVoicePanel() {
                     className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-code focus-ring"
                     aria-label={t.plugins.companion.voice_id_label}
                   />
-                  <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
+                  <p className="typo-caption">
                     {t.plugins.companion.voice_id_hint}
                   </p>
                 </div>
@@ -556,7 +554,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
       <div className="px-1 py-2 space-y-4">
         {/* Model dropdown */}
         <div className="space-y-1">
-          <label className="typo-body font-medium text-foreground">
+          <label className="typo-title">
             {t.plugins.companion.voice_settings_model_label}
           </label>
           <ThemedSelect
@@ -575,7 +573,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
             }
             aria-label={t.plugins.companion.voice_settings_model_label}
           />
-          <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
+          <p className="typo-caption">
             {t.plugins.companion.voice_settings_model_hint}
           </p>
         </div>
@@ -660,7 +658,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between">
-        <label className="typo-body font-medium text-foreground">{label}</label>
+        <label className="typo-title">{label}</label>
         <span className="typo-code text-foreground text-[11px]">{display}</span>
       </div>
       <div className="flex items-center gap-2">
@@ -686,9 +684,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
           </button>
         )}
       </div>
-      <p className="typo-caption font-normal text-foreground/85 leading-relaxed">
-        {hint}
-      </p>
+      <p className="typo-caption">{hint}</p>
     </div>
   );
 }

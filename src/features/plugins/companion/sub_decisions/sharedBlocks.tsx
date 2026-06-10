@@ -26,7 +26,7 @@ export function ScopeBanner({
     >
       <Sparkles className="w-4 h-4 text-fuchsia-400 shrink-0 mt-0.5" />
       <div className="flex-1 min-w-0">
-        <div className="typo-caption text-foreground/90">
+        <div className="typo-caption">
           {t.plugins.companion.decisions_panel_currently_designing}
         </div>
         <div className="typo-body text-foreground truncate">{intent}</div>
@@ -60,7 +60,7 @@ export function DecisionsFilterInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={t.plugins.companion.decisions_panel_filter_placeholder}
-        className="w-full pl-8 pr-3 py-1.5 rounded-input bg-secondary/50 border border-foreground/15 typo-caption text-foreground/90 focus-ring"
+        className="w-full pl-8 pr-3 py-1.5 rounded-input bg-secondary/50 border border-foreground/15 typo-body text-foreground focus-ring"
         data-testid="companion-decisions-filter"
       />
     </div>

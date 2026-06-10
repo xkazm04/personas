@@ -294,10 +294,10 @@ export default function SetupPanel() {
             className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium">
+            <div className="typo-title">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption font-normal text-foreground/85 leading-relaxed mt-1">
+            <div className="typo-caption mt-1">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
