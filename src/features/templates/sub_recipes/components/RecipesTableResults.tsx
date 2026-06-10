@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
+import { categoryLabel } from '../libs/categoryLabels';
 import { EligibilityChip } from './EligibilityChip';
 import type { Recipe, Eligibility } from '../types';
 
@@ -11,7 +12,7 @@ interface ResultsProps {
   onOpenDetail: (recipeId: string) => void;
 }
 
-type SortKey = 'name' | 'category' | 'bindings' | 'version' | 'eligibility';
+type SortKey = 'name' | 'category' | 'connectors' | 'version' | 'eligibility';
 type SortDir = 'asc' | 'desc';
 
 const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
@@ -50,8 +51,8 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
         case 'category':
           cmp = a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
           break;
-        case 'bindings':
-          cmp = a.bindings.length - b.bindings.length;
+        case 'connectors':
+          cmp = a.requiredConnectors.length - b.requiredConnectors.length;
           if (cmp === 0) cmp = a.name.localeCompare(b.name);
           break;
         case 'version':
@@ -92,18 +93,18 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
                 active={sort.key === 'category'}
                 dir={sort.dir}
                 onClick={() => toggleSort('category')}
-                className="w-32"
+                className="w-36"
               >
                 {t.recipes_catalog.col_category}
               </Th>
               <Th
                 sortable
-                active={sort.key === 'bindings'}
+                active={sort.key === 'connectors'}
                 dir={sort.dir}
-                onClick={() => toggleSort('bindings')}
-                className="w-24 text-right"
+                onClick={() => toggleSort('connectors')}
+                className="w-28"
               >
-                {t.recipes_catalog.col_bindings}
+                {t.recipes_catalog.col_connectors}
               </Th>
               <Th
                 sortable
@@ -223,15 +224,32 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
 
       {/* Category */}
       <td className="px-2 align-middle">
-        <span className="typo-label uppercase tracking-wider text-foreground truncate">
-          {recipe.category.replace(/-/g, ' ')}
+        <span className="inline-flex typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground whitespace-nowrap">
+          {categoryLabel(t, recipe.category)}
         </span>
       </td>
 
-      {/* Bindings count */}
-      <td className="px-2 align-middle text-right">
-        <span className="typo-data font-mono text-foreground/85">
-          {recipe.bindings.length}
+      {/* Required connectors — icon strip, replaces the always-zero bindings count */}
+      <td className="px-2 align-middle">
+        <span className="inline-flex items-center gap-1">
+          {recipe.requiredConnectors.slice(0, 3).map((slug) => {
+            const m = getConnectorMeta(slug);
+            return (
+              <span
+                key={slug}
+                className="inline-flex items-center justify-center w-5 h-5 rounded border bg-secondary/40 shrink-0"
+                style={{ borderColor: `${m.color}4d` }}
+                title={m.label}
+              >
+                <ConnectorIcon meta={m} size="w-3 h-3" />
+              </span>
+            );
+          })}
+          {recipe.requiredConnectors.length > 3 && (
+            <span className="typo-label font-mono text-foreground">
+              +{recipe.requiredConnectors.length - 3}
+            </span>
+          )}
         </span>
       </td>
 

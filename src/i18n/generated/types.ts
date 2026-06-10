@@ -10537,6 +10537,8 @@ export type Translations = {
     col_category: string;
     _comment_col_bindings: string;
     col_bindings: string;
+    _comment_col_connectors: string;
+    col_connectors: string;
     _comment_col_version: string;
     col_version: string;
     _comment_col_eligibility: string;

@@ -48,6 +48,7 @@
   "col_category": "Category",
   "_comment_col_bindings": "Table column header for binding count",
   "col_bindings": "Bindings",
+  "col_connectors": "Trình kết nối",
   "_comment_col_version": "Table column header for version",
   "col_version": "Version",
   "_comment_col_eligibility": "Table column header for eligibility status",

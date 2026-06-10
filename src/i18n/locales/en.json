@@ -10534,6 +10534,8 @@
     "col_category": "Category",
     "_comment_col_bindings": "Table column header for binding count",
     "col_bindings": "Bindings",
+    "_comment_col_connectors": "Table column header: required connector icons — keep 1 word",
+    "col_connectors": "Connectors",
     "_comment_col_version": "Table column header for version",
     "col_version": "Version",
     "_comment_col_eligibility": "Table column header for eligibility status",
