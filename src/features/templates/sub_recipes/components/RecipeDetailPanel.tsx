@@ -1,4 +1,5 @@
 import { useAgentStore } from '@/stores/agentStore';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../types';
 import { useRecipeEligibility } from '../useEligibility';
@@ -11,6 +12,8 @@ interface RecipeDetailPanelProps {
   recipe: Recipe;
   onBack: () => void;
   onAdopt: () => void;
+  /** Clicking a tag jumps back to browse with the tag as the search query. */
+  onTagClick?: (tag: string) => void;
 }
 
 /**
@@ -26,7 +29,7 @@ interface RecipeDetailPanelProps {
  *   │ Guardrails & memory — review / memory / failure-handling prose   │
  *   └───────────────────────────────────────────────────────────────────┘
  */
-export function RecipeDetailPanel({ recipe, onBack, onAdopt }: RecipeDetailPanelProps) {
+export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: RecipeDetailPanelProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibility = useRecipeEligibility(recipe);
@@ -50,7 +53,17 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt }: RecipeDetailPanel
           <p className="typo-body text-foreground/90 leading-relaxed whitespace-pre-line">{recipe.description}</p>
           {recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
-              {recipe.tags.map((tag) => (
+              {recipe.tags.map((tag) => onTagClick ? (
+                <Tooltip key={tag} content={t.recipes_catalog.tag_filter_tooltip}>
+                  <button
+                    type="button"
+                    onClick={() => onTagClick(tag)}
+                    className="typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/30 text-foreground hover:border-primary/40 hover:text-primary cursor-pointer transition-colors"
+                  >
+                    {tag}
+                  </button>
+                </Tooltip>
+              ) : (
                 <span
                   key={tag}
                   className="typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/30 text-foreground"

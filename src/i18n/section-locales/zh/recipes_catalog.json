@@ -117,6 +117,7 @@
   "bindings_count_other": "You'll fill in {count} settings during adoption",
   "_comment_tags_heading": "Section heading for the tags list",
   "tags_heading": "Tags",
+  "tag_filter_tooltip": "显示带此标签的配方",
   "guardrails_heading": "防护与记忆",
   "events_label": "事件",
   "event_emit_label": "发出",

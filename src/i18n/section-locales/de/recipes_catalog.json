@@ -117,6 +117,7 @@
   "bindings_count_other": "You'll fill in {count} settings during adoption",
   "_comment_tags_heading": "Section heading for the tags list",
   "tags_heading": "Tags",
+  "tag_filter_tooltip": "Rezepte mit diesem Tag anzeigen",
   "guardrails_heading": "Leitplanken & Gedächtnis",
   "events_label": "Ereignisse",
   "event_emit_label": "Sendet",

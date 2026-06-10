@@ -9,6 +9,8 @@ import type { Recipe, Eligibility } from '../types';
 interface ResultsProps {
   recipes: Recipe[];
   eligibilityMap: Map<string, Eligibility>;
+  /** Active search query — matching substrings in the name column light up. */
+  highlight?: string;
   onOpenDetail: (recipeId: string) => void;
 }
 
@@ -36,7 +38,7 @@ const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
  * Clicking the button adopts; clicking the row opens detail. Both stop
  * at the right place.
  */
-export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: ResultsProps) {
+export function RecipesTableResults({ recipes, eligibilityMap, highlight, onOpenDetail }: ResultsProps) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
 
@@ -133,6 +135,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
                 key={r.id}
                 recipe={r}
                 eligibility={eligibilityMap.get(r.id) ?? { state: 'eligible' }}
+                highlight={highlight}
                 onOpenDetail={() => onOpenDetail(r.id)}
               />
             ))}
@@ -182,10 +185,28 @@ function Th({ children, className = '', sortable, active, dir, onClick }: ThProp
 interface RecipeRowProps {
   recipe: Recipe;
   eligibility: Eligibility;
+  highlight?: string;
   onOpenDetail: () => void;
 }
 
-function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
+/** Case-insensitive first-match emphasis for the active search query. */
+function HighlightedName({ text, query }: { text: string; query?: string }) {
+  const q = query?.trim().toLowerCase();
+  if (!q) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-primary/25 text-foreground rounded-interactive px-0.5 -mx-0.5">
+        {text.slice(idx, idx + q.length)}
+      </mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
+function RecipeRow({ recipe, eligibility, highlight, onOpenDetail }: RecipeRowProps) {
   const { t } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
   const iconMeta = iconKey ? getConnectorMeta(iconKey) : null;
@@ -218,7 +239,7 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
       {/* Name — summary moved to row tooltip / detail view */}
       <td className="px-2 align-middle" title={recipe.summary}>
         <div className="typo-caption font-medium text-foreground truncate min-w-0 max-w-[420px]">
-          {recipe.name}
+          <HighlightedName text={recipe.name} query={highlight} />
         </div>
       </td>
 

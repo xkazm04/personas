@@ -12,6 +12,10 @@ import { RecipesTableResults } from './RecipesTableResults';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
+  /** Search is owned by RecipesPage so detail-view tag clicks can land
+   *  back in browse with the filter pre-applied. */
+  search: string;
+  onSearchChange: (value: string) => void;
   onOpenDetail: (recipeId: string) => void;
 }
 
@@ -35,12 +39,11 @@ type EligibilityFilter = 'all' | 'eligible' | 'adoptable-with-setup' | 'incompat
  *     entirely (no banner — recipe.detail surfaces "select a persona"
  *     guidance contextually if a user tries to adopt).
  */
-export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListProps) {
+export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail }: RecipesBrowseListProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
 
-  const [search, setSearch] = useState('');
   const [category, setCategory] = useState<RecipeCategory | 'all'>('all');
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all');
 
@@ -122,7 +125,7 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
           <input
             type="search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.recipes_catalog.search_placeholder}
             className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
           />
@@ -180,6 +183,7 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
             <RecipesTableResults
               recipes={filtered}
               eligibilityMap={eligibilityMap}
+              highlight={search}
               onOpenDetail={onOpenDetail}
             />
           )}

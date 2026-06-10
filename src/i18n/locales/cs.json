@@ -9849,6 +9849,7 @@
     "bindings_count_other": "You'll fill in {count} settings during adoption",
     "_comment_tags_heading": "Section heading for the tags list",
     "tags_heading": "Tags",
+    "tag_filter_tooltip": "Zobrazit recepty s tímto štítkem",
     "guardrails_heading": "Pojistky a paměť",
     "events_label": "Události",
     "event_emit_label": "Vysílá",

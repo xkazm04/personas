@@ -10607,6 +10607,8 @@ export type Translations = {
     bindings_count_other: string;
     _comment_tags_heading: string;
     tags_heading: string;
+    _comment_tag_filter_tooltip: string;
+    tag_filter_tooltip: string;
     _comment_guardrails_heading: string;
     guardrails_heading: string;
     _comment_events_label: string;
