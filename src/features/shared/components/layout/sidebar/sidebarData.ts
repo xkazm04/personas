@@ -9,7 +9,7 @@ import {
   User, Users, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard,
+  Clapperboard, MoonStar,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -177,12 +177,15 @@ export const companionItems: SubNavItem[] = [
 // Mirrors the in-page header tab bar that previously lived in
 // ObsidianBrainPage.tsx — the page now renders only the active panel,
 // matching the L3-pattern adopted by Artist / Dev Tools / Twin etc.
+// Keep sorted alphabetically by label (asc) — nav-order convention since
+// 2026-06-10; new tabs slot into alphabetical position.
 export const obsidianBrainItems: SubNavItem[] = [
-  { id: 'setup',  label: 'Setup',        icon: Settings },
-  { id: 'sync',   label: 'Sync',         icon: RefreshCw },
-  { id: 'browse', label: 'Browse Vault', icon: FolderOpen },
-  { id: 'graph',  label: 'Graph',        icon: Network },
-  { id: 'cloud',  label: 'Cloud',        icon: Cloud },
+  { id: 'browse',     label: 'Browse Vault', icon: FolderOpen },
+  { id: 'cloud',      label: 'Cloud',        icon: Cloud },
+  { id: 'graph',      label: 'Graph',        icon: Network },
+  { id: 'revitalize', label: 'Revitalize',   icon: MoonStar },
+  { id: 'setup',      label: 'Setup',        icon: Settings },
+  { id: 'sync',       label: 'Sync',         icon: RefreshCw },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {
