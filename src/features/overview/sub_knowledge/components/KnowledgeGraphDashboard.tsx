@@ -89,7 +89,14 @@ export default function KnowledgeGraphDashboard() {
   const rawEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
 
   const { filtered: allEntries } = useFilteredCollection(rawEntries, {
-    exact: [{ field: 'scope_type', value: selectedScope }],
+    exact: [
+      { field: 'scope_type', value: selectedScope },
+      // Apply the type filter client-side too. The backend list query already
+      // narrows by type when a persona is selected, but the no-persona view
+      // renders summary.top_patterns (which the query never touches) — without
+      // this the type dropdown and the clickable KPI tiles silently no-op there.
+      { field: 'knowledge_type', value: selectedType },
+    ],
     custom: [
       failureDrilldownDate
         ? (entry) => entry.failure_count > 0 && entry.updated_at.slice(0, 10) >= failureDrilldownDate
@@ -121,6 +128,14 @@ export default function KnowledgeGraphDashboard() {
     setFailureDrilldownDate(null);
     setSelectedType(null);
   };
+
+  // Single entry point for changing the type filter (KPI tiles + dropdown share
+  // it) so the failure-drilldown auto-clear logic lives in exactly one place.
+  const chooseType = useCallback((type: string | null) => {
+    setSelectedType(type);
+    setShowTypeDropdown(false);
+    if (failureDrilldownDate && type !== 'failure_pattern') setFailureDrilldownDate(null);
+  }, [failureDrilldownDate, setFailureDrilldownDate]);
 
   const handleSeedKnowledge = useCallback(async () => {
     try { await seedMockKnowledge(); await fetchData(); }
@@ -173,10 +188,25 @@ export default function KnowledgeGraphDashboard() {
         <div className="space-y-6 pb-6">
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <KpiTile density="card-rich" icon={Network} label="Total Patterns" numericValue={summary.total_entries} compact language={language} color="primary" />
-              <KpiTile density="card-rich" icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} compact language={language} subtitle="Learned tool chains" color="emerald" />
-              <KpiTile density="card-rich" icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} compact language={language} subtitle="Known error signatures" color="red" />
-              <KpiTile density="card-rich" icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} compact language={language} subtitle="Performance by model" color="violet" />
+              {([
+                { type: null, icon: Network, label: 'Total Patterns', value: summary.total_entries, color: 'primary', subtitle: undefined },
+                { type: 'tool_sequence', icon: ArrowRight, label: 'Tool Sequences', value: summary.tool_sequence_count, color: 'emerald', subtitle: 'Learned tool chains' },
+                { type: 'failure_pattern', icon: AlertTriangle, label: 'Failure Patterns', value: summary.failure_pattern_count, color: 'red', subtitle: 'Known error signatures' },
+                { type: 'model_performance', icon: Cpu, label: 'Model Insights', value: summary.model_performance_count, color: 'violet', subtitle: 'Performance by model' },
+              ] as const).map((tile) => {
+                const active = selectedType === tile.type;
+                return (
+                  <button
+                    key={tile.label}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => chooseType(tile.type)}
+                    className={`text-left rounded-modal transition-shadow focus-ring ${active ? 'ring-2 ring-primary/40' : 'hover:ring-1 hover:ring-primary/20'}`}
+                  >
+                    <KpiTile density="card-rich" icon={tile.icon} label={tile.label} numericValue={tile.value} compact language={language} subtitle={tile.subtitle} color={tile.color} />
+                  </button>
+                );
+              })}
               <KpiTile density="card-rich" icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} compact language={language} subtitle="Shared knowledge" color="cyan" />
             </div>
           )}
@@ -198,9 +228,9 @@ export default function KnowledgeGraphDashboard() {
             </button>
             {showTypeDropdown && (
               <div className="absolute mt-8 z-50 min-w-[160px] rounded-modal border border-primary/15 bg-background shadow-elevation-3 overflow-hidden">
-                <button onClick={() => { setSelectedType(null); setShowTypeDropdown(false); }} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
+                <button onClick={() => chooseType(null)} className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${!selectedType ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}><DebtText k="auto_all_types_eb672cb3" /></button>
                 {Object.entries(KNOWLEDGE_TYPES).map(([key, val]) => (
-                  <button key={key} onClick={() => { setSelectedType(key); setShowTypeDropdown(false); if (failureDrilldownDate && key !== 'failure_pattern') setFailureDrilldownDate(null); }}
+                  <button key={key} onClick={() => chooseType(key)}
                     className={`w-full text-left px-3 py-1.5 typo-body transition-colors ${selectedType === key ? 'bg-primary/10 text-foreground' : 'text-foreground hover:bg-secondary/30'}`}
                   >{val.label}</button>
                 ))}
