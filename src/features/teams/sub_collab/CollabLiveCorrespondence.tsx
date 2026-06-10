@@ -14,6 +14,7 @@ import {
   type ChannelMember,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { ChannelDetailModal } from './ChannelDetailModal';
 import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
@@ -297,12 +298,24 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     .map((m) => m.name.replace(/^T: /, ''));
   const reviewCount = members.filter((m) => presence.get(m.personaId) === 'waiting').length;
 
+  // The header crest wears the team's identity (icon + color, editable in
+  // Workspace settings) instead of a generic red radio glyph.
+  const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
+  const crestAccent = team?.color ?? '#f87171';
+
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
       {/* ── Header band: identity · live presence · data glance ── */}
       <div className="flex-shrink-0 border-b border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-3">
-        <div className="relative w-8 h-8 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
-          <Radio className="w-4 h-4 text-status-error" />
+        <div
+          className="relative w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: `${crestAccent}26`, borderColor: `${crestAccent}59` }}
+        >
+          {team?.icon ? (
+            <span aria-hidden className="typo-body leading-none">{team.icon}</span>
+          ) : (
+            <Radio className="w-4 h-4" style={{ color: crestAccent }} />
+          )}
         </div>
         <div className="min-w-0">
           <div className="typo-body-lg font-semibold text-foreground leading-tight truncate">{teamName ?? 'Team channel'}</div>
