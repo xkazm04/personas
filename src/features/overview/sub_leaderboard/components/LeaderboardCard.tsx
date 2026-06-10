@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { SpringCount } from '@/features/shared/components/display/SpringCount';
 import type { LeaderboardEntry, Medal, PerformanceTier } from '../libs/leaderboardScoring';
 import { headlineScore, type RankKey } from '../libs/leaderboardRanking';
 import { DebtText } from '@/i18n/DebtText';
@@ -49,7 +50,7 @@ function MiniScoreRing({ score, size = 48 }: { score: number; size?: number }) {
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="typo-body font-bold text-foreground tabular-nums">{score}</span>
+        <SpringCount value={score} className="typo-body font-bold text-foreground tabular-nums" />
       </div>
     </div>
   );

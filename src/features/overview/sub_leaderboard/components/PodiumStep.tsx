@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from 'framer-motion';
 import { Crown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { SpringCount } from '@/features/shared/components/display/SpringCount';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 import { headlineScore, type RankKey } from '../libs/leaderboardRanking';
 
@@ -120,9 +121,7 @@ export function PodiumStep({ entry, slot, selected, onClick, rankKey, activeDimL
         </p>
         <div className="flex flex-col items-center gap-0.5">
           <div className="flex items-center gap-2">
-            <span className={`typo-display font-bold tabular-nums ${cfg.scoreText}`}>
-              {headline}
-            </span>
+            <SpringCount value={headline} className={`typo-display font-bold tabular-nums ${cfg.scoreText}`} />
             <TrendIcon className={`w-4 h-4 ${trend.color}`} aria-label={trend.label} />
           </div>
           {activeDimLabel && (
