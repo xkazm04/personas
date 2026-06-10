@@ -1,14 +1,17 @@
 import { useMemo } from 'react';
 import type { LeaderboardEntry, Medal } from '../libs/leaderboardScoring';
+import type { RankKey } from '../libs/leaderboardRanking';
 import { PodiumStep } from './PodiumStep';
 
 interface PodiumProps {
   entries: LeaderboardEntry[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  rankKey: RankKey;
+  activeDimLabel?: string | null;
 }
 
-export function Podium({ entries, selectedId, onSelect }: PodiumProps) {
+export function Podium({ entries, selectedId, onSelect, rankKey, activeDimLabel }: PodiumProps) {
   const { gold, silver, bronze } = useMemo(() => {
     const byMedal = (m: Medal) => entries.find((e) => e.medal === m) ?? null;
     return {
@@ -35,6 +38,8 @@ export function Podium({ entries, selectedId, onSelect }: PodiumProps) {
             slot="silver"
             selected={selectedId === silver.personaId}
             onClick={() => onSelect(silver.personaId)}
+            rankKey={rankKey}
+            activeDimLabel={activeDimLabel}
           />
         )}
         {gold && (
@@ -43,6 +48,8 @@ export function Podium({ entries, selectedId, onSelect }: PodiumProps) {
             slot="gold"
             selected={selectedId === gold.personaId}
             onClick={() => onSelect(gold.personaId)}
+            rankKey={rankKey}
+            activeDimLabel={activeDimLabel}
           />
         )}
         {bronze && (
@@ -51,6 +58,8 @@ export function Podium({ entries, selectedId, onSelect }: PodiumProps) {
             slot="bronze"
             selected={selectedId === bronze.personaId}
             onClick={() => onSelect(bronze.personaId)}
+            rankKey={rankKey}
+            activeDimLabel={activeDimLabel}
           />
         )}
       </div>

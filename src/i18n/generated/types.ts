@@ -6201,6 +6201,27 @@ export type Translations = {
       efficiency: string;
       cost_effectiveness: string;
       overall: string;
+      rank_by: string;
+      dim_overall: string;
+      dim_success: string;
+      dim_health: string;
+      dim_speed: string;
+      dim_cost: string;
+      dim_activity: string;
+      stat_total_runs: string;
+      stat_recent_7d: string;
+      stat_avg_latency: string;
+      stat_daily_burn: string;
+      fleet_average: string;
+      this_agent: string;
+      biggest_opportunity: string;
+      pts_to_gain: string;
+      hint_success: string;
+      hint_health: string;
+      hint_speed: string;
+      hint_cost: string;
+      hint_activity: string;
+      improve_agent: string;
     };
     analytics: {
       title: string;

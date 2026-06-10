@@ -16,7 +16,12 @@ import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealth
 
 // ── Types ──────────────────────────────────────────────────────────────
 
+/** Stable identifier for a score dimension — used for ranking + i18n lookup,
+ *  independent of the (English) display label. */
+export type DimensionKey = 'success' | 'health' | 'speed' | 'cost' | 'activity';
+
 export interface ScoreDimension {
+  key: DimensionKey;
   label: string;
   value: number;   // 0-100 normalized
   weight: number;  // 0-1 (sums to 1)
@@ -135,11 +140,11 @@ export function computeLeaderboard(signals: PersonaHealthSignal[]): LeaderboardE
       : 0;
 
     const dimensions: ScoreDimension[] = [
-      { label: 'Success', value: successScore, weight: WEIGHTS.success, raw: `${signal.successRate.toFixed(1)}%` },
-      { label: 'Health', value: healthScore, weight: WEIGHTS.health, raw: `${signal.heartbeatScore}/100` },
-      { label: 'Speed', value: speedScore, weight: WEIGHTS.speed, raw: signal.avgLatencyMs > 0 ? `${(signal.avgLatencyMs / 1000).toFixed(1)}s` : '—' },
-      { label: 'Cost', value: costScore, weight: WEIGHTS.cost, raw: costPerExec > 0 ? `$${costPerExec.toFixed(3)}` : '—' },
-      { label: 'Activity', value: activityScore, weight: WEIGHTS.activity, raw: `${signal.recentExecutions} / 7d` },
+      { key: 'success', label: 'Success', value: successScore, weight: WEIGHTS.success, raw: `${signal.successRate.toFixed(1)}%` },
+      { key: 'health', label: 'Health', value: healthScore, weight: WEIGHTS.health, raw: `${signal.heartbeatScore}/100` },
+      { key: 'speed', label: 'Speed', value: speedScore, weight: WEIGHTS.speed, raw: signal.avgLatencyMs > 0 ? `${(signal.avgLatencyMs / 1000).toFixed(1)}s` : '—' },
+      { key: 'cost', label: 'Cost', value: costScore, weight: WEIGHTS.cost, raw: costPerExec > 0 ? `$${costPerExec.toFixed(3)}` : '—' },
+      { key: 'activity', label: 'Activity', value: activityScore, weight: WEIGHTS.activity, raw: `${signal.recentExecutions} / 7d` },
     ];
 
     return {
