@@ -737,6 +737,20 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Obsidian Brain Revitalize status --------------------------------------
+  // Registered globally so the sidebar status dots (L1 Plugins, L2 Brain,
+  // L3 Revitalize) stay accurate while the user navigates away during a
+  // running vault-optimization pass. Output lines are panel-local.
+  {
+    event: EventName.OBSIDIAN_REVITALIZE_STATUS,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.OBSIDIAN_REVITALIZE_STATUS, (payload) => {
+        useSystemStore.getState().onObsidianRevitalizeStatus(payload);
+      });
+      return [unlisten];
+    },
+  },
+
   // -- One-shot build terminal phase (Promoted | Failed) --------------------
   // Fires when an autonomous build ends — adds an entry to the bell with a
   // deep-link to the persona so the user can review what landed (or why it

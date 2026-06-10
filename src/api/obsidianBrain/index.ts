@@ -389,6 +389,64 @@ export const obsidianGraphWriteMeetingNote = (
     body,
   });
 
+// ── Phase 8: Revitalize (background vault memory optimization) ─────
+
+export interface RevitalizeOptions {
+  /** Delete notes that are stale, superseded, or content-free. */
+  pruneStale: boolean;
+  /** Merge near-duplicate / overlapping notes into one canonical note. */
+  mergeDuplicates: boolean;
+  /** Refresh frontmatter, titles, and [[wiki-links]] on surviving notes. */
+  refreshStructure: boolean;
+  /** Optional free-form operator guidance appended to the prompt. */
+  instructions?: string | null;
+}
+
+export interface RevitalizeSummary {
+  filesDeleted: number;
+  filesMerged: number;
+  filesUpdated: number;
+  filesReviewed: number;
+  summary: string;
+  highlights: string[];
+  notesBefore: number;
+  notesAfter: number;
+  bytesBefore: number;
+  bytesAfter: number;
+  estTokensBefore: number;
+  estTokensAfter: number;
+  durationSecs: number;
+}
+
+/**
+ * BackgroundTaskSnapshot shape: common job fields are snake_case (no serde
+ * rename on the shared struct), the flattened extras are camelCase.
+ */
+export interface RevitalizeSnapshot {
+  job_id: string;
+  status: string;
+  error: string | null;
+  lines: string[];
+  elapsed_secs: number;
+  vaultPath: string;
+  vaultName: string;
+  summary: RevitalizeSummary | null;
+}
+
+/** Start a revitalize pass over the configured vault. Returns the job id. */
+export const obsidianRevitalizeStart = (options: RevitalizeOptions) =>
+  invoke<string>("obsidian_revitalize_start", { options });
+
+export const obsidianRevitalizeSnapshot = (jobId: string) =>
+  invoke<RevitalizeSnapshot>("obsidian_revitalize_snapshot", { jobId });
+
+/** The currently-running revitalize job id, if any (for panel re-attach). */
+export const obsidianRevitalizeActive = () =>
+  invoke<string | null>("obsidian_revitalize_active");
+
+export const obsidianRevitalizeCancel = (jobId: string) =>
+  invoke<void>("obsidian_revitalize_cancel", { jobId });
+
 export const obsidianGraphStartWatcher = () =>
   invoke<void>("obsidian_graph_start_watcher");
 
