@@ -96,6 +96,8 @@ export const ALL_TOUR_IDS = [
   'plugins-explorer',
   'schedules-mastery',
   'templates-recipes',
+  'teams-orchestration',
+  'obsidian-brain',
 ] as const;
 
 export class CompanionBridge {

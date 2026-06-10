@@ -246,11 +246,13 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
+              data-testid="obsidian-vault-path-input"
               className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <button
               onClick={testConnection}
               disabled={!vaultPath || testing}
+              data-testid="obsidian-test-connection"
               className="flex items-center gap-2 px-4 py-2 rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 focus-ring"
             >
               {testing ? <LoadingSpinner size="sm" /> : <CheckCircle2 className="w-4 h-4" />}
