@@ -11,7 +11,6 @@ pub mod director;
 pub mod gitlab;
 pub mod idea_scanner;
 pub mod incremental_scan;
-pub mod langfuse;
 pub mod research_lab;
 pub mod settings;
 pub mod setup;

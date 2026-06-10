@@ -408,12 +408,12 @@ export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
-export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "langfuse";
+export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";
 export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";
 export type ArtistTab = "blender" | "gallery" | "media-studio";
-export type EventBusTab = "builder" | "studio" | "shared" | "lineage" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
+export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts
 // and src-tauri/src/engine/ollama.rs (gated behind the `ollama` Cargo feature).

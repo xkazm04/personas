@@ -15,7 +15,6 @@
  *  - drive         → stacked storage platters with an orbiting data ring
  *  - twin          → two mirrored android heads across a reflection seam
  *  - companion     → a glowing companion orb with a halo + spark
- *  - langfuse      → an observability trace waterfall of span bars
  */
 import React from 'react';
 import type { PluginTab } from '@/lib/types/types';
@@ -113,21 +112,6 @@ export function IconCompanion({ active = false, className = '' }: IconProps) {
   );
 }
 
-// -- Langfuse: an observability trace waterfall of span bars --------------
-export function IconLangfuse({ active = false, className = '' }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" className={className}>
-      {/* Trace axis */}
-      <line x1="3" y1="3.5" x2="3" y2="20.5" stroke="currentColor" strokeWidth="1" opacity={active ? 0.4 : 0.25} />
-      {/* Span waterfall */}
-      <rect x="5" y="5" width="14" height="2.6" rx="1.3" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.8 : 0.5} />
-      <rect x="7.5" y="9.2" width="9.5" height="2.6" rx="1.3" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.7 : 0.42} />
-      <rect x="10" y="13.4" width="7" height="2.6" rx="1.3" fill="currentColor" className={a('pi-pulse', active)} opacity={active ? 0.85 : 0.5} />
-      <rect x="7.5" y="17.6" width="5.5" height="2.6" rx="1.3" fill="currentColor" className={a('pi-pulse-d', active)} opacity={active ? 0.6 : 0.38} />
-    </svg>
-  );
-}
-
 /** Map plugin id → custom illustrated icon. Plugins not listed fall back to
  *  their lucide icon at the call site. */
 export const PLUGIN_ICONS: Partial<Record<PluginTab, (props: IconProps) => React.JSX.Element>> = {
@@ -136,5 +120,4 @@ export const PLUGIN_ICONS: Partial<Record<PluginTab, (props: IconProps) => React
   drive: IconDrive,
   twin: IconTwin,
   companion: IconCompanion,
-  langfuse: IconLangfuse,
 };

@@ -382,16 +382,6 @@
       "marketingModule": "deployment"
     },
     {
-      "doc": "docs/features/langfuse.md",
-      "sourceGlobs": [
-        "src/features/plugins/langfuse/**",
-        "src-tauri/src/commands/infrastructure/langfuse.rs",
-        "src-tauri/src/langfuse/**",
-        "src-tauri/src/local_http/langfuse_routes.rs"
-      ],
-      "marketingModule": "plugins"
-    },
-    {
       "doc": "docs/features/deployment/README.md",
       "sourceGlobs": [
         "src/features/deployment/**",

@@ -147,12 +147,6 @@ export interface PartialPersonaUpdate {
    * this and skips actions for a capability whose dim is in its set.
    */
   disabled_dims_json?: string | null;
-  /**
-   * Per-persona Langfuse trace export gate. When `false`, the runner skips
-   * shipping this persona's traces to Langfuse even when the plugin is
-   * connected. Defaults to `true` on insert.
-   */
-  langfuse_export_enabled?: boolean;
 }
 
 // ============================================================================
@@ -198,7 +192,6 @@ export interface UpdateSettingsOp {
   max_concurrent?: number;
   timeout_ms?: number;
   cli_awareness_enabled?: boolean;
-  langfuse_export_enabled?: boolean;
 }
 
 /** Update design context (use-cases, design files, connector links). */
@@ -264,7 +257,6 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
         name: op.name, description: op.description, icon: op.icon, color: op.color,
         enabled: op.enabled, sensitive: op.sensitive, max_concurrent: op.max_concurrent, timeout_ms: op.timeout_ms,
         cli_awareness_enabled: op.cli_awareness_enabled,
-        langfuse_export_enabled: op.langfuse_export_enabled,
       };
     case 'UpdateDesignContext':
       return { design_context: op.design_context };
@@ -315,6 +307,5 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
     cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,
     disabled_dims_json: partial.disabled_dims_json !== undefined ? partial.disabled_dims_json : null,
-    langfuse_export_enabled: partial.langfuse_export_enabled !== undefined ? partial.langfuse_export_enabled : null,
   };
 }

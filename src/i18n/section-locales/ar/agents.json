@@ -2159,9 +2159,7 @@
     "no_twins_configured": "لا توجد توائم مُهيّأة. افتح المكوّن الإضافي Twin لإنشاء واحد — ستتمكن هذه الشخصية عندئذٍ من تبنّيه.",
     "twin_profile_aria": "ملف التوأم الذي تتحدث هذه الشخصية باسمه",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export أثرs to Langfuse",
-    "langfuse_export_desc": "Ship this شخصية's execution أثرs to your configured Langfuse instance. Off keeps THIS شخصية's أثرs local without disabling the integration globally — useful for شخصيةs handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "لم تُسنَد أدوات لهذا الوكيل.",

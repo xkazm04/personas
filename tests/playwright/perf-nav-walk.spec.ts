@@ -138,7 +138,6 @@ const STOPS: NavStop[] = [
   { id: 'plugins/research-lab',   group: 'plugins', description: 'Research Lab plugin',        setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'research-lab' }); } },
   { id: 'plugins/drive',          group: 'plugins', description: 'Drive plugin',               setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'drive' }); } },
   { id: 'plugins/twin',           group: 'plugins', description: 'Twin plugin',                setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'twin' }); } },
-  { id: 'plugins/langfuse',       group: 'plugins', description: 'Langfuse plugin',            setup: async () => { await navigate('plugins'); await bridgeExec('setPluginTab', { tab: 'langfuse' }); } },
 
   // Settings tabs (openSettingsTab)
   { id: 'settings/account',       group: 'settings', description: 'Settings → Account',       setup: async () => { await navigate('settings'); await bridgeExec('openSettingsTab', { tab: 'account' }); } },
@@ -275,7 +274,7 @@ test.describe('perf-nav-walk', () => {
     };
     const out = writeReport(report);
     console.log(`\nReport written: ${out}`);
-    // A few stops may fail (e.g. langfuse plugin disabled in starter tier),
+    // A few stops may fail (e.g. a plugin disabled in starter tier),
     // but the suite passes overall as long as the report wrote successfully.
     expect(fs.existsSync(out)).toBe(true);
     // Sanity: at least L1 stops should have succeeded.

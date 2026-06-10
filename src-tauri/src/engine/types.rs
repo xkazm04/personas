@@ -483,7 +483,6 @@ impl EphemeralPersona {
             gateway_exposure: crate::db::models::PersonaGatewayExposure::LocalOnly,
             template_category: None,
             cli_awareness_enabled: false,
-            langfuse_export_enabled: true,
             setup_status: "ready".to_string(),
             setup_detail: None,
             disabled_dims_json: None,

@@ -298,11 +298,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "artist_measure_loudness",
     "artist_trim_file",
     "artist_cancel_export",
-    // Langfuse -- manual connection commands send Basic-auth credentials to a
-    // user-supplied host; gating prevents an unprivileged caller from probing
-    // attacker URLs with the victim's keys.
-    "langfuse_test_connection",
-    "langfuse_save_config",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).

@@ -2159,9 +2159,7 @@
     "no_twins_configured": "Двойники не настроены. Откройте плагин Twin, чтобы создать одного — после этого агент сможет его использовать.",
     "twin_profile_aria": "Профиль двойника, от имени которого говорит агент",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export трассаs to Langfuse",
-    "langfuse_export_desc": "Ship this персона's execution трассаs to your configured Langfuse instance. Off keeps THIS персона's трассаs local without disabling the integration globally — useful for персонаs handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "Этому агенту не назначены инструменты.",

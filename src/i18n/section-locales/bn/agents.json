@@ -2159,9 +2159,7 @@
     "no_twins_configured": "কোনো টুইন কনফিগার করা নেই। একটি তৈরি করতে Twin প্লাগইন খুলুন — এরপর এই পার্সোনা সেটি গ্রহণ করতে পারবে।",
     "twin_profile_aria": "টুইন প্রোফাইল যা এই পার্সোনা হিসেবে কথা বলে",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
-    "langfuse_export": "Export ট্রেসs to Langfuse",
-    "langfuse_export_desc": "Ship this পারসোনা's execution ট্রেসs to your configured Langfuse instance. Off keeps THIS পারসোনা's ট্রেসs local without disabling the integration globally — useful for পারসোনাs handling sensitive content. On by default."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
   },
   "tool_runner": {
     "no_tools": "এই পার্সোনায় কোনো টুল নির্ধারিত নেই।",

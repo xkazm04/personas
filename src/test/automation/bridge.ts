@@ -127,7 +127,7 @@ interface TestBridge {
 }
 
 const VALID_ARTIST_TABS = ['blender', 'gallery', 'media-studio'] as const;
-const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'langfuse'] as const;
+const VALID_PLUGIN_TABS = ['browse', 'companion', 'artist', 'dev-tools', 'obsidian-brain', 'research-lab', 'drive', 'twin'] as const;
 const VALID_TWIN_TABS = ['profiles', 'identity', 'tone', 'brain', 'knowledge', 'voice', 'channels', 'training'] as const;
 
 /** Turn an arbitrary caught value into a human-readable error string.

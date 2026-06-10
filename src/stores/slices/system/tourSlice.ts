@@ -493,7 +493,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugin-others",
     title: "The Rest of the Plugins",
-    description: "Three more plugins round out the production catalog: Drive (file sync), Obsidian Brain (note-vault indexing + graph), and Langfuse (external observability for traces, cost, and latency). In dev builds you'll also find Artist (image/video generation) and Research Lab (literature → hypotheses → experiments). Fleet — multi-session Claude Code orchestration — lives as a sub-tab of Dev Tools, not a standalone plugin.",
+    description: "Two more plugins round out the production catalog: Drive (file sync) and Obsidian Brain (note-vault indexing + graph). In dev builds you'll also find Artist (image/video generation) and Research Lab (literature → hypotheses → experiments). Fleet — multi-session Claude Code orchestration — lives as a sub-tab of Dev Tools, not a standalone plugin.",
     hint: "Browse each plugin from the catalog and enable any that look useful.",
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugin-surface-visited",
@@ -501,7 +501,6 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     panelWidth: 360,
     subSteps: [
       { id: "drive-obsidian", label: "Drive & Obsidian Brain", hint: "Drive syncs files; Obsidian Brain indexes your vault for knowledge retrieval and graph navigation." },
-      { id: "langfuse", label: "Langfuse", hint: "External observability. Pipe execution traces to Langfuse for cost, latency, and prompt analysis." },
       { id: "dev-extras", label: "Dev-build extras", hint: "Artist (Leonardo + Blender + media studio) and Research Lab (structured literature reviews + experiments) ship in dev builds only — handy to know they exist." },
     ],
   },

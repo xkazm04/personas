@@ -69,7 +69,7 @@ describe('getBrandTokens', () => {
   });
 
   it('covers every plugin id the Browse grid iterates', () => {
-    for (const id of ['dev-tools', 'obsidian-brain', 'drive', 'twin', 'companion', 'langfuse']) {
+    for (const id of ['dev-tools', 'obsidian-brain', 'drive', 'twin', 'companion']) {
       expect(hasBrandTokens(id), id).toBe(true);
     }
   });

@@ -11,7 +11,7 @@
  *   Level 3 pane via {@link SidebarLevel3}. The L3 header shows
  *   "← Plugins" plus an optional context chip (active project for Dev
  *   Tools, active twin for Twin). The body is the plugin's sub-tab list.
- * - Plugins without sub-items (Browse, Brain, Drive, Langfuse) stay flat
+ * - Plugins without sub-items (Browse, Brain, Drive) stay flat
  *   on L2 — clicking them just sets `pluginTab` and the page renders the
  *   plugin's own surface.
  *
@@ -19,7 +19,7 @@
  * change. See {@link SidebarLevel3} for the primitive.
  */
 import { AnimatePresence } from 'framer-motion';
-import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart, type LucideIcon } from 'lucide-react';
+import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
@@ -94,7 +94,6 @@ export function PluginsSidebarNav() {
     { id: 'twin',            label: 'Twin',                                icon: Sparkles,  hasSubItems: true },
     { id: 'companion',       label: 'Companion',                           icon: Bot,       hasSubItems: true },
     { id: 'research-lab',    label: t.shared.sidebar_extra.research_lab,    icon: BookOpen, hasSubItems: true, devOnly: true },
-    { id: 'langfuse',        label: 'Langfuse',                            icon: LineChart, hasSubItems: false },
   ], [t]);
 
   const browseMeta = allPlugins.find((p) => p.id === 'browse')!;
