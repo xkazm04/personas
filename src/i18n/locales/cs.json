@@ -15259,6 +15259,8 @@
     "category_memory": "Paměť",
     "category_usefulness": "Užitečnost",
     "period_label": "Období hodnocení",
-    "period_days": "{count}d"
+    "period_days": "{count}d",
+    "distribution_band": "Skóre {score}: {count} agentů",
+    "avg_label": "prům."
   }
 }

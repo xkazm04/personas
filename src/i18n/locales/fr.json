@@ -15259,6 +15259,8 @@
     "category_memory": "Mémoire",
     "category_usefulness": "Utilité",
     "period_label": "Période d'évaluation",
-    "period_days": "{count}j"
+    "period_days": "{count}j",
+    "distribution_band": "Score {score} : {count} agents",
+    "avg_label": "moy."
   }
 }

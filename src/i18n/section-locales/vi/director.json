@@ -20,5 +20,7 @@
   "category_memory": "Bộ nhớ",
   "category_usefulness": "Tính hữu ích",
   "period_label": "Kỳ đánh giá",
-  "period_days": "{count} ngày"
+  "period_days": "{count} ngày",
+  "distribution_band": "Điểm {score}: {count} tác nhân",
+  "avg_label": "TB"
 }

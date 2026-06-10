@@ -20,5 +20,7 @@
   "category_memory": "Память",
   "category_usefulness": "Полезность",
   "period_label": "Период обзора",
-  "period_days": "{count}д"
+  "period_days": "{count}д",
+  "distribution_band": "Оценка {score}: {count} агентов",
+  "avg_label": "сред."
 }

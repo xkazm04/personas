@@ -15259,6 +15259,8 @@
     "category_memory": "メモリ",
     "category_usefulness": "有用性",
     "period_label": "レビュー期間",
-    "period_days": "{count}日"
+    "period_days": "{count}日",
+    "distribution_band": "スコア {score}：{count} 体のエージェント",
+    "avg_label": "平均"
   }
 }

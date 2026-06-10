@@ -20,5 +20,7 @@
   "category_memory": "Memoria",
   "category_usefulness": "Utilidad",
   "period_label": "Período de revisión",
-  "period_days": "{count}d"
+  "period_days": "{count}d",
+  "distribution_band": "Puntuación {score}: {count} agentes",
+  "avg_label": "media"
 }

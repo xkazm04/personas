@@ -15259,6 +15259,8 @@
     "category_memory": "الذاكرة",
     "category_usefulness": "الفائدة",
     "period_label": "فترة المراجعة",
-    "period_days": "{count} يوم"
+    "period_days": "{count} يوم",
+    "distribution_band": "الدرجة {score}: {count} وكلاء",
+    "avg_label": "المتوسط"
   }
 }

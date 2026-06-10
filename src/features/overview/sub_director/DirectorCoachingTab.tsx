@@ -14,12 +14,13 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
-import { scoreTone, toneFill } from './directorScore';
+import { scoreTone } from './directorScore';
 import { PersonaCoachingTable } from './components/PersonaCoachingTable';
 import { PersonaDetailModal } from './components/PersonaDetailModal';
 import { AddToScopeModal } from './components/AddToScopeModal';
 import { ValueLeakBar } from './components/ValueLeakBar';
 import { PeriodSelect } from './components/PeriodSelect';
+import { ScoreDistribution } from './components/ScoreDistribution';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -205,7 +206,6 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
   const p = d.portfolio!;
   const { rollup } = p;
   const avgTone = p.avgScore != null ? scoreTone(p.avgScore) : null;
-  const maxBand = Math.max(1, ...p.scoreDistribution.map((b) => b.count));
   const maxModelRuns = Math.max(1, ...rollup.models.map((m) => m.executions));
 
   return (
@@ -251,36 +251,7 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
-          {p.reviewed === 0 ? (
-            <p className="typo-caption text-foreground py-2">{t.director.score_distribution_empty}</p>
-          ) : (
-            <div className="flex items-end gap-2.5 h-28 pt-2">
-              {p.scoreDistribution.map((band, i) => {
-                const tone = scoreTone(band.score);
-                const hPct = (band.count / maxBand) * 100;
-                return (
-                  <div key={band.score} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <span className="typo-caption text-foreground tabular-nums">{band.count}</span>
-                    <div className="w-full flex-1 flex items-end">
-                      <div
-                        className="w-full rounded-t-input animate-fade-slide-in"
-                        style={{
-                          height: `${Math.max(hPct, band.count > 0 ? 6 : 0)}%`,
-                          minHeight: band.count > 0 ? 6 : 0,
-                          background: band.count > 0 ? `linear-gradient(to top, ${tone.color}, color-mix(in oklab, ${tone.color} 55%, transparent))` : 'transparent',
-                          border: band.count === 0 ? '1px dashed var(--border)' : undefined,
-                          animationDelay: `${i * 50}ms`,
-                        }}
-                      />
-                    </div>
-                    <span className="typo-caption tabular-nums px-1.5 rounded font-medium" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
-                      {band.score}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} />
         </DirectorSection>
 
         {rollup.models.length > 0 && (

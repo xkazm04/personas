@@ -15259,6 +15259,8 @@
     "category_memory": "স্মৃতি",
     "category_usefulness": "উপযোগিতা",
     "period_label": "পর্যালোচনার সময়কাল",
-    "period_days": "{count} দিন"
+    "period_days": "{count} দিন",
+    "distribution_band": "স্কোর {score}: {count} এজেন্ট",
+    "avg_label": "গড়"
   }
 }

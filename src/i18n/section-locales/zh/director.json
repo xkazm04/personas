@@ -20,5 +20,7 @@
   "category_memory": "记忆",
   "category_usefulness": "有用性",
   "period_label": "评估周期",
-  "period_days": "{count}天"
+  "period_days": "{count}天",
+  "distribution_band": "评分 {score}：{count} 个智能体",
+  "avg_label": "平均"
 }

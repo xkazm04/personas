@@ -3462,7 +3462,9 @@
     "category_memory": "Memory",
     "category_usefulness": "Usefulness",
     "period_label": "Review period",
-    "period_days": "{count}d"
+    "period_days": "{count}d",
+    "distribution_band": "Score {score}: {count} agents",
+    "avg_label": "avg"
   },
   "vault": {
     "title": "Vault",

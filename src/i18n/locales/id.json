@@ -15259,6 +15259,8 @@
     "category_memory": "Memori",
     "category_usefulness": "Kegunaan",
     "period_label": "Periode tinjauan",
-    "period_days": "{count}h"
+    "period_days": "{count}h",
+    "distribution_band": "Skor {score}: {count} agen",
+    "avg_label": "rata-rata"
   }
 }

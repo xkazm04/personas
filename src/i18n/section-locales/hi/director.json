@@ -20,5 +20,7 @@
   "category_memory": "स्मृति",
   "category_usefulness": "उपयोगिता",
   "period_label": "समीक्षा अवधि",
-  "period_days": "{count} दिन"
+  "period_days": "{count} दिन",
+  "distribution_band": "स्कोर {score}: {count} एजेंट",
+  "avg_label": "औसत"
 }

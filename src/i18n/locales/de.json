@@ -15259,6 +15259,8 @@
     "category_memory": "Speicher",
     "category_usefulness": "Nützlichkeit",
     "period_label": "Bewertungszeitraum",
-    "period_days": "{count}T"
+    "period_days": "{count}T",
+    "distribution_band": "Bewertung {score}: {count} Agenten",
+    "avg_label": "Ø"
   }
 }

@@ -15259,6 +15259,8 @@
     "category_memory": "메모리",
     "category_usefulness": "유용성",
     "period_label": "검토 기간",
-    "period_days": "{count}일"
+    "period_days": "{count}일",
+    "distribution_band": "점수 {score}: 에이전트 {count}개",
+    "avg_label": "평균"
   }
 }

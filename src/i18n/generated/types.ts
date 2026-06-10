@@ -3469,6 +3469,8 @@ export type Translations = {
     category_usefulness: string;
     period_label: string;
     period_days: string;
+    distribution_band: string;
+    avg_label: string;
   };
   vault: {
     title: string;
