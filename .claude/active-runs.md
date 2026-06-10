@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — obsidian-brain: vault persistence + sorted nav + Revitalize module
+- Started: 2026-06-10 (worktree worktree-obsidian-revitalize off vibeman/audit-2026-06-09)
+- Status: completed (merge: 5cd7be3d8; commits 35f1c93f1..86439b576)
+- Branch: merged into vibeman/audit-2026-06-09; worktree + branch removed
+- Paths: src/features/plugins/obsidian-brain/, src/api/obsidianBrain/, src/stores/slices/system/obsidianBrainSlice.ts, src-tauri/src/commands/obsidian_brain/, src/features/shared/components/layout/sidebar/ (sidebarData + PluginsSidebarNav + SidebarLevel1), src/lib/eventRegistry.ts, src/lib/eventBridge.ts, src/i18n/locales/en.json, docs/features/plugins/brain/
+- Note: 1) saved vaults → SQLite settings (obsidian_brain_list/set_saved_vaults + localStorage migration) + active-vault rehydration in BackgroundServices; 2) Brain L3 nav sorted label-asc; 3) new Revitalize tab — background Claude CLI memory consolidation (BackgroundJobManager, obsidian-revitalize-status/output events, fuchsia pulse dots L1/L2/L3, end-of-pass summary card). Validated: tsc clean, eslint clean, cargo check --features desktop clean, eventBridge tests pass. Marketing guide updated (personas-web 97c3e1c).
+
 ### perf — remove Langfuse plugin end-to-end
 - Started: 2026-06-10 10:40
 - Status: completed (commit: 11d0814ce)
