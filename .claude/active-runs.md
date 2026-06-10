@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
+- Started: 2026-06-10 17:50
+- Status: started
+- Branch: vibeman/audit-2026-06-09 (main checkout — controlled-chaos, disjoint scope from Cockpit session)
+- Paths: src/features/vault/sub_credentials/manager/, src/features/vault/shared/hooks/health/useBulkHealthcheck.ts, src/api/vault/credentials.ts, src-tauri/src/engine/{healthcheck.rs,subscription.rs,background.rs}, src-tauri/src/commands/credentials/crud.rs, src-tauri/src/db/{settings_keys.rs,repos/resources/credentials.rs}, src-tauri/src/ipc_auth.rs, src-tauri/src/lib.rs, docs/features/connections/README.md
+- Note: Root-caused the "7 healthy/17 degraded" — bulk Test-all fires ~24 concurrent privileged healthcheck_credential IPC calls; the x-ipc-token monkey-patch races the stampede (81 rejections in DB logs today) → JS catches rejection as success:false → false "degraded" while keys stay valid + table (persisted last_success) shows healthy. Fix: daily in-process CredentialHealthcheckSubscription (no IPC boundary) + single healthcheck_all_credentials command behind manual Test-all + remove on-visit auto-test.
+
 ### feature — Explain-in-Cockpit (orb decision 0 → Athena composes explanation in Cockpit)
 - Started: 2026-06-10 17:05
 - Status: started
@@ -45,10 +52,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ### test — obsidian-brain tour live E2E (isolated instance)
 - Started: 2026-06-10
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout — spec + testids committed)
+- Status: completed (spec PASSED 1/1 in 14.5s; spec+testids commit on this branch: tests/playwright/tours-obsidian-brain.spec.ts)
+- Branch: vibeman/audit-2026-06-09 (main checkout)
 - Paths: tests/playwright/{tours-obsidian-brain.spec.ts,companion-bridge.ts}, src/features/plugins/obsidian-brain/sub_setup/SetupPanel.tsx (testids only)
-- Note: running `TOURS_FRESH_SPEC=tours-obsidian-brain.spec.ts npm run test:tours:fresh` — boots an ISOLATED instance (PERSONAS_DATA_DIR temp + ports 1430/17330/9430), does NOT hold the canonical :1420/:17320 shell. App compiles from the main checkout's current source.
+- Note: LESSON for parallel E2E — booting the isolated instance from the main checkout fails while another session iterates on Rust there (cargo artifact-dir lock + tauri file-watcher restarts on their edits + their running exe holds target/debug/personas-desktop.exe). Working recipe: detached run-only worktree at HEAD + node_modules junction + SEPARATE CARGO_TARGET_DIR (C:/Users/kazda/kiro/.personas-e2e-target — reusable warm cache, ~13 min cold) + `node scripts/test/launch-isolated.mjs` from the worktree, then playwright with COMPANION_TEST_PORT=17330. Tour verified live: all 8 steps, real vault connect (temp vault dir + fill/Test/Save → real tour event), per-tab panel anchors mounted (setObsidianBrainTab nav works), finish → completed.
 
 ### feature — schedules: last-24h timeline section + Claude usage-limit durable retries
 - Started: 2026-06-10 17:25
