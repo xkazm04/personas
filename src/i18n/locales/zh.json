@@ -15274,6 +15274,8 @@
     "momentum_improving": "上升",
     "momentum_flat": "持平",
     "momentum_declining": "下降",
-    "sparkline_scores": "近期评分（从旧到新）"
+    "sparkline_scores": "近期评分（从旧到新）",
+    "review_filtered": "评测这 {count} 个",
+    "review_filtered_progress": "评测中 {done}/{total}…"
   }
 }

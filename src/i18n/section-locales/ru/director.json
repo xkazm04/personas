@@ -33,5 +33,7 @@
   "momentum_improving": "растут",
   "momentum_flat": "без изменений",
   "momentum_declining": "падают",
-  "sparkline_scores": "Недавние оценки (от старых к новым)"
+  "sparkline_scores": "Недавние оценки (от старых к новым)",
+  "review_filtered": "Оценить эти {count}",
+  "review_filtered_progress": "Оценка {done}/{total}…"
 }

@@ -33,5 +33,7 @@
   "momentum_improving": "উন্নতি",
   "momentum_flat": "স্থির",
   "momentum_declining": "অবনতি",
-  "sparkline_scores": "সাম্প্রতিক স্কোর (পুরনো থেকে নতুন)"
+  "sparkline_scores": "সাম্প্রতিক স্কোর (পুরনো থেকে নতুন)",
+  "review_filtered": "এই {count}টি পর্যালোচনা করুন",
+  "review_filtered_progress": "পর্যালোচনা চলছে {done}/{total}…"
 }

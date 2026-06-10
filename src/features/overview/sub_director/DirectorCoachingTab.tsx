@@ -24,7 +24,8 @@ import { ScoreDistribution } from './components/ScoreDistribution';
 import { AttentionTriageBar } from './components/AttentionTriageBar';
 import { CategoryRollup } from './components/CategoryRollup';
 import { MomentumSummary } from './components/MomentumSummary';
-import type { RosterFilter } from './rosterFilter';
+import { ReviewFilteredAction } from './components/ReviewFilteredAction';
+import { filterRoster, type RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -56,6 +57,8 @@ export default function DirectorCoachingTab() {
   const p = d.portfolio;
   const inScope = p?.inScope ?? 0;
   const lastReviewAt = d.verdicts[0]?.createdAt ?? null;
+  // Agents the active facet narrowed the table to — the "Review these N" target.
+  const filteredAgents = rosterFilter && p ? filterRoster(p.roster, rosterFilter, Date.now()) : [];
 
   const runAll = async () => {
     setRunning(true);
@@ -192,7 +195,16 @@ export default function DirectorCoachingTab() {
             <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} />
 
             {/* Coaching table */}
-            <DirectorSection label={t.director.table_title} icon={Star} action={<AttentionTriageBar roster={p.roster} filter={rosterFilter} onSelect={setRosterFilter} />}>
+            <DirectorSection
+              label={t.director.table_title}
+              icon={Star}
+              action={
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {rosterFilter && <ReviewFilteredAction agents={filteredAgents} onReview={d.runOnPersona} />}
+                  <AttentionTriageBar roster={p.roster} filter={rosterFilter} onSelect={setRosterFilter} />
+                </div>
+              }
+            >
               <PersonaCoachingTable
                 roster={p.roster}
                 onSelect={setSelected}

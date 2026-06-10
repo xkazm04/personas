@@ -3477,7 +3477,9 @@
     "momentum_improving": "improving",
     "momentum_flat": "flat",
     "momentum_declining": "declining",
-    "sparkline_scores": "Recent scores (oldest→newest)"
+    "sparkline_scores": "Recent scores (oldest→newest)",
+    "review_filtered": "Review these {count}",
+    "review_filtered_progress": "Reviewing {done}/{total}…"
   },
   "vault": {
     "title": "Vault",

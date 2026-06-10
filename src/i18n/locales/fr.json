@@ -15274,6 +15274,8 @@
     "momentum_improving": "en hausse",
     "momentum_flat": "stable",
     "momentum_declining": "en baisse",
-    "sparkline_scores": "Scores récents (du plus ancien au plus récent)"
+    "sparkline_scores": "Scores récents (du plus ancien au plus récent)",
+    "review_filtered": "Évaluer ces {count}",
+    "review_filtered_progress": "Évaluation {done}/{total}…"
   }
 }

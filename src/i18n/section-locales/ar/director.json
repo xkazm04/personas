@@ -33,5 +33,7 @@
   "momentum_improving": "تحسّن",
   "momentum_flat": "ثابت",
   "momentum_declining": "تراجع",
-  "sparkline_scores": "الدرجات الأخيرة (من الأقدم إلى الأحدث)"
+  "sparkline_scores": "الدرجات الأخيرة (من الأقدم إلى الأحدث)",
+  "review_filtered": "راجِع هؤلاء {count}",
+  "review_filtered_progress": "جارٍ المراجعة {done}/{total}…"
 }

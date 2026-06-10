@@ -1,5 +1,6 @@
-import type { AttentionFlag } from './attention';
-import type { Momentum } from './momentum';
+import { attentionFlags, type AttentionFlag } from './attention';
+import { rosterMomentum, type Momentum } from './momentum';
+import type { DirectorRosterEntry } from '@/api/director';
 
 /**
  * Shared coaching-table facet filter. One facet is active at a time and any of
@@ -47,4 +48,14 @@ export function sameFilter(a: RosterFilter | null, b: RosterFilter | null): bool
 /** Toggle helper — re-selecting the active facet clears the filter. */
 export function toggleFilter(current: RosterFilter | null, next: RosterFilter): RosterFilter | null {
   return sameFilter(current, next) ? null : next;
+}
+
+/** The roster entries that pass the active facet (all of them when no filter). */
+export function filterRoster(
+  roster: DirectorRosterEntry[],
+  filter: RosterFilter | null,
+  now: number,
+): DirectorRosterEntry[] {
+  if (!filter) return roster;
+  return roster.filter((r) => rosterRowMatches(filter, attentionFlags(r, now), r.latestScore, rosterMomentum(r)));
 }

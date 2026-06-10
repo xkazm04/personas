@@ -15274,6 +15274,8 @@
     "momentum_improving": "steigend",
     "momentum_flat": "unverändert",
     "momentum_declining": "fallend",
-    "sparkline_scores": "Letzte Bewertungen (alt zu neu)"
+    "sparkline_scores": "Letzte Bewertungen (alt zu neu)",
+    "review_filtered": "Diese {count} bewerten",
+    "review_filtered_progress": "Bewertung {done}/{total}…"
   }
 }

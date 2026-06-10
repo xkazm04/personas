@@ -15274,6 +15274,8 @@
     "momentum_improving": "zlepšení",
     "momentum_flat": "beze změny",
     "momentum_declining": "pokles",
-    "sparkline_scores": "Nedávná skóre (od nejstaršího)"
+    "sparkline_scores": "Nedávná skóre (od nejstaršího)",
+    "review_filtered": "Zhodnotit těchto {count}",
+    "review_filtered_progress": "Hodnocení {done}/{total}…"
   }
 }

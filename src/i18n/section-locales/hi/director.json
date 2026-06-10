@@ -33,5 +33,7 @@
   "momentum_improving": "सुधरते",
   "momentum_flat": "स्थिर",
   "momentum_declining": "गिरते",
-  "sparkline_scores": "हाल के स्कोर (पुराने से नए)"
+  "sparkline_scores": "हाल के स्कोर (पुराने से नए)",
+  "review_filtered": "इन {count} की समीक्षा करें",
+  "review_filtered_progress": "समीक्षा हो रही है {done}/{total}…"
 }

@@ -15274,6 +15274,8 @@
     "momentum_improving": "cải thiện",
     "momentum_flat": "ổn định",
     "momentum_declining": "giảm sút",
-    "sparkline_scores": "Điểm gần đây (cũ đến mới)"
+    "sparkline_scores": "Điểm gần đây (cũ đến mới)",
+    "review_filtered": "Đánh giá {count} mục này",
+    "review_filtered_progress": "Đang đánh giá {done}/{total}…"
   }
 }

@@ -15274,6 +15274,8 @@
     "momentum_improving": "membaik",
     "momentum_flat": "tetap",
     "momentum_declining": "menurun",
-    "sparkline_scores": "Skor terbaru (lama ke baru)"
+    "sparkline_scores": "Skor terbaru (lama ke baru)",
+    "review_filtered": "Tinjau {count} ini",
+    "review_filtered_progress": "Meninjau {done}/{total}…"
   }
 }

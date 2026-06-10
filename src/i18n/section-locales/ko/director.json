@@ -33,5 +33,7 @@
   "momentum_improving": "상승",
   "momentum_flat": "유지",
   "momentum_declining": "하락",
-  "sparkline_scores": "최근 점수 (오래된 순)"
+  "sparkline_scores": "최근 점수 (오래된 순)",
+  "review_filtered": "이 {count}개 검토",
+  "review_filtered_progress": "검토 중 {done}/{total}…"
 }

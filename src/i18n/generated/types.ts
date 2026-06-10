@@ -3484,6 +3484,8 @@ export type Translations = {
     momentum_flat: string;
     momentum_declining: string;
     sparkline_scores: string;
+    review_filtered: string;
+    review_filtered_progress: string;
   };
   vault: {
     title: string;

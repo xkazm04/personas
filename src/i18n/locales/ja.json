@@ -15274,6 +15274,8 @@
     "momentum_improving": "上昇",
     "momentum_flat": "横ばい",
     "momentum_declining": "下降",
-    "sparkline_scores": "最近のスコア（古い順）"
+    "sparkline_scores": "最近のスコア（古い順）",
+    "review_filtered": "この {count} 件を評価",
+    "review_filtered_progress": "評価中 {done}/{total}…"
   }
 }

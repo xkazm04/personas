@@ -33,5 +33,7 @@
   "momentum_improving": "mejorando",
   "momentum_flat": "estable",
   "momentum_declining": "bajando",
-  "sparkline_scores": "Puntuaciones recientes (de más antigua a más reciente)"
+  "sparkline_scores": "Puntuaciones recientes (de más antigua a más reciente)",
+  "review_filtered": "Revisar estos {count}",
+  "review_filtered_progress": "Revisando {done}/{total}…"
 }
