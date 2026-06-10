@@ -6447,6 +6447,7 @@
       "all": "All",
       "running": "Running",
       "all_statuses": "All statuses",
+      "all_models": "All models",
       "showing": "Showing {count} of {total}",
       "load_more": "Load More",
       "col_status": "Status",

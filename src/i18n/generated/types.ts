@@ -6453,6 +6453,7 @@ export type Translations = {
       all: string;
       running: string;
       all_statuses: string;
+      all_models: string;
       showing: string;
       load_more: string;
       col_status: string;

@@ -39,7 +39,7 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 const EXEC_COLUMNS: { key: string; width: string }[] = [
   { key: 'persona', width: 'minmax(280px,2fr)' },
   { key: 'status', width: 'minmax(0,1fr)' },
-  { key: 'model', width: '110px' },
+  { key: 'model', width: '130px' },
   { key: 'duration', width: '120px' },
   { key: 'started', width: '160px' },
 ];
@@ -77,6 +77,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
+  const [modelFilter, setModelFilter] = useState<string>('all');
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
@@ -108,9 +109,27 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
     [filter]);
 
+  const modelPredicate = useCallback((e: GlobalExecution) => e.model_used === modelFilter, [modelFilter]);
+
   const { filtered: statusFiltered } = useFilteredCollection(personaFiltered, {
-    custom: [filter !== 'all' ? statusPredicate : null],
+    custom: [
+      filter !== 'all' ? statusPredicate : null,
+      modelFilter !== 'all' ? modelPredicate : null,
+    ],
   });
+
+  // Distinct models across the loaded rows (client-side filter — unlike the
+  // status filter there is no server-side model param). The active selection
+  // stays in the list even when its rows page out, so the chip keeps its label.
+  const modelOptions = useMemo(() => {
+    const distinct = new Set<string>();
+    for (const e of globalExecutions) if (e.model_used) distinct.add(e.model_used);
+    if (modelFilter !== 'all') distinct.add(modelFilter);
+    return [
+      { value: 'all', label: t.overview.activity.all_models },
+      ...[...distinct].sort().map((m) => ({ value: m, label: formatModelShort(m) ?? m })),
+    ];
+  }, [globalExecutions, modelFilter, t]);
 
   const filteredExecutions = useMemo(() => {
     if (startedSort === null) return statusFiltered;
@@ -209,7 +228,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     },
     [groupLabels],
   );
-  const scrollRestoreKey = `overview/activity|status=${filter}|persona=${selectedPersonaId ?? 'all'}`;
+  const scrollRestoreKey = `overview/activity|status=${filter}|model=${modelFilter}|persona=${selectedPersonaId ?? 'all'}`;
 
   return (
     <ContentBox>
@@ -312,8 +331,13 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         onReset={() => colWidths.clearColumn('status')}
                       />
                     </div>
-                    <div role="columnheader" className="relative flex items-center px-4 py-1.5 typo-label text-foreground">
-                      {t.overview.activity.col_model}
+                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+                      <ColumnDropdownFilter
+                        label={t.overview.activity.col_model}
+                        value={modelFilter}
+                        options={modelOptions}
+                        onChange={setModelFilter}
+                      />
                       <ColumnResizeHandle
                         label={t.shared.resize_column}
                         onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
@@ -399,7 +423,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                           )}
                         </div>
                         <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
                       </div>
                     );
                   }}
