@@ -21,6 +21,7 @@ import { AddToScopeModal } from './components/AddToScopeModal';
 import { ValueLeakBar } from './components/ValueLeakBar';
 import { PeriodSelect } from './components/PeriodSelect';
 import { ScoreDistribution } from './components/ScoreDistribution';
+import { AttentionTriageBar } from './components/AttentionTriageBar';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -180,7 +181,7 @@ export default function DirectorCoachingTab() {
             <Scorecard d={d} />
 
             {/* Coaching table */}
-            <DirectorSection label={t.director.table_title} icon={Star}>
+            <DirectorSection label={t.director.table_title} icon={Star} action={<AttentionTriageBar roster={p.roster} />}>
               <PersonaCoachingTable
                 roster={p.roster}
                 onSelect={setSelected}
