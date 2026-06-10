@@ -204,6 +204,13 @@ pub const COMPOSE_DASHBOARD_EVENT: &str = "companion://compose-dashboard";
 /// persisted; the frontend navigates to Home → Cockpit on receipt.
 pub const COMPOSE_COCKPIT_EVENT: &str = "companion://compose-cockpit";
 
+/// Tauri event for `explain_in_cockpit` auto-fire. UNLIKE compose, the
+/// payload carries the full spec JSON (`{ "spec": "<json string>" }`) and
+/// nothing is persisted — the frontend renders it as a contextual overlay
+/// (Home → Cockpit) that dies with dismissal, leaving the user's
+/// persistent cockpit untouched.
+pub const EXPLAIN_COCKPIT_EVENT: &str = "companion://explain-cockpit";
+
 /// Tauri event for inline chat-cards emitted via `show_persona_overview`,
 /// `show_connected_services`, `show_decisions`. Payload is the list of cards
 /// for this turn; the frontend appends them to the latest assistant bubble.
@@ -579,6 +586,7 @@ pub async fn send_turn(
                     lab_opens: Vec::new(),
                     dashboards: Vec::new(),
                     cockpits: Vec::new(),
+                    explain_cockpits: Vec::new(),
                     chat_cards: Vec::new(),
                     guide_walkthroughs: Vec::new(),
                     point_ats: Vec::new(),
@@ -752,6 +760,17 @@ pub async fn send_turn(
         }
         if let Err(e) = app.emit(COMPOSE_COCKPIT_EVENT, serde_json::json!({})) {
             tracing::warn!(error = %e, "companion compose_cockpit event emit failed");
+        }
+    }
+
+    // explain_in_cockpit auto-fire. Ephemeral sibling of compose_cockpit:
+    // the spec rides in the event payload and is deliberately NEVER
+    // persisted — it renders as a contextual overlay over the cockpit and
+    // dismissal restores the user's own board. No save call by design.
+    for spec_json in &dispatched.explain_cockpits {
+        let payload = serde_json::json!({ "spec": spec_json });
+        if let Err(e) = app.emit(EXPLAIN_COCKPIT_EVENT, payload) {
+            tracing::warn!(error = %e, "companion explain_in_cockpit event emit failed");
         }
     }
 

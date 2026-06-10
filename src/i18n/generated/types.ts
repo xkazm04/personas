@@ -6134,6 +6134,7 @@ export type Translations = {
       subtitle_contextual: string;
       context_for: string;
       context_exit: string;
+      context_explaining: string;
       widget_empty: string;
       verdict_title: string;
       verdict_confidence: string;
@@ -10208,6 +10209,10 @@ export type Translations = {
     permission_denied_suggestion: string;
     forbidden_message: string;
     forbidden_suggestion: string;
+    usage_limit_weekly_message: string;
+    usage_limit_weekly_suggestion: string;
+    usage_limit_window_message: string;
+    usage_limit_window_suggestion: string;
     rate_limit_message: string;
     rate_limit_suggestion: string;
     rate_limited_message: string;
@@ -10466,6 +10471,7 @@ export type Translations = {
     last24h_failed_count: string;
     last24h_show_all: string;
     last24h_show_less: string;
+    last24h_retry_at: string;
     sparkline_aria: string;
     sparkline_window: string;
     sparkline_no_data: string;
