@@ -1,12 +1,11 @@
 /**
- * StudioOptionCards — shared palette option cards for the canvas-less
- * Chain Studio variants. Cards answer "what am I working with?": trigger
- * cards carry the type description; persona cards carry model tier, trust,
- * readiness, and recency pulled from the live Persona binding.
- *
- * Prototype-phase file shared by StudioSwitchboard + StudioComposer.
+ * StudioOptionCards — palette option cards for the Chain Studio
+ * Switchboard. Cards answer "what am I working with?": trigger cards carry
+ * the type description; persona cards carry model tier, trust, readiness,
+ * and recency pulled from the live Persona binding.
  */
 import { ShieldCheck, ShieldAlert, EyeOff } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import {
@@ -57,6 +56,7 @@ export function PersonaOptionCard({
   hint?: string;
   onPick: () => void;
 }) {
+  const { t } = useTranslation();
   const tier = modelTierAccent(persona.model_profile);
   const tierLabel = modelTierLabel(persona.model_profile);
   const attention = attentionFor(persona);
@@ -81,7 +81,7 @@ export function PersonaOptionCard({
           {persona.headless && <EyeOff className="w-3 h-3 text-foreground shrink-0" />}
         </div>
         <div className="typo-caption text-foreground truncate">
-          {hint ?? persona.description ?? 'Agent'}
+          {hint ?? persona.description ?? t.triggers.studio.agent_fallback}
         </div>
         <div className="flex items-center gap-2 mt-1">
           <span className={`typo-label px-1.5 py-0.5 rounded-input ${tier.bgSoftClass} ${tier.textClass}`}>{tierLabel}</span>

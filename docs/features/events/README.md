@@ -19,7 +19,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Local Relay | Smee relay control and switch-back to live stream | `sub_smee_relay/SmeeRelayTab.tsx` |
 | Cloud Events | Dev-only cloud webhook relay status | `sub_cloud_webhooks/CloudWebhooksTab.tsx` |
 | Dead Letter Queue | Dev-only failed event review with checkbox multi-select, bulk retry/discard, event-type/source/error/age filters, and a Group-by-error view that clusters rows by Jaccard similarity so an operator can retry-or-discard an entire failure mode at once | `sub_dead_letter/DeadLetterTab.tsx` |
-| Chain Studio | Dev-only visual chain editor built on React Flow nodes/edges | `sub_studio/TriggerStudioCanvas.tsx` |
+| Chain Studio | Dev-only switchboard for composing trigger chains without a canvas: a sources rail (9 signal types + persona completions), a targets rail (personas with model-tier / trust / readiness stats), and a routes ledger in between. Arm a source, click a target, the route patches in; each route carries a cyclable run condition (always / on success / on failure / if output matches). Draft persists to localStorage. | `sub_studio/StudioSwitchboard.tsx`, `sub_studio/libs/studioDraftModel.ts` |
 | Marketplace | Dev-only shared event catalog and subscriptions | `sub_shared/SharedEventsTab.tsx` |
 
 ## Trigger editor mechanics

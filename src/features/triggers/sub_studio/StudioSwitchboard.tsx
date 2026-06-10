@@ -1,26 +1,39 @@
 /**
- * StudioSwitchboard — directional variant A: a telephone-switchboard /
- * patch-bay mental model. Everything visible at once: sources rail on the
- * left (9 signal types + persona completions), targets rail on the right
- * (personas with live stats), and the routes ledger in the middle. Arm a
- * source, click a target — the route patches in. Order-agnostic: arming a
- * target first works too. Both rails are type-to-filter.
+ * StudioSwitchboard — the Chain Studio surface. A patch-bay mental model:
+ * sources rail on the left (9 signal types + persona completions), target
+ * personas on the right, and the routes ledger in the middle. Arm a source,
+ * click a target — the route patches in. Order-agnostic: arming a target
+ * first works too. Both rails are type-to-filter.
  */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, Search, Trash2, X, Zap, Bot, Filter } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
+import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
 import {
   loadDraft, saveDraft, newLinkId, findTrigger, personaName,
   LINK_CONDITION_PRESETS,
-  type ChainDraft, type DraftSource,
+  type ChainDraft, type DraftSource, type LinkCondition,
 } from './libs/studioDraftModel';
 import { TriggerOptionCard, PersonaOptionCard } from './StudioOptionCards';
 
+type T = ReturnType<typeof useTranslation>['t'];
+
+function conditionLabel(t: T, condition: LinkCondition): string {
+  switch (condition) {
+    case 'on_success': return t.triggers.studio.condition_on_success;
+    case 'on_failure': return t.triggers.studio.condition_on_failure;
+    case 'output_match': return t.triggers.studio.condition_output_match;
+    default: return t.triggers.studio.condition_always;
+  }
+}
+
 export function StudioSwitchboard() {
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [draft, setDraft] = useState<ChainDraft>(() => loadDraft());
   const [armedSource, setArmedSource] = useState<DraftSource | null>(null);
@@ -44,7 +57,7 @@ export function StudioSwitchboard() {
 
   const sq = sourceQuery.trim().toLowerCase();
   const filteredTriggers = useMemo(
-    () => TRIGGER_BLOCK_TEMPLATES.filter((t) => !sq || t.label.toLowerCase().includes(sq) || t.description.toLowerCase().includes(sq)),
+    () => TRIGGER_BLOCK_TEMPLATES.filter((tpl) => !sq || tpl.label.toLowerCase().includes(sq) || tpl.description.toLowerCase().includes(sq)),
     [sq],
   );
   const filteredSourcePersonas = useMemo(
@@ -71,12 +84,18 @@ export function StudioSwitchboard() {
     }));
 
   return (
-    <div className="flex-1 flex min-h-0">
+    <div className="flex-1 flex min-h-0" data-testid="studio-switchboard">
       {/* ── Sources rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-r border-border flex flex-col min-h-0 bg-card/30">
-        <RailHeader icon={<Zap className="w-4 h-4 text-amber-400" />} title="Sources" subtitle="What starts the chain" query={sourceQuery} onQuery={setSourceQuery} />
+        <RailHeader
+          icon={<Zap className="w-4 h-4 text-amber-400" />}
+          title={t.triggers.studio.sources_title}
+          subtitle={t.triggers.studio.sources_subtitle}
+          query={sourceQuery}
+          onQuery={setSourceQuery}
+        />
         <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
-          <RailGroupLabel label="Signals" />
+          <RailGroupLabel label={t.triggers.studio.group_signals} />
           {filteredTriggers.map((tpl) => (
             <TriggerOptionCard
               key={tpl.id}
@@ -86,19 +105,19 @@ export function StudioSwitchboard() {
               onPick={() => setArmedSource((s) => (s?.kind === 'trigger' && s.triggerType === tpl.triggerType ? null : { kind: 'trigger', triggerType: tpl.triggerType }))}
             />
           ))}
-          <RailGroupLabel label="After a persona completes" />
+          <RailGroupLabel label={t.triggers.studio.group_after_persona} />
           {filteredSourcePersonas.map((p) => (
             <PersonaOptionCard
               key={p.id}
               persona={p}
               dense
-              hint="fires when this persona finishes"
+              hint={t.triggers.studio.source_persona_hint}
               active={armedSource?.kind === 'persona' && armedSource.personaId === p.id}
               onPick={() => setArmedSource((s) => (s?.kind === 'persona' && s.personaId === p.id ? null : { kind: 'persona', personaId: p.id }))}
             />
           ))}
           {filteredTriggers.length === 0 && filteredSourcePersonas.length === 0 && (
-            <p className="typo-caption text-foreground px-1 py-2">No sources match "{sourceQuery}"</p>
+            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_sources_match, { query: sourceQuery })}</p>
           )}
         </div>
       </div>
@@ -106,7 +125,7 @@ export function StudioSwitchboard() {
       {/* ── Routes ledger ────────────────────────────────────────────── */}
       <div className="flex-1 flex flex-col min-h-0">
         <div className="px-5 py-3 border-b border-border flex items-center gap-3">
-          <h3 className="typo-heading text-foreground">Routes</h3>
+          <h3 className="typo-heading text-foreground">{t.triggers.studio.routes_title}</h3>
           <span className="typo-data text-foreground">{draft.links.length}</span>
           <div className="ml-auto flex items-center gap-2">
             {draft.links.length > 0 && (
@@ -115,7 +134,7 @@ export function StudioSwitchboard() {
                 onClick={() => setDraft({ version: 1, links: [] })}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption rounded-interactive text-foreground hover:text-status-error hover:bg-status-error/10 transition-colors"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Clear all
+                <Trash2 className="w-3.5 h-3.5" /> {t.triggers.studio.clear_all}
               </button>
             )}
           </div>
@@ -131,14 +150,14 @@ export function StudioSwitchboard() {
               transition={{ duration: 0.15 }}
               className="mx-5 mt-3 px-4 py-2.5 rounded-card border border-primary/30 bg-primary/5 flex items-center gap-3"
             >
-              <PatchEndChip source={armedSource} personas={personas} placeholder="pick a source" />
+              <PatchEndChip source={armedSource} personas={personas} placeholder={t.triggers.studio.pick_a_source} />
               <ArrowRight className="w-4 h-4 text-primary shrink-0" />
-              <PatchEndChip targetId={armedTarget} personas={personas} placeholder="pick a target" />
+              <PatchEndChip targetId={armedTarget} personas={personas} placeholder={t.triggers.studio.pick_a_target} />
               <button
                 type="button"
                 onClick={() => { setArmedSource(null); setArmedTarget(null); }}
                 className="ml-auto p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors"
-                aria-label="Cancel pending route"
+                aria-label={t.triggers.studio.cancel_pending_route}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -150,8 +169,8 @@ export function StudioSwitchboard() {
           {draft.links.length === 0 && !armedSource && !armedTarget && (
             <EmptyState
               icon={Filter}
-              title="No routes yet"
-              description="Arm a source on the left, then click a target persona on the right. The route patches in here."
+              title={t.triggers.studio.no_routes_title}
+              description={t.triggers.studio.no_routes_desc}
             />
           )}
           {draft.links.map((link, i) => (
@@ -162,20 +181,20 @@ export function StudioSwitchboard() {
               transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.2) }}
               className="group flex items-center gap-3 px-4 py-3 rounded-card border border-border bg-background/80 hover:border-foreground/20 transition-colors"
             >
-              <SourceChip source={link.source} personas={personas} />
+              <SourceChip source={link.source} personas={personas} completesLabel={t.triggers.studio.persona_completes} />
               <div className="flex items-center gap-1.5 shrink-0">
                 <div className="h-px w-6 bg-border" />
                 <button
                   type="button"
                   onClick={() => cycleCondition(link.id)}
-                  title="Click to cycle the run condition"
+                  title={t.triggers.studio.cycle_condition_hint}
                   className={`typo-caption px-2 py-0.5 rounded-input border transition-colors ${
                     link.condition
-                      ? 'border-amber-500/40 text-amber-400 bg-amber-500/10'
+                      ? 'border-status-warning/40 text-status-warning bg-status-warning/10'
                       : 'border-border text-foreground hover:border-foreground/30'
                   }`}
                 >
-                  {link.condition ?? 'always'}
+                  {conditionLabel(t, link.condition)}
                 </button>
                 <div className="h-px w-6 bg-border" />
                 <ArrowRight className="w-3.5 h-3.5 text-foreground" />
@@ -185,7 +204,7 @@ export function StudioSwitchboard() {
                 type="button"
                 onClick={() => removeLink(link.id)}
                 className="ml-auto p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all"
-                aria-label="Remove route"
+                aria-label={t.triggers.studio.remove_route}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -196,7 +215,13 @@ export function StudioSwitchboard() {
 
       {/* ── Targets rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-l border-border flex flex-col min-h-0 bg-card/30">
-        <RailHeader icon={<Bot className="w-4 h-4 text-emerald-400" />} title="Targets" subtitle="Which persona runs" query={targetQuery} onQuery={setTargetQuery} />
+        <RailHeader
+          icon={<Bot className="w-4 h-4 text-emerald-400" />}
+          title={t.triggers.studio.targets_title}
+          subtitle={t.triggers.studio.targets_subtitle}
+          query={targetQuery}
+          onQuery={setTargetQuery}
+        />
         <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
           {filteredTargets.map((p) => (
             <PersonaOptionCard
@@ -204,11 +229,11 @@ export function StudioSwitchboard() {
               persona={p}
               dense
               active={armedTarget === p.id}
-              onPick={() => setArmedTarget((t) => (t === p.id ? null : p.id))}
+              onPick={() => setArmedTarget((cur) => (cur === p.id ? null : p.id))}
             />
           ))}
           {filteredTargets.length === 0 && (
-            <p className="typo-caption text-foreground px-1 py-2">No personas match "{targetQuery}"</p>
+            <p className="typo-caption text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: targetQuery })}</p>
           )}
         </div>
       </div>
@@ -219,9 +244,10 @@ export function StudioSwitchboard() {
 // ── Rail + chip primitives ───────────────────────────────────────────────
 
 function RailHeader({ icon, title, subtitle, query, onQuery }: {
-  icon: React.ReactNode; title: string; subtitle: string;
+  icon: ReactNode; title: string; subtitle: string;
   query: string; onQuery: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="px-3 pt-3 pb-2 space-y-2">
       <div className="flex items-center gap-2">
@@ -234,8 +260,8 @@ function RailHeader({ icon, title, subtitle, query, onQuery }: {
         <input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
-          placeholder="Filter…"
-          className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-border focus:border-primary/40 focus:outline-none text-foreground placeholder:text-foreground/60"
+          placeholder={t.triggers.studio.filter_placeholder}
+          className="w-full pl-8 pr-2.5 py-1.5 typo-body rounded-input bg-background/60 border border-border focus:border-primary/40 focus:outline-none text-foreground placeholder:text-muted-foreground"
         />
       </div>
     </div>
@@ -246,7 +272,7 @@ function RailGroupLabel({ label }: { label: string }) {
   return <div className="typo-label text-foreground pt-2 pb-0.5 px-1">{label}</div>;
 }
 
-function SourceChip({ source, personas }: { source: DraftSource; personas: ReturnType<typeof useAgentStore.getState>['personas'] }) {
+function SourceChip({ source, personas, completesLabel }: { source: DraftSource; personas: Persona[]; completesLabel: string }) {
   if (source.kind === 'trigger') {
     const tpl = findTrigger(source.triggerType);
     const Icon = tpl?.icon ?? Zap;
@@ -263,13 +289,13 @@ function SourceChip({ source, personas }: { source: DraftSource; personas: Retur
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
       <PersonaIcon icon={p?.icon} color={p?.color} display="framed" frameSize="sm" />
-      <span className="typo-body font-medium text-foreground truncate">{p?.name ?? 'Unknown'}</span>
-      <span className="typo-caption text-foreground shrink-0">completes</span>
+      <span className="typo-body font-medium text-foreground truncate">{p?.name ?? personaName(source.personaId, personas)}</span>
+      <span className="typo-caption text-foreground shrink-0">{completesLabel}</span>
     </span>
   );
 }
 
-function TargetChip({ targetId, personas }: { targetId: string; personas: ReturnType<typeof useAgentStore.getState>['personas'] }) {
+function TargetChip({ targetId, personas }: { targetId: string; personas: Persona[] }) {
   const p = personas.find((x) => x.id === targetId);
   return (
     <span className="flex items-center gap-2 min-w-0 shrink">
@@ -281,10 +307,11 @@ function TargetChip({ targetId, personas }: { targetId: string; personas: Return
 
 function PatchEndChip({ source, targetId, personas, placeholder }: {
   source?: DraftSource | null; targetId?: string | null;
-  personas: ReturnType<typeof useAgentStore.getState>['personas'];
+  personas: Persona[];
   placeholder: string;
 }) {
-  if (source) return <SourceChip source={source} personas={personas} />;
+  const { t } = useTranslation();
+  if (source) return <SourceChip source={source} personas={personas} completesLabel={t.triggers.studio.persona_completes} />;
   if (targetId) return <TargetChip targetId={targetId} personas={personas} />;
-  return <span className="typo-body text-foreground/70 italic">{placeholder}</span>;
+  return <span className="typo-body text-foreground italic">{placeholder}</span>;
 }
