@@ -43,12 +43,12 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: src-tauri/src/commands/obsidian_brain/revitalize.rs, src-tauri/src/db/{migrations/incremental.rs,models/obsidian_brain.rs,repos/resources/obsidian_brain.rs}, src-tauri/src/lib.rs, src/api/obsidianBrain/, src/features/plugins/obsidian-brain/sub_revitalize/, src/lib/bindings/RevitalizeRunRecord.ts, src/i18n/locales/en.json (plugins.obsidian_brain keys only), docs/features/plugins/brain/
 - Note: persisted obsidian_revitalize_runs table (+ binding regen) + obsidian_revitalize_history command + "Recent passes" table (when / vault / status / cleaned counts / tokens saved). Validated: tsc, eslint, cargo check, export_bindings test. Merge required checkpointing another session's in-flight en.json adoption keys (f4a6b9aae) + regenerating conflicted enSectionStrings.ts from the merged en.json; post-merge tsc clean on main.
 
-### prototype — companion Decisions panel variants (+ voice select refactor)
+### prototype — companion Decisions panel (Atlas wins) + settings typography ramp
 - Started: 2026-06-10 13:41
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server; scope is contained)
-- Paths: src/features/plugins/companion/sub_decisions/ (incl. new DecisionsVariant*.tsx + shared hook), src/i18n/locales/en.json (plugins.companion keys), src/features/shared/components/forms/ThemedSelect.tsx, src/features/plugins/companion/sub_voice/VoicePanel.tsx
-- Note: /prototype skill — tab switcher + 2 directional variants (Ledger, Atlas) for the Decisions panel; variants removed at consolidation. Same session also converted VoicePanel selects to ThemedSelect filterable mode (themed options) with new hideSearch/disabled support.
+- Status: completed (commits: 48d86a4e4 voice themed selects, 00a5b7ff6 proto round 1, 78453de66 Atlas consolidation, c8780125e settings type ramp)
+- Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants had to render in the user's live dev server)
+- Paths: src/features/plugins/companion/{sub_decisions,sub_voice,sub_setup}/, src/features/shared/components/forms/{ThemedSelect,SettingRow}.tsx, src/i18n/locales/en.json (plugins.companion keys)
+- Note: Decisions panel = Atlas (context rail + reading thread; useDesignDecisions hook + sharedBlocks survive); Ledger/baseline/switcher deleted. VoicePanel selects → ThemedSelect filterable (new hideSearch/disabled). SettingRow description tier fixed once (typo-caption/normal /85) — inherited by companion + obsidian-brain panels; hand-rolled toggle rows (Setup tracking, Voice enable) converted to SettingRow. My en.json edits + regens were checkpoint-committed by a concurrent session (f4a6b9aae) — content correct, attribution mislabeled.
 
 ### feature — obsidian-brain: vault persistence + sorted nav + Revitalize module
 - Started: 2026-06-10 (worktree worktree-obsidian-revitalize off vibeman/audit-2026-06-09)
