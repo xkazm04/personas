@@ -28,13 +28,15 @@ scripts/templates/_team_presets/<id>.json   (source of truth, hand-authored)
         ▼ engine::team_preset_loader (validates schema + role uniqueness)
 list_team_presets / get_team_preset (Tauri IPC)
         │
-        ▼ PresetLibraryPage (templates → presets sub-tab)
-          — ALSO surfaced from the Teams page: the "Preset Team" button +
-            empty-state CTA open TeamPresetPickerModal (same gallery), which
-            hands the chosen preset to the shared PresetPreviewModal below.
-PresetPreviewModal — graph preview + per-member rows (each row shows the
-   template name + one-line description from the adoption schema, and is a
-   toggle: click to include / exclude that member from the adoption)
+        ▼ TWO surfaces, ONE shared state machine (`usePresetAdoption`):
+          (a) Templates → Presets: PresetLibraryPage → PresetPreviewModal (modal).
+          (b) Teams → "Preset Team" button / empty-state CTA → in-app PresetStudio
+              (full content area, not a modal): gallery → PresetProcessHost, which
+              renders the BLUEPRINT schematic (the connection graph is the hero and
+              the member include/exclude surface — tap a node to toggle it).
+Both surfaces show graph + per-member selection (toggle to include / exclude a
+   member) over the same controller; the template name + one-line description come
+   from the adoption schema.
         │
         ▼ user clicks "Adopt N members" (label tracks the selection)
 adopt_team_preset IPC  (roles: Option<Vec<String>> — the selected subset,
