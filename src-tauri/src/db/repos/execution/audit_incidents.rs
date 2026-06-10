@@ -459,8 +459,11 @@ pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppE
 /// Resolved persona-raised incidents whose blocked work has NOT yet been
 /// auto-continued (P2.3b). These are the candidates the incident-continuation
 /// reactive loop re-runs: `status='resolved'` (the human/Athena cleared the
-/// blocker) AND `source_table='persona_blocker'` (it came from a persona's
-/// `raise_incident`, so `source_id` is the blocked execution id) AND
+/// blocker) AND a continuable source — `source_table='persona_blocker'` (a
+/// persona's `raise_incident`; `source_id` is the blocked execution id) or
+/// `source_table='team_assignments'` (Athena's review-resolution `incident`
+/// outcome; `source_id` is the parked assignment id — resolving the access/
+/// credential blocker auto-resumes the assignment) — AND
 /// `continued_at IS NULL` (not yet claimed). Oldest-resolved first so the
 /// backlog drains FIFO. The caller still atomically `claim_continuation`s each
 /// one before acting, so this query may safely over-return under races.
@@ -469,7 +472,7 @@ pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<Aud
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM audit_incidents \
-             WHERE status = 'resolved' AND source_table = 'persona_blocker' \
+             WHERE status = 'resolved' \n             AND source_table IN ('persona_blocker', 'team_assignments') \
              AND continued_at IS NULL \
              ORDER BY resolved_at ASC LIMIT ?1",
         )?;

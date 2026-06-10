@@ -90,8 +90,10 @@ const buckets = db
      GROUP BY h ORDER BY h`,
   )
   .all();
-const activeHours = buckets.length;
-const uptimePct = Math.round((activeHours / HOURS) * 100);
+// Clamp: the bucket count can exceed the window by one partial hour at each
+// edge (observed 7 buckets over a 6h window → 117%); uptime is capped at 100.
+const activeHours = Math.min(buckets.length, HOURS);
+const uptimePct = Math.min(100, Math.round((activeHours / HOURS) * 100));
 
 // Stall episodes: walk execution start times (fleet-wide), flag gaps > STALL_HOURS.
 const execTimes = db

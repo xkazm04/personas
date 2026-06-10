@@ -37,6 +37,24 @@ use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::types::Continuation;
+
+/// cfg-gated accessor for the optional ml-feature EmbeddingManager off
+/// AppState (the orchestrator's auto-resume signature needs it; lite builds
+/// pass the stub None).
+#[cfg(feature = "ml")]
+fn embedding_manager_of(
+    app: &AppHandle,
+) -> Option<Arc<crate::engine::embedder::EmbeddingManager>> {
+    use tauri::Manager;
+    app.try_state::<Arc<crate::AppState>>()
+        .and_then(|s| s.inner().embedding_manager.clone())
+}
+#[cfg(not(feature = "ml"))]
+fn embedding_manager_of(
+    _app: &AppHandle,
+) -> Option<Arc<crate::engine::team_assignment_matching::EmbeddingManager>> {
+    None
+}
 use crate::engine::ExecutionEngine;
 
 /// Max incidents continued per tick — bounds the burst when a batch of
@@ -51,7 +69,7 @@ const MAX_CONTINUATIONS_PER_TICK: i64 = 10;
 /// the blocker is moot if the work is gone). Returns the number of
 /// continuations actually started.
 pub async fn continue_resolved_incidents(
-    engine: &ExecutionEngine,
+    engine: &Arc<ExecutionEngine>,
     app: AppHandle,
     pool: DbPool,
 ) -> usize {
@@ -78,6 +96,68 @@ pub async fn continue_resolved_incidents(
                 tracing::warn!(incident_id = %incident.id, error = %e, "incident_continuation: claim failed");
                 continue;
             }
+        }
+
+        // Athena review-resolution incident (source_table='team_assignments'):
+        // source_id is a PARKED assignment whose blocker (missing access /
+        // credential) the human just resolved. Mechanically un-park it: reset
+        // its failed steps + restore cascade-skipped dependents + restart the
+        // tick — the same auto-resume path the orchestrator uses. Closes the
+        // loop the 2026-06-10 live run exposed: an incident-parked assignment
+        // had no machine path back to `running` after the fix.
+        if incident.source_table == "team_assignments" {
+            let assignment_id = incident.source_id.clone();
+            let failed_steps: Vec<String> = pool
+                .get()
+                .ok()
+                .and_then(|conn| {
+                    conn.prepare(
+                        "SELECT id FROM team_assignment_steps
+                         WHERE assignment_id = ?1 AND status = 'failed'",
+                    )
+                    .ok()
+                    .and_then(|mut stmt| {
+                        stmt.query_map([&assignment_id], |r| r.get::<_, String>(0))
+                            .ok()
+                            .map(|rows| rows.filter_map(Result::ok).collect())
+                    })
+                })
+                .unwrap_or_default();
+            if failed_steps.is_empty() {
+                tracing::info!(
+                    incident_id = %incident.id,
+                    assignment_id = %assignment_id,
+                    "incident_continuation: assignment has no failed steps (already resumed/done); skipping"
+                );
+                continue;
+            }
+            match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
+                Arc::new(pool.clone()),
+                app.clone(),
+                engine.clone(),
+                embedding_manager_of(&app),
+                &assignment_id,
+                &failed_steps,
+            ) {
+                Ok(()) => {
+                    started += 1;
+                    tracing::info!(
+                        incident_id = %incident.id,
+                        assignment_id = %assignment_id,
+                        steps = failed_steps.len(),
+                        "incident_continuation: parked assignment resumed after incident resolution"
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        incident_id = %incident.id,
+                        assignment_id = %assignment_id,
+                        error = %e,
+                        "incident_continuation: assignment resume failed"
+                    );
+                }
+            }
+            continue;
         }
 
         // For a persona_blocker incident, source_id IS the blocked execution id.

@@ -118,6 +118,9 @@ pub fn find_athena_reaction_signals(
                              datetime(a.created_at)) AS occurred_at
              FROM team_assignments a
              WHERE a.status = 'awaiting_review' AND a.team_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM team_assignment_events ev
+                                 WHERE ev.assignment_id = a.id
+                                   AND ev.kind = 'athena_review_resolution')
              UNION ALL
              SELECT a.team_id, 'qa_bounce', 1, a.id, a.title,
                     COALESCE(e.payload, ''), datetime(e.created_at)
@@ -613,6 +616,38 @@ pub fn find_review_resolution_candidates(
             .collect();
         if failed_steps.is_empty() {
             continue; // nothing actionable (shouldn't happen for a cap-out)
+        }
+        // RETRYABLE-class parks are NOT Athena's to resolve: a step that failed
+        // on a provider session/usage/rate limit (or an app-restart kill) will
+        // be reset + re-run by AssignmentAutoResumeSubscription once the limit
+        // lifts. Escalating those was the 2026-06-10 soundness miss — she paged
+        // the human about parks that healed themselves an hour later. Skip the
+        // candidate while EVERY failed step classifies environmental; if even
+        // one failed for a real reason, the resolution decision proceeds.
+        let retryable_failed: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM team_assignment_steps s
+                 LEFT JOIN persona_executions e ON e.id = s.execution_id
+                 WHERE s.assignment_id = ?1 AND s.status = 'failed'
+                   AND (
+                        LOWER(COALESCE(e.error_message,'')) LIKE '%rate limit%'
+                     OR LOWER(COALESCE(e.error_message,'')) LIKE '%usage limit%'
+                     OR LOWER(COALESCE(e.error_message,'')) LIKE '%session limit%'
+                     OR COALESCE(e.error_message,'') LIKE '%App restarted%'
+                     OR LOWER(COALESCE(e.output_data,'')) LIKE '%session limit%'
+                     OR LOWER(COALESCE(e.output_data,'')) LIKE '%usage limit%'
+                     OR EXISTS (SELECT 1 FROM scheduled_retries r WHERE r.execution_id = e.id)
+                   )",
+                rusqlite::params![assignment_id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if retryable_failed as usize >= failed_steps.len() {
+            tracing::debug!(
+                assignment_id = %assignment_id,
+                "athena_review_resolution: skipped — all failed steps are retryable-class (auto-resume owns them)"
+            );
+            continue;
         }
         out.push(ReviewResolutionCandidate {
             assignment_id,
