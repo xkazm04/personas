@@ -11,6 +11,7 @@ const SyncPanel = lazy(() => import('./sub_sync/SyncPanel'));
 const BrowsePanel = lazy(() => import('./sub_browse/BrowsePanel'));
 const GraphPanel = lazy(() => import('./sub_graph/GraphPanel'));
 const CloudSyncPanel = lazy(() => import('./sub_cloud/CloudSyncPanel'));
+const RevitalizePanel = lazy(() => import('./sub_revitalize/RevitalizePanel'));
 
 export default function ObsidianBrainPage() {
   const { t } = useTranslation();
@@ -34,6 +35,7 @@ export default function ObsidianBrainPage() {
               {obsidianBrainTab === 'browse' && <BrowsePanel />}
               {obsidianBrainTab === 'graph' && <GraphPanel />}
               {obsidianBrainTab === 'cloud' && <CloudSyncPanel />}
+              {obsidianBrainTab === 'revitalize' && <RevitalizePanel />}
             </Suspense>
           </ErrorBoundary>
         </div>

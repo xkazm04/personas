@@ -139,6 +139,13 @@ pub const OBSIDIAN_BRAIN_CONFIG: &str = "obsidian_brain_config";
 /// internal stores mirror into the Obsidian vault. All default false.
 pub const OBSIDIAN_MIRROR_CONFIG: &str = "obsidian_mirror_config";
 
+/// Saved Obsidian vault list (JSON-encoded Vec<ObsidianVaultConfig>). The
+/// user's quick-switch roster shown in the Brain plugin's "Saved vaults"
+/// sidebar. Lived in webview localStorage until 2026-06-10, which silently
+/// dropped the list whenever the webview profile was cleared — moved into
+/// app_settings so it survives app sessions like the active config does.
+pub const OBSIDIAN_BRAIN_SAVED_VAULTS: &str = "obsidian_brain_saved_vaults";
+
 /// Dev-tools cross-project metadata cache (JSON-encoded).
 /// Written by `infrastructure::dev_tools` to surface multi-project context to
 /// agents connecting via the management API.
@@ -376,6 +383,7 @@ const ALLOWED_KEYS: &[&str] = &[
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
     OBSIDIAN_BRAIN_CONFIG,
     OBSIDIAN_MIRROR_CONFIG,
+    OBSIDIAN_BRAIN_SAVED_VAULTS,
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
