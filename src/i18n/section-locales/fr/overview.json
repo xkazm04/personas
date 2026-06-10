@@ -315,7 +315,9 @@
     "sort_default": "Meilleurs motifs",
     "sort_confidence": "Confiance la plus élevée",
     "sort_runs": "Plus d'exécutions",
-    "sort_recent": "Plus récents"
+    "sort_recent": "Plus récents",
+    "needs_review": "À vérifier",
+    "pending_scope_hint": "Sélectionnez un persona pour vérifier toutes les annotations en attente."
   },
   "conflicts": {
     "dismissed": "Conflit ignoré",

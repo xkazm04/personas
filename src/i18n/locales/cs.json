@@ -5419,7 +5419,9 @@
       "sort_default": "Hlavní vzory",
       "sort_confidence": "Nejvyšší spolehlivost",
       "sort_runs": "Nejvíce běhů",
-      "sort_recent": "Nejnovější"
+      "sort_recent": "Nejnovější",
+      "needs_review": "Ke kontrole",
+      "pending_scope_hint": "Vyberte personu pro kontrolu všech čekajících anotací."
     },
     "conflicts": {
       "dismissed": "Konflikt zamítnut",

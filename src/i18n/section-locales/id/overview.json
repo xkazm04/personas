@@ -315,7 +315,9 @@
     "sort_default": "Pola teratas",
     "sort_confidence": "Keyakinan tertinggi",
     "sort_runs": "Paling banyak dijalankan",
-    "sort_recent": "Terbaru"
+    "sort_recent": "Terbaru",
+    "needs_review": "Perlu ditinjau",
+    "pending_scope_hint": "Pilih persona untuk meninjau semua anotasi yang tertunda."
   },
   "conflicts": {
     "dismissed": "Konflik diabaikan",

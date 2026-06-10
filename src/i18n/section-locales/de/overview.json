@@ -315,7 +315,9 @@
     "sort_default": "Top-Muster",
     "sort_confidence": "Höchste Konfidenz",
     "sort_runs": "Meiste Ausführungen",
-    "sort_recent": "Neueste"
+    "sort_recent": "Neueste",
+    "needs_review": "Zu prüfen",
+    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen."
   },
   "conflicts": {
     "dismissed": "Konflikt verworfen",

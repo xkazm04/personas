@@ -5419,7 +5419,9 @@
       "sort_default": "トップパターン",
       "sort_confidence": "信頼度が高い順",
       "sort_runs": "実行回数が多い順",
-      "sort_recent": "最新順"
+      "sort_recent": "最新順",
+      "needs_review": "要確認",
+      "pending_scope_hint": "保留中の注釈をすべて確認するにはペルソナを選択してください。"
     },
     "conflicts": {
       "dismissed": "競合を非表示にしました",

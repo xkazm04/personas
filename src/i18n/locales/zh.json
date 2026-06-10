@@ -5419,7 +5419,9 @@
       "sort_default": "热门模式",
       "sort_confidence": "置信度最高",
       "sort_runs": "运行最多",
-      "sort_recent": "最新"
+      "sort_recent": "最新",
+      "needs_review": "需审核",
+      "pending_scope_hint": "选择一个角色以审核所有待处理的注释。"
     },
     "conflicts": {
       "dismissed": "冲突已忽略",

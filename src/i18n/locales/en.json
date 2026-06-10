@@ -5768,6 +5768,8 @@
       "sort_confidence": "Highest confidence",
       "sort_runs": "Most runs",
       "sort_recent": "Most recent",
+      "needs_review": "Needs review",
+      "pending_scope_hint": "Select a persona to review all pending annotations.",
       "subtitle": "{count} things learned from past runs",
       "total_patterns": "Total Learnings",
       "tool_sequences": "Action Sequences",

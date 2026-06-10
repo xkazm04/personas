@@ -315,7 +315,9 @@
     "sort_default": "أهم الأنماط",
     "sort_confidence": "أعلى ثقة",
     "sort_runs": "الأكثر تشغيلاً",
-    "sort_recent": "الأحدث"
+    "sort_recent": "الأحدث",
+    "needs_review": "بحاجة إلى مراجعة",
+    "pending_scope_hint": "اختر شخصية لمراجعة جميع التعليقات المعلّقة."
   },
   "conflicts": {
     "dismissed": "تم تجاهل التعارض",

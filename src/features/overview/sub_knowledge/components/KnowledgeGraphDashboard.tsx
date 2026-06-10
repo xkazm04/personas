@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen, Search } from 'lucide-react';
+import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen, Search, ShieldAlert } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useSystemStore } from '@/stores/systemStore';
@@ -46,6 +46,7 @@ export default function KnowledgeGraphDashboard() {
   const [showScopeDropdown, setShowScopeDropdown] = useState(false);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<'default' | 'confidence' | 'runs' | 'recent'>('default');
+  const [pendingOnly, setPendingOnly] = useState(false);
   const { failureDrilldownDate } = useOverviewFilterValues();
   const { setFailureDrilldownDate } = useOverviewFilterActions();
 
@@ -125,6 +126,9 @@ export default function KnowledgeGraphDashboard() {
               || (entry.annotation_text?.toLowerCase().includes(q) ?? false);
           }
         : null,
+      pendingOnly
+        ? (entry) => (entry.knowledge_type === 'agent_annotation' || entry.knowledge_type === 'user_annotation') && !entry.is_verified
+        : null,
     ],
   });
 
@@ -133,7 +137,7 @@ export default function KnowledgeGraphDashboard() {
   // sparkline), so spread mounting across ~2s after the frame lands rather
   // than dumping up to 100 rows on one frame. Resets when the filter changes.
   const entryReveal = useProgressiveReveal(allEntries.length, {
-    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}`,
+    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}|${pendingOnly}`,
     initialCount: 16,
   });
   const revealedEntries = useMemo(
@@ -142,7 +146,7 @@ export default function KnowledgeGraphDashboard() {
   );
   // Per-item entrance guard for the (virtualized) entry list. Keyed to the
   // active filters; survives row remount so scrolling never replays the fade.
-  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}`);
+  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}|${pendingOnly}`);
   const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(revealedEntries, ENTRY_ROW_ESTIMATE);
 
   const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
@@ -185,6 +189,20 @@ export default function KnowledgeGraphDashboard() {
             {import.meta.env.DEV && (
               <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
+              </button>
+            )}
+            {summary && summary.unverified_annotation_count > 0 && (
+              <button
+                type="button"
+                aria-pressed={pendingOnly}
+                onClick={() => { setPendingOnly((v) => !v); if (!pendingOnly) chooseType(null); }}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium border transition-colors ${pendingOnly ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-amber-500/10 text-amber-400 border-amber-500/25 hover:bg-amber-500/20'}`}
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                {t.overview.knowledge.needs_review}
+                <span className="px-1.5 rounded-full bg-amber-500/25 typo-caption tabular-nums">
+                  <Numeric>{summary.unverified_annotation_count}</Numeric>
+                </span>
               </button>
             )}
             <Button
@@ -311,6 +329,10 @@ export default function KnowledgeGraphDashboard() {
               <option value="recent">{t.overview.knowledge.sort_recent}</option>
             </ThemedSelect>
           </div>
+
+          {pendingOnly && !selectedPersonaId && summary && allEntries.length < summary.unverified_annotation_count && (
+            <p className="typo-caption text-amber-400/80 -mt-3">{t.overview.knowledge.pending_scope_hint}</p>
+          )}
 
           {failureDrilldownDate && (
             <div className="rounded-modal border border-red-500/20 bg-red-500/10 px-4 py-3">

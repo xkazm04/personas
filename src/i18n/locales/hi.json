@@ -5419,7 +5419,9 @@
       "sort_default": "शीर्ष पैटर्न",
       "sort_confidence": "उच्चतम विश्वास",
       "sort_runs": "सर्वाधिक रन",
-      "sort_recent": "सबसे नए"
+      "sort_recent": "सबसे नए",
+      "needs_review": "समीक्षा आवश्यक",
+      "pending_scope_hint": "सभी लंबित एनोटेशन की समीक्षा के लिए एक पर्सोना चुनें।"
     },
     "conflicts": {
       "dismissed": "विवाद खारिज किया गया",

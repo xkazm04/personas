@@ -5774,6 +5774,8 @@ export type Translations = {
       sort_confidence: string;
       sort_runs: string;
       sort_recent: string;
+      needs_review: string;
+      pending_scope_hint: string;
       subtitle: string;
       total_patterns: string;
       tool_sequences: string;
