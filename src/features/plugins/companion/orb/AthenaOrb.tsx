@@ -329,10 +329,12 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
       animate={{ left: renderLeft, top: renderTop }}
       transition={glideTransition}
     >
-      {/* Interim-dictation caption, flips to whichever side has room. */}
+      {/* Interim-dictation caption, flips to whichever side has room.
+          Wraps instead of truncating — a cut-off "Preparing an explanat…"
+          reads as broken; the cap only bounds line length. */}
       {caption && (
         <div
-          className={`absolute top-1/2 -translate-y-1/2 max-w-[220px] px-3 py-1.5 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 typo-caption text-foreground/90 truncate ${
+          className={`absolute top-1/2 -translate-y-1/2 w-max max-w-[320px] px-3 py-1.5 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 typo-caption text-foreground/90 break-words ${
             dockedLeft ? 'left-full ml-2' : 'right-full mr-2'
           }`}
         >
