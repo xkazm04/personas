@@ -10528,6 +10528,10 @@ export type Translations = {
     eligibility_locked_label: string;
     _comment_eligibility_no_persona: string;
     eligibility_no_persona: string;
+    _comment_adopted_badge: string;
+    adopted_badge: string;
+    _comment_adopted_badge_tooltip: string;
+    adopted_badge_tooltip: string;
     _comment_no_results_heading: string;
     no_results_heading: string;
     _comment_no_results_body: string;

@@ -38,6 +38,8 @@
   "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
   "eligibility_locked_label": "Locked",
   "eligibility_no_persona": "ペルソナを選択すると適合性を確認できます",
+  "adopted_badge": "採用済み",
+  "adopted_badge_tooltip": "選択中のペルソナは既に採用しています",
   "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
   "no_results_heading": "No recipes match",
   "_comment_no_results_body": "Empty state body below the heading",

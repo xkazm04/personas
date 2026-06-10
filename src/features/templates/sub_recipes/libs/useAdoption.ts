@@ -129,6 +129,9 @@ export function recipeToUseCase(
     // wire a dedicated field.
     sample_input: undefined,
     input_schema: undefined,
+    // Provenance: lets the catalog show which recipes this persona already
+    // adopted, and future republish flows reconcile against the source.
+    source_recipe_id: recipe.id,
   } satisfies DesignUseCase as DesignUseCase;
 }
 

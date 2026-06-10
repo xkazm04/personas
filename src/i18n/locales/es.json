@@ -9770,6 +9770,8 @@
     "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
     "eligibility_locked_label": "Locked",
     "eligibility_no_persona": "Selecciona una persona para comprobar la elegibilidad",
+    "adopted_badge": "Adoptada",
+    "adopted_badge_tooltip": "Ya adoptada por la persona seleccionada",
     "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
     "no_results_heading": "No recipes match",
     "_comment_no_results_body": "Empty state body below the heading",

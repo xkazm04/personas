@@ -9770,6 +9770,8 @@
     "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
     "eligibility_locked_label": "Locked",
     "eligibility_no_persona": "اختر شخصية للتحقق من الأهلية",
+    "adopted_badge": "معتمدة",
+    "adopted_badge_tooltip": "اعتمدتها الشخصية المحددة بالفعل",
     "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
     "no_results_heading": "No recipes match",
     "_comment_no_results_body": "Empty state body below the heading",

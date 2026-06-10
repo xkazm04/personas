@@ -38,6 +38,8 @@
   "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
   "eligibility_locked_label": "Locked",
   "eligibility_no_persona": "Chọn một persona để kiểm tra tính phù hợp",
+  "adopted_badge": "Đã áp dụng",
+  "adopted_badge_tooltip": "Persona đã chọn đã áp dụng công thức này",
   "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
   "no_results_heading": "No recipes match",
   "_comment_no_results_body": "Empty state body below the heading",

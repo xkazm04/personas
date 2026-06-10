@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, AlertTriangle, Lock } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertTriangle, Lock, Check } from 'lucide-react';
 import { CONNECTOR_META, ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,6 +11,8 @@ interface RecipeDetailHeaderProps {
   eligibility: Eligibility;
   canAdopt: boolean;
   hasPersona: boolean;
+  /** The selected persona already adopted this recipe. */
+  adopted: boolean;
   onBack: () => void;
   onAdopt: () => void;
 }
@@ -21,7 +23,7 @@ interface RecipeDetailHeaderProps {
  * Includes the contextual eligibility banner so the orchestrator stays slim.
  */
 export function RecipeDetailHeader({
-  recipe, eligibility, canAdopt, hasPersona, onBack, onAdopt,
+  recipe, eligibility, canAdopt, hasPersona, adopted, onBack, onAdopt,
 }: RecipeDetailHeaderProps) {
   const { t, tx } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
@@ -66,6 +68,12 @@ export function RecipeDetailHeader({
             {/* Eligibility is a per-persona verdict — meaningless before one
                 is selected, so the chip waits for a persona. */}
             {hasPersona && <EligibilityChip eligibility={eligibility} />}
+            {hasPersona && adopted && (
+              <span className="inline-flex items-center gap-0.5 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+                <Check className="w-2.5 h-2.5" />
+                {t.recipes_catalog.adopted_badge}
+              </span>
+            )}
           </div>
           <div className="typo-body text-foreground mt-0.5">{recipe.summary}</div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">

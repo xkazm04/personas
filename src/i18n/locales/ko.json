@@ -9770,6 +9770,8 @@
     "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
     "eligibility_locked_label": "Locked",
     "eligibility_no_persona": "페르소나를 선택하면 적합성을 확인할 수 있습니다",
+    "adopted_badge": "적용됨",
+    "adopted_badge_tooltip": "선택한 페르소나가 이미 적용했습니다",
     "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
     "no_results_heading": "No recipes match",
     "_comment_no_results_body": "Empty state body below the heading",

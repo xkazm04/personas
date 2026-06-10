@@ -9770,6 +9770,8 @@
     "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
     "eligibility_locked_label": "Locked",
     "eligibility_no_persona": "选择一个角色以检查兼容性",
+    "adopted_badge": "已采用",
+    "adopted_badge_tooltip": "所选角色已采用此配方",
     "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
     "no_results_heading": "No recipes match",
     "_comment_no_results_body": "Empty state body below the heading",

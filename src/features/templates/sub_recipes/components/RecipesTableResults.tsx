@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,6 +15,9 @@ interface ResultsProps {
   /** Eligibility is a per-persona verdict; without a selected persona the
    *  chips would claim READY/LOCKED against nothing — render neutral. */
   personaSelected: boolean;
+  /** Recipe ids the selected persona has already adopted (provenance via
+   *  DesignUseCase.source_recipe_id) — rows get an "Adopted" chip. */
+  adoptedRecipeIds: ReadonlySet<string>;
   onOpenDetail: (recipeId: string) => void;
 }
 
@@ -42,7 +45,7 @@ const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
  * Clicking the button adopts; clicking the row opens detail. Both stop
  * at the right place.
  */
-export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, onOpenDetail }: ResultsProps) {
+export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, adoptedRecipeIds, onOpenDetail }: ResultsProps) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
 
@@ -141,6 +144,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, person
                 eligibility={eligibilityMap.get(r.id) ?? { state: 'eligible' }}
                 highlight={highlight}
                 personaSelected={personaSelected}
+                adopted={adoptedRecipeIds.has(r.id)}
                 onOpenDetail={() => onOpenDetail(r.id)}
               />
             ))}
@@ -192,6 +196,7 @@ interface RecipeRowProps {
   eligibility: Eligibility;
   highlight?: string;
   personaSelected: boolean;
+  adopted: boolean;
   onOpenDetail: () => void;
 }
 
@@ -212,7 +217,7 @@ function HighlightedName({ text, query }: { text: string; query?: string }) {
   );
 }
 
-function RecipeRow({ recipe, eligibility, highlight, personaSelected, onOpenDetail }: RecipeRowProps) {
+function RecipeRow({ recipe, eligibility, highlight, personaSelected, adopted, onOpenDetail }: RecipeRowProps) {
   const { t } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
   const iconMeta = iconKey ? getConnectorMeta(iconKey) : null;
@@ -245,8 +250,18 @@ function RecipeRow({ recipe, eligibility, highlight, personaSelected, onOpenDeta
 
       {/* Name — summary moved to row tooltip / detail view */}
       <td className="px-2 align-middle" title={recipe.summary}>
-        <div className="typo-caption font-medium text-foreground truncate min-w-0 max-w-[420px]">
-          <HighlightedName text={recipe.name} query={highlight} />
+        <div className="flex items-center gap-1.5 min-w-0 max-w-[420px]">
+          <span className="typo-caption font-medium text-foreground truncate min-w-0">
+            <HighlightedName text={recipe.name} query={highlight} />
+          </span>
+          {adopted && (
+            <Tooltip content={t.recipes_catalog.adopted_badge_tooltip}>
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label uppercase tracking-wider px-1 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+                <Check className="w-2.5 h-2.5" />
+                {t.recipes_catalog.adopted_badge}
+              </span>
+            </Tooltip>
+          )}
         </div>
       </td>
 

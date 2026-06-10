@@ -1,4 +1,6 @@
+import { useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../types';
@@ -34,6 +36,11 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibility = useRecipeEligibility(recipe);
   const canAdopt = !!selectedPersona && eligibility.state !== 'incompatible';
+  const selectedUseCases = useSelectedUseCases();
+  const adopted = useMemo(
+    () => selectedUseCases.some((uc) => uc.source_recipe_id === recipe.id),
+    [selectedUseCases, recipe.id],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -42,6 +49,7 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
         eligibility={eligibility}
         canAdopt={canAdopt}
         hasPersona={!!selectedPersona}
+        adopted={adopted}
         onBack={onBack}
         onAdopt={onAdopt}
       />

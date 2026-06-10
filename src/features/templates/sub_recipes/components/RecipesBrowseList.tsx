@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, RecipeCategory } from '../types';
 import { useRecipeEligibilityMap } from '../useEligibility';
@@ -43,6 +44,11 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
+  const selectedUseCases = useSelectedUseCases();
+  const adoptedRecipeIds = useMemo(
+    () => new Set(selectedUseCases.map((uc) => uc.source_recipe_id).filter((id): id is string => !!id)),
+    [selectedUseCases],
+  );
 
   const [category, setCategory] = useState<RecipeCategory | 'all'>('all');
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all');
@@ -186,6 +192,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
               eligibilityMap={eligibilityMap}
               highlight={search}
               personaSelected={!!selectedPersona}
+              adoptedRecipeIds={adoptedRecipeIds}
               onOpenDetail={onOpenDetail}
             />
           )}
