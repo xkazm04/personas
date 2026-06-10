@@ -46,14 +46,19 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
 
   const categoryOptions = useMemo<CategoryOption[]>(() => {
     const labels = getCategoryLabels(t);
+    const counts = new Map<RecipeCategory, number>();
+    for (const r of recipes) counts.set(r.category, (counts.get(r.category) ?? 0) + 1);
+    // Buckets with no recipes are hidden rather than offered as dead filters.
     return [
-      { value: 'all', label: t.recipes_catalog.category_all },
-      ...(Object.keys(labels) as RecipeCategory[]).map((c) => ({
-        value: c,
-        label: labels[c],
-      })),
+      { value: 'all', label: `${t.recipes_catalog.category_all} (${recipes.length})` },
+      ...(Object.keys(labels) as RecipeCategory[])
+        .filter((c) => (counts.get(c) ?? 0) > 0)
+        .map((c) => ({
+          value: c,
+          label: `${labels[c]} (${counts.get(c)})`,
+        })),
     ];
-  }, [t]);
+  }, [t, recipes]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
