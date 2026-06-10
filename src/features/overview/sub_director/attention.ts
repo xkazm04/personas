@@ -61,3 +61,8 @@ export function attentionCounts(
   for (const r of roster) for (const f of attentionFlags(r, now)) counts[f] += 1;
   return counts;
 }
+
+/** Number of distinct agents carrying at least one attention flag (badge count). */
+export function flaggedAgentCount(roster: DirectorRosterEntry[], now: number): number {
+  return roster.reduce((n, r) => n + (attentionFlags(r, now).length > 0 ? 1 : 0), 0);
+}

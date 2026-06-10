@@ -515,7 +515,9 @@
     "unread_messages_sr": "{count} unread message",
     "unread_messages_sr_other": "{count} unread messages",
     "pending_events_sr": "{count} pending event",
-    "pending_events_sr_other": "{count} pending events"
+    "pending_events_sr_other": "{count} pending events",
+    "director_attention_sr": "{count} agent needs coaching",
+    "director_attention_sr_other": "{count} agents need coaching"
   },
   "home": {
     "welcome": "Welcome",

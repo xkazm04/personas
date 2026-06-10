@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "{count} непрочитанных сообщений",
     "pending_events_sr": "{count} ожидающее событие",
     "pending_events_sr_other": "{count} ожидающих событий",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count} агенту нужно наставничество",
+    "director_attention_sr_other": "{count} агентам нужно наставничество"
   },
   "home": {
     "welcome": "Добро пожаловать",

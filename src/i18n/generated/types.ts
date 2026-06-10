@@ -522,6 +522,8 @@ export type Translations = {
     unread_messages_sr_other: string;
     pending_events_sr: string;
     pending_events_sr_other: string;
+    director_attention_sr: string;
+    director_attention_sr_other: string;
   };
   home: {
     welcome: string;

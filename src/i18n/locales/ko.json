@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "읽지 않은 메시지 {count}건",
     "pending_events_sr": "대기 이벤트 {count}건",
     "pending_events_sr_other": "대기 이벤트 {count}건",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count}개 에이전트에 코칭 필요",
+    "director_attention_sr_other": "{count}개 에이전트에 코칭 필요"
   },
   "home": {
     "welcome": "환영합니다",

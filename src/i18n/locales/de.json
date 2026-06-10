@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "{count} ungelesene Nachrichten",
     "pending_events_sr": "{count} ausstehendes Ereignis",
     "pending_events_sr_other": "{count} ausstehende Ereignisse",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count} Agent benötigt Coaching",
+    "director_attention_sr_other": "{count} Agenten benötigen Coaching"
   },
   "home": {
     "welcome": "Willkommen",

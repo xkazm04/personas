@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "{count} رسائل غير مقروءة",
     "pending_events_sr": "{count} حدث معلّق",
     "pending_events_sr_other": "{count} أحداث معلّقة",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count} وكيل يحتاج إلى إرشاد",
+    "director_attention_sr_other": "{count} وكلاء يحتاجون إلى إرشاد"
   },
   "home": {
     "welcome": "مرحبًا",

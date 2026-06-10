@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "{count} 条未读消息",
     "pending_events_sr": "{count} 个待处理事件",
     "pending_events_sr_other": "{count} 个待处理事件",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count} 个智能体需要辅导",
+    "director_attention_sr_other": "{count} 个智能体需要辅导"
   },
   "home": {
     "welcome": "欢迎",

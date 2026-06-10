@@ -425,7 +425,9 @@
     "unread_messages_sr_other": "{count}件の未読メッセージ",
     "pending_events_sr": "{count}件の保留イベント",
     "pending_events_sr_other": "{count}件の保留イベント",
-    "cockpit": "Cockpit"
+    "cockpit": "Cockpit",
+    "director_attention_sr": "{count} 体のエージェントにコーチングが必要",
+    "director_attention_sr_other": "{count} 体のエージェントにコーチングが必要"
   },
   "home": {
     "welcome": "ようこそ",
