@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { X, ChevronRight, ListFilter } from 'lucide-react';
+import { X, ChevronRight, ListFilter, TrendingUp, TrendingDown } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -10,6 +10,7 @@ import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
 import { attentionFlags, attentionRank, primaryFlag, FLAG_TONE, type AttentionFlag } from '../attention';
 import { rosterRowMatches, toggleFilter, type RosterFilter } from '../rosterFilter';
+import { rosterScoreDelta, MOMENTUM_TONE } from '../momentum';
 import type { DirectorRosterEntry } from '@/api/director';
 
 // Shared column template so the header and every row line up.
@@ -138,8 +139,8 @@ export function PersonaCoachingTable({
                 <PersonaIcon icon={r.icon} color={r.color} size="w-4 h-4" />
                 <span className="typo-body text-foreground truncate">{r.name}</span>
               </span>
-              {/* score */}
-              <span className="text-center">
+              {/* score + momentum delta since the previous review */}
+              <span className="flex flex-col items-center gap-0.5">
                 {r.latestScore != null && tone ? (
                   <span
                     className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums font-medium"
@@ -150,6 +151,21 @@ export function PersonaCoachingTable({
                 ) : (
                   <span className="typo-caption text-foreground">—</span>
                 )}
+                {(() => {
+                  const delta = rosterScoreDelta(r);
+                  if (delta === 0) return null;
+                  const up = delta > 0;
+                  const Arrow = up ? TrendingUp : TrendingDown;
+                  return (
+                    <span
+                      className="inline-flex items-center gap-0.5 text-[10px] tabular-nums leading-none font-medium"
+                      style={{ color: up ? MOMENTUM_TONE.improving : MOMENTUM_TONE.declining }}
+                    >
+                      <Arrow aria-hidden className="w-2.5 h-2.5" />
+                      {up ? `+${delta}` : delta}
+                    </span>
+                  );
+                })()}
               </span>
               {/* trend */}
               <span>
