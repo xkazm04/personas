@@ -4,12 +4,12 @@ import {
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
   Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
-  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers, Workflow,
-  GraduationCap, BookOpen, Trophy, AlertOctagon, Target,
+  Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
+  GraduationCap, BookOpen, Trophy, AlertOctagon, Target, Swords,
   User, Users, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
-  Clapperboard,
+  Clapperboard, MoonStar,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -99,8 +99,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
-  { id: 'studio', label: 'Chain Studio', icon: GitBranch, devOnly: true },
-  { id: 'lineage', label: 'Lineage', icon: Workflow },
+  { id: 'studio', label: 'Chain Studio', icon: GitBranch },
   { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
 ];
 
@@ -122,6 +121,7 @@ export const devToolsItems: SubNavItem[] = [
   { id: 'projects', label: 'Projects', icon: FolderKanban },
   { id: 'goals', label: 'Goals', icon: Target },
   { id: 'lifecycle', label: 'Lifecycle', icon: GitBranch },
+  { id: 'competition', label: 'Competition', icon: Swords },
   { id: 'context-map', label: 'Context Map', icon: Map },
   { id: 'idea-scanner', label: 'Idea Scanner', icon: Lightbulb },
   { id: 'idea-triage', label: 'Idea Triage', icon: ArrowLeftRight },
@@ -178,12 +178,15 @@ export const companionItems: SubNavItem[] = [
 // Mirrors the in-page header tab bar that previously lived in
 // ObsidianBrainPage.tsx — the page now renders only the active panel,
 // matching the L3-pattern adopted by Artist / Dev Tools / Twin etc.
+// Keep sorted alphabetically by label (asc) — nav-order convention since
+// 2026-06-10; new tabs slot into alphabetical position.
 export const obsidianBrainItems: SubNavItem[] = [
-  { id: 'setup',  label: 'Setup',        icon: Settings },
-  { id: 'sync',   label: 'Sync',         icon: RefreshCw },
-  { id: 'browse', label: 'Browse Vault', icon: FolderOpen },
-  { id: 'graph',  label: 'Graph',        icon: Network },
-  { id: 'cloud',  label: 'Cloud',        icon: Cloud },
+  { id: 'browse',     label: 'Browse Vault', icon: FolderOpen },
+  { id: 'cloud',      label: 'Cloud',        icon: Cloud },
+  { id: 'graph',      label: 'Graph',        icon: Network },
+  { id: 'revitalize', label: 'Revitalize',   icon: MoonStar },
+  { id: 'setup',      label: 'Setup',        icon: Settings },
+  { id: 'sync',       label: 'Sync',         icon: RefreshCw },
 ];
 
 export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[] {

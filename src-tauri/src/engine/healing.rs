@@ -25,6 +25,7 @@
 //!
 //! | Category        | `retry_count < MAX` & no KB hint      | `retry_count >= MAX` OR KB `occurrence >= 5` | Notes                                       |
 //! | --------------- | ------------------------------------- | -------------------------------------------- | ------------------------------------------- |
+//! | `SessionLimit`  | window cap → `RetryAt(reset)`†        | → `CreateIssue`                              | † via [`usage_limit_diagnosis`] when the orchestrator has parsed [`UsageLimitInfo`]; weekly caps and unparsed session limits always `CreateIssue`. `RetryAt` is durable (`scheduled_retries` table). |
 //! | `RateLimit`     | → `RetryWithBackoff` (KB delay wins)  | → `CreateIssue`                              | `consecutive_failures` drives exponent      |
 //! | `Timeout`       | → `RetryWithTimeout` (×2, capped)     | → `CreateIssue`                              | New timeout capped at [`MAX_TIMEOUT_MS`]    |
 //! | `External`      | → `RetryWithBackoff`                  | → `CreateIssue`                              | Treated like `RateLimit` w/r/t retries      |
@@ -57,12 +58,21 @@
 
 pub use super::error_taxonomy::ErrorCategory as FailureCategory;
 pub use super::error_taxonomy::{classify_error, is_auto_fixable};
+pub use super::error_taxonomy::{UsageLimitInfo, UsageLimitScope};
 
 /// Recommended action for a diagnosed failure.
 #[derive(Debug, Clone, PartialEq)]
 pub enum HealingAction {
     RetryWithBackoff { delay_secs: u64 },
     RetryWithTimeout { new_timeout_ms: u64 },
+    /// Durable retry at an absolute time — used for provider usage-limit
+    /// windows that reset on their own (e.g. Claude's rolling ~5h window).
+    /// Unlike the backoff variants this is persisted to `scheduled_retries`
+    /// and survives app restarts; see `ExecutionEngine::schedule_healing_retry`
+    /// and the event-bus tick drain.
+    RetryAt {
+        retry_at: chrono::DateTime<chrono::Utc>,
+    },
     AiHealing,
     CreateIssue,
 }
@@ -88,6 +98,13 @@ pub struct HealingDiagnosis {
 
 /// Maximum backoff delay in seconds (5 minutes).
 const MAX_BACKOFF_SECS: u64 = 300;
+/// Buffer added on top of a usage-limit reset time before retrying, so the
+/// retry doesn't race the provider's own clock.
+const USAGE_LIMIT_RESET_BUFFER_SECS: i64 = 120;
+/// Fallback wait when a window usage-limit message carries no parseable reset
+/// timestamp. Claude's window is ~5 hours rolling, so "now + 5h" is the worst
+/// case and guaranteed to be past the reset.
+const USAGE_WINDOW_FALLBACK_HOURS: i64 = 5;
 /// Maximum timeout in milliseconds — derived from the engine hard ceiling.
 const MAX_TIMEOUT_MS: u64 = super::ENGINE_MAX_EXECUTION_SECS * 1000;
 /// Maximum number of retries for a single execution chain.
@@ -104,6 +121,80 @@ pub struct KnowledgeHint {
     pub recommended_delay_secs: Option<u64>,
     /// How many times this pattern has been observed fleet-wide.
     pub occurrence_count: i64,
+}
+
+/// Produce a usage-limit-aware diagnosis, overriding the generic
+/// `SessionLimit → CreateIssue` rule when the failure was a parsed provider
+/// usage cap (see `parser::parse_usage_limit`).
+///
+/// - **Window** scope with retry budget left → [`HealingAction::RetryAt`] at
+///   the reset time (+ buffer), falling back to now + 5h when the message
+///   carried no timestamp. Durable — survives restarts via `scheduled_retries`.
+/// - **Window** scope with budget exhausted → `CreateIssue`.
+/// - **Weekly** scope → `CreateIssue` (too far out to auto-retry); the run
+///   stays failed, matching the pre-existing behavior.
+pub fn usage_limit_diagnosis(
+    ul: &UsageLimitInfo,
+    error: &str,
+    retry_count: i64,
+) -> HealingDiagnosis {
+    match ul.scope {
+        UsageLimitScope::Window if retry_count < MAX_RETRY_COUNT => {
+            let now = chrono::Utc::now();
+            let retry_at = ul
+                .resets_at
+                .filter(|ts| *ts > now)
+                .unwrap_or_else(|| now + chrono::Duration::hours(USAGE_WINDOW_FALLBACK_HOURS))
+                + chrono::Duration::seconds(USAGE_LIMIT_RESET_BUFFER_SECS);
+            HealingDiagnosis {
+                category: FailureCategory::SessionLimit,
+                action: HealingAction::RetryAt { retry_at },
+                title: "Usage limit reached — retry scheduled".into(),
+                description: format!(
+                    "The provider's usage window is exhausted. The run will retry automatically at {}. Error: {}",
+                    retry_at.to_rfc3339(),
+                    truncate(error, 200),
+                ),
+                severity: "medium".into(),
+                db_category: "external".into(),
+                suggested_fix: Some(
+                    "No action needed — the run retries when the usage window resets.".into(),
+                ),
+            }
+        }
+        UsageLimitScope::Window => HealingDiagnosis {
+            category: FailureCategory::SessionLimit,
+            action: HealingAction::CreateIssue,
+            title: "Usage-limit retries exhausted".into(),
+            description: format!(
+                "The run kept hitting the provider usage limit after {} scheduled retries. Manual investigation required. Error: {}",
+                MAX_RETRY_COUNT,
+                truncate(error, 200),
+            ),
+            severity: "high".into(),
+            db_category: "external".into(),
+            suggested_fix: Some(
+                "Reduce schedule frequency or upgrade your plan — the usage window keeps being exhausted.".into(),
+            ),
+        },
+        UsageLimitScope::Weekly => HealingDiagnosis {
+            category: FailureCategory::SessionLimit,
+            action: HealingAction::CreateIssue,
+            title: "Weekly usage limit reached".into(),
+            description: format!(
+                "The provider's weekly usage cap was hit{}. Runs will keep failing until it resets. Error: {}",
+                ul.resets_at
+                    .map(|ts| format!(" (resets at {})", ts.to_rfc3339()))
+                    .unwrap_or_default(),
+                truncate(error, 200),
+            ),
+            severity: "high".into(),
+            db_category: "external".into(),
+            suggested_fix: Some(
+                "Pause schedules until the weekly limit resets, or upgrade your plan.".into(),
+            ),
+        },
+    }
 }
 
 /// Produce a full [`HealingDiagnosis`] with a recommended action.
@@ -728,5 +819,85 @@ mod tests {
                 new_timeout_ms: 1_200_000
             }
         );
+    }
+
+    // --- usage_limit_diagnosis -------------------------------------------
+
+    #[test]
+    fn test_usage_limit_window_with_reset_ts_schedules_retry_at() {
+        let resets_at = chrono::Utc::now() + chrono::Duration::hours(2);
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: Some(resets_at),
+        };
+        let d = usage_limit_diagnosis(&ul, "Claude AI usage limit reached", 0);
+        match d.action {
+            HealingAction::RetryAt { retry_at } => {
+                // reset + buffer
+                assert_eq!(
+                    retry_at.timestamp(),
+                    resets_at.timestamp() + USAGE_LIMIT_RESET_BUFFER_SECS,
+                );
+            }
+            other => panic!("expected RetryAt, got {other:?}"),
+        }
+        assert_eq!(d.severity, "medium");
+    }
+
+    #[test]
+    fn test_usage_limit_window_without_ts_falls_back_to_5h() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let before = chrono::Utc::now();
+        let d = usage_limit_diagnosis(&ul, "usage limit reached", 1);
+        match d.action {
+            HealingAction::RetryAt { retry_at } => {
+                let min = before + chrono::Duration::hours(USAGE_WINDOW_FALLBACK_HOURS);
+                let max = min + chrono::Duration::seconds(USAGE_LIMIT_RESET_BUFFER_SECS + 60);
+                assert!(retry_at >= min && retry_at <= max);
+            }
+            other => panic!("expected RetryAt, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_usage_limit_window_budget_exhausted_creates_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: None,
+        };
+        let d = usage_limit_diagnosis(&ul, "usage limit reached", MAX_RETRY_COUNT);
+        assert_eq!(d.action, HealingAction::CreateIssue);
+        assert_eq!(d.severity, "high");
+    }
+
+    #[test]
+    fn test_usage_limit_weekly_creates_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Weekly,
+            resets_at: None,
+        };
+        let d = usage_limit_diagnosis(&ul, "weekly limit reached", 0);
+        assert_eq!(d.action, HealingAction::CreateIssue);
+        assert!(d.title.contains("Weekly"));
+    }
+
+    #[test]
+    fn test_usage_limit_stale_reset_ts_uses_fallback() {
+        // A reset timestamp in the past must not schedule an immediate-past
+        // retry — the fallback window applies instead.
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Window,
+            resets_at: Some(chrono::Utc::now() - chrono::Duration::hours(1)),
+        };
+        let d = usage_limit_diagnosis(&ul, "usage limit reached", 0);
+        match d.action {
+            HealingAction::RetryAt { retry_at } => {
+                assert!(retry_at > chrono::Utc::now() + chrono::Duration::hours(4));
+            }
+            other => panic!("expected RetryAt, got {other:?}"),
+        }
     }
 }

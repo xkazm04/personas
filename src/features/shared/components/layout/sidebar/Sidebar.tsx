@@ -77,7 +77,7 @@ export default function Sidebar() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
   const setSettingsTab = useSystemStore((s) => s.setSettingsTab);
-  const { pendingReviewCount, unreadMessageCount, pendingEventCount } = useBadgeCounts();
+  const { pendingReviewCount, unreadMessageCount, pendingEventCount, directorAttentionCount } = useBadgeCounts();
   const selectPersona = useAgentStore((s) => s.selectPersona);
 
   const isDev = import.meta.env.DEV;
@@ -174,6 +174,7 @@ export default function Sidebar() {
         {pendingReviewCount > 0 && tx(pendingReviewCount === 1 ? t.sidebar.pending_reviews_sr : t.sidebar.pending_reviews_sr_other, { count: pendingReviewCount }) + '.'}
         {unreadMessageCount > 0 && ' ' + tx(unreadMessageCount === 1 ? t.sidebar.unread_messages_sr : t.sidebar.unread_messages_sr_other, { count: unreadMessageCount }) + '.'}
         {pendingEventCount > 0 && ' ' + tx(pendingEventCount === 1 ? t.sidebar.pending_events_sr : t.sidebar.pending_events_sr_other, { count: pendingEventCount }) + '.'}
+        {directorAttentionCount > 0 && ' ' + tx(directorAttentionCount === 1 ? t.sidebar.director_attention_sr : t.sidebar.director_attention_sr_other, { count: directorAttentionCount }) + '.'}
       </div>
 
       {/* Level 2: Item list */}
@@ -210,6 +211,7 @@ export default function Sidebar() {
                       pendingReviewCount={pendingReviewCount}
                       unreadMessageCount={unreadMessageCount}
                       pendingEventCount={pendingEventCount}
+                      directorAttentionCount={directorAttentionCount}
                     />
                   </div>
               </div>

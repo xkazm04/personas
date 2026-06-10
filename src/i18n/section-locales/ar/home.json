@@ -104,13 +104,6 @@
     "restart": "إعادة التشغيل",
     "start_tour": "ابدأ الجولة",
     "steps_count": "{count} خطوات",
-    "tricks_tips": "حيل ونصائح",
-    "guides_count": "{count} أدلة",
-    "how_to_use": "طريقة الاستخدام",
-    "pro_tip": "نصيحة احترافية: ",
-    "cat_agent_craft": "بناء الوكلاء",
-    "cat_observability": "المراقبة والأحداث",
-    "cat_platform": "المنصة والإعداد",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

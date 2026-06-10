@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings, LayoutGrid, Radio, MessagesSquare, Brain } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTeamStudioData } from './useTeamStudioData';
 import { TeamWorkspacePane } from './TeamWorkspacePane';
 import { TeamAssignmentBoard } from './TeamAssignmentBoard';
 import { RedRoomPane } from '../../sub_redRoom/RedRoomPane';
 import { CollabPane } from '../../sub_collab/CollabPane';
+import { useTeamPresence, type PresenceStatus } from '../../sub_collab/useTeamChannel';
 import { TeamMemoryPane } from '../../sub_teamMemory/TeamMemoryPane';
 import {
   MemberTierChip,
@@ -48,6 +51,35 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   const { members, toggleUseCase, busyUseCases } = useTeamStudioData();
   const [mode, setMode] = useState<RightMode>({ kind: 'orchestrate' });
 
+  // The studio header wears the team's identity — the icon and color that
+  // became editable in Workspace settings show up where the user works.
+  const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
+  const teamAccent = team?.color ?? '#6366f1';
+
+  // Live presence (working / waiting) for the roster, from the same step
+  // layer the channel header uses.
+  const presence = useTeamPresence(teamId);
+
+  // Unsaved-changes guard: the workspace pane reports its dirty flag up; any
+  // navigation away while dirty detours through a confirm instead of silently
+  // unmounting the pane (and the edits with it).
+  const workspaceDirty = useRef(false);
+  const [pendingNav, setPendingNav] = useState<RightMode | 'back' | null>(null);
+  const requestMode = (next: RightMode) => {
+    if (mode.kind === 'workspace' && workspaceDirty.current && next.kind !== 'workspace') setPendingNav(next);
+    else setMode(next);
+  };
+  const requestBack = () => {
+    if (mode.kind === 'workspace' && workspaceDirty.current) setPendingNav('back');
+    else onBack?.();
+  };
+  const confirmNav = () => {
+    workspaceDirty.current = false;
+    if (pendingNav === 'back') onBack?.();
+    else if (pendingNav) setMode(pendingNav);
+    setPendingNav(null);
+  };
+
   // Default-select the first member once the roster loads (but keep
   // orchestrate as the initial mode so the assignment box is the first
   // thing the user sees — the primary action).
@@ -68,15 +100,25 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   return (
     <>
       <ContentHeader
-        icon={<Users className="w-5 h-5 text-indigo-300" />}
-        iconColor="indigo"
+        icon={
+          <span
+            className="w-9 h-9 rounded-card border flex items-center justify-center flex-shrink-0"
+            style={{ backgroundColor: `${teamAccent}26`, borderColor: `${teamAccent}59` }}
+          >
+            {team?.icon ? (
+              <span aria-hidden className="typo-body-lg leading-none">{team.icon}</span>
+            ) : (
+              <Users className="w-5 h-5" style={{ color: teamAccent }} />
+            )}
+          </span>
+        }
         title={ts.header_label}
         subtitle={teamName}
         actions={
           onBack ? (
             <button
               type="button"
-              onClick={onBack}
+              onClick={requestBack}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -100,7 +142,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-orchestrate"
-                onClick={() => setMode({ kind: 'orchestrate' })}
+                onClick={() => requestMode({ kind: 'orchestrate' })}
                 aria-pressed={mode.kind === 'orchestrate'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'orchestrate'
@@ -116,7 +158,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-board"
-                onClick={() => setMode({ kind: 'board' })}
+                onClick={() => requestMode({ kind: 'board' })}
                 aria-pressed={mode.kind === 'board'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'board'
@@ -132,7 +174,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-redroom"
-                onClick={() => setMode({ kind: 'redroom' })}
+                onClick={() => requestMode({ kind: 'redroom' })}
                 aria-pressed={mode.kind === 'redroom'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'redroom'
@@ -148,7 +190,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-collab"
-                onClick={() => setMode({ kind: 'collab' })}
+                onClick={() => requestMode({ kind: 'collab' })}
                 aria-pressed={mode.kind === 'collab'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'collab'
@@ -164,7 +206,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-memory"
-                onClick={() => setMode({ kind: 'memory' })}
+                onClick={() => requestMode({ kind: 'memory' })}
                 aria-pressed={mode.kind === 'memory'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'memory'
@@ -180,7 +222,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <button
                 type="button"
                 data-testid="team-mode-workspace"
-                onClick={() => setMode({ kind: 'workspace' })}
+                onClick={() => requestMode({ kind: 'workspace' })}
                 aria-pressed={mode.kind === 'workspace'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'workspace'
@@ -210,8 +252,9 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <RosterRow
                 key={m.memberId}
                 member={m}
+                status={presence.get(m.personaId)}
                 selected={mode.kind === 'member' && mode.memberId === m.memberId}
-                onClick={() => setMode({ kind: 'member', memberId: m.memberId })}
+                onClick={() => requestMode({ kind: 'member', memberId: m.memberId })}
               />
             ))}
             <div className="mt-1">
@@ -233,7 +276,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           ) : mode.kind === 'memory' ? (
             <TeamMemoryPane teamId={teamId} onClose={() => setMode({ kind: 'orchestrate' })} />
           ) : mode.kind === 'workspace' ? (
-            <TeamWorkspacePane teamId={teamId} />
+            <TeamWorkspacePane teamId={teamId} onDirtyChange={(d) => { workspaceDirty.current = d; }} />
           ) : selected ? (
             <MemberAdjustPane
               member={selected}
@@ -247,20 +290,35 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           )}
         </div>
       </div>
+
+      {pendingNav !== null && (
+        <ConfirmDialog
+          title={ts.workspace_unsaved_title}
+          body={ts.workspace_unsaved_body}
+          danger
+          confirmLabel={ts.workspace_unsaved_discard}
+          cancelLabel={ts.workspace_unsaved_stay}
+          onConfirm={confirmNav}
+          onCancel={() => setPendingNav(null)}
+        />
+      )}
     </>
   );
 }
 
 function RosterRow({
   member,
+  status,
   selected,
   onClick,
 }: {
   member: StudioMember;
+  status?: PresenceStatus;
   selected: boolean;
   onClick: () => void;
 }) {
   const { t, tx } = useTranslation();
+  const ts = t.pipeline.team_studio;
   return (
     <button
       type="button"
@@ -272,14 +330,26 @@ function RosterRow({
           : 'border-transparent hover:bg-secondary/25'
       }`}
     >
-      <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
+      <span className="relative flex-shrink-0">
+        <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
+        {status && (
+          <span
+            title={status === 'working' ? ts.presence_working : ts.presence_waiting}
+            className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-background ${
+              status === 'working' ? 'bg-status-info animate-pulse' : 'bg-status-warning'
+            }`}
+          />
+        )}
+      </span>
       <div className="min-w-0 flex-1">
         <div className="typo-body font-medium text-foreground truncate">{member.name}</div>
         <div className="typo-caption text-foreground">
-          {tx(t.pipeline.team_studio.capabilities_active, {
-            active: member.activeUseCaseCount,
-            total: member.useCases.length,
-          })}
+          {status
+            ? (status === 'working' ? ts.presence_working : ts.presence_waiting)
+            : tx(ts.capabilities_active, {
+                active: member.activeUseCaseCount,
+                total: member.useCases.length,
+              })}
         </div>
       </div>
       <MemberTierChip tier={member.modelTier} />

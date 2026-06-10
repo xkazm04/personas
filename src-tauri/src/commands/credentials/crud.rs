@@ -343,6 +343,21 @@ pub async fn healthcheck_credential_preview(
     Ok(result)
 }
 
+/// Healthcheck every credential in one server-side sweep and return a summary.
+///
+/// Backs the manual "Test all" button. Doing the loop in one privileged call —
+/// instead of the frontend firing ~24 concurrent `healthcheck_credential` calls —
+/// removes the IPC stampede that raced the `x-ipc-token` injection and produced
+/// false "degraded" results. Shares the in-process sweep with the daily
+/// `CredentialHealthcheckSubscription`, so both paths persist results identically.
+#[tauri::command]
+#[requires(privileged)]
+pub async fn healthcheck_all_credentials(
+    state: State<'_, Arc<AppState>>,
+) -> Result<crate::engine::healthcheck::BulkHealthcheckSummary, AppError> {
+    crate::engine::healthcheck::run_all_healthchecks(&state.db).await
+}
+
 #[tauri::command]
 pub fn vault_status(state: State<'_, Arc<AppState>>) -> Result<serde_json::Value, AppError> {
     // Public command — no IPC token required (read-only status check)

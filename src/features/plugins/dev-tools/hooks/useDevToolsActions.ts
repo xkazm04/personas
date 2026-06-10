@@ -32,10 +32,10 @@ export function useDevToolsActions() {
     },
     createContextGroup: (data: { name: string; color: string }) =>
       s().createContextGroup(pid(), data.name, data.color),
-    scanCodebase: (rootPath?: string) => {
+    scanCodebase: (rootPath?: string, deltaMode?: boolean) => {
       const id = pid();
       if (!id) return Promise.resolve();
-      return s().scanCodebase(id, rootPath ?? '.');
+      return s().scanCodebase(id, rootPath ?? '.', deltaMode);
     },
 
     // Scanner

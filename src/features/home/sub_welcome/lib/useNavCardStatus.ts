@@ -93,15 +93,25 @@ export function useNavCardStatus(): Record<string, NavStatChip[]> {
       .catch(silentCatch('useNavCardStatus:executions'));
   }, []);
 
-  // Event volume in each 24h window.
+  // Event volume in each 24h window. One 48h fetch partitioned client-side —
+  // two separate range calls cost ~150ms of backend work each on every Home
+  // landing (×2 again under StrictMode), and this is a snapshot chip, not an
+  // exact count: WINDOW_LIMIT bounds it either way.
   useEffect(() => {
     const now = Date.now();
     const iso = (ms: number) => new Date(ms).toISOString();
-    Promise.all([
-      listEventsInRange(iso(now - DAY_MS), iso(now), WINDOW_LIMIT),
-      listEventsInRange(iso(now - 2 * DAY_MS), iso(now - DAY_MS), WINDOW_LIMIT),
-    ])
-      .then(([a, b]) => setEvents({ curr: a.events.length, prev: b.events.length }))
+    const cutoff = now - DAY_MS;
+    listEventsInRange(iso(now - 2 * DAY_MS), iso(now), WINDOW_LIMIT * 2)
+      .then((res) => {
+        let curr = 0;
+        let prev = 0;
+        for (const e of res.events) {
+          const ts = Date.parse(e.created_at);
+          if (Number.isNaN(ts)) continue;
+          if (ts >= cutoff) curr++; else prev++;
+        }
+        setEvents({ curr, prev });
+      })
       .catch(silentCatch('useNavCardStatus:events'));
   }, []);
 

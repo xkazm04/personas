@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::{SyncLogEntry, SyncState};
+use crate::db::models::{RevitalizeRunRecord, SyncLogEntry, SyncState};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -147,4 +147,86 @@ pub fn list_sync_log(pool: &DbPool, limit: i64) -> Result<Vec<SyncLogEntry>, App
             .collect::<Result<Vec<_>, _>>()?;
         Ok(rows)
     })
+}
+
+// ── Revitalize run history ───────────────────────────────────────────
+
+pub fn insert_revitalize_run(pool: &DbPool, run: &RevitalizeRunRecord) -> Result<(), AppError> {
+    timed_query!(
+        "obsidian_revitalize_runs",
+        "obsidian_revitalize::insert_run",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "INSERT INTO obsidian_revitalize_runs (
+                    id, vault_name, vault_path, status, error,
+                    files_deleted, files_merged, files_updated, files_reviewed,
+                    notes_before, notes_after, est_tokens_before, est_tokens_after,
+                    duration_secs, started_at, created_at
+                 ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)",
+                params![
+                    run.id,
+                    run.vault_name,
+                    run.vault_path,
+                    run.status,
+                    run.error,
+                    run.files_deleted,
+                    run.files_merged,
+                    run.files_updated,
+                    run.files_reviewed,
+                    run.notes_before,
+                    run.notes_after,
+                    run.est_tokens_before,
+                    run.est_tokens_after,
+                    run.duration_secs,
+                    run.started_at,
+                    run.created_at,
+                ],
+            )?;
+            Ok(())
+        }
+    )
+}
+
+pub fn list_revitalize_runs(
+    pool: &DbPool,
+    limit: i64,
+) -> Result<Vec<RevitalizeRunRecord>, AppError> {
+    timed_query!(
+        "obsidian_revitalize_runs",
+        "obsidian_revitalize::list_runs",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT id, vault_name, vault_path, status, error,
+                        files_deleted, files_merged, files_updated, files_reviewed,
+                        notes_before, notes_after, est_tokens_before, est_tokens_after,
+                        duration_secs, started_at, created_at
+                 FROM obsidian_revitalize_runs ORDER BY created_at DESC LIMIT ?1",
+            )?;
+            let rows = stmt
+                .query_map(params![limit], |row| {
+                    Ok(RevitalizeRunRecord {
+                        id: row.get(0)?,
+                        vault_name: row.get(1)?,
+                        vault_path: row.get(2)?,
+                        status: row.get(3)?,
+                        error: row.get(4)?,
+                        files_deleted: row.get(5)?,
+                        files_merged: row.get(6)?,
+                        files_updated: row.get(7)?,
+                        files_reviewed: row.get(8)?,
+                        notes_before: row.get(9)?,
+                        notes_after: row.get(10)?,
+                        est_tokens_before: row.get(11)?,
+                        est_tokens_after: row.get(12)?,
+                        duration_secs: row.get(13)?,
+                        started_at: row.get(14)?,
+                        created_at: row.get(15)?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        }
+    )
 }

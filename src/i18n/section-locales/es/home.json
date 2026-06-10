@@ -104,13 +104,6 @@
     "restart": "Reiniciar",
     "start_tour": "Iniciar recorrido",
     "steps_count": "{count} pasos",
-    "tricks_tips": "Trucos y consejos",
-    "guides_count": "{count} guías",
-    "how_to_use": "Cómo usar",
-    "pro_tip": "Consejo profesional: ",
-    "cat_agent_craft": "Diseño de agentes",
-    "cat_observability": "Observabilidad y eventos",
-    "cat_platform": "Plataforma y configuración",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

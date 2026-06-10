@@ -148,6 +148,10 @@ event_names! {
     CONTEXT_GEN_STATUS         => "context-gen-status",
     CONTEXT_GEN_OUTPUT         => "context-gen-output",
     CONTEXT_GEN_COMPLETE       => "context-gen-complete",
+    // Dev-tools context-scan lifecycle, published to the persona-event BUS
+    // (not the direct context-gen channel) so it surfaces in the Live Stream.
+    DEV_TOOLS_CONTEXT_SCAN_STARTED   => "dev_tools.context_scan_started",
+    DEV_TOOLS_CONTEXT_SCAN_COMPLETED => "dev_tools.context_scan_completed",
     IDEA_SCAN_STATUS           => "idea-scan-status",
     IDEA_SCAN_OUTPUT           => "idea-scan-output",
     IDEA_SCAN_COMPLETE         => "idea-scan-complete",
@@ -244,6 +248,10 @@ event_names! {
     // listener adds an entry to the notification bell with a deep-link to
     // the persona's draft so the user can review what landed.
     BUILD_ONESHOT_TERMINAL     => "build-oneshot-terminal",
+
+    // Obsidian Brain — Revitalize (background vault memory optimization)
+    OBSIDIAN_REVITALIZE_STATUS => "obsidian-revitalize-status",
+    OBSIDIAN_REVITALIZE_OUTPUT => "obsidian-revitalize-output",
 
     // Fleet plugin (DEV-only Claude Code session aggregator)
     FLEET_SESSION_OUTPUT       => "fleet-session-output",

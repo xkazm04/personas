@@ -36,6 +36,8 @@ export default function SidebarLevel1({
     contextScanComplete,
     creativeSessionRunning,
     studioJobActive,
+    obsidianRevitalizeRunning,
+    obsidianRevitalizeJustCompleted,
   } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
@@ -43,10 +45,13 @@ export default function SidebarLevel1({
       contextScanComplete: s.contextScanComplete,
       creativeSessionRunning: s.creativeSessionRunning,
       studioJobActive: s.studioJobActive,
+      obsidianRevitalizeRunning: s.obsidianRevitalizeRunning,
+      obsidianRevitalizeJustCompleted: s.obsidianRevitalizeJustCompleted,
     }))
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
+  const clearObsidianRevitalizeCompletion = useSystemStore((s) => s.clearObsidianRevitalizeCompletion);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
   const { hasUpdate: whatsNewUpdate, dismiss: dismissWhatsNew } = useWhatsNewIndicator();
   const isDev = import.meta.env.DEV;
@@ -141,6 +146,24 @@ export default function SidebarLevel1({
           color: 'bg-emerald-500 border border-emerald-600/50',
           onClick: (e: React.MouseEvent) => { e.stopPropagation(); setContextScanComplete(false); },
         },
+        {
+          id: 'obsidian-revitalize-active',
+          priority: 2,
+          active: obsidianRevitalizeRunning,
+          label: t.plugins.obsidian_brain.revitalize_badge_running,
+          variant: 'pulse',
+          color: 'bg-fuchsia-500 border-fuchsia-600/50',
+          pingColor: 'bg-fuchsia-500/40',
+        },
+        {
+          id: 'obsidian-revitalize-complete',
+          priority: 6,
+          active: !obsidianRevitalizeRunning && obsidianRevitalizeJustCompleted,
+          label: t.plugins.obsidian_brain.revitalize_badge_complete,
+          variant: 'dot',
+          color: 'bg-emerald-500 border border-emerald-600/50',
+          onClick: (e: React.MouseEvent) => { e.stopPropagation(); clearObsidianRevitalizeCompletion(); },
+        },
       ],
     };
     return map;
@@ -148,6 +171,8 @@ export default function SidebarLevel1({
     pendingReviewCount, unreadMessageCount,
     contextScanActive, contextScanComplete,
     setContextScanComplete, creativeSessionRunning, studioJobActive,
+    obsidianRevitalizeRunning, obsidianRevitalizeJustCompleted,
+    clearObsidianRevitalizeCompletion,
     whatsNewUpdate, dismissWhatsNew, t,
   ]);
 

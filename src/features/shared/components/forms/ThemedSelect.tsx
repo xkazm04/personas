@@ -28,6 +28,10 @@ export interface ThemedSelectProps extends SelectHTMLAttributes<HTMLSelectElemen
   onValueChange?: (value: string) => void;
   /** Placeholder text (filterable mode) */
   placeholder?: string;
+  /** Filterable mode only: skip the search input. For short, bounded
+   *  option lists where type-ahead is noise but themed options are
+   *  still wanted (native `<option>`s render OS-styled). */
+  hideSearch?: boolean;
 }
 
 // -- Icon helper for options --------------------------------------
@@ -67,7 +71,21 @@ function FilterableSelect({
   placeholder = 'Select...',
   wrapperClassName = '',
   className = '',
-}: Pick<ThemedSelectProps, 'options' | 'value' | 'onValueChange' | 'placeholder' | 'wrapperClassName' | 'className'>) {
+  hideSearch = false,
+  disabled = false,
+  'aria-label': ariaLabel,
+}: Pick<
+  ThemedSelectProps,
+  | 'options'
+  | 'value'
+  | 'onValueChange'
+  | 'placeholder'
+  | 'wrapperClassName'
+  | 'className'
+  | 'hideSearch'
+  | 'disabled'
+  | 'aria-label'
+>) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -116,10 +134,10 @@ function FilterableSelect({
 
   // Focus search input when opening
   useEffect(() => {
-    if (!open) return;
+    if (!open || hideSearch) return;
     const timer = setTimeout(() => inputRef.current?.focus(), 0);
     return () => clearTimeout(timer);
-  }, [open]);
+  }, [open, hideSearch]);
 
   const debouncedQuery = useDebounce(query, 150);
 
@@ -142,13 +160,20 @@ function FilterableSelect({
     'bg-background/50 text-foreground border border-primary/15',
     'focus-ring focus-visible:border-primary/30',
     'transition-all text-left',
+    'disabled:opacity-50 disabled:cursor-not-allowed',
     className,
   ].join(' ');
 
   return (
     <div ref={containerRef} className={`relative ${wrapperClassName}`}>
       {/* Trigger */}
-      <button type="button" onClick={() => setOpen((p) => !p)} className={baseClasses}>
+      <button
+        type="button"
+        onClick={() => setOpen((p) => !p)}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className={baseClasses}
+      >
         <span className={`flex items-center gap-2 ${selectedOption ? '' : 'text-foreground'}`}>
           {selectedOption?.iconUrl && <OptionIcon url={selectedOption.iconUrl} color={selectedOption.iconColor} label={selectedOption.label} />}
           {selectedOption?.label ?? placeholder}
@@ -170,17 +195,19 @@ function FilterableSelect({
           }}
         >
           {/* Search */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/15 bg-secondary/30">
-            <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t.shared.forms_extra.filter_placeholder}
-              className="w-full bg-transparent typo-body text-foreground placeholder:text-foreground focus-visible:outline-none"
-            />
-          </div>
+          {!hideSearch && (
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-primary/15 bg-secondary/30">
+              <Search className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+              <input
+                ref={inputRef}
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t.shared.forms_extra.filter_placeholder}
+                className="w-full bg-transparent typo-body text-foreground placeholder:text-foreground focus-visible:outline-none"
+              />
+            </div>
+          )}
 
           {/* Options */}
           <div className="max-h-48 overflow-y-auto">
@@ -227,7 +254,7 @@ function FilterableSelect({
  * Set `filterable` to render a custom dropdown with text search.
  */
 export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
-  ({ className = '', wrapperClassName = '', filterable, options, value, onValueChange, placeholder, children, ...rest }, ref) => {
+  ({ className = '', wrapperClassName = '', filterable, options, value, onValueChange, placeholder, hideSearch, children, ...rest }, ref) => {
     if (filterable) {
       return (
         <FilterableSelect
@@ -237,6 +264,9 @@ export const ThemedSelect = forwardRef<HTMLSelectElement, ThemedSelectProps>(
           placeholder={placeholder}
           wrapperClassName={wrapperClassName}
           className={className}
+          hideSearch={hideSearch}
+          disabled={rest.disabled}
+          aria-label={rest['aria-label']}
         />
       );
     }

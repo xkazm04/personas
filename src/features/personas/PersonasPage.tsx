@@ -45,7 +45,6 @@ const ResearchLabPage = lazyRetry(() => import('@/features/plugins/research-lab/
 const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
 const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
-const LangfusePage = lazyRetry(() => import('@/features/plugins/langfuse/LangfusePage'));
 const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
 
@@ -262,9 +261,6 @@ export default function PersonasPage() {
       }
       if (pluginTab === 'companion') {
         return <ErrorBoundary name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
-      }
-      if (pluginTab === 'langfuse') {
-        return <ErrorBoundary name="Langfuse"><Suspense fallback={SectionFallback}><LangfusePage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;

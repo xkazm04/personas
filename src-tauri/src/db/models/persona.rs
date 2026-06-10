@@ -529,12 +529,6 @@ pub struct Persona {
     /// awareness.md`.
     #[serde(default)]
     pub cli_awareness_enabled: bool,
-    /// Per-persona gate for the Langfuse trace exporter. Defaults to `true`
-    /// so existing personas continue exporting if the user has the plugin
-    /// connected; turning it off keeps THIS persona's traces local without
-    /// disabling the integration globally.
-    #[serde(default = "default_langfuse_export_enabled")]
-    pub langfuse_export_enabled: bool,
     /// Adoption pre-flight signal. `ready` (default) means every declared
     /// connector has a matching vault credential or is a built-in local
     /// resource. `needs_credentials` means the persona was created but one
@@ -566,10 +560,6 @@ pub struct Persona {
 
 fn default_setup_status() -> String {
     "ready".to_string()
-}
-
-fn default_langfuse_export_enabled() -> bool {
-    true
 }
 
 impl Persona {
@@ -781,6 +771,4 @@ pub struct UpdatePersonaInput {
     /// unchanged); inner `Option<String>` lets callers explicitly clear
     /// the column with `Some(None)`. Set by the View-mode SigilEditModal.
     pub disabled_dims_json: Option<Option<String>>,
-    /// Per-persona Langfuse trace export gate.
-    pub langfuse_export_enabled: Option<bool>,
 }

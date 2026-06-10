@@ -807,14 +807,27 @@ pub fn append_healthcheck_metadata(
             // Write updated ring buffer back into the ledger using typed conversion
             ledger.healthcheck_results =
                 crate::engine::rotation::engine_entries_to_ledger(&updated);
+            let now = chrono::Utc::now().to_rfc3339();
             ledger.healthcheck_last_success = Some(success);
             if success {
-                ledger.healthcheck_last_success_at = Some(chrono::Utc::now().to_rfc3339());
+                ledger.healthcheck_last_success_at = Some(now.clone());
             }
+            // `healthcheck_last_message` / `healthcheck_last_tested_at` live in the
+            // flattened `custom` map (no typed fields). Persist them here so a
+            // backend-driven sweep is self-sufficient — the Vault table/cards read
+            // these directly and no longer depend on a follow-up frontend
+            // `patch_credential_metadata` call to populate them.
+            ledger.custom.insert(
+                "healthcheck_last_message".to_string(),
+                serde_json::Value::String(message.to_string()),
+            );
+            ledger.custom.insert(
+                "healthcheck_last_tested_at".to_string(),
+                serde_json::Value::String(now.clone()),
+            );
 
             let next_meta = ledger.to_json_string()?;
             let sanitized = sanitize_secrets(&next_meta);
-            let now = chrono::Utc::now().to_rfc3339();
 
             tx.execute(
                 "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",

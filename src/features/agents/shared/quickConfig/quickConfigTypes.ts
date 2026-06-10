@@ -39,8 +39,12 @@ export interface QuickConfigState {
   monthDay: number;
   time: string;
   selectedConnectors: string[];
-  /** Map of connector name -> selected table name for database connectors */
-  connectorTables: Record<string, string>;
+  /**
+   * Per-database-connector table scope: connector name → selected table names.
+   * Absent / empty array = ALL tables (no filter, the default). A non-empty
+   * subset restricts the persona to those tables.
+   */
+  connectorTables: Record<string, string[]>;
   /** Event subscriptions from other personas' event_listener triggers */
   selectedEvents: EventSubscription[];
   /**
@@ -72,8 +76,13 @@ export function serializeQuickConfig(state: QuickConfigState): string {
 
   if (state.selectedConnectors.length > 0) {
     const serviceDescs = state.selectedConnectors.map((name) => {
-      const table = state.connectorTables[name];
-      return table ? `${name} (table: ${table})` : name;
+      const tables = state.connectorTables[name];
+      // Only a non-empty SUBSET is a filter worth mentioning — "all tables"
+      // (absent/empty) stays unannotated so the build prompt isn't cluttered
+      // with redundant scope notes.
+      return tables && tables.length > 0
+        ? `${name} (tables: ${tables.join(', ')})`
+        : name;
     });
     parts.push(`Services: ${serviceDescs.join(', ')}`);
   }

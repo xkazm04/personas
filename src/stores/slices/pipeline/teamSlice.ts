@@ -25,10 +25,18 @@ export interface TeamSlice {
   memoryFilterCategory: string | undefined;
   memoryFilterSearch: string | undefined;
   memoryFilterRunId: string | undefined;
+  /**
+   * When true, the Teams content area renders the in-app preset-adoption
+   * flow (`PresetStudio`) instead of the team list / studio. Routed by
+   * `TeamCanvas`; opened from the "Preset Team" entry points in `TeamList`.
+   */
+  presetFlowOpen: boolean;
 
   // Actions
   fetchTeams: () => Promise<void>;
   selectTeam: (teamId: string | null) => void;
+  /** Open / close the in-app preset-adoption flow. */
+  setPresetFlowOpen: (open: boolean) => void;
   fetchTeamDetails: (teamId: string) => Promise<void>;
   createTeam: (data: { name: string; description?: string; icon?: string; color?: string }) => Promise<PersonaTeam | null>;
   cloneTeam: (sourceTeamId: string) => Promise<PersonaTeam | null>;
@@ -61,6 +69,9 @@ export const createTeamSlice: StateCreator<PipelineStore, [], [], TeamSlice> = (
   memoryFilterCategory: undefined,
   memoryFilterSearch: undefined,
   memoryFilterRunId: undefined,
+  presetFlowOpen: false,
+
+  setPresetFlowOpen: (open) => set({ presetFlowOpen: open }),
 
   fetchTeams: async () => {
     try {

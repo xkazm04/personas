@@ -61,7 +61,6 @@ interface CredentialToolbarProps {
   isCatalogView: boolean;
   credentials: CredentialMetadata[];
   bulk: ReturnType<typeof useBulkHealthcheck>;
-  isDailyRun?: boolean;
 }
 
 export function CredentialToolbar({
@@ -78,7 +77,6 @@ export function CredentialToolbar({
   isCatalogView,
   credentials,
   bulk,
-  isDailyRun,
 }: CredentialToolbarProps) {
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
@@ -135,7 +133,7 @@ export function CredentialToolbar({
         )}
 
         {credentials.length > 0 && (
-          <TestAllButton bulk={bulk} credentials={credentials} isDailyRun={isDailyRun} />
+          <TestAllButton bulk={bulk} credentials={credentials} />
         )}
       </div>
       )}

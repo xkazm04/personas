@@ -141,6 +141,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // wrapper level — also has body-level require_privileged for audit/depth)
     "healthcheck_credential",
     "healthcheck_credential_preview",
+    "healthcheck_all_credentials",
     // Credentials -- Credential Design
     "start_credential_design",
     "cancel_credential_design",
@@ -298,11 +299,6 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "artist_measure_loudness",
     "artist_trim_file",
     "artist_cancel_export",
-    // Langfuse -- manual connection commands send Basic-auth credentials to a
-    // user-supplied host; gating prevents an unprivileged caller from probing
-    // attacker URLs with the victim's keys.
-    "langfuse_test_connection",
-    "langfuse_save_config",
     // Data Portability — NOT in PRIVILEGED_COMMANDS because the wrapper-level
     // header check fails intermittently on Windows WebView2 (the monkey-patch
     // may not reliably forward headers for commands that open native file dialogs).

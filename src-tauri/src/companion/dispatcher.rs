@@ -47,6 +47,13 @@ pub struct Dispatched {
     /// event to Home → Cockpit. Auto-fire for the same reason as dashboards:
     /// the user already asked for the surface.
     pub cockpits: Vec<String>,
+    /// `explain_in_cockpit` payloads — the ephemeral sibling of `cockpits`.
+    /// Each entry is a serialized spec (title + widgets + decision_id) that
+    /// session.rs emits VERBATIM in the event payload and never persists:
+    /// the frontend renders it as a contextual overlay over the user's
+    /// cockpit and it dies with dismissal. Auto-fire — the user pressed the
+    /// decision bubble's `0` (explain) to ask for exactly this surface.
+    pub explain_cockpits: Vec<String>,
     /// Inline chat cards from `show_persona_overview` / `show_connected_services`
     /// / `show_decisions`. Auto-fire (no approval) — companion uses these to
     /// surface contextual info inside the chat transcript when she judges it
@@ -1107,6 +1114,67 @@ pub fn dispatch(
                     "updated_at": now,
                 });
                 out.cockpits.push(spec.to_string());
+            }
+            Ok(env) if env.op == "propose_action" && env.action == "explain_in_cockpit" => {
+                // Ephemeral explanation overlay (orb decision `0` flow). Unlike
+                // compose_cockpit, widget kinds are validated here: an
+                // explanation with a hallucinated kind renders as an error box
+                // at the worst possible moment (the user just asked for help),
+                // so unknown kinds are dropped with a warning instead.
+                const EXPLAIN_KINDS: &[&str] = &[
+                    "verdict",
+                    "flow_steps",
+                    "comparison_cards",
+                    "timeline",
+                    "stat_grid",
+                    "log_excerpt",
+                    "text_callout",
+                    "metric_spark",
+                    "issue_list",
+                ];
+                let widgets_arr = env
+                    .params
+                    .get("widgets")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                let mut kept: Vec<serde_json::Value> = Vec::new();
+                for w in widgets_arr {
+                    let kind = w.get("kind").and_then(|k| k.as_str()).unwrap_or("");
+                    if EXPLAIN_KINDS.contains(&kind) {
+                        kept.push(w);
+                    } else {
+                        out.warnings.push(format!(
+                            "explain_in_cockpit: dropped unknown widget kind `{kind}`"
+                        ));
+                    }
+                }
+                if kept.is_empty() {
+                    out.warnings.push(
+                        "explain_in_cockpit: `widgets` must be a non-empty array of known kinds"
+                            .into(),
+                    );
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("Explanation");
+                let decision_id = env
+                    .params
+                    .get("decision_id")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                let now = chrono::Utc::now().to_rfc3339();
+                let spec = serde_json::json!({
+                    "title": title,
+                    "decision_id": decision_id,
+                    "widgets": kept,
+                    "updated_at": now,
+                });
+                out.explain_cockpits.push(spec.to_string());
             }
             Ok(env) if env.op == "propose_action" && env.action == "open_lab" => {
                 let persona_id = env

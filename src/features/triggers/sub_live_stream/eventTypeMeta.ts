@@ -1,6 +1,6 @@
 import {
   CheckCircle2, XCircle, AlertTriangle, Webhook, Cloud, Unplug,
-  FileEdit, Rocket, Clock, Link, Zap,
+  FileEdit, Rocket, Clock, Link, Zap, ScanSearch,
 } from 'lucide-react';
 
 export const COMMON_EVENT_TYPES = [
@@ -45,6 +45,9 @@ export const EVENT_TYPE_META: Record<string, EventTypeMeta> = {
   schedule_fired:   { Icon: Clock,         text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
   // File events -- cyan
   file_changed:     { Icon: FileEdit,      text: 'text-cyan-400',    bg: 'bg-cyan-500/12',    border: 'border-cyan-500/20' },
+  // System ops -- dev-tools context-scan lifecycle (amber starting, emerald done)
+  'dev_tools.context_scan_started':   { Icon: ScanSearch, text: 'text-amber-400',   bg: 'bg-amber-500/12',   border: 'border-amber-500/20' },
+  'dev_tools.context_scan_completed': { Icon: ScanSearch, text: 'text-emerald-400', bg: 'bg-emerald-500/12', border: 'border-emerald-500/20' },
 };
 
 export const DEFAULT_EVENT_META: EventTypeMeta = {

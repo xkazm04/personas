@@ -18,7 +18,8 @@ import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaC
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
-import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { formatDuration, formatModelShort, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { GlobalExecution } from '@/lib/types/types';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -38,6 +39,7 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 const EXEC_COLUMNS: { key: string; width: string }[] = [
   { key: 'persona', width: 'minmax(280px,2fr)' },
   { key: 'status', width: 'minmax(0,1fr)' },
+  { key: 'model', width: '130px' },
   { key: 'duration', width: '120px' },
   { key: 'started', width: '160px' },
 ];
@@ -75,6 +77,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   const personas = useAgentStore((s) => s.personas);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
+  const [modelFilter, setModelFilter] = useState<string>('all');
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
   const [selectedExec, setSelectedExec] = useState<GlobalExecution | null>(null);
@@ -106,9 +109,27 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     filter === 'running' ? e.status === 'running' || e.status === 'pending' : e.status === filter,
     [filter]);
 
+  const modelPredicate = useCallback((e: GlobalExecution) => e.model_used === modelFilter, [modelFilter]);
+
   const { filtered: statusFiltered } = useFilteredCollection(personaFiltered, {
-    custom: [filter !== 'all' ? statusPredicate : null],
+    custom: [
+      filter !== 'all' ? statusPredicate : null,
+      modelFilter !== 'all' ? modelPredicate : null,
+    ],
   });
+
+  // Distinct models across the loaded rows (client-side filter — unlike the
+  // status filter there is no server-side model param). The active selection
+  // stays in the list even when its rows page out, so the chip keeps its label.
+  const modelOptions = useMemo(() => {
+    const distinct = new Set<string>();
+    for (const e of globalExecutions) if (e.model_used) distinct.add(e.model_used);
+    if (modelFilter !== 'all') distinct.add(modelFilter);
+    return [
+      { value: 'all', label: t.overview.activity.all_models },
+      ...[...distinct].sort().map((m) => ({ value: m, label: formatModelShort(m) ?? m })),
+    ];
+  }, [globalExecutions, modelFilter, t]);
 
   const filteredExecutions = useMemo(() => {
     if (startedSort === null) return statusFiltered;
@@ -207,7 +228,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     },
     [groupLabels],
   );
-  const scrollRestoreKey = `overview/activity|status=${filter}|persona=${selectedPersonaId ?? 'all'}`;
+  const scrollRestoreKey = `overview/activity|status=${filter}|model=${modelFilter}|persona=${selectedPersonaId ?? 'all'}`;
 
   return (
     <ContentBox>
@@ -310,6 +331,19 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         onReset={() => colWidths.clearColumn('status')}
                       />
                     </div>
+                    <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
+                      <ColumnDropdownFilter
+                        label={t.overview.activity.col_model}
+                        value={modelFilter}
+                        options={modelOptions}
+                        onChange={setModelFilter}
+                      />
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('model', w, x)}
+                        onReset={() => colWidths.clearColumn('model')}
+                      />
+                    </div>
                     <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
                       {t.overview.activity.col_duration}
                       <ColumnResizeHandle
@@ -333,6 +367,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   scrollRestoreKey={scrollRestoreKey}
                   renderItem={(exec, index) => {
                     const status = getStatusEntry(exec.status);
+                    const modelShort = formatModelShort(exec.model_used);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
                         : exec.status === 'completed' ? 'border-l-emerald-400'
@@ -356,6 +391,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
                           <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
+                          {modelShort && <span className="font-mono truncate">{modelShort}</span>}
                           <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
                         </div>
                       </div>
@@ -377,8 +413,17 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             {status.label}
                           </span>
                         </div>
+                        <div className="px-4 min-w-0">
+                          {modelShort ? (
+                            <Tooltip content={exec.model_used ?? ''}>
+                              <span className="block typo-code text-foreground font-mono truncate">{modelShort}</span>
+                            </Tooltip>
+                          ) : (
+                            <span className="typo-code text-foreground font-mono">{'—'}</span>
+                          )}
+                        </div>
                         <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatDuration(exec.duration_ms)}</span></div>
-                        <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
+                        <div className="px-4 text-right"><span className="typo-code text-foreground font-mono">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
                       </div>
                     );
                   }}

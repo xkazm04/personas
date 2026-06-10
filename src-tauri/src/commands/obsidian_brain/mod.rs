@@ -3,6 +3,7 @@ pub mod drive;
 pub mod graph;
 pub mod lint;
 pub mod markdown;
+pub mod revitalize;
 pub mod semantic_lint;
 
 #[cfg(test)]
@@ -41,6 +42,7 @@ use self::markdown::{
 
 const SETTINGS_KEY: &str = "obsidian_brain_config";
 const MIRROR_SETTINGS_KEY: &str = "obsidian_mirror_config";
+const SAVED_VAULTS_KEY: &str = "obsidian_brain_saved_vaults";
 
 /// Atomically write `content` to `path` via temp-file + rename.
 ///
@@ -210,6 +212,34 @@ pub fn obsidian_brain_get_config(
         }
         None => Ok(None),
     }
+}
+
+/// List the saved-vault roster (the quick-switch list in the Brain plugin's
+/// "Saved vaults" sidebar). Stored in app_settings so it survives app
+/// sessions — see `settings_keys::OBSIDIAN_BRAIN_SAVED_VAULTS`.
+#[tauri::command]
+pub fn obsidian_brain_list_saved_vaults(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<ObsidianVaultConfig>, AppError> {
+    require_auth_sync(&state)?;
+    match settings_repo::get(&state.db, SAVED_VAULTS_KEY)? {
+        Some(json) => serde_json::from_str(&json)
+            .map_err(|e| AppError::Internal(format!("Failed to parse saved vaults: {e}"))),
+        None => Ok(Vec::new()),
+    }
+}
+
+/// Replace the saved-vault roster wholesale. The frontend owns merge
+/// semantics (add/update/remove by vaultPath); the backend just persists.
+#[tauri::command]
+pub fn obsidian_brain_set_saved_vaults(
+    state: State<'_, Arc<AppState>>,
+    configs: Vec<ObsidianVaultConfig>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let json = serde_json::to_string(&configs)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize saved vaults: {e}")))?;
+    settings_repo::set(&state.db, SAVED_VAULTS_KEY, &json)
 }
 
 // ── Knowledge Mirror config + availability (opt-in, off by default) ──

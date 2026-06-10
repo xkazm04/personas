@@ -12,21 +12,28 @@
  * them from the same warm cache.
  */
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useAgentStore } from "@/stores/agentStore";
 import { POLLING_CONFIG } from "@/hooks/utility/timing/usePolling";
 import { useAttention } from "@/hooks/useAttention";
 import { getPollingCoordinator } from "@/lib/polling/pollingCoordinator";
+import { getDirectorPortfolio } from "@/api/director";
+import { flaggedAgentCount } from "@/features/overview/sub_director/attention";
 
 interface BadgeCounts {
   pendingReviewCount: number;
   unreadMessageCount: number;
   pendingEventCount: number;
+  directorAttentionCount: number;
 }
 
 export function useBadgeCounts(): BadgeCounts {
   const fetchBudgetSpend = useAgentStore((s) => s.fetchBudgetSpend);
   const { counts } = useAttention("sidebar");
+  // Director attention isn't part of the unified attention registry; poll the
+  // portfolio on the same sidebar tick (best-effort) and derive the flagged
+  // agent count locally. Empty/no-scope portfolios make this near-free.
+  const [directorAttentionCount, setDirectorAttentionCount] = useState(0);
 
   const fetchAll = useCallback(async () => {
     const { useOverviewStore } = await import("@/stores/overviewStore");
@@ -38,6 +45,9 @@ export function useBadgeCounts(): BadgeCounts {
     await new Promise(r => setTimeout(r, 0)); // yield to browser
     state.fetchRecentEvents().catch(() => {});
     fetchBudgetSpend().catch(() => {});
+    getDirectorPortfolio()
+      .then((p) => setDirectorAttentionCount(flaggedAgentCount(p.roster, Date.now())))
+      .catch(() => {});
   }, [fetchBudgetSpend]);
 
   useEffect(() => {
@@ -60,5 +70,6 @@ export function useBadgeCounts(): BadgeCounts {
     pendingReviewCount: counts.pending_reviews,
     unreadMessageCount: counts.unread_messages,
     pendingEventCount: counts.pending_events,
+    directorAttentionCount,
   };
 }

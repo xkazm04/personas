@@ -416,3 +416,16 @@ export function formatDuration(
   const remainingMinutes = minutes % 60;
   return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
 }
+
+/**
+ * Shorten a raw `model_used` id for dense table cells.
+ *
+ * Claude CLI ids carry a `claude-` prefix and often a trailing date stamp
+ * (`claude-sonnet-4-20250514` → `sonnet-4`); local/BYOM model names
+ * (`gemma4`, `qwen3.5`) pass through unchanged. Returns null when no model
+ * was recorded so callers can render their own placeholder.
+ */
+export function formatModelShort(model: string | null | undefined): string | null {
+  if (!model) return null;
+  return model.replace(/^claude-/, '').replace(/-\d{8}$/, '');
+}

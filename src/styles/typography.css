@@ -146,12 +146,22 @@ body {
   font-feature-settings: "kern" 1, "liga" 1;
 }
 
-/* Caption -- small secondary text, timestamps, hints */
+/* Caption -- secondary text, descriptions, timestamps, hints.
+   Body-sized (was text-xs; bumped +2px 2026-06-10 for readability) but
+   muted to 70% foreground so the title/description pair reads as two
+   distinct tiers. The color lives in @layer base (below) so any explicit
+   text-* utility — status colors, accent chips, badges — still wins. */
 .typo-caption {
-  font-size: 0.75rem;            /* text-xs */
+  font-size: 0.875rem;           /* text-sm */
   font-weight: 500;
-  line-height: 1.4;
+  line-height: 1.5;
   font-feature-settings: "kern" 1, "liga" 1;
+}
+
+@layer base {
+  .typo-caption {
+    color: color-mix(in srgb, var(--foreground) 70%, transparent);
+  }
 }
 
 /* Label -- uppercase category markers, dividers, badges */
@@ -231,6 +241,43 @@ body {
 [data-theme*="light"] .typo-card-label {
   text-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 15%, transparent);
   color: color-mix(in srgb, var(--foreground) 85%, transparent);
+}
+
+/* -- Title -------------------------------------------------------------------
+   Universal title for form-element labels, toggle rows, and list-item
+   headlines. The counterpart of a .typo-caption description: where the
+   caption is muted secondary prose, the title is semibold, slightly
+   tracked, and tinted with the theme primary (same adaptive recipe as
+   .typo-section-title) — so a title + description pair never renders as
+   two near-identical lines. */
+
+.typo-title {
+  font-size: 0.875rem;           /* text-sm */
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.015em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+}
+
+:root[class*="light"] .typo-title,
+[data-theme*="light"] .typo-title {
+  color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
+}
+
+/* Title large -- content headlines (e.g. a logged decision's choice). */
+.typo-title-lg {
+  font-size: 1rem;               /* text-base */
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0.005em;
+  font-feature-settings: "kern" 1, "liga" 1;
+  color: color-mix(in srgb, var(--primary) 75%, var(--foreground));
+}
+
+:root[class*="light"] .typo-title-lg,
+[data-theme*="light"] .typo-title-lg {
+  color: color-mix(in srgb, var(--primary) 60%, var(--foreground));
 }
 
 /* -- Section Title -----------------------------------------------------------
@@ -319,7 +366,9 @@ body {
 [data-text-scale="compact"] .typo-heading    { font-size: 0.8125rem; }
 [data-text-scale="compact"] .typo-body       { font-size: 0.8125rem; }
 [data-text-scale="compact"] .typo-body-lg    { font-size: 0.9375rem; }
-[data-text-scale="compact"] .typo-caption    { font-size: 0.6875rem; }
+[data-text-scale="compact"] .typo-title      { font-size: 0.8125rem; }
+[data-text-scale="compact"] .typo-title-lg   { font-size: 0.9375rem; }
+[data-text-scale="compact"] .typo-caption    { font-size: 0.8125rem; }
 [data-text-scale="compact"] .typo-label      { font-size: 0.6875rem; }
 [data-text-scale="compact"] .typo-data       { font-size: 0.8125rem; }
 [data-text-scale="compact"] .typo-data-lg    { font-size: 1.375rem; }
@@ -335,7 +384,9 @@ body {
 [data-text-scale="large"] .typo-heading    { font-size: 0.9375rem; }
 [data-text-scale="large"] .typo-body       { font-size: 0.9375rem; }
 [data-text-scale="large"] .typo-body-lg    { font-size: 1.0625rem; }
-[data-text-scale="large"] .typo-caption    { font-size: 0.8rem; }
+[data-text-scale="large"] .typo-title      { font-size: 0.9375rem; }
+[data-text-scale="large"] .typo-title-lg   { font-size: 1.0625rem; }
+[data-text-scale="large"] .typo-caption    { font-size: 0.9375rem; }
 [data-text-scale="large"] .typo-label      { font-size: 0.8rem; }
 [data-text-scale="large"] .typo-data       { font-size: 0.9375rem; }
 [data-text-scale="large"] .typo-data-lg    { font-size: 1.625rem; }
@@ -347,7 +398,9 @@ body {
 [data-text-scale="larger"] .typo-heading    { font-size: 1rem; }
 [data-text-scale="larger"] .typo-body       { font-size: 1rem; }
 [data-text-scale="larger"] .typo-body-lg    { font-size: 1.125rem; }
-[data-text-scale="larger"] .typo-caption    { font-size: 0.85rem; }
+[data-text-scale="larger"] .typo-title      { font-size: 1rem; }
+[data-text-scale="larger"] .typo-title-lg   { font-size: 1.125rem; }
+[data-text-scale="larger"] .typo-caption    { font-size: 1rem; }
 [data-text-scale="larger"] .typo-label      { font-size: 0.85rem; }
 [data-text-scale="larger"] .typo-data       { font-size: 1rem; }
 [data-text-scale="larger"] .typo-data-lg    { font-size: 1.75rem; }
@@ -359,7 +412,9 @@ body {
 [data-text-scale="xl"] .typo-heading    { font-size: 1.0625rem; }
 [data-text-scale="xl"] .typo-body       { font-size: 1.0625rem; }
 [data-text-scale="xl"] .typo-body-lg    { font-size: 1.1875rem; }
-[data-text-scale="xl"] .typo-caption    { font-size: 0.9rem; }
+[data-text-scale="xl"] .typo-title      { font-size: 1.0625rem; }
+[data-text-scale="xl"] .typo-title-lg   { font-size: 1.1875rem; }
+[data-text-scale="xl"] .typo-caption    { font-size: 0.9375rem; }
 [data-text-scale="xl"] .typo-label      { font-size: 0.9rem; }
 [data-text-scale="xl"] .typo-data       { font-size: 1.0625rem; }
 [data-text-scale="xl"] .typo-data-lg    { font-size: 1.875rem; }

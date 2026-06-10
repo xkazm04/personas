@@ -110,6 +110,25 @@ const ERROR_RULES: ErrorRule[] = [
   },
 
   // ── Rate limiting ───────────────────────────────────────────────────
+  // Usage-limit caps before generic rate limits (weekly before window —
+  // both contain "usage limit reached"). Mirrors ERROR_KEY_MAP in
+  // useTranslatedError.ts; keep the two in sync.
+  {
+    match: 'weekly usage limit reached',
+    error: {
+      message: "Claude's weekly usage limit was reached.",
+      suggestion: 'Runs will keep failing until the weekly limit resets — pause schedules or upgrade your plan.',
+      category: 'user_action',
+    },
+  },
+  {
+    match: 'usage limit reached',
+    error: {
+      message: "Claude's usage window is exhausted.",
+      suggestion: 'The run retries automatically when the window resets — no action needed.',
+      category: 'recoverable',
+    },
+  },
   {
     match: 'rate limit exceeded',
     error: {

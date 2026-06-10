@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} ث",
     "identity_section": "هوية الفريق",
     "identity_icon_label": "الأيقونة",
-    "identity_hint": "إعادة التسمية أو تغيير اللون تنطبق أينما يظهر هذا الفريق. الحقول المفرغة تبقى دون تغيير."
+    "identity_hint": "إعادة التسمية أو تغيير اللون تنطبق أينما يظهر هذا الفريق. الحقول المفرغة تبقى دون تغيير.",
+    "workspace_unsaved_title": "تغييرات مساحة العمل غير محفوظة",
+    "workspace_unsaved_body": "لقد عدّلت إعدادات مساحة العمل دون حفظها. هل تريد المغادرة وتجاهل التغييرات؟",
+    "workspace_unsaved_discard": "تجاهل التغييرات",
+    "workspace_unsaved_stay": "متابعة التحرير",
+    "unsent_draft_hint": "مسودة قناة غير مرسلة",
+    "presence_working": "يعمل…",
+    "presence_waiting": "في انتظار المراجعة"
   },
   "memory_created": "تم حفظ الذاكرة في سجل الفريق",
   "memory_updated": "تم تحديث الذاكرة",

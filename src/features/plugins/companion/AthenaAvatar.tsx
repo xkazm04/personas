@@ -33,25 +33,28 @@ import { silentCatch } from '@/lib/silentCatch';
  *     reaction).
  *   - Hardware-decoded at orb/footer sizes the cost is a fraction of 1% CPU.
  */
-export type AthenaState = 'idle' | 'thinking' | 'speaking';
+export type AthenaState = 'idle' | 'thinking' | 'speaking' | 'composing';
 
 /**
  * Which clip is actually rendered. `speaking` (part of {@link AthenaState})
- * has no dedicated clip yet, so it falls back to idle. `message` is never a
- * sticky `state` — it's driven only by the `messageNonce` one-shot.
+ * has no dedicated clip yet, so it falls back to idle. `composing` (Athena
+ * is preparing a visual explanation — the orb decision `0` flow) maps to
+ * the `shows` presenting clip. `message` is never a sticky `state` — it's
+ * driven only by the `messageNonce` one-shot.
  */
-type ClipState = 'idle' | 'thinking' | 'message';
+type ClipState = 'idle' | 'thinking' | 'message' | 'shows';
 
 const CLIP_SRC: Record<ClipState, string> = {
   idle: '/athena/athena_idle_loop.mp4',
   thinking: '/athena/athena_thinking_loop.mp4',
   message: '/athena/athena_message_loop.mp4',
+  shows: '/athena/athena_shows_loop.mp4',
 };
 
-const CLIP_ORDER: ClipState[] = ['idle', 'thinking', 'message'];
+const CLIP_ORDER: ClipState[] = ['idle', 'thinking', 'message', 'shows'];
 
 function clipFor(state: AthenaState): ClipState {
-  return state === 'speaking' ? 'idle' : state;
+  return state === 'speaking' ? 'idle' : state === 'composing' ? 'shows' : state;
 }
 
 export function AthenaAvatar({
@@ -93,12 +96,15 @@ export function AthenaAvatar({
   const idleRef = useRef<HTMLVideoElement>(null);
   const thinkingRef = useRef<HTMLVideoElement>(null);
   const messageRef = useRef<HTMLVideoElement>(null);
+  const showsRef = useRef<HTMLVideoElement>(null);
   const refFor = useCallback((c: ClipState): HTMLVideoElement | null => {
     return c === 'idle'
       ? idleRef.current
       : c === 'thinking'
         ? thinkingRef.current
-        : messageRef.current;
+        : c === 'shows'
+          ? showsRef.current
+          : messageRef.current;
   }, []);
 
   // What the caller wants, narrowed to a sticky clip (idle/thinking).
@@ -214,7 +220,15 @@ export function AthenaAvatar({
       {CLIP_ORDER.map((c) => (
         <video
           key={c}
-          ref={c === 'idle' ? idleRef : c === 'thinking' ? thinkingRef : messageRef}
+          ref={
+            c === 'idle'
+              ? idleRef
+              : c === 'thinking'
+                ? thinkingRef
+                : c === 'shows'
+                  ? showsRef
+                  : messageRef
+          }
           src={CLIP_SRC[c]}
           // baseline.jpg matches the first frame of every clip, so the
           // still→video handoff is invisible while the browser decodes.

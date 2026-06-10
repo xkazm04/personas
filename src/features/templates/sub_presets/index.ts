@@ -1,2 +1,2 @@
-export { default as PresetLibraryPage } from './PresetLibraryPage';
+export { default as PresetLibraryPage, PresetCard } from './PresetLibraryPage';
 export { PresetPreviewModal } from './PresetPreviewModal';

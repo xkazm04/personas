@@ -7,6 +7,7 @@ import type { CredentialEvent } from "@/lib/bindings/CredentialEvent";
 import type { CreateCredentialEventInput } from "@/lib/bindings/CreateCredentialEventInput";
 import type { UpdateCredentialEventInput } from "@/lib/bindings/UpdateCredentialEventInput";
 import type { HealthcheckResult } from "@/lib/bindings/HealthcheckResult";
+import type { BulkHealthcheckSummary } from "@/lib/bindings/BulkHealthcheckSummary";
 import type { VaultStatus } from "@/lib/bindings/VaultStatus";
 import type { MigrationResult } from "@/lib/bindings/MigrationResult";
 import type { CredentialFieldMeta } from "@/lib/bindings/CredentialFieldMeta";
@@ -66,6 +67,18 @@ export const healthcheckCredentialPreview = (
   invoke<HealthcheckResult>("healthcheck_credential_preview", {
     serviceType,
     sessionEncryptedData,
+  });
+
+/**
+ * Healthcheck every credential in one server-side sweep. Backs the manual
+ * "Test all" button: a single privileged IPC call runs the whole loop in Rust,
+ * avoiding the ~24-concurrent-call stampede that raced the IPC session-token
+ * injection and produced false "degraded" results. The daily automated sweep
+ * runs in-process via the engine's CredentialHealthcheckSubscription.
+ */
+export const healthcheckAllCredentials = () =>
+  invoke<BulkHealthcheckSummary>("healthcheck_all_credentials", undefined, {
+    timeoutMs: 120_000,
   });
 
 export const vaultStatus = () =>

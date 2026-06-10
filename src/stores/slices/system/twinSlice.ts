@@ -26,6 +26,14 @@ import type {
 // profiles (per-channel voice directives).
 // ============================================================================
 
+// Dedupe state for fetchTwinProfiles — TwinPage and its sub-panels each
+// fetch on mount (×2 under StrictMode), which stacked 3-4 identical
+// `twin_list_profiles` IPCs per twin-tab visit. Module-level because the
+// store is a singleton; an HMR reload merely resets the freshness window.
+const TWIN_PROFILES_FRESH_MS = 10_000;
+let twinProfilesInflight: Promise<void> | null = null;
+let twinProfilesFetchedAt = 0;
+
 export interface TwinSlice {
   // -- State -----------------------------------------------------------
   twinProfiles: TwinProfile[];
@@ -92,7 +100,11 @@ export interface TwinSlice {
   /** Internal — driven by the global TWIN_STUDIO_* event listeners. */
   onStudioProgress: (p: { batch_id: string; phase: string; completed: number; total: number }) => void;
   onStudioComplete: (p: { batch_id: string; status: string; phase: string; item_count: number }) => void;
-  fetchTwinProfiles: () => Promise<void>;
+  /** Fetch twin profiles. Concurrent calls share one IPC; non-forced calls
+   *  within a short freshness window are no-ops (mount-time fetches from
+   *  TwinPage + sub-panels + StrictMode otherwise stack 3-4 identical
+   *  `twin_list_profiles` invokes). Pass `{ force: true }` after mutations. */
+  fetchTwinProfiles: (opts?: { force?: boolean }) => Promise<void>;
   createTwinProfile: (
     name: string,
     bio?: string,
@@ -297,22 +309,30 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
       });
   },
 
-  fetchTwinProfiles: async () => {
-    set({ twinProfilesLoading: true });
-    try {
-      const twinProfiles = await twinApi.listProfiles();
-      const active = twinProfiles.find((t) => t.is_active) ?? null;
-      set({
-        twinProfiles,
-        activeTwinId: active?.id ?? null,
-        twinProfilesLoading: false,
-        error: null,
-      });
-    } catch (err) {
-      reportError(err, "Failed to fetch twin profiles", set, {
-        stateUpdates: { twinProfilesLoading: false },
-      });
-    }
+  fetchTwinProfiles: async (opts) => {
+    if (!opts?.force && Date.now() - twinProfilesFetchedAt < TWIN_PROFILES_FRESH_MS) return;
+    if (twinProfilesInflight) return twinProfilesInflight;
+    twinProfilesInflight = (async () => {
+      set({ twinProfilesLoading: true });
+      try {
+        const twinProfiles = await twinApi.listProfiles();
+        const active = twinProfiles.find((t) => t.is_active) ?? null;
+        twinProfilesFetchedAt = Date.now();
+        set({
+          twinProfiles,
+          activeTwinId: active?.id ?? null,
+          twinProfilesLoading: false,
+          error: null,
+        });
+      } catch (err) {
+        reportError(err, "Failed to fetch twin profiles", set, {
+          stateUpdates: { twinProfilesLoading: false },
+        });
+      } finally {
+        twinProfilesInflight = null;
+      }
+    })();
+    return twinProfilesInflight;
   },
 
   createTwinProfile: async (name, bio, role, languages, pronouns) => {
@@ -365,7 +385,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
       await twinApi.setActiveProfile(id);
       // Re-fetch so every row's is_active flag stays in sync with the
       // single-active invariant the backend enforces.
-      await get().fetchTwinProfiles();
+      await get().fetchTwinProfiles({ force: true });
     } catch (err) {
       reportError(err, "Failed to set active twin", set);
     }

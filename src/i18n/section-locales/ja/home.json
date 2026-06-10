@@ -104,13 +104,6 @@
     "restart": "再スタート",
     "start_tour": "ツアーを開始",
     "steps_count": "{count} ステップ",
-    "tricks_tips": "ヒントとコツ",
-    "guides_count": "{count} ガイド",
-    "how_to_use": "使い方",
-    "pro_tip": "プロのヒント: ",
-    "cat_agent_craft": "エージェントクラフト",
-    "cat_observability": "オブザーバビリティとイベント",
-    "cat_platform": "プラットフォームとセットアップ",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

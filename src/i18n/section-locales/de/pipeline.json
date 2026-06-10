@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} s",
     "identity_section": "Team-Identität",
     "identity_icon_label": "Symbol",
-    "identity_hint": "Umbenennen oder Umfärben gilt überall, wo dieses Team erscheint. Geleerte Felder bleiben unverändert."
+    "identity_hint": "Umbenennen oder Umfärben gilt überall, wo dieses Team erscheint. Geleerte Felder bleiben unverändert.",
+    "workspace_unsaved_title": "Ungespeicherte Workspace-Änderungen",
+    "workspace_unsaved_body": "Du hast die Workspace-Einstellungen bearbeitet, aber nicht gespeichert. Verlassen und Änderungen verwerfen?",
+    "workspace_unsaved_discard": "Änderungen verwerfen",
+    "workspace_unsaved_stay": "Weiter bearbeiten",
+    "unsent_draft_hint": "Ungesendeter Kanal-Entwurf",
+    "presence_working": "Arbeitet…",
+    "presence_waiting": "Wartet auf Review"
   },
   "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
   "memory_updated": "Eintrag aktualisiert",

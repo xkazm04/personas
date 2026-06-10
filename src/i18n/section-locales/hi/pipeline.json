@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} से.",
     "identity_section": "टीम पहचान",
     "identity_icon_label": "आइकन",
-    "identity_hint": "नाम या रंग बदलना हर जगह लागू होता है जहाँ यह टीम दिखती है। खाली किए गए फ़ील्ड अपरिवर्तित रहते हैं।"
+    "identity_hint": "नाम या रंग बदलना हर जगह लागू होता है जहाँ यह टीम दिखती है। खाली किए गए फ़ील्ड अपरिवर्तित रहते हैं।",
+    "workspace_unsaved_title": "कार्यक्षेत्र में सहेजे न गए बदलाव",
+    "workspace_unsaved_body": "आपने कार्यक्षेत्र सेटिंग्स बदली हैं लेकिन सहेजी नहीं। छोड़कर बदलाव हटा दें?",
+    "workspace_unsaved_discard": "बदलाव हटाएँ",
+    "workspace_unsaved_stay": "संपादन जारी रखें",
+    "unsent_draft_hint": "चैनल का न भेजा गया ड्राफ़्ट",
+    "presence_working": "काम कर रहा है…",
+    "presence_waiting": "समीक्षा की प्रतीक्षा में"
   },
   "memory_created": "स्मृति टीम लेजर में सहेजी गई",
   "memory_updated": "स्मृति अपडेट हुई",

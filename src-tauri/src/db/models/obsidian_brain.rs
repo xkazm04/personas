@@ -174,6 +174,35 @@ pub struct SyncConflict {
     pub detected_at: String,
 }
 
+// ── Revitalize run history ───────────────────────────────────────────
+
+/// One finished Revitalize pass (completed or failed). Persisted in
+/// `obsidian_revitalize_runs` so the panel's "Recent passes" table survives
+/// the in-memory job store's TTL and app restarts.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RevitalizeRunRecord {
+    /// Job id (`revitalize-<uuid>`).
+    pub id: String,
+    pub vault_name: String,
+    pub vault_path: String,
+    /// `completed` | `failed` (cancellation lands as failed).
+    pub status: String,
+    pub error: Option<String>,
+    pub files_deleted: i64,
+    pub files_merged: i64,
+    pub files_updated: i64,
+    pub files_reviewed: i64,
+    pub notes_before: i64,
+    pub notes_after: i64,
+    pub est_tokens_before: i64,
+    pub est_tokens_after: i64,
+    pub duration_secs: i64,
+    pub started_at: String,
+    pub created_at: String,
+}
+
 // ── Sync Results ─────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]

@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} dtk",
     "identity_section": "Identitas tim",
     "identity_icon_label": "Ikon",
-    "identity_hint": "Mengganti nama atau warna berlaku di mana pun tim ini muncul. Bidang yang dikosongkan tidak diubah."
+    "identity_hint": "Mengganti nama atau warna berlaku di mana pun tim ini muncul. Bidang yang dikosongkan tidak diubah.",
+    "workspace_unsaved_title": "Perubahan ruang kerja belum disimpan",
+    "workspace_unsaved_body": "Anda mengubah pengaturan ruang kerja tetapi belum menyimpannya. Keluar dan buang perubahan?",
+    "workspace_unsaved_discard": "Buang perubahan",
+    "workspace_unsaved_stay": "Lanjutkan mengedit",
+    "unsent_draft_hint": "Draf kanal belum terkirim",
+    "presence_working": "Sedang bekerja…",
+    "presence_waiting": "Menunggu tinjauan"
   },
   "memory_created": "Memori disimpan ke catatan tim",
   "memory_updated": "Memori diperbarui",

@@ -38,7 +38,7 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
   };
 
   return (
-    <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="sm" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
+    <BaseModal isOpen onClose={onClose} titleId="annotate-modal-title" size="md" panelClassName="bg-background border border-primary/10 rounded-2xl shadow-elevation-4 overflow-hidden p-6 space-y-4">
       <h3 id="annotate-modal-title" className="typo-body-lg font-semibold text-foreground/90 flex items-center gap-2">
         <MessageSquare className="w-4 h-4 text-cyan-400" /> {t.overview.annotate_modal.title}
       </h3>
@@ -46,16 +46,26 @@ export function AnnotateModal({ personas, onClose, onCreated }: AnnotateModalPro
       <div className="space-y-3">
         <div>
           <label className="typo-caption text-foreground mb-1 block">{t.overview.annotate_modal.persona_label}</label>
-          <ThemedSelect value={personaId} onChange={(e) => setPersonaId(e.target.value)} className="w-full py-1.5">
-            {personas.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </ThemedSelect>
+          <ThemedSelect
+            filterable
+            value={personaId}
+            onValueChange={setPersonaId}
+            placeholder={t.common.select_persona}
+            className="py-1.5"
+            options={personas.map((p) => ({ value: p.id, label: p.name }))}
+          />
         </div>
 
         <div>
           <label className="typo-caption text-foreground mb-1 block">{t.overview.annotate_modal.scope_label}</label>
-          <ThemedSelect value={scopeType} onChange={(e) => setScopeType(e.target.value)} className="w-full py-1.5">
-            {Object.entries(SCOPE_TYPES).map(([key, val]) => <option key={key} value={key}>{val.label}</option>)}
-          </ThemedSelect>
+          <ThemedSelect
+            filterable
+            value={scopeType}
+            onValueChange={setScopeType}
+            placeholder={t.common.select}
+            className="py-1.5"
+            options={Object.entries(SCOPE_TYPES).map(([key, val]) => ({ value: key, label: val.label }))}
+          />
         </div>
 
         {(scopeType === 'tool' || scopeType === 'connector') && (

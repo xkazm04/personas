@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Clapperboard, RefreshCw, UserPlus, Gauge, Star, Coins, BarChart3, Cpu, Brain, ExternalLink, Layers, Tags, Inbox } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
@@ -11,13 +11,23 @@ import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleT
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDirector } from './useDirector';
 import { DirectorSection } from './DirectorSection';
-import { scoreTone, toneFill } from './directorScore';
+import { scoreTone } from './directorScore';
 import { PersonaCoachingTable } from './components/PersonaCoachingTable';
 import { PersonaDetailModal } from './components/PersonaDetailModal';
 import { AddToScopeModal } from './components/AddToScopeModal';
+import { ValueLeakBar } from './components/ValueLeakBar';
+import { PeriodSelect } from './components/PeriodSelect';
+import { ScoreDistribution } from './components/ScoreDistribution';
+import { AttentionTriageBar } from './components/AttentionTriageBar';
+import { CategoryRollup } from './components/CategoryRollup';
+import { MomentumSummary } from './components/MomentumSummary';
+import { ReviewFilteredAction } from './components/ReviewFilteredAction';
+import { StaleSweepButton } from './components/StaleSweepButton';
+import { filterRoster, type RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
 /**
@@ -37,10 +47,24 @@ export default function DirectorCoachingTab() {
   const [running, setRunning] = useState(false);
   const [selected, setSelected] = useState<DirectorRosterEntry | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [rosterFilter, setRosterFilter] = useState<RosterFilter | null>(null);
+
+  // A facet (e.g. score-band 5) can become stale when the window changes and
+  // that band empties — clear the filter on period change so it never points at
+  // an absent facet, leaving a confusing empty table behind a live clear-chip.
+  useEffect(() => {
+    setRosterFilter(null);
+  }, [d.period]);
 
   const p = d.portfolio;
   const inScope = p?.inScope ?? 0;
   const lastReviewAt = d.verdicts[0]?.createdAt ?? null;
+  // Agents the active facet narrowed the table to — the "Review these N" target.
+  const filteredAgents = rosterFilter && p ? filterRoster(p.roster, rosterFilter, Date.now()) : [];
+  // Agents whose last review is stale (>14d) — the standing stale-sweep target.
+  const staleAgents = p ? filterRoster(p.roster, { type: 'flag', flag: 'stale' }, Date.now()) : [];
+  // Director coaching verdicts still awaiting the user's decision in the queue.
+  const openReviewCount = d.verdicts.filter((v) => v.status === 'pending').length;
 
   const runAll = async () => {
     setRunning(true);
@@ -70,6 +94,7 @@ export default function DirectorCoachingTab() {
       >
         {t.director.add_to_scope}
       </Button>
+      <StaleSweepButton agents={staleAgents} onReview={d.runOnPersona} />
       <AsyncButton
         variant="accent"
         accentColor="violet"
@@ -132,6 +157,7 @@ export default function DirectorCoachingTab() {
             {/* Thin subheader: secondary stats + Memory toggle */}
             <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
               <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
+                <PeriodSelect value={d.period ?? p.periodDays} onChange={d.setPeriod} />
                 {p.avgScore != null && (
                   <span className="inline-flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-violet-300" />
@@ -144,6 +170,18 @@ export default function DirectorCoachingTab() {
                     {t.director.last_review}
                     <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
                   </span>
+                )}
+                {openReviewCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => useOverviewStore.getState().setOverviewTab('manual-review')}
+                    title={t.director.open_reviews_hint}
+                    className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors focus-ring rounded"
+                    data-testid="director-open-reviews"
+                  >
+                    <Inbox className="w-3.5 h-3.5 text-amber-400" />
+                    {tx(t.director.open_reviews, { count: openReviewCount })}
+                  </button>
                 )}
               </div>
               {/* Memory toggle */}
@@ -173,14 +211,25 @@ export default function DirectorCoachingTab() {
             </div>
 
             {/* Scorecard */}
-            <Scorecard d={d} />
+            <Scorecard d={d} filter={rosterFilter} onFilterChange={setRosterFilter} />
 
             {/* Coaching table */}
-            <DirectorSection label={t.director.table_title} icon={Star}>
+            <DirectorSection
+              label={t.director.table_title}
+              icon={Star}
+              action={
+                <div className="flex items-center gap-2 flex-wrap justify-end">
+                  {rosterFilter && <ReviewFilteredAction agents={filteredAgents} onReview={d.runOnPersona} />}
+                  <AttentionTriageBar roster={p.roster} filter={rosterFilter} onSelect={setRosterFilter} />
+                </div>
+              }
+            >
               <PersonaCoachingTable
                 roster={p.roster}
                 onSelect={setSelected}
                 onRemove={(id) => d.setStarred(id, false)}
+                filter={rosterFilter}
+                onFilterChange={setRosterFilter}
               />
             </DirectorSection>
           </div>
@@ -197,12 +246,19 @@ export default function DirectorCoachingTab() {
 }
 
 /** Portfolio scorecard — KPIs + score distribution + model efficiency. */
-function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
+function Scorecard({
+  d,
+  filter,
+  onFilterChange,
+}: {
+  d: ReturnType<typeof useDirector>;
+  filter: RosterFilter | null;
+  onFilterChange: (filter: RosterFilter | null) => void;
+}) {
   const { t, tx } = useTranslation();
   const p = d.portfolio!;
   const { rollup } = p;
   const avgTone = p.avgScore != null ? scoreTone(p.avgScore) : null;
-  const maxBand = Math.max(1, ...p.scoreDistribution.map((b) => b.count));
   const maxModelRuns = Math.max(1, ...rollup.models.map((m) => m.executions));
 
   return (
@@ -242,38 +298,15 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
         />
       </div>
 
+      <MomentumSummary roster={p.roster} filter={filter} onSelect={onFilterChange} />
+
+      <DirectorSection label={t.director.value_leak_title} icon={Layers}>
+        <ValueLeakBar rollup={rollup} />
+      </DirectorSection>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
-          {p.reviewed === 0 ? (
-            <p className="typo-caption text-foreground py-2">{t.director.score_distribution_empty}</p>
-          ) : (
-            <div className="flex items-end gap-2.5 h-28 pt-2">
-              {p.scoreDistribution.map((band, i) => {
-                const tone = scoreTone(band.score);
-                const hPct = (band.count / maxBand) * 100;
-                return (
-                  <div key={band.score} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <span className="typo-caption text-foreground tabular-nums">{band.count}</span>
-                    <div className="w-full flex-1 flex items-end">
-                      <div
-                        className="w-full rounded-t-input animate-fade-slide-in"
-                        style={{
-                          height: `${Math.max(hPct, band.count > 0 ? 6 : 0)}%`,
-                          minHeight: band.count > 0 ? 6 : 0,
-                          background: band.count > 0 ? `linear-gradient(to top, ${tone.color}, color-mix(in oklab, ${tone.color} 55%, transparent))` : 'transparent',
-                          border: band.count === 0 ? '1px dashed var(--border)' : undefined,
-                          animationDelay: `${i * 50}ms`,
-                        }}
-                      />
-                    </div>
-                    <span className="typo-caption tabular-nums px-1.5 rounded font-medium" style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}>
-                      {band.score}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <ScoreDistribution bands={p.scoreDistribution} avgScore={p.avgScore} filter={filter} onSelect={onFilterChange} />
         </DirectorSection>
 
         {rollup.models.length > 0 && (
@@ -302,6 +335,12 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
           </DirectorSection>
         )}
       </div>
+
+      {d.verdicts.length > 0 && (
+        <DirectorSection label={t.director.category_rollup_title} icon={Tags}>
+          <CategoryRollup verdicts={d.verdicts} />
+        </DirectorSection>
+      )}
     </>
   );
 }

@@ -11,6 +11,7 @@ const SyncPanel = lazy(() => import('./sub_sync/SyncPanel'));
 const BrowsePanel = lazy(() => import('./sub_browse/BrowsePanel'));
 const GraphPanel = lazy(() => import('./sub_graph/GraphPanel'));
 const CloudSyncPanel = lazy(() => import('./sub_cloud/CloudSyncPanel'));
+const RevitalizePanel = lazy(() => import('./sub_revitalize/RevitalizePanel'));
 
 export default function ObsidianBrainPage() {
   const { t } = useTranslation();
@@ -26,7 +27,9 @@ export default function ObsidianBrainPage() {
       />
 
       <ContentBody centered>
-        <div key={obsidianBrainTab} className="animate-fade-slide-in">
+        {/* data-testid doubles as the Brain tour's spotlight anchor — one
+            stable id per tab regardless of connected/empty branch. */}
+        <div key={obsidianBrainTab} className="animate-fade-slide-in" data-testid={`obsidian-${obsidianBrainTab}-panel`}>
           <ErrorBoundary name="Obsidian Brain">
             <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
               {obsidianBrainTab === 'setup' && <SetupPanel />}
@@ -34,6 +37,7 @@ export default function ObsidianBrainPage() {
               {obsidianBrainTab === 'browse' && <BrowsePanel />}
               {obsidianBrainTab === 'graph' && <GraphPanel />}
               {obsidianBrainTab === 'cloud' && <CloudSyncPanel />}
+              {obsidianBrainTab === 'revitalize' && <RevitalizePanel />}
             </Suspense>
           </ErrorBoundary>
         </div>

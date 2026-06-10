@@ -168,6 +168,15 @@ export async function getDirectorBrainEnabled(): Promise<boolean> {
   return invoke<boolean>('get_director_brain_enabled');
 }
 
+/**
+ * The persona's most recent Director coaching notes from the Obsidian Brain
+ * vault (markdown, newest-first), or null when Brain is off / no vault / no
+ * notes yet. Read-only; powers the prior-coaching panel in the detail modal.
+ */
+export async function getDirectorBrainHistory(personaId: string): Promise<string | null> {
+  return invoke<string | null>('get_director_brain_history', { personaId });
+}
+
 /** Toggle the Director's Brain long-term memory (gated on a configured vault). */
 export async function setDirectorBrainEnabled(enabled: boolean): Promise<void> {
   return invoke<void>('set_director_brain_enabled', { enabled });

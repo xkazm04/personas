@@ -6,6 +6,7 @@ import type { UpdateTriggerInput } from "@/lib/bindings/UpdateTriggerInput";
 import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
 import type { WebhookStatus } from "@/lib/bindings/WebhookStatus";
 import type { CronAgent } from "@/lib/bindings/CronAgent";
+import type { RecentScheduleRun } from "@/lib/bindings/RecentScheduleRun";
 import type { WebhookRequestLog } from "@/lib/bindings/WebhookRequestLog";
 
 // ============================================================================
@@ -231,6 +232,9 @@ export const listCronAgents = () =>
 
 export const seedMockCronAgent = () =>
   invoke<CronAgent>("seed_mock_cron_agent", {});
+
+export const listRecentScheduleRuns = (hours?: number) =>
+  invoke<RecentScheduleRun[]>("list_recent_schedule_runs", { hours });
 
 // ============================================================================
 // Webhook Request Inspector

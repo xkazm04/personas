@@ -13,7 +13,14 @@ import type { CompanionCockpitSpecBody } from "@/api/companion";
  */
 export interface ContextualCockpit {
   /** What triggered the overlay — drives the dismiss banner copy. */
-  source: { kind: 'message'; messageId: string; messageTitle: string };
+  source:
+    | { kind: 'message'; messageId: string; messageTitle: string }
+    | {
+        /** Athena's `explain_in_cockpit` op — the orb decision `0` flow. */
+        kind: 'explain';
+        decisionId: string;
+        decisionTitle: string;
+      };
   /** Widget spec body — same shape Athena emits via compose_cockpit. */
   spec: CompanionCockpitSpecBody;
 }

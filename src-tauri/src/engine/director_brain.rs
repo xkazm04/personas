@@ -37,7 +37,7 @@ pub(super) fn director_vault_folder(persona_name: &str) -> String {
 /// vault is configured. Both signals are required — if either is missing we
 /// skip the read/write so the evaluator behaves identically to the no-brain
 /// case.
-pub(super) fn brain_enabled(pool: &DbPool) -> bool {
+pub(crate) fn brain_enabled(pool: &DbPool) -> bool {
     let on = matches!(
         settings::get(pool, DIRECTOR_BRAIN_ENABLED),
         Ok(Some(v)) if v == "true"
@@ -49,7 +49,7 @@ pub(super) fn brain_enabled(pool: &DbPool) -> bool {
 /// vault. Plain `std::fs` (no embeddings); best-effort. Returns the
 /// concatenated markdown bodies separated by horizontal rules, or `None` if
 /// no vault, no folder, or no `.md` files.
-pub(super) fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
+pub(crate) fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
     let cfg = crate::commands::obsidian_brain::mirror_vault_root(pool)?;
     let dir = std::path::Path::new(&cfg.vault_path).join(director_vault_folder(persona_name));
     let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)

@@ -32,6 +32,12 @@ import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 import { TriggerSetWidget } from './widgets/TriggerSetWidget';
 import { UseCaseSetWidget } from './widgets/UseCaseSetWidget';
+import { VerdictWidget } from './widgets/VerdictWidget';
+import { FlowStepsWidget } from './widgets/FlowStepsWidget';
+import { ComparisonCardsWidget } from './widgets/ComparisonCardsWidget';
+import { TimelineWidget } from './widgets/TimelineWidget';
+import { StatGridWidget } from './widgets/StatGridWidget';
+import { LogExcerptWidget } from './widgets/LogExcerptWidget';
 
 export interface CockpitWidgetProps {
   /** Free-form config block from Athena's compose_cockpit op. */
@@ -58,6 +64,23 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   metric_spark: MetricSparkWidget,
   issue_list: IssueListWidget,
   text_callout: TextCalloutWidget,
+  // Explainer widgets — the "Explain in Cockpit" palette (2026-06-10).
+  // Generic, data-agnostic, populated directly from Athena's reasoning
+  // (no per-widget fetch). Emitted via `explain_in_cockpit` (ephemeral
+  // contextual overlay) and also valid in `compose_cockpit`.
+  //  - verdict: the answer card — headline recommendation + reasoning +
+  //    caveat, with live chips that resolve the pending orb decision.
+  //  - flow_steps: causal/sequence chain with a drawing connector rail.
+  //  - comparison_cards: options side-by-side with pros/cons/recommended.
+  //  - timeline: chronological events with relative timestamps.
+  //  - stat_grid: 3-6 labeled figures in a tile grid.
+  //  - log_excerpt: monospace evidence block with highlighted lines.
+  verdict: VerdictWidget,
+  flow_steps: FlowStepsWidget,
+  comparison_cards: ComparisonCardsWidget,
+  timeline: TimelineWidget,
+  stat_grid: StatGridWidget,
+  log_excerpt: LogExcerptWidget,
   // Persona-design walkthrough — Athena's step-by-step plan applying
   // the persona-design best-practices doctrine to a user intent. Emitted
   // via `show_persona_walkthrough`. Long-form markdown; InlineChatCard
@@ -127,6 +150,10 @@ export function cockpitRowSpan(kind: string): number {
     case 'linked_decisions':
     case 'linked_memories':
     case 'issue_list':
+    case 'flow_steps':
+    case 'comparison_cards':
+    case 'timeline':
+    case 'log_excerpt':
       return 3;
     case 'metric_spark':
       // KPI tile — short and wide, looks crammed at 2 rows.

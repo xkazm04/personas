@@ -105,7 +105,7 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
           {label}
         </span>
       </div>
-      <p className="typo-caption text-foreground mt-1">{caption}</p>
+      <p className="typo-caption mt-1">{caption}</p>
     </button>
   );
 }
@@ -227,7 +227,7 @@ function WhisperConfig() {
                     : t.plugins.companion.stt_not_installed}
                 </div>
                 {!status?.installed && (
-                  <p className="typo-caption text-foreground mt-1">
+                  <p className="typo-caption mt-1">
                     {t.plugins.companion.stt_install_hint}
                   </p>
                 )}
@@ -286,8 +286,8 @@ function WhisperConfig() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <ActivityDot tone={selected ? 'active' : m.isDownloaded ? 'idle' : 'off'} size="xs" />
-                        <span className="typo-body font-medium truncate">{m.label}</span>
-                        <span className="typo-caption text-foreground">{m.approxSizeMb} MB</span>
+                        <span className="typo-title truncate">{m.label}</span>
+                        <span className="typo-caption">{m.approxSizeMb} MB</span>
                         {selected && (
                           <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300">
                             <CheckCircle2 className="w-3 h-3" />
@@ -295,7 +295,7 @@ function WhisperConfig() {
                           </span>
                         )}
                       </div>
-                      <p className="typo-caption text-foreground mt-0.5">{m.description}</p>
+                      <p className="typo-caption mt-0.5">{m.description}</p>
                     </div>
                     <div className="shrink-0 flex items-center gap-1.5">
                       {m.isDownloaded ? (

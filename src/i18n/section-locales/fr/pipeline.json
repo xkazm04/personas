@@ -301,7 +301,14 @@
     "replay_duration": "{seconds} s",
     "identity_section": "Identité de l'équipe",
     "identity_icon_label": "Icône",
-    "identity_hint": "Renommer ou recolorer s'applique partout où l'équipe apparaît. Les champs vidés restent inchangés."
+    "identity_hint": "Renommer ou recolorer s'applique partout où l'équipe apparaît. Les champs vidés restent inchangés.",
+    "workspace_unsaved_title": "Modifications de l'espace de travail non enregistrées",
+    "workspace_unsaved_body": "Vous avez modifié les paramètres de l'espace de travail sans enregistrer. Quitter et abandonner les modifications ?",
+    "workspace_unsaved_discard": "Abandonner les modifications",
+    "workspace_unsaved_stay": "Continuer l'édition",
+    "unsent_draft_hint": "Brouillon de canal non envoyé",
+    "presence_working": "Au travail…",
+    "presence_waiting": "En attente de révision"
   },
   "memory_created": "Mémoire enregistrée dans le registre de l'équipe",
   "memory_updated": "Mémoire mise à jour",

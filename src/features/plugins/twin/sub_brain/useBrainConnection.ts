@@ -76,7 +76,7 @@ export function useBrainConnection() {
         description: `Knowledge base for twin: ${activeTwin.name}`,
       });
       await bindTwinKnowledgeBase(activeTwinId, kb.id);
-      await fetchTwinProfiles();
+      await fetchTwinProfiles({ force: true });
       setKbInfo(kb);
       lastLoadedKbId.current = kb.id;
     } catch (err) {
@@ -90,7 +90,7 @@ export function useBrainConnection() {
   const handleBind = async (id: string) => {
     if (!activeTwinId) return;
     await bindTwinKnowledgeBase(activeTwinId, id);
-    await fetchTwinProfiles();
+    await fetchTwinProfiles({ force: true });
     setPickMode(false);
     try {
       const kb = await invoke<KbInfo>('get_knowledge_base', { kbId: id });
@@ -104,7 +104,7 @@ export function useBrainConnection() {
   const handleUnbind = async () => {
     if (!activeTwinId) return;
     await unbindTwinKnowledgeBase(activeTwinId);
-    await fetchTwinProfiles();
+    await fetchTwinProfiles({ force: true });
     setKbInfo(null);
     lastLoadedKbId.current = null;
   };

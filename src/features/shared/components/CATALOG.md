@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**197 reusable components** live under `src/features/shared/components/`.
+**198 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -235,6 +235,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `FirstUseConsentModal` | _(add a `@catalog` tag)_ |
 | `PipelineDots` | _(add a `@catalog` tag)_ |
 | `QuickEditPanel` | _(add a `@catalog` tag)_ |
+| `QuickEditPopover` | QuickEditPopover — anchored inline-edit popover: header + arbitrary |
 | `UnsavedChangesModal` | _(add a `@catalog` tag)_ |
 
 ## picker — Specialized pickers
@@ -281,4 +282,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_197 components, 97 without a `@catalog` description._
+_198 components, 97 without a `@catalog` description._

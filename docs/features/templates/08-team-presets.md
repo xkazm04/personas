@@ -13,9 +13,12 @@ skips them — they're a separate primitive, not a template variant.
 
 **Shipped presets today:** `backlog-execution` (capture → triage →
 backlog → decisions → resolution → reporting), `engineering-triage`,
-and `sdlc-lifecycle` (architect → review → security → release → docs —
+`sdlc-lifecycle` (architect → review → security → release → docs —
 five codebase-grounded delivery agents wired into one end-to-end software
-lifecycle on a single registered codebase).
+lifecycle on a single registered codebase), and `web-development`
+(architect → design handoff → implement → review → QA-test/merge →
+deploy → conversion audit → docs — a best-practice web-delivery pod of
+eight templates on one codebase).
 
 ## Lifecycle at a glance
 
@@ -26,6 +29,9 @@ scripts/templates/_team_presets/<id>.json   (source of truth, hand-authored)
 list_team_presets / get_team_preset (Tauri IPC)
         │
         ▼ PresetLibraryPage (templates → presets sub-tab)
+          — ALSO surfaced from the Teams page: the "Preset Team" button +
+            empty-state CTA open TeamPresetPickerModal (same gallery), which
+            hands the chosen preset to the shared PresetPreviewModal below.
 PresetPreviewModal — graph preview + per-member rows (each row shows the
    template name + one-line description from the adoption schema, and is a
    toggle: click to include / exclude that member from the adoption)

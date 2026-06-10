@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -295,10 +294,10 @@ export default function SetupPanel() {
             className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`}
           />
           <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium">
+            <div className="typo-title">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground mt-1.5">
+            <div className="typo-caption mt-1">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -327,29 +326,24 @@ export default function SetupPanel() {
         subtitle={t.plugins.companion.tracking_subtitle}
         titleClassName="text-primary"
       >
-        <div className="flex items-start gap-3 px-1 py-2">
-          <Activity
-            className={`w-4 h-4 mt-0.5 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`}
-          />
-          <div className="flex-1 min-w-0">
-            <div className="typo-body font-medium">
-              {t.plugins.companion.tracking_master_label}
-            </div>
-            <div className="typo-caption text-foreground mt-1.5">
-              {trackingEnabled === null
-                ? t.plugins.companion.loading
-                : trackingEnabled
-                  ? t.plugins.companion.tracking_master_on
-                  : t.plugins.companion.tracking_master_off}
-            </div>
-          </div>
-          <AccessibleToggle
-            checked={trackingEnabled === true}
-            onChange={() => void onToggleTracking(!(trackingEnabled === true))}
-            disabled={trackingBusy || trackingEnabled === null}
-            label={t.plugins.companion.tracking_master_label}
-          />
-        </div>
+        <SettingRow
+          icon={
+            <Activity
+              className={`w-4 h-4 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`}
+            />
+          }
+          label={t.plugins.companion.tracking_master_label}
+          description={
+            trackingEnabled === null
+              ? t.plugins.companion.loading
+              : trackingEnabled
+                ? t.plugins.companion.tracking_master_on
+                : t.plugins.companion.tracking_master_off
+          }
+          checked={trackingEnabled === true}
+          disabled={trackingBusy || trackingEnabled === null}
+          onChange={() => void onToggleTracking(!(trackingEnabled === true))}
+        />
       </SectionCard>
     </div>
   );

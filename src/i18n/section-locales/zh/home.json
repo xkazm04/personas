@@ -104,13 +104,6 @@
     "restart": "重新开始",
     "start_tour": "开始教程",
     "steps_count": "{count} 个步骤",
-    "tricks_tips": "技巧提示",
-    "guides_count": "{count} 个指南",
-    "how_to_use": "如何使用",
-    "pro_tip": "专业提示：",
-    "cat_agent_craft": "代理构建",
-    "cat_observability": "可观测性与事件",
-    "cat_platform": "平台与设置",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

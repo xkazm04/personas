@@ -18,6 +18,18 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 const PAGE = 60;
 const POLL_MS = 15_000;
 
+/** Per-team composer-draft storage key prefix (see CollabLiveCorrespondence). */
+export const CHANNEL_DRAFT_PREFIX = 'personas.channel.draft.';
+
+/** Whether a team has an unsent channel draft persisted locally. */
+export function hasUnsentDraft(teamId: string): boolean {
+  try {
+    return !!localStorage.getItem(CHANNEL_DRAFT_PREFIX + teamId)?.trim();
+  } catch {
+    return false;
+  }
+}
+
 export interface DirectiveDelivery {
   step_id: string;
   persona_id: string;
@@ -34,6 +46,65 @@ export function parseDeliveries(item: TeamChannelItem): DirectiveDelivery[] {
   } catch {
     return [];
   }
+}
+
+export type PresenceStatus = 'working' | 'waiting';
+
+/**
+ * Presence, derived from the step layer: a persona whose most recent step row
+ * is `step_running` is WORKING; one whose latest row is the awaiting-review
+ * gate is WAITING. Shared by the channel and the studio roster.
+ */
+export function derivePresence(items: TeamChannelItem[]): Map<string, PresenceStatus> {
+  const latestByStep = new Map<string, TeamChannelItem>();
+  for (const i of items) {
+    if (i.kind !== 'step' || !i.stepId) continue;
+    if (!latestByStep.has(i.stepId)) latestByStep.set(i.stepId, i); // items are newest-first
+  }
+  const map = new Map<string, PresenceStatus>();
+  for (const i of latestByStep.values()) {
+    if (!i.personaId) continue;
+    if (i.label === 'step_running') map.set(i.personaId, 'working');
+    else if (i.label === 'status_awaiting_review' && !map.has(i.personaId)) map.set(i.personaId, 'waiting');
+  }
+  return map;
+}
+
+/**
+ * Lean presence-only feed for surfaces that don't render the conversation
+ * (e.g. the studio roster). Same data source as the channel, but it keeps
+ * only the derived presence map and polls at half the channel's cadence —
+ * the TEAM_ASSIGNMENT_PROGRESS push still updates it the moment a step moves.
+ */
+export function useTeamPresence(teamId: string): Map<string, PresenceStatus> {
+  const [presence, setPresence] = useState<Map<string, PresenceStatus>>(new Map());
+
+  const refresh = useCallback(() => {
+    listTeamChannel(teamId, PAGE)
+      .then((items) => setPresence(derivePresence(items)))
+      .catch(silentCatch('teams/collab:presence'));
+  }, [teamId]);
+
+  useEffect(() => {
+    setPresence(new Map());
+    refresh();
+    const timer = setInterval(refresh, POLL_MS * 2);
+    let cancelled = false;
+    let unlisten: (() => void) | null = null;
+    void listen(EventName.TEAM_ASSIGNMENT_PROGRESS, () => {
+      if (!cancelled) refresh();
+    }).then((u) => {
+      if (cancelled) u();
+      else unlisten = u;
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      if (unlisten) unlisten();
+    };
+  }, [refresh]);
+
+  return presence;
 }
 
 export function useTeamChannel(teamId: string) {
@@ -123,25 +194,7 @@ export function useTeamChannel(teamId: string) {
     [teamId, refreshHead],
   );
 
-  /**
-   * Presence, derived from the step layer: a persona whose most recent step
-   * row is `step_running` is WORKING; one whose latest row is the
-   * awaiting-review gate is WAITING; everyone else with traffic is IDLE.
-   */
-  const presence = useMemo(() => {
-    const latestByStep = new Map<string, TeamChannelItem>();
-    for (const i of items) {
-      if (i.kind !== 'step' || !i.stepId) continue;
-      if (!latestByStep.has(i.stepId)) latestByStep.set(i.stepId, i); // items are newest-first
-    }
-    const map = new Map<string, 'working' | 'waiting'>();
-    for (const i of latestByStep.values()) {
-      if (!i.personaId) continue;
-      if (i.label === 'step_running') map.set(i.personaId, 'working');
-      else if (i.label === 'status_awaiting_review' && !map.has(i.personaId)) map.set(i.personaId, 'waiting');
-    }
-    return map;
-  }, [items]);
+  const presence = useMemo(() => derivePresence(items), [items]);
 
   return { items, loaded, exhausted, posting, presence, refreshHead, loadOlder, sendDirective };
 }

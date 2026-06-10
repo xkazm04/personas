@@ -1163,6 +1163,20 @@ export async function companionUnpinWidgetFromCockpit(widgetId: string): Promise
 /** Tauri event for `compose_cockpit` auto-fire. Payload is empty. */
 export const COMPANION_COMPOSE_COCKPIT_EVENT = 'companion://compose-cockpit';
 
+/**
+ * Tauri event for `explain_in_cockpit` auto-fire (the orb decision `0`
+ * flow). UNLIKE compose, the spec rides in the payload as a serialized
+ * `CompanionCockpitSpecBody` (plus `decision_id`) and is never persisted —
+ * the listener renders it as a contextual cockpit overlay.
+ */
+export const COMPANION_EXPLAIN_COCKPIT_EVENT = 'companion://explain-cockpit';
+
+/** Payload of {@link COMPANION_EXPLAIN_COCKPIT_EVENT}. */
+export interface CompanionExplainCockpitEvent {
+  /** Serialized spec JSON: `{ title, decision_id, widgets, updated_at }`. */
+  spec: string;
+}
+
 // ── Inline chat-cards (show_* ops) ───────────────────────────────────
 
 /**

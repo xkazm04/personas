@@ -111,6 +111,7 @@ export function QuestionnaireStoryThread({
   answeredCount,
   totalCount,
   onJumpTo,
+  fill = false,
 }: {
   questions: TransformQuestionResponse[];
   userAnswers: Record<string, string>;
@@ -120,6 +121,10 @@ export function QuestionnaireStoryThread({
   answeredCount: number;
   totalCount: number;
   onJumpTo: (idx: number) => void;
+  /** Fill the parent column instead of forcing the standalone 320px rail.
+   *  Set when embedded in PersonaLayout's right `<aside>` (which already
+   *  controls the column width) so the rail doesn't overflow the modal. */
+  fill?: boolean;
 }) {
   const { t } = useTranslation();
   const resolveState = (i: number): QuestionnaireThreadState => {
@@ -136,7 +141,13 @@ export function QuestionnaireStoryThread({
   };
 
   return (
-    <aside className="w-[320px] flex-shrink-0 border-l border-border bg-foreground/[0.01] flex flex-col min-h-0">
+    <aside
+      className={
+        fill
+          ? 'w-full flex flex-col min-h-0'
+          : 'w-[320px] flex-shrink-0 border-l border-border bg-foreground/[0.01] flex flex-col min-h-0'
+      }
+    >
       <div className="flex-shrink-0 px-4 py-3 border-b border-border flex items-center gap-2">
         <BookOpen className="w-4 h-4 text-primary/70" />
         <span className="typo-label uppercase tracking-[0.2em] text-foreground font-semibold">

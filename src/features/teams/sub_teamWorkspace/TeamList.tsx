@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Users, Zap, Trash2, ArrowRight, Layers } from 'lucide-react';
+import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
@@ -36,6 +38,7 @@ export default function TeamList() {
   const createTeam = usePipelineStore((s) => s.createTeam);
   const deleteTeam = usePipelineStore((s) => s.deleteTeam);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
+  const setPresetFlowOpen = usePipelineStore((s) => s.setPresetFlowOpen);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -75,6 +78,15 @@ export default function TeamList() {
 
   const sortedTeams = useMemo(
     () => [...teams].sort((a, b) => a.name.localeCompare(b.name)),
+    [teams],
+  );
+
+  // Teams with an unsent channel draft persisted locally — surfaced as a
+  // small pen hint on the row so a half-written directive isn't forgotten.
+  // localStorage is read on mount/teams-change; the list remounts on
+  // navigation, which is when drafts can have changed.
+  const draftTeamIds = useMemo(
+    () => new Set(teams.filter((tm) => hasUnsentDraft(tm.id)).map((tm) => tm.id)),
     [teams],
   );
 
@@ -134,6 +146,9 @@ export default function TeamList() {
         subtitle={countLabel}
         actions={
           <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)}>
+              {t.pipeline.preset_team}
+            </Button>
             <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
               {t.pipeline.auto_team}
             </Button>
@@ -165,7 +180,12 @@ export default function TeamList() {
         )}
 
         {sortedTeams.length === 0 && !showCreate ? (
-          <EmptyState onCreate={() => setShowCreate(true)} onAuto={() => setShowAutoTeam(true)} t={t} />
+          <EmptyState
+            onCreate={() => setShowCreate(true)}
+            onAuto={() => setShowAutoTeam(true)}
+            onPreset={() => setPresetFlowOpen(true)}
+            t={t}
+          />
         ) : (
           <div className="rounded-card border border-primary/12 overflow-hidden">
             <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 items-center px-4 py-2 bg-secondary/20 border-b border-primary/10 typo-label uppercase tracking-wider text-foreground">
@@ -179,6 +199,7 @@ export default function TeamList() {
                 key={team.id}
                 team={team}
                 counts={teamCounts[team.id]}
+                hasDraft={draftTeamIds.has(team.id)}
                 personaIndex={personaIndex}
                 confirmingDisband={confirmDisbandId === team.id}
                 onOpen={() => selectTeam(team.id)}
@@ -202,6 +223,7 @@ type TeamStudioStrings = ReturnType<typeof useTranslation>['t']['pipeline']['tea
 interface TeamRowProps {
   team: PersonaTeam;
   counts: { members: number; connections: number } | undefined;
+  hasDraft: boolean;
   personaIndex: ReturnType<typeof usePersonaIndex>;
   confirmingDisband: boolean;
   onOpen: () => void;
@@ -214,6 +236,7 @@ interface TeamRowProps {
 function TeamRow({
   team,
   counts,
+  hasDraft,
   personaIndex,
   confirmingDisband,
   onOpen,
@@ -233,8 +256,15 @@ function TeamRow({
           {team.icon ? <span className="typo-body leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
         </span>
         <span className="min-w-0">
-          <span className="block typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
-            {team.name}
+          <span className="flex items-center gap-1.5 min-w-0">
+            <span className="typo-body font-medium text-foreground truncate group-hover/row:text-primary transition-colors">
+              {team.name}
+            </span>
+            {hasDraft && (
+              <Tooltip content={ts.unsent_draft_hint}>
+                <PenLine className="w-3 h-3 text-amber-300/80 flex-shrink-0" aria-label={ts.unsent_draft_hint} />
+              </Tooltip>
+            )}
           </span>
           {team.description && (
             <span className="block typo-caption text-foreground truncate">{team.description}</span>
@@ -359,10 +389,12 @@ function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
 function EmptyState({
   onCreate,
   onAuto,
+  onPreset,
   t,
 }: {
   onCreate: () => void;
   onAuto: () => void;
+  onPreset: () => void;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
   return (
@@ -372,11 +404,14 @@ function EmptyState({
       </div>
       <h2 className="typo-heading-lg font-semibold text-foreground/90 mb-1">{t.pipeline.no_teams_yet}</h2>
       <p className="typo-body text-foreground mb-6 max-w-sm mx-auto">{t.pipeline.no_teams_hint}</p>
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <Button variant="primary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={onPreset}>
+          {t.pipeline.preset_team}
+        </Button>
         <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={onAuto}>
           {t.pipeline.auto_team}
         </Button>
-        <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
+        <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>
           {t.pipeline.create_blank_team}
         </Button>
       </div>

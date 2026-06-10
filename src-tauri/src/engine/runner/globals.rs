@@ -52,6 +52,7 @@ pub(super) fn default_result() -> ExecutionResult {
         output: None,
         error: None,
         session_limit_reached: false,
+        usage_limit: None,
         log_file_path: None,
         claude_session_id: None,
         duration_ms: 0,

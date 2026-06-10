@@ -29,7 +29,9 @@ Notes are written with YAML frontmatter that preserves IDs, hashes, and timestam
 
 ## User flow
 
-The plugin is organised as five tabs: **Setup**, **Sync**, **Browse Vault**, **Graph**, and **Cloud**. A **Saved Vaults** sidebar appears on the right of every tab except Cloud and lets you switch between multiple vault configurations without re-running setup. When no vault is connected, the Sync, Browse, Graph, and Cloud tabs show a *No vault connected* empty state with an **Open Setup** button that jumps straight to the Setup tab.
+The plugin is organised as six tabs, listed alphabetically in the sidebar: **Browse Vault**, **Cloud**, **Graph**, **Revitalize**, **Setup**, and **Sync**. A **Saved Vaults** sidebar appears on the right of every tab except Cloud and lets you switch between multiple vault configurations without re-running setup. The saved-vault roster and the active vault both persist across app sessions (app settings table; the active vault is rehydrated at startup). When no vault is connected, the Sync, Browse, Graph, Cloud, and Revitalize tabs show a *No vault connected* empty state with an **Open Setup** button that jumps straight to the Setup tab.
+
+A guided **Obsidian Brain & Memory** tour (Home → Learning, tour id `obsidian-brain`, 8 steps) walks this whole flow: it detects whether the Obsidian app is installed (auto-completing when found, with install guidance when not), coaches the vault connection, visits every tab, and ends with a map of where vault memory plugs into the rest of the app (memory curation loop, `obsidian_memory` connector, knowledge mirror, Director brain, Revitalize).
 
 ### 1. Setup — connect a vault
 
@@ -77,6 +79,16 @@ The Graph tab is the human-facing twin of the **Obsidian Memory** connector — 
    - **Push to Drive** — uploads vault files to `Personas/ObsidianSync/`. Only files whose content hash has changed since the last push are uploaded.
    - **Pull from Drive** — downloads remote changes back into the local vault folder.
 5. A "How it works" card explains the model in three steps and reinforces that Drive sync is *separate* from app⇄vault sync — Drive treats the vault as an opaque file tree.
+
+### 6. Revitalize — background memory consolidation ("sleep cycle")
+
+1. Open the **Revitalize** tab. Pick one or more goals: **Prune stale notes** (delete outdated / superseded / empty notes), **Aggregate duplicates** (merge overlapping notes into one canonical note with wikilinks), **Refresh structure** (fix links, frontmatter, titles). Optional free-form guidance narrows the pass (e.g. *"focus on the Research folder"*).
+2. Press **Start revitalization**. The backend spawns the Claude Code CLI *inside the vault* as a background job (same `BackgroundJobManager` pattern as n8n transforms) and streams a live narration log into the panel. The pass is bounded (~40 notes, 9-minute cap) so large vaults are optimized over repeated runs.
+3. The job survives navigation: a fuchsia pulse dot shows on the **Plugins** L1 button, the **Brain** row in the plugins list, and the **Revitalize** L3 item while it runs; an emerald dot (dismissible) marks completion. Re-opening the tab re-attaches to the running job.
+4. When the pass finishes, a **summary card** reports notes removed / merged / updated / reviewed, estimated tokens saved (measured before/after vault scan), notes before → after, duration, plus the model's narrative and highlights. **Run another pass** continues where the last one stopped.
+5. A **Recent passes** table below shows the last 20 runs — when each ran, which vault, completed/failed status (error in the tooltip), the cleaning result (removed · merged · updated), and tokens saved. Runs persist in the `obsidian_revitalize_runs` table, so the history survives app restarts; failed and cancelled passes are recorded too.
+
+Safety: only Markdown notes are touched — `.obsidian/`, dot-directories, and attachments are never modified, and the prompt forbids inventing facts when merging.
 
 ### Lifecycle, end-to-end
 

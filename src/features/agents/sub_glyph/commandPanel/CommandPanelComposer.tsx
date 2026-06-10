@@ -56,6 +56,7 @@ export function CommandPanelComposer({
   const [days, setDays] = useState<string[]>(["mon"]);
   const [monthDay, setMonthDay] = useState(1);
   const [selectedConnectors, setSelectedConnectors] = useState<string[]>([]);
+  const [selectedConnectorTables, setSelectedConnectorTables] = useState<Record<string, string[]>>({});
   const [selectedEvents, setSelectedEvents] = useState<EventSubscription[]>([]);
   // Slice 4 — hydrate from a parent-supplied snapshot when re-entering the
   // build flow for an existing persona. `[BUILT_IN_INBOX]` is the
@@ -92,12 +93,12 @@ export function CommandPanelComposer({
     if (!onQuickConfigChange) return;
     const next: QuickConfigState = {
       frequency, days, monthDay, time,
-      selectedConnectors, connectorTables: {},
+      selectedConnectors, connectorTables: selectedConnectorTables,
       selectedEvents,
       notificationChannels: selectedChannels,
     };
     onQuickConfigChange(next);
-  }, [frequency, days, monthDay, time, selectedConnectors, selectedEvents, selectedChannels, onQuickConfigChange]);
+  }, [frequency, days, monthDay, time, selectedConnectors, selectedConnectorTables, selectedEvents, selectedChannels, onQuickConfigChange]);
 
   const setRow = (k: IntentKey, v: string) => setDraft((p) => ({ ...p, [k]: v }));
   const scheduleLabel = scheduleSummary(frequency, days, monthDay, time);
@@ -209,8 +210,10 @@ export function CommandPanelComposer({
         open={toolsOpen}
         onClose={() => setToolsOpen(false)}
         selected={selectedConnectors}
-        onApply={(next) => {
+        tables={selectedConnectorTables}
+        onApply={(next, nextTables) => {
           setSelectedConnectors(next);
+          setSelectedConnectorTables(nextTables);
           setToolsOpen(false);
         }}
       />

@@ -105,9 +105,12 @@ export function ConnectorsSection({
             {group.roleLabel && group.items.length > 1 && (
               <p className="text-[11px] font-semibold text-foreground uppercase tracking-wider px-1 pt-1">{group.roleLabel}</p>
             )}
-            {group.items.map((status) => (
+            {group.items.map((status, i) => (
               <ConnectorStatusCard
-                key={status.name} status={status}
+                // Composite key: persona configs can carry duplicate connector
+                // names (e.g. test-seeded adoptions), which made a name-only
+                // key collide and spam dup-key warnings on every render.
+                key={`${status.name}-${i}`} status={status}
                 isLinking={linkingConnector === status.name}
                 credentials={credentials}
                 onTest={(name, credId) => void onTestConnector(name, credId)}
