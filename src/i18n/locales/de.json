@@ -5717,7 +5717,13 @@
       "dim_health": "Zustand",
       "dim_speed": "Geschwindigkeit",
       "dim_cost": "Kosten",
-      "dim_activity": "Aktivität"
+      "dim_activity": "Aktivität",
+      "stat_total_runs": "Läufe gesamt",
+      "stat_recent_7d": "Aktuell (7 T)",
+      "stat_avg_latency": "Ø Latenz",
+      "stat_daily_burn": "Tägl. Verbrauch",
+      "fleet_average": "Flottendurchschnitt",
+      "this_agent": "Dieser Agent"
     },
     "analytics": {
       "title": "Analytik",

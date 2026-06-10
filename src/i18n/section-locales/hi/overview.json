@@ -613,7 +613,13 @@
     "dim_health": "स्वास्थ्य",
     "dim_speed": "गति",
     "dim_cost": "लागत",
-    "dim_activity": "गतिविधि"
+    "dim_activity": "गतिविधि",
+    "stat_total_runs": "कुल रन",
+    "stat_recent_7d": "हाल का (7दि)",
+    "stat_avg_latency": "औसत विलंबता",
+    "stat_daily_burn": "दैनिक खर्च",
+    "fleet_average": "फ्लीट औसत",
+    "this_agent": "यह एजेंट"
   },
   "analytics": {
     "title": "एनालिटिक्स",

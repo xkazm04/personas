@@ -6208,6 +6208,12 @@ export type Translations = {
       dim_speed: string;
       dim_cost: string;
       dim_activity: string;
+      stat_total_runs: string;
+      stat_recent_7d: string;
+      stat_avg_latency: string;
+      stat_daily_burn: string;
+      fleet_average: string;
+      this_agent: string;
     };
     analytics: {
       title: string;

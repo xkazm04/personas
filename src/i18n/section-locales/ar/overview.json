@@ -613,7 +613,13 @@
     "dim_health": "الصحة",
     "dim_speed": "السرعة",
     "dim_cost": "التكلفة",
-    "dim_activity": "النشاط"
+    "dim_activity": "النشاط",
+    "stat_total_runs": "إجمالي التشغيلات",
+    "stat_recent_7d": "الأخيرة (7 أيام)",
+    "stat_avg_latency": "متوسط الكمون",
+    "stat_daily_burn": "الإنفاق اليومي",
+    "fleet_average": "متوسط الأسطول",
+    "this_agent": "هذا الوكيل"
   },
   "analytics": {
     "title": "التحليلات",

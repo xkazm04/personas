@@ -1,6 +1,8 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
+import type { FleetBenchmark } from '../libs/useLeaderboardData';
 import { ScoreRadar } from './ScoreRadar';
 import { DebtText } from '@/i18n/DebtText';
 
@@ -8,9 +10,33 @@ import { DebtText } from '@/i18n/DebtText';
 interface DetailPanelProps {
   entry: LeaderboardEntry | null;
   onNavigateToAgent: (personaId: string) => void;
+  /** Fleet-wide averages, used to benchmark this agent on the radar + stats. */
+  fleetBenchmark?: FleetBenchmark | null;
 }
 
-export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
+interface StatDelta {
+  text: string;
+  good: boolean;
+}
+
+/** Signed difference of `agent` vs the fleet `fleet`, coloured by whether the
+ *  direction is favourable. Returns null when there's nothing to compare. */
+function buildDelta(
+  agent: number,
+  fleet: number | undefined,
+  higherIsBetter: boolean,
+  fmt: (n: number) => string,
+): StatDelta | null {
+  if (fleet === undefined || !Number.isFinite(fleet)) return null;
+  const diff = agent - fleet;
+  if (Math.abs(diff) < 1e-9) return null;
+  const good = higherIsBetter ? diff > 0 : diff < 0;
+  const sign = diff > 0 ? '+' : '−';
+  return { text: `${sign}${fmt(Math.abs(diff))}`, good };
+}
+
+export function DetailPanel({ entry, onNavigateToAgent, fleetBenchmark }: DetailPanelProps) {
+  const { t } = useTranslation();
   const reduce = useReducedMotion();
 
   if (!entry) {
@@ -20,6 +46,9 @@ export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
       </div>
     );
   }
+
+  const lb = t.overview.leaderboard;
+  const showBenchmark = !!fleetBenchmark;
 
   return (
     <div className="p-4 rounded-modal border border-primary/[0.08] bg-secondary/[0.03] overflow-hidden">
@@ -35,19 +64,47 @@ export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
             {entry.personaName}
           </h4>
           <div className="flex justify-center">
-            <ScoreRadar entries={[entry]} size={200} />
+            <ScoreRadar entries={[entry]} size={200} benchmarkValues={fleetBenchmark?.dimensionValues} />
           </div>
+
+          {showBenchmark && (
+            <div className="mt-1 flex items-center justify-center gap-4 typo-caption text-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 h-0.5 rounded-full" style={{ backgroundColor: '#8b5cf6' }} />
+                {lb.this_agent}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-3 border-t border-dashed border-foreground/50" />
+                {lb.fleet_average}
+              </span>
+            </div>
+          )}
+
           <div className="mt-4 space-y-2">
-            <StatRow label="Total runs" value={String(entry.totalExecutions)} />
-            <StatRow label="Recent (7d)" value={String(entry.recentExecutions)} />
-            <StatRow label="Success" value={`${entry.successRate.toFixed(1)}%`} />
             <StatRow
-              label="Avg latency"
-              value={entry.avgLatencyMs > 0 ? `${(entry.avgLatencyMs / 1000).toFixed(1)}s` : '—'}
+              label={lb.stat_total_runs}
+              value={String(entry.totalExecutions)}
+              delta={showBenchmark ? buildDelta(entry.totalExecutions, fleetBenchmark?.totalExecutions, true, (n) => String(Math.round(n))) : null}
             />
             <StatRow
-              label="Daily burn"
+              label={lb.stat_recent_7d}
+              value={String(entry.recentExecutions)}
+              delta={showBenchmark ? buildDelta(entry.recentExecutions, fleetBenchmark?.recentExecutions, true, (n) => String(Math.round(n))) : null}
+            />
+            <StatRow
+              label={lb.dim_success}
+              value={`${entry.successRate.toFixed(1)}%`}
+              delta={showBenchmark ? buildDelta(entry.successRate, fleetBenchmark?.successRate, true, (n) => `${n.toFixed(1)}%`) : null}
+            />
+            <StatRow
+              label={lb.stat_avg_latency}
+              value={entry.avgLatencyMs > 0 ? `${(entry.avgLatencyMs / 1000).toFixed(1)}s` : '—'}
+              delta={showBenchmark && entry.avgLatencyMs > 0 ? buildDelta(entry.avgLatencyMs, fleetBenchmark?.avgLatencyMs, false, (n) => `${(n / 1000).toFixed(1)}s`) : null}
+            />
+            <StatRow
+              label={lb.stat_daily_burn}
               value={entry.dailyBurnRate > 0 ? `$${entry.dailyBurnRate.toFixed(3)}` : '—'}
+              delta={showBenchmark && entry.dailyBurnRate > 0 ? buildDelta(entry.dailyBurnRate, fleetBenchmark?.dailyBurnRate, false, (n) => `$${n.toFixed(3)}`) : null}
             />
           </div>
           <button
@@ -63,11 +120,18 @@ export function DetailPanel({ entry, onNavigateToAgent }: DetailPanelProps) {
   );
 }
 
-function StatRow({ label, value }: { label: string; value: string }) {
+function StatRow({ label, value, delta }: { label: string; value: string; delta?: StatDelta | null }) {
   return (
-    <div className="flex items-center justify-between typo-body">
+    <div className="flex items-center justify-between typo-body gap-2">
       <span className="text-foreground">{label}</span>
-      <span className="text-foreground font-semibold tabular-nums">{value}</span>
+      <div className="flex items-center gap-2 min-w-0">
+        {delta && (
+          <span className={`typo-caption tabular-nums flex-shrink-0 ${delta.good ? 'text-emerald-400' : 'text-red-400'}`}>
+            {delta.text}
+          </span>
+        )}
+        <span className="text-foreground font-semibold tabular-nums">{value}</span>
+      </div>
     </div>
   );
 }

@@ -6201,7 +6201,13 @@
       "dim_health": "Health",
       "dim_speed": "Speed",
       "dim_cost": "Cost",
-      "dim_activity": "Activity"
+      "dim_activity": "Activity",
+      "stat_total_runs": "Total runs",
+      "stat_recent_7d": "Recent (7d)",
+      "stat_avg_latency": "Avg latency",
+      "stat_daily_burn": "Daily burn",
+      "fleet_average": "Fleet average",
+      "this_agent": "This agent"
     },
     "analytics": {
       "title": "Analytics",

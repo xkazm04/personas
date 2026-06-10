@@ -613,7 +613,13 @@
     "dim_health": "Stav",
     "dim_speed": "Rychlost",
     "dim_cost": "Náklady",
-    "dim_activity": "Aktivita"
+    "dim_activity": "Aktivita",
+    "stat_total_runs": "Celkem běhů",
+    "stat_recent_7d": "Nedávné (7d)",
+    "stat_avg_latency": "Prům. latence",
+    "stat_daily_burn": "Denní spotřeba",
+    "fleet_average": "Průměr flotily",
+    "this_agent": "Tento agent"
   },
   "analytics": {
     "title": "Analytika",

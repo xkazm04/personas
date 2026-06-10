@@ -613,7 +613,13 @@
     "dim_health": "상태",
     "dim_speed": "속도",
     "dim_cost": "비용",
-    "dim_activity": "활동"
+    "dim_activity": "활동",
+    "stat_total_runs": "총 실행 수",
+    "stat_recent_7d": "최근 (7일)",
+    "stat_avg_latency": "평균 지연",
+    "stat_daily_burn": "일일 소모",
+    "fleet_average": "전체 평균",
+    "this_agent": "이 에이전트"
   },
   "analytics": {
     "title": "분석",

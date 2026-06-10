@@ -19,7 +19,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 
 export default function LeaderboardPage() {
   const { t } = useTranslation();
-  const { leaderboard, loading, isEmpty, fleetAvgScore, refresh } = useLeaderboardData();
+  const { leaderboard, loading, isEmpty, fleetAvgScore, fleetBenchmark, refresh } = useLeaderboardData();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rankKey, setRankKey] = useState<RankKey>('overall');
 
@@ -133,12 +133,12 @@ export default function LeaderboardPage() {
                   ))}
                 </div>
                 <div className="w-64 flex-shrink-0">
-                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} />
+                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} fleetBenchmark={fleetBenchmark} />
                 </div>
               </div>
             ) : (
               <div className="max-w-sm mx-auto w-full">
-                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} />
+                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} fleetBenchmark={fleetBenchmark} />
               </div>
             )}
           </div>

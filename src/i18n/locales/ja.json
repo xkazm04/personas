@@ -5717,7 +5717,13 @@
       "dim_health": "健全性",
       "dim_speed": "速度",
       "dim_cost": "コスト",
-      "dim_activity": "アクティビティ"
+      "dim_activity": "アクティビティ",
+      "stat_total_runs": "総実行数",
+      "stat_recent_7d": "直近 (7日)",
+      "stat_avg_latency": "平均レイテンシ",
+      "stat_daily_burn": "日次消費",
+      "fleet_average": "全体平均",
+      "this_agent": "このエージェント"
     },
     "analytics": {
       "title": "分析",

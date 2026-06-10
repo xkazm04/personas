@@ -613,7 +613,13 @@
     "dim_health": "Состояние",
     "dim_speed": "Скорость",
     "dim_cost": "Стоимость",
-    "dim_activity": "Активность"
+    "dim_activity": "Активность",
+    "stat_total_runs": "Всего запусков",
+    "stat_recent_7d": "Недавние (7д)",
+    "stat_avg_latency": "Ср. задержка",
+    "stat_daily_burn": "Расход в день",
+    "fleet_average": "Среднее по флоту",
+    "this_agent": "Этот агент"
   },
   "analytics": {
     "title": "Аналитика",

@@ -613,7 +613,13 @@
     "dim_health": "Kesehatan",
     "dim_speed": "Kecepatan",
     "dim_cost": "Biaya",
-    "dim_activity": "Aktivitas"
+    "dim_activity": "Aktivitas",
+    "stat_total_runs": "Total proses",
+    "stat_recent_7d": "Terbaru (7h)",
+    "stat_avg_latency": "Latensi rata-rata",
+    "stat_daily_burn": "Pemakaian harian",
+    "fleet_average": "Rata-rata armada",
+    "this_agent": "Agen ini"
   },
   "analytics": {
     "title": "Analitik",

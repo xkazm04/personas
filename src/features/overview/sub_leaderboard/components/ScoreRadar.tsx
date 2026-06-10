@@ -8,6 +8,10 @@ import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 interface ScoreRadarProps {
   entries: LeaderboardEntry[];    // 1 or 2 entries to overlay
   size?: number;
+  /** Optional fleet-average reference, drawn as a dashed neutral polygon
+   *  behind the data so a single agent can be read against the fleet. Must be
+   *  aligned to the AXES order (success, health, speed, cost, activity). */
+  benchmarkValues?: number[] | null;
 }
 
 const AXES = ['Success', 'Health', 'Speed', 'Cost', 'Activity'];
@@ -35,7 +39,7 @@ function makePolygonPoints(cx: number, cy: number, values: number[], maxRadius: 
     .join(' ');
 }
 
-export function ScoreRadar({ entries, size = 200 }: ScoreRadarProps) {
+export function ScoreRadar({ entries, size = 200, benchmarkValues }: ScoreRadarProps) {
   const cx = size / 2;
   const cy = size / 2;
   const maxRadius = size * 0.38;
@@ -84,6 +88,18 @@ export function ScoreRadar({ entries, size = 200 }: ScoreRadarProps) {
           />
         );
       })}
+
+      {/* Fleet-average reference (dashed, behind the data) */}
+      {benchmarkValues && benchmarkValues.length === AXIS_COUNT && (
+        <polygon
+          points={makePolygonPoints(cx, cy, benchmarkValues, maxRadius)}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1"
+          strokeDasharray="3 3"
+          className="text-foreground/40"
+        />
+      )}
 
       {/* Data polygons */}
       {entries.slice(0, 2).map((entry, ei) => {

@@ -613,7 +613,13 @@
     "dim_health": "Santé",
     "dim_speed": "Vitesse",
     "dim_cost": "Coût",
-    "dim_activity": "Activité"
+    "dim_activity": "Activité",
+    "stat_total_runs": "Exécutions totales",
+    "stat_recent_7d": "Récent (7j)",
+    "stat_avg_latency": "Latence moy.",
+    "stat_daily_burn": "Coût quotidien",
+    "fleet_average": "Moyenne de la flotte",
+    "this_agent": "Cet agent"
   },
   "analytics": {
     "title": "Analyses",

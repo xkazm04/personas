@@ -5717,7 +5717,13 @@
       "dim_health": "স্বাস্থ্য",
       "dim_speed": "গতি",
       "dim_cost": "খরচ",
-      "dim_activity": "কার্যকলাপ"
+      "dim_activity": "কার্যকলাপ",
+      "stat_total_runs": "মোট রান",
+      "stat_recent_7d": "সাম্প্রতিক (৭দি)",
+      "stat_avg_latency": "গড় বিলম্ব",
+      "stat_daily_burn": "দৈনিক খরচ",
+      "fleet_average": "ফ্লিট গড়",
+      "this_agent": "এই এজেন্ট"
     },
     "analytics": {
       "title": "অ্যানালিটিক্স",

@@ -613,7 +613,13 @@
     "dim_health": "健康度",
     "dim_speed": "速度",
     "dim_cost": "成本",
-    "dim_activity": "活跃度"
+    "dim_activity": "活跃度",
+    "stat_total_runs": "总运行数",
+    "stat_recent_7d": "近期 (7天)",
+    "stat_avg_latency": "平均延迟",
+    "stat_daily_burn": "每日消耗",
+    "fleet_average": "全部平均",
+    "this_agent": "此智能体"
   },
   "analytics": {
     "title": "分析",

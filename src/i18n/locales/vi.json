@@ -5717,7 +5717,13 @@
       "dim_health": "Tình trạng",
       "dim_speed": "Tốc độ",
       "dim_cost": "Chi phí",
-      "dim_activity": "Hoạt động"
+      "dim_activity": "Hoạt động",
+      "stat_total_runs": "Tổng số lần chạy",
+      "stat_recent_7d": "Gần đây (7n)",
+      "stat_avg_latency": "Độ trễ TB",
+      "stat_daily_burn": "Chi tiêu hàng ngày",
+      "fleet_average": "Trung bình đội",
+      "this_agent": "Tác nhân này"
     },
     "analytics": {
       "title": "Phân tích",
