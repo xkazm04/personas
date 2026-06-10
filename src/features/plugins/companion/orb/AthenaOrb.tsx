@@ -56,6 +56,7 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   const { t, tx } = useTranslation();
   const setState = useCompanionStore((s) => s.setState);
   const streaming = useCompanionStore((s) => s.streaming);
+  const explainComposing = useCompanionStore((s) => s.explainComposing);
   const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
   // Async-UX phase 3: how many background tasks are in flight. Returns a
   // primitive so the orb only re-renders when the count actually changes.
@@ -235,8 +236,16 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   // perimeter dots, one per in-flight task, so the user sees parallel work
   // happening while the panel is minimized.
   const working = runningTaskCount > 0;
-  const avatarState: AthenaState =
-    talking || streaming || working ? 'thinking' : hasUnreadPlayback ? 'speaking' : 'idle';
+  // `composing` (Explain-in-Cockpit in flight) outranks the generic
+  // thinking posture — the user just asked for a visual explanation and
+  // the presenting clip telegraphs "she's building it".
+  const avatarState: AthenaState = explainComposing
+    ? 'composing'
+    : talking || streaming || working
+      ? 'thinking'
+      : hasUnreadPlayback
+        ? 'speaking'
+        : 'idle';
   const speaking = avatarState === 'speaking';
 
   // Perimeter task dots: up to 5 pulsing dots arced across the orb's top,
@@ -255,14 +264,17 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     };
   });
 
-  // Caption priority: live dictation transcript > a fleet-orchestration cue
-  // (Athena working while the grid is open) > nothing.
+  // Caption priority: live dictation transcript > composing an explanation
+  // > a fleet-orchestration cue (Athena working while the grid is open) >
+  // nothing.
   const caption =
     talking && interimText
       ? interimText
-      : working && fleetGridOpen
-        ? t.plugins.companion.orb_managing_fleet
-        : null;
+      : explainComposing
+        ? t.plugins.companion.orb_composing_explanation
+        : working && fleetGridOpen
+          ? t.plugins.companion.orb_managing_fleet
+          : null;
 
   // Audio-reactive glow: while a spoken reply plays, drive the bloom's
   // opacity + scale from the live TTS level (tapped via the shared

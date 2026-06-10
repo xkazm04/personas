@@ -1377,6 +1377,9 @@ function Body(props: BodyProps) {
         return;
       }
       if (!body || !Array.isArray(body.widgets) || body.widgets.length === 0) return;
+      // The explanation landed — drop the orb's composing posture.
+      useCompanionStore.getState().setExplainComposing(false);
+      useCompanionStore.getState().setExplainComposeError(null);
       const sys = useSystemStore.getState();
       sys.setContextualCockpit({
         source: {

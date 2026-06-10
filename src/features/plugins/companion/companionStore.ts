@@ -447,6 +447,20 @@ interface CompanionStore {
   markDecisionExplained: () => void;
 
   /**
+   * Explain-in-Cockpit composing state. True from the moment `0` escalates
+   * into a `decision-explain` turn until either the `explain_in_cockpit`
+   * event lands (CompanionPanel listener clears it) or the turn finishes
+   * without emitting the op. Drives the orb's `composing` avatar clip and
+   * the bubble's processing row. `explainComposeError` is a short token
+   * (`'no-spec' | 'turn-failed'`) the bubble maps to a translated fallback
+   * line; reset on the next decision / next `0`.
+   */
+  explainComposing: boolean;
+  explainComposeError: string | null;
+  setExplainComposing: (v: boolean) => void;
+  setExplainComposeError: (v: string | null) => void;
+
+  /**
    * Notify-only indicator for an autonomous fleet auto-decision (the "Notify
    * only" safety net). Set when Athena auto-fires a high-confidence
    * `fleet_send_input` into one of her own sessions; the orb flashes a brief
@@ -907,11 +921,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   pendingDecision: null,
   decisionExplained: false,
   setPendingDecision: (decision) =>
-    set({ pendingDecision: decision, decisionExplained: false }),
+    set({ pendingDecision: decision, decisionExplained: false, explainComposeError: null }),
   clearPendingDecision: () =>
-    set({ pendingDecision: null, decisionExplained: false }),
+    set({ pendingDecision: null, decisionExplained: false, explainComposeError: null }),
   markDecisionExplained: () =>
     set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
+
+  explainComposing: false,
+  explainComposeError: null,
+  setExplainComposing: (explainComposing) => set({ explainComposing }),
+  setExplainComposeError: (explainComposeError) => set({ explainComposeError }),
 
   fleetAutoNotice: null,
   setFleetAutoNotice: (fleetAutoNotice) => set({ fleetAutoNotice }),

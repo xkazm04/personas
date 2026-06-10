@@ -47,6 +47,13 @@ export interface PendingDecision {
   source: DecisionSource;
   /** Underlying row id — approval id / review id / incident id. */
   sourceRef?: string;
+  /**
+   * Serialized context of the underlying row (approval action+params,
+   * incident trigger, review body). Not rendered — handed to Athena as
+   * grounding data when the user escalates `0` into a `decision-explain`
+   * turn, so her explanation cites real fields instead of guessing.
+   */
+  payload?: string;
   /** Optional element to ring while asking (reuses the guidance highlight). */
   highlightTestId?: string;
   /** Optional route to take the user to for context before asking. */

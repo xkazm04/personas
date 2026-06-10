@@ -12228,6 +12228,9 @@ export type Translations = {
       decision_title: string;
       decision_explain: string;
       decision_explain_hint: string;
+      decision_composing: string;
+      decision_compose_failed: string;
+      orb_composing_explanation: string;
       decision_recommend_prefix: string;
       decision_dismiss: string;
       decision_approve: string;
