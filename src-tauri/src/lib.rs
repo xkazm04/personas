@@ -2383,6 +2383,8 @@ pub fn run() {
             commands::obsidian_brain::obsidian_brain_test_connection,
             commands::obsidian_brain::obsidian_brain_save_config,
             commands::obsidian_brain::obsidian_brain_get_config,
+            commands::obsidian_brain::obsidian_brain_list_saved_vaults,
+            commands::obsidian_brain::obsidian_brain_set_saved_vaults,
             commands::obsidian_brain::obsidian_mirror_get_config,
             commands::obsidian_brain::obsidian_mirror_set_config,
             commands::obsidian_brain::obsidian_available,

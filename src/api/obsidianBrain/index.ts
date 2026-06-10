@@ -133,6 +133,14 @@ export const obsidianBrainSaveConfig = (config: ObsidianVaultConfig) =>
 export const obsidianBrainGetConfig = () =>
   invoke<ObsidianVaultConfig | null>("obsidian_brain_get_config");
 
+// ── Saved vault roster (persisted in app settings, not localStorage) ─
+
+export const obsidianBrainListSavedVaults = () =>
+  invoke<ObsidianVaultConfig[]>("obsidian_brain_list_saved_vaults");
+
+export const obsidianBrainSetSavedVaults = (configs: ObsidianVaultConfig[]) =>
+  invoke<void>("obsidian_brain_set_saved_vaults", { configs });
+
 // ── Knowledge Mirror (opt-in, off by default) ────────────────────────
 
 export const obsidianMirrorGetConfig = () =>
