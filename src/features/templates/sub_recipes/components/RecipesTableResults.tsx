@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { categoryLabel } from '../libs/categoryLabels';
 import { EligibilityChip } from './EligibilityChip';
@@ -11,6 +12,9 @@ interface ResultsProps {
   eligibilityMap: Map<string, Eligibility>;
   /** Active search query — matching substrings in the name column light up. */
   highlight?: string;
+  /** Eligibility is a per-persona verdict; without a selected persona the
+   *  chips would claim READY/LOCKED against nothing — render neutral. */
+  personaSelected: boolean;
   onOpenDetail: (recipeId: string) => void;
 }
 
@@ -38,7 +42,7 @@ const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
  * Clicking the button adopts; clicking the row opens detail. Both stop
  * at the right place.
  */
-export function RecipesTableResults({ recipes, eligibilityMap, highlight, onOpenDetail }: ResultsProps) {
+export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, onOpenDetail }: ResultsProps) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
 
@@ -136,6 +140,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, highlight, onOpen
                 recipe={r}
                 eligibility={eligibilityMap.get(r.id) ?? { state: 'eligible' }}
                 highlight={highlight}
+                personaSelected={personaSelected}
                 onOpenDetail={() => onOpenDetail(r.id)}
               />
             ))}
@@ -186,6 +191,7 @@ interface RecipeRowProps {
   recipe: Recipe;
   eligibility: Eligibility;
   highlight?: string;
+  personaSelected: boolean;
   onOpenDetail: () => void;
 }
 
@@ -206,11 +212,11 @@ function HighlightedName({ text, query }: { text: string; query?: string }) {
   );
 }
 
-function RecipeRow({ recipe, eligibility, highlight, onOpenDetail }: RecipeRowProps) {
+function RecipeRow({ recipe, eligibility, highlight, personaSelected, onOpenDetail }: RecipeRowProps) {
   const { t } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
   const iconMeta = iconKey ? getConnectorMeta(iconKey) : null;
-  const incompatible = eligibility.state === 'incompatible';
+  const incompatible = personaSelected && eligibility.state === 'incompatible';
 
   return (
     <tr
@@ -282,9 +288,17 @@ function RecipeRow({ recipe, eligibility, highlight, onOpenDetail }: RecipeRowPr
         </span>
       </td>
 
-      {/* Eligibility */}
+      {/* Eligibility — neutral dash until a persona gives the verdict meaning */}
       <td className="px-2 align-middle">
-        <EligibilityChip eligibility={eligibility} />
+        {personaSelected ? (
+          <EligibilityChip eligibility={eligibility} />
+        ) : (
+          <Tooltip content={t.recipes_catalog.eligibility_no_persona}>
+            <span className="typo-caption text-foreground" aria-label={t.recipes_catalog.eligibility_no_persona}>
+              —
+            </span>
+          </Tooltip>
+        )}
       </td>
 
       {/* Adopt button — hover-revealed */}

@@ -63,7 +63,9 @@ export function RecipeDetailHeader({
         <div className="relative flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="typo-title text-foreground">{recipe.name}</span>
-            <EligibilityChip eligibility={eligibility} />
+            {/* Eligibility is a per-persona verdict — meaningless before one
+                is selected, so the chip waits for a persona. */}
+            {hasPersona && <EligibilityChip eligibility={eligibility} />}
           </div>
           <div className="typo-body text-foreground mt-0.5">{recipe.summary}</div>
           <div className="flex items-center gap-2 mt-2 flex-wrap">

@@ -185,6 +185,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
               recipes={filtered}
               eligibilityMap={eligibilityMap}
               highlight={search}
+              personaSelected={!!selectedPersona}
               onOpenDetail={onOpenDetail}
             />
           )}

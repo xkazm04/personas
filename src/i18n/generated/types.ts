@@ -10526,6 +10526,8 @@ export type Translations = {
     eligibility_setup_label: string;
     _comment_eligibility_locked_label: string;
     eligibility_locked_label: string;
+    _comment_eligibility_no_persona: string;
+    eligibility_no_persona: string;
     _comment_no_results_heading: string;
     no_results_heading: string;
     _comment_no_results_body: string;

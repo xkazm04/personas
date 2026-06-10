@@ -10523,6 +10523,8 @@
     "eligibility_setup_label": "Setup",
     "_comment_eligibility_locked_label": "Eligibility filter tab — locked/unavailable",
     "eligibility_locked_label": "Locked",
+    "_comment_eligibility_no_persona": "Tooltip/aria on the neutral dash shown in the eligibility column before any persona is selected",
+    "eligibility_no_persona": "Select a persona to check eligibility",
     "_comment_no_results_heading": "Empty state heading when search/filter returns nothing",
     "no_results_heading": "No recipes match",
     "_comment_no_results_body": "Empty state body below the heading",
