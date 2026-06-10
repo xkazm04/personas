@@ -5762,6 +5762,12 @@
     "knowledge": {
       "title": "Knowledge",
       "patterns_tab": "Patterns",
+      "search_placeholder": "Search patterns...",
+      "sort_aria": "Sort patterns",
+      "sort_default": "Top patterns",
+      "sort_confidence": "Highest confidence",
+      "sort_runs": "Most runs",
+      "sort_recent": "Most recent",
       "subtitle": "{count} things learned from past runs",
       "total_patterns": "Total Learnings",
       "tool_sequences": "Action Sequences",

@@ -5413,7 +5413,13 @@
       "avg_cost": "औसत लागत",
       "avg_duration": "औसत अवधि",
       "pattern_data": "पैटर्न डेटा",
-      "patterns_tab": "पैटर्न"
+      "patterns_tab": "पैटर्न",
+      "search_placeholder": "पैटर्न खोजें...",
+      "sort_aria": "पैटर्न क्रमबद्ध करें",
+      "sort_default": "शीर्ष पैटर्न",
+      "sort_confidence": "उच्चतम विश्वास",
+      "sort_runs": "सर्वाधिक रन",
+      "sort_recent": "सबसे नए"
     },
     "conflicts": {
       "dismissed": "विवाद खारिज किया गया",

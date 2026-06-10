@@ -5413,7 +5413,13 @@
       "avg_cost": "গড় খরচ",
       "avg_duration": "গড় সময়কাল",
       "pattern_data": "প্যাটার্ন ডাটা",
-      "patterns_tab": "প্যাটার্ন"
+      "patterns_tab": "প্যাটার্ন",
+      "search_placeholder": "প্যাটার্ন খুঁজুন...",
+      "sort_aria": "প্যাটার্ন সাজান",
+      "sort_default": "শীর্ষ প্যাটার্ন",
+      "sort_confidence": "সর্বোচ্চ আস্থা",
+      "sort_runs": "সর্বাধিক রান",
+      "sort_recent": "সাম্প্রতিকতম"
     },
     "conflicts": {
       "dismissed": "দ্বন্দ্ব বাতিল",

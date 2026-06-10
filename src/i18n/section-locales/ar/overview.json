@@ -309,7 +309,13 @@
     "avg_cost": "متوسط التكلفة",
     "avg_duration": "متوسط المدة",
     "pattern_data": "بيانات النمط",
-    "patterns_tab": "الأنماط"
+    "patterns_tab": "الأنماط",
+    "search_placeholder": "البحث عن الأنماط...",
+    "sort_aria": "فرز الأنماط",
+    "sort_default": "أهم الأنماط",
+    "sort_confidence": "أعلى ثقة",
+    "sort_runs": "الأكثر تشغيلاً",
+    "sort_recent": "الأحدث"
   },
   "conflicts": {
     "dismissed": "تم تجاهل التعارض",

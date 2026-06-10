@@ -5413,7 +5413,13 @@
       "avg_cost": "平均成本",
       "avg_duration": "平均时长",
       "pattern_data": "模式数据",
-      "patterns_tab": "模式"
+      "patterns_tab": "模式",
+      "search_placeholder": "搜索模式...",
+      "sort_aria": "排序模式",
+      "sort_default": "热门模式",
+      "sort_confidence": "置信度最高",
+      "sort_runs": "运行最多",
+      "sort_recent": "最新"
     },
     "conflicts": {
       "dismissed": "冲突已忽略",

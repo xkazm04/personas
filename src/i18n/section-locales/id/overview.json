@@ -309,7 +309,13 @@
     "avg_cost": "Biaya Rata-rata",
     "avg_duration": "Durasi Rata-rata",
     "pattern_data": "Data Pola",
-    "patterns_tab": "Pola"
+    "patterns_tab": "Pola",
+    "search_placeholder": "Cari pola...",
+    "sort_aria": "Urutkan pola",
+    "sort_default": "Pola teratas",
+    "sort_confidence": "Keyakinan tertinggi",
+    "sort_runs": "Paling banyak dijalankan",
+    "sort_recent": "Terbaru"
   },
   "conflicts": {
     "dismissed": "Konflik diabaikan",

@@ -5413,7 +5413,13 @@
       "avg_cost": "Chi phí TB",
       "avg_duration": "Thời lượng TB",
       "pattern_data": "Dữ liệu mẫu",
-      "patterns_tab": "Mẫu"
+      "patterns_tab": "Mẫu",
+      "search_placeholder": "Tìm mẫu...",
+      "sort_aria": "Sắp xếp mẫu",
+      "sort_default": "Mẫu hàng đầu",
+      "sort_confidence": "Độ tin cậy cao nhất",
+      "sort_runs": "Chạy nhiều nhất",
+      "sort_recent": "Mới nhất"
     },
     "conflicts": {
       "dismissed": "Đã bỏ qua xung đột",

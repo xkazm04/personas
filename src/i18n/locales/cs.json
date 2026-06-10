@@ -5413,7 +5413,13 @@
       "avg_cost": "Průměrné náklady",
       "avg_duration": "Průměrná doba",
       "pattern_data": "Data vzoru",
-      "patterns_tab": "Vzory"
+      "patterns_tab": "Vzory",
+      "search_placeholder": "Hledat vzory...",
+      "sort_aria": "Seřadit vzory",
+      "sort_default": "Hlavní vzory",
+      "sort_confidence": "Nejvyšší spolehlivost",
+      "sort_runs": "Nejvíce běhů",
+      "sort_recent": "Nejnovější"
     },
     "conflicts": {
       "dismissed": "Konflikt zamítnut",

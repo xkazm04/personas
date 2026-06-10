@@ -5768,6 +5768,12 @@ export type Translations = {
     knowledge: {
       title: string;
       patterns_tab: string;
+      search_placeholder: string;
+      sort_aria: string;
+      sort_default: string;
+      sort_confidence: string;
+      sort_runs: string;
+      sort_recent: string;
       subtitle: string;
       total_patterns: string;
       tool_sequences: string;

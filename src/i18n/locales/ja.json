@@ -5413,7 +5413,13 @@
       "avg_cost": "平均コスト",
       "avg_duration": "平均所要時間",
       "pattern_data": "パターンデータ",
-      "patterns_tab": "パターン"
+      "patterns_tab": "パターン",
+      "search_placeholder": "パターンを検索...",
+      "sort_aria": "パターンを並べ替え",
+      "sort_default": "トップパターン",
+      "sort_confidence": "信頼度が高い順",
+      "sort_runs": "実行回数が多い順",
+      "sort_recent": "最新順"
     },
     "conflicts": {
       "dismissed": "競合を非表示にしました",

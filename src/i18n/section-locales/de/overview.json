@@ -309,7 +309,13 @@
     "avg_cost": "Durchschn. Kosten",
     "avg_duration": "Durchschn. Dauer",
     "pattern_data": "Musterdaten",
-    "patterns_tab": "Muster"
+    "patterns_tab": "Muster",
+    "search_placeholder": "Muster suchen...",
+    "sort_aria": "Muster sortieren",
+    "sort_default": "Top-Muster",
+    "sort_confidence": "Höchste Konfidenz",
+    "sort_runs": "Meiste Ausführungen",
+    "sort_recent": "Neueste"
   },
   "conflicts": {
     "dismissed": "Konflikt verworfen",

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen } from 'lucide-react';
+import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen, Search } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useSystemStore } from '@/stores/systemStore';
@@ -11,6 +11,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
@@ -43,6 +44,8 @@ export default function KnowledgeGraphDashboard() {
   const [showAnnotateModal, setShowAnnotateModal] = useState(false);
   const [showTypeDropdown, setShowTypeDropdown] = useState(false);
   const [showScopeDropdown, setShowScopeDropdown] = useState(false);
+  const [search, setSearch] = useState('');
+  const [sortKey, setSortKey] = useState<'default' | 'confidence' | 'runs' | 'recent'>('default');
   const { failureDrilldownDate } = useOverviewFilterValues();
   const { setFailureDrilldownDate } = useOverviewFilterActions();
 
@@ -86,9 +89,23 @@ export default function KnowledgeGraphDashboard() {
     return () => { active = false; };
   }, [fetchData]);
 
-  const rawEntries = selectedPersonaId ? entries : (summary?.top_patterns ?? []);
+  const rawEntries = useMemo(
+    () => (selectedPersonaId ? entries : (summary?.top_patterns ?? [])),
+    [selectedPersonaId, entries, summary],
+  );
 
-  const { filtered: allEntries } = useFilteredCollection(rawEntries, {
+  // Sort before filtering — filtering preserves order, so the displayed subset
+  // stays in the chosen order. 'default' keeps the backend ranking untouched.
+  const sortedRaw = useMemo(() => {
+    if (sortKey === 'default') return rawEntries;
+    return [...rawEntries].sort((a, b) => {
+      if (sortKey === 'confidence') return b.confidence - a.confidence;
+      if (sortKey === 'runs') return (b.success_count + b.failure_count) - (a.success_count + a.failure_count);
+      return b.updated_at.localeCompare(a.updated_at); // 'recent'
+    });
+  }, [rawEntries, sortKey]);
+
+  const { filtered: allEntries } = useFilteredCollection(sortedRaw, {
     exact: [
       { field: 'scope_type', value: selectedScope },
       // Apply the type filter client-side too. The backend list query already
@@ -101,6 +118,13 @@ export default function KnowledgeGraphDashboard() {
       failureDrilldownDate
         ? (entry) => entry.failure_count > 0 && entry.updated_at.slice(0, 10) >= failureDrilldownDate
         : null,
+      search.trim()
+        ? (entry) => {
+            const q = search.trim().toLowerCase();
+            return entry.pattern_key.toLowerCase().includes(q)
+              || (entry.annotation_text?.toLowerCase().includes(q) ?? false);
+          }
+        : null,
     ],
   });
 
@@ -109,7 +133,7 @@ export default function KnowledgeGraphDashboard() {
   // sparkline), so spread mounting across ~2s after the frame lands rather
   // than dumping up to 100 rows on one frame. Resets when the filter changes.
   const entryReveal = useProgressiveReveal(allEntries.length, {
-    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`,
+    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}`,
     initialCount: 16,
   });
   const revealedEntries = useMemo(
@@ -118,7 +142,7 @@ export default function KnowledgeGraphDashboard() {
   );
   // Per-item entrance guard for the (virtualized) entry list. Keyed to the
   // active filters; survives row remount so scrolling never replays the fade.
-  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`);
+  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}|${search.trim()}`);
   const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(revealedEntries, ENTRY_ROW_ESTIMATE);
 
   const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
@@ -212,6 +236,21 @@ export default function KnowledgeGraphDashboard() {
           )}
 
           <div className="flex items-center gap-4 flex-wrap">
+            <div className="relative flex-1 min-w-[180px] max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.overview.knowledge.search_placeholder}
+                className="w-full pl-8 pr-8 py-1.5 typo-body rounded-card bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground focus:outline-none focus:border-primary/30 transition-colors"
+              />
+              {search && (
+                <button onClick={() => setSearch('')} aria-label={t.common.clear} className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/70">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
             <PersonaColumnFilter value={selectedPersonaId ?? ''} onChange={(v) => setSelectedPersonaId(v || null)} personas={personas} />
 
             <button
@@ -259,6 +298,18 @@ export default function KnowledgeGraphDashboard() {
                 ))}
               </div>
             )}
+
+            <ThemedSelect
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as typeof sortKey)}
+              aria-label={t.overview.knowledge.sort_aria}
+              wrapperClassName="ml-auto min-w-[150px] flex-shrink-0"
+            >
+              <option value="default">{t.overview.knowledge.sort_default}</option>
+              <option value="confidence">{t.overview.knowledge.sort_confidence}</option>
+              <option value="runs">{t.overview.knowledge.sort_runs}</option>
+              <option value="recent">{t.overview.knowledge.sort_recent}</option>
+            </ThemedSelect>
           </div>
 
           {failureDrilldownDate && (
@@ -308,7 +359,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : loading ? (
             <ListSkeleton rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />
-          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
+          ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope && !search ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <MotionEmptyState
                 motif="knowledge"
