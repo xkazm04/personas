@@ -6,7 +6,7 @@ import {
 // -- Tour icons & colors -----------------------------------------------
 
 export const TOUR_ICONS: Record<string, typeof Compass> = {
-  Compass, Activity, Radio, Sparkles, Puzzle, CalendarClock, FlaskConical,
+  Compass, Activity, Radio, Sparkles, Puzzle, CalendarClock, FlaskConical, Brain,
 };
 
 export interface TourColorSet {

@@ -27,7 +27,9 @@ export default function ObsidianBrainPage() {
       />
 
       <ContentBody centered>
-        <div key={obsidianBrainTab} className="animate-fade-slide-in">
+        {/* data-testid doubles as the Brain tour's spotlight anchor — one
+            stable id per tab regardless of connected/empty branch. */}
+        <div key={obsidianBrainTab} className="animate-fade-slide-in" data-testid={`obsidian-${obsidianBrainTab}-panel`}>
           <ErrorBoundary name="Obsidian Brain">
             <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
               {obsidianBrainTab === 'setup' && <SetupPanel />}

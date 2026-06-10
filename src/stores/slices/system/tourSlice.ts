@@ -18,7 +18,8 @@ export type TourId =
   | "plugins-explorer"
   | "schedules-mastery"
   | "templates-recipes"
-  | "teams-orchestration";
+  | "teams-orchestration"
+  | "obsidian-brain";
 
 /**
  * The single source of truth for tour completion event keys.
@@ -71,6 +72,11 @@ export const TOUR_EVENTS = [
   'tour:team-chaining-understood',
   'tour:team-assignment-explored',
   'tour:team-memory-explored',
+  // Obsidian Brain
+  'tour:obsidian-detected',
+  'tour:obsidian-vault-connected',
+  'tour:obsidian-tab-explored',
+  'tour:obsidian-memory-understood',
 ] as const;
 
 export type TourEventKey = (typeof TOUR_EVENTS)[number];
@@ -121,6 +127,13 @@ export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
   'tour:team-chaining-understood',
   'tour:team-assignment-explored',
   'tour:team-memory-explored',
+  // Obsidian Brain — 'detected' auto-completes via the obsidian_available
+  // probe when the binary is present; the acknowledge button is the manual
+  // fallback after the user installs Obsidian mid-step. The tab walks and
+  // the memory-dimensions stop are pure exploration.
+  'tour:obsidian-detected',
+  'tour:obsidian-tab-explored',
+  'tour:obsidian-memory-understood',
 ]);
 
 /** True when a step's completion is gated on the user clicking acknowledge rather than a real interaction. */
@@ -662,6 +675,133 @@ const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
   },
 ];
 
+const OBSIDIAN_BRAIN_STEPS: TourStepDef[] = [
+  {
+    id: "obsidian-install",
+    title: "Get Obsidian Ready",
+    description: "Obsidian Brain mirrors your agents' memory into an Obsidian vault — plain markdown notes you fully own, edit, and back up. This step checks whether the Obsidian desktop app is installed: if it is, the step completes by itself. If not, install it now — it's free.",
+    hint: "If this step doesn't complete on its own, install Obsidian from obsidian.md, open it once to create a vault, then click \"I've explored this\".",
+    nav: { sidebarSection: "plugins", subTab: "setup", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-detected",
+    highlightTestId: "obsidian-setup-panel",
+    narration: "Before anything else, let's make sure Obsidian itself is in place. I'm checking for it now — if you don't have it yet, grab it free from obsidian dot md, open it once to create a vault, and come right back.",
+    subSteps: [
+      { id: "auto-check", label: "Automatic check", hint: "Personas probes for the Obsidian desktop app the moment this step opens — when it's found, the step ticks itself off." },
+      { id: "install-missing", label: "Install if missing", hint: "Download Obsidian free from obsidian.md (Windows / macOS / Linux), launch it once, and create or open any vault folder." },
+      { id: "why-obsidian", label: "Why Obsidian?", hint: "Vendor-neutral memory: every agent memory becomes a readable markdown file in a folder you own — git it, Drive it, or read it in bed." },
+    ],
+  },
+  {
+    id: "obsidian-vault-connect",
+    title: "Connect a Vault",
+    description: "The Setup tab links a vault to Personas. Auto-detect scans the locations Obsidian itself knows about, Test verifies the folder is a real vault, and Save Configuration activates it. Already connected? This step completes by itself.",
+    hint: "Auto-detect (or browse to) your vault, press Test, then Save Configuration.",
+    nav: { sidebarSection: "plugins", subTab: "setup", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-vault-connected",
+    highlightTestId: "obsidian-setup-panel",
+    narration: "Now let's wire a vault in. Hit auto-detect — Personas reads the same registry Obsidian uses — then test the folder and save. Your vault list on the right remembers every vault you connect, so switching later is one click.",
+    subSteps: [
+      { id: "detect", label: "Auto-detect vaults", hint: "Scans Obsidian's own config for known vaults. You can also Browse to any folder manually.", highlightTestId: "obsidian-detect-vaults" },
+      { id: "test", label: "Test the connection", hint: "Verifies the folder has a .obsidian directory and counts its notes." },
+      { id: "options", label: "Pick sync options", hint: "Choose what syncs — memories, persona profiles, connectors — and whether Auto-Sync fires on every memory write." },
+      { id: "save", label: "Save configuration", hint: "Persists the vault and adds it to the Saved Vaults list. This is what completes the step.", highlightTestId: "obsidian-save-config" },
+    ],
+  },
+  {
+    id: "obsidian-sync-tab",
+    title: "Sync — Push & Pull Memories",
+    description: "Sync is the two-way bridge. Push writes agent memories, profiles, and connectors into the vault as markdown; Pull reads your edits back into the app. When both sides changed the same note, a conflict card shows a line-level diff with Keep App / Keep Vault / Skip.",
+    hint: "Look over the push selector, the pull button, and the sync log.",
+    nav: { sidebarSection: "plugins", subTab: "sync", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-tab-explored",
+    highlightTestId: "obsidian-sync-panel",
+    narration: "This is the bridge itself. Push sends memories into the vault as markdown. Pull brings your edits back — and that's the magic: edit a note in Obsidian, pull, and your agent now reasons with your curated version.",
+    subSteps: [
+      { id: "push", label: "Push to vault", hint: "Pick which personas to push with the chip selector — created / updated / skipped counts land in a result card." },
+      { id: "pull-conflicts", label: "Pull + conflicts", hint: "Pull parses frontmatter back into the app. Conflicting edits show a blue/violet line diff above Keep App / Keep Vault / Skip." },
+      { id: "sync-log", label: "Sync log", hint: "Every action is recorded — created, updated, conflict, skipped — with timestamps and the entity it touched." },
+    ],
+  },
+  {
+    id: "obsidian-browse-tab",
+    title: "Browse the Vault",
+    description: "A read-only explorer for the vault, inside the app. The folder tree shows note counts, the preview renders markdown with frontmatter lifted into a Properties row, and Open in Obsidian deep-links straight to the note.",
+    hint: "Open a few notes; try the filter box and Open in Obsidian.",
+    nav: { sidebarSection: "plugins", subTab: "browse", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-tab-explored",
+    highlightTestId: "obsidian-browse-panel",
+    narration: "Browse is your window into the vault without leaving Personas. Click through the tree, preview any note, and jump to the real thing in Obsidian with one button.",
+    subSteps: [
+      { id: "tree", label: "Folder tree", hint: "Collapsible folders with note counts. The filter box narrows the tree by file name." },
+      { id: "preview", label: "Note preview", hint: "Markdown rendered with tables and code; YAML frontmatter becomes a Properties chip row; word count in the header." },
+      { id: "deep-link", label: "Open in Obsidian", hint: "Launches the Obsidian app at the selected note via an obsidian:// link." },
+    ],
+  },
+  {
+    id: "obsidian-graph-tab",
+    title: "Graph — Search & Quick Capture",
+    description: "The Graph tab is the vault's metrics-and-capture surface: aggregate stats (notes, links, orphans, Maps of Content), a relevance-ranked search, and quick capture into today's daily note or a structured meeting note. A file watcher keeps stats live while you edit in Obsidian.",
+    hint: "Run a search, skim the orphan and MOC lists, try a journal capture.",
+    nav: { sidebarSection: "plugins", subTab: "graph", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-tab-explored",
+    highlightTestId: "obsidian-graph-panel",
+    narration: "Graph is where the vault becomes navigable: search it, find orphan notes that need linking, and capture thoughts straight into today's daily note. Agents get these same tools through the Obsidian Memory connector.",
+    subSteps: [
+      { id: "stats", label: "Vault stats", hint: "Notes, links, orphans, MOCs, and daily-note counts — every result row opens the note in Obsidian." },
+      { id: "search", label: "Search", hint: "Relevance-ranked full-text search over the vault — the same tool agents call as vault_search." },
+      { id: "capture", label: "Quick capture", hint: "Append a section to today's daily note, or write a meeting note with attendees — straight into the vault." },
+    ],
+  },
+  {
+    id: "obsidian-cloud-tab",
+    title: "Cloud — Back Up to Google Drive",
+    description: "Optional off-site backup: push the vault's files to your own Google Drive under Personas/ObsidianSync/ — a free alternative to Obsidian Sync. Only changed files upload (content-hash diff), and the drive.file scope means Personas can only see files it created.",
+    hint: "Note the sign-in flow and the Push / Pull to Drive buttons.",
+    nav: { sidebarSection: "plugins", subTab: "cloud", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-tab-explored",
+    highlightTestId: "obsidian-cloud-panel",
+    narration: "Cloud is belt and suspenders: back the whole vault up to your own Google Drive. It only sees files it created, and only uploads what changed.",
+    subSteps: [
+      { id: "signin", label: "Sign in + connect", hint: "Sign in with Google, then Connect Google Drive — Personas requests the narrow drive.file scope only." },
+      { id: "pushpull", label: "Push / Pull", hint: "Push uploads changed vault files; Pull downloads remote changes back into the local folder." },
+      { id: "separate", label: "Independent layer", hint: "Drive backup treats the vault as an opaque file tree — it's separate from the app⇄vault memory sync." },
+    ],
+  },
+  {
+    id: "obsidian-revitalize-tab",
+    title: "Revitalize — the Memory Sleep Cycle",
+    description: "Revitalize runs Claude over your vault in the background, the way sleep consolidates memory: prune stale notes, merge duplicates into canonical notes, refresh links and structure. A pass is bounded, narrates itself live, and ends with a summary — notes removed, merged, updated, and estimated tokens saved.",
+    hint: "Review the three goals, the live log area, and the Recent passes history.",
+    nav: { sidebarSection: "plugins", subTab: "revitalize", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-tab-explored",
+    highlightTestId: "obsidian-revitalize-panel",
+    narration: "Memory needs sleep. Revitalize lets Claude tidy the vault in the background — pruning stale notes, merging duplicates, fixing links — while status dots track it in the sidebar. Every pass ends with a report of what got cleaned.",
+    subSteps: [
+      { id: "goals", label: "Pick goals", hint: "Prune stale notes, aggregate duplicates, refresh structure — plus optional free-form guidance.", highlightTestId: "revitalize-goal-prune" },
+      { id: "background", label: "Runs in background", hint: "Start a pass and keep working — fuchsia dots on Plugins → Brain → Revitalize track it; re-opening the tab re-attaches.", highlightTestId: "revitalize-start" },
+      { id: "history", label: "Summary + history", hint: "Each pass ends with a stats card, and the Recent passes table keeps the last 20 runs — when, which vault, what was cleaned." },
+    ],
+  },
+  {
+    id: "obsidian-memory-dimensions",
+    title: "Where Vault Memory Pays Off",
+    description: "The vault isn't a side feature — it plugs into the app's memory everywhere. Agents write memories you can curate in Obsidian; agents with the Obsidian Memory connector read the vault at runtime; opt-in mirrors copy Research Lab, execution knowledge, and Athena's brain into it; and the Director writes its coaching history there.",
+    hint: "Skim the dimensions below, then flip on any Knowledge mirror toggles you want.",
+    nav: { sidebarSection: "plugins", subTab: "setup", subTabSetter: "setObsidianBrainTab" },
+    completeOn: "tour:obsidian-memory-understood",
+    highlightTestId: "obsidian-knowledge-mirror",
+    panelWidth: 480,
+    narration: "Here's the payoff. Agent memories become notes you co-author — your edits flow back into how agents reason. Agents can search the vault live. Research, execution knowledge, and Athena's brain can mirror into it. And the Director keeps its coaching history there. One vault, every memory dimension of the app.",
+    subSteps: [
+      { id: "curation-loop", label: "Curated agent memory", hint: "Agents write memories → they land as notes → you edit, link, and prune them in Obsidian → the next Pull feeds your curated version back into the agent's reasoning." },
+      { id: "runtime-tools", label: "Obsidian Memory connector", hint: "Attach the obsidian_memory connector to an agent and it can search the vault, walk wikilinks/backlinks, and append daily or meeting notes while it runs." },
+      { id: "knowledge-mirror", label: "Knowledge mirror", hint: "Opt-in toggles (visible once a vault is connected): mirror Research Lab findings, per-persona execution knowledge, and Athena's brain into the vault as markdown.", highlightTestId: "obsidian-knowledge-mirror" },
+      { id: "director-brain", label: "Director coaching history", hint: "With the Director's long-term memory enabled, every verdict it writes lands in a Director/ folder — a durable, human-readable coaching log per agent." },
+      { id: "hygiene", label: "Memory hygiene", hint: "Revitalize keeps all of the above lean — stale notes pruned, duplicates merged — so retrieval stays sharp as the vault grows." },
+    ],
+  },
+];
+
 export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "getting-started",
@@ -726,6 +866,14 @@ export const TOUR_REGISTRY: TourDef[] = [
     icon: "GitBranch",
     color: "emerald",
     steps: TEAMS_ORCHESTRATION_STEPS,
+  },
+  {
+    id: "obsidian-brain",
+    title: "Obsidian Brain & Memory",
+    description: "Install and connect Obsidian, walk every Brain tab — Sync, Browse, Graph, Cloud, Revitalize — and see where vault memory plugs into the rest of the app.",
+    icon: "Brain",
+    color: "violet",
+    steps: OBSIDIAN_BRAIN_STEPS,
   },
 ];
 
@@ -1019,6 +1167,7 @@ export const createTourSlice: StateCreator<
     "schedules-mastery": persisted?.tours?.["schedules-mastery"]?.completed ?? false,
     "templates-recipes": persisted?.tours?.["templates-recipes"]?.completed ?? false,
     "teams-orchestration": persisted?.tours?.["teams-orchestration"]?.completed ?? false,
+    "obsidian-brain": persisted?.tours?.["obsidian-brain"]?.completed ?? false,
   };
 
   function getPersistedTours(): PersistedTourState['tours'] {

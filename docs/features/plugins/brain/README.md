@@ -31,6 +31,8 @@ Notes are written with YAML frontmatter that preserves IDs, hashes, and timestam
 
 The plugin is organised as six tabs, listed alphabetically in the sidebar: **Browse Vault**, **Cloud**, **Graph**, **Revitalize**, **Setup**, and **Sync**. A **Saved Vaults** sidebar appears on the right of every tab except Cloud and lets you switch between multiple vault configurations without re-running setup. The saved-vault roster and the active vault both persist across app sessions (app settings table; the active vault is rehydrated at startup). When no vault is connected, the Sync, Browse, Graph, Cloud, and Revitalize tabs show a *No vault connected* empty state with an **Open Setup** button that jumps straight to the Setup tab.
 
+A guided **Obsidian Brain & Memory** tour (Home → Learning, tour id `obsidian-brain`, 8 steps) walks this whole flow: it detects whether the Obsidian app is installed (auto-completing when found, with install guidance when not), coaches the vault connection, visits every tab, and ends with a map of where vault memory plugs into the rest of the app (memory curation loop, `obsidian_memory` connector, knowledge mirror, Director brain, Revitalize).
+
 ### 1. Setup — connect a vault
 
 1. Open **Plugins → Obsidian Brain → Setup**.
