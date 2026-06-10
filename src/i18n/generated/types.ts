@@ -417,6 +417,16 @@ export type Translations = {
   };
   chrome: {
     app_title: string;
+    tray_schedules: string;
+    tray_schedules_today: string;
+    tray_notifications: string;
+    tray_notifications_unread: string;
+    tray_signals: string;
+    tray_word_today: string;
+    tray_word_to_answer: string;
+    tray_word_fleet: string;
+    tray_word_unread: string;
+    tray_word_running: string;
     system_load: {
       label: string;
       cpu: string;
@@ -7712,6 +7722,8 @@ export type Translations = {
       autocomplete_setup_time: string;
       autocomplete_suggestions: string;
       coverage_filter_aria: string;
+      _comment_coverage_chips: string;
+      coverage_drafts: string;
       search_suggestions_aria: string;
       clear_search_aria: string;
       search_with_ai_aria: string;
@@ -14431,6 +14443,7 @@ export type Translations = {
     preset_back_to_gallery: string;
     preset_blueprint_heading: string;
     preset_blueprint_hint: string;
+    preset_setup_cta: string;
     no_teams_yet: string;
     no_teams_hint: string;
     team_studio: {

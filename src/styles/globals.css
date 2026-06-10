@@ -151,6 +151,13 @@
   -webkit-app-region: no-drag;
 }
 
+/* Interactive islands inside the title-bar drag region (quick-action tray
+   variants + the temporary variant switcher). */
+.titlebar-nodrag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 .titlebar-btn {
   display: inline-flex;
   align-items: center;

@@ -1,25 +1,33 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 // eslint-disable-next-line no-restricted-imports -- TitleBar owns the native window chrome (minimize/maximize/close); the Tauri window API is intrinsic to this primitive and cannot be lifted without moving the window controls themselves out of the design-system layer.
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Minus, Square, X, Copy, Bell, CalendarClock, ArrowLeft, Search } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
-import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
-import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import ProcessActivityIndicator from '@/features/shared/components/layout/ProcessActivityIndicator';
 import { TitleBarAmbient } from '@/features/shared/components/layout/TitleBarAmbient';
+import { useTitleBarTray } from './useTitleBarTray';
+import TitleBarVariantDock from './TitleBarVariantDock';
+import TitleBarVariantLedger from './TitleBarVariantLedger';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 
+/* PROTOTYPE SCAFFOLD — temporary tray-variant switcher (left side of the
+   title bar). Removed at consolidation; the winning variant replaces the
+   baseline tray. */
+const TRAY_VARIANTS = ['base', 'dock', 'ledger'] as const;
+type TrayVariant = (typeof TRAY_VARIANTS)[number];
+const TRAY_VARIANT_KEY = 'titlebar-tray-variant';
+
+function initialTrayVariant(): TrayVariant {
+  const stored = localStorage.getItem(TRAY_VARIANT_KEY);
+  return TRAY_VARIANTS.includes(stored as TrayVariant) ? (stored as TrayVariant) : 'base';
+}
+
 export default function TitleBar() {
   const [maximized, setMaximized] = useState(false);
-  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
-  const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
-  const cronAgents = useOverviewStore((s) => s.cronAgents);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const sidebarSection = useSystemStore((s) => s.sidebarSection);
+  const [trayVariant, setTrayVariant] = useState<TrayVariant>(initialTrayVariant);
   const navigationHistory = useSystemStore((s) => s.navigationHistory);
   const navigateBack = useSystemStore((s) => s.navigateBack);
   // A fullscreen surface (e.g. the Fleet grid overlay) can register a Back
@@ -28,20 +36,6 @@ export default function TitleBar() {
   // Unified header-overlay controller — Notifications & Monitor are mutually
   // exclusive, and route nav / Back close the active overlay (see uiSlice).
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
-  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
-  const openPalette = useCommandPaletteStore((s) => s.openPalette);
-  const notificationsOpen = headerOverlay === 'notifications';
-
-  const todayScheduleCount = useMemo(() => {
-    const now = new Date();
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    return cronAgents.filter((a) => {
-      if (!a.trigger_enabled || !a.persona_enabled) return false;
-      if (!a.next_trigger_at) return false;
-      const next = new Date(a.next_trigger_at);
-      return next >= now && next <= endOfDay;
-    }).length;
-  }, [cronAgents]);
 
   useEffect(() => {
     if (!appWindow) return;
@@ -57,21 +51,12 @@ export default function TitleBar() {
 
   const { t } = useTranslation();
 
-  // Opening the bell marks everything read (clears the unread badge); closing
-  // is a plain toggle. Mirrors how most notification trays behave — surfacing
-  // the panel is the acknowledgement.
-  const handleToggleNotifications = () => {
-    if (!notificationsOpen) {
-      markAllNotificationsRead();
-      setHeaderOverlay('notifications'); // structurally closes the Monitor if open
-    } else {
-      setHeaderOverlay('none');
-    }
+  const pickTrayVariant = (v: TrayVariant) => {
+    setTrayVariant(v);
+    localStorage.setItem(TRAY_VARIANT_KEY, v);
   };
 
   if (!IS_DESKTOP) return null;
-
-  const isScheduleActive = sidebarSection === 'schedules';
 
   return (
     <div
@@ -102,67 +87,38 @@ export default function TitleBar() {
         </button>
       )}
 
+      {/* PROTOTYPE SCAFFOLD — tray variant switcher. Throwaway. */}
+      <div
+        className="titlebar-nodrag ml-3 flex items-center gap-0.5 rounded-full border border-primary/10 bg-secondary/40 p-0.5"
+        data-testid="titlebar-tray-switcher"
+      >
+        {TRAY_VARIANTS.map((v) => (
+          <button
+            key={v}
+            type="button"
+            className={`h-5 rounded-full px-2 text-xs leading-none transition-colors ${
+              trayVariant === v
+                ? 'bg-primary/15 text-primary'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            onClick={() => pickTrayVariant(v)}
+            aria-pressed={trayVariant === v}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
+
       {/* Spacer -- entire middle area is draggable */}
       <div data-tauri-drag-region className="flex-1" />
 
       {/* Time-of-day chip -- inline, sits before the action tray */}
       <TitleBarAmbient />
 
-      {/* Quick-action tray */}
-      <div className="flex items-center gap-0.5 mr-1">
-        {/* Search — opens the command palette (settings scope). Moved off the
-            ambient illustration so the time-of-day art stays a window-drag
-            region; lives left of the schedule icon. */}
-        <button
-          className="titlebar-btn"
-          data-testid="titlebar-search"
-          onClick={() => openPalette('settings')}
-          aria-label={t.settings.search.trigger_aria}
-          title={t.settings.search.trigger_hint}
-        >
-          <Search size={20} strokeWidth={1.5} />
-        </button>
-
-        {/* Schedule calendar */}
-        <button
-          className={`titlebar-btn relative ${isScheduleActive ? 'titlebar-btn-active' : ''}`}
-          data-testid="titlebar-schedules"
-          aria-pressed={isScheduleActive}
-          onClick={() => setSidebarSection(isScheduleActive ? 'home' : 'schedules')}
-          aria-label={`Schedules${todayScheduleCount > 0 ? ` (${todayScheduleCount} today)` : ''}`}
-          title={todayScheduleCount > 0 ? `${todayScheduleCount} scheduled today` : 'Schedules'}
-        >
-          <CalendarClock size={22} strokeWidth={1.5} />
-          {todayScheduleCount > 0 && (
-            <span
-              className="absolute bottom-1.5 right-1 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[10px] font-semibold leading-none rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/25"
-              style={{ filter: `brightness(${1 / todayScheduleCount})` }}
-            >
-              {todayScheduleCount}
-            </span>
-          )}
-        </button>
-
-        {/* Process activity indicator */}
-        <ProcessActivityIndicator />
-
-        {/* Notification bell — background highlight while the center is open */}
-        <button
-          className={`titlebar-btn relative ${notificationsOpen ? 'titlebar-btn-active' : ''}`}
-          data-testid="titlebar-notifications"
-          aria-pressed={notificationsOpen}
-          onClick={handleToggleNotifications}
-          aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
-          title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
-        >
-          <Bell size={22} strokeWidth={1.5} />
-          {unreadCount > 0 && (
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 min-w-[18px] h-[18px] px-[3px] flex items-center justify-center text-[12px] font-bold leading-none rounded-full bg-orange-500 text-foreground shadow-elevation-1">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Quick-action tray — baseline or one of the prototype variants */}
+      {trayVariant === 'base' && <BaselineTray />}
+      {trayVariant === 'dock' && <TitleBarVariantDock />}
+      {trayVariant === 'ledger' && <TitleBarVariantLedger />}
 
       {/* Divider between actions and window chrome */}
       <div className="w-px h-5 bg-primary/10 mx-1" />
@@ -197,6 +153,73 @@ export default function TitleBar() {
           <X size={18} strokeWidth={1.5} />
         </button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * The pre-prototype quick-action tray, byte-for-byte the markup that shipped
+ * before the variant experiment — kept as the default A/B reference.
+ * State wiring lives in useTitleBarTray (shared with the variants).
+ */
+function BaselineTray() {
+  const { t } = useTranslation();
+  const tray = useTitleBarTray();
+
+  return (
+    <div className="flex items-center gap-0.5 mr-1">
+      {/* Search — opens the command palette (settings scope). Moved off the
+          ambient illustration so the time-of-day art stays a window-drag
+          region; lives left of the schedule icon. */}
+      <button
+        className="titlebar-btn"
+        data-testid="titlebar-search"
+        onClick={tray.openSearch}
+        aria-label={t.settings.search.trigger_aria}
+        title={t.settings.search.trigger_hint}
+      >
+        <Search size={20} strokeWidth={1.5} />
+      </button>
+
+      {/* Schedule calendar */}
+      <button
+        className={`titlebar-btn relative ${tray.isScheduleActive ? 'titlebar-btn-active' : ''}`}
+        data-testid="titlebar-schedules"
+        aria-pressed={tray.isScheduleActive}
+        onClick={tray.toggleSchedules}
+        aria-label={`Schedules${tray.todayScheduleCount > 0 ? ` (${tray.todayScheduleCount} today)` : ''}`}
+        title={tray.todayScheduleCount > 0 ? `${tray.todayScheduleCount} scheduled today` : 'Schedules'}
+      >
+        <CalendarClock size={22} strokeWidth={1.5} />
+        {tray.todayScheduleCount > 0 && (
+          <span
+            className="absolute bottom-1.5 right-1 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[10px] font-semibold leading-none rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/25"
+            style={{ filter: `brightness(${1 / tray.todayScheduleCount})` }}
+          >
+            {tray.todayScheduleCount}
+          </span>
+        )}
+      </button>
+
+      {/* Process activity indicator */}
+      <ProcessActivityIndicator />
+
+      {/* Notification bell — background highlight while the center is open */}
+      <button
+        className={`titlebar-btn relative ${tray.notificationsOpen ? 'titlebar-btn-active' : ''}`}
+        data-testid="titlebar-notifications"
+        aria-pressed={tray.notificationsOpen}
+        onClick={tray.toggleNotifications}
+        aria-label={`Notifications${tray.unreadCount > 0 ? ` (${tray.unreadCount} unread)` : ''}`}
+        title={tray.unreadCount > 0 ? `${tray.unreadCount} unread notifications` : 'Notifications'}
+      >
+        <Bell size={22} strokeWidth={1.5} />
+        {tray.unreadCount > 0 && (
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 min-w-[18px] h-[18px] px-[3px] flex items-center justify-center text-[12px] font-bold leading-none rounded-full bg-orange-500 text-foreground shadow-elevation-1">
+            {tray.unreadCount > 9 ? '9+' : tray.unreadCount}
+          </span>
+        )}
+      </button>
     </div>
   );
 }

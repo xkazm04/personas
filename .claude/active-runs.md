@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype — TitleBar quick-action tray (badge redesign, 2 variants)
+- Started: 2026-06-10 20:27
+- Status: started
+- Branch: master (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server)
+- Paths: src/features/shared/components/layout/{TitleBar.tsx,TitleBarVariantDock.tsx,TitleBarVariantLedger.tsx,useTitleBarTray.tsx}, src/styles/globals.css (titlebar-nodrag util), src/i18n/locales/en.json (chrome.tray_* keys)
+- Note: icon cluster (Search/Calendar/Review/Monitor/Bell) has 3 inconsistent badge styles overlapping the glyphs (incl. a brightness(1/count) dimming hack). Prototyping Dock (inline count capsules) + Ledger (separate annunciator readout strip) behind a temporary left-side switcher.
+
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
 - Status: completed (commit: 3194e4c25) — cargo check + tsc + ts-rs bindings test all green; runtime not yet observed (needs dev rebuild)
