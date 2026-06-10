@@ -36,6 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — obsidian-brain: Revitalize runs history
+- Started: 2026-06-10 (worktree worktree-revitalize-history off vibeman/audit-2026-06-09)
+- Status: completed (merge: ec8baaf40; commit 66afa8406)
+- Branch: merged into vibeman/audit-2026-06-09; worktree + branch removed
+- Paths: src-tauri/src/commands/obsidian_brain/revitalize.rs, src-tauri/src/db/{migrations/incremental.rs,models/obsidian_brain.rs,repos/resources/obsidian_brain.rs}, src-tauri/src/lib.rs, src/api/obsidianBrain/, src/features/plugins/obsidian-brain/sub_revitalize/, src/lib/bindings/RevitalizeRunRecord.ts, src/i18n/locales/en.json (plugins.obsidian_brain keys only), docs/features/plugins/brain/
+- Note: persisted obsidian_revitalize_runs table (+ binding regen) + obsidian_revitalize_history command + "Recent passes" table (when / vault / status / cleaned counts / tokens saved). Validated: tsc, eslint, cargo check, export_bindings test. Merge required checkpointing another session's in-flight en.json adoption keys (f4a6b9aae) + regenerating conflicted enSectionStrings.ts from the merged en.json; post-merge tsc clean on main.
+
 ### prototype — companion Decisions panel variants (+ voice select refactor)
 - Started: 2026-06-10 13:41
 - Status: started
