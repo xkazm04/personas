@@ -56,6 +56,37 @@ describe('recipeDefinitionToRecipe', () => {
       .toBe('reporting');
     expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'observability' })).category)
       .toBe('monitoring');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'personal_productivity' })).category)
+      .toBe('productivity');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'writing' })).category)
+      .toBe('content');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'build' })).category)
+      .toBe('development');
+  });
+
+  it('prefers the UC title over the technical row name', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc_approval_workflow', title: 'Approval Workflow' }, { name: 'uc_approval_workflow' }),
+    );
+    expect(r.name).toBe('Approval Workflow');
+    expect(r.slug).toBe('approval-workflow');
+    expect(r.template.title).toBe('Approval Workflow');
+  });
+
+  it('prefers the UC category over the (usually null) row category', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', category: 'research' }, { category: null }),
+    );
+    expect(r.category).toBe('analysis');
+    // Raw UC category is preserved on the adopted-template shape.
+    expect(r.template.category).toBe('research');
+  });
+
+  it('uses the UC capability_summary as the browse tagline', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', capability_summary: 'Tracks invoices end to end.' }),
+    );
+    expect(r.summary).toBe('Tracks invoices end to end.');
   });
 
   it('extracts tool_hints from the prompt_template UC', () => {

@@ -19,14 +19,20 @@
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 
 /** Coarse top-level taxonomy used for filter chips in the catalog. Avoid
- *  proliferation — when in doubt, choose the closest existing bucket. */
+ *  proliferation — when in doubt, choose the closest existing bucket.
+ *  The 2026-06 extension (development / content / productivity) tracks the
+ *  real distribution of the 298 seeded recipes — those three buckets alone
+ *  cover ~40% of the corpus, which previously collapsed into 'automation'. */
 export type RecipeCategory =
   | 'monitoring'
   | 'reporting'
   | 'automation'
   | 'communication'
   | 'data-sync'
-  | 'analysis';
+  | 'analysis'
+  | 'development'
+  | 'content'
+  | 'productivity';
 
 /** Kind of value the user supplies during adoption for a `RecipeBinding`.
  *  Each kind that names a connector is an *implicit* dependency on that

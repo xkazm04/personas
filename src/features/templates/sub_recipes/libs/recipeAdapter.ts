@@ -42,7 +42,44 @@ const KNOWN_CATEGORIES: ReadonlySet<RecipeCategory> = new Set<RecipeCategory>([
   'communication',
   'data-sync',
   'analysis',
+  'development',
+  'content',
+  'productivity',
 ]);
+
+/** Alias → canonical bucket. Built from the actual category vocabulary of
+ *  the 298 seeded recipes' use-case JSON (42 distinct values), so the
+ *  catalog's category column reflects what each recipe really does instead
+ *  of collapsing everything into 'automation'. */
+const CATEGORY_ALIASES: Readonly<Record<string, RecipeCategory>> = {
+  // monitoring — watching state, alerting on change
+  monitor: 'monitoring', observability: 'monitoring', tracking: 'monitoring',
+  realtime: 'monitoring', security: 'monitoring',
+  // reporting — digests, summaries, dashboards
+  reports: 'reporting', audit: 'reporting', 'audit-reporting': 'reporting',
+  analytics: 'reporting',
+  // automation — scheduled/operational work without a better home
+  workflow: 'automation', operations: 'automation', maintenance: 'automation',
+  scheduled: 'automation', configuration: 'automation', response: 'automation',
+  // communication — messages out to people
+  messaging: 'communication', notify: 'communication', notifications: 'communication',
+  outreach: 'communication', email_processing: 'communication',
+  // data-sync — moving/ingesting/archiving data between systems
+  data: 'data-sync', sync: 'data-sync', integration: 'data-sync',
+  ingestion: 'data-sync', collections: 'data-sync', archive: 'data-sync',
+  // analysis — research, review, investigation
+  research: 'analysis', investigation: 'analysis', extraction: 'analysis',
+  discovery: 'analysis', review: 'analysis', strategy: 'analysis',
+  // development — code, builds, engineering workflows
+  build: 'development',
+  // content — writing, editing, publishing
+  writing: 'content', editing: 'content', publishing: 'content',
+  curation: 'content', generation: 'content',
+  // productivity — personal/team support, planning, people ops
+  personal_productivity: 'productivity', support: 'productivity',
+  hr: 'productivity', recruiting_ops: 'productivity', planning: 'productivity',
+  growth: 'productivity', intake: 'productivity',
+};
 
 function coerceCategory(value: string | null | undefined): RecipeCategory {
   if (!value) return 'automation';
@@ -50,14 +87,7 @@ function coerceCategory(value: string | null | undefined): RecipeCategory {
   if (KNOWN_CATEGORIES.has(lower as RecipeCategory)) {
     return lower as RecipeCategory;
   }
-  // Common aliases observed in the seeded catalog.
-  if (lower === 'workflow' || lower === 'sync') return 'automation';
-  if (lower === 'reports' || lower === 'audit' || lower === 'audit-reporting') return 'reporting';
-  if (lower === 'observability' || lower === 'monitor') return 'monitoring';
-  if (lower === 'messaging' || lower === 'notify') return 'communication';
-  if (lower === 'data' || lower === 'integration') return 'data-sync';
-  if (lower === 'research' || lower === 'investigation' || lower === 'extraction') return 'analysis';
-  return 'automation';
+  return CATEGORY_ALIASES[lower] ?? 'automation';
 }
 
 function safeJsonArray<T = unknown>(raw: string | null | undefined): T[] {
@@ -82,6 +112,15 @@ function slugify(s: string): string {
 }
 
 interface ParsedUseCase {
+  /** Human display title from the UC JSON — the fix for catalog rows that
+   *  otherwise show the technical `uc_*` id as their name. */
+  title?: string;
+  /** UC-level category — far more specific than the row-level
+   *  `RecipeDefinition.category`, which is null for ~97% of seeds. */
+  category?: string;
+  /** One-line capability summary — better browse tagline than a hard
+   *  80-char slice of the long description. */
+  capabilitySummary?: string;
   toolHints: string[];
   connectors: string[];
   suggestedTrigger?: {
@@ -96,6 +135,10 @@ interface ParsedUseCase {
     events?: 'on' | 'off';
   };
   promptTemplate: string;
+}
+
+function nonEmptyString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
 }
 
 function parsePromptTemplate(prompt: string): ParsedUseCase {
@@ -165,6 +208,9 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
     );
 
   return {
+    title: nonEmptyString(uc.title),
+    category: nonEmptyString(uc.category),
+    capabilitySummary: nonEmptyString(uc.capability_summary),
     toolHints,
     connectors,
     suggestedTrigger,
@@ -181,16 +227,23 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
 export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
   const parsed = parsePromptTemplate(def.prompt_template);
   const tags = asStringArray(safeJsonArray(def.tags));
-  const summary = (def.description ?? '').trim().slice(0, 80) || def.name;
-  const slug = slugify(def.name) || def.id.slice(0, 8);
+  // Prefer the UC's human title over the row name — Stage B's derivation
+  // wrote the technical `uc_*` id into `name` (the UC JSON has `title`,
+  // not `name`), so for seeded rows the row name is not display-worthy.
+  const name = parsed.title ?? def.name;
+  const summary = parsed.capabilitySummary?.slice(0, 80)
+    ?? ((def.description ?? '').trim().slice(0, 80) || name);
+  const slug = slugify(name) || def.id.slice(0, 8);
 
   return {
     id: def.id,
     slug,
-    name: def.name,
+    name,
     summary,
     description: def.description ?? '',
-    category: coerceCategory(def.category),
+    // UC-level category wins: row-level `category` is null for ~97% of
+    // seeds, which used to collapse the whole catalog into 'automation'.
+    category: coerceCategory(parsed.category ?? def.category),
 
     // No connector requirements declared → empty arrays. The frontend's
     // eligibility resolver treats empty `requiredConnectors` as
@@ -200,10 +253,10 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
     optionalConnectors: [],
 
     template: {
-      title: def.name,
+      title: name,
       description: def.description ?? '',
-      capabilitySummary: def.description ?? '',
-      category: def.category ?? 'automation',
+      capabilitySummary: parsed.capabilitySummary ?? def.description ?? '',
+      category: parsed.category ?? def.category ?? 'automation',
       suggestedTrigger: parsed.suggestedTrigger,
       toolHints: parsed.toolHints,
       notificationChannelTypes: parsed.notificationChannelTypes,

@@ -23,6 +23,9 @@ function getCategoryLabels(t: Translations): Record<RecipeCategory, string> {
     communication: t.recipes_catalog.category_communication,
     'data-sync': t.recipes_catalog.category_data_sync,
     analysis: t.recipes_catalog.category_analysis,
+    development: t.recipes_catalog.category_development,
+    content: t.recipes_catalog.category_content,
+    productivity: t.recipes_catalog.category_productivity,
   };
 }
 

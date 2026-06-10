@@ -10515,6 +10515,9 @@ export type Translations = {
     category_data_sync: string;
     _comment_category_analysis: string;
     category_analysis: string;
+    category_development: string;
+    category_content: string;
+    category_productivity: string;
     _comment_eligibility_all_label: string;
     eligibility_all_label: string;
     _comment_eligibility_ready_label: string;
