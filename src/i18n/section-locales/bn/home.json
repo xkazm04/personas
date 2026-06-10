@@ -104,13 +104,6 @@
     "restart": "পুনরায় শুরু",
     "start_tour": "ট্যুর শুরু করুন",
     "steps_count": "{count}টি ধাপ",
-    "tricks_tips": "টিপস ও ট্রিকস",
-    "guides_count": "{count}টি গাইড",
-    "how_to_use": "কীভাবে ব্যবহার করবেন",
-    "pro_tip": "প্রো টিপ: ",
-    "cat_agent_craft": "এজেন্ট ক্রাফট",
-    "cat_observability": "পর্যবেক্ষণযোগ্যতা ও ইভেন্ট",
-    "cat_platform": "প্ল্যাটফর্ম ও সেটআপ",
     "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {

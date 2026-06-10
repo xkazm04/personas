@@ -561,13 +561,6 @@
       "restart": "Recommencer",
       "start_tour": "Démarrer la visite",
       "steps_count": "{count} étapes",
-      "tricks_tips": "Astuces & conseils",
-      "guides_count": "{count} guides",
-      "how_to_use": "Comment utiliser",
-      "pro_tip": "Conseil pro : ",
-      "cat_agent_craft": "Création d'agents",
-      "cat_observability": "Observabilité & Événements",
-      "cat_platform": "Plateforme & Configuration",
       "tour_steps_label": "What you'll learn"
     },
     "setup_stepper": {

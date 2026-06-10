@@ -561,13 +561,6 @@
       "restart": "Mulai Ulang",
       "start_tour": "Mulai Tur",
       "steps_count": "{count} langkah",
-      "tricks_tips": "Trik & Tips",
-      "guides_count": "{count} panduan",
-      "how_to_use": "Cara menggunakan",
-      "pro_tip": "Tips pro: ",
-      "cat_agent_craft": "Pembuatan Agen",
-      "cat_observability": "Observabilitas & Acara",
-      "cat_platform": "Platform & Pengaturan",
       "tour_steps_label": "What you'll learn"
     },
     "setup_stepper": {
