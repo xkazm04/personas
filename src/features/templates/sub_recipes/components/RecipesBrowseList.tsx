@@ -5,28 +5,14 @@ import {
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { Translations } from '@/i18n/en';
 import type { Recipe, RecipeCategory } from '../types';
 import { useRecipeEligibilityMap } from '../useEligibility';
+import { getCategoryLabels } from '../libs/categoryLabels';
 import { RecipesTableResults } from './RecipesTableResults';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
   onOpenDetail: (recipeId: string) => void;
-}
-
-function getCategoryLabels(t: Translations): Record<RecipeCategory, string> {
-  return {
-    monitoring: t.recipes_catalog.category_monitoring,
-    reporting: t.recipes_catalog.category_reporting,
-    automation: t.recipes_catalog.category_automation,
-    communication: t.recipes_catalog.category_communication,
-    'data-sync': t.recipes_catalog.category_data_sync,
-    analysis: t.recipes_catalog.category_analysis,
-    development: t.recipes_catalog.category_development,
-    content: t.recipes_catalog.category_content,
-    productivity: t.recipes_catalog.category_productivity,
-  };
 }
 
 interface CategoryOption {
