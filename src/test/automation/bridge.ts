@@ -247,7 +247,8 @@ const bridge: TestBridge = {
         error: `Invalid template tab: ${tab}. Valid: ${VALID_TEMPLATE_TABS.join(', ')}`,
       };
     }
-    useSystemStore.getState().setSidebarSection('templates');
+    // Templates surfaces live under the 'design-reviews' sidebar section.
+    useSystemStore.getState().setSidebarSection('design-reviews');
     useSystemStore.getState().setTemplateTab(tab as typeof VALID_TEMPLATE_TABS[number]);
     return { success: true, tab };
   },
