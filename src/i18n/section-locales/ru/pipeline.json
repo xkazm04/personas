@@ -306,7 +306,9 @@
     "workspace_unsaved_body": "Вы изменили настройки рабочего пространства, но не сохранили их. Выйти и отменить изменения?",
     "workspace_unsaved_discard": "Отменить изменения",
     "workspace_unsaved_stay": "Продолжить редактирование",
-    "unsent_draft_hint": "Неотправленный черновик канала"
+    "unsent_draft_hint": "Неотправленный черновик канала",
+    "presence_working": "Работает…",
+    "presence_waiting": "Ожидает проверки"
   },
   "memory_created": "Запись сохранена в журнал команды",
   "memory_updated": "Запись обновлена",

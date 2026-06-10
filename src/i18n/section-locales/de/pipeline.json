@@ -306,7 +306,9 @@
     "workspace_unsaved_body": "Du hast die Workspace-Einstellungen bearbeitet, aber nicht gespeichert. Verlassen und Änderungen verwerfen?",
     "workspace_unsaved_discard": "Änderungen verwerfen",
     "workspace_unsaved_stay": "Weiter bearbeiten",
-    "unsent_draft_hint": "Ungesendeter Kanal-Entwurf"
+    "unsent_draft_hint": "Ungesendeter Kanal-Entwurf",
+    "presence_working": "Arbeitet…",
+    "presence_waiting": "Wartet auf Review"
   },
   "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
   "memory_updated": "Eintrag aktualisiert",

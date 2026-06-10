@@ -13696,7 +13696,9 @@
       "workspace_unsaved_body": "Upravili jste nastavení pracovního prostoru, ale neuložili je. Odejít a zahodit změny?",
       "workspace_unsaved_discard": "Zahodit změny",
       "workspace_unsaved_stay": "Pokračovat v úpravách",
-      "unsent_draft_hint": "Neodeslaný koncept v kanálu"
+      "unsent_draft_hint": "Neodeslaný koncept v kanálu",
+      "presence_working": "Pracuje…",
+      "presence_waiting": "Čeká na kontrolu"
     },
     "memory_created": "Záznam uložen do týmové paměti",
     "memory_updated": "Záznam aktualizován",

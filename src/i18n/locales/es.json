@@ -13696,7 +13696,9 @@
       "workspace_unsaved_body": "Editaste la configuración del espacio de trabajo pero no la guardaste. ¿Salir y descartar los cambios?",
       "workspace_unsaved_discard": "Descartar cambios",
       "workspace_unsaved_stay": "Seguir editando",
-      "unsent_draft_hint": "Borrador del canal sin enviar"
+      "unsent_draft_hint": "Borrador del canal sin enviar",
+      "presence_working": "Trabajando…",
+      "presence_waiting": "Esperando revisión"
     },
     "memory_created": "Memoria guardada en el registro del equipo",
     "memory_updated": "Memoria actualizada",

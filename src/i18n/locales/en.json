@@ -14446,6 +14446,8 @@
       "workspace_save_failed": "Couldn't save workspace settings",
       "workspace_inherit": "Inherit",
       "unsent_draft_hint": "Unsent channel draft",
+      "presence_working": "Working…",
+      "presence_waiting": "Waiting for review",
       "workspace_unsaved_title": "Unsaved workspace changes",
       "workspace_unsaved_body": "You edited the workspace settings but haven't saved. Leave and discard the changes?",
       "workspace_unsaved_discard": "Discard changes",

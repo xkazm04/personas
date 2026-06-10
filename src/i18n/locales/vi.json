@@ -13696,7 +13696,9 @@
       "workspace_unsaved_body": "Bạn đã chỉnh sửa cài đặt không gian làm việc nhưng chưa lưu. Rời đi và bỏ các thay đổi?",
       "workspace_unsaved_discard": "Bỏ thay đổi",
       "workspace_unsaved_stay": "Tiếp tục chỉnh sửa",
-      "unsent_draft_hint": "Bản nháp kênh chưa gửi"
+      "unsent_draft_hint": "Bản nháp kênh chưa gửi",
+      "presence_working": "Đang làm việc…",
+      "presence_waiting": "Đang chờ xét duyệt"
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",

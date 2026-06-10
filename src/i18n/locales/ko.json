@@ -13696,7 +13696,9 @@
       "workspace_unsaved_body": "워크스페이스 설정을 편집했지만 저장하지 않았습니다. 나가서 변경 사항을 취소할까요?",
       "workspace_unsaved_discard": "변경 사항 취소",
       "workspace_unsaved_stay": "계속 편집",
-      "unsent_draft_hint": "보내지 않은 채널 초안"
+      "unsent_draft_hint": "보내지 않은 채널 초안",
+      "presence_working": "작업 중…",
+      "presence_waiting": "리뷰 대기 중"
     },
     "memory_created": "메모리가 팀 장부에 저장되었습니다",
     "memory_updated": "메모리가 업데이트되었습니다",

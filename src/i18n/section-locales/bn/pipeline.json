@@ -306,7 +306,9 @@
     "workspace_unsaved_body": "আপনি ওয়ার্কস্পেস সেটিংস সম্পাদনা করেছেন কিন্তু সংরক্ষণ করেননি। ছেড়ে গিয়ে পরিবর্তনগুলি বাতিল করবেন?",
     "workspace_unsaved_discard": "পরিবর্তন বাতিল করুন",
     "workspace_unsaved_stay": "সম্পাদনা চালিয়ে যান",
-    "unsent_draft_hint": "চ্যানেলের অপাঠানো খসড়া"
+    "unsent_draft_hint": "চ্যানেলের অপাঠানো খসড়া",
+    "presence_working": "কাজ করছে…",
+    "presence_waiting": "পর্যালোচনার অপেক্ষায়"
   },
   "memory_created": "স্মৃতি টিম লেজারে সংরক্ষিত হয়েছে",
   "memory_updated": "স্মৃতি আপডেট হয়েছে",

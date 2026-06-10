@@ -191,7 +191,10 @@ Director/Athena orchestration discussion).
   shell; switching modes, clicking a roster member, or navigating back while
   dirty raises a Discard-changes/Keep-editing confirm instead of silently
   dropping the edits. The studio header also wears the team's identity — the
-  icon and color editable in Workspace settings render in the header chip.
+  icon and color editable in Workspace settings render in the header chip —
+  and the roster shows live presence: members mid-step get a pulsing
+  "Working…" dot, members at a review gate a "Waiting for review" one, from
+  the same step-layer derivation the channel header uses (`useTeamPresence`).
 
 ## State and backend
 

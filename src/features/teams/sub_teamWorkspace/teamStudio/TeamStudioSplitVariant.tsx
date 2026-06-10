@@ -10,6 +10,7 @@ import { TeamWorkspacePane } from './TeamWorkspacePane';
 import { TeamAssignmentBoard } from './TeamAssignmentBoard';
 import { RedRoomPane } from '../../sub_redRoom/RedRoomPane';
 import { CollabPane } from '../../sub_collab/CollabPane';
+import { useTeamPresence, type PresenceStatus } from '../../sub_collab/useTeamChannel';
 import { TeamMemoryPane } from '../../sub_teamMemory/TeamMemoryPane';
 import {
   MemberTierChip,
@@ -54,6 +55,10 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
   // became editable in Workspace settings show up where the user works.
   const team = usePipelineStore((s) => s.teams.find((x) => x.id === teamId)) ?? null;
   const teamAccent = team?.color ?? '#6366f1';
+
+  // Live presence (working / waiting) for the roster, from the same step
+  // layer the channel header uses.
+  const presence = useTeamPresence(teamId);
 
   // Unsaved-changes guard: the workspace pane reports its dirty flag up; any
   // navigation away while dirty detours through a confirm instead of silently
@@ -247,6 +252,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
               <RosterRow
                 key={m.memberId}
                 member={m}
+                status={presence.get(m.personaId)}
                 selected={mode.kind === 'member' && mode.memberId === m.memberId}
                 onClick={() => requestMode({ kind: 'member', memberId: m.memberId })}
               />
@@ -302,14 +308,17 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
 
 function RosterRow({
   member,
+  status,
   selected,
   onClick,
 }: {
   member: StudioMember;
+  status?: PresenceStatus;
   selected: boolean;
   onClick: () => void;
 }) {
   const { t, tx } = useTranslation();
+  const ts = t.pipeline.team_studio;
   return (
     <button
       type="button"
@@ -321,14 +330,26 @@ function RosterRow({
           : 'border-transparent hover:bg-secondary/25'
       }`}
     >
-      <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
+      <span className="relative flex-shrink-0">
+        <PersonaIcon icon={member.icon} color={member.color} display="pop" frameSize="sm" />
+        {status && (
+          <span
+            title={status === 'working' ? ts.presence_working : ts.presence_waiting}
+            className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full ring-2 ring-background ${
+              status === 'working' ? 'bg-status-info animate-pulse' : 'bg-status-warning'
+            }`}
+          />
+        )}
+      </span>
       <div className="min-w-0 flex-1">
         <div className="typo-body font-medium text-foreground truncate">{member.name}</div>
         <div className="typo-caption text-foreground">
-          {tx(t.pipeline.team_studio.capabilities_active, {
-            active: member.activeUseCaseCount,
-            total: member.useCases.length,
-          })}
+          {status
+            ? (status === 'working' ? ts.presence_working : ts.presence_waiting)
+            : tx(ts.capabilities_active, {
+                active: member.activeUseCaseCount,
+                total: member.useCases.length,
+              })}
         </div>
       </div>
       <MemberTierChip tier={member.modelTier} />
