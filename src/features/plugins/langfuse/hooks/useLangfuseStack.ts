@@ -25,6 +25,32 @@ import { useShallow } from "zustand/react/shallow";
 /// the user's machine with subprocess churn during a multi-minute pull.
 const POLL_INTERVAL_MS = 8_000;
 
+/// Module-level cache for the docker-probe result. The probe costs
+/// 0.7–1.3s of subprocess spawning, and the hook mounts more often than the
+/// stack state can plausibly change: StrictMode double-mounts, plus every
+/// `navigate('plugins')` re-mounts the last-active plugin page before a
+/// sub-tab switch lands. Mount-time reads accept a snapshot up to TTL old;
+/// user-initiated refreshes, job polling, and post-job re-reads bypass it.
+const STACK_INFO_TTL_MS = 30_000;
+let stackInfoCache: { info: LangfuseStackInfo; at: number } | null = null;
+let stackInfoInflight: Promise<LangfuseStackInfo> | null = null;
+
+function getStackInfoCached(force: boolean): Promise<LangfuseStackInfo> {
+  if (!force && stackInfoCache && Date.now() - stackInfoCache.at < STACK_INFO_TTL_MS) {
+    return Promise.resolve(stackInfoCache.info);
+  }
+  if (stackInfoInflight) return stackInfoInflight;
+  stackInfoInflight = langfuseStackGetInfo()
+    .then((info) => {
+      stackInfoCache = { info, at: Date.now() };
+      return info;
+    })
+    .finally(() => {
+      stackInfoInflight = null;
+    });
+  return stackInfoInflight;
+}
+
 export interface UseLangfuseStack {
   info: LangfuseStackInfo | null;
   loading: boolean;
@@ -53,8 +79,10 @@ export interface UseLangfuseStack {
 }
 
 export function useLangfuseStack(): UseLangfuseStack {
-  const [info, setInfo] = useState<LangfuseStackInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Seed from the cache so a remount within TTL renders the known state
+  // immediately instead of flashing a loading skeleton.
+  const [info, setInfo] = useState<LangfuseStackInfo | null>(() => stackInfoCache?.info ?? null);
+  const [loading, setLoading] = useState(() => stackInfoCache === null);
   const [adminCredentials, setAdminCredentials] =
     useState<LangfuseAdminCredentials | null>(null);
 
@@ -75,9 +103,9 @@ export function useLangfuseStack(): UseLangfuseStack {
   const starting = jobKind === "start";
   const stopping = jobKind === "stop";
 
-  const refresh = useCallback(async () => {
+  const refreshWith = useCallback(async (force: boolean) => {
     try {
-      const next = await langfuseStackGetInfo();
+      const next = await getStackInfoCached(force);
       setInfo(next);
     } catch (e) {
       toastCatch("Langfuse:stack:refresh", "Failed to read Langfuse stack status")(e);
@@ -86,9 +114,14 @@ export function useLangfuseStack(): UseLangfuseStack {
     }
   }, []);
 
+  // Exposed refresh = user intent (refresh button, post-action re-reads) —
+  // always re-probes docker.
+  const refresh = useCallback(() => refreshWith(true), [refreshWith]);
+
+  // Mount-time read tolerates a snapshot up to TTL old.
   useEffect(() => {
-    void refresh();
-  }, [refresh]);
+    void refreshWith(false);
+  }, [refreshWith]);
 
   // Poll while a transition is in flight so info reflects the live state
   // (not just the one we read at mount). Also re-fetch right after a job
