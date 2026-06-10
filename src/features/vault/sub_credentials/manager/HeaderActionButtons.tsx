@@ -52,11 +52,9 @@ export function RotateAllButton({
 export function TestAllButton({
   bulk,
   credentials,
-  isDailyRun,
 }: {
   bulk: ReturnType<typeof useBulkHealthcheck>;
   credentials: CredentialMetadata[];
-  isDailyRun?: boolean;
 }) {
   const { t, tx } = useTranslation();
   const hasSummary = !!bulk.summary;
@@ -102,7 +100,7 @@ export function TestAllButton({
           <>
             <LoadingSpinner size="xs" />
             <span>
-              {tx(isDailyRun ? t.vault.manager.daily_progress : t.vault.manager.testing_progress, { done: bulk.progress.done, total: bulk.progress.total })}
+              {tx(t.vault.manager.testing_progress, { done: bulk.progress.done, total: bulk.progress.total })}
             </span>
           </>
         ) : hasSummary ? (

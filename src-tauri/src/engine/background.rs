@@ -25,8 +25,9 @@ use crate::engine::bus;
 use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, CloudWebhookRelaySubscription, CompositeSubscription,
-    EventBusSubscription, OAuthRefreshSubscription, PollingSubscription, RotationSubscription,
-    SharedEventRelaySubscription, TriggerSchedulerSubscription,
+    CredentialHealthcheckSubscription, EventBusSubscription, OAuthRefreshSubscription,
+    PollingSubscription, RotationSubscription, SharedEventRelaySubscription,
+    TriggerSchedulerSubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
@@ -444,6 +445,12 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Daily in-process credential healthcheck sweep. Runs at most once per
+        // 24h (gate inside the tick); first tick ~60s after launch is the
+        // startup catch-up. Replaces the per-Vault-visit frontend auto-test,
+        // whose concurrent privileged-IPC stampede produced false "degraded"
+        // cards (x-ipc-token race in ipc_auth.rs).
+        Box::new(CredentialHealthcheckSubscription { pool: pool.clone() }),
         Box::new(subscription::ZombieExecutionSubscription {
             pool: pool.clone(),
             app: app.clone(),
@@ -775,6 +782,12 @@ pub(crate) async fn event_bus_tick(
     pool: &DbPool,
     engine: &ExecutionEngine,
 ) {
+    // System-op automations: run any due *schedule* automations on this tick.
+    // Reuses the bus loop's cadence (2s active / 10s idle) — ample resolution
+    // for cron-grained system ops like the weekly context-scan. See
+    // `engine/system_ops.rs`.
+    super::system_ops::run_due_schedule_automations(app, pool);
+
     // 1. Atomically claim pending events (SET status='processing' WHERE status='pending')
     //    This prevents duplicate processing when ticks overlap.
     let events = match event_repo::claim_pending(pool, 50) {
@@ -794,6 +807,12 @@ pub(crate) async fn event_bus_tick(
     }
     // Events are pending — system is definitely active
     scheduler.set_active(true);
+
+    // System-op *event* automations react to the same bus events personas do
+    // (e.g. a context-scan that fires on a custom event). Runs alongside the
+    // persona-dispatch path below; the helper skips scan lifecycle events to
+    // avoid self-triggering loops.
+    super::system_ops::dispatch_event_automations(app, pool, &events);
 
     // 2. Collect unique event types for batch queries
     let event_types: Vec<String> = {

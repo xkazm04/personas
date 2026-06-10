@@ -226,6 +226,19 @@ pub struct OAuthRefreshSubscription {
     pub app: AppHandle,
 }
 
+/// Daily credential healthcheck subscription: probes every stored credential
+/// in-process once per 24h and persists the result into credential metadata.
+///
+/// Replaces the old per-Vault-visit frontend auto-test, which fired ~24
+/// concurrent *privileged* `healthcheck_credential` IPC calls and raced the
+/// `x-ipc-token` injection (`ipc_auth.rs`) — the rejected calls surfaced as
+/// false "degraded" cards while the stored keys stayed valid. Running the sweep
+/// here never crosses the IPC auth boundary. The 24h gate + startup catch-up
+/// live in `healthcheck::daily_healthcheck_tick`.
+pub struct CredentialHealthcheckSubscription {
+    pub pool: DbPool,
+}
+
 /// Periodic sweep for zombie executions stuck in 'running' state.
 pub struct ZombieExecutionSubscription {
     pub pool: DbPool,
@@ -892,6 +905,31 @@ impl ReactiveSubscription for OAuthRefreshSubscription {
 
     async fn tick(&self) {
         super::oauth_refresh::oauth_refresh_tick(&self.pool, Some(&self.app)).await;
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for CredentialHealthcheckSubscription {
+    fn name(&self) -> &'static str {
+        "credential_healthcheck"
+    }
+
+    fn interval(&self) -> Duration {
+        Duration::from_secs(600) // 10 min — the 24h gate inside the tick is the real cadence
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800) // 30 min when idle
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // First tick ~60s after launch acts as the startup catch-up: the 24h
+        // gate runs the sweep if it's been ≥24h (or never) since the last one.
+        Duration::from_secs(60)
+    }
+
+    async fn tick(&self) {
+        super::healthcheck::daily_healthcheck_tick(&self.pool).await;
     }
 }
 

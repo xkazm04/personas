@@ -1843,6 +1843,7 @@ pub fn run() {
             commands::credentials::crud::delete_credential_event,
             commands::credentials::crud::healthcheck_credential,
             commands::credentials::crud::healthcheck_credential_preview,
+            commands::credentials::crud::healthcheck_all_credentials,
             commands::credentials::crud::vault_status,
             commands::credentials::crud::migrate_plaintext_credentials,
             commands::credentials::crud::list_credential_fields,

@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import * as credApi from '@/api/vault/credentials';
-import { toCredentialMetadata, type CredentialMetadata } from '@/lib/types/types';
+import type { CredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { createModuleCache, useModuleCacheSubscription } from '@/hooks/utility/data/useModuleSubscription';
 import { setHealthResultStatic } from './useCredentialHealth';
 
@@ -29,9 +30,17 @@ const bulkSummaryCache = createModuleCache<'latest', BulkSummary>();
 
 // -- Hook -------------------------------------------------------------
 
-const CONCURRENCY = 3;
-const STORE_FLUSH_INTERVAL = 5;
-
+/**
+ * Manual "Test all" runner.
+ *
+ * Delegates the whole sweep to a single `healthcheck_all_credentials` IPC call
+ * that runs the per-credential loop server-side. This replaced the previous
+ * client-side fan-out of ~24 concurrent `healthcheck_credential` calls, whose
+ * privileged-IPC stampede raced the `x-ipc-token` injection and surfaced valid
+ * credentials as false "degraded" failures. The automated daily sweep runs
+ * fully in-process via the engine's `CredentialHealthcheckSubscription` — this
+ * hook only powers the explicit, user-initiated button.
+ */
 export function useBulkHealthcheck() {
   const [isRunning, setIsRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, failed: 0 });
@@ -51,188 +60,63 @@ export function useBulkHealthcheck() {
   const summary = bulkSummaryCache.get('latest') ?? null;
 
   const run = useCallback(async (credentials: CredentialMetadata[]) => {
-    if (credentials.length === 0) return;
     cancelRef.current = false;
     if (mountedRef.current) {
       setIsRunning(true);
+      // The server-side sweep doesn't stream per-credential progress, so the
+      // bar is effectively indeterminate: seed it with the visible count and
+      // snap to complete when the single call returns.
       setProgress({ done: 0, total: credentials.length, failed: 0 });
     }
 
-    const results: BulkResult[] = [];
-    let doneCount = 0;
-    let failedCount = 0;
-    const isCancelled = () => cancelRef.current || !mountedRef.current;
+    try {
+      const result = await credApi.healthcheckAllCredentials();
+      if (cancelRef.current || !mountedRef.current) return;
 
-    // Batch store updates: collect patched credentials and flush periodically
-    const pendingUpdates = new Map<string, CredentialMetadata>();
-    let updatesSinceFlush = 0;
+      // Mirror each outcome into the shared per-card health cache so
+      // CredentialCard reflects the fresh result without waiting for a reload.
+      const results: BulkResult[] = result.results.map((r) => {
+        setHealthResultStatic(r.credentialId, { success: r.success, message: r.message });
+        return {
+          credentialId: r.credentialId,
+          credentialName: r.credentialName,
+          success: r.success,
+          message: r.message,
+          durationMs: r.durationMs,
+        };
+      });
 
-    const flushStoreUpdates = () => {
-      if (pendingUpdates.size === 0) return;
-      if (isCancelled()) {
-        pendingUpdates.clear();
-        updatesSinceFlush = 0;
-        return;
-      }
-      const patches = new Map(pendingUpdates);
-      pendingUpdates.clear();
-      updatesSinceFlush = 0;
-      useVaultStore.setState((s) => ({
-        credentials: s.credentials.map((c) => patches.get(c.id) ?? c),
-      }));
-    };
-
-    // Process in batches of CONCURRENCY
-    const queue = [...credentials];
-
-    // Credentials tested within this window via per-card Test Connection
-    // or a prior bulk run should not be re-probed -- the bulk result can
-    // race manual tests and flip a freshly-succeeded card to a transient
-    // network failure (e.g. provider rate-limiting from the concurrent
-    // bulk sweep). Reuse the persisted result instead.
-    //
-    // Bumped from 30s to 24h after the 2026-05-17 perf-walk: the daily
-    // auto-test fired 25 fresh healthchecks per Vault landing because the
-    // 30s window was too tight to catch yesterday's bulk run, and most
-    // credentials don't actually need re-probing more than once a day.
-    // 24h aligns with the "daily" semantics of the auto-test caller above.
-    const FRESH_RESULT_TTL_MS = 24 * 60 * 60 * 1000;
-
-    const worker = async () => {
-      while (queue.length > 0 && !cancelRef.current) {
-        const cred = queue.shift();
-        if (!cred) break;
-
-        const start = performance.now();
-        let success = false;
-        let message = 'Cancelled';
-
-        if (!cancelRef.current) {
-          // Reuse a recent manual/bulk test result to avoid clobbering a
-          // freshly-verified credential with a concurrent probe failure.
-          const lastTestedAt = cred.healthcheck_last_tested_at
-            ? Date.parse(cred.healthcheck_last_tested_at)
-            : 0;
-          if (
-            lastTestedAt > 0 &&
-            Date.now() - lastTestedAt < FRESH_RESULT_TTL_MS &&
-            cred.healthcheck_last_success !== null &&
-            cred.healthcheck_last_success !== undefined
-          ) {
-            success = cred.healthcheck_last_success;
-            message = cred.healthcheck_last_message ?? (success ? 'Recently verified' : 'Recently failed');
-            results.push({
-              credentialId: cred.id,
-              credentialName: cred.name,
-              success,
-              message,
-              durationMs: 0,
-            });
-            doneCount++;
-            if (!success) failedCount++;
-            if (mountedRef.current) {
-              setProgress({ done: doneCount, total: credentials.length, failed: failedCount });
-            }
-            continue;
-          }
-
-          try {
-            const hcResult = await credApi.healthcheckCredential(cred.id);
-            if (isCancelled()) return;
-            success = hcResult.success;
-            message = hcResult.message;
-
-            // Sync result into the shared module-level health cache so
-            // CredentialCard picks up fresh data instead of stale metadata.
-            setHealthResultStatic(cred.id, { success, message });
-
-            // Persist healthcheck metadata via atomic patch (avoids stale overwrites)
-            const nowIso = new Date().toISOString();
-            const patch: Record<string, unknown> = {
-              healthcheck_last_success: hcResult.success,
-              healthcheck_last_message: hcResult.message,
-              healthcheck_last_tested_at: nowIso,
-            };
-            if (hcResult.success) patch.healthcheck_last_success_at = nowIso;
-
-            try {
-              const updatedRaw = await credApi.patchCredentialMetadata(cred.id, patch);
-              if (isCancelled()) return;
-              const updated = toCredentialMetadata(updatedRaw);
-              pendingUpdates.set(cred.id, updated);
-              updatesSinceFlush++;
-              if (updatesSinceFlush >= STORE_FLUSH_INTERVAL) {
-                flushStoreUpdates();
-              }
-            } catch {
-              if (isCancelled()) return;
-              /* intentional: non-critical -- healthcheck metadata persistence is best-effort */
-            }
-          } catch (e) {
-            if (isCancelled()) return;
-            success = false;
-            message = e instanceof Error ? e.message : 'Healthcheck failed';
-          }
-        }
-
-        if (isCancelled()) return;
-        const durationMs = performance.now() - start;
-        results.push({
-          credentialId: cred.id,
-          credentialName: cred.name,
-          success,
-          message,
-          durationMs,
-        });
-        doneCount++;
-        if (!success) failedCount++;
-        if (mountedRef.current) {
-          setProgress({ done: doneCount, total: credentials.length, failed: failedCount });
-        }
-      }
-    };
-
-    // Launch CONCURRENCY workers
-    const workers = Array.from({ length: Math.min(CONCURRENCY, credentials.length) }, () => worker());
-    await Promise.all(workers);
-
-    if (isCancelled()) {
-      pendingUpdates.clear();
-      if (mountedRef.current) {
-        setIsRunning(false);
-      }
-      return;
-    }
-
-    // Flush any remaining batched store updates
-    flushStoreUpdates();
-
-    // Build summary
-    const passed = results.filter((r) => r.success).length;
-    const failed = results.filter((r) => !r.success).length;
-    const slowest = [...results].sort((a, b) => b.durationMs - a.durationMs).slice(0, 3);
-    const needsAttention = results.filter((r) => !r.success);
-
-    const bulkSummary: BulkSummary = {
-      total: results.length,
-      passed,
-      failed,
-      results,
-      slowest,
-      needsAttention,
-      completedAt: new Date().toISOString(),
-    };
-
-    if (mountedRef.current) {
+      const slowest = [...results].sort((a, b) => b.durationMs - a.durationMs).slice(0, 3);
+      const needsAttention = results.filter((r) => !r.success);
+      const bulkSummary: BulkSummary = {
+        total: result.total,
+        passed: result.passed,
+        failed: result.failed,
+        results,
+        slowest,
+        needsAttention,
+        completedAt: result.completedAt,
+      };
       bulkSummaryCache.set('latest', bulkSummary);
       bulkSummaryCache.notify();
-      setIsRunning(false);
-    }
+      setProgress({ done: result.total, total: result.total, failed: result.failed });
 
+      // The sweep persisted fresh healthcheck metadata server-side; refresh the
+      // store so the connections table reflects it.
+      void useVaultStore.getState().fetchCredentials();
+    } catch (e) {
+      if (cancelRef.current || !mountedRef.current) return;
+      toastCatch('useBulkHealthcheck:healthcheckAllCredentials')(e);
+    } finally {
+      if (mountedRef.current) setIsRunning(false);
+    }
   }, []);
 
   const cancel = useCallback(() => {
+    // The server-side sweep can't be aborted mid-flight; flip the flag so we
+    // discard the result and reset the button when the call returns.
     cancelRef.current = true;
+    if (mountedRef.current) setIsRunning(false);
   }, []);
 
   const dismiss = useCallback(() => {

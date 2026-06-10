@@ -141,6 +141,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     // wrapper level — also has body-level require_privileged for audit/depth)
     "healthcheck_credential",
     "healthcheck_credential_preview",
+    "healthcheck_all_credentials",
     // Credentials -- Credential Design
     "start_credential_design",
     "cancel_credential_design",

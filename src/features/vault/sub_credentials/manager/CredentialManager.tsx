@@ -26,7 +26,6 @@ export function CredentialManager() {
     rotateAllResult,
     rotatableCount,
     bulk,
-    isDailyRun,
     viewState,
     handleRotateAll,
     undoDelete,
@@ -60,7 +59,6 @@ export function CredentialManager() {
         isCatalogView={viewState.view === 'catalog-browse'}
         credentials={credentials}
         bulk={bulk}
-        isDailyRun={isDailyRun}
       />
 
       {/* The catalog browse view's search row stands alone — drop the

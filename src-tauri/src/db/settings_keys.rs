@@ -114,6 +114,11 @@ pub const SEMANTIC_LINT_MODEL: &str = "semantic_lint_model";
 /// Default model ID for [`SEMANTIC_LINT_MODEL`] when unset.
 pub const SEMANTIC_LINT_MODEL_DEFAULT: &str = "claude-haiku-4-5-20251001";
 
+/// ISO 8601 timestamp of the last completed daily credential healthcheck sweep.
+/// Written by the in-process `CredentialHealthcheckSubscription` to gate the
+/// sweep to once per 24h (replaces the old per-Vault-visit frontend auto-test).
+pub const CREDENTIAL_HEALTHCHECK_LAST: &str = "credential_healthcheck_last";
+
 /// Whether the weekly health digest is enabled. Value: `"true"` or `"false"`.
 pub const HEALTH_DIGEST_ENABLED: &str = "health_digest_enabled";
 
@@ -372,6 +377,7 @@ const ALLOWED_KEYS: &[&str] = &[
     FILE_WATCHER_DEBOUNCE_MS,
     PERFORMANCE_DIGEST,
     PERFORMANCE_DIGEST_LAST,
+    CREDENTIAL_HEALTHCHECK_LAST,
     QUALITY_GATE_CONFIG,
     SMART_SEARCH_MODEL,
     SEMANTIC_LINT_MODEL,

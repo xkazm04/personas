@@ -483,6 +483,168 @@ pub async fn run_healthcheck_with_fields(
         .await
 }
 
+// ---------------------------------------------------------------------------
+// Bulk / daily sweep (in-process — no IPC boundary)
+// ---------------------------------------------------------------------------
+
+/// Per-credential outcome from a bulk / daily healthcheck sweep.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CredentialHealthcheckOutcome {
+    pub credential_id: String,
+    pub credential_name: String,
+    pub success: bool,
+    pub message: String,
+    pub duration_ms: u32,
+}
+
+/// Summary of a bulk / daily credential healthcheck sweep.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkHealthcheckSummary {
+    pub total: u32,
+    pub passed: u32,
+    pub failed: u32,
+    pub results: Vec<CredentialHealthcheckOutcome>,
+    pub completed_at: String,
+}
+
+/// Bounded concurrency for the sweep. Mirrors the old frontend bulk-runner
+/// (`CONCURRENCY = 3`) so probing many credentials that share an API host
+/// doesn't trip provider rate limits.
+const HEALTHCHECK_SWEEP_CONCURRENCY: usize = 3;
+
+/// 24h cadence for the daily credential healthcheck sweep.
+const CREDENTIAL_HEALTHCHECK_INTERVAL_HOURS: i64 = 24;
+
+/// Run a healthcheck for every credential whose `service_type` maps to a known
+/// connector, persist each result, and return a summary.
+///
+/// This is the in-process counterpart to the per-credential `healthcheck_credential`
+/// IPC command. Running the loop inside the engine — driven by the daily
+/// `CredentialHealthcheckSubscription` or the single `healthcheck_all_credentials`
+/// command — avoids firing N concurrent *privileged* IPC calls from the
+/// frontend. That stampede raced the `x-ipc-token` injection (see `ipc_auth.rs`)
+/// and produced spurious "degraded" cards even though the stored keys were valid
+/// and the probe never ran.
+pub async fn run_all_healthchecks(pool: &DbPool) -> Result<BulkHealthcheckSummary, AppError> {
+    use futures_util::stream::{self, StreamExt};
+
+    let credentials = cred_repo::get_all(pool)?;
+
+    // Only probe credentials whose service_type maps to a known connector.
+    // Orphaned credentials (no connector definition) would always error and
+    // inflate the failure count — mirrors the frontend `healthcheckCredentials`
+    // filter. If connector enumeration fails, fall back to probing all rather
+    // than silently skipping everything.
+    let connector_names: std::collections::HashSet<String> = connector_repo::get_all(pool)
+        .map(|cs| cs.into_iter().map(|c| c.name).collect())
+        .unwrap_or_default();
+    let targets: Vec<(String, String)> = credentials
+        .into_iter()
+        .filter(|c| connector_names.is_empty() || connector_names.contains(&c.service_type))
+        .map(|c| (c.id, c.name))
+        .collect();
+
+    let results: Vec<CredentialHealthcheckOutcome> = stream::iter(targets)
+        .map(move |(id, name)| async move {
+            let start = std::time::Instant::now();
+            let (success, message) = match run_healthcheck(pool, &id).await {
+                Ok(r) => (r.success, r.message),
+                Err(e) => (false, e.to_string()),
+            };
+            let duration_ms = start.elapsed().as_millis() as u32;
+
+            // Persist exactly like the per-credential IPC command: ring-buffer
+            // append + last_success/message/tested_at, then record usage.
+            if let Err(e) = cred_repo::append_healthcheck_metadata(pool, &id, success, &message) {
+                tracing::warn!(credential_id = %id, error = %e, "sweep: failed to persist healthcheck metadata");
+            }
+            if let Err(e) = cred_repo::record_usage(pool, &id) {
+                tracing::warn!(credential_id = %id, error = %e, "sweep: failed to record credential usage");
+            }
+
+            CredentialHealthcheckOutcome {
+                credential_id: id,
+                credential_name: name,
+                success,
+                message,
+                duration_ms,
+            }
+        })
+        .buffer_unordered(HEALTHCHECK_SWEEP_CONCURRENCY)
+        .collect()
+        .await;
+
+    let passed = results.iter().filter(|r| r.success).count() as u32;
+    let failed = results.len() as u32 - passed;
+
+    Ok(BulkHealthcheckSummary {
+        total: results.len() as u32,
+        passed,
+        failed,
+        results,
+        completed_at: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
+/// Daily-gated entry point called by `CredentialHealthcheckSubscription::tick`.
+///
+/// Runs the full sweep at most once per [`CREDENTIAL_HEALTHCHECK_INTERVAL_HOURS`],
+/// tracked via the `CREDENTIAL_HEALTHCHECK_LAST` setting. The timestamp is
+/// refreshed BEFORE the sweep (retry-storm hardening, mirroring `digest_tick`):
+/// if the sweep panics or the app dies mid-run, the next tick still backs off
+/// until the cadence elapses again instead of re-sweeping every tick. A missing
+/// or corrupted timestamp is treated as due (and healed by the pre-sweep write),
+/// which is what makes the first tick after launch act as the startup catch-up.
+pub async fn daily_healthcheck_tick(pool: &DbPool) {
+    use crate::db::repos::core::settings;
+    use crate::db::settings_keys::CREDENTIAL_HEALTHCHECK_LAST;
+
+    let now = chrono::Utc::now();
+    let last = settings::get(pool, CREDENTIAL_HEALTHCHECK_LAST)
+        .ok()
+        .flatten();
+    let due = match last
+        .as_deref()
+        .and_then(|s| chrono::DateTime::parse_from_rfc3339(s).ok())
+    {
+        Some(prev) => {
+            now.signed_duration_since(prev.with_timezone(&chrono::Utc))
+                .num_hours()
+                >= CREDENTIAL_HEALTHCHECK_INTERVAL_HOURS
+        }
+        None => true, // missing / corrupted → run now; the write below heals it
+    };
+    if !due {
+        return;
+    }
+
+    if let Err(e) = settings::set(pool, CREDENTIAL_HEALTHCHECK_LAST, &now.to_rfc3339()) {
+        tracing::error!(
+            error = %e,
+            "credential healthcheck: failed to refresh cadence timestamp; skipping sweep to avoid retry storm"
+        );
+        return;
+    }
+
+    match run_all_healthchecks(pool).await {
+        Ok(summary) => {
+            tracing::info!(
+                total = summary.total,
+                passed = summary.passed,
+                failed = summary.failed,
+                "Daily credential healthcheck sweep complete"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(error = %e, "Daily credential healthcheck sweep failed");
+        }
+    }
+}
+
 /// Try to find a matching auth_variant for the given fields and return its
 /// healthcheck_config if present.  Falls back to the connector-level config.
 fn resolve_connector_healthcheck(

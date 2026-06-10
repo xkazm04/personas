@@ -26,6 +26,15 @@ The credentials manager uses `useCredentialManagerState`, `CredentialNavContext`
 - Undo-delete support (`useUndoDelete`).
 - Post-save resource picker flow (`resourcePickerStore.ts`, `usePostSaveResourcePicker.tsx`).
 
+### Credential healthchecks
+
+Healthchecks verify that a stored credential still authenticates against its provider (HTTP probe, CLI verify, or desktop-app presence — see `engine/healthcheck.rs`). They run on two paths:
+
+- **Automated daily sweep (in-process).** The engine's `CredentialHealthcheckSubscription` (`engine/subscription.rs`, registered in `engine/background.rs`) runs `healthcheck::run_all_healthchecks` at most once per 24h — gated by the `credential_healthcheck_last` setting, with the first post-launch tick (~60s) acting as the startup catch-up. It probes every credential whose `service_type` maps to a known connector, persists each result into credential metadata (`append_healthcheck_metadata`: ring buffer + `healthcheck_last_success`/`healthcheck_last_message`/`healthcheck_last_tested_at`), and never crosses the IPC boundary. The connections table reads these persisted fields, so a freshly-launched Vault shows up-to-date health without probing on every visit.
+- **Manual "Test all" button.** Calls the single `healthcheck_all_credentials` command (`credentials/crud.rs`), which runs the *same* in-process sweep server-side and returns a `BulkHealthcheckSummary`. `useBulkHealthcheck` maps the result into the per-card health cache and refreshes the store.
+
+This replaced an earlier client-side fan-out that fired ~24 concurrent privileged `healthcheck_credential` IPC calls on every Vault visit. That stampede raced the `x-ipc-token` injection (`ipc_auth.rs`) — rejected calls surfaced as false **"degraded"** cards even though the stored keys were valid and the probe never ran. Routing the loop through the engine (daily sweep) or a single privileged call (manual button) eliminates the race; per-credential `healthcheck_credential` remains for one-off "Test connection" actions in the detail modal.
+
 ## API playground and vector KB
 
 `shared/playground` is the credential detail modal opened when you click a saved credential. Tabs: **Overview** (test connection, edit fields, scope, services/events, intelligence, delete), **Executions**, **API Explorer** (request-builder via `useApiTestRunner` + `ResponseViewer`, custom connectors only), **MCP Tools** (mcp connectors), **Rotation**. Resource **scope editing** lives in the Overview tab's `CredentialScopeSection` ("Edit scope" reopens the shared `ResourcePicker`) — surfaced near the top so it's reachable without scrolling. The `ResourcePicker` modal is a flex-column with `min-h-0` scroll body + `shrink-0` sticky footer so the Save button stays visible regardless of how many resource specs a connector declares.
