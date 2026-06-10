@@ -113,7 +113,9 @@ export default function CockpitPanel() {
     ? body?.title ?? t.overview.cockpit.title_default
     : body?.title ?? 'Cockpit';
   const headerSubtitle = contextualCockpit
-    ? t.overview.cockpit.subtitle_contextual
+    ? contextualCockpit.source.kind === 'explain'
+      ? t.overview.cockpit.subtitle_explaining
+      : t.overview.cockpit.subtitle_contextual
     : spec
       ? `Composed by Athena — updated ${formatRelative(spec.updatedAt)}`
       : 'Your companion-driven workspace';

@@ -256,4 +256,11 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// status/progress change to a project (dev) goal. Approval-gated; never
 /// auto-resolved. Paired with project-goal awareness in the prompt + the
 /// `dev_goal_target` / `dev_goal_stalled` proactive triggers.
-pub const CONSTITUTION_VERSION: u32 = 30;
+///
+/// v31 (Explain-in-Cockpit) adds the `explain_in_cockpit` op + the
+/// "Explaining a decision visually" section: when the user presses `0` on
+/// the orb decision bubble, Athena composes an ephemeral explanation
+/// overlay from the explainer widget palette (`verdict`, `flow_steps`,
+/// `comparison_cards`, `timeline`, `stat_grid`, `log_excerpt`); the same
+/// kinds also become valid in `compose_cockpit`.
+pub const CONSTITUTION_VERSION: u32 = 31;

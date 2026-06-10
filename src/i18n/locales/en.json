@@ -6135,6 +6135,7 @@
     "cockpit": {
       "title_default": "Cockpit",
       "subtitle_contextual": "Showing context for a single message — chat with Athena alongside.",
+      "subtitle_explaining": "Athena composed this explanation for you — exit it to return to your own cockpit.",
       "context_for": "Showing context for {title}",
       "context_exit": "Exit context",
       "context_explaining": "Athena is explaining: {title}",

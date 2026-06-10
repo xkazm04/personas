@@ -6141,6 +6141,7 @@ export type Translations = {
     cockpit: {
       title_default: string;
       subtitle_contextual: string;
+      subtitle_explaining: string;
       context_for: string;
       context_exit: string;
       context_explaining: string;
