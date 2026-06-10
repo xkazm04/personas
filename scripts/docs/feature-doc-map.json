@@ -37,6 +37,26 @@
       "tourEvent": "tour:team-memory-explored",
       "description": "Teams tour — shared team memory, goal linking, Director/Attention oversight"
     },
+    "obsidian-install": {
+      "stepFile": null,
+      "tourEvent": "tour:obsidian-detected",
+      "description": "Brain tour — detect the Obsidian binary (obsidian_available probe in GuidedTour); install guidance when missing"
+    },
+    "obsidian-vault-connect": {
+      "stepFile": null,
+      "tourEvent": "tour:obsidian-vault-connected",
+      "description": "Brain tour — connect a vault via Setup (auto-detect/test/save); SetupPanel emits on save, auto-completes when already connected"
+    },
+    "obsidian-tab-walk": {
+      "stepFile": null,
+      "tourEvent": "tour:obsidian-tab-explored",
+      "description": "Brain tour — exploration stops across Sync / Browse / Graph / Cloud / Revitalize tabs (shared event)"
+    },
+    "obsidian-memory-dimensions": {
+      "stepFile": null,
+      "tourEvent": "tour:obsidian-memory-understood",
+      "description": "Brain tour — where vault memory plugs in app-wide: curation loop, obsidian_memory connector, knowledge mirror, Director brain, Revitalize hygiene"
+    },
     "template-picker": {
       "stepFile": "src/features/onboarding/components/TemplatePickerStep.tsx",
       "tourEvent": "tour:persona-draft-ready",
@@ -353,6 +373,7 @@
         "src/features/plugins/obsidian-brain/**",
         "src-tauri/src/commands/obsidian_brain/**"
       ],
+      "onboardingFlows": ["obsidian-install", "obsidian-vault-connect", "obsidian-tab-walk", "obsidian-memory-dimensions"],
       "marketingModule": "plugins"
     },
     {

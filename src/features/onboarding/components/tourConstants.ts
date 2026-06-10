@@ -5,6 +5,7 @@ import {
   CalendarClock, CalendarRange, Clock,
   LayoutGrid, Wand2, BookOpen, Rocket,
   Network, ListChecks, Target,
+  Download, FolderOpen, RefreshCw, Search, Cloud, MoonStar, Brain,
 } from 'lucide-react';
 import {
   getTourSurface,
@@ -51,6 +52,15 @@ const ICON_MAP: Record<string, typeof Key> = {
   'team-chaining': Link,
   'team-assignments': ListChecks,
   'team-memory-goals': Target,
+  // Obsidian Brain
+  'obsidian-install': Download,
+  'obsidian-vault-connect': FolderOpen,
+  'obsidian-sync-tab': RefreshCw,
+  'obsidian-browse-tab': Eye,
+  'obsidian-graph-tab': Search,
+  'obsidian-cloud-tab': Cloud,
+  'obsidian-revitalize-tab': MoonStar,
+  'obsidian-memory-dimensions': Brain,
 };
 
 export function getStepIcon(stepId: string): typeof Key {
@@ -68,6 +78,8 @@ const STEP_TO_SURFACE: Record<string, TourSurfaceKey> = {
   'schedules-page': 'emerald', 'schedules-views': 'emerald', 'schedules-attach': 'emerald',
   'templates-page': 'indigo', 'templates-adopt': 'indigo', 'recipes-tab': 'indigo',
   'team-canvas-intro': 'emerald', 'team-chaining': 'emerald', 'team-assignments': 'emerald', 'team-memory-goals': 'emerald',
+  'obsidian-install': 'violet', 'obsidian-vault-connect': 'violet', 'obsidian-sync-tab': 'violet', 'obsidian-browse-tab': 'violet',
+  'obsidian-graph-tab': 'violet', 'obsidian-cloud-tab': 'violet', 'obsidian-revitalize-tab': 'violet', 'obsidian-memory-dimensions': 'violet',
 };
 
 /**
@@ -91,6 +103,7 @@ const TOUR_SEQUENCE: TourId[] = [
   'execution-observability',
   'orchestration-events',
   'plugins-explorer',
+  'obsidian-brain',
   'schedules-mastery',
   'templates-recipes',
   'teams-orchestration',
