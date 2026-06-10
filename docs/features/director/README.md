@@ -22,9 +22,16 @@ the Agents-page teaser).
 
 The single tab stacks, top to bottom:
 
-- **Thin subheader** — scope summary + the **Brain long-term-memory toggle**
-  (gated on a configured vault; otherwise a deep-link to the Obsidian Brain
-  plugin), an **Add to scope** button, and **Review all in scope**.
+- **Thin subheader** — scope summary, the avg-score + last-review stats, an
+  **open-reviews CTA** (count of Director verdicts still `pending` your
+  decision, one-click into the review queue), and the **Brain long-term-memory
+  toggle** (gated on a configured vault; otherwise a deep-link to the Obsidian
+  Brain plugin). The header actions are **Add to scope**, a **Stale sweep (N)**
+  button (re-reviews every agent not coached in >14d, shown only when some are
+  stale), and **Review all in scope**. The Director sidebar nav item also
+  carries a **flagged-count badge** — how many in-scope agents need attention —
+  fed best-effort by the sidebar badge poll (`useBadgeCounts` →
+  `flaggedAgentCount`).
 - **Scorecard** (the portfolio analytics): KPI cards for fleet value-delivered
   rate, average verdict score, cost-per-value, and in-scope count; a **value
   breakdown** bar (`ValueLeakBar`) that decomposes the headline value-rate into
@@ -54,7 +61,10 @@ The single tab stacks, top to bottom:
   filters to improving/flat/declining, and the header's "only flagged" toggle
   filters to any-flagged — one shared facet at a time (`rosterFilter.ts`),
   re-click to clear, with a clear-chip surfacing a facet whose trigger lives
-  elsewhere. **Clicking a row opens a detail modal** (`PersonaDetailModal`) with
+  elsewhere. While a facet is active, a **Review these N** action in the header
+  runs the Director sequentially over exactly the filtered agents (inline
+  progress; `useSequentialReview`), closing triage → act. The trend sparkline
+  reveals the **readable score series on hover**. **Clicking a row opens a detail modal** (`PersonaDetailModal`) with
   that agent's score trend, value signal, active attention flags, and full
   **verdict history** (the Reviews surface, scoped to the agent, expandable to
   rationale + suggested actions) — each verdict tagged with its **category**
@@ -216,11 +226,14 @@ created in the first place.
   (score-delta + improving/flat/declining buckets), `directorScore.ts` +
   `ScoreSparkline.tsx` (shared 0–5 score visual language), `categoryMeta.ts`
   (verdict-category icon/tone/label palette), `rosterFilter.ts` (the shared
-  coaching-table facet filter — flag / score / momentum / flagged),
+  coaching-table facet filter — flag / score / momentum / flagged — plus
+  `filterRoster`), `useSequentialReview.ts` (progress-tracked batch reviewer),
   `DirectorSection.tsx` (panel surface),
-  `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal,ValueLeakBar,PeriodSelect,ScoreDistribution,AttentionTriageBar,CategoryRollup,MomentumSummary}.tsx`.
+  `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal,ValueLeakBar,PeriodSelect,ScoreDistribution,AttentionTriageBar,CategoryRollup,MomentumSummary,ReviewFilteredAction,StaleSweepButton}.tsx`.
   Brain history command: `get_director_brain_history` (engine
-  `director_brain::read_brain_history`, exposed read-only).
+  `director_brain::read_brain_history`, exposed read-only). The Director sidebar
+  badge is fed by `flaggedAgentCount` (`attention.ts`) via
+  `src/hooks/sidebar/useBadgeCounts.ts` → `SidebarLevel2`.
 - Shared primitive: `src/features/shared/components/display/StatCard.tsx` (KPI
   card, added with this feature).
 - Other UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx`
