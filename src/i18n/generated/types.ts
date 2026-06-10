@@ -3490,6 +3490,7 @@ export type Translations = {
     stale_sweep_hint: string;
     open_reviews: string;
     open_reviews_hint: string;
+    momentum_steady: string;
   };
   vault: {
     title: string;

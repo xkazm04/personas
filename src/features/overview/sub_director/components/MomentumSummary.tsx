@@ -39,10 +39,20 @@ export function MomentumSummary({
     declining: t.director.momentum_declining,
   };
 
+  // Nothing actually moved — show a steady affirmation rather than a lone,
+  // filter-to-nothing "flat" chip.
+  const moving = counts.improving > 0 || counts.declining > 0;
+
   return (
     <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 px-1">
       <span className="typo-caption uppercase tracking-wider text-foreground">{t.director.momentum_label}</span>
-      {present.map((m) => {
+      {!moving && (
+        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <Minus className="w-3.5 h-3.5 shrink-0" style={{ color: MOMENTUM_TONE.flat }} />
+          {t.director.momentum_steady}
+        </span>
+      )}
+      {moving && present.map((m) => {
         const Icon = ICON[m];
         const active = filter?.type === 'momentum' && filter.momentum === m;
         return (

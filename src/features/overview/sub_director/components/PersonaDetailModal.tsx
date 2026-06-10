@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Play, Eraser, Brain } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -253,7 +254,7 @@ export function PersonaDetailModal({
             </div>
           )}
           {loading ? (
-            <p className="typo-body text-foreground py-2">…</p>
+            <div className="flex justify-center py-4"><LoadingSpinner /></div>
           ) : verdicts.length === 0 ? (
             <p className="typo-body text-foreground py-2">{t.director.no_verdicts}</p>
           ) : (

@@ -15280,6 +15280,7 @@
     "stale_sweep": "Sapu kedaluwarsa ({count})",
     "stale_sweep_hint": "Tinjau ulang setiap agen yang tidak dibina lebih dari dua minggu",
     "open_reviews": "{count} tinjauan terbuka",
-    "open_reviews_hint": "Penilaian pembinaan menunggu keputusan Anda — buka antrean tinjauan"
+    "open_reviews_hint": "Penilaian pembinaan menunggu keputusan Anda — buka antrean tinjauan",
+    "momentum_steady": "Stabil"
   }
 }

@@ -15280,6 +15280,7 @@
     "stale_sweep": "Prověření starých ({count})",
     "stale_sweep_hint": "Znovu zhodnotit každého agenta bez koučinku déle než dva týdny",
     "open_reviews": "{count} otevřených hodnocení",
-    "open_reviews_hint": "Hodnocení koučinku čekající na vaše rozhodnutí — otevřete frontu kontroly"
+    "open_reviews_hint": "Hodnocení koučinku čekající na vaše rozhodnutí — otevřete frontu kontroly",
+    "momentum_steady": "Beze změny"
   }
 }

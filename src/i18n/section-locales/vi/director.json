@@ -39,5 +39,6 @@
   "stale_sweep": "Quét tồn đọng ({count})",
   "stale_sweep_hint": "Đánh giá lại mọi tác nhân chưa được huấn luyện hơn hai tuần",
   "open_reviews": "{count} đánh giá đang mở",
-  "open_reviews_hint": "Các đánh giá huấn luyện đang chờ quyết định của bạn — mở hàng đợi đánh giá"
+  "open_reviews_hint": "Các đánh giá huấn luyện đang chờ quyết định của bạn — mở hàng đợi đánh giá",
+  "momentum_steady": "Ổn định"
 }

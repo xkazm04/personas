@@ -15280,6 +15280,7 @@
     "stale_sweep": "Veraltete prüfen ({count})",
     "stale_sweep_hint": "Jeden seit über zwei Wochen nicht gecoachten Agenten erneut bewerten",
     "open_reviews": "{count} offene Bewertungen",
-    "open_reviews_hint": "Coaching-Bewertungen, die auf Ihre Entscheidung warten — Prüfwarteschlange öffnen"
+    "open_reviews_hint": "Coaching-Bewertungen, die auf Ihre Entscheidung warten — Prüfwarteschlange öffnen",
+    "momentum_steady": "Stabil"
   }
 }

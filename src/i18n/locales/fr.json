@@ -15280,6 +15280,7 @@
     "stale_sweep": "Balayage des obsolètes ({count})",
     "stale_sweep_hint": "Réévaluer chaque agent non coaché depuis plus de deux semaines",
     "open_reviews": "{count} évaluations ouvertes",
-    "open_reviews_hint": "Verdicts de coaching en attente de votre décision — ouvrez la file de revue"
+    "open_reviews_hint": "Verdicts de coaching en attente de votre décision — ouvrez la file de revue",
+    "momentum_steady": "Stable"
   }
 }

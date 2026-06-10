@@ -39,5 +39,6 @@
   "stale_sweep": "Barrido de obsoletos ({count})",
   "stale_sweep_hint": "Volver a revisar cada agente sin coaching desde hace más de dos semanas",
   "open_reviews": "{count} revisiones abiertas",
-  "open_reviews_hint": "Veredictos de coaching a la espera de tu decisión — abre la cola de revisión"
+  "open_reviews_hint": "Veredictos de coaching a la espera de tu decisión — abre la cola de revisión",
+  "momentum_steady": "Estable"
 }

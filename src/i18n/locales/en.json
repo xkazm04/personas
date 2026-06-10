@@ -3483,7 +3483,8 @@
     "stale_sweep": "Stale sweep ({count})",
     "stale_sweep_hint": "Re-review every agent not coached in over two weeks",
     "open_reviews": "{count} open reviews",
-    "open_reviews_hint": "Coaching verdicts awaiting your decision — open the review queue"
+    "open_reviews_hint": "Coaching verdicts awaiting your decision — open the review queue",
+    "momentum_steady": "Holding steady"
   },
   "vault": {
     "title": "Vault",
