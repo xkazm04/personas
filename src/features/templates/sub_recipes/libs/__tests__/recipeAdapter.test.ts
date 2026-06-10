@@ -162,6 +162,17 @@ describe('recipeDefinitionToRecipe', () => {
     expect(r.template.inputParameters).toBeUndefined();
   });
 
+  it('treats template-derived rows as builtin even when the DB flag is unset', () => {
+    const derived = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc' }, { is_builtin: false, source_template_id: 'access-request-manager' }),
+    );
+    expect(derived.isBuiltin).toBe(true);
+    const userAuthored = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc' }, { is_builtin: false, source_template_id: null }),
+    );
+    expect(userAuthored.isBuiltin).toBe(false);
+  });
+
   it('extracts tool_hints from the prompt_template UC', () => {
     const r = recipeDefinitionToRecipe(
       defWithPrompt({ id: 'uc', tool_hints: ['file_read', 'gmail_search'] }),

@@ -358,7 +358,12 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
     },
     bindings: [],
 
-    isBuiltin: def.is_builtin,
+    // Catalog-seeded rows aren't flagged is_builtin in the DB (the seeder's
+    // CreateRecipeInput has no such field) — but every derived recipe carries
+    // source_template_id, and for all of them `created_at` is a synthetic
+    // insert/derivation time, not a real publication date. Treat them as
+    // builtin so display rules (e.g. hiding "Published · 1m ago") hold.
+    isBuiltin: def.is_builtin || def.source_template_id != null,
     version: def.source_version ?? '1.0.0',
     publishedAt: def.created_at,
     author: 'Personas Team',
