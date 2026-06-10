@@ -13,6 +13,12 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### incident-loop-hardening — incident loop closure + GitHub hardening (session 94f4d04f, fork of 2c665603)
+- Started: 2026-06-10 ~11:30. Completed: 2026-06-10 ~12:40. Commit: f73523ca4.
+- Paths: src-tauri/src/engine/{types,parser,dispatch,protocol}.rs, src-tauri/src/engine/runner/team_context.rs, src-tauri/src/db/repos/execution/audit_incidents.rs, docs/features/execution/README.md. Live DB: 14 devProjectId pins + incident backlog cleanup (98→54).
+- Note: resolve_incident protocol + injected incident ids/discipline + promote() open-dup guard + GIT DISCIPLINE policy section.
+
+
 ### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
 - Started: 2026-06-10 09:30. Completed: 2026-06-10 11:05. Commits: bcd293f05, 50281ce2d, 273b1782d. Live-verified (Athena resolved 4/6 parked; fleet resumed).
 - Paths: src-tauri/src/engine/{subscription.rs,background.rs,auto_rollback.rs?}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/{fleet-analyze.mjs,loop-certify.mjs(new),lib/eval/*}, scripts/templates/_team_presets/sdlc-lifecycle.json, docs/tests/autonomy-eval/*.
