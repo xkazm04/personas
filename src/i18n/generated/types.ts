@@ -14441,23 +14441,8 @@ export type Translations = {
     preset_team_picker_title: string;
     preset_team_picker_subtitle: string;
     preset_back_to_gallery: string;
-    preset_prototype_label: string;
-    preset_variant_blueprint: string;
-    preset_variant_blueprint_sub: string;
-    preset_variant_pipeline: string;
-    preset_variant_pipeline_sub: string;
-    preset_variant_split: string;
-    preset_variant_split_sub: string;
-    preset_variant_baseline: string;
-    preset_variant_baseline_sub: string;
     preset_blueprint_heading: string;
     preset_blueprint_hint: string;
-    preset_pipeline_heading: string;
-    preset_pipeline_feedback_heading: string;
-    preset_split_receives_from: string;
-    preset_split_hands_off_to: string;
-    preset_split_no_connections: string;
-    preset_split_hover_hint: string;
     no_teams_yet: string;
     no_teams_hint: string;
     team_studio: {
