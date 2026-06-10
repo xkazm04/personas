@@ -3477,6 +3477,10 @@ export type Translations = {
     category_rollup_title: string;
     category_rollup_empty: string;
     brain_history_title: string;
+    momentum_label: string;
+    momentum_improving: string;
+    momentum_flat: string;
+    momentum_declining: string;
   };
   vault: {
     title: string;

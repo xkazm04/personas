@@ -28,5 +28,9 @@
   "triage_chip_hint": "Lọc bảng theo các tác nhân này",
   "category_rollup_title": "Vấn đề theo danh mục",
   "category_rollup_empty": "Chưa có đánh giá huấn luyện",
-  "brain_history_title": "Huấn luyện trước đây (bộ nhớ dài hạn)"
+  "brain_history_title": "Huấn luyện trước đây (bộ nhớ dài hạn)",
+  "momentum_label": "Đà",
+  "momentum_improving": "cải thiện",
+  "momentum_flat": "ổn định",
+  "momentum_declining": "giảm sút"
 }

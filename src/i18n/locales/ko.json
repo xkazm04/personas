@@ -15267,6 +15267,10 @@
     "triage_chip_hint": "테이블을 이 에이전트로 필터링",
     "category_rollup_title": "카테고리별 문제",
     "category_rollup_empty": "아직 코칭 평가가 없습니다",
-    "brain_history_title": "이전 코칭 (장기 기억)"
+    "brain_history_title": "이전 코칭 (장기 기억)",
+    "momentum_label": "추세",
+    "momentum_improving": "상승",
+    "momentum_flat": "유지",
+    "momentum_declining": "하락"
   }
 }

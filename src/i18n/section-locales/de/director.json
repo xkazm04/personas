@@ -28,5 +28,9 @@
   "triage_chip_hint": "Tabelle auf diese Agenten filtern",
   "category_rollup_title": "Probleme nach Kategorie",
   "category_rollup_empty": "Noch keine Coaching-Bewertungen",
-  "brain_history_title": "Früheres Coaching (Langzeitgedächtnis)"
+  "brain_history_title": "Früheres Coaching (Langzeitgedächtnis)",
+  "momentum_label": "Dynamik",
+  "momentum_improving": "steigend",
+  "momentum_flat": "unverändert",
+  "momentum_declining": "fallend"
 }

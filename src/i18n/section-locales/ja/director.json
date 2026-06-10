@@ -28,5 +28,9 @@
   "triage_chip_hint": "テーブルをこれらのエージェントに絞り込む",
   "category_rollup_title": "カテゴリ別の問題",
   "category_rollup_empty": "コーチング評定はまだありません",
-  "brain_history_title": "過去のコーチング（長期記憶）"
+  "brain_history_title": "過去のコーチング（長期記憶）",
+  "momentum_label": "勢い",
+  "momentum_improving": "上昇",
+  "momentum_flat": "横ばい",
+  "momentum_declining": "下降"
 }

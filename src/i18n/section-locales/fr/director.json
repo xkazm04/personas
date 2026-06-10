@@ -28,5 +28,9 @@
   "triage_chip_hint": "Filtrer le tableau sur ces agents",
   "category_rollup_title": "Problèmes par catégorie",
   "category_rollup_empty": "Aucun verdict de coaching pour l'instant",
-  "brain_history_title": "Coaching antérieur (mémoire à long terme)"
+  "brain_history_title": "Coaching antérieur (mémoire à long terme)",
+  "momentum_label": "Dynamique",
+  "momentum_improving": "en hausse",
+  "momentum_flat": "stable",
+  "momentum_declining": "en baisse"
 }

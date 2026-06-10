@@ -15267,6 +15267,10 @@
     "triage_chip_hint": "Filtrovat tabulku na tyto agenty",
     "category_rollup_title": "Problémy podle kategorie",
     "category_rollup_empty": "Zatím žádné hodnocení koučinku",
-    "brain_history_title": "Předchozí koučink (dlouhodobá paměť)"
+    "brain_history_title": "Předchozí koučink (dlouhodobá paměť)",
+    "momentum_label": "Vývoj",
+    "momentum_improving": "zlepšení",
+    "momentum_flat": "beze změny",
+    "momentum_declining": "pokles"
   }
 }

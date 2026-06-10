@@ -23,6 +23,7 @@ import { PeriodSelect } from './components/PeriodSelect';
 import { ScoreDistribution } from './components/ScoreDistribution';
 import { AttentionTriageBar } from './components/AttentionTriageBar';
 import { CategoryRollup } from './components/CategoryRollup';
+import { MomentumSummary } from './components/MomentumSummary';
 import type { RosterFilter } from './rosterFilter';
 import type { DirectorRosterEntry } from '@/api/director';
 
@@ -265,6 +266,8 @@ function Scorecard({
           hint={tx(t.director.kpi_in_scope_hint, { reviewed: p.reviewed, unreviewed: p.unreviewed })}
         />
       </div>
+
+      <MomentumSummary roster={p.roster} />
 
       <DirectorSection label={t.director.value_leak_title} icon={Layers}>
         <ValueLeakBar rollup={rollup} />

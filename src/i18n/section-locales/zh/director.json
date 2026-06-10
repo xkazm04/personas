@@ -28,5 +28,9 @@
   "triage_chip_hint": "将表格筛选为这些智能体",
   "category_rollup_title": "按类别分类的问题",
   "category_rollup_empty": "尚无辅导评定",
-  "brain_history_title": "过往辅导（长期记忆）"
+  "brain_history_title": "过往辅导（长期记忆）",
+  "momentum_label": "动向",
+  "momentum_improving": "上升",
+  "momentum_flat": "持平",
+  "momentum_declining": "下降"
 }

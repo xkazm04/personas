@@ -3470,7 +3470,11 @@
     "triage_chip_hint": "Filter the table to these agents",
     "category_rollup_title": "Issues by category",
     "category_rollup_empty": "No coaching verdicts yet",
-    "brain_history_title": "Prior coaching (long-term memory)"
+    "brain_history_title": "Prior coaching (long-term memory)",
+    "momentum_label": "Momentum",
+    "momentum_improving": "improving",
+    "momentum_flat": "flat",
+    "momentum_declining": "declining"
   },
   "vault": {
     "title": "Vault",

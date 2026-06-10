@@ -28,5 +28,9 @@
   "triage_chip_hint": "টেবিলকে এই এজেন্টগুলিতে ফিল্টার করুন",
   "category_rollup_title": "বিভাগ অনুযায়ী সমস্যা",
   "category_rollup_empty": "এখনও কোনো কোচিং রায় নেই",
-  "brain_history_title": "পূর্ববর্তী কোচিং (দীর্ঘমেয়াদী স্মৃতি)"
+  "brain_history_title": "পূর্ববর্তী কোচিং (দীর্ঘমেয়াদী স্মৃতি)",
+  "momentum_label": "গতি",
+  "momentum_improving": "উন্নতি",
+  "momentum_flat": "স্থির",
+  "momentum_declining": "অবনতি"
 }

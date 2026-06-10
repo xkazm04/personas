@@ -15267,6 +15267,10 @@
     "triage_chip_hint": "Отфильтровать таблицу по этим агентам",
     "category_rollup_title": "Проблемы по категориям",
     "category_rollup_empty": "Пока нет оценок",
-    "brain_history_title": "Прежний коучинг (долговременная память)"
+    "brain_history_title": "Прежний коучинг (долговременная память)",
+    "momentum_label": "Динамика",
+    "momentum_improving": "растут",
+    "momentum_flat": "без изменений",
+    "momentum_declining": "падают"
   }
 }

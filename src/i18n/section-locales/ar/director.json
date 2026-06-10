@@ -28,5 +28,9 @@
   "triage_chip_hint": "تصفية الجدول إلى هؤلاء الوكلاء",
   "category_rollup_title": "المشكلات حسب الفئة",
   "category_rollup_empty": "لا توجد أحكام إرشادية بعد",
-  "brain_history_title": "الإرشاد السابق (الذاكرة طويلة المدى)"
+  "brain_history_title": "الإرشاد السابق (الذاكرة طويلة المدى)",
+  "momentum_label": "الزخم",
+  "momentum_improving": "تحسّن",
+  "momentum_flat": "ثابت",
+  "momentum_declining": "تراجع"
 }
