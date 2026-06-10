@@ -130,17 +130,36 @@ export function PodiumStep({ entry, slot, selected, onClick, rankKey, activeDimL
           )}
         </div>
       </div>
+      <div className="w-full">
       <motion.div
         initial={reduce ? false : { scaleY: 0.4, opacity: 0 }}
         animate={{ scaleY: 1, opacity: 1 }}
         style={{ transformOrigin: 'bottom' }}
         transition={{ duration: reduce ? 0 : 0.55, delay: reduce ? 0 : cfg.staggerDelay + 0.15, ease: [0.34, 1.4, 0.64, 1] }}
-        className={`w-full ${cfg.heightClass} border rounded-t-card ${cfg.stepClass} flex items-start justify-center pt-3`}
+        className={`relative w-full ${cfg.heightClass} border rounded-t-card ${cfg.stepClass} flex items-start justify-center pt-3 overflow-hidden shadow-[inset_0_-12px_24px_-12px_rgba(0,0,0,0.45)]`}
       >
-        <span className={`typo-display font-black tracking-widest ${cfg.accentText}`}>
+        {/* Top bevel highlight — reads as the lit cap of an extruded pedestal */}
+        <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-foreground/25" />
+        {/* Soft vertical sheen down the face */}
+        <span aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.07] to-transparent" />
+        <span
+          className={`relative typo-display font-black tracking-widest ${cfg.accentText}`}
+          style={{ textShadow: '0 1px 0 rgba(255,255,255,0.18), 0 -1px 1px rgba(0,0,0,0.35)' }}
+        >
           {cfg.label}
         </span>
       </motion.div>
+      {/* Fading floor reflection beneath the riser */}
+      <div aria-hidden className="pointer-events-none w-full h-10 overflow-hidden">
+        <div
+          className={`w-full ${cfg.heightClass} rounded-t-card border ${cfg.stepClass} -scale-y-100 origin-top opacity-25`}
+          style={{
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent 55%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.55), transparent 55%)',
+          }}
+        />
+      </div>
+      </div>
     </motion.button>
   );
 }
