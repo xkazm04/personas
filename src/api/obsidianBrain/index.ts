@@ -447,6 +447,36 @@ export const obsidianRevitalizeActive = () =>
 export const obsidianRevitalizeCancel = (jobId: string) =>
   invoke<void>("obsidian_revitalize_cancel", { jobId });
 
+/**
+ * One finished revitalize pass, persisted in `obsidian_revitalize_runs`.
+ * Mirrors the Rust `RevitalizeRunRecord` model (serde camelCase). Defined
+ * manually (not via the ts-rs binding) because ts-rs renders i64 as bigint
+ * while the IPC layer delivers plain JSON numbers.
+ */
+export interface RevitalizeRunRecord {
+  id: string;
+  vaultName: string;
+  vaultPath: string;
+  /** 'completed' | 'failed' (cancellation lands as failed). */
+  status: string;
+  error: string | null;
+  filesDeleted: number;
+  filesMerged: number;
+  filesUpdated: number;
+  filesReviewed: number;
+  notesBefore: number;
+  notesAfter: number;
+  estTokensBefore: number;
+  estTokensAfter: number;
+  durationSecs: number;
+  startedAt: string;
+  createdAt: string;
+}
+
+/** Last finished revitalize passes, newest first (default 20, max 100). */
+export const obsidianRevitalizeHistory = (limit?: number) =>
+  invoke<RevitalizeRunRecord[]>("obsidian_revitalize_history", { limit: limit ?? null });
+
 export const obsidianGraphStartWatcher = () =>
   invoke<void>("obsidian_graph_start_watcher");
 

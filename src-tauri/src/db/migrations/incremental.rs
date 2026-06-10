@@ -4549,4 +4549,36 @@ fn research_lab_align_columns(conn: &Connection) {
         "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_team
             ON team_channel_messages(team_id, created_at);",
     );
+
+    // Obsidian Brain — Revitalize run history. One row per finished pass
+    // (completed or failed) so the panel can show "last runs: when, which
+    // vault, what the cleaning achieved" after the in-memory job store's
+    // 30-minute TTL evicts the live job. Counts come from the model's
+    // REVITALIZE_SUMMARY line; notes/tokens before/after are measured scans.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS obsidian_revitalize_runs (
+            id                TEXT PRIMARY KEY,
+            vault_name        TEXT NOT NULL,
+            vault_path        TEXT NOT NULL,
+            status            TEXT NOT NULL,
+            error             TEXT,
+            files_deleted     INTEGER NOT NULL DEFAULT 0,
+            files_merged      INTEGER NOT NULL DEFAULT 0,
+            files_updated     INTEGER NOT NULL DEFAULT 0,
+            files_reviewed    INTEGER NOT NULL DEFAULT 0,
+            notes_before      INTEGER NOT NULL DEFAULT 0,
+            notes_after       INTEGER NOT NULL DEFAULT 0,
+            est_tokens_before INTEGER NOT NULL DEFAULT 0,
+            est_tokens_after  INTEGER NOT NULL DEFAULT 0,
+            duration_secs     INTEGER NOT NULL DEFAULT 0,
+            started_at        TEXT NOT NULL,
+            created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_obsidian_revitalize_runs_created
+            ON obsidian_revitalize_runs(created_at DESC);",
+    );
 }

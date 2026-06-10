@@ -9,6 +9,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import RevitalizeProgress from './RevitalizeProgress';
 import RevitalizeSummaryCard from './RevitalizeSummaryCard';
+import RevitalizeHistoryTable from './RevitalizeHistoryTable';
 import { useRevitalizeJob } from './useRevitalizeJob';
 
 export default function RevitalizePanel() {
@@ -147,6 +148,8 @@ export default function RevitalizePanel() {
             onDismiss={dismissSummary}
           />
         )}
+
+        <RevitalizeHistoryTable />
       </div>
 
       <SavedConfigsSidebar emptyHint={ob.saved_vaults_empty_hint_other} />

@@ -84,6 +84,7 @@ The Graph tab is the human-facing twin of the **Obsidian Memory** connector — 
 2. Press **Start revitalization**. The backend spawns the Claude Code CLI *inside the vault* as a background job (same `BackgroundJobManager` pattern as n8n transforms) and streams a live narration log into the panel. The pass is bounded (~40 notes, 9-minute cap) so large vaults are optimized over repeated runs.
 3. The job survives navigation: a fuchsia pulse dot shows on the **Plugins** L1 button, the **Brain** row in the plugins list, and the **Revitalize** L3 item while it runs; an emerald dot (dismissible) marks completion. Re-opening the tab re-attaches to the running job.
 4. When the pass finishes, a **summary card** reports notes removed / merged / updated / reviewed, estimated tokens saved (measured before/after vault scan), notes before → after, duration, plus the model's narrative and highlights. **Run another pass** continues where the last one stopped.
+5. A **Recent passes** table below shows the last 20 runs — when each ran, which vault, completed/failed status (error in the tooltip), the cleaning result (removed · merged · updated), and tokens saved. Runs persist in the `obsidian_revitalize_runs` table, so the history survives app restarts; failed and cancelled passes are recorded too.
 
 Safety: only Markdown notes are touched — `.obsidian/`, dot-directories, and attachments are never modified, and the prompt forbids inventing facts when merging.
 
