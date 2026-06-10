@@ -10535,8 +10535,6 @@ export type Translations = {
     col_recipe: string;
     _comment_col_category: string;
     col_category: string;
-    _comment_col_bindings: string;
-    col_bindings: string;
     _comment_col_connectors: string;
     col_connectors: string;
     _comment_col_version: string;
@@ -10569,8 +10567,6 @@ export type Translations = {
     adopt_label: string;
     _comment_detail_by_prefix: string;
     detail_by_prefix: string;
-    _comment_detail_published_prefix: string;
-    detail_published_prefix: string;
     _comment_banner_setup_title: string;
     banner_setup_title: string;
     _comment_banner_setup_body_prefix: string;
@@ -10593,8 +10589,6 @@ export type Translations = {
     spec_memory_label: string;
     _comment_spec_review_label: string;
     spec_review_label: string;
-    _comment_spec_events_label: string;
-    spec_events_label: string;
     _comment_spec_tools_label: string;
     spec_tools_label: string;
     _comment_spec_notifications_none: string;

@@ -76,11 +76,18 @@ export function RecipeDetailHeader({
             <span className="typo-caption text-foreground">
               {tx(t.recipes_catalog.detail_by_prefix, { author: recipe.author })}
             </span>
-            <span className="typo-caption text-foreground" aria-hidden>·</span>
-            <span className="typo-caption text-foreground inline-flex items-center gap-1">
-              {t.recipes_catalog.published_label}
-              <RelativeTime timestamp={recipe.publishedAt} />
-            </span>
+            {/* Builtins' publishedAt is the local seed-insert time, not a
+                real publication date — showing it reads as "just now" for
+                the entire shipped catalog. */}
+            {!recipe.isBuiltin && (
+              <>
+                <span className="typo-caption text-foreground" aria-hidden>·</span>
+                <span className="typo-caption text-foreground inline-flex items-center gap-1">
+                  {t.recipes_catalog.published_label}
+                  <RelativeTime timestamp={recipe.publishedAt} />
+                </span>
+              </>
+            )}
           </div>
         </div>
         <button

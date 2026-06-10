@@ -20,17 +20,23 @@ export function RecipeGuardrailsCard({ recipe }: RecipeGuardrailsCardProps) {
   const hasMemory = !!(memoryPolicy?.context || generationSettings?.memories);
   if (!hasReview && !hasMemory && !errorHandling) return null;
 
+  // No badge when the underlying policy field is absent — a recipe that
+  // only ships prose context must not be labeled "Never" / "Enabled".
   const reviewSetting = generationSettings?.reviews;
-  const reviewBadge = reviewSetting === 'on'
-    ? { label: t.recipes_catalog.review_mode_always, cls: 'border-status-warning/40 bg-status-warning/10 text-status-warning' }
-    : reviewSetting === 'trust_llm'
-      ? { label: t.recipes_catalog.review_mode_conditional, cls: 'border-primary/35 bg-primary/10 text-primary' }
-      : { label: t.recipes_catalog.review_mode_never, cls: 'border-card-border bg-secondary/40 text-foreground' };
+  const reviewBadge = reviewSetting === undefined
+    ? undefined
+    : reviewSetting === 'on'
+      ? { label: t.recipes_catalog.review_mode_always, cls: 'border-status-warning/40 bg-status-warning/10 text-status-warning' }
+      : reviewSetting === 'trust_llm'
+        ? { label: t.recipes_catalog.review_mode_conditional, cls: 'border-primary/35 bg-primary/10 text-primary' }
+        : { label: t.recipes_catalog.review_mode_never, cls: 'border-card-border bg-secondary/40 text-foreground' };
 
-  const memoryOn = generationSettings?.memories !== 'off';
-  const memoryBadge = memoryOn
-    ? { label: t.recipes_catalog.memory_on_label, cls: 'border-status-success/35 bg-status-success/10 text-status-success' }
-    : { label: t.recipes_catalog.memory_off_label, cls: 'border-card-border bg-secondary/40 text-foreground' };
+  const memorySetting = generationSettings?.memories;
+  const memoryBadge = memorySetting === undefined
+    ? undefined
+    : memorySetting === 'on'
+      ? { label: t.recipes_catalog.memory_on_label, cls: 'border-status-success/35 bg-status-success/10 text-status-success' }
+      : { label: t.recipes_catalog.memory_off_label, cls: 'border-card-border bg-secondary/40 text-foreground' };
 
   return (
     <section className="mx-4 mb-6 rounded-card border border-card-border bg-secondary/30 p-4 shadow-elevation-1">
