@@ -5710,7 +5710,14 @@
       "speed": "Скорость",
       "efficiency": "Эффективность",
       "cost_effectiveness": "Экономичность",
-      "overall": "Общий"
+      "overall": "Общий",
+      "rank_by": "Сортировать по",
+      "dim_overall": "Общий",
+      "dim_success": "Успешность",
+      "dim_health": "Состояние",
+      "dim_speed": "Скорость",
+      "dim_cost": "Стоимость",
+      "dim_activity": "Активность"
     },
     "analytics": {
       "title": "Аналитика",

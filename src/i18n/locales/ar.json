@@ -5710,7 +5710,14 @@
       "speed": "السرعة",
       "efficiency": "الكفاءة",
       "cost_effectiveness": "جدوى التكلفة",
-      "overall": "الإجمالي"
+      "overall": "الإجمالي",
+      "rank_by": "ترتيب حسب",
+      "dim_overall": "إجمالي",
+      "dim_success": "النجاح",
+      "dim_health": "الصحة",
+      "dim_speed": "السرعة",
+      "dim_cost": "التكلفة",
+      "dim_activity": "النشاط"
     },
     "analytics": {
       "title": "التحليلات",

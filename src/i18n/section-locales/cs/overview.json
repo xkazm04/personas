@@ -606,7 +606,14 @@
     "speed": "Rychlost",
     "efficiency": "Efektivita",
     "cost_effectiveness": "Ekonomičnost",
-    "overall": "Celkově"
+    "overall": "Celkově",
+    "rank_by": "Seřadit podle",
+    "dim_overall": "Celkové",
+    "dim_success": "Úspěšnost",
+    "dim_health": "Stav",
+    "dim_speed": "Rychlost",
+    "dim_cost": "Náklady",
+    "dim_activity": "Aktivita"
   },
   "analytics": {
     "title": "Analytika",

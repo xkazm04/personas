@@ -606,7 +606,14 @@
     "speed": "Tốc độ",
     "efficiency": "Hiệu quả",
     "cost_effectiveness": "Hiệu quả chi phí",
-    "overall": "Tổng thể"
+    "overall": "Tổng thể",
+    "rank_by": "Xếp hạng theo",
+    "dim_overall": "Tổng thể",
+    "dim_success": "Thành công",
+    "dim_health": "Tình trạng",
+    "dim_speed": "Tốc độ",
+    "dim_cost": "Chi phí",
+    "dim_activity": "Hoạt động"
   },
   "analytics": {
     "title": "Phân tích",

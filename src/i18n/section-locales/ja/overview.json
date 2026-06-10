@@ -606,7 +606,14 @@
     "speed": "速度",
     "efficiency": "効率",
     "cost_effectiveness": "コスト効率",
-    "overall": "総合"
+    "overall": "総合",
+    "rank_by": "並び替え",
+    "dim_overall": "総合",
+    "dim_success": "成功率",
+    "dim_health": "健全性",
+    "dim_speed": "速度",
+    "dim_cost": "コスト",
+    "dim_activity": "アクティビティ"
   },
   "analytics": {
     "title": "分析",

@@ -606,7 +606,14 @@
     "speed": "速度",
     "efficiency": "效率",
     "cost_effectiveness": "成本效益",
-    "overall": "综合"
+    "overall": "综合",
+    "rank_by": "排序依据",
+    "dim_overall": "综合",
+    "dim_success": "成功率",
+    "dim_health": "健康度",
+    "dim_speed": "速度",
+    "dim_cost": "成本",
+    "dim_activity": "活跃度"
   },
   "analytics": {
     "title": "分析",

@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Sparkles, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
+import { headlineScore, type RankKey } from '../libs/leaderboardRanking';
 
 export type PodiumSlot = 'gold' | 'silver' | 'bronze';
 
@@ -59,13 +60,18 @@ interface PodiumStepProps {
   slot: PodiumSlot;
   selected: boolean;
   onClick: () => void;
+  /** Active ranking dimension — drives which score is shown as the headline. */
+  rankKey: RankKey;
+  /** Translated label for the active dimension (null when ranking by overall). */
+  activeDimLabel?: string | null;
 }
 
-export function PodiumStep({ entry, slot, selected, onClick }: PodiumStepProps) {
+export function PodiumStep({ entry, slot, selected, onClick, rankKey, activeDimLabel }: PodiumStepProps) {
   const reduce = useReducedMotion();
   const cfg = PODIUM_CONFIG[slot];
   const trend = TREND[entry.trend];
   const TrendIcon = trend.Icon;
+  const headline = headlineScore(entry, rankKey);
 
   return (
     <motion.button
@@ -94,11 +100,16 @@ export function PodiumStep({ entry, slot, selected, onClick }: PodiumStepProps) 
         <p className={`typo-heading font-semibold ${cfg.accentText} text-center max-w-[180px] truncate`}>
           {entry.personaName}
         </p>
-        <div className="flex items-center gap-2">
-          <span className={`typo-display font-bold tabular-nums ${cfg.scoreText}`}>
-            {entry.compositeScore}
-          </span>
-          <TrendIcon className={`w-4 h-4 ${trend.color}`} aria-label={trend.label} />
+        <div className="flex flex-col items-center gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className={`typo-display font-bold tabular-nums ${cfg.scoreText}`}>
+              {headline}
+            </span>
+            <TrendIcon className={`w-4 h-4 ${trend.color}`} aria-label={trend.label} />
+          </div>
+          {activeDimLabel && (
+            <span className={`typo-caption font-medium ${cfg.accentText}`}>{activeDimLabel}</span>
+          )}
         </div>
       </div>
       <motion.div

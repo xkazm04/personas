@@ -606,7 +606,14 @@
     "speed": "गति",
     "efficiency": "दक्षता",
     "cost_effectiveness": "लागत-प्रभावशीलता",
-    "overall": "कुल"
+    "overall": "कुल",
+    "rank_by": "इसके आधार पर रैंक करें",
+    "dim_overall": "समग्र",
+    "dim_success": "सफलता",
+    "dim_health": "स्वास्थ्य",
+    "dim_speed": "गति",
+    "dim_cost": "लागत",
+    "dim_activity": "गतिविधि"
   },
   "analytics": {
     "title": "एनालिटिक्स",

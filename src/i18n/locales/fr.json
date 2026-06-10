@@ -5710,7 +5710,14 @@
       "speed": "Vitesse",
       "efficiency": "Efficacité",
       "cost_effectiveness": "Rapport coût-efficacité",
-      "overall": "Général"
+      "overall": "Général",
+      "rank_by": "Classer par",
+      "dim_overall": "Global",
+      "dim_success": "Réussite",
+      "dim_health": "Santé",
+      "dim_speed": "Vitesse",
+      "dim_cost": "Coût",
+      "dim_activity": "Activité"
     },
     "analytics": {
       "title": "Analyses",

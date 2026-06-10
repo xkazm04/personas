@@ -6201,6 +6201,13 @@ export type Translations = {
       efficiency: string;
       cost_effectiveness: string;
       overall: string;
+      rank_by: string;
+      dim_overall: string;
+      dim_success: string;
+      dim_health: string;
+      dim_speed: string;
+      dim_cost: string;
+      dim_activity: string;
     };
     analytics: {
       title: string;

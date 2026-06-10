@@ -606,7 +606,14 @@
     "speed": "Velocidad",
     "efficiency": "Eficiencia",
     "cost_effectiveness": "Relación Costo-Beneficio",
-    "overall": "General"
+    "overall": "General",
+    "rank_by": "Ordenar por",
+    "dim_overall": "General",
+    "dim_success": "Éxito",
+    "dim_health": "Salud",
+    "dim_speed": "Velocidad",
+    "dim_cost": "Costo",
+    "dim_activity": "Actividad"
   },
   "analytics": {
     "title": "Análisis",

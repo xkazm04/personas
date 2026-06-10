@@ -2,6 +2,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Minus, ExternalLink } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { LeaderboardEntry, Medal, PerformanceTier } from '../libs/leaderboardScoring';
+import { headlineScore, type RankKey } from '../libs/leaderboardRanking';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -56,13 +57,13 @@ function MiniScoreRing({ score, size = 48 }: { score: number; size?: number }) {
 
 // ── Dimension bar ──────────────────────────────────────────────────────
 
-function DimensionBar({ label, value, raw, delay = 0 }: { label: string; value: number; raw: string; delay?: number }) {
+function DimensionBar({ label, value, raw, delay = 0, active = false }: { label: string; value: number; raw: string; delay?: number; active?: boolean }) {
   const reduce = useReducedMotion();
   const barColor = value >= 80 ? 'bg-emerald-500/70' : value >= 60 ? 'bg-blue-500/70' : value >= 40 ? 'bg-amber-500/70' : 'bg-red-500/70';
   return (
     <div className="flex items-center gap-2">
-      <span className="typo-caption text-foreground w-14 text-right flex-shrink-0">{label}</span>
-      <div className="flex-1 h-1.5 rounded-full bg-primary/10 overflow-hidden">
+      <span className={`typo-caption w-14 text-right flex-shrink-0 ${active ? 'text-primary font-semibold' : 'text-foreground'}`}>{label}</span>
+      <div className={`flex-1 rounded-full bg-primary/10 overflow-hidden transition-all ${active ? 'h-2 ring-1 ring-primary/30' : 'h-1.5'}`}>
         <motion.div
           className={`h-full rounded-full ${barColor}`}
           initial={reduce ? false : { width: 0 }}
@@ -70,7 +71,7 @@ function DimensionBar({ label, value, raw, delay = 0 }: { label: string; value: 
           transition={{ duration: reduce ? 0 : 0.55, delay: reduce ? 0 : delay, ease: [0.22, 0.61, 0.36, 1] }}
         />
       </div>
-      <span className="typo-caption font-mono text-foreground w-16 flex-shrink-0">{raw}</span>
+      <span className={`typo-caption font-mono w-16 flex-shrink-0 ${active ? 'text-primary font-semibold' : 'text-foreground'}`}>{raw}</span>
     </div>
   );
 }
@@ -84,9 +85,11 @@ interface LeaderboardCardProps {
   onNavigateToAgent?: (personaId: string) => void;
   /** Index in the visible list — used to stagger entrance animations. */
   index?: number;
+  /** Active ranking dimension — drives the headline score + accented bar. */
+  rankKey?: RankKey;
 }
 
-export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, index = 0 }: LeaderboardCardProps) {
+export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, index = 0, rankKey = 'overall' }: LeaderboardCardProps) {
   const reduce = useReducedMotion();
   const medalCfg = entry.medal ? MEDAL_CONFIG[entry.medal] : null;
   const tierCfg = TIER_CONFIG[entry.tier];
@@ -133,13 +136,13 @@ export function LeaderboardCard({ entry, selected, onClick, onNavigateToAgent, i
         </div>
 
         {/* Score ring */}
-        <MiniScoreRing score={entry.compositeScore} />
+        <MiniScoreRing score={headlineScore(entry, rankKey)} />
       </div>
 
       {/* Dimension bars */}
       <div className="mt-3 space-y-1.5 pl-12">
         {entry.dimensions.map((dim, i) => (
-          <DimensionBar key={dim.label} label={dim.label} value={dim.value} raw={dim.raw} delay={i * 0.05} />
+          <DimensionBar key={dim.label} label={dim.label} value={dim.value} raw={dim.raw} delay={i * 0.05} active={rankKey !== 'overall' && dim.key === rankKey} />
         ))}
       </div>
 

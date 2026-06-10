@@ -5710,7 +5710,14 @@
       "speed": "Kecepatan",
       "efficiency": "Efisiensi",
       "cost_effectiveness": "Efektivitas Biaya",
-      "overall": "Keseluruhan"
+      "overall": "Keseluruhan",
+      "rank_by": "Urutkan menurut",
+      "dim_overall": "Keseluruhan",
+      "dim_success": "Keberhasilan",
+      "dim_health": "Kesehatan",
+      "dim_speed": "Kecepatan",
+      "dim_cost": "Biaya",
+      "dim_activity": "Aktivitas"
     },
     "analytics": {
       "title": "Analitik",

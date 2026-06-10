@@ -606,7 +606,14 @@
     "speed": "Geschwindigkeit",
     "efficiency": "Effizienz",
     "cost_effectiveness": "Kosteneffizienz",
-    "overall": "Gesamt"
+    "overall": "Gesamt",
+    "rank_by": "Sortieren nach",
+    "dim_overall": "Gesamt",
+    "dim_success": "Erfolg",
+    "dim_health": "Zustand",
+    "dim_speed": "Geschwindigkeit",
+    "dim_cost": "Kosten",
+    "dim_activity": "Aktivität"
   },
   "analytics": {
     "title": "Analytik",

@@ -606,7 +606,14 @@
     "speed": "গতি",
     "efficiency": "দক্ষতা",
     "cost_effectiveness": "খরচ সাশ্রয়",
-    "overall": "সামগ্রিক"
+    "overall": "সামগ্রিক",
+    "rank_by": "অনুসারে র‍্যাঙ্ক",
+    "dim_overall": "সামগ্রিক",
+    "dim_success": "সাফল্য",
+    "dim_health": "স্বাস্থ্য",
+    "dim_speed": "গতি",
+    "dim_cost": "খরচ",
+    "dim_activity": "কার্যকলাপ"
   },
   "analytics": {
     "title": "অ্যানালিটিক্স",

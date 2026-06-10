@@ -6194,7 +6194,14 @@
       "speed": "Speed",
       "efficiency": "Efficiency",
       "cost_effectiveness": "Cost Effectiveness",
-      "overall": "Overall"
+      "overall": "Overall",
+      "rank_by": "Rank by",
+      "dim_overall": "Overall",
+      "dim_success": "Success",
+      "dim_health": "Health",
+      "dim_speed": "Speed",
+      "dim_cost": "Cost",
+      "dim_activity": "Activity"
     },
     "analytics": {
       "title": "Analytics",

@@ -5710,7 +5710,14 @@
       "speed": "속도",
       "efficiency": "효율성",
       "cost_effectiveness": "비용 효율성",
-      "overall": "전체"
+      "overall": "전체",
+      "rank_by": "정렬 기준",
+      "dim_overall": "종합",
+      "dim_success": "성공률",
+      "dim_health": "상태",
+      "dim_speed": "속도",
+      "dim_cost": "비용",
+      "dim_activity": "활동"
     },
     "analytics": {
       "title": "분석",
