@@ -33,28 +33,36 @@ The single tab stacks, top to bottom:
   a 0–5 **score distribution** chart (`ScoreDistribution`) with per-band tooltips
   and a dashed **portfolio-average marker**; a **model efficiency** table; and an
   **Issues by category** rollup (`CategoryRollup`) tallying every coaching verdict
-  by category so the portfolio's issue mix reads at a glance. A **review-period
-  selector** (`PeriodSelect`, 7/30/90-day) in the subheader scopes the whole
-  scorecard by threading the `days` window into `get_director_portfolio` (default
-  30). All from the `get_director_portfolio` command, which surfaces the
-  `ValueRollup` that until now only ever reached the LLM payload.
+  by category so the portfolio's issue mix reads at a glance; and a **momentum**
+  strip (`MomentumSummary`, derived from `momentum.ts`) tallying how many agents
+  improved / held / slipped versus their previous review — the "is the fleet
+  getting better?" headline. A **review-period selector** (`PeriodSelect`,
+  7/30/90-day) in the subheader scopes the whole scorecard by threading the
+  `days` window into `get_director_portfolio` (default 30). All from the
+  `get_director_portfolio` command, which surfaces the `ValueRollup` that until
+  now only ever reached the LLM payload.
 - **Coaching table** — one table consolidating what were three tabs (Roster +
-  Attention + Reviews). Each in-scope agent is a row showing score · trend
-  sparkline · value rate · **attention tags** · last review. Attention tags are
-  the client-derived triage lenses (`sub_director/attention.ts`): awaiting first
-  review / low score ≤2 / declining trend / stale review >14d. The table header
-  carries an **attention-triage bar** (`AttentionTriageBar`) rolling those flags
-  up across the whole roster (N new · N low · N declining · N stale). Triage is a
-  **click-to-filter cockpit**: a triage chip filters the table to that flag, a
-  score-distribution bar filters to that score, and the header's "only flagged"
-  toggle filters to any-flagged — one shared facet at a time (`rosterFilter.ts`),
+  Attention + Reviews). Each in-scope agent is a row showing score (with a
+  **momentum delta** — an arrow + signed change since the previous review) ·
+  trend sparkline · value rate · **attention tags** · last review. Attention tags
+  are the client-derived triage lenses (`sub_director/attention.ts`): awaiting
+  first review / low score ≤2 / declining trend / stale review >14d. The table
+  header carries an **attention-triage bar** (`AttentionTriageBar`) rolling those
+  flags up across the whole roster (N new · N low · N declining · N stale).
+  Triage is a **click-to-filter cockpit**: a triage chip filters the table to
+  that flag, a score-distribution bar filters to that score, a momentum bucket
+  filters to improving/flat/declining, and the header's "only flagged" toggle
+  filters to any-flagged — one shared facet at a time (`rosterFilter.ts`),
   re-click to clear, with a clear-chip surfacing a facet whose trigger lives
   elsewhere. **Clicking a row opens a detail modal** (`PersonaDetailModal`) with
   that agent's score trend, value signal, active attention flags, and full
   **verdict history** (the Reviews surface, scoped to the agent, expandable to
   rationale + suggested actions) — each verdict tagged with its **category**
   (prompt / health / triggers / credentials / memory / usefulness, via
-  `categoryMeta.ts`) and filterable by category — plus Review-now.
+  `categoryMeta.ts`) and filterable by category — plus Review-now. When the
+  **Brain** is enabled, the modal also shows a collapsible **Prior coaching
+  (long-term memory)** panel rendering the agent's most recent Director vault
+  notes (read-only markdown via `get_director_brain_history`).
 
 **Add to scope** and **per-agent detail** are modals (`AddToScopeModal` /
 `PersonaDetailModal`) so the tab stays compact.
@@ -182,6 +190,7 @@ created in the first place.
 | `get_director_portfolio(days?)` | Portfolio analytics for the command center: fleet value rollup + in-scope roster + 0–5 score distribution + headline counts. Composes existing aggregates (no new SQL). |
 | `set_persona_starred(id, starred)` | Add/remove a persona from the Director's scope. |
 | `get_director_brain_enabled()` / `set_director_brain_enabled(enabled)` | Read/toggle the Brain long-term-memory wiring. |
+| `get_director_brain_history(persona_id)` | Read the persona's recent Director vault notes as markdown (or null when Brain is off / no notes). Read-only; powers the detail-modal prior-coaching panel. |
 
 ## Source map
 
@@ -203,11 +212,15 @@ created in the first place.
 - Command center: `src/features/overview/sub_director/` —
   `DirectorCoachingTab.tsx` (the Overview sub-tab: subheader + scorecard +
   table), `useDirector.ts` (shared data/actions hook, owns the `period` window),
-  `attention.ts` (triage lenses + `attentionCounts` rollup), `directorScore.ts` +
+  `attention.ts` (triage lenses + `attentionCounts` rollup), `momentum.ts`
+  (score-delta + improving/flat/declining buckets), `directorScore.ts` +
   `ScoreSparkline.tsx` (shared 0–5 score visual language), `categoryMeta.ts`
   (verdict-category icon/tone/label palette), `rosterFilter.ts` (the shared
-  coaching-table facet filter), `DirectorSection.tsx` (panel surface),
-  `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal,ValueLeakBar,PeriodSelect,ScoreDistribution,AttentionTriageBar,CategoryRollup}.tsx`.
+  coaching-table facet filter — flag / score / momentum / flagged),
+  `DirectorSection.tsx` (panel surface),
+  `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal,ValueLeakBar,PeriodSelect,ScoreDistribution,AttentionTriageBar,CategoryRollup,MomentumSummary}.tsx`.
+  Brain history command: `get_director_brain_history` (engine
+  `director_brain::read_brain_history`, exposed read-only).
 - Shared primitive: `src/features/shared/components/display/StatCard.tsx` (KPI
   card, added with this feature).
 - Other UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx`
