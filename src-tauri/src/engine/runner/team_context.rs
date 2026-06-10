@@ -629,6 +629,7 @@ mod tests {
 
     fn inc(severity: &str, title: &str, desc: &str) -> IncidentLine {
         IncidentLine {
+            id: "abcd1234".into(),
             severity: severity.into(),
             title: title.into(),
             desc: desc.into(),
