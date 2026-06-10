@@ -13,13 +13,10 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
-import { TeamPresetPickerModal } from './TeamPresetPickerModal';
-import { PresetPreviewModal } from '@/features/templates/sub_presets';
 import { usePersonaIndex } from './teamStudio/boardShared';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
-import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 
 /**
  * Teams management table — the landing view of the "Teams" sidebar
@@ -41,6 +38,7 @@ export default function TeamList() {
   const createTeam = usePipelineStore((s) => s.createTeam);
   const deleteTeam = usePipelineStore((s) => s.deleteTeam);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
+  const setPresetFlowOpen = usePipelineStore((s) => s.setPresetFlowOpen);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -53,10 +51,6 @@ export default function TeamList() {
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [confirmDisbandId, setConfirmDisbandId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
-  // Preset-team onboarding: the picker lists best-practice presets; choosing
-  // one opens the shared PresetPreviewModal (select/unselect members → adopt).
-  const [showPresetPicker, setShowPresetPicker] = useState(false);
-  const [presetToPreview, setPresetToPreview] = useState<TeamPreset | null>(null);
   const personaIndex = usePersonaIndex();
 
   useEffect(() => {
@@ -152,7 +146,7 @@ export default function TeamList() {
         subtitle={countLabel}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setShowPresetPicker(true)}>
+            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)}>
               {t.pipeline.preset_team}
             </Button>
             <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
@@ -189,7 +183,7 @@ export default function TeamList() {
           <EmptyState
             onCreate={() => setShowCreate(true)}
             onAuto={() => setShowAutoTeam(true)}
-            onPreset={() => setShowPresetPicker(true)}
+            onPreset={() => setPresetFlowOpen(true)}
             t={t}
           />
         ) : (
@@ -220,24 +214,6 @@ export default function TeamList() {
       </ContentBody>
 
       <AutoTeamModal open={showAutoTeam} onClose={() => setShowAutoTeam(false)} />
-
-      <TeamPresetPickerModal
-        open={showPresetPicker}
-        onClose={() => setShowPresetPicker(false)}
-        onSelect={(preset) => {
-          // Close the gallery and hand the preset to the shared preview/
-          // adoption modal — keeps both modals from stacking on screen.
-          setShowPresetPicker(false);
-          setPresetToPreview(preset);
-        }}
-      />
-      {presetToPreview && (
-        <PresetPreviewModal
-          open
-          preset={presetToPreview}
-          onClose={() => setPresetToPreview(null)}
-        />
-      )}
     </ContentBox>
   );
 }

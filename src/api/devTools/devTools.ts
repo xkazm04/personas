@@ -494,8 +494,8 @@ export const deleteContext = (id: string) =>
 export const moveContext = (id: string, targetGroupId: string | null) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_move_context", { id, targetGroupId });
 
-export const scanCodebase = (projectId: string, rootPath: string) =>
-  invoke<{ scan_id: string }>("dev_tools_scan_codebase", { projectId, rootPath });
+export const scanCodebase = (projectId: string, rootPath: string, deltaMode?: boolean) =>
+  invoke<{ scan_id: string }>("dev_tools_scan_codebase", { projectId, rootPath, deltaMode });
 
 export const cancelScanCodebase = (scanId: string) =>
   safeInvoke<boolean>(false, "dev_tools_cancel_scan_codebase", { scanId });

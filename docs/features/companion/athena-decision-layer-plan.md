@@ -72,6 +72,19 @@ Drive it from a single place (e.g. `AthenaGuideLayer` or a small `DecisionDriver
 ### Slice 4 — `0 = explain + recommend, then re-ask`
 When the user picks `0` (click or key), do NOT clear the decision: speak/show `recommendation` + `detail` (set `decisionExplained=true`), and keep the same `pendingDecision` so the numbered options remain. The bubble shows the recommendation text above the options after `0`.
 
+**Explain-in-Cockpit escalation (shipped 2026-06-10).** `0` now ALSO fires a
+synthetic `decision-explain` turn carrying the decision's full context
+(including the new `PendingDecision.payload` — approval params / incident
+trigger / review body). Athena answers with an `explain_in_cockpit` op; the
+spec rides in the `EXPLAIN_COCKPIT_EVENT` payload (never persisted) and
+renders as a contextual cockpit overlay at Home → Cockpit, built from the
+explainer widget palette (`verdict`, `flow_steps`, `comparison_cards`,
+`timeline`, `stat_grid`, `log_excerpt`). While composing: orb plays the
+`composing` clip (`athena_shows_loop.mp4`), bubble shows a processing row;
+on failure the static recommendation remains the floor. The `verdict`
+widget renders the live decision options, so the user can resolve from the
+Cockpit. See [`../cockpit.md`](../cockpit.md) → "Explainer widgets".
+
 ### Slice 5 — `;` leader-key numeric syntax
 In `AthenaOrbLayer.tsx`'s raw keydown handler (next to the Shift+A block): a small leader state machine via `useRef`. When `pendingDecision != null` and the user presses `;` (and not in a typing target), arm a 2s window; the next `0-9` resolves: `1..n` → `options[n-1].run()` + clear; `0` → explain (slice 4). `Esc` disarms. Mirror the guard pattern from `QuickReplies`/`WorkspaceShortcuts` (skip when `tagName` INPUT/TEXTAREA or `isContentEditable`).
 

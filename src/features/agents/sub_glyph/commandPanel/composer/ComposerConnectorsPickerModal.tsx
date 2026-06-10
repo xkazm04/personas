@@ -13,11 +13,12 @@
  * Uses healthy connectors from vault so only actually-usable choices appear.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Plug, Package } from "lucide-react";
+import { Plug, Package, Database } from "lucide-react";
 import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";
+import { ConnectorTableScopeRow } from "./ConnectorTableScopeRow";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -26,17 +27,20 @@ interface ComposerConnectorsPickerModalProps {
   open: boolean;
   onClose: () => void;
   selected: string[];
-  onApply: (next: string[]) => void;
+  /** Per-database-connector table scope (connector name → tables; [] = all). */
+  tables?: Record<string, string[]>;
+  onApply: (next: string[], tables: Record<string, string[]>) => void;
   /** Forwarded to PickerShell — solid bg when the modal opens over a translucent surface. */
   solid?: boolean;
 }
 
 export function ComposerConnectorsPickerModal({
-  open, onClose, selected, onApply, solid = false,
+  open, onClose, selected, tables, onApply, solid = false,
 }: ComposerConnectorsPickerModalProps) {
   const healthy = useHealthyConnectors();
   const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<string[]>(selected);
+  const [draftTables, setDraftTables] = useState<Record<string, string[]>>(tables ?? {});
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("__all__");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -45,12 +49,13 @@ export function ComposerConnectorsPickerModal({
   useEffect(() => {
     if (!open) return;
     setDraft(selected);
+    setDraftTables(tables ?? {});
     setQuery("");
     setCategory("__all__");
     setFiltersOpen(false);
     const t = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(t);
-  }, [open, selected]);
+  }, [open, selected, tables]);
 
   const categories = useMemo(() => {
     const counts = new Map<string, number>();
@@ -74,9 +79,36 @@ export function ComposerConnectorsPickerModal({
   }, [healthy, query, category]);
 
   const toggleDraft = (name: string) =>
-    setDraft((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
+    setDraft((prev) => {
+      if (prev.includes(name)) {
+        // De-selecting a connector drops any table scope it carried.
+        setDraftTables((tbl) => {
+          if (!(name in tbl)) return tbl;
+          const next = { ...tbl };
+          delete next[name];
+          return next;
+        });
+        return prev.filter((n) => n !== name);
+      }
+      return [...prev, name];
+    });
 
-  const applyNow = () => onApply(draft);
+  // Selected connectors that are databases — drive the table-scope panel.
+  const selectedDbConnectors = useMemo(
+    () => healthy.filter((c) => draft.includes(c.name) && c.category === "database"),
+    [healthy, draft],
+  );
+
+  const applyNow = () => {
+    // Only persist table scope for connectors still selected (and only
+    // non-empty subsets — empty = all = no filter).
+    const pruned: Record<string, string[]> = {};
+    for (const name of draft) {
+      const t = draftTables[name];
+      if (t && t.length > 0) pruned[name] = t;
+    }
+    onApply(draft, pruned);
+  };
 
   const selectedChips = useMemo(
     () =>
@@ -156,6 +188,27 @@ export function ComposerConnectorsPickerModal({
           </div>
         )}
       </div>
+
+      {selectedDbConnectors.length > 0 && (
+        <div className="border-t border-border/20 px-5 py-4">
+          <div className="flex items-center gap-2 typo-label uppercase tracking-[0.18em] text-foreground mb-2.5">
+            <Database className="w-3.5 h-3.5 text-cyan-400" />
+            {t.agents.glyph_db_scope_heading}
+          </div>
+          <div className="flex flex-col gap-2">
+            {selectedDbConnectors.map((c) => (
+              <ConnectorTableScopeRow
+                key={c.name}
+                connector={c}
+                selected={draftTables[c.name] ?? []}
+                onChange={(next) =>
+                  setDraftTables((prev) => ({ ...prev, [c.name]: next }))
+                }
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {selectedChips.length > 0 && (
         <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">

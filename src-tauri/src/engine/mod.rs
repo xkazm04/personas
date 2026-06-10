@@ -51,6 +51,7 @@ pub mod credential_negotiator;
 pub mod cron;
 pub mod crypto;
 pub mod curation_scheduler;
+pub mod system_ops;
 pub mod db_query;
 pub mod design;
 pub mod design_context;

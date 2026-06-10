@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { Map as MapIcon, Plus, Search } from 'lucide-react';
+import { Map as MapIcon, Plus, Search, RefreshCw, CalendarClock } from 'lucide-react';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { planWeeklyContextScan } from '@/api/systemOps';
 import type { Event } from '@tauri-apps/api/event';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
@@ -344,6 +346,40 @@ export default function ContextMapPage() {
     }
   }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
 
+  // Incremental re-scan — only re-derives contexts for files that changed since
+  // the last scan (delta_mode), so frequent updates stay cheap. Same streaming
+  // + completion path as a full scan; the backend short-circuits when nothing
+  // changed.
+  const handleRescan = useCallback(async () => {
+    setScanLines([]);
+    useOverviewStore.getState().processStarted(
+      'context_scan',
+      undefined,
+      `Context Map Re-scan${activeProject?.name ? ` — ${activeProject.name}` : ''}`,
+      { section: 'plugins', tab: 'context-map' },
+    );
+    try { await scanCodebase(activeProject?.root_path, true); } catch {
+      useOverviewStore.getState().processEnded('context_scan', 'failed');
+    }
+  }, [scanCodebase, activeProject?.root_path, activeProject?.name]);
+
+  // Plan a recurring (weekly) context-scan automation for this project. Creates
+  // a `system_op_automation` schedule the background loop runs — surfacing in
+  // the Chain Studio "System events" list and the Live Stream when it fires.
+  const [planning, setPlanning] = useState(false);
+  const handlePlanUpdate = useCallback(async () => {
+    if (!activeProjectId) return;
+    setPlanning(true);
+    try {
+      await planWeeklyContextScan(activeProjectId, activeProject?.name);
+      addToast(t.plugins.dev_tools.context_plan_created, 'success');
+    } catch (err) {
+      toastCatch('ContextMapPage:planUpdate', t.plugins.dev_tools.context_plan_failed)(err);
+    } finally {
+      setPlanning(false);
+    }
+  }, [activeProjectId, activeProject?.name, addToast, t.plugins.dev_tools.context_plan_created, t.plugins.dev_tools.context_plan_failed]);
+
   const handleCancelScan = useCallback(async () => {
     if (activeScanId) await cancelScanCodebase(activeScanId);
     useOverviewStore.getState().processEnded('context_scan', 'cancelled');
@@ -403,6 +439,15 @@ export default function ContextMapPage() {
 
   const selectedCtx = groups.flatMap((g) => g.contexts).find((c) => c.id === selectedCtxId);
 
+  // Re-scan is offered once a project has been mapped at least once; the
+  // "last scan" tag (most recent group update) gives a recency cue so the user
+  // knows whether a refresh is even worth it.
+  const hasContexts = storeGroups.length > 0;
+  const lastScannedAt = useMemo(() => {
+    const times = storeGroups.map((g) => g.updated_at).filter(Boolean);
+    return times.length ? times.reduce((a, b) => (a > b ? a : b)) : null;
+  }, [storeGroups]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -416,7 +461,21 @@ export default function ContextMapPage() {
       <ContentBody>
         <ActionRow>
           <Button variant="secondary" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowNewGroup(true)}>{t.plugins.dev_tools.group}</Button>
-          <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
+          {hasContexts ? (
+            <>
+              <Button variant="accent" accentColor="amber" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} loading={scanning} onClick={handleRescan}>{t.plugins.dev_tools.context_rescan}</Button>
+              <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.context_full_rescan}</Button>
+              <Button variant="secondary" size="sm" icon={<CalendarClock className="w-3.5 h-3.5" />} loading={planning} onClick={handlePlanUpdate}>{t.plugins.dev_tools.context_plan_update}</Button>
+            </>
+          ) : (
+            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
+          )}
+          {lastScannedAt && (
+            <span className="ml-auto inline-flex items-center gap-1.5 typo-caption text-foreground">
+              {t.plugins.dev_tools.context_last_scanned}{' '}
+              <RelativeTime timestamp={lastScannedAt} className="tabular-nums" />
+            </span>
+          )}
         </ActionRow>
 
         <div className="flex gap-0 min-h-0 flex-1">

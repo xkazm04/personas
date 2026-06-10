@@ -427,6 +427,46 @@ function applyEventSubscriptions(
   return { ...designResult, use_cases: nextUseCases };
 }
 
+/**
+ * Append the user's manually-attached connectors onto the IR's
+ * `suggested_connectors` (deduped against existing suggested/required), so a
+ * connector chosen via the Apps petal is bound when the persona is built.
+ */
+function applyManualConnectors(
+  designResult: Record<string, unknown>,
+  names: string[],
+): Record<string, unknown> {
+  if (names.length === 0) return designResult;
+  const suggested = (designResult.suggested_connectors ?? []) as Array<Record<string, unknown>>;
+  const required = (designResult.required_connectors ?? []) as Array<Record<string, unknown>>;
+  const have = new Set(
+    [...suggested, ...required].map((c) =>
+      String(c.name ?? c.service_type ?? "").toLowerCase(),
+    ),
+  );
+  const added = names
+    .filter((n) => !have.has(n.toLowerCase()))
+    .map((n) => ({ name: n, service_type: n, purpose: "User-attached connector" }));
+  if (added.length === 0) return designResult;
+  return { ...designResult, suggested_connectors: [...suggested, ...added] };
+}
+
+/** One-line "Services: …" hint appended to the seed intent for the manually
+ *  attached connectors (matches the glyph builder's serializeQuickConfig).
+ *  Database connectors narrowed to a table subset render `(tables: a, b)`;
+ *  the all-tables default emits no suffix (no redundant scope note). */
+function manualConnectorsHint(
+  names: string[],
+  tables: Record<string, string[]>,
+): string {
+  if (names.length === 0) return "";
+  const descs = names.map((name) => {
+    const t = tables[name];
+    return t && t.length > 0 ? `${name} (tables: ${t.join(", ")})` : name;
+  });
+  return `\nServices: ${descs.join(", ")}`;
+}
+
 /** One-line human summary of the picked event subscriptions, appended to the
  *  seed intent so the backend LLM has the cross-persona context too. */
 function eventSubscriptionsHint(byCap: Record<string, EventSubscription[]>): string {
@@ -658,6 +698,14 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     },
     [],
   );
+
+  // Connectors the user manually attached via the Apps petal (persona-level,
+  // glyph-builder parity). Appended to the IR's suggested_connectors and
+  // summarized into the seed intent.
+  const [manualConnectors, setManualConnectors] = useState<string[]>([]);
+  // Per-database-connector table scope (connector name → tables; [] = all).
+  // Subsets ride into the seed intent so the build focuses the persona.
+  const [connectorTables, setConnectorTables] = useState<Record<string, string[]>>({});
 
   // Per-capability "Errors" sigil routing policy. Edited via the Error petal
   // in the Persona Layout; applied onto effectiveDesignResult.use_cases at
@@ -911,7 +959,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     // envelope the runtime dispatcher reads).
     const withGenSettings = applyGenerationSettings(withErrorPolicies, dimPolicyByCap);
     // Bake the cross-persona event subscriptions onto use_cases[].event_subscriptions.
-    const effectiveDesignResult = applyEventSubscriptions(withGenSettings, eventSubsByCap);
+    const withEvents = applyEventSubscriptions(withGenSettings, eventSubsByCap);
+    // Append manually-attached connectors (Apps petal) to suggested_connectors.
+    const effectiveDesignResult = applyManualConnectors(withEvents, manualConnectors);
     const dimensionData = extractDimensionData(
       effectiveDesignResult,
       credentialBindings,
@@ -967,7 +1017,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           // subscriptions so the backend LLM has the context the structured
           // event_subscriptions can't fully convey (matches the glyph
           // builder's serializeQuickConfig approach).
-          intent: (review.instruction || templateName) + eventSubscriptionsHint(eventSubsByCap),
+          intent: (review.instruction || templateName)
+            + manualConnectorsHint(manualConnectors, connectorTables)
+            + eventSubscriptionsHint(eventSubsByCap),
           agentIrJson,
           resolvedCellsJson,
         });
@@ -1038,7 +1090,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         seedInFlight.current = false;
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, dimPolicyByCap, eventSubsByCap, t, tx]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, dimPolicyByCap, eventSubsByCap, manualConnectors, connectorTables, t, tx]);
 
   const build = useBuild({ personaId });
   const lifecycle = useLifecycle({ personaId });
@@ -1316,6 +1368,10 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onEventSubsChange={handleEventSubsChange}
         dimPolicyByCap={dimPolicyByCap}
         onDimPolicyChange={handleDimPolicyChange}
+        manualConnectors={manualConnectors}
+        onManualConnectorsChange={setManualConnectors}
+        connectorTables={connectorTables}
+        onConnectorTablesChange={setConnectorTables}
       />
     );
 

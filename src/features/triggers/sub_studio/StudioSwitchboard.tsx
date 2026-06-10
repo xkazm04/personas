@@ -5,11 +5,12 @@
  * click a target — the route patches in. Order-agnostic: arming a target
  * first works too. Both rails are type-to-filter.
  */
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Search, Trash2, X, Zap, Bot, Filter } from 'lucide-react';
+import { ArrowRight, Search, Trash2, X, Zap, Bot, Filter, Cog } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
+import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -22,6 +23,11 @@ import {
   type ChainDraft, type DraftSource, type LinkCondition,
 } from './libs/studioDraftModel';
 import { TriggerOptionCard, PersonaOptionCard } from './StudioOptionCards';
+import { useSystemOpStudio } from './system_ops/useSystemOpStudio';
+import { SystemOpOptionCard } from './system_ops/SystemOpOptionCard';
+import { SystemEventCommitModal } from './system_ops/SystemEventCommitModal';
+import { SystemEventAutomationsPanel } from './system_ops/SystemEventAutomationsPanel';
+import type { SystemOpKindMeta } from '@/api/systemOps';
 
 type T = ReturnType<typeof useTranslation>['t'];
 
@@ -35,20 +41,30 @@ function conditionLabel(t: T, condition: LinkCondition): string {
 }
 
 type SourceRailKind = 'signals' | 'personas';
+type TargetRailKind = 'personas' | 'system';
 
 export function StudioSwitchboard() {
   const { t, tx } = useTranslation();
+  const st = t.triggers.studio;
   const personas = useAgentStore((s) => s.personas);
+  const addToast = useToastStore((s) => s.addToast);
+  const { kinds: systemOpKinds, automations, refresh: refreshAutomations, toggle, remove, runNow } = useSystemOpStudio();
   const [draft, setDraft] = useState<ChainDraft>(() => loadDraft());
   const [armedSource, setArmedSource] = useState<DraftSource | null>(null);
   const [armedTarget, setArmedTarget] = useState<string | null>(null);
+  // System-op target (right rail "System events" tab). Mutually exclusive with
+  // armedTarget — arming one clears the other.
+  const [armedSystemOp, setArmedSystemOp] = useState<string | null>(null);
   const [sourceKind, setSourceKind] = useState<SourceRailKind>('signals');
+  const [targetKind, setTargetKind] = useState<TargetRailKind>('personas');
   const [sourceQuery, setSourceQuery] = useState('');
   const [targetQuery, setTargetQuery] = useState('');
+  // Open commit modal: a system-op route awaiting its trigger config.
+  const [commit, setCommit] = useState<{ opKind: string; triggerType: string } | null>(null);
 
   useEffect(() => { saveDraft(draft); }, [draft]);
 
-  // Arming both sides completes a route.
+  // Arming a trigger/persona source + a persona target completes a persona route.
   useEffect(() => {
     if (armedSource && armedTarget) {
       setDraft((d) => ({
@@ -59,6 +75,23 @@ export function StudioSwitchboard() {
       setArmedTarget(null);
     }
   }, [armedSource, armedTarget]);
+
+  // Arming a source + a system-op target opens the commit modal. System ops are
+  // driven by a *trigger* (time/event) — not a persona completion — so a
+  // persona source is rejected with a hint.
+  useEffect(() => {
+    if (armedSource && armedSystemOp) {
+      const ok = armedSource.kind === 'trigger'
+        && (armedSource.triggerType === 'schedule' || armedSource.triggerType === 'event_listener');
+      if (ok && armedSource.kind === 'trigger') {
+        setCommit({ opKind: armedSystemOp, triggerType: armedSource.triggerType });
+      } else {
+        addToast(st.system_event_needs_trigger, 'error');
+      }
+      setArmedSource(null);
+      setArmedSystemOp(null);
+    }
+  }, [armedSource, armedSystemOp, addToast, st.system_event_needs_trigger]);
 
   // Both rails offer only healthy personas — enabled, credentials ready,
   // trust above the floor. Unhealthy personas can't reliably run a chain
@@ -161,7 +194,7 @@ export function StudioSwitchboard() {
 
         {/* Pending patch strip */}
         <AnimatePresence>
-          {(armedSource || armedTarget) && (
+          {(armedSource || armedTarget || armedSystemOp) && (
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
@@ -169,12 +202,12 @@ export function StudioSwitchboard() {
               transition={{ duration: 0.15 }}
               className="mx-5 mt-3 px-4 py-2.5 rounded-card border border-primary/30 bg-primary/5 flex items-center gap-3"
             >
-              <PatchEndChip source={armedSource} personas={personas} placeholder={t.triggers.studio.pick_a_source} />
+              <PatchEndChip source={armedSource} personas={personas} kinds={systemOpKinds} placeholder={t.triggers.studio.pick_a_source} />
               <ArrowRight className="w-4 h-4 text-primary shrink-0" />
-              <PatchEndChip targetId={armedTarget} personas={personas} placeholder={t.triggers.studio.pick_a_target} />
+              <PatchEndChip targetId={armedTarget} systemOpKind={armedSystemOp} personas={personas} kinds={systemOpKinds} placeholder={t.triggers.studio.pick_a_target} />
               <button
                 type="button"
-                onClick={() => { setArmedSource(null); setArmedTarget(null); }}
+                onClick={() => { setArmedSource(null); setArmedTarget(null); setArmedSystemOp(null); }}
                 className="ml-auto p-1 rounded-interactive text-foreground hover:bg-secondary/60 transition-colors"
                 aria-label={t.triggers.studio.cancel_pending_route}
               >
@@ -185,7 +218,13 @@ export function StudioSwitchboard() {
         </AnimatePresence>
 
         <div className="flex-1 overflow-y-auto p-5 space-y-2">
-          {draft.links.length === 0 && !armedSource && !armedTarget && (
+          <SystemEventAutomationsPanel
+            automations={automations}
+            onToggle={toggle}
+            onRun={runNow}
+            onDelete={remove}
+          />
+          {draft.links.length === 0 && automations.length === 0 && !armedSource && !armedTarget && !armedSystemOp && (
             <EmptyState
               icon={Filter}
               title={t.triggers.studio.no_routes_title}
@@ -234,49 +273,60 @@ export function StudioSwitchboard() {
 
       {/* ── Targets rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-l border-border flex flex-col min-h-0 bg-card/30">
-        <RailHeader
-          icon={<Bot className="w-4 h-4 text-emerald-400" />}
-          title={t.triggers.studio.targets_title}
-          subtitle={t.triggers.studio.targets_subtitle}
-          query={targetQuery}
-          onQuery={setTargetQuery}
-        />
+        <div className="px-3 pt-3 pb-2 space-y-2">
+          <SegmentedTabs<TargetRailKind>
+            tabs={[
+              { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{st.targets_title}</> },
+              { id: 'system', label: <><Cog className="w-3.5 h-3.5 text-violet-400" />{st.group_system_events}</> },
+            ]}
+            activeTab={targetKind}
+            onTabChange={setTargetKind}
+            ariaLabel={st.targets_title}
+          />
+          <p className="typo-body opacity-80 text-foreground px-1">
+            {targetKind === 'personas' ? st.targets_subtitle : st.system_events_subtitle}
+          </p>
+          {targetKind === 'personas' && <SearchField query={targetQuery} onQuery={setTargetQuery} />}
+        </div>
         <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-1.5">
-          {filteredTargets.map((p) => (
+          {targetKind === 'personas' && filteredTargets.map((p) => (
             <PersonaOptionCard
               key={p.id}
               persona={p}
               dense
               active={armedTarget === p.id}
-              onPick={() => setArmedTarget((cur) => (cur === p.id ? null : p.id))}
+              onPick={() => { setArmedSystemOp(null); setArmedTarget((cur) => (cur === p.id ? null : p.id)); }}
             />
           ))}
-          {filteredTargets.length === 0 && (
-            <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(t.triggers.studio.no_targets_match, { query: targetQuery })}</p>
+          {targetKind === 'personas' && filteredTargets.length === 0 && (
+            <p className="typo-body opacity-80 text-foreground px-1 py-2">{tx(st.no_targets_match, { query: targetQuery })}</p>
+          )}
+          {targetKind === 'system' && systemOpKinds.map((k: SystemOpKindMeta) => (
+            <SystemOpOptionCard
+              key={k.kind}
+              kind={k}
+              active={armedSystemOp === k.kind}
+              onPick={() => { setArmedTarget(null); setArmedSystemOp((cur) => (cur === k.kind ? null : k.kind)); }}
+            />
+          ))}
+          {targetKind === 'system' && systemOpKinds.length === 0 && (
+            <p className="typo-body opacity-80 text-foreground px-1 py-2">{st.system_events_empty}</p>
           )}
         </div>
       </div>
+
+      <SystemEventCommitModal
+        open={commit !== null}
+        onClose={() => setCommit(null)}
+        opKind={commit?.opKind ?? ''}
+        triggerType={commit?.triggerType ?? 'schedule'}
+        onCreated={() => { void refreshAutomations(); setTargetKind('system'); }}
+      />
     </div>
   );
 }
 
 // ── Rail + chip primitives ───────────────────────────────────────────────
-
-function RailHeader({ icon, title, subtitle, query, onQuery }: {
-  icon: ReactNode; title: string; subtitle: string;
-  query: string; onQuery: (v: string) => void;
-}) {
-  return (
-    <div className="px-3 pt-3 pb-2 space-y-2">
-      <div className="flex items-center gap-2">
-        {icon}
-        <span className="typo-heading text-foreground">{title}</span>
-        <span className="typo-body opacity-80 text-foreground">{subtitle}</span>
-      </div>
-      <SearchField query={query} onQuery={onQuery} />
-    </div>
-  );
-}
 
 function SearchField({ query, onQuery }: { query: string; onQuery: (v: string) => void }) {
   const { t } = useTranslation();
@@ -326,13 +376,25 @@ function TargetChip({ targetId, personas }: { targetId: string; personas: Person
   );
 }
 
-function PatchEndChip({ source, targetId, personas, placeholder }: {
-  source?: DraftSource | null; targetId?: string | null;
+function PatchEndChip({ source, targetId, systemOpKind, personas, kinds, placeholder }: {
+  source?: DraftSource | null; targetId?: string | null; systemOpKind?: string | null;
   personas: Persona[];
+  kinds?: SystemOpKindMeta[];
   placeholder: string;
 }) {
   const { t } = useTranslation();
   if (source) return <SourceChip source={source} personas={personas} completesLabel={t.triggers.studio.persona_completes} />;
   if (targetId) return <TargetChip targetId={targetId} personas={personas} />;
+  if (systemOpKind) {
+    const k = kinds?.find((x) => x.kind === systemOpKind);
+    return (
+      <span className="flex items-center gap-2 min-w-0 shrink">
+        <span className="w-7 h-7 rounded-input flex items-center justify-center bg-secondary/60 shrink-0 text-violet-400">
+          <Cog className="w-3.5 h-3.5" />
+        </span>
+        <span className="typo-body font-medium text-foreground truncate">{k?.label ?? systemOpKind}</span>
+      </span>
+    );
+  }
   return <span className="typo-body text-foreground italic">{placeholder}</span>;
 }

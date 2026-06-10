@@ -34,12 +34,17 @@ export function useHealthyConnectors(): HealthyConnector[] {
     for (const cred of credentials) {
       if (seen.has(cred.service_type)) continue;
 
-      // CredentialMetadata already has healthcheck_last_success extracted as top-level field
-      if (cred.healthcheck_last_success !== true) continue;
-
       // Verify connector definition exists
       const connector = connectorDefinitions.find((c) => c.name === cred.service_type);
       if (!connector) continue;
+
+      // External connectors must have passed a healthcheck. Zero-config
+      // built-ins (Local Database/Drive/Messaging/Vector DB) have no
+      // healthcheck (healthcheck_config: null) yet are always usable — so
+      // they'd never surface here under the health gate. Treat them as
+      // healthy so they're attachable/scopable (e.g. the Local Database can
+      // be picked + table-scoped like any external DB connector).
+      if (cred.healthcheck_last_success !== true && !connector.is_builtin) continue;
 
       seen.add(cred.service_type);
       healthy.push({

@@ -38,7 +38,7 @@ timestamp — the next session can recognize it as abandoned.
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
-- Status: started
+- Status: completed (commit: 3194e4c25) — cargo check + tsc + ts-rs bindings test all green; runtime not yet observed (needs dev rebuild)
 - Branch: vibeman/audit-2026-06-09 (main checkout — controlled-chaos, disjoint scope from Cockpit session)
 - Paths: src/features/vault/sub_credentials/manager/, src/features/vault/shared/hooks/health/useBulkHealthcheck.ts, src/api/vault/credentials.ts, src-tauri/src/engine/{healthcheck.rs,subscription.rs,background.rs}, src-tauri/src/commands/credentials/crud.rs, src-tauri/src/db/{settings_keys.rs,repos/resources/credentials.rs}, src-tauri/src/ipc_auth.rs, src-tauri/src/lib.rs, docs/features/connections/README.md
 - Note: Root-caused the "7 healthy/17 degraded" — bulk Test-all fires ~24 concurrent privileged healthcheck_credential IPC calls; the x-ipc-token monkey-patch races the stampede (81 rejections in DB logs today) → JS catches rejection as success:false → false "degraded" while keys stay valid + table (persisted last_success) shows healthy. Fix: daily in-process CredentialHealthcheckSubscription (no IPC boundary) + single healthcheck_all_credentials command behind manual Test-all + remove on-visit auto-test.

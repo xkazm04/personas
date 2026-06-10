@@ -26,7 +26,7 @@ export interface DevToolsContextSlice {
   updateContext: (id: string, updates: { name?: string; description?: string; filePaths?: string; entryPoints?: string; dbTables?: string; keywords?: string; apiSurface?: string; crossRefs?: string; techStack?: string; groupId?: string }) => Promise<void>;
   deleteContext: (id: string) => Promise<void>;
   moveContext: (id: string, targetGroupId: string | null) => Promise<void>;
-  scanCodebase: (projectId: string, rootPath: string) => Promise<void>;
+  scanCodebase: (projectId: string, rootPath: string, deltaMode?: boolean) => Promise<void>;
   generateContextDescription: (contextId: string) => Promise<DevContext>;
 
   fetchContextGroupRelationships: (projectId: string) => Promise<void>;
@@ -157,10 +157,10 @@ export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  scanCodebase: async (projectId, rootPath) => {
+  scanCodebase: async (projectId, rootPath, deltaMode) => {
     set({ codebaseScanPhase: "scanning" });
     try {
-      const result = await devApi.scanCodebase(projectId, rootPath);
+      const result = await devApi.scanCodebase(projectId, rootPath, deltaMode);
       // The scan runs asynchronously via CLI — the scan_id is returned immediately.
       // Progress streams via "context-gen-output" Tauri events.
       // When complete, "context-gen-complete" fires and the UI should re-fetch.

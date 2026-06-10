@@ -19,6 +19,7 @@ pub mod standards_scan;
 pub mod static_scan;
 pub mod system;
 pub mod system_metrics;
+pub mod system_ops;
 pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;

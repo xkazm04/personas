@@ -123,7 +123,21 @@ from-scratch glyph builder (`agents/sub_glyph`):
 | **When** (trigger) | opens `ComposerSchedulePickerModal` (reused from the builder); the pick maps to a `TriggerSelection` via `composerScheduleToTriggerSelection.ts` |
 | **Events** | opens `ComposerEventPickerModal` — cross-persona event subscriptions |
 | **Memory** / **Review** | toggle **on/off** in place (no card) |
-| **Apps** / **What** / **Messages** | open the inline `AdoptionAnswerCard` (questions) |
+| **Apps** | `ComposerConnectorsPickerModal` (manual attach) when the capability ships no credential questions; otherwise the inline `AdoptionAnswerCard` |
+| **What** / **Messages** | open the inline `AdoptionAnswerCard` (questions) |
+
+When an attached connector is a **database** (`category === 'database'`), the
+connector picker shows a "Database tables" scope panel (`ConnectorTableScopeRow`,
+reusing `useTableIntrospection`). The default is **all tables** (no scope note);
+narrowing to a subset appends `Services: <conn> (tables: …)` to the seed intent
+so the built persona focuses on those tables. Same picker/behaviour in the
+from-scratch glyph builder (`serializeQuickConfig`).
+
+Zero-config built-in connectors (Local Database, Drive, Messaging, Vector DB)
+are selectable in the picker even without a healthcheck — `useHealthyConnectors`
+treats `is_builtin` connectors as always usable — so the **Local Database**
+(`personas_database`, SQLite) can be attached and table-scoped like any external
+DB (`introspect_db_tables` resolves it via `introspect_local_sqlite_tables`).
 | **Errors** | opens `ErrorPolicyCard` (post-error routing) |
 
 Capabilities live in a **single** control — the top `CapabilityTagSwitcher`

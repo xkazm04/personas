@@ -12,6 +12,8 @@ import {
 } from './composerScheduleToTriggerSelection';
 import { ComposerSchedulePickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerSchedulePickerModal';
 import { ComposerEventPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal';
+import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { EventSubscription } from '@/features/agents/shared/quickConfig/quickConfigTypes';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
 import { silentCatch } from '@/lib/silentCatch';
@@ -95,6 +97,15 @@ interface PersonaLayoutAdoptionProps {
   dimPolicyByCap: Record<string, { memory?: boolean; review?: boolean }>;
   /** Toggle a capability's Memory/Review on-off (petal click). */
   onDimPolicyChange: (capabilityId: string, dim: 'memory' | 'review', on: boolean) => void;
+  /** Connectors the user manually attached via the Apps petal (persona-level,
+   *  glyph-builder parity). Lights the Apps petal + shows in the left panel. */
+  manualConnectors: string[];
+  /** Set the manually-attached connectors (from the connector picker). */
+  onManualConnectorsChange: (names: string[]) => void;
+  /** Per-database-connector table scope (connector name → tables; [] = all). */
+  connectorTables: Record<string, string[]>;
+  /** Set the per-connector table scope (from the connector picker). */
+  onConnectorTablesChange: (tables: Record<string, string[]>) => void;
 }
 
 /**
@@ -136,6 +147,10 @@ export function PersonaLayoutAdoption({
   onEventSubsChange,
   dimPolicyByCap,
   onDimPolicyChange,
+  manualConnectors,
+  onManualConnectorsChange,
+  connectorTables,
+  onConnectorTablesChange,
 }: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
@@ -145,6 +160,7 @@ export function PersonaLayoutAdoption({
   // Reused-from-glyph-builder picker modals (open over the adoption modal).
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
+  const [connectorsOpen, setConnectorsOpen] = useState(false);
 
   // Per-capability disabled-dims map — drives question filtering + petal idle
   // for the CARD dims (task / connector / message) via the AnswerCard footer
@@ -319,6 +335,10 @@ export function PersonaLayoutAdoption({
         const sel = activeCapabilityId ? triggerSelections[activeCapabilityId] : undefined;
         if ((subs?.length ?? 0) > 0 || sel?.event) { out[dim] = 'resolved'; continue; }
       }
+      // Apps petal lights once a connector is manually attached (no questions
+      // path) — otherwise it falls through to question/design coverage below
+      // and stays idle (empty) when nothing is attached.
+      if (dim === 'connector' && manualConnectors.length > 0) { out[dim] = 'resolved'; continue; }
       if (disabledDimsForActive.has(dim)) {
         out[dim] = 'idle';
         continue;
@@ -337,7 +357,7 @@ export function PersonaLayoutAdoption({
       }
     }
     return out;
-  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive, activeCapabilityId, dimOnForCap, triggerSelections, eventSubsByCap]);
+  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive, activeCapabilityId, dimOnForCap, triggerSelections, eventSubsByCap, manualConnectors]);
 
   const handlePetalClick = useCallback(
     (dim: GlyphDimension) => {
@@ -350,11 +370,18 @@ export function PersonaLayoutAdoption({
         onDimPolicyChange(activeCapabilityId, dim, !dimOnForCap(activeCapabilityId, dim));
         return;
       }
-      // task / connector / message / error → open the inline card.
+      // Apps → when the capability ships no connector questions, attach a
+      // connector manually (glyph-builder parity). Templates that DO carry
+      // credential questions keep the inline answer-card flow.
+      if (dim === 'connector' && questionsByDim.connector.length === 0) {
+        setConnectorsOpen(true);
+        return;
+      }
+      // task / connector(with questions) / message / error → open the inline card.
       setActiveQuestionId(null);
       setActiveDim((prev) => (prev === dim ? null : dim));
     },
-    [activeCapabilityId, dimOnForCap, onDimPolicyChange],
+    [activeCapabilityId, dimOnForCap, onDimPolicyChange, questionsByDim],
   );
 
   const handleStoryJumpTo = useCallback(
@@ -512,12 +539,24 @@ export function PersonaLayoutAdoption({
     return out;
   }, [filteredQuestions, userAnswers, t, tx, activeCapabilityId, dimPolicyByCap, templateDimOn, dimOnForCap, triggerSelections, eventSubsByCap]);
 
-  // Connector card source — the active capability's primary connector.
+  // Connector card source — the active capability's primary connector plus any
+  // connectors the user manually attached via the Apps petal (deduped by key).
   const connectorsForActive = useMemo<AdoptionConnectorCard[]>(() => {
+    const out: AdoptionConnectorCard[] = [];
+    const seen = new Set<string>();
     const uc = items.find((u) => u.id === activeCapabilityId);
-    if (uc?.connectorKey) return [{ key: uc.connectorKey, label: uc.connector }];
-    return [];
-  }, [items, activeCapabilityId]);
+    if (uc?.connectorKey) {
+      out.push({ key: uc.connectorKey, label: uc.connector });
+      seen.add(uc.connectorKey.toLowerCase());
+    }
+    for (const name of manualConnectors) {
+      const key = name.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ key: name, label: getConnectorMeta(name).label });
+    }
+    return out;
+  }, [items, activeCapabilityId, manualConnectors]);
 
   const leftSlot = (
     <AdoptionLeftPanel
@@ -537,6 +576,7 @@ export function PersonaLayoutAdoption({
       answeredCount={answeredCount}
       totalCount={totalCount}
       onJumpTo={handleStoryJumpTo}
+      fill
     />
   );
 
@@ -575,7 +615,9 @@ export function PersonaLayoutAdoption({
         <div className="rounded-card border border-card-border/50 bg-secondary/15 px-4 py-3">
           <h3 className="typo-body-lg font-medium text-foreground">{activeUc.title}</h3>
           {activeUc.description && (
-            <p className="typo-caption text-foreground mt-1 leading-relaxed">{activeUc.description}</p>
+            <p className="typo-body-lg font-serif font-normal text-foreground mt-1.5 leading-relaxed">
+              {activeUc.description}
+            </p>
           )}
         </div>
       )}
@@ -747,6 +789,17 @@ export function PersonaLayoutAdoption({
         onApply={(next) => {
           if (activeCapabilityId) onEventSubsChange(activeCapabilityId, next);
           setEventsOpen(false);
+        }}
+      />
+      <ComposerConnectorsPickerModal
+        open={connectorsOpen}
+        onClose={() => setConnectorsOpen(false)}
+        selected={manualConnectors}
+        tables={connectorTables}
+        onApply={(next, nextTables) => {
+          onManualConnectorsChange(next);
+          onConnectorTablesChange(nextTables);
+          setConnectorsOpen(false);
         }}
       />
     </div>
