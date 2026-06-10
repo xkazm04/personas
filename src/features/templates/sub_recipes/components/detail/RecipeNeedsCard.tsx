@@ -1,4 +1,4 @@
-import { Plug } from 'lucide-react';
+import { Plug, SlidersHorizontal } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
@@ -59,6 +59,38 @@ export function RecipeNeedsCard({ recipe }: RecipeNeedsCardProps) {
               );
             })}
           </div>
+        </div>
+      )}
+
+      {(recipe.template.inputParameters?.length ?? 0) > 0 && (
+        <div className="mb-4">
+          <div className="typo-caption text-foreground mb-1.5">{t.recipes_catalog.parameters_heading}</div>
+          <ul className="space-y-1">
+            {recipe.template.inputParameters!.map((p) => (
+              <li
+                key={p.name}
+                className="flex items-start gap-2 px-2 py-1.5 rounded border border-card-border/50 bg-secondary/20"
+              >
+                <SlidersHorizontal className="w-3 h-3 text-foreground mt-1 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="typo-caption font-mono font-medium text-foreground">{p.name}</span>
+                    {p.type && (
+                      <span className="typo-label uppercase tracking-wider text-foreground">{p.type}</span>
+                    )}
+                    {p.defaultValue && (
+                      <span className="typo-label font-mono px-1 py-0.5 rounded border border-card-border/50 bg-secondary/30 text-foreground">
+                        {t.recipes_catalog.param_default_label} {p.defaultValue}
+                      </span>
+                    )}
+                  </div>
+                  {p.description && (
+                    <div className="typo-caption text-foreground leading-snug">{p.description}</div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

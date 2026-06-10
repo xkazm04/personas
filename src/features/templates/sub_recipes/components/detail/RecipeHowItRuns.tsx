@@ -1,5 +1,6 @@
-import { Calendar, Bell, Cpu, Mail } from 'lucide-react';
+import { Calendar, Bell, Cpu, Mail, Activity, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../../types';
 
@@ -60,8 +61,45 @@ export function RecipeHowItRuns({ recipe }: RecipeHowItRunsProps) {
           </span>
         </SpecRow>
       )}
+
+      {(template.eventSubscriptions?.length ?? 0) > 0 && (
+        <SpecRow icon={Activity} label={t.recipes_catalog.events_label}>
+          <span className="inline-flex items-center gap-1 flex-wrap">
+            {template.eventSubscriptions!.map((ev) => <EventChip key={`${ev.direction}:${ev.eventType}`} event={ev} />)}
+          </span>
+        </SpecRow>
+      )}
     </section>
   );
+}
+
+interface EventChipProps {
+  event: { eventType: string; direction: 'listen' | 'emit'; description?: string };
+}
+
+/** Direction-badged event chip: ↘ listen (incoming) / ↗ emit (outgoing).
+ *  The event description rides in a tooltip so the row stays scannable. */
+function EventChip({ event }: EventChipProps) {
+  const { t } = useTranslation();
+  const emit = event.direction === 'emit';
+  const Icon = emit ? ArrowUpRight : ArrowDownLeft;
+  const dirLabel = emit ? t.recipes_catalog.event_emit_label : t.recipes_catalog.event_listen_label;
+  const chip = (
+    <span
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border typo-label font-mono ${
+        emit
+          ? 'border-primary/35 bg-primary/10 text-primary'
+          : 'border-card-border/60 bg-secondary/40 text-foreground'
+      }`}
+      aria-label={`${dirLabel}: ${event.eventType}`}
+    >
+      <Icon className="w-3 h-3 shrink-0" />
+      {event.eventType}
+    </span>
+  );
+  return event.description
+    ? <Tooltip content={event.description}>{chip}</Tooltip>
+    : chip;
 }
 
 function ChannelChip({ channel }: { channel: string }) {

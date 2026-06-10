@@ -121,6 +121,47 @@ describe('recipeDefinitionToRecipe', () => {
     expect(r.template.reviewPolicy).toBeUndefined();
   });
 
+  it('extracts event subscriptions, dropping malformed entries', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        event_subscriptions: [
+          { event_type: 'access.request.received', direction: 'listen', description: 'Incoming.' },
+          { event_type: 'access.request.approved', direction: 'emit' },
+          { event_type: 'bad.direction', direction: 'sideways' },
+          { direction: 'emit' },
+        ],
+      }),
+    );
+    expect(r.template.eventSubscriptions).toEqual([
+      { eventType: 'access.request.received', direction: 'listen', description: 'Incoming.' },
+      { eventType: 'access.request.approved', direction: 'emit', description: undefined },
+    ]);
+  });
+
+  it('extracts input parameters with display-ready defaults', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        input_schema: [
+          { name: 'timeout_hours', type: 'number', default: 48, description: 'Approval timeout.' },
+          { name: 'strict_mode', type: 'boolean', default: true },
+          { type: 'number', default: 1 },
+        ],
+      }),
+    );
+    expect(r.template.inputParameters).toEqual([
+      { name: 'timeout_hours', type: 'number', defaultValue: '48', description: 'Approval timeout.' },
+      { name: 'strict_mode', type: 'boolean', defaultValue: 'true', description: undefined },
+    ]);
+  });
+
+  it('omits events/parameters when absent from the UC', () => {
+    const r = recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }));
+    expect(r.template.eventSubscriptions).toBeUndefined();
+    expect(r.template.inputParameters).toBeUndefined();
+  });
+
   it('extracts tool_hints from the prompt_template UC', () => {
     const r = recipeDefinitionToRecipe(
       defWithPrompt({ id: 'uc', tool_hints: ['file_read', 'gmail_search'] }),

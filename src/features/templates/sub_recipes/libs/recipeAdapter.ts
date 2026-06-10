@@ -137,7 +137,52 @@ interface ParsedUseCase {
   reviewPolicy?: { mode?: string; context?: string };
   memoryPolicy?: { enabled?: boolean; context?: string };
   errorHandling?: string;
+  eventSubscriptions?: Array<{ eventType: string; direction: 'listen' | 'emit'; description?: string }>;
+  inputParameters?: Array<{ name: string; type?: string; defaultValue?: string; description?: string }>;
   promptTemplate: string;
+}
+
+/** Render a schema default for display: primitives as-is, structures as JSON. */
+function defaultValueLabel(v: unknown): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v === 'string') return v.length > 0 ? v : undefined;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  try { return JSON.stringify(v); } catch { return undefined; }
+}
+
+function parseEventSubscriptions(uc: Record<string, unknown>): ParsedUseCase['eventSubscriptions'] {
+  if (!Array.isArray(uc.event_subscriptions)) return undefined;
+  const events = (uc.event_subscriptions as unknown[])
+    .map((e) => {
+      if (!e || typeof e !== 'object') return null;
+      const rec = e as Record<string, unknown>;
+      const eventType = nonEmptyString(rec.event_type);
+      const direction: 'listen' | 'emit' | null =
+        rec.direction === 'emit' ? 'emit' : rec.direction === 'listen' ? 'listen' : null;
+      if (!eventType || !direction) return null;
+      return { eventType, direction, description: nonEmptyString(rec.description) };
+    })
+    .filter((e): e is NonNullable<typeof e> => e !== null);
+  return events.length > 0 ? events : undefined;
+}
+
+function parseInputParameters(uc: Record<string, unknown>): ParsedUseCase['inputParameters'] {
+  if (!Array.isArray(uc.input_schema)) return undefined;
+  const params = (uc.input_schema as unknown[])
+    .map((p) => {
+      if (!p || typeof p !== 'object') return null;
+      const rec = p as Record<string, unknown>;
+      const name = nonEmptyString(rec.name);
+      if (!name) return null;
+      return {
+        name,
+        type: nonEmptyString(rec.type),
+        defaultValue: defaultValueLabel(rec.default),
+        description: nonEmptyString(rec.description),
+      };
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+  return params.length > 0 ? params : undefined;
 }
 
 function nonEmptyString(v: unknown): string | undefined {
@@ -256,6 +301,8 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
     reviewPolicy,
     memoryPolicy,
     errorHandling: nonEmptyString(uc.error_handling),
+    eventSubscriptions: parseEventSubscriptions(uc),
+    inputParameters: parseInputParameters(uc),
     promptTemplate: prompt,
   };
 }
@@ -305,6 +352,8 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
       reviewPolicy: parsed.reviewPolicy,
       memoryPolicy: parsed.memoryPolicy,
       errorHandling: parsed.errorHandling,
+      eventSubscriptions: parsed.eventSubscriptions,
+      inputParameters: parsed.inputParameters,
       promptTemplate: parsed.promptTemplate,
     },
     bindings: [],

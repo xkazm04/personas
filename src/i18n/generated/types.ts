@@ -10609,6 +10609,16 @@ export type Translations = {
     tags_heading: string;
     _comment_guardrails_heading: string;
     guardrails_heading: string;
+    _comment_events_label: string;
+    events_label: string;
+    _comment_event_emit_label: string;
+    event_emit_label: string;
+    _comment_event_listen_label: string;
+    event_listen_label: string;
+    _comment_parameters_heading: string;
+    parameters_heading: string;
+    _comment_param_default_label: string;
+    param_default_label: string;
     _comment_review_mode_always: string;
     review_mode_always: string;
     _comment_review_mode_conditional: string;

@@ -109,6 +109,20 @@ export interface RecipeUseCaseTemplate {
   memoryPolicy?: { enabled?: boolean; context?: string };
   /** Prose description of failure handling — from the UC. */
   errorHandling?: string;
+  /** Events the recipe listens to and emits — from event_subscriptions. */
+  eventSubscriptions?: Array<{
+    eventType: string;
+    direction: 'listen' | 'emit';
+    description?: string;
+  }>;
+  /** Tunable inputs from the UC's input_schema (display-only; the adoption
+   *  wizard collects real values through `bindings`). */
+  inputParameters?: Array<{
+    name: string;
+    type?: string;
+    defaultValue?: string;
+    description?: string;
+  }>;
   /** LLM prompt template — `{{variable}}` placeholders for bindings. */
   promptTemplate: string;
 }
