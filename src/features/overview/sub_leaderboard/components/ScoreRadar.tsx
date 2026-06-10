@@ -1,8 +1,11 @@
 /**
- * Pure SVG radar chart for comparing agent score dimensions.
- * Supports 1-2 overlaid entries with labeled axes.
+ * SVG radar chart for comparing agent score dimensions.
+ * Supports 1-2 overlaid entries with labeled axes, gradient fills, a soft
+ * glow, and an animated draw-in.
  */
 
+import { useId } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 
 interface ScoreRadarProps {
@@ -40,6 +43,8 @@ function makePolygonPoints(cx: number, cy: number, values: number[], maxRadius: 
 }
 
 export function ScoreRadar({ entries, size = 200, benchmarkValues }: ScoreRadarProps) {
+  const reduce = useReducedMotion();
+  const uid = useId().replace(/:/g, '');
   const cx = size / 2;
   const cy = size / 2;
   const maxRadius = size * 0.38;
@@ -60,6 +65,22 @@ export function ScoreRadar({ entries, size = 200, benchmarkValues }: ScoreRadarP
       className="select-none"
       data-testid="score-radar"
     >
+      <defs>
+        {entries.slice(0, 2).map((_, ei) => (
+          <radialGradient key={ei} id={`${uid}-fill-${ei}`} cx="50%" cy="50%" r="62%">
+            <stop offset="0%" stopColor={COLORS[ei]!.stroke} stopOpacity="0.42" />
+            <stop offset="100%" stopColor={COLORS[ei]!.stroke} stopOpacity="0.04" />
+          </radialGradient>
+        ))}
+        <filter id={`${uid}-glow`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+
       {/* Grid circles */}
       {gridLevels.map((level) => (
         <polygon
@@ -107,15 +128,33 @@ export function ScoreRadar({ entries, size = 200, benchmarkValues }: ScoreRadarP
         const points = makePolygonPoints(cx, cy, values, maxRadius);
         const color = COLORS[ei]!;
         return (
-          <g key={entry.personaId}>
-            <polygon points={points} fill={color.fill} stroke={color.stroke} strokeWidth="1.5" />
-            {/* Dots at each vertex */}
+          <motion.g
+            key={entry.personaId}
+            initial={reduce ? false : { scale: 0.55, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: reduce ? 0 : 0.6, delay: reduce ? 0 : ei * 0.12, ease: [0.22, 0.61, 0.36, 1] }}
+            style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
+          >
+            <polygon
+              points={points}
+              fill={`url(#${uid}-fill-${ei})`}
+              stroke={color.stroke}
+              strokeWidth="1.75"
+              strokeLinejoin="round"
+              filter={`url(#${uid}-glow)`}
+            />
+            {/* Glowing vertex dots — soft halo + crisp core */}
             {values.map((v, i) => {
               const r = (v / 100) * maxRadius;
               const [x, y] = polarToCartesian(cx, cy, r, i);
-              return <circle key={i} cx={x} cy={y} r="3" fill={color.stroke} />;
+              return (
+                <g key={i}>
+                  <circle cx={x} cy={y} r="3.4" fill={color.stroke} fillOpacity="0.35" filter={`url(#${uid}-glow)`} />
+                  <circle cx={x} cy={y} r="1.6" fill={color.stroke} />
+                </g>
+              );
             })}
-          </g>
+          </motion.g>
         );
       })}
 
