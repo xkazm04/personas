@@ -33,6 +33,14 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
+/// Mixed-engine local delegate model (Ollama tag, e.g. "qwen3:8b").
+/// "auto" or unset lets the sidecar pick the first installed model at call
+/// time. See docs/plans/mixed-engine-byom.md.
+pub const DELEGATE_MODEL: &str = "delegate_model";
+
+/// Mixed-engine local delegate server base URL (default http://localhost:11434).
+pub const DELEGATE_BASE_URL: &str = "delegate_base_url";
+
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
@@ -413,6 +421,8 @@ pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
+    DELEGATE_MODEL,
+    DELEGATE_BASE_URL,
     LITELLM_BASE_URL,
     LITELLM_MASTER_KEY,
     CLI_ENGINE,

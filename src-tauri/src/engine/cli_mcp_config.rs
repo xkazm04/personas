@@ -78,6 +78,7 @@ pub fn install_mcp_sidecar(
     project_root: Option<&Path>,
     api_key: Option<&str>,
     dev_project_id: Option<&str>,
+    delegate: Option<(&str, &str)>,
 ) -> Result<bool, AppError> {
     let Some(mcp_binary) = find_mcp_binary() else {
         tracing::debug!("cli_mcp_config: personas-mcp binary not found — skipping sidecar");
@@ -148,6 +149,27 @@ pub fn install_mcp_sidecar(
                 serde_json::Value::String(pid.to_string()),
             );
         }
+    }
+
+    // Mixed-engine delegate (docs/plans/mixed-engine-byom.md): arms the
+    // sidecar's `llm_delegate` tool with the local model endpoint. Only
+    // written for capabilities that opted in (engine_mode == "mixed") — the
+    // sidecar advertises the tool only when these vars are present.
+    if let Some((base_url, model)) = delegate {
+        env_map.insert(
+            "PERSONAS_DELEGATE_BASE_URL".to_string(),
+            serde_json::Value::String(base_url.to_string()),
+        );
+        env_map.insert(
+            "PERSONAS_DELEGATE_MODEL".to_string(),
+            serde_json::Value::String(model.to_string()),
+        );
+        env_map.insert(
+            "PERSONAS_DELEGATE_AUDIT".to_string(),
+            serde_json::Value::String(
+                exec_dir.join(".claude").join("delegate-audit.jsonl").display().to_string(),
+            ),
+        );
     }
 
     // `alwaysLoad: true` skips the CLI's tool-search deferral so personas-mcp

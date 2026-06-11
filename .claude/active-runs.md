@@ -4,7 +4,13 @@ Coordination surface for CLIs (Claude Code agents, manual sessions, skill
 invocations) operating concurrently on this checkout. Each session that
 materially edits the working tree should touch this file twice:
 
-1. **At session start (Phase 0):** read this file, scan `## Active` for
+1. **At session start (Phase 0):** read this file, scan `## Active
+
+### byom-mixed-engine — Claude orchestrator + local Ollama as MCP delegate tool (session 7c484b45, fork of 2c665603)
+- Started: 2026-06-11 ~17:15. Status: started.
+- Paths: src-tauri/src/mcp_server/tools.rs, src-tauri/src/engine/cli_mcp_config.rs, src-tauri/src/engine/runner/mod.rs (engine_mode resolve), src-tauri/src/db/models/persona.rs (DesignUseCase.engine_mode), src/features/agents/sub_use_cases/components/detail/*, src/i18n/locales/en.json, docs/plans/mixed-engine-byom.md (new), .claude/active-runs.md.
+- Note: capability-level engine_mode=mixed gives the Claude run an llm_delegate MCP tool wired to local Ollama; main checkout (live-test loop needs the running dev app; data-dir singleton).
+` for
    running entries. If any entry's declared paths overlap with this
    session's planned scope AND the entry is less than 2 hours old AND its
    status is `started`, surface the conflict to the user before proceeding
