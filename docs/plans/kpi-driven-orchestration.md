@@ -340,6 +340,18 @@ markers; first-run banner ships. Files: `sub_kpis/*` (rework),
 > technical KPIs into business dimensions, because *"if we have 0 users, the
 > goals should be driven to get one instead of having 100% test coverage."*
 
+> **Run-2 addendum (2026-06-11 night):** external connectors deferred per user;
+> the observation run uses internally measurable KPIs only (codebase +
+> derived). Landed during setup: `KpiEvaluationSubscription` (89be34943,
+> hourly default-OFF `autonomous_kpi_evaluation` — evaluate_due_kpis was
+> command-only and the derivation staleness guard would have starved the loop
+> unattended) and the non-gating §10 KPI block in loop-certify (76023d0f1).
+> Known scan defect to fix next maintenance window: composed `measure_config`
+> commands use Unix pipes (`tail`/`grep`/`awk`) that fail under the Windows
+> `cmd /C` evaluator — wave-1 recipes were hand-rewritten to cmd-native forms
+> (regex over full output, `findstr` + `count_lines`); the kpi_scan prompt
+> needs a Windows-portability rule so future scans compose portable recipes.
+
 ### The three dimensions and their sources
 
 | Dimension | Preferred source | Why | Catalog status |
