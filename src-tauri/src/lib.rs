@@ -1,5 +1,6 @@
 pub mod background_job;
 pub mod bench;
+mod browser_bridge;
 mod cloud;
 mod commands;
 mod companion;
@@ -857,6 +858,10 @@ pub fn run() {
                 "mcp",
                 companion::orchestration::mcp::router(app.handle().clone()),
             );
+            // Browser bridge (Athena × Chrome tester arc, Phase 1) —
+            // /browser-bridge/ws for the extension, /browser-bridge/mcp for
+            // browser-test turns' --mcp-config.
+            local_http::register_router("browser-bridge", browser_bridge::router());
             // Fleet background workers — staleness ticker + JSONL watcher.
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.

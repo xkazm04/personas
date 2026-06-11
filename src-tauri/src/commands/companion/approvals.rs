@@ -1356,7 +1356,14 @@ fn execute_run_browser_test(
         )));
     }
 
-    let directive = build_browser_test_directive(&url, project_label.as_deref(), &scenario);
+    // Pin the approved origin with the bridge BEFORE spawning the turn — the
+    // turn's MCP token + origin allowlist come from this registration. The
+    // bridge enforces the origin server-side; the model never picks it.
+    crate::browser_bridge::register_test_session(&url).map_err(AppError::Validation)?;
+    let via_extension = crate::browser_bridge::extension_connected();
+
+    let directive =
+        build_browser_test_directive(&url, project_label.as_deref(), &scenario, via_extension);
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
         std::sync::Arc::new(state.user_db.clone()),
@@ -1367,26 +1374,43 @@ fn execute_run_browser_test(
         Some(url.clone()),
         directive,
     );
+    let backend = if via_extension {
+        "your Chrome (via the paired extension)"
+    } else {
+        "the bundled test browser"
+    };
     Ok(ExecuteResult::message(format!(
-        "Browser test started — Athena is opening {url} with live browser tools and will report findings here."
+        "Browser test started — Athena is opening {url} in {backend} and will report findings here."
     )))
 }
 
 /// Directive for the browser-test proactive turn. The turn (and ONLY this
-/// turn) has Playwright MCP tools; the directive makes the single-turn scope,
+/// turn) has browser tools via MCP; the directive makes the single-turn scope,
 /// the origin boundary, and the untrusted-page-content posture explicit.
-fn build_browser_test_directive(url: &str, project: Option<&str>, scenario: &str) -> String {
+fn build_browser_test_directive(
+    url: &str,
+    project: Option<&str>,
+    scenario: &str,
+    via_extension: bool,
+) -> String {
     let project_line = project
         .map(|p| format!("Project: {p}\n"))
         .unwrap_or_default();
+    let backend_line = if via_extension {
+        "Backend: the USER'S REAL Chrome via the paired extension (browser_* tools — start \
+         with browser_status, then browser_navigate). The bridge enforces the approved \
+         origin; navigation elsewhere is refused. Call browser_detach when done.\n"
+    } else {
+        "Backend: the bundled Playwright browser (browser_* tools).\n"
+    };
     format!(
-        "You are running a LIVE BROWSER TEST. For THIS TURN ONLY you have Playwright \
-         browser tools via MCP (navigate, snapshot, click, type, console messages, \
-         screenshot). They will NOT exist on any later turn — complete the entire test \
-         and the report within this single turn; never propose continue_autonomously to \
-         finish testing.\n\n\
+        "You are running a LIVE BROWSER TEST. For THIS TURN ONLY you have live browser \
+         tools via MCP (navigate, snapshot, click, type, console messages, screenshot). \
+         They will NOT exist on any later turn — complete the entire test and the report \
+         within this single turn; never propose continue_autonomously to finish testing.\n\n\
          Target URL: {url}\n\
          {project_line}\
+         {backend_line}\
          Scenario from the user: {scenario}\n\n\
          Method:\n\
          1. Navigate to the target URL.\n\

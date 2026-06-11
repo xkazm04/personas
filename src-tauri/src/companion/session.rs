@@ -1060,21 +1060,24 @@ async fn run_cli(
         prompt_file.to_string_lossy().to_string(),
     ]);
 
-    // Browser-test turns: hand this single CLI spawn a Playwright MCP server
-    // so Athena can drive a real browser in-turn. Continuation/regular turns
-    // never get it (npx startup cost + tool surface stay scoped to the test).
-    // The temp config must outlive the child — NamedTempFile deletes on drop.
+    // Browser-test turns: hand this single CLI spawn browser tools via MCP —
+    // the browser-bridge endpoint (user's real Chrome through the paired
+    // extension) when one is connected, else the bundled Playwright MCP.
+    // Continuation/regular turns never get it (startup cost + tool surface
+    // stay scoped to the test). The temp config must outlive the child —
+    // NamedTempFile deletes on drop.
     let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
     if browser_tools {
-        match crate::commands::credentials::auto_cred_browser::build_playwright_mcp_config() {
-            Ok(f) => {
+        match crate::browser_bridge::build_browser_mcp_config() {
+            Ok((f, mode)) => {
+                tracing::info!(?mode, "browser-test turn: browser MCP config ready");
                 argv.push("--mcp-config".into());
                 argv.push(f.path().to_string_lossy().to_string());
                 _mcp_config_file = Some(f);
             }
             Err(e) => tracing::warn!(
                 error = %e,
-                "browser-test turn: failed to build Playwright MCP config; running without browser tools"
+                "browser-test turn: failed to build browser MCP config; running without browser tools"
             ),
         }
     }
