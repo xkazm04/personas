@@ -2684,6 +2684,100 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
 }
 
 // ---------------------------------------------------------------------------
+// Autonomous KPI evaluation (default-OFF) — measure due KPIs on cadence
+// ---------------------------------------------------------------------------
+
+/// Measures due active KPIs across team-linked projects so the steering loop
+/// runs unattended. Without this tick `evaluate_due_kpis` is command-only —
+/// a human has to click Measure — and after 2× cadence the staleness guard in
+/// `kpi_derivation::find_derivation_candidates` (correctly) stops deriving
+/// goals, starving the KPI→goal loop on any multi-day run. Default-OFF
+/// (`AUTONOMOUS_KPI_EVALUATION`); codebase measurements run repo commands, so
+/// the tick is hourly and quota/cooldown-guarded like the other spend loops.
+pub struct KpiEvaluationSubscription {
+    pub pool: DbPool,
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for KpiEvaluationSubscription {
+    fn name(&self) -> &'static str {
+        "kpi_evaluation"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(3600)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(3600)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_KPI_EVALUATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("kpi_evaluation: quota cooldown active — skipping tick");
+            return;
+        }
+
+        // Team-linked projects that have at least one active non-manual KPI.
+        // `evaluate_due_kpis` re-checks per-KPI dueness, so this is just a
+        // cheap pre-filter to avoid no-op project iterations.
+        let projects: Vec<String> = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || -> Vec<String> {
+                let Ok(conn) = pool.get() else { return Vec::new() };
+                let Ok(mut stmt) = conn.prepare(
+                    "SELECT DISTINCT dp.id FROM dev_projects dp
+                     JOIN dev_kpis k ON k.project_id = dp.id
+                     WHERE dp.team_id IS NOT NULL AND k.status = 'active'
+                       AND k.measure_kind IN ('codebase','derived','connector')",
+                ) else {
+                    return Vec::new();
+                };
+                stmt.query_map([], |r| r.get::<_, String>(0))
+                    .map(|rows| rows.filter_map(Result::ok).collect())
+                    .unwrap_or_default()
+            })
+            .await
+            .unwrap_or_default()
+        };
+
+        for project_id in projects {
+            match crate::engine::kpi_eval::evaluate_due_kpis(&self.pool, &project_id).await {
+                Ok(results) if !results.is_empty() => {
+                    let failed: Vec<&str> = results
+                        .iter()
+                        .filter_map(|(k, v)| v.is_err().then_some(k.as_str()))
+                        .collect();
+                    tracing::info!(
+                        project_id = %project_id,
+                        measured = results.len() - failed.len(),
+                        failed = failed.len(),
+                        failed_kpis = ?failed,
+                        "kpi_evaluation: tick measured due KPIs"
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    tracing::warn!(project_id = %project_id, error = %e, "kpi_evaluation: project evaluation failed");
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Fleet liveness watchdog — a stalled autonomous fleet must never be silent
 // ---------------------------------------------------------------------------
 

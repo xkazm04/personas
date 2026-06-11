@@ -539,6 +539,11 @@ pub fn start_loops(
         // KPI → Goal derivation — derive goals from off-track KPIs (default-OFF
         // `autonomous_kpi_goal_derivation`; fresh-measurement + one-open-goal +
         // re-measure-after-completion gates; skip is a legitimate outcome).
+        // Autonomous KPI evaluation — default-OFF; gated on the
+        // AUTONOMOUS_KPI_EVALUATION setting inside its tick. Measures due
+        // active KPIs hourly so the KPI→goal derivation loop has fresh data
+        // on unattended runs (derivation refuses stale measurements).
+        Box::new(subscription::KpiEvaluationSubscription { pool: pool.clone() }),
         Box::new(subscription::KpiGoalDerivationSubscription {
             pool: pool.clone(),
             app: app.clone(),

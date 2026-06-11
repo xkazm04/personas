@@ -356,6 +356,13 @@ pub const AUTONOMOUS_KPI_GOAL_DERIVATION: &str = "autonomous_kpi_goal_derivation
 /// Default for [`AUTONOMOUS_KPI_GOAL_DERIVATION`] — off (opt-in autonomy).
 pub const AUTONOMOUS_KPI_GOAL_DERIVATION_DEFAULT: bool = false;
 
+/// When `"true"`, due active KPIs are measured automatically on cadence by
+/// `engine::subscription::KpiEvaluationSubscription` (hourly tick). Default
+/// OFF — opt-in; codebase KPIs run repo commands (lint/typecheck/tests).
+pub const AUTONOMOUS_KPI_EVALUATION: &str = "autonomous_kpi_evaluation";
+/// Default for [`AUTONOMOUS_KPI_EVALUATION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_KPI_EVALUATION_DEFAULT: bool = false;
+
 /// When `"true"`, the Director runs a focused coaching evaluation on a persona
 /// whose recent team work shows a STORM (a burst of step failures / QA
 /// change-requests). Default OFF — opt-in. Read by
@@ -466,6 +473,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_ATHENA_REACTIONS,
     AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
     AUTONOMOUS_KPI_GOAL_DERIVATION,
+    AUTONOMOUS_KPI_EVALUATION,
     AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
@@ -576,6 +584,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_ATHENA_REACTIONS
         | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
         | AUTONOMOUS_KPI_GOAL_DERIVATION
+        | AUTONOMOUS_KPI_EVALUATION
         | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
