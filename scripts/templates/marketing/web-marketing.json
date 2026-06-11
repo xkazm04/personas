@@ -167,8 +167,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Combined weekly Monday briefing — performance scan + optimization proposals + cannibalization findings in one message."
+          "type": "built-in",
+          "description": "Combined weekly Monday briefing — performance scan + cannibalization findings delivered as a report; optimization proposals routed through human review (accept/reject per proposal)."
         }
       ],
       "core_memories": []

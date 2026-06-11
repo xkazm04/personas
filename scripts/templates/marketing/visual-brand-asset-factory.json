@@ -179,8 +179,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Per-asset message with preview, prompt used, multimodal AI score, cycle count, and approval CTA. Always delivered regardless of review outcome."
+          "type": "built-in",
+          "description": "Per-asset delivery with preview, prompt used, multimodal AI score, cycle count, and approval CTA. Every generated asset routes through human review (approve / reject with feedback) before being finalized."
         }
       ],
       "core_memories": []

@@ -202,7 +202,7 @@
         },
         {
           "type": "email",
-          "description": "email carries personalized signer reminders and owner-escalation emails with full document context."
+          "description": "email carries personalized signer reminders and owner-escalation emails with full document context. External-counterparty emails are review-gated by default (configurable at adoption); internal escalations and renewal alerts ship automatically."
         }
       ],
       "core_memories": []

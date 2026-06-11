@@ -102,7 +102,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Warning alerts (inline with investigation hint) + critical escalations (full incident report with remediation options)."
+          "description": "Warning alerts (inline with investigation hint) + critical escalations (full incident report with remediation options, pending human acknowledgment before any action)."
         }
       ],
       "core_memories": []

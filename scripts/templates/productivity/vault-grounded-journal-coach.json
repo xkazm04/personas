@@ -65,8 +65,8 @@
       "connectors": [],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Optional weekly pattern digest (only when enable_messages_digest is true) and one-time setup-required messages. The reflection itself never goes to Messages — it always goes back to the daily note."
+          "type": "built-in",
+          "description": "Optional weekly pattern digest in-app (only when enable_messages_digest is true) and one-time setup-required alerts. The reflection itself never goes to Messages — it always goes back to the daily note."
         }
       ],
       "core_memories": []

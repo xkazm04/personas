@@ -114,8 +114,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Combined weekly CRO briefing — in-flight experiments, significant results, new proposals, inconclusive archives — delivered as one message per weekly tick."
+          "type": "built-in",
+          "description": "Combined weekly CRO briefing — in-flight experiments, significant results, new proposals, inconclusive archives — delivered as one message per weekly tick. Variant proposals and experiment actions route through human review before any backend deployment."
         }
       ],
       "core_memories": []

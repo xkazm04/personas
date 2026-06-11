@@ -75,7 +75,11 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Severity-tiered alerts (S1/S2 immediate, S3 standard, S4 batched in daily summary), escalation notices, and post-mortem approval requests."
+          "description": "Severity-tiered alerts (S1/S2 immediate, S3 standard, S4 batched in daily summary) and escalation notices."
+        },
+        {
+          "type": "built-in",
+          "description": "Post-mortem approval cards for S1/S2 incidents — human must approve the generated review before it finalizes as an organizational record."
         }
       ],
       "core_memories": []

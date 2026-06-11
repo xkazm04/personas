@@ -66,8 +66,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "After each triage pass: the ranked next-up queue with one-line why-now reasons, what was rejected and why, and the queue's theme balance."
+          "type": "built-in",
+          "description": "After each triage pass: the ranked next-up queue with one-line why-now reasons, what was rejected and why, and the queue's theme balance. Output is in-app — no external messaging connector is declared."
         }
       ],
       "core_memories": []

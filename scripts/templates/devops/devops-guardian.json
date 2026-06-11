@@ -187,6 +187,10 @@
         {
           "type": "messaging",
           "description": "One combined morning briefing per day — errors + infra + database + deploy correlations concatenated into a single structured message."
+        },
+        {
+          "type": "built-in",
+          "description": "Incident triage cards for Medium+ errors (uc_error_scan review_policy: always) — human marks each finding Actionable or Noise; decisions persist to memory and tune future classifications."
         }
       ],
       "core_memories": []

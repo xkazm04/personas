@@ -107,7 +107,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Landscape summary reports, batch progress updates, and error notifications."
+          "description": "Landscape summary reports and error notifications after each profiling batch completes."
         }
       ],
       "core_memories": []

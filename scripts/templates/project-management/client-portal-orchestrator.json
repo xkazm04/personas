@@ -14,7 +14,7 @@
     "messaging",
     "messaging"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "knowledge base",
@@ -171,8 +171,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "In-app channel for portfolio report drops and critical escalations when messaging or messaging are unconfigured."
+          "type": "built-in",
+          "description": "In-app fallback channel for portfolio report drops and critical escalations when the optional Telegram and Slack connectors are unconfigured. Primary team output goes via the messaging (Telegram) connector; this built-in channel ensures nothing is silently dropped."
         }
       ],
       "core_memories": []

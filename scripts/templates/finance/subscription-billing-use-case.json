@@ -14,7 +14,7 @@
     "messaging",
     "email"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "finance platform",
