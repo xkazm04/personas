@@ -155,6 +155,9 @@ event_names! {
     IDEA_SCAN_STATUS           => "idea-scan-status",
     IDEA_SCAN_OUTPUT           => "idea-scan-output",
     IDEA_SCAN_COMPLETE         => "idea-scan-complete",
+    KPI_SCAN_STATUS            => "kpi-scan-status",
+    KPI_SCAN_OUTPUT            => "kpi-scan-output",
+    KPI_SCAN_COMPLETE          => "kpi-scan-complete",
 
     // Task executor
     TASK_EXEC_STATUS           => "task-exec-status",

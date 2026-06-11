@@ -1,18 +1,35 @@
-//! Goal 2 — self-initiated execution review.
+//! Self-initiated execution review — signal-economy edition.
 //!
-//! On each proactive tick (5-min cadence), when autonomous mode is on,
-//! scan `persona_executions` for recently-finished runs worth analyzing
-//! (failures, or notably slow / expensive runs) and spawn a real Athena
-//! reasoning turn (`TurnOrigin::Proactive`) that looks at the run and
-//! proposes an improvement. This is distinct from the proactive *nudge*
-//! pipeline (pre-drafted strings) — here Athena actually reasons.
+//! On each proactive tick (5-min cadence) and after debounced
+//! execution-finish bursts, when autonomous mode is on, scan
+//! `persona_executions` for recently-finished runs worth analyzing
+//! (failures, notably slow / expensive runs) and run ONE headless triage
+//! decision over the whole batch. The triage is the gatekeeper of the
+//! user's attention:
+//!
+//!   - **drop**      — routine noise; nothing surfaces anywhere (tracing only).
+//!   - **digest**    — worth one line on an aggregated proactive card
+//!                     (`trigger_kind = "execution_review"`, deduped per
+//!                     hour bucket) — NOT a chat turn.
+//!   - **deep_dive** — at most ONE group per batch graduates to a full
+//!                     `TurnOrigin::Proactive` reasoning turn (chat +
+//!                     operation proposals), pre-screened as worth it.
+//!
+//! This replaces the original per-candidate design (≤2 full chat turns per
+//! tick, each persisting a `[proactive: execution_review]` system episode
+//! plus an assistant episode even when the verdict was "nothing to add").
+//! Episodes are append-only by design (`brain/episodic.rs`), so the only
+//! way to keep the transcript clean at high execution volume is to not
+//! mint turns for chatter in the first place — the same reasoning that put
+//! Athena's channel reactions on a headless decision
+//! (`companion::athena_reaction`), whose `cli_text` subprocess plumbing the
+//! triage reuses.
 //!
 //! Dedupe / rate-limit: a single settings cursor
-//! (`companion.exec_review_cursor`, an ISO8601 timestamp) marks the
-//! newest execution we've already considered. Each tick processes only
-//! rows created after the cursor, reviews at most `MAX_REVIEWS_PER_TICK`
-//! (newest-first), and advances the cursor past the whole window so the
-//! next tick never re-reviews. Bounds work per tick and survives restarts.
+//! (`companion_exec_review_cursor`, an ISO8601 timestamp) marks the newest
+//! execution already considered. Each pass processes only rows created
+//! after the cursor and advances it past the whole scanned window, so work
+//! is bounded per pass and survives restarts.
 
 use std::sync::LazyLock;
 use std::time::Duration;
@@ -20,18 +37,17 @@ use std::time::Duration;
 use crate::db::DbPool;
 use crate::error::AppError;
 
-/// Goal 1 — event-driven review. The engine pings this every time a
-/// persona execution reaches a terminal state; a debouncer task (spawned
-/// in `companion_init`) coalesces a burst and runs the same review pass
-/// `review_recent_executions` the 5-min tick uses. Decoupling via a
-/// `Notify` keeps the engine's completion hot-path free of companion
-/// pools / app-handle plumbing — it just signals.
+/// Event-driven leg: the engine pings this every time a persona execution
+/// reaches a terminal state; a debouncer task (spawned in `companion_init`)
+/// coalesces a burst and runs the same triage pass the 5-min tick uses.
+/// Decoupling via a `Notify` keeps the engine's completion hot-path free of
+/// companion pools / app-handle plumbing — it just signals.
 static REVIEW_SIGNAL: LazyLock<tokio::sync::Notify> = LazyLock::new(tokio::sync::Notify::new);
 
 /// Quiet window the debouncer waits for after the last execution-finish
-/// signal before running a review. Coalesces a flurry of scheduled runs
-/// finishing together into a single review pass (which is itself capped
-/// + cursor-deduped). Long enough to batch a burst, short enough to feel
+/// signal before running a triage pass. Coalesces a flurry of scheduled
+/// runs finishing together into a single pass (which is itself batched +
+/// cursor-deduped). Long enough to batch a burst, short enough to feel
 /// event-driven.
 const DEBOUNCE: Duration = Duration::from_secs(20);
 
@@ -44,7 +60,7 @@ pub fn signal_execution_finished() {
 
 /// The debouncer loop body — `companion_init` spawns this. Waits for the
 /// first finish signal, drains further signals until `DEBOUNCE` of quiet,
-/// then runs one review pass if autonomous mode is on. Loops forever.
+/// then runs one triage pass if autonomous mode is on. Loops forever.
 pub async fn run_execution_review_debouncer(
     user_db: crate::db::UserDbPool,
     sys_db: DbPool,
@@ -71,13 +87,14 @@ pub async fn run_execution_review_debouncer(
             &app,
             #[cfg(feature = "ml")]
             embedder.as_ref(),
-        );
+        )
+        .await;
         match res {
             Ok(n) if n > 0 => {
-                tracing::info!(reviews = n, "exec-review debouncer: spawned review turn(s)")
+                tracing::info!(surfaced = n, "exec-review debouncer: triage surfaced finding(s)")
             }
             Ok(_) => {}
-            Err(e) => tracing::warn!(error = %e, "exec-review debouncer: review failed"),
+            Err(e) => tracing::warn!(error = %e, "exec-review debouncer: triage pass failed"),
         }
     }
 }
@@ -89,11 +106,18 @@ pub async fn run_execution_review_debouncer(
 /// "now" every tick, silently finding nothing.
 use crate::db::settings_keys::COMPANION_EXEC_REVIEW_CURSOR as CURSOR_KEY;
 
-/// Most reviews to spawn in a single tick. A burst of failures
-/// shouldn't spawn 20 CLI turns at once; cap it and let the cursor
-/// advance past the rest (we care about recency, not exhaustive
-/// coverage of a flood).
-const MAX_REVIEWS_PER_TICK: usize = 2;
+/// Scan window per pass. A pass that's been idle for a while shouldn't
+/// pull thousands of rows; anything beyond this is reported as overflow
+/// in the digest (no silent caps) and skipped by the advancing cursor.
+const SCAN_LIMIT: usize = 200;
+
+/// Most qualifying candidates fed into a single triage decision. Beyond
+/// this the prompt stops being a triage and starts being a haystack;
+/// overflow is counted and surfaced as a digest footnote instead.
+const MAX_BATCH_CANDIDATES: usize = 24;
+
+/// Most digest lines composed onto one proactive card.
+const MAX_DIGEST_LINES: usize = 6;
 
 /// A run is "slow enough to flag" past this wall-clock duration.
 const SLOW_MS: i64 = 120_000; // 2 minutes
@@ -101,8 +125,8 @@ const SLOW_MS: i64 = 120_000; // 2 minutes
 /// A run is "expensive enough to flag" past this USD cost.
 const EXPENSIVE_USD: f64 = 0.50;
 
-/// One finished execution worth reviewing, with the persona name joined
-/// in and the error/output tail truncated for the directive.
+/// One finished execution worth triaging, with the persona name joined
+/// in and the error/output tail truncated for the prompt.
 struct ReviewCandidate {
     execution_id: String,
     persona_name: String,
@@ -115,19 +139,25 @@ struct ReviewCandidate {
     reason: &'static str,
 }
 
-/// Scan for qualifying executions after the cursor. Returns
-/// `(candidates_to_review, newest_created_at_seen)`. `newest_created_at`
-/// is `None` when no rows at all landed after the cursor (nothing to do,
-/// cursor unchanged).
-fn collect_candidates(
-    sys_db: &DbPool,
-    cursor: &str,
-) -> Result<(Vec<ReviewCandidate>, Option<String>), AppError> {
+/// Result of one cursor-window scan.
+struct CandidateScan {
+    candidates: Vec<ReviewCandidate>,
+    /// Newest `created_at` seen in the window (cursor advance target);
+    /// `None` when no rows at all landed after the cursor.
+    newest: Option<String>,
+    /// Qualifying rows beyond [`MAX_BATCH_CANDIDATES`] — counted so the
+    /// digest can say "+N more", never silently dropped.
+    qualifying_overflow: usize,
+    /// The scan hit [`SCAN_LIMIT`] — there may be rows we never saw.
+    window_saturated: bool,
+}
+
+/// Scan for qualifying executions after the cursor.
+fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, AppError> {
     let conn = sys_db.get()?;
     // Pull every terminal execution after the cursor (newest first) so we
-    // can both pick review candidates AND learn the newest timestamp to
-    // advance the cursor to. Cap the scan generously — a tick that's been
-    // idle for a while shouldn't pull thousands of rows.
+    // can both pick triage candidates AND learn the newest timestamp to
+    // advance the cursor to.
     let mut stmt = conn.prepare(
         "SELECT e.id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,
                 e.duration_ms, COALESCE(e.cost_usd, 0.0), e.error_message,
@@ -137,10 +167,10 @@ fn collect_candidates(
          WHERE e.created_at > ?1
            AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
          ORDER BY e.created_at DESC
-         LIMIT 200",
+         LIMIT ?2",
     )?;
     let rows = stmt
-        .query_map([cursor], |row| {
+        .query_map(rusqlite::params![cursor, SCAN_LIMIT as i64], |row| {
             let status: String = row.get(2)?;
             let duration_ms: Option<i64> = row.get(3)?;
             let cost_usd: f64 = row.get(4)?;
@@ -160,14 +190,13 @@ fn collect_candidates(
         .collect::<Result<Vec<_>, _>>()?;
 
     let newest = rows.first().map(|r| r.7.clone());
+    let window_saturated = rows.len() >= SCAN_LIMIT;
 
     let mut candidates = Vec::new();
+    let mut qualifying_overflow = 0usize;
     for (id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
         rows
     {
-        if candidates.len() >= MAX_REVIEWS_PER_TICK {
-            break; // newest-first, so we keep the most recent qualifying
-        }
         let failed = matches!(status.as_str(), "failed" | "incomplete");
         let slow = duration_ms.is_some_and(|d| d >= SLOW_MS);
         let expensive = cost_usd >= EXPENSIVE_USD;
@@ -178,8 +207,12 @@ fn collect_candidates(
         } else if slow {
             "slow"
         } else {
-            continue; // clean, cheap, fast — nothing to review
+            continue; // clean, cheap, fast — nothing to triage
         };
+        if candidates.len() >= MAX_BATCH_CANDIDATES {
+            qualifying_overflow += 1; // counted, surfaced in the digest
+            continue;
+        }
         candidates.push(ReviewCandidate {
             execution_id: id,
             persona_name,
@@ -192,50 +225,250 @@ fn collect_candidates(
             reason,
         });
     }
-    Ok((candidates, newest))
+    Ok(CandidateScan {
+        candidates,
+        newest,
+        qualifying_overflow,
+        window_saturated,
+    })
 }
 
-/// Build the synthetic directive Athena receives for one review. It's a
-/// real instruction, not a marker — `TurnOrigin::Proactive` passes it
-/// straight to the CLI. The directive demands grounding (reference the
-/// specific run) and a concrete proposal on failure, and explicitly
-/// licenses a one-line "nothing to add" stop on a clean run so Athena
-/// doesn't manufacture busywork.
-fn build_directive(c: &ReviewCandidate) -> String {
-    let dur = c
+/// Candidates collapsed by (persona, flag reason) — the aggregation that
+/// makes a flood legible: 14 identical PAT failures become one group with
+/// `count = 14` and the newest run as exemplar.
+struct CandidateGroup {
+    persona_name: String,
+    reason: &'static str,
+    count: usize,
+    total_cost: f64,
+    exemplar: ReviewCandidate,
+}
+
+fn group_candidates(candidates: Vec<ReviewCandidate>) -> Vec<CandidateGroup> {
+    let mut groups: Vec<CandidateGroup> = Vec::new();
+    for c in candidates {
+        // candidates arrive newest-first, so the first member of a group
+        // is its newest run — keep it as the exemplar.
+        if let Some(g) = groups
+            .iter_mut()
+            .find(|g| g.persona_name == c.persona_name && g.reason == c.reason)
+        {
+            g.count += 1;
+            g.total_cost += c.cost_usd;
+        } else {
+            groups.push(CandidateGroup {
+                persona_name: c.persona_name.clone(),
+                reason: c.reason,
+                count: 1,
+                total_cost: c.cost_usd,
+                exemplar: c,
+            });
+        }
+    }
+    // Failures first, then expensive, then slow; bigger groups first
+    // within a tier — the order the triage should spend its attention in.
+    let tier = |r: &str| match r {
+        "failed" => 0,
+        "expensive" => 1,
+        _ => 2,
+    };
+    groups.sort_by(|a, b| {
+        tier(a.reason)
+            .cmp(&tier(b.reason))
+            .then(b.count.cmp(&a.count))
+    });
+    groups
+}
+
+/// Athena's execution-triage protocol — the single JSON object she must emit.
+#[derive(Debug, serde::Deserialize)]
+struct ExecTriageEnvelope {
+    athena_exec_triage: ExecTriageDecision,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ExecTriageDecision {
+    /// One verdict per presented group (`id` is the 1-based group number).
+    #[serde(default)]
+    groups: Vec<ExecGroupVerdict>,
+    /// One-line batch summary — becomes the digest card's first line.
+    #[serde(default)]
+    headline: String,
+    /// True only when the user should look TODAY (desktop notification).
+    #[serde(default)]
+    escalate_to_user: bool,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct ExecGroupVerdict {
+    id: usize,
+    /// `drop` | `digest` | `deep_dive`
+    verdict: String,
+    /// The digest line for `digest`/`deep_dive` verdicts (≤140 chars).
+    #[serde(default)]
+    line: String,
+}
+
+fn build_triage_prompt(groups: &[CandidateGroup], overflow: usize, saturated: bool) -> String {
+    let mut listing = String::new();
+    for (i, g) in groups.iter().enumerate() {
+        let e = &g.exemplar;
+        let dur = e
+            .duration_ms
+            .map(|d| format!("{:.1}s", d as f64 / 1000.0))
+            .unwrap_or_else(|| "unknown".into());
+        listing.push_str(&format!(
+            "{n}. Persona \"{persona}\" — {count} run(s) flagged `{reason}` (combined cost ${total:.2})\n   \
+             Exemplar (newest): execution {exec}, status {status}, duration {dur}, cost ${cost:.4}, finished {created}\n",
+            n = i + 1,
+            persona = g.persona_name,
+            count = g.count,
+            reason = g.reason,
+            total = g.total_cost,
+            exec = e.execution_id,
+            status = e.status,
+            dur = dur,
+            cost = e.cost_usd,
+            created = e.created_at,
+        ));
+        if let Some(err) = &e.error_tail {
+            listing.push_str(&format!("   Error (tail): {err}\n"));
+        } else if let Some(out) = &e.output_tail {
+            listing.push_str(&format!("   Output (tail): {out}\n"));
+        }
+    }
+    let mut footnotes = String::new();
+    if overflow > 0 {
+        footnotes.push_str(&format!(
+            "\nNote: {overflow} further qualifying run(s) in this window were not listed (batch cap)."
+        ));
+    }
+    if saturated {
+        footnotes.push_str(
+            "\nNote: the scan window was saturated — there may be additional unexamined runs.",
+        );
+    }
+
+    format!(
+        r#"You are **Athena**, the autonomous orchestrator of this Personas workspace. You are running unattended. Finished persona executions were flagged for triage (failed / slow / expensive), already grouped by persona and flag reason. Hundreds of executions can flow through here per hour, so you are the gatekeeper of the user's attention: almost everything should pass quietly; only real signal may surface.
+
+Flagged groups:
+{listing}{footnotes}
+
+YOUR TRIAGE — one verdict per group:
+- "drop": routine noise — a one-off transient failure the retry machinery already owns (rate/usage/session limits, app-restart kills), expected slowness for that workload, cost within that persona's norms. THE DEFAULT. Most groups should be dropped.
+- "digest": worth exactly one line of the user's aggregated review card. Use for recurring patterns (same persona failing the same way repeatedly), a new kind of failure, or a notable cost/duration anomaly. Write `line` as one concrete sentence ≤140 chars naming the persona and the pattern (e.g. "Dev Clone failed 14× on the same GitHub 401 — PAT likely expired"). No filler.
+- "deep_dive": AT MOST ONE group in the whole batch — and only when a concrete, fixable problem would benefit from full analysis and a proposal (prompt tweak, guardrail, model-tier change, missing tool, observability fix). This spawns a real reasoning turn, so spend it well. Also provide its `line`.
+- `headline`: one short sentence summarizing the batch for the card title.
+- `escalate_to_user`: true ONLY if something needs the user TODAY (a whole team blocked on credentials, runaway spend, data at risk). This fires a desktop notification — be conservative.
+
+Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line:
+{{"athena_exec_triage": {{"groups": [{{"id": 1, "verdict": "drop"|"digest"|"deep_dive", "line": ""}}], "headline": "...", "escalate_to_user": false}}}}
+"#,
+        listing = listing,
+        footnotes = footnotes,
+    )
+}
+
+/// Extract the `{"athena_exec_triage": {...}}` object (same tolerant
+/// brace-matching as the channel-reaction parser; last occurrence wins).
+fn parse_exec_triage(blob: &str) -> Option<ExecTriageDecision> {
+    let marker = "\"athena_exec_triage\"";
+    let mut result = None;
+    let mut search_from = 0;
+    while let Some(rel) = blob[search_from..].find(marker) {
+        let marker_pos = search_from + rel;
+        search_from = marker_pos + marker.len();
+        let Some(open) = blob[..marker_pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
+            if let Ok(env) =
+                serde_json::from_str::<ExecTriageEnvelope>(&blob[open..open + close + 1])
+            {
+                result = Some(env.athena_exec_triage);
+            }
+        }
+    }
+    result
+}
+
+/// The directive for the single deep-dive turn — pre-screened by the
+/// triage, so it IS worth a chat entry; the format contract keeps that
+/// entry tight instead of essay-shaped.
+fn build_deep_directive(g: &CandidateGroup, triage_line: &str) -> String {
+    let e = &g.exemplar;
+    let dur = e
         .duration_ms
         .map(|d| format!("{:.1}s", d as f64 / 1000.0))
         .unwrap_or_else(|| "unknown".into());
     let mut body = format!(
-        "A persona execution just finished and is worth a look (flagged: {reason}).\n\n\
+        "Your execution triage flagged ONE group of finished runs as worth a deep look:\n\
+         {line}\n\n\
          - Persona: {persona}\n\
-         - Execution id: {exec}\n\
+         - Occurrences this window: {count} (flagged: {reason}, combined cost ${total:.2})\n\
+         - Exemplar execution id: {exec}\n\
          - Status: {status}\n\
          - Duration: {dur}\n\
          - Cost: ${cost:.4}\n\
          - Finished: {created}\n",
-        reason = c.reason,
-        persona = c.persona_name,
-        exec = c.execution_id,
-        status = c.status,
+        line = triage_line,
+        persona = g.persona_name,
+        count = g.count,
+        reason = g.reason,
+        total = g.total_cost,
+        exec = e.execution_id,
+        status = e.status,
         dur = dur,
-        cost = c.cost_usd,
-        created = c.created_at,
+        cost = e.cost_usd,
+        created = e.created_at,
     );
-    if let Some(err) = &c.error_tail {
+    if let Some(err) = &e.error_tail {
         body.push_str(&format!("\nError (tail):\n{err}\n"));
     }
-    if let Some(out) = &c.output_tail {
+    if let Some(out) = &e.output_tail {
         body.push_str(&format!("\nOutput (tail):\n{out}\n"));
     }
     body.push_str(
-        "\nAnalyze this run. If there's a concrete improvement, propose it — a system-prompt \
-         tweak, a guardrail, a model-tier change, a missing tool, or an observability fix. \
-         Reference THIS run specifically (the persona and what happened); don't give generic \
-         advice. If the run is clean and there's genuinely nothing to improve, say so in one \
-         line and stop — don't manufacture work.",
+        "\nAnalyze this and, if there's a concrete improvement, propose it — a system-prompt \
+         tweak, a guardrail, a model-tier change, a missing tool, or an observability fix — \
+         referencing THIS persona and what happened. FORMAT CONTRACT: lead with a one-line \
+         verdict; keep the whole reply under ~120 words unless you emit an operation; no \
+         headers, no restating the data above. If on closer inspection nothing is actionable \
+         after all, say so in one line and stop.",
     );
     body
+}
+
+/// Compose the aggregated digest card body.
+fn compose_digest_message(
+    headline: &str,
+    lines: &[String],
+    overflow: usize,
+    saturated: bool,
+) -> String {
+    let mut msg = String::new();
+    let headline = headline.trim();
+    if !headline.is_empty() {
+        msg.push_str(headline);
+    }
+    for line in lines.iter().take(MAX_DIGEST_LINES) {
+        if !msg.is_empty() {
+            msg.push('\n');
+        }
+        msg.push_str(&format!("• {}", line.trim()));
+    }
+    let dropped_lines = lines.len().saturating_sub(MAX_DIGEST_LINES);
+    let mut more = overflow + dropped_lines;
+    if saturated {
+        more += 1; // window saturation means "at least one more"
+    }
+    if more > 0 {
+        msg.push_str(&format!(
+            "\n(+{more} more flagged run(s) this window — see Overview → Executions)"
+        ));
+    }
+    msg
 }
 
 fn truncate_tail(s: &str, max: usize) -> String {
@@ -272,11 +505,11 @@ fn read_cursor(sys_db: &DbPool) -> String {
     }
 }
 
-/// Entry point called from the proactive tick. Reviews qualifying recent
-/// executions by spawning `TurnOrigin::Proactive` turns. Returns the
-/// number of reviews spawned (for telemetry). The caller must have
-/// already confirmed autonomous mode is on.
-pub fn review_recent_executions(
+/// Entry point called from the proactive tick and the debouncer. Runs one
+/// batched triage pass over qualifying recent executions. Returns the
+/// number of surfaced findings (digest lines + deep dives) for telemetry.
+/// The caller must have already confirmed autonomous mode is on.
+pub async fn review_recent_executions(
     user_db: &crate::db::UserDbPool,
     sys_db: &DbPool,
     app: &tauri::AppHandle,
@@ -292,16 +525,76 @@ pub fn review_recent_executions(
         advance_cursor(sys_db, &cursor);
     }
 
-    let (candidates, newest) = collect_candidates(sys_db, &cursor)?;
-    if let Some(newest) = newest {
-        // Advance past the whole window we scanned, not just reviewed
+    let scan = collect_candidates(sys_db, &cursor)?;
+    if let Some(newest) = &scan.newest {
+        // Advance past the whole window we scanned, not just triaged
         // rows — bounds work and prevents an unreviewable backlog from
         // re-scanning forever.
-        advance_cursor(sys_db, &newest);
+        advance_cursor(sys_db, newest);
     }
-    let spawned = candidates.len();
-    for c in candidates {
-        let directive = build_directive(&c);
+    if scan.candidates.is_empty() {
+        return Ok(0);
+    }
+
+    let overflow = scan.qualifying_overflow;
+    let saturated = scan.window_saturated;
+    let groups = group_candidates(scan.candidates);
+    tracing::info!(
+        groups = groups.len(),
+        overflow,
+        saturated,
+        "exec_review: running batched triage decision"
+    );
+
+    let prompt = build_triage_prompt(&groups, overflow, saturated);
+    let blob = crate::companion::athena_reaction::cli_text(prompt).await?;
+    let Some(decision) = parse_exec_triage(&blob) else {
+        tracing::warn!("exec_review: no triage decision parsed from CLI output");
+        return Ok(0);
+    };
+
+    // Apply verdicts. Restraint is the default: anything unmatched or
+    // malformed is treated as drop.
+    let mut digest_lines: Vec<String> = Vec::new();
+    let mut deep: Option<(&CandidateGroup, String)> = None;
+    for v in &decision.groups {
+        let Some(g) = v.id.checked_sub(1).and_then(|i| groups.get(i)) else {
+            continue; // hallucinated group id — ignore
+        };
+        match v.verdict.as_str() {
+            "deep_dive" => {
+                let line = if v.line.trim().is_empty() {
+                    format!("{} — {} run(s) flagged {}", g.persona_name, g.count, g.reason)
+                } else {
+                    v.line.trim().to_string()
+                };
+                if deep.is_none() {
+                    deep = Some((g, line.clone()));
+                }
+                // The deep-dive group still earns its digest line so the
+                // card stays the one complete summary of the batch.
+                digest_lines.push(line);
+            }
+            "digest" => {
+                if !v.line.trim().is_empty() {
+                    digest_lines.push(v.line.trim().to_string());
+                }
+            }
+            _ => {
+                tracing::debug!(
+                    persona = %g.persona_name,
+                    reason = %g.reason,
+                    count = g.count,
+                    "exec_review: triage dropped group (restraint)"
+                );
+            }
+        }
+    }
+
+    let mut surfaced = 0usize;
+
+    if let Some((g, line)) = &deep {
+        let directive = build_deep_directive(g, line);
         crate::companion::session::spawn_proactive_turn(
             app.clone(),
             std::sync::Arc::new(user_db.clone()),
@@ -309,9 +602,126 @@ pub fn review_recent_executions(
             #[cfg(feature = "ml")]
             embedder.cloned(),
             "execution_review".to_string(),
-            Some(c.execution_id),
+            Some(g.exemplar.execution_id.clone()),
             directive,
         );
+        surfaced += 1;
     }
-    Ok(spawned)
+
+    if !digest_lines.is_empty() {
+        surfaced += digest_lines.len();
+        let message =
+            compose_digest_message(&decision.headline, &digest_lines, overflow, saturated);
+        // Hour-bucketed dedupe ref: at most one execution-review card per
+        // hour can be pending — a flood aggregates instead of stacking.
+        let bucket = chrono::Utc::now().format("%Y-%m-%dT%H").to_string();
+        let nudge = super::Nudge {
+            trigger_kind: "execution_review".to_string(),
+            trigger_ref: Some(format!("bucket:{bucket}")),
+            message,
+        };
+        match super::enqueue_external(user_db, &nudge) {
+            Ok(Some(msg)) => super::deliver_now(user_db, app, msg),
+            Ok(None) => tracing::info!(
+                "exec_review: digest deduped — an unresolved card for this hour already exists"
+            ),
+            Err(e) => tracing::warn!(error = %e, "exec_review: digest nudge enqueue failed"),
+        }
+    }
+
+    // Desktop notification ONLY on explicit escalation, and never during
+    // the user's quiet hours — the card waits, the ping doesn't fire.
+    if decision.escalate_to_user && !super::quiet::is_quiet_now(user_db).unwrap_or(false) {
+        let headline = if decision.headline.trim().is_empty() {
+            "Execution review needs your attention".to_string()
+        } else {
+            decision.headline.trim().to_string()
+        };
+        crate::notifications::send(app, "Athena · execution review", &headline);
+    }
+
+    Ok(surfaced)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mk_candidate(persona: &str, reason: &'static str, cost: f64) -> ReviewCandidate {
+        ReviewCandidate {
+            execution_id: format!("exec-{persona}-{reason}"),
+            persona_name: persona.to_string(),
+            status: if reason == "failed" { "failed" } else { "completed" }.to_string(),
+            duration_ms: Some(1_000),
+            cost_usd: cost,
+            error_tail: None,
+            output_tail: None,
+            created_at: "2026-06-10T12:00:00Z".to_string(),
+            reason,
+        }
+    }
+
+    #[test]
+    fn parses_triage_with_mixed_verdicts() {
+        let blob = r#"Thinking it through…
+{"athena_exec_triage": {"groups": [{"id": 1, "verdict": "digest", "line": "Dev Clone failed 14x on the same 401"}, {"id": 2, "verdict": "drop", "line": ""}, {"id": 3, "verdict": "deep_dive", "line": "RM loops on a closed PR"}], "headline": "One credential failure pattern, one stuck loop", "escalate_to_user": true}}
+trailing"#;
+        let d = parse_exec_triage(blob).expect("should parse");
+        assert_eq!(d.groups.len(), 3);
+        assert_eq!(d.groups[0].verdict, "digest");
+        assert_eq!(d.groups[2].verdict, "deep_dive");
+        assert!(d.escalate_to_user);
+        assert!(d.headline.contains("credential"));
+    }
+
+    #[test]
+    fn parses_minimal_all_drop() {
+        let blob = r#"{"athena_exec_triage": {"groups": [{"id": 1, "verdict": "drop"}]}}"#;
+        let d = parse_exec_triage(blob).expect("should parse");
+        assert_eq!(d.groups.len(), 1);
+        assert!(d.headline.is_empty());
+        assert!(!d.escalate_to_user);
+    }
+
+    #[test]
+    fn triage_parser_ignores_other_protocols() {
+        let blob = r#"{"athena_channel": {"react": true, "message": "x"}}"#;
+        assert!(parse_exec_triage(blob).is_none());
+    }
+
+    #[test]
+    fn last_triage_occurrence_wins() {
+        let blob = r#"{"athena_exec_triage":{"groups":[{"id":1,"verdict":"drop"}]}}
+corrected: {"athena_exec_triage":{"groups":[{"id":1,"verdict":"digest","line":"final"}]}}"#;
+        let d = parse_exec_triage(blob).expect("should parse");
+        assert_eq!(d.groups[0].verdict, "digest");
+        assert_eq!(d.groups[0].line, "final");
+    }
+
+    #[test]
+    fn groups_collapse_by_persona_and_reason_failures_first() {
+        let groups = group_candidates(vec![
+            mk_candidate("Slow Persona", "slow", 0.01),
+            mk_candidate("Dev Clone", "failed", 0.10),
+            mk_candidate("Dev Clone", "failed", 0.20),
+            mk_candidate("Dev Clone", "failed", 0.30),
+            mk_candidate("Costly", "expensive", 1.50),
+        ]);
+        assert_eq!(groups.len(), 3);
+        assert_eq!(groups[0].persona_name, "Dev Clone");
+        assert_eq!(groups[0].count, 3);
+        assert!((groups[0].total_cost - 0.60).abs() < 1e-9);
+        assert_eq!(groups[1].reason, "expensive");
+        assert_eq!(groups[2].reason, "slow");
+    }
+
+    #[test]
+    fn digest_message_reports_overflow_not_silence() {
+        let lines: Vec<String> = (0..8).map(|i| format!("line {i}")).collect();
+        let msg = compose_digest_message("Headline", &lines, 3, true);
+        // 6 lines rendered, 2 dropped + 3 overflow + 1 saturation = +6 more
+        assert!(msg.starts_with("Headline"));
+        assert_eq!(msg.matches("• ").count(), MAX_DIGEST_LINES);
+        assert!(msg.contains("+6 more"), "got: {msg}");
+    }
 }

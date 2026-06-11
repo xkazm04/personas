@@ -24,6 +24,7 @@
 //! the C2 surface). Reusing `channel_repo::create` keeps a single channel-write
 //! path shared with `companion_post_team_message`.
 
+use tauri::Manager;
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 
@@ -91,6 +92,35 @@ struct AthenaChannelDecision {
     addressed_to: Vec<String>,
 }
 
+/// Batch decision protocol (docs/plans/athena-reaction-batching.md): one
+/// verdict per numbered signal. A missing verdict = decline (restraint is
+/// the safe default and the cert's no-spam axis still scores the trail).
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchEnvelope {
+    athena_channel_batch: AthenaBatchDecision,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchDecision {
+    #[serde(default)]
+    reactions: Vec<AthenaBatchVerdict>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchVerdict {
+    /// 1-based index of the signal block in the prompt.
+    signal: usize,
+    react: bool,
+    #[serde(default)]
+    message: String,
+    #[serde(default)]
+    rationale: String,
+    #[serde(default)]
+    escalate_to_user: bool,
+    #[serde(default)]
+    addressed_to: Vec<String>,
+}
+
 /// Detect the single most recent reaction-worthy moment per goal-managed team
 /// that is NEWER than Athena's last channel post in that team (the cursor that
 /// gives natural debounce/restraint) and within a 12h lookback (so first-enable
@@ -117,6 +147,9 @@ pub fn find_athena_reaction_signals(
                              datetime(a.created_at)) AS occurred_at
              FROM team_assignments a
              WHERE a.status = 'awaiting_review' AND a.team_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM team_assignment_events ev
+                                 WHERE ev.assignment_id = a.id
+                                   AND ev.kind = 'athena_review_resolution')
              UNION ALL
              SELECT a.team_id, 'qa_bounce', 1, a.id, a.title,
                     COALESCE(e.payload, ''), datetime(e.created_at)
@@ -273,6 +306,18 @@ pub async fn run_athena_reaction(
         return Ok(false);
     };
 
+    post_reaction_message(app, pool, &signal, decision)
+}
+
+/// Post one decided reaction to the team channel (shared by the single-signal
+/// path and the batch path): audit-footer body, inject-vs-display consumer,
+/// assignment linkage, optional user escalation. Returns Ok(true) if posted.
+fn post_reaction_message(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    signal: &ReactionSignal,
+    decision: AthenaChannelDecision,
+) -> Result<bool, AppError> {
     if !decision.react || decision.message.trim().is_empty() {
         // Restraint is a first-class outcome — record it so the cert can score
         // the no-spam axis from the decision trail.
@@ -350,10 +395,19 @@ pub async fn run_athena_reaction(
 }
 
 /// Spawn the Claude CLI with the prompt on stdin, stream stdout, and parse the
-/// single `{"athena_channel": {...}}` decision object. Lean clone of
-/// `idea_scanner::run_idea_scan`'s subprocess handling without the scan-job
-/// bookkeeping. Returns `Ok(None)` if no valid decision object was emitted.
+/// single `{"athena_channel": {...}}` decision object. Returns `Ok(None)` if
+/// no valid decision object was emitted.
 async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>, AppError> {
+    let blob = cli_text(prompt_text).await?;
+    Ok(parse_athena_decision(&blob))
+}
+
+/// Spawn the Claude CLI with the prompt on stdin and return the accumulated
+/// display text. Lean clone of `idea_scanner::run_idea_scan`'s subprocess
+/// handling without the scan-job bookkeeping; shared by the channel-reaction,
+/// review-resolution, execution-triage and message-triage decisions (each
+/// parses its own protocol object).
+pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
     let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
@@ -435,7 +489,7 @@ async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>
         let _ = child.wait().await;
     }
 
-    Ok(parse_athena_decision(&blob))
+    Ok(blob)
 }
 
 /// Extract the `{"athena_channel": {...}}` object from the model's free-text
@@ -464,9 +518,150 @@ fn parse_athena_decision(blob: &str) -> Option<AthenaChannelDecision> {
     result
 }
 
+/// Extract the `{"athena_channel_batch": {...}}` object (same brace-match
+/// tolerance as the single-decision parse; last occurrence wins).
+fn parse_athena_batch(blob: &str) -> Option<AthenaBatchDecision> {
+    let marker = "\"athena_channel_batch\"";
+    let mut result = None;
+    let mut search_from = 0;
+    while let Some(rel) = blob[search_from..].find(marker) {
+        let marker_pos = search_from + rel;
+        search_from = marker_pos + marker.len();
+        let Some(open) = blob[..marker_pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<AthenaBatchEnvelope>(candidate) {
+                result = Some(env.athena_channel_batch);
+            }
+        }
+    }
+    result
+}
+
+/// Build the BATCH decision prompt: every pending signal as a numbered block
+/// (team + moment + that team's recent history), the restraint doctrine once,
+/// and a per-signal verdict protocol. History is capped tighter in multi-team
+/// batches to bound the prompt.
+fn build_batch_prompt(pool: &crate::db::DbPool, signals: &[ReactionSignal]) -> String {
+    let multi = signals.len() > 1;
+    let mut blocks = String::new();
+    for (i, signal) in signals.iter().enumerate() {
+        let mut history = recent_channel_history(pool, &signal.team_id);
+        if multi {
+            // Keep only the newest 5 lines per team in multi-team batches.
+            let lines: Vec<&str> = history.lines().collect();
+            if lines.len() > 5 {
+                history = lines[lines.len() - 5..].join("\n");
+            }
+        }
+        let history_block = if history.trim().is_empty() {
+            "(no recent channel messages)".to_string()
+        } else {
+            history
+        };
+        let ledger = crate::db::repos::resources::team_memories::get_for_injection(pool, &signal.team_id, 5)
+            .ok()
+            .filter(|m| !m.is_empty())
+            .map(|m| {
+                let items = m
+                    .iter()
+                    .map(|tm| format!("  - [{}] {}: {}", tm.category, tm.title, tm.content))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                format!("\nTeam ledger:\n{items}")
+            })
+            .unwrap_or_default();
+        blocks.push_str(&format!(
+            "### Signal {n} — team \"{team}\"\n- Moment: {headline}\n- Kind: `{kind}`\n- Artifact: {title}\n- Detail: {detail}\nRecent channel activity (oldest → newest):\n{history}{ledger}\n\n",
+            n = i + 1,
+            team = signal.team_name,
+            headline = signal.headline(),
+            kind = signal.kind,
+            title = signal.title,
+            detail = if signal.detail.is_empty() { "(none)" } else { &signal.detail },
+            history = history_block,
+            ledger = ledger,
+        ));
+    }
+
+    format!(
+        r#"You are **Athena**, the autonomous orchestrator overseeing this fleet of software-delivery teams. You are running unattended. Several development moments have accumulated since your last wake — decide, for EACH one, whether to step into that team's channel (the channel its personas and the Director coordinate in).
+
+{blocks}YOUR DECISIONS
+You see all pending moments at once — use cross-team patterns (the same failure shape appearing on multiple teams, repeated bounces on one artifact) to inform individual messages. Be disciplined — you are judged on RESTRAINT as much as on coverage:
+- The DEFAULT is `react: false`. Routine progress does not need narration. Do not congratulate every shipped goal or echo every bounce.
+- AWAITING-REVIEW cap-out → almost always react AND `escalate_to_user: true`: the team is stuck and only a human can unblock it. Say concisely what's blocked and what call is needed.
+- A QA bounce → usually stay silent (normal SDLC); react only on a repeating pattern the team isn't self-correcting, optionally addressing the implementer with one concrete steer.
+- A shipped goal → react only if it's a meaningful milestone worth recording; otherwise silent.
+- If you address a specific persona, put their persona id in `addressed_to` (injected into their next step). Otherwise leave it empty (visible observation for the human).
+- Keep each `message` to 1–3 sentences, plain and specific. `rationale` is one short clause recorded as an audit footer.
+
+Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line — one entry per signal, ALL signals present:
+{{"athena_channel_batch": {{"reactions": [{{"signal": 1, "react": true|false, "message": "...", "rationale": "...", "escalate_to_user": true|false, "addressed_to": []}}]}}}}
+"#,
+        blocks = blocks,
+    )
+}
+
+/// Run ONE batched Athena reaction decision over every pending signal
+/// (docs/plans/athena-reaction-batching.md): one CLI call instead of one per
+/// signal. Returns the number of messages posted. Signals without a verdict
+/// in the response are treated as declines.
+pub async fn run_athena_reaction_batch(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    signals: Vec<ReactionSignal>,
+) -> Result<usize, AppError> {
+    if signals.is_empty() {
+        return Ok(0);
+    }
+    let prompt = build_batch_prompt(pool, &signals);
+    let blob = cli_text(prompt).await?;
+    let Some(batch) = parse_athena_batch(&blob) else {
+        tracing::warn!(
+            signals = signals.len(),
+            "athena_reaction_batch: no batch decision parsed from CLI output"
+        );
+        return Ok(0);
+    };
+
+    let mut posted = 0usize;
+    for (i, signal) in signals.iter().enumerate() {
+        let verdict = batch.reactions.iter().find(|v| v.signal == i + 1);
+        let decision = match verdict {
+            Some(v) => AthenaChannelDecision {
+                react: v.react,
+                message: v.message.clone(),
+                rationale: v.rationale.clone(),
+                escalate_to_user: v.escalate_to_user,
+                addressed_to: v.addressed_to.clone(),
+            },
+            None => {
+                tracing::info!(
+                    team = %signal.team_name,
+                    kind = %signal.kind,
+                    "athena_reaction_batch: no verdict for signal — treated as decline"
+                );
+                continue;
+            }
+        };
+        match post_reaction_message(app, pool, signal, decision) {
+            Ok(true) => posted += 1,
+            Ok(false) => {}
+            Err(e) => {
+                tracing::warn!(team = %signal.team_name, kind = %signal.kind, error = %e,
+                    "athena_reaction_batch: post failed");
+            }
+        }
+    }
+    Ok(posted)
+}
+
 /// Given a slice that starts with `{`, return the byte offset of the matching
 /// closing `}` (relative to the slice start), or `None` if unbalanced.
-fn match_braces(s: &str) -> Option<usize> {
+pub(crate) fn match_braces(s: &str) -> Option<usize> {
     let bytes = s.as_bytes();
     let mut depth = 0i32;
     let mut in_str = false;
@@ -495,6 +690,441 @@ fn match_braces(s: &str) -> Option<usize> {
         }
     }
     None
+}
+
+// ---------------------------------------------------------------------------
+// Review resolution (B) — Athena RESOLVES parked awaiting_review cap-outs
+// ---------------------------------------------------------------------------
+//
+// A QA fix-loop cap-out parks the assignment in `awaiting_review` — and the
+// 06-09 fleet deadlock showed a parked review starves the whole pipeline
+// (goal-slot held → re-advance blocked → backlog promotion starved). With
+// `autonomous_athena_review_resolution` ON, Athena doesn't just react: she
+// makes a three-way RESOLUTION decision per parked assignment:
+//
+//   APPROVE  — the QA objections are resolved/stale/acceptable. She posts her
+//              assessment as an inject-directive addressed to the QA persona
+//              and grants exactly ONE extra QA round (reset failed step →
+//              pending via the auto-resume machinery). QA keeps sole merge
+//              authority — Athena never merges, she un-parks the loop.
+//   INCIDENT — the blocker is access/credential/external-shaped (missing PAT,
+//              401, permission denied, env not provisioned). Not a review
+//              decision — transformed into an `audit_incidents` row so it gets
+//              the Incidents lifecycle + escalation-close machinery.
+//   ESCALATE — a genuine product/business call only the human can make.
+//              Channel post + notification (the reactions-only behavior).
+//
+// One resolution per assignment, ever: the `athena_review_resolution`
+// assignment event is the guard (a re-parked assignment after her approve
+// round is the human's, not hers — prevents approve ping-pong).
+
+/// A parked assignment Athena may resolve, with the context her decision needs.
+pub struct ReviewResolutionCandidate {
+    pub assignment_id: String,
+    pub team_id: String,
+    pub team_name: String,
+    pub title: String,
+    /// The failed (cap-out / blocking) steps: (step_id, title, error_message,
+    /// output_tail, assigned_persona_id, retry_count).
+    pub failed_steps: Vec<FailedStepContext>,
+}
+
+pub struct FailedStepContext {
+    pub step_id: String,
+    pub title: String,
+    pub error_message: String,
+    pub output_tail: String,
+    pub assigned_persona_id: Option<String>,
+    pub retry_count: i32,
+}
+
+/// Parked `awaiting_review` assignments on goal-managed teams that Athena has
+/// NEVER resolved (the once-per-assignment guard). No recency cursor — parked
+/// work stays a candidate until resolved, however old.
+pub fn find_review_resolution_candidates(
+    pool: &crate::db::DbPool,
+    limit: usize,
+) -> Result<Vec<ReviewResolutionCandidate>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT a.id, a.team_id, t.name, a.title
+         FROM team_assignments a
+         JOIN persona_teams t ON t.id = a.team_id
+         WHERE a.status = 'awaiting_review' AND a.team_id IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM team_assignment_events e
+                             WHERE e.assignment_id = a.id
+                               AND e.kind = 'athena_review_resolution')
+         ORDER BY datetime(a.created_at) ASC
+         LIMIT ?1",
+    )?;
+    let heads: Vec<(String, String, String, String)> = stmt
+        .query_map([limit as i64], |r| {
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+        })?
+        .filter_map(Result::ok)
+        .collect();
+
+    let mut out = Vec::new();
+    for (assignment_id, team_id, team_name, title) in heads {
+        let mut step_stmt = conn.prepare(
+            "SELECT id, title, COALESCE(error_message,''), COALESCE(output_summary,''),
+                    assigned_persona_id, retry_count
+             FROM team_assignment_steps
+             WHERE assignment_id = ?1 AND status = 'failed'
+             ORDER BY step_order ASC",
+        )?;
+        let failed_steps: Vec<FailedStepContext> = step_stmt
+            .query_map([&assignment_id], |r| {
+                Ok(FailedStepContext {
+                    step_id: r.get(0)?,
+                    title: r.get(1)?,
+                    error_message: r.get(2)?,
+                    output_tail: r.get(3)?,
+                    assigned_persona_id: r.get(4)?,
+                    retry_count: r.get(5)?,
+                })
+            })?
+            .filter_map(Result::ok)
+            .map(|mut s| {
+                s.error_message =
+                    crate::utils::text::truncate_on_char_boundary(s.error_message.trim(), 400)
+                        .to_string();
+                s.output_tail = {
+                    // tail, not head — the verdict lands at the end
+                    let t = s.output_tail.trim();
+                    let chars: Vec<char> = t.chars().collect();
+                    let start = chars.len().saturating_sub(900);
+                    chars[start..].iter().collect::<String>()
+                };
+                s
+            })
+            .collect();
+        if failed_steps.is_empty() {
+            continue; // nothing actionable (shouldn't happen for a cap-out)
+        }
+        // RETRYABLE-class parks are NOT Athena's to resolve: a step that failed
+        // on a provider session/usage/rate limit (or an app-restart kill) will
+        // be reset + re-run by AssignmentAutoResumeSubscription once the limit
+        // lifts. Escalating those was the 2026-06-10 soundness miss — she paged
+        // the human about parks that healed themselves an hour later. Skip the
+        // candidate while EVERY failed step classifies environmental; if even
+        // one failed for a real reason, the resolution decision proceeds.
+        let retryable_failed: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM team_assignment_steps s
+                 LEFT JOIN persona_executions e ON e.id = s.execution_id
+                 WHERE s.assignment_id = ?1 AND s.status = 'failed'
+                   AND (
+                        LOWER(COALESCE(e.error_message,'')) LIKE '%rate limit%'
+                     OR LOWER(COALESCE(e.error_message,'')) LIKE '%usage limit%'
+                     OR LOWER(COALESCE(e.error_message,'')) LIKE '%session limit%'
+                     OR COALESCE(e.error_message,'') LIKE '%App restarted%'
+                     OR LOWER(COALESCE(e.output_data,'')) LIKE '%session limit%'
+                     OR LOWER(COALESCE(e.output_data,'')) LIKE '%usage limit%'
+                     OR EXISTS (SELECT 1 FROM scheduled_retries r WHERE r.execution_id = e.id)
+                   )",
+                rusqlite::params![assignment_id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        if retryable_failed as usize >= failed_steps.len() {
+            tracing::debug!(
+                assignment_id = %assignment_id,
+                "athena_review_resolution: skipped — all failed steps are retryable-class (auto-resume owns them)"
+            );
+            continue;
+        }
+        out.push(ReviewResolutionCandidate {
+            assignment_id,
+            team_id,
+            team_name,
+            title,
+            failed_steps,
+        });
+    }
+    Ok(out)
+}
+
+/// Athena's review-resolution protocol object.
+#[derive(Debug, serde::Deserialize)]
+struct AthenaReviewEnvelope {
+    athena_review: AthenaReviewDecision,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AthenaReviewDecision {
+    /// `approve` | `incident` | `escalate`
+    resolution: String,
+    /// Channel message body (her assessment / escalation text).
+    #[serde(default)]
+    message: String,
+    /// One-line justification — the auditable footer.
+    #[serde(default)]
+    rationale: String,
+    /// Incident title when resolution = incident.
+    #[serde(default)]
+    incident_title: String,
+}
+
+fn build_review_resolution_prompt(c: &ReviewResolutionCandidate, history: &str) -> String {
+    let steps_block = c
+        .failed_steps
+        .iter()
+        .map(|s| {
+            format!(
+                "- Step \"{}\" (QA rounds used: {})\n  Error: {}\n  Last output (tail): {}",
+                s.title,
+                s.retry_count,
+                if s.error_message.is_empty() { "(none)" } else { &s.error_message },
+                if s.output_tail.is_empty() { "(none)" } else { &s.output_tail },
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let history_block = if history.trim().is_empty() {
+        "(no recent channel messages)".to_string()
+    } else {
+        history.to_string()
+    };
+
+    format!(
+        r#"You are **Athena**, the autonomous orchestrator for the team "{team}". You are running unattended; the human is away. An assignment is PARKED in awaiting-review — the QA fix-loop reached its cap without a clean pass, and the team cannot exit this state on its own. You are the resolution authority of last resort before the human.
+
+Assignment: {title}
+
+Blocking step(s):
+{steps}
+
+Recent channel activity (oldest → newest):
+{history}
+
+YOUR RESOLUTION — pick exactly one:
+- "approve": Use when the QA objections look RESOLVED, STALE, or ACCEPTABLE on the evidence (e.g. the PR already merged and the loop gated a closed PR; the remaining findings are nits; the failure is a flaky gate, not the work). This grants the team exactly ONE extra QA round: your message is delivered to the QA persona as a direct instruction, and QA re-verifies and keeps SOLE merge authority — you are not merging, you are un-parking the loop with your assessment. Write `message` as the instruction to QA: what you assessed, what to re-verify, and that they should merge if it passes.
+- "incident": Use when the real blocker is access/credential/environment-shaped — missing or invalid credential/PAT, 401/403/permission denied, unprovisioned environment, an external service the team cannot reach. That is not a review decision; it becomes a tracked INCIDENT for the human to fix. Set `incident_title` to a crisp one-liner naming the missing access.
+- "escalate": Use when this is a genuine product/business/policy call only the human can make, or the evidence is too ambiguous to approve safely. Write `message` as the concise brief to the human: what's blocked, what call is needed.
+
+Be honest and conservative: approve only what you can defend from the evidence above. `rationale` is one short clause explaining WHY (recorded as the audit footer).
+
+Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line:
+{{"athena_review": {{"resolution": "approve"|"incident"|"escalate", "message": "...", "rationale": "...", "incident_title": ""}}}}
+"#,
+        team = c.team_name,
+        title = c.title,
+        steps = steps_block,
+        history = history_block,
+    )
+}
+
+/// cfg-gated accessor for the optional ml-feature EmbeddingManager off
+/// AppState (mirrors `commands::teams::assignments::embedding_manager_for_state`,
+/// which needs a tauri `State<>` wrapper we don't have here).
+#[cfg(feature = "ml")]
+fn embedding_manager_of(
+    state: &std::sync::Arc<crate::AppState>,
+) -> Option<std::sync::Arc<crate::engine::embedder::EmbeddingManager>> {
+    state.embedding_manager.clone()
+}
+#[cfg(not(feature = "ml"))]
+fn embedding_manager_of(
+    _state: &std::sync::Arc<crate::AppState>,
+) -> Option<std::sync::Arc<crate::engine::team_assignment_matching::EmbeddingManager>> {
+    None
+}
+
+/// Run one review resolution end-to-end. Returns the outcome label
+/// (`approve` / `incident` / `escalate` / `none`).
+pub async fn run_athena_review_resolution(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    candidate: ReviewResolutionCandidate,
+) -> Result<&'static str, AppError> {
+    let history = recent_channel_history(pool, &candidate.team_id);
+    let prompt = build_review_resolution_prompt(&candidate, &history);
+    let blob = cli_text(prompt).await?;
+    let Some(decision) = parse_athena_review(&blob) else {
+        tracing::warn!(team = %candidate.team_name, assignment = %candidate.assignment_id,
+            "athena_review_resolution: no decision parsed");
+        return Ok("none");
+    };
+
+    let outcome: &'static str = match decision.resolution.as_str() {
+        "approve" => "approve",
+        "incident" => "incident",
+        _ => "escalate",
+    };
+
+    // The once-per-assignment guard — recorded FIRST so even a partially
+    // failed action never lets Athena re-decide this assignment.
+    let payload = serde_json::json!({
+        "outcome": outcome,
+        "rationale": decision.rationale,
+    })
+    .to_string();
+    crate::db::repos::orchestration::team_assignments::insert_event(
+        pool,
+        &candidate.assignment_id,
+        None,
+        "athena_review_resolution",
+        Some(&payload),
+    )?;
+
+    let rationale_footer = if decision.rationale.trim().is_empty() {
+        String::new()
+    } else {
+        format!("\n\n› {}", decision.rationale.trim())
+    };
+
+    match outcome {
+        "approve" => {
+            // 1) Her assessment goes to the QA persona as an inject-directive
+            //    (reaches their next step via the channel-injection machinery).
+            let qa_ids: Vec<String> = candidate
+                .failed_steps
+                .iter()
+                .filter_map(|s| s.assigned_persona_id.clone())
+                .collect();
+            let body = format!(
+                "✅ Review resolution — one more QA round granted.\n{}{}",
+                decision.message.trim(),
+                rationale_footer
+            );
+            let _ = channel_repo::create(
+                pool,
+                CreateChannelMessageInput {
+                    team_id: candidate.team_id.clone(),
+                    author_kind: "athena".into(),
+                    author_id: None,
+                    body,
+                    addressed_to: if qa_ids.is_empty() { None } else { Some(qa_ids) },
+                    reply_to: None,
+                    assignment_id: Some(candidate.assignment_id.clone()),
+                    consumer: Some("inject".into()),
+                },
+            );
+            // 2) Reset the failed step(s) → pending + restore cascade-skipped
+            //    dependents + resume the tick (the existing auto-resume path).
+            let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() else {
+                return Err(AppError::Internal("AppState unavailable".into()));
+            };
+            let state = state.inner().clone();
+            let step_ids: Vec<String> = candidate
+                .failed_steps
+                .iter()
+                .map(|s| s.step_id.clone())
+                .collect();
+            crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
+                std::sync::Arc::new(pool.clone()),
+                app.clone(),
+                state.engine.clone(),
+                embedding_manager_of(&state),
+                &candidate.assignment_id,
+                &step_ids,
+            )?;
+            tracing::info!(team = %candidate.team_name, assignment = %candidate.assignment_id,
+                "athena_review_resolution: APPROVED — one extra QA round granted");
+        }
+        "incident" => {
+            let title = if decision.incident_title.trim().is_empty() {
+                format!("Access blocker: {}", candidate.title)
+            } else {
+                decision.incident_title.trim().to_string()
+            };
+            let _ = crate::db::repos::execution::audit_incidents::promote(
+                pool,
+                crate::db::models::CreateAuditIncidentInput {
+                    source_table: "team_assignments".to_string(),
+                    source_id: candidate.assignment_id.clone(),
+                    persona_id: None,
+                    persona_name: Some("Athena".to_string()),
+                    execution_id: None,
+                    severity: "high".to_string(),
+                    kind: "review_blocker".to_string(),
+                    title,
+                    detail: Some(format!(
+                        "{}\n\nRationale: {}\n\nParked assignment: {} (team {}). Resolve the \
+                         access/credential issue, then resume the assignment from the review modal.",
+                        decision.message.trim(),
+                        decision.rationale.trim(),
+                        candidate.title,
+                        candidate.team_name
+                    )),
+                },
+            );
+            let body = format!(
+                "🔐 {}\n{}{}",
+                "This review is blocked on missing access — transformed into an incident for you.",
+                decision.message.trim(),
+                rationale_footer
+            );
+            let _ = channel_repo::create(
+                pool,
+                CreateChannelMessageInput {
+                    team_id: candidate.team_id.clone(),
+                    author_kind: "athena".into(),
+                    author_id: None,
+                    body,
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: Some(candidate.assignment_id.clone()),
+                    consumer: Some("display".into()),
+                },
+            );
+            crate::notifications::send(
+                app,
+                &format!("Athena · {} — access blocker", candidate.team_name),
+                decision.message.trim(),
+            );
+            tracing::info!(team = %candidate.team_name, assignment = %candidate.assignment_id,
+                "athena_review_resolution: INCIDENT raised (access blocker)");
+        }
+        _ => {
+            let body = format!("⚠️ {}{}", decision.message.trim(), rationale_footer);
+            let _ = channel_repo::create(
+                pool,
+                CreateChannelMessageInput {
+                    team_id: candidate.team_id.clone(),
+                    author_kind: "athena".into(),
+                    author_id: None,
+                    body,
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: Some(candidate.assignment_id.clone()),
+                    consumer: Some("display".into()),
+                },
+            );
+            crate::notifications::send(
+                app,
+                &format!("Athena · {} — needs your call", candidate.team_name),
+                decision.message.trim(),
+            );
+            tracing::info!(team = %candidate.team_name, assignment = %candidate.assignment_id,
+                "athena_review_resolution: ESCALATED to human");
+        }
+    }
+    Ok(outcome)
+}
+
+/// Extract the `{"athena_review": {...}}` object (same tolerant brace-matching
+/// as `parse_athena_decision`).
+fn parse_athena_review(blob: &str) -> Option<AthenaReviewDecision> {
+    let marker = "\"athena_review\"";
+    let mut result = None;
+    let mut search_from = 0;
+    while let Some(rel) = blob[search_from..].find(marker) {
+        let marker_pos = search_from + rel;
+        search_from = marker_pos + marker.len();
+        let Some(open) = blob[..marker_pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = match_braces(&blob[open..]) {
+            if let Ok(env) =
+                serde_json::from_str::<AthenaReviewEnvelope>(&blob[open..open + close + 1])
+            {
+                result = Some(env.athena_review);
+            }
+        }
+    }
+    result
 }
 
 #[cfg(test)]
@@ -551,5 +1181,30 @@ later corrected: {"athena_channel":{"react":true,"message":"final","rationale":"
         let s = r#"{"a": "x}y", "b": 1}"#;
         let close = match_braces(s).unwrap();
         assert_eq!(&s[..close + 1], s);
+    }
+
+    #[test]
+    fn parses_review_approve() {
+        let blob = r#"analysis...
+{"athena_review": {"resolution": "approve", "message": "QA: PR #17 already merged — re-verify and close the loop.", "rationale": "loop gated a closed PR", "incident_title": ""}}"#;
+        let d = parse_athena_review(blob).expect("should parse");
+        assert_eq!(d.resolution, "approve");
+        assert!(d.message.contains("re-verify"));
+        assert_eq!(d.rationale, "loop gated a closed PR");
+    }
+
+    #[test]
+    fn parses_review_incident_with_title() {
+        let blob = r#"{"athena_review":{"resolution":"incident","message":"Push rejected 403 — the team PAT lacks write access.","rationale":"credential-shaped","incident_title":"GitHub PAT missing write scope"}}"#;
+        let d = parse_athena_review(blob).expect("should parse");
+        assert_eq!(d.resolution, "incident");
+        assert_eq!(d.incident_title, "GitHub PAT missing write scope");
+    }
+
+    #[test]
+    fn review_parser_ignores_channel_protocol() {
+        // The review parser must not match the reaction protocol's envelope.
+        let blob = r#"{"athena_channel": {"react": true, "message": "x"}}"#;
+        assert!(parse_athena_review(blob).is_none());
     }
 }

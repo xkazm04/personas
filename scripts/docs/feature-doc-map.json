@@ -189,7 +189,10 @@
         "src-tauri/src/db/models/persona.rs",
         "src-tauri/src/db/models/agent_ir.rs"
       ],
-      "onboardingFlows": ["persona-creation", "lab-arena"],
+      "onboardingFlows": [
+        "persona-creation",
+        "lab-arena"
+      ],
       "marketingModule": "agents"
     },
     {
@@ -203,7 +206,12 @@
         "src-tauri/src/engine/template_checksums.rs",
         "src-tauri/src/engine/build_session/**"
       ],
-      "onboardingFlows": ["template-picker", "persona-creation", "templates-page", "templates-adopt"],
+      "onboardingFlows": [
+        "template-picker",
+        "persona-creation",
+        "templates-page",
+        "templates-adopt"
+      ],
       "marketingModule": "templates"
     },
     {
@@ -225,7 +233,9 @@
         "src-tauri/src/engine/automation_runner.rs",
         "src-tauri/src/engine/tool_runner.rs"
       ],
-      "onboardingFlows": ["execution-activity"],
+      "onboardingFlows": [
+        "execution-activity"
+      ],
       "marketingModule": "agents"
     },
     {
@@ -234,7 +244,9 @@
         "src/features/vault/**",
         "src-tauri/src/commands/credentials/**"
       ],
-      "onboardingFlows": ["credentials-intro"],
+      "onboardingFlows": [
+        "credentials-intro"
+      ],
       "marketingModule": "connections"
     },
     {
@@ -245,7 +257,12 @@
         "src-tauri/src/engine/webhook.rs",
         "src-tauri/src/engine/event_registry.rs"
       ],
-      "onboardingFlows": ["events-intro", "trigger-types", "event-chaining", "live-stream"],
+      "onboardingFlows": [
+        "events-intro",
+        "trigger-types",
+        "event-chaining",
+        "live-stream"
+      ],
       "marketingModule": "events"
     },
     {
@@ -254,7 +271,9 @@
         "src/features/recipes/**",
         "src-tauri/src/commands/recipes/**"
       ],
-      "onboardingFlows": ["recipes-tab"],
+      "onboardingFlows": [
+        "recipes-tab"
+      ],
       "marketingModule": "agents"
     },
     {
@@ -267,7 +286,9 @@
         "src-tauri/src/commands/credentials/external_api_keys.rs",
         "src-tauri/src/engine/management_api.rs"
       ],
-      "onboardingFlows": ["appearance-setup"],
+      "onboardingFlows": [
+        "appearance-setup"
+      ],
       "marketingModule": "settings"
     },
     {
@@ -275,7 +296,9 @@
       "sourceGlobs": [
         "src/features/home/**"
       ],
-      "onboardingFlows": ["desktop-discovery"],
+      "onboardingFlows": [
+        "desktop-discovery"
+      ],
       "marketingModule": "home"
     },
     {
@@ -286,7 +309,9 @@
         "src/features/plugins/companion/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"
       ],
-      "onboardingFlows": ["messages-tab"],
+      "onboardingFlows": [
+        "messages-tab"
+      ],
       "marketingModule": "home"
     },
     {
@@ -295,7 +320,10 @@
         "src/features/onboarding/**",
         "src/stores/slices/system/tourSlice.ts"
       ],
-      "onboardingFlows": ["plugins-browse", "plugin-others"],
+      "onboardingFlows": [
+        "plugins-browse",
+        "plugin-others"
+      ],
       "marketingModule": "home"
     },
     {
@@ -306,7 +334,11 @@
         "src/features/shared/components/layout/systemLoad.ts",
         "src-tauri/src/commands/infrastructure/system_metrics.rs"
       ],
-      "onboardingFlows": ["overview-dashboard", "execution-activity", "health-monitoring"],
+      "onboardingFlows": [
+        "overview-dashboard",
+        "execution-activity",
+        "health-monitoring"
+      ],
       "marketingModule": "overview"
     },
     {
@@ -332,7 +364,10 @@
         "src/features/plugins/companion/**",
         "src-tauri/src/commands/companion/**"
       ],
-      "onboardingFlows": ["messages-tab", "plugin-companion"],
+      "onboardingFlows": [
+        "messages-tab",
+        "plugin-companion"
+      ],
       "marketingModule": "plugins"
     },
     {
@@ -341,7 +376,9 @@
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"
       ],
-      "onboardingFlows": ["plugin-dev-tools"],
+      "onboardingFlows": [
+        "plugin-dev-tools"
+      ],
       "marketingModule": "plugins"
     },
     {
@@ -373,7 +410,12 @@
         "src/features/plugins/obsidian-brain/**",
         "src-tauri/src/commands/obsidian_brain/**"
       ],
-      "onboardingFlows": ["obsidian-install", "obsidian-vault-connect", "obsidian-tab-walk", "obsidian-memory-dimensions"],
+      "onboardingFlows": [
+        "obsidian-install",
+        "obsidian-vault-connect",
+        "obsidian-tab-walk",
+        "obsidian-memory-dimensions"
+      ],
       "marketingModule": "plugins"
     },
     {
@@ -390,7 +432,9 @@
         "src/features/plugins/twin/**",
         "src-tauri/src/commands/infrastructure/twin.rs"
       ],
-      "onboardingFlows": ["plugin-twin"],
+      "onboardingFlows": [
+        "plugin-twin"
+      ],
       "marketingModule": "plugins"
     },
     {
@@ -426,7 +470,11 @@
       "sourceGlobs": [
         "src/features/schedules/**"
       ],
-      "onboardingFlows": ["schedules-page", "schedules-views", "schedules-attach"],
+      "onboardingFlows": [
+        "schedules-page",
+        "schedules-views",
+        "schedules-attach"
+      ],
       "marketingModule": "schedules"
     },
     {
@@ -440,7 +488,12 @@
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
         "src-tauri/src/engine/team_assignment_matching.rs"
       ],
-      "onboardingFlows": ["team-canvas-intro", "team-chaining", "team-assignments", "team-memory-goals"],
+      "onboardingFlows": [
+        "team-canvas-intro",
+        "team-chaining",
+        "team-assignments",
+        "team-memory-goals"
+      ],
       "marketingModule": "pipeline"
     },
     {
@@ -470,6 +523,14 @@
         "src-tauri/src/commands/radio.rs",
         "src-tauri/data/radio_stations.json",
         "public/radio.html"
+      ]
+    },
+    {
+      "doc": "docs/features/kpis.md",
+      "sourceGlobs": [
+        "src/features/teams/sub_kpis/**",
+        "src/api/devTools/kpis.ts",
+        "src-tauri/src/commands/infrastructure/kpi_scan.rs"
       ]
     }
   ]

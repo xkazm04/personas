@@ -28,7 +28,10 @@ const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
  *
  * Mounted in `AthenaGuideLayer` (the always-on body portal) rather than inside
  * `AthenaOrb` (which only renders while `state === 'minimized'`), so a decision
- * can surface over any screen. Renders nothing unless `pendingDecision != null`.
+ * can surface over any screen. Renders nothing unless `pendingDecision != null`
+ * AND the presence state is `minimized` — the bubble docks against the orb, so
+ * with the chat panel open (orb hidden) it stays hidden too and re-surfaces
+ * when the panel closes.
  *
  * Chrome + positioning mirror `GuideCaption` (rounded-card, bg-background/95,
  * shadow-elevation-3, a small primary tail pointing back at the orb, flipped to
@@ -50,6 +53,7 @@ export function OrbDecisionBubble() {
   const { t } = useTranslation();
   const reduceMotion = useReducedMotion();
   const decision = useCompanionStore((s) => s.pendingDecision);
+  const companionState = useCompanionStore((s) => s.state);
   const explained = useCompanionStore((s) => s.decisionExplained);
   const composing = useCompanionStore((s) => s.explainComposing);
   const composeError = useCompanionStore((s) => s.explainComposeError);
@@ -76,10 +80,14 @@ export function OrbDecisionBubble() {
   }, [decisionId]);
 
   // On a fresh decision: promote Athena out of dormancy so the orb is visible,
-  // and ring the element the bubble is asking about (best-effort).
+  // and ring the element the bubble is asking about (best-effort). Promote
+  // ONLY from the dormant states — when the chat panel is `open` the user is
+  // mid-conversation; yanking it down to the orb would close their chat. The
+  // decision stays pending and the bubble surfaces once the panel closes.
   useEffect(() => {
     if (!decisionId) return;
-    if (useCompanionStore.getState().state !== 'minimized') {
+    const presence = useCompanionStore.getState().state;
+    if (presence === 'collapsed' || presence === 'closed') {
       setState('minimized');
     }
     if (highlightTestId) {
@@ -105,7 +113,11 @@ export function OrbDecisionBubble() {
     t.plugins.companion.decision_title,
   ]);
 
-  if (!decision) return null;
+  // The bubble (and its arrow/handle) docks against the orb, and the orb only
+  // exists while `minimized` — with the chat panel open (or Athena dismissed)
+  // there is no anchor, so render nothing. The decision is NOT lost: it stays
+  // in `pendingDecision` and re-surfaces when the orb returns.
+  if (!decision || companionState !== 'minimized') return null;
 
   // Click → run the option then clear. Shared with the `;`-leader key (Slice 5)
   // and spoken-number answering (Slice 7) via `runDecisionOption` so all three

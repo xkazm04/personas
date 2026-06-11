@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -27,6 +27,7 @@ export function TeamsSidebarNav() {
   const teamsTab = useSystemStore((s) => s.teamsTab);
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
   const goalsTab = useSystemStore((s) => s.goalsTab);
+  const kpiProposalCount = useSystemStore((s) => s.kpis.filter((k) => k.status === 'proposed').length);
   const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const teams = usePipelineStore((s) => s.teams);
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
@@ -143,6 +144,26 @@ export function TeamsSidebarNav() {
             );
           })}
         </div>
+      </div>
+
+      {/* KPIs — the outcome layer above goals (dashboard + proposal review) */}
+      <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
+        <button
+          data-testid="teams-kpis-nav"
+          onClick={() => go('kpis')}
+          aria-current={teamsTab === 'kpis' ? 'page' : undefined}
+          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+            teamsTab === 'kpis'
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
+          }`}
+        >
+          <Gauge className="w-4 h-4 flex-shrink-0" />
+          {t.sidebar.kpis}
+          {kpiProposalCount > 0 && (
+            <span className="ml-auto typo-caption text-foreground font-mono">{kpiProposalCount}</span>
+          )}
+        </button>
       </div>
     </nav>
   );

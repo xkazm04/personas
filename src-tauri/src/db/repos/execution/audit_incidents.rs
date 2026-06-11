@@ -77,6 +77,38 @@ pub fn make_dedup_key(source_table: &str, source_id: &str) -> String {
 /// Returns `Ok(Some(id))` when a new incident was inserted, `Ok(None)` when
 /// the dedup key already existed (the source row was previously promoted).
 /// Severity is normalized via `normalize_severity()` before insertion.
+/// Normalize an incident title into a duplicate-detection key: lowercase,
+/// every digit run collapsed to `#` (so "PR #4 stuck (cycle 4)" and
+/// "(cycle 5)" compare equal), whitespace collapsed, first 64 chars.
+pub fn normalize_title_key(title: &str) -> String {
+    let mut out = String::with_capacity(64);
+    let mut last_was_digit = false;
+    let mut last_was_space = false;
+    for c in title.trim().chars() {
+        if out.len() >= 64 {
+            break;
+        }
+        if c.is_ascii_digit() {
+            if !last_was_digit {
+                out.push('#');
+            }
+            last_was_digit = true;
+            last_was_space = false;
+        } else if c.is_whitespace() {
+            if !last_was_space {
+                out.push(' ');
+            }
+            last_was_space = true;
+            last_was_digit = false;
+        } else {
+            out.extend(c.to_lowercase());
+            last_was_digit = false;
+            last_was_space = false;
+        }
+    }
+    out
+}
+
 pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<String>, AppError> {
     timed_query!("audit_incidents", "audit_incidents::promote", {
         if input.source_table.trim().is_empty() || input.source_id.trim().is_empty() {
@@ -94,6 +126,37 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
         let now = chrono::Utc::now().to_rfc3339();
 
         let conn = pool.get()?;
+
+        // OPEN-DUPLICATE guard (beyond the per-source dedup_key): the same
+        // underlying problem re-raised from a DIFFERENT execution/run must not
+        // stack a new open incident. Live audit (2026-06-10) found 22 open
+        // copies of "Transient process failure" and per-cycle re-raises of the
+        // same stuck-PR blocker ("PR #4 stuck (cycle 4)" / "(cycle 5)") — the
+        // inbox became noise and personas re-discovered the same blocker every
+        // run. Compare on a normalized title (lowercase, digits collapsed, 64
+        // chars) within the same persona (or, for persona-less system sources,
+        // the same kind): an OPEN match means this incident already exists.
+        let title_key = normalize_title_key(&input.title);
+        let open_titles: Vec<String> = if let Some(pid) = input.persona_id.as_deref() {
+            let mut stmt = conn.prepare(
+                "SELECT title FROM audit_incidents WHERE status = 'open' AND persona_id = ?1",
+            )?;
+            let rows = stmt.query_map(params![pid], |r| r.get::<_, String>(0))?;
+            rows.filter_map(Result::ok).collect()
+        } else {
+            let mut stmt = conn.prepare(
+                "SELECT title FROM audit_incidents
+                 WHERE status = 'open' AND persona_id IS NULL AND kind = ?1",
+            )?;
+            let rows = stmt.query_map(params![input.kind], |r| r.get::<_, String>(0))?;
+            rows.filter_map(Result::ok).collect()
+        };
+        if open_titles
+            .iter()
+            .any(|t| normalize_title_key(t) == title_key)
+        {
+            return Ok(None);
+        }
         let rows = conn.execute(
             "INSERT OR IGNORE INTO audit_incidents
              (id, source_table, source_id, dedup_key,
@@ -396,8 +459,11 @@ pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppE
 /// Resolved persona-raised incidents whose blocked work has NOT yet been
 /// auto-continued (P2.3b). These are the candidates the incident-continuation
 /// reactive loop re-runs: `status='resolved'` (the human/Athena cleared the
-/// blocker) AND `source_table='persona_blocker'` (it came from a persona's
-/// `raise_incident`, so `source_id` is the blocked execution id) AND
+/// blocker) AND a continuable source — `source_table='persona_blocker'` (a
+/// persona's `raise_incident`; `source_id` is the blocked execution id) or
+/// `source_table='team_assignments'` (Athena's review-resolution `incident`
+/// outcome; `source_id` is the parked assignment id — resolving the access/
+/// credential blocker auto-resumes the assignment) — AND
 /// `continued_at IS NULL` (not yet claimed). Oldest-resolved first so the
 /// backlog drains FIFO. The caller still atomically `claim_continuation`s each
 /// one before acting, so this query may safely over-return under races.
@@ -406,7 +472,7 @@ pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<Aud
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM audit_incidents \
-             WHERE status = 'resolved' AND source_table = 'persona_blocker' \
+             WHERE status = 'resolved' \n             AND source_table IN ('persona_blocker', 'team_assignments') \
              AND continued_at IS NULL \
              ORDER BY resolved_at ASC LIMIT ?1",
         )?;

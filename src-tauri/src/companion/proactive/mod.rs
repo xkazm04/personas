@@ -24,6 +24,7 @@ pub mod budget;
 pub mod execution_review;
 pub mod fleet_triggers;
 pub mod incident_triggers;
+pub mod message_triage;
 pub mod quiet;
 pub mod triggers;
 
@@ -375,6 +376,27 @@ pub fn get_by_id(pool: &UserDbPool, id: &str) -> Result<Option<ProactiveMessage>
         )
         .optional()?;
     Ok(row)
+}
+
+/// Mark a freshly-enqueued nudge delivered and announce it on the
+/// `companion://proactive` Tauri event — the same delivery contract the
+/// 5-min scheduler tick applies to trigger-evaluator nudges. For callers
+/// (execution triage, message triage) that mint a nudge outside the tick's
+/// own evaluate pass and want it visible immediately.
+pub fn deliver_now(pool: &UserDbPool, app: &tauri::AppHandle, msg: ProactiveMessage) {
+    use tauri::Emitter;
+    if let Err(e) = mark_delivered(pool, &msg.id) {
+        tracing::warn!(id = %msg.id, error = %e, "proactive: deliver_now mark_delivered failed");
+    }
+    let payload = crate::commands::companion::proactive::ProactiveDelivery {
+        messages: vec![ProactiveMessage {
+            status: "delivered".into(),
+            ..msg
+        }],
+    };
+    if let Err(e) = app.emit(crate::commands::companion::proactive::PROACTIVE_EVENT, payload) {
+        tracing::warn!(error = %e, "proactive: deliver_now event emit failed");
+    }
 }
 
 /// Transition `queued → delivered` for the given message id.

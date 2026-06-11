@@ -150,6 +150,8 @@ pub struct DevGoal {
     pub project_id: String,
     pub parent_goal_id: Option<String>,
     pub context_id: Option<String>,
+    /// KPI this goal was derived from / serves (outcome layer, P4).
+    pub kpi_id: Option<String>,
     pub order_index: i32,
     pub title: String,
     pub description: Option<String>,
@@ -206,6 +208,83 @@ pub struct DevGoalItem {
     pub order_index: i32,
     pub created_at: String,
     pub updated_at: String,
+}
+
+// ============================================================================
+// KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevKpi {
+    pub id: String,
+    pub project_id: String,
+    /// NULL = project-level KPI; otherwise attached to a context group.
+    pub context_group_id: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
+    /// 'technical' | 'traffic' | 'value' | 'quality'
+    pub category: String,
+    /// 'codebase' | 'connector' | 'manual' | 'derived'
+    pub measure_kind: String,
+    /// JSON measurement procedure, shape per measure_kind.
+    pub measure_config: String,
+    pub unit: String,
+    /// 'up' | 'down' — which way is better.
+    pub direction: String,
+    pub baseline_value: Option<f64>,
+    pub target_value: Option<f64>,
+    pub target_date: Option<String>,
+    pub current_value: Option<f64>,
+    pub last_measured_at: Option<String>,
+    /// 'manual' | 'daily' | 'weekly'
+    pub cadence: String,
+    /// 'proposed' | 'active' | 'paused' | 'archived'
+    pub status: String,
+    /// 'user' | 'scan'
+    pub created_by: String,
+    pub rationale: Option<String>,
+    /// Connector this KPI needs to be measurable — drives the
+    /// "Connect <service>" vault-catalog CTA on parked KPIs.
+    pub needed_connector: Option<String>,
+    /// Semantic measurement capability (P6 type-bound connectors) — e.g.
+    /// `unique_visitors`, `llm_tokens`. The tool is a swappable binding.
+    pub metric_type: Option<String>,
+    /// `north_star` | `primary` | `supporting` — derivation precedence
+    /// ("0 users beats 100% coverage").
+    pub tier: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevKpiBinding {
+    pub id: String,
+    pub kpi_id: String,
+    pub credential_id: String,
+    pub service_type: String,
+    /// Frozen retrieval procedure JSON (engine::kpi_binding::Procedure).
+    pub procedure: String,
+    /// 'recipe' | 'llm'
+    pub composed_by: String,
+    /// 'active' | 'archived' | 'degraded'
+    pub status: String,
+    pub verified_at: Option<String>,
+    pub created_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevKpiMeasurement {
+    pub id: String,
+    pub kpi_id: String,
+    pub value: f64,
+    pub measured_at: String,
+    /// 'evaluator' | 'manual' | 'scan' | 'health_snapshot'
+    pub source: String,
+    pub evidence: Option<String>,
+    pub note: Option<String>,
 }
 
 // ============================================================================

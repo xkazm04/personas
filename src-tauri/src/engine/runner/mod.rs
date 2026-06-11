@@ -245,13 +245,26 @@ pub async fn run_execution(
     //   { "model": "claude-haiku-4-5-20251001" }   — full ModelProfile-shaped object
     // Fields other than `model` on the object merge into the persona's base
     // profile (provider, temperature, etc.). If no override: untouched.
+    let mut mixed_engine = false;
     if let (Some(uc_id), Some(ref dc_json)) = (&execution_use_case_id, &persona.design_context) {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
-            let uc_override = crate::engine::design_context::pick_use_cases_array(&dc)
+            let uc_value = crate::engine::design_context::pick_use_cases_array(&dc)
                 .and_then(|arr| {
                     arr.iter()
                         .find(|uc| uc.get("id").and_then(|i| i.as_str()) == Some(uc_id.as_str()))
                 })
+                .cloned();
+            // Mixed engine (docs/plans/mixed-engine-byom.md): this capability
+            // opted into the local delegate tool. Resolved into sidecar env at
+            // MCP install; the prompt gains a one-paragraph offload doctrine.
+            mixed_engine = uc_value
+                .as_ref()
+                .and_then(|uc| uc.get("engine_mode"))
+                .and_then(|v| v.as_str())
+                .map(|m| m.eq_ignore_ascii_case("mixed"))
+                .unwrap_or(false);
+            let uc_override = uc_value
+                .as_ref()
                 .and_then(|uc| uc.get("model_override"))
                 .filter(|v| !v.is_null())
                 .cloned();
@@ -795,6 +808,16 @@ pub async fn run_execution(
         prompt_text
     };
 
+    // Mixed engine: tell the orchestrator WHEN to reach for the delegate.
+    // The tool description (personas-mcp `llm_delegate`) carries the details.
+    let prompt_text = if mixed_engine {
+        format!(
+            "{prompt_text}\n\n## Local Delegate Available\n\nThis run has the `llm_delegate` tool: a fast LOCAL model for simple, self-contained subtasks \u{2014} bulk summarization, field extraction, classification, reformatting of content you already have in hand. Delegating these saves premium-model capacity. Pass everything it needs in `input` (it has no context, no tools, no files) and review its output before using it. Do NOT delegate reasoning, planning, code changes, or anything needing judgment. If the tool errors, just do the subtask yourself.\n"
+        )
+    } else {
+        prompt_text
+    };
+
     // Team-alignment "pre-ritual" — wrap every member execution with awareness
     // of its team: who its teammates are (roster + capabilities), and the team's
     // active goals. The persona then self-decides — from its own capabilities —
@@ -1083,12 +1106,40 @@ pub async fn run_execution(
             }
         }
     }
+    // Mixed engine: resolve the delegate endpoint from settings (device-level
+    // — the local model is a property of the machine, not the capability).
+    // "auto" defers model choice to the sidecar (first installed model).
+    let delegate_cfg: Option<(String, String)> = if mixed_engine {
+        let base = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::DELEGATE_BASE_URL,
+        )
+        .ok()
+        .flatten()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "http://localhost:11434".to_string());
+        let model = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::DELEGATE_MODEL,
+        )
+        .ok()
+        .flatten()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "auto".to_string());
+        logger.log(&format!(
+            "[mixed-engine] llm_delegate armed (model: {model}, base: {base})"
+        ));
+        Some((base, model))
+    } else {
+        None
+    };
     let mcp_installed = match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
         None,
         bridge_api_key.as_deref(),
         pinned_dev_project.as_deref(),
+        delegate_cfg.as_ref().map(|(b, m)| (b.as_str(), m.as_str())),
     ) {
         Ok(true) => {
             logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");

@@ -1,0 +1,37 @@
+{
+ "id": "builtin-anthropic-admin",
+ "name": "anthropic-admin",
+ "label": "Anthropic Admin",
+ "color": "#D4A27F",
+ "icon_url": "/icons/connectors/anthropic.svg",
+ "category": "ai",
+ "categories": [
+  "ai",
+  "monitoring"
+ ],
+ "fields": [
+  {
+   "key": "admin_api_key",
+   "label": "Admin API Key",
+   "type": "password",
+   "required": true,
+   "placeholder": "sk-ant-admin...",
+   "helpText": "Anthropic Console -> Settings -> Organization -> Admin keys. Grants usage/cost read access for the org.",
+   "sensitive": true
+  }
+ ],
+ "healthcheck_config": {
+  "method": "GET",
+  "url": "https://api.anthropic.com/v1/organizations/usage_report/messages?starting_at=2026-01-01T00:00:00Z&limit=1",
+  "headers": {
+   "x-api-key": "{{admin_api_key}}",
+   "anthropic-version": "2023-06-01"
+  },
+  "expect_status": 200
+ },
+ "metadata": {
+  "template_enabled": false,
+  "summary": "Anthropic organization admin API \u2014 usage and cost reporting per API key (LLM spend KPIs).",
+  "auth_type": "api_key"
+ }
+}

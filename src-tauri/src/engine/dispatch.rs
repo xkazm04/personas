@@ -192,6 +192,13 @@ impl<'a> DispatchContext<'a> {
 
 /// Route a single protocol message to the appropriate DB repo and emit events.
 ///
+/// Backlog backpressure cap: a project with this many `pending` dev_ideas is
+/// SATURATED — backlog producers (persona `propose_backlog`, scheduled scans)
+/// skip their round instead of stacking ideas faster than the triage +
+/// promotion loop can drain them. Sized ~2× the strategist triage trigger
+/// (≥ 6 pending) so triage always fires well before producers go quiet.
+pub const IDEA_BACKLOG_CAP: i64 = 15;
+
 /// This is the core dispatch function. It handles all 6 protocol message types:
 /// - `UserMessage` -> messages repo + frontend event + OS notification
 /// - `PersonaAction` -> events repo (persona_action event type)
@@ -748,6 +755,105 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
         }
+        ProtocolMessage::ResolveIncident { id, note } => {
+            // Persona closes an incident its work fixed — the missing half of
+            // the incident loop (raise existed since P2.3; nothing ever
+            // resolved). Accept a unique id PREFIX (>= 8 chars) against OPEN
+            // incidents only; ambiguous or unknown prefixes are logged and
+            // ignored (never guess which incident to close).
+            let id = id.trim();
+            if id.len() < 8 {
+                ctx.logger.log(&format!(
+                    "[INCIDENT] resolve_incident ignored — id prefix too short ({id})"
+                ));
+            } else if ctx.is_simulation {
+                ctx.logger.log("[SIM] resolve_incident skipped (simulation run)");
+            } else {
+                let matches: Vec<String> = ctx
+                    .pool
+                    .get()
+                    .ok()
+                    .and_then(|conn| {
+                        conn.prepare(
+                            "SELECT id FROM audit_incidents WHERE status = 'open' AND id LIKE ?1 LIMIT 2",
+                        )
+                        .ok()
+                        .and_then(|mut stmt| {
+                            stmt.query_map(
+                                rusqlite::params![format!("{id}%")],
+                                |r| r.get::<_, String>(0),
+                            )
+                            .ok()
+                            .map(|rows| rows.filter_map(Result::ok).collect())
+                        })
+                    })
+                    .unwrap_or_default();
+                match matches.as_slice() {
+                    [full_id] => {
+                        let resolution = format!(
+                            "Resolved by {} (execution {}): {}",
+                            ctx.persona_name,
+                            ctx.execution_id,
+                            note.as_deref().unwrap_or("fixed in this run")
+                        );
+                        match crate::db::repos::execution::audit_incidents::resolve(
+                            ctx.pool,
+                            full_id,
+                            Some(&resolution),
+                        ) {
+                            Ok(true) => ctx.logger.log(&format!(
+                                "[INCIDENT] Resolved {full_id}: {}",
+                                note.as_deref().unwrap_or("")
+                            )),
+                            Ok(false) => ctx.logger.log(&format!(
+                                "[INCIDENT] resolve_incident no-op (not open?): {full_id}"
+                            )),
+                            Err(e) => ctx.logger.log(&format!(
+                                "[INCIDENT] resolve_incident failed for {full_id}: {e}"
+                            )),
+                        }
+                    }
+                    [] => ctx.logger.log(&format!(
+                        "[INCIDENT] resolve_incident: no OPEN incident matches prefix {id}"
+                    )),
+                    _ => ctx.logger.log(&format!(
+                        "[INCIDENT] resolve_incident: prefix {id} is ambiguous — be more specific"
+                    )),
+                }
+            }
+        }
+        ProtocolMessage::KpiMeasurement { kpi_id, value, evidence } => {
+            // A persona measured a KPI mid-run (connector recipes, ad-hoc
+            // checks). Recorded with source='evaluator' semantics but
+            // attributed to the execution via the evidence envelope.
+            if kpi_id.trim().is_empty() {
+                ctx.logger.log("[KPI] kpi_measurement dropped — empty kpi_id");
+            } else if ctx.is_simulation {
+                ctx.logger.log("[SIM] kpi_measurement skipped (simulation run)");
+            } else {
+                let evidence_json = serde_json::json!({
+                    "from_execution": ctx.execution_id,
+                    "persona": ctx.persona_name,
+                    "detail": evidence,
+                })
+                .to_string();
+                match crate::db::repos::dev_tools::record_kpi_measurement(
+                    ctx.pool,
+                    kpi_id,
+                    *value,
+                    "evaluator",
+                    Some(&evidence_json),
+                    None,
+                ) {
+                    Ok(_) => ctx
+                        .logger
+                        .log(&format!("[KPI] Recorded measurement {value} for {kpi_id}")),
+                    Err(e) => ctx
+                        .logger
+                        .log(&format!("[KPI] Failed to record measurement: {e}")),
+                }
+            }
+        }
         ProtocolMessage::ProposeBacklog {
             title,
             description,
@@ -777,28 +883,55 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                                 .and_then(|x| x.as_str())
                                 .map(String::from)
                         });
-                match crate::db::repos::dev_tools::create_idea(
-                    ctx.pool,
-                    project_id.as_deref(),
-                    None,
-                    "team_proposed",
-                    category.as_deref(),
-                    title,
-                    description.as_deref(),
-                    None,
-                    Some("pending"),
-                    *effort,
-                    *impact,
-                    *risk,
-                    None,
-                    None,
-                ) {
-                    Ok(idea) => ctx
-                        .logger
-                        .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
-                    Err(e) => ctx
-                        .logger
-                        .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                // Backlog backpressure: producers SKIP their round when the
+                // project's pending backlog is already saturated. Without this
+                // every scheduled scan / strategist run keeps stacking ideas
+                // faster than triage + promotion can drain them, and backlog
+                // size becomes a function of producer cadence instead of team
+                // throughput.
+                let saturated = project_id.as_deref().is_some_and(|pid| {
+                    ctx.pool
+                        .get()
+                        .ok()
+                        .and_then(|conn| {
+                            conn.query_row(
+                                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
+                                rusqlite::params![pid],
+                                |r| r.get::<_, i64>(0),
+                            )
+                            .ok()
+                        })
+                        .unwrap_or(0)
+                        >= IDEA_BACKLOG_CAP
+                });
+                if saturated {
+                    ctx.logger.log(&format!(
+                        "[BACKLOG] propose_backlog skipped — backlog saturated (≥ {IDEA_BACKLOG_CAP} pending): {title}"
+                    ));
+                } else {
+                    match crate::db::repos::dev_tools::create_idea(
+                        ctx.pool,
+                        project_id.as_deref(),
+                        None,
+                        "team_proposed",
+                        category.as_deref(),
+                        title,
+                        description.as_deref(),
+                        None,
+                        Some("pending"),
+                        *effort,
+                        *impact,
+                        *risk,
+                        None,
+                        None,
+                    ) {
+                        Ok(idea) => ctx
+                            .logger
+                            .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
+                        Err(e) => ctx
+                            .logger
+                            .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                    }
                 }
             }
         }

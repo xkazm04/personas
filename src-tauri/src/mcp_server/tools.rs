@@ -88,6 +88,138 @@ fn rel_of(root: &Path, abs: &Path) -> String {
         .unwrap_or_else(|_| abs.to_string_lossy().to_string())
 }
 
+
+/// Offload a simple, self-contained subtask to the local delegate model
+/// (mixed engine — docs/plans/mixed-engine-byom.md). The delegate sees only
+/// the provided input: no tools, no files, no conversation context. Errors
+/// surface as tool errors so the orchestrator simply does the work itself —
+/// a mixed run must never fail because the local model did.
+fn handle_llm_delegate(args: &Value) -> Result<String, String> {
+    let task = args
+        .get("task")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or("'task' is required (one-line instruction)")?;
+    let input = args
+        .get("input")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .ok_or("'input' is required (the self-contained content to process)")?;
+    let format = args.get("format").and_then(|v| v.as_str()).unwrap_or("plain");
+    let base_url = std::env::var("PERSONAS_DELEGATE_BASE_URL")
+        .unwrap_or_else(|_| "http://localhost:11434".to_string());
+    let model_pref =
+        std::env::var("PERSONAS_DELEGATE_MODEL").unwrap_or_else(|_| "auto".to_string());
+
+    let system = match format {
+        "json" => "You are a precise text-processing assistant. Respond ONLY with valid JSON \u{2014} no prose, no code fences.",
+        "markdown" => "You are a precise text-processing assistant. Respond in clean Markdown only \u{2014} no preamble.",
+        _ => "You are a precise text-processing assistant. Respond with the result only \u{2014} no preamble, no commentary.",
+    };
+
+    let started = std::time::Instant::now();
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("runtime build failed: {e}"))?;
+    let base = base_url.trim_end_matches('/').to_string();
+    let outcome: Result<(String, String, u64, u64), String> = rt.block_on(async {
+        let client = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(120))
+            .build()
+            .map_err(|e| format!("client build failed: {e}"))?;
+        // "auto" keeps the setting optional: first installed model wins.
+        let model = if model_pref == "auto" {
+            let tags: Value = client
+                .get(format!("{base}/api/tags"))
+                .send()
+                .await
+                .map_err(|e| format!("local delegate unreachable at {base}: {e}"))?
+                .json()
+                .await
+                .map_err(|e| format!("delegate /api/tags unreadable: {e}"))?;
+            tags.get("models")
+                .and_then(|m| m.as_array())
+                .and_then(|a| a.first())
+                .and_then(|m| m.get("name"))
+                .and_then(|n| n.as_str())
+                .map(String::from)
+                .ok_or_else(|| {
+                    "no local models installed (run `ollama pull <model>`)".to_string()
+                })?
+        } else {
+            model_pref.clone()
+        };
+        let body = json!({
+            "model": model,
+            "messages": [
+                { "role": "system", "content": system },
+                { "role": "user", "content": format!("{task}\n\n---\n\n{input}") }
+            ],
+            "stream": false,
+            "options": { "temperature": 0.2 }
+        });
+        let resp = client
+            .post(format!("{base}/api/chat"))
+            .json(&body)
+            .send()
+            .await
+            .map_err(|e| format!("delegate request failed: {e}"))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| format!("delegate response unreadable: {e}"))?;
+        if !status.is_success() {
+            let excerpt: String = text.chars().take(300).collect();
+            return Err(format!("delegate returned {status}: {excerpt}"));
+        }
+        let v: Value = serde_json::from_str(&text)
+            .map_err(|_| "delegate response is not JSON".to_string())?;
+        let content = v
+            .get("message")
+            .and_then(|m| m.get("content"))
+            .and_then(|c| c.as_str())
+            .unwrap_or("")
+            .to_string();
+        if content.trim().is_empty() {
+            return Err("delegate returned an empty response".to_string());
+        }
+        let prompt_tokens = v.get("prompt_eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
+        let eval_tokens = v.get("eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
+        Ok((model, content, prompt_tokens, eval_tokens))
+    });
+    let duration_ms = started.elapsed().as_millis() as u64;
+
+    // Best-effort JSONL audit \u{2014} the comparison harness reads this; never fatal.
+    if let Ok(audit_path) = std::env::var("PERSONAS_DELEGATE_AUDIT") {
+        let line = match &outcome {
+            Ok((model, _content, pt, et)) => json!({
+                "ts": chrono::Utc::now().to_rfc3339(),
+                "ok": true, "model": model, "task": task,
+                "prompt_tokens": pt, "eval_tokens": et, "duration_ms": duration_ms,
+            }),
+            Err(e) => json!({
+                "ts": chrono::Utc::now().to_rfc3339(),
+                "ok": false, "task": task, "error": e, "duration_ms": duration_ms,
+            }),
+        };
+        if let Some(parent) = std::path::Path::new(&audit_path).parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        use std::io::Write as _;
+        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(&audit_path) {
+            let _ = writeln!(f, "{line}");
+        }
+    }
+
+    let (model, content, pt, et) = outcome?;
+    Ok(format!(
+        "{content}\n\n---\ndelegate-meta: model={model} prompt_tokens={pt} eval_tokens={et} duration_ms={duration_ms}"
+    ))
+}
+
 fn handle_drive_write_text(args: &Value) -> Result<String, String> {
     let rel_path = args
         .get("rel_path")
@@ -464,7 +596,7 @@ fn handle_context_neighbors(args: &Value, pool: &McpDbPool) -> Result<String, St
 
 /// Return the list of available MCP tools with their schemas.
 pub fn list_tools() -> Vec<Value> {
-    vec![
+    let mut tools = vec![
         json!({
             "name": "personas_list",
             "description": "List all personas (AI agents) in the system. Returns name, description, status, trust level, and configuration.",
@@ -791,7 +923,29 @@ pub fn list_tools() -> Vec<Value> {
                 "required": ["title", "content"]
             }
         }),
-    ]
+    ];
+
+    // Mixed engine (docs/plans/mixed-engine-byom.md): the delegate tool is
+    // advertised only when the runner armed it via env — non-mixed runs never
+    // see it, so the orchestrator is never tempted off-doctrine.
+    if std::env::var("PERSONAS_DELEGATE_BASE_URL").is_ok()
+        || std::env::var("PERSONAS_DELEGATE_MODEL").is_ok()
+    {
+        tools.push(json!({
+            "name": "llm_delegate",
+            "description": "Offload a SIMPLE, self-contained subtask to a fast LOCAL model (summarize, extract fields, classify, reformat, draft boilerplate text). The local model sees ONLY what you pass in `input` \u{2014} no conversation context, no tools, no files. Do NOT use for reasoning, planning, code edits, or anything requiring judgment or context you cannot paste into `input`. If this tool errors, do the subtask yourself.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "task": { "type": "string", "description": "One-line instruction, e.g. 'Summarize into 5 bullets' or 'Extract all error codes as a JSON array'" },
+                    "input": { "type": "string", "description": "The full, self-contained content to process" },
+                    "format": { "type": "string", "enum": ["plain", "json", "markdown"], "description": "Expected output shape (default plain)" }
+                },
+                "required": ["task", "input"]
+            }
+        }));
+    }
+    tools
 }
 
 /// Execute an MCP tool call and return the result.
@@ -811,6 +965,7 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "arena_list_runs" => handle_arena_list_runs(args, pool),
         "arena_run_status" => handle_arena_run_status(args, pool),
         "arena_get_results" => handle_arena_get_results(args, pool),
+        "llm_delegate" => handle_llm_delegate(args),
         "drive_write_text" => handle_drive_write_text(args),
         "drive_read_text" => handle_drive_read_text(args),
         "drive_list" => handle_drive_list(args),

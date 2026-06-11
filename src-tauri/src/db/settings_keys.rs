@@ -33,6 +33,14 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
+/// Mixed-engine local delegate model (Ollama tag, e.g. "qwen3:8b").
+/// "auto" or unset lets the sidecar pick the first installed model at call
+/// time. See docs/plans/mixed-engine-byom.md.
+pub const DELEGATE_MODEL: &str = "delegate_model";
+
+/// Mixed-engine local delegate server base URL (default http://localhost:11434).
+pub const DELEGATE_BASE_URL: &str = "delegate_base_url";
+
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
@@ -188,6 +196,27 @@ pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
 /// the scheduler reads it. Stored as `"true"` / `"false"` strings.
 pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
 
+/// Whether the autonomous MESSAGE triage leg of the proactive tick may,
+/// unattended, read the Overview → Messages inbox the way Athena resolves
+/// human reviews: a batched headless decision classifies each unread
+/// persona message as `done` (routine — marked read with an audit
+/// annotation), `digest` (business value — folded into one aggregated
+/// proactive card, then marked read) or `attention` (stays UNREAD for the
+/// user to read personally + desktop notification). High/urgent-priority
+/// messages can never be auto-`done` (code-level guard). Requires
+/// [`COMPANION_AUTONOMOUS_MODE`] to also be on. Default OFF — opt-in.
+/// Read by `companion::proactive::message_triage`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_MESSAGE_TRIAGE: &str = "autonomous_message_triage";
+/// Default for [`AUTONOMOUS_MESSAGE_TRIAGE`] — off (opt-in autonomy).
+pub const AUTONOMOUS_MESSAGE_TRIAGE_DEFAULT: bool = false;
+
+/// Cursor for the autonomous message-triage leg: the ISO8601 `created_at`
+/// of the newest `persona_messages` row already triaged. Unlike the
+/// exec-review cursor it advances only past the batch actually processed
+/// (oldest-first), so a backlog drains progressively instead of being
+/// skipped. Free-form timestamp value (no typed validation).
+pub const COMPANION_MSG_TRIAGE_CURSOR: &str = "companion_msg_triage_cursor";
+
 /// Cursor for the autonomous execution-review leg (Goal 2): the ISO8601
 /// timestamp of the newest `persona_executions` row the reviewer has
 /// already considered. Each proactive tick reviews only rows created
@@ -302,6 +331,38 @@ pub const AUTONOMOUS_ATHENA_REACTIONS: &str = "autonomous_athena_reactions";
 /// Default for [`AUTONOMOUS_ATHENA_REACTIONS`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ATHENA_REACTIONS_DEFAULT: bool = false;
 
+/// Athena autonomous REVIEW RESOLUTION: when on (and channel reactions are
+/// on), Athena doesn't just react to a parked `awaiting_review` cap-out — she
+/// RESOLVES it with a three-way decision: APPROVE acceptable work (posts her
+/// assessment as an inject-directive to the QA persona + grants exactly one
+/// extra QA round via the auto-resume machinery — QA keeps sole merge
+/// authority), transform into an INCIDENT when the blocker is access/
+/// credential/external-shaped (Incidents lifecycle + escalation-close), or
+/// ESCALATE to the human (channel + notification, the reactions-only
+/// behavior). One resolution per assignment (the `athena_review_resolution`
+/// assignment event is the guard); re-parked assignments escalate to human.
+/// Default OFF — opt-in. Read by `companion::athena_reaction`.
+pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION: &str = "autonomous_athena_review_resolution";
+/// Default for [`AUTONOMOUS_ATHENA_REVIEW_RESOLUTION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION_DEFAULT: bool = false;
+
+/// KPI → Goal derivation: when on, an ACTIVE KPI that is OFF TRACK (pace-based,
+/// freshly measured, no open derived goal, re-measured since the last derived
+/// goal completed) derives ONE goal for the project's team via a headless
+/// decision (skip is a legitimate outcome). The goal rides the normal
+/// GoalAdvance loop. Default OFF — opt-in. Read by
+/// `engine::subscription::KpiGoalDerivationSubscription`.
+pub const AUTONOMOUS_KPI_GOAL_DERIVATION: &str = "autonomous_kpi_goal_derivation";
+/// Default for [`AUTONOMOUS_KPI_GOAL_DERIVATION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_KPI_GOAL_DERIVATION_DEFAULT: bool = false;
+
+/// When `"true"`, due active KPIs are measured automatically on cadence by
+/// `engine::subscription::KpiEvaluationSubscription` (hourly tick). Default
+/// OFF — opt-in; codebase KPIs run repo commands (lint/typecheck/tests).
+pub const AUTONOMOUS_KPI_EVALUATION: &str = "autonomous_kpi_evaluation";
+/// Default for [`AUTONOMOUS_KPI_EVALUATION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_KPI_EVALUATION_DEFAULT: bool = false;
+
 /// When `"true"`, the Director runs a focused coaching evaluation on a persona
 /// whose recent team work shows a STORM (a burst of step failures / QA
 /// change-requests). Default OFF — opt-in. Read by
@@ -367,6 +428,8 @@ pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
+    DELEGATE_MODEL,
+    DELEGATE_BASE_URL,
     LITELLM_BASE_URL,
     LITELLM_MASTER_KEY,
     CLI_ENGINE,
@@ -396,6 +459,8 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
+    AUTONOMOUS_MESSAGE_TRIAGE,
+    COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
@@ -406,6 +471,9 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_IDEA_SCAN,
     AUTONOMOUS_BACKLOG_TRIAGE,
     AUTONOMOUS_ATHENA_REACTIONS,
+    AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
+    AUTONOMOUS_KPI_GOAL_DERIVATION,
+    AUTONOMOUS_KPI_EVALUATION,
     AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
@@ -506,6 +574,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         CLI_SESSION_AWARENESS_ENABLED
         | COMPANION_AUTONOMOUS_MODE
         | CLOUD_SYNC_ENABLED
+        | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
@@ -513,6 +582,9 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_IDEA_SCAN
         | AUTONOMOUS_BACKLOG_TRIAGE
         | AUTONOMOUS_ATHENA_REACTIONS
+        | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
+        | AUTONOMOUS_KPI_GOAL_DERIVATION
+        | AUTONOMOUS_KPI_EVALUATION
         | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {

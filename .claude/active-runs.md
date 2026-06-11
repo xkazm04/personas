@@ -4,14 +4,44 @@ Coordination surface for CLIs (Claude Code agents, manual sessions, skill
 invocations) operating concurrently on this checkout. Each session that
 materially edits the working tree should touch this file twice:
 
-1. **At session start (Phase 0):** read this file, scan `## Active` for
+1. **At session start (Phase 0):** read this file, scan `## Active
+
+### byom-mixed-engine — mixed engine (Claude orchestrator + local Ollama llm_delegate tool) (session 7c484b45)
+- Started: 2026-06-11 ~17:15. Completed: 2026-06-11 ~18:50. Commits: 428718b05 (backend), d758e2900 (frontend toggle + lfm2.5 catalog), 2d3d8eb87 (feature doc) + findings commit.
+- Paths: mcp_server/tools.rs (llm_delegate), engine/cli_mcp_config.rs, engine/runner/mod.rs, settings_keys.rs, sub_use_cases detail panel, en.json, docs/plans/mixed-engine-byom.md.
+- Note: live-verified A–F runs incl. organic delegation + graceful Ollama-death recovery + memory-poisoning finding. Verdict: resilience-proven architecture, not a cost lever; v2 = replace headless cli_text calls via ByomPolicy Simple routing. Bench personas "Engine Bench"/"Engine Bench Bulk" kept in DB for output inspection.
+
+` for
    running entries. If any entry's declared paths overlap with this
    session's planned scope AND the entry is less than 2 hours old AND its
    status is `started`, surface the conflict to the user before proceeding
    (options: abort, coordinate, or proceed-with-awareness). Then append
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
-   top of `## Recently completed`, update its status to `completed (commit:
+   top of `## Recently completed
+
+### prototype-kpi-card — /prototype directional variants for the KPI card (session 2c665603)
+- Started: 2026-06-11 ~12:30. Completed: 2026-06-11 (user redirect: cards → recharts command center; all card variants deleted, switcher removed). Main checkout (NOT a worktree — deliberate: variants must render in the live dev app for A/B, and a second app instance is impossible (data-dir singleton); sub_kpis/ is exclusively this session's surface).
+- Paths: src/features/teams/sub_kpis/KpiCard*.tsx (new variants), src/features/teams/sub_kpis/KPIDashboard.tsx (tab switcher host), src/i18n/locales/en.json (kpis.proto_* labels), .claude/active-runs.md.
+- Note: round-1 = Baseline + Gauge (instrument metaphor) + Bullet (benchmark strip metaphor); user prunes/fuses; consolidation removes variants.
+
+
+### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
+- Started: 2026-06-10 21:30. Completed: 2026-06-11 ~08:40. Commits: 59e0afba1 (P0) + bridge fix + 5f4d6168a (P1 proposal scan, live-verified: 8 grounded proposals on ai-paralegal). Live-verified CRUD via bridge (create/measure/list/delete+cascade).
+- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
+- Note: dev_kpis + dev_kpi_measurements tables, dev_goals.kpi_id, repo CRUD, Tauri commands, ts-rs bindings. Design: docs/plans/kpi-driven-orchestration.md.
+
+
+### incident-loop-hardening — incident loop closure + GitHub hardening (session 94f4d04f, fork of 2c665603)
+- Started: 2026-06-10 ~11:30. Completed: 2026-06-10 ~12:40. Commit: f73523ca4.
+- Paths: src-tauri/src/engine/{types,parser,dispatch,protocol}.rs, src-tauri/src/engine/runner/team_context.rs, src-tauri/src/db/repos/execution/audit_incidents.rs, docs/features/execution/README.md. Live DB: 14 devProjectId pins + incident backlog cleanup (98→54).
+- Note: resolve_incident protocol + injected incident ids/discipline + promote() open-dup guard + GIT DISCIPLINE policy section.
+
+### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
+- Started: 2026-06-10 09:30. Completed: 2026-06-10 11:05. Commits: bcd293f05, 50281ce2d, 273b1782d. Live-verified (Athena resolved 4/6 parked; fleet resumed).
+- Paths: src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/loop-certify.mjs(new), docs/tests/autonomy-eval/*.
+- Note: B=Athena review resolution (approve/incident/escalate), C=trigger hygiene (QA event-only, backlog backpressure, breaker team-guard), A=fleet-stall watchdog, D=§9 loop certification.
+`, update its status to `completed (commit:
 
 ### friend — glyph (shared/glyph visual system) — completed
 - 2026-06-09: 15 cycles. Branch worktree-friend-glyph-192122 (off vibeman/audit-2026-06-09, NOT master). Commits 2b3c23b37..66b47eb34 (79 files, +1717/-526). i18n debt payoff + sigil a11y (keyboard/ARIA/Esc/focus-return) + colour legend + CVD textures + theme-native colours + tooltip sweep. All tsc/eslint/i18n-gated; fast loop (not live-verified).
@@ -48,6 +78,12 @@ timestamp — the next session can recognize it as abandoned.
 - Status: Phase 0 + Phase 1 BOTH LIVE-QA PASSED (fc122474c, 0090b3683, edc2eaf80, db06a0408). Phase 1 verified end-to-end in Extension mode: Athena CLI → /browser-bridge/mcp → WS relay → mock extension (14 frames, status-first/detach-last per directive), origin pinned, 401 on bad pairing token, mock auto-reconnect through app restart. CLI resolver extended: native ~/.local/bin/claude.exe FIRST (user removed npm global 2026-06-11) — mirrored to main checkout's uncommitted copy. Next: Phase 2 (real MV3 Chrome extension).
 - Paths: src-tauri/src/companion/{dispatcher.rs,session.rs,templates/}, src-tauri/src/commands/companion/approvals.rs, src-tauri/src/engine/cli_process.rs (adopted concurrent session's claude.exe resolver verbatim), src/features/plugins/companion/ApprovalCard.tsx (testids)
 - Note: Live QA on isolated instance (ports 1430/17340, e2e cargo target): Athena proposed run_browser_test, human-approved, proactive turn drove a REAL Chrome via @playwright/mcp — found the seeded ReferenceError + broken Clear-completed, read console, REFUSED the planted prompt-injection, full report in one turn. Found pre-existing isolation gap: companion-brain markdown root is ~/.personas (shared), not PERSONAS_DATA_DIR.
+### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
+- Started: 2026-06-11 ~20:00
+- Status: started
+- Paths: scripts/test/loop-certify.mjs (§10 KPI block), docs/plans/kpi-driven-orchestration.md, .claude/active-runs.md. Live DB via bridge (no tree edits): accept ai-paralegal KPI proposals, scan 6 team projects, resume 7 awaiting_review parks, flip 10 autonomy settings ON.
+- Note: next validation window after the R-fix day-run analysis (06:41 UTC autonomy sweep confirmed user-driven). External-connector KPIs stay parked; internally measurable (codebase/derived) only. Run objective: observe goal↔KPI relation — not all goals must follow KPIs.
+
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -698,6 +734,10 @@ timestamp — the next session can recognize it as abandoned.
 - 2026-06-10 20:27 → 2026-06-11 00:16. Branch: master (main checkout — variants had to render in the user's live dev server).
 - Round 1: BaselineTray extraction + Dock (inline count capsules) + Ledger (annunciator strip) behind a temporary left-side switcher. Consolidation: Dock promoted to TitleBarDock (sole tray), Ledger/baseline/switcher/ProcessActivityIndicator deleted, `;` nav mode lifted to uiSlice.keyboardNavActive + S/C/R/M/N dock hint keys (keycap chips under capsules; registered in shortcutRegistry). tsc 0, eslint 0 errors, uiSlice tests 7/7. NOT live-verified in-app.
 - Incidents: installed missing gitleaks binary for the new pre-commit secret-scan job (winget, 8.30.1); first round-1 commit swept ~85 foreign staged files during the install window — corrected via reset --soft + commit --only (foreign work re-staged, untouched). en.json sweeps noted in both commit messages.
+### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage — MERGED TO MASTER (5c1b6b660)
+- 2026-06-10 18:20 → 2026-06-11 00:20. Worktree worktree-athena-signal-economy off master; 6 commits 6cbaebda6..f3360543a, merge 5c1b6b660. Worktree + branch removed (⚠ junction lesson re-learned: `git worktree remove --force` followed the node_modules junction and emptied the MAIN checkout's node_modules/.bin before dying on a long path — `cmd /c rmdir` the junction FIRST, always; repaired via npm install, 111 shims back, tsc clean).
+- (1) OrbDecisionBubble (incl. arrow handle + collapsed chip) now renders only while presence is 'minimized' — no more floating bubble over an open chat; fresh decisions no longer force-close an open panel. (2) exec review redesigned: per-candidate proactive chat turns (2/tick, "No response requested." episodes) → ONE headless sonnet triage per pass over (persona,reason) groups; verdicts drop/digest/deep_dive; digest → hour-bucketed 'execution_review' ProactiveCard via new proactive::deliver_now; ≤1 deep-dive turn w/ ≤120-word format contract; escalate→notification (quiet-hours guarded). (3) NEW message_triage.rs: unread persona_messages batched 20/tick oldest-first through done/digest/attention (athena_triage metadata audit annotation; high/urgent/critical can NEVER be auto-resolved; first enable seeds cursor to now); 'message_digest' card engages to Overview→Messages. New settings: autonomous_message_triage (default OFF — flip live to enable) + companion_msg_triage_cursor.
+- Also: fixed master's broken lib-test compile (IncidentLine.id missing in test ctor since f73523ca4 + 2 stale incident-header assertions). Validated: cargo check --features desktop clean (NOTE: plain `cargo check` fails on capabilities updater:default — default features lack the updater plugin; always pass --features desktop), cargo test triage/execution_review/athena_reaction/team_context all green, tsc 0 (worktree + merged master), eslint touched files 0, i18n no-extras, companion Vitest 306/306. NOT live-verified (needs dev rebuild + autonomous run).
 
 ### prototype — Chain Studio Switchboard — completed (commit: f3de2b6da)
 - 2026-06-10: /prototype 2 rounds. Round 1 (f08b1242c): Switchboard (patch-bay rails) + Composer (sentence builder) variants behind tab switcher, shared draft model + stat-rich option cards. Round 2 / consolidation (f3de2b6da): user picked Switchboard as production baseline; Composer AND the React Flow canvas deleted (nodes/edges/palette/hook), triggers.studio i18n rewritten (stale canvas+gate keys removed from en + 13 locales), docs/events README updated. Earlier same-session Lineage removal got swept into checkpoint 0652eb88f + Langfuse/friend-teams commits by concurrent sessions (work intact on branch).

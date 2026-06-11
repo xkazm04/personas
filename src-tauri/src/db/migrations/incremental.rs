@@ -4296,6 +4296,150 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON team_assignment_templates(team_id, updated_at DESC);",
     )?;
 
+    // -- KPI layer (docs/plans/kpi-driven-orchestration.md P0) -------------------
+    // KPIs are the outcome layer above goals: per-project (or per context group)
+    // success definitions with a stored measurement procedure, a target
+    // ("volume"), and a time series. Goals derived from off-track KPIs carry
+    // dev_goals.kpi_id (soft link, ALTER style).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpis",
+            description: "KPI definitions (outcome layer above goals)",
+            already_applied: |conn| has_table(conn, "dev_kpis"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_kpis (
+                        id               TEXT PRIMARY KEY,
+                        project_id       TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+                        context_group_id TEXT REFERENCES dev_context_groups(id) ON DELETE SET NULL,
+                        name             TEXT NOT NULL,
+                        description      TEXT,
+                        category         TEXT NOT NULL DEFAULT 'technical'
+                                         CHECK(category IN ('technical','traffic','value','quality')),
+                        measure_kind     TEXT NOT NULL DEFAULT 'manual'
+                                         CHECK(measure_kind IN ('codebase','connector','manual','derived')),
+                        measure_config   TEXT NOT NULL DEFAULT '{}',
+                        unit             TEXT NOT NULL DEFAULT '',
+                        direction        TEXT NOT NULL DEFAULT 'up' CHECK(direction IN ('up','down')),
+                        baseline_value   REAL,
+                        target_value     REAL,
+                        target_date      TEXT,
+                        current_value    REAL,
+                        last_measured_at TEXT,
+                        cadence          TEXT NOT NULL DEFAULT 'manual'
+                                         CHECK(cadence IN ('manual','daily','weekly')),
+                        status           TEXT NOT NULL DEFAULT 'proposed'
+                                         CHECK(status IN ('proposed','active','paused','archived')),
+                        created_by       TEXT NOT NULL DEFAULT 'user' CHECK(created_by IN ('user','scan')),
+                        rationale        TEXT,
+                        needed_connector TEXT,
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_kpis_project ON dev_kpis(project_id, status);
+                    CREATE INDEX IF NOT EXISTS idx_dev_kpis_group ON dev_kpis(context_group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpi_measurements",
+            description: "KPI measurement time series",
+            already_applied: |conn| has_table(conn, "dev_kpi_measurements"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_kpi_measurements (
+                        id          TEXT PRIMARY KEY,
+                        kpi_id      TEXT NOT NULL REFERENCES dev_kpis(id) ON DELETE CASCADE,
+                        value       REAL NOT NULL,
+                        measured_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        source      TEXT NOT NULL DEFAULT 'manual'
+                                    CHECK(source IN ('evaluator','manual','scan','health_snapshot')),
+                        evidence    TEXT,
+                        note        TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_kpi_measurements_kpi
+                        ON dev_kpi_measurements(kpi_id, measured_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpis.metric_type",
+            description: "Type-bound connector KPIs (P6): semantic metric type",
+            already_applied: |conn| has_column(conn, "dev_kpis", "metric_type"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN metric_type TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpis.tier",
+            description: "KPI tier (north_star/primary/supporting) for derivation precedence",
+            already_applied: |conn| has_column(conn, "dev_kpis", "tier"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_kpis ADD COLUMN tier TEXT NOT NULL DEFAULT 'supporting';",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_kpi_bindings",
+            description: "Swappable connector bindings for type-bound KPIs (P6)",
+            already_applied: |conn| has_table(conn, "dev_kpi_bindings"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_kpi_bindings (
+                        id            TEXT PRIMARY KEY,
+                        kpi_id        TEXT NOT NULL REFERENCES dev_kpis(id) ON DELETE CASCADE,
+                        credential_id TEXT NOT NULL,
+                        service_type  TEXT NOT NULL,
+                        procedure     TEXT NOT NULL,
+                        composed_by   TEXT NOT NULL DEFAULT 'llm'
+                                      CHECK(composed_by IN ('recipe','llm')),
+                        status        TEXT NOT NULL DEFAULT 'active'
+                                      CHECK(status IN ('active','archived','degraded')),
+                        verified_at   TEXT,
+                        created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_kpi_bindings_kpi
+                        ON dev_kpi_bindings(kpi_id, status);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_goals.kpi_id",
+            description: "Link a derived goal to the KPI it serves",
+            already_applied: |conn| has_column(conn, "dev_goals", "kpi_id"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_goals ADD COLUMN kpi_id TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     // NOTE: the Groups→Teams Phase-3 DATA MIGRATION that used to live here was
     // relocated to the end of `run_incremental` (2026-05-24). It reads columns
     // (`persona_groups.shared_instructions`, `persona_teams.shared_instructions`,

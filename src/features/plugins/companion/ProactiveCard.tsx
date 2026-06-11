@@ -58,6 +58,13 @@ export function ProactiveCard({
             storeBus.emit('incidents:open-detail', { incidentId: message.triggerRef });
           }
         }
+        // Message-digest nudges (Athena's triaged inbox summary) land the
+        // user on Overview → Messages, where the attention-flagged items
+        // are the remaining unread rows.
+        if (message.triggerKind === 'message_digest') {
+          useSystemStore.getState().setSidebarSection('overview');
+          useOverviewStore.getState().setOverviewTab('messages');
+        }
         onEngaged(result.message);
       } else {
         await companionDismissProactive(message.id);
@@ -154,6 +161,10 @@ function accentForTrigger(kind: string): string {
       return 'border-emerald-500/30 bg-emerald-500/[0.06]';
     case 'incident_blocker':
       return 'border-rose-500/30 bg-rose-500/[0.06]';
+    case 'execution_review':
+      return 'border-amber-500/30 bg-amber-500/[0.06]';
+    case 'message_digest':
+      return 'border-sky-500/30 bg-sky-500/[0.06]';
     default:
       return 'border-primary/30 bg-primary/[0.06]';
   }

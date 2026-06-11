@@ -13,14 +13,14 @@ pub use competitions::*;
 
 use crate::db::models::{
     AttentionQueue, ContextHealthSnapshot, CrossProjectRelation, DevContext, DevContextGroup,
-    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
+    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiMeasurement, DevIdea,
     DevPipeline, DevProject, DevScan, DevTask, GitOperationResult, GoalProgressSuggestion,
     PortfolioHealthSummary, PortfolioSummary, RiskMatrixEntry, TechRadarEntry, TestRunResult,
     TriageRule,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -2603,3 +2603,299 @@ pub async fn dev_tools_get_dependency_graph(
     }))
 }
 
+
+// ============================================================================
+// KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
+// ============================================================================
+
+#[tauri::command]
+pub fn dev_tools_list_kpis(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    status: Option<String>,
+) -> Result<Vec<DevKpi>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpis(&state.db, &project_id, status.as_deref())
+}
+
+#[tauri::command]
+pub fn dev_tools_get_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::get_kpi(&state.db, &id)
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_create_kpi(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    name: String,
+    description: Option<String>,
+    context_group_id: Option<String>,
+    category: String,
+    measure_kind: String,
+    measure_config: Option<String>,
+    unit: Option<String>,
+    direction: Option<String>,
+    baseline_value: Option<f64>,
+    target_value: Option<f64>,
+    target_date: Option<String>,
+    cadence: Option<String>,
+    status: Option<String>,
+    created_by: Option<String>,
+    rationale: Option<String>,
+    needed_connector: Option<String>,
+    metric_type: Option<String>,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::create_kpi(
+        &state.db,
+        &project_id,
+        &name,
+        description.as_deref(),
+        context_group_id.as_deref(),
+        &category,
+        &measure_kind,
+        measure_config.as_deref().unwrap_or("{}"),
+        unit.as_deref().unwrap_or(""),
+        direction.as_deref().unwrap_or("up"),
+        baseline_value,
+        target_value,
+        target_date.as_deref(),
+        cadence.as_deref().unwrap_or("manual"),
+        status.as_deref(),
+        created_by.as_deref().unwrap_or("user"),
+        rationale.as_deref(),
+        needed_connector.as_deref(),
+        metric_type.as_deref(),
+    )
+}
+
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_update_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    name: Option<String>,
+    description: Option<Option<String>>,
+    context_group_id: Option<Option<String>>,
+    category: Option<String>,
+    measure_kind: Option<String>,
+    measure_config: Option<String>,
+    unit: Option<String>,
+    direction: Option<String>,
+    baseline_value: Option<Option<f64>>,
+    target_value: Option<Option<f64>>,
+    target_date: Option<Option<String>>,
+    cadence: Option<String>,
+    status: Option<String>,
+    needed_connector: Option<Option<String>>,
+    metric_type: Option<Option<String>>,
+    tier: Option<String>,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::update_kpi(
+        &state.db,
+        &id,
+        name.as_deref(),
+        description.as_ref().map(|o| o.as_deref()),
+        context_group_id.as_ref().map(|o| o.as_deref()),
+        category.as_deref(),
+        measure_kind.as_deref(),
+        measure_config.as_deref(),
+        unit.as_deref(),
+        direction.as_deref(),
+        baseline_value,
+        target_value,
+        target_date.as_ref().map(|o| o.as_deref()),
+        cadence.as_deref(),
+        status.as_deref(),
+        needed_connector.as_ref().map(|o| o.as_deref()),
+        metric_type.as_ref().map(|o| o.as_deref()),
+        tier.as_deref(),
+    )
+}
+
+#[tauri::command]
+pub fn dev_tools_delete_kpi(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_kpi(&state.db, &id)
+}
+
+#[tauri::command]
+pub fn dev_tools_list_kpi_measurements(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_measurements(&state.db, &kpi_id, limit)
+}
+
+#[tauri::command]
+pub fn dev_tools_record_kpi_measurement(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    value: f64,
+    source: Option<String>,
+    evidence: Option<String>,
+    note: Option<String>,
+) -> Result<DevKpiMeasurement, AppError> {
+    require_auth_sync(&state)?;
+    repo::record_kpi_measurement(
+        &state.db,
+        &kpi_id,
+        value,
+        source.as_deref().unwrap_or("manual"),
+        evidence.as_deref(),
+        note.as_deref(),
+    )
+}
+
+/// Measure one KPI now (codebase/derived kinds). Long-running for coverage
+/// commands — the frontend invokes with an extended timeout.
+#[tauri::command]
+pub async fn dev_tools_evaluate_kpi(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+) -> Result<DevKpiMeasurement, AppError> {
+    require_auth(&state).await?;
+    crate::engine::kpi_eval::evaluate_kpi(&state.db, &kpi_id).await
+}
+
+/// Measure every due active KPI of a project (cadence-elapsed). Returns
+/// `{ "<kpi name>": value | "error: ..." }` per evaluated KPI.
+#[tauri::command]
+pub async fn dev_tools_evaluate_due_kpis(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+    let results = crate::engine::kpi_eval::evaluate_due_kpis(&state.db, &project_id).await?;
+    let mut map = serde_json::Map::new();
+    for (name, r) in results {
+        map.insert(
+            name,
+            match r {
+                Ok(v) => serde_json::json!(v),
+                Err(e) => serde_json::json!(format!("error: {e}")),
+            },
+        );
+    }
+    Ok(serde_json::Value::Object(map))
+}
+
+/// All KPIs across every project (cross-project dashboard scope).
+#[tauri::command]
+pub fn dev_tools_list_all_kpis(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<DevKpi>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_all_kpis(&state.db)
+}
+
+/// Bulk measurement history for trend charts (chronological, bounded per KPI).
+#[tauri::command]
+pub fn dev_tools_list_kpi_measurements_bulk(
+    state: State<'_, Arc<AppState>>,
+    kpi_ids: Vec<String>,
+    per_kpi: Option<i64>,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_measurements_bulk(&state.db, &kpi_ids, per_kpi.unwrap_or(30))
+}
+
+/// Metric-type registry (P6) — the semantic capabilities a connector KPI can bind to.
+#[tauri::command]
+pub fn dev_tools_list_kpi_metric_types(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    Ok(serde_json::to_value(crate::engine::kpi_binding::METRIC_TYPES).unwrap_or_default())
+}
+
+/// Vault credentials able to measure a metric type (category-matched).
+#[tauri::command]
+pub fn dev_tools_kpi_matching_credentials(
+    state: State<'_, Arc<AppState>>,
+    metric_type: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let m = crate::engine::kpi_binding::find_matching_credentials(&state.db, &metric_type)?;
+    Ok(serde_json::to_value(m).unwrap_or_default())
+}
+
+/// Compose + live-verify a binding candidate (recipe or LLM-composed).
+/// Returns the procedure + plan + the verified value/evidence; nothing is
+/// persisted — activation is the explicit next step after user confirmation.
+#[tauri::command]
+pub async fn dev_tools_kpi_compose_binding(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    credential_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+    let kpi = repo::get_kpi(&state.db, &kpi_id)?;
+    let (procedure, composed_by) =
+        crate::engine::kpi_binding::compose_procedure(&state.db, &kpi, &credential_id).await?;
+    let (value, evidence) =
+        crate::engine::kpi_binding::execute_procedure(&state.db, &credential_id, &procedure).await?;
+    if let Some(mt) = kpi.metric_type.as_deref().and_then(crate::engine::kpi_binding::metric_type) {
+        crate::engine::kpi_binding::check_invariants(mt, value)?;
+    }
+    Ok(serde_json::json!({
+        "procedure": procedure,
+        "composed_by": composed_by,
+        "value": value,
+        "evidence": evidence,
+    }))
+}
+
+/// Freeze a verified procedure as the KPI's ACTIVE binding (archives any
+/// prior binding) and record the verification measurement.
+#[tauri::command]
+pub async fn dev_tools_kpi_activate_binding(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    credential_id: String,
+    procedure: String,
+    composed_by: String,
+    verified_value: f64,
+    evidence: Option<String>,
+) -> Result<crate::db::models::DevKpiBinding, AppError> {
+    require_auth(&state).await?;
+    let credential =
+        crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
+    let binding = repo::activate_kpi_binding(
+        &state.db,
+        &kpi_id,
+        &credential_id,
+        &credential.service_type,
+        &procedure,
+        if composed_by == "recipe" { "recipe" } else { "llm" },
+    )?;
+    let _ = repo::record_kpi_measurement(
+        &state.db,
+        &kpi_id,
+        verified_value,
+        "evaluator",
+        evidence.as_deref(),
+        None,
+    )?;
+    Ok(binding)
+}
+
+#[tauri::command]
+pub fn dev_tools_kpi_list_bindings(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+) -> Result<Vec<crate::db::models::DevKpiBinding>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_bindings(&state.db, &kpi_id)
+}

@@ -128,6 +128,10 @@ export function triggerKindLabel(t: T, kind: string): string {
       return c.proactive_kind_fleet_op_completed;
     case 'incident_blocker':
       return c.proactive_kind_incident_blocker;
+    case 'execution_review':
+      return c.proactive_kind_execution_review;
+    case 'message_digest':
+      return c.proactive_kind_message_digest;
     default:
       return c.proactive_kind_unknown;
   }

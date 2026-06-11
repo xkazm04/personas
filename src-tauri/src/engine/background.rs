@@ -536,6 +536,26 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // KPI → Goal derivation — derive goals from off-track KPIs (default-OFF
+        // `autonomous_kpi_goal_derivation`; fresh-measurement + one-open-goal +
+        // re-measure-after-completion gates; skip is a legitimate outcome).
+        // Autonomous KPI evaluation — default-OFF; gated on the
+        // AUTONOMOUS_KPI_EVALUATION setting inside its tick. Measures due
+        // active KPIs hourly so the KPI→goal derivation loop has fresh data
+        // on unattended runs (derivation refuses stale measurements).
+        Box::new(subscription::KpiEvaluationSubscription { pool: pool.clone() }),
+        Box::new(subscription::KpiGoalDerivationSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
+        // Fleet liveness watchdog — raises ONE deduped fleet_stall incident +
+        // notification when autonomy is on, work is available, no quota
+        // cooldown applies, and nothing has executed for 2h (the 06-09 silent
+        // deadlock class). Always-on; spends nothing.
+        Box::new(subscription::FleetLivenessWatchdog {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

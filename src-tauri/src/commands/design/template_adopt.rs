@@ -1657,11 +1657,16 @@ Return ONLY valid JSON (no markdown fences, no commentary):
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string with summary and use_cases reflecting user's stated intent",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string or null"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string — see TRIGGER POLICY below", "use_case_id": "string or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
 }}
+
+TRIGGER POLICY (binding):
+1. REACTIVE roles — QA/testing, code review, security review, release management, docs, implementation — get NO `schedule` and NO `polling` triggers. They are driven by team events and chain handoffs; give them at most one `manual` trigger. Cron sweeps on reactive roles duplicate the event spine, burn budget, and inflate the running count (observed live: two daily QA crons plus hourly implementer polling, per team).
+2. Only genuinely PROACTIVE cadences (periodic backlog/idea scanning, scheduled reporting/digest) may carry ONE low-frequency `schedule` (weekly; daily at most).
+3. Never wire the same use case to BOTH a schedule and an event — pick the event.
 "##
     );
 
@@ -1821,11 +1826,16 @@ Return ONLY valid JSON (no markdown fences, no commentary), with this exact shap
     "max_budget_usd": null,
     "max_turns": null,
     "design_context": "JSON string: {{\"summary\":\"Brief overview\",\"use_cases\":[{{\"id\":\"uc1\",\"title\":\"...\",\"description\":\"...\",\"category\":\"notification|data-sync|monitoring|automation|communication|reporting\",\"execution_mode\":\"e2e|mock|non_executable\",\"sample_input\":{{}},\"time_filter\":{{\"field\":\"date\",\"default_window\":\"24h\",\"description\":\"Only process recent items\"}},\"input_schema\":[{{\"key\":\"mode\",\"type\":\"select\",\"label\":\"Mode\",\"options\":[\"a\",\"b\"],\"default\":\"a\"}}],\"suggested_trigger\":{{\"type\":\"schedule\",\"cron\":\"0 */6 * * *\",\"description\":\"Every 6 hours\"}}}}]}}. Generate 3-6 use_cases. execution_mode: e2e (default), mock (example output), non_executable (informational). sample_input: realistic test JSON matching input_schema keys. time_filter: REQUIRED for time-series data use cases (emails, messages, logs). input_schema: structured input fields replacing free-text JSON. suggested_trigger: proposed schedule/trigger for recurring use cases.",
-    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string", "use_case_id": "string -- id of the use case this trigger serves, or null"}}],
+    "triggers": [{{"trigger_type": "schedule|polling|webhook|manual", "config": {{}}, "description": "string — see TRIGGER POLICY below", "use_case_id": "string -- id of the use case this trigger serves, or null"}}],
     "tools": [{{"name": "tool_name_snake_case", "category": "email|http|database|file|messaging|other", "description": "string", "requires_credential_type": "connector_name_or_null", "input_schema": null, "implementation_guide": "Step-by-step API docs (REQUIRED for each tool)"}}],
     "required_connectors": [{{"name": "connector_name", "n8n_credential_type": "service_type", "has_credential": false}}]
   }}
 }}
+
+TRIGGER POLICY (binding):
+1. REACTIVE roles — QA/testing, code review, security review, release management, docs, implementation — get NO `schedule` and NO `polling` triggers. They are driven by team events and chain handoffs; give them at most one `manual` trigger. Cron sweeps on reactive roles duplicate the event spine, burn budget, and inflate the running count (observed live: two daily QA crons plus hourly implementer polling, per team).
+2. Only genuinely PROACTIVE cadences (periodic backlog/idea scanning, scheduled reporting/digest) may carry ONE low-frequency `schedule` (weekly; daily at most).
+3. Never wire the same use case to BOTH a schedule and an event — pick the event.
 
 Template name:
 {template_name}

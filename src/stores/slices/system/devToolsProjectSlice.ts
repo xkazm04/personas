@@ -6,7 +6,10 @@ import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
 import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
+import type { DevKpi } from "@/lib/bindings/DevKpi";
+import type { DevKpiMeasurement } from "@/lib/bindings/DevKpiMeasurement";
 import * as devApi from "@/api/devTools/devTools";
+import * as kpiApi from "@/api/devTools/kpis";
 
 export interface DevToolsProjectSlice {
   // -- Projects --------------------------------------------------------
@@ -49,6 +52,30 @@ export interface DevToolsProjectSlice {
   fetchGoalDependencies: (goalId: string) => Promise<void>;
   addGoalDependency: (goalId: string, dependsOnId: string, dependencyType?: string) => Promise<DevGoalDependency>;
   removeGoalDependency: (id: string) => Promise<void>;
+
+  // -- KPIs (outcome layer above goals) ----------------------------------
+  kpis: DevKpi[];
+  kpisLoading: boolean;
+  /** Measurement history for the KPI open in the detail drawer. */
+  kpiMeasurements: DevKpiMeasurement[];
+
+  fetchKpis: (projectId: string) => Promise<void>;
+  /** Load KPIs across ALL projects (dashboard cross-project scope). Writes the
+   *  same `kpis` array so update/delete/measure actions keep working. */
+  fetchAllKpis: () => Promise<void>;
+  /** Measurement series per KPI id, for the dashboard trend chart. */
+  kpiTrends: Record<string, import("@/lib/bindings/DevKpiMeasurement").DevKpiMeasurement[]>;
+  fetchKpiTrends: (kpiIds: string[]) => Promise<void>;
+  updateKpi: (id: string, updates: kpiApi.UpdateKpiInput) => Promise<void>;
+  deleteKpi: (id: string) => Promise<void>;
+  fetchKpiMeasurements: (kpiId: string) => Promise<void>;
+  recordKpiMeasurement: (kpiId: string, value: number, note?: string) => Promise<void>;
+  /** Start a KPI proposal scan for the project; resolves with the scan id. */
+  scanKpis: (projectId: string) => Promise<string>;
+  /** Measure one KPI now (codebase/derived kinds). */
+  evaluateKpi: (kpiId: string) => Promise<void>;
+  /** Measure every due active KPI; returns name → value | error string. */
+  evaluateDueKpis: (projectId: string) => Promise<Record<string, number | string>>;
 }
 
 export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevToolsProjectSlice> = (set, get) => ({
@@ -276,6 +303,127 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       }));
     } catch (err) {
       reportError(err, "Failed to remove goal dependency", set);
+    }
+  },
+
+  // -- KPIs state ---------------------------------------------------------
+  kpis: [],
+  kpisLoading: false,
+  kpiMeasurements: [],
+  kpiTrends: {},
+
+  fetchKpis: async (projectId) => {
+    set({ kpisLoading: true });
+    try {
+      const kpis = await kpiApi.listKpis(projectId);
+      set({ kpis, kpisLoading: false, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPIs", set, { stateUpdates: { kpisLoading: false } });
+    }
+  },
+
+  fetchAllKpis: async () => {
+    set({ kpisLoading: true });
+    try {
+      const kpis = await kpiApi.listAllKpis();
+      set({ kpis, kpisLoading: false, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPIs", set, { stateUpdates: { kpisLoading: false } });
+    }
+  },
+
+  fetchKpiTrends: async (kpiIds) => {
+    if (kpiIds.length === 0) return;
+    try {
+      const rows = await kpiApi.listKpiMeasurementsBulk(kpiIds, 30);
+      const kpiTrends: Record<string, typeof rows> = {};
+      for (const m of rows) {
+        (kpiTrends[m.kpi_id] ??= []).push(m);
+      }
+      set({ kpiTrends, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPI trends", set);
+    }
+  },
+
+  updateKpi: async (id, updates) => {
+    try {
+      const kpi = await kpiApi.updateKpi(id, updates);
+      set((state) => ({ kpis: state.kpis.map((k) => (k.id === id ? kpi : k)), error: null }));
+    } catch (err) {
+      reportError(err, "Failed to update KPI", set);
+      throw err;
+    }
+  },
+
+  deleteKpi: async (id) => {
+    try {
+      await kpiApi.deleteKpi(id);
+      set((state) => ({ kpis: state.kpis.filter((k) => k.id !== id), error: null }));
+    } catch (err) {
+      reportError(err, "Failed to delete KPI", set);
+    }
+  },
+
+  fetchKpiMeasurements: async (kpiId) => {
+    try {
+      const kpiMeasurements = await kpiApi.listKpiMeasurements(kpiId, 60);
+      set({ kpiMeasurements, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPI measurements", set);
+    }
+  },
+
+  recordKpiMeasurement: async (kpiId, value, note) => {
+    try {
+      const m = await kpiApi.recordKpiMeasurement(kpiId, value, "manual", undefined, note);
+      set((state) => ({
+        kpiMeasurements: [m, ...state.kpiMeasurements],
+        kpis: state.kpis.map((k) =>
+          k.id === kpiId ? { ...k, current_value: value, last_measured_at: m.measured_at } : k,
+        ),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to record KPI measurement", set);
+      throw err;
+    }
+  },
+
+  scanKpis: async (projectId) => {
+    try {
+      const r = await kpiApi.scanKpis(projectId);
+      return r.scan_id;
+    } catch (err) {
+      reportError(err, "Failed to start KPI scan", set);
+      throw err;
+    }
+  },
+
+  evaluateKpi: async (kpiId) => {
+    try {
+      const m = await kpiApi.evaluateKpi(kpiId);
+      set((state) => ({
+        kpiMeasurements: [m, ...state.kpiMeasurements],
+        kpis: state.kpis.map((k) =>
+          k.id === kpiId ? { ...k, current_value: m.value, last_measured_at: m.measured_at } : k,
+        ),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to measure KPI", set);
+      throw err;
+    }
+  },
+
+  evaluateDueKpis: async (projectId) => {
+    try {
+      const results = await kpiApi.evaluateDueKpis(projectId);
+      await get().fetchKpis(projectId);
+      return results;
+    } catch (err) {
+      reportError(err, "Failed to evaluate due KPIs", set);
+      throw err;
     }
   },
 });
