@@ -2426,6 +2426,10 @@ export type Translations = {
       _comment_policy_updated: string;
       policy_updated: string;
       schedule_will_run: string;
+      engine_claude: string;
+      engine_mixed: string;
+      engine_claude_tooltip: string;
+      engine_mixed_tooltip: string;
     };
     tools: {
       no_persona: string;

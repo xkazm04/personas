@@ -2419,7 +2419,11 @@
       "_comment_section_usePolicyControls": "── usePolicyControls.ts ──",
       "_comment_policy_updated": "Toast shown after a policy key is updated",
       "policy_updated": "{key} policy updated",
-      "schedule_will_run": "This will run {title} for {persona}"
+      "schedule_will_run": "This will run {title} for {persona}",
+      "engine_claude": "Engine: Claude",
+      "engine_mixed": "Engine: Mixed",
+      "engine_claude_tooltip": "Full Claude. Click to enable Mixed: simple subtasks (summarize, extract, reformat) are offloaded to a local model to save premium capacity.",
+      "engine_mixed_tooltip": "Mixed engine: Claude orchestrates and offloads simple subtasks to a local model via the llm_delegate tool. Click to return to full Claude."
     },
     "tools": {
       "no_persona": "No persona selected",

@@ -133,6 +133,11 @@ export function useUseCaseDetail(useCaseId: string) {
   const personaDefaultLabel = personaDefault.label;
   const modelLabel = resolved.label;
 
+  const engineMode: 'claude' | 'mixed' = useCase?.engine_mode === 'mixed' ? 'mixed' : 'claude';
+  const handleEngineToggle = useCallback(() => {
+    handleUpdate((uc) => ({ engine_mode: uc.engine_mode === 'mixed' ? undefined : 'mixed' }));
+  }, [handleUpdate]);
+
   const handleModelSelect = (opt: ModelOption) => {
     if (opt.id === '__default__') {
       handleUpdate({ model_override: undefined });
@@ -223,6 +228,8 @@ export function useUseCaseDetail(useCaseId: string) {
     handleManualRun,
     isManualRunning,
     handleModelSelect,
+    engineMode,
+    handleEngineToggle,
     handleSaveFixture,
     handleDeleteFixture,
     handleUpdateFixture,

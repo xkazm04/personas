@@ -52,6 +52,7 @@ export const OLLAMA_CLOUD_MODELS: ModelOption[] = OLLAMA_CLOUD_PRESETS.map((p) =
 
 /** Local Ollama models — run on the user's machine via native HTTP path. */
 export const OLLAMA_LOCAL_MODELS: ModelOption[] = [
+  { id: 'ollama:lfm2.5', label: 'LFM 2.5 (local)', provider: 'ollama', model: 'lfm2.5', base_url: 'http://localhost:11434' },
   { id: 'ollama:gemma4', label: 'Gemma 4 (local)', provider: 'ollama', model: 'gemma4', base_url: 'http://localhost:11434' },
   { id: 'ollama:qwen3.5', label: 'Qwen 3.5 (local)', provider: 'ollama', model: 'qwen3.5', base_url: 'http://localhost:11434' },
 ];
