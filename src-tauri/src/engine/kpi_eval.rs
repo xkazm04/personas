@@ -54,12 +54,38 @@ pub async fn evaluate_kpi(pool: &DbPool, kpi_id: &str) -> Result<DevKpiMeasureme
             ))
         }
         "connector" => {
-            return Err(AppError::Validation(
-                "Connector measurement ships with the P6 onboarding wizard — \
-                 record manually for now, or have a team persona emit a \
-                 kpi_measurement protocol message"
-                    .into(),
-            ))
+            // P6: replay the KPI's ACTIVE binding deterministically. A failed
+            // replay flips the binding to `degraded` (visible on the KPI) —
+            // never a silent procedure change.
+            let Some(binding) = repo::active_kpi_binding(pool, kpi_id)? else {
+                return Err(AppError::Validation(
+                    "This connector KPI has no active binding — wire it via Connect".into(),
+                ));
+            };
+            let procedure: crate::engine::kpi_binding::Procedure =
+                serde_json::from_str(&binding.procedure).map_err(|e| {
+                    AppError::Internal(format!("Stored binding procedure is corrupt: {e}"))
+                })?;
+            match crate::engine::kpi_binding::execute_procedure(pool, &binding.credential_id, &procedure)
+                .await
+            {
+                Ok((value, evidence)) => {
+                    if let Some(mt) = kpi
+                        .metric_type
+                        .as_deref()
+                        .and_then(crate::engine::kpi_binding::metric_type)
+                    {
+                        crate::engine::kpi_binding::check_invariants(mt, value)?;
+                    }
+                    (value, evidence)
+                }
+                Err(e) => {
+                    let _ = repo::set_kpi_binding_status(pool, &binding.id, "degraded");
+                    return Err(AppError::Validation(format!(
+                        "Binding replay failed (binding marked degraded — recompose from the KPI drawer): {e}"
+                    )));
+                }
+            }
         }
         other => {
             return Err(AppError::Validation(format!("Unknown measure_kind '{other}'")))
@@ -80,7 +106,7 @@ pub async fn evaluate_due_kpis(
     let kpis = repo::list_kpis(pool, project_id, Some("active"))?;
     let mut out = HashMap::new();
     for kpi in kpis {
-        if !matches!(kpi.measure_kind.as_str(), "codebase" | "derived") {
+        if !matches!(kpi.measure_kind.as_str(), "codebase" | "derived" | "connector") {
             continue;
         }
         let due = match (kpi.cadence.as_str(), kpi.last_measured_at.as_deref()) {

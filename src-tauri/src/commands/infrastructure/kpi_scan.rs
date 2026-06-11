@@ -95,6 +95,9 @@ struct KpiProposal {
     /// Connector required to measure this (empty when none / already present).
     #[serde(default)]
     needed_connector: String,
+    /// Semantic metric type for connector/parked KPIs (P6 type binding).
+    #[serde(default)]
+    metric_type: String,
 }
 
 fn parse_kpi_proposal(line: &str) -> Option<KpiProposal> {
@@ -146,12 +149,13 @@ Rules:
    - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}}
    - manual: {{"instruction": "<what the human should check/enter>"}}
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
+4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".
 6. `cadence`: "weekly" for codebase KPIs, "daily" only for cheap derived ones, "manual" for connector-parked ones.
 7. `rationale`: ONE sentence the user reads in the review queue — why THIS metric steers value.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": ""}}}}
+{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": ""}}}}
 
 Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
 "#,
@@ -509,6 +513,7 @@ async fn run_kpi_scan(
                     "scan",
                     if p.rationale.is_empty() { None } else { Some(&p.rationale) },
                     if needed.is_empty() { None } else { Some(needed) },
+                    if p.metric_type.is_empty() { None } else { Some(&p.metric_type) },
                 ) {
                     Ok(kpi) => {
                         created += 1;

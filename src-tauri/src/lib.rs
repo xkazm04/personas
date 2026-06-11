@@ -2696,6 +2696,11 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_evaluate_due_kpis,
             commands::infrastructure::dev_tools::dev_tools_list_all_kpis,
             commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements_bulk,
+            commands::infrastructure::dev_tools::dev_tools_list_kpi_metric_types,
+            commands::infrastructure::dev_tools::dev_tools_kpi_matching_credentials,
+            commands::infrastructure::dev_tools::dev_tools_kpi_compose_binding,
+            commands::infrastructure::dev_tools::dev_tools_kpi_activate_binding,
+            commands::infrastructure::dev_tools::dev_tools_kpi_list_bindings,
             // Dev Tools -- Goal Dependencies
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies,
             commands::infrastructure::dev_tools::dev_tools_add_goal_dependency,

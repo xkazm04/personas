@@ -136,6 +136,7 @@ pub mod goal_advance;
 pub mod incident_continuation;
 pub mod kpi_eval;
 pub mod kpi_derivation;
+pub mod kpi_binding;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod team_handoff;

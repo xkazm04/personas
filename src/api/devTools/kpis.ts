@@ -33,6 +33,7 @@ export interface CreateKpiInput {
   status?: string;
   rationale?: string;
   neededConnector?: string;
+  metricType?: string;
 }
 
 export async function createKpi(input: CreateKpiInput): Promise<DevKpi> {
@@ -55,6 +56,8 @@ export interface UpdateKpiInput {
   cadence?: string;
   status?: string;
   neededConnector?: string | null;
+  metricType?: string | null;
+  tier?: string;
 }
 
 export async function updateKpi(id: string, updates: UpdateKpiInput): Promise<DevKpi> {

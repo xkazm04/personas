@@ -247,8 +247,31 @@ pub struct DevKpi {
     /// Connector this KPI needs to be measurable — drives the
     /// "Connect <service>" vault-catalog CTA on parked KPIs.
     pub needed_connector: Option<String>,
+    /// Semantic measurement capability (P6 type-bound connectors) — e.g.
+    /// `unique_visitors`, `llm_tokens`. The tool is a swappable binding.
+    pub metric_type: Option<String>,
+    /// `north_star` | `primary` | `supporting` — derivation precedence
+    /// ("0 users beats 100% coverage").
+    pub tier: String,
     pub created_at: String,
     pub updated_at: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevKpiBinding {
+    pub id: String,
+    pub kpi_id: String,
+    pub credential_id: String,
+    pub service_type: String,
+    /// Frozen retrieval procedure JSON (engine::kpi_binding::Procedure).
+    pub procedure: String,
+    /// 'recipe' | 'llm'
+    pub composed_by: String,
+    /// 'active' | 'archived' | 'degraded'
+    pub status: String,
+    pub verified_at: Option<String>,
+    pub created_at: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

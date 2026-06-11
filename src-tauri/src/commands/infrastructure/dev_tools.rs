@@ -2648,6 +2648,7 @@ pub fn dev_tools_create_kpi(
     created_by: Option<String>,
     rationale: Option<String>,
     needed_connector: Option<String>,
+    metric_type: Option<String>,
 ) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::create_kpi(
@@ -2669,6 +2670,7 @@ pub fn dev_tools_create_kpi(
         created_by.as_deref().unwrap_or("user"),
         rationale.as_deref(),
         needed_connector.as_deref(),
+        metric_type.as_deref(),
     )
 }
 
@@ -2691,6 +2693,8 @@ pub fn dev_tools_update_kpi(
     cadence: Option<String>,
     status: Option<String>,
     needed_connector: Option<Option<String>>,
+    metric_type: Option<Option<String>>,
+    tier: Option<String>,
 ) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::update_kpi(
@@ -2710,6 +2714,8 @@ pub fn dev_tools_update_kpi(
         cadence.as_deref(),
         status.as_deref(),
         needed_connector.as_ref().map(|o| o.as_deref()),
+        metric_type.as_ref().map(|o| o.as_deref()),
+        tier.as_deref(),
     )
 }
 
@@ -2803,4 +2809,93 @@ pub fn dev_tools_list_kpi_measurements_bulk(
 ) -> Result<Vec<DevKpiMeasurement>, AppError> {
     require_auth_sync(&state)?;
     repo::list_kpi_measurements_bulk(&state.db, &kpi_ids, per_kpi.unwrap_or(30))
+}
+
+/// Metric-type registry (P6) — the semantic capabilities a connector KPI can bind to.
+#[tauri::command]
+pub fn dev_tools_list_kpi_metric_types(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    Ok(serde_json::to_value(crate::engine::kpi_binding::METRIC_TYPES).unwrap_or_default())
+}
+
+/// Vault credentials able to measure a metric type (category-matched).
+#[tauri::command]
+pub fn dev_tools_kpi_matching_credentials(
+    state: State<'_, Arc<AppState>>,
+    metric_type: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let m = crate::engine::kpi_binding::find_matching_credentials(&state.db, &metric_type)?;
+    Ok(serde_json::to_value(m).unwrap_or_default())
+}
+
+/// Compose + live-verify a binding candidate (recipe or LLM-composed).
+/// Returns the procedure + plan + the verified value/evidence; nothing is
+/// persisted — activation is the explicit next step after user confirmation.
+#[tauri::command]
+pub async fn dev_tools_kpi_compose_binding(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    credential_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+    let kpi = repo::get_kpi(&state.db, &kpi_id)?;
+    let (procedure, composed_by) =
+        crate::engine::kpi_binding::compose_procedure(&state.db, &kpi, &credential_id).await?;
+    let (value, evidence) =
+        crate::engine::kpi_binding::execute_procedure(&state.db, &credential_id, &procedure).await?;
+    if let Some(mt) = kpi.metric_type.as_deref().and_then(crate::engine::kpi_binding::metric_type) {
+        crate::engine::kpi_binding::check_invariants(mt, value)?;
+    }
+    Ok(serde_json::json!({
+        "procedure": procedure,
+        "composed_by": composed_by,
+        "value": value,
+        "evidence": evidence,
+    }))
+}
+
+/// Freeze a verified procedure as the KPI's ACTIVE binding (archives any
+/// prior binding) and record the verification measurement.
+#[tauri::command]
+pub async fn dev_tools_kpi_activate_binding(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+    credential_id: String,
+    procedure: String,
+    composed_by: String,
+    verified_value: f64,
+    evidence: Option<String>,
+) -> Result<crate::db::models::DevKpiBinding, AppError> {
+    require_auth(&state).await?;
+    let credential =
+        crate::db::repos::resources::credentials::get_by_id(&state.db, &credential_id)?;
+    let binding = repo::activate_kpi_binding(
+        &state.db,
+        &kpi_id,
+        &credential_id,
+        &credential.service_type,
+        &procedure,
+        if composed_by == "recipe" { "recipe" } else { "llm" },
+    )?;
+    let _ = repo::record_kpi_measurement(
+        &state.db,
+        &kpi_id,
+        verified_value,
+        "evaluator",
+        evidence.as_deref(),
+        None,
+    )?;
+    Ok(binding)
+}
+
+#[tauri::command]
+pub fn dev_tools_kpi_list_bindings(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+) -> Result<Vec<crate::db::models::DevKpiBinding>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_bindings(&state.db, &kpi_id)
 }

@@ -4,7 +4,7 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{
     AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
-    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiMeasurement, DevIdea,
+    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevKpi, DevKpiBinding, DevKpiMeasurement, DevIdea,
     DevProject, DevScan, DevStandard, DevTask, GoalProgressSuggestion, PortfolioProjectSummary,
     PortfolioSummary, TriageRule,
 };
@@ -4053,6 +4053,8 @@ pub fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
         created_by: row.get("created_by")?,
         rationale: row.get("rationale")?,
         needed_connector: row.get("needed_connector")?,
+        metric_type: row.get("metric_type").unwrap_or(None),
+        tier: row.get("tier").unwrap_or_else(|_| "supporting".to_string()),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -4128,6 +4130,7 @@ pub fn create_kpi(
     created_by: &str,
     rationale: Option<&str>,
     needed_connector: Option<&str>,
+    metric_type: Option<&str>,
 ) -> Result<DevKpi, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("KPI name cannot be empty".into()));
@@ -4139,13 +4142,14 @@ pub fn create_kpi(
             "INSERT INTO dev_kpis (id, project_id, context_group_id, name, description,
                 category, measure_kind, measure_config, unit, direction,
                 baseline_value, target_value, target_date, cadence, status,
-                created_by, rationale, needed_connector)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18)",
+                created_by, rationale, needed_connector, metric_type)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
             params![
                 id, project_id, context_group_id, name.trim(), description,
                 category, measure_kind, measure_config, unit, direction,
                 baseline_value, target_value, target_date, cadence,
-                status.unwrap_or("proposed"), created_by, rationale, needed_connector
+                status.unwrap_or("proposed"), created_by, rationale, needed_connector,
+                metric_type
             ],
         )?;
         drop(conn);
@@ -4173,6 +4177,8 @@ pub fn update_kpi(
     cadence: Option<&str>,
     status: Option<&str>,
     needed_connector: Option<Option<&str>>,
+    metric_type: Option<Option<&str>>,
+    tier: Option<&str>,
 ) -> Result<DevKpi, AppError> {
     timed_query!("dev_kpis", "dev_kpis::update_kpi", {
         let conn = pool.get()?;
@@ -4197,6 +4203,8 @@ pub fn update_kpi(
         if let Some(v) = cadence { push(&mut sets, "cadence", Box::new(v.to_string()), &mut vals); }
         if let Some(v) = status { push(&mut sets, "status", Box::new(v.to_string()), &mut vals); }
         if let Some(v) = needed_connector { push(&mut sets, "needed_connector", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = metric_type { push(&mut sets, "metric_type", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = tier { push(&mut sets, "tier", Box::new(v.to_string()), &mut vals); }
         let sql = format!(
             "UPDATE dev_kpis SET {} WHERE id = ?{}",
             sets.join(", "),
@@ -4323,5 +4331,99 @@ pub fn record_kpi_measurement(
             row_to_kpi_measurement,
         )
         .map_err(AppError::Database)
+    })
+}
+
+// ============================================================================
+// KPI connector bindings (P6 — swappable tool under a type-bound KPI)
+// ============================================================================
+
+fn row_to_kpi_binding(row: &Row) -> rusqlite::Result<DevKpiBinding> {
+    Ok(DevKpiBinding {
+        id: row.get("id")?,
+        kpi_id: row.get("kpi_id")?,
+        credential_id: row.get("credential_id")?,
+        service_type: row.get("service_type")?,
+        procedure: row.get("procedure")?,
+        composed_by: row.get("composed_by")?,
+        status: row.get("status")?,
+        verified_at: row.get("verified_at")?,
+        created_at: row.get("created_at")?,
+    })
+}
+
+pub fn list_kpi_bindings(pool: &DbPool, kpi_id: &str) -> Result<Vec<DevKpiBinding>, AppError> {
+    timed_query!("dev_kpi_bindings", "dev_kpis::list_kpi_bindings", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_kpi_bindings WHERE kpi_id = ?1 ORDER BY datetime(created_at) DESC",
+        )?;
+        let rows = stmt.query_map(params![kpi_id], row_to_kpi_binding)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+pub fn active_kpi_binding(pool: &DbPool, kpi_id: &str) -> Result<Option<DevKpiBinding>, AppError> {
+    timed_query!("dev_kpi_bindings", "dev_kpis::active_kpi_binding", {
+        let conn = pool.get()?;
+        let row = conn
+            .query_row(
+                "SELECT * FROM dev_kpi_bindings WHERE kpi_id = ?1 AND status = 'active'
+                 ORDER BY datetime(created_at) DESC LIMIT 1",
+                params![kpi_id],
+                row_to_kpi_binding,
+            )
+            .ok();
+        Ok(row)
+    })
+}
+
+/// Activate a verified binding: archive any current active binding, insert
+/// the new one as active, and flip the KPI to a live connector KPI. The KPI
+/// row's identity + measurement series are untouched (switch-without-harm).
+pub fn activate_kpi_binding(
+    pool: &DbPool,
+    kpi_id: &str,
+    credential_id: &str,
+    service_type: &str,
+    procedure: &str,
+    composed_by: &str,
+) -> Result<DevKpiBinding, AppError> {
+    timed_query!("dev_kpi_bindings", "dev_kpis::activate_kpi_binding", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_kpi_bindings SET status = 'archived' WHERE kpi_id = ?1 AND status = 'active'",
+            params![kpi_id],
+        )?;
+        conn.execute(
+            "INSERT INTO dev_kpi_bindings (id, kpi_id, credential_id, service_type, procedure,
+                composed_by, status, verified_at)
+             VALUES (?1,?2,?3,?4,?5,?6,'active',datetime('now'))",
+            params![id, kpi_id, credential_id, service_type, procedure, composed_by],
+        )?;
+        conn.execute(
+            "UPDATE dev_kpis SET measure_kind = 'connector', needed_connector = NULL,
+                 updated_at = datetime('now')
+             WHERE id = ?1",
+            params![kpi_id],
+        )?;
+        conn.query_row(
+            "SELECT * FROM dev_kpi_bindings WHERE id = ?1",
+            params![id],
+            row_to_kpi_binding,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+pub fn set_kpi_binding_status(pool: &DbPool, binding_id: &str, status: &str) -> Result<(), AppError> {
+    timed_query!("dev_kpi_bindings", "dev_kpis::set_kpi_binding_status", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_kpi_bindings SET status = ?1 WHERE id = ?2",
+            params![status, binding_id],
+        )?;
+        Ok(())
     })
 }

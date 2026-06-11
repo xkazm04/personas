@@ -62,6 +62,7 @@ export type { DevContextGroupRelationship } from "./DevContextGroupRelationship"
 export type { DevGoal } from "./DevGoal";
 export type { DevGoalSignal } from "./DevGoalSignal";
 export type { DevKpi } from "./DevKpi";
+export type { DevKpiBinding } from "./DevKpiBinding";
 export type { DevKpiMeasurement } from "./DevKpiMeasurement";
 export type { DevIdea } from "./DevIdea";
 export type { DevProject } from "./DevProject";

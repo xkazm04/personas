@@ -37,6 +37,9 @@ const TOLERANCE_FRAC: f64 = 0.1;
 /// only a missed target with nothing to pace against is NOT treated as
 /// off-track (matching the UI's 'on-track' verdict for that case).
 pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
+    if kpi_floor_breached(kpi) {
+        return true;
+    }
     let (Some(cur), Some(target)) = (kpi.current_value, kpi.target_value) else {
         return false; // unmeasured or target-less — nothing to steer against
     };
@@ -64,6 +67,17 @@ pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     } else {
         cur < expected - tolerance
     }
+}
+
+/// The "0 users beats 100% coverage" rule: a MEASURED business KPI
+/// (traffic/value) sitting at zero is maximally off-track no matter what the
+/// pace math says — there is no pace toward a target when the floor itself
+/// is breached. Derivation prompts reframe these to "establish the first
+/// unit of value".
+pub fn kpi_floor_breached(kpi: &DevKpi) -> bool {
+    matches!(kpi.category.as_str(), "traffic" | "value")
+        && kpi.direction == "up"
+        && kpi.current_value.is_some_and(|v| v <= 0.0)
 }
 
 fn parse_ts(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
@@ -111,7 +125,8 @@ pub fn find_derivation_candidates(pool: &DbPool, limit: usize) -> Result<Vec<Dev
                             WHERE g2.kpi_id = k.id
                               AND g2.completed_at IS NOT NULL
                               AND datetime(g2.completed_at) >= datetime(k.last_measured_at))
-         ORDER BY CASE k.category WHEN 'value' THEN 0 WHEN 'traffic' THEN 1
+         ORDER BY CASE k.tier WHEN 'north_star' THEN 0 WHEN 'primary' THEN 1 ELSE 2 END,
+                  CASE k.category WHEN 'value' THEN 0 WHEN 'traffic' THEN 1
                                   WHEN 'quality' THEN 2 ELSE 3 END,
                   datetime(k.last_measured_at) DESC",
     )?;
@@ -213,7 +228,7 @@ Recent goals on this project (do NOT duplicate; learn what already shipped):
 {recent_goals}
 
 Rules:
-- ONE goal, scoped to ship in days not weeks, that a software team can execute autonomously and that plausibly MOVES THIS METRIC. Title imperative and concrete.
+- ONE goal, scoped to ship in days not weeks, that a software team can execute autonomously and that plausibly MOVES THIS METRIC. Title imperative and concrete.{floor_breach}
 - The description must say HOW the work moves the metric (the causal claim the next measurement will test).
 - If the metric is not movable by team work right now (needs humans, marketing, external dependency), answer skip with the reason.
 - `rationale`: one short clause — recorded in the goal's provenance.
@@ -241,6 +256,11 @@ Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON
         history = if history.is_empty() { "(single measurement)".into() } else { history },
         contexts = if contexts.is_empty() { "(no context map)".to_string() } else { contexts },
         recent_goals = if recent_goals.is_empty() { "(none)".to_string() } else { recent_goals },
+        floor_breach = if kpi_floor_breached(kpi) {
+            "\n- FLOOR BREACH: this business metric is at ZERO. Do not propose incremental optimization — propose the single most direct path to ESTABLISH THE FIRST UNIT OF VALUE (the first user, the first real request). Distribution/instrumentation/activation work beats internal quality work here."
+        } else {
+            ""
+        },
     )
 }
 
