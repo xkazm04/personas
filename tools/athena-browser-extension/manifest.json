@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Personas — Athena Browser Bridge",
+  "description": "Lets Athena (the Personas desktop companion) run approved live tests of your web apps in this browser. Connects only to the Personas app on localhost; only ever drives tabs it created itself.",
+  "version": "0.1.0",
+  "permissions": ["debugger", "scripting", "tabs", "storage", "alarms"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "options_page": "options.html",
+  "action": {
+    "default_title": "Athena Browser Bridge — open options to pair"
+  }
+}
