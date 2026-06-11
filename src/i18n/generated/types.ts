@@ -4483,6 +4483,9 @@ export type Translations = {
     reauth_banner: {
       access_revoked: string;
       reconnect: string;
+      cli_expired: string;
+      retry_capture: string;
+      retry_success: string;
     };
     rotation_section: {
       corrupted_warning: string;

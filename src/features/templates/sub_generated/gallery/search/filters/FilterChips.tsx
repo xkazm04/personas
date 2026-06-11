@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, FlaskConical, X } from 'lucide-react';
 import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
@@ -21,13 +21,25 @@ export function FilterChips({
   onConnectorFilterChange: (connectors: string[]) => void;
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
-  coverageCounts?: { all: number; ready: number; partial: number };
+  coverageCounts?: { all: number; ready: number; partial: number; drafts?: number };
   componentFilter?: string[];
   onComponentFilterChange?: (components: string[]) => void;
 }) {
   const { t } = useTranslation();
   const activeCategoryMeta = selectedCategory ? getCategoryMeta(selectedCategory) : null;
   const ActiveCategoryIcon = activeCategoryMeta?.icon ?? null;
+
+  // "Drafts" is a dev-only filter: the chip appears only when draft (unpublished)
+  // templates are present, which happens solely in dev builds (the catalog skips
+  // them in production), so it's auto-hidden in release builds.
+  const coverageOptions = [
+    { value: 'all', label: t.templates.search.coverage_all, color: 'violet', icon: null, countKey: 'all' as const },
+    { value: 'full', label: t.templates.search.coverage_ready, color: 'emerald', icon: CheckCircle2, countKey: 'ready' as const },
+    { value: 'partial', label: t.templates.search.coverage_partial, color: 'amber', icon: AlertCircle, countKey: 'partial' as const },
+    ...((coverageCounts?.drafts ?? 0) > 0
+      ? [{ value: 'drafts', label: t.templates.search.coverage_drafts, color: 'slate', icon: FlaskConical, countKey: 'drafts' as const }]
+      : []),
+  ];
 
   return (
     <>
@@ -106,7 +118,7 @@ export function FilterChips({
             role="radiogroup"
             aria-label={t.templates.search.coverage_filter_aria}
             onKeyDown={(e) => {
-              const values = ['all', 'full', 'partial'];
+              const values = coverageOptions.map((o) => o.value);
               const idx = values.indexOf(coverageFilter ?? 'all');
               let next: number;
 
@@ -137,14 +149,18 @@ export function FilterChips({
             }}
             className="inline-flex items-center rounded-card border border-primary/15 overflow-hidden flex-shrink-0"
           >
-            {([
-              { value: 'all', label: 'All', color: 'violet', countKey: 'all' as const },
-              { value: 'full', label: 'Ready', color: 'emerald', icon: CheckCircle2, countKey: 'ready' as const },
-              { value: 'partial', label: 'Partial', color: 'amber', icon: AlertCircle, countKey: 'partial' as const },
-            ]).map((opt) => {
+            {coverageOptions.map((opt) => {
               const isActive = (coverageFilter ?? 'all') === opt.value;
-              const Icon = 'icon' in opt ? opt.icon : null;
+              const Icon = opt.icon;
               const count = coverageCounts?.[opt.countKey];
+              const activeClass =
+                opt.color === 'violet'
+                  ? 'bg-violet-500/20 text-violet-300'
+                  : opt.color === 'emerald'
+                    ? 'bg-emerald-500/20 text-emerald-300'
+                    : opt.color === 'slate'
+                      ? 'bg-slate-500/25 text-slate-200'
+                      : 'bg-amber-500/20 text-amber-300';
               return (
                 <button
                   key={opt.value}
@@ -154,13 +170,7 @@ export function FilterChips({
                   data-value={opt.value}
                   onClick={() => onCoverageFilterChange(opt.value)}
                   className={`px-2.5 py-1.5 typo-body font-medium transition-colors flex items-center gap-1 ${
-                    isActive
-                      ? opt.color === 'violet'
-                        ? 'bg-violet-500/20 text-violet-300'
-                        : opt.color === 'emerald'
-                          ? 'bg-emerald-500/20 text-emerald-300'
-                          : 'bg-amber-500/20 text-amber-300'
-                      : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
+                    isActive ? activeClass : 'text-foreground hover:text-muted-foreground/80 hover:bg-secondary/40'
                   }`}
                 >
                   {Icon && <Icon className="w-3 h-3" />}

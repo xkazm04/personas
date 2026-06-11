@@ -1,7 +1,27 @@
 import type { Translations } from '@/i18n/generated/types';
+import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import type { ChannelSpecV2 } from '@/lib/bindings/ChannelSpecV2';
 import type { TriggerSelection } from '../useCasePickerShared';
 
 type Tx = (template: string, vars: Record<string, string | number>) => string;
+
+/**
+ * Map a notification channel to a left-panel card ({ key, label }) for the
+ * Messages card. The `key` resolves a brand icon via getConnectorMeta in
+ * AdoptionLeftPanel; built-in/titlebar fall back to the local-messaging icon.
+ */
+export function resolveChannelCard(ch: ChannelSpecV2): { key: string; label: string } {
+  switch (ch.type) {
+    case 'built-in':
+      return { key: 'personas_messages', label: 'Inbox' };
+    case 'titlebar':
+      return { key: 'personas_messages', label: 'Title bar' };
+    case 'email':
+      return { key: 'gmail', label: 'Email' };
+    default:
+      return { key: ch.type, label: getConnectorMeta(ch.type).label };
+  }
+}
 
 /**
  * Human label for a capability's trigger selection, reusing the from-scratch

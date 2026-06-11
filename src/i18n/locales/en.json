@@ -4476,7 +4476,10 @@
     },
     "reauth_banner": {
       "access_revoked": ") -- access was revoked. Please re-authorize to resume automations.",
-      "reconnect": "Reconnect"
+      "reconnect": "Reconnect",
+      "cli_expired": ") -- CLI session expired. Sign in via your terminal, then retry.",
+      "retry_capture": "Retry capture",
+      "retry_success": "Credential refreshed from CLI session"
     },
     "rotation_section": {
       "corrupted_warning": "Healthcheck metadata is corrupted. Anomaly scores are unavailable until the next successful healthcheck overwrites the bad data.",

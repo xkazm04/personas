@@ -4,7 +4,7 @@ import {
   AlertCircle,
   Lightbulb, Play,
   BrainCircuit,
-  Zap, Star,
+  Zap, Star, SlidersHorizontal,
 } from 'lucide-react';
 import type { Event } from '@tauri-apps/api/event';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -17,7 +17,10 @@ import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { runStaticScan } from '@/api/devTools/devTools';
-import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch, extractMessage } from '@/lib/silentCatch';
+import type { StaticScanConfig } from '@/lib/bindings/StaticScanConfig';
+import { ScanConfigModal } from './ScanConfigModal';
+import { StaticScanConfigModal } from './StaticScanConfigModal';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
 } from '../constants/scanAgents';
@@ -51,6 +54,8 @@ export default function IdeaScannerPage() {
   const scans = useSystemStore((s) => s.scans ?? []);
   const fetchScans = useSystemStore((s) => s.fetchScans);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const activeProject = useSystemStore((s) => s.projects.find((p) => p.id === s.activeProjectId));
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
   // Context map data for auto-scan
   const fetchContexts = useSystemStore((s) => s.fetchContexts);
@@ -73,6 +78,23 @@ export default function IdeaScannerPage() {
   const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
   const [staticScanRunning, setStaticScanRunning] = useState(false);
   const [staticScanStatus, setStaticScanStatus] = useState<string | null>(null);
+  // Scan configuration (context scope + granularity), set via the Configure modal.
+  const [scanConfigOpen, setScanConfigOpen] = useState(false);
+  const [selectedContextIds, setSelectedContextIds] = useState<string[]>([]);
+  const [targetCount, setTargetCount] = useState<number | null>(null);
+  const [staticConfigOpen, setStaticConfigOpen] = useState(false);
+
+  // Parsed static-scan config for the active project — drives whether the
+  // Static Scan button runs or opens the config modal.
+  const parsedStaticConfig = useMemo<StaticScanConfig | null>(() => {
+    const raw = activeProject?.static_scan_config;
+    if (!raw) return null;
+    try { return JSON.parse(raw) as StaticScanConfig; } catch { return null; }
+  }, [activeProject?.static_scan_config]);
+
+  // Context selection is project-specific — drop it when the project changes so
+  // stale ids from another project can't scope a scan.
+  useEffect(() => { setSelectedContextIds([]); }, [activeProjectId]);
 
   const mountedRef = useRef(true);
   useEffect(() => () => { mountedRef.current = false; }, []);
@@ -252,30 +274,42 @@ export default function IdeaScannerPage() {
     }
   };
 
-  const handleRunStaticScan = useCallback(async () => {
-    if (!activeProjectId || staticScanRunning) return;
+  // The actual static-scan run (no config gate). Reused after saving a config.
+  const runStaticScanNow = useCallback(async () => {
+    if (!activeProjectId) return;
     setStaticScanRunning(true);
-    setStaticScanStatus(t.plugins.dev_scanner.static_scan_running);
+    setStaticScanStatus(ds.static_scan_running);
     try {
       const result = await runStaticScan(activeProjectId);
-      setStaticScanStatus(
-        tx(t.plugins.dev_scanner.static_scan_complete, { count: result.ideas_created }),
-      );
+      setStaticScanStatus(tx(ds.static_scan_complete, { count: result.ideas_created }));
       // Refresh ideas + scan history so the new findings + scan row appear immediately.
       useSystemStore.getState().fetchIdeas(activeProjectId);
       useSystemStore.getState().fetchScans(activeProjectId);
-      setTimeout(() => {
-        if (!mountedRef.current) return;
-        setStaticScanStatus(null);
-      }, 4000);
+      setTimeout(() => { if (mountedRef.current) setStaticScanStatus(null); }, 4000);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setStaticScanStatus(tx(t.plugins.dev_scanner.static_scan_failed, { error: msg }));
+      setStaticScanStatus(tx(ds.static_scan_failed, { error: extractMessage(err) }));
       toastCatch('IdeaScannerPage:runStaticScan')(err);
+      // Auto-clear the failed status so the control never looks permanently stuck.
+      setTimeout(() => { if (mountedRef.current) setStaticScanStatus(null); }, 6000);
     } finally {
       if (mountedRef.current) setStaticScanRunning(false);
     }
-  }, [activeProjectId, staticScanRunning, t, tx]);
+  }, [activeProjectId, ds, tx]);
+
+  // Static Scan button. With no tool configured, open the config modal instead
+  // of firing a run that's guaranteed to fail with a confusing generic
+  // validation error ("Some input values are invalid").
+  const handleRunStaticScan = useCallback(() => {
+    if (!activeProjectId || staticScanRunning) return;
+    if (!parsedStaticConfig) { setStaticConfigOpen(true); return; }
+    void runStaticScanNow();
+  }, [activeProjectId, staticScanRunning, parsedStaticConfig, runStaticScanNow]);
+
+  // After saving a config from the modal: refresh projects (so the config is
+  // reflected) then run immediately.
+  const handleStaticConfigSaved = useCallback(() => {
+    void Promise.resolve(fetchProjects?.()).then(() => { void runStaticScanNow(); });
+  }, [fetchProjects, runStaticScanNow]);
 
   const handleRunScan = useCallback(async () => {
     if (selectedAgents.size === 0) return;
@@ -289,12 +323,15 @@ export default function IdeaScannerPage() {
     );
 
     try {
-      await runScan([...selectedAgents]);
+      await runScan([...selectedAgents], {
+        contextIds: selectedContextIds.length > 0 ? selectedContextIds : undefined,
+        targetCount: targetCount ?? undefined,
+      });
     } catch {
       setScanProgress(0);
       useOverviewStore.getState().processEnded('idea_scan', 'failed');
     }
-  }, [selectedAgents, runScan]);
+  }, [selectedAgents, runScan, selectedContextIds, targetCount]);
 
   // Rerun a historical scan with its exact agent set against current HEAD.
   // Also restores the agent selection in the picker grid for visibility.
@@ -383,7 +420,7 @@ export default function IdeaScannerPage() {
         setScanProgress(Math.round((completed / ctxList.length) * 90) + 5);
 
         try {
-          await runScan(matchedAgents, ctx.id);
+          await runScan(matchedAgents, { contextId: ctx.id });
           await new Promise<void>((resolve) => {
             const check = () => {
               if (!mountedRef.current) { resolve(); return; }
@@ -516,6 +553,20 @@ export default function IdeaScannerPage() {
             </Button>
           )}
           <Button
+            variant="secondary"
+            size="sm"
+            icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
+            onClick={() => setScanConfigOpen(true)}
+            title={ds.scan_config_btn}
+          >
+            {ds.scan_config_btn}
+            {(selectedContextIds.length > 0 || targetCount !== null) && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-semibold tabular-nums">
+                {selectedContextIds.length > 0 ? selectedContextIds.length : '•'}
+              </span>
+            )}
+          </Button>
+          <Button
             variant="accent"
             accentColor="amber"
             size="sm"
@@ -634,10 +685,10 @@ export default function IdeaScannerPage() {
                     {ideaSortOptions.map((opt) => (
                       <Button
                         key={`sort-${opt.mode}`}
-                        variant={ideaSort === opt.mode ? 'secondary' : 'ghost'}
+                        variant="ghost"
                         size="xs"
                         onClick={() => setIdeaSort(opt.mode)}
-                        className={ideaSort === opt.mode ? 'bg-primary/15 border-primary/30' : ''}
+                        className={ideaSort === opt.mode ? 'border bg-primary/15 border-primary/30 text-primary' : ''}
                       >
                         {opt.label}
                       </Button>
@@ -646,10 +697,10 @@ export default function IdeaScannerPage() {
                   </>
                 )}
                 <Button
-                  variant={filterCategory === 'all' ? 'secondary' : 'ghost'}
+                  variant="ghost"
                   size="xs"
                   onClick={() => setFilterCategory('all')}
-                  className={filterCategory === 'all' ? 'bg-primary/15 border-primary/30' : ''}
+                  className={filterCategory === 'all' ? 'border bg-primary/15 border-primary/30 text-primary' : ''}
                 >
                   All
                 </Button>
@@ -658,10 +709,10 @@ export default function IdeaScannerPage() {
                   return (
                     <Button
                       key={cat.key}
-                      variant={filterCategory === cat.key ? 'secondary' : 'ghost'}
+                      variant="ghost"
                       size="xs"
                       onClick={() => setFilterCategory(cat.key as CategoryKey)}
-                      className={filterCategory === cat.key ? `${catTw.bg} ${catTw.border} ${catTw.text}` : ''}
+                      className={filterCategory === cat.key ? `border ${catTw.bg} ${catTw.border} ${catTw.text}` : ''}
                     >
                       {cat.label}
                     </Button>
@@ -762,6 +813,21 @@ export default function IdeaScannerPage() {
           </div>
         </div>
       </ContentBody>
+
+      <ScanConfigModal
+        open={scanConfigOpen}
+        onClose={() => setScanConfigOpen(false)}
+        initialContextIds={selectedContextIds}
+        initialTargetCount={targetCount}
+        onApply={(ctxIds, tc) => { setSelectedContextIds(ctxIds); setTargetCount(tc); }}
+      />
+      <StaticScanConfigModal
+        open={staticConfigOpen}
+        onClose={() => setStaticConfigOpen(false)}
+        projectId={activeProjectId}
+        initialConfig={parsedStaticConfig}
+        onSaved={handleStaticConfigSaved}
+      />
     </ContentBox>
   );
 }

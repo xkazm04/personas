@@ -50,16 +50,35 @@ export function useGalleryActions(
     return map;
   }, [allItems, installedConnectorNames, credentialServiceTypes]);
 
+  // Draft (unpublished) templates — seeded only in dev builds, tagged via a
+  // `_draft` marker on the design_result. Isolated under the "Drafts" filter and
+  // excluded from All/Ready/Partial so half-baked templates don't pollute the
+  // normal views.
+  const draftIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const item of allItems) {
+      const dr = getCachedDesignResult(item) as Record<string, unknown> | null;
+      if (dr?._draft === true) s.add(item.id);
+    }
+    return s;
+  }, [allItems]);
+
   const coverageCounts = useMemo(() => {
+    let all = 0;
     let ready = 0;
     let partial = 0;
-    for (const [, score] of readinessScores) {
+    let drafts = 0;
+    for (const item of allItems) {
+      if (draftIds.has(item.id)) { drafts++; continue; }
+      all++;
+      const score = readinessScores.get(item.id) ?? 0;
       if (score === 100) ready++;
       else if (score > 0) partial++;
     }
+    void total;
     void unfilteredTotal;
-    return { all: total, ready, partial };
-  }, [readinessScores, total, unfilteredTotal]);
+    return { all, ready, partial, drafts };
+  }, [allItems, readinessScores, draftIds, total, unfilteredTotal]);
 
   // -- Available architectural components ----------------------------
   const availableComponents = useMemo(() => {
@@ -88,14 +107,20 @@ export function useGalleryActions(
   const displayItems = useMemo(() => {
     let filtered = allItems;
 
-    // Coverage filter
-    if (coverageFilter === 'full') {
-      filtered = filtered.filter((item) => (readinessScores.get(item.id) ?? 0) === 100);
-    } else if (coverageFilter === 'partial') {
-      filtered = filtered.filter((item) => {
-        const score = readinessScores.get(item.id) ?? 0;
-        return score > 0 && score < 100;
-      });
+    // Coverage filter. Drafts are isolated under their own filter and excluded
+    // from every other view (All/Ready/Partial).
+    if (coverageFilter === 'drafts') {
+      filtered = filtered.filter((item) => draftIds.has(item.id));
+    } else {
+      filtered = filtered.filter((item) => !draftIds.has(item.id));
+      if (coverageFilter === 'full') {
+        filtered = filtered.filter((item) => (readinessScores.get(item.id) ?? 0) === 100);
+      } else if (coverageFilter === 'partial') {
+        filtered = filtered.filter((item) => {
+          const score = readinessScores.get(item.id) ?? 0;
+          return score > 0 && score < 100;
+        });
+      }
     }
 
     // Component filter
@@ -124,7 +149,7 @@ export function useGalleryActions(
       if (sb !== sa) return sb - sa;
       return b.adoption_count - a.adoption_count;
     });
-  }, [isReadinessSort, allItems, readinessScores, coverageFilter, componentFilterSet, difficultyFilterSet, setupFilterSet]);
+  }, [isReadinessSort, allItems, readinessScores, draftIds, coverageFilter, componentFilterSet, difficultyFilterSet, setupFilterSet]);
 
   // -- Credential modal ---------------------------------------------
   const [credentialModalTarget, setCredentialModalTarget] = useState<CredentialModalTarget | null>(null);

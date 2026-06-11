@@ -13,8 +13,11 @@ import {
 import { ComposerSchedulePickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerSchedulePickerModal';
 import { ComposerEventPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerEventPickerModal';
 import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal';
+import { ComposerMessagingPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerMessagingPickerModal';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { resolveChannelCard } from './adoptionDimHelpers';
 import type { EventSubscription } from '@/features/agents/shared/quickConfig/quickConfigTypes';
+import type { ChannelSpecV2 } from '@/lib/bindings/ChannelSpecV2';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
@@ -41,6 +44,17 @@ import { groupQuestionsByDimension, questionToDimension } from './questionDimMap
 
 /** Dims that toggle on/off directly on petal click (no card / picker). */
 const POLICY_TOGGLE_DIMS = new Set<GlyphDimension>(['memory', 'review']);
+
+/** Sensible default the messaging picker starts from on first open (removable —
+ *  clearing it yields no user-facing message). */
+const BUILT_IN_INBOX: ChannelSpecV2 = {
+  type: 'built-in',
+  enabled: true,
+  credential_id: null,
+  use_case_ids: '*',
+  event_filter: null,
+  config: null,
+};
 
 interface PersonaLayoutAdoptionProps {
   /** Template parsed design result — source of use cases for the rows. */
@@ -106,6 +120,11 @@ interface PersonaLayoutAdoptionProps {
   connectorTables: Record<string, string[]>;
   /** Set the per-connector table scope (from the connector picker). */
   onConnectorTablesChange: (tables: Record<string, string[]>) => void;
+  /** Messaging channels (Messages petal). `null` = untouched (template default);
+   *  a non-null array = the user's explicit choice (empty = no message output). */
+  notificationChannels: ChannelSpecV2[] | null;
+  /** Set the messaging channels (from the messaging picker). */
+  onNotificationChannelsChange: (channels: ChannelSpecV2[]) => void;
 }
 
 /**
@@ -151,6 +170,8 @@ export function PersonaLayoutAdoption({
   onManualConnectorsChange,
   connectorTables,
   onConnectorTablesChange,
+  notificationChannels,
+  onNotificationChannelsChange,
 }: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
@@ -161,6 +182,7 @@ export function PersonaLayoutAdoption({
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [eventsOpen, setEventsOpen] = useState(false);
   const [connectorsOpen, setConnectorsOpen] = useState(false);
+  const [messagingOpen, setMessagingOpen] = useState(false);
 
   // Per-capability disabled-dims map — drives question filtering + petal idle
   // for the CARD dims (task / connector / message) via the AnswerCard footer
@@ -339,6 +361,14 @@ export function PersonaLayoutAdoption({
       // path) — otherwise it falls through to question/design coverage below
       // and stays idle (empty) when nothing is attached.
       if (dim === 'connector' && manualConnectors.length > 0) { out[dim] = 'resolved'; continue; }
+      // Messages petal: once the user edits channels (non-null), the petal
+      // reflects the explicit choice — resolved when ≥1 channel, idle (empty)
+      // when none (= no user-facing message). Untouched (null) falls through to
+      // the template's question/design coverage below.
+      if (dim === 'message' && notificationChannels !== null) {
+        out[dim] = notificationChannels.length > 0 ? 'resolved' : 'idle';
+        continue;
+      }
       if (disabledDimsForActive.has(dim)) {
         out[dim] = 'idle';
         continue;
@@ -357,7 +387,7 @@ export function PersonaLayoutAdoption({
       }
     }
     return out;
-  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive, activeCapabilityId, dimOnForCap, triggerSelections, eventSubsByCap, manualConnectors]);
+  }, [items, questionsByDim, userAnswers, blockedQuestionIds, disabledDimsForActive, activeCapabilityId, dimOnForCap, triggerSelections, eventSubsByCap, manualConnectors, notificationChannels]);
 
   const handlePetalClick = useCallback(
     (dim: GlyphDimension) => {
@@ -377,7 +407,10 @@ export function PersonaLayoutAdoption({
         setConnectorsOpen(true);
         return;
       }
-      // task / connector(with questions) / message / error → open the inline card.
+      // Messages → open the channel picker (pick delivery channels; clear all
+      // for no user-facing message).
+      if (dim === 'message') { setMessagingOpen(true); return; }
+      // task / connector(with questions) / error → open the inline card.
       setActiveQuestionId(null);
       setActiveDim((prev) => (prev === dim ? null : dim));
     },
@@ -558,9 +591,26 @@ export function PersonaLayoutAdoption({
     return out;
   }, [items, activeCapabilityId, manualConnectors]);
 
+  // Messages card source — the user's picked channels (deduped). Empty when
+  // untouched (null) or explicitly cleared.
+  const channelsForActive = useMemo<AdoptionConnectorCard[]>(() => {
+    if (!notificationChannels) return [];
+    const out: AdoptionConnectorCard[] = [];
+    const seen = new Set<string>();
+    for (const ch of notificationChannels) {
+      const card = resolveChannelCard(ch);
+      const k = `${card.key}:${ch.credential_id ?? ''}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(card);
+    }
+    return out;
+  }, [notificationChannels]);
+
   const leftSlot = (
     <AdoptionLeftPanel
       connectors={connectorsForActive}
+      channels={channelsForActive}
       summaryEntries={summaryEntries}
       onSelectDim={handlePetalClick}
     />
@@ -800,6 +850,16 @@ export function PersonaLayoutAdoption({
           onManualConnectorsChange(next);
           onConnectorTablesChange(nextTables);
           setConnectorsOpen(false);
+        }}
+      />
+      <ComposerMessagingPickerModal
+        open={messagingOpen}
+        onClose={() => setMessagingOpen(false)}
+        selected={notificationChannels ?? [BUILT_IN_INBOX]}
+        pinBuiltIn={false}
+        onApply={(next) => {
+          onNotificationChannelsChange(next);
+          setMessagingOpen(false);
         }}
       />
     </div>

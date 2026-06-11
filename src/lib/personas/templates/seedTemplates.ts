@@ -65,6 +65,14 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
 
   const flows = v3Flows.length > 0 ? v3Flows : legacyFlows;
 
+  // Tag unpublished drafts so the gallery's "Drafts" filter can isolate them.
+  // Additive marker on the seeded design_result (adoption ignores unknown keys);
+  // drafts only ever reach here in dev builds (the catalog skips them in prod).
+  const designResultObj: Record<string, unknown> =
+    template.is_published === false
+      ? { ...(payload as Record<string, unknown>), _draft: true }
+      : (payload as Record<string, unknown>);
+
   return {
     test_case_id: template.id,
     test_case_name: template.name,
@@ -74,7 +82,7 @@ function templateToReviewInput(template: TemplateCatalogEntry, runId: string): S
     semantic_score: 100,
     connectors_used: JSON.stringify(connectors),
     trigger_types: JSON.stringify(triggers),
-    design_result: JSON.stringify(payload),
+    design_result: JSON.stringify(designResultObj),
     use_case_flows: flows ? JSON.stringify(flows) : null,
     test_run_id: runId,
     reviewed_at: new Date().toISOString(),

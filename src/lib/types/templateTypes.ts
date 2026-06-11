@@ -171,6 +171,12 @@ export interface TemplateCatalogEntry {
    * persona/use_cases; v2 templates store flat arrays. See TemplateV3Payload.
    */
   payload: TemplateV3Payload;
+  /**
+   * `false` marks an unpublished "draft" template. In production these never
+   * load (the catalog skips them); in dev builds they load + verify and surface
+   * only under the gallery's "Drafts" filter. Absent/`true` = published.
+   */
+  is_published?: boolean;
 }
 
 export interface N8nNode {

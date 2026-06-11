@@ -110,6 +110,18 @@ export async function companionAnalyzeFleet(
 }
 
 /**
+ * Deterministic "Daily brief" trigger (the companion sidebar button). Pre-
+ * gathers the three operational inboxes (Messages / Human Review / Incidents)
+ * over the last `hours` (default 24, server-clamped 1–168) and spawns a
+ * proactive turn that summarizes them in chat — bypassing the chat round-trip
+ * so Athena can't shortcut past her wrong-DB connector. Returns immediately;
+ * the brief streams into the panel.
+ */
+export async function companionDailyBrief(hours?: number): Promise<string> {
+  return invoke<string>('companion_daily_brief', { hours });
+}
+
+/**
  * Cancel any scheduled autonomous-continuation tick. Backend best-
  * effort: drops the JoinHandle if pending; if a continuation already
  * started, this is a no-op (use `companionInterruptTurn` to stop the
