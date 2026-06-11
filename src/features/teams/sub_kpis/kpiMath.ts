@@ -63,3 +63,23 @@ export function sparklinePoints(
     })
     .join(' ');
 }
+
+/** Inputs for the plain-language pace sentence (component interpolates i18n). */
+export interface PaceDescriptor {
+  track: KpiTrack;
+  /** 0–100 progress from baseline toward target, when computable. */
+  progressPct: number | null;
+  /** Days until the milestone (negative = overdue), when a date exists. */
+  daysLeft: number | null;
+}
+
+export function paceDescriptor(kpi: DevKpi): PaceDescriptor {
+  const track = kpiTrack(kpi);
+  const progressPct = kpiProgressPct(kpi);
+  let daysLeft: number | null = null;
+  if (kpi.target_date) {
+    const end = new Date(kpi.target_date.replace(' ', 'T')).getTime();
+    if (Number.isFinite(end)) daysLeft = Math.round((end - Date.now()) / 86_400_000);
+  }
+  return { track, progressPct, daysLeft };
+}

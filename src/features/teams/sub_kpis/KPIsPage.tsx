@@ -17,6 +17,7 @@ import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecyc
 import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KPIDetailDrawer } from './KPIDetailDrawer';
+import { KPIExplainer } from './KPIExplainer';
 
 type KpiView = 'dashboard' | 'proposals';
 
@@ -106,6 +107,7 @@ export default function KPIsPage() {
         }
       />
       <ContentBody>
+        <KPIExplainer />
         {!activeProjectId ? (
           <EmptyState title={t.kpis.no_project_title} description={t.kpis.no_project_hint} />
         ) : view === 'proposals' ? (

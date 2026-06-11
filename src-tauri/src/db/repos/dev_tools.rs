@@ -49,6 +49,7 @@ fn row_to_goal(row: &Row) -> rusqlite::Result<DevGoal> {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
         parent_goal_id: row.get("parent_goal_id")?,
+        kpi_id: row.get("kpi_id").unwrap_or(None),
         context_id: row.get("context_id")?,
         order_index: row.get("order_index")?,
         title: row.get("title")?,

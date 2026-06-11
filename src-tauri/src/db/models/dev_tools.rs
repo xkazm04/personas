@@ -150,6 +150,8 @@ pub struct DevGoal {
     pub project_id: String,
     pub parent_goal_id: Option<String>,
     pub context_id: Option<String>,
+    /// KPI this goal was derived from / serves (outcome layer, P4).
+    pub kpi_id: Option<String>,
     pub order_index: i32,
     pub title: String,
     pub description: Option<String>,
