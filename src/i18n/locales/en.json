@@ -16560,6 +16560,15 @@
     "chart_aria": "KPI measurement history chart",
     "chart_legend": "Dashed line = target ({target} {unit}). Vertical marks = derived goals.",
     "goal_marker_done": "shipped",
-    "goal_marker_open": "in flight"
+    "goal_marker_open": "in flight",
+    "proto_label": "Card style",
+    "proto_baseline": "Classic",
+    "proto_gauge": "Gauge",
+    "proto_bullet": "Benchmark",
+    "gauge_to_go": "{delta} {unit} to go",
+    "gauge_target_line": "Target {target} {unit}",
+    "gauge_lower_better": "(lower is better)",
+    "bullet_target_tick": "target",
+    "bullet_baseline_tick": "started"
   }
 }

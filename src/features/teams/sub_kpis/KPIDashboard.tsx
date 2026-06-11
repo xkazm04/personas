@@ -1,11 +1,10 @@
 // KPI dashboard (P5 polish) — active KPIs in CONTEXT-GROUP sections (group
-// color + name as the header, "Whole project" for project-level KPIs), each
-// KPI a plain-language card: value vs target, a pace sentence instead of a
-// status token, how it's measured in one sentence, and a quiet one-shot
-// celebration when a target is met. Zero JSON / zero raw enum tokens.
-import { useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Cable, Gauge, PartyPopper } from 'lucide-react';
+// color + name as the header, "Whole project" for project-level KPIs).
+// Card rendering is delegated to the /prototype variants behind a small
+// card-style switcher (Baseline / Gauge / Bullet) while the directional
+// A/B round runs; the winner consolidates back to a single card.
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { Gauge } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
@@ -13,39 +12,20 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { Numeric } from '@/features/shared/components/display/Numeric';
-import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { paceDescriptor, type KpiTrack } from './kpiMath';
-import { categoryMeta } from './kpiMeta';
-import { describeMeasurement } from './describeMeasurement';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import { paceDescriptor } from './kpiMath';
+import { KpiCardBaseline, type KpiCardProps } from './KpiCardBaseline';
+import { KpiCardGauge } from './KpiCardGauge';
+import { KpiCardBullet } from './KpiCardBullet';
 
-const TRACK_TINT: Record<KpiTrack, string> = {
-  met: 'border-success/40',
-  'on-track': 'border-primary/15',
-  'off-track': 'border-destructive/50',
-  unmeasured: 'border-primary/10',
+type CardVariant = 'baseline' | 'gauge' | 'bullet';
+const VARIANT_KEY = 'personas.kpis.cardVariant';
+
+const CARD_RENDERERS: Record<CardVariant, ComponentType<KpiCardProps>> = {
+  baseline: KpiCardBaseline,
+  gauge: KpiCardGauge,
+  bullet: KpiCardBullet,
 };
-
-const CELEBRATED_KEY = 'personas.kpis.celebrated';
-
-function celebratedSet(): Set<string> {
-  try {
-    return new Set(JSON.parse(localStorage.getItem(CELEBRATED_KEY) ?? '[]') as string[]);
-  } catch {
-    return new Set();
-  }
-}
-
-function markCelebrated(id: string) {
-  try {
-    const s = celebratedSet();
-    s.add(id);
-    localStorage.setItem(CELEBRATED_KEY, JSON.stringify([...s].slice(-100)));
-  } catch (err) {
-    silentCatch('kpi.celebrate.persist')(err);
-  }
-}
 
 export function KPIDashboard({
   loading,
@@ -63,6 +43,24 @@ export function KPIDashboard({
   const fetchContextGroups = useSystemStore((s) => s.fetchContextGroups);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
+  const [variant, setVariant] = useState<CardVariant>(() => {
+    try {
+      const v = localStorage.getItem(VARIANT_KEY);
+      return v === 'gauge' || v === 'bullet' ? v : 'baseline';
+    } catch (err) {
+      silentCatch('kpi.cardVariant.read')(err);
+      return 'baseline';
+    }
+  });
+  const pickVariant = (v: CardVariant) => {
+    setVariant(v);
+    try {
+      localStorage.setItem(VARIANT_KEY, v);
+    } catch (err) {
+      silentCatch('kpi.cardVariant.persist')(err);
+    }
+  };
+
   useEffect(() => {
     if (activeProjectId) void fetchContextGroups(activeProjectId);
   }, [activeProjectId, fetchContextGroups]);
@@ -73,7 +71,6 @@ export function KPIDashboard({
   );
   const hasProposals = useMemo(() => kpis.some((k) => k.status === 'proposed'), [kpis]);
 
-  // Sections: each context group that has KPIs, then "Whole project".
   const sections = useMemo(() => {
     const byGroup = new Map<string | null, DevKpi[]>();
     for (const k of visible) {
@@ -115,8 +112,25 @@ export function KPIDashboard({
     );
   }
 
+  const Card = CARD_RENDERERS[variant];
+
   return (
     <div className="space-y-6" data-testid="kpi-dashboard">
+      {/* Card-style A/B switcher (prototype round — consolidates to the winner). */}
+      <div className="flex items-center gap-2">
+        <span className="typo-caption text-foreground">{t.kpis.proto_label}</span>
+        <SegmentedTabs<CardVariant>
+          tabs={[
+            { id: 'baseline', label: t.kpis.proto_baseline },
+            { id: 'gauge', label: t.kpis.proto_gauge },
+            { id: 'bullet', label: t.kpis.proto_bullet },
+          ]}
+          activeTab={variant}
+          onTabChange={pickVariant}
+          ariaLabel={t.kpis.proto_label}
+        />
+      </div>
+
       {sections.map((section) => {
         const onTrack = section.kpis.filter((k) => {
           const tr = paceDescriptor(k).track;
@@ -136,7 +150,7 @@ export function KPIDashboard({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {section.kpis.map((kpi) => (
-                <KpiCard
+                <Card
                   key={kpi.id}
                   kpi={kpi}
                   onOpen={onOpen}
@@ -148,139 +162,5 @@ export function KPIDashboard({
         );
       })}
     </div>
-  );
-}
-
-function paceSentence(
-  kpi: DevKpi,
-  t: ReturnType<typeof useTranslation>['t'],
-  tx: ReturnType<typeof useTranslation>['tx'],
-): string {
-  const d = paceDescriptor(kpi);
-  const unit = kpi.unit || '';
-  switch (d.track) {
-    case 'met':
-      return tx(t.kpis.pace_met, { value: kpi.current_value ?? 0, unit });
-    case 'unmeasured':
-      return t.kpis.pace_unmeasured;
-    case 'off-track':
-      return d.daysLeft != null
-        ? tx(t.kpis.pace_off_dated, {
-            current: kpi.current_value ?? 0,
-            target: kpi.target_value ?? 0,
-            unit,
-            days: Math.max(0, d.daysLeft),
-          })
-        : tx(t.kpis.pace_off, {
-            current: kpi.current_value ?? 0,
-            target: kpi.target_value ?? 0,
-            unit,
-          });
-    default:
-      return d.progressPct != null && d.daysLeft != null
-        ? tx(t.kpis.pace_on_dated, {
-            pct: d.progressPct,
-            target: kpi.target_value ?? 0,
-            unit,
-            days: Math.max(0, d.daysLeft),
-          })
-        : tx(t.kpis.pace_on, { target: kpi.target_value ?? 0, unit });
-  }
-}
-
-function KpiCard({
-  kpi,
-  onOpen,
-  onConnect,
-}: {
-  kpi: DevKpi;
-  onOpen: (id: string) => void;
-  onConnect: () => void;
-}) {
-  const { t, tx } = useTranslation();
-  const d = paceDescriptor(kpi);
-  const cat = categoryMeta(kpi.category);
-  const CatIcon = cat.icon;
-  const justMet = d.track === 'met' && !celebratedSet().has(kpi.id);
-
-  useEffect(() => {
-    if (justMet) markCelebrated(kpi.id);
-  }, [justMet, kpi.id]);
-
-  return (
-    <motion.button
-      type="button"
-      onClick={() => onOpen(kpi.id)}
-      data-testid={`kpi-card-${kpi.id}`}
-      initial={justMet ? { scale: 0.96 } : false}
-      animate={justMet ? { scale: [0.96, 1.03, 1] } : {}}
-      transition={{ duration: 0.6, ease: 'easeOut' }}
-      className={`text-left rounded-card border bg-secondary/20 hover:bg-secondary/40 transition-colors p-4 space-y-2 ${TRACK_TINT[d.track]} ${kpi.status === 'paused' ? 'opacity-60' : ''}`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <span className="typo-heading text-foreground">{kpi.name}</span>
-        <Tooltip content={cat.label(t)}>
-          <CatIcon className="w-4 h-4 text-foreground flex-shrink-0" aria-label={cat.label(t)} />
-        </Tooltip>
-      </div>
-
-      <div className="flex items-baseline gap-2">
-        {justMet && <PartyPopper className="w-4 h-4 text-success" aria-hidden />}
-        <span className="typo-title text-foreground tabular-nums">
-          {kpi.current_value != null ? <Numeric value={kpi.current_value} /> : '—'}
-        </span>
-        {kpi.target_value != null && (
-          <span className="typo-body text-foreground tabular-nums">
-            / <Numeric value={kpi.target_value} /> {kpi.unit}
-          </span>
-        )}
-      </div>
-
-      {d.progressPct != null && (
-        <div className="h-1 rounded-full bg-secondary/60 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${d.track === 'off-track' ? 'bg-destructive/70' : d.track === 'met' ? 'bg-success/70' : 'bg-primary/70'}`}
-            style={{ width: `${Math.max(d.progressPct, 2)}%` }}
-          />
-        </div>
-      )}
-
-      <p className="typo-caption text-foreground">{paceSentence(kpi, t, tx)}</p>
-      <p className="typo-caption text-foreground opacity-80">{describeMeasurement(kpi, t, tx)}</p>
-
-      <div className="flex items-center gap-2 flex-wrap">
-        {kpi.last_measured_at && (
-          <span className="typo-caption text-foreground">
-            <RelativeTime timestamp={kpi.last_measured_at} />
-          </span>
-        )}
-        {kpi.status === 'paused' && (
-          <span className="typo-caption text-foreground">{t.kpis.paused_chip}</span>
-        )}
-        {kpi.needed_connector && (
-          <Tooltip content={tx(t.kpis.connect_tooltip, { service: kpi.needed_connector })}>
-            <span
-              role="link"
-              tabIndex={0}
-              onClick={(e) => {
-                e.stopPropagation();
-                onConnect();
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.stopPropagation();
-                  onConnect();
-                }
-              }}
-              className="inline-flex items-center gap-1 typo-caption text-primary hover:underline cursor-pointer"
-              data-testid={`kpi-connect-${kpi.id}`}
-            >
-              <Cable className="w-3 h-3" />
-              {tx(t.kpis.connect_cta, { service: kpi.needed_connector })}
-            </span>
-          </Tooltip>
-        )}
-      </div>
-    </motion.button>
   );
 }

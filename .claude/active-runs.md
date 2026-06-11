@@ -53,6 +53,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype-kpi-card — /prototype directional variants for the KPI card (session 2c665603)
+- Started: 2026-06-11 ~12:30. Main checkout (NOT a worktree — deliberate: variants must render in the live dev app for A/B, and a second app instance is impossible (data-dir singleton); sub_kpis/ is exclusively this session's surface).
+- Paths: src/features/teams/sub_kpis/KpiCard*.tsx (new variants), src/features/teams/sub_kpis/KPIDashboard.tsx (tab switcher host), src/i18n/locales/en.json (kpis.proto_* labels), .claude/active-runs.md.
+- Note: round-1 = Baseline + Gauge (instrument metaphor) + Bullet (benchmark strip metaphor); user prunes/fuses; consolidation removes variants.
+
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50

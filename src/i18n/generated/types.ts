@@ -16567,5 +16567,14 @@ export type Translations = {
     chart_legend: string;
     goal_marker_done: string;
     goal_marker_open: string;
+    proto_label: string;
+    proto_baseline: string;
+    proto_gauge: string;
+    proto_bullet: string;
+    gauge_to_go: string;
+    gauge_target_line: string;
+    gauge_lower_better: string;
+    bullet_target_tick: string;
+    bullet_baseline_tick: string;
   };
 };
