@@ -84,27 +84,61 @@ pub fn claude_cli_invocation() -> (String, Vec<String>) {
     }
 }
 
-/// Absolute path to the real `claude.exe` (the binary the npm `claude.cmd` shim
-/// forwards to), searching the npm-global dir then PATH. `None` if not found.
+/// Absolute path to the real `claude.exe`, searching install layouts in
+/// preference order. `None` if not found.
+///
+/// 1. **Native installer** — `%USERPROFILE%\.local\bin\claude.exe`. The
+///    user migrated to this install (2026-06-11) and removed the npm global,
+///    so it is checked FIRST: when both exist the native one is the one the
+///    user maintains.
+/// 2. **npm-global layout** — `%APPDATA%\npm\node_modules\@anthropic-ai\
+///    claude-code\bin\claude.exe` (the binary the `claude.cmd` shim forwards
+///    to).
+/// 3. **PATH scan** — each PATH entry, as plain `<dir>\claude.exe` first,
+///    then the npm layout under `<dir>`.
 #[cfg(windows)]
 fn resolve_claude_exe_windows() -> Option<String> {
+    fn ok(p: std::path::PathBuf) -> Option<String> {
+        if p.exists() {
+            p.to_str().map(str::to_string)
+        } else {
+            None
+        }
+    }
+
+    // 1) Native installer.
+    if let Some(home) = std::env::var_os("USERPROFILE") {
+        let native = std::path::PathBuf::from(home)
+            .join(".local")
+            .join("bin")
+            .join("claude.exe");
+        if let Some(s) = ok(native) {
+            return Some(s);
+        }
+    }
+
     let rel = std::path::Path::new("node_modules")
         .join("@anthropic-ai")
         .join("claude-code")
         .join("bin")
         .join("claude.exe");
-    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+
+    // 2) Canonical npm-global dir.
     if let Some(appdata) = std::env::var_os("APPDATA") {
-        dirs.push(std::path::PathBuf::from(appdata).join("npm"));
+        if let Some(s) = ok(std::path::PathBuf::from(appdata).join("npm").join(&rel)) {
+            return Some(s);
+        }
     }
+
+    // 3) PATH entries — plain exe (covers any custom install dir on PATH),
+    //    then the npm layout.
     if let Some(path) = std::env::var_os("PATH") {
-        dirs.extend(std::env::split_paths(&path));
-    }
-    for dir in dirs {
-        let exe = dir.join(&rel);
-        if exe.exists() {
-            if let Some(s) = exe.to_str() {
-                return Some(s.to_string());
+        for dir in std::env::split_paths(&path) {
+            if let Some(s) = ok(dir.join("claude.exe")) {
+                return Some(s);
+            }
+            if let Some(s) = ok(dir.join(&rel)) {
+                return Some(s);
             }
         }
     }
