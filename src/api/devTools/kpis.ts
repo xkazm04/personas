@@ -105,3 +105,15 @@ export async function getKpiScanStatus(scanId: string): Promise<{
 }> {
   return invoke("dev_tools_get_kpi_scan_status", { scanId });
 }
+
+/** Measure one KPI now (codebase/derived). Coverage runs take minutes. */
+export async function evaluateKpi(kpiId: string): Promise<DevKpiMeasurement> {
+  return invoke<DevKpiMeasurement>("dev_tools_evaluate_kpi", { kpiId }, { timeoutMs: 360_000 });
+}
+
+/** Measure every due active KPI of a project. Returns name → value | "error: ...". */
+export async function evaluateDueKpis(
+  projectId: string,
+): Promise<Record<string, number | string>> {
+  return invoke("dev_tools_evaluate_due_kpis", { projectId }, { timeoutMs: 900_000 });
+}

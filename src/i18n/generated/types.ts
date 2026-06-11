@@ -16510,5 +16510,10 @@ export type Translations = {
     archive_confirm_title: string;
     archive_confirm_body: string;
     archive_failed: string;
+    measure_now: string;
+    measuring: string;
+    evaluate_due_button: string;
+    evaluate_done: string;
+    evaluate_failed: string;
   };
 };

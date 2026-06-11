@@ -66,6 +66,10 @@ export interface DevToolsProjectSlice {
   recordKpiMeasurement: (kpiId: string, value: number, note?: string) => Promise<void>;
   /** Start a KPI proposal scan for the project; resolves with the scan id. */
   scanKpis: (projectId: string) => Promise<string>;
+  /** Measure one KPI now (codebase/derived kinds). */
+  evaluateKpi: (kpiId: string) => Promise<void>;
+  /** Measure every due active KPI; returns name → value | error string. */
+  evaluateDueKpis: (projectId: string) => Promise<Record<string, number | string>>;
 }
 
 export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevToolsProjectSlice> = (set, get) => ({
@@ -361,6 +365,33 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       return r.scan_id;
     } catch (err) {
       reportError(err, "Failed to start KPI scan", set);
+      throw err;
+    }
+  },
+
+  evaluateKpi: async (kpiId) => {
+    try {
+      const m = await kpiApi.evaluateKpi(kpiId);
+      set((state) => ({
+        kpiMeasurements: [m, ...state.kpiMeasurements],
+        kpis: state.kpis.map((k) =>
+          k.id === kpiId ? { ...k, current_value: m.value, last_measured_at: m.measured_at } : k,
+        ),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to measure KPI", set);
+      throw err;
+    }
+  },
+
+  evaluateDueKpis: async (projectId) => {
+    try {
+      const results = await kpiApi.evaluateDueKpis(projectId);
+      await get().fetchKpis(projectId);
+      return results;
+    } catch (err) {
+      reportError(err, "Failed to evaluate due KPIs", set);
       throw err;
     }
   },

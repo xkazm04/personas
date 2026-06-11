@@ -4,7 +4,7 @@
 // (scan output drained via accept / adjust / reject). Header carries the
 // shared project picker + the "Scan for KPIs" action.
 import { useEffect, useMemo, useState } from 'react';
-import { ScanSearch } from 'lucide-react';
+import { Activity, ScanSearch } from 'lucide-react';
 
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -27,6 +27,7 @@ export default function KPIsPage() {
   const kpisLoading = useSystemStore((s) => s.kpisLoading);
   const fetchKpis = useSystemStore((s) => s.fetchKpis);
   const scanKpis = useSystemStore((s) => s.scanKpis);
+  const evaluateDueKpis = useSystemStore((s) => s.evaluateDueKpis);
 
   const [view, setView] = useState<KpiView>('dashboard');
   const [openKpiId, setOpenKpiId] = useState<string | null>(null);
@@ -49,6 +50,19 @@ export default function KPIsPage() {
     }
   };
 
+  const handleEvaluateDue = async () => {
+    if (!activeProjectId) return;
+    try {
+      const results = await evaluateDueKpis(activeProjectId);
+      const n = Object.keys(results).length;
+      // Surface as page hint via store error path is wrong for success — keep silent;
+      // the dashboard re-renders with fresh values, which IS the feedback.
+      void n;
+    } catch (err) {
+      toastCatch('kpi evaluate-due', t.kpis.evaluate_failed)(err);
+    }
+  };
+
   const viewTabs = [
     { id: 'dashboard' as KpiView, label: t.kpis.view_dashboard },
     {
@@ -67,6 +81,17 @@ export default function KPIsPage() {
             <SegmentedTabs<KpiView> tabs={viewTabs} activeTab={view} onTabChange={setView} ariaLabel={t.kpis.title} />
             <div className="flex-1" />
             <LifecycleProjectPicker />
+            <AsyncButton
+              size="sm"
+              variant="secondary"
+              icon={<Activity className="w-4 h-4" />}
+              onClick={handleEvaluateDue}
+              disabled={!activeProjectId}
+              loadingText={t.kpis.measuring}
+              data-testid="kpi-evaluate-due-button"
+            >
+              {t.kpis.evaluate_due_button}
+            </AsyncButton>
             <AsyncButton
               size="sm"
               variant="secondary"

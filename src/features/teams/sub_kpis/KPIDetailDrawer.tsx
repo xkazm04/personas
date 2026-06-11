@@ -21,6 +21,7 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
   const fetchKpiMeasurements = useSystemStore((s) => s.fetchKpiMeasurements);
   const recordKpiMeasurement = useSystemStore((s) => s.recordKpiMeasurement);
   const updateKpi = useSystemStore((s) => s.updateKpi);
+  const evaluateKpi = useSystemStore((s) => s.evaluateKpi);
 
   const [manualValue, setManualValue] = useState('');
   const [confirmArchive, setConfirmArchive] = useState(false);
@@ -91,6 +92,18 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
 
         {kpi.description && <p className="typo-body text-foreground">{kpi.description}</p>}
         <p className="typo-caption text-foreground font-mono break-all">{kpi.measure_config}</p>
+
+        {(kpi.measure_kind === 'codebase' || kpi.measure_kind === 'derived') && (
+          <AsyncButton
+            size="sm"
+            variant="secondary"
+            onClick={() => evaluateKpi(kpi.id).catch(toastCatch('kpi evaluate', t.kpis.evaluate_failed))}
+            loadingText={t.kpis.measuring}
+            data-testid="kpi-measure-now"
+          >
+            {t.kpis.measure_now}
+          </AsyncButton>
+        )}
 
         <div className="flex items-end gap-2">
           <label className="flex flex-col gap-0.5 typo-caption text-foreground flex-1">

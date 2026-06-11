@@ -16503,6 +16503,11 @@
     "archive_button": "Archive",
     "archive_confirm_title": "Archive this KPI?",
     "archive_confirm_body": "Archived KPIs stop being measured and are fed back to future scans as rejected examples. The measurement history is kept.",
-    "archive_failed": "Could not archive the KPI"
+    "archive_failed": "Could not archive the KPI",
+    "measure_now": "Measure now",
+    "measuring": "Measuring…",
+    "evaluate_due_button": "Evaluate due",
+    "evaluate_done": "Evaluated {count} KPI(s)",
+    "evaluate_failed": "Evaluation failed"
   }
 }

@@ -2692,6 +2692,8 @@ pub fn run() {
             commands::infrastructure::kpi_scan::dev_tools_scan_kpis,
             commands::infrastructure::kpi_scan::dev_tools_cancel_kpi_scan,
             commands::infrastructure::kpi_scan::dev_tools_get_kpi_scan_status,
+            commands::infrastructure::dev_tools::dev_tools_evaluate_kpi,
+            commands::infrastructure::dev_tools::dev_tools_evaluate_due_kpis,
             // Dev Tools -- Goal Dependencies
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies,
             commands::infrastructure::dev_tools::dev_tools_add_goal_dependency,

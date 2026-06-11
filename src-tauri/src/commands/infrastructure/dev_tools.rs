@@ -20,7 +20,7 @@ use crate::db::models::{
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
-use crate::ipc_auth::require_auth_sync;
+use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
 
 // ============================================================================
@@ -2750,4 +2750,37 @@ pub fn dev_tools_record_kpi_measurement(
         evidence.as_deref(),
         note.as_deref(),
     )
+}
+
+/// Measure one KPI now (codebase/derived kinds). Long-running for coverage
+/// commands — the frontend invokes with an extended timeout.
+#[tauri::command]
+pub async fn dev_tools_evaluate_kpi(
+    state: State<'_, Arc<AppState>>,
+    kpi_id: String,
+) -> Result<DevKpiMeasurement, AppError> {
+    require_auth(&state).await?;
+    crate::engine::kpi_eval::evaluate_kpi(&state.db, &kpi_id).await
+}
+
+/// Measure every due active KPI of a project (cadence-elapsed). Returns
+/// `{ "<kpi name>": value | "error: ..." }` per evaluated KPI.
+#[tauri::command]
+pub async fn dev_tools_evaluate_due_kpis(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<serde_json::Value, AppError> {
+    require_auth(&state).await?;
+    let results = crate::engine::kpi_eval::evaluate_due_kpis(&state.db, &project_id).await?;
+    let mut map = serde_json::Map::new();
+    for (name, r) in results {
+        map.insert(
+            name,
+            match r {
+                Ok(v) => serde_json::json!(v),
+                Err(e) => serde_json::json!(format!("error: {e}")),
+            },
+        );
+    }
+    Ok(serde_json::Value::Object(map))
 }

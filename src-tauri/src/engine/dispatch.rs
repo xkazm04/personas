@@ -822,6 +822,38 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
         }
+        ProtocolMessage::KpiMeasurement { kpi_id, value, evidence } => {
+            // A persona measured a KPI mid-run (connector recipes, ad-hoc
+            // checks). Recorded with source='evaluator' semantics but
+            // attributed to the execution via the evidence envelope.
+            if kpi_id.trim().is_empty() {
+                ctx.logger.log("[KPI] kpi_measurement dropped — empty kpi_id");
+            } else if ctx.is_simulation {
+                ctx.logger.log("[SIM] kpi_measurement skipped (simulation run)");
+            } else {
+                let evidence_json = serde_json::json!({
+                    "from_execution": ctx.execution_id,
+                    "persona": ctx.persona_name,
+                    "detail": evidence,
+                })
+                .to_string();
+                match crate::db::repos::dev_tools::record_kpi_measurement(
+                    ctx.pool,
+                    kpi_id,
+                    *value,
+                    "evaluator",
+                    Some(&evidence_json),
+                    None,
+                ) {
+                    Ok(_) => ctx
+                        .logger
+                        .log(&format!("[KPI] Recorded measurement {value} for {kpi_id}")),
+                    Err(e) => ctx
+                        .logger
+                        .log(&format!("[KPI] Failed to record measurement: {e}")),
+                }
+            }
+        }
         ProtocolMessage::ProposeBacklog {
             title,
             description,
