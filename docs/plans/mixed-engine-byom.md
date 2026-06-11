@@ -148,3 +148,49 @@ Claude output tokens (the offloaded subtask's generation moved local), at
 acceptable wall-time cost. Failure looks like: the orchestrator burns more
 tokens negotiating with the tool than doing the work — which would argue for
 narrowing the doctrine, not abandoning the tool.
+
+## 6. Live comparison results (2026-06-11, this device, lfm2.5 @ 53 tok/s)
+
+Bench personas: "Engine Bench" (small digest UC) + "Engine Bench Bulk"
+(six team logs → per-team digests + rollup). Same input per pair.
+
+| Run | UC | Engine | Delegate calls | Cost | Wall |
+|---|---|---|---|---|---|
+| A | small | claude | — | $0.246 | 0:42 |
+| B | small | mixed | 0 (armed; correct restraint) | $0.241 | 0:14 |
+| C | bulk | claude | — | $0.275 | 3:33 |
+| D | bulk | mixed | 7 fired, 6 failed (Ollama server handover mid-run) | $0.314 | 4:08 |
+| E | bulk | mixed | 0 — see memory finding | $0.251 | 2:57 |
+| F | bulk | mixed, clean | 1 ok (commit-count JSON, 55s local) | $0.289 | 4:11 |
+
+**What was proven.** The full chain works: capability toggle → runner arms
+sidecar → tool advertised only when armed → orchestrator delegates
+*organically* (D fired six parallel per-team digests unprompted; F delegated
+the mechanical counting) → JSONL audit. Failure semantics proven live by
+accident: the Ollama server died mid-run (instance handover) and the run
+completed anyway — the orchestrator absorbed six tool errors and did the
+work itself.
+
+**Emergent finding — memory poisoning.** Run D's failures produced an
+`agent_memory` ("Local delegate was unavailable…"); run E, with that memory
+injected, rationally skipped the armed tool. One bad infra day teaches a
+persona to avoid delegation until the memory ages out. If mixed scales,
+infra-failure observations should be excluded from durable memory or
+TTL-tagged.
+
+**Economics verdict.** No measurable per-execution savings: engine-identical
+repeats vary by ~$0.03 (C $0.275 vs E $0.251), the same magnitude as any
+delegation effect, because the ~20–37k-token per-execution prompt machinery
+dominates cost and the delegated slice of output is cents. Wall time is
+WORSE under mixed (local generation is serialized and slow). The
+capability-level mixed engine is therefore a *resilience-proven architecture*
+with niche value (very large delegated payloads), not a cost lever.
+
+**Where the real quota lever is (v2 priority reordered).** The headless
+`cli_text` family (Athena reactions, KPI scan/derivation/triage,
+auto-triage verdicts — small prompts, simple judgments, fired constantly
+during cert runs) can be *entirely replaced* by the local model per the
+dormant `ByomPolicy` `TaskComplexity::Simple` routing — replacing whole
+Sonnet calls beats delegating inside prompt-heavy executions by an order of
+magnitude. Second lever: the 20–37k prompt machinery itself (prompt diet),
+which mixed cannot touch.

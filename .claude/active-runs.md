@@ -6,10 +6,11 @@ materially edits the working tree should touch this file twice:
 
 1. **At session start (Phase 0):** read this file, scan `## Active
 
-### byom-mixed-engine — Claude orchestrator + local Ollama as MCP delegate tool (session 7c484b45, fork of 2c665603)
-- Started: 2026-06-11 ~17:15. Status: started.
-- Paths: src-tauri/src/mcp_server/tools.rs, src-tauri/src/engine/cli_mcp_config.rs, src-tauri/src/engine/runner/mod.rs (engine_mode resolve), src-tauri/src/db/models/persona.rs (DesignUseCase.engine_mode), src/features/agents/sub_use_cases/components/detail/*, src/i18n/locales/en.json, docs/plans/mixed-engine-byom.md (new), .claude/active-runs.md.
-- Note: capability-level engine_mode=mixed gives the Claude run an llm_delegate MCP tool wired to local Ollama; main checkout (live-test loop needs the running dev app; data-dir singleton).
+### byom-mixed-engine — mixed engine (Claude orchestrator + local Ollama llm_delegate tool) (session 7c484b45)
+- Started: 2026-06-11 ~17:15. Completed: 2026-06-11 ~18:50. Commits: 428718b05 (backend), d758e2900 (frontend toggle + lfm2.5 catalog), 2d3d8eb87 (feature doc) + findings commit.
+- Paths: mcp_server/tools.rs (llm_delegate), engine/cli_mcp_config.rs, engine/runner/mod.rs, settings_keys.rs, sub_use_cases detail panel, en.json, docs/plans/mixed-engine-byom.md.
+- Note: live-verified A–F runs incl. organic delegation + graceful Ollama-death recovery + memory-poisoning finding. Verdict: resilience-proven architecture, not a cost lever; v2 = replace headless cli_text calls via ByomPolicy Simple routing. Bench personas "Engine Bench"/"Engine Bench Bulk" kept in DB for output inspection.
+
 ` for
    running entries. If any entry's declared paths overlap with this
    session's planned scope AND the entry is less than 2 hours old AND its
