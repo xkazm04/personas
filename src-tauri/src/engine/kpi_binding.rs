@@ -266,8 +266,10 @@ fn render_template(s: &str, fields: &HashMap<String, String>) -> String {
 
 fn extract_value(body: &serde_json::Value, extract: &str) -> Option<f64> {
     let (mode, path) = extract.split_once(':')?;
+    // Root-of-document spellings LLM composers reach for: "", "$", ".".
+    let path = path.trim().trim_start_matches('$').trim_start_matches('.');
     let mut cur = body;
-    for seg in path.split('.') {
+    for seg in path.split('.').filter(|s| !s.is_empty()) {
         cur = match seg.parse::<usize>() {
             Ok(idx) => cur.get(idx)?,
             Err(_) => cur.get(seg)?,
@@ -456,7 +458,7 @@ KPI context: "{kpi_name}" for a software product. {kpi_desc}
 
 Compose ONE HTTPS request against this connector's public REST API that returns the contract's number, plus an extractor:
 - Use {{{{field:KEY}}}} placeholders for secrets/hosts (NEVER inline real values). Optional default: {{{{field:KEY|https://default.host}}}}.
-- "extract" is "json_path:<dot.path>" to a numeric leaf in the response (array indices are numeric segments, e.g. results.0.0) or "count:<dot.path>" for an array length.
+- "extract" is "json_path:<dot.path>" to a numeric leaf in the response (array indices are numeric segments, e.g. results.0.0) or "count:<dot.path>" for an array length. When the response ROOT is the target array, use "count:" with an empty path. No JSONPath operators ($, [*], filters) — dot-paths only.
 - Prefer the API's native aggregation over client-side math; trailing 7-day window where the contract says so.
 - "plan" = one sentence a non-technical user reads before approving.
 
@@ -517,6 +519,11 @@ mod tests {
         assert_eq!(extract_value(&v, "count:items"), Some(3.0));
         assert_eq!(extract_value(&v, "json_path:s.n"), Some(7.5));
         assert_eq!(extract_value(&v, "json_path:missing"), None);
+        // Root-array spellings (empty path, "$", ".") all count the root.
+        let root = serde_json::json!([1, 2]);
+        assert_eq!(extract_value(&root, "count:"), Some(2.0));
+        assert_eq!(extract_value(&root, "count:$"), Some(2.0));
+        assert_eq!(extract_value(&root, "count:."), Some(2.0));
     }
 
     #[test]

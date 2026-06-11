@@ -364,6 +364,8 @@ mod tests {
             created_by: "user".into(),
             rationale: None,
             needed_connector: None,
+            metric_type: None,
+            tier: "supporting".into(),
             created_at: created.into(),
             updated_at: created.into(),
         }
