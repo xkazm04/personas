@@ -1,3 +1,5 @@
+import type { DevKpi } from '@/lib/bindings/DevKpi';
+import { paceDescriptor, type KpiTrack } from './kpiMath';
 // Display metadata for KPI enum tokens — the i18n'd, icon-carrying layer that
 // keeps raw tokens ('technical', 'codebase', 'weekly') out of the UI entirely
 // (P5 acceptance: zero enum tokens visible).
@@ -56,4 +58,48 @@ export function kindMeta(kind: string): KpiTokenMeta {
 }
 export function cadenceMeta(cadence: string): KpiTokenMeta {
   return CADENCE_META[cadence] ?? FALLBACK_META;
+}
+
+/** Theme color for a pace state — the ramp every KPI visual shares. */
+export const TRACK_COLOR: Record<KpiTrack, string> = {
+  met: 'var(--success)',
+  'on-track': 'var(--primary)',
+  'off-track': 'var(--destructive)',
+  unmeasured: 'var(--muted-foreground, var(--primary))',
+};
+
+type Tx = (template: string, vars: Record<string, string | number>) => string;
+
+/** One plain-language sentence describing the KPI's pace state. */
+export function paceSentence(kpi: DevKpi, t: Translations, tx: Tx): string {
+  const d = paceDescriptor(kpi);
+  const unit = kpi.unit || '';
+  switch (d.track) {
+    case 'met':
+      return tx(t.kpis.pace_met, { value: kpi.current_value ?? 0, unit });
+    case 'unmeasured':
+      return t.kpis.pace_unmeasured;
+    case 'off-track':
+      return d.daysLeft != null
+        ? tx(t.kpis.pace_off_dated, {
+            current: kpi.current_value ?? 0,
+            target: kpi.target_value ?? 0,
+            unit,
+            days: Math.max(0, d.daysLeft),
+          })
+        : tx(t.kpis.pace_off, {
+            current: kpi.current_value ?? 0,
+            target: kpi.target_value ?? 0,
+            unit,
+          });
+    default:
+      return d.progressPct != null && d.daysLeft != null
+        ? tx(t.kpis.pace_on_dated, {
+            pct: d.progressPct,
+            target: kpi.target_value ?? 0,
+            unit,
+            days: Math.max(0, d.daysLeft),
+          })
+        : tx(t.kpis.pace_on, { target: kpi.target_value ?? 0, unit });
+  }
 }

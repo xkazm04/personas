@@ -1,29 +1,38 @@
-// KPI proposals review queue (P5 polish: decision cards) — each proposal
-// LEADS with the plain-language rationale, shows how it would be measured as
-// a sentence (procedure JSON behind a disclosure), carries an evidence chip
-// when the baseline was actually measured from the repo, and keeps the
-// decision row primary: Accept / Reject, with target adjustment behind a
-// progressive "Adjust" affordance.
+// KPI proposals review queue (P5 round 2) — a SCALABLE one-row-per-proposal
+// table: name, project, category, the measured baseline, the suggested
+// target, and quick Accept/Reject actions. Everything textual (rationale,
+// description, exact procedure, target adjustment) lives in the clickable
+// row's detail modal — the table stays scannable at 50 proposals.
 import { useMemo, useState } from 'react';
-import { Cable, Check, FlaskConical, SlidersHorizontal, X } from 'lucide-react';
+import { Cable, Check, X } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
-import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { categoryMeta, cadenceMeta } from './kpiMeta';
-import { describeMeasurement } from './describeMeasurement';
+import { categoryMeta } from './kpiMeta';
+import { KPIProposalModal } from './KPIProposalModal';
 
 export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
+  const projects = useSystemStore((s) => s.projects);
+  const updateKpi = useSystemStore((s) => s.updateKpi);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const proposals = useMemo(() => kpis.filter((k) => k.status === 'proposed'), [kpis]);
+  const projectName = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of projects) m.set(p.id, p.name);
+    return (id: string) => m.get(id) ?? '—';
+  }, [projects]);
+  const openKpi = useMemo(() => proposals.find((k) => k.id === openId) ?? null, [proposals, openId]);
 
   if (proposals.length === 0) {
     return (
@@ -35,160 +44,118 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
     );
   }
 
-  return (
-    <div className="space-y-3" data-testid="kpi-proposals-queue">
-      {proposals.map((kpi) => (
-        <ProposalCard key={kpi.id} kpi={kpi} />
-      ))}
-    </div>
-  );
-}
-
-function ProposalCard({ kpi }: { kpi: DevKpi }) {
-  const { t, tx } = useTranslation();
-  const updateKpi = useSystemStore((s) => s.updateKpi);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-
-  const [adjusting, setAdjusting] = useState(false);
-  const [target, setTarget] = useState('');
-  const [date, setDate] = useState('');
-
-  const cat = categoryMeta(kpi.category);
-  const CatIcon = cat.icon;
-  const cad = cadenceMeta(kpi.cadence);
-
-  const accept = async () => {
-    const adjusted = target !== '' ? Number(target) : undefined;
-    try {
-      await updateKpi(kpi.id, {
-        status: 'active',
-        ...(adjusted != null && Number.isFinite(adjusted) ? { targetValue: adjusted } : {}),
-        ...(date ? { targetDate: date } : {}),
-      });
-    } catch (err) {
-      toastCatch('kpi accept', t.kpis.accept_failed)(err);
-    }
-  };
-
-  const reject = async () => {
-    try {
-      await updateKpi(kpi.id, { status: 'archived' });
-    } catch (err) {
-      toastCatch('kpi reject', t.kpis.reject_failed)(err);
-    }
-  };
+  const quickAccept = (kpi: DevKpi) =>
+    updateKpi(kpi.id, { status: 'active' }).catch(toastCatch('kpi accept', t.kpis.accept_failed));
+  const quickReject = (kpi: DevKpi) =>
+    updateKpi(kpi.id, { status: 'archived' }).catch(toastCatch('kpi reject', t.kpis.reject_failed));
 
   return (
-    <div
-      className="rounded-card border border-primary/15 bg-secondary/20 p-4 space-y-2"
-      data-testid={`kpi-proposal-${kpi.id}`}
-    >
-      {/* Decision header: name + the WHY, front and center. */}
-      <div className="flex items-start gap-2">
-        <Tooltip content={cat.label(t)}>
-          <CatIcon
-            className="w-4 h-4 text-foreground mt-0.5 flex-shrink-0"
-            aria-label={cat.label(t)}
-          />
-        </Tooltip>
-        <div className="min-w-0 flex-1">
-          <span className="typo-heading text-foreground">{kpi.name}</span>
-          {kpi.rationale && <p className="mt-0.5 typo-body text-foreground">{kpi.rationale}</p>}
-        </div>
-        {kpi.baseline_value != null && (
-          <Tooltip content={t.kpis.evidence_tooltip}>
-            <span className="inline-flex items-center gap-1 typo-caption text-foreground whitespace-nowrap tabular-nums rounded-interactive border border-success/30 bg-success/10 px-2 py-0.5">
-              <FlaskConical className="w-3 h-3" />
-              {tx(t.kpis.evidence_chip, { value: kpi.baseline_value, unit: kpi.unit || '' })}
-            </span>
-          </Tooltip>
-        )}
-      </div>
+    <div data-testid="kpi-proposals-queue">
+      <table className="w-full border-collapse">
+        <thead>
+          <tr className="border-b border-primary/15 text-left">
+            <th className="typo-label text-foreground py-2 pr-3">{t.kpis.col_kpi}</th>
+            <th className="typo-label text-foreground py-2 pr-3 hidden md:table-cell">
+              {t.kpis.col_project}
+            </th>
+            <th className="typo-label text-foreground py-2 pr-3 text-right">{t.kpis.col_baseline}</th>
+            <th className="typo-label text-foreground py-2 pr-3 text-right">{t.kpis.col_target}</th>
+            <th className="typo-label text-foreground py-2 pr-3 w-px whitespace-nowrap" aria-label={t.kpis.col_actions} />
+          </tr>
+        </thead>
+        <tbody>
+          {proposals.map((kpi) => {
+            const cat = categoryMeta(kpi.category);
+            const CatIcon = cat.icon;
+            return (
+              <tr
+                key={kpi.id}
+                onClick={() => setOpenId(kpi.id)}
+                className="border-b border-primary/10 hover:bg-secondary/30 cursor-pointer transition-colors"
+                data-testid={`kpi-proposal-${kpi.id}`}
+              >
+                <td className="py-2 pr-3">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <Tooltip content={cat.label(t)}>
+                      <CatIcon className="w-4 h-4 text-foreground flex-shrink-0" aria-label={cat.label(t)} />
+                    </Tooltip>
+                    <span className="typo-body text-foreground font-medium truncate">{kpi.name}</span>
+                    {kpi.needed_connector && (
+                      <Tooltip content={tx(t.kpis.connect_tooltip, { service: kpi.needed_connector })}>
+                        <span
+                          role="link"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSidebarSection('credentials');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.stopPropagation();
+                              setSidebarSection('credentials');
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 typo-caption text-primary flex-shrink-0 cursor-pointer hover:underline"
+                          data-testid={`kpi-proposal-connect-${kpi.id}`}
+                        >
+                          <Cable className="w-3 h-3" />
+                          {kpi.needed_connector}
+                        </span>
+                      </Tooltip>
+                    )}
+                  </div>
+                </td>
+                <td className="py-2 pr-3 typo-caption text-foreground hidden md:table-cell">
+                  {projectName(kpi.project_id)}
+                </td>
+                <td className="py-2 pr-3 typo-body text-foreground tabular-nums text-right">
+                  {kpi.baseline_value != null ? (
+                    <>
+                      <Numeric value={kpi.baseline_value} /> {kpi.unit}
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="py-2 pr-3 typo-body text-foreground tabular-nums text-right">
+                  {kpi.target_value != null ? (
+                    <>
+                      <Numeric value={kpi.target_value} /> {kpi.unit}
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="py-2 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center gap-1 justify-end">
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      icon={<X className="w-3.5 h-3.5" />}
+                      onClick={() => void quickReject(kpi)}
+                      aria-label={t.kpis.reject_button}
+                      title={t.kpis.reject_button}
+                      data-testid={`kpi-reject-${kpi.id}`}
+                    />
+                    <Button
+                      size="icon-sm"
+                      variant="secondary"
+                      icon={<Check className="w-3.5 h-3.5" />}
+                      onClick={() => void quickAccept(kpi)}
+                      aria-label={t.kpis.accept_button}
+                      title={t.kpis.accept_button}
+                      data-testid={`kpi-accept-${kpi.id}`}
+                    />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p className="typo-caption text-foreground opacity-70 mt-2">{t.kpis.table_hint}</p>
 
-      {/* How it would be measured — a sentence, never JSON. */}
-      <p className="typo-caption text-foreground opacity-80">
-        {describeMeasurement(kpi, t, tx)}
-        {kpi.cadence !== 'manual' && <> · {cad.label(t)}</>}
-        {kpi.target_value != null && (
-          <>
-            {' '}
-            · {t.kpis.suggested_target_label}: <Numeric value={kpi.target_value} /> {kpi.unit}
-          </>
-        )}
-      </p>
-      <details className="typo-caption text-foreground opacity-70">
-        <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
-        <code className="block mt-1 font-mono break-all">{kpi.measure_config}</code>
-      </details>
-
-      {kpi.needed_connector && (
-        <button
-          type="button"
-          onClick={() => setSidebarSection('credentials')}
-          className="inline-flex items-center gap-1 typo-caption text-primary hover:underline"
-          data-testid={`kpi-proposal-connect-${kpi.id}`}
-        >
-          <Cable className="w-3 h-3" />
-          {tx(t.kpis.connect_cta, { service: kpi.needed_connector })}
-        </button>
-      )}
-
-      {/* Decision row — Accept / Reject primary; Adjust folds open. */}
-      <div className="flex items-center gap-2 flex-wrap pt-1 border-t border-primary/10">
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={<SlidersHorizontal className="w-3.5 h-3.5" />}
-          onClick={() => setAdjusting((v) => !v)}
-          aria-expanded={adjusting}
-          data-testid={`kpi-adjust-${kpi.id}`}
-        >
-          {t.kpis.adjust_button}
-        </Button>
-        <div className="flex-1" />
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={<X className="w-3.5 h-3.5" />}
-          onClick={() => void reject()}
-          data-testid={`kpi-reject-${kpi.id}`}
-        >
-          {t.kpis.reject_button}
-        </Button>
-        <AsyncButton
-          size="sm"
-          variant="primary"
-          icon={<Check className="w-3.5 h-3.5" />}
-          onClick={accept}
-          data-testid={`kpi-accept-${kpi.id}`}
-        >
-          {t.kpis.accept_button}
-        </AsyncButton>
-      </div>
-
-      {adjusting && (
-        <div className="flex items-end gap-2 flex-wrap">
-          <label className="flex flex-col gap-0.5 typo-caption text-foreground">
-            {tx(t.kpis.target_label, { unit: kpi.unit || '—' })}
-            <input
-              type="number"
-              defaultValue={kpi.target_value ?? undefined}
-              onChange={(e) => setTarget(e.target.value)}
-              className="w-28 rounded-input border border-primary/15 bg-background px-2 py-1 typo-body text-foreground tabular-nums"
-              data-testid={`kpi-target-input-${kpi.id}`}
-            />
-          </label>
-          <label className="flex flex-col gap-0.5 typo-caption text-foreground">
-            {t.kpis.target_date_label}
-            <input
-              type="date"
-              defaultValue={kpi.target_date?.slice(0, 10) ?? undefined}
-              onChange={(e) => setDate(e.target.value)}
-              className="rounded-input border border-primary/15 bg-background px-2 py-1 typo-body text-foreground"
-            />
-          </label>
-        </div>
-      )}
+      {openKpi && <KPIProposalModal kpi={openKpi} onClose={() => setOpenId(null)} />}
     </div>
   );
 }

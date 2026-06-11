@@ -12,7 +12,6 @@ import { toastCatch } from '@/lib/silentCatch';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
@@ -26,7 +25,8 @@ export default function KPIsPage() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const kpis = useSystemStore((s) => s.kpis);
   const kpisLoading = useSystemStore((s) => s.kpisLoading);
-  const fetchKpis = useSystemStore((s) => s.fetchKpis);
+  const fetchAllKpis = useSystemStore((s) => s.fetchAllKpis);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const scanKpis = useSystemStore((s) => s.scanKpis);
   const evaluateDueKpis = useSystemStore((s) => s.evaluateDueKpis);
 
@@ -34,8 +34,11 @@ export default function KPIsPage() {
   const [openKpiId, setOpenKpiId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (activeProjectId) void fetchKpis(activeProjectId);
-  }, [activeProjectId, fetchKpis]);
+    // Cross-project scope: the dashboard charts + proposals table span every
+    // project; the header picker only scopes the scan/evaluate actions.
+    void fetchAllKpis();
+    void fetchProjects();
+  }, [fetchAllKpis, fetchProjects]);
 
   const proposedCount = useMemo(() => kpis.filter((k) => k.status === 'proposed').length, [kpis]);
   const openKpi = useMemo(() => kpis.find((k) => k.id === openKpiId) ?? null, [kpis, openKpiId]);
@@ -108,10 +111,8 @@ export default function KPIsPage() {
       />
       <ContentBody>
         <KPIExplainer />
-        {!activeProjectId ? (
-          <EmptyState title={t.kpis.no_project_title} description={t.kpis.no_project_hint} />
-        ) : view === 'proposals' ? (
-          <KPIProposalsQueue onRefresh={() => void fetchKpis(activeProjectId)} />
+        {view === 'proposals' ? (
+          <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
         ) : (
           <KPIDashboard
             loading={kpisLoading}

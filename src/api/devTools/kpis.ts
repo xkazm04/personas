@@ -117,3 +117,16 @@ export async function evaluateDueKpis(
 ): Promise<Record<string, number | string>> {
   return invoke("dev_tools_evaluate_due_kpis", { projectId }, { timeoutMs: 900_000 });
 }
+
+/** All KPIs across every project (cross-project dashboard scope). */
+export async function listAllKpis(): Promise<DevKpi[]> {
+  return invoke<DevKpi[]>("dev_tools_list_all_kpis", {});
+}
+
+/** Bulk measurement history for trend charts (chronological, bounded per KPI). */
+export async function listKpiMeasurementsBulk(
+  kpiIds: string[],
+  perKpi?: number,
+): Promise<DevKpiMeasurement[]> {
+  return invoke<DevKpiMeasurement[]>("dev_tools_list_kpi_measurements_bulk", { kpiIds, perKpi });
+}

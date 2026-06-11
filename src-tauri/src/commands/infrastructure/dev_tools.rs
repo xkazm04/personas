@@ -2784,3 +2784,23 @@ pub async fn dev_tools_evaluate_due_kpis(
     }
     Ok(serde_json::Value::Object(map))
 }
+
+/// All KPIs across every project (cross-project dashboard scope).
+#[tauri::command]
+pub fn dev_tools_list_all_kpis(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<DevKpi>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_all_kpis(&state.db)
+}
+
+/// Bulk measurement history for trend charts (chronological, bounded per KPI).
+#[tauri::command]
+pub fn dev_tools_list_kpi_measurements_bulk(
+    state: State<'_, Arc<AppState>>,
+    kpi_ids: Vec<String>,
+    per_kpi: Option<i64>,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_kpi_measurements_bulk(&state.db, &kpi_ids, per_kpi.unwrap_or(30))
+}

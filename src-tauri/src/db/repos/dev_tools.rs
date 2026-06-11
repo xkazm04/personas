@@ -4223,6 +4223,56 @@ pub fn delete_kpi(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// All KPIs across every project (cross-project dashboard scope). Same
+/// status ordering as `list_kpis`.
+pub fn list_all_kpis(pool: &DbPool) -> Result<Vec<DevKpi>, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::list_all_kpis", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM dev_kpis
+             ORDER BY CASE status
+                  WHEN 'active' THEN 0 WHEN 'proposed' THEN 1
+                  WHEN 'paused' THEN 2 ELSE 3 END,
+                created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_kpi)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Bulk measurement history for a set of KPIs (trend charts) — newest-first
+/// per KPI, bounded per KPI by `per_kpi` (applied client-side is wasteful;
+/// a window function keeps the payload tight).
+pub fn list_kpi_measurements_bulk(
+    pool: &DbPool,
+    kpi_ids: &[String],
+    per_kpi: i64,
+) -> Result<Vec<DevKpiMeasurement>, AppError> {
+    if kpi_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    timed_query!("dev_kpi_measurements", "dev_kpis::list_kpi_measurements_bulk", {
+        let conn = pool.get()?;
+        let ph = kpi_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+        let sql = format!(
+            "SELECT * FROM (
+                 SELECT m.*, ROW_NUMBER() OVER (
+                     PARTITION BY kpi_id ORDER BY datetime(measured_at) DESC
+                 ) AS rn
+                 FROM dev_kpi_measurements m
+                 WHERE kpi_id IN ({ph})
+             ) WHERE rn <= ?
+             ORDER BY datetime(measured_at) ASC"
+        );
+        let mut stmt = conn.prepare(&sql)?;
+        let mut params: Vec<&dyn rusqlite::types::ToSql> =
+            kpi_ids.iter().map(|s| s as &dyn rusqlite::types::ToSql).collect();
+        params.push(&per_kpi);
+        let rows = stmt.query_map(rusqlite::params_from_iter(params), row_to_kpi_measurement)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
 /// Newest-first measurement history (bounded).
 pub fn list_kpi_measurements(
     pool: &DbPool,

@@ -13,6 +13,12 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### prototype-kpi-card — /prototype directional variants for the KPI card (session 2c665603)
+- Started: 2026-06-11 ~12:30. Completed: 2026-06-11 (user redirect: cards → recharts command center; all card variants deleted, switcher removed). Main checkout (NOT a worktree — deliberate: variants must render in the live dev app for A/B, and a second app instance is impossible (data-dir singleton); sub_kpis/ is exclusively this session's surface).
+- Paths: src/features/teams/sub_kpis/KpiCard*.tsx (new variants), src/features/teams/sub_kpis/KPIDashboard.tsx (tab switcher host), src/i18n/locales/en.json (kpis.proto_* labels), .claude/active-runs.md.
+- Note: round-1 = Baseline + Gauge (instrument metaphor) + Bullet (benchmark strip metaphor); user prunes/fuses; consolidation removes variants.
+
+
 ### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
 - Started: 2026-06-10 21:30. Completed: 2026-06-11 ~08:40. Commits: 59e0afba1 (P0) + bridge fix + 5f4d6168a (P1 proposal scan, live-verified: 8 grounded proposals on ai-paralegal). Live-verified CRUD via bridge (create/measure/list/delete+cascade).
 - Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
@@ -53,10 +59,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### prototype-kpi-card — /prototype directional variants for the KPI card (session 2c665603)
-- Started: 2026-06-11 ~12:30. Main checkout (NOT a worktree — deliberate: variants must render in the live dev app for A/B, and a second app instance is impossible (data-dir singleton); sub_kpis/ is exclusively this session's surface).
-- Paths: src/features/teams/sub_kpis/KpiCard*.tsx (new variants), src/features/teams/sub_kpis/KPIDashboard.tsx (tab switcher host), src/i18n/locales/en.json (kpis.proto_* labels), .claude/active-runs.md.
-- Note: round-1 = Baseline + Gauge (instrument metaphor) + Bullet (benchmark strip metaphor); user prunes/fuses; consolidation removes variants.
 
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")

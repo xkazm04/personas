@@ -60,6 +60,12 @@ export interface DevToolsProjectSlice {
   kpiMeasurements: DevKpiMeasurement[];
 
   fetchKpis: (projectId: string) => Promise<void>;
+  /** Load KPIs across ALL projects (dashboard cross-project scope). Writes the
+   *  same `kpis` array so update/delete/measure actions keep working. */
+  fetchAllKpis: () => Promise<void>;
+  /** Measurement series per KPI id, for the dashboard trend chart. */
+  kpiTrends: Record<string, import("@/lib/bindings/DevKpiMeasurement").DevKpiMeasurement[]>;
+  fetchKpiTrends: (kpiIds: string[]) => Promise<void>;
   updateKpi: (id: string, updates: kpiApi.UpdateKpiInput) => Promise<void>;
   deleteKpi: (id: string) => Promise<void>;
   fetchKpiMeasurements: (kpiId: string) => Promise<void>;
@@ -304,6 +310,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
   kpis: [],
   kpisLoading: false,
   kpiMeasurements: [],
+  kpiTrends: {},
 
   fetchKpis: async (projectId) => {
     set({ kpisLoading: true });
@@ -312,6 +319,30 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       set({ kpis, kpisLoading: false, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch KPIs", set, { stateUpdates: { kpisLoading: false } });
+    }
+  },
+
+  fetchAllKpis: async () => {
+    set({ kpisLoading: true });
+    try {
+      const kpis = await kpiApi.listAllKpis();
+      set({ kpis, kpisLoading: false, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPIs", set, { stateUpdates: { kpisLoading: false } });
+    }
+  },
+
+  fetchKpiTrends: async (kpiIds) => {
+    if (kpiIds.length === 0) return;
+    try {
+      const rows = await kpiApi.listKpiMeasurementsBulk(kpiIds, 30);
+      const kpiTrends: Record<string, typeof rows> = {};
+      for (const m of rows) {
+        (kpiTrends[m.kpi_id] ??= []).push(m);
+      }
+      set({ kpiTrends, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch KPI trends", set);
     }
   },
 
