@@ -66,6 +66,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
+- Started: 2026-06-11 ~20:00
+- Status: started
+- Paths: scripts/test/loop-certify.mjs (§10 KPI block), docs/plans/kpi-driven-orchestration.md, .claude/active-runs.md. Live DB via bridge (no tree edits): accept ai-paralegal KPI proposals, scan 6 team projects, resume 7 awaiting_review parks, flip 10 autonomy settings ON.
+- Note: next validation window after the R-fix day-run analysis (06:41 UTC autonomy sweep confirmed user-driven). External-connector KPIs stay parked; internally measurable (codebase/derived) only. Run objective: observe goal↔KPI relation — not all goals must follow KPIs.
 
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")

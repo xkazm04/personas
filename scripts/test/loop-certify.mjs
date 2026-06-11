@@ -228,6 +228,99 @@ const fuel = {
   })(),
 };
 
+// --- §10 KPI orchestration (informational, NON-GATING) ------------------------
+// First-cases observation: are active KPIs measured on cadence, do off-track
+// KPIs derive goals, and what share of the window's goal flow is KPI-driven vs
+// organic? Deliberately excluded from the verdict fold — teams are allowed to
+// pursue goals unrelated to technical KPIs; this block measures the relation,
+// it does not enforce it.
+const kpiBlock = (() => {
+  try {
+    const active = db
+      .prepare(
+        `SELECT k.id, k.name, k.category, k.measure_kind, k.cadence, k.direction,
+                k.current_value, k.target_value, k.baseline_value, k.target_date,
+                k.last_measured_at, k.created_at, dp.team_id, dp.name AS project
+         FROM dev_kpis k JOIN dev_projects dp ON dp.id = k.project_id
+         WHERE k.status = 'active' AND dp.team_id IS NOT NULL`,
+      )
+      .all();
+    if (!active.length) return { activeKpis: 0 };
+
+    // Mirror of engine/kpi_derivation.rs kpi_is_off_track (pace rule + floor breach).
+    const ts = (s) => (s ? new Date(String(s).replace(' ', 'T') + (String(s).includes('Z') ? '' : 'Z')).getTime() : NaN);
+    const offTrack = (k) => {
+      if (
+        (k.category === 'traffic' || k.category === 'value') &&
+        k.direction === 'up' &&
+        k.current_value != null &&
+        k.current_value <= 0
+      )
+        return true; // floor breach
+      if (k.current_value == null || k.target_value == null) return false;
+      const met = k.direction === 'down' ? k.current_value <= k.target_value : k.current_value >= k.target_value;
+      if (met) return false;
+      if (!k.target_date || k.baseline_value == null) return false;
+      const start = ts(k.created_at);
+      const end = ts(k.target_date);
+      if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false;
+      const frac = Math.min(1, Math.max(0, (Date.now() - start) / (end - start)));
+      const span = k.target_value - k.baseline_value;
+      const expected = k.baseline_value + span * frac;
+      const tol = Math.abs(span) * 0.1;
+      return k.direction === 'down' ? k.current_value > expected + tol : k.current_value < expected - tol;
+    };
+
+    const freshCutoffDays = (cadence) => (cadence === 'daily' ? 2 : 14);
+    const fresh = active.filter(
+      (k) => k.last_measured_at && Date.now() - ts(k.last_measured_at) < freshCutoffDays(k.cadence) * 86400_000,
+    );
+    const off = active.filter(offTrack);
+    const openDerived = db
+      .prepare(
+        `SELECT g.kpi_id FROM dev_goals g WHERE g.kpi_id IS NOT NULL AND g.status NOT IN ('done','completed','archived')`,
+      )
+      .all()
+      .map((r) => r.kpi_id);
+    const derivationDebt = off.filter((k) => !openDerived.includes(k.id));
+    const measurementsInWindow = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM dev_kpi_measurements m
+         JOIN dev_kpis k ON k.id = m.kpi_id JOIN dev_projects dp ON dp.id = k.project_id
+         WHERE dp.team_id IS NOT NULL AND datetime(m.measured_at) > ${sinceExpr}`,
+      )
+      .get().n;
+    const goalsKpiDriven = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM dev_goals g JOIN dev_projects dp ON dp.id = g.project_id
+         WHERE dp.team_id IS NOT NULL AND g.kpi_id IS NOT NULL AND datetime(g.created_at) > ${sinceExpr}`,
+      )
+      .get().n;
+    const kpiGoalsDone = db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM dev_goals g JOIN dev_projects dp ON dp.id = g.project_id
+         WHERE dp.team_id IS NOT NULL AND g.kpi_id IS NOT NULL AND g.status IN ('done','completed')
+           AND g.completed_at IS NOT NULL AND datetime(g.completed_at) > ${sinceExpr}`,
+      )
+      .get().n;
+
+    return {
+      activeKpis: active.length,
+      teamsWithKpis: new Set(active.map((k) => k.team_id)).size,
+      teamsTotal: teams.length,
+      measuredFreshPct: Math.round((fresh.length / active.length) * 100),
+      measurementsInWindow,
+      offTrack: off.length,
+      derivationDebt: derivationDebt.map((k) => `${k.project}: ${k.name}`),
+      goalsKpiDrivenInWindow: goalsKpiDriven,
+      goalsOrganicInWindow: Math.max(0, fuel.goalsCreated - goalsKpiDriven),
+      kpiGoalsDoneInWindow: kpiGoalsDone,
+    };
+  } catch (e) {
+    return { error: String(e.message || e) };
+  }
+})();
+
 db.close();
 
 // --- verdict fold --------------------------------------------------------------
@@ -267,6 +360,7 @@ const report = {
   fairness,
   drain,
   fuel,
+  kpi: kpiBlock,
   ...(athena ? { athena_orchestration: athena } : {}),
   perTeam: perTeam.map((t) => ({
     team: t.teamName,
@@ -292,6 +386,18 @@ if (AS_JSON) {
   console.log(`fairness: ${fairness.teamsActive} teams active, top-2 share ${fairness.top2SharePct ?? 'n/a'}%${fairness.hoarding ? ' (HOARDING)' : ''}`);
   console.log(`drain: ${drain.parkedNow} parked, ${drain.athenaResolutions} athena resolution(s), oldest ${drain.oldestParkedDays}d${drain.blackHole ? ' (BLACK HOLE)' : ''}`);
   console.log(`fuel: ${fuel.goalsCreated} goals + ${fuel.ideasCreated} ideas created, ${fuel.goalRelations ?? 'n/a'} goal relations`);
+  if (kpiBlock && !kpiBlock.error) {
+    if (kpiBlock.activeKpis === 0) {
+      console.log('kpi §10: no active team-project KPIs (informational)');
+    } else {
+      console.log(
+        `kpi §10 (informational): ${kpiBlock.activeKpis} active across ${kpiBlock.teamsWithKpis}/${kpiBlock.teamsTotal} teams, ` +
+          `${kpiBlock.measuredFreshPct}% fresh, ${kpiBlock.measurementsInWindow} measurement(s) in window; ` +
+          `goals: ${kpiBlock.goalsKpiDrivenInWindow} KPI-driven vs ${kpiBlock.goalsOrganicInWindow} organic (${kpiBlock.kpiGoalsDoneInWindow} KPI-goal(s) done); ` +
+          `${kpiBlock.offTrack} off-track, derivation debt: ${kpiBlock.derivationDebt.length ? kpiBlock.derivationDebt.join(' | ') : 'none'}`,
+      );
+    }
+  }
   if (athena) {
     const ax = athena.axes;
     console.log(`athena §8: ${athena.facts.athenaPosts} posts, coverage ${ax.coverage.criticalCoveragePct ?? 'n/a'}%, soundness ${ax.soundness.soundnessPct ?? 'n/a'}%, audit ${ax.auditability.auditablePct ?? 'n/a'}%, restraint ${ax.restraint.restraintOk ? 'ok' : 'REVIEW'}`);
