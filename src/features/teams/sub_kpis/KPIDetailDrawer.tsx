@@ -118,7 +118,7 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
         </div>
 
         {kpi.description && <p className="typo-body text-foreground">{kpi.description}</p>}
-        <p className="typo-caption text-foreground opacity-80">{describeMeasurement(kpi, t, tx)}</p>
+        <p className="typo-body text-foreground opacity-90">{describeMeasurement(kpi, t, tx)}</p>
         <details className="typo-caption text-foreground opacity-70">
           <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
           <code className="block mt-1 font-mono break-all">{kpi.measure_config}</code>
@@ -161,7 +161,7 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
         )}
 
         <div>
-          <h3 className="typo-caption text-foreground uppercase mb-1">{t.kpis.history_title}</h3>
+          <h3 className="typo-overline text-foreground mb-1.5">{t.kpis.history_title}</h3>
           {measurements.length === 0 ? (
             <p className="typo-caption text-foreground opacity-80">{t.kpis.history_empty}</p>
           ) : (

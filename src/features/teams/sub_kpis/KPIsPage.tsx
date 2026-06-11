@@ -21,7 +21,7 @@ import { KPIExplainer } from './KPIExplainer';
 type KpiView = 'dashboard' | 'proposals';
 
 export default function KPIsPage() {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const kpis = useSystemStore((s) => s.kpis);
   const kpisLoading = useSystemStore((s) => s.kpisLoading);
@@ -121,11 +121,6 @@ export default function KPIsPage() {
           />
         )}
         {openKpi && <KPIDetailDrawer kpi={openKpi} onClose={() => setOpenKpiId(null)} />}
-        {proposedCount > 0 && view === 'dashboard' && (
-          <p className="mt-4 typo-caption text-foreground">
-            {tx(t.kpis.proposals_waiting_hint, { count: proposedCount })}
-          </p>
-        )}
       </ContentBody>
     </ContentBox>
   );

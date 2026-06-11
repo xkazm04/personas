@@ -32,7 +32,7 @@ export function KPIExplainer() {
   return (
     <div className="flex items-start gap-2 px-3 py-2 mb-4 rounded-card border border-primary/15 bg-primary/5">
       <Info className="w-3.5 h-3.5 text-primary/70 mt-0.5 flex-shrink-0" />
-      <p className="typo-caption text-foreground flex-1">{t.kpis.explainer}</p>
+      <p className="typo-body text-foreground flex-1">{t.kpis.explainer}</p>
       <button
         type="button"
         onClick={dismiss}

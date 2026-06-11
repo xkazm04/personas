@@ -51,7 +51,7 @@ export function KPIDashboard({
   onOpen: (kpiId: string) => void;
   onReviewProposals: () => void;
 }) {
-  const { t, tx } = useTranslation();
+  const { t } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
   const projects = useSystemStore((s) => s.projects);
   const kpiTrends = useSystemStore((s) => s.kpiTrends);
@@ -169,7 +169,7 @@ export function KPIDashboard({
       {offTrack.length > 0 && (
         <div className="flex items-center gap-2 flex-wrap rounded-card border border-destructive/30 bg-destructive/5 px-3 py-2">
           <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-          <span className="typo-label text-foreground">{t.kpis.attention_label}</span>
+          <span className="typo-overline text-foreground">{t.kpis.attention_label}</span>
           {offTrack.map(({ kpi }) => (
             <button
               key={kpi.id}
@@ -178,7 +178,8 @@ export function KPIDashboard({
               className="typo-caption text-foreground rounded-interactive border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 transition-colors px-2 py-0.5 tabular-nums"
               data-testid={`kpi-attention-${kpi.id}`}
             >
-              {kpi.name} · {kpi.current_value ?? '—'}/{kpi.target_value ?? '—'} {kpi.unit}
+              <span className="font-medium">{kpi.name}</span>{' '}
+              {kpi.current_value ?? '—'} / {kpi.target_value ?? '—'} {kpi.unit}
             </button>
           ))}
         </div>
@@ -197,13 +198,14 @@ export function KPIDashboard({
       </div>
 
       {/* Distance to target — pace-colored horizontal bars, click → drawer */}
-      <section className="rounded-card border border-primary/15 bg-secondary/10 p-4">
-        <h3 className="typo-label text-foreground mb-2">{t.kpis.chart_distance_title}</h3>
+      <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
+        <h3 className="typo-overline text-foreground mb-2">{t.kpis.chart_distance_title}</h3>
         <LazyChart
           fallback={<div className="h-24" />}
           render={(R) => (
             <R.ResponsiveContainer width="100%" height={distanceData.length * CHART_ROW_H + 30}>
               <R.BarChart
+                accessibilityLayer={false}
                 data={distanceData}
                 layout="vertical"
                 margin={{ top: 0, right: 36, bottom: 0, left: 8 }}
@@ -251,23 +253,28 @@ export function KPIDashboard({
                   {distanceData.map((row) => (
                     <R.Cell key={row.id} fill={row.fill} />
                   ))}
+                  <R.LabelList
+                    dataKey="pct"
+                    position="right"
+                    formatter={((v: unknown) => `${String(v)}%`) as never}
+                    style={{ fill: 'var(--foreground)', fontSize: 11 }}
+                  />
                 </R.Bar>
               </R.BarChart>
             </R.ResponsiveContainer>
           )}
         />
-        <p className="typo-caption text-foreground opacity-70 mt-1">{t.kpis.chart_distance_hint}</p>
       </section>
 
       {/* Trend — progress vs target over time */}
       {trendModel && (
-        <section className="rounded-card border border-primary/15 bg-secondary/10 p-4">
-          <h3 className="typo-label text-foreground mb-2">{t.kpis.chart_trend_title}</h3>
+        <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
+          <h3 className="typo-overline text-foreground mb-2">{t.kpis.chart_trend_title}</h3>
           <LazyChart
             fallback={<div className="h-48" />}
             render={(R) => (
               <R.ResponsiveContainer width="100%" height={220}>
-                <R.LineChart data={trendModel.rows} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+                <R.LineChart accessibilityLayer={false} data={trendModel.rows} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
                   <R.CartesianGrid stroke="var(--secondary)" strokeOpacity={0.5} vertical={false} />
                   <R.XAxis
                     dataKey="t"
@@ -315,9 +322,6 @@ export function KPIDashboard({
               </R.ResponsiveContainer>
             )}
           />
-          <p className="typo-caption text-foreground opacity-70 mt-1">
-            {tx(t.kpis.chart_trend_hint, { count: trendModel.series.length })}
-          </p>
         </section>
       )}
     </div>

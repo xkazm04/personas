@@ -16469,13 +16469,10 @@
     "view_proposals": "Proposals",
     "scan_button": "Scan for KPIs",
     "scan_failed": "Could not start the KPI scan",
-    "no_project_title": "Pick a project",
-    "no_project_hint": "KPIs are defined per project. Choose a project to see its dashboard.",
     "empty_title": "No active KPIs yet",
     "empty_hint": "Run a KPI scan to get grounded proposals from your codebase and context map.",
     "empty_with_proposals_hint": "Proposals are waiting in the review queue — accept the ones that matter.",
     "review_proposals_cta": "Review proposals",
-    "proposals_waiting_hint": "{count} proposal(s) await your review in the Proposals tab.",
     "track_met": "Target met",
     "track_on": "On track",
     "track_off": "Off track",
@@ -16567,14 +16564,15 @@
     "stat_off_track": "Off track",
     "stat_met": "Targets met",
     "chart_distance_title": "Distance to target",
-    "chart_distance_hint": "Each bar is a KPI's progress toward its target — the dashed line is 100%. Click a bar for the full story.",
     "chart_trend_title": "Trend — progress vs target",
-    "chart_trend_hint": "{count} KPI(s) with measurement history, normalized to % of target. Click a point for detail.",
     "col_kpi": "KPI",
     "col_project": "Project",
     "col_baseline": "Measured",
     "col_target": "Suggested target",
     "col_actions": "Actions",
-    "table_hint": "Click a row for the rationale, description, and target adjustment."
+    "section_why": "Why this metric",
+    "section_what": "What it covers",
+    "section_how": "How it is measured",
+    "section_target": "Your target"
   }
 }

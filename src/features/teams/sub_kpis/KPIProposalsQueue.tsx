@@ -54,13 +54,13 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-primary/15 text-left">
-            <th className="typo-label text-foreground py-2 pr-3">{t.kpis.col_kpi}</th>
-            <th className="typo-label text-foreground py-2 pr-3 hidden md:table-cell">
+            <th className="typo-overline text-foreground py-2 pr-3">{t.kpis.col_kpi}</th>
+            <th className="typo-overline text-foreground py-2 pr-3 hidden md:table-cell">
               {t.kpis.col_project}
             </th>
-            <th className="typo-label text-foreground py-2 pr-3 text-right">{t.kpis.col_baseline}</th>
-            <th className="typo-label text-foreground py-2 pr-3 text-right">{t.kpis.col_target}</th>
-            <th className="typo-label text-foreground py-2 pr-3 w-px whitespace-nowrap" aria-label={t.kpis.col_actions} />
+            <th className="typo-overline text-foreground py-2 pr-3 text-right">{t.kpis.col_baseline}</th>
+            <th className="typo-overline text-foreground py-2 pr-3 text-right">{t.kpis.col_target}</th>
+            <th className="typo-overline text-foreground py-2 pr-3 w-px whitespace-nowrap" aria-label={t.kpis.col_actions} />
           </tr>
         </thead>
         <tbody>
@@ -153,8 +153,6 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
           })}
         </tbody>
       </table>
-      <p className="typo-caption text-foreground opacity-70 mt-2">{t.kpis.table_hint}</p>
-
       {openKpi && <KPIProposalModal kpi={openKpi} onClose={() => setOpenId(null)} />}
     </div>
   );
