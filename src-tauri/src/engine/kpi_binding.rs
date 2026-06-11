@@ -460,9 +460,10 @@ Compose ONE HTTPS request against this connector's public REST API that returns 
 - Use {{{{field:KEY}}}} placeholders for secrets/hosts (NEVER inline real values). Optional default: {{{{field:KEY|https://default.host}}}}.
 - "extract" is "json_path:<dot.path>" to a numeric leaf in the response (array indices are numeric segments, e.g. results.0.0) or "count:<dot.path>" for an array length. When the response ROOT is the target array, use "count:" with an empty path. No JSONPath operators ($, [*], filters) — dot-paths only.
 - Prefer the API's native aggregation over client-side math; trailing 7-day window where the contract says so.
+- A single-request approximation IS acceptable where the API paginates (e.g. a count capped at one page of results) — prefer that over declining, and state the bound in the plan.
 - "plan" = one sentence a non-technical user reads before approving.
 
-If you are not confident the connector's public API can satisfy this contract with a single request, emit {{"kpi_procedure": null}} instead of guessing.
+Emit {{"kpi_procedure": null}} ONLY when the connector's API genuinely cannot produce this metric at all (wrong domain, no relevant endpoint) — not because of pagination limits or approximation concerns.
 
 Respond with your analysis, then EXACTLY ONE line that is this JSON object and nothing else on that line:
 {{"kpi_procedure": {{"http": {{"method": "GET", "url": "...", "headers": {{}}, "body": null}}, "extract": "json_path:...", "plan": "..."}}}}
