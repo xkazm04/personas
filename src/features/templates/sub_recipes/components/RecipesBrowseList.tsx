@@ -4,26 +4,20 @@ import {
 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { Translations } from '@/i18n/en';
 import type { Recipe, RecipeCategory } from '../types';
 import { useRecipeEligibilityMap } from '../useEligibility';
+import { getCategoryLabels } from '../libs/categoryLabels';
 import { RecipesTableResults } from './RecipesTableResults';
 
 interface RecipesBrowseListProps {
   recipes: Recipe[];
+  /** Search is owned by RecipesPage so detail-view tag clicks can land
+   *  back in browse with the filter pre-applied. */
+  search: string;
+  onSearchChange: (value: string) => void;
   onOpenDetail: (recipeId: string) => void;
-}
-
-function getCategoryLabels(t: Translations): Record<RecipeCategory, string> {
-  return {
-    monitoring: t.recipes_catalog.category_monitoring,
-    reporting: t.recipes_catalog.category_reporting,
-    automation: t.recipes_catalog.category_automation,
-    communication: t.recipes_catalog.category_communication,
-    'data-sync': t.recipes_catalog.category_data_sync,
-    analysis: t.recipes_catalog.category_analysis,
-  };
 }
 
 interface CategoryOption {
@@ -46,25 +40,34 @@ type EligibilityFilter = 'all' | 'eligible' | 'adoptable-with-setup' | 'incompat
  *     entirely (no banner — recipe.detail surfaces "select a persona"
  *     guidance contextually if a user tries to adopt).
  */
-export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListProps) {
+export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetail }: RecipesBrowseListProps) {
   const { t } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibilityMap = useRecipeEligibilityMap(recipes);
+  const selectedUseCases = useSelectedUseCases();
+  const adoptedRecipeIds = useMemo(
+    () => new Set(selectedUseCases.map((uc) => uc.source_recipe_id).filter((id): id is string => !!id)),
+    [selectedUseCases],
+  );
 
-  const [search, setSearch] = useState('');
   const [category, setCategory] = useState<RecipeCategory | 'all'>('all');
   const [eligibilityFilter, setEligibilityFilter] = useState<EligibilityFilter>('all');
 
   const categoryOptions = useMemo<CategoryOption[]>(() => {
     const labels = getCategoryLabels(t);
+    const counts = new Map<RecipeCategory, number>();
+    for (const r of recipes) counts.set(r.category, (counts.get(r.category) ?? 0) + 1);
+    // Buckets with no recipes are hidden rather than offered as dead filters.
     return [
-      { value: 'all', label: t.recipes_catalog.category_all },
-      ...(Object.keys(labels) as RecipeCategory[]).map((c) => ({
-        value: c,
-        label: labels[c],
-      })),
+      { value: 'all', label: `${t.recipes_catalog.category_all} (${recipes.length})` },
+      ...(Object.keys(labels) as RecipeCategory[])
+        .filter((c) => (counts.get(c) ?? 0) > 0)
+        .map((c) => ({
+          value: c,
+          label: `${labels[c]} (${counts.get(c)})`,
+        })),
     ];
-  }, [t]);
+  }, [t, recipes]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -127,8 +130,9 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
           <input
             type="search"
+            data-testid="recipes-search"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder={t.recipes_catalog.search_placeholder}
             className="pl-8 pr-3 py-1.5 rounded-input border border-card-border bg-secondary/40 typo-caption text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/45 transition-colors min-w-[220px]"
           />
@@ -186,6 +190,9 @@ export function RecipesBrowseList({ recipes, onOpenDetail }: RecipesBrowseListPr
             <RecipesTableResults
               recipes={filtered}
               eligibilityMap={eligibilityMap}
+              highlight={search}
+              personaSelected={!!selectedPersona}
+              adoptedRecipeIds={adoptedRecipeIds}
               onOpenDetail={onOpenDetail}
             />
           )}

@@ -137,6 +137,10 @@ export interface DesignUseCase {
   enabled?: boolean;
   /** One-line summary injected into the runtime "Active Capabilities" prompt section. */
   capability_summary?: string;
+  /** Recipe provenance — set when this use case was adopted from a catalog
+   *  recipe. Drives the catalog's "Adopted" badge and future staleness
+   *  reconciliation when the source recipe is republished. */
+  source_recipe_id?: string;
   /** Tool names to prefer when this capability is in focus. Advisory only. */
   tool_hints?: string[];
   /** Phase C5b — per-capability generation policy. */

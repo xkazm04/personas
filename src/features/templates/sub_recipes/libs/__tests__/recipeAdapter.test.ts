@@ -56,6 +56,121 @@ describe('recipeDefinitionToRecipe', () => {
       .toBe('reporting');
     expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'observability' })).category)
       .toBe('monitoring');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'personal_productivity' })).category)
+      .toBe('productivity');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'writing' })).category)
+      .toBe('content');
+    expect(recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }, { category: 'build' })).category)
+      .toBe('development');
+  });
+
+  it('prefers the UC title over the technical row name', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc_approval_workflow', title: 'Approval Workflow' }, { name: 'uc_approval_workflow' }),
+    );
+    expect(r.name).toBe('Approval Workflow');
+    expect(r.slug).toBe('approval-workflow');
+    expect(r.template.title).toBe('Approval Workflow');
+  });
+
+  it('prefers the UC category over the (usually null) row category', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', category: 'research' }, { category: null }),
+    );
+    expect(r.category).toBe('analysis');
+    // Raw UC category is preserved on the adopted-template shape.
+    expect(r.template.category).toBe('research');
+  });
+
+  it('uses the UC capability_summary as the browse tagline', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc', capability_summary: 'Tracks invoices end to end.' }),
+    );
+    expect(r.summary).toBe('Tracks invoices end to end.');
+  });
+
+  it('extracts review/memory policies and derives generation settings', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        review_policy: { mode: 'on_low_confidence', context: 'Reviewed when unsure.' },
+        memory_policy: { enabled: true, context: 'Remembers approver stats.' },
+        error_handling: 'Retry once, then flag.',
+      }),
+    );
+    expect(r.template.reviewPolicy).toEqual({ mode: 'on_low_confidence', context: 'Reviewed when unsure.' });
+    expect(r.template.memoryPolicy).toEqual({ enabled: true, context: 'Remembers approver stats.' });
+    expect(r.template.errorHandling).toBe('Retry once, then flag.');
+    expect(r.template.generationSettings).toEqual({ reviews: 'trust_llm', memories: 'on' });
+  });
+
+  it('maps never-review + disabled memory to off settings', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        review_policy: { mode: 'never' },
+        memory_policy: { enabled: false },
+      }),
+    );
+    expect(r.template.generationSettings).toEqual({ reviews: 'off', memories: 'off' });
+  });
+
+  it('leaves generation settings undefined when the UC declares no policies', () => {
+    const r = recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }));
+    expect(r.template.generationSettings).toBeUndefined();
+    expect(r.template.reviewPolicy).toBeUndefined();
+  });
+
+  it('extracts event subscriptions, dropping malformed entries', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        event_subscriptions: [
+          { event_type: 'access.request.received', direction: 'listen', description: 'Incoming.' },
+          { event_type: 'access.request.approved', direction: 'emit' },
+          { event_type: 'bad.direction', direction: 'sideways' },
+          { direction: 'emit' },
+        ],
+      }),
+    );
+    expect(r.template.eventSubscriptions).toEqual([
+      { eventType: 'access.request.received', direction: 'listen', description: 'Incoming.' },
+      { eventType: 'access.request.approved', direction: 'emit', description: undefined },
+    ]);
+  });
+
+  it('extracts input parameters with display-ready defaults', () => {
+    const r = recipeDefinitionToRecipe(
+      defWithPrompt({
+        id: 'uc',
+        input_schema: [
+          { name: 'timeout_hours', type: 'number', default: 48, description: 'Approval timeout.' },
+          { name: 'strict_mode', type: 'boolean', default: true },
+          { type: 'number', default: 1 },
+        ],
+      }),
+    );
+    expect(r.template.inputParameters).toEqual([
+      { name: 'timeout_hours', type: 'number', defaultValue: '48', description: 'Approval timeout.' },
+      { name: 'strict_mode', type: 'boolean', defaultValue: 'true', description: undefined },
+    ]);
+  });
+
+  it('omits events/parameters when absent from the UC', () => {
+    const r = recipeDefinitionToRecipe(defWithPrompt({ id: 'uc' }));
+    expect(r.template.eventSubscriptions).toBeUndefined();
+    expect(r.template.inputParameters).toBeUndefined();
+  });
+
+  it('treats template-derived rows as builtin even when the DB flag is unset', () => {
+    const derived = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc' }, { is_builtin: false, source_template_id: 'access-request-manager' }),
+    );
+    expect(derived.isBuiltin).toBe(true);
+    const userAuthored = recipeDefinitionToRecipe(
+      defWithPrompt({ id: 'uc' }, { is_builtin: false, source_template_id: null }),
+    );
+    expect(userAuthored.isBuiltin).toBe(false);
   });
 
   it('extracts tool_hints from the prompt_template UC', () => {

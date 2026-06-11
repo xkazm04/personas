@@ -98,6 +98,42 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   verdict, so a reviewer grasps a generated design's shape before scrolling its full section
   list. Self-hides when there is nothing to summarise.
 
+### Recipes catalog (`sub_recipes/`)
+
+Browse/adopt surface for the 298 seeded recipe definitions (derived use cases packaged as
+`recipe_definitions` rows). `RecipesPage` pulls rows from `usePipelineStore`, adapts each
+`RecipeDefinition` through `libs/recipeAdapter.ts`, and routes browse → detail → adoption.
+
+- **Adapter is the display contract** (`libs/recipeAdapter.ts`): the row's `prompt_template`
+  holds the full serialized use-case JSON; the adapter extracts the human `title` (the row
+  `name` was historically the technical `uc_*` id), the UC-level `category` (row-level is
+  NULL for most seeds), `capability_summary` (browse tagline), and the review/memory/error
+  policies. Categories funnel through a 42-alias map (`CATEGORY_ALIASES`) into the 9-bucket
+  `RecipeCategory` taxonomy (monitoring / reporting / automation / communication / data-sync /
+  analysis / development / content / productivity); labels resolve via `libs/categoryLabels.ts`.
+- **Table** (`RecipesTableResults.tsx`): sortable columns — name (search matches
+  highlighted), category badge (translated label), required-connector icon strip
+  (up to 3 + overflow), version, eligibility. Row click opens detail; hover reveals
+  Adopt. Eligibility is a per-persona verdict: before a persona is selected the
+  column shows a neutral dash (no LOCKED stamping, no row dimming). Rows the
+  selected persona already adopted carry a green **Adopted** chip, driven by
+  `DesignUseCase.source_recipe_id` — stamped at adoption time by `useAdoption`
+  and persisted on both the TS and Rust shapes.
+- **Detail** (`RecipeDetailPanel.tsx` + `components/detail/*`): connector-tinted hero header
+  (eligibility chip, category/version badges, author; publish time hidden for builtins),
+  About + tags, "What it does" (trigger/cron, branded channel chips, tool hints), "What it
+  needs" (connectors, bindings), and "Guardrails & memory" — the UC's review-policy,
+  memory-policy and failure-handling prose with honest mode badges (no badge when the
+  policy field is absent).
+- **Source-side derivation** (`src-tauri/src/commands/recipes/recipe_derivation.rs`):
+  `extract_uc_name` falls back name → title → id and derivation prefers the UC-level
+  category. The boot seeder (`engine/recipe_seed.rs`) additionally heals pre-2026-06 rows
+  still carrying the technical name signature (`name == source_use_case_id`) or a NULL
+  category — user renames are never overwritten. **Never blindly regenerate
+  `scripts/templates/_recipe_seeds.json`**: see the CAUTION in
+  `scripts/generate-recipe-seeds.py` (a re-run from the pinned ref drops the 9 SDLC recipes
+  appended after it).
+
 ## Common operations
 
 ### Add a new template
