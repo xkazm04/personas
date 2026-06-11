@@ -333,6 +333,84 @@ markers; first-run banner ships. Files: `sub_kpis/*` (rework),
 One connector (PostHog) covers two of the three dimensions — the handshake
 flow presents that as the default path.
 
+### v2 revision (2026-06-11, user direction): TYPE-bound, not tool-bound
+
+A connector KPI is wired to a **metric type** (the semantic capability), never
+to a specific tool. The tool is a swappable BINDING underneath:
+
+```
+dev_kpis.metric_type      "unique_visitors" | "api_requests" | "llm_tokens" |
+                          "llm_cost" | "revenue" | "error_rate" | ...
+                          (stable identity — what is measured)
+
+dev_kpi_bindings          kpi_id → credential_id (vault instance) + the
+                          tool-specific PROCEDURE + verified_at + status
+                          (one ACTIVE binding per KPI; prior bindings kept
+                          as history — switching never touches the KPI row
+                          or its measurement series)
+```
+
+**Metric-type contract** (the thing both recipes and the LLM composer must
+satisfy): semantic definition ("distinct human visitors over window W"),
+output shape (ONE number + unit + window), and verification invariants
+(non-negative, integer for counts, plausibility bounds). The contract is what
+makes tool-switching harmless: any binding that passes the contract produces
+comparable numbers.
+
+**Type → connector matching** rides the catalog's EXISTING category taxonomy
+(`analytics` ×8, `ai` ×6, `finance` ×6, `monitoring`, …):
+each metric type declares its compatible categories; the wizard queries the
+vault for credential instances whose connector definition carries one.
+
+**The wiring wizard v2**:
+1. KPI carries `metric_type` (the scan now proposes types; `needed_connector`
+   degrades to a display hint). "Connect" opens the wizard.
+2. Vault lookup: credentials matching the type's categories
+   (`sub_credentials` instances joined to `sub_catalog` definitions) →
+   "pick one" with instance name + health + last-used.
+3. No match, or the user wants something else → catalog browser filtered to
+   the compatible categories → **`QuickAddCredentialModal`** (already built
+   for the template-adoption flow — category-driven, returns the created
+   credential's service_type; hoist it to `shared/` so both flows import
+   one component).
+4. **Compose**: recipe registry hit → instant. Miss → LLM composes the
+   procedure (below). Either way the user sees the plan in plain language.
+5. **Verify**: run one live measurement, show number + evidence inline.
+   Only a confirmed verification freezes the binding and activates the KPI.
+6. **Switch** ("Change source" in the drawer): same wizard; on success the
+   old binding archives, the story chart gains a *rebase marker* at the
+   switch point, and the user chooses "continue series (annotated)" or
+   "re-baseline from here" — because GA4 users ≠ Plausible visitors, the
+   honesty lives in the annotation, not in pretending continuity.
+
+### DECIDED: hardcode vs LLM-composed procedures → hybrid, LLM-composes-ONCE
+
+The cartesian space (127 catalog connectors × N metric types) makes
+hardcoding every pair unmaintainable, and a new connector must not require a
+code release. But an LLM call per measurement would be slow, costly, and
+non-deterministic. The codebase doctrine resolves it — **LLM at design time,
+deterministic at runtime** (exactly how template adoption composes each
+tool's `implementation_guide` once, and executions replay it mechanically):
+
+- **Compose-once-then-freeze.** At wiring time, an LLM layer receives the
+  connector's catalog definition (auth fields, host), the metric-type
+  contract, and the credential's service docs, and COMPOSES the retrieval
+  procedure. It is immediately TEST-RUN (the P3 connector mini-execution);
+  the result must satisfy the contract's invariants and the user confirms
+  the number. Only then does the procedure freeze into the binding. Every
+  subsequent measurement replays the frozen procedure deterministically —
+  no LLM in the measurement path, ever.
+- **Curated recipes are accelerators, not gatekeepers.** Known-good pairs
+  (posthog×unique_visitors, posthog×api_requests, anthropic-admin×llm_tokens,
+  stripe×revenue) ship as a JSON recipe registry — instant + free wiring,
+  skipping composition. A recipe is just a pre-frozen, pre-verified
+  procedure for the same contract; the registry grows from successful
+  compositions (a verified composed procedure can be promoted to a recipe).
+- **Recompose on failure, never silently.** When a frozen procedure starts
+  failing (API change), the binding flips to `degraded`, the KPI shows it,
+  and the user (or later, an autonomous repair pass) triggers recomposition
+  + re-verification. Measurements never silently switch procedure.
+
 ### The handshake flow (connector onboarding inside the KPI module)
 
 Extends the existing "Connect <service>" CTA into a 4-step wizard:
