@@ -74,7 +74,8 @@ pub async fn ws_handler(
             .and_then(|v| v.to_str().ok())
             .map(str::to_string)
     });
-    if presented.as_deref() != Some(super::pairing_token()) {
+    let expected = super::pairing_token();
+    if presented.as_deref() != Some(expected.as_str()) {
         tracing::warn!("browser-bridge: WS connect rejected (bad or missing pairing token)");
         return (StatusCode::UNAUTHORIZED, "bad or missing pairing token").into_response();
     }

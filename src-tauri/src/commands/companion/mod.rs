@@ -6,6 +6,7 @@
 
 pub mod approvals;
 pub mod brain;
+pub mod browser_test;
 pub mod chat;
 pub mod connectors;
 pub mod consolidate;

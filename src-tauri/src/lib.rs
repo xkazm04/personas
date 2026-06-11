@@ -837,6 +837,28 @@ pub fn run() {
             }
             st.checkpoint("gitlab_restore");
 
+            // Browser-bridge pairing token: persist across runs so the
+            // extension pairs once. Env override (QA) wins inside
+            // init_pairing_token; first run mints + stores a token.
+            match db::repos::core::settings::get(
+                &pool,
+                db::settings_keys::BROWSER_BRIDGE_PAIRING_TOKEN,
+            ) {
+                Ok(Some(t)) if !t.trim().is_empty() => {
+                    browser_bridge::init_pairing_token(&t);
+                }
+                _ => {
+                    let t = browser_bridge::pairing_token();
+                    if let Err(e) = db::repos::core::settings::set(
+                        &pool,
+                        db::settings_keys::BROWSER_BRIDGE_PAIRING_TOKEN,
+                        &t,
+                    ) {
+                        tracing::warn!(error = %e, "browser-bridge: pairing token persist failed (runtime token still works)");
+                    }
+                }
+            }
+
             // Start the in-app HTTP server (binds 127.0.0.1, free port at-or
             // above 17400). Hosts authenticated-redirect routes for the
             // user's default browser. Register routers BEFORE starting;
@@ -2446,6 +2468,9 @@ pub fn run() {
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
+            commands::companion::browser_test::browser_bridge_status,
+            commands::companion::browser_test::browser_bridge_regenerate_token,
+            commands::companion::browser_test::companion_file_browser_defects,
             commands::companion::brain::companion_list_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,

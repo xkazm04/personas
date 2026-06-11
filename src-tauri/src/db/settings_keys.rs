@@ -36,6 +36,13 @@ pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 /// Active CLI engine: `"claude_code"` or `"codex_cli"`.
 pub const CLI_ENGINE: &str = "cli_engine";
 
+/// Browser-bridge pairing token — the secret the Athena Browser Bridge
+/// extension presents on its WebSocket handshake. Persisted so the extension
+/// pairs once and survives app restarts; regenerated from the Companion
+/// Setup panel. The `PERSONAS_BROWSER_BRIDGE_TOKEN` env override (QA
+/// harnesses) wins over this value at runtime.
+pub const BROWSER_BRIDGE_PAIRING_TOKEN: &str = "browser_bridge_pairing_token";
+
 /// Event retention period in days. Events older than this are purged by the
 /// cleanup subscription.
 pub const EVENT_RETENTION_DAYS: &str = "event_retention_days";
@@ -370,6 +377,7 @@ const ALLOWED_KEYS: &[&str] = &[
     LITELLM_BASE_URL,
     LITELLM_MASTER_KEY,
     CLI_ENGINE,
+    BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,
     EXECUTION_RETENTION_DAYS,
     SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR,

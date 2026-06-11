@@ -71,18 +71,49 @@ fn session_slot() -> &'static RwLock<Option<TestSession>> {
 /// reaches page JS — only the extension's service worker holds it.
 ///
 /// Resolution order: `PERSONAS_BROWSER_BRIDGE_TOKEN` env override (dev/test
-/// harnesses; the isolated-instance launcher passes env through) → random
-/// per-run UUID. A persisted token + pairing UI ships with the extension
-/// (Phase 2); until then the env override is the only practical client.
-pub fn pairing_token() -> &'static str {
-    static TOKEN: OnceLock<String> = OnceLock::new();
+/// harnesses; the isolated-instance launcher passes env through) → the
+/// persisted token installed at startup via [`init_pairing_token`] → a
+/// random per-run UUID (first run before persistence lands). The Companion
+/// Setup panel surfaces it (Phase 3) and can rotate it via
+/// [`set_pairing_token`].
+fn pairing_slot() -> &'static RwLock<String> {
+    static TOKEN: OnceLock<RwLock<String>> = OnceLock::new();
     TOKEN.get_or_init(|| {
-        std::env::var("PERSONAS_BROWSER_BRIDGE_TOKEN")
-            .ok()
-            .map(|t| t.trim().to_string())
-            .filter(|t| !t.is_empty())
-            .unwrap_or_else(|| uuid::Uuid::new_v4().simple().to_string())
+        RwLock::new(
+            env_pairing_token()
+                .unwrap_or_else(|| uuid::Uuid::new_v4().simple().to_string()),
+        )
     })
+}
+
+fn env_pairing_token() -> Option<String> {
+    std::env::var("PERSONAS_BROWSER_BRIDGE_TOKEN")
+        .ok()
+        .map(|t| t.trim().to_string())
+        .filter(|t| !t.is_empty())
+}
+
+pub fn pairing_token() -> String {
+    pairing_slot()
+        .read()
+        .unwrap_or_else(|p| p.into_inner())
+        .clone()
+}
+
+/// Install the persisted pairing token at app startup. The env override
+/// (QA harnesses) always wins; an empty persisted value is ignored.
+pub fn init_pairing_token(persisted: &str) {
+    if env_pairing_token().is_some() || persisted.trim().is_empty() {
+        return;
+    }
+    *pairing_slot().write().unwrap_or_else(|p| p.into_inner()) = persisted.trim().to_string();
+}
+
+/// Rotate the pairing token (Companion Setup → regenerate). A connected
+/// extension keeps its socket — the token is only checked at handshake —
+/// but its next reconnect needs the new value.
+pub fn set_pairing_token(token: &str) {
+    *pairing_slot().write().unwrap_or_else(|p| p.into_inner()) = token.trim().to_string();
 }
 
 /// Register the single active browser-test session for `target_url` and

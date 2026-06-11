@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -107,6 +108,41 @@ export async function companionAnalyzeFleet(
   days?: number,
 ): Promise<string> {
   return invoke<string>('companion_analyze_fleet', { teamId, days });
+}
+
+// ── Browser testing (Athena × browser tester arc) ──────────────────────────
+
+/** Pairing + connection status for the Companion Setup → Browser panel. */
+export async function browserBridgeStatus(): Promise<BrowserBridgeStatus> {
+  return invoke<BrowserBridgeStatus>('browser_bridge_status', {});
+}
+
+/** Rotate the pairing token; returns the new value (already persisted). */
+export async function browserBridgeRegenerateToken(): Promise<string> {
+  return invoke<string>('browser_bridge_regenerate_token', {});
+}
+
+/**
+ * File browser-test defects (from a `browser_test_report` chat-card) into
+ * the Dev Tools idea inbox. Returns the number of ideas created.
+ */
+export async function companionFileBrowserDefects(
+  url: string,
+  projectName: string | undefined,
+  defects: Array<{ title?: string; severity?: string; detail?: string; fix?: string }>,
+): Promise<number> {
+  return invoke<number>('companion_file_browser_defects', {
+    url,
+    projectName,
+    defects: defects
+      .filter((d) => (d.title ?? '').trim())
+      .map((d) => ({
+        title: d.title,
+        severity: d.severity,
+        detail: d.detail,
+        fix: d.fix,
+      })),
+  });
 }
 
 /**

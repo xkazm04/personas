@@ -17,6 +17,7 @@ import {
   projectTrackingRunNow,
 } from '@/api/companion/projectTracking';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { BrowserBridgePanel } from './BrowserBridgePanel';
 import { SensorySignalsModal } from './SensorySignalsModal';
 
 /**
@@ -345,6 +346,8 @@ export default function SetupPanel() {
           onChange={() => void onToggleTracking(!(trackingEnabled === true))}
         />
       </SectionCard>
+
+      <BrowserBridgePanel />
     </div>
   );
 }

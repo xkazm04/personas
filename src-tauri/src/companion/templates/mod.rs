@@ -268,4 +268,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// approval-gated live browser test of a dev project's test environment.
 /// On approval a dedicated proactive turn spawns with Playwright MCP
 /// browser tools available for that single turn.
-pub const CONSTITUTION_VERSION: u32 = 32;
+///
+/// v33 (browser testing, Phase 3) adds `show_browser_test_report` — the
+/// structured verdict chat-card a browser-test turn ends with (steps with
+/// evidence, defects, console errors, security notes) — plus guidance to
+/// verify visual claims via screenshot instead of DOM inference.
+pub const CONSTITUTION_VERSION: u32 = 33;
