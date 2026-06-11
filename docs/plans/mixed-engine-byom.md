@@ -186,6 +186,34 @@ WORSE under mixed (local generation is serialized and slow). The
 capability-level mixed engine is therefore a *resilience-proven architecture*
 with niche value (very large delegated payloads), not a cost lever.
 
+**Token-methodic round (runs G vs H2, 2026-06-11 evening).** Same bulk UC,
+same persona state, idle CPU, warm lfm2.5 — measured in TOKENS per engine
+(the right unit for subscription quota), from the stream-json result usage:
+
+| | G (full Claude) | H2 (mixed) |
+|---|---|---|
+| Claude output tokens | 11,283 | **9,671 (−14%)** |
+| Claude cache write / read | 44,943 / 38,056 | 19,315 / 63,161 |
+| Claude uncached input | 3 | 3 |
+| Turns / wall | 2 / 3:37 | 2 / 3:36 |
+| Local tokens (lfm2.5) | — | 868 out / 514 in (1 call, 20.8s) |
+
+Reading: delegation moved ~1.6k Claude output tokens local (one mechanical
+subtask) at zero wall-time cost on an idle machine. But the input side
+(~83k cache tokens/run, both engines) dwarfs output — `mixed` can only ever
+shave the ~10k output slice. Cache write/read asymmetry is cache-state
+path-dependence, not an engine effect. One-sample caveat: natural output
+variance across identical runs is ±15%, the same order as the measured
+saving — direction consistent, magnitude not yet proven.
+
+**Run H1 lesson (CPU contention kills serialized delegation).** A run with
+cargo saturating the cores stretched each local call to ~100–120s; four hit
+the tool's 120s timeout and the execution died on the engine's 20-minute
+safety ceiling. Design consequence: the delegate is only viable when the
+local model is fast *right now* — a future guard should probe latency and
+fail fast (arming-time healthcheck or first-call latency circuit-breaker)
+rather than letting slow calls eat the execution ceiling.
+
 **Where the real quota lever is (v2 priority reordered).** The headless
 `cli_text` family (Athena reactions, KPI scan/derivation/triage,
 auto-triage verdicts — small prompts, simple judgments, fired constantly
