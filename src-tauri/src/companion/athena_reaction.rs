@@ -92,6 +92,35 @@ struct AthenaChannelDecision {
     addressed_to: Vec<String>,
 }
 
+/// Batch decision protocol (docs/plans/athena-reaction-batching.md): one
+/// verdict per numbered signal. A missing verdict = decline (restraint is
+/// the safe default and the cert's no-spam axis still scores the trail).
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchEnvelope {
+    athena_channel_batch: AthenaBatchDecision,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchDecision {
+    #[serde(default)]
+    reactions: Vec<AthenaBatchVerdict>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct AthenaBatchVerdict {
+    /// 1-based index of the signal block in the prompt.
+    signal: usize,
+    react: bool,
+    #[serde(default)]
+    message: String,
+    #[serde(default)]
+    rationale: String,
+    #[serde(default)]
+    escalate_to_user: bool,
+    #[serde(default)]
+    addressed_to: Vec<String>,
+}
+
 /// Detect the single most recent reaction-worthy moment per goal-managed team
 /// that is NEWER than Athena's last channel post in that team (the cursor that
 /// gives natural debounce/restraint) and within a 12h lookback (so first-enable
@@ -277,6 +306,18 @@ pub async fn run_athena_reaction(
         return Ok(false);
     };
 
+    post_reaction_message(app, pool, &signal, decision)
+}
+
+/// Post one decided reaction to the team channel (shared by the single-signal
+/// path and the batch path): audit-footer body, inject-vs-display consumer,
+/// assignment linkage, optional user escalation. Returns Ok(true) if posted.
+fn post_reaction_message(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    signal: &ReactionSignal,
+    decision: AthenaChannelDecision,
+) -> Result<bool, AppError> {
     if !decision.react || decision.message.trim().is_empty() {
         // Restraint is a first-class outcome — record it so the cert can score
         // the no-spam axis from the decision trail.
@@ -473,6 +514,147 @@ fn parse_athena_decision(blob: &str) -> Option<AthenaChannelDecision> {
         }
     }
     result
+}
+
+/// Extract the `{"athena_channel_batch": {...}}` object (same brace-match
+/// tolerance as the single-decision parse; last occurrence wins).
+fn parse_athena_batch(blob: &str) -> Option<AthenaBatchDecision> {
+    let marker = "\"athena_channel_batch\"";
+    let mut result = None;
+    let mut search_from = 0;
+    while let Some(rel) = blob[search_from..].find(marker) {
+        let marker_pos = search_from + rel;
+        search_from = marker_pos + marker.len();
+        let Some(open) = blob[..marker_pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<AthenaBatchEnvelope>(candidate) {
+                result = Some(env.athena_channel_batch);
+            }
+        }
+    }
+    result
+}
+
+/// Build the BATCH decision prompt: every pending signal as a numbered block
+/// (team + moment + that team's recent history), the restraint doctrine once,
+/// and a per-signal verdict protocol. History is capped tighter in multi-team
+/// batches to bound the prompt.
+fn build_batch_prompt(pool: &crate::db::DbPool, signals: &[ReactionSignal]) -> String {
+    let multi = signals.len() > 1;
+    let mut blocks = String::new();
+    for (i, signal) in signals.iter().enumerate() {
+        let mut history = recent_channel_history(pool, &signal.team_id);
+        if multi {
+            // Keep only the newest 5 lines per team in multi-team batches.
+            let lines: Vec<&str> = history.lines().collect();
+            if lines.len() > 5 {
+                history = lines[lines.len() - 5..].join("\n");
+            }
+        }
+        let history_block = if history.trim().is_empty() {
+            "(no recent channel messages)".to_string()
+        } else {
+            history
+        };
+        let ledger = crate::db::repos::resources::team_memories::get_for_injection(pool, &signal.team_id, 5)
+            .ok()
+            .filter(|m| !m.is_empty())
+            .map(|m| {
+                let items = m
+                    .iter()
+                    .map(|tm| format!("  - [{}] {}: {}", tm.category, tm.title, tm.content))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                format!("\nTeam ledger:\n{items}")
+            })
+            .unwrap_or_default();
+        blocks.push_str(&format!(
+            "### Signal {n} — team \"{team}\"\n- Moment: {headline}\n- Kind: `{kind}`\n- Artifact: {title}\n- Detail: {detail}\nRecent channel activity (oldest → newest):\n{history}{ledger}\n\n",
+            n = i + 1,
+            team = signal.team_name,
+            headline = signal.headline(),
+            kind = signal.kind,
+            title = signal.title,
+            detail = if signal.detail.is_empty() { "(none)" } else { &signal.detail },
+            history = history_block,
+            ledger = ledger,
+        ));
+    }
+
+    format!(
+        r#"You are **Athena**, the autonomous orchestrator overseeing this fleet of software-delivery teams. You are running unattended. Several development moments have accumulated since your last wake — decide, for EACH one, whether to step into that team's channel (the channel its personas and the Director coordinate in).
+
+{blocks}YOUR DECISIONS
+You see all pending moments at once — use cross-team patterns (the same failure shape appearing on multiple teams, repeated bounces on one artifact) to inform individual messages. Be disciplined — you are judged on RESTRAINT as much as on coverage:
+- The DEFAULT is `react: false`. Routine progress does not need narration. Do not congratulate every shipped goal or echo every bounce.
+- AWAITING-REVIEW cap-out → almost always react AND `escalate_to_user: true`: the team is stuck and only a human can unblock it. Say concisely what's blocked and what call is needed.
+- A QA bounce → usually stay silent (normal SDLC); react only on a repeating pattern the team isn't self-correcting, optionally addressing the implementer with one concrete steer.
+- A shipped goal → react only if it's a meaningful milestone worth recording; otherwise silent.
+- If you address a specific persona, put their persona id in `addressed_to` (injected into their next step). Otherwise leave it empty (visible observation for the human).
+- Keep each `message` to 1–3 sentences, plain and specific. `rationale` is one short clause recorded as an audit footer.
+
+Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line — one entry per signal, ALL signals present:
+{{"athena_channel_batch": {{"reactions": [{{"signal": 1, "react": true|false, "message": "...", "rationale": "...", "escalate_to_user": true|false, "addressed_to": []}}]}}}}
+"#,
+        blocks = blocks,
+    )
+}
+
+/// Run ONE batched Athena reaction decision over every pending signal
+/// (docs/plans/athena-reaction-batching.md): one CLI call instead of one per
+/// signal. Returns the number of messages posted. Signals without a verdict
+/// in the response are treated as declines.
+pub async fn run_athena_reaction_batch(
+    app: &tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    signals: Vec<ReactionSignal>,
+) -> Result<usize, AppError> {
+    if signals.is_empty() {
+        return Ok(0);
+    }
+    let prompt = build_batch_prompt(pool, &signals);
+    let blob = cli_text(prompt).await?;
+    let Some(batch) = parse_athena_batch(&blob) else {
+        tracing::warn!(
+            signals = signals.len(),
+            "athena_reaction_batch: no batch decision parsed from CLI output"
+        );
+        return Ok(0);
+    };
+
+    let mut posted = 0usize;
+    for (i, signal) in signals.iter().enumerate() {
+        let verdict = batch.reactions.iter().find(|v| v.signal == i + 1);
+        let decision = match verdict {
+            Some(v) => AthenaChannelDecision {
+                react: v.react,
+                message: v.message.clone(),
+                rationale: v.rationale.clone(),
+                escalate_to_user: v.escalate_to_user,
+                addressed_to: v.addressed_to.clone(),
+            },
+            None => {
+                tracing::info!(
+                    team = %signal.team_name,
+                    kind = %signal.kind,
+                    "athena_reaction_batch: no verdict for signal — treated as decline"
+                );
+                continue;
+            }
+        };
+        match post_reaction_message(app, pool, signal, decision) {
+            Ok(true) => posted += 1,
+            Ok(false) => {}
+            Err(e) => {
+                tracing::warn!(team = %signal.team_name, kind = %signal.kind, error = %e,
+                    "athena_reaction_batch: post failed");
+            }
+        }
+    }
+    Ok(posted)
 }
 
 /// Given a slice that starts with `{`, return the byte offset of the matching

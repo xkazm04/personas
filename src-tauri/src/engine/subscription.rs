@@ -2475,7 +2475,10 @@ pub struct AthenaChannelReactionSubscription {
 /// Backstop cap on Athena reactions per tick (one CLI decision each). The real
 /// debounce is the per-team "newer than her last post" cursor; this only bounds
 /// a cold-start burst across many teams.
-const ATHENA_REACTION_MAX_PER_TICK: usize = 4;
+// Batch-size cap (was a per-CALL cap of 4 when reactions ran one CLI call
+// per signal). Signals are already deduped to one per team, so 10 covers the
+// whole fleet; the CLI-call count per tick is now exactly 1.
+const ATHENA_REACTION_MAX_PER_TICK: usize = 10;
 
 #[async_trait::async_trait]
 impl ReactiveSubscription for AthenaChannelReactionSubscription {
@@ -2569,28 +2572,29 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
             return;
         }
 
-        let mut posted = 0usize;
-        for signal in signals.into_iter().take(ATHENA_REACTION_MAX_PER_TICK) {
-            let team = signal.team_name.clone();
-            let kind = signal.kind.clone();
-            match crate::companion::athena_reaction::run_athena_reaction(
-                &self.app, &self.pool, signal,
-            )
-            .await
-            {
-                Ok(true) => {
-                    posted += 1;
-                }
-                Ok(false) => {
-                    tracing::debug!(team = %team, kind = %kind, "athena_channel_reactions: declined or no-op");
-                }
-                Err(e) => {
-                    tracing::warn!(team = %team, kind = %kind, error = %e, "athena_channel_reactions: reaction failed");
-                }
+        // Batched wake (docs/plans/athena-reaction-batching.md): ONE CLI call
+        // decides every pending signal — Athena sees the fleet side by side
+        // (cross-team patterns) and the doctrine is paid once per tick
+        // instead of once per signal.
+        let batch: Vec<_> = signals
+            .into_iter()
+            .take(ATHENA_REACTION_MAX_PER_TICK)
+            .collect();
+        let n = batch.len();
+        match crate::companion::athena_reaction::run_athena_reaction_batch(
+            &self.app, &self.pool, batch,
+        )
+        .await
+        {
+            Ok(posted) if posted > 0 => {
+                tracing::info!(posted, signals = n, "athena_channel_reactions: batch posted Athena reactions");
             }
-        }
-        if posted > 0 {
-            tracing::info!(posted, "athena_channel_reactions: posted Athena reactions to channels");
+            Ok(_) => {
+                tracing::debug!(signals = n, "athena_channel_reactions: batch declined all signals");
+            }
+            Err(e) => {
+                tracing::warn!(signals = n, error = %e, "athena_channel_reactions: batch failed");
+            }
         }
     }
 }
