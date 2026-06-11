@@ -1,0 +1,27 @@
+# gitleaks config for personas — extends the default ruleset and trims known false-positive noise so
+# the pre-commit control (scripts/secret-scan.mjs) and the one-time history audit stay actionable.
+#
+# History triage: `node scripts/secret-scan.mjs --detect` scans all history and (today) flags ~34
+# hits — most are expected example/test/i18n strings the allowlist below quiets. After triaging:
+#   - rotate anything that was a REAL credential, then
+#   - add a precise `[[rules.allowlist]]` regex here for each confirmed-safe token (prefer narrow
+#     regexes over broad path globs once you know what's noise).
+title = "personas gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Paths that legitimately contain secret-shaped strings (examples, fixtures, generated)"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)(test|tests|__tests__|fixtures?)/''',
+  '''\.(test|spec)\.[cm]?[jt]sx?$''',
+  '''(^|/)e2e/''',
+  '''(^|/)docs/''',
+  '''(^|/)src/i18n/''',
+  '''(^|/)src/lib/bindings/''',
+]
+# regexes = [
+#   '''EXAMPLE_[A-Z0-9_]+''',   # add confirmed-safe placeholder tokens after triage
+# ]
