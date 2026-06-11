@@ -357,6 +357,106 @@ pub fn mark_as_read(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
+/// One unread message in the shape the autonomous message-triage batch
+/// needs: persona name joined in, no delivery/thread baggage.
+pub struct UnreadMessageForTriage {
+    pub id: String,
+    pub persona_name: String,
+    pub title: Option<String>,
+    pub content: String,
+    pub priority: String,
+    pub created_at: String,
+}
+
+/// Unread messages created after `cursor`, OLDEST first (the triage
+/// drains the backlog progressively, advancing its cursor only past the
+/// batch it actually processed). Read by
+/// `companion::proactive::message_triage`.
+pub fn list_unread_after(
+    pool: &DbPool,
+    cursor: &str,
+    limit: i64,
+) -> Result<Vec<UnreadMessageForTriage>, AppError> {
+    timed_query!("persona_messages", "persona_messages::list_unread_after", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT m.id, COALESCE(p.name, m.persona_id), m.title, m.content,
+                    m.priority, m.created_at
+             FROM persona_messages m
+             LEFT JOIN personas p ON p.id = m.persona_id
+             WHERE m.is_read = 0 AND m.created_at > ?1
+             ORDER BY m.created_at ASC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![cursor, limit], |row| {
+            Ok(UnreadMessageForTriage {
+                id: row.get(0)?,
+                persona_name: row.get(1)?,
+                title: row.get(2)?,
+                content: row.get(3)?,
+                priority: row.get(4)?,
+                created_at: row.get(5)?,
+            })
+        })?;
+        Ok(collect_rows(rows, "messages::list_unread_after"))
+    })
+}
+
+/// Record Athena's triage verdict on a message by merging an
+/// `athena_triage` object into its `metadata` JSON — the audit trail for
+/// "why is this marked read?" / "why did this stay unread?". Read-modify-
+/// write in Rust (metadata blobs are small); a malformed existing blob is
+/// preserved under `previous_metadata` rather than dropped.
+pub fn annotate_athena_triage(
+    pool: &DbPool,
+    id: &str,
+    action: &str,
+    note: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_messages",
+        "persona_messages::annotate_athena_triage",
+        {
+            let conn = pool.get()?;
+            let existing: Option<String> = conn
+                .query_row(
+                    "SELECT metadata FROM persona_messages WHERE id = ?1",
+                    params![id],
+                    |row| row.get(0),
+                )
+                .map_err(|e| match e {
+                    rusqlite::Error::QueryReturnedNoRows => {
+                        AppError::NotFound(format!("PersonaMessage {id}"))
+                    }
+                    other => AppError::Database(other),
+                })?;
+
+            let mut root = match existing
+                .as_deref()
+                .filter(|s| !s.trim().is_empty())
+                .map(serde_json::from_str::<serde_json::Value>)
+            {
+                Some(Ok(serde_json::Value::Object(map))) => serde_json::Value::Object(map),
+                Some(_) => serde_json::json!({
+                    "previous_metadata": existing,
+                }),
+                None => serde_json::json!({}),
+            };
+            root["athena_triage"] = serde_json::json!({
+                "action": action,
+                "note": note,
+                "at": chrono::Utc::now().to_rfc3339(),
+            });
+
+            conn.execute(
+                "UPDATE persona_messages SET metadata = ?1 WHERE id = ?2",
+                params![root.to_string(), id],
+            )?;
+            Ok(())
+        }
+    )
+}
+
 pub fn mark_all_as_read(pool: &DbPool, persona_id: Option<&str>) -> Result<(), AppError> {
     timed_query!("persona_messages", "persona_messages::mark_all_as_read", {
         let now = chrono::Utc::now().to_rfc3339();
