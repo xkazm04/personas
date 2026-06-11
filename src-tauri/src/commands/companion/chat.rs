@@ -141,18 +141,19 @@ pub fn autonomous_mode_enabled(db: &crate::db::DbPool) -> bool {
     )
 }
 
-/// Run the execution-review pass on demand (Goal 2), bypassing the 5-min
-/// scheduler cadence. Spawns `TurnOrigin::Proactive` analysis turns for
-/// qualifying recent executions and returns how many it kicked off. Used
-/// by the test harness to drive a deterministic review, and usable as a
-/// "review my recent runs now" affordance. Each spawned turn runs with
-/// autonomous_mode=true so it can chain if it needs more than one pass.
+/// Run the execution-review pass on demand, bypassing the 5-min scheduler
+/// cadence. Runs the batched headless triage over qualifying recent
+/// executions (digest card + at most one deep-dive `TurnOrigin::Proactive`
+/// turn) and returns how many findings it surfaced. Used by the test
+/// harness to drive a deterministic review, and usable as a "review my
+/// recent runs now" affordance. Async: the triage awaits one headless CLI
+/// decision before returning the count.
 #[tauri::command]
-pub fn companion_review_recent_executions_now(
+pub async fn companion_review_recent_executions_now(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
 ) -> Result<usize, AppError> {
-    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::ipc_auth::require_auth(&state).await?;
     crate::companion::proactive::execution_review::review_recent_executions(
         &state.user_db,
         &state.db,
@@ -160,6 +161,7 @@ pub fn companion_review_recent_executions_now(
         #[cfg(feature = "ml")]
         state.embedding_manager.as_ref(),
     )
+    .await
 }
 
 /// Read the most recent N messages oldest-first for the panel transcript.

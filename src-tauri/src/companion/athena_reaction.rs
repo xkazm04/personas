@@ -363,9 +363,10 @@ async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>
 
 /// Spawn the Claude CLI with the prompt on stdin and return the accumulated
 /// display text. Lean clone of `idea_scanner::run_idea_scan`'s subprocess
-/// handling without the scan-job bookkeeping; shared by the channel-reaction
-/// and review-resolution decisions (each parses its own protocol object).
-async fn cli_text(prompt_text: String) -> Result<String, AppError> {
+/// handling without the scan-job bookkeeping; shared by the channel-reaction,
+/// review-resolution, execution-triage and message-triage decisions (each
+/// parses its own protocol object).
+pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
     let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
@@ -476,7 +477,7 @@ fn parse_athena_decision(blob: &str) -> Option<AthenaChannelDecision> {
 
 /// Given a slice that starts with `{`, return the byte offset of the matching
 /// closing `}` (relative to the slice start), or `None` if unbalanced.
-fn match_braces(s: &str) -> Option<usize> {
+pub(crate) fn match_braces(s: &str) -> Option<usize> {
     let bytes = s.as_bytes();
     let mut depth = 0i32;
     let mut in_str = false;

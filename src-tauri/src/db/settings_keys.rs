@@ -188,6 +188,27 @@ pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
 /// the scheduler reads it. Stored as `"true"` / `"false"` strings.
 pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
 
+/// Whether the autonomous MESSAGE triage leg of the proactive tick may,
+/// unattended, read the Overview → Messages inbox the way Athena resolves
+/// human reviews: a batched headless decision classifies each unread
+/// persona message as `done` (routine — marked read with an audit
+/// annotation), `digest` (business value — folded into one aggregated
+/// proactive card, then marked read) or `attention` (stays UNREAD for the
+/// user to read personally + desktop notification). High/urgent-priority
+/// messages can never be auto-`done` (code-level guard). Requires
+/// [`COMPANION_AUTONOMOUS_MODE`] to also be on. Default OFF — opt-in.
+/// Read by `companion::proactive::message_triage`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_MESSAGE_TRIAGE: &str = "autonomous_message_triage";
+/// Default for [`AUTONOMOUS_MESSAGE_TRIAGE`] — off (opt-in autonomy).
+pub const AUTONOMOUS_MESSAGE_TRIAGE_DEFAULT: bool = false;
+
+/// Cursor for the autonomous message-triage leg: the ISO8601 `created_at`
+/// of the newest `persona_messages` row already triaged. Unlike the
+/// exec-review cursor it advances only past the batch actually processed
+/// (oldest-first), so a backlog drains progressively instead of being
+/// skipped. Free-form timestamp value (no typed validation).
+pub const COMPANION_MSG_TRIAGE_CURSOR: &str = "companion_msg_triage_cursor";
+
 /// Cursor for the autonomous execution-review leg (Goal 2): the ISO8601
 /// timestamp of the newest `persona_executions` row the reviewer has
 /// already considered. Each proactive tick reviews only rows created
@@ -411,6 +432,8 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
+    AUTONOMOUS_MESSAGE_TRIAGE,
+    COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
@@ -522,6 +545,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         CLI_SESSION_AWARENESS_ENABLED
         | COMPANION_AUTONOMOUS_MODE
         | CLOUD_SYNC_ENABLED
+        | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
