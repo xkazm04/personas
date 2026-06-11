@@ -66,12 +66,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
-- Started: 2026-06-11 ~20:00
-- Status: started
-- Paths: scripts/test/loop-certify.mjs (§10 KPI block), docs/plans/kpi-driven-orchestration.md, .claude/active-runs.md. Live DB via bridge (no tree edits): accept ai-paralegal KPI proposals, scan 6 team projects, resume 7 awaiting_review parks, flip 10 autonomy settings ON.
-- Note: next validation window after the R-fix day-run analysis (06:41 UTC autonomy sweep confirmed user-driven). External-connector KPIs stay parked; internally measurable (codebase/derived) only. Run objective: observe goal↔KPI relation — not all goals must follow KPIs.
-
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -712,6 +706,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
+- Started: 2026-06-11 ~20:00. Completed: 2026-06-12 ~00:00. Commits: 76023d0f1 (§10 cert block), 89be34943 (KpiEvaluationSubscription), be8e8116a (plan addendum).
+- Paths: scripts/test/loop-certify.mjs, src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/db/settings_keys.rs, docs/plans/kpi-driven-orchestration.md.
+- Note: run-2 LIVE — 27 internal KPIs active across 7/7 teams (scans + Windows-safe recipe rewrites; 2 non-portable recipes archived as negative feedback), 11 autonomy settings ON (incl. new autonomous_kpi_evaluation), goal_advance/auto_resume/backlog_to_goal ticks verified firing, KPI-derived goal being advanced by a team. Known scan defect queued: kpi_scan composes Unix-piped measure_config cmds that fail under cmd /C.
+
 
 ### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage — MERGED TO MASTER (5c1b6b660)
 - 2026-06-10 18:20 → 2026-06-11 00:20. Worktree worktree-athena-signal-economy off master; 6 commits 6cbaebda6..f3360543a, merge 5c1b6b660. Worktree + branch removed (⚠ junction lesson re-learned: `git worktree remove --force` followed the node_modules junction and emptied the MAIN checkout's node_modules/.bin before dying on a long path — `cmd /c rmdir` the junction FIRST, always; repaired via npm install, 111 shims back, tsc clean).
