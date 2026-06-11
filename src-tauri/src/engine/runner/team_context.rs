@@ -644,7 +644,7 @@ mod tests {
         ];
         let block = render_alignment_block("Solo", None, "AI Bookkeeper", &[], &[], &incidents)
             .expect("incidents-only should still render the block");
-        assert!(block.contains("Known incidents to avoid"));
+        assert!(block.contains("Open incidents"));
         assert!(block.contains("[critical]"));
         assert!(block.contains("OAuth refresh storms 401s"));
         assert!(block.contains("Daily token expiry"));
@@ -668,7 +668,7 @@ mod tests {
         )
         .expect("renders");
         let goals_at = block.find("Active team goals").expect("has goals header");
-        let inc_at = block.find("Known incidents to avoid").expect("has incidents header");
+        let inc_at = block.find("Open incidents").expect("has incidents header");
         assert!(inc_at > goals_at, "incidents section must come after goals");
         assert!(block.contains("Race in goal-advance"));
     }
