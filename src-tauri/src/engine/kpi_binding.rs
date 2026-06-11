@@ -477,15 +477,37 @@ Respond with your analysis, then EXACTLY ONE line that is this JSON object and n
         kpi_desc = kpi.description.as_deref().unwrap_or(""),
     );
 
-    let blob = crate::companion::athena_reaction::cli_text(prompt).await?;
-    let procedure = parse_procedure(&blob).ok_or_else(|| {
-        AppError::Validation(
-            "The composer could not produce a confident procedure for this connector — \
-             try a different connector, or wire this KPI manually"
-                .into(),
-        )
-    })?;
-    Ok((procedure, "llm"))
+    // The CLI round-trip is non-deterministic and can also fail fast (early
+    // exit, drained-stderr error, contention with background cli_text users
+    // like Athena reactions) — retry once before giving up. An explicit
+    // `"kpi_procedure": null` is the model DECLINING the contract; that is an
+    // answer, not a flake, so it does not retry.
+    let mut declined = false;
+    for attempt in 0..2u8 {
+        let blob = crate::companion::athena_reaction::cli_text(prompt.clone()).await?;
+        if let Some(procedure) = parse_procedure(&blob) {
+            return Ok((procedure, "llm"));
+        }
+        declined = blob.contains("\"kpi_procedure\": null") || blob.contains("\"kpi_procedure\":null");
+        if declined {
+            break;
+        }
+        tracing::warn!(
+            attempt,
+            blob_len = blob.len(),
+            excerpt = %crate::utils::text::truncate_on_char_boundary(&blob, 200),
+            "kpi_binding: composer output had no parseable procedure"
+        );
+    }
+    Err(AppError::Validation(if declined {
+        "The composer judged this connector's API unable to answer this metric type with a \
+         single request — try a different connector, or wire this KPI manually"
+            .into()
+    } else {
+        "The composer could not produce a confident procedure for this connector — \
+         try again or pick a different connector"
+            .into()
+    }))
 }
 
 #[cfg(test)]

@@ -12,7 +12,8 @@ import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { toastCatch } from '@/lib/silentCatch';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
+import { extractMessage, toastCatch } from '@/lib/silentCatch';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -130,7 +131,10 @@ export function KPIConnectWizard({
       setResult(r);
       setStep('verify');
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      // Compose/verify errors are written for users in the backend
+      // (unconfident composer, invariant breach, API status) — show them
+      // verbatim; the registry would genericize them away.
+      setError(extractMessage(err) || resolveErrorTranslated(t, null).message);
       setStep('verify');
     }
   };
