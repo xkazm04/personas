@@ -256,7 +256,7 @@ the dimension has live history.
 | **P3 — Evaluation runner** | `run_kpi_evaluation` (codebase + derived + manual kinds), `kpi_measurement` protocol + dispatch variant for the connector kind (mini-execution), health-snapshot absorption, Measure-now UI | `engine/` or `commands/` kpi_eval module, `dispatch.rs`, drawer | Measure-now produces a time-series point with evidence; coverage KPI measured end-to-end on a real repo |
 | **P4 — Derivation loop** | off-track helper, `KpiGoalDerivationSubscription` (default-OFF setting + array + validation), derivation CLI decision + caps/cooldowns, Athena `kpi_off_track` signal | `subscription.rs`, `settings_keys.rs`, `background.rs`, `athena_reaction.rs` | Seeded off-track KPI derives exactly one goal with provenance; GoalAdvance picks it up; no derivation while measurement stale |
 | **P5 — Experience polish** | Plain-language formatter, gauge card (prototype pass), group sections, decision cards, story drawer w/ goal markers, explainer banner | `sub_kpis/*`, `describeMeasurement.ts` | Zero JSON/enum tokens visible; non-technical read test passes |
-| **P6 — Business measurement** | Connector handshake wizard (PostHog + anthropic-admin), tested measurement recipes, instrument-via-goal path, `tier` + floor-breach derivation semantics | wizard in `sub_kpis/`, catalog entries, kpi_eval recipes, `subscription.rs` ordering | Pilot: visitors + API usage + LLM usage measuring live; business KPI outranks technical in derivation |
+| **P6 — Business measurement** ✅ built + live-verified (see §9b status); pilot keys pending | Type-bound binding engine + connect wizard (recipes + LLM compose-once), `tier` + floor-breach derivation semantics, anthropic-admin catalog entry | `engine/kpi_binding.rs`, `dev_kpi_bindings`, wizard in `sub_kpis/`, kpi_eval replay, derivation ordering | Pilot: visitors + API usage + LLM usage measuring live; business KPI outranks technical in derivation |
 | **P7 — Cert §10** | gather snapshot, loop-certify kpi block, rubric §10, feature docs + map entry | `scripts/test/`, `docs/tests/autonomy-eval/`, `docs/features/` | loop-certify renders the kpi block on live data; golden-safe for pre-KPI bundles |
 
 Order rationale: the user sees value at P2 (visible KPI management); autonomy
@@ -316,6 +316,24 @@ markers; first-run banner ships. Files: `sub_kpis/*` (rework),
 `describeMeasurement.ts` (new), prototype pass on the card. No backend change.
 
 ## 9b. P6 — Business measurement onboarding (the external handshake)
+
+> **STATUS: built + live-verified (2026-06-11).** Backend spine
+> (`engine/kpi_binding.rs`: 6 metric-type contracts, credential matching via
+> connector-definition categories, PostHog recipe registry, LLM compose-once
+> with retry + decline detection, `{{field:KEY}}` render at execution,
+> deterministic replay in `kpi_eval` with degraded-flip), `dev_kpi_bindings`
+> table + 5 commands, `KPIConnectWizard` (pick type-matched credential →
+> compose → live verify → activate) wired into the proposal modal/queue
+> Connect CTAs + a drawer Data-source section (active binding, degraded
+> banner, change source). Live acceptance ran the FULL UI loop against the
+> real Sentry credential (`open_errors`, LLM path — no recipe): compose →
+> verify (0 issues; plan states the 100-group page cap) → activate →
+> binding frozen → `evaluate_kpi` replayed it deterministically.
+> `anthropic-admin` catalog connector shipped for LLM spend. Remaining
+> (needs the user): PostHog/Stripe/Anthropic-admin keys for the pilot's
+> visitors / API-usage / LLM-spend KPIs + the instrument-via-derived-goal
+> acceptance below. Commits: ce4fa68bd, 082fc186c, 51b3d34fa, a36c12076,
+> f633ef79d.
 
 > User direction (2026-06-11): wire ONE pilot project end-to-end for **API
 > usage**, **LLM API usage**, and **unique visitors** — moving from purely
