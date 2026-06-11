@@ -233,6 +233,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // memory + propose improvements. Approval-gated because it spawns a CLI
     // reasoning turn (cost) — same rationale as run_persona / assign_team.
     "analyze_fleet",
+    // Live browser test of a dev project's test environment. Approval-gated
+    // twice over: it spawns a CLI reasoning turn (cost) AND that turn drives
+    // a real browser via Playwright MCP (clicks, navigation, form input on
+    // the user's machine). execute_run_browser_test resolves the target URL
+    // and spawns the proactive browser_test turn.
+    "run_browser_test",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

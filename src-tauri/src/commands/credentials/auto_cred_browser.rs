@@ -1307,7 +1307,9 @@ pub async fn get_playwright_procedure(
 /// Returns a `NamedTempFile` with a random filename. The caller MUST keep this
 /// handle alive until the CLI process finishes -- dropping it deletes the file,
 /// preventing stale credential configs from lingering on disk.
-fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
+///
+/// `pub(crate)`: also used by companion browser-test turns (companion/session.rs).
+pub(crate) fn build_playwright_mcp_config() -> Result<tempfile::NamedTempFile, String> {
     use std::io::Write;
 
     let config = json!({
