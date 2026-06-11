@@ -1099,6 +1099,10 @@ async fn run_cli(
         // re-priming context. Harmless on older CLI versions (env var
         // is ignored if the feature isn't recognized).
         .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+    // Athena (and every persona execution/evaluation) runs on the Claude
+    // monthly subscription — strip any ANTHROPIC_* API-account auth so the CLI
+    // uses its OAuth/keychain credentials, never billing the API.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows — see apply_no_console_window. Without
     // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
     // and eventually dies on spawn with 0xC0000142.
@@ -1426,11 +1430,9 @@ fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
 /// Public so the consolidation + reflection one-shots can reuse the
 /// same invocation pattern instead of duplicating the platform check.
 pub fn base_cli_invocation() -> (String, Vec<String>) {
-    if cfg!(windows) {
-        ("cmd".into(), vec!["/C".into(), "claude.cmd".into()])
-    } else {
-        ("claude".into(), vec![])
-    }
+    // Shared resolver — verified absolute claude.exe on Windows so a broken
+    // or missing claude.cmd shim on PATH can't break the spawn.
+    crate::engine::cli_process::claude_cli_invocation()
 }
 
 /// Apply the Windows "no console window" creation flag to a CLI command.
