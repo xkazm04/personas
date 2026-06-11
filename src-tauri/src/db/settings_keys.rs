@@ -338,6 +338,16 @@ pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION: &str = "autonomous_athena_review_
 /// Default for [`AUTONOMOUS_ATHENA_REVIEW_RESOLUTION`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ATHENA_REVIEW_RESOLUTION_DEFAULT: bool = false;
 
+/// KPI → Goal derivation: when on, an ACTIVE KPI that is OFF TRACK (pace-based,
+/// freshly measured, no open derived goal, re-measured since the last derived
+/// goal completed) derives ONE goal for the project's team via a headless
+/// decision (skip is a legitimate outcome). The goal rides the normal
+/// GoalAdvance loop. Default OFF — opt-in. Read by
+/// `engine::subscription::KpiGoalDerivationSubscription`.
+pub const AUTONOMOUS_KPI_GOAL_DERIVATION: &str = "autonomous_kpi_goal_derivation";
+/// Default for [`AUTONOMOUS_KPI_GOAL_DERIVATION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_KPI_GOAL_DERIVATION_DEFAULT: bool = false;
+
 /// When `"true"`, the Director runs a focused coaching evaluation on a persona
 /// whose recent team work shows a STORM (a burst of step failures / QA
 /// change-requests). Default OFF — opt-in. Read by
@@ -445,6 +455,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_BACKLOG_TRIAGE,
     AUTONOMOUS_ATHENA_REACTIONS,
     AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
+    AUTONOMOUS_KPI_GOAL_DERIVATION,
     AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
@@ -554,6 +565,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_BACKLOG_TRIAGE
         | AUTONOMOUS_ATHENA_REACTIONS
         | AUTONOMOUS_ATHENA_REVIEW_RESOLUTION
+        | AUTONOMOUS_KPI_GOAL_DERIVATION
         | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {

@@ -4030,7 +4030,7 @@ mod goal_progress_tests {
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
 // ============================================================================
 
-fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
+pub fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
     Ok(DevKpi {
         id: row.get("id")?,
         project_id: row.get("project_id")?,

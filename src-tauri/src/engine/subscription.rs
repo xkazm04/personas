@@ -2596,6 +2596,90 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
 }
 
 // ---------------------------------------------------------------------------
+// KPI → Goal derivation — the outcome layer steering the goal loop
+// ---------------------------------------------------------------------------
+
+/// Opt-in autonomous loop: derive goals from OFF-TRACK KPIs (P4 of the KPI
+/// plan). Candidates are gated hard — fresh measurement, one open derived
+/// goal per KPI, re-measured since the last derived goal completed — and the
+/// headless decision may legitimately SKIP. Business categories (value /
+/// traffic) order before quality/technical: with 0 users, getting one beats
+/// raising coverage. ≤2 derivations per tick; quota-gated.
+pub struct KpiGoalDerivationSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+const KPI_DERIVATION_MAX_PER_TICK: usize = 2;
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for KpiGoalDerivationSubscription {
+    fn name(&self) -> &'static str {
+        "kpi_goal_derivation"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_KPI_GOAL_DERIVATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("kpi_goal_derivation: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let candidates = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || {
+                crate::engine::kpi_derivation::find_derivation_candidates(
+                    &pool,
+                    KPI_DERIVATION_MAX_PER_TICK,
+                )
+            })
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+            .unwrap_or_default()
+        };
+        for kpi in candidates {
+            let name = kpi.name.clone();
+            match crate::engine::kpi_derivation::derive_goal_from_kpi(&self.pool, &kpi).await {
+                Ok(Some(title)) => {
+                    tracing::info!(kpi = %name, goal = %title, "kpi_goal_derivation: derived goal");
+                    crate::notifications::send(
+                        &self.app,
+                        "KPI steering",
+                        &format!("'{name}' is off track — derived goal: {title}"),
+                    );
+                }
+                Ok(None) => {
+                    tracing::info!(kpi = %name, "kpi_goal_derivation: skip (no actionable goal)");
+                }
+                Err(e) => {
+                    tracing::warn!(kpi = %name, error = %e, "kpi_goal_derivation: failed");
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Fleet liveness watchdog — a stalled autonomous fleet must never be silent
 // ---------------------------------------------------------------------------
 
