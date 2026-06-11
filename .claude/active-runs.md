@@ -13,6 +13,12 @@ materially edits the working tree should touch this file twice:
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
 
+### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
+- Started: 2026-06-10 21:30. Completed: 2026-06-11 ~08:40. Commits: 59e0afba1 (P0) + bridge fix. Live-verified CRUD via bridge (create/measure/list/delete+cascade).
+- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
+- Note: dev_kpis + dev_kpi_measurements tables, dev_goals.kpi_id, repo CRUD, Tauri commands, ts-rs bindings. Design: docs/plans/kpi-driven-orchestration.md.
+
+
 ### incident-loop-hardening — incident loop closure + GitHub hardening (session 94f4d04f, fork of 2c665603)
 - Started: 2026-06-10 ~11:30. Completed: 2026-06-10 ~12:40. Commit: f73523ca4.
 - Paths: src-tauri/src/engine/{types,parser,dispatch,protocol}.rs, src-tauri/src/engine/runner/team_context.rs, src-tauri/src/db/repos/execution/audit_incidents.rs, docs/features/execution/README.md. Live DB: 14 devProjectId pins + incident backlog cleanup (98→54).
@@ -47,17 +53,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
-- Started: 2026-06-10 21:30. Master, atomic commits.
-- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
-- Note: dev_kpis + dev_kpi_measurements tables, dev_goals.kpi_id, repo CRUD, Tauri commands, ts-rs bindings. Design: docs/plans/kpi-driven-orchestration.md.
-
-### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage
-- Started: 2026-06-10 18:20
-- Status: started
-- Branch: worktree-athena-signal-economy (worktree .claude/worktrees/athena-signal-economy, off master)
-- Paths: src/features/plugins/companion/orb/OrbDecisionBubble.tsx, src/features/plugins/companion/{ProactiveCard.tsx,athenaLabels.ts}, src-tauri/src/companion/proactive/{execution_review.rs,message_triage.rs(new),mod.rs}, src-tauri/src/companion/athena_reaction.rs (pub(crate) helpers only), src-tauri/src/commands/companion/mod.rs, src-tauri/src/db/{settings_keys.rs,repos/communication/messages.rs}, src/i18n/locales/en.json (plugins.companion keys), docs/features/companion/
-- Note: (1) hide orb decision bubble + arrow while chat open; (2) replace per-exec proactive chat turns with headless batch triage → digest nudge + ≤1 deep-dive turn; (3) replicate review procedure for Messages (done/digest/attention + message_digest nudge).
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -698,6 +693,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage — MERGED TO MASTER (5c1b6b660)
+- 2026-06-10 18:20 → 2026-06-11 00:20. Worktree worktree-athena-signal-economy off master; 6 commits 6cbaebda6..f3360543a, merge 5c1b6b660. Worktree + branch removed (⚠ junction lesson re-learned: `git worktree remove --force` followed the node_modules junction and emptied the MAIN checkout's node_modules/.bin before dying on a long path — `cmd /c rmdir` the junction FIRST, always; repaired via npm install, 111 shims back, tsc clean).
+- (1) OrbDecisionBubble (incl. arrow handle + collapsed chip) now renders only while presence is 'minimized' — no more floating bubble over an open chat; fresh decisions no longer force-close an open panel. (2) exec review redesigned: per-candidate proactive chat turns (2/tick, "No response requested." episodes) → ONE headless sonnet triage per pass over (persona,reason) groups; verdicts drop/digest/deep_dive; digest → hour-bucketed 'execution_review' ProactiveCard via new proactive::deliver_now; ≤1 deep-dive turn w/ ≤120-word format contract; escalate→notification (quiet-hours guarded). (3) NEW message_triage.rs: unread persona_messages batched 20/tick oldest-first through done/digest/attention (athena_triage metadata audit annotation; high/urgent/critical can NEVER be auto-resolved; first enable seeds cursor to now); 'message_digest' card engages to Overview→Messages. New settings: autonomous_message_triage (default OFF — flip live to enable) + companion_msg_triage_cursor.
+- Also: fixed master's broken lib-test compile (IncidentLine.id missing in test ctor since f73523ca4 + 2 stale incident-header assertions). Validated: cargo check --features desktop clean (NOTE: plain `cargo check` fails on capabilities updater:default — default features lack the updater plugin; always pass --features desktop), cargo test triage/execution_review/athena_reaction/team_context all green, tsc 0 (worktree + merged master), eslint touched files 0, i18n no-extras, companion Vitest 306/306. NOT live-verified (needs dev rebuild + autonomous run).
 
 ### prototype — Chain Studio Switchboard — completed (commit: f3de2b6da)
 - 2026-06-10: /prototype 2 rounds. Round 1 (f08b1242c): Switchboard (patch-bay rails) + Composer (sentence builder) variants behind tab switcher, shared draft model + stat-rich option cards. Round 2 / consolidation (f3de2b6da): user picked Switchboard as production baseline; Composer AND the React Flow canvas deleted (nodes/edges/palette/hook), triggers.studio i18n rewritten (stale canvas+gate keys removed from en + 13 locales), docs/events README updated. Earlier same-session Lineage removal got swept into checkpoint 0652eb88f + Langfuse/friend-teams commits by concurrent sessions (work intact on branch).
