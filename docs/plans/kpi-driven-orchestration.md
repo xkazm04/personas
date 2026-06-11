@@ -255,7 +255,9 @@ the dimension has live history.
 | **P2 — UI submodule** | `sub_kpis` (Dashboard + Proposals + Drawer), sidebar registration, store slice, i18n keys | `features/teams/sub_kpis/`, `TeamsSidebarNav.tsx`, store, `en.json` | Accept/adjust/reject flow works; dashboard renders active KPIs; design-token + catalog rules respected |
 | **P3 — Evaluation runner** | `run_kpi_evaluation` (codebase + derived + manual kinds), `kpi_measurement` protocol + dispatch variant for the connector kind (mini-execution), health-snapshot absorption, Measure-now UI | `engine/` or `commands/` kpi_eval module, `dispatch.rs`, drawer | Measure-now produces a time-series point with evidence; coverage KPI measured end-to-end on a real repo |
 | **P4 — Derivation loop** | off-track helper, `KpiGoalDerivationSubscription` (default-OFF setting + array + validation), derivation CLI decision + caps/cooldowns, Athena `kpi_off_track` signal | `subscription.rs`, `settings_keys.rs`, `background.rs`, `athena_reaction.rs` | Seeded off-track KPI derives exactly one goal with provenance; GoalAdvance picks it up; no derivation while measurement stale |
-| **P5 — Cert §10** | gather snapshot, loop-certify kpi block, rubric §10, feature docs + map entry | `scripts/test/`, `docs/tests/autonomy-eval/`, `docs/features/` | loop-certify renders the kpi block on live data; golden-safe for pre-KPI bundles |
+| **P5 — Experience polish** | Plain-language formatter, gauge card (prototype pass), group sections, decision cards, story drawer w/ goal markers, explainer banner | `sub_kpis/*`, `describeMeasurement.ts` | Zero JSON/enum tokens visible; non-technical read test passes |
+| **P6 — Business measurement** | Connector handshake wizard (PostHog + anthropic-admin), tested measurement recipes, instrument-via-goal path, `tier` + floor-breach derivation semantics | wizard in `sub_kpis/`, catalog entries, kpi_eval recipes, `subscription.rs` ordering | Pilot: visitors + API usage + LLM usage measuring live; business KPI outranks technical in derivation |
+| **P7 — Cert §10** | gather snapshot, loop-certify kpi block, rubric §10, feature docs + map entry | `scripts/test/`, `docs/tests/autonomy-eval/`, `docs/features/` | loop-certify renders the kpi block on live data; golden-safe for pre-KPI bundles |
 
 Order rationale: the user sees value at P2 (visible KPI management); autonomy
 (P4) deliberately comes *after* measurement (P3) exists — deriving goals from
@@ -263,6 +265,130 @@ unmeasured KPIs would reintroduce exactly the proxy-driven busywork this layer
 is meant to replace. Every phase lands behind existing patterns (default-OFF
 settings, informational cert dimensions) so no phase destabilizes the running
 certification campaign.
+
+## 9a. P5 — KPI experience polish (from prototype to product)
+
+> User direction (2026-06-11): "readability and visual quality is still in
+> MVP/prototype level — transforming it into UX even non-technical users can
+> manage and enjoy would be key to make the KPI module attractive to use."
+
+The P2 surface is functionally complete but speaks the *system's* language
+(JSON procedures, token chips, raw numbers). P5 makes it speak the *user's*
+language, reusing the established "for-humans" design moves from the goals
+humanization pass (explainer banners, title-first cards, status-tinted edges,
+markdown narratives).
+
+1. **Plain language everywhere.** A `describeMeasurement()` formatter renders
+   every `measure_config` as a sentence — "Measured weekly by running the test
+   suite and reading branch coverage" — with the raw procedure behind a
+   "show procedure" disclosure for power users. Category/kind/cadence chips
+   become i18n'd labels with icons, never raw tokens. Every pace state gets a
+   one-sentence status ("On pace — 58% of the way to 70%, due Jul 15").
+2. **The gauge card — the module's signature visual.** Replace the plain
+   number card with a direction-aware radial arc (baseline → target span,
+   current as the sweep, theme-native color ramp; off-track pulls toward the
+   destructive hue, met locks to success). Built via the `/prototype` skill
+   (this is a pillar component: directional variants behind a tab switcher,
+   consolidate the winner) — gauge vs. bullet-bar vs. delta-tile.
+3. **Group storytelling.** Dashboard sections per context group, using the
+   group's existing `color` dot + name as the section header; project-level
+   KPIs under a "Whole project" section; per-section rollup chip ("2 of 3 on
+   track").
+4. **Proposal cards become decision cards.** Lead with the rationale sentence;
+   evidence chip when the baseline was measured from the repo ("measured:
+   51.9%"); accept/reject as the primary row; target/date adjustment behind a
+   progressive-disclosure "Adjust" affordance instead of always-visible inputs.
+5. **The drawer becomes the KPI's story.** A proper time-series chart with
+   target line + today marker, and **goal-event annotations** — vertical
+   markers where a derived goal shipped (from `dev_goal_signals` of linked
+   goals) so cause-and-effect is visible: "goal landed here, line moved (or
+   didn't)". This is the §10 outcome-trace, drawn.
+6. **First-run explainer banner** (same pattern as the goals views' banners)
+   answering "what is a KPI here, what will the system do with it" in three
+   sentences, dismissable.
+7. **Quiet celebration on target met** (theme-native, one-shot) — KPIs should
+   feel rewarding, not bureaucratic.
+
+Acceptance: a non-technical user sees **zero JSON and zero raw enum tokens**
+anywhere in the module; the dashboard reads in group sections with gauges and
+plain-language pace sentences; the drawer chart shows the target line + goal
+markers; first-run banner ships. Files: `sub_kpis/*` (rework),
+`describeMeasurement.ts` (new), prototype pass on the card. No backend change.
+
+## 9b. P6 — Business measurement onboarding (the external handshake)
+
+> User direction (2026-06-11): wire ONE pilot project end-to-end for **API
+> usage**, **LLM API usage**, and **unique visitors** — moving from purely
+> technical KPIs into business dimensions, because *"if we have 0 users, the
+> goals should be driven to get one instead of having 100% test coverage."*
+
+### The three dimensions and their sources
+
+| Dimension | Preferred source | Why | Catalog status |
+|---|---|---|---|
+| Unique visitors | **PostHog** (pageview events → unique persons via HogQL/Trends API) | Already a builtin connector (query + ingestion keys); one snippet instruments the product | already exists |
+| API usage | **PostHog server-side events** (an `api_request` capture in the product backend) — fallback: Google Cloud Monitoring for Firebase-hosted functions | Same connector covers it; the instrumentation is a small backend change the TEAM can ship as a goal | exists (GCM would be new) |
+| LLM API usage | **Anthropic Admin/Usage API** (org usage by API key → per-product attribution via the product's key) | The products run on Anthropic keys; usage + cost per key is the honest spend metric | new catalog entry (`anthropic-admin`) via `/add-credential` |
+
+One connector (PostHog) covers two of the three dimensions — the handshake
+flow presents that as the default path.
+
+### The handshake flow (connector onboarding inside the KPI module)
+
+Extends the existing "Connect <service>" CTA into a 4-step wizard:
+
+1. **Pick the source** — for each parked business KPI, offer the mapped
+   source options (visitors → PostHog (recommended) / GA4 later; LLM usage →
+   anthropic-admin) with a one-line tradeoff each.
+2. **Catalog onboarding** — deep-link into the vault catalog with the chosen
+   connector preselected; the user pastes the key(s). New catalog entries
+   (`anthropic-admin`; optionally `google-cloud-monitoring`, `plausible`) are
+   added via the `/add-credential` pipeline.
+3. **Verify** — run one test measurement immediately (the P3 connector
+   mini-execution) and show the number + evidence inline; only a verified
+   source flips the KPI from parked-`manual` to live-`connector`.
+4. **Instrument when the data doesn't exist yet** — if verification shows the
+   product isn't instrumented (no pageview events, no `api_request` capture),
+   the wizard offers **"have the team instrument it"**: it creates a goal
+   ("Add PostHog pageview + API-usage capture to the product", linked to the
+   KPI) that the normal GoalAdvance loop ships. The system builds its own
+   measurement capability — this is the bridge out of the 0-data state.
+
+### Measurement recipes (P3 `measure_config` templates, shipped + tested)
+
+- `{"connector":"posthog","recipe":"unique_visitors","window":"7d"}` —
+  HogQL count of distinct persons over pageview events in the window.
+- `{"connector":"posthog","recipe":"api_requests","window":"7d","event":"api_request"}`.
+- `{"connector":"anthropic-admin","recipe":"llm_tokens","window":"7d","api_key_name":"<product key label>"}`
+  plus an `llm_cost_usd` variant. Recipes are first-class: the evaluator
+  resolves `recipe` to a tested query instead of trusting free-text
+  instructions — free text stays available for custom KPIs.
+
+### Business-priority semantics (the "0 users beats 100% coverage" rule)
+
+Two additions that make business KPIs actually steer:
+
+1. **`dev_kpis.tier`** — `north_star | primary | supporting` (default
+   `supporting`; the wizard marks the three business dimensions `primary` and
+   lets the user crown one `north_star`). The P4 derivation orders candidates
+   **tier-first, then off-track severity** — a technical KPI never derives a
+   goal while a higher-tier business KPI is off-track and underived.
+2. **Floor-breach boost** — a measured business KPI at/near zero (current at
+   or below the floor, default 0) is treated as maximally off-track regardless
+   of pace math, and its derivation prompt is reframed from "improve the
+   metric" to "establish the first unit of value" (get the first user, the
+   first API call). Athena's `kpi_off_track` signal carries the tier so her
+   channel posts reflect business urgency.
+
+### Pilot + acceptance
+
+A kickoff handshake picks the pilot (criteria: deployed/deployable product
+with real or imminent traffic — ai-paralegal and medical-bill are the natural
+candidates). Acceptance: on the pilot, the three KPIs measure on cadence with
+real numbers + evidence; at least one started uninstrumented and was
+instrumented **by the team via a derived goal**; derivation candidate ordering
+demonstrably prefers the off-track business KPI over an off-track technical
+one; the whole flow is drivable from the UI without touching a terminal.
 
 ## 10. Design decisions (made) + open questions (for the user)
 
