@@ -12547,6 +12547,8 @@
       "proactive_kind_fleet_stuck_dispatched": "dispatched session stuck",
       "proactive_kind_fleet_op_completed": "fleet operation done",
       "proactive_kind_incident_blocker": "incident needs attention",
+      "proactive_kind_execution_review": "execution review digest",
+      "proactive_kind_message_digest": "message inbox digest",
       "proactive_kind_unknown": "Athena reached out",
       "action_label_run_persona": "Run persona",
       "action_label_resolve_human_review": "Resolve review",
