@@ -52,12 +52,6 @@
   "tray_schedules_today": "{count} planifiée(s) aujourd'hui",
   "tray_notifications": "Notifications",
   "tray_notifications_unread": "{count} notifications non lues",
-  "tray_signals": "Signaux d'attention",
-  "tray_word_today": "aujourd'hui",
-  "tray_word_to_answer": "à répondre",
-  "tray_word_fleet": "dans la flotte",
-  "tray_word_unread": "non lus",
-  "tray_word_running": "en cours",
   "system_load": {
     "label": "Charge système",
     "cpu": "CPU {pct}%",

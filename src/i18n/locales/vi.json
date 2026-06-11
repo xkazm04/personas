@@ -463,12 +463,6 @@
     "tray_schedules_today": "{count} được lên lịch hôm nay",
     "tray_notifications": "Thông báo",
     "tray_notifications_unread": "{count} thông báo chưa đọc",
-    "tray_signals": "Tín hiệu chú ý",
-    "tray_word_today": "hôm nay",
-    "tray_word_to_answer": "cần trả lời",
-    "tray_word_fleet": "trong đội nhóm",
-    "tray_word_unread": "chưa đọc",
-    "tray_word_running": "đang chạy",
     "system_load": {
       "label": "Tải hệ thống",
       "cpu": "CPU {pct}%",

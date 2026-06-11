@@ -52,12 +52,6 @@
   "tray_schedules_today": "{count} запланировано сегодня",
   "tray_notifications": "Уведомления",
   "tray_notifications_unread": "{count} непрочитанных уведомлений",
-  "tray_signals": "Сигналы внимания",
-  "tray_word_today": "сегодня",
-  "tray_word_to_answer": "для ответа",
-  "tray_word_fleet": "во флоте",
-  "tray_word_unread": "непрочитанное",
-  "tray_word_running": "выполняется",
   "system_load": {
     "label": "Нагрузка на систему",
     "cpu": "CPU {pct}%",
