@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "Tidak ada makalah arXiv yang cocok dengan kueri Anda. Coba kata kunci yang lebih luas atau berbeda.",
+  "arxiv_error_title": "Pencarian gagal",
+  "arxiv_error_timeout": "arXiv terlalu lama merespons — mungkin sedang membatasi permintaan. Coba lagi sebentar.",
+  "arxiv_error_rate_limited": "arXiv sedang membatasi permintaan saat ini. Tunggu beberapa detik dan coba lagi.",
+  "arxiv_error_http": "arXiv mengembalikan error (HTTP {status}). Coba lagi sebentar.",
+  "arxiv_error_network": "Tidak dapat menjangkau arXiv. Periksa koneksi Anda dan coba lagi.",
+  "arxiv_error_feed": "arXiv tidak dapat memproses kueri tersebut. Coba kata kunci yang berbeda atau lebih sederhana.",
+  "arxiv_error_generic": "Pencarian arXiv gagal. Coba lagi."
 }

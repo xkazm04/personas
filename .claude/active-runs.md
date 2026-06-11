@@ -36,12 +36,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### prototype — TitleBar quick-action tray (badge redesign, 2 variants)
-- Started: 2026-06-10 20:27
+### friend — templates/sub_recipes (recipe table + detail modal)
+- Started: 2026-06-10 21:00
 - Status: started
-- Branch: master (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server)
-- Paths: src/features/shared/components/layout/{TitleBar.tsx,TitleBarVariantDock.tsx,TitleBarVariantLedger.tsx,useTitleBarTray.tsx}, src/styles/globals.css (titlebar-nodrag util), src/i18n/locales/en.json (chrome.tray_* keys)
-- Note: icon cluster (Search/Calendar/Review/Monitor/Bell) has 3 inconsistent badge styles overlapping the glyphs (incl. a brightness(1/count) dimming hack). Prototyping Dock (inline count capsules) + Ledger (separate annunciator readout strip) behind a temporary left-side switcher.
+- Branch: worktree-friend-recipes-210046
+- Worktree: .claude/worktrees/friend-recipes-210046/
+- Paths: src/features/templates/sub_recipes/, src/i18n/locales/en.json (templates.recipes keys), docs/features/templates/README.md
+- Note: /friend endless development loop — user-flagged issues: recipe table shows technical ids + flat "Automation" category; detail modal needs visual redesign
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -74,8 +75,8 @@ timestamp — the next session can recognize it as abandoned.
 
 ### prototype — Teams preset adoption: migrate out of modal → in-app process + 3 variants
 - Started: 2026-06-10 14:05
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server)
+- Status: completed (commit: c1ac3f8d3 on master, + an earlier concurrent sweep that grabbed part of the staged set). Blueprint won (other 3 process variants + Showcase gallery winner consolidated; Spotlight/Cards/Pipeline/Split deleted). 6 per-team Leonardo illustrations added. Card tags removed.
+- Branch: master (branch flipped from vibeman/audit-2026-06-09 mid-session by a concurrent checkout; landed via `git commit --only <paths>` to survive a live multi-session commit race)
 - Paths: src/features/teams/sub_teamWorkspace/ (TeamList, TeamCanvas, new presetStudio/), src/features/templates/sub_presets/ (extract usePresetAdoption hook from PresetPreviewModal), src/stores/pipelineStore.ts + slices, src/i18n/locales/en.json (pipeline/templates.presets keys), docs/features/{pipeline,templates}/
 - Note: migrate PresetPreviewModal's adoption process into an in-app Teams view (larger space + better connection graph), then prototype 3 directional design variants of the process behind a tab switcher. PresetPreviewModal kept intact for Templates→Presets (shared adoption logic extracted to a hook).
 
@@ -682,6 +683,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### prototype — TitleBar quick-action tray (Dock wins) — completed (commits: 314aa9dd1 round 1, d459bcff2 consolidation)
+- 2026-06-10 20:27 → 2026-06-11 00:16. Branch: master (main checkout — variants had to render in the user's live dev server).
+- Round 1: BaselineTray extraction + Dock (inline count capsules) + Ledger (annunciator strip) behind a temporary left-side switcher. Consolidation: Dock promoted to TitleBarDock (sole tray), Ledger/baseline/switcher/ProcessActivityIndicator deleted, `;` nav mode lifted to uiSlice.keyboardNavActive + S/C/R/M/N dock hint keys (keycap chips under capsules; registered in shortcutRegistry). tsc 0, eslint 0 errors, uiSlice tests 7/7. NOT live-verified in-app.
+- Incidents: installed missing gitleaks binary for the new pre-commit secret-scan job (winget, 8.30.1); first round-1 commit swept ~85 foreign staged files during the install window — corrected via reset --soft + commit --only (foreign work re-staged, untouched). en.json sweeps noted in both commit messages.
 
 ### prototype — Chain Studio Switchboard — completed (commit: f3de2b6da)
 - 2026-06-10: /prototype 2 rounds. Round 1 (f08b1242c): Switchboard (patch-bay rails) + Composer (sentence builder) variants behind tab switcher, shared draft model + stat-rich option cards. Round 2 / consolidation (f3de2b6da): user picked Switchboard as production baseline; Composer AND the React Flow canvas deleted (nodes/edges/palette/hook), triggers.studio i18n rewritten (stale canvas+gate keys removed from en + 13 locales), docs/events README updated. Earlier same-session Lineage removal got swept into checkpoint 0652eb88f + Langfuse/friend-teams commits by concurrent sessions (work intact on branch).

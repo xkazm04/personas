@@ -219,7 +219,9 @@
     "stage_generating": "তৈরি হচ্ছে",
     "stage_completed": "সম্পন্ন",
     "stage_failed": "ব্যর্থ",
-    "tool_calls": "{count}টি টুল কল"
+    "tool_calls": "{count}টি টুল কল",
+    "connect_cloud_cta": "একটি ক্লাউড টার্গেট সংযুক্ত করুন",
+    "connect_gitlab_cta": "GitLab সংযুক্ত করুন"
   },
   "cloud_trigger_schedule": "নির্ধারিত (Cron)",
   "cloud_trigger_polling": "পোলিং",

@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "Ningún artículo de arXiv coincide con tu búsqueda. Prueba con palabras clave más amplias o diferentes.",
+  "arxiv_error_title": "Búsqueda fallida",
+  "arxiv_error_timeout": "arXiv tardó demasiado en responder — puede estar limitando las solicitudes. Inténtalo de nuevo en un momento.",
+  "arxiv_error_rate_limited": "arXiv está limitando las solicitudes ahora mismo. Espera unos segundos e inténtalo de nuevo.",
+  "arxiv_error_http": "arXiv devolvió un error (HTTP {status}). Inténtalo de nuevo en breve.",
+  "arxiv_error_network": "No se pudo acceder a arXiv. Comprueba tu conexión e inténtalo de nuevo.",
+  "arxiv_error_feed": "arXiv no pudo procesar esa consulta. Prueba con palabras clave diferentes o más simples.",
+  "arxiv_error_generic": "La búsqueda en arXiv falló. Inténtalo de nuevo."
 }

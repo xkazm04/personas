@@ -229,7 +229,9 @@
     "teams_label": "Tim",
     "groups_label": "Grup",
     "cloud_label": "Cloud",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "Tidak ada tim",
+    "whats_new_update": "Diperbarui — lihat apa yang baru"
   },
   "execution_detail": {
     "copy": "Salin",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "Hari ini",
+  "group_yesterday": "Kemarin",
+  "group_this_week": "Minggu ini",
+  "group_this_month": "Bulan ini",
+  "group_older": "Lebih lama",
+  "code_expand_block": "Perluas blok kode",
+  "code_collapse_block": "Perkecil blok kode",
+  "code_show_lines": "Tampilkan semua {count} baris"
 }

@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "아레나",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms}ms",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "버전 및 평점",
+    "vr_subtitle": "측정한 모든 프롬프트 버전 × 모델. 하나의 행이 활성 상태입니다.",
+    "vr_col_version": "버전",
+    "vr_col_model": "모델",
+    "vr_col_rating": "평점",
+    "vr_col_delta": "기준선",
+    "vr_col_cost": "비용",
+    "vr_col_status": "상태",
+    "vr_col_actions": "작업",
+    "vr_status_active": "활성",
+    "vr_status_baseline": "기준선",
+    "vr_status_archived": "보관됨",
+    "vr_status_measured": "측정됨",
+    "vr_status_unmeasured": "미측정",
+    "vr_action_activate": "이 버전 + 모델 활성화",
+    "vr_action_active": "현재 라이브",
+    "vr_action_measure": "모델 간 측정 (Arena)",
+    "vr_action_measuring": "측정 중…",
+    "vr_action_improve": "Athena로 개선",
+    "vr_action_diff": "활성 프롬프트와 비교",
+    "vr_action_archive": "버전 보관",
+    "vr_action_unarchive": "버전 보관 해제",
+    "vr_action_pin_baseline": "회귀 기준선으로 고정",
+    "vr_action_unpin_baseline": "기준선 고정 해제",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count}개 샘플",
+    "vr_samples_other": "{count}개 샘플",
+    "vr_empty_title": "버전 없음",
+    "vr_empty_desc": "페르소나의 프롬프트를 편집하고 저장하여 첫 번째 버전을 생성한 다음, 여기서 측정하세요.",
+    "vr_measuring_toast": "모델 전체에서 v{version} 측정 중…",
+    "vr_measure_modal_title": "v{version} 측정",
+    "vr_measure_scope_banner": "버전 {version} 측정 중 — 선택한 모델에서 해당 프롬프트가 실행됩니다. 점수는 평점 표에 반영됩니다.",
+    "vr_diff_title": "v{version} vs 활성",
+    "vr_diff_no_active": "비교할 활성 버전이 없습니다.",
+    "vr_improve_seed_measured": "페르소나 \"{name}\" v{version} 개선. 가장 약한 측정 지표: {model}에서 {metric} {score}/100. 어디에 집중해야 할까요? ",
+    "vr_improve_seed_plain": "페르소나 \"{name}\" v{version} 개선 — 아직 측정되지 않았습니다. 어디에 집중해야 할까요? ",
+    "vr_metric_tool": "도구 정확도",
+    "vr_metric_quality": "출력 품질",
+    "vr_metric_protocol": "프로토콜 준수"
   },
   "design": {
     "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",
@@ -903,7 +944,9 @@
     "next": "다음",
     "go_back_hint": "뒤로 가서 에이전트를 구성하기 위한 질문에 답하세요.",
     "additional_instructions": "추가 지시사항 또는 문맥 (선택)",
-    "additional_instructions_placeholder": "특정 요구사항, 도메인 지식 또는 제약 조건 추가..."
+    "additional_instructions_placeholder": "특정 요구사항, 도메인 지식 또는 제약 조건 추가...",
+    "role_user": "사용자",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "커넥터",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "{persona}에 대해 {title}을 실행합니다"
+    "schedule_will_run": "{persona}에 대해 {title}을 실행합니다",
+    "_comment_manual_run_in_progress": "수동 실행이 진행 중일 때 지금 실행 버튼 툴팁",
+    "manual_run_in_progress": "수동 실행 진행 중",
+    "_comment_run_now_tooltip": "지금 실행 버튼 툴팁 — 실제 실행과 테스트를 구분",
+    "run_now_tooltip": "이 사용 사례를 지금 실행 — 실제 실행 및 다운스트림 이벤트를 발생시킵니다",
+    "_comment_run_now": "지금 실행 버튼 레이블 (세부 패널 + 기능 탭 바)",
+    "run_now": "지금 실행",
+    "_comment_event_type_options": "UseCaseSubscriptionForm 이벤트 유형 드롭다운 옵션 레이블",
+    "event_type_webhook_received": "Webhook 수신됨",
+    "event_type_execution_completed": "실행 완료됨",
+    "event_type_execution_failed": "실행 실패",
+    "event_type_persona_action": "페르소나 액션",
+    "event_type_file_changed": "파일 변경됨",
+    "event_type_schedule_triggered": "일정 트리거됨",
+    "_comment_dim_review_title": "ReviewDimCard 제목",
+    "dim_review_title": "검토",
+    "_comment_pill_on": "ToggleDimCard ON 상태 필 (메모리/이벤트)",
+    "pill_on": "ON",
+    "_comment_pill_off": "OFF 상태 필, ToggleDimCard와 ReviewDimCard off에서 공유",
+    "pill_off": "OFF",
+    "_comment_review_pill_queue": "ReviewDimCard QUEUE 상태 필",
+    "review_pill_queue": "대기열",
+    "_comment_review_pill_trust": "ReviewDimCard TRUST 상태 필",
+    "review_pill_trust": "신뢰",
+    "_comment_dim_status_activated": "기능에 대해 불리언 차원(메모리/검토/이벤트/오류)이 활성화될 때 PersonaSigilSummary에 표시되는 값",
+    "dim_status_activated": "활성화됨"
   },
   "tools": {
     "no_persona": "선택된 페르소나 없음",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "평결",
+    "verdict_none": "Director가 아직 검토하지 않았습니다",
+    "verdict_tooltip": "Director 평결: {score}/5"
   },
   "chat": {
     "select_persona": "채팅을 시작하려면 페르소나 선택",
@@ -2293,7 +2364,8 @@
     "delete_agents": "{count}개 에이전트 삭제",
     "delete_agents_message": "{count}개 에이전트와 모든 구성이 영구적으로 제거됩니다.",
     "delete_drafts": "{count}개 초안 삭제",
-    "delete_drafts_message": "{count}개 초안 에이전트가 영구적으로 제거됩니다."
+    "delete_drafts_message": "{count}개 초안 에이전트가 영구적으로 제거됩니다.",
+    "system_persona_undeletable": "Director는 시스템 페르소나이므로 삭제할 수 없습니다."
   },
   "persona_list": {
     "all_personas": "전체 페르소나",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "아직 그룹이 없습니다 — 에이전트 → 그룹에서 만들 수 있습니다",
     "batch_move_to_ungrouped": "그룹 없음",
     "batch_moved_success": "{count}개 페르소나를 {group}(으)로 이동했습니다",
-    "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패"
+    "batch_moved_partial": "{ok}개를 {group}(으)로 이동했습니다; {failed}개 실패",
+    "render_cap_notice": "{total}개 중 {shown}개 표시 — 검색이나 필터로 좁혀 나머지를 확인하세요.",
+    "star_director_add": "별표를 눌러 Director의 코칭 범위에 추가",
+    "star_director_remove": "별표됨 — Director의 코칭 범위에 포함됨. 클릭하여 제거."
   },
   "design_preview": {
     "preview": "미리보기",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "수신 Slack 메시지 폴링",
+    "slack_poll_inbound_help": "체크하면 페르소나가 5초마다 이 채널의 새 메시지를 읽고 실행 출력으로 스레드에 답장합니다. 먼저 봇을 채널에 초대하세요."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "이 기능에 대해 활성화됨",
   "sigil_edit_inactive": "비활성 — 켜서 활성화",
   "sigil_edit_enable": "이 기능에 대해 활성화",
-  "sigil_edit_disable": "이 기능에 대해 비활성화"
+  "sigil_edit_disable": "이 기능에 대해 비활성화",
+  "design_subtabs": {
+    "use_cases": "사용 사례",
+    "prompt": "프롬프트",
+    "connectors": "커넥터 및 도구",
+    "triggers": "이벤트 및 트리거",
+    "messaging": "메시징",
+    "automations": "자동화",
+    "triggers_desc": "퍼소나별 이벤트 구독 및 트리거 설정이 이 탭에 제공될 예정입니다.",
+    "messaging_desc": "이 에이전트의 알림 채널 및 인박스 라우팅이 여기에 표시됩니다.",
+    "automations_desc": "이 에이전트의 독립 자동화 규칙이 여기에 표시됩니다."
+  },
+  "parameters_card": {
+    "title": "파라미터",
+    "saved": "저장됨",
+    "apply": "적용",
+    "on": "켜기",
+    "off": "끄기",
+    "reset": "초기화"
+  },
+  "editor_empty": {
+    "title": "선택된 퍼소나 없음",
+    "subtitle": "사이드바에서 에이전트를 선택하여 편집을 시작하거나, 새로 만드세요.",
+    "create": "퍼소나 만들기",
+    "resume_label": "돌아가기"
+  },
+  "build_template_match_label": "더 빠른 방법",
+  "build_template_match_title": "\"{name}\"과(와) 일치하는 항목 발견",
+  "build_template_match_body": "이 기성 템플릿이 설명하신 내용을 다루고 있습니다 — 채택하면 나머지 질문을 건너뛸 수 있습니다. 이미 설정 및 테스트가 완료되어 있습니다.",
+  "build_template_match_adopt": "이 템플릿 사용",
+  "build_template_match_dismiss": "계속 빌드",
+  "build_template_match_loading": "일치하는 템플릿 확인 중…",
+  "build_template_match_more": "또는 시작 위치",
+  "_comment_glyph_db_scope": "커넥터 선택기의 데이터베이스 커넥터 테이블 범위 지정 패널",
+  "glyph_db_scope_heading": "데이터베이스 테이블",
+  "glyph_db_scope_all": "모든 테이블",
+  "glyph_db_scope_loading": "테이블 로딩 중…",
+  "glyph_db_scope_error": "테이블을 불러올 수 없습니다 — 다시 시도",
+  "glyph_db_scope_empty": "테이블을 찾을 수 없습니다",
+  "glyph_db_scope_selected": "{total}개 중 {count}개 테이블"
 }

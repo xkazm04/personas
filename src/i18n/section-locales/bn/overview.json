@@ -133,7 +133,25 @@
     "view_all_from_agent": "এই এজেন্টের সব দেখুন",
     "distribution_aria": "গুরুত্ব অনুযায়ী খোলা ঘটনা",
     "new_since_last_visit": "আপনার শেষ পরিদর্শনের পর থেকে {count} নতুন",
-    "mark_seen": "দেখা হয়েছে চিহ্নিত করুন"
+    "mark_seen": "দেখা হয়েছে চিহ্নিত করুন",
+    "action_start_work": "কাজ শুরু করুন",
+    "action_back_to_open": "খোলায় ফিরে যান",
+    "filter_status_in_progress": "চলমান",
+    "detail_title": "ঘটনার বিবরণ",
+    "detail_label_status": "স্ট্যাটাস",
+    "detail_label_kind": "ধরন",
+    "detail_label_source": "উৎস",
+    "detail_label_persona": "এজেন্ট",
+    "detail_label_detail": "বিবরণ",
+    "detail_label_resolution_note": "সমাধানের নোট",
+    "detail_label_created": "তৈরি",
+    "detail_label_acknowledged": "স্বীকৃত",
+    "detail_label_resolved": "সমাধান হয়েছে",
+    "detail_no_detail": "অতিরিক্ত বিবরণ নেই।",
+    "detail_note_label": "সমাধানের নোট (ঐচ্ছিক)",
+    "detail_no_persona": "কোনো এজেন্ট নেই",
+    "empty_open_title": "সব পরিষ্কার",
+    "empty_filtered_title": "কোনো মিলসই ঘটনা নেই"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "সব মুছুন",
+    "delete_all_confirm_title": "সব স্মৃতি মুছবেন?",
+    "delete_all_confirm_body": "এটি স্থায়ীভাবে সব {count}টি স্মৃতি মুছে দেবে। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "delete_all_confirm_cta": "সব মুছুন"
   },
   "memory_review": {
     "all_conflicts_resolved": "সব দ্বন্দ্ব সমাধান হয়েছে",
@@ -473,7 +495,18 @@
     "select_action_first": "প্রথমে একটি প্রস্তাবিত পদক্ষেপ নির্বাচন করুন",
     "review_detail": "পর্যালোচনার বিস্তারিত",
     "select_review": "দেখতে একটি পর্যালোচনা নির্বাচন করুন",
-    "technical_context": "প্রযুক্তিগত প্রেক্ষাপট"
+    "technical_context": "প্রযুক্তিগত প্রেক্ষাপট",
+    "split": "বিভাজিত",
+    "split_tooltip": "বিভাজিত দৃশ্য — বিস্তারিত প্যানেল সহ তালিকা",
+    "table": "টেবিল",
+    "table_tooltip": "টেবিল দৃশ্য — গ্রিডে সব পর্যালোচনা",
+    "backlog_group_title": "Dev Tools ব্যাকলগ",
+    "backlog_accept": "গ্রহণ করুন",
+    "backlog_reject": "প্রত্যাখ্যান করুন",
+    "delete_all": "সব মুছুন",
+    "delete_all_confirm_title": "সব পর্যালোচনা মুছবেন?",
+    "delete_all_confirm_body": "এটি সমস্ত {count}টি রিভিউ স্থায়ীভাবে মুছে দেয়। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "delete_all_confirm_cta": "সব মুছুন"
   },
   "messages_view": {
     "title": "বার্তা",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "সব মুছুন",
+    "delete_all_confirm_title": "সব বার্তা মুছবেন?",
+    "delete_all_confirm_body": "এটি সমস্ত {count}টি বার্তা স্থায়ীভাবে মুছে দেয়। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "delete_all_confirm_cta": "সব মুছুন"
   },
   "events": {
     "title": "ইভেন্ট",
@@ -809,7 +846,13 @@
     "create_persona": "পার্সোনা তৈরি করুন",
     "from_templates": "টেমপ্লেট থেকে",
     "execution_label": "এক্সিকিউশন",
-    "unknown": "অজানা"
+    "unknown": "অজানা",
+    "value_section_title": "ব্যবসায়িক মূল্য",
+    "value_delivered_rate": "মূল্য-প্রদানের হার",
+    "cost_per_value": "খরচ / মূল্য রান",
+    "value_delivered_count": "প্রদত্ত মূল্য",
+    "all_models": "সব মডেল",
+    "col_model": "মডেল"
   },
   "analytics_dashboard": {
     "title": "অ্যানালিটিক্স",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "এখনই বাকি",
+    "rotation_countdown_days_hours": "{days}দ {hours}ঘ",
+    "rotation_countdown_hours": "{hours}ঘ"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "স্মৃতি অনুসন্ধান করুন...",
     "all_agents": "সব এজেন্ট",
-    "all_categories": "সব বিভাগ"
+    "all_categories": "সব বিভাগ",
+    "tier_all": "সক্রিয় সেট",
+    "tier_core": "মূল",
+    "tier_active": "সক্রিয়",
+    "tier_working": "কার্যকর",
+    "tier_archived": "সংরক্ষিত"
   },
   "memory_actions": {
     "dismiss_suggestion": "পরামর্শ বরখাস্ত করুন",
@@ -1246,7 +1297,8 @@
     "reject_all": "সব প্রত্যাখ্যান করুন",
     "accept_all": "সব গ্রহণ করুন",
     "retry_with_changes": "পরিবর্তন সহ পুনরায় চেষ্টা করুন",
-    "video_not_supported": "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।"
+    "video_not_supported": "আপনার ব্রাউজার ভিডিও প্লেব্যাক সমর্থন করে না।",
+    "carry_out_hint": "রিভিউ অনুমোদন করে এবং এটি সম্পন্ন করতে persona চালায়"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count}টি মুলতুবি পর্যালোচনা নির্বাচিত",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "নিশ্চিত করুন",
-    "cancel": "বাতিল"
+    "cancel": "বাতিল",
+    "restore": "সক্রিয় সেটে পুনরুদ্ধার করুন"
   },
   "memory_detail": {
     "title_label": "শিরোনাম",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my পারসোনাs — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my পারসোনাs — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena আপনার জন্য এই ব্যাখ্যাটি তৈরি করেছে — আপনার নিজের কক্পিটে ফিরতে এটি বন্ধ করুন।",
+    "context_explaining": "Athena ব্যাখ্যা করছে: {title}",
+    "widget_empty": "এখনও দেখানোর মতো কিছু নেই।",
+    "verdict_title": "Athena-র রায়",
+    "verdict_confidence": "আস্থা",
+    "verdict_confidence_high": "উচ্চ",
+    "verdict_confidence_medium": "মাঝারি",
+    "verdict_confidence_low": "কম",
+    "verdict_resolve": "এখনই সমাধান করুন",
+    "comparison_recommended": "প্রস্তাবিত",
+    "flow_title": "এটি কীভাবে উন্মোচিত হয়",
+    "timeline_title": "টাইমলাইন",
+    "log_title": "প্রমাণ"
+  },
+  "certification": {
+    "title": "সার্টিফিকেশন কমান্ড সেন্টার",
+    "subtitle": "টিম-স্বায়ত্তশাসন মূল্যায়ন রান এবং সার্টিফিকেশন স্ট্যাটাস (dev-only)",
+    "updated": "আপডেট হয়েছে",
+    "refresh": "রিফ্রেশ",
+    "error_title": "মূল্যায়ন রান লোড করা যায়নি",
+    "loading": "মূল্যায়ন রান লোড হচ্ছে…",
+    "loading_detail": "রান বিস্তারিত লোড হচ্ছে…",
+    "tab_overview": "সংক্ষিপ্ত বিবরণ",
+    "tab_history": "রান ইতিহাস",
+    "back": "পিছনে",
+    "empty_title": "কোনো মূল্যায়ন রান নেই",
+    "empty_desc": "docs/test/runs/ পপুলেট করতে eval হার্নেস (scripts/test/) চালান।",
+    "teams_certified": "টিম সার্টিফাইড",
+    "certified": "সার্টিফাইড",
+    "streak_label": "ধারা",
+    "held_out_runs": "হোল্ড-আউট রান",
+    "provisional": "অস্থায়ী রায় (বিচারক এখনো স্কোর দেননি)",
+    "final": "চূড়ান্ত রায়",
+    "team_score": "টিম স্কোর",
+    "cost": "খরচ",
+    "dims_title": "নির্ধারণমূলক মাত্রা",
+    "dim_cascade": "ক্যাসকেড সম্পন্নতা",
+    "dim_density": "কাজের ঘনত্ব",
+    "dim_handoff": "হ্যান্ডঅফ স্বাস্থ্য",
+    "dim_learning": "লার্নিং লুপ",
+    "dim_grounding": "গ্রাউন্ডিং",
+    "dim_correctness": "নির্ভুলতা",
+    "dim_actionability": "কার্যকারিতা",
+    "dim_specificity": "নির্দিষ্টতা",
+    "dim_role_fidelity": "ভূমিকা বিশ্বস্ততা",
+    "gates_title": "বিল্ড / lint / টেস্ট গেট",
+    "gate_build": "বিল্ড",
+    "gate_lint": "Lint",
+    "gate_test": "টেস্ট",
+    "gate_pass": "পাস",
+    "gate_fail": "ফেল",
+    "gate_log": "লগ",
+    "gate_copy_log": "লগ কপি করুন",
+    "gate_code_track": "কোড-ট্র্যাক রান",
+    "delivered": "মাস্টারে ডেলিভার হয়েছে",
+    "cascade_stalled": "ক্যাসকেড থেমে গেছে",
+    "self_vetoed": "স্ব-ভেটো দেওয়া হয়েছে",
+    "self_veto_capped": "টিম নিজেই রায় সীমাবদ্ধ করেছে",
+    "grounding_title": "উদ্ধৃতি গ্রাউন্ডিং",
+    "grounding_file": "ফাইল",
+    "grounding_valid": "বৈধ",
+    "grounding_pct": "%",
+    "grounding_invalid": "অবৈধ",
+    "grounding_na": "পরীক্ষার জন্য কোনো উদ্ধৃতি নেই",
+    "standards_title": "মানদণ্ড ও ব্রাঞ্চিং সম্মতি",
+    "standards_subtitle": "রানটি প্রকল্পের ঘোষিত pre-commit + ব্রাঞ্চিং নীতি কতটা মেনে চলেছে",
+    "standards_compliance": "সম্মতি",
+    "standards_rule": "নিয়ম",
+    "standards_basis": "ভিত্তি",
+    "standards_na": "প্রযোজ্য নয়",
+    "trajectory_title": "স্কোর ট্র্যাজেক্টরি",
+    "judge_title": "বিচারক প্যানেল",
+    "judge_mean": "গড়",
+    "judge_min": "সর্বনিম্ন আউটপুট",
+    "judge_balance": "ভারসাম্য",
+    "fact_executions": "সম্পন্ন",
+    "fact_failed": "ব্যর্থ",
+    "fact_members": "সদস্য",
+    "fact_reviews": "রিভিউ",
+    "fact_memories": "মেমোরি",
+    "fact_cost": "খরচ",
+    "fact_window": "উইন্ডো",
+    "col_team": "টিম",
+    "col_seed": "সিড",
+    "col_verdict": "রায়",
+    "col_score": "স্কোর",
+    "col_gates": "গেট",
+    "col_started": "শুরু হয়েছে"
+  },
+  "fleet_optimization": {
+    "title": "ফ্লিট অপ্টিমাইজেশন",
+    "open_lab": "Lab খুলুন",
+    "open_lab_hint": "Lab-এ {persona}-এর জন্য বিকল্প মডেল পরীক্ষা করুন",
+    "ask_athena": "Athena-কে জিজ্ঞেস করুন",
+    "ask_athena_hint": "এই পরামর্শটি অনুসন্ধানের জন্য Athena-র কাছে পাঠান",
+    "ask_athena_prompt": "আমি আমার এজেন্টগুলির জন্য একটি ফ্লিট অপ্টিমাইজেশন পরামর্শ পর্যালোচনা করছি: \"{title}\"। {description} প্রস্তাবিত পদক্ষেপ: {action}। {focus}",
+    "ask_athena_focus_persona": "অনুগ্রহ করে \"{persona}\" এজেন্টটি পরীক্ষা করুন এবং প্রয়োজনে বিকল্প মডেল পরীক্ষার জন্য Lab খুলুন, তারপর আপনার ফলাফল জানান।",
+    "ask_athena_focus_general": "অনুগ্রহ করে এটি পরীক্ষা করুন এবং কী পরিবর্তন করতে হবে তা সুপারিশ করুন।"
   }
 }

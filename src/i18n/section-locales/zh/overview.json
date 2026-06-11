@@ -133,7 +133,25 @@
     "source_provider": "提供商",
     "source_policy": "策略",
     "source_healing_issue": "修复问题",
-    "source_execution_error": "执行错误"
+    "source_execution_error": "执行错误",
+    "action_start_work": "开始处理",
+    "action_back_to_open": "返回待处理",
+    "filter_status_in_progress": "处理中",
+    "detail_title": "事故详情",
+    "detail_label_status": "状态",
+    "detail_label_kind": "类型",
+    "detail_label_source": "来源",
+    "detail_label_persona": "代理",
+    "detail_label_detail": "详细信息",
+    "detail_label_resolution_note": "解决说明",
+    "detail_label_created": "创建时间",
+    "detail_label_acknowledged": "已确认",
+    "detail_label_resolved": "已解决",
+    "detail_no_detail": "无附加详情。",
+    "detail_note_label": "解决说明（可选）",
+    "detail_no_persona": "无代理",
+    "empty_open_title": "一切正常",
+    "empty_filtered_title": "无匹配事故"
   },
   "observability": {
     "title": "可观测性",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "全部删除",
+    "delete_all_confirm_title": "删除所有记忆？",
+    "delete_all_confirm_body": "这将永久删除所有 {count} 条记忆，此操作无法撤销。",
+    "delete_all_confirm_cta": "全部删除"
   },
   "memory_review": {
     "all_conflicts_resolved": "所有冲突已解决",
@@ -473,7 +495,18 @@
     "select_action_first": "请先选择建议的操作",
     "review_detail": "审核详情",
     "select_review": "选择要查看的审核",
-    "technical_context": "技术上下文"
+    "technical_context": "技术上下文",
+    "split": "拆分",
+    "split_tooltip": "拆分视图 — 列表与详情面板",
+    "table": "表格",
+    "table_tooltip": "表格视图 — 网格中显示所有审查",
+    "backlog_group_title": "Dev Tools 积压",
+    "backlog_accept": "接受",
+    "backlog_reject": "拒绝",
+    "delete_all": "全部删除",
+    "delete_all_confirm_title": "删除所有审查？",
+    "delete_all_confirm_body": "此操作将永久删除全部 {count} 条评价，无法撤销。",
+    "delete_all_confirm_cta": "全部删除"
   },
   "messages_view": {
     "title": "消息",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "全部删除",
+    "delete_all_confirm_title": "删除所有消息？",
+    "delete_all_confirm_body": "此操作将永久删除全部 {count} 条消息，无法撤销。",
+    "delete_all_confirm_cta": "全部删除"
   },
   "events": {
     "title": "事件",
@@ -809,7 +846,13 @@
     "create_persona": "创建代理",
     "from_templates": "从模板",
     "execution_label": "执行",
-    "unknown": "未知"
+    "unknown": "未知",
+    "value_section_title": "业务价值",
+    "value_delivered_rate": "价值交付率",
+    "cost_per_value": "费用 / 价值运行",
+    "value_delivered_count": "已交付价值",
+    "all_models": "所有模型",
+    "col_model": "模型"
   },
   "analytics_dashboard": {
     "title": "分析",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "立即到期",
+    "rotation_countdown_days_hours": "{days}天 {hours}小时",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "搜索记忆...",
     "all_agents": "所有代理",
-    "all_categories": "所有类别"
+    "all_categories": "所有类别",
+    "tier_all": "活跃集合",
+    "tier_core": "核心",
+    "tier_active": "活跃",
+    "tier_working": "工作中",
+    "tier_archived": "已归档"
   },
   "memory_actions": {
     "dismiss_suggestion": "忽略建议",
@@ -1246,7 +1297,8 @@
     "reject_all": "全部拒绝",
     "accept_all": "全部接受",
     "retry_with_changes": "修改后重试",
-    "video_not_supported": "您的浏览器不支持视频播放。"
+    "video_not_supported": "您的浏览器不支持视频播放。",
+    "carry_out_hint": "批准审查并运行角色以执行此操作"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "已选择 {count} 个待审核项",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "确认",
-    "cancel": "取消"
+    "cancel": "取消",
+    "restore": "恢复到活跃集合"
   },
   "memory_detail": {
     "title_label": "标题",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my 人格s — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my 人格s — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena 为您撰写了此说明——退出后即可返回您自己的驾驶舱。",
+    "context_explaining": "Athena 正在解释：{title}",
+    "widget_empty": "暂无内容可显示。",
+    "verdict_title": "Athena 的裁定",
+    "verdict_confidence": "置信度",
+    "verdict_confidence_high": "高",
+    "verdict_confidence_medium": "中",
+    "verdict_confidence_low": "低",
+    "verdict_resolve": "立即解决",
+    "comparison_recommended": "推荐",
+    "flow_title": "执行流程",
+    "timeline_title": "时间轴",
+    "log_title": "依据"
+  },
+  "certification": {
+    "title": "认证指挥中心",
+    "subtitle": "团队自主性评估运行与认证状态（仅限开发环境）",
+    "updated": "已更新",
+    "refresh": "刷新",
+    "error_title": "无法加载评估运行记录",
+    "loading": "正在加载评估运行记录……",
+    "loading_detail": "正在加载运行详情……",
+    "tab_overview": "概览",
+    "tab_history": "运行历史",
+    "back": "返回",
+    "empty_title": "暂无评估运行记录",
+    "empty_desc": "运行评估套件（scripts/test/）以填充 docs/test/runs/ 目录。",
+    "teams_certified": "已认证团队",
+    "certified": "已认证",
+    "streak_label": "连续次数",
+    "held_out_runs": "保留运行",
+    "provisional": "临时裁定（评审尚未评分）",
+    "final": "最终裁定",
+    "team_score": "团队得分",
+    "cost": "费用",
+    "dims_title": "确定性维度",
+    "dim_cascade": "级联完成度",
+    "dim_density": "工作密度",
+    "dim_handoff": "交接健康度",
+    "dim_learning": "学习循环",
+    "dim_grounding": "依据充分性",
+    "dim_correctness": "正确性",
+    "dim_actionability": "可操作性",
+    "dim_specificity": "具体性",
+    "dim_role_fidelity": "角色忠实度",
+    "gates_title": "构建 / Lint / 测试门控",
+    "gate_build": "构建",
+    "gate_lint": "Lint",
+    "gate_test": "测试",
+    "gate_pass": "通过",
+    "gate_fail": "失败",
+    "gate_log": "日志",
+    "gate_copy_log": "复制日志",
+    "gate_code_track": "代码追踪运行",
+    "delivered": "已交付至主分支",
+    "cascade_stalled": "级联已停滞",
+    "self_vetoed": "已自我否决",
+    "self_veto_capped": "团队自行将裁定限制为",
+    "grounding_title": "引用依据",
+    "grounding_file": "文件",
+    "grounding_valid": "有效",
+    "grounding_pct": "%",
+    "grounding_invalid": "无效",
+    "grounding_na": "无引用可检查",
+    "standards_title": "规范与分支合规性",
+    "standards_subtitle": "本次运行遵守项目声明的预提交及分支策略的程度",
+    "standards_compliance": "合规性",
+    "standards_rule": "规则",
+    "standards_basis": "依据",
+    "standards_na": "不适用",
+    "trajectory_title": "得分走势",
+    "judge_title": "评审团",
+    "judge_mean": "平均值",
+    "judge_min": "最低输出",
+    "judge_balance": "均衡性",
+    "fact_executions": "已完成",
+    "fact_failed": "已失败",
+    "fact_members": "成员",
+    "fact_reviews": "评价",
+    "fact_memories": "记忆",
+    "fact_cost": "费用",
+    "fact_window": "时间窗口",
+    "col_team": "团队",
+    "col_seed": "种子",
+    "col_verdict": "裁定",
+    "col_score": "得分",
+    "col_gates": "门控",
+    "col_started": "开始时间"
+  },
+  "fleet_optimization": {
+    "title": "舰队优化",
+    "open_lab": "打开实验室",
+    "open_lab_hint": "在实验室中为 {persona} 测试备选模型",
+    "ask_athena": "询问 Athena",
+    "ask_athena_hint": "将此建议转发给 Athena 进行调查",
+    "ask_athena_prompt": "我正在查看我的智能体的舰队优化建议：\"{title}\"。{description} 建议操作：{action}。{focus}",
+    "ask_athena_focus_persona": "请调查智能体\"{persona}\"，如有帮助，请打开其实验室测试备选模型，然后汇报您的发现。",
+    "ask_athena_focus_general": "请调查此问题并推荐需要更改的内容。"
   }
 }

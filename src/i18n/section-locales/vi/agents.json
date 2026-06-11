@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "Đấu trường",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} ms",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "Phiên bản & Đánh giá",
+    "vr_subtitle": "Mọi tổ hợp phiên bản prompt × mô hình bạn đã đo. Một hàng đang hoạt động.",
+    "vr_col_version": "Phiên bản",
+    "vr_col_model": "Mô hình",
+    "vr_col_rating": "Đánh giá",
+    "vr_col_delta": "Đường cơ sở",
+    "vr_col_cost": "Chi phí",
+    "vr_col_status": "Trạng thái",
+    "vr_col_actions": "Thao tác",
+    "vr_status_active": "Đang hoạt động",
+    "vr_status_baseline": "Đường cơ sở",
+    "vr_status_archived": "Đã lưu trữ",
+    "vr_status_measured": "Đã đo",
+    "vr_status_unmeasured": "Chưa đo",
+    "vr_action_activate": "Kích hoạt phiên bản + mô hình này",
+    "vr_action_active": "Đang chạy",
+    "vr_action_measure": "Đo trên nhiều mô hình (Arena)",
+    "vr_action_measuring": "Đang đo…",
+    "vr_action_improve": "Cải thiện với Athena",
+    "vr_action_diff": "So sánh prompt với bản đang hoạt động",
+    "vr_action_archive": "Lưu trữ phiên bản",
+    "vr_action_unarchive": "Khôi phục phiên bản",
+    "vr_action_pin_baseline": "Ghim làm đường cơ sở hồi quy",
+    "vr_action_unpin_baseline": "Bỏ ghim đường cơ sở",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} mẫu",
+    "vr_samples_other": "{count} mẫu",
+    "vr_empty_title": "Chưa có phiên bản nào",
+    "vr_empty_desc": "Chỉnh sửa và lưu prompt của persona để tạo phiên bản đầu tiên, sau đó đo lường tại đây.",
+    "vr_measuring_toast": "Đang đo lường v{version} trên các mô hình…",
+    "vr_measure_modal_title": "Đo lường v{version}",
+    "vr_measure_scope_banner": "Đang đo lường phiên bản {version} — prompt của nó sẽ chạy trên các mô hình bạn chọn. Điểm số sẽ hiển thị trong bảng đánh giá.",
+    "vr_diff_title": "v{version} so với đang hoạt động",
+    "vr_diff_no_active": "Không có phiên bản đang hoạt động để so sánh.",
+    "vr_improve_seed_measured": "Cải thiện persona \"{name}\" v{version}. Chỉ số đo lường yếu nhất: {metric} {score}/100 trên {model}. Tôi nên tập trung vào điều gì? ",
+    "vr_improve_seed_plain": "Cải thiện persona \"{name}\" v{version} — chưa được đo lường. Tôi nên tập trung vào điều gì? ",
+    "vr_metric_tool": "độ chính xác công cụ",
+    "vr_metric_quality": "chất lượng đầu ra",
+    "vr_metric_protocol": "tuân thủ giao thức"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",
@@ -903,7 +944,9 @@
     "next": "Tiếp theo",
     "go_back_hint": "Quay lại và trả lời các câu hỏi để cấu hình tác nhân của bạn.",
     "additional_instructions": "Hướng dẫn hoặc ngữ cảnh bổ sung (tùy chọn)",
-    "additional_instructions_placeholder": "Thêm các yêu cầu cụ thể, kiến thức chuyên môn hoặc ràng buộc..."
+    "additional_instructions_placeholder": "Thêm các yêu cầu cụ thể, kiến thức chuyên môn hoặc ràng buộc...",
+    "role_user": "Người dùng",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "Trình kết nối",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "Thao tác này sẽ chạy {title} cho {persona}"
+    "schedule_will_run": "Thao tác này sẽ chạy {title} cho {persona}",
+    "_comment_manual_run_in_progress": "Tooltip nút chạy ngay khi đang có lần chạy thủ công",
+    "manual_run_in_progress": "Đang chạy thủ công",
+    "_comment_run_now_tooltip": "Tooltip nút chạy ngay — phân biệt thực thi thật với Kiểm tra",
+    "run_now_tooltip": "Chạy use case này ngay — kích hoạt thực thi thật và các sự kiện tiếp theo",
+    "_comment_run_now": "Nhãn nút chạy ngay (bảng chi tiết + thanh tab khả năng)",
+    "run_now": "Chạy ngay",
+    "_comment_event_type_options": "Nhãn tùy chọn dropdown loại sự kiện UseCaseSubscriptionForm",
+    "event_type_webhook_received": "Webhook Đã Nhận",
+    "event_type_execution_completed": "Thực Thi Hoàn Thành",
+    "event_type_execution_failed": "Thực Thi Thất Bại",
+    "event_type_persona_action": "Hành Động Persona",
+    "event_type_file_changed": "Tệp Thay Đổi",
+    "event_type_schedule_triggered": "Lịch Đã Kích Hoạt",
+    "_comment_dim_review_title": "Tiêu đề ReviewDimCard",
+    "dim_review_title": "Đánh giá",
+    "_comment_pill_on": "Pill trạng thái BẬT của ToggleDimCard (bộ nhớ/sự kiện)",
+    "pill_on": "BẬT",
+    "_comment_pill_off": "Pill trạng thái TẮT, dùng chung bởi ToggleDimCard và ReviewDimCard tắt",
+    "pill_off": "TẮT",
+    "_comment_review_pill_queue": "Pill trạng thái HÀNG ĐỢI của ReviewDimCard",
+    "review_pill_queue": "HÀNG ĐỢI",
+    "_comment_review_pill_trust": "Pill trạng thái TIN TƯỞNG của ReviewDimCard",
+    "review_pill_trust": "TIN TƯỞNG",
+    "_comment_dim_status_activated": "Giá trị PersonaSigilSummary hiển thị khi một dim boolean (bộ nhớ/đánh giá/sự kiện/lỗi) đang hoạt động cho khả năng",
+    "dim_status_activated": "Đã kích hoạt"
   },
   "tools": {
     "no_persona": "Chưa chọn tác nhân",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "Phán quyết",
+    "verdict_none": "Chưa được Director đánh giá",
+    "verdict_tooltip": "Phán quyết Director: {score}/5"
   },
   "chat": {
     "select_persona": "Chọn tác nhân để bắt đầu trò chuyện",
@@ -2293,7 +2364,8 @@
     "delete_agents": "Xóa {count} tác nhân",
     "delete_agents_message": "{count} tác nhân và toàn bộ cấu hình của chúng sẽ bị xóa vĩnh viễn.",
     "delete_drafts": "Xóa {count} nháp",
-    "delete_drafts_message": "{count} tác nhân nháp sẽ bị xóa vĩnh viễn."
+    "delete_drafts_message": "{count} tác nhân nháp sẽ bị xóa vĩnh viễn.",
+    "system_persona_undeletable": "Director là persona hệ thống và không thể xóa."
   },
   "persona_list": {
     "all_personas": "Tất cả tác nhân",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "Chưa có nhóm — tạo trong Agents → Nhóm",
     "batch_move_to_ungrouped": "Không nhóm",
     "batch_moved_success": "Đã chuyển {count} persona sang {group}",
-    "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại"
+    "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại",
+    "render_cap_notice": "Đang hiển thị {shown} trong {total} — thu hẹp bằng tìm kiếm hoặc bộ lọc để xem phần còn lại.",
+    "star_director_add": "Gắn sao để thêm vào phạm vi huấn luyện của Director",
+    "star_director_remove": "Đã gắn sao — trong phạm vi huấn luyện của Director. Nhấn để xóa."
   },
   "design_preview": {
     "preview": "Xem trước",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Theo dõi tin nhắn Slack đến",
+    "slack_poll_inbound_help": "Khi được chọn, persona đọc tin nhắn mới trong kênh này mỗi 5 giây và trả lời trong luồng với kết quả chạy. Mời bot vào kênh trước."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "Đang bật cho khả năng này",
   "sigil_edit_inactive": "Tắt — bật để kích hoạt",
   "sigil_edit_enable": "Bật cho khả năng này",
-  "sigil_edit_disable": "Tắt cho khả năng này"
+  "sigil_edit_disable": "Tắt cho khả năng này",
+  "design_subtabs": {
+    "use_cases": "Trường hợp sử dụng",
+    "prompt": "Prompt",
+    "connectors": "Connector & Công cụ",
+    "triggers": "Sự kiện & Trigger",
+    "messaging": "Nhắn tin",
+    "automations": "Tự động hóa",
+    "triggers_desc": "Đăng ký sự kiện và cấu hình trigger theo từng persona sẽ được hiển thị ở tab này.",
+    "messaging_desc": "Kênh thông báo và định tuyến hộp thư đến cho agent này sẽ nằm ở đây.",
+    "automations_desc": "Các quy tắc tự động hóa độc lập cho agent này sẽ nằm ở đây."
+  },
+  "parameters_card": {
+    "title": "Thông số",
+    "saved": "Đã lưu",
+    "apply": "Áp dụng",
+    "on": "Bật",
+    "off": "Tắt",
+    "reset": "đặt lại"
+  },
+  "editor_empty": {
+    "title": "Chưa chọn persona",
+    "subtitle": "Chọn một agent từ thanh bên để bắt đầu chỉnh sửa, hoặc tạo mới.",
+    "create": "Tạo persona",
+    "resume_label": "Tiếp tục từ đây"
+  },
+  "build_template_match_label": "Con đường nhanh hơn",
+  "build_template_match_title": "\"{name}\" trông giống một kết quả phù hợp",
+  "build_template_match_body": "Template có sẵn này bao gồm những gì bạn mô tả — áp dụng để bỏ qua các câu hỏi. Đã được thiết lập và kiểm thử sẵn.",
+  "build_template_match_adopt": "Dùng template này",
+  "build_template_match_dismiss": "Tiếp tục xây dựng",
+  "build_template_match_loading": "Đang tìm template phù hợp…",
+  "build_template_match_more": "Hoặc bắt đầu từ",
+  "_comment_glyph_db_scope": "Database connector table-scoping panel in the connector picker",
+  "glyph_db_scope_heading": "Bảng cơ sở dữ liệu",
+  "glyph_db_scope_all": "Tất cả bảng",
+  "glyph_db_scope_loading": "Đang tải bảng…",
+  "glyph_db_scope_error": "Không thể tải bảng — thử lại",
+  "glyph_db_scope_empty": "Không tìm thấy bảng nào",
+  "glyph_db_scope_selected": "{count} trong số {total} bảng"
 }

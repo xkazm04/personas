@@ -70,5 +70,7 @@
   "pending_events_sr_other": "{count} 个待处理事件",
   "cockpit": "Cockpit",
   "director_attention_sr": "{count} 个智能体需要辅导",
-  "director_attention_sr_other": "{count} 个智能体需要辅导"
+  "director_attention_sr_other": "{count} 个智能体需要辅导",
+  "goals": "目标",
+  "mission_control": "任务控制中心"
 }

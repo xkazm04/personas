@@ -343,7 +343,9 @@
     "search_suggestions_aria": "खोज सुझाव",
     "clear_search_aria": "खोज साफ़ करें",
     "search_with_ai_aria": "AI के साथ खोजें",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "ड्राफ्ट"
   },
   "list": {
     "template_name": "टेम्पलेट नाम",
@@ -807,7 +809,25 @@
       "lab_desc": "विफलताएं दोहराने पर इस persona के लिए Lab auto-improvement (prompt evolution) चालू करें।",
       "escalate_after_label": "इसके बाद एस्केलेट करें",
       "escalate_after_desc": "इंसिडेंट बनाने या Lab में भेजने से पहले लगातार विफलताओं की संख्या।"
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "कनेक्शन",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "जैसे-जैसे आप प्रत्येक आयाम कॉन्फ़िगर करेंगे, आपके चयन यहाँ दिखेंगे।",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "क्षमताएं",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "क्षमता शामिल करें",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "क्षमता छोड़ें",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "चालू",
+    "policy_off": "बंद",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "प्रति घंटा",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count} इवेंट",
+    "events_count_other": "{count} इवेंट"
   },
   "scan": {
     "scanning_draft": "एजेंट ड्राफ्ट स्कैन हो रहा है...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} प्रश्न, सभी डिफ़ॉल्ट",
     "questionnaire_member_summary_customized": "{count} प्रश्न, {customized} कस्टमाइज़्ड",
     "questionnaire_member_no_config": "कोई कॉन्फ़िगरेशन आवश्यक नहीं",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "हस्तक्षेप-रहित",
+    "graph_legend_feedback": "वापस भेजता है"
   },
   "compare": {
     "compare": "तुलना करें",

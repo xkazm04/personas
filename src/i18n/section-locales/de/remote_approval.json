@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Anfrage zur Fernausführung",
+  "body": "Ihr Dashboard hat eine Ausführung von {persona} auf diesem Gerät angefordert.",
+  "safety_note": "Dies wird lokal auf diesem Gerät mit eigenen Anmeldedaten ausgeführt. Nichts wird ausgeführt, bis Sie zustimmen.",
+  "approve": "Genehmigen & ausführen",
+  "approving": "Wird gestartet…",
+  "reject": "Ablehnen",
+  "queue_count": "{index} von {total} ausstehend",
+  "prompt_label": "Eingabeaufforderung",
+  "no_prompt": "Keine Eingabeaufforderung angegeben.",
+  "from_dashboard": "Vom Web-Dashboard angefordert",
+  "later": "Später entscheiden"
+}

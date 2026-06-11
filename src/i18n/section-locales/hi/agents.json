@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "एरेना",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} मि.से.",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "संस्करण और रेटिंग",
+    "vr_subtitle": "हर प्रॉम्प्ट संस्करण × मॉडल जो आपने मापा है। एक पंक्ति लाइव है।",
+    "vr_col_version": "संस्करण",
+    "vr_col_model": "मॉडल",
+    "vr_col_rating": "रेटिंग",
+    "vr_col_delta": "बेसलाइन",
+    "vr_col_cost": "लागत",
+    "vr_col_status": "स्थिति",
+    "vr_col_actions": "क्रियाएँ",
+    "vr_status_active": "सक्रिय",
+    "vr_status_baseline": "बेसलाइन",
+    "vr_status_archived": "संग्रहीत",
+    "vr_status_measured": "मापा गया",
+    "vr_status_unmeasured": "नहीं मापा गया",
+    "vr_action_activate": "यह संस्करण + मॉडल सक्रिय करें",
+    "vr_action_active": "अभी लाइव",
+    "vr_action_measure": "मॉडलों में मापें (Arena)",
+    "vr_action_measuring": "माप रहे हैं…",
+    "vr_action_improve": "Athena से सुधारें",
+    "vr_action_diff": "सक्रिय से प्रॉम्प्ट की तुलना करें",
+    "vr_action_archive": "संस्करण संग्रहीत करें",
+    "vr_action_unarchive": "संस्करण असंग्रहीत करें",
+    "vr_action_pin_baseline": "रिग्रेशन बेसलाइन के रूप में पिन करें",
+    "vr_action_unpin_baseline": "बेसलाइन अनपिन करें",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} नमूना",
+    "vr_samples_other": "{count} नमूने",
+    "vr_empty_title": "अभी कोई संस्करण नहीं",
+    "vr_empty_desc": "पहला संस्करण बनाने के लिए persona का प्रॉम्प्ट संपादित करके सहेजें, फिर यहाँ मापें।",
+    "vr_measuring_toast": "मॉडल्स पर v{version} माप रहे हैं…",
+    "vr_measure_modal_title": "v{version} मापें",
+    "vr_measure_scope_banner": "संस्करण {version} माप रहे हैं — इसका प्रॉम्प्ट आपके चुने मॉडल्स पर चलेगा। स्कोर रेटिंग तालिका में आएंगे।",
+    "vr_diff_title": "v{version} बनाम सक्रिय",
+    "vr_diff_no_active": "तुलना के लिए कोई सक्रिय संस्करण नहीं।",
+    "vr_improve_seed_measured": "persona \"{name}\" v{version} को बेहतर करें। सबसे कमज़ोर मापा गया मेट्रिक: {metric} {score}/100 on {model}. मुझे किस पर ध्यान देना चाहिए? ",
+    "vr_improve_seed_plain": "persona \"{name}\" v{version} को बेहतर करें — अभी मापा नहीं गया। मुझे किस पर ध्यान देना चाहिए? ",
+    "vr_metric_tool": "टूल सटीकता",
+    "vr_metric_quality": "आउटपुट गुणवत्ता",
+    "vr_metric_protocol": "protocol अनुपालन"
   },
   "design": {
     "select_agent": "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",
@@ -903,7 +944,9 @@
     "next": "अगला",
     "go_back_hint": "वापस जाएं और अपने एजेंट को कॉन्फ़िगर करने के लिए प्रश्नों का उत्तर दें।",
     "additional_instructions": "अतिरिक्त निर्देश या संदर्भ (वैकल्पिक)",
-    "additional_instructions_placeholder": "कोई विशिष्ट आवश्यकताएं, डोमेन ज्ञान, या बाधाएं जोड़ें..."
+    "additional_instructions_placeholder": "कोई विशिष्ट आवश्यकताएं, डोमेन ज्ञान, या बाधाएं जोड़ें...",
+    "role_user": "उपयोगकर्ता",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "कनेक्टर",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "यह {persona} के लिए {title} चलाएगा"
+    "schedule_will_run": "यह {persona} के लिए {title} चलाएगा",
+    "_comment_manual_run_in_progress": "Run-now button tooltip while a manual run is in flight",
+    "manual_run_in_progress": "मैन्युअल रन जारी है",
+    "_comment_run_now_tooltip": "Run-now button tooltip — distinguishes real execution from Test",
+    "run_now_tooltip": "इस use case को अभी चलाएं — वास्तविक निष्पादन और डाउनस्ट्रीम इवेंट सक्रिय होंगे",
+    "_comment_run_now": "Run-now button label (detail panel + capability tab bar)",
+    "run_now": "अभी चलाएं",
+    "_comment_event_type_options": "UseCaseSubscriptionForm event-type dropdown option labels",
+    "event_type_webhook_received": "Webhook प्राप्त हुआ",
+    "event_type_execution_completed": "निष्पादन पूर्ण",
+    "event_type_execution_failed": "निष्पादन विफल",
+    "event_type_persona_action": "Persona क्रिया",
+    "event_type_file_changed": "फ़ाइल बदली",
+    "event_type_schedule_triggered": "शेड्यूल ट्रिगर हुआ",
+    "_comment_dim_review_title": "ReviewDimCard heading",
+    "dim_review_title": "समीक्षा",
+    "_comment_pill_on": "ToggleDimCard ON-state pill (memory/events)",
+    "pill_on": "चालू",
+    "_comment_pill_off": "OFF-state pill, shared by ToggleDimCard and ReviewDimCard off",
+    "pill_off": "बंद",
+    "_comment_review_pill_queue": "ReviewDimCard QUEUE-state pill",
+    "review_pill_queue": "QUEUE",
+    "_comment_review_pill_trust": "ReviewDimCard TRUST-state pill",
+    "review_pill_trust": "TRUST",
+    "_comment_dim_status_activated": "PersonaSigilSummary value shown when a boolean dim (memory/review/event/error) is active for the capability",
+    "dim_status_activated": "सक्रिय"
   },
   "tools": {
     "no_persona": "कोई पर्सोना नहीं चुना गया",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "निर्णय",
+    "verdict_none": "Director द्वारा अभी समीक्षा नहीं",
+    "verdict_tooltip": "Director का निर्णय: {score}/5"
   },
   "chat": {
     "select_persona": "चैट शुरू करने के लिए एक पर्सोना चुनें",
@@ -2293,7 +2364,8 @@
     "delete_agents": "{count} एजेंट हटाएं",
     "delete_agents_message": "{count} एजेंट और उनकी सभी कॉन्फ़िगरेशन स्थायी रूप से हटाई जाएगी।",
     "delete_drafts": "{count} ड्राफ्ट हटाएं",
-    "delete_drafts_message": "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।"
+    "delete_drafts_message": "{count} ड्राफ्ट एजेंट स्थायी रूप से हटाए जाएंगे।",
+    "system_persona_undeletable": "Director एक सिस्टम persona है और इसे हटाया नहीं जा सकता।"
   },
   "persona_list": {
     "all_personas": "सभी पर्सोना",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "अभी तक कोई समूह नहीं — एजेंट्स → समूह में बनाएं",
     "batch_move_to_ungrouped": "बिना समूह",
     "batch_moved_success": "{count} पर्सोना {group} में स्थानांतरित",
-    "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल"
+    "batch_moved_partial": "{ok} {group} में स्थानांतरित; {failed} विफल",
+    "render_cap_notice": "{total} में से {shown} दिखाए जा रहे हैं — बाकी देखने के लिए खोज या फ़िल्टर का उपयोग करें।",
+    "star_director_add": "Director की कोचिंग सूची में जोड़ने के लिए स्टार करें",
+    "star_director_remove": "स्टार किया — Director की कोचिंग सूची में है। हटाने के लिए क्लिक करें।"
   },
   "design_preview": {
     "preview": "प्रीव्यू",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "आने वाले Slack संदेशों के लिए पोल करें",
+    "slack_poll_inbound_help": "चेक होने पर, persona इस चैनल में हर 5 सेकंड में नए संदेश पढ़ता है और थ्रेड में रन आउटपुट से उत्तर देता है। पहले बॉट को चैनल में आमंत्रित करें।"
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "इस क्षमता के लिए सक्रिय",
   "sigil_edit_inactive": "निष्क्रिय — सक्षम करने के लिए चालू करें",
   "sigil_edit_enable": "इस क्षमता के लिए सक्षम करें",
-  "sigil_edit_disable": "इस क्षमता के लिए अक्षम करें"
+  "sigil_edit_disable": "इस क्षमता के लिए अक्षम करें",
+  "design_subtabs": {
+    "use_cases": "उपयोग के मामले",
+    "prompt": "प्रॉम्प्ट",
+    "connectors": "कनेक्टर्स और टूल्स",
+    "triggers": "ईवेंट्स और ट्रिगर्स",
+    "messaging": "मैसेजिंग",
+    "automations": "ऑटोमेशन",
+    "triggers_desc": "प्रति-पर्सोना ईवेंट सब्सक्रिप्शन और ट्रिगर कॉन्फ़िगरेशन इस टैब में आएगा।",
+    "messaging_desc": "इस एजेंट के नोटिफिकेशन चैनल और इनबॉक्स रूटिंग यहाँ होंगे।",
+    "automations_desc": "इस एजेंट के लिए स्वतंत्र ऑटोमेशन नियम यहाँ होंगे।"
+  },
+  "parameters_card": {
+    "title": "पैरामीटर्स",
+    "saved": "सहेजा गया",
+    "apply": "लागू करें",
+    "on": "चालू",
+    "off": "बंद",
+    "reset": "रीसेट"
+  },
+  "editor_empty": {
+    "title": "कोई पर्सोना चयनित नहीं",
+    "subtitle": "संपादन शुरू करने के लिए साइडबार से कोई एजेंट चुनें, या नया बनाएँ।",
+    "create": "पर्सोना बनाएँ",
+    "resume_label": "वापस जाएँ"
+  },
+  "build_template_match_label": "तेज़ रास्ता",
+  "build_template_match_title": "\"{name}\" एक मैच लग रहा है",
+  "build_template_match_body": "यह रेडीमेड टेम्पलेट वही कवर करता है जो आपने बताया — इन सवालों को छोड़ने के लिए इसे अपनाएँ। यह पहले से सेट अप और टेस्ट किया हुआ है।",
+  "build_template_match_adopt": "यह टेम्पलेट उपयोग करें",
+  "build_template_match_dismiss": "बनाते रहें",
+  "build_template_match_loading": "मिलते टेम्पलेट्स खोजे जा रहे हैं…",
+  "build_template_match_more": "या यहाँ से शुरू करें",
+  "_comment_glyph_db_scope": "कनेक्टर पिकर में डेटाबेस कनेक्टर टेबल-स्कोपिंग पैनल",
+  "glyph_db_scope_heading": "डेटाबेस टेबल्स",
+  "glyph_db_scope_all": "सभी टेबल्स",
+  "glyph_db_scope_loading": "टेबल्स लोड हो रहे हैं…",
+  "glyph_db_scope_error": "टेबल्स लोड नहीं हो सके — पुनः प्रयास करें",
+  "glyph_db_scope_empty": "कोई टेबल नहीं मिली",
+  "glyph_db_scope_selected": "{total} में से {count} टेबल्स"
 }

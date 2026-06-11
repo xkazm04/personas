@@ -44,6 +44,27 @@
     "section_workspace": "Espacio de trabajo",
     "toggle_sidebar": "Contraer / expandir barra lateral",
     "toggle_monitor": "Abrir / cerrar Monitor de personas",
-    "toggle_athena": "Abrir / cerrar chat de Athena"
+    "toggle_athena": "Abrir / cerrar chat de Athena",
+    "nav_mode": "Activar/desactivar modo de navegación por teclado",
+    "nav_mode_back": "Retroceder una página (en modo de navegación)"
+  },
+  "tray_schedules": "Programaciones",
+  "tray_schedules_today": "{count} programadas hoy",
+  "tray_notifications": "Notificaciones",
+  "tray_notifications_unread": "{count} notificaciones sin leer",
+  "tray_signals": "Señales de atención",
+  "tray_word_today": "hoy",
+  "tray_word_to_answer": "por responder",
+  "tray_word_fleet": "en flota",
+  "tray_word_unread": "sin leer",
+  "tray_word_running": "en ejecución",
+  "system_load": {
+    "label": "Carga del sistema",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB libres)",
+    "measuring": "Midiendo la carga del sistema…",
+    "headroom_green": "Amplia capacidad disponible para más trabajo",
+    "headroom_amber": "Bastante ocupado — considera reducir la carga",
+    "headroom_red": "Al límite de capacidad — considera ralentizar"
   }
 }

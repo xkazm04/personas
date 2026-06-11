@@ -74,5 +74,9 @@
   "recovered_title": "We caught that for you",
   "recovered_illustration_aria": "Recovery in progress",
   "n8n_invalid_shape_message": "This file doesn't look like an n8n workflow export.",
-  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps."
+  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps.",
+  "usage_limit_weekly_message": "已达到 Claude 的每周使用上限。",
+  "usage_limit_weekly_suggestion": "每周限制重置前，运行任务将持续失败——请暂停计划或升级套餐。",
+  "usage_limit_window_message": "Claude 的使用窗口已耗尽。",
+  "usage_limit_window_suggestion": "窗口重置后将自动重试——无需任何操作。"
 }

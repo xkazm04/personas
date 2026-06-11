@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "Identidad de firma no disponible",
+  "identity_degraded_hint": "No se pudo cargar la clave de firma del dispositivo — puede que el llavero del sistema operativo haya sido restablecido. La confianza entre pares y la sincronización están interrumpidas hasta que reinicies tu identidad."
 }

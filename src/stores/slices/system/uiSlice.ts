@@ -132,6 +132,15 @@ export interface UiSlice {
   headerOverlay: HeaderOverlay;
 
   /**
+   * Whether `;` keyboard-nav mode is active. `KeyboardNavMode` owns the
+   * toggle (`;` / Esc); surfaces that render key hints while the mode is on
+   * (the title-bar dock) read it and register their own key handlers.
+   * Transient — deliberately NOT in the persist partialize whitelist.
+   */
+  keyboardNavActive: boolean;
+  setKeyboardNavActive: (active: boolean) => void;
+
+  /**
    * Whether the Monitor grid should be partitioned by PersonaGroup. Persisted
    * (via the SystemStore's persist middleware) so re-opening the Monitor
    * preserves the user's last view choice across the entire session and across
@@ -278,6 +287,8 @@ function currentSelectedPersonaId(): string | null {
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, get) => ({
   sidebarSection: "home" as SidebarSection,
   headerOverlay: 'none' as HeaderOverlay,
+  keyboardNavActive: false,
+  setKeyboardNavActive: (active) => set({ keyboardNavActive: active }),
   monitorGroupBy: 'none' as const,
   monitorCollapsedGroups: [],
   homeHiddenSections: [],

@@ -343,7 +343,9 @@
     "search_suggestions_aria": "اقتراحات البحث",
     "clear_search_aria": "مسح البحث",
     "search_with_ai_aria": "البحث بالذكاء الاصطناعي",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "مرشحات تغطية معرض القوالب — الحفاظ على كلمة واحدة لكل منها. 'Drafts' = قوالب تطوير غير منشورة.",
+    "coverage_drafts": "مسودات"
   },
   "list": {
     "template_name": "اسم القالب",
@@ -807,7 +809,25 @@
       "lab_desc": "تشغيل التحسين التلقائي في المختبر (تطوير المطالبات) لهذه الشخصية عند تكرر الإخفاقات.",
       "escalate_after_label": "التصعيد بعد",
       "escalate_after_desc": "عدد الإخفاقات المتتالية قبل رفع حادثة أو إرسالها إلى المختبر."
-    }
+    },
+    "_comment_left_connections_heading": "عنوان فوق بطاقة الموصّل في اللوحة اليسرى للتبني — حافظ على كلمة واحدة",
+    "left_connections_heading": "الاتصالات",
+    "_comment_left_empty_placeholder": "نص توضيحي في اللوحة اليسرى للتبني قبل إعداد أي شيء",
+    "left_empty_placeholder": "ستظهر تحديداتك هنا أثناء ضبط كل بُعد.",
+    "_comment_capabilities_aria": "تسمية الوصول لشريط تبويب القدرات في التبني",
+    "capabilities_aria": "القدرات",
+    "_comment_capability_include": "تلميح على مفتاح تبديل القوة لكل قدرة عند تخطيها — انقر للتضمين",
+    "capability_include": "تضمين القدرة",
+    "_comment_capability_skip": "تلميح على مفتاح تبديل القوة لكل قدرة عند تفعيلها — انقر للتخطي",
+    "capability_skip": "تخطي القدرة",
+    "_comment_policy_on": "حالة تشغيل/إيقاف لأبعاد الذاكرة والمراجعة — حافظ على كلمة واحدة",
+    "policy_on": "مفعّل",
+    "policy_off": "معطّل",
+    "_comment_schedule_hourly": "تسمية ملخص الجدولة للتكرار كل ساعة — اجعلها قصيرة",
+    "schedule_hourly": "كل ساعة",
+    "_comment_events_count": "عدد اشتراكات الأحداث عبر الشخصيات المُهيأة لقدرة ما",
+    "events_count_one": "حدث واحد ({count})",
+    "events_count_other": "{count} أحداث"
   },
   "scan": {
     "scanning_draft": "جارٍ مسح مسودة الوكيل...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} أسئلة، كل الإعدادات الافتراضية",
     "questionnaire_member_summary_customized": "{count} أسئلة، {customized} مخصصة",
     "questionnaire_member_no_config": "لا يلزم أي تكوين",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "بدون تدخل",
+    "graph_legend_feedback": "يُرسل للخلف"
   },
   "compare": {
     "compare": "مقارنة",

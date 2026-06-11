@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Solicitud de ejecución remota",
+  "body": "Tu panel de control solicitó una ejecución de {persona} en este dispositivo.",
+  "safety_note": "Esto se ejecuta localmente en este dispositivo con sus propias credenciales. Nada se ejecuta hasta que lo apruebes.",
+  "approve": "Aprobar y ejecutar",
+  "approving": "Iniciando…",
+  "reject": "Rechazar",
+  "queue_count": "{index} de {total} pendientes",
+  "prompt_label": "Prompt",
+  "no_prompt": "No se proporcionó prompt.",
+  "from_dashboard": "Solicitado desde el panel web",
+  "later": "Decidir más tarde"
+}

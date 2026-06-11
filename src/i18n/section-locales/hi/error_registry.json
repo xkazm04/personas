@@ -74,5 +74,9 @@
   "recovered_title": "We caught that for you",
   "recovered_illustration_aria": "Recovery in progress",
   "n8n_invalid_shape_message": "This file doesn't look like an n8n workflow export.",
-  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps."
+  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps.",
+  "usage_limit_weekly_message": "Claude की साप्ताहिक उपयोग सीमा पहुंच गई।",
+  "usage_limit_weekly_suggestion": "साप्ताहिक सीमा रीसेट होने तक रन्स विफल होते रहेंगे — शेड्यूल रोकें या अपना प्लान अपग्रेड करें।",
+  "usage_limit_window_message": "Claude की उपयोग विंडो समाप्त हो गई है।",
+  "usage_limit_window_suggestion": "विंडो रीसेट होने पर रन स्वतः पुनः प्रयास करेगा — कोई कार्रवाई आवश्यक नहीं।"
 }

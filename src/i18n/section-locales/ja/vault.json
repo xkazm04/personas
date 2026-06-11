@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "更新",
+    "tool_count_one": "{count}個のツール",
+    "tool_count_other": "{count}個のツール",
+    "tab_documents": "ドキュメント",
+    "tab_search": "検索",
+    "tab_settings": "設定"
   },
   "manager": {
     "title": "認証情報",
@@ -845,7 +851,10 @@
     "enabling": "有効化中...",
     "enable_rotation": "ローテーションを有効にする",
     "enable_failed": "ローテーションの有効化に失敗: {error}",
-    "last_rotated": "最終ローテーション {time}"
+    "last_rotated": "最終ローテーション {time}",
+    "ring_aria_label": "{countdown}後にローテーション",
+    "history_empty_title": "ローテーション履歴はまだありません",
+    "history_empty_subtitle": "この資格情報がローテーションされると、ここにイベントが表示されます。"
   },
   "event_config": {
     "event_triggers": "イベントトリガー",
@@ -950,11 +959,24 @@
     "catalog_description": "Slack、GitHub、OpenAIなどの既知のサービスを選択してください。事前設定済みのフィールドとヘルスチェックがあります。",
     "ai_heading": "AIが設計した認証情報",
     "ai_description": "任意のサービスを説明すると、AIがフィールド、認証タイプ、ヘルスチェックを設定します。",
-    "works_with_any": "任意のAPIに対応"
+    "works_with_any": "任意のAPIに対応",
+    "recommended": "おすすめ"
   },
   "credential_list": {
     "no_match": "一致する認証情報がありません",
-    "no_match_hint": "フィルターまたは検索語を調整してみてください"
+    "no_match_hint": "フィルターまたは検索語を調整してみてください",
+    "col_name": "名前",
+    "col_status": "ステータス",
+    "col_type": "タイプ",
+    "col_category": "カテゴリ",
+    "col_health": "ヘルス",
+    "col_last_used": "最終使用",
+    "col_created": "作成日",
+    "filter_all": "すべて",
+    "filter_all_health": "すべてのヘルス",
+    "health_healthy": "正常",
+    "health_failing": "障害",
+    "health_untested": "未テスト"
   },
   "wizard_detect": {
     "no_services": "\"{search}\"に一致するサービスはありません",

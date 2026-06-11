@@ -219,7 +219,9 @@
     "stage_generating": "생성 중",
     "stage_completed": "완료됨",
     "stage_failed": "실패",
-    "tool_calls": "{count}번 도구 호출"
+    "tool_calls": "{count}번 도구 호출",
+    "connect_cloud_cta": "클라우드 대상 연결",
+    "connect_gitlab_cta": "GitLab 연결"
   },
   "cloud_trigger_schedule": "예약됨 (Cron)",
   "cloud_trigger_polling": "폴링",

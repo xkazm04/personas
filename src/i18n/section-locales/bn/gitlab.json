@@ -114,5 +114,7 @@
   "trigger_on": "চালু:",
   "connecting_to_gitlab": "GitLab-এ সংযোগ হচ্ছে...",
   "deploying_to_gitlab": "GitLab-এ পার্সোনা ডিপ্লয় করা হচ্ছে...",
-  "pipeline_hash": "পাইপলাইন #"
+  "pipeline_hash": "পাইপলাইন #",
+  "notification_ask_athena": "Athena-কে বিশ্লেষণ করতে বলুন",
+  "notification_athena_prompt": "অনুগ্রহ করে আমার পাওয়া এই বিজ্ঞপ্তি এবং অন্তর্নিহিত সমস্যাটি বিশ্লেষণ করুন: \"{title}\" — {body} (অবস্থা: {status})। কী হয়েছে, সম্ভাব্য মূল কারণ অনুসন্ধান করুন এবং স্পষ্টভাবে বলুন আমার কোনো পদক্ষেপ নেওয়া দরকার কিনা।"
 }

@@ -229,7 +229,9 @@
     "teams_label": "Équipes",
     "groups_label": "Groupes",
     "cloud_label": "Cloud",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "Sans équipe",
+    "whats_new_update": "Mis à jour — voir les nouveautés"
   },
   "execution_detail": {
     "copy": "Copier",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "Aujourd'hui",
+  "group_yesterday": "Hier",
+  "group_this_week": "Cette semaine",
+  "group_this_month": "Ce mois-ci",
+  "group_older": "Plus ancien",
+  "code_expand_block": "Développer le bloc de code",
+  "code_collapse_block": "Réduire le bloc de code",
+  "code_show_lines": "Afficher les {count} lignes"
 }

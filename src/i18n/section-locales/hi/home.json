@@ -93,6 +93,10 @@
     "plugins": {
       "label": "प्लगइन",
       "description": "थर्ड-पार्टी प्लगइन और कस्टम एक्सटेंशन से अपने एजेंट बढ़ाएं"
+    },
+    "teams": {
+      "label": "टीमें",
+      "description": "कई एजेंट्स को एक टीम में जोड़ें जो मल्टी-स्टेप वर्कफ़्लो पर मिलकर काम करे"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "पुनः प्रारंभ",
     "start_tour": "टूर शुरू करें",
     "steps_count": "{count} चरण",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "पावर मूव्स",
+    "moves_used": "{used}/{total} उपयोग किए",
+    "try_it": "आज़माएँ",
+    "used_badge": "उपयोग किया",
+    "group_save_time": "समय बचाएँ",
+    "group_prevent_failures": "विफलताएँ रोकें",
+    "group_level_up": "एजेंट्स को अपग्रेड करें",
+    "group_orchestrate": "ऑर्केस्ट्रेट करें",
+    "pm_monitor_triage_title": "टाइटलबार से पूरे फ्लीट को ट्रिएज करें",
+    "pm_schedule_delay_title": "शेड्यूल्ड रन को छोड़ें या विलंबित करें",
+    "pm_bulk_rerun_title": "विफल एक्ज़ीक्यूशन को बल्क में फिर चलाएँ",
+    "pm_dead_letter_title": "डेड-लेटर कतार से ईवेंट्स बचाएँ",
+    "pm_annotate_golden_title": "गोल्डन रन को स्टार करें, रिग्रेशन टैग करें",
+    "pm_credential_health_title": "AI को विफल क्रेडेंशियल ठीक करने दें",
+    "pm_lab_measure_title": "मॉडलों में प्रॉम्प्ट को मापें",
+    "pm_prompt_rollback_title": "एक क्लिक में खराब प्रॉम्प्ट वापस करें",
+    "pm_director_coaching_title": "Director से पोर्टफोलियो कोचिंग लें",
+    "pm_event_chain_title": "इवेंट लिस्नर्स से एजेंट्स को चेन करें",
+    "pm_live_stream_title": "चेन कैस्केड को रीयल टाइम में देखें",
+    "pm_athena_fleet_title": "Athena से अपना फ्लीट विश्लेषण करवाएँ"
   },
   "setup_stepper": {
     "your_profile": "आपकी प्रोफ़ाइल",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- जेनेरिक आइकन लाइब्रेरी -- स्टैटिक",
     "personas_footer": "9 कस्टम आइकन -- न्यूरल/सर्किट मोटिफ -- CSS-एनिमेटेड -- थीम-अनुकूली"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "{personaName} में अपठित विफलता — जाँच करें",
+    "tour": "{tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle} जारी रखें",
+    "edit": "{personaName} को संपादित करना जारी रखें"
+  },
+  "nav_status": {
+    "incidents": "{count} खुली घटना",
+    "incidents_other": "{count} खुली घटनाएँ",
+    "messages": "{count} अपठित संदेश",
+    "messages_other": "{count} अपठित संदेश",
+    "reviews": "{count} लंबित समीक्षा",
+    "reviews_other": "{count} लंबित समीक्षाएँ",
+    "teams": "{count} टीम",
+    "teams_other": "{count} टीमें",
+    "agents_active": "पिछले 24 घंटों में {count} एजेंट सक्रिय",
+    "agents_active_other": "पिछले 24 घंटों में {count} एजेंट्स सक्रिय",
+    "events_today": "पिछले 24 घंटों में {count} ईवेंट",
+    "events_today_other": "पिछले 24 घंटों में {count} ईवेंट्स",
+    "connections_external": "{count} बाहरी कनेक्शन",
+    "connections_external_other": "{count} बाहरी कनेक्शन",
+    "connections_builtin": "{count} बिल्ट-इन कनेक्टर",
+    "connections_builtin_other": "{count} बिल्ट-इन कनेक्टर्स",
+    "trend_up": "पिछले 24 घंटों की तुलना में {pct}% ऊपर",
+    "trend_down": "पिछले 24 घंटों की तुलना में {pct}% नीचे",
+    "trend_flat": "पिछले 24 घंटों की तुलना में कोई बदलाव नहीं"
+  }
 }

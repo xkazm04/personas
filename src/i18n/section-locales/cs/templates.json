@@ -343,7 +343,9 @@
     "search_suggestions_aria": "Návrhy vyhledávání",
     "clear_search_aria": "Vymazat vyhledávání",
     "search_with_ai_aria": "Hledat pomocí AI",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "Koncepty"
   },
   "list": {
     "template_name": "Název šablony",
@@ -807,7 +809,25 @@
       "lab_desc": "Zapnout automatické zlepšování v Labu (evoluci promptů) pro tuto personu, když se selhání opakují.",
       "escalate_after_label": "Eskalovat po",
       "escalate_after_desc": "Počet po sobě jdoucích selhání před vytvořením incidentu nebo odesláním do Labu."
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "Připojení",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "Vaše výběry se zobrazí zde, jakmile nakonfigurujete jednotlivé dimenze.",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "Schopnosti",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "Zahrnout schopnost",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "Přeskočit schopnost",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "Zapnuto",
+    "policy_off": "Vypnuto",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "Každou hodinu",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count} událost",
+    "events_count_other": "{count} událostí"
   },
   "scan": {
     "scanning_draft": "Skenování návrhu persony...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} otázek, vše výchozí",
     "questionnaire_member_summary_customized": "{count} otázek, {customized} přizpůsobených",
     "questionnaire_member_no_config": "Žádná konfigurace není potřeba",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "Bez zásahu",
+    "graph_legend_feedback": "Odesílá zpět"
   },
   "compare": {
     "compare": "Porovnat",

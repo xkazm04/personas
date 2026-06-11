@@ -105,5 +105,12 @@
   "sparkline_aria": "Sparkline des Ausführungsverlaufs, letzte {days} Tage",
   "sparkline_window": "Letzte {days} T",
   "sparkline_no_data": "Keine Ausführungen im Zeitraum",
-  "sparkline_failure_rate": "{total} Ausführungen · {rate}% fehlgeschlagen"
+  "sparkline_failure_rate": "{total} Ausführungen · {rate}% fehlgeschlagen",
+  "run_status_incomplete": "Unvollständig",
+  "last24h_title": "Letzte 24 Stunden",
+  "last24h_empty": "Keine geplanten Läufe in den letzten 24 Stunden.",
+  "last24h_failed_count": "{count} fehlgeschlagen",
+  "last24h_show_all": "Alle anzeigen ({count})",
+  "last24h_show_less": "Weniger anzeigen",
+  "last24h_retry_at": "Auto-Wiederholung {time}"
 }

@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "서명 ID 사용 불가",
+  "identity_degraded_hint": "기기의 서명 키를 불러올 수 없습니다 — OS 키링이 초기화되었을 수 있습니다. ID를 다시 초기화할 때까지 피어 신뢰 및 동기화가 중단됩니다."
 }

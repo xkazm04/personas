@@ -47,11 +47,11 @@ export interface ProcessActivitySlice {
   activeProcesses: Record<string, ActiveProcess>; // keyed by domain or domain:runId
   /**
    * Derived count of `activeProcesses`. Maintained in sync with the map so the
-   * titlebar `ProcessActivityIndicator` can subscribe to a primitive (number)
-   * instead of running `Object.keys(activeProcesses).length` inside its selector
-   * on every store mutation. With Zustand's default `Object.is` equality, the
-   * indicator now re-renders only when the count actually changes — not on
-   * every telemetry tick that mutates an inner ActiveProcess.
+   * titlebar dock (`TitleBarDock` / `useTitleBarTray`) can subscribe to a
+   * primitive (number) instead of running `Object.keys(activeProcesses).length`
+   * inside its selector on every store mutation. With Zustand's default
+   * `Object.is` equality, the dock re-renders only when the count actually
+   * changes — not on every telemetry tick that mutates an inner ActiveProcess.
    */
   activeProcessCount: number;
   recentProcesses: ActiveProcess[]; // last 10 completed, newest first

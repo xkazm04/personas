@@ -9,11 +9,11 @@ import { PersonaMonitor } from '@/features/shared/components/layout/monitor';
 import { QuickAnswerPopover } from '@/features/shared/components/layout/quick-answer/QuickAnswerPopover';
 
 /**
- * PROTOTYPE SCAFFOLD — shared state for the title-bar quick-action tray
- * variants (see TitleBarVariantDock / TitleBarVariantLedger). Mirrors the
- * store wiring that lives in TitleBar's baseline tray + ProcessActivityIndicator
- * so every variant renders identical data through a different visual model.
- * Deleted (or folded into the winner) at consolidation.
+ * State for the title-bar quick-action dock (`TitleBarDock`): every count the
+ * dock surfaces (today's schedules, pending reviews/questions, fleet
+ * attention, unread notifications), the open-state of each header surface,
+ * and the toggle actions. Kept apart from the dock so the data wiring stays
+ * readable next to the purely visual capsule markup.
  */
 export function useTitleBarTray() {
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
@@ -91,9 +91,9 @@ export function useTitleBarTray() {
 }
 
 /**
- * Mounts the two overlays that normally live inside ProcessActivityIndicator
- * (which the variants do not render). Only mounted by variants — the baseline
- * tray keeps ProcessActivityIndicator and would double-mount otherwise.
+ * Mounts the Persona Monitor + Quick Answer popover for the dock's review and
+ * monitor capsules. AnimatePresence so each overlay plays its exit fade-out
+ * on close (a bare conditional unmounts instantly, skipping it).
  */
 export function TrayOverlays() {
   const headerOverlay = useSystemStore((s) => s.headerOverlay);

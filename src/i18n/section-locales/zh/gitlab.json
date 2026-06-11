@@ -114,5 +114,7 @@
   "trigger_on": "触发：",
   "connecting_to_gitlab": "正在连接到 GitLab...",
   "deploying_to_gitlab": "正在将代理部署到 GitLab...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "请 Athena 分析",
+  "notification_athena_prompt": "请分析我收到的通知及相关问题：\"{title}\" — {body}（状态：{status}）。请调查发生了什么、可能的根本原因，并明确告诉我是否需要我采取行动。"
 }

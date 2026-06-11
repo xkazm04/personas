@@ -105,5 +105,12 @@
   "sparkline_aria": "运行历史迷你图，最近 {days} 天",
   "sparkline_window": "最近 {days} 天",
   "sparkline_no_data": "时间范围内无运行",
-  "sparkline_failure_rate": "{total} 次运行 · {rate}% 失败"
+  "sparkline_failure_rate": "{total} 次运行 · {rate}% 失败",
+  "run_status_incomplete": "未完成",
+  "last24h_title": "过去 24 小时",
+  "last24h_empty": "过去 24 小时内无计划运行。",
+  "last24h_failed_count": "{count} 次失败",
+  "last24h_show_all": "显示全部（{count}）",
+  "last24h_show_less": "收起",
+  "last24h_retry_at": "自动重试于 {time}"
 }

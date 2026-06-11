@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "Sản xuất",
+    "promising": "Triển vọng",
+    "not_ready": "Chưa sẵn sàng",
+    "broken": "Hỏng"
+  },
+  "deployment": {
+    "active": "Đang hoạt động",
+    "paused": "Đã tạm dừng",
+    "failed": "Thất bại",
+    "unknown": "Không xác định"
+  },
+  "delivery": {
+    "delivered": "Đã giao",
+    "failed": "Thất bại",
+    "pending": "Đang chờ",
+    "queued": "Trong hàng đợi"
+  },
+  "rotation": {
+    "anomaly": "Bất thường",
+    "paused": "Đã tạm dừng",
+    "disabled": "Đã tắt",
+    "perm_errors": "Lỗi vĩnh viễn",
+    "degrading": "Đang suy giảm",
+    "backoff": "Đang chờ",
+    "fresh": "Mới",
+    "active": "Đang hoạt động"
   }
 }

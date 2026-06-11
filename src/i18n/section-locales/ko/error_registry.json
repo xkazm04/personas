@@ -74,5 +74,9 @@
   "recovered_title": "We caught that for you",
   "recovered_illustration_aria": "Recovery in progress",
   "n8n_invalid_shape_message": "This file doesn't look like an n8n workflow export.",
-  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps."
+  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps.",
+  "usage_limit_weekly_message": "Claude의 주간 사용 한도에 도달했습니다.",
+  "usage_limit_weekly_suggestion": "주간 한도가 초기화될 때까지 실행이 계속 실패합니다. 스케줄을 일시 중지하거나 플랜을 업그레이드하세요.",
+  "usage_limit_window_message": "Claude의 사용 기간이 소진되었습니다.",
+  "usage_limit_window_suggestion": "기간이 초기화되면 실행이 자동으로 재시도됩니다. 별도 조치가 필요 없습니다."
 }

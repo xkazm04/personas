@@ -400,7 +400,15 @@
     "nextStep": "Siguiente paso",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Completa tu gemelo",
-    "rosterFoundations": "{twins} gemelos · {identities} con identidad · {brains} con base de conocimiento"
+    "rosterFoundations": "{twins} gemelos · {identities} con identidad · {brains} con base de conocimiento",
+    "ready": "Listo",
+    "satellites": "Satélites",
+    "rosterSpread": "Distribución del equipo",
+    "twinsConfigured": "Gemelos configurados",
+    "avgReadiness": "Preparación media",
+    "activeChannels": "Canales activos",
+    "memoriesApproved": "Memorias aprobadas",
+    "channelsInUse": "Canales en uso"
   },
   "variantTabs": {
     "prototype": "Prototype",

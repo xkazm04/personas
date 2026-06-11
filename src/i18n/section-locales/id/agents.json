@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} md",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "Versi & Penilaian",
+    "vr_subtitle": "Setiap versi prompt × model yang telah Anda ukur. Satu baris aktif.",
+    "vr_col_version": "Versi",
+    "vr_col_model": "Model",
+    "vr_col_rating": "Penilaian",
+    "vr_col_delta": "Baseline",
+    "vr_col_cost": "Biaya",
+    "vr_col_status": "Status",
+    "vr_col_actions": "Tindakan",
+    "vr_status_active": "Aktif",
+    "vr_status_baseline": "Baseline",
+    "vr_status_archived": "Diarsipkan",
+    "vr_status_measured": "Terukur",
+    "vr_status_unmeasured": "Belum diukur",
+    "vr_action_activate": "Aktifkan versi + model ini",
+    "vr_action_active": "Sedang live",
+    "vr_action_measure": "Ukur di berbagai model (Arena)",
+    "vr_action_measuring": "Mengukur…",
+    "vr_action_improve": "Tingkatkan dengan Athena",
+    "vr_action_diff": "Bandingkan prompt dengan yang aktif",
+    "vr_action_archive": "Arsipkan versi",
+    "vr_action_unarchive": "Batalkan arsip versi",
+    "vr_action_pin_baseline": "Sematkan sebagai baseline regresi",
+    "vr_action_unpin_baseline": "Lepas sematkan baseline",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} sampel",
+    "vr_samples_other": "{count} sampel",
+    "vr_empty_title": "Belum ada versi",
+    "vr_empty_desc": "Edit dan simpan prompt persona untuk membuat versi pertama, lalu ukur di sini.",
+    "vr_measuring_toast": "Mengukur v{version} di semua model…",
+    "vr_measure_modal_title": "Ukur v{version}",
+    "vr_measure_scope_banner": "Mengukur versi {version} — promptnya dijalankan terhadap model yang Anda pilih. Skor akan muncul kembali di tabel penilaian.",
+    "vr_diff_title": "v{version} vs aktif",
+    "vr_diff_no_active": "Tidak ada versi aktif untuk dibandingkan.",
+    "vr_improve_seed_measured": "Tingkatkan persona \"{name}\" v{version}. Metrik terukur paling lemah: {metric} {score}/100 pada {model}. Apa yang harus saya fokuskan? ",
+    "vr_improve_seed_plain": "Tingkatkan persona \"{name}\" v{version} — belum diukur. Apa yang harus saya fokuskan? ",
+    "vr_metric_tool": "akurasi alat",
+    "vr_metric_quality": "kualitas keluaran",
+    "vr_metric_protocol": "kepatuhan protokol"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",
@@ -903,7 +944,9 @@
     "next": "Berikutnya",
     "go_back_hint": "Kembali dan jawab pertanyaan untuk mengonfigurasi agen Anda.",
     "additional_instructions": "Instruksi atau konteks tambahan (opsional)",
-    "additional_instructions_placeholder": "Tambahkan persyaratan spesifik, pengetahuan domain, atau batasan..."
+    "additional_instructions_placeholder": "Tambahkan persyaratan spesifik, pengetahuan domain, atau batasan...",
+    "role_user": "Pengguna",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "Konektor",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "Ini akan menjalankan {title} untuk {persona}"
+    "schedule_will_run": "Ini akan menjalankan {title} untuk {persona}",
+    "_comment_manual_run_in_progress": "Tooltip tombol jalankan-sekarang saat eksekusi manual sedang berjalan",
+    "manual_run_in_progress": "Eksekusi manual sedang berjalan",
+    "_comment_run_now_tooltip": "Tooltip tombol jalankan-sekarang — membedakan eksekusi nyata dari Uji",
+    "run_now_tooltip": "Jalankan kasus penggunaan ini sekarang — memicu eksekusi nyata dan event berikutnya",
+    "_comment_run_now": "Label tombol jalankan-sekarang (panel detail + tab bar kapabilitas)",
+    "run_now": "Jalankan sekarang",
+    "_comment_event_type_options": "Label opsi dropdown jenis event pada UseCaseSubscriptionForm",
+    "event_type_webhook_received": "Webhook Diterima",
+    "event_type_execution_completed": "Eksekusi Selesai",
+    "event_type_execution_failed": "Eksekusi Gagal",
+    "event_type_persona_action": "Aksi Persona",
+    "event_type_file_changed": "File Berubah",
+    "event_type_schedule_triggered": "Jadwal Dipicu",
+    "_comment_dim_review_title": "Judul ReviewDimCard",
+    "dim_review_title": "Ulasan",
+    "_comment_pill_on": "Pil status ON pada ToggleDimCard (memori/event)",
+    "pill_on": "AKTIF",
+    "_comment_pill_off": "Pil status OFF, digunakan bersama oleh ToggleDimCard dan ReviewDimCard off",
+    "pill_off": "NONAKTIF",
+    "_comment_review_pill_queue": "Pil status QUEUE pada ReviewDimCard",
+    "review_pill_queue": "ANTRE",
+    "_comment_review_pill_trust": "Pil status TRUST pada ReviewDimCard",
+    "review_pill_trust": "PERCAYA",
+    "_comment_dim_status_activated": "Nilai PersonaSigilSummary yang ditampilkan saat dim boolean (memori/ulasan/event/error) aktif untuk kapabilitas",
+    "dim_status_activated": "Diaktifkan"
   },
   "tools": {
     "no_persona": "Tidak ada persona dipilih",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "Putusan",
+    "verdict_none": "Belum ditinjau oleh Director",
+    "verdict_tooltip": "Putusan Director: {score}/5"
   },
   "chat": {
     "select_persona": "Pilih persona untuk mulai mengobrol",
@@ -2293,7 +2364,8 @@
     "delete_agents": "Hapus {count} Agen",
     "delete_agents_message": "{count} agen dan semua konfigurasinya akan dihapus secara permanen.",
     "delete_drafts": "Hapus {count} Draf",
-    "delete_drafts_message": "{count} agen draf akan dihapus secara permanen."
+    "delete_drafts_message": "{count} agen draf akan dihapus secara permanen.",
+    "system_persona_undeletable": "Director adalah persona sistem dan tidak dapat dihapus."
   },
   "persona_list": {
     "all_personas": "Semua Persona",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "Belum ada grup — buat di Agen → Grup",
     "batch_move_to_ungrouped": "Tanpa grup",
     "batch_moved_success": "Memindahkan {count} persona ke {group}",
-    "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal"
+    "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal",
+    "render_cap_notice": "Menampilkan {shown} dari {total} — persempit dengan pencarian atau filter untuk melihat sisanya.",
+    "star_director_add": "Beri bintang untuk menambahkan ke cakupan pembinaan Director",
+    "star_director_remove": "Diberi bintang — ada dalam cakupan pembinaan Director. Klik untuk menghapus."
   },
   "design_preview": {
     "preview": "Pratinjau",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Pantau pesan masuk Slack",
+    "slack_poll_inbound_help": "Jika dicentang, persona membaca pesan baru di saluran ini setiap 5 detik dan membalas dalam thread dengan hasil eksekusinya. Undang bot ke saluran terlebih dahulu."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "Aktif untuk kapabilitas ini",
   "sigil_edit_inactive": "Nonaktif — aktifkan untuk mengaktifkan",
   "sigil_edit_enable": "Aktifkan untuk kapabilitas ini",
-  "sigil_edit_disable": "Nonaktifkan untuk kapabilitas ini"
+  "sigil_edit_disable": "Nonaktifkan untuk kapabilitas ini",
+  "design_subtabs": {
+    "use_cases": "Kasus Penggunaan",
+    "prompt": "Prompt",
+    "connectors": "Konektor & Alat",
+    "triggers": "Acara & Pemicu",
+    "messaging": "Pesan",
+    "automations": "Otomasi",
+    "triggers_desc": "Langganan acara per-persona dan konfigurasi pemicu akan tersedia di tab ini.",
+    "messaging_desc": "Saluran notifikasi dan perutean kotak masuk untuk agen ini akan ada di sini.",
+    "automations_desc": "Aturan otomasi mandiri untuk agen ini akan ada di sini."
+  },
+  "parameters_card": {
+    "title": "Parameter",
+    "saved": "Tersimpan",
+    "apply": "Terapkan",
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "reset": "atur ulang"
+  },
+  "editor_empty": {
+    "title": "Tidak ada persona dipilih",
+    "subtitle": "Pilih agen dari bilah sisi untuk mulai mengedit, atau buat yang baru.",
+    "create": "Buat persona",
+    "resume_label": "Lanjutkan"
+  },
+  "build_template_match_label": "Jalur lebih cepat",
+  "build_template_match_title": "\"{name}\" tampaknya cocok",
+  "build_template_match_body": "Template siap pakai ini mencakup apa yang Anda deskripsikan — adopsi untuk melewati pertanyaan ini. Sudah dikonfigurasi dan diuji.",
+  "build_template_match_adopt": "Gunakan template ini",
+  "build_template_match_dismiss": "Lanjutkan membangun",
+  "build_template_match_loading": "Memeriksa template yang cocok…",
+  "build_template_match_more": "Atau mulai dari",
+  "_comment_glyph_db_scope": "Panel pembatasan tabel konektor database di pemilih konektor",
+  "glyph_db_scope_heading": "Tabel database",
+  "glyph_db_scope_all": "Semua tabel",
+  "glyph_db_scope_loading": "Memuat tabel…",
+  "glyph_db_scope_error": "Gagal memuat tabel — coba lagi",
+  "glyph_db_scope_empty": "Tidak ada tabel ditemukan",
+  "glyph_db_scope_selected": "{count} dari {total} tabel"
 }

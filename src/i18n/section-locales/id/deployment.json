@@ -219,7 +219,9 @@
     "stage_generating": "Membuat",
     "stage_completed": "Selesai",
     "stage_failed": "Gagal",
-    "tool_calls": "{count} pemanggilan alat"
+    "tool_calls": "{count} pemanggilan alat",
+    "connect_cloud_cta": "Hubungkan target cloud",
+    "connect_gitlab_cta": "Hubungkan GitLab"
   },
   "cloud_trigger_schedule": "Terjadwal (Cron)",
   "cloud_trigger_polling": "Polling",

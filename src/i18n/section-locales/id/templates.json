@@ -343,7 +343,9 @@
     "search_suggestions_aria": "Saran pencarian",
     "clear_search_aria": "Bersihkan pencarian",
     "search_with_ai_aria": "Cari dengan AI",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "Draf"
   },
   "list": {
     "template_name": "Nama Templat",
@@ -807,7 +809,25 @@
       "lab_desc": "Aktifkan peningkatan otomatis Lab (evolusi prompt) untuk persona ini saat kegagalan berulang.",
       "escalate_after_label": "Eskalasi setelah",
       "escalate_after_desc": "Kegagalan berturut-turut sebelum membuat insiden atau mengirim ke Lab."
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "Koneksi",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "Pilihan Anda akan muncul di sini saat Anda mengonfigurasi setiap dimensi.",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "Kemampuan",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "Sertakan kemampuan",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "Lewati kemampuan",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "Aktif",
+    "policy_off": "Nonaktif",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "Per jam",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count} acara",
+    "events_count_other": "{count} acara"
   },
   "scan": {
     "scanning_draft": "Memindai draf persona...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} pertanyaan, semua default",
     "questionnaire_member_summary_customized": "{count} pertanyaan, {customized} disesuaikan",
     "questionnaire_member_no_config": "Tidak perlu konfigurasi",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "Serahkan",
+    "graph_legend_feedback": "Kirim balik"
   },
   "compare": {
     "compare": "Bandingkan",

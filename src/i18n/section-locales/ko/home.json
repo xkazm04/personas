@@ -93,6 +93,10 @@
     "plugins": {
       "label": "플러그인",
       "description": "서드파티 플러그인 및 커스텀 확장으로 에이전트 기능 확장"
+    },
+    "teams": {
+      "label": "팀",
+      "description": "여러 에이전트를 팀으로 결합하여 다단계 워크플로를 함께 처리합니다"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "재시작",
     "start_tour": "투어 시작",
     "steps_count": "{count}단계",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "파워 무브",
+    "moves_used": "{used}/{total} 사용됨",
+    "try_it": "시도해보기",
+    "used_badge": "사용됨",
+    "group_save_time": "시간 절약",
+    "group_prevent_failures": "장애 예방",
+    "group_level_up": "에이전트 레벨 업",
+    "group_orchestrate": "오케스트레이션",
+    "pm_monitor_triage_title": "타이틀바에서 전체 플리트 트리아지",
+    "pm_schedule_delay_title": "예약된 실행 건너뛰기 또는 지연",
+    "pm_bulk_rerun_title": "실패한 실행 일괄 재실행",
+    "pm_dead_letter_title": "데드 레터 큐에서 이벤트 복구",
+    "pm_annotate_golden_title": "골든 실행에 별표, 회귀에 태그",
+    "pm_credential_health_title": "AI로 실패한 자격 증명 자동 복구",
+    "pm_lab_measure_title": "여러 모델에서 프롬프트 측정",
+    "pm_prompt_rollback_title": "클릭 한 번으로 잘못된 프롬프트 롤백",
+    "pm_director_coaching_title": "Director에서 포트폴리오 코칭 받기",
+    "pm_event_chain_title": "이벤트 리스너로 에이전트 체이닝",
+    "pm_live_stream_title": "실시간으로 체인 연쇄 확인",
+    "pm_athena_fleet_title": "Athena에게 플리트 분석 요청"
   },
   "setup_stepper": {
     "your_profile": "프로필",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
     "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "{personaName}에서 읽지 않은 실패 — 조사 필요",
+    "tour": "{tourTitle} 재개 ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "{personaName} 계속 편집하기"
+  },
+  "nav_status": {
+    "incidents": "{count}개 진행 중인 인시던트",
+    "incidents_other": "{count}개 진행 중인 인시던트",
+    "messages": "{count}개 읽지 않은 메시지",
+    "messages_other": "{count}개 읽지 않은 메시지",
+    "reviews": "{count}개 대기 중인 검토",
+    "reviews_other": "{count}개 대기 중인 검토",
+    "teams": "{count}개 팀",
+    "teams_other": "{count}개 팀",
+    "agents_active": "최근 24시간 동안 활성 에이전트 {count}개",
+    "agents_active_other": "최근 24시간 동안 활성 에이전트 {count}개",
+    "events_today": "최근 24시간 동안 이벤트 {count}개",
+    "events_today_other": "최근 24시간 동안 이벤트 {count}개",
+    "connections_external": "{count}개 외부 연결",
+    "connections_external_other": "{count}개 외부 연결",
+    "connections_builtin": "{count}개 내장 커넥터",
+    "connections_builtin_other": "{count}개 내장 커넥터",
+    "trend_up": "이전 24시간 대비 {pct}% 증가",
+    "trend_down": "이전 24시간 대비 {pct}% 감소",
+    "trend_flat": "이전 24시간 대비 변화 없음"
+  }
 }

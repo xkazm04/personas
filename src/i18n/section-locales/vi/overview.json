@@ -133,7 +133,25 @@
     "view_all_from_agent": "Xem tất cả từ tác nhân này",
     "distribution_aria": "Sự cố đang mở theo mức độ",
     "new_since_last_visit": "{count} mới kể từ lần truy cập cuối",
-    "mark_seen": "Đánh dấu đã xem"
+    "mark_seen": "Đánh dấu đã xem",
+    "action_start_work": "Bắt đầu xử lý",
+    "action_back_to_open": "Quay lại đang mở",
+    "filter_status_in_progress": "Đang xử lý",
+    "detail_title": "Chi tiết sự cố",
+    "detail_label_status": "Trạng thái",
+    "detail_label_kind": "Loại",
+    "detail_label_source": "Nguồn",
+    "detail_label_persona": "Agent",
+    "detail_label_detail": "Chi tiết",
+    "detail_label_resolution_note": "Ghi chú giải quyết",
+    "detail_label_created": "Ngày tạo",
+    "detail_label_acknowledged": "Đã xác nhận",
+    "detail_label_resolved": "Đã giải quyết",
+    "detail_no_detail": "Không có thêm chi tiết.",
+    "detail_note_label": "Ghi chú giải quyết (tùy chọn)",
+    "detail_no_persona": "Không có agent",
+    "empty_open_title": "Không có sự cố nào",
+    "empty_filtered_title": "Không có sự cố phù hợp"
   },
   "observability": {
     "title": "Khả năng quan sát",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Xóa tất cả",
+    "delete_all_confirm_title": "Xóa tất cả bộ nhớ?",
+    "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} bộ nhớ. Không thể hoàn tác.",
+    "delete_all_confirm_cta": "Xóa tất cả"
   },
   "memory_review": {
     "all_conflicts_resolved": "Tất cả xung đột đã được giải quyết",
@@ -473,7 +495,18 @@
     "select_action_first": "Chọn thao tác đề xuất trước",
     "review_detail": "Chi tiết đánh giá",
     "select_review": "Chọn đánh giá để xem",
-    "technical_context": "Ngữ cảnh kỹ thuật"
+    "technical_context": "Ngữ cảnh kỹ thuật",
+    "split": "Chia đôi",
+    "split_tooltip": "Chế độ chia đôi — danh sách kèm ngăn chi tiết",
+    "table": "Bảng",
+    "table_tooltip": "Chế độ bảng — tất cả đánh giá trong lưới",
+    "backlog_group_title": "Tồn đọng Dev Tools",
+    "backlog_accept": "Chấp nhận",
+    "backlog_reject": "Từ chối",
+    "delete_all": "Xóa tất cả",
+    "delete_all_confirm_title": "Xóa tất cả đánh giá?",
+    "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} đánh giá. Không thể hoàn tác.",
+    "delete_all_confirm_cta": "Xóa tất cả"
   },
   "messages_view": {
     "title": "Tin nhắn",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Xóa tất cả",
+    "delete_all_confirm_title": "Xóa tất cả tin nhắn?",
+    "delete_all_confirm_body": "Thao tác này sẽ xóa vĩnh viễn tất cả {count} tin nhắn. Không thể hoàn tác.",
+    "delete_all_confirm_cta": "Xóa tất cả"
   },
   "events": {
     "title": "Sự kiện",
@@ -809,7 +846,13 @@
     "create_persona": "Tạo Persona",
     "from_templates": "Từ mẫu",
     "execution_label": "Thực thi",
-    "unknown": "Không rõ"
+    "unknown": "Không rõ",
+    "value_section_title": "Giá trị kinh doanh",
+    "value_delivered_rate": "Tỷ lệ giá trị đạt được",
+    "cost_per_value": "Chi phí / lượt chạy có giá trị",
+    "value_delivered_count": "Giá trị đạt được",
+    "all_models": "Tất cả mô hình",
+    "col_model": "Mô hình"
   },
   "analytics_dashboard": {
     "title": "Phân tích",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "đến hạn ngay",
+    "rotation_countdown_days_hours": "{days}n {hours}g",
+    "rotation_countdown_hours": "{hours}g"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Tìm kiếm bộ nhớ...",
     "all_agents": "Tất cả tác nhân",
-    "all_categories": "Tất cả danh mục"
+    "all_categories": "Tất cả danh mục",
+    "tier_all": "Bộ đang hoạt động",
+    "tier_core": "Cốt lõi",
+    "tier_active": "Đang hoạt động",
+    "tier_working": "Đang làm việc",
+    "tier_archived": "Đã lưu trữ"
   },
   "memory_actions": {
     "dismiss_suggestion": "Bỏ qua gợi ý",
@@ -1246,7 +1297,8 @@
     "reject_all": "Từ chối tất cả",
     "accept_all": "Chấp nhận tất cả",
     "retry_with_changes": "Thử lại với thay đổi",
-    "video_not_supported": "Trình duyệt của bạn không hỗ trợ phát video."
+    "video_not_supported": "Trình duyệt của bạn không hỗ trợ phát video.",
+    "carry_out_hint": "Phê duyệt đánh giá và chạy persona để thực hiện việc này"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} bài duyệt chờ xử lý đã chọn",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Xác nhận",
-    "cancel": "Hủy"
+    "cancel": "Hủy",
+    "restore": "Khôi phục về bộ đang hoạt động"
   },
   "memory_detail": {
     "title_label": "Tiêu đề",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my persona — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my persona — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena đã soạn giải thích này cho bạn — thoát để quay về cockpit của bạn.",
+    "context_explaining": "Athena đang giải thích: {title}",
+    "widget_empty": "Chưa có gì để hiển thị.",
+    "verdict_title": "Phán quyết của Athena",
+    "verdict_confidence": "Độ tin cậy",
+    "verdict_confidence_high": "Cao",
+    "verdict_confidence_medium": "Trung bình",
+    "verdict_confidence_low": "Thấp",
+    "verdict_resolve": "Giải quyết ngay",
+    "comparison_recommended": "Đề xuất",
+    "flow_title": "Diễn tiến",
+    "timeline_title": "Dòng thời gian",
+    "log_title": "Bằng chứng"
+  },
+  "certification": {
+    "title": "Trung tâm điều hành chứng nhận",
+    "subtitle": "Các lượt đánh giá quyền tự chủ nhóm và trạng thái chứng nhận (chỉ dành cho dev)",
+    "updated": "Đã cập nhật",
+    "refresh": "Làm mới",
+    "error_title": "Không thể tải các lượt đánh giá",
+    "loading": "Đang tải các lượt đánh giá…",
+    "loading_detail": "Đang tải chi tiết lượt chạy…",
+    "tab_overview": "Tổng quan",
+    "tab_history": "Lịch sử chạy",
+    "back": "Quay lại",
+    "empty_title": "Không có lượt đánh giá nào",
+    "empty_desc": "Chạy bộ kiểm tra eval (scripts/test/) để điền dữ liệu vào docs/test/runs/.",
+    "teams_certified": "nhóm được chứng nhận",
+    "certified": "Đã chứng nhận",
+    "streak_label": "chuỗi liên tiếp",
+    "held_out_runs": "lượt chạy giữ lại",
+    "provisional": "Phán quyết tạm thời (giám khảo chưa chấm điểm)",
+    "final": "Phán quyết cuối cùng",
+    "team_score": "Điểm nhóm",
+    "cost": "Chi phí",
+    "dims_title": "Các chiều xác định",
+    "dim_cascade": "Hoàn thành cascade",
+    "dim_density": "Mật độ công việc",
+    "dim_handoff": "Tình trạng bàn giao",
+    "dim_learning": "Vòng học tập",
+    "dim_grounding": "Căn cứ thực tế",
+    "dim_correctness": "Độ chính xác",
+    "dim_actionability": "Tính khả thi",
+    "dim_specificity": "Tính cụ thể",
+    "dim_role_fidelity": "Trung thành vai trò",
+    "gates_title": "Cổng build / lint / test",
+    "gate_build": "Build",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "đạt",
+    "gate_fail": "thất bại",
+    "gate_log": "nhật ký",
+    "gate_copy_log": "Sao chép nhật ký",
+    "gate_code_track": "Lượt chạy theo dõi mã",
+    "delivered": "Đã giao lên master",
+    "cascade_stalled": "Cascade bị đình trệ",
+    "self_vetoed": "Tự phủ quyết",
+    "self_veto_capped": "Nhóm tự giới hạn phán quyết ở mức",
+    "grounding_title": "Căn cứ trích dẫn",
+    "grounding_file": "Tệp",
+    "grounding_valid": "Hợp lệ",
+    "grounding_pct": "%",
+    "grounding_invalid": "Không hợp lệ",
+    "grounding_na": "Không có trích dẫn để kiểm tra",
+    "standards_title": "Tuân thủ tiêu chuẩn & phân nhánh",
+    "standards_subtitle": "Mức độ tuân thủ chính sách pre-commit và phân nhánh đã khai báo của dự án",
+    "standards_compliance": "Tuân thủ",
+    "standards_rule": "Quy tắc",
+    "standards_basis": "Cơ sở",
+    "standards_na": "k/a",
+    "trajectory_title": "Quỹ đạo điểm số",
+    "judge_title": "Hội đồng giám khảo",
+    "judge_mean": "Trung bình",
+    "judge_min": "Đầu ra tối thiểu",
+    "judge_balance": "Cân bằng",
+    "fact_executions": "Đã hoàn thành",
+    "fact_failed": "Thất bại",
+    "fact_members": "Thành viên",
+    "fact_reviews": "Đánh giá",
+    "fact_memories": "Bộ nhớ",
+    "fact_cost": "Chi phí",
+    "fact_window": "Cửa sổ",
+    "col_team": "Nhóm",
+    "col_seed": "Seed",
+    "col_verdict": "Phán quyết",
+    "col_score": "Điểm",
+    "col_gates": "Cổng",
+    "col_started": "Bắt đầu"
+  },
+  "fleet_optimization": {
+    "title": "Tối ưu hóa đội",
+    "open_lab": "Mở Lab",
+    "open_lab_hint": "Kiểm tra các mô hình thay thế cho {persona} trong Lab",
+    "ask_athena": "Hỏi Athena",
+    "ask_athena_hint": "Chuyển tiếp đề xuất này cho Athena để điều tra",
+    "ask_athena_prompt": "Tôi đang xem xét một đề xuất tối ưu hóa đội cho các agent của mình: \"{title}\". {description} Hành động được đề xuất: {action}. {focus}",
+    "ask_athena_focus_persona": "Vui lòng xem xét agent \"{persona}\" và nếu cần thiết, hãy mở Lab của nó để kiểm tra các mô hình thay thế, sau đó báo cáo lại kết quả bạn tìm được.",
+    "ask_athena_focus_general": "Vui lòng xem xét vấn đề này và đề xuất những thay đổi cần thực hiện."
   }
 }

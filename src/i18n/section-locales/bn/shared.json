@@ -229,7 +229,9 @@
     "teams_label": "টিম",
     "groups_label": "গ্রুপ",
     "cloud_label": "ক্লাউড",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "কোনো দল নেই",
+    "whats_new_update": "আপডেট হয়েছে — নতুন কী দেখুন"
   },
   "execution_detail": {
     "copy": "Copy",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "আজ",
+  "group_yesterday": "গতকাল",
+  "group_this_week": "এই সপ্তাহ",
+  "group_this_month": "এই মাস",
+  "group_older": "পুরনো",
+  "code_expand_block": "কোড ব্লক প্রসারিত করুন",
+  "code_collapse_block": "কোড ব্লক সংকুচিত করুন",
+  "code_show_lines": "সব {count}টি লাইন দেখুন"
 }

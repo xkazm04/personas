@@ -400,7 +400,15 @@
     "nextStep": "Další krok",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Dokončete své dvojče",
-    "rosterFoundations": "{twins} dvojčat · {identities} s identitou · {brains} se znalostní bází"
+    "rosterFoundations": "{twins} dvojčat · {identities} s identitou · {brains} se znalostní bází",
+    "ready": "Připraveno",
+    "satellites": "Satelity",
+    "rosterSpread": "Rozložení týmu",
+    "twinsConfigured": "Nakonfigurované twins",
+    "avgReadiness": "Průměrná připravenost",
+    "activeChannels": "Aktivní kanály",
+    "memoriesApproved": "Schválené vzpomínky",
+    "channelsInUse": "Používané kanály"
   },
   "variantTabs": {
     "prototype": "Prototype",

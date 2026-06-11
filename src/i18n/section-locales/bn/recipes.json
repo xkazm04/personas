@@ -116,5 +116,10 @@
     "applied_toast": "Applied recipe: {name}",
     "run_now": "Run now",
     "run_now_toast": "Opening {name} in the recipe playground"
-  }
+  },
+  "discard": "বাতিল করুন",
+  "yes": "হ্যাঁ",
+  "no": "না",
+  "delete_confirm_question": "{name} মুছে দেবেন?",
+  "tag_input_placeholder": "ট্যাগ লিখুন এবং Enter চাপুন..."
 }

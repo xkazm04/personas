@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "تحديث",
+    "tool_count_one": "أداة واحدة ({count})",
+    "tool_count_other": "{count} أدوات",
+    "tab_documents": "المستندات",
+    "tab_search": "بحث",
+    "tab_settings": "الإعدادات"
   },
   "manager": {
     "title": "بيانات الاعتماد",
@@ -845,7 +851,10 @@
     "enabling": "جارٍ التفعيل...",
     "enable_rotation": "تفعيل التدوير",
     "enable_failed": "فشل تفعيل التدوير: {error}",
-    "last_rotated": "آخر تدوير {time}"
+    "last_rotated": "آخر تدوير {time}",
+    "ring_aria_label": "الدوران خلال {countdown}",
+    "history_empty_title": "لا يوجد سجل دوران بعد",
+    "history_empty_subtitle": "ستظهر أحداث الدوران هنا بمجرد تدوير هذه البيانات."
   },
   "event_config": {
     "event_triggers": "مشغّلات الأحداث",
@@ -950,11 +959,24 @@
     "catalog_description": "اختر خدمة معروفة كـ Slack أو GitHub أو OpenAI. حقول وفحوصات صحية مُعدّة مسبقاً.",
     "ai_heading": "بيانات اعتماد مصمَّمة بالذكاء الاصطناعي",
     "ai_description": "صف أي خدمة والذكاء الاصطناعي سيُعدّ الحقول ونوع المصادقة والفحص الصحي.",
-    "works_with_any": "يعمل مع أي API"
+    "works_with_any": "يعمل مع أي API",
+    "recommended": "موصى به"
   },
   "credential_list": {
     "no_match": "لا توجد بيانات اعتماد مطابقة",
-    "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث"
+    "no_match_hint": "جرب تعديل الفلاتر أو مصطلح البحث",
+    "col_name": "الاسم",
+    "col_status": "الحالة",
+    "col_type": "النوع",
+    "col_category": "الفئة",
+    "col_health": "الصحة",
+    "col_last_used": "آخر استخدام",
+    "col_created": "تاريخ الإنشاء",
+    "filter_all": "الكل",
+    "filter_all_health": "جميع الحالات الصحية",
+    "health_healthy": "سليم",
+    "health_failing": "فاشل",
+    "health_untested": "غير مُختبر"
   },
   "wizard_detect": {
     "no_services": "لا توجد خدمات مطابقة لـ\"{search}\"",

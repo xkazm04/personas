@@ -219,7 +219,9 @@
     "stage_generating": "生成中",
     "stage_completed": "完了",
     "stage_failed": "失敗",
-    "tool_calls": "{count}回のツール呼び出し"
+    "tool_calls": "{count}回のツール呼び出し",
+    "connect_cloud_cta": "クラウドターゲットを接続",
+    "connect_gitlab_cta": "GitLabを接続"
   },
   "cloud_trigger_schedule": "スケジュール（cron）",
   "cloud_trigger_polling": "ポーリング",

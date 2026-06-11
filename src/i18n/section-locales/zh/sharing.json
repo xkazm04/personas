@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "签名身份不可用",
+  "identity_degraded_hint": "您设备的签名密钥无法加载 — 操作系统密钥链可能已被重置。对等信任和同步已中断，请重新初始化您的身份。"
 }

@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "Produktion",
+    "promising": "Vielversprechend",
+    "not_ready": "Nicht bereit",
+    "broken": "Defekt"
+  },
+  "deployment": {
+    "active": "Aktiv",
+    "paused": "Pausiert",
+    "failed": "Fehlgeschlagen",
+    "unknown": "Unbekannt"
+  },
+  "delivery": {
+    "delivered": "Zugestellt",
+    "failed": "Fehlgeschlagen",
+    "pending": "Ausstehend",
+    "queued": "In Warteschlange"
+  },
+  "rotation": {
+    "anomaly": "Anomalie",
+    "paused": "Pausiert",
+    "disabled": "Deaktiviert",
+    "perm_errors": "Dauerhafte Fehler",
+    "degrading": "Verschlechternd",
+    "backoff": "Backoff",
+    "fresh": "Frisch",
+    "active": "Aktiv"
   }
 }

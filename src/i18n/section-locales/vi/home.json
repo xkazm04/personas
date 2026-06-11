@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Plugin",
       "description": "Mở rộng tác nhân với plugin bên thứ ba và tiện ích tùy chỉnh"
+    },
+    "teams": {
+      "label": "Nhóm",
+      "description": "Kết hợp nhiều agent thành một nhóm cùng phối hợp trên quy trình làm việc nhiều bước"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Bắt đầu lại",
     "start_tour": "Bắt đầu tham quan",
     "steps_count": "{count} bước",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Thao Tác Nâng Cao",
+    "moves_used": "{used}/{total} đã dùng",
+    "try_it": "Thử ngay",
+    "used_badge": "Đã dùng",
+    "group_save_time": "Tiết kiệm thời gian",
+    "group_prevent_failures": "Ngăn ngừa lỗi",
+    "group_level_up": "Nâng cấp agent",
+    "group_orchestrate": "Điều phối",
+    "pm_monitor_triage_title": "Phân loại toàn bộ fleet từ thanh tiêu đề",
+    "pm_schedule_delay_title": "Bỏ qua hoặc trì hoãn lịch chạy",
+    "pm_bulk_rerun_title": "Chạy lại hàng loạt lần thực thi thất bại",
+    "pm_dead_letter_title": "Khôi phục sự kiện từ hàng đợi dead-letter",
+    "pm_annotate_golden_title": "Đánh dấu lần chạy tốt, gắn thẻ lỗi hồi quy",
+    "pm_credential_health_title": "Để AI tự phục hồi thông tin xác thực lỗi",
+    "pm_lab_measure_title": "Đo hiệu suất prompt trên nhiều mô hình",
+    "pm_prompt_rollback_title": "Khôi phục prompt lỗi chỉ một cú nhấp",
+    "pm_director_coaching_title": "Nhận tư vấn danh mục từ Director",
+    "pm_event_chain_title": "Kết nối agent bằng trình lắng nghe sự kiện",
+    "pm_live_stream_title": "Xem chuỗi cascade theo thời gian thực",
+    "pm_athena_fleet_title": "Nhờ Athena phân tích fleet của bạn"
   },
   "setup_stepper": {
     "your_profile": "Hồ sơ của bạn",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
     "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Lỗi chưa đọc trong {personaName} — hãy điều tra",
+    "tour": "Tiếp tục {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Tiếp tục chỉnh sửa {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} sự cố đang mở",
+    "incidents_other": "{count} sự cố đang mở",
+    "messages": "{count} tin nhắn chưa đọc",
+    "messages_other": "{count} tin nhắn chưa đọc",
+    "reviews": "{count} yêu cầu xét duyệt",
+    "reviews_other": "{count} yêu cầu xét duyệt",
+    "teams": "{count} nhóm",
+    "teams_other": "{count} nhóm",
+    "agents_active": "{count} agent hoạt động trong 24h qua",
+    "agents_active_other": "{count} agent hoạt động trong 24h qua",
+    "events_today": "{count} sự kiện trong 24h qua",
+    "events_today_other": "{count} sự kiện trong 24h qua",
+    "connections_external": "{count} kết nối bên ngoài",
+    "connections_external_other": "{count} kết nối bên ngoài",
+    "connections_builtin": "{count} connector tích hợp sẵn",
+    "connections_builtin_other": "{count} connector tích hợp sẵn",
+    "trend_up": "tăng {pct}% so với 24h trước",
+    "trend_down": "giảm {pct}% so với 24h trước",
+    "trend_flat": "không đổi so với 24h trước"
+  }
 }

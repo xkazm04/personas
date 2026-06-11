@@ -219,7 +219,9 @@
     "stage_generating": "Generování",
     "stage_completed": "Dokončeno",
     "stage_failed": "Selhalo",
-    "tool_calls": "{count} volání nástrojů"
+    "tool_calls": "{count} volání nástrojů",
+    "connect_cloud_cta": "Připojit cloudový cíl",
+    "connect_gitlab_cta": "Připojit GitLab"
   },
   "cloud_trigger_schedule": "Plánované (Cron)",
   "cloud_trigger_polling": "Pollování",

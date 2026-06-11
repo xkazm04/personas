@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Požadavek na vzdálené spuštění",
+  "body": "Váš dashboard požádal o spuštění {persona} na tomto zařízení.",
+  "safety_note": "Spustí se lokálně na tomto zařízení s jeho vlastními přihlašovacími údaji. Nic se nespustí, dokud neschválíte.",
+  "approve": "Schválit a spustit",
+  "approving": "Spouštění…",
+  "reject": "Zamítnout",
+  "queue_count": "{index} z {total} čekajících",
+  "prompt_label": "Výzva",
+  "no_prompt": "Žádná výzva nebyla zadána.",
+  "from_dashboard": "Vyžádáno z webového panelu",
+  "later": "Rozhodnout později"
+}

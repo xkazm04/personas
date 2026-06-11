@@ -44,6 +44,27 @@
     "section_workspace": "Arbeitsbereich",
     "toggle_sidebar": "Seitenleiste ein-/ausklappen",
     "toggle_monitor": "Persona Monitor öffnen / schließen",
-    "toggle_athena": "Athena-Chat öffnen / schließen"
+    "toggle_athena": "Athena-Chat öffnen / schließen",
+    "nav_mode": "Tastaturnavigationsmodus umschalten",
+    "nav_mode_back": "Eine Seite zurück (im Navigationsmodus)"
+  },
+  "tray_schedules": "Zeitpläne",
+  "tray_schedules_today": "{count} heute geplant",
+  "tray_notifications": "Benachrichtigungen",
+  "tray_notifications_unread": "{count} ungelesene Benachrichtigungen",
+  "tray_signals": "Aufmerksamkeitssignale",
+  "tray_word_today": "heute",
+  "tray_word_to_answer": "zu beantworten",
+  "tray_word_fleet": "in Fleet",
+  "tray_word_unread": "ungelesen",
+  "tray_word_running": "aktiv",
+  "system_load": {
+    "label": "Systemauslastung",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB frei)",
+    "measuring": "Systemauslastung wird gemessen…",
+    "headroom_green": "Genug Kapazität für mehr Arbeit",
+    "headroom_amber": "Wird ausgelastet — Entlastung empfohlen",
+    "headroom_red": "Kapazitätsgrenze erreicht — Verlangsamung empfohlen"
   }
 }

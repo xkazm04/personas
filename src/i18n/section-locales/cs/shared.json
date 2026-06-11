@@ -229,7 +229,9 @@
     "teams_label": "Týmy",
     "groups_label": "Skupiny",
     "cloud_label": "Cloud",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "Bez týmu",
+    "whats_new_update": "Aktualizováno — podívejte se, co je nového"
   },
   "execution_detail": {
     "copy": "Kopírovat",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "Dnes",
+  "group_yesterday": "Včera",
+  "group_this_week": "Tento týden",
+  "group_this_month": "Tento měsíc",
+  "group_older": "Starší",
+  "code_expand_block": "Rozbalit blok kódu",
+  "code_collapse_block": "Sbalit blok kódu",
+  "code_show_lines": "Zobrazit všech {count} řádků"
 }

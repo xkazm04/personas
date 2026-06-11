@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "クエリに一致する arXiv 論文が見つかりませんでした。より広いキーワードや別のキーワードをお試しください。",
+  "arxiv_error_title": "検索に失敗しました",
+  "arxiv_error_timeout": "arXiv の応答が遅すぎます — レート制限がかかっている可能性があります。少し待ってから再試行してください。",
+  "arxiv_error_rate_limited": "arXiv が現在リクエストをレート制限しています。数秒待ってから再試行してください。",
+  "arxiv_error_http": "arXiv がエラーを返しました（HTTP {status}）。しばらくしてから再試行してください。",
+  "arxiv_error_network": "arXiv に接続できませんでした。接続を確認して再試行してください。",
+  "arxiv_error_feed": "arXiv がそのクエリを処理できませんでした。別のキーワードやシンプルなキーワードをお試しください。",
+  "arxiv_error_generic": "arXiv 検索に失敗しました。再試行してください。"
 }

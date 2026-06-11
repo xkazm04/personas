@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "الساحة",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} مللي ثانية",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "الإصدارات والتقييمات",
+    "vr_subtitle": "كل إصدار أمر × نموذج قمت بقياسه. صف واحد فقط نشط.",
+    "vr_col_version": "الإصدار",
+    "vr_col_model": "النموذج",
+    "vr_col_rating": "التقييم",
+    "vr_col_delta": "الخط الأساسي",
+    "vr_col_cost": "التكلفة",
+    "vr_col_status": "الحالة",
+    "vr_col_actions": "الإجراءات",
+    "vr_status_active": "نشط",
+    "vr_status_baseline": "الخط الأساسي",
+    "vr_status_archived": "مؤرشف",
+    "vr_status_measured": "مقيَّس",
+    "vr_status_unmeasured": "غير مقيَّس",
+    "vr_action_activate": "تفعيل هذا الإصدار + النموذج",
+    "vr_action_active": "نشط الآن",
+    "vr_action_measure": "القياس عبر النماذج (Arena)",
+    "vr_action_measuring": "جارٍ القياس…",
+    "vr_action_improve": "التحسين مع Athena",
+    "vr_action_diff": "مقارنة الأمر بالنشط",
+    "vr_action_archive": "أرشفة الإصدار",
+    "vr_action_unarchive": "إلغاء أرشفة الإصدار",
+    "vr_action_pin_baseline": "تثبيت كخط أساسي للانحدار",
+    "vr_action_unpin_baseline": "إلغاء تثبيت الخط الأساسي",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} عينة",
+    "vr_samples_other": "{count} عينات",
+    "vr_empty_title": "لا توجد إصدارات بعد",
+    "vr_empty_desc": "قم بتعديل وحفظ موجّه الشخصية لإنشاء الإصدار الأول، ثم قسه هنا.",
+    "vr_measuring_toast": "جارٍ قياس v{version} عبر النماذج…",
+    "vr_measure_modal_title": "قياس v{version}",
+    "vr_measure_scope_banner": "قياس الإصدار {version} — يُشغَّل موجّهه مقابل النماذج التي تختارها. تظهر النتائج في جدول التقييمات.",
+    "vr_diff_title": "v{version} مقابل النشط",
+    "vr_diff_no_active": "لا يوجد إصدار نشط للمقارنة معه.",
+    "vr_improve_seed_measured": "تحسين الشخصية \"{name}\" v{version}. أضعف مقياس مُقاس: {metric} {score}/100 على {model}. على ماذا يجب أن أركز؟ ",
+    "vr_improve_seed_plain": "تحسين الشخصية \"{name}\" v{version} — لم يُقس بعد. على ماذا يجب أن أركز؟ ",
+    "vr_metric_tool": "دقة الأداة",
+    "vr_metric_quality": "جودة المخرجات",
+    "vr_metric_protocol": "الالتزام بالبروتوكول"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -903,7 +944,9 @@
     "next": "التالي",
     "go_back_hint": "ارجع وأجب على الأسئلة لإعداد وكيلك.",
     "additional_instructions": "تعليمات أو سياق إضافي (اختياري)",
-    "additional_instructions_placeholder": "أضف أي متطلبات محددة أو معرفة متخصصة أو قيوداً..."
+    "additional_instructions_placeholder": "أضف أي متطلبات محددة أو معرفة متخصصة أو قيوداً...",
+    "role_user": "المستخدم",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "الموصِّلات",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "سيشغّل هذا {title} لـ {persona}"
+    "schedule_will_run": "سيشغّل هذا {title} لـ {persona}",
+    "_comment_manual_run_in_progress": "تلميح زر التشغيل الفوري أثناء تشغيل يدوي جارٍ",
+    "manual_run_in_progress": "تشغيل يدوي جارٍ",
+    "_comment_run_now_tooltip": "تلميح زر التشغيل الفوري — يميّز التنفيذ الحقيقي عن الاختبار",
+    "run_now_tooltip": "تشغيل حالة الاستخدام الآن — يُطلق تنفيذاً حقيقياً وأحداثاً لاحقة",
+    "_comment_run_now": "تسمية زر التشغيل الفوري (لوحة التفاصيل + شريط تبويب القدرات)",
+    "run_now": "تشغيل الآن",
+    "_comment_event_type_options": "تسميات خيارات قائمة نوع الحدث في UseCaseSubscriptionForm",
+    "event_type_webhook_received": "تم استقبال Webhook",
+    "event_type_execution_completed": "اكتمل التنفيذ",
+    "event_type_execution_failed": "فشل التنفيذ",
+    "event_type_persona_action": "إجراء الشخصية",
+    "event_type_file_changed": "تغيّر الملف",
+    "event_type_schedule_triggered": "تم تشغيل الجدول",
+    "_comment_dim_review_title": "عنوان ReviewDimCard",
+    "dim_review_title": "مراجعة",
+    "_comment_pill_on": "حبة ToggleDimCard في حالة التشغيل (الذاكرة/الأحداث)",
+    "pill_on": "مفعّل",
+    "_comment_pill_off": "حبة حالة الإيقاف، مشتركة بين ToggleDimCard و ReviewDimCard في وضع الإيقاف",
+    "pill_off": "معطّل",
+    "_comment_review_pill_queue": "حبة ReviewDimCard في حالة الانتظار",
+    "review_pill_queue": "انتظار",
+    "_comment_review_pill_trust": "حبة ReviewDimCard في حالة الثقة",
+    "review_pill_trust": "ثقة",
+    "_comment_dim_status_activated": "قيمة PersonaSigilSummary عند تفعيل بُعد منطقي (ذاكرة/مراجعة/حدث/خطأ) للقدرة",
+    "dim_status_activated": "مُفعَّل"
   },
   "tools": {
     "no_persona": "لم يتم اختيار وكيل",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "الحكم",
+    "verdict_none": "لم يراجعه المدير بعد",
+    "verdict_tooltip": "حكم المدير: {score}/5"
   },
   "chat": {
     "select_persona": "اختر وكيلاً لبدء المحادثة",
@@ -2293,7 +2364,8 @@
     "delete_agents": "حذف {count} وكيل/وكلاء",
     "delete_agents_message": "سيُزال {count} وكيل/وكلاء وجميع إعداداتهم نهائياً.",
     "delete_drafts": "حذف {count} مسودة/مسودات",
-    "delete_drafts_message": "سيُزال {count} مسودة وكيل نهائياً."
+    "delete_drafts_message": "سيُزال {count} مسودة وكيل نهائياً.",
+    "system_persona_undeletable": "المدير شخصية نظام ولا يمكن حذفه."
   },
   "persona_list": {
     "all_personas": "جميع الوكلاء",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "لا توجد مجموعات بعد — أنشئها من العملاء ← المجموعات",
     "batch_move_to_ungrouped": "بدون مجموعة",
     "batch_moved_success": "تم نقل {count} شخصية إلى {group}",
-    "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل"
+    "batch_moved_partial": "تم نقل {ok} إلى {group}؛ {failed} فشل",
+    "render_cap_notice": "عرض {shown} من {total} — قلّص النطاق بالبحث أو الفلاتر لرؤية الباقي.",
+    "star_director_add": "ضع نجمة لإضافته إلى نطاق تدريب المدير",
+    "star_director_remove": "مُنجَّم — ضمن نطاق تدريب المدير. انقر للإزالة."
   },
   "design_preview": {
     "preview": "معاينة",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "استطلاع الرسائل الواردة من Slack",
+    "slack_poll_inbound_help": "عند التفعيل، تقرأ الشخصية الرسائل الجديدة في هذه القناة كل 5 ثوانٍ وترد في الخيط بمخرجات تشغيلها. ادعُ البوت إلى القناة أولاً."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "مُفعّل لهذه القدرة",
   "sigil_edit_inactive": "غير مُفعّل — فعّله للتمكين",
   "sigil_edit_enable": "تفعيل لهذه القدرة",
-  "sigil_edit_disable": "تعطيل لهذه القدرة"
+  "sigil_edit_disable": "تعطيل لهذه القدرة",
+  "design_subtabs": {
+    "use_cases": "حالات الاستخدام",
+    "prompt": "الأمر",
+    "connectors": "الموصّلات والأدوات",
+    "triggers": "الأحداث والمحفّزات",
+    "messaging": "المراسلة",
+    "automations": "الأتمتة",
+    "triggers_desc": "ستظهر هنا اشتراكات الأحداث وإعدادات المحفّزات الخاصة بكل شخصية.",
+    "messaging_desc": "ستُوجَد هنا قنوات الإشعارات وتوجيه صندوق الوارد لهذا الوكيل.",
+    "automations_desc": "ستُوجَد هنا قواعد الأتمتة المستقلة لهذا الوكيل."
+  },
+  "parameters_card": {
+    "title": "المعاملات",
+    "saved": "محفوظ",
+    "apply": "تطبيق",
+    "on": "تشغيل",
+    "off": "إيقاف",
+    "reset": "إعادة تعيين"
+  },
+  "editor_empty": {
+    "title": "لم يتم اختيار شخصية",
+    "subtitle": "اختر وكيلاً من الشريط الجانبي لبدء التحرير، أو أنشئ شخصية جديدة.",
+    "create": "إنشاء شخصية",
+    "resume_label": "العودة للعمل"
+  },
+  "build_template_match_label": "مسار أسرع",
+  "build_template_match_title": "\"{name}\" يبدو مطابقاً",
+  "build_template_match_body": "يغطي هذا القالب الجاهز ما وصفته — تبنّه لتخطي هذه الأسئلة. فهو مُعدّ ومُختبر مسبقاً.",
+  "build_template_match_adopt": "استخدام هذا القالب",
+  "build_template_match_dismiss": "متابعة البناء",
+  "build_template_match_loading": "جارٍ البحث عن قوالب مطابقة…",
+  "build_template_match_more": "أو ابدأ من",
+  "_comment_glyph_db_scope": "لوحة تحديد نطاق جداول قاعدة البيانات في منتقي الموصّل",
+  "glyph_db_scope_heading": "جداول قاعدة البيانات",
+  "glyph_db_scope_all": "جميع الجداول",
+  "glyph_db_scope_loading": "جارٍ تحميل الجداول…",
+  "glyph_db_scope_error": "تعذّر تحميل الجداول — أعد المحاولة",
+  "glyph_db_scope_empty": "لا توجد جداول",
+  "glyph_db_scope_selected": "{count} من {total} جدول"
 }

@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "Produksi",
+    "promising": "Menjanjikan",
+    "not_ready": "Belum Siap",
+    "broken": "Rusak"
+  },
+  "deployment": {
+    "active": "Aktif",
+    "paused": "Dijeda",
+    "failed": "Gagal",
+    "unknown": "Tidak Diketahui"
+  },
+  "delivery": {
+    "delivered": "Terkirim",
+    "failed": "Gagal",
+    "pending": "Tertunda",
+    "queued": "Diantrikan"
+  },
+  "rotation": {
+    "anomaly": "Anomali",
+    "paused": "Dijeda",
+    "disabled": "Dinonaktifkan",
+    "perm_errors": "Kesalahan Permanen",
+    "degrading": "Menurun",
+    "backoff": "Mundur",
+    "fresh": "Baru",
+    "active": "Aktif"
   }
 }

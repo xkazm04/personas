@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "প্রোডাকশন",
+    "promising": "আশাব্যঞ্জক",
+    "not_ready": "প্রস্তুত নয়",
+    "broken": "ভাঙা"
+  },
+  "deployment": {
+    "active": "সক্রিয়",
+    "paused": "বিরতিতে",
+    "failed": "ব্যর্থ",
+    "unknown": "অজানা"
+  },
+  "delivery": {
+    "delivered": "বিতরণ হয়েছে",
+    "failed": "ব্যর্থ",
+    "pending": "মুলতুবি",
+    "queued": "কিউতে আছে"
+  },
+  "rotation": {
+    "anomaly": "অস্বাভাবিকতা",
+    "paused": "বিরতিতে",
+    "disabled": "অক্ষম",
+    "perm_errors": "স্থায়ী ত্রুটি",
+    "degrading": "অবনমিত হচ্ছে",
+    "backoff": "ব্যাকঅফ",
+    "fresh": "তাজা",
+    "active": "সক্রিয়"
   }
 }

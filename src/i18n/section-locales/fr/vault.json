@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Actualiser",
+    "tool_count_one": "{count} outil",
+    "tool_count_other": "{count} outils",
+    "tab_documents": "Documents",
+    "tab_search": "Recherche",
+    "tab_settings": "Paramètres"
   },
   "manager": {
     "title": "Coffre-fort",
@@ -845,7 +851,10 @@
     "enabling": "Activation...",
     "enable_rotation": "Activer la rotation",
     "enable_failed": "Échec de l’activation de la rotation : {error}",
-    "last_rotated": "Dernière rotation {time}"
+    "last_rotated": "Dernière rotation {time}",
+    "ring_aria_label": "Rotation dans {countdown}",
+    "history_empty_title": "Aucun historique de rotation pour l'instant",
+    "history_empty_subtitle": "Les événements de rotation apparaîtront ici une fois que cette accréditation aura été renouvelée."
   },
   "event_config": {
     "event_triggers": "Déclencheurs d'événements",
@@ -950,11 +959,24 @@
     "catalog_description": "Choisissez un service connu comme Slack, GitHub ou OpenAI. Champs et tests de connexion pré-configurés.",
     "ai_heading": "Identifiant conçu par IA",
     "ai_description": "Décrivez n'importe quel service et l'IA configurera les champs, le type d'authentification et le test de connexion pour vous.",
-    "works_with_any": "Compatible avec n'importe quelle API"
+    "works_with_any": "Compatible avec n'importe quelle API",
+    "recommended": "Recommandé"
   },
   "credential_list": {
     "no_match": "Aucun identifiant correspondant",
-    "no_match_hint": "Essayez d'ajuster vos filtres ou votre terme de recherche"
+    "no_match_hint": "Essayez d'ajuster vos filtres ou votre terme de recherche",
+    "col_name": "Nom",
+    "col_status": "Statut",
+    "col_type": "Type",
+    "col_category": "Catégorie",
+    "col_health": "Santé",
+    "col_last_used": "Dernière utilisation",
+    "col_created": "Créé",
+    "filter_all": "Tous",
+    "filter_all_health": "Toute santé",
+    "health_healthy": "Saine",
+    "health_failing": "Défaillante",
+    "health_untested": "Non testée"
   },
   "wizard_detect": {
     "no_services": "Aucun service ne correspond à \\\"{search}\\\"",

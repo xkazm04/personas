@@ -1,1 +1,13 @@
-{}
+{
+  "title": "Yêu cầu chạy từ xa",
+  "body": "Bảng điều khiển của bạn đã yêu cầu chạy {persona} trên thiết bị này.",
+  "safety_note": "Thao tác này chạy cục bộ trên thiết bị này với thông tin xác thực của nó. Không có gì chạy cho đến khi bạn phê duyệt.",
+  "approve": "Phê duyệt & chạy",
+  "approving": "Đang bắt đầu…",
+  "reject": "Từ chối",
+  "queue_count": "{index} trong {total} đang chờ",
+  "prompt_label": "Lệnh nhắc",
+  "no_prompt": "Không có lệnh nhắc nào được cung cấp.",
+  "from_dashboard": "Được yêu cầu từ bảng điều khiển web",
+  "later": "Quyết định sau"
+}

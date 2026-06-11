@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Extensions",
       "description": "Étendez vos agents avec des extensions tierces et des plugins personnalisés"
+    },
+    "teams": {
+      "label": "Équipes",
+      "description": "Combinez plusieurs agents en une équipe qui travaille ensemble sur des workflows en plusieurs étapes"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Recommencer",
     "start_tour": "Démarrer la visite",
     "steps_count": "{count} étapes",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Mouvements avancés",
+    "moves_used": "{used}/{total} utilisés",
+    "try_it": "Essayer",
+    "used_badge": "Utilisé",
+    "group_save_time": "Gagner du temps",
+    "group_prevent_failures": "Prévenir les échecs",
+    "group_level_up": "Améliorer les agents",
+    "group_orchestrate": "Orchestrer",
+    "pm_monitor_triage_title": "Trier toute la flotte depuis la barre de titre",
+    "pm_schedule_delay_title": "Ignorer ou retarder une exécution planifiée",
+    "pm_bulk_rerun_title": "Relancer en masse les exécutions échouées",
+    "pm_dead_letter_title": "Récupérer les événements de la file morte",
+    "pm_annotate_golden_title": "Marquer les exécutions réussies, annoter les régressions",
+    "pm_credential_health_title": "Laisser l'IA réparer les identifiants défaillants",
+    "pm_lab_measure_title": "Mesurer les prompts sur plusieurs modèles",
+    "pm_prompt_rollback_title": "Annuler un mauvais prompt en un clic",
+    "pm_director_coaching_title": "Obtenir des conseils de portefeuille du Directeur",
+    "pm_event_chain_title": "Enchaîner des agents avec des écouteurs d'événements",
+    "pm_live_stream_title": "Observer les enchaînements en temps réel",
+    "pm_athena_fleet_title": "Demander à Athena d'analyser votre flotte"
   },
   "setup_stepper": {
     "your_profile": "Votre profil",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
     "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Échec non lu dans {personaName} — à examiner",
+    "tour": "Reprendre {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Continuer à modifier {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} incident ouvert",
+    "incidents_other": "{count} incidents ouverts",
+    "messages": "{count} message non lu",
+    "messages_other": "{count} messages non lus",
+    "reviews": "{count} révision en attente",
+    "reviews_other": "{count} révisions en attente",
+    "teams": "{count} équipe",
+    "teams_other": "{count} équipes",
+    "agents_active": "{count} agent actif ces dernières 24h",
+    "agents_active_other": "{count} agents actifs ces dernières 24h",
+    "events_today": "{count} événement ces dernières 24h",
+    "events_today_other": "{count} événements ces dernières 24h",
+    "connections_external": "{count} connexion externe",
+    "connections_external_other": "{count} connexions externes",
+    "connections_builtin": "{count} connecteur intégré",
+    "connections_builtin_other": "{count} connecteurs intégrés",
+    "trend_up": "en hausse de {pct}% par rapport aux 24h précédentes",
+    "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
+    "trend_flat": "aucun changement par rapport aux 24h précédentes"
+  }
 }

@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Làm mới",
+    "tool_count_one": "{count} công cụ",
+    "tool_count_other": "{count} công cụ",
+    "tab_documents": "Tài liệu",
+    "tab_search": "Tìm kiếm",
+    "tab_settings": "Cài đặt"
   },
   "manager": {
     "title": "Thông tin xác thực",
@@ -845,7 +851,10 @@
     "enabling": "Đang bật...",
     "enable_rotation": "Bật xoay vòng",
     "enable_failed": "Không thể bật xoay vòng: {error}",
-    "last_rotated": "Lần xoay cuối cùng {time}"
+    "last_rotated": "Lần xoay cuối cùng {time}",
+    "ring_aria_label": "Xoay vòng sau {countdown}",
+    "history_empty_title": "Chưa có lịch sử xoay vòng",
+    "history_empty_subtitle": "Các sự kiện xoay vòng sẽ xuất hiện tại đây khi thông tin xác thực này được xoay vòng."
   },
   "event_config": {
     "event_triggers": "Trình kích hoạt sự kiện",
@@ -950,11 +959,24 @@
     "catalog_description": "Chọn dịch vụ đã biết như Slack, GitHub hoặc OpenAI. Trường và healthcheck được cấu hình sẵn.",
     "ai_heading": "Thông tin xác thực do AI thiết kế",
     "ai_description": "Mô tả bất kỳ dịch vụ nào và AI sẽ cấu hình các trường, loại xác thực và healthcheck cho bạn.",
-    "works_with_any": "Hoạt động với bất kỳ API"
+    "works_with_any": "Hoạt động với bất kỳ API",
+    "recommended": "Được đề xuất"
   },
   "credential_list": {
     "no_match": "Không có thông tin xác thực nào phù hợp",
-    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm"
+    "no_match_hint": "Hãy thử điều chỉnh bộ lọc hoặc cụm từ tìm kiếm",
+    "col_name": "Tên",
+    "col_status": "Trạng thái",
+    "col_type": "Loại",
+    "col_category": "Danh mục",
+    "col_health": "Tình trạng",
+    "col_last_used": "Dùng lần cuối",
+    "col_created": "Ngày tạo",
+    "filter_all": "Tất cả",
+    "filter_all_health": "Tất cả tình trạng",
+    "health_healthy": "Tốt",
+    "health_failing": "Lỗi",
+    "health_untested": "Chưa kiểm tra"
   },
   "wizard_detect": {
     "no_services": "Không có dịch vụ nào khớp với \\\"{search}\\\"",

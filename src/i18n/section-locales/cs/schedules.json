@@ -105,5 +105,12 @@
   "sparkline_aria": "Sparkline historie spuštění, posledních {days} dní",
   "sparkline_window": "Posledních {days} d",
   "sparkline_no_data": "Žádná spuštění v okně",
-  "sparkline_failure_rate": "{total} spuštění · {rate}% selhalo"
+  "sparkline_failure_rate": "{total} spuštění · {rate}% selhalo",
+  "run_status_incomplete": "Neúplné",
+  "last24h_title": "Posledních 24 hodin",
+  "last24h_empty": "Žádná plánovaná spuštění za posledních 24 hodin.",
+  "last24h_failed_count": "{count} selhalo",
+  "last24h_show_all": "Zobrazit vše ({count})",
+  "last24h_show_less": "Zobrazit méně",
+  "last24h_retry_at": "automatický opakování {time}"
 }

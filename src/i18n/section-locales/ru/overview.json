@@ -133,7 +133,25 @@
     "source_provider": "Провайдер",
     "source_policy": "Политика",
     "source_healing_issue": "Проблема восстановления",
-    "source_execution_error": "Ошибка выполнения"
+    "source_execution_error": "Ошибка выполнения",
+    "action_start_work": "Начать работу",
+    "action_back_to_open": "Вернуть в открытые",
+    "filter_status_in_progress": "В работе",
+    "detail_title": "Детали инцидента",
+    "detail_label_status": "Статус",
+    "detail_label_kind": "Тип",
+    "detail_label_source": "Источник",
+    "detail_label_persona": "Агент",
+    "detail_label_detail": "Подробности",
+    "detail_label_resolution_note": "Примечание о решении",
+    "detail_label_created": "Создано",
+    "detail_label_acknowledged": "Подтверждено",
+    "detail_label_resolved": "Решено",
+    "detail_no_detail": "Нет дополнительных сведений.",
+    "detail_note_label": "Примечание о решении (необязательно)",
+    "detail_no_persona": "Нет агента",
+    "empty_open_title": "Всё в порядке",
+    "empty_filtered_title": "Совпадающих инцидентов нет"
   },
   "observability": {
     "title": "Мониторинг",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Удалить все",
+    "delete_all_confirm_title": "Удалить все воспоминания?",
+    "delete_all_confirm_body": "Это безвозвратно удалит все {count} воспоминаний. Отменить невозможно.",
+    "delete_all_confirm_cta": "Удалить все"
   },
   "memory_review": {
     "all_conflicts_resolved": "Все конфликты разрешены",
@@ -473,7 +495,18 @@
     "select_action_first": "Сначала выберите предложенное действие",
     "review_detail": "Детали проверки",
     "select_review": "Выберите проверку для просмотра",
-    "technical_context": "Технический контекст"
+    "technical_context": "Технический контекст",
+    "split": "Разделить",
+    "split_tooltip": "Разделённый вид — список с панелью деталей",
+    "table": "Таблица",
+    "table_tooltip": "Табличный вид — все проверки в сетке",
+    "backlog_group_title": "Бэклог Dev Tools",
+    "backlog_accept": "Принять",
+    "backlog_reject": "Отклонить",
+    "delete_all": "Удалить все",
+    "delete_all_confirm_title": "Удалить все проверки?",
+    "delete_all_confirm_body": "Это безвозвратно удалит все {count} отзывов. Действие нельзя отменить.",
+    "delete_all_confirm_cta": "Удалить все"
   },
   "messages_view": {
     "title": "Сообщения",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Удалить все",
+    "delete_all_confirm_title": "Удалить все сообщения?",
+    "delete_all_confirm_body": "Это безвозвратно удалит все {count} сообщений. Действие нельзя отменить.",
+    "delete_all_confirm_cta": "Удалить все"
   },
   "events": {
     "title": "События",
@@ -809,7 +846,13 @@
     "create_persona": "Создать агента",
     "from_templates": "Из шаблонов",
     "execution_label": "Запуск",
-    "unknown": "Неизвестно"
+    "unknown": "Неизвестно",
+    "value_section_title": "Бизнес-ценность",
+    "value_delivered_rate": "Доля реализованной ценности",
+    "cost_per_value": "Стоимость / прогон с ценностью",
+    "value_delivered_count": "Доставлено ценности",
+    "all_models": "Все модели",
+    "col_model": "Модель"
   },
   "analytics_dashboard": {
     "title": "Аналитика",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "истекает сейчас",
+    "rotation_countdown_days_hours": "{days}д {hours}ч",
+    "rotation_countdown_hours": "{hours}ч"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Поиск воспоминаний...",
     "all_agents": "Все агенты",
-    "all_categories": "Все категории"
+    "all_categories": "Все категории",
+    "tier_all": "Активный набор",
+    "tier_core": "Основные",
+    "tier_active": "Активные",
+    "tier_working": "Рабочие",
+    "tier_archived": "Архив"
   },
   "memory_actions": {
     "dismiss_suggestion": "Отклонить предложение",
@@ -1246,7 +1297,8 @@
     "reject_all": "Отклонить все",
     "accept_all": "Принять все",
     "retry_with_changes": "Повторить с изменениями",
-    "video_not_supported": "Ваш браузер не поддерживает воспроизведение видео."
+    "video_not_supported": "Ваш браузер не поддерживает воспроизведение видео.",
+    "carry_out_hint": "Подтверждает проверку и запускает персону для выполнения"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "Выбран {count} ожидающий проверки",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Подтвердить",
-    "cancel": "Отмена"
+    "cancel": "Отмена",
+    "restore": "Восстановить в активный набор"
   },
   "memory_detail": {
     "title_label": "Заголовок",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my персонаs — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my персонаs — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena подготовила это объяснение для вас — закройте его, чтобы вернуться в свой кокпит.",
+    "context_explaining": "Athena объясняет: {title}",
+    "widget_empty": "Пока нечего показать.",
+    "verdict_title": "Вердикт Athena",
+    "verdict_confidence": "Уверенность",
+    "verdict_confidence_high": "Высокая",
+    "verdict_confidence_medium": "Средняя",
+    "verdict_confidence_low": "Низкая",
+    "verdict_resolve": "Решить сейчас",
+    "comparison_recommended": "Рекомендуется",
+    "flow_title": "Как это происходит",
+    "timeline_title": "Хронология",
+    "log_title": "Доказательства"
+  },
+  "certification": {
+    "title": "Центр управления сертификацией",
+    "subtitle": "Оценка автономности команды и статус сертификации (только для разработки)",
+    "updated": "Обновлено",
+    "refresh": "Обновить",
+    "error_title": "Не удалось загрузить прогоны оценки",
+    "loading": "Загрузка прогонов оценки…",
+    "loading_detail": "Загрузка деталей прогона…",
+    "tab_overview": "Обзор",
+    "tab_history": "История прогонов",
+    "back": "Назад",
+    "empty_title": "Нет прогонов оценки",
+    "empty_desc": "Запустите тестовый стенд (scripts/test/) для заполнения docs/test/runs/.",
+    "teams_certified": "команд сертифицировано",
+    "certified": "Сертифицировано",
+    "streak_label": "серия",
+    "held_out_runs": "отложенные прогоны",
+    "provisional": "Предварительный вердикт (судья ещё не выставил оценку)",
+    "final": "Окончательный вердикт",
+    "team_score": "Оценка команды",
+    "cost": "Стоимость",
+    "dims_title": "Детерминированные измерения",
+    "dim_cascade": "Завершение каскада",
+    "dim_density": "Плотность работы",
+    "dim_handoff": "Качество передачи",
+    "dim_learning": "Цикл обучения",
+    "dim_grounding": "Заземление",
+    "dim_correctness": "Корректность",
+    "dim_actionability": "Действенность",
+    "dim_specificity": "Конкретность",
+    "dim_role_fidelity": "Точность роли",
+    "gates_title": "Проверки сборки / линтера / тестов",
+    "gate_build": "Сборка",
+    "gate_lint": "Линтер",
+    "gate_test": "Тест",
+    "gate_pass": "пройдено",
+    "gate_fail": "ошибка",
+    "gate_log": "лог",
+    "gate_copy_log": "Копировать лог",
+    "gate_code_track": "Прогон отслеживания кода",
+    "delivered": "Передано в master",
+    "cascade_stalled": "Каскад остановлен",
+    "self_vetoed": "Самостоятельное вето",
+    "self_veto_capped": "Команда самостоятельно ограничила вердикт до",
+    "grounding_title": "Обоснование цитатами",
+    "grounding_file": "Файл",
+    "grounding_valid": "Действительные",
+    "grounding_pct": "%",
+    "grounding_invalid": "Недействительные",
+    "grounding_na": "Цитат для проверки нет",
+    "standards_title": "Соответствие стандартам и политике ветвления",
+    "standards_subtitle": "Насколько точно прогон соблюдал объявленную политику pre-commit и ветвления проекта",
+    "standards_compliance": "Соответствие",
+    "standards_rule": "Правило",
+    "standards_basis": "Основание",
+    "standards_na": "н/д",
+    "trajectory_title": "Динамика оценки",
+    "judge_title": "Коллегия судей",
+    "judge_mean": "Среднее",
+    "judge_min": "Мин. вывод",
+    "judge_balance": "Баланс",
+    "fact_executions": "Завершено",
+    "fact_failed": "Ошибки",
+    "fact_members": "Участники",
+    "fact_reviews": "Отзывы",
+    "fact_memories": "Воспоминания",
+    "fact_cost": "Стоимость",
+    "fact_window": "Окно",
+    "col_team": "Команда",
+    "col_seed": "Основа",
+    "col_verdict": "Вердикт",
+    "col_score": "Оценка",
+    "col_gates": "Проверки",
+    "col_started": "Начато"
+  },
+  "fleet_optimization": {
+    "title": "Оптимизация флота",
+    "open_lab": "Открыть Lab",
+    "open_lab_hint": "Протестировать альтернативные модели для {persona} в Lab",
+    "ask_athena": "Спросить Athena",
+    "ask_athena_hint": "Передать это предложение Athena для изучения",
+    "ask_athena_prompt": "Я рассматриваю предложение по оптимизации флота для своих агентов: «{title}». {description} Рекомендуемое действие: {action}. {focus}",
+    "ask_athena_focus_persona": "Пожалуйста, изучи агента «{persona}» и, если это поможет, открой его Lab для тестирования альтернативных моделей, затем сообщи о своих выводах.",
+    "ask_athena_focus_general": "Пожалуйста, изучи это и порекомендуй, что изменить."
   }
 }
