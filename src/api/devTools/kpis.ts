@@ -6,6 +6,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevKpi } from "@/lib/bindings/DevKpi";
+import type { DevKpiBinding } from "@/lib/bindings/DevKpiBinding";
 import type { DevKpiMeasurement } from "@/lib/bindings/DevKpiMeasurement";
 
 export async function listKpis(projectId: string, status?: string): Promise<DevKpi[]> {
@@ -132,4 +133,90 @@ export async function listKpiMeasurementsBulk(
   perKpi?: number,
 ): Promise<DevKpiMeasurement[]> {
   return invoke<DevKpiMeasurement[]>("dev_tools_list_kpi_measurements_bulk", { kpiIds, perKpi });
+}
+
+// =============================================================================
+// P6 — type-bound connector bindings (compose → verify → freeze → replay)
+// =============================================================================
+
+/** A metric-type contract (mirrors engine/kpi_binding.rs METRIC_TYPES). */
+export interface KpiMetricType {
+  id: string;
+  label: string;
+  unit: string;
+  direction: string;
+  categories: string[];
+  contract: string;
+  min: number;
+  integer: boolean;
+}
+
+export async function listKpiMetricTypes(): Promise<KpiMetricType[]> {
+  return invoke<KpiMetricType[]>("dev_tools_list_kpi_metric_types", {});
+}
+
+/** Vault credential able to answer a metric type (category-matched). */
+export interface KpiMatchingCredential {
+  credential_id: string;
+  name: string;
+  service_type: string;
+  connector_label: string;
+  category: string;
+  has_recipe: boolean;
+}
+
+export async function kpiMatchingCredentials(
+  metricType: string,
+): Promise<KpiMatchingCredential[]> {
+  return invoke<KpiMatchingCredential[]>("dev_tools_kpi_matching_credentials", { metricType });
+}
+
+/** The frozen retrieval procedure — one HTTP call + one extraction. */
+export interface KpiProcedure {
+  http: { method: string; url: string; headers?: Record<string, string>; body?: unknown };
+  extract: string;
+  plan?: string;
+}
+
+export interface KpiComposeResult {
+  procedure: KpiProcedure;
+  composed_by: string;
+  value: number;
+  evidence: string | null;
+}
+
+/** Compose + live-verify a candidate binding. Persists nothing; the LLM path
+ * can take minutes (compose + live HTTP test). */
+export async function composeKpiBinding(
+  kpiId: string,
+  credentialId: string,
+): Promise<KpiComposeResult> {
+  return invoke<KpiComposeResult>(
+    "dev_tools_kpi_compose_binding",
+    { kpiId, credentialId },
+    { timeoutMs: 360_000 },
+  );
+}
+
+/** Freeze a verified procedure as the KPI's active binding. */
+export async function activateKpiBinding(
+  kpiId: string,
+  credentialId: string,
+  procedure: KpiProcedure,
+  composedBy: string,
+  verifiedValue: number,
+  evidence?: string | null,
+): Promise<DevKpiBinding> {
+  return invoke<DevKpiBinding>("dev_tools_kpi_activate_binding", {
+    kpiId,
+    credentialId,
+    procedure: JSON.stringify(procedure),
+    composedBy,
+    verifiedValue,
+    evidence: evidence ?? undefined,
+  });
+}
+
+export async function listKpiBindings(kpiId: string): Promise<DevKpiBinding[]> {
+  return invoke<DevKpiBinding[]>("dev_tools_kpi_list_bindings", { kpiId });
 }

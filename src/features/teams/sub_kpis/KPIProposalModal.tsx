@@ -16,6 +16,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { categoryMeta, cadenceMeta } from './kpiMeta';
 import { describeMeasurement } from './describeMeasurement';
+import { KPIConnectWizard } from './KPIConnectWizard';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -29,10 +30,10 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () => void }) {
   const { t, tx } = useTranslation();
   const updateKpi = useSystemStore((s) => s.updateKpi);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const [target, setTarget] = useState('');
   const [date, setDate] = useState('');
+  const [connectOpen, setConnectOpen] = useState(false);
 
   const cat = categoryMeta(kpi.category);
   const CatIcon = cat.icon;
@@ -121,7 +122,7 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
             {kpi.needed_connector && (
               <button
                 type="button"
-                onClick={() => setSidebarSection('credentials')}
+                onClick={() => setConnectOpen(true)}
                 className="mt-2 inline-flex items-center gap-1 typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
               >
                 <Cable className="w-3 h-3" />
@@ -183,6 +184,9 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
           </AsyncButton>
         </div>
       </div>
+      {connectOpen && (
+        <KPIConnectWizard kpi={kpi} onClose={() => setConnectOpen(false)} />
+      )}
     </BaseModal>
   );
 }

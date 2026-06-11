@@ -4,12 +4,14 @@
 // here, the line moved (or didn't)". Below it: how the KPI is measured in
 // plain language (procedure behind a disclosure), Measure-now, manual entry
 // for manual KPIs, the history list, pause/resume + archive.
-import { useEffect, useMemo, useState } from 'react';
-import { Archive, Pause, Play, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Archive, Cable, Pause, Play, X } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
+import type { DevKpiBinding } from '@/lib/bindings/DevKpiBinding';
 import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
+import { listKpiBindings } from '@/api/devTools/kpis';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -22,6 +24,7 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { paceDescriptor } from './kpiMath';
 import { categoryMeta, cadenceMeta, kindMeta } from './kpiMeta';
 import { describeMeasurement } from './describeMeasurement';
+import { ComposedByBadge, KPIConnectWizard } from './KPIConnectWizard';
 
 export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => void }) {
   const { t, tx } = useTranslation();
@@ -35,11 +38,18 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
 
   const [manualValue, setManualValue] = useState('');
   const [confirmArchive, setConfirmArchive] = useState(false);
+  const [bindings, setBindings] = useState<DevKpiBinding[]>([]);
+  const [connectOpen, setConnectOpen] = useState(false);
+
+  const refreshBindings = useCallback(() => {
+    listKpiBindings(kpi.id).then(setBindings).catch(() => setBindings([]));
+  }, [kpi.id]);
 
   useEffect(() => {
     void fetchKpiMeasurements(kpi.id);
     void fetchGoals(kpi.project_id);
-  }, [kpi.id, kpi.project_id, fetchKpiMeasurements, fetchGoals]);
+    refreshBindings();
+  }, [kpi.id, kpi.project_id, fetchKpiMeasurements, fetchGoals, refreshBindings]);
 
   const linkedGoals = useMemo(
     () => goals.filter((g) => g.kpi_id === kpi.id),
@@ -123,6 +133,12 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
           <summary className="cursor-pointer select-none">{t.kpis.show_procedure}</summary>
           <code className="block mt-1 font-mono break-all">{kpi.measure_config}</code>
         </details>
+
+        <KpiSourceSection
+          kpi={kpi}
+          bindings={bindings}
+          onConnect={() => setConnectOpen(true)}
+        />
 
         {(kpi.measure_kind === 'codebase' || kpi.measure_kind === 'derived') && (
           <AsyncButton
@@ -213,6 +229,17 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
         </Button>
       </div>
 
+      {connectOpen && (
+        <KPIConnectWizard
+          kpi={kpi}
+          onClose={() => setConnectOpen(false)}
+          onActivated={() => {
+            refreshBindings();
+            void fetchKpiMeasurements(kpi.id);
+          }}
+        />
+      )}
+
       {confirmArchive && (
         <ConfirmDialog
           title={t.kpis.archive_confirm_title}
@@ -229,6 +256,83 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
           }}
           onCancel={() => setConfirmArchive(false)}
         />
+      )}
+    </div>
+  );
+}
+
+// =============================================================================
+// Data source — the KPI's active binding (or the invitation to create one)
+// =============================================================================
+
+function KpiSourceSection({
+  kpi,
+  bindings,
+  onConnect,
+}: {
+  kpi: DevKpi;
+  bindings: DevKpiBinding[];
+  onConnect: () => void;
+}) {
+  const { t, tx } = useTranslation();
+  const active = bindings.find((b) => b.status === 'active') ?? null;
+  const degraded = !active ? bindings.find((b) => b.status === 'degraded') ?? null : null;
+  const connectable =
+    kpi.metric_type != null ||
+    kpi.needed_connector != null ||
+    kpi.measure_kind === 'connector' ||
+    kpi.measure_kind === 'manual';
+
+  if (!active && !degraded && !connectable) return null;
+
+  return (
+    <div data-testid="kpi-source-section">
+      <h3 className="typo-overline text-foreground mb-1.5">{t.kpis.source_section_title}</h3>
+      {degraded && (
+        <div className="rounded-card border border-status-error/25 bg-status-error/10 p-3 mb-2 space-y-2">
+          <p className="typo-body text-foreground">
+            {tx(t.kpis.source_degraded_banner, { service: degraded.service_type })}
+          </p>
+          <Button size="sm" variant="secondary" icon={<Cable className="w-3.5 h-3.5" />} onClick={onConnect}>
+            {t.kpis.source_reconnect}
+          </Button>
+        </div>
+      )}
+      {active ? (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="typo-body text-foreground font-medium">{active.service_type}</span>
+          <ComposedByBadge composedBy={active.composed_by} />
+          {active.verified_at && (
+            <span className="typo-caption text-foreground opacity-80">
+              {t.kpis.source_verified} <RelativeTime timestamp={active.verified_at} />
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={onConnect}
+            className="typo-caption text-primary rounded-card px-1.5 py-1 hover:bg-secondary/40 transition-colors focus-ring"
+            data-testid="kpi-change-source"
+          >
+            {t.kpis.source_change}
+          </button>
+        </div>
+      ) : (
+        !degraded && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {kpi.measure_kind === 'manual' && (
+              <p className="typo-caption text-foreground opacity-80">{t.kpis.source_none_hint}</p>
+            )}
+            <Button
+              size="sm"
+              variant="secondary"
+              icon={<Cable className="w-3.5 h-3.5" />}
+              onClick={onConnect}
+              data-testid="kpi-connect-source"
+            >
+              {t.kpis.source_connect}
+            </Button>
+          </div>
+        )
       )}
     </div>
   );

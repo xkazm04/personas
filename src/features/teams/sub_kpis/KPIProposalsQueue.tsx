@@ -16,15 +16,16 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { categoryMeta } from './kpiMeta';
 import { KPIProposalModal } from './KPIProposalModal';
+import { KPIConnectWizard } from './KPIConnectWizard';
 
 export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
   const { t, tx } = useTranslation();
   const kpis = useSystemStore((s) => s.kpis);
   const projects = useSystemStore((s) => s.projects);
   const updateKpi = useSystemStore((s) => s.updateKpi);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
 
   const [openId, setOpenId] = useState<string | null>(null);
+  const [connectId, setConnectId] = useState<string | null>(null);
 
   const proposals = useMemo(() => kpis.filter((k) => k.status === 'proposed'), [kpis]);
   const projectName = useMemo(() => {
@@ -33,6 +34,10 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
     return (id: string) => m.get(id) ?? '—';
   }, [projects]);
   const openKpi = useMemo(() => proposals.find((k) => k.id === openId) ?? null, [proposals, openId]);
+  const connectKpi = useMemo(
+    () => proposals.find((k) => k.id === connectId) ?? null,
+    [proposals, connectId],
+  );
 
   if (proposals.length === 0) {
     return (
@@ -87,12 +92,12 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
                           tabIndex={0}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSidebarSection('credentials');
+                            setConnectId(kpi.id);
                           }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
                               e.stopPropagation();
-                              setSidebarSection('credentials');
+                              setConnectId(kpi.id);
                             }
                           }}
                           className="inline-flex items-center gap-1 typo-caption text-primary flex-shrink-0 cursor-pointer hover:underline"
@@ -154,6 +159,9 @@ export function KPIProposalsQueue({ onRefresh }: { onRefresh: () => void }) {
         </tbody>
       </table>
       {openKpi && <KPIProposalModal kpi={openKpi} onClose={() => setOpenId(null)} />}
+      {connectKpi && (
+        <KPIConnectWizard kpi={connectKpi} onClose={() => setConnectId(null)} />
+      )}
     </div>
   );
 }
