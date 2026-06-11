@@ -368,6 +368,8 @@ async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
+    // Subscription-only — never the API account.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     #[cfg(windows)]
     {

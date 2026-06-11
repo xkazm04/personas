@@ -1754,6 +1754,8 @@ pub fn run() {
             // 2026-05-09; only snapshot poll + instant adopt remain wired)
             commands::design::template_adopt::get_template_adopt_snapshot,
             commands::design::template_adopt::instant_adopt_template,
+            // Approach 1 -- always-on adjustment of the pre-built base IR
+            commands::design::template_adopt::adjust_adoption_draft,
             // Design -- Team Presets (filesystem-shipped multi-template bundles)
             commands::design::team_presets::list_team_presets,
             commands::design::team_presets::get_team_preset,
@@ -2441,6 +2443,7 @@ pub fn run() {
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
+            commands::companion::approvals::companion_daily_brief,
             commands::companion::brain::companion_list_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,

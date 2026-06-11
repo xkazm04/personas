@@ -189,6 +189,8 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
         .stderr(Stdio::piped())
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
         .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1");
+    // Build fixes run on the Claude monthly subscription only — never the API.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows (desktop-heap / 0xC0000142 guard).
     crate::companion::session::apply_no_console_window(&mut cmd);
     let mut child = cmd

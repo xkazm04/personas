@@ -23,6 +23,128 @@ use super::types::CliArgs;
 /// (binary data, base64 blobs, minified JSON, infinite loops without newlines).
 pub(crate) const MAX_LINE_BYTES: usize = 64 * 1024; // 64 KB
 
+/// Env vars that authenticate the Claude Code CLI against an **API account**
+/// (credits) instead of the monthly **subscription** OAuth. The CLI is the LLM
+/// for every persona execution and evaluation, and the whole app is built to run
+/// it on the subscription — so these are stripped from EVERY spawned CLI's
+/// environment (whether inherited from the OS or injected by credential
+/// resolution). Leaving any of them set silently bills the API account and
+/// surfaces as "Credit balance is too low". (User directive 2026-06-11.)
+///
+/// Also consulted by `runner::credentials` so a vault credential is never
+/// injected under one of these names in the first place.
+pub const CLI_SUBSCRIPTION_RESERVED_ENV: &[&str] = &[
+    "ANTHROPIC_API_KEY",
+    "ANTHROPIC_AUTH_TOKEN",
+    "ANTHROPIC_BASE_URL",
+];
+
+/// Strip the API-account auth env vars (see [`CLI_SUBSCRIPTION_RESERVED_ENV`])
+/// from a `Command` so the spawned Claude CLI falls back to the subscription.
+/// Call AFTER applying any env overrides so nothing can re-introduce them.
+pub fn force_subscription_auth(cmd: &mut Command) {
+    for key in CLI_SUBSCRIPTION_RESERVED_ENV {
+        cmd.env_remove(key);
+    }
+}
+
+/// Resolve the Claude CLI invocation as `(program, leading_args)`.
+///
+/// On Windows the legacy path was `cmd /C claude.cmd`, resolved by `cmd` against
+/// PATH — fragile in two ways seen on real machines: (1) a *broken* `claude.cmd`
+/// earlier on PATH (e.g. a stale nvm-for-Windows global) shadows the working
+/// one, and (2) the `claude.cmd` shim itself can vanish from `%APPDATA%\npm`
+/// while the actual binary remains (npm/nvm global churn). Either way
+/// `cmd /C claude.cmd` fails with "is not recognized" and every execution dies
+/// with exit 1.
+///
+/// To be immune to both, we resolve the **actual `claude.exe`** the shim would
+/// invoke (`node_modules\@anthropic-ai\claude-code\bin\claude.exe`) and run it
+/// **directly** — no `cmd`, no shim, no PATH lookup. We check the canonical
+/// npm-global (`%APPDATA%\npm`) first, then each PATH entry. Only if no real
+/// `claude.exe` is found do we fall back to the legacy `cmd /C claude.cmd`.
+///
+/// This is THE single source of the Claude invocation — execution, evaluation,
+/// companion/brain, and memory passes all route through it.
+pub fn claude_cli_invocation() -> (String, Vec<String>) {
+    #[cfg(windows)]
+    {
+        if let Some(exe) = resolve_claude_exe_windows() {
+            return (exe, Vec::new());
+        }
+        // Legacy fallback — let `cmd` resolve the shim via PATH.
+        (
+            "cmd".to_string(),
+            vec!["/C".to_string(), "claude.cmd".to_string()],
+        )
+    }
+    #[cfg(not(windows))]
+    {
+        ("claude".to_string(), Vec::new())
+    }
+}
+
+/// Absolute path to the real `claude.exe`, searching install layouts in
+/// preference order. `None` if not found.
+///
+/// 1. **Native installer** — `%USERPROFILE%\.local\bin\claude.exe`. The
+///    user migrated to this install (2026-06-11) and removed the npm global,
+///    so it is checked FIRST: when both exist the native one is the one the
+///    user maintains.
+/// 2. **npm-global layout** — `%APPDATA%\npm\node_modules\@anthropic-ai\
+///    claude-code\bin\claude.exe` (the binary the `claude.cmd` shim forwards
+///    to).
+/// 3. **PATH scan** — each PATH entry, as plain `<dir>\claude.exe` first,
+///    then the npm layout under `<dir>`.
+#[cfg(windows)]
+fn resolve_claude_exe_windows() -> Option<String> {
+    fn ok(p: std::path::PathBuf) -> Option<String> {
+        if p.exists() {
+            p.to_str().map(str::to_string)
+        } else {
+            None
+        }
+    }
+
+    // 1) Native installer.
+    if let Some(home) = std::env::var_os("USERPROFILE") {
+        let native = std::path::PathBuf::from(home)
+            .join(".local")
+            .join("bin")
+            .join("claude.exe");
+        if let Some(s) = ok(native) {
+            return Some(s);
+        }
+    }
+
+    let rel = std::path::Path::new("node_modules")
+        .join("@anthropic-ai")
+        .join("claude-code")
+        .join("bin")
+        .join("claude.exe");
+
+    // 2) Canonical npm-global dir.
+    if let Some(appdata) = std::env::var_os("APPDATA") {
+        if let Some(s) = ok(std::path::PathBuf::from(appdata).join("npm").join(&rel)) {
+            return Some(s);
+        }
+    }
+
+    // 3) PATH entries — plain exe (covers any custom install dir on PATH),
+    //    then the npm layout.
+    if let Some(path) = std::env::var_os("PATH") {
+        for dir in std::env::split_paths(&path) {
+            if let Some(s) = ok(dir.join("claude.exe")) {
+                return Some(s);
+            }
+            if let Some(s) = ok(dir.join(&rel)) {
+                return Some(s);
+            }
+        }
+    }
+    None
+}
+
 /// Watchdog timeout: if no newline arrives within this duration, the line
 /// read is aborted and whatever has been buffered so far is returned.
 /// Prevents indefinite hangs from processes that produce output without newlines.
@@ -229,6 +351,9 @@ impl CliProcessDriver {
         for (key, val) in &cli_args.env_overrides {
             cmd.env(key, val);
         }
+        // Always force the subscription path — strip any API-account auth that
+        // was inherited from the OS env or slipped through env_overrides.
+        force_subscription_auth(&mut cmd);
 
         cmd.spawn()
     }
@@ -265,6 +390,7 @@ impl CliProcessDriver {
         for (key, val) in &cli_args.env_overrides {
             cmd.env(key, val);
         }
+        force_subscription_auth(&mut cmd);
 
         let child = cmd
             .spawn()

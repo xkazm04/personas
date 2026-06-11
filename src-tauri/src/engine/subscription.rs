@@ -2227,6 +2227,8 @@ impl ReactiveSubscription for IdeaReplenishSubscription {
             self.pool.clone(),
             project_id.clone(),
             lenses,
+            None,
+            None,
         )
         .await
         {

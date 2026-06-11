@@ -1270,6 +1270,233 @@ pub fn companion_analyze_fleet(
     Ok("Fleet analysis started.".to_string())
 }
 
+/// Compact digest across the three operational inboxes — Messages
+/// (`persona_messages`), Human Review (`persona_manual_reviews`), and Incidents
+/// (`audit_incidents`) — pulled from the OPERATIONAL store (`state.db` /
+/// personas.db) and embedded in the daily-brief directive. Athena's
+/// `personas_database` connector points at the companion-brain DB, not the
+/// execution store, so she can't fetch these herself — we supply them (same
+/// rationale as `gather_fleet_digest`). Best-effort: any query failure degrades
+/// to a short note rather than aborting the turn.
+fn gather_daily_brief_digest(db: &crate::db::DbPool, hours: i64) -> String {
+    let conn = match db.get() {
+        Ok(c) => c,
+        Err(e) => return format!("(brief data unavailable: {e})"),
+    };
+    // Window expressed in fractional days for julianday() math. This is uniform
+    // across the three tables despite their mixed `created_at` formats
+    // (persona_messages / persona_manual_reviews store RFC3339; audit_incidents
+    // stores SQLite datetime-text) — julianday() parses both, and both stored
+    // times and `now` are UTC. A plain `created_at >= datetime('now', …)` string
+    // compare would be wrong for the RFC3339 columns (the `T`/`Z` break ordering).
+    let win_days = (hours as f64) / 24.0;
+
+    let mut out = format!(
+        "## Operational inboxes — last {hours}h (operational store, personas.db)\n"
+    );
+
+    // 1) Messages — agent output the user reads.
+    {
+        let agg = conn.query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN COALESCE(is_read,0)=0 THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN COALESCE(priority,'normal') NOT IN ('low','normal') THEN 1 ELSE 0 END)
+             FROM persona_messages
+             WHERE julianday('now') - julianday(created_at) <= ?1",
+            params![win_days],
+            |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, i64>(1).unwrap_or(0),
+                    r.get::<_, i64>(2).unwrap_or(0),
+                ))
+            },
+        );
+        match agg {
+            Ok((total, unread, high)) if total > 0 => {
+                out.push_str(&format!(
+                    "\n### Messages\n- {total} new ({unread} unread, {high} elevated-priority)\n"
+                ));
+                if let Ok(mut stmt) = conn.prepare(
+                    "SELECT COALESCE(NULLIF(title,''),'(untitled)'), COALESCE(priority,'normal')
+                     FROM persona_messages
+                     WHERE julianday('now') - julianday(created_at) <= ?1
+                     ORDER BY created_at DESC LIMIT 5",
+                ) {
+                    if let Ok(rows) = stmt.query_map(params![win_days], |r| {
+                        Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                    }) {
+                        for (title, prio) in rows.flatten() {
+                            let t: String = title.chars().take(70).collect();
+                            let tag = if prio != "low" && prio != "normal" {
+                                format!(" [{prio}]")
+                            } else {
+                                String::new()
+                            };
+                            out.push_str(&format!("  - {t}{tag}\n"));
+                        }
+                    }
+                }
+            }
+            Ok(_) => out.push_str("\n### Messages\n- none in the window\n"),
+            Err(_) => out.push_str("\n### Messages\n- (unavailable)\n"),
+        }
+    }
+
+    // 2) Human Review — items awaiting the user's decision. Also report the
+    // current open backlog regardless of age: a daily brief should flag a review
+    // that's been waiting since before the window (those are the overdue ones).
+    {
+        let agg = conn.query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END)
+             FROM persona_manual_reviews
+             WHERE julianday('now') - julianday(created_at) <= ?1",
+            params![win_days],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1).unwrap_or(0))),
+        );
+        let open_backlog: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM persona_manual_reviews WHERE status='pending'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        match agg {
+            Ok((total, _pending_in_window)) => {
+                out.push_str(&format!(
+                    "\n### Human Review\n- {total} new this window · {open_backlog} pending total (all ages)\n"
+                ));
+                if open_backlog > 0 {
+                    if let Ok(mut stmt) = conn.prepare(
+                        "SELECT COALESCE(NULLIF(title,''),'(untitled)'), COALESCE(severity,'info')
+                         FROM persona_manual_reviews
+                         WHERE status='pending' ORDER BY created_at ASC LIMIT 5",
+                    ) {
+                        if let Ok(rows) = stmt.query_map([], |r| {
+                            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+                        }) {
+                            for (title, sev) in rows.flatten() {
+                                let t: String = title.chars().take(70).collect();
+                                out.push_str(&format!("  - {t} ({sev})\n"));
+                            }
+                        }
+                    }
+                }
+            }
+            Err(_) => out.push_str("\n### Human Review\n- (unavailable)\n"),
+        }
+    }
+
+    // 3) Incidents — failures/alerts triaged into one inbox. Same window-plus-
+    // backlog shape: surface what's still OPEN, severity-ordered.
+    {
+        let agg = conn.query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN severity IN ('high','critical') THEN 1 ELSE 0 END)
+             FROM audit_incidents
+             WHERE julianday('now') - julianday(created_at) <= ?1",
+            params![win_days],
+            |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1).unwrap_or(0))),
+        );
+        let (open_total, open_sev): (i64, i64) = conn
+            .query_row(
+                "SELECT COUNT(*),
+                        SUM(CASE WHEN severity IN ('high','critical') THEN 1 ELSE 0 END)
+                 FROM audit_incidents WHERE status IN ('open','acknowledged')",
+                [],
+                |r| Ok((r.get::<_, i64>(0)?, r.get::<_, i64>(1).unwrap_or(0))),
+            )
+            .unwrap_or((0, 0));
+        match agg {
+            Ok((total, sev)) => {
+                out.push_str(&format!(
+                    "\n### Incidents\n- {total} new this window ({sev} high/critical) · {open_total} open total ({open_sev} high/critical)\n"
+                ));
+                if open_total > 0 {
+                    if let Ok(mut stmt) = conn.prepare(
+                        "SELECT COALESCE(NULLIF(title,''),'(untitled)'), COALESCE(severity,'low'), status
+                         FROM audit_incidents
+                         WHERE status IN ('open','acknowledged')
+                         ORDER BY CASE severity
+                                    WHEN 'critical' THEN 0 WHEN 'high' THEN 1
+                                    WHEN 'medium' THEN 2 ELSE 3 END,
+                                  created_at DESC
+                         LIMIT 5",
+                    ) {
+                        if let Ok(rows) = stmt.query_map([], |r| {
+                            Ok((
+                                r.get::<_, String>(0)?,
+                                r.get::<_, String>(1)?,
+                                r.get::<_, String>(2)?,
+                            ))
+                        }) {
+                            for (title, sev, status) in rows.flatten() {
+                                let t: String = title.chars().take(70).collect();
+                                out.push_str(&format!("  - {t} ({sev}, {status})\n"));
+                            }
+                        }
+                    }
+                }
+            }
+            Err(_) => out.push_str("\n### Incidents\n- (unavailable)\n"),
+        }
+    }
+
+    out
+}
+
+/// The directive handed to the proactive daily-brief turn. The inbox data is
+/// pre-gathered (`gather_daily_brief_digest`) and embedded, so Athena reasons
+/// over real numbers instead of trying to fetch them via the wrong-DB connector.
+fn build_daily_brief_directive(hours: i64, digest: &str) -> String {
+    format!(
+        "Compose the user's daily brief: a tight, skimmable summary of what happened across \
+         their three operational inboxes in the last {hours} hours — Messages (agent output they \
+         read), Human Review (items awaiting their decision), and Incidents (failures and alerts).\n\n\
+         The data is ALREADY GATHERED for you below, from the OPERATIONAL store. Reason over THIS \
+         — do NOT try to fetch it via a connector (your personas_database connector points at the \
+         companion-brain DB, not the execution store):\n\n\
+         {digest}\n\n\
+         Write the brief directly in chat (no approval, no card). Lead with the single most \
+         important thing to act on first. Then one or two short lines per inbox: flag unread / \
+         elevated-priority messages, anything still PENDING in Human Review (items older than the \
+         window are overdue — call those out), and any OPEN high/critical incidents. If a section \
+         is quiet, say so in one line and move on — don't pad. Close with one concrete suggested \
+         next action only if something clearly needs it. Keep the whole thing readable in under a \
+         minute, and ground every number in the data above."
+    )
+}
+
+/// Direct, deterministic "Daily brief" trigger for the companion sidebar button.
+/// Pre-gathers the three operational inboxes (Messages / Human Review /
+/// Incidents) over the last `hours` (default 24) from the operational store and
+/// spawns a proactive turn that summarizes them in chat. Like
+/// `companion_analyze_fleet`, it bypasses the chat round-trip so Athena can't
+/// shortcut past the wrong-DB connector; the button click is the consent, so
+/// there is no approval gate.
+#[tauri::command]
+pub fn companion_daily_brief(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    hours: Option<i64>,
+) -> Result<String, AppError> {
+    let hours = hours.unwrap_or(24).clamp(1, 168);
+    let digest = gather_daily_brief_digest(&state.db, hours);
+    let directive = build_daily_brief_directive(hours, &digest);
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        std::sync::Arc::new(state.user_db.clone()),
+        std::sync::Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "daily_brief".to_string(),
+        None,
+        directive,
+    );
+    Ok("Daily brief started.".to_string())
+}
+
 fn execute_update_goal_status(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,
