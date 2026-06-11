@@ -118,6 +118,16 @@ pub struct DesignContextData {
 `input_schema`, `sample_input` so the UI can render a ready-to-run
 template per use case.
 
+**`engine_mode`** (per use case, optional) — `"mixed"` arms the execution's
+personas-mcp sidecar with the `llm_delegate` tool: Claude stays the
+orchestrator and offloads simple self-contained subtasks (summarize,
+extract, classify, reformat) to a local Ollama model, saving premium-model
+capacity. Unset/`"claude"` = full Claude (default). Toggle lives in the
+use-case detail panel's Transform column; delegate endpoint/model come from
+the `delegate_base_url` / `delegate_model` settings (default
+`http://localhost:11434`, `auto` = first installed model). Design:
+`docs/plans/mixed-engine-byom.md`.
+
 **Two-format legacy handling**: `parse_design_context()` first tries
 the new envelope, falls back to flat `{files, references}` form for
 pre-envelope personas. Always use the helper — never parse raw SQL.
