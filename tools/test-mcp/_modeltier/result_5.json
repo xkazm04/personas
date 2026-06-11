@@ -1,0 +1,192 @@
+[
+  {
+    "id": "d04d937f-c43f-54bb-af22-94a509f819d0",
+    "tier": "sonnet",
+    "rationale": "Multi-step audit: collision detection + KB upsert needs moderate judgment per flag event."
+  },
+  {
+    "id": "62c97322-835a-5782-a3f2-d7af8ba0b2a8",
+    "tier": "sonnet",
+    "rationale": "Full-registry reconciliation + messaging summary involves moderate synthesis and reporting."
+  },
+  {
+    "id": "6be233cb-8072-5fb1-acdd-69a5be3a40e6",
+    "tier": "sonnet",
+    "rationale": "Stale-flag scan + ticket filing + digest requires light judgment on staleness criteria."
+  },
+  {
+    "id": "478fab0f-0db5-59d2-a84d-0471660e9791",
+    "tier": "haiku",
+    "rationale": "Deterministic single-tool sweep creating file:line idea entries — explicit rule, no synthesis."
+  },
+  {
+    "id": "a0f09053-db9a-5080-9796-b5ea0b2e72af",
+    "tier": "haiku",
+    "rationale": "Recomputing statistical baselines from raw data is mechanical aggregation with fixed formulas."
+  },
+  {
+    "id": "906e8b82-4e28-5960-ac6c-ad7613f00d53",
+    "tier": "sonnet",
+    "rationale": "Real-time classify + enrich + route + anomaly-scan requires moderate multi-step judgment per event."
+  },
+  {
+    "id": "a7b101bb-c357-5fc5-a2ee-47fde7939daa",
+    "tier": "sonnet",
+    "rationale": "Formatted digest with WoW trends and severity grouping needs light editorial shaping."
+  },
+  {
+    "id": "6a2bf81d-047f-59cf-b7af-dc6bf210a975",
+    "tier": "sonnet",
+    "rationale": "Compiling raw memories into coherent wiki articles requires synthesis and structure judgment."
+  },
+  {
+    "id": "b92807b8-61ec-5f23-a9f1-d34ed86d0a00",
+    "tier": "haiku",
+    "rationale": "Drain + extract + store raw session memories is structured extraction and persist — mechanical."
+  },
+  {
+    "id": "bf57241c-c97c-5a8d-b200-1e96e6a811db",
+    "tier": "sonnet",
+    "rationale": "Auditing for stale/contradictory/gap memories and surfacing for review needs nuanced judgment; review_mode=always."
+  },
+  {
+    "id": "14a1f250-19f9-524e-b031-1da3bce5e684",
+    "tier": "haiku",
+    "rationale": "Fetch approved review body and file a structured GitHub/GitLab issue — template-driven mechanical routing."
+  },
+  {
+    "id": "c1422775-da51-512b-a3bd-de049b2c3f82",
+    "tier": "sonnet",
+    "rationale": "Auditing skill quality and proposing edits/retirements requires editorial judgment; review_mode=always."
+  },
+  {
+    "id": "bacdcdd7-dfbc-53ca-afd2-4ec5ed1af5ed",
+    "tier": "sonnet",
+    "rationale": "Soft-delete + farewell email + masked alert involves multiple consequential steps; review_mode=always."
+  },
+  {
+    "id": "a5d1cd82-ef99-575c-b6ce-70623fd8bda3",
+    "tier": "haiku",
+    "rationale": "Sync email change to Supabase + send confirmation — deterministic two-step data propagation."
+  },
+  {
+    "id": "2e709a14-5c11-5478-9e1c-37989a3dbd8e",
+    "tier": "haiku",
+    "rationale": "Day-keyed drip advancement is rule-based dispatch: check day counter, send fixed email template."
+  },
+  {
+    "id": "4786985d-9b83-57a8-a536-8ca8f3f4451b",
+    "tier": "haiku",
+    "rationale": "Signup fan-out to fixed targets (Supabase, messaging, email, state) is deterministic multi-sink routing."
+  },
+  {
+    "id": "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100",
+    "tier": "opus",
+    "rationale": "Writing correct missing tests for uncovered modules requires deep code understanding and quality judgment."
+  },
+  {
+    "id": "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200",
+    "tier": "opus",
+    "rationale": "Bug hunting in a codebase demands deep reasoning, security/correctness judgment, and high error cost; review_mode=always."
+  },
+  {
+    "id": "5dc1a001-a5c0-4a01-9e01-5dc1a0010001",
+    "tier": "opus",
+    "rationale": "Codebase architecture review + ADR publication is deep multi-source analysis where quality is the whole point."
+  },
+  {
+    "id": "5dc1a002-a5c0-4a02-9e02-5dc1a0020002",
+    "tier": "opus",
+    "rationale": "Evaluating an idea against architecture and producing a scoped implementation plan is high-judgment strategic work."
+  },
+  {
+    "id": "5dc1a003-a5c0-4a03-9e03-5dc1a0030003",
+    "tier": "sonnet",
+    "rationale": "Code review for security/correctness is high-judgment but current_override pins it to sonnet; aligns with rubric default."
+  },
+  {
+    "id": "5dc1a004-a5c0-4a04-9e04-5dc1a0040004",
+    "tier": "sonnet",
+    "rationale": "Semver bump + changelog + release notes drafting is structured multi-step with light editorial judgment."
+  },
+  {
+    "id": "5dc1a006-a5c0-4a06-9e06-5dc1a0060006",
+    "tier": "sonnet",
+    "rationale": "Analyzing commits to sync README + changelog requires moderate prose judgment and multi-source diff reading."
+  },
+  {
+    "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+    "tier": "sonnet",
+    "rationale": "PR testing + standards-policy verdict in isolated worktree requires moderate multi-step reasoning."
+  },
+  {
+    "id": "983df3be-5a0e-5b92-b8d3-ca1ac87df901",
+    "tier": "haiku",
+    "rationale": "DNS resolution + variant generation + ledger comparison is deterministic pattern matching with no synthesis."
+  },
+  {
+    "id": "40c34e72-2b3c-514e-896e-fb48ee29c572",
+    "tier": "opus",
+    "rationale": "Critical incident root-cause hypothesis from correlated signals is high-stakes reasoning; review_mode=always."
+  },
+  {
+    "id": "5abd6abc-a2ce-5954-a2b3-25d4473d7868",
+    "tier": "sonnet",
+    "rationale": "Metric collection + baseline learning + warning-level anomaly detection is moderate statistical monitoring."
+  },
+  {
+    "id": "5437968e-d364-578c-a4f2-8ccd41dac357",
+    "tier": "haiku",
+    "rationale": "Rolling stats aggregation (triage/draft/grad counts) into a fixed summary layout is mechanical formatting."
+  },
+  {
+    "id": "78df8662-0964-54c1-b353-1730f6de3185",
+    "tier": "haiku",
+    "rationale": "Full-ledger status report is structured data formatting with no analysis or judgment required."
+  },
+  {
+    "id": "698fe298-5710-54d3-9d4b-796b0af3cd7e",
+    "tier": "haiku",
+    "rationale": "Periodic sweep with graduated reminder batching follows explicit escalation rules — mechanical routing."
+  },
+  {
+    "id": "9cd5f781-79f0-5968-8b60-33ed90c25e3c",
+    "tier": "sonnet",
+    "rationale": "Urgency-graded deal change alerting needs judgment to grade urgency; review_mode=always elevates above haiku."
+  },
+  {
+    "id": "be53e4e3-1f98-5e40-931c-6fa9ac21148a",
+    "tier": "haiku",
+    "rationale": "Tiered stale-deal escalation by age thresholds is deterministic rule-based routing with no synthesis."
+  },
+  {
+    "id": "7a90ad49-bf04-5235-9f46-9b42bc6ee230",
+    "tier": "haiku",
+    "rationale": "Fetch Sentry issues + memory-dedup filter is structured retrieval with mechanical noise suppression."
+  },
+  {
+    "id": "e71be662-3bfc-5a42-9869-fbf3a8381e7e",
+    "tier": "haiku",
+    "rationale": "Threshold inventory alerts + velocity calc are deterministic numeric comparisons with no prose synthesis."
+  },
+  {
+    "id": "a3375a9b-bbdd-5570-aa0e-5e113b8ffd5d",
+    "tier": "haiku",
+    "rationale": "Per-order log + classify + high-value threshold alert is structured extraction and rule-based routing."
+  },
+  {
+    "id": "1f52c9ff-639a-5e0d-813e-262d83d77960",
+    "tier": "haiku",
+    "rationale": "Refund logging + quality-issue flag is simple record + threshold alert — fully mechanical."
+  },
+  {
+    "id": "bfae76f0-5997-5d7c-bea0-5a18028e4ee2",
+    "tier": "sonnet",
+    "rationale": "Weekly portfolio delta report across multiple audits requires moderate cross-audit synthesis and reporting."
+  },
+  {
+    "id": "228c0d05-6844-58e7-b815-97564ab21f53",
+    "tier": "haiku",
+    "rationale": "Subscribing + polling to build a rolling error index is mechanical ingestion and structured storage."
+  }
+]

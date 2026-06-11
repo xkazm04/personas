@@ -35,6 +35,17 @@ Healthchecks verify that a stored credential still authenticates against its pro
 
 This replaced an earlier client-side fan-out that fired ~24 concurrent privileged `healthcheck_credential` IPC calls on every Vault visit. That stampede raced the `x-ipc-token` injection (`ipc_auth.rs`) — rejected calls surfaced as false **"degraded"** cards even though the stored keys were valid and the probe never ran. Routing the loop through the engine (daily sweep) or a single privileged call (manual button) eliminates the race; per-credential `healthcheck_credential` remains for one-off "Test connection" actions in the detail modal.
 
+### CLI-captured credentials (gcloud and friends)
+
+Connectors whose catalog metadata declares an `auth_methods` entry with `"type": "cli"` (currently **Google Cloud Platform**) show an extra tab in the add-credential form that onboards an already-authenticated local CLI session instead of a pasted secret. The flow (`CliConnectionPanel` → `cli_capture.rs`) verifies the binary is installed and authenticated, captures the active token (`gcloud auth print-access-token`, 1h TTL) plus context fields, and saves the credential with `metadata.source = "cli"`.
+
+Lifecycle of a CLI-sourced credential:
+
+- **Healthcheck** routes through the CLI (`cli_verify_auth`) instead of the HTTP probe.
+- **Token freshness** is maintained by the OAuth refresh engine, which routes `source = "cli"` credentials through `recapture_for_credential` — re-running the capture command before expiry (proactive tick + startup sweep).
+- **Execution** uses the captured token through the connector strategy. `GcpCloudStrategy` (`engine/connector_strategy.rs`) resolves the raw access token in `service_account_json` as a Bearer token and reports the credential as refresh-eligible, which arms the api_proxy 401 → force-refresh (CLI recapture) → retry path for mid-run expiry. A pasted service-account *key* (JSON shape) is not directly usable as a Bearer token — it would need a signed-JWT grant exchange, which is not implemented.
+- **Dead CLI session** (revocation, password change, org session policy): recapture fails as `Unauthenticated`, which classifies as `OAuthRevoked` — the credential is flagged `needs_reauth`, a `credential-reauth-required` event + OS notification fire, and the Vault `ReauthBanner` shows the CLI login instruction (e.g. "Run `gcloud auth login`") with a **Retry capture** button (`refresh_credential_cli_now`) so the user can recover without recreating the credential.
+
 ## API playground and vector KB
 
 `shared/playground` is the credential detail modal opened when you click a saved credential. Tabs: **Overview** (test connection, edit fields, scope, services/events, intelligence, delete), **Executions**, **API Explorer** (request-builder via `useApiTestRunner` + `ResponseViewer`, custom connectors only), **MCP Tools** (mcp connectors), **Rotation**. Resource **scope editing** lives in the Overview tab's `CredentialScopeSection` ("Edit scope" reopens the shared `ResourcePicker`) — surfaced near the top so it's reachable without scrolling. The `ResourcePicker` modal is a flex-column with `min-h-0` scroll body + `shrink-0` sticky footer so the Save button stays visible regardless of how many resource specs a connector declares.

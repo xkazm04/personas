@@ -206,6 +206,37 @@ The post-certification "are the teams on track?" review. When the user lets all 
 - **Engine** — the deterministic read-only counterpart is `scripts/test/fleet-analyze.mjs` (per-team execution health, outcomes, Director verdicts, goal links, on-track flags); see [team-orchestration.md](../pipeline/team-orchestration.md). Athena reasons; the script measures.
 - **"Ask Athena" from the dashboard (via the orb)** — the Mission Control **Fleet optimization** card (`overview/sub_missionControl/cards/FleetOptimizationCard.tsx`) carries a per-recommendation **Ask Athena** button. Unlike `analyze_fleet` (a gated rubric-graded turn), this is a lightweight forward through the **`useForwardToAthena`** hook (`plugins/companion/useForwardToAthena.ts`). It composes the recommendation (title / description / suggested action + a persona-or-general focus, from `t.overview.fleet_optimization.ask_athena_*`) and then: surfaces the floating **orb** (`state='minimized'`, not the full panel — falls back to `'open'` only if the orb feature is off), fires a one-shot amber "message received" ack glow on the orb (`companionStore.pulseForwardAck` → `forwardAckPulse` → `AthenaOrb`), sends the turn through the always-mounted `voiceTurnRequest` consumer (so it runs panel-closed), and — when voice is enabled + configured — speaks a short scripted, translated acknowledgement (`forward_ack_speech` = "Understood, processing the message.") for immediate feedback while the (often slow) turn spins up. The sibling **Open Lab** button skips Athena and navigates the user straight into the affected agent's Lab in matrix (model-comparison) mode. (Note: the older `pendingPrompt` forward — still used by `CockpitPanel` / `MessageDetailModal` / `GoalsPage` — opens the full panel instead; both consumers now claim their request atomically so StrictMode's dev double-invoke can't double-send.)
 
+## Daily brief (`companion_daily_brief`)
+
+The morning "what happened while I was away" summary. A **Sunrise** button in the
+companion toolbar's Assist group (`CompanionToolbar`, `data-testid="companion-daily-brief"`)
+calls the **`companion_daily_brief`** Tauri command **directly** — the same
+deterministic, button-is-the-consent shape as the fleet-analysis Radar button, and
+for the same reason: routing it through a chat message would let Athena shortcut to
+an inline read, and her `personas_database` connector points at the companion-brain
+DB (`personas_data.db`), not the execution store, so she can't fetch the inbox data
+herself.
+
+- **What it does** — `gather_daily_brief_digest` (`src-tauri/src/commands/companion/approvals.rs`)
+  pre-gathers a compact digest from the **operational store** (`state.db` = `personas.db`)
+  across the three operational inboxes over the last `hours` (default 24, clamped 1–168):
+  **Messages** (`persona_messages` — count, unread, elevated-priority + recent titles),
+  **Human Review** (`persona_manual_reviews` — new-in-window count plus the current
+  all-ages `pending` backlog and its oldest titles, since an overdue review predates
+  the window), and **Incidents** (`audit_incidents` — new-in-window plus current
+  `open`/`acknowledged` backlog, severity-ordered, high/critical called out). The
+  24h window uses `julianday()` math so it's correct across the tables' mixed
+  `created_at` formats (RFC3339 for messages/reviews, datetime-text for incidents).
+  `build_daily_brief_directive` embeds the digest and tells Athena to write a short,
+  skimmable summary directly in chat — lead with the top thing to act on, one or two
+  lines per inbox, flag overdue reviews + open high/critical incidents, and close with
+  one concrete next action only if something needs it. Spawned via
+  `session::spawn_proactive_turn` (trigger kind `daily_brief`), so the brief streams
+  back into the panel like any proactive turn.
+- **No approval, no new op** — unlike `analyze_fleet`, the daily brief is button-only:
+  there is no `ALLOWED_ACTIONS` op and no constitution bump, because Athena never needs
+  to *propose* it from chat. The click is the whole trigger.
+
 ## MCP request panel (D3 — batched approvals)
 
 Pending MCP requests from fleet sessions land in `McpRequestPanel` above the chat transcript: one card per request, with guidance prompts taking text input and approvals taking ✓/✗ + an optional note. The panel groups by `fleetSessionId` so cards from the same session render together — and when a single session has 2+ pending `approval`-kind requests, the group header renders a primary "Approve all" button that fires `resolveMcpRequest(_, { approved: true, note: '' })` for every approval in that group in parallel (`Promise.allSettled` so one failure doesn't stall the rest). Guidance requests are never batched — they need typed answers.

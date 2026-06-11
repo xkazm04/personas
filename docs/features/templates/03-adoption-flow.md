@@ -124,7 +124,8 @@ from-scratch glyph builder (`agents/sub_glyph`):
 | **Events** | opens `ComposerEventPickerModal` — cross-persona event subscriptions |
 | **Memory** / **Review** | toggle **on/off** in place (no card) |
 | **Apps** | `ComposerConnectorsPickerModal` (manual attach) when the capability ships no credential questions; otherwise the inline `AdoptionAnswerCard` |
-| **What** / **Messages** | open the inline `AdoptionAnswerCard` (questions) |
+| **Messages** | `ComposerMessagingPickerModal` (`pinBuiltIn={false}` — the inbox is a clearable option). Picked channels light the petal + show in the left **Messages** card and bake onto `notification_channels`. Clearing all channels empties the petal and appends a "no user-facing messages" hint to the seed intent (behavioral; the inbox is always written at runtime, so suppression is build-time). Same picker + behaviour in the from-scratch glyph builder. |
+| **What** | opens the inline `AdoptionAnswerCard` (questions) |
 
 When an attached connector is a **database** (`category === 'database'`), the
 connector picker shows a "Database tables" scope panel (`ConnectorTableScopeRow`,
@@ -305,6 +306,38 @@ permanently. See [07-adoption-answer-pipeline.md](07-adoption-answer-pipeline.md
 Once `seeded === true` and the Focus variant exits (questionsComplete),
 `MatrixAdoptionView` falls through to rendering `PersonaMatrix` with
 full `useMatrixBuild` + `useMatrixLifecycle` hooks attached.
+
+### Always-on adjustment (Approach 1)
+
+The seeded base `agent_ir` is composed deterministically from the template +
+recipes, so it describes connectors at the **category** level and can't
+reference the user's *actual* connector/credential picks or answers concretely.
+Before the auto-test, an LLM **adjustment pass** specializes the base to those
+picks and writes the result back to the build session, so the test + promote
+operate on the specialized IR.
+
+- Backend: `adjust_adoption_draft(session_id)` (`commands/design/template_adopt.rs`).
+  It reuses the refine-mode prompt (`build_template_adopt_prompt`) with the base
+  IR + `adoption_answers` + derived connector swaps, parses the result
+  (`parse_persona_output` → `N8nPersonaOutput`), and **scoped-merges only the
+  prose** (`system_prompt` + `structured_prompt`) back onto the base —
+  structural fields (use_cases/triggers/events/connectors) are preserved.
+- Divergence-gated (ties into the per-capability model tiers): an
+  **absolute-default adoption** (no answers, no credential bindings) **skips the
+  LLM entirely** — the deterministic base IR plus promote-time `{{param.*}}`
+  substitution is already correct, so there is nothing to specialize (this was
+  measured at ~42s of pure overhead and removed). A **configured** adoption
+  (a credential binding, a custom answer, or a connector swap) runs the full
+  **Sonnet** specialization (or **Opus** when the persona carries opus-tier
+  capabilities).
+- **Hard fallback**: any LLM/parse failure leaves the base IR untouched, so a
+  failed or slow adjustment degrades to the deterministic path, never blocking
+  adoption.
+- Frontend (`ChronologyAdoptionView`): runs once per persona when the session
+  reaches `draft_ready` with questions complete, gated *before* the auto-test
+  (`adjustedPersonaId` state). The call uses a long (`450s`) `invokeWithTimeout`
+  since the pass can take up to the backend's 420s budget; the process-activity
+  status shows "Adjusting persona to your setup…".
 
 ### Auto-test
 

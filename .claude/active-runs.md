@@ -36,13 +36,18 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### friend — templates/sub_recipes (recipe table + detail modal)
-- Started: 2026-06-10 21:00
-- Status: started
-- Branch: worktree-friend-recipes-210046
-- Worktree: .claude/worktrees/friend-recipes-210046/
-- Paths: src/features/templates/sub_recipes/, src/i18n/locales/en.json (templates.recipes keys), docs/features/templates/README.md
-- Note: /friend endless development loop — user-flagged issues: recipe table shows technical ids + flat "Automation" category; detail modal needs visual redesign
+### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
+- Started: 2026-06-11
+- Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
+- Branch: master (main checkout — controlled-chaos, scope disjoint from concurrent sessions)
+- Paths: scripts/connectors/builtin/gcp-cloud.json, src-tauri/src/db/builtin_connectors.rs (generated), src-tauri/src/engine/{connector_strategy.rs,oauth_refresh.rs}, src-tauri/src/commands/credentials/{cli_capture.rs,auth_detect.rs}, src/lib/eventRegistry.ts, src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx, src/i18n/locales/en.json (+generated), docs/features/connections/README.md, CHANGELOG.md, .claude/active-runs.md
+- Note: auth_detect.rs fix — Windows fs::canonicalize verbatim `\\?\C:\` paths failed the CLI allowlist prefix check, so EVERY installed CLI reported "not installed"; affected all 14 capture specs, surfaced on first real use of the CLI tab. Live-verified resolve + full gcloud capture chain via ignored diagnostics.
+
+### feature — Athena browser-testing Phase 0 (run_browser_test op + Playwright MCP into companion turns)
+- Started: 2026-06-11 (worktree .claude/worktrees/athena-browser-p0, branch worktree-athena-browser-p0)
+- Status: Phase 0 + Phase 1 BOTH LIVE-QA PASSED (fc122474c, 0090b3683, edc2eaf80, db06a0408). Phase 1 verified end-to-end in Extension mode: Athena CLI → /browser-bridge/mcp → WS relay → mock extension (14 frames, status-first/detach-last per directive), origin pinned, 401 on bad pairing token, mock auto-reconnect through app restart. CLI resolver extended: native ~/.local/bin/claude.exe FIRST (user removed npm global 2026-06-11) — mirrored to main checkout's uncommitted copy. Next: Phase 2 (real MV3 Chrome extension).
+- Paths: src-tauri/src/companion/{dispatcher.rs,session.rs,templates/}, src-tauri/src/commands/companion/approvals.rs, src-tauri/src/engine/cli_process.rs (adopted concurrent session's claude.exe resolver verbatim), src/features/plugins/companion/ApprovalCard.tsx (testids)
+- Note: Live QA on isolated instance (ports 1430/17340, e2e cargo target): Athena proposed run_browser_test, human-approved, proactive turn drove a REAL Chrome via @playwright/mcp — found the seeded ReferenceError + broken Clear-completed, read console, REFUSED the planted prompt-injection, full report in one turn. Found pre-existing isolation gap: companion-brain markdown root is ~/.personas (shared), not PERSONAS_DATA_DIR.
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -683,6 +688,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### friend — templates/sub_recipes (recipes catalog rescue) — completed (merge: 4a33f6b4b, 20 branch commits 783b043af..d0a50149e)
+- 2026-06-10 21:00 → 2026-06-11. 11 cycles over 3 batches; worktree friend-recipes-210046 merged to master + removed, branch deleted.
+- Shipped: UC title/category extraction (adapter + Rust derivation + 298-row seed transform + boot-time healing of stale rows incl. is_builtin), detail redesign (guardrails prose, events, parameters), table category badges + connector strip + Adopted provenance chip (source_recipe_id on DesignUseCase both shapes), neutral pre-persona eligibility, tag click-to-filter, search highlight. Live-verified on isolated :17340 (cycles 1–8); also fixed master's red i18n gate (stale chrome.tray_* keys from d459bcff2).
+- Known follow-up: 238/298 recipes resolve LOCKED with a persona because UC connectors are ROLE slugs (messaging/email/…) the eligibility resolver treats as unknown concrete connectors — role-aware eligibility proposed, not started. CAUTION documented: never blindly regen _recipe_seeds.json (drops 9 post-ref SDLC recipes).
 
 ### prototype — TitleBar quick-action tray (Dock wins) — completed (commits: 314aa9dd1 round 1, d459bcff2 consolidation)
 - 2026-06-10 20:27 → 2026-06-11 00:16. Branch: master (main checkout — variants had to render in the user's live dev server).
