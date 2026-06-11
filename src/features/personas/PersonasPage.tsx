@@ -30,6 +30,7 @@ const PersonaOverviewPage = lazyRetry(() => import('@/features/agents/components
 const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
 const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
+const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
 const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
 const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
@@ -232,6 +233,9 @@ export default function PersonasPage() {
     }
     if (sidebarSection === 'teams') {
       // Teams 1st-level section: Workspace (canvas/Studio) or the Goals hub.
+      if (teamsTab === 'kpis') {
+        return <ErrorBoundary name="KPIs"><Suspense fallback={SectionFallback}><KPIsPage /></Suspense></ErrorBoundary>;
+      }
       if (teamsTab === 'goals') {
         return <ErrorBoundary name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
       }

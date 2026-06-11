@@ -14,7 +14,7 @@ materially edits the working tree should touch this file twice:
    top of `## Recently completed
 
 ### kpi-orchestration-p0 — KPI layer P0: schema + CRUD + commands (session 2c665603)
-- Started: 2026-06-10 21:30. Completed: 2026-06-11 ~08:40. Commits: 59e0afba1 (P0) + bridge fix. Live-verified CRUD via bridge (create/measure/list/delete+cascade).
+- Started: 2026-06-10 21:30. Completed: 2026-06-11 ~08:40. Commits: 59e0afba1 (P0) + bridge fix + 5f4d6168a (P1 proposal scan, live-verified: 8 grounded proposals on ai-paralegal). Live-verified CRUD via bridge (create/measure/list/delete+cascade).
 - Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/lib.rs, src/lib/bindings/, docs/plans/kpi-driven-orchestration.md.
 - Note: dev_kpis + dev_kpi_measurements tables, dev_goals.kpi_id, repo CRUD, Tauri commands, ts-rs bindings. Design: docs/plans/kpi-driven-orchestration.md.
 
