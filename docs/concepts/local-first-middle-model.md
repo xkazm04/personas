@@ -149,7 +149,146 @@ transient. Recipe:
   faithfulness-critical work; keep `local_first` for low-stakes bulk
   transforms only (translations, reformatting) and close the direction.
 
-## 5. Related
+## 5. First result on a bigger device — 14B round (2026-06-12, RTX 4090)
+
+Device: RTX 4090 (24 GB), Ryzen 7 7800X3D, 64 GB RAM. Ollama 0.20.5,
+`qwen2.5:14b-instruct` (non-reasoning instruct, ~90 tok/s on GPU — 9× the
+Snapdragon CPU floor). Same six-team bulk-digest UC, deterministic synthetic
+input (six teams, 90 commits, exact authors/hashes, two `NOT DONE YET` lines
+each, one review each, one release blocker). Engine: Opus 4.8. Harness:
+`C:\Users\kazda\kiro\.byom-bench\` (disposable, outside the repo).
+
+> Methodology note (paid for once): the CLI stream-json **per-message**
+> `usage.output_tokens` and the result event's nested per-turn fields BOTH
+> undercount the final flush (a 15 KB deliverable reported as 66 output
+> tokens). The only authoritative token total is the **result event's
+> top-level `usage` object** — it equals the single-message baseline exactly.
+> Also: the `personas-mcp` binary is not rebuilt by the dev watcher, so the
+> first attempt ran against a stale binary with no `llm_delegate` tool and
+> Claude silently fell back to writing everything itself. Rebuild
+> (`cargo build --bin personas-mcp --features desktop`) before any delegate
+> round, and confirm `grep -c llm_delegate` on the `.exe` > 0.
+
+| Metric | Baseline (full Opus) | local_first @ 14B | vs baseline | Flip target | Met? |
+|---|---|---|---|---|---|
+| Claude output tokens | 7,716 | **18,065** | **+134%** | ≤ 50% | ❌ |
+| Turns | 1 | 10 | 10× | ≤ 6 | ❌ |
+| Revision work orders | — | 1 | — | 0–1 | ✅ |
+| Cache read (cumulative) | 0 | 157,241 | — | — | — |
+| Cost (CLI-billed) | $0.617 | **$1.170** | **+90%** | — | ❌ |
+| Wall | 78 s | 210 s | +169% | ≤ 2× | ❌ |
+| Delegate calls | 0 | 9 ok (6.2k in / 3.8k out local) | — | — | — |
+| Final quality | faithful | faithful (89/90 hashes) | held | no regress | ✅ |
+
+**Verdict: 14B does NOT clear the trust threshold — the economics invert the
+same way 4B did, just less severely.** The composer chain worked
+structurally (9 clean work orders: 6 team digests + rollup + table + a
+commit-count pass; one revision round; no infra failures). But the 14B made
+the *same classes* of error as the 4B — it **miscounted commits for 3 of 6
+teams** in the contributors table (Atlas 5/4/3/3 instead of 4/4/4/3),
+**fabricated commit URLs**, **swapped a hash** (Cobalt cold-start), and
+**dropped the verbatim `NOT DONE YET:` prefixes** in one team. Claude caught
+all of them — but only by **forensically validating every count and hash and
+then re-emitting a cleaned 15 KB deliverable itself**. That re-emission is
+why Claude *output* rose to 18 k tokens: the promise of "Claude composes &
+validates, never writes deliverable content" broke because the middle was
+untrustworthy enough to require a rewrite, not a spot-check. Even after
+forensic repair, one hash (`8b5faad`) still leaked from the final output.
+
+Two structural costs the 14B can't fix: (1) **multi-turn cache re-reads** —
+10 delegate round-trips re-read a growing context for 157 k cumulative
+cache-read tokens, a cost that scales with turn count regardless of delegate
+quality; (2) **validate-then-re-emit** — as long as the validator can't
+trust the middle enough to pass it through, Claude pays to write the
+deliverable a second time. Both are properties of the composer pattern on
+faithfulness-critical work, not of the model size alone.
+
+**Decision-tree position:** not "flip at 12–14B." The doc's remaining branch
+is "flip only at 27–32B" — `qwen2.5:32b-instruct` / `gemma3:27b` at Q4 fit
+this box's 24 GB. The bet for 32B: a low enough error rate that the validator
+*spot-checks instead of re-emits* (collapsing the 18 k re-emission) and the
+revision round disappears (fewer turns → less cache-read). If 32B still
+forces re-emission, the pattern is structurally wrong for faithfulness-
+critical work and `local_first` should be scoped to low-stakes bulk
+transforms (translation, reformatting) only — with the real near-term token
+lever remaining the headless-call layer (§6 of mixed-engine-byom.md).
+
+### 5.1 Cloud frontier middle — nemotron-3-ultra (550B) round (2026-06-12)
+
+When 14B fell short, we tested the ceiling: NVIDIA **nemotron-3-ultra**
+(550B total / 55B active, 256K ctx) via **Ollama Cloud** free tier
+(`https://ollama.com/api/chat`, `Authorization: Bearer <ollama_api_key>`).
+Same six-team UC, same input, Opus orchestrator.
+
+**Wiring (shipped, three small edits — the doc's predicted "auth header gap"):**
+- `mcp_server/tools.rs` `handle_llm_delegate`: reads `PERSONAS_DELEGATE_API_KEY`
+  and sends `Authorization: Bearer` on `/api/tags` + `/api/chat`; adds
+  `"think": false` to the body (nemotron is a reasoning model — without it
+  `message.content` is empty and everything lands in the `thinking` field).
+- `engine/cli_mcp_config.rs` `install_mcp_sidecar`: `delegate` tuple grew a
+  third `Option<&str>` element → writes `PERSONAS_DELEGATE_API_KEY` into the
+  sidecar env when set.
+- `engine/runner/mod.rs`: resolves the existing `ollama_api_key` setting and
+  threads it into `delegate_cfg`. Set `delegate_base_url=https://ollama.com`,
+  `delegate_model=nemotron-3-ultra` (bare tag works direct; `:cloud` suffix is
+  only for local routing), `ollama_api_key=<key>`. Rebuild **both** binaries
+  (the app via the watcher, `personas-mcp` manually).
+
+| Metric | Baseline | 14B local | **nemotron-3-ultra (cloud)** |
+|---|---|---|---|
+| Claude output tokens | 7,716 | 18,065 | **14,319** |
+| Turns | 1 | 10 | **8** |
+| Revision rounds | — | 1 | **0** |
+| Cost (CLI-billed) | $0.617 | $1.170 | **$0.993** |
+| Wall | 78 s | 210 s | **326 s** (cloud free tier) |
+| Delegate calls | — | 9 | **7 ok** (4.3k in / 2.7k out) |
+| Faithfulness | — | 89/90 hashes, miscounts | **90/90 hashes, 24/24 engineers, 0 miscounts** |
+
+**Quality: nemotron-3-ultra CLEARS the trust threshold.** Perfect attribution,
+zero miscounts, **no revision rounds** — Claude spot-validated and trimmed
+exactly **one minor fabrication** (an invented "Ravi Suri is addressing this
+follow-up" line in the Falcon digest) across the whole deliverable. This is
+the first middle model where the validator could spot-check instead of
+forensically rewrite. Capability scaled exactly as hypothesized: 4B → 14B →
+550B monotonically reduced errors, revisions, and cost.
+
+**But the economics STILL do not flip — and the round proves the blocker is
+the contract, not the model.** Claude output stayed at 14.3k (≈2× baseline)
+*despite a near-perfect delegate and zero revisions*. Root cause: the
+`local_first` contract's **VALIDATE & ASSEMBLE** step makes Claude emit the
+full ~15.7 KB assembled deliverable itself. The delegate offloads *generating*
+content (2.7k local output tokens) but **not emitting it** — and emission, not
+generation, dominates Claude's output-token cost. Output therefore cannot drop
+below the deliverable size no matter how good the middle is. Add 8 turns ×
+growing context (96.8k cache-read) and cloud latency (68 s cold start +
+17–30 s/call serialized on the 1-concurrent free tier), and a trustworthy
+550B middle still lands at +86% output / +60% cost / 4× wall vs full Claude.
+
+**Revised decision-tree outcome — neither "flip at 12–14B" nor "flip at
+27–32B" holds, because both assumed the model was the bottleneck.** At 550B
+the model is no longer the bottleneck; the composer contract's re-emission is.
+Two structural costs survive any model upgrade: (1) **re-emission** — Claude
+rewrites the deliverable it just validated; (2) **multi-turn cache re-reads** —
+each delegate round-trip re-reads a growing context. The only path to a flip
+is a **contract redesign**, not a bigger model:
+- **Assembly-by-reference**: Claude emits a skeleton with `{{insert delegate
+  output N}}` placeholders and the runner stitches the raw delegate outputs in
+  post-process — so Claude never re-emits the bulk content. This is the change
+  that would actually move output below baseline.
+- **Sampling validator**: validate 2-of-N sections + the rollup (not every
+  line) — cheaper now that a 550B middle earns the trust to sample.
+
+**Bottom line for cost reduction (2026-06-12):** `local_first` is *not* a
+cost lever today for faithfulness-critical bulk work, at any model size,
+under the current emit-the-whole-deliverable contract. For the **local /
+small-model goal** (run the middle on your own hardware), capability is still
+the blocker — 14B fails faithfulness; wait for nemotron-class faithfulness in
+a ≤30B variant. For the **cloud-middle path**, capability is solved but the
+contract must change first. The real near-term token lever remains the
+headless-call layer (wake window + Simple-routing), per §6 of
+mixed-engine-byom.md — deferred here by design.
+
+## 6. Related
 
 - `docs/plans/mixed-engine-byom.md` — architecture, §6 token methodic,
   §7 first verdict.
