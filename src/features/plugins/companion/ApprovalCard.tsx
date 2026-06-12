@@ -184,6 +184,7 @@ export function ApprovalCard({
         <button
           onClick={() => handle('approve')}
           disabled={busy !== null || failedOutcome !== null}
+          data-testid="companion-approve"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring"
         >
           {busy === 'approve' ? (
@@ -196,6 +197,7 @@ export function ApprovalCard({
         <button
           onClick={() => handle('reject')}
           disabled={busy !== null || failedOutcome !== null}
+          data-testid="companion-reject"
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-foreground/10 transition-colors focus-ring"
         >
           {busy === 'reject' ? (

@@ -263,4 +263,14 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// overlay from the explainer widget palette (`verdict`, `flow_steps`,
 /// `comparison_cards`, `timeline`, `stat_grid`, `log_excerpt`); the same
 /// kinds also become valid in `compose_cockpit`.
-pub const CONSTITUTION_VERSION: u32 = 31;
+///
+/// v32 (browser testing, Phase 0) adds the `run_browser_test` op: an
+/// approval-gated live browser test of a dev project's test environment.
+/// On approval a dedicated proactive turn spawns with Playwright MCP
+/// browser tools available for that single turn.
+///
+/// v33 (browser testing, Phase 3) adds `show_browser_test_report` — the
+/// structured verdict chat-card a browser-test turn ends with (steps with
+/// evidence, defects, console errors, security notes) — plus guidance to
+/// verify visual claims via screenshot instead of DOM inference.
+pub const CONSTITUTION_VERSION: u32 = 33;

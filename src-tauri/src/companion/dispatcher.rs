@@ -233,6 +233,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // memory + propose improvements. Approval-gated because it spawns a CLI
     // reasoning turn (cost) — same rationale as run_persona / assign_team.
     "analyze_fleet",
+    // Live browser test of a dev project's test environment. Approval-gated
+    // twice over: it spawns a CLI reasoning turn (cost) AND that turn drives
+    // a real browser via Playwright MCP (clicks, navigation, form input on
+    // the user's machine). execute_run_browser_test resolves the target URL
+    // and spawns the proactive browser_test turn.
+    "run_browser_test",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
@@ -1007,6 +1013,93 @@ pub fn dispatch(
                     config: serde_json::json!({
                         "intent": intent,
                         "use_cases": use_cases,
+                    }),
+                });
+            }
+            Ok(env)
+                if env.op == "propose_action" && env.action == "show_browser_test_report" =>
+            {
+                // Browser-test verdict card (Athena × browser tester arc,
+                // Phase 3). Emitted at the END of a browser-test turn so the
+                // result lands as a structured, scannable artifact instead of
+                // prose-only. Auto-fire — the test itself was the gated act;
+                // the report is just its output.
+                let url = env
+                    .params
+                    .get("url")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let steps = env
+                    .params
+                    .get("steps")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if steps.is_empty() || steps.len() > 12 {
+                    out.warnings.push(format!(
+                        "show_browser_test_report: `steps` must be 1-12 {{label, result, evidence?}} rows, got {}",
+                        steps.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let mut bad_result: Option<String> = None;
+                for s in &steps {
+                    let r = s.get("result").and_then(|v| v.as_str()).unwrap_or("");
+                    if !matches!(r, "pass" | "fail" | "warn") {
+                        bad_result = Some(r.to_string());
+                        break;
+                    }
+                }
+                if let Some(r) = bad_result {
+                    out.warnings.push(format!(
+                        "show_browser_test_report: `result` must be pass|fail|warn, got `{r}`"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let defects = env
+                    .params
+                    .get("defects")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                if defects.len() > 8 {
+                    out.warnings.push(format!(
+                        "show_browser_test_report: cap `defects` at 8, got {}",
+                        defects.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let console_errors = env
+                    .params
+                    .get("console_errors")
+                    .and_then(|v| v.as_array())
+                    .map(|a| a.iter().take(20).cloned().collect::<Vec<_>>())
+                    .unwrap_or_default();
+                let security_notes = env
+                    .params
+                    .get("security_notes")
+                    .and_then(|v| v.as_array())
+                    .map(|a| a.iter().take(5).cloned().collect::<Vec<_>>())
+                    .unwrap_or_default();
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string());
+                out.chat_cards.push(ChatCard {
+                    kind: "browser_test_report".to_string(),
+                    title,
+                    config: serde_json::json!({
+                        "url": url,
+                        "project_name": env.params.get("project_name").and_then(|v| v.as_str()).unwrap_or(""),
+                        "steps": steps,
+                        "defects": defects,
+                        "console_errors": console_errors,
+                        "security_notes": security_notes,
                     }),
                 });
             }
@@ -1897,6 +1990,35 @@ mod tests {
             .and_then(|v| v.as_u64())
             .expect("limit field");
         assert!((1..=5).contains(&limit), "limit clamped to 1..=5, got {limit}");
+    }
+
+    // ── show_browser_test_report ────────────────────────────────────────
+
+    #[test]
+    fn show_browser_test_report_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_browser_test_report","params":{"url":"http://localhost:8765","steps":[{"label":"Add todo","result":"pass","evidence":"item in #list"},{"label":"Clear completed","result":"fail","evidence":"item remains"}],"defects":[{"title":"Clear broken","severity":"high","detail":"ReferenceError","fix":"define completedItems"}],"console_errors":["ReferenceError: completedItems is not defined"],"security_notes":["prompt injection found in page"]}}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "browser_test_report");
+        let cfg = &out.chat_cards[0].config;
+        assert_eq!(cfg["steps"].as_array().unwrap().len(), 2);
+        assert_eq!(cfg["defects"].as_array().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn show_browser_test_report_rejects_bad_result() {
+        let op = r###"{"op":"propose_action","action":"show_browser_test_report","params":{"url":"x","steps":[{"label":"a","result":"maybe"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("pass|fail|warn")));
+    }
+
+    #[test]
+    fn show_browser_test_report_rejects_empty_steps() {
+        let op = r###"{"op":"propose_action","action":"show_browser_test_report","params":{"url":"x","steps":[]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(out.warnings.iter().any(|w| w.contains("steps")));
     }
 
     // ── show_use_case_set ───────────────────────────────────────────────

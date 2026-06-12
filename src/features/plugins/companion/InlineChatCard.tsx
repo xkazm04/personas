@@ -16,6 +16,7 @@ const UNCLAMPED_KINDS = new Set([
   'persona_walkthrough',
   'template_suggestions',
   'use_case_set',
+  'browser_test_report',
   'trigger_set',
   'model_tier_choice',
   'observability_plan',

@@ -507,6 +507,15 @@ pub async fn send_turn(
         tracing::warn!(error = %e, "companion recall preview event emit failed");
     }
 
+    // Browser-test turns get Playwright MCP tools for this single CLI spawn
+    // (see execute_run_browser_test in commands/companion/approvals.rs).
+    // Derived from the trigger kind so no extra parameter threads through
+    // every proactive spawner.
+    let browser_tools = matches!(
+        &origin,
+        TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "browser_test"
+    );
+
     let assistant_text = match timeout(
         TURN_TIMEOUT,
         run_cli(
@@ -517,6 +526,7 @@ pub async fn send_turn(
             &system_prompt,
             &effective_user_message,
             &user_db,
+            browser_tools,
         ),
     )
     .await
@@ -543,6 +553,7 @@ pub async fn send_turn(
                     &system_prompt,
                     &user_message,
                     &user_db,
+                    browser_tools,
                 ),
             )
             .await
@@ -1005,6 +1016,7 @@ async fn run_cli(
     system_prompt: &str,
     user_message: &str,
     pool: &UserDbPool,
+    browser_tools: bool,
 ) -> Result<String, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1047,6 +1059,28 @@ async fn run_cli(
         "--system-prompt-file".into(),
         prompt_file.to_string_lossy().to_string(),
     ]);
+
+    // Browser-test turns: hand this single CLI spawn browser tools via MCP —
+    // the browser-bridge endpoint (user's real Chrome through the paired
+    // extension) when one is connected, else the bundled Playwright MCP.
+    // Continuation/regular turns never get it (startup cost + tool surface
+    // stay scoped to the test). The temp config must outlive the child —
+    // NamedTempFile deletes on drop.
+    let mut _mcp_config_file: Option<tempfile::NamedTempFile> = None;
+    if browser_tools {
+        match crate::browser_bridge::build_browser_mcp_config() {
+            Ok((f, mode)) => {
+                tracing::info!(?mode, "browser-test turn: browser MCP config ready");
+                argv.push("--mcp-config".into());
+                argv.push(f.path().to_string_lossy().to_string());
+                _mcp_config_file = Some(f);
+            }
+            Err(e) => tracing::warn!(
+                error = %e,
+                "browser-test turn: failed to build browser MCP config; running without browser tools"
+            ),
+        }
+    }
 
     // Spawn from the user's home directory (or a benign fallback) so we
     // don't auto-pick up the Personas project's CLAUDE.md as context.
@@ -1399,8 +1433,8 @@ fn write_temp_prompt(content: &str) -> Result<std::path::PathBuf, AppError> {
 /// Public so the consolidation + reflection one-shots can reuse the
 /// same invocation pattern instead of duplicating the platform check.
 pub fn base_cli_invocation() -> (String, Vec<String>) {
-    // Shared resolver — verified absolute claude.cmd on Windows so a broken
-    // shim earlier on PATH can't shadow the working install.
+    // Shared resolver — verified absolute claude.exe on Windows so a broken
+    // or missing claude.cmd shim on PATH can't break the spawn.
     crate::engine::cli_process::claude_cli_invocation()
 }
 
