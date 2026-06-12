@@ -277,7 +277,14 @@ const ALLOWED_ROUTES: &[&str] = &[
 /// frontend registry keys in `guidance/walkthroughs.ts` (`GUIDANCE_TOPICS`).
 /// A topic not listed here is rejected with a warning so a hallucinated
 /// walkthrough name can't drive the orb to nowhere.
-const GUIDED_TOPICS: &[&str] = &["persona_creation", "connector_setup"];
+const GUIDED_TOPICS: &[&str] = &[
+    "persona_creation",
+    "connector_setup",
+    "trigger_creation",
+    "template_adoption",
+    "incident_triage",
+    "goal_kpi_setup",
+];
 
 /// Anchors Athena may target via `point_at` / `compose_walkthrough`. An anchor
 /// not listed here is rejected so a hallucinated selector can't drive the orb to
@@ -2319,6 +2326,25 @@ mod tests {
         let out = dispatch_op(op);
         assert_eq!(out.guide_walkthroughs, vec!["persona_creation".to_string()]);
         assert!(!out.cleaned_text.contains("start_guided_walkthrough"));
+    }
+
+    #[test]
+    fn start_guided_walkthrough_accepts_e2_topics() {
+        // The four E2 coverage topics must be allow-listed (mirrors the frontend
+        // registry); a regression that drops one would silently reject the tour.
+        for topic in [
+            "trigger_creation",
+            "template_adoption",
+            "incident_triage",
+            "goal_kpi_setup",
+        ] {
+            let op = format!(
+                r###"{{"op":"propose_action","action":"start_guided_walkthrough","params":{{"topic":"{topic}"}},"rationale":"show me"}}"###
+            );
+            let out = dispatch_op(&op);
+            assert_eq!(out.guide_walkthroughs, vec![topic.to_string()], "topic {topic} should be accepted");
+            assert!(out.warnings.is_empty(), "topic {topic} should not warn");
+        }
     }
 
     #[test]

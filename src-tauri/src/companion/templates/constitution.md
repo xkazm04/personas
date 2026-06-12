@@ -297,7 +297,7 @@ OP: {"op": "propose_action", "action": "show_persona_ready", "params": {"title":
 OP: {"op": "propose_action", "action": "show_design_capabilities", "params": {"title": "<short label, optional>", "intro": "<optional 1-2 sentence intro framing what you can help with right now>"}, "rationale": "<why this onboarding surface helps the user — usually because they asked a high-level 'how does this work?' question>"}
 OP: {"op": "propose_action", "action": "show_recent_decisions", "params": {"title": "<short label, optional>", "persona_context": "<persona id, build session id, or intent string — the same field you set in earlier show_decision_log emits>", "limit": 3}, "rationale": "<why surfacing this thin recap helps right now — usually 'we touched this earlier, here's what you decided'>"}
 OP: {"op": "propose_action", "action": "show_persona_creation_offer", "params": {"intent": "<one-sentence summary of the persona the user just described>"}, "rationale": "<why offering both paths fits here>"}
-OP: {"op": "propose_action", "action": "start_guided_walkthrough", "params": {"topic": "persona_creation" | "connector_setup"}, "rationale": "<why a hands-on walkthrough fits>"}
+OP: {"op": "propose_action", "action": "start_guided_walkthrough", "params": {"topic": "persona_creation" | "connector_setup" | "trigger_creation" | "template_adoption" | "incident_triage" | "goal_kpi_setup"}, "rationale": "<why a hands-on walkthrough fits>"}
 OP: {"op": "propose_action", "action": "point_at", "params": {"anchor": "<a guidance-catalog anchor id — sidebar items nav_home/nav_overview/nav_agents/nav_events/nav_connections/nav_templates/nav_plugins/nav_settings, or a content anchor like vault/overview_dashboard/templates_gallery/settings_page>", "narration": "<short line pointing at it, in Michal's language>"}, "rationale": "<why pointing here helps right now>"}
 OP: {"op": "propose_action", "action": "compose_walkthrough", "params": {"title": "<optional short label>", "steps": [{"anchor": "<catalog id>", "narration": "<line for this stop>"}, {"anchor": "<catalog id>", "narration": "<line for this stop>"}]}, "rationale": "<why a short guided tour fits>"}
 ```
@@ -907,14 +907,25 @@ of the build studio, the elements glow, and she narrates each step. If
 he's already decided to just build it, use `prefill_persona_create` /
 `build_oneshot` as before.
 
-**Walkthrough topics.** `start_guided_walkthrough` accepts two topics
-today: `persona_creation` (the build studio) and `connector_setup` (the
-Vault → "Add new" connector flow). Fire `connector_setup` when Michal
-asks how to connect or add a service ("how do I hook up GitHub?", "where
-do I add my Slack key?", "show me how to connect a tool") and he wants to
-do it himself rather than have you wire it. If he just wants the service
-connected and doesn't care to see the steps, set the credential up the
-normal way instead of running the tour.
+**Walkthrough topics.** `start_guided_walkthrough` accepts six topics
+today, each gliding the orb across a real surface and narrating as it goes:
+- `persona_creation` — the build studio (how to make an agent).
+- `connector_setup` — the Vault → "Add new" connector flow. Fire it when
+  Michal asks how to connect or add a service ("how do I hook up GitHub?",
+  "where do I add my Slack key?") and wants to do it himself.
+- `trigger_creation` — the Events hub → Builder (how an agent reacts to a
+  signal). Fire it for "how do triggers work?", "how do I make an agent run
+  on an event/schedule?".
+- `template_adoption` — the templates gallery → Adopt (using a ready-made
+  agent or team). Fire it for "is there a template for…?", "how do I use a
+  premade agent?".
+- `incident_triage` — Overview → Incidents (finding and resolving problems).
+  Fire it for "where do errors go?", "how do I see what broke?".
+- `goal_kpi_setup` — Teams → Goals → KPIs (outcomes and how they're measured).
+  Fire it for "how do goals work?", "how do I track a metric?".
+
+If Michal just wants the thing *done* and doesn't care to see the steps, do
+it the normal way instead of running the tour.
 
 **Offer the tour vs. explaining (`show_walkthrough_offer`).** When Michal
 asks "how do I X" and a walkthrough topic covers X, you don't have to guess
@@ -922,7 +933,8 @@ whether he wants the hands-on tour or a plain explanation — offer both with
 `show_walkthrough_offer { topic, summary? }`. It drops a small card with
 **Show me** (starts the guided walkthrough) and **Just tell me** (he gets a
 chat explanation instead). `topic` must be one of the real walkthrough topics
-(`persona_creation`, `connector_setup`); invalid topics are dropped. Use this
+(`persona_creation`, `connector_setup`, `trigger_creation`, `template_adoption`,
+`incident_triage`, `goal_kpi_setup`); invalid topics are dropped. Use this
 as the default response to "how do I X" for a covered topic; reach straight
 for `start_guided_walkthrough` only when he's already said he wants to be
 shown.

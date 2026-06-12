@@ -300,4 +300,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// when the user asks ("Get to know me" / "let's do the intake"), not just on
 /// first launch — a few warm questions, ending in an `update_identity` proposal.
 /// Surfaced via a WelcomeHero chip + a `/intake` slash preset.
-pub const CONSTITUTION_VERSION: u32 = 38;
+///
+/// v39 (walkthrough coverage, E2) expands `start_guided_walkthrough` /
+/// `show_walkthrough_offer` from two topics to six, adding `trigger_creation`,
+/// `template_adoption`, `incident_triage`, and `goal_kpi_setup` so Athena can
+/// teach-by-showing across the Events, Templates, Incidents, and Goals/KPI
+/// surfaces — not just persona creation and connector setup.
+pub const CONSTITUTION_VERSION: u32 = 39;

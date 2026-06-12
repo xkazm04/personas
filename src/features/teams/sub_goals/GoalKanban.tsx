@@ -101,6 +101,7 @@ function GoalCard({
 
   return (
     <div
+      data-testid="goal-card"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={goalAccentEdgeStyle(goal.status)}

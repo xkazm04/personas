@@ -84,7 +84,7 @@ export function RoutingView(props: Props) {
   });
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" data-testid="routing-canvas">
       <Toolbar
         activeOnly={filters.activeOnly} onActiveOnlyChange={filters.setActiveOnly}
         showUnconnected={filters.showUnconnected} onShowUnconnectedChange={filters.setShowUnconnected}

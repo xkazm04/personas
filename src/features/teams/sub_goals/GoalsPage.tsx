@@ -154,7 +154,7 @@ export default function GoalsPage() {
   };
 
   return (
-    <ContentBox>
+    <ContentBox data-testid="goals-page">
       <ContentHeader
         icon={<Target className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
