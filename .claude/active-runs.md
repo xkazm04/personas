@@ -66,6 +66,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — Athena value expansion EXECUTION (phased build of docs/plans/athena-value-expansion.md)
+- Started: 2026-06-12
+- Status: PART A COMPLETE (auditability). A1 b3ae1e95d (companion_turn ledger+capture), A2 de55e9318 (usage/health commands), A3 7f8ee1692 (Activity Athena lane), A4 c13b1a6cf (Observability health panel). All gates green (tsc 0, cargo check 0, clippy clean on touched, 202 companion tests, i18n no-extras). NEXT in order: D1 (baselines) → B1 (ops connector) → C1-4 → E1-3 → F1-4.
+- Branch: master (main checkout — deliberate: Rust-heavy sequential phases, worktree recompile cost prohibitive; scope = src-tauri/src/companion/** disjoint from concurrent doc/credentials sessions). Per-file git add + atomic commit per phase.
+- Paths: src-tauri/src/companion/{session.rs,athena_reaction.rs,dispatcher.rs,proactive/*,brain/*,connectors.rs,operations_views.rs[new]}, src-tauri/src/commands/companion/observability.rs, src-tauri/src/db/{mod.rs,schema,settings_keys.rs}, src/features/overview/{sub_activity,sub_observability}/, src/features/plugins/companion/{decision,guidance,sub_memory,BrainViewer.tsx}, src/i18n/locales/en.json, docs/features/{companion,overview}/README.md, docs/plans/athena-value-expansion.md
+- Note: design doc = docs/plans/athena-value-expansion.md (committed 4c029ba58). Order: A1→A2→A3→A4→D→B→C1-4→E1-3→F1-4. Each phase atomic + gates green before next.
+
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
