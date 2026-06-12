@@ -2420,7 +2420,9 @@
       "engine_claude": "Engine: Claude",
       "engine_mixed": "Engine: Mixed",
       "engine_claude_tooltip": "Full Claude. Click to enable Mixed: simple subtasks (summarize, extract, reformat) are offloaded to a local model to save premium capacity.",
-      "engine_mixed_tooltip": "Mixed engine: Claude orchestrates and offloads simple subtasks to a local model via the llm_delegate tool. Click to return to full Claude."
+      "engine_mixed_tooltip": "Mixed engine: Claude orchestrates and offloads simple subtasks to a local model via the llm_delegate tool. Click to return to full Claude.",
+      "engine_local_first": "Engine: Local-first",
+      "engine_local_first_tooltip": "Local-first: Claude composes work orders and validates; the local model produces all content. Click to return to full Claude."
     },
     "tools": {
       "no_persona": "No persona selected",
@@ -7724,9 +7726,6 @@
       "autocomplete_suggestions": "Suggestions",
       "coverage_filter_aria": "Coverage filter",
       "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
-      "coverage_all": "All",
-      "coverage_ready": "Ready",
-      "coverage_partial": "Partial",
       "coverage_drafts": "Drafts",
       "search_suggestions_aria": "Search suggestions",
       "clear_search_aria": "Clear search",
@@ -12957,7 +12956,14 @@
         "batch_approving": "Approving…"
       },
       "decision_hide": "Hide",
-      "decision_show": "Show decision"
+      "decision_show": "Show decision",
+      "wake_cadence_label": "Autonomy cadence",
+      "wake_cadence_hint": "How long signals accumulate before Athena wakes and handles them in one batch. Blocked teams and urgent messages bypass the timer.",
+      "wake_reactive": "Reactive",
+      "wake_30": "30 min",
+      "wake_60": "1 h",
+      "wake_120": "2 h",
+      "wake_impact_line": "24 h: {wakes} wakes · {signals} signals · {calls} calls · {actions} actions"
     },
     "ocr": {
       "title": "OCR",

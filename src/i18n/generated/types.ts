@@ -2427,6 +2427,8 @@ export type Translations = {
       engine_mixed: string;
       engine_claude_tooltip: string;
       engine_mixed_tooltip: string;
+      engine_local_first: string;
+      engine_local_first_tooltip: string;
     };
     tools: {
       no_persona: string;
@@ -12961,6 +12963,13 @@ export type Translations = {
       };
       decision_hide: string;
       decision_show: string;
+      wake_cadence_label: string;
+      wake_cadence_hint: string;
+      wake_reactive: string;
+      wake_30: string;
+      wake_60: string;
+      wake_120: string;
+      wake_impact_line: string;
     };
     ocr: {
       title: string;

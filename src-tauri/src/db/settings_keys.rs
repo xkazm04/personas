@@ -33,6 +33,12 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
+/// Athena autonomous wake window in minutes (docs/plans/athena-wake-window.md).
+/// 0 / unset = reactive (every tick); 30/60/120 = signals accumulate until the
+/// surface's last wake is older than the window (queue-size and priority
+/// bypasses apply). Read by exec triage, message triage, channel reactions.
+pub const ATHENA_WAKE_WINDOW_MINUTES: &str = "athena_wake_window_minutes";
+
 /// Mixed-engine local delegate model (Ollama tag, e.g. "qwen3:8b").
 /// "auto" or unset lets the sidecar pick the first installed model at call
 /// time. See docs/plans/mixed-engine-byom.md.
@@ -436,6 +442,7 @@ pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
     DELEGATE_MODEL,
+    ATHENA_WAKE_WINDOW_MINUTES,
     DELEGATE_BASE_URL,
     LITELLM_BASE_URL,
     LITELLM_MASTER_KEY,

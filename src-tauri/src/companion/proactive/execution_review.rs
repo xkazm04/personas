@@ -81,6 +81,11 @@ pub async fn run_execution_review_debouncer(
         if !crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
             continue; // mode off — drop the signal, no reviews
         }
+        // Wake window set → the event-driven leg stands down entirely; the
+        // gated periodic tick owns triage and the cursor keeps the queue.
+        if crate::companion::wake_window::window_minutes(&sys_db) > 0 {
+            continue;
+        }
         let res = review_recent_executions(
             &user_db,
             &sys_db,
@@ -526,6 +531,20 @@ pub async fn review_recent_executions(
     }
 
     let scan = collect_candidates(sys_db, &cursor)?;
+    // Wake window (docs/plans/athena-wake-window.md): gate BEFORE the cursor
+    // advance so a skipped tick leaves the backlog accumulating. Exec triage
+    // is observability — no priority bypass.
+    let wake = crate::companion::wake_window::gate(
+        sys_db,
+        "exec_triage",
+        scan.candidates.len(),
+        false,
+    );
+    if !wake.due {
+        return Ok(0);
+    }
+    let wake_started = std::time::Instant::now();
+    let wake_pending = scan.candidates.len();
     if let Some(newest) = &scan.newest {
         // Advance past the whole window we scanned, not just triaged
         // rows — bounds work and prevents an unreviewable backlog from
@@ -550,8 +569,16 @@ pub async fn review_recent_executions(
     let blob = crate::companion::athena_reaction::cli_text(prompt).await?;
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
+        crate::companion::wake_window::log_wake(
+            sys_db, "exec_triage", wake.reason, wake_pending, 1, 0,
+            wake_started.elapsed().as_millis() as u64,
+        );
         return Ok(0);
     };
+    crate::companion::wake_window::log_wake(
+        sys_db, "exec_triage", wake.reason, wake_pending, 1, decision.groups.len(),
+        wake_started.elapsed().as_millis() as u64,
+    );
 
     // Apply verdicts. Restraint is the default: anything unmatched or
     // malformed is treated as drop.

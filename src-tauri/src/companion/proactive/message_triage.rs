@@ -248,6 +248,22 @@ pub async fn triage_unread_messages(
     if batch.is_empty() {
         return Ok(0);
     }
+    // Wake window: high/urgent/critical messages bypass the timer (the same
+    // priority floor effective_action() enforces on verdicts).
+    let has_priority = batch
+        .iter()
+        .any(|m| matches!(m.priority.as_str(), "high" | "urgent" | "critical"));
+    let wake = crate::companion::wake_window::gate(
+        sys_db,
+        "message_triage",
+        batch.len(),
+        has_priority,
+    );
+    if !wake.due {
+        return Ok(0); // cursor untouched — the batch keeps accumulating
+    }
+    let wake_started = std::time::Instant::now();
+    let wake_pending = batch.len();
     // Oldest-first: the last row is the newest of this batch — the
     // cursor target once the batch is handled (or skipped).
     let batch_newest = batch
@@ -269,6 +285,10 @@ pub async fn triage_unread_messages(
         return Ok(0);
     };
 
+    crate::companion::wake_window::log_wake(
+        sys_db, "message_triage", wake.reason, wake_pending, 1, decision.items.len(),
+        wake_started.elapsed().as_millis() as u64,
+    );
     let mut done = 0usize;
     let mut digested = 0usize;
     let mut attention: Vec<(String, String, String)> = Vec::new();
