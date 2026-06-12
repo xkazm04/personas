@@ -4152,6 +4152,105 @@ mod goal_progress_tests {
     }
 }
 
+#[cfg(test)]
+mod uat_gate_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    fn test_pool() -> DbPool {
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let uri = format!("file:uat_gate_testdb_{id}?mode=memory&cache=shared");
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        let pool = r2d2::Pool::builder()
+            .max_size(4)
+            .build(manager)
+            .expect("test pool build");
+        {
+            let conn = pool.get().expect("conn");
+            conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
+            crate::db::migrations::run(&conn).expect("initial migrations");
+            crate::db::migrations::run_incremental(&conn).expect("incremental migrations");
+        }
+        pool
+    }
+
+    #[test]
+    fn web_classifier() {
+        assert!(project_type_is_web(Some("react")));
+        assert!(project_type_is_web(Some("NodeJS")));
+        assert!(project_type_is_web(Some("combined")));
+        assert!(!project_type_is_web(Some("rust")));
+        assert!(!project_type_is_web(Some("fastapi")));
+        assert!(!project_type_is_web(Some("python")));
+        assert!(!project_type_is_web(Some("other")));
+        assert!(!project_type_is_web(None));
+    }
+
+    #[test]
+    fn open_uat_gate_caps_progress_below_done() {
+        let pool = test_pool();
+        let project =
+            create_project(&pool, "Web App", "/tmp/webapp", None, None, Some("react"), None, None)
+                .unwrap();
+        let goal =
+            create_goal(&pool, &project.id, "Ship feature", None, None, None, None, None).unwrap();
+        // One ordinary to-do, marked done.
+        let todo = create_goal_item(&pool, &goal.id, "Build the feature").unwrap();
+        update_goal_item(&pool, &todo.id, None, Some(true)).unwrap();
+        // Attach the UAT gate (still open).
+        set_goal_verification(&pool, &goal.id, "smoke test the app", None).unwrap();
+
+        // All ordinary to-dos done, but the open gate must cap below 100 / not done.
+        let progress = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert!(progress < 100, "open UAT gate must keep progress < 100, got {progress}");
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_ne!(normalize_goal_status(&g.status), "done", "goal must NOT be done while UAT open");
+
+        // Eligibility: every non-verify to-do is complete → UAT may run.
+        assert!(goal_todos_all_complete(&pool, &goal.id).unwrap());
+
+        // Passing the UAT closes the gate → goal reaches 100 / done.
+        let after = complete_goal_verification(&pool, &goal.id).unwrap();
+        assert_eq!(after, 100, "closing the gate completes the goal");
+        let g2 = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&g2.status), "done");
+    }
+
+    #[test]
+    fn uat_ineligible_while_todos_open() {
+        let pool = test_pool();
+        let project =
+            create_project(&pool, "Web2", "/tmp/web2", None, None, Some("nodejs"), None, None)
+                .unwrap();
+        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        create_goal_item(&pool, &goal.id, "Unfinished work").unwrap(); // left open
+        set_goal_verification(&pool, &goal.id, "test it", None).unwrap();
+        assert!(
+            !goal_todos_all_complete(&pool, &goal.id).unwrap(),
+            "an open ordinary to-do makes the UAT ineligible"
+        );
+    }
+
+    #[test]
+    fn set_verification_replaces_not_duplicates() {
+        let pool = test_pool();
+        let project =
+            create_project(&pool, "Web3", "/tmp/web3", None, None, Some("react"), None, None)
+                .unwrap();
+        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        set_goal_verification(&pool, &goal.id, "scenario one", None).unwrap();
+        set_goal_verification(&pool, &goal.id, "scenario two", Some("http://localhost:8765")).unwrap();
+        let items = list_goal_items(&pool, &goal.id).unwrap();
+        let gates: Vec<_> = items
+            .iter()
+            .filter(|i| i.verify_kind.as_deref() == Some("browser_test"))
+            .collect();
+        assert_eq!(gates.len(), 1, "re-setting replaces the gate, never duplicates");
+        assert!(gates[0].verify_config.as_deref().unwrap().contains("scenario two"));
+    }
+}
+
 // ============================================================================
 // KPIs (outcome layer above goals — docs/plans/kpi-driven-orchestration.md)
 // ============================================================================
