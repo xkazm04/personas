@@ -66,11 +66,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (session: Fable design pass)
-- Started: 2026-06-12
-- Paths: docs/plans/athena-value-expansion.md (new), .claude/active-runs.md
-- Status: started — design-only session (no src edits); doc to be executed phase-by-phase by follow-up Opus sessions
-
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
@@ -717,6 +712,11 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (Fable design pass)
+- Started: 2026-06-12. Completed: 2026-06-12. Commit: 4c029ba58.
+- Paths: docs/plans/athena-value-expansion.md (new, 807 lines), .claude/active-runs.md.
+- Note: design-only (no src edits). 6 parts / 17 phases with verified code anchors: A=companion_turn ledger + Overview Athena lanes; B=operations_database read connector; C=attention queue + per-source budgets + daily rollup; D=adaptive triage baselines; E=anchor catalog + walkthrough scale-out; F=identity layer v2 (stub at brain/identity.rs → write loop/intake/synthesis). Execution by Opus sessions, one phase per session per the doc's §0 contract.
 
 ### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
 - Started: 2026-06-11 ~20:00. Completed: 2026-06-12 ~00:00. Commits: 76023d0f1 (§10 cert block), 89be34943 (KpiEvaluationSubscription), be8e8116a (plan addendum).
