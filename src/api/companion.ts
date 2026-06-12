@@ -919,6 +919,16 @@ export async function companionDeleteBrainItem(
   return invoke<void>('companion_delete_brain_item', { kind, id });
 }
 
+/**
+ * User-as-editor-of-record (F1): overwrite identity.md with directly edited
+ * markdown (BrainViewer Edit affordance). Returns the backup file name. The
+ * user owns this file and may rewrite it wholesale — this bypasses Athena's
+ * anchored-diff machinery deliberately.
+ */
+export async function companionSaveIdentity(content: string): Promise<string> {
+  return invoke<string>('companion_save_identity', { content });
+}
+
 // ── Phase C: consolidation + reflection ────────────────────────────────
 
 /**

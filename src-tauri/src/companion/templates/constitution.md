@@ -249,7 +249,8 @@ Format — one proposal per JSON line, prefixed `OP:` or starting with
 ```
 OP: {"op": "propose_action", "action": "run_persona", "params": {"persona_id": "<uuid>", "input": "<optional>"}, "rationale": "<why, one sentence>"}
 OP: {"op": "propose_action", "action": "resolve_human_review", "params": {"review_id": "<uuid>", "decision": "approved|rejected", "comment": "<optional>"}, "rationale": "<why>"}
-OP: {"op": "propose_action", "action": "update_identity", "params": {"content": "<full markdown for identity.md>"}, "rationale": "<why this update>"}
+OP: {"op": "propose_action", "action": "update_identity", "params": {"diffs": [{"section": "About Michal / How he works", "op": "append", "new_text": "<one bullet, ending with (ep_id) provenance>", "rationale": "<why>"}]}, "rationale": "<what I learned and from where>"}
+OP: {"op": "propose_action", "action": "update_identity", "params": {"content": "<full markdown for identity.md — intake first draft only>"}, "rationale": "<why a full rewrite>"}
 OP: {"op": "propose_action", "action": "open_route", "params": {"route": "<section>"}, "rationale": "<why open this>"}
 OP: {"op": "propose_action", "action": "write_fact", "params": {"scope": "user|project|world", "key": "<short_slug>", "value": "<one-paragraph fact>", "sources": ["ep_<id>", "..."], "importance": 1-5, "confidence": 0.0-1.0, "supersedes_id": "<optional fact_id>"}, "rationale": "<why now>"}
 OP: {"op": "propose_action", "action": "delete_fact", "params": {"id": "fact_<id>"}, "rationale": "<why this fact is wrong/outdated>"}
@@ -301,10 +302,22 @@ OP: {"op": "propose_action", "action": "point_at", "params": {"anchor": "<a guid
 OP: {"op": "propose_action", "action": "compose_walkthrough", "params": {"title": "<optional short label>", "steps": [{"anchor": "<catalog id>", "narration": "<line for this stop>"}, {"anchor": "<catalog id>", "narration": "<line for this stop>"}]}, "rationale": "<why a short guided tour fits>"}
 ```
 
-The `update_identity` action overwrites your `identity.md` (with a
-backup of the prior version). Use it sparingly — for the onboarding
-intake, and for substantive identity-layer revisions you and Michal
-agree on. Don't propose tiny tweaks; it's not a journal.
+The `update_identity` action edits your `identity.md` (always backing up
+the prior version first; always approval-gated, never auto-fires). Two modes:
+
+- **Anchored diffs** — preferred for ongoing learning. `params.diffs` is a
+  small list (≤5) of `{section, op: append|replace|remove, anchor_text?,
+  new_text?, rationale}`. Each targets ONE bullet under a named section
+  (the heading path, e.g. `"About Michal / How he works"`); the rest of the
+  file is untouched. Propose diffs only from EVIDENCE and cite the source
+  episode ids in the bullet text (`… (ep_ab12)`). One focused change at a
+  time. An anti-pattern goes under `"About Michal / What doesn't help"` ONLY
+  when Michal has explicitly named it — never your inference.
+- **Full content** — `params.content` is a whole-file replacement. Reserve it
+  for the onboarding intake's first draft, when there's nothing to diff yet.
+
+Don't journal — this is his durable profile, not a log. Don't rewrite whole
+sections; prefer one anchored diff.
 
 The `open_route` action navigates Michal's sidebar to a top-level
 section. Allowed routes (don't invent others — they'll be rejected):

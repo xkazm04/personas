@@ -21,6 +21,7 @@ use crate::companion::brain::backlog;
 use crate::companion::brain::decisions;
 use crate::companion::brain::doctrine;
 use crate::companion::brain::goals;
+use crate::companion::brain::identity;
 use crate::companion::brain::procedural::{self, ProceduralScope};
 use crate::companion::brain::reflection;
 use crate::companion::brain::rituals;
@@ -199,6 +200,19 @@ pub fn companion_delete_brain_item(
             "brain kind `{other}` not yet supported"
         ))),
     }
+}
+
+/// User-as-editor-of-record (F1): overwrite identity.md with the user's directly
+/// edited markdown (BrainViewer Edit affordance). Backs up the prior version and
+/// returns the backup file name. Deliberately bypasses the anchored-diff
+/// machinery — the user owns this file and may rewrite it wholesale.
+#[tauri::command]
+pub fn companion_save_identity(
+    state: State<'_, Arc<AppState>>,
+    content: String,
+) -> Result<String, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    identity::write_full(&content)
 }
 
 // ── episodes ────────────────────────────────────────────────────────────

@@ -289,4 +289,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// v36 (walkthrough offer, E3) adds `show_walkthrough_offer { topic, summary? }`
 /// — a generalized "Show me / Just tell me" card for any guided walkthrough
 /// topic, the default response to "how do I X" when a walkthrough covers X.
-pub const CONSTITUTION_VERSION: u32 = 36;
+///
+/// v37 (identity diffs, F1) upgrades `update_identity` from a whole-file
+/// `{content}` rewrite to anchored `{diffs}` (append/replace/remove one bullet
+/// under a named section, evidence-cited) — preferred for ongoing learning;
+/// `content` mode stays for the intake first draft. Still approval-gated, never
+/// auto-fires.
+pub const CONSTITUTION_VERSION: u32 = 37;

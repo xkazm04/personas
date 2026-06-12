@@ -12565,6 +12565,10 @@ export type Translations = {
       brain_desc_constitution: string;
       brain_delete: string;
       brain_deleting: string;
+      identity_edit: string;
+      identity_save: string;
+      identity_saving: string;
+      identity_edit_hint: string;
       brain_linked_label: string;
       episodes: string;
       doctrine: string;

@@ -1715,6 +1715,29 @@ pub fn dispatch(
                         continue;
                     }
                 }
+                // Identity diffs (F1): structurally validate the anchored-diff
+                // batch before it becomes an approval card. The full
+                // anchor-exists check happens at execute time (partial-failure
+                // reporting). `content`-mode (intake first draft) is unchecked.
+                if env.action == "update_identity" {
+                    if let Some(arr) = env.params.get("diffs").and_then(|v| v.as_array()) {
+                        use crate::companion::brain::identity::{IdentityDiff, MAX_DIFFS_PER_OP};
+                        if arr.is_empty() || arr.len() > MAX_DIFFS_PER_OP {
+                            out.warnings.push(format!(
+                                "rejected update_identity: 1..={MAX_DIFFS_PER_OP} diffs required, got {}",
+                                arr.len()
+                            ));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
+                        if let Some(err) = arr.iter().find_map(|d| IdentityDiff::from_json(d).err()) {
+                            out.warnings
+                                .push(format!("rejected update_identity: {err}"));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
+                    }
+                }
                 match insert_approval(pool, session_id, &env) {
                     Ok(created) => out.approvals.push(created),
                     Err(e) => {

@@ -82,6 +82,13 @@ Companion's awareness of the user's desktop activity ships in phases. The decisi
 
 Manual re-ingest uses `companion_reingest_doctrine`. It is idempotent: unchanged chunks are skipped by content hash, and the frontend receives inserted/updated/unchanged/deleted counts.
 
+## Identity layer (`identity.md`, F1 — direction 7)
+
+`~/.personas/companion-brain/identity.md` is the evolving profile of the user (and Athena's self-model), read into **every** system prompt by `prompt.rs`. It grows by **anchored diffs**, never a whole-file rewrite: the engine in `src-tauri/src/companion/brain/identity.rs` parses the doc into sections (`# heading / ## heading` path) and applies `AppendBullet` / `ReplaceBullet` / `RemoveBullet` against one bullet under a named section, leaving the rest untouched.
+
+- **Athena's writes** go through the `update_identity` op — **approval-gated and never auto-approved** (deliberately absent from `AUTOAPPROVE_ALLOWLIST`, like `update_dev_goal`). Two param modes: `diffs: [{section, op, anchor_text?, new_text?, rationale}]` (≤5, the preferred incremental path — each bullet should cite its source episode ids; structurally validated in `dispatcher.rs`, anchor-existence checked at execute time with partial-failure reporting) and `content: "..."` (a full rewrite, reserved for the intake first draft). `execute_update_identity` (`approvals.rs`) backs up the prior file (`identity.bak-<ts>.md`) before every write and bumps the `updated` frontmatter. Constitution **v37** teaches the op + the discipline (evidence-only, one focused diff, never journal).
+- **The user is editor-of-record.** The Memory-tab BrainViewer renders the identity DetailView with an **Edit** affordance (textarea over the raw markdown → `companion_save_identity`, full write + backup) — the user can rewrite it wholesale, bypassing the diff machinery by design.
+
 ## Conversation flow
 
 1. Frontend sends `companion_send_message` with the user message and a `voiceEnabled` flag.
