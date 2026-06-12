@@ -66,6 +66,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (session: Fable design pass)
+- Started: 2026-06-12
+- Paths: docs/plans/athena-value-expansion.md (new), .claude/active-runs.md
+- Status: started — design-only session (no src edits); doc to be executed phase-by-phase by follow-up Opus sessions
+
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
