@@ -237,6 +237,14 @@ pub const COMPANION_MSG_TRIAGE_CURSOR: &str = "companion_msg_triage_cursor";
 /// backfilled. Free-form timestamp value (no typed validation).
 pub const COMPANION_EXEC_REVIEW_CURSOR: &str = "companion_exec_review_cursor";
 
+/// Two-phase retry state for the exec-review leg (C4): JSON
+/// `{"cursor": <iso>, "attempts": N}` recording a triage batch whose CLI call
+/// or parse failed, so the next pass re-scans the same window instead of
+/// skipping it. After 2 failed attempts the main cursor advances past the batch
+/// (bounded work, no livelock) and this clears. Free-form JSON (no typed
+/// validation; empty string = no pending retry).
+pub const COMPANION_EXEC_REVIEW_RETRY: &str = "companion_exec_review_retry";
+
 /// Whether the Director may use the Obsidian Brain vault as long-term memory:
 /// read prior coaching notes before a review + write a verdict note after.
 /// Additionally gated on the vault being configured. Stored `"true"`/`"false"`.
@@ -489,6 +497,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
+    COMPANION_EXEC_REVIEW_RETRY,
     AUTONOMOUS_MESSAGE_TRIAGE,
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,

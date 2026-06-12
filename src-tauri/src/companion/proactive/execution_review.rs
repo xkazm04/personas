@@ -580,6 +580,61 @@ fn read_cursor(sys_db: &DbPool) -> String {
     }
 }
 
+// ── Two-phase retry cursor (C4) ──────────────────────────────────────────
+use crate::db::settings_keys::COMPANION_EXEC_REVIEW_RETRY as RETRY_KEY;
+
+/// A triage batch is given this many attempts before the cursor advances past
+/// it (giving up on an unprocessable batch — bounded work, never a livelock).
+const MAX_TRIAGE_ATTEMPTS: u32 = 2;
+
+/// Attempts already spent on the batch starting at `cursor` (0 if the retry
+/// state is absent or anchored to a different cursor — i.e. a fresh window).
+fn retry_attempts_for(sys_db: &DbPool, cursor: &str) -> u32 {
+    let Ok(Some(json)) = crate::db::repos::core::settings::get(sys_db, RETRY_KEY) else {
+        return 0;
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&json) else {
+        return 0;
+    };
+    if v.get("cursor").and_then(|x| x.as_str()) == Some(cursor) {
+        v.get("attempts").and_then(|x| x.as_u64()).unwrap_or(0) as u32
+    } else {
+        0
+    }
+}
+
+fn set_retry(sys_db: &DbPool, cursor: &str, attempts: u32) {
+    let json = serde_json::json!({ "cursor": cursor, "attempts": attempts }).to_string();
+    let _ = crate::db::repos::core::settings::set(sys_db, RETRY_KEY, &json);
+}
+
+fn clear_retry(sys_db: &DbPool) {
+    let _ = crate::db::repos::core::settings::set(sys_db, RETRY_KEY, "");
+}
+
+/// Handle a triage CLI/parse failure: bump the attempt count and, only once the
+/// batch has failed [`MAX_TRIAGE_ATTEMPTS`] times, advance past it. Until then
+/// the main cursor stays put so the next pass re-scans the same window.
+fn handle_triage_failure(sys_db: &DbPool, window_cursor: &str, newest: Option<&str>, attempts: u32) {
+    let next = attempts + 1;
+    if next >= MAX_TRIAGE_ATTEMPTS {
+        if let Some(n) = newest {
+            advance_cursor(sys_db, n);
+        }
+        clear_retry(sys_db);
+        tracing::warn!(
+            attempts = next,
+            "exec_review: triage failed {MAX_TRIAGE_ATTEMPTS}× — advancing past the batch"
+        );
+    } else {
+        set_retry(sys_db, window_cursor, next);
+        tracing::info!(
+            attempts = next,
+            "exec_review: triage failed — retrying this batch next pass (cursor held)"
+        );
+    }
+}
+
 /// Entry point called from the proactive tick and the debouncer. Runs one
 /// batched triage pass over qualifying recent executions. Returns the
 /// number of surfaced findings (digest lines + deep dives) for telemetry.
@@ -615,15 +670,21 @@ pub async fn review_recent_executions(
     }
     let wake_started = std::time::Instant::now();
     let wake_pending = scan.candidates.len();
-    if let Some(newest) = &scan.newest {
-        // Advance past the whole window we scanned, not just triaged
-        // rows — bounds work and prevents an unreviewable backlog from
-        // re-scanning forever.
-        advance_cursor(sys_db, newest);
-    }
+    // Empty window — nothing to triage. Advance past it and clear any pending
+    // retry (the window is consumed, no failure possible).
     if scan.candidates.is_empty() {
+        if let Some(newest) = &scan.newest {
+            advance_cursor(sys_db, newest);
+        }
+        clear_retry(sys_db);
         return Ok(0);
     }
+
+    // Two-phase cursor (C4): the main cursor is NOT advanced until triage
+    // SUCCEEDS, so a CLI/parse failure re-scans this same window next pass
+    // (bounded by MAX_TRIAGE_ATTEMPTS, after which we give up and advance).
+    let attempts = retry_attempts_for(sys_db, &cursor);
+    let newest_window = scan.newest.clone();
 
     let overflow = scan.qualifying_overflow;
     let saturated = scan.window_saturated;
@@ -632,12 +693,26 @@ pub async fn review_recent_executions(
         groups = groups.len(),
         overflow,
         saturated,
+        attempt = attempts + 1,
         "exec_review: running batched triage decision"
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let (blob, turn_id) =
-        crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "exec_triage").await?;
+    let (blob, turn_id) = match crate::companion::athena_reaction::cli_text_tracked(
+        prompt,
+        user_db,
+        "exec_triage",
+    )
+    .await
+    {
+        Ok(x) => x,
+        Err(e) => {
+            // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
+            // retry instead of silently skipping the batch.
+            handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
+            return Err(e);
+        }
+    };
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
         if let Some(tid) = &turn_id {
@@ -651,8 +726,14 @@ pub async fn review_recent_executions(
             sys_db, "exec_triage", wake.reason, wake_pending, 1, 0,
             wake_started.elapsed().as_millis() as u64,
         );
+        handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
         return Ok(0);
     };
+    // Triage succeeded — advance past the window and clear the retry state.
+    if let Some(newest) = &newest_window {
+        advance_cursor(sys_db, newest);
+    }
+    clear_retry(sys_db);
     // Record the triage verdict distribution on the ledger row so the Athena
     // health funnel (A4) can show drop / digest / deep-dive at a glance.
     if let Some(tid) = &turn_id {
@@ -767,6 +848,46 @@ pub async fn review_recent_executions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// In-memory system pool with just the `app_settings` table the cursor /
+    /// retry helpers read and write.
+    fn sys_test_pool() -> DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now')));",
+            )
+            .unwrap();
+        pool
+    }
+
+    #[test]
+    fn two_phase_cursor_retries_then_advances() {
+        let sys = sys_test_pool();
+        let cursor = "2026-06-12T00:00:00Z";
+        let newest = "2026-06-12T01:00:00Z";
+        let get = |k: &str| crate::db::repos::core::settings::get(&sys, k).unwrap();
+
+        // Fresh window — no attempts spent.
+        assert_eq!(retry_attempts_for(&sys, cursor), 0);
+
+        // First failure: cursor held (main cursor unset), one attempt recorded.
+        handle_triage_failure(&sys, cursor, Some(newest), 0);
+        assert_eq!(retry_attempts_for(&sys, cursor), 1);
+        assert_eq!(get(CURSOR_KEY), None, "main cursor must NOT advance on first failure");
+
+        // A retry anchored to a different cursor reads as fresh (0).
+        assert_eq!(retry_attempts_for(&sys, "different-cursor"), 0);
+
+        // Second failure hits the cap: advance past the batch + clear retry.
+        handle_triage_failure(&sys, cursor, Some(newest), 1);
+        assert_eq!(retry_attempts_for(&sys, cursor), 0, "retry cleared after giving up");
+        assert_eq!(get(CURSOR_KEY).as_deref(), Some(newest), "cursor advances after 2 failures");
+    }
 
     fn mk_candidate(persona: &str, reason: &'static str, cost: f64) -> ReviewCandidate {
         ReviewCandidate {

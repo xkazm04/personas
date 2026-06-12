@@ -96,9 +96,11 @@ The Messages counterpart of Athena's human-review resolution
 - **Digest dedupe hit** → the card for that hour already pending; lines are
   logged, items were still annotated/marked correctly. Cards are pointers, the
   durable state lives in Messages/Executions.
-- **Exec cursor semantics unchanged** (advance past the scanned window even if
-  triage later fails): bounds work, never re-reviews; the trade is a missed
-  batch on CLI failure, same as before.
+- **Exec cursor is two-phase (C4)**: the cursor advances only when triage
+  succeeds (or the window is empty), so a CLI/parse failure re-scans the same
+  window next pass. Bounded to 2 attempts (`companion_exec_review_retry`), after
+  which it advances past the batch — bounds work, never re-reviews a succeeded
+  batch, never livelocks on a poison one.
 
 ## Future work (known, not yet built)
 
@@ -138,8 +140,12 @@ The Messages counterpart of Athena's human-review resolution
   and job failures — counts only, each line naming where to look. No budget cost
   (`enqueue_external`), deduped on the date. Checked from both proactive
   evaluation entry points (manual + desktop tick).
-- **Exec-leg retry cursor** — a two-phase cursor (scanned vs triaged) so a CLI
-  failure doesn't skip the batch.
+- ~~**Exec-leg retry cursor**~~ — **SHIPPED (C4).** The main cursor no longer
+  advances until triage *succeeds*, so a CLI/parse failure re-scans the same
+  window next pass instead of skipping the batch. Bounded by
+  `companion_exec_review_retry` (`{cursor, attempts}`): after
+  `MAX_TRIAGE_ATTEMPTS` (2) failures the cursor advances past the batch and the
+  retry clears — never a livelock on a poison batch.
 
 ## Related
 
