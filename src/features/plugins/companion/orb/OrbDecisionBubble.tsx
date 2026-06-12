@@ -145,13 +145,13 @@ export function OrbDecisionBubble() {
   // toggle. It sits at the bottom on the docked side, pointing at the orb.
   const handleSide: CSSProperties = dockedLeft ? { left: 14 } : { right: 14 };
 
-  // A short, markdown-free label for the collapsed chip (the review title, or
-  // the first line of the prompt).
+  // A markdown-free label for the collapsed chip: the full first line of
+  // the prompt, untruncated — the chip wraps instead of ellipsizing so the
+  // title is always readable while minimized.
   const shortLabel =
-    (decision.prompt.split(/ — |\n/)[0] ?? decision.prompt)
+    (decision.prompt.split('\n')[0] ?? decision.prompt)
       .replace(/[*_`#>]/g, '')
-      .trim()
-      .slice(0, 80) || t.plugins.companion.decision_title;
+      .trim() || t.plugins.companion.decision_title;
   const SourceIcon = SOURCE_ICON[decision.source] ?? Sparkles;
 
   return (
@@ -173,14 +173,17 @@ export function OrbDecisionBubble() {
           onClick={() => setCollapsed(false)}
           data-testid="athena-decision-expand"
           aria-label={t.plugins.companion.decision_show}
-          className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors"
+          className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors max-w-[420px]"
         >
           <span className="relative flex w-2 h-2 flex-shrink-0">
             {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
             <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
           </span>
           <SourceIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
-          <span className="typo-caption font-medium text-foreground/90 max-w-[200px] truncate">{shortLabel}</span>
+          {/* Wraps — never ellipsized; the chip caps line length, not content. */}
+          <span className="typo-caption font-medium text-foreground/90 text-left whitespace-normal break-words min-w-0">
+            {shortLabel}
+          </span>
         </button>
       ) : (
         <div className="relative rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5">
@@ -251,7 +254,9 @@ export function OrbDecisionBubble() {
                 >
                   {i + 1}
                 </span>
-                <span className="truncate">{opt.label}</span>
+                <span className="text-left whitespace-normal break-words min-w-0">
+                  {opt.label}
+                </span>
               </button>
             ))}
 
@@ -273,7 +278,9 @@ export function OrbDecisionBubble() {
                 0
               </span>
               <Lightbulb className="w-3.5 h-3.5" aria-hidden />
-              <span className="truncate">{t.plugins.companion.decision_explain}</span>
+              <span className="text-left whitespace-normal break-words min-w-0">
+                {t.plugins.companion.decision_explain}
+              </span>
             </button>
           </div>
         </div>

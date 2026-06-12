@@ -29,7 +29,43 @@
     "updates_current_version": "У вас версия v{version}",
     "updates_last_checked": "Последняя проверка {time}",
     "updates_history_title": "Недавние обновления",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Синхронизация с облачной панелью",
+    "cloud_sync_description": "Синхронизируйте копию ваших персон, запусков и активности в частное облако для просмотра в веб-панели (только для чтения). Учётные данные коннекторов никогда не покидают это устройство.",
+    "cloud_sync_toggle": "Синхронизировать с облачной панелью",
+    "cloud_sync_on": "Данные синхронизируются с облачной панелью.",
+    "cloud_sync_off": "Данные хранятся только на этом устройстве.",
+    "cloud_sync_toggle_aria": "Переключить синхронизацию с облачной панелью",
+    "cloud_sync_now": "Синхронизировать сейчас",
+    "cloud_sync_syncing": "Синхронизация...",
+    "cloud_sync_last": "Последняя синхронизация",
+    "cloud_sync_never": "Ещё не синхронизировалось",
+    "cloud_sync_error": "Ошибка последней синхронизации: {error}",
+    "cloud_sync_enable_failed": "Не удалось обновить настройку синхронизации",
+    "cloud_sync_now_failed": "Синхронизация не удалась. Проверьте подключение и попробуйте снова.",
+    "cloud_sync_now_done": "Синхронизировано записей: {count}",
+    "cloud_sync_state_off": "Выключено",
+    "cloud_sync_state_active": "Активно",
+    "cloud_sync_state_syncing": "Синхронизация…",
+    "cloud_sync_total": "синхронизировано за всё время",
+    "cloud_sync_device": "Устройство {id}",
+    "cloud_sync_tables_title": "Синхронизированные данные",
+    "cloud_sync_show_details": "Показать детали",
+    "cloud_sync_hide_details": "Скрыть детали",
+    "cloud_sync_retry": "Повторить",
+    "cloud_sync_rows": "строк",
+    "cloud_sync_table_pending": "Ожидание первой синхронизации",
+    "cloud_sync_tables": {
+      "synced_personas": "Персоны",
+      "synced_executions": "Запуски",
+      "synced_events": "События",
+      "synced_manual_reviews": "Проверки",
+      "synced_messages": "Сообщения",
+      "synced_metrics_snapshots": "Метрики",
+      "synced_tool_usage": "Использование инструментов",
+      "synced_memories": "Воспоминания",
+      "synced_knowledge_patterns": "Знания"
+    }
   },
   "appearance_extra": {
     "simple": "Простой",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Командные воспоминания",
+    "import_team_memories": "{count} командных воспоминаний",
+    "include_memories_label": "Включить воспоминания",
+    "include_memories_note": "Воспоминания персоны и команды экспортируются вместе. Отключите, чтобы экспортировать агентов и команды без накопленных воспоминаний."
   },
   "config": {
     "title": "Разрешение конфигурации",
@@ -510,7 +550,12 @@
     "over_budget": "Вы превысили ежемесячный потолок. На этапе 2 в этом случае новые запуски будут заблокированы; пока считайте это предупреждением.",
     "approaching_budget": "Вы приближаетесь к ежемесячному потолку. Рекомендуется просмотреть недавние запуски.",
     "no_ceiling_hint": "Потолок не задан. Введите сумму в USD выше, чтобы начать отслеживание бюджета.",
-    "stage1_note": "Этап 1: только информирование. На этапе 2 диспетчеризация выполнения будет блокироваться при превышении потолка."
+    "stage1_note": "Этап 1: только информирование. На этапе 2 диспетчеризация выполнения будет блокироваться при превышении потолка.",
+    "concurrency_section": "Параллельные запуски",
+    "concurrency_hint": "Количество персон, которые могут выполняться одновременно. Лишние запуски ожидают в очереди и запускаются автоматически по мере освобождения слотов. Изменения применяются сразу — перезапуск не нужен.",
+    "concurrency_aria": "Максимальное количество параллельных запусков",
+    "concurrency_range": "От {min} до {max} одновременных запусков.",
+    "concurrency_queued_note": "Запуски сверх этого лимита ставятся в очередь и продвигаются по приоритету, затем по порядку поступления, по мере завершения активных."
   },
   "recent_change": {
     "label": "Последнее {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Поиск в настройках…",
+    "recommended": "Рекомендуемое",
+    "section": "Настройки",
+    "trigger_hint": "Поиск настроек  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Открыть поиск настроек",
+    "reduce_motion": "Уменьшить анимацию",
+    "dim": "Снизить насыщенность цветов",
+    "cvd_safe": "Палитра для дальтоников",
+    "high_contrast": "Высокий контраст",
+    "ambient": "Фоновое изображение по времени суток",
+    "theme": "Тема и цвета",
+    "text_size": "Размер текста",
+    "brightness": "Яркость",
+    "density": "Плотность интерфейса",
+    "timezone": "Часовой пояс",
+    "tabs": {
+      "limits": "Ограничения",
+      "api_keys": "API-ключи",
+      "history": "История"
+    }
   }
 }

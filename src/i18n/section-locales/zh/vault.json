@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "刷新",
+    "tool_count_one": "{count} 个工具",
+    "tool_count_other": "{count} 个工具",
+    "tab_documents": "文档",
+    "tab_search": "搜索",
+    "tab_settings": "设置"
   },
   "manager": {
     "title": "凭据",
@@ -845,7 +851,10 @@
     "enabling": "启用中...",
     "enable_rotation": "启用轮换",
     "enable_failed": "启用轮换失败：{error}",
-    "last_rotated": "最后轮换于 {time}"
+    "last_rotated": "最后轮换于 {time}",
+    "ring_aria_label": "将在 {countdown} 后轮换",
+    "history_empty_title": "暂无轮换历史",
+    "history_empty_subtitle": "一旦此凭证轮换，轮换事件将显示在此处。"
   },
   "event_config": {
     "event_triggers": "事件触发器",
@@ -950,11 +959,24 @@
     "catalog_description": "选择已知服务，如 Slack、GitHub 或 OpenAI。预配置字段和健康检查。",
     "ai_heading": "AI 设计凭据",
     "ai_description": "描述任何服务，AI 将为您配置字段、认证类型和健康检查。",
-    "works_with_any": "适用于任何 API"
+    "works_with_any": "适用于任何 API",
+    "recommended": "推荐"
   },
   "credential_list": {
     "no_match": "无匹配凭据",
-    "no_match_hint": "尝试调整筛选器或搜索词"
+    "no_match_hint": "尝试调整筛选器或搜索词",
+    "col_name": "名称",
+    "col_status": "状态",
+    "col_type": "类型",
+    "col_category": "分类",
+    "col_health": "健康状态",
+    "col_last_used": "最后使用",
+    "col_created": "创建时间",
+    "filter_all": "全部",
+    "filter_all_health": "所有健康状态",
+    "health_healthy": "健康",
+    "health_failing": "异常",
+    "health_untested": "未测试"
   },
   "wizard_detect": {
     "no_services": "无服务匹配 \\\"{search}\\\"",

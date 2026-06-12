@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "쿼리와 일치하는 arXiv 논문이 없습니다. 더 넓거나 다른 키워드를 시도해 보세요.",
+  "arxiv_error_title": "검색 실패",
+  "arxiv_error_timeout": "arXiv 응답이 너무 오래 걸립니다 — 요청을 제한하고 있을 수 있습니다. 잠시 후 다시 시도하세요.",
+  "arxiv_error_rate_limited": "arXiv가 현재 요청을 제한하고 있습니다. 몇 초 후 다시 시도하세요.",
+  "arxiv_error_http": "arXiv에서 오류가 반환되었습니다 (HTTP {status}). 잠시 후 다시 시도하세요.",
+  "arxiv_error_network": "arXiv에 연결할 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.",
+  "arxiv_error_feed": "arXiv에서 해당 쿼리를 처리할 수 없습니다. 다른 키워드나 더 간단한 키워드를 시도해 보세요.",
+  "arxiv_error_generic": "arXiv 검색에 실패했습니다. 다시 시도하세요."
 }

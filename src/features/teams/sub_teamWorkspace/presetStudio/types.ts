@@ -14,3 +14,9 @@ export interface PresetVariantProps {
   customizing: boolean;
   setCustomizing: (next: boolean) => void;
 }
+
+/** Prop contract for the preset-gallery variants (how the offer is presented). */
+export interface PresetGalleryVariantProps {
+  presets: TeamPreset[];
+  onPick: (preset: TeamPreset) => void;
+}

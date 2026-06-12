@@ -211,6 +211,37 @@ The post-certification "are the teams on track?" review. When the user lets all 
 - **Engine** — the deterministic read-only counterpart is `scripts/test/fleet-analyze.mjs` (per-team execution health, outcomes, Director verdicts, goal links, on-track flags); see [team-orchestration.md](../pipeline/team-orchestration.md). Athena reasons; the script measures.
 - **"Ask Athena" from the dashboard (via the orb)** — the Mission Control **Fleet optimization** card (`overview/sub_missionControl/cards/FleetOptimizationCard.tsx`) carries a per-recommendation **Ask Athena** button. Unlike `analyze_fleet` (a gated rubric-graded turn), this is a lightweight forward through the **`useForwardToAthena`** hook (`plugins/companion/useForwardToAthena.ts`). It composes the recommendation (title / description / suggested action + a persona-or-general focus, from `t.overview.fleet_optimization.ask_athena_*`) and then: surfaces the floating **orb** (`state='minimized'`, not the full panel — falls back to `'open'` only if the orb feature is off), fires a one-shot amber "message received" ack glow on the orb (`companionStore.pulseForwardAck` → `forwardAckPulse` → `AthenaOrb`), sends the turn through the always-mounted `voiceTurnRequest` consumer (so it runs panel-closed), and — when voice is enabled + configured — speaks a short scripted, translated acknowledgement (`forward_ack_speech` = "Understood, processing the message.") for immediate feedback while the (often slow) turn spins up. The sibling **Open Lab** button skips Athena and navigates the user straight into the affected agent's Lab in matrix (model-comparison) mode. (Note: the older `pendingPrompt` forward — still used by `CockpitPanel` / `MessageDetailModal` / `GoalsPage` — opens the full panel instead; both consumers now claim their request atomically so StrictMode's dev double-invoke can't double-send.)
 
+## Daily brief (`companion_daily_brief`)
+
+The morning "what happened while I was away" summary. A **Sunrise** button in the
+companion toolbar's Assist group (`CompanionToolbar`, `data-testid="companion-daily-brief"`)
+calls the **`companion_daily_brief`** Tauri command **directly** — the same
+deterministic, button-is-the-consent shape as the fleet-analysis Radar button, and
+for the same reason: routing it through a chat message would let Athena shortcut to
+an inline read, and her `personas_database` connector points at the companion-brain
+DB (`personas_data.db`), not the execution store, so she can't fetch the inbox data
+herself.
+
+- **What it does** — `gather_daily_brief_digest` (`src-tauri/src/commands/companion/approvals.rs`)
+  pre-gathers a compact digest from the **operational store** (`state.db` = `personas.db`)
+  across the three operational inboxes over the last `hours` (default 24, clamped 1–168):
+  **Messages** (`persona_messages` — count, unread, elevated-priority + recent titles),
+  **Human Review** (`persona_manual_reviews` — new-in-window count plus the current
+  all-ages `pending` backlog and its oldest titles, since an overdue review predates
+  the window), and **Incidents** (`audit_incidents` — new-in-window plus current
+  `open`/`acknowledged` backlog, severity-ordered, high/critical called out). The
+  24h window uses `julianday()` math so it's correct across the tables' mixed
+  `created_at` formats (RFC3339 for messages/reviews, datetime-text for incidents).
+  `build_daily_brief_directive` embeds the digest and tells Athena to write a short,
+  skimmable summary directly in chat — lead with the top thing to act on, one or two
+  lines per inbox, flag overdue reviews + open high/critical incidents, and close with
+  one concrete next action only if something needs it. Spawned via
+  `session::spawn_proactive_turn` (trigger kind `daily_brief`), so the brief streams
+  back into the panel like any proactive turn.
+- **No approval, no new op** — unlike `analyze_fleet`, the daily brief is button-only:
+  there is no `ALLOWED_ACTIONS` op and no constitution bump, because Athena never needs
+  to *propose* it from chat. The click is the whole trigger.
+
 ## MCP request panel (D3 — batched approvals)
 
 Pending MCP requests from fleet sessions land in `McpRequestPanel` above the chat transcript: one card per request, with guidance prompts taking text input and approvals taking ✓/✗ + an optional note. The panel groups by `fleetSessionId` so cards from the same session render together — and when a single session has 2+ pending `approval`-kind requests, the group header renders a primary "Approve all" button that fires `resolveMcpRequest(_, { approved: true, note: '' })` for every approval in that group in parallel (`Promise.allSettled` so one failure doesn't stall the rest). Guidance requests are never batched — they need typed answers.
@@ -398,6 +429,36 @@ Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layou
 ## Self-improve loop
 
 When beta self-improve is enabled, `companion_request_improvement` runs a coding CLI session against user feedback. The result reports success, summary, modified files, critical files, elapsed time, and any error. Startup recovery checks for orphaned runs after Tauri dev reloads.
+
+## Live browser testing (`run_browser_test`)
+
+Athena can run a **live browser test** of a web app the user is building — the products of this app's Dev Tools projects — driving a real browser, walking the scenario, and reporting defects back into chat. The capability is the Athena-side counterpart to a QA engineer.
+
+### The op
+
+`run_browser_test { project_name? | url?, scenario }` is **approval-gated** (`ALLOWED_ACTIONS` in `dispatcher.rs`, `execute_run_browser_test` in `commands/companion/approvals.rs`) — twice over: it spawns a CLI reasoning turn (cost), and that turn drives a real browser (clicks/navigation/input on the user's machine). On approval the executor resolves the target URL (an explicit `url`, or the resolved Dev Tools project's `test_env_url`), registers the **approved origin** with the bridge, and spawns a proactive turn with `trigger_kind = "browser_test"`. Constitution **v32** teaches the op; **v33** adds the report card + screenshot-verification guidance.
+
+That trigger kind is what makes `companion/session.rs::run_cli` hand the single CLI spawn a browser-tools MCP server via `--mcp-config` (browser tools exist for **that turn only** — the directive tells Athena to complete the whole test in one pass, never deferring to a continuation). Two backends:
+
+- **Extension** — the user's real Chrome via the paired bridge + extension (preferred when connected).
+- **Playwright** — the bundled `@playwright/mcp` browser (fallback when no extension is connected; the proven first-cut path).
+
+### The browser bridge
+
+`src-tauri/src/browser_bridge/` mounts two routes on the shared `local_http` server (alongside `/mcp/rpc` and `/fleet/hooks/*`):
+
+- **`GET /browser-bridge/ws`** — the WebSocket the Chrome extension connects to. Authenticated by the **pairing token** *before* the upgrade — any web page can open a socket to `127.0.0.1`, so the token (which never reaches page JS) is the gate. Last-connection-wins for MV3 service-worker reconnects; pending requests fail cleanly on disconnect.
+- **`POST /browser-bridge/mcp`** — the JSON-RPC 2.0 MCP endpoint the browser-test turn discovers via `--mcp-config`. Tools: `browser_status / navigate / snapshot / click / type / screenshot / console / wait_for / detach`. Every `tools/call` authenticates the per-test session token AND enforces the approved origin **server-side** before relaying to the extension — the model never picks the origin; the approval did.
+
+Policy lives in the bridge (Rust), not the model and not the extension. The extension (`tools/athena-browser-extension/`, MV3) is hands and eyes only: it drives a dedicated test tab it created itself (never the user's existing tabs), captures console/network via `chrome.debugger` CDP, and reads/acts on the DOM via `chrome.scripting`. Pairing config lives in the extension's options page (or a packaged `config.json` for QA harnesses).
+
+### Report card + defects → ideas
+
+A browser-test turn ends by emitting `show_browser_test_report { url, steps[], defects[], console_errors[], security_notes[] }` — a structured verdict chat-card (`browser_test_report` widget, unclamped) instead of prose-only: each step with one line of observed evidence, defects with severity + suggested fix, verbatim console errors, and any prompt-injection / untrusted-content notes. The card carries a **File as ideas** affordance (`companion_file_browser_defects`) that writes each defect into the Dev Tools idea inbox (`dev_ideas`, `scan_type = "browser_test"`, status `pending`) so it flows into the normal [Idea Triage](../dev-tools.md) → Build → agent-fix loop.
+
+### Pairing UX
+
+Companion → Setup surfaces a **Browser testing** panel (`sub_setup/BrowserBridgePanel.tsx`): live "Extension connected" status, the bridge port, the copyable pairing token, and a regenerate button. The token persists in settings (`browser_bridge_pairing_token`) so the extension pairs once and survives restarts; `PERSONAS_BROWSER_BRIDGE_TOKEN` env override wins for QA. Commands: `browser_bridge_status`, `browser_bridge_regenerate_token`.
 
 ## State
 

@@ -1,0 +1,25 @@
+# CodeQL — full-tree SAST for the TypeScript frontend (the D9 CI hard-pass, per .ai/manifest controls).
+# Rust SAST is already covered on every PR by clippy `-D warnings` + cargo-deny (see ci.yml), and
+# CodeQL has no first-class Rust support — so this analyzes javascript-typescript only.
+name: codeql
+on:
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1" # weekly: catches new advisories on unchanged code
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:javascript-typescript"

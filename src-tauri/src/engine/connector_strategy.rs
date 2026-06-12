@@ -277,6 +277,7 @@ pub fn init_registry() {
         reg.register("buffer", Box::new(BufferStrategy));
         reg.register("circleci", Box::new(CircleCIStrategy));
         reg.register("clickup", Box::new(ClickUpStrategy));
+        reg.register("gcp_cloud", Box::new(GcpCloudStrategy));
         reg.register("github", Box::new(GitHubStrategy));
         // Atlassian Cloud Basic Auth (email:api_token). Two registrations so
         // both service_types route to the same strategy — Jira + Confluence.
@@ -666,6 +667,46 @@ impl ConnectorStrategy for ClickUpStrategy {
     }
 }
 
+// -- Google Cloud Platform (gcp_cloud) -------------------------------
+
+/// GCP credentials carry their auth material in the `service_account_json`
+/// field, which holds one of two shapes:
+/// - a raw short-lived access token captured from `gcloud auth
+///   print-access-token` (CLI flow, `metadata.source == "cli"`), or
+/// - a pasted service-account key (a JSON object). SA keys cannot be used as
+///   Bearer tokens directly — they require a signed-JWT grant exchange, which
+///   is not implemented — so resolve returns no token for that shape.
+pub struct GcpCloudStrategy;
+
+/// Return `service_account_json` when it holds a raw access token (not a
+/// JSON-shaped service-account key).
+fn gcp_raw_access_token(fields: &HashMap<String, String>) -> Option<&String> {
+    fields
+        .get("service_account_json")
+        .filter(|v| !v.trim().is_empty() && !v.trim_start().starts_with('{'))
+}
+
+#[async_trait]
+impl ConnectorStrategy for GcpCloudStrategy {
+    /// Raw-token credentials are refresh-eligible: the refresh engine routes
+    /// them through CLI recapture (`metadata.source == "cli"`), and treating
+    /// them as OAuth arms api_proxy's 401 → force-refresh → retry path so
+    /// mid-run expiry recovers without user interaction.
+    fn is_oauth(&self, fields: &HashMap<String, String>) -> bool {
+        gcp_raw_access_token(fields).is_some()
+    }
+
+    async fn resolve_auth_token(
+        &self,
+        _connector_metadata: Option<&str>,
+        fields: &HashMap<String, String>,
+    ) -> Result<Option<ResolvedToken>, AppError> {
+        Ok(gcp_raw_access_token(fields)
+            .cloned()
+            .map(ResolvedToken::plain))
+    }
+}
+
 // -- GitHub ----------------------------------------------------------
 
 pub struct GitHubStrategy;
@@ -722,7 +763,7 @@ impl ConnectorStrategy for AtlassianBasicAuthStrategy {
 /// perfectly fine here.
 fn base64_encode(input: &[u8]) -> String {
     const ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
+    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
     let mut i = 0;
     while i + 3 <= input.len() {
         let b0 = input[i];
@@ -754,6 +795,60 @@ fn base64_encode(input: &[u8]) -> String {
         _ => unreachable!(),
     }
     out
+}
+
+#[cfg(test)]
+mod gcp_tests {
+    use super::*;
+
+    fn fields_with(value: &str) -> HashMap<String, String> {
+        let mut f = HashMap::new();
+        f.insert("service_account_json".to_string(), value.to_string());
+        f.insert("project_id".to_string(), "my-project".to_string());
+        f
+    }
+
+    #[tokio::test]
+    async fn raw_access_token_resolves_as_bearer() {
+        let s = GcpCloudStrategy;
+        let fields = fields_with("ya29.a0AfH6SMBexampletoken");
+        assert!(s.is_oauth(&fields));
+        let resolved = s.resolve_auth_token(None, &fields).await.unwrap();
+        assert_eq!(resolved.unwrap().token, "ya29.a0AfH6SMBexampletoken");
+    }
+
+    #[tokio::test]
+    async fn service_account_key_json_is_not_a_token() {
+        let s = GcpCloudStrategy;
+        let fields = fields_with(r#"{"type": "service_account", "private_key": "..."}"#);
+        assert!(!s.is_oauth(&fields));
+        let resolved = s.resolve_auth_token(None, &fields).await.unwrap();
+        assert!(resolved.is_none());
+    }
+
+    #[tokio::test]
+    async fn empty_or_missing_field_is_not_a_token() {
+        let s = GcpCloudStrategy;
+        assert!(!s.is_oauth(&fields_with("   ")));
+        assert!(!s.is_oauth(&HashMap::new()));
+        let resolved = s.resolve_auth_token(None, &HashMap::new()).await.unwrap();
+        assert!(resolved.is_none());
+    }
+
+    #[test]
+    fn registry_routes_gcp_cloud_to_gcp_strategy() {
+        init_registry();
+        let reg = registry().unwrap();
+        let strategy = reg.get("gcp_cloud", None);
+        // The default strategy would never report OAuth for a raw token in
+        // service_account_json (it only looks for refresh_token), so this
+        // doubles as a routing assertion.
+        assert!(strategy.is_oauth(&{
+            let mut f = HashMap::new();
+            f.insert("service_account_json".to_string(), "ya29.raw".to_string());
+            f
+        }));
+    }
 }
 
 #[cfg(test)]

@@ -65,8 +65,8 @@
       "connectors": [],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Audit report delivery — scorecard, per-category details, prioritized action plan. Critical gap alerts delivered inline."
+          "type": "built-in",
+          "description": "Audit report delivery — scorecard, per-category details, prioritized action plan. Individual findings routed through human review (valuable / not valuable). Critical gap alerts delivered inline."
         }
       ],
       "core_memories": []

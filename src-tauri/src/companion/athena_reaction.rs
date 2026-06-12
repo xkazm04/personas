@@ -422,6 +422,8 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
         .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped());
+    // Subscription-only — never the API account.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     #[cfg(windows)]
     {

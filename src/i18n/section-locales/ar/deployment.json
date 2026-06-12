@@ -219,7 +219,9 @@
     "stage_generating": "توليد",
     "stage_completed": "مكتمل",
     "stage_failed": "فشل",
-    "tool_calls": "{count} استدعاء أداة"
+    "tool_calls": "{count} استدعاء أداة",
+    "connect_cloud_cta": "ربط هدف سحابي",
+    "connect_gitlab_cta": "ربط GitLab"
   },
   "cloud_trigger_schedule": "مجدوَل (Cron)",
   "cloud_trigger_polling": "استطلاع",

@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Обновить",
+    "tool_count_one": "{count} инструмент",
+    "tool_count_other": "{count} инструментов",
+    "tab_documents": "Документы",
+    "tab_search": "Поиск",
+    "tab_settings": "Настройки"
   },
   "manager": {
     "title": "Учётные данные",
@@ -845,7 +851,10 @@
     "enabling": "Включение...",
     "enable_rotation": "Включить ротацию",
     "enable_failed": "Не удалось включить ротацию: {error}",
-    "last_rotated": "Последняя ротация: {time}"
+    "last_rotated": "Последняя ротация: {time}",
+    "ring_aria_label": "Ротация через {countdown}",
+    "history_empty_title": "История ротации пуста",
+    "history_empty_subtitle": "События ротации появятся здесь после первой ротации учётных данных."
   },
   "event_config": {
     "event_triggers": "Триггеры событий",
@@ -950,11 +959,24 @@
     "catalog_description": "Выберите известный сервис, например Slack, GitHub или OpenAI. Предварительно настроенные поля и проверки состояния.",
     "ai_heading": "Учётные данные на основе ИИ",
     "ai_description": "Опишите любой сервис, и ИИ настроит поля, тип аутентификации и проверку состояния.",
-    "works_with_any": "Работает с любым API"
+    "works_with_any": "Работает с любым API",
+    "recommended": "Рекомендуемые"
   },
   "credential_list": {
     "no_match": "Учётных данных не найдено",
-    "no_match_hint": "Попробуйте изменить фильтры или поисковый запрос"
+    "no_match_hint": "Попробуйте изменить фильтры или поисковый запрос",
+    "col_name": "Название",
+    "col_status": "Статус",
+    "col_type": "Тип",
+    "col_category": "Категория",
+    "col_health": "Состояние",
+    "col_last_used": "Последнее использование",
+    "col_created": "Создано",
+    "filter_all": "Все",
+    "filter_all_health": "Все состояния",
+    "health_healthy": "В норме",
+    "health_failing": "Ошибка",
+    "health_untested": "Не проверено"
   },
   "wizard_detect": {
     "no_services": "Нет сервисов по запросу \\\"{search}\\\"",

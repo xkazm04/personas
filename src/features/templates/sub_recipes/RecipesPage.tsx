@@ -27,6 +27,8 @@ import { recipeDefinitionsToRecipes } from './libs/recipeAdapter';
 export function RecipesPage() {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
   const [adoptingRecipeId, setAdoptingRecipeId] = useState<string | null>(null);
+  // Lifted so the detail view's tag chips can jump back to a filtered browse.
+  const [search, setSearch] = useState('');
 
   const { definitions, fetchRecipes } = usePipelineStore(
     useShallow((s) => ({ definitions: s.recipes, fetchRecipes: s.fetchRecipes })),
@@ -65,6 +67,10 @@ export function RecipesPage() {
               recipe={selectedRecipe}
               onBack={() => setSelectedRecipeId(null)}
               onAdopt={() => setAdoptingRecipeId(selectedRecipe.id)}
+              onTagClick={(tag) => {
+                setSearch(tag);
+                setSelectedRecipeId(null);
+              }}
             />
           </motion.div>
         ) : (
@@ -78,6 +84,8 @@ export function RecipesPage() {
           >
             <RecipesBrowseList
               recipes={recipes}
+              search={search}
+              onSearchChange={setSearch}
               onOpenDetail={(id) => setSelectedRecipeId(id)}
             />
           </motion.div>

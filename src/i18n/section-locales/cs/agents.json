@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "Aréna",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} ms",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "Verze a hodnocení",
+    "vr_subtitle": "Každá verze promptu × model, který jste změřili. Jeden řádek je aktivní.",
+    "vr_col_version": "Verze",
+    "vr_col_model": "Model",
+    "vr_col_rating": "Hodnocení",
+    "vr_col_delta": "Základní linie",
+    "vr_col_cost": "Náklady",
+    "vr_col_status": "Stav",
+    "vr_col_actions": "Akce",
+    "vr_status_active": "Aktivní",
+    "vr_status_baseline": "Základní linie",
+    "vr_status_archived": "Archivováno",
+    "vr_status_measured": "Změřeno",
+    "vr_status_unmeasured": "Nezměřeno",
+    "vr_action_activate": "Aktivovat tuto verzi + model",
+    "vr_action_active": "Právě živě",
+    "vr_action_measure": "Měřit napříč modely (Arena)",
+    "vr_action_measuring": "Měřím…",
+    "vr_action_improve": "Vylepšit s Athenou",
+    "vr_action_diff": "Porovnat prompt s aktivním",
+    "vr_action_archive": "Archivovat verzi",
+    "vr_action_unarchive": "Obnovit verzi z archivu",
+    "vr_action_pin_baseline": "Připnout jako základní linii regrese",
+    "vr_action_unpin_baseline": "Odepnout základní linii",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} vzorek",
+    "vr_samples_other": "{count} vzorků",
+    "vr_empty_title": "Zatím žádné verze",
+    "vr_empty_desc": "Upravte a uložte prompt persony pro vytvoření první verze, poté ji zde změřte.",
+    "vr_measuring_toast": "Měření v{version} napříč modely…",
+    "vr_measure_modal_title": "Měřit v{version}",
+    "vr_measure_scope_banner": "Měření verze {version} — její prompt se spustí proti vybraným modelům. Skóre se zobrazí zpět v tabulce hodnocení.",
+    "vr_diff_title": "v{version} vs aktivní",
+    "vr_diff_no_active": "Žádná aktivní verze pro porovnání.",
+    "vr_improve_seed_measured": "Vylepšit personu „{name}\" v{version}. Nejslabší naměřená metrika: {metric} {score}/100 na modelu {model}. Na co se mám zaměřit? ",
+    "vr_improve_seed_plain": "Vylepšit personu „{name}\" v{version} — zatím neměřena. Na co se mám zaměřit? ",
+    "vr_metric_tool": "přesnost nástrojů",
+    "vr_metric_quality": "kvalita výstupu",
+    "vr_metric_protocol": "shoda s protokolem"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
@@ -903,7 +944,9 @@
     "next": "Další",
     "go_back_hint": "Vraťte se zpět a odpovězte na otázky pro nastavení agenta.",
     "additional_instructions": "Doplňující pokyny nebo kontext (volitelné)",
-    "additional_instructions_placeholder": "Přidejte specifické požadavky, znalosti domény nebo omezení..."
+    "additional_instructions_placeholder": "Přidejte specifické požadavky, znalosti domény nebo omezení...",
+    "role_user": "Uživatel",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "Konektory",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "Toto spustí {title} pro {persona}"
+    "schedule_will_run": "Toto spustí {title} pro {persona}",
+    "_comment_manual_run_in_progress": "Run-now button tooltip while a manual run is in flight",
+    "manual_run_in_progress": "Ruční spuštění probíhá",
+    "_comment_run_now_tooltip": "Run-now button tooltip — distinguishes real execution from Test",
+    "run_now_tooltip": "Spustit tento případ použití nyní — provede skutečné spuštění a navazující události",
+    "_comment_run_now": "Run-now button label (detail panel + capability tab bar)",
+    "run_now": "Spustit nyní",
+    "_comment_event_type_options": "UseCaseSubscriptionForm event-type dropdown option labels",
+    "event_type_webhook_received": "Přijat Webhook",
+    "event_type_execution_completed": "Spuštění dokončeno",
+    "event_type_execution_failed": "Spuštění selhalo",
+    "event_type_persona_action": "Akce persony",
+    "event_type_file_changed": "Soubor změněn",
+    "event_type_schedule_triggered": "Plán spuštěn",
+    "_comment_dim_review_title": "ReviewDimCard heading",
+    "dim_review_title": "Recenze",
+    "_comment_pill_on": "ToggleDimCard ON-state pill (memory/events)",
+    "pill_on": "ZAP",
+    "_comment_pill_off": "OFF-state pill, shared by ToggleDimCard and ReviewDimCard off",
+    "pill_off": "VYP",
+    "_comment_review_pill_queue": "ReviewDimCard QUEUE-state pill",
+    "review_pill_queue": "FRONTA",
+    "_comment_review_pill_trust": "ReviewDimCard TRUST-state pill",
+    "review_pill_trust": "DŮVĚRA",
+    "_comment_dim_status_activated": "PersonaSigilSummary value shown when a boolean dim (memory/review/event/error) is active for the capability",
+    "dim_status_activated": "Aktivováno"
   },
   "tools": {
     "no_persona": "Žádná persona nevybrána",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "Verdikt",
+    "verdict_none": "Dosud nehodnoceno ředitelem",
+    "verdict_tooltip": "Verdikt ředitele: {score}/5"
   },
   "chat": {
     "select_persona": "Vyberte personu pro zahájení chatu",
@@ -2293,7 +2364,8 @@
     "delete_agents": "Smazat {count} agent(y/ů)",
     "delete_agents_message": "{count} agent(y/ů) a veškerá jejich konfigurace budou trvale odstraněny.",
     "delete_drafts": "Smazat {count} návrh(y/ů)",
-    "delete_drafts_message": "{count} rozpracovaných agentů bude trvale odstraněno."
+    "delete_drafts_message": "{count} rozpracovaných agentů bude trvale odstraněno.",
+    "system_persona_undeletable": "Director je systémová persona a nelze ji smazat."
   },
   "persona_list": {
     "all_personas": "Všechny persony",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "Zatím žádné skupiny — vytvořte v Agenti → Skupiny",
     "batch_move_to_ungrouped": "Bez skupiny",
     "batch_moved_success": "{count} person přesunuto do {group}",
-    "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo"
+    "batch_moved_partial": "{ok} přesunuto do {group}; {failed} selhalo",
+    "render_cap_notice": "Zobrazeno {shown} z {total} — upřesněte vyhledáváním nebo filtry pro zobrazení zbytku.",
+    "star_director_add": "Označit hvězdičkou pro přidání do rozsahu koučování Directora",
+    "star_director_remove": "Označeno hvězdičkou — v rozsahu koučování Directora. Kliknutím odeberete."
   },
   "design_preview": {
     "preview": "Náhled",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Sledovat příchozí zprávy Slack",
+    "slack_poll_inbound_help": "Pokud je zaškrtnuto, persona čte nové zprávy v tomto kanálu každých 5 s a odpovídá ve vlákně výstupem svého spuštění. Nejprve pozvěte bota do kanálu."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "Aktivní pro tuto schopnost",
   "sigil_edit_inactive": "Neaktivní — zapněte pro aktivaci",
   "sigil_edit_enable": "Zapnout pro tuto schopnost",
-  "sigil_edit_disable": "Vypnout pro tuto schopnost"
+  "sigil_edit_disable": "Vypnout pro tuto schopnost",
+  "design_subtabs": {
+    "use_cases": "Případy použití",
+    "prompt": "Prompt",
+    "connectors": "Konektory a nástroje",
+    "triggers": "Události a spouštěče",
+    "messaging": "Zprávy",
+    "automations": "Automatizace",
+    "triggers_desc": "Odběry událostí pro konkrétní persony a konfigurace spouštěčů budou k dispozici v této záložce.",
+    "messaging_desc": "Notifikační kanály a směrování doručené pošty pro tohoto agenta budou zde.",
+    "automations_desc": "Samostatná pravidla automatizace pro tohoto agenta budou zde."
+  },
+  "parameters_card": {
+    "title": "Parametry",
+    "saved": "Uloženo",
+    "apply": "Použít",
+    "on": "Zap.",
+    "off": "Vyp.",
+    "reset": "resetovat"
+  },
+  "editor_empty": {
+    "title": "Žádná persona není vybrána",
+    "subtitle": "Vyberte agenta v postranním panelu a začněte upravovat, nebo vytvořte nového.",
+    "create": "Vytvořit personu",
+    "resume_label": "Pokračovat"
+  },
+  "build_template_match_label": "Rychlejší cesta",
+  "build_template_match_title": "„{name}\" vypadá jako shoda",
+  "build_template_match_body": "Tato hotová šablona pokrývá to, co jste popsali — adoptujte ji a přeskočte tyto otázky. Je již nastavena a otestována.",
+  "build_template_match_adopt": "Použít tuto šablonu",
+  "build_template_match_dismiss": "Pokračovat v sestavování",
+  "build_template_match_loading": "Hledám odpovídající šablony…",
+  "build_template_match_more": "Nebo začít od",
+  "_comment_glyph_db_scope": "Panel pro omezení rozsahu tabulky databázového konektoru ve výběru konektorů",
+  "glyph_db_scope_heading": "Databázové tabulky",
+  "glyph_db_scope_all": "Všechny tabulky",
+  "glyph_db_scope_loading": "Načítám tabulky…",
+  "glyph_db_scope_error": "Tabulky nelze načíst — zkusit znovu",
+  "glyph_db_scope_empty": "Žádné tabulky nenalezeny",
+  "glyph_db_scope_selected": "{count} z {total} tabulek"
 }

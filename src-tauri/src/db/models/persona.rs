@@ -363,6 +363,11 @@ pub struct DesignUseCase {
     /// section of the runtime prompt. Falls back to `description` when absent.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capability_summary: Option<String>,
+    /// Recipe provenance — set when the use case was adopted from a catalog
+    /// recipe. Carried through Rust-side design_context rewrites so the
+    /// catalog's "Adopted" badge and future staleness checks keep working.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_recipe_id: Option<String>,
     /// Tool names the LLM should prefer when this capability is in focus.
     /// Advisory only — all persona tools remain available at runtime.
     #[serde(default, skip_serializing_if = "Option::is_none")]

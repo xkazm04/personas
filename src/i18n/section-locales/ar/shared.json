@@ -229,7 +229,9 @@
     "teams_label": "الفِرَق",
     "groups_label": "المجموعات",
     "cloud_label": "السحابة",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "بلا فريق",
+    "whats_new_update": "تحديث — اطّلع على الجديد"
   },
   "execution_detail": {
     "copy": "نسخ",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "اليوم",
+  "group_yesterday": "أمس",
+  "group_this_week": "هذا الأسبوع",
+  "group_this_month": "هذا الشهر",
+  "group_older": "أقدم",
+  "code_expand_block": "توسيع كتلة الكود",
+  "code_collapse_block": "طيّ كتلة الكود",
+  "code_show_lines": "عرض جميع الأسطر {count}"
 }

@@ -105,5 +105,12 @@
   "sparkline_aria": "রান ইতিহাস স্পার্কলাইন, গত {days} দিন",
   "sparkline_window": "গত {days} দিন",
   "sparkline_no_data": "উইন্ডোতে কোনো রান নেই",
-  "sparkline_failure_rate": "{total} রান · {rate}% ব্যর্থ"
+  "sparkline_failure_rate": "{total} রান · {rate}% ব্যর্থ",
+  "run_status_incomplete": "অসম্পূর্ণ",
+  "last24h_title": "গত ২৪ ঘণ্টা",
+  "last24h_empty": "গত ২৪ ঘণ্টায় কোনো শিডিউলড রান নেই।",
+  "last24h_failed_count": "{count} টি ব্যর্থ",
+  "last24h_show_all": "সব দেখুন ({count})",
+  "last24h_show_less": "কম দেখুন",
+  "last24h_retry_at": "স্বয়ংক্রিয় পুনরায় চেষ্টা {time}"
 }

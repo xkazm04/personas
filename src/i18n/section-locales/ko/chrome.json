@@ -44,6 +44,21 @@
     "section_workspace": "작업 영역",
     "toggle_sidebar": "사이드바 접기 / 펼치기",
     "toggle_monitor": "Persona Monitor 열기 / 닫기",
-    "toggle_athena": "Athena 채팅 열기 / 닫기"
+    "toggle_athena": "Athena 채팅 열기 / 닫기",
+    "nav_mode": "키보드 탐색 모드 전환",
+    "nav_mode_back": "한 페이지 뒤로 이동 (탐색 모드)"
+  },
+  "tray_schedules": "일정",
+  "tray_schedules_today": "오늘 {count}개 예약됨",
+  "tray_notifications": "알림",
+  "tray_notifications_unread": "읽지 않은 알림 {count}개",
+  "system_load": {
+    "label": "시스템 부하",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB 여유)",
+    "measuring": "시스템 부하 측정 중…",
+    "headroom_green": "여유가 충분합니다",
+    "headroom_amber": "바빠지고 있습니다 — 작업량을 줄이는 것을 고려하세요",
+    "headroom_red": "한계에 도달했습니다 — 속도를 늦추는 것을 고려하세요"
   }
 }

@@ -892,6 +892,8 @@ export interface EventPayloadMap {
     credentialName: string;
     serviceType: string;
     reason: string;
+    /** Credential metadata.source (e.g. "cli") — picks the re-auth action. */
+    source: string | null;
   };
 
   // Share link

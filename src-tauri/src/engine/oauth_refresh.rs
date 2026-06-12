@@ -124,13 +124,7 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
                         "Startup OAuth sweep: grant revoked — needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
-                    emit_reauth_required(
-                        app,
-                        &cred.id,
-                        &cred.name,
-                        &cred.service_type,
-                        &e.to_string(),
-                    );
+                    emit_reauth_required(app, cred, &e.to_string());
                 } else {
                     tracing::warn!(
                         credential_id = %cred.id,
@@ -163,7 +157,7 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
     // Pre-parse all credential metadata once (avoids double parse per credential)
     let parsed_meta: Vec<Option<serde_json::Value>> = all_creds
         .iter()
-        .map(|c| parse_credential_metadata(c))
+        .map(parse_credential_metadata)
         .collect();
 
     for (i, cred) in all_creds.iter().enumerate() {
@@ -237,13 +231,7 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
                         "OAuth grant revoked — credential needs re-authorization"
                     );
                     mark_needs_reauth(pool, &cred.id);
-                    emit_reauth_required(
-                        app,
-                        &cred.id,
-                        &cred.name,
-                        &cred.service_type,
-                        &e.to_string(),
-                    );
+                    emit_reauth_required(app, cred, &e.to_string());
                 } else {
                     tracing::warn!(
                         credential_id = %cred.id,
@@ -704,6 +692,10 @@ pub struct CredentialReauthRequiredEvent {
     pub credential_name: String,
     pub service_type: String,
     pub reason: String,
+    /// `metadata.source` of the credential (e.g. `"cli"`). Lets the frontend
+    /// offer the right re-auth action: CLI credentials need a terminal
+    /// re-login + recapture, not an OAuth reconnect.
+    pub source: Option<String>,
 }
 
 /// Mark a credential's metadata with `needs_reauth: true` so the frontend can
@@ -719,19 +711,21 @@ fn mark_needs_reauth(pool: &DbPool, credential_id: &str) {
 /// Emit a Tauri event and OS notification when OAuth re-authorization is required.
 fn emit_reauth_required(
     app: Option<&AppHandle>,
-    credential_id: &str,
-    credential_name: &str,
-    service_type: &str,
+    cred: &crate::db::models::PersonaCredential,
     reason: &str,
 ) {
     let Some(app) = app else { return };
     use crate::engine::event_registry::{emit_event, event_name};
 
+    let source = parse_credential_metadata(cred)
+        .and_then(|m| m.get("source").and_then(|v| v.as_str()).map(str::to_owned));
+
     let payload = CredentialReauthRequiredEvent {
-        credential_id: credential_id.to_string(),
-        credential_name: credential_name.to_string(),
-        service_type: service_type.to_string(),
+        credential_id: cred.id.to_string(),
+        credential_name: cred.name.to_string(),
+        service_type: cred.service_type.to_string(),
         reason: reason.to_string(),
+        source,
     };
     emit_event(app, event_name::CREDENTIAL_REAUTH_REQUIRED, &payload);
 
@@ -741,7 +735,7 @@ fn emit_reauth_required(
         "Credential needs re-authorization",
         &format!(
             "{} ({}) -- access was revoked. Open Vault to reconnect.",
-            credential_name, service_type,
+            cred.name, cred.service_type,
         ),
     );
 }

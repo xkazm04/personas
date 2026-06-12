@@ -133,7 +133,25 @@
     "source_provider": "Poskytovatel",
     "source_policy": "Zásada",
     "source_healing_issue": "Problém léčení",
-    "source_execution_error": "Chyba spuštění"
+    "source_execution_error": "Chyba spuštění",
+    "action_start_work": "Začít práci",
+    "action_back_to_open": "Zpět na otevřené",
+    "filter_status_in_progress": "Probíhající",
+    "detail_title": "Detail incidentu",
+    "detail_label_status": "Stav",
+    "detail_label_kind": "Typ",
+    "detail_label_source": "Zdroj",
+    "detail_label_persona": "Agent",
+    "detail_label_detail": "Podrobnosti",
+    "detail_label_resolution_note": "Poznámka k řešení",
+    "detail_label_created": "Vytvořeno",
+    "detail_label_acknowledged": "Potvrzeno",
+    "detail_label_resolved": "Vyřešeno",
+    "detail_no_detail": "Žádné další podrobnosti.",
+    "detail_note_label": "Poznámka k řešení (volitelné)",
+    "detail_no_persona": "Žádný agent",
+    "empty_open_title": "Vše v pořádku",
+    "empty_filtered_title": "Žádné odpovídající incidenty"
   },
   "observability": {
     "title": "Pozorovatelnost",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "Smazat vše",
+    "delete_all_confirm_title": "Smazat všechny vzpomínky?",
+    "delete_all_confirm_body": "Tímto trvale smažete všech {count} vzpomínek. Tuto akci nelze vrátit zpět.",
+    "delete_all_confirm_cta": "Smazat vše"
   },
   "memory_review": {
     "all_conflicts_resolved": "Všechny konflikty vyřešeny",
@@ -473,7 +495,18 @@
     "select_action_first": "Nejprve vyber navrženou akci",
     "review_detail": "Detail kontroly",
     "select_review": "Vyber kontrolu k zobrazení",
-    "technical_context": "Technický kontext"
+    "technical_context": "Technický kontext",
+    "split": "Rozdělit",
+    "split_tooltip": "Rozdělené zobrazení — seznam s podrobnostmi",
+    "table": "Tabulka",
+    "table_tooltip": "Tabulkové zobrazení — všechny recenze v mřížce",
+    "backlog_group_title": "Nevyřízené položky Dev Tools",
+    "backlog_accept": "Přijmout",
+    "backlog_reject": "Odmítnout",
+    "delete_all": "Smazat vše",
+    "delete_all_confirm_title": "Smazat všechny recenze?",
+    "delete_all_confirm_body": "Tato akce trvale smaže všech {count} recenzí. Nelze ji vrátit zpět.",
+    "delete_all_confirm_cta": "Smazat vše"
   },
   "messages_view": {
     "title": "Zprávy",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "Smazat vše",
+    "delete_all_confirm_title": "Smazat všechny zprávy?",
+    "delete_all_confirm_body": "Tato akce trvale smaže všech {count} zpráv. Nelze ji vrátit zpět.",
+    "delete_all_confirm_cta": "Smazat vše"
   },
   "events": {
     "title": "Události",
@@ -809,7 +846,13 @@
     "create_persona": "Vytvořit personu",
     "from_templates": "Ze šablon",
     "execution_label": "Spuštění",
-    "unknown": "Neznámý"
+    "unknown": "Neznámý",
+    "value_section_title": "Obchodní hodnota",
+    "value_delivered_rate": "Míra doručené hodnoty",
+    "cost_per_value": "Náklady / hodnotový průběh",
+    "value_delivered_count": "Doručená hodnota",
+    "all_models": "Všechny modely",
+    "col_model": "Model"
   },
   "analytics_dashboard": {
     "title": "Analytika",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "nyní splatné",
+    "rotation_countdown_days_hours": "{days}d {hours}h",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "Hledat vzpomínky...",
     "all_agents": "Všichni agenti",
-    "all_categories": "Všechny kategorie"
+    "all_categories": "Všechny kategorie",
+    "tier_all": "Aktivní sada",
+    "tier_core": "Jádro",
+    "tier_active": "Aktivní",
+    "tier_working": "Pracovní",
+    "tier_archived": "Archivované"
   },
   "memory_actions": {
     "dismiss_suggestion": "Zavřít návrh",
@@ -1246,7 +1297,8 @@
     "reject_all": "Odmítnout vše",
     "accept_all": "Přijmout vše",
     "retry_with_changes": "Opakovat se změnami",
-    "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa."
+    "video_not_supported": "Tvůj prohlížeč nepodporuje přehrávání videa.",
+    "carry_out_hint": "Schválí revizi a spustí personu k provedení"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "{count} čekající kontrola vybrána",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "Potvrdit",
-    "cancel": "Zrušit"
+    "cancel": "Zrušit",
+    "restore": "Obnovit do aktivní sady"
   },
   "memory_detail": {
     "title_label": "Název",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my persony — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my persony — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena pro vás sestavila toto vysvětlení — zavřete ho a vrátíte se do svého cockpitu.",
+    "context_explaining": "Athena vysvětluje: {title}",
+    "widget_empty": "Zatím není co zobrazit.",
+    "verdict_title": "Verdikt Atheny",
+    "verdict_confidence": "Spolehlivost",
+    "verdict_confidence_high": "Vysoká",
+    "verdict_confidence_medium": "Střední",
+    "verdict_confidence_low": "Nízká",
+    "verdict_resolve": "Vyřešit nyní",
+    "comparison_recommended": "Doporučeno",
+    "flow_title": "Jak se vyvíjí",
+    "timeline_title": "Časová osa",
+    "log_title": "Důkazy"
+  },
+  "certification": {
+    "title": "Centrum certifikací",
+    "subtitle": "Hodnocení autonomie týmu a stav certifikace (pouze dev)",
+    "updated": "Aktualizováno",
+    "refresh": "Obnovit",
+    "error_title": "Nelze načíst průběhy hodnocení",
+    "loading": "Načítání průběhů hodnocení…",
+    "loading_detail": "Načítání detailu průběhu…",
+    "tab_overview": "Přehled",
+    "tab_history": "Historie průběhů",
+    "back": "Zpět",
+    "empty_title": "Žádné průběhy hodnocení",
+    "empty_desc": "Spusťte hodnoticí harness (scripts/test/) pro naplnění docs/test/runs/.",
+    "teams_certified": "certifikovaných týmů",
+    "certified": "Certifikováno",
+    "streak_label": "série",
+    "held_out_runs": "vyhrazené průběhy",
+    "provisional": "Předběžný verdikt (soudce ještě neohodnotil)",
+    "final": "Finální verdikt",
+    "team_score": "Skóre týmu",
+    "cost": "Náklady",
+    "dims_title": "Deterministické dimenze",
+    "dim_cascade": "Dokončení kaskády",
+    "dim_density": "Hustota práce",
+    "dim_handoff": "Zdraví předání",
+    "dim_learning": "Učící smyčka",
+    "dim_grounding": "Ukotvení",
+    "dim_correctness": "Správnost",
+    "dim_actionability": "Akceschopnost",
+    "dim_specificity": "Specifičnost",
+    "dim_role_fidelity": "Věrnost roli",
+    "gates_title": "Brány build / lint / test",
+    "gate_build": "Build",
+    "gate_lint": "Lint",
+    "gate_test": "Test",
+    "gate_pass": "prošel",
+    "gate_fail": "selhal",
+    "gate_log": "log",
+    "gate_copy_log": "Kopírovat log",
+    "gate_code_track": "Průběh sledování kódu",
+    "delivered": "Doručeno do master",
+    "cascade_stalled": "Kaskáda uvázla",
+    "self_vetoed": "Samo-vetováno",
+    "self_veto_capped": "Tým si sám omezil verdikt na",
+    "grounding_title": "Ukotvení citacemi",
+    "grounding_file": "Soubor",
+    "grounding_valid": "Platné",
+    "grounding_pct": "%",
+    "grounding_invalid": "Neplatné",
+    "grounding_na": "Žádné citace ke kontrole",
+    "standards_title": "Soulad se standardy a větvením",
+    "standards_subtitle": "Jak dobře průběh dodržoval deklarované zásady pre-commit a větvení projektu",
+    "standards_compliance": "Soulad",
+    "standards_rule": "Pravidlo",
+    "standards_basis": "Základ",
+    "standards_na": "n/a",
+    "trajectory_title": "Vývoj skóre",
+    "judge_title": "Panel soudců",
+    "judge_mean": "Průměr",
+    "judge_min": "Min výstup",
+    "judge_balance": "Rovnováha",
+    "fact_executions": "Dokončeno",
+    "fact_failed": "Selhalo",
+    "fact_members": "Členové",
+    "fact_reviews": "Recenze",
+    "fact_memories": "Paměti",
+    "fact_cost": "Náklady",
+    "fact_window": "Okno",
+    "col_team": "Tým",
+    "col_seed": "Seed",
+    "col_verdict": "Verdikt",
+    "col_score": "Skóre",
+    "col_gates": "Brány",
+    "col_started": "Zahájeno"
+  },
+  "fleet_optimization": {
+    "title": "Optimalizace flotily",
+    "open_lab": "Otevřít Lab",
+    "open_lab_hint": "Otestujte alternativní modely pro {persona} v Labu",
+    "ask_athena": "Zeptat se Atheny",
+    "ask_athena_hint": "Přepošlete tento návrh Atheně k prozkoumání",
+    "ask_athena_prompt": "Přezkoumávám návrh na optimalizaci flotily pro své agenty: „{title}\". {description} Navrhovaná akce: {action}. {focus}",
+    "ask_athena_focus_persona": "Prozkoumej prosím agenta „{persona}\" a pokud by to pomohlo, otevři jeho Lab a otestuj alternativní modely, pak mi sdělte, co jsi zjistila.",
+    "ask_athena_focus_general": "Prozkoumej to prosím a doporuč, co změnit."
   }
 }

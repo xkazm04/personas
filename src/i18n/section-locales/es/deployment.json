@@ -219,7 +219,9 @@
     "stage_generating": "Generando",
     "stage_completed": "Completado",
     "stage_failed": "Fallido",
-    "tool_calls": "{count} llamadas a herramientas"
+    "tool_calls": "{count} llamadas a herramientas",
+    "connect_cloud_cta": "Conectar un destino en la nube",
+    "connect_gitlab_cta": "Conectar GitLab"
   },
   "cloud_trigger_schedule": "Programado (Cron)",
   "cloud_trigger_polling": "Sondeo",

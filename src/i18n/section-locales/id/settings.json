@@ -29,7 +29,43 @@
     "updates_current_version": "Anda menggunakan v{version}",
     "updates_last_checked": "Terakhir diperiksa {time}",
     "updates_history_title": "Pembaruan terbaru",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Sinkronisasi Dasbor Cloud",
+    "cloud_sync_description": "Sinkronkan salinan hanya-baca dari personas, eksekusi, dan aktivitas Anda ke cloud pribadi agar dapat dilihat di dasbor web. Kredensial konektor Anda tidak pernah meninggalkan perangkat ini.",
+    "cloud_sync_toggle": "Sinkronkan ke dasbor cloud",
+    "cloud_sync_on": "Data Anda sedang disinkronkan ke dasbor cloud.",
+    "cloud_sync_off": "Data Anda tetap hanya di perangkat ini.",
+    "cloud_sync_toggle_aria": "Aktifkan/nonaktifkan sinkronisasi dasbor cloud",
+    "cloud_sync_now": "Sinkronkan sekarang",
+    "cloud_sync_syncing": "Menyinkronkan...",
+    "cloud_sync_last": "Terakhir disinkronkan",
+    "cloud_sync_never": "Belum pernah disinkronkan",
+    "cloud_sync_error": "Sinkronisasi terakhir gagal: {error}",
+    "cloud_sync_enable_failed": "Tidak dapat memperbarui pengaturan sinkronisasi",
+    "cloud_sync_now_failed": "Sinkronisasi gagal. Periksa koneksi Anda dan coba lagi.",
+    "cloud_sync_now_done": "Disinkronkan {count} rekaman",
+    "cloud_sync_state_off": "Nonaktif",
+    "cloud_sync_state_active": "Aktif",
+    "cloud_sync_state_syncing": "Menyinkronkan…",
+    "cloud_sync_total": "disinkronkan sepanjang masa",
+    "cloud_sync_device": "Perangkat {id}",
+    "cloud_sync_tables_title": "Data tersinkronisasi",
+    "cloud_sync_show_details": "Tampilkan rincian",
+    "cloud_sync_hide_details": "Sembunyikan rincian",
+    "cloud_sync_retry": "Coba lagi",
+    "cloud_sync_rows": "baris",
+    "cloud_sync_table_pending": "Menunggu sinkronisasi pertama",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "Eksekusi",
+      "synced_events": "Peristiwa",
+      "synced_manual_reviews": "Ulasan",
+      "synced_messages": "Pesan",
+      "synced_metrics_snapshots": "Metrik",
+      "synced_tool_usage": "Penggunaan alat",
+      "synced_memories": "Memori",
+      "synced_knowledge_patterns": "Pengetahuan"
+    }
   },
   "appearance_extra": {
     "simple": "Sederhana",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Memori Tim",
+    "import_team_memories": "{count} memori tim",
+    "include_memories_label": "Sertakan memori",
+    "include_memories_note": "Memori persona dan tim disertakan dalam ekspor. Nonaktifkan ini untuk mengekspor agen dan tim tanpa memori yang telah terkumpul."
   },
   "config": {
     "title": "Resolusi Konfigurasi",
@@ -510,7 +550,12 @@
     "over_budget": "Anda telah melampaui plafon bulanan Anda. Tahap 2 akan memblokir eksekusi baru ketika hal ini terjadi; untuk saat ini, anggap ini sebagai peringatan.",
     "approaching_budget": "Anda mendekati plafon bulanan Anda. Pertimbangkan untuk meninjau run terbaru.",
     "no_ceiling_hint": "Tidak ada plafon yang disetel. Masukkan jumlah USD di atas untuk mulai melacak terhadap anggaran.",
-    "stage1_note": "Tahap 1: hanya informasional. Tahap 2 akan menggerbangi pengiriman eksekusi ketika plafon terlampaui."
+    "stage1_note": "Tahap 1: hanya informasional. Tahap 2 akan menggerbangi pengiriman eksekusi ketika plafon terlampaui.",
+    "concurrency_section": "Eksekusi paralel",
+    "concurrency_hint": "Berapa banyak personas yang dapat berjalan sekaligus. Eksekusi tambahan menunggu dalam antrean dan dimulai otomatis saat slot tersedia. Perubahan diterapkan segera — tidak perlu restart.",
+    "concurrency_aria": "Maksimum eksekusi paralel",
+    "concurrency_range": "Antara {min} dan {max} eksekusi bersamaan.",
+    "concurrency_queued_note": "Eksekusi melebihi batas ini diantrikan dan diprioritaskan berdasarkan prioritas, lalu urutan kedatangan, saat yang sedang berjalan selesai."
   },
   "recent_change": {
     "label": "Terakhir {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Cari pengaturan…",
+    "recommended": "Direkomendasikan",
+    "section": "Pengaturan",
+    "trigger_hint": "Cari pengaturan  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Buka pencarian pengaturan",
+    "reduce_motion": "Kurangi animasi",
+    "dim": "Kurangi intensitas warna",
+    "cvd_safe": "Palet ramah buta warna",
+    "high_contrast": "Kontras tinggi",
+    "ambient": "Seni header sesuai waktu",
+    "theme": "Tema & warna",
+    "text_size": "Ukuran teks",
+    "brightness": "Kecerahan",
+    "density": "Kepadatan tata letak",
+    "timezone": "Zona waktu",
+    "tabs": {
+      "limits": "Batas",
+      "api_keys": "Kunci API",
+      "history": "Riwayat"
+    }
   }
 }

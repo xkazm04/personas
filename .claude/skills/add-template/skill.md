@@ -46,7 +46,7 @@ Each use case has its own:
 - `suggested_trigger` — `schedule` | `polling` | `webhook` | (manual is always implicit)
 - `event_subscriptions[]` — events this use case consumes
 - `notification_channels[]` — where this use case's output lands
-- `model_override` — optional per-capability model/effort
+- `model_override` — per-capability model tier by cognitive complexity (`"haiku"` mechanical / `null` = Sonnet default / `"opus"` high-judgment) + optional `model_rationale`; see "Per-capability model tiering" below
 - `tool_hints[]` — tools most relevant to this capability
 - `capability_summary` — one-line prompt-injected description
 
@@ -180,8 +180,15 @@ hydrate at adoption. You MUST create the recipe rows:
 1. Each recipe row: `{ id (uuid, == recipe_ref.id), source_template_id,
    source_use_case_id ("uc_<slug>"), source_use_case_name, source_version "1.0.0",
    name, description, category (null|string), prompt_template (a JSON **string**
-   of the full hydrated use-case object), tool_requirements (null), tags
-   ["<template-id>", "derived"] }`.
+   of the full hydrated use-case object), tool_requirements (null), tags }`.
+   **CRITICAL — `tags` is a JSON-encoded STRING, not an array.** The Rust
+   `SeedRecipe.tags` is `Option<String>`, and every shipped row stores it as a
+   stringified array, e.g. `"tags": "[\"<template-id>\",\"derived\"]"`. Writing
+   a real array (`"tags": ["x","derived"]`) makes serde fail the WHOLE bundle
+   parse (`invalid type: sequence, expected a string`) → **zero** recipes seed
+   on boot (breaks fresh installs). Same for any other top-level recipe field:
+   match the existing rows' value TYPES exactly (`tool_requirements` is a string
+   or null, not an object/array).
 2. The `prompt_template` use-case object shape is the gold standard in any existing
    recipe — fields: `id, title, description, capability_summary, category,
    enabled_by_default, execution_mode, model_override, suggested_trigger,
@@ -448,9 +455,42 @@ If you wrote a v3 template using `recipe_ref` per use_case, the
 **recipe** carries these fields, not the inline `use_cases[i]`. The
 checklist still applies — open the recipe rows you reference and
 confirm they're populated. Use the shipped templates as references:
-`scripts/templates/security/ai-environment-posture-audit.json` is the
-gold-standard example with full review_policy / memory_policy /
+`scripts/templates/finance/budget-spending-monitor.json` (a 2-use-case
+v3 template) and `scripts/templates/security/security-sentinel.json` are
+gold-standard examples with full review_policy / memory_policy /
 notification_channels declared per use_case.
+
+#### Per-capability model tiering (model_override) — set it deliberately
+
+Every recipe's `prompt_template` carries `model_override` (+ optional
+`model_rationale`). Tier each capability by the **cognitive complexity** of the
+work — NOT by how many tools/APIs it calls:
+
+- `"haiku"` — mechanical / low-judgment work: compose a known API request,
+  extract/format fields, render a templated digest/report, threshold checks,
+  rule-based routing/triage. (A "fetch billing → format a weekly report"
+  capability is haiku even though it hits an API.)
+- `null` — the default tier (**Sonnet**), the majority: multi-step
+  orchestration, summarization needing editorial judgment, moderate analysis.
+  `null` means "use the persona default" so it tracks any persona-level change.
+- `"opus"` — high-judgment / high-stakes: deep multi-source research synthesis,
+  code review/refactor, legal/financial/compliance judgments.
+
+Rules: a capability with `review_policy.mode == "always"` (consequential output)
+is **never** `haiku`. When unsure, leave it `null` (Sonnet). Set
+`model_rationale` to a one-line reason whenever you deviate from `null`
+(haiku/opus) — it's surfaced in the UI and keeps the tiering auditable. The tier
+propagates through adoption to the runtime `--model` (bare aliases
+`haiku`/`opus` are resolved by the Claude CLI), and the boot-time seeder
+field-merges it into existing installs. The full doctrine is in
+`docs/features/templates/README.md` → "Per-capability model tiering".
+
+> Adoption also runs an always-on LLM **adjustment** pass that specializes the
+> pre-built base to the user's actual connector/answer picks — so it's correct
+> to author connectors at the connector-CATEGORY level (e.g. a generic `cloud`
+> or `messaging` connector); adoption rewrites the prose to the concrete service
+> the adopter binds. Don't hard-code one vendor's API into the authored prose
+> when the template is meant to be vendor-agnostic.
 
 #### 3c.1 — Other payload fields
 
@@ -796,8 +836,9 @@ When generating templates, match the depth and style of current shipped template
 **For schema_version 3 (default), read a v3 neighbor:**
 - **Development**: `scripts/templates/development/qa-guardian.json` — memory-backed, multi-capability, codebase-grounded (the canonical v3 example)
 - **Development**: `scripts/templates/development/solution-architect.json` — two memory-backed use cases + event handoff
-- **Security**: `scripts/templates/security/security-sentinel.json` / `ai-environment-posture-audit.json`
+- **Security**: `scripts/templates/security/security-sentinel.json`
 - **DevOps**: `scripts/templates/devops/devops-guardian.json` / `release-manager.json`
+- **Finance/cloud-cost**: `scripts/templates/finance/budget-spending-monitor.json` — 2 use cases, haiku-tiered, vendor-agnostic `cloud` connector
 
 Read one v3 neighbor in your chosen category before generating to calibrate quality
 expectations. (The older v2 references some earlier versions of this doc cited —

@@ -38,6 +38,14 @@ interface ComposerMessagingPickerModalProps {
   onApply: (next: ChannelSpecV2[]) => void;
   /** Forwarded to PickerShell — solid bg over translucent surfaces. */
   solid?: boolean;
+  /**
+   * When `true` (default), the built-in inbox is force-present and cannot be
+   * deselected (the Composer's Messaging row). When `false`, the inbox is a
+   * normal toggleable option so the selection can reach EMPTY — used by the
+   * adoption Messages petal, where "no channel" means the persona produces no
+   * user-facing message.
+   */
+  pinBuiltIn?: boolean;
 }
 
 /**
@@ -158,6 +166,7 @@ export function ComposerMessagingPickerModal({
   selected,
   onApply,
   solid = false,
+  pinBuiltIn = true,
 }: ComposerMessagingPickerModalProps) {
   const { t } = useTranslation();
   const healthy = useHealthyConnectors();
@@ -167,10 +176,20 @@ export function ComposerMessagingPickerModal({
   useEffect(() => {
     if (!open) return;
     const hasBuiltIn = selected.some((s) => s.type === "built-in");
-    setDraft(hasBuiltIn ? selected : [BUILT_IN_INBOX, ...selected]);
+    // pinBuiltIn: force the inbox into the draft. Otherwise honour `selected`
+    // as-is so the user can reach an empty (no-message) selection.
+    setDraft(pinBuiltIn && !hasBuiltIn ? [BUILT_IN_INBOX, ...selected] : selected);
     const t = setTimeout(() => inputRef.current?.focus(), 80);
     return () => clearTimeout(t);
-  }, [open, selected]);
+  }, [open, selected, pinBuiltIn]);
+
+  const builtInSelected = draft.some((s) => s.type === "built-in");
+  const toggleBuiltIn = () =>
+    setDraft((prev) =>
+      prev.some((s) => s.type === "built-in")
+        ? prev.filter((s) => s.type !== "built-in")
+        : [BUILT_IN_INBOX, ...prev],
+    );
 
   /** Healthy messaging-category credentials with a known channel-type adapter. */
   const pickable: PickableChannel[] = useMemo(() => {
@@ -296,27 +315,55 @@ export function ComposerMessagingPickerModal({
       }
     >
       <div className="p-5 flex flex-col gap-4">
-        {/* Pinned built-in inbox row */}
-        <div className="rounded-card border border-primary/40 bg-primary/[0.06] p-3 flex items-center gap-3">
-          <div className="shrink-0 w-10 h-10 rounded-interactive bg-primary/20 flex items-center justify-center text-primary">
-            <Inbox className="w-5 h-5" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="typo-body text-foreground font-medium">
-              {t.agents.messaging_picker.builtin_label}
-            </div>
-            <div className="typo-caption text-foreground">
-              {t.agents.messaging_picker.builtin_help}
-            </div>
-          </div>
-          <span
-            className="shrink-0 w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-            style={{ boxShadow: "0 0 10px rgba(96,165,250,0.8)" }}
-            aria-label={t.agents.messaging_picker.builtin_always_on}
-          >
-            <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
-          </span>
-        </div>
+        {/* Built-in inbox row. Pinned (always-on) for the Composer; a normal
+            toggle for the adoption petal (pinBuiltIn=false) so it can be
+            cleared to reach an empty / no-message selection. */}
+        {(() => {
+          const content = (
+            <>
+              <div className="shrink-0 w-10 h-10 rounded-interactive bg-primary/20 flex items-center justify-center text-primary">
+                <Inbox className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0 text-left">
+                <div className="typo-body text-foreground font-medium">
+                  {t.agents.messaging_picker.builtin_label}
+                </div>
+                <div className="typo-caption text-foreground">
+                  {t.agents.messaging_picker.builtin_help}
+                </div>
+              </div>
+              <span
+                className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                  pinBuiltIn || builtInSelected ? "bg-primary" : "border border-card-border"
+                }`}
+                style={pinBuiltIn || builtInSelected ? { boxShadow: "0 0 10px rgba(96,165,250,0.8)" } : undefined}
+                aria-label={t.agents.messaging_picker.builtin_always_on}
+              >
+                {(pinBuiltIn || builtInSelected) && (
+                  <Check className="w-3 h-3 text-foreground" strokeWidth={3} />
+                )}
+              </span>
+            </>
+          );
+          const cls = `rounded-card border p-3 flex items-center gap-3 ${
+            pinBuiltIn || builtInSelected
+              ? "border-primary/40 bg-primary/[0.06]"
+              : "border-border/25 bg-foreground/[0.02]"
+          }`;
+          return pinBuiltIn ? (
+            <div className={cls}>{content}</div>
+          ) : (
+            <button
+              type="button"
+              onClick={toggleBuiltIn}
+              role="checkbox"
+              aria-checked={builtInSelected}
+              className={`${cls} w-full transition-colors hover:border-primary/35`}
+            >
+              {content}
+            </button>
+          );
+        })()}
 
         {/* Configured-channels section (selected + destination inputs). */}
         {selectedRender.length > 0 && (

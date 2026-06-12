@@ -66,6 +66,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
+- Started: 2026-06-11
+- Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
+- Branch: master (main checkout — controlled-chaos, scope disjoint from concurrent sessions)
+- Paths: scripts/connectors/builtin/gcp-cloud.json, src-tauri/src/db/builtin_connectors.rs (generated), src-tauri/src/engine/{connector_strategy.rs,oauth_refresh.rs}, src-tauri/src/commands/credentials/{cli_capture.rs,auth_detect.rs}, src/lib/eventRegistry.ts, src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx, src/i18n/locales/en.json (+generated), docs/features/connections/README.md, CHANGELOG.md, .claude/active-runs.md
+- Note: auth_detect.rs fix — Windows fs::canonicalize verbatim `\\?\C:\` paths failed the CLI allowlist prefix check, so EVERY installed CLI reported "not installed"; affected all 14 capture specs, surfaced on first real use of the CLI tab. Live-verified resolve + full gcloud capture chain via ignored diagnostics.
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -98,8 +104,8 @@ timestamp — the next session can recognize it as abandoned.
 
 ### prototype — Teams preset adoption: migrate out of modal → in-app process + 3 variants
 - Started: 2026-06-10 14:05
-- Status: started
-- Branch: vibeman/audit-2026-06-09 (main checkout — deliberate /prototype deviation: variants must render in the user's live dev server)
+- Status: completed (commit: c1ac3f8d3 on master, + an earlier concurrent sweep that grabbed part of the staged set). Blueprint won (other 3 process variants + Showcase gallery winner consolidated; Spotlight/Cards/Pipeline/Split deleted). 6 per-team Leonardo illustrations added. Card tags removed.
+- Branch: master (branch flipped from vibeman/audit-2026-06-09 mid-session by a concurrent checkout; landed via `git commit --only <paths>` to survive a live multi-session commit race)
 - Paths: src/features/teams/sub_teamWorkspace/ (TeamList, TeamCanvas, new presetStudio/), src/features/templates/sub_presets/ (extract usePresetAdoption hook from PresetPreviewModal), src/stores/pipelineStore.ts + slices, src/i18n/locales/en.json (pipeline/templates.presets keys), docs/features/{pipeline,templates}/
 - Note: migrate PresetPreviewModal's adoption process into an in-app Teams view (larger space + better connection graph), then prototype 3 directional design variants of the process behind a tab switcher. PresetPreviewModal kept intact for Templates→Presets (shared adoption logic extracted to a hook).
 
@@ -712,6 +718,19 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: scripts/test/loop-certify.mjs, src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/db/settings_keys.rs, docs/plans/kpi-driven-orchestration.md.
 - Note: run-2 LIVE — 27 internal KPIs active across 7/7 teams (scans + Windows-safe recipe rewrites; 2 non-portable recipes archived as negative feedback), 11 autonomy settings ON (incl. new autonomous_kpi_evaluation), goal_advance/auto_resume/backlog_to_goal ticks verified firing, KPI-derived goal being advanced by a team. Known scan defect queued: kpi_scan composes Unix-piped measure_config cmds that fail under cmd /C.
 
+### feature — Athena browser-testing arc (Phases 0-3) — completed (merge: 31a9b886c, pushed to origin)
+- 2026-06-11 → 2026-06-12. Worktree athena-browser-p0 (7 phase commits + merge), merged to master + pushed, worktree/branch removed (junction-first, main node_modules safe).
+- Shipped: `run_browser_test` approval-gated op (Playwright MCP into companion turns, constitution v32) → `browser_bridge` module (WS relay + JSON-RPC MCP endpoint, pairing-token WS auth, per-test origin allowlist enforced server-side) → MV3 Chrome extension (`tools/athena-browser-extension/`, chrome.debugger CDP console + chrome.scripting DOM, drives only its own test tab) → `show_browser_test_report` card + File-as-ideas → `dev_ideas` + Companion Setup pairing panel (constitution v33). All 4 phases LIVE-QA'd on isolated instance: Phase 2 drove a REAL Chromium tab, Athena cited true DOM evidence + the seeded ReferenceError stack line + refused the planted prompt injection (every run). Docs synced (companion README, dev-tools, feature-doc-map). GOTCHAS: branded Chrome stable dropped --load-extension → use Playwright Chromium (scripts/test/launch-ext-chromium.mjs); native ~/.local/bin/claude.exe resolver needed (npm global removed) — master had converged on the same fix; companion-brain markdown root is ~/.personas (shared), NOT PERSONAS_DATA_DIR (isolation gap). NEXT: wire the ability into app features + Athena's proactive surfaces (design discussion pending).
+
+### friend — templates/sub_recipes (recipes catalog rescue) — completed (merge: 4a33f6b4b, 20 branch commits 783b043af..d0a50149e)
+- 2026-06-10 21:00 → 2026-06-11. 11 cycles over 3 batches; worktree friend-recipes-210046 merged to master + removed, branch deleted.
+- Shipped: UC title/category extraction (adapter + Rust derivation + 298-row seed transform + boot-time healing of stale rows incl. is_builtin), detail redesign (guardrails prose, events, parameters), table category badges + connector strip + Adopted provenance chip (source_recipe_id on DesignUseCase both shapes), neutral pre-persona eligibility, tag click-to-filter, search highlight. Live-verified on isolated :17340 (cycles 1–8); also fixed master's red i18n gate (stale chrome.tray_* keys from d459bcff2).
+- Known follow-up: 238/298 recipes resolve LOCKED with a persona because UC connectors are ROLE slugs (messaging/email/…) the eligibility resolver treats as unknown concrete connectors — role-aware eligibility proposed, not started. CAUTION documented: never blindly regen _recipe_seeds.json (drops 9 post-ref SDLC recipes).
+
+### prototype — TitleBar quick-action tray (Dock wins) — completed (commits: 314aa9dd1 round 1, d459bcff2 consolidation)
+- 2026-06-10 20:27 → 2026-06-11 00:16. Branch: master (main checkout — variants had to render in the user's live dev server).
+- Round 1: BaselineTray extraction + Dock (inline count capsules) + Ledger (annunciator strip) behind a temporary left-side switcher. Consolidation: Dock promoted to TitleBarDock (sole tray), Ledger/baseline/switcher/ProcessActivityIndicator deleted, `;` nav mode lifted to uiSlice.keyboardNavActive + S/C/R/M/N dock hint keys (keycap chips under capsules; registered in shortcutRegistry). tsc 0, eslint 0 errors, uiSlice tests 7/7. NOT live-verified in-app.
+- Incidents: installed missing gitleaks binary for the new pre-commit secret-scan job (winget, 8.30.1); first round-1 commit swept ~85 foreign staged files during the install window — corrected via reset --soft + commit --only (foreign work re-staged, untouched). en.json sweeps noted in both commit messages.
 
 ### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage — MERGED TO MASTER (5c1b6b660)
 - 2026-06-10 18:20 → 2026-06-11 00:20. Worktree worktree-athena-signal-economy off master; 6 commits 6cbaebda6..f3360543a, merge 5c1b6b660. Worktree + branch removed (⚠ junction lesson re-learned: `git worktree remove --force` followed the node_modules junction and emptied the MAIN checkout's node_modules/.bin before dying on a long path — `cmd /c rmdir` the junction FIRST, always; repaired via npm install, 111 shims back, tsc clean).

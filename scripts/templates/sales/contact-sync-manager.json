@@ -12,7 +12,7 @@
     "email",
     "Local Database"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "email",
@@ -120,8 +120,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Polling-cycle summaries, significant per-contact change notifications, and critical error alerts."
+          "type": "built-in",
+          "description": "Field-level conflict review cards requiring human arbitration. Polling-cycle summaries and critical error alerts delivered as messages."
         }
       ],
       "core_memories": []

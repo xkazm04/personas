@@ -714,6 +714,14 @@ pub async fn run_claude_prompt_text_inner(
         cmd.env(key, val);
     }
 
+    // Route the design/adopt/eval LLM path to the Claude Code subscription, never
+    // the API key — same guarantee the execution spawn (cli_process) makes. The
+    // app process can inherit ANTHROPIC_API_KEY / AUTH_TOKEN / BASE_URL from its
+    // launch env; left in place they make the CLI fail fast (or bill credits).
+    // This was the gap that made `adjust_adoption_draft` (and the n8n transforms)
+    // error with "Claude CLI exited with error" while executions succeeded.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
+
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
             "Claude CLI not found. Install from https://docs.anthropic.com/en/docs/claude-code"

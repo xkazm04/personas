@@ -114,5 +114,7 @@
   "trigger_on": "पर:",
   "connecting_to_gitlab": "GitLab से कनेक्ट हो रहा है...",
   "deploying_to_gitlab": "पर्सोना को GitLab पर deploy किया जा रहा है...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "Athena से विश्लेषण करने के लिए कहें",
+  "notification_athena_prompt": "कृपया मुझे मिली इस सूचना और अंतर्निहित समस्या का विश्लेषण करें: \"{title}\" — {body} (स्थिति: {status})। जांचें क्या हुआ, संभावित मूल कारण, और स्पष्ट रूप से बताएं कि क्या मुझे कुछ करना है।"
 }

@@ -29,7 +29,43 @@
     "updates_current_version": "Máte verzi v{version}",
     "updates_last_checked": "Naposledy zkontrolováno {time}",
     "updates_history_title": "Nedávné aktualizace",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Synchronizace s cloudovým panelem",
+    "cloud_sync_description": "Synchronizujte kopii svých person, spuštění a aktivity pouze pro čtení do soukromého cloudu a prohlížejte je ve webovém panelu. Přihlašovací údaje ke konektorům nikdy neopustí toto zařízení.",
+    "cloud_sync_toggle": "Synchronizovat s cloudovým panelem",
+    "cloud_sync_on": "Vaše data se synchronizují s cloudovým panelem.",
+    "cloud_sync_off": "Vaše data zůstávají pouze na tomto zařízení.",
+    "cloud_sync_toggle_aria": "Přepnout synchronizaci s cloudovým panelem",
+    "cloud_sync_now": "Synchronizovat nyní",
+    "cloud_sync_syncing": "Synchronizace...",
+    "cloud_sync_last": "Poslední synchronizace",
+    "cloud_sync_never": "Zatím nesynchronizováno",
+    "cloud_sync_error": "Poslední synchronizace selhala: {error}",
+    "cloud_sync_enable_failed": "Nastavení synchronizace se nepodařilo aktualizovat",
+    "cloud_sync_now_failed": "Synchronizace selhala. Zkontrolujte připojení a zkuste to znovu.",
+    "cloud_sync_now_done": "Synchronizováno {count} záznamů",
+    "cloud_sync_state_off": "Vypnuto",
+    "cloud_sync_state_active": "Aktivní",
+    "cloud_sync_state_syncing": "Synchronizace…",
+    "cloud_sync_total": "celkem synchronizováno",
+    "cloud_sync_device": "Zařízení {id}",
+    "cloud_sync_tables_title": "Synchronizovaná data",
+    "cloud_sync_show_details": "Zobrazit přehled",
+    "cloud_sync_hide_details": "Skrýt přehled",
+    "cloud_sync_retry": "Zkusit znovu",
+    "cloud_sync_rows": "řádků",
+    "cloud_sync_table_pending": "Čeká na první synchronizaci",
+    "cloud_sync_tables": {
+      "synced_personas": "Persony",
+      "synced_executions": "Spuštění",
+      "synced_events": "Události",
+      "synced_manual_reviews": "Recenze",
+      "synced_messages": "Zprávy",
+      "synced_metrics_snapshots": "Metriky",
+      "synced_tool_usage": "Využití nástrojů",
+      "synced_memories": "Vzpomínky",
+      "synced_knowledge_patterns": "Znalosti"
+    }
   },
   "appearance_extra": {
     "simple": "Jednoduchý",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Týmové vzpomínky",
+    "import_team_memories": "{count} týmová(é) vzpomínka(y)",
+    "include_memories_label": "Zahrnout vzpomínky",
+    "include_memories_note": "Vzpomínky person a týmu jsou součástí exportu. Vypněte tuto možnost pro export agentů a týmů bez nahromaděných vzpomínek."
   },
   "config": {
     "title": "Řešení konfigurace",
@@ -510,7 +550,12 @@
     "over_budget": "Překročil jsi měsíční strop. Fáze 2 v takovém případě zablokuje nová spuštění; prozatím to ber jako varování.",
     "approaching_budget": "Blížíš se měsíčnímu stropu. Zvaž revizi nedávných spuštění.",
     "no_ceiling_hint": "Není nastaven žádný strop. Zadej výše částku v USD a začni sledovat rozpočet.",
-    "stage1_note": "Fáze 1: pouze informativně. Fáze 2 zablokuje odeslání spuštění při překročení stropu."
+    "stage1_note": "Fáze 1: pouze informativně. Fáze 2 zablokuje odeslání spuštění při překročení stropu.",
+    "concurrency_section": "Paralelní spuštění",
+    "concurrency_hint": "Počet person, které mohou běžet současně. Další spuštění čekají ve frontě a spouštějí se automaticky, jakmile se uvolní místa. Změny se projeví okamžitě — restart není nutný.",
+    "concurrency_aria": "Maximální počet paralelních spuštění",
+    "concurrency_range": "Mezi {min} a {max} souběžnými spuštěními.",
+    "concurrency_queued_note": "Spuštění nad tento limit jsou zařazena do fronty a upřednostňována podle priority a pořadí příchodu, jak se dokončují běžící."
   },
   "recent_change": {
     "label": "Poslední {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Hledat nastavení…",
+    "recommended": "Doporučeno",
+    "section": "Nastavení",
+    "trigger_hint": "Hledat nastavení  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Otevřít vyhledávání v nastavení",
+    "reduce_motion": "Omezit animace",
+    "dim": "Snížit intenzitu barev",
+    "cvd_safe": "Paleta bezpečná pro barvoslepé",
+    "high_contrast": "Vysoký kontrast",
+    "ambient": "Grafika záhlaví podle denní doby",
+    "theme": "Motiv a barvy",
+    "text_size": "Velikost textu",
+    "brightness": "Jas",
+    "density": "Hustota rozvržení",
+    "timezone": "Časové pásmo",
+    "tabs": {
+      "limits": "Limity",
+      "api_keys": "API klíče",
+      "history": "Historie"
+    }
   }
 }

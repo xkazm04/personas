@@ -27,7 +27,6 @@ export interface PowerMove {
   color: string;
   group: PowerMoveGroupKey;
   titleKey: LearningKey;
-  hookKey: LearningKey;
   nav: PowerMoveNav;
   /** data-testid to flash after landing — must be a stable route-level anchor. */
   spotlightTestId?: string;
@@ -48,7 +47,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-rose-400',
     group: 'save_time',
     titleKey: 'pm_monitor_triage_title',
-    hookKey: 'pm_monitor_triage_hook',
     nav: { overlay: 'monitor' },
   },
   {
@@ -57,7 +55,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-amber-400',
     group: 'save_time',
     titleKey: 'pm_schedule_delay_title',
-    hookKey: 'pm_schedule_delay_hook',
     nav: { section: 'schedules' },
     spotlightTestId: 'schedules-page',
   },
@@ -67,7 +64,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-cyan-400',
     group: 'save_time',
     titleKey: 'pm_bulk_rerun_title',
-    hookKey: 'pm_bulk_rerun_hook',
     nav: { section: 'overview', overviewTab: 'executions' },
     spotlightTestId: 'overview-page',
   },
@@ -78,7 +74,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-orange-400',
     group: 'prevent_failures',
     titleKey: 'pm_dead_letter_title',
-    hookKey: 'pm_dead_letter_hook',
     nav: { section: 'events', eventBusTab: 'dead-letter' },
     spotlightTestId: 'triggers-page',
   },
@@ -88,7 +83,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-yellow-400',
     group: 'prevent_failures',
     titleKey: 'pm_annotate_golden_title',
-    hookKey: 'pm_annotate_golden_hook',
     nav: { section: 'overview', overviewTab: 'executions' },
     spotlightTestId: 'overview-page',
   },
@@ -98,7 +92,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-emerald-400',
     group: 'prevent_failures',
     titleKey: 'pm_credential_health_title',
-    hookKey: 'pm_credential_health_hook',
     nav: { section: 'credentials' },
     spotlightTestId: 'credential-manager',
   },
@@ -109,7 +102,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-violet-400',
     group: 'level_up',
     titleKey: 'pm_lab_measure_title',
-    hookKey: 'pm_lab_measure_hook',
     nav: { section: 'personas' },
   },
   {
@@ -118,7 +110,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-blue-400',
     group: 'level_up',
     titleKey: 'pm_prompt_rollback_title',
-    hookKey: 'pm_prompt_rollback_hook',
     nav: { section: 'personas' },
   },
   {
@@ -127,7 +118,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-amber-400',
     group: 'level_up',
     titleKey: 'pm_director_coaching_title',
-    hookKey: 'pm_director_coaching_hook',
     nav: { section: 'overview', overviewTab: 'director' },
     spotlightTestId: 'overview-page',
   },
@@ -138,7 +128,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-purple-400',
     group: 'orchestrate',
     titleKey: 'pm_event_chain_title',
-    hookKey: 'pm_event_chain_hook',
     nav: { section: 'events', eventBusTab: 'builder' },
     spotlightTestId: 'triggers-page',
     detect: async () => {
@@ -152,7 +141,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-yellow-400',
     group: 'orchestrate',
     titleKey: 'pm_live_stream_title',
-    hookKey: 'pm_live_stream_hook',
     nav: { section: 'events', eventBusTab: 'live-stream' },
     spotlightTestId: 'triggers-page',
   },
@@ -162,7 +150,6 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-indigo-400',
     group: 'orchestrate',
     titleKey: 'pm_athena_fleet_title',
-    hookKey: 'pm_athena_fleet_hook',
     nav: { section: 'plugins', pluginTab: 'companion' },
     spotlightTestId: 'companion-panel',
   },

@@ -93,6 +93,10 @@
     "plugins": {
       "label": "প্লাগিন",
       "description": "তৃতীয় পক্ষের প্লাগিন এবং কাস্টম এক্সটেনশন দিয়ে এজেন্ট প্রসারিত করুন"
+    },
+    "teams": {
+      "label": "দলসমূহ",
+      "description": "একাধিক এজেন্টকে একটি দলে একত্রিত করুন যা বহু-ধাপের ওয়ার্কফ্লোতে একসাথে কাজ করে"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "পুনরায় শুরু",
     "start_tour": "ট্যুর শুরু করুন",
     "steps_count": "{count}টি ধাপ",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "পাওয়ার মুভস",
+    "moves_used": "{used}/{total} ব্যবহৃত",
+    "try_it": "চেষ্টা করুন",
+    "used_badge": "ব্যবহৃত",
+    "group_save_time": "সময় বাঁচান",
+    "group_prevent_failures": "ব্যর্থতা রোধ করুন",
+    "group_level_up": "এজেন্ট উন্নত করুন",
+    "group_orchestrate": "অর্কেস্ট্রেট করুন",
+    "pm_monitor_triage_title": "টাইটেলবার থেকে পুরো ফ্লিট ট্রাইয়াজ করুন",
+    "pm_schedule_delay_title": "নির্ধারিত রান এড়িয়ে যান বা দেরি করুন",
+    "pm_bulk_rerun_title": "ব্যর্থ এক্সিকিউশনগুলো একসাথে পুনরায় চালান",
+    "pm_dead_letter_title": "ডেড-লেটার কিউ থেকে ইভেন্ট উদ্ধার করুন",
+    "pm_annotate_golden_title": "গোল্ডেন রান স্টার করুন, রিগ্রেশন ট্যাগ করুন",
+    "pm_credential_health_title": "AI-কে ব্যর্থ ক্রেডেনশিয়াল ঠিক করতে দিন",
+    "pm_lab_measure_title": "বিভিন্ন মডেলে প্রম্পট পরিমাপ করুন",
+    "pm_prompt_rollback_title": "এক ক্লিকে খারাপ প্রম্পট রোলব্যাক করুন",
+    "pm_director_coaching_title": "Director থেকে পোর্টফোলিও কোচিং পান",
+    "pm_event_chain_title": "ইভেন্ট লিসেনার দিয়ে এজেন্ট চেইন করুন",
+    "pm_live_stream_title": "রিয়েল টাইমে চেইন ক্যাসকেড দেখুন",
+    "pm_athena_fleet_title": "Athena-কে আপনার ফ্লিট বিশ্লেষণ করতে বলুন"
   },
   "setup_stepper": {
     "your_profile": "আপনার প্রোফাইল",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
     "personas_footer": "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "{personaName}-এ অপঠিত ব্যর্থতা — তদন্ত করুন",
+    "tour": "{tourTitle} চালিয়ে যান ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "{personaName} সম্পাদনা চালিয়ে যান"
+  },
+  "nav_status": {
+    "incidents": "{count}টি খোলা ঘটনা",
+    "incidents_other": "{count}টি খোলা ঘটনা",
+    "messages": "{count}টি অপঠিত বার্তা",
+    "messages_other": "{count}টি অপঠিত বার্তা",
+    "reviews": "{count}টি মুলতুবি পর্যালোচনা",
+    "reviews_other": "{count}টি মুলতুবি পর্যালোচনা",
+    "teams": "{count}টি দল",
+    "teams_other": "{count}টি দল",
+    "agents_active": "গত ২৪ ঘণ্টায় {count}টি এজেন্ট সক্রিয়",
+    "agents_active_other": "গত ২৪ ঘণ্টায় {count}টি এজেন্ট সক্রিয়",
+    "events_today": "গত ২৪ ঘণ্টায় {count}টি ইভেন্ট",
+    "events_today_other": "গত ২৪ ঘণ্টায় {count}টি ইভেন্ট",
+    "connections_external": "{count}টি বাহ্যিক সংযোগ",
+    "connections_external_other": "{count}টি বাহ্যিক সংযোগ",
+    "connections_builtin": "{count}টি বিল্ট-ইন কানেক্টর",
+    "connections_builtin_other": "{count}টি বিল্ট-ইন কানেক্টর",
+    "trend_up": "আগের ২৪ ঘণ্টার তুলনায় {pct}% বেশি",
+    "trend_down": "আগের ২৪ ঘণ্টার তুলনায় {pct}% কম",
+    "trend_flat": "আগের ২৪ ঘণ্টার তুলনায় কোনো পরিবর্তন নেই"
+  }
 }

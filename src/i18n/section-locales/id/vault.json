@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Perbarui",
+    "tool_count_one": "{count} alat",
+    "tool_count_other": "{count} alat",
+    "tab_documents": "Dokumen",
+    "tab_search": "Cari",
+    "tab_settings": "Pengaturan"
   },
   "manager": {
     "title": "Kredensial",
@@ -845,7 +851,10 @@
     "enabling": "Mengaktifkan...",
     "enable_rotation": "Aktifkan Rotasi",
     "enable_failed": "Gagal mengaktifkan rotasi: {error}",
-    "last_rotated": "Terakhir diputar {time}"
+    "last_rotated": "Terakhir diputar {time}",
+    "ring_aria_label": "Rotasi dalam {countdown}",
+    "history_empty_title": "Belum ada riwayat rotasi",
+    "history_empty_subtitle": "Peristiwa rotasi akan muncul di sini setelah kredensial ini dirotasi."
   },
   "event_config": {
     "event_triggers": "Pemicu Peristiwa",
@@ -950,11 +959,24 @@
     "catalog_description": "Pilih layanan yang dikenal seperti Slack, GitHub, atau OpenAI. Bidang yang sudah dikonfigurasikan dan pemeriksaan kesehatan.",
     "ai_heading": "Kredensial yang dirancang AI",
     "ai_description": "Deskripsikan layanan apapun dan AI akan mengonfigurasi bidang, tipe auth, dan pemeriksaan kesehatan untuk Anda.",
-    "works_with_any": "Berfungsi dengan API apapun"
+    "works_with_any": "Berfungsi dengan API apapun",
+    "recommended": "Direkomendasikan"
   },
   "credential_list": {
     "no_match": "Tidak ada kredensial yang cocok",
-    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda"
+    "no_match_hint": "Coba sesuaikan filter atau kata kunci pencarian Anda",
+    "col_name": "Nama",
+    "col_status": "Status",
+    "col_type": "Tipe",
+    "col_category": "Kategori",
+    "col_health": "Kesehatan",
+    "col_last_used": "Terakhir Digunakan",
+    "col_created": "Dibuat",
+    "filter_all": "Semua",
+    "filter_all_health": "Semua Kesehatan",
+    "health_healthy": "Sehat",
+    "health_failing": "Gagal",
+    "health_untested": "Belum Diuji"
   },
   "wizard_detect": {
     "no_services": "Tidak ada layanan yang cocok dengan \\\"{search}\\\"",

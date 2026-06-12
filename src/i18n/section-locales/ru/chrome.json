@@ -44,6 +44,21 @@
     "section_workspace": "Рабочая область",
     "toggle_sidebar": "Свернуть / развернуть боковую панель",
     "toggle_monitor": "Открыть / закрыть Persona Monitor",
-    "toggle_athena": "Открыть / закрыть чат Athena"
+    "toggle_athena": "Открыть / закрыть чат Athena",
+    "nav_mode": "Переключить режим навигации с клавиатуры",
+    "nav_mode_back": "Перейти на страницу назад (в режиме навигации)"
+  },
+  "tray_schedules": "Расписания",
+  "tray_schedules_today": "{count} запланировано сегодня",
+  "tray_notifications": "Уведомления",
+  "tray_notifications_unread": "{count} непрочитанных уведомлений",
+  "system_load": {
+    "label": "Нагрузка на систему",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} ГБ свободно)",
+    "measuring": "Измерение нагрузки на систему…",
+    "headroom_green": "Достаточно ресурсов для дополнительной работы",
+    "headroom_amber": "Нагрузка растёт — рекомендуется снизить активность",
+    "headroom_red": "Ресурсы исчерпаны — рекомендуется замедлиться"
   }
 }

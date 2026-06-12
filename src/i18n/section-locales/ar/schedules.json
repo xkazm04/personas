@@ -105,5 +105,12 @@
   "sparkline_aria": "مخطط مصغر لسجل التشغيل، آخر {days} يوم",
   "sparkline_window": "آخر {days} يوم",
   "sparkline_no_data": "لا توجد عمليات تشغيل في النافذة",
-  "sparkline_failure_rate": "{total} عملية تشغيل · {rate}% فشلت"
+  "sparkline_failure_rate": "{total} عملية تشغيل · {rate}% فشلت",
+  "run_status_incomplete": "غير مكتمل",
+  "last24h_title": "آخر 24 ساعة",
+  "last24h_empty": "لا توجد تشغيلات مجدولة في آخر 24 ساعة.",
+  "last24h_failed_count": "{count} فاشل",
+  "last24h_show_all": "عرض الكل ({count})",
+  "last24h_show_less": "عرض أقل",
+  "last24h_retry_at": "إعادة محاولة تلقائية {time}"
 }

@@ -400,7 +400,15 @@
     "nextStep": "Bước tiếp theo",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Hoàn thiện bản sao của bạn",
-    "rosterFoundations": "{twins} bản sao · {identities} có danh tính · {brains} có cơ sở tri thức"
+    "rosterFoundations": "{twins} bản sao · {identities} có danh tính · {brains} có cơ sở tri thức",
+    "ready": "Sẵn sàng",
+    "satellites": "Vệ tinh",
+    "rosterSpread": "Phạm vi danh sách",
+    "twinsConfigured": "Twins đã cấu hình",
+    "avgReadiness": "Sẵn sàng trung bình",
+    "activeChannels": "Kênh đang hoạt động",
+    "memoriesApproved": "Ký ức đã duyệt",
+    "channelsInUse": "Kênh đang dùng"
   },
   "variantTabs": {
     "prototype": "Prototype",

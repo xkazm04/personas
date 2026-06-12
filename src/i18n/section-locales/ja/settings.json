@@ -29,7 +29,43 @@
     "updates_current_version": "現在のバージョン v{version}",
     "updates_last_checked": "最終確認 {time}",
     "updates_history_title": "最近の更新",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "クラウドダッシュボード同期",
+    "cloud_sync_description": "ペルソナ、実行履歴、アクティビティの読み取り専用コピーをプライベートクラウドに同期し、ウェブダッシュボードで閲覧できます。コネクタの認証情報はこのデバイスから外に出ることはありません。",
+    "cloud_sync_toggle": "クラウドダッシュボードに同期",
+    "cloud_sync_on": "データをクラウドダッシュボードに同期中です。",
+    "cloud_sync_off": "データはこのデバイスのみに保存されます。",
+    "cloud_sync_toggle_aria": "クラウドダッシュボード同期を切り替え",
+    "cloud_sync_now": "今すぐ同期",
+    "cloud_sync_syncing": "同期中...",
+    "cloud_sync_last": "最終同期",
+    "cloud_sync_never": "未同期",
+    "cloud_sync_error": "前回の同期に失敗しました: {error}",
+    "cloud_sync_enable_failed": "同期設定を更新できませんでした",
+    "cloud_sync_now_failed": "同期に失敗しました。接続を確認して再試行してください。",
+    "cloud_sync_now_done": "{count}件のレコードを同期しました",
+    "cloud_sync_state_off": "オフ",
+    "cloud_sync_state_active": "有効",
+    "cloud_sync_state_syncing": "同期中…",
+    "cloud_sync_total": "通算同期済み",
+    "cloud_sync_device": "デバイス {id}",
+    "cloud_sync_tables_title": "同期データ",
+    "cloud_sync_show_details": "詳細を表示",
+    "cloud_sync_hide_details": "詳細を非表示",
+    "cloud_sync_retry": "再試行",
+    "cloud_sync_rows": "行",
+    "cloud_sync_table_pending": "初回同期待ち",
+    "cloud_sync_tables": {
+      "synced_personas": "ペルソナ",
+      "synced_executions": "実行",
+      "synced_events": "イベント",
+      "synced_manual_reviews": "レビュー",
+      "synced_messages": "メッセージ",
+      "synced_metrics_snapshots": "メトリクス",
+      "synced_tool_usage": "ツール使用状況",
+      "synced_memories": "メモリ",
+      "synced_knowledge_patterns": "ナレッジ"
+    }
   },
   "appearance_extra": {
     "simple": "シンプル",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "チームメモリ",
+    "import_team_memories": "{count}件のチームメモリ",
+    "include_memories_label": "メモリを含める",
+    "include_memories_note": "ペルソナとチームのメモリはエクスポートに含まれます。エージェントとチームを蓄積されたメモリなしでエクスポートする場合はオフにしてください。"
   },
   "config": {
     "title": "設定の解決",
@@ -510,7 +550,12 @@
     "over_budget": "月次上限を超過しました。ステージ 2 ではこの時点で新規実行がブロックされますが、現時点では警告として扱ってください。",
     "approaching_budget": "月次上限に近づいています。最近の実行内容を確認することをお勧めします。",
     "no_ceiling_hint": "上限が設定されていません。予算に対する追跡を開始するには、上の欄に USD 金額を入力してください。",
-    "stage1_note": "ステージ 1: 情報提供のみ。ステージ 2 では上限を超えた時点で実行ディスパッチをゲートします。"
+    "stage1_note": "ステージ 1: 情報提供のみ。ステージ 2 では上限を超えた時点で実行ディスパッチをゲートします。",
+    "concurrency_section": "並列実行",
+    "concurrency_hint": "同時に実行できるペルソナの数です。上限を超えた実行はキューに入り、スロットが空き次第自動的に開始されます。変更は即座に反映されます — 再起動は不要です。",
+    "concurrency_aria": "最大並列実行数",
+    "concurrency_range": "{min}〜{max}件の同時実行。",
+    "concurrency_queued_note": "この制限を超えた実行はキューに入り、実行中のものが終わり次第、優先度順・到着順に昇格されます。"
   },
   "recent_change": {
     "label": "最終{action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "設定を検索…",
+    "recommended": "おすすめ",
+    "section": "設定",
+    "trigger_hint": "設定を検索  ·  Ctrl / ⌘ K",
+    "trigger_aria": "設定検索を開く",
+    "reduce_motion": "モーションを軽減",
+    "dim": "色の強度を下げる",
+    "cvd_safe": "色覚バリアフリーパレット",
+    "high_contrast": "ハイコントラスト",
+    "ambient": "時間帯ヘッダーアート",
+    "theme": "テーマと色",
+    "text_size": "文字サイズ",
+    "brightness": "明るさ",
+    "density": "レイアウト密度",
+    "timezone": "タイムゾーン",
+    "tabs": {
+      "limits": "制限",
+      "api_keys": "APIキー",
+      "history": "履歴"
+    }
   }
 }

@@ -116,5 +116,10 @@
     "applied_toast": "Applied recipe: {name}",
     "run_now": "Run now",
     "run_now_toast": "Opening {name} in the recipe playground"
-  }
+  },
+  "discard": "Verwerfen",
+  "yes": "Ja",
+  "no": "Nein",
+  "delete_confirm_question": "{name} löschen?",
+  "tag_input_placeholder": "Tag eingeben und Enter drücken..."
 }

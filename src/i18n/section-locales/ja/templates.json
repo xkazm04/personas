@@ -343,7 +343,9 @@
     "search_suggestions_aria": "検索候補",
     "clear_search_aria": "検索をクリア",
     "search_with_ai_aria": "AIで検索",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "テンプレートギャラリーのカバレッジフィルターチップ — 各1語を維持。「Drafts」= 未公開の開発専用テンプレート。",
+    "coverage_drafts": "下書き"
   },
   "list": {
     "template_name": "テンプレート名",
@@ -807,7 +809,25 @@
       "lab_desc": "障害が繰り返される場合、このペルソナの Lab 自動改善 (プロンプト進化) を有効にします。",
       "escalate_after_label": "エスカレーションまで",
       "escalate_after_desc": "インシデント作成または Lab 送信までの連続失敗回数。"
-    }
+    },
+    "_comment_left_connections_heading": "採用左パネルのコネクターカード上の見出し — 1語を維持",
+    "left_connections_heading": "接続",
+    "_comment_left_empty_placeholder": "設定前の採用左パネルのミュートされたプレースホルダー",
+    "left_empty_placeholder": "各ディメンションを設定すると、選択内容がここに表示されます。",
+    "_comment_capabilities_aria": "採用機能タブストリップのアクセシビリティラベル",
+    "capabilities_aria": "機能",
+    "_comment_capability_include": "機能がスキップされているときの機能パワートグルのツールチップ — クリックして含める",
+    "capability_include": "機能を含める",
+    "_comment_capability_skip": "機能がオンのときの機能パワートグルのツールチップ — クリックしてスキップ",
+    "capability_skip": "機能をスキップ",
+    "_comment_policy_on": "メモリとレビューディメンションに表示されるオン/オフ状態 — 1語を維持",
+    "policy_on": "オン",
+    "policy_off": "オフ",
+    "_comment_schedule_hourly": "毎時ケイデンスのスケジュール概要ラベル — 短く維持",
+    "schedule_hourly": "毎時",
+    "_comment_events_count": "機能に設定されたペルソナ間イベントサブスクリプションの数",
+    "events_count_one": "{count}件のイベント",
+    "events_count_other": "{count}件のイベント"
   },
   "scan": {
     "scanning_draft": "ペルソナのドラフトをスキャン中...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count}個の質問、すべてデフォルト",
     "questionnaire_member_summary_customized": "{count}個の質問、{customized}個カスタマイズ",
     "questionnaire_member_no_config": "設定不要",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "一方向",
+    "graph_legend_feedback": "フィードバック"
   },
   "compare": {
     "compare": "比較",

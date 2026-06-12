@@ -44,6 +44,21 @@
     "section_workspace": "工作区",
     "toggle_sidebar": "折叠 / 展开侧边栏",
     "toggle_monitor": "打开 / 关闭 Persona Monitor",
-    "toggle_athena": "打开 / 关闭 Athena 聊天"
+    "toggle_athena": "打开 / 关闭 Athena 聊天",
+    "nav_mode": "切换键盘导航模式",
+    "nav_mode_back": "返回上一页（导航模式下）"
+  },
+  "tray_schedules": "计划任务",
+  "tray_schedules_today": "今日 {count} 个计划任务",
+  "tray_notifications": "通知",
+  "tray_notifications_unread": "{count} 条未读通知",
+  "system_load": {
+    "label": "系统负载",
+    "cpu": "CPU {pct}%",
+    "ram": "内存 {pct}%（剩余 {free} GB）",
+    "measuring": "正在测量系统负载…",
+    "headroom_green": "资源充足，可承接更多工作",
+    "headroom_amber": "负载较高，建议适当减轻",
+    "headroom_red": "已达上限，建议放缓节奏"
   }
 }

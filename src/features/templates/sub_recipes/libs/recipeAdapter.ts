@@ -42,7 +42,44 @@ const KNOWN_CATEGORIES: ReadonlySet<RecipeCategory> = new Set<RecipeCategory>([
   'communication',
   'data-sync',
   'analysis',
+  'development',
+  'content',
+  'productivity',
 ]);
+
+/** Alias → canonical bucket. Built from the actual category vocabulary of
+ *  the 298 seeded recipes' use-case JSON (42 distinct values), so the
+ *  catalog's category column reflects what each recipe really does instead
+ *  of collapsing everything into 'automation'. */
+const CATEGORY_ALIASES: Readonly<Record<string, RecipeCategory>> = {
+  // monitoring — watching state, alerting on change
+  monitor: 'monitoring', observability: 'monitoring', tracking: 'monitoring',
+  realtime: 'monitoring', security: 'monitoring',
+  // reporting — digests, summaries, dashboards
+  reports: 'reporting', audit: 'reporting', 'audit-reporting': 'reporting',
+  analytics: 'reporting',
+  // automation — scheduled/operational work without a better home
+  workflow: 'automation', operations: 'automation', maintenance: 'automation',
+  scheduled: 'automation', configuration: 'automation', response: 'automation',
+  // communication — messages out to people
+  messaging: 'communication', notify: 'communication', notifications: 'communication',
+  outreach: 'communication', email_processing: 'communication',
+  // data-sync — moving/ingesting/archiving data between systems
+  data: 'data-sync', sync: 'data-sync', integration: 'data-sync',
+  ingestion: 'data-sync', collections: 'data-sync', archive: 'data-sync',
+  // analysis — research, review, investigation
+  research: 'analysis', investigation: 'analysis', extraction: 'analysis',
+  discovery: 'analysis', review: 'analysis', strategy: 'analysis',
+  // development — code, builds, engineering workflows
+  build: 'development',
+  // content — writing, editing, publishing
+  writing: 'content', editing: 'content', publishing: 'content',
+  curation: 'content', generation: 'content',
+  // productivity — personal/team support, planning, people ops
+  personal_productivity: 'productivity', support: 'productivity',
+  hr: 'productivity', recruiting_ops: 'productivity', planning: 'productivity',
+  growth: 'productivity', intake: 'productivity',
+};
 
 function coerceCategory(value: string | null | undefined): RecipeCategory {
   if (!value) return 'automation';
@@ -50,14 +87,7 @@ function coerceCategory(value: string | null | undefined): RecipeCategory {
   if (KNOWN_CATEGORIES.has(lower as RecipeCategory)) {
     return lower as RecipeCategory;
   }
-  // Common aliases observed in the seeded catalog.
-  if (lower === 'workflow' || lower === 'sync') return 'automation';
-  if (lower === 'reports' || lower === 'audit' || lower === 'audit-reporting') return 'reporting';
-  if (lower === 'observability' || lower === 'monitor') return 'monitoring';
-  if (lower === 'messaging' || lower === 'notify') return 'communication';
-  if (lower === 'data' || lower === 'integration') return 'data-sync';
-  if (lower === 'research' || lower === 'investigation' || lower === 'extraction') return 'analysis';
-  return 'automation';
+  return CATEGORY_ALIASES[lower] ?? 'automation';
 }
 
 function safeJsonArray<T = unknown>(raw: string | null | undefined): T[] {
@@ -82,6 +112,15 @@ function slugify(s: string): string {
 }
 
 interface ParsedUseCase {
+  /** Human display title from the UC JSON — the fix for catalog rows that
+   *  otherwise show the technical `uc_*` id as their name. */
+  title?: string;
+  /** UC-level category — far more specific than the row-level
+   *  `RecipeDefinition.category`, which is null for ~97% of seeds. */
+  category?: string;
+  /** One-line capability summary — better browse tagline than a hard
+   *  80-char slice of the long description. */
+  capabilitySummary?: string;
   toolHints: string[];
   connectors: string[];
   suggestedTrigger?: {
@@ -95,7 +134,68 @@ interface ParsedUseCase {
     reviews?: 'on' | 'off' | 'trust_llm';
     events?: 'on' | 'off';
   };
+  reviewPolicy?: { mode?: string; context?: string };
+  memoryPolicy?: { enabled?: boolean; context?: string };
+  errorHandling?: string;
+  eventSubscriptions?: Array<{ eventType: string; direction: 'listen' | 'emit'; description?: string }>;
+  inputParameters?: Array<{ name: string; type?: string; defaultValue?: string; description?: string }>;
   promptTemplate: string;
+}
+
+/** Render a schema default for display: primitives as-is, structures as JSON. */
+function defaultValueLabel(v: unknown): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  if (typeof v === 'string') return v.length > 0 ? v : undefined;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  try { return JSON.stringify(v); } catch { return undefined; }
+}
+
+function parseEventSubscriptions(uc: Record<string, unknown>): ParsedUseCase['eventSubscriptions'] {
+  if (!Array.isArray(uc.event_subscriptions)) return undefined;
+  const events = (uc.event_subscriptions as unknown[])
+    .map((e) => {
+      if (!e || typeof e !== 'object') return null;
+      const rec = e as Record<string, unknown>;
+      const eventType = nonEmptyString(rec.event_type);
+      const direction: 'listen' | 'emit' | null =
+        rec.direction === 'emit' ? 'emit' : rec.direction === 'listen' ? 'listen' : null;
+      if (!eventType || !direction) return null;
+      return { eventType, direction, description: nonEmptyString(rec.description) };
+    })
+    .filter((e): e is NonNullable<typeof e> => e !== null);
+  return events.length > 0 ? events : undefined;
+}
+
+function parseInputParameters(uc: Record<string, unknown>): ParsedUseCase['inputParameters'] {
+  if (!Array.isArray(uc.input_schema)) return undefined;
+  const params = (uc.input_schema as unknown[])
+    .map((p) => {
+      if (!p || typeof p !== 'object') return null;
+      const rec = p as Record<string, unknown>;
+      const name = nonEmptyString(rec.name);
+      if (!name) return null;
+      return {
+        name,
+        type: nonEmptyString(rec.type),
+        defaultValue: defaultValueLabel(rec.default),
+        description: nonEmptyString(rec.description),
+      };
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
+  return params.length > 0 ? params : undefined;
+}
+
+function nonEmptyString(v: unknown): string | undefined {
+  return typeof v === 'string' && v.trim().length > 0 ? v.trim() : undefined;
+}
+
+/** Collapse the UC review-mode vocabulary (always / never / conditional /
+ *  on_low_confidence / …) into the 3-state toggle the adoption flow knows. */
+function reviewModeToSetting(mode: string | undefined): 'on' | 'off' | 'trust_llm' | undefined {
+  if (!mode) return undefined;
+  if (mode === 'never' || mode === 'off') return 'off';
+  if (mode === 'always') return 'on';
+  return 'trust_llm';
 }
 
 function parsePromptTemplate(prompt: string): ParsedUseCase {
@@ -164,11 +264,45 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
       t === 'slack' || t === 'telegram' || t === 'email',
     );
 
+  let reviewPolicy: ParsedUseCase['reviewPolicy'];
+  if (uc.review_policy && typeof uc.review_policy === 'object') {
+    const rp = uc.review_policy as Record<string, unknown>;
+    reviewPolicy = { mode: nonEmptyString(rp.mode), context: nonEmptyString(rp.context) };
+  }
+  let memoryPolicy: ParsedUseCase['memoryPolicy'];
+  if (uc.memory_policy && typeof uc.memory_policy === 'object') {
+    const mp = uc.memory_policy as Record<string, unknown>;
+    memoryPolicy = {
+      enabled: typeof mp.enabled === 'boolean' ? mp.enabled : undefined,
+      context: nonEmptyString(mp.context),
+    };
+  }
+
+  // Derive the 3-state adoption toggles from the real policies so the
+  // detail view reflects what the recipe actually does instead of
+  // hardcoded ON defaults.
+  const reviews = reviewModeToSetting(reviewPolicy?.mode);
+  const memories = memoryPolicy?.enabled === undefined
+    ? undefined
+    : (memoryPolicy.enabled ? 'on' as const : 'off' as const);
+  const generationSettings = reviews || memories
+    ? { reviews, memories }
+    : undefined;
+
   return {
+    title: nonEmptyString(uc.title),
+    category: nonEmptyString(uc.category),
+    capabilitySummary: nonEmptyString(uc.capability_summary),
     toolHints,
     connectors,
     suggestedTrigger,
     notificationChannelTypes,
+    generationSettings,
+    reviewPolicy,
+    memoryPolicy,
+    errorHandling: nonEmptyString(uc.error_handling),
+    eventSubscriptions: parseEventSubscriptions(uc),
+    inputParameters: parseInputParameters(uc),
     promptTemplate: prompt,
   };
 }
@@ -181,16 +315,23 @@ function parsePromptTemplate(prompt: string): ParsedUseCase {
 export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
   const parsed = parsePromptTemplate(def.prompt_template);
   const tags = asStringArray(safeJsonArray(def.tags));
-  const summary = (def.description ?? '').trim().slice(0, 80) || def.name;
-  const slug = slugify(def.name) || def.id.slice(0, 8);
+  // Prefer the UC's human title over the row name — Stage B's derivation
+  // wrote the technical `uc_*` id into `name` (the UC JSON has `title`,
+  // not `name`), so for seeded rows the row name is not display-worthy.
+  const name = parsed.title ?? def.name;
+  const summary = parsed.capabilitySummary?.slice(0, 80)
+    ?? ((def.description ?? '').trim().slice(0, 80) || name);
+  const slug = slugify(name) || def.id.slice(0, 8);
 
   return {
     id: def.id,
     slug,
-    name: def.name,
+    name,
     summary,
     description: def.description ?? '',
-    category: coerceCategory(def.category),
+    // UC-level category wins: row-level `category` is null for ~97% of
+    // seeds, which used to collapse the whole catalog into 'automation'.
+    category: coerceCategory(parsed.category ?? def.category),
 
     // No connector requirements declared → empty arrays. The frontend's
     // eligibility resolver treats empty `requiredConnectors` as
@@ -200,19 +341,29 @@ export function recipeDefinitionToRecipe(def: RecipeDefinition): Recipe {
     optionalConnectors: [],
 
     template: {
-      title: def.name,
+      title: name,
       description: def.description ?? '',
-      capabilitySummary: def.description ?? '',
-      category: def.category ?? 'automation',
+      capabilitySummary: parsed.capabilitySummary ?? def.description ?? '',
+      category: parsed.category ?? def.category ?? 'automation',
       suggestedTrigger: parsed.suggestedTrigger,
       toolHints: parsed.toolHints,
       notificationChannelTypes: parsed.notificationChannelTypes,
       generationSettings: parsed.generationSettings,
+      reviewPolicy: parsed.reviewPolicy,
+      memoryPolicy: parsed.memoryPolicy,
+      errorHandling: parsed.errorHandling,
+      eventSubscriptions: parsed.eventSubscriptions,
+      inputParameters: parsed.inputParameters,
       promptTemplate: parsed.promptTemplate,
     },
     bindings: [],
 
-    isBuiltin: def.is_builtin,
+    // Catalog-seeded rows aren't flagged is_builtin in the DB (the seeder's
+    // CreateRecipeInput has no such field) — but every derived recipe carries
+    // source_template_id, and for all of them `created_at` is a synthetic
+    // insert/derivation time, not a real publication date. Treat them as
+    // builtin so display rules (e.g. hiding "Published · 1m ago") hold.
+    isBuiltin: def.is_builtin || def.source_template_id != null,
     version: def.source_version ?? '1.0.0',
     publishedAt: def.created_at,
     author: 'Personas Team',

@@ -771,6 +771,22 @@ pub(crate) async fn inject_credential(
             Some(k) => k,
             None => continue,
         };
+        // Never inject a vault credential as one of the Claude CLI's own auth
+        // env vars. The CLI IS the LLM and must always run on the monthly
+        // subscription OAuth — injecting e.g. an `anthropic` connector's api_key
+        // as ANTHROPIC_API_KEY would silently flip the CLI onto the API account
+        // and bill credits ("Credit balance is too low"). (User directive
+        // 2026-06-11: executions/evaluation route to the .cmd subscription only.)
+        if crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV
+            .contains(&env_key.as_str())
+        {
+            tracing::warn!(
+                env_key = %env_key,
+                credential = %cred.name,
+                "Skipping credential env injection — reserved for Claude CLI subscription auth; the API key is never used for execution"
+            );
+            continue;
+        }
         env_vars.push((env_key.clone(), field_val.clone()));
         hints.push(format!(
             "`{}` (from {} credential '{}')",

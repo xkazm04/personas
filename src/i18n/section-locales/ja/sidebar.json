@@ -70,5 +70,7 @@
   "pending_events_sr_other": "{count}件の保留イベント",
   "cockpit": "Cockpit",
   "director_attention_sr": "{count} 体のエージェントにコーチングが必要",
-  "director_attention_sr_other": "{count} 体のエージェントにコーチングが必要"
+  "director_attention_sr_other": "{count} 体のエージェントにコーチングが必要",
+  "goals": "ゴール",
+  "mission_control": "ミッションコントロール"
 }

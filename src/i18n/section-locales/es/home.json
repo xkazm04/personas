@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Plugins",
       "description": "Amplía tus agentes con plugins de terceros y extensiones personalizadas"
+    },
+    "teams": {
+      "label": "Equipos",
+      "description": "Combina múltiples agentes en un equipo que trabaja en conjunto en flujos de trabajo de varios pasos"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Reiniciar",
     "start_tour": "Iniciar recorrido",
     "steps_count": "{count} pasos",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Movimientos Avanzados",
+    "moves_used": "{used}/{total} usados",
+    "try_it": "Pruébalo",
+    "used_badge": "Usado",
+    "group_save_time": "Ahorrar tiempo",
+    "group_prevent_failures": "Prevenir fallos",
+    "group_level_up": "Mejorar agentes",
+    "group_orchestrate": "Orquestar",
+    "pm_monitor_triage_title": "Gestiona toda la flota desde la barra de título",
+    "pm_schedule_delay_title": "Omite o retrasa una ejecución programada",
+    "pm_bulk_rerun_title": "Vuelve a ejecutar ejecuciones fallidas en bloque",
+    "pm_dead_letter_title": "Rescata eventos de la cola de mensajes fallidos",
+    "pm_annotate_golden_title": "Marca ejecuciones doradas, etiqueta regresiones",
+    "pm_credential_health_title": "Deja que la IA repare credenciales con fallos",
+    "pm_lab_measure_title": "Mide prompts en distintos modelos",
+    "pm_prompt_rollback_title": "Revierte un prompt defectuoso con un clic",
+    "pm_director_coaching_title": "Recibe asesoramiento de cartera del Director",
+    "pm_event_chain_title": "Encadena agentes con detectores de eventos",
+    "pm_live_stream_title": "Observa cómo se propagan las cadenas en tiempo real",
+    "pm_athena_fleet_title": "Pide a Athena que analice tu flota"
   },
   "setup_stepper": {
     "your_profile": "Tu perfil",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
     "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Error sin leer en {personaName} — investigar",
+    "tour": "Continuar {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Continuar editando {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} incidente abierto",
+    "incidents_other": "{count} incidentes abiertos",
+    "messages": "{count} mensaje sin leer",
+    "messages_other": "{count} mensajes sin leer",
+    "reviews": "{count} revisión pendiente",
+    "reviews_other": "{count} revisiones pendientes",
+    "teams": "{count} equipo",
+    "teams_other": "{count} equipos",
+    "agents_active": "{count} agente activo en las últimas 24h",
+    "agents_active_other": "{count} agentes activos en las últimas 24h",
+    "events_today": "{count} evento en las últimas 24h",
+    "events_today_other": "{count} eventos en las últimas 24h",
+    "connections_external": "{count} conexión externa",
+    "connections_external_other": "{count} conexiones externas",
+    "connections_builtin": "{count} conector integrado",
+    "connections_builtin_other": "{count} conectores integrados",
+    "trend_up": "subió {pct}% respecto a las 24h anteriores",
+    "trend_down": "bajó {pct}% respecto a las 24h anteriores",
+    "trend_flat": "sin cambios respecto a las 24h anteriores"
+  }
 }

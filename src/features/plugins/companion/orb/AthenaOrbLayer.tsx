@@ -183,7 +183,7 @@ export default function AthenaOrbLayer() {
                 })
               : t.plugins.companion.fleet_auto_decided}
           </div>
-          <div className="typo-caption mt-0.5 truncate text-foreground/90">
+          <div className="typo-caption mt-0.5 break-words text-foreground/90">
             {fleetAutoNotice.text}
           </div>
         </button>

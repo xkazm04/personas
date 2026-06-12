@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "साइनिंग पहचान अनुपलब्ध",
+  "identity_degraded_hint": "आपके डिवाइस की साइनिंग की लोड नहीं हो सकी — OS keyring रीसेट हो गई होगी। पहचान पुनः आरंभ करने तक पीयर ट्रस्ट और सिंक टूटे हुए हैं।"
 }

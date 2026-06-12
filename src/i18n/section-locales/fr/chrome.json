@@ -44,6 +44,21 @@
     "section_workspace": "Espace de travail",
     "toggle_sidebar": "Réduire / développer la barre latérale",
     "toggle_monitor": "Ouvrir / fermer Persona Monitor",
-    "toggle_athena": "Ouvrir / fermer le chat Athena"
+    "toggle_athena": "Ouvrir / fermer le chat Athena",
+    "nav_mode": "Activer/désactiver la navigation clavier",
+    "nav_mode_back": "Revenir à la page précédente (en mode navigation)"
+  },
+  "tray_schedules": "Planifications",
+  "tray_schedules_today": "{count} planifiée(s) aujourd'hui",
+  "tray_notifications": "Notifications",
+  "tray_notifications_unread": "{count} notifications non lues",
+  "system_load": {
+    "label": "Charge système",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} Go libres)",
+    "measuring": "Mesure de la charge système…",
+    "headroom_green": "Largement disponible pour plus de travail",
+    "headroom_amber": "Chargé — pensez à ralentir",
+    "headroom_red": "À pleine capacité — envisagez de ralentir"
   }
 }

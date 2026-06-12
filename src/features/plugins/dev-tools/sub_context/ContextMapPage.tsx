@@ -415,7 +415,7 @@ export default function ContextMapPage() {
       { section: 'plugins', tab: 'idea-scanner' },
     );
     addToast(tx(t.plugins.dev_tools.context_scan_ideas_started, { name: raw.name }), 'success');
-    runScan(agents, contextId).catch((err) => {
+    runScan(agents, { contextId }).catch((err) => {
       setScanningContextId(null);
       useOverviewStore.getState().processEnded('idea_scan', 'failed');
       toastCatch('ContextMapPage:scanContext')(err);

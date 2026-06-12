@@ -52,6 +52,28 @@ Codegen runs in parallel via `scripts/run-codegen.mjs` (per-task 60s timeout, ov
 Advisory pre-release scripts (manual, not CI-gated):
 - `npm run check:assets` — reports PNG → WebP compression savings via `scripts/optimize-assets.mjs --dry-run`. Run before bumping a release if asset weight matters.
 
+## PR self-review (agent: run before pushing)
+
+> Added by Ascent onboarding (D4 — agent-in-the-loop). The agent self-certifies against the repo's
+> *real* gates **before** the branch leaves the box; CI is the backstop. Run these and confirm green
+> before opening a PR (the local lefthook hooks enforce the fast subset; the full suites run in CI):
+
+- `npm run check` — TypeScript + ESLint (incl. the 18 custom rules)
+- `npm run check:i18n` · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
+- `npm run test -- --run` (Vitest)
+- If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test export_bindings` (then commit `src/lib/bindings/`)
+- `node .ai/doctor.mjs` — `.ai` conformance (no hard FAILs)
+
+Then the judgment checks a linter can't make:
+- Diff is small and single-purpose (one feature/fix per PR).
+- New user-facing strings go through `t.section.key` — no hardcoded English in JSX.
+- Security-sensitive edits (crypto/vault/connectors/IPC commands) are flagged for human review.
+- Public-API / ts-rs binding / generated command-name changes are intentional and regenerated.
+- `CHANGELOG.md` has an `[Unreleased]` entry for user-visible changes.
+
+Dependency bumps come in via Renovate (`renovate.json`): the agent reads the changelog / breaking
+changes and evaluates — never blind-merges minor/major. The human-facing DoD lives in the PR template.
+
 ## Architecture
 
 ```

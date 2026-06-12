@@ -32,6 +32,7 @@ import { TemplateSuggestionsWidget } from './widgets/TemplateSuggestionsWidget';
 import { TextCalloutWidget } from './widgets/TextCalloutWidget';
 import { TriggerSetWidget } from './widgets/TriggerSetWidget';
 import { UseCaseSetWidget } from './widgets/UseCaseSetWidget';
+import { BrowserTestReportWidget } from './widgets/BrowserTestReportWidget';
 import { VerdictWidget } from './widgets/VerdictWidget';
 import { FlowStepsWidget } from './widgets/FlowStepsWidget';
 import { ComparisonCardsWidget } from './widgets/ComparisonCardsWidget';
@@ -96,6 +97,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // Athena composes the use cases; the widget renders them grouped by
   // golden / variant / out-of-scope role with role-specific accents.
   use_case_set: UseCaseSetWidget,
+  // Browser-test verdict — Athena's structured report at the end of a
+  // `run_browser_test` turn. Emitted via `show_browser_test_report
+  // { url, steps, defects?, console_errors?, security_notes? }`.
+  // Unclamped in InlineChatCard; carries a "File as ideas" affordance.
+  browser_test_report: BrowserTestReportWidget,
   // Trigger decomposition — sibling of use_case_set. Emitted via
   // `show_trigger_set { intent, triggers: [{label, source, condition, grain?, idempotency_note?}] }`.
   // Each entry applies cycle-6 doctrine's "one trigger condition → one

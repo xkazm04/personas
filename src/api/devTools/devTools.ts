@@ -570,11 +570,22 @@ export const bulkDeleteIdeas = (ids: string[]) =>
 export const listScanAgents = () =>
   safeInvoke<ScanAgentMeta[]>([], "dev_tools_list_scan_agents");
 
-export const runScan = (projectId: string, scanTypes: string[], contextId?: string) =>
+export interface RunScanOptions {
+  /** Single legacy context scope (per-context "scan this" + auto-scan). */
+  contextId?: string;
+  /** Multi-context scope (Scanner Configure modal). Takes precedence. */
+  contextIds?: string[];
+  /** Target number of findings (granularity). */
+  targetCount?: number;
+}
+
+export const runScan = (projectId: string, scanTypes: string[], opts?: RunScanOptions) =>
   invoke<{ scan_id: string; scan_type: string }>("dev_tools_run_scan", {
     projectId,
     scanTypes,
-    contextId: contextId,
+    contextId: opts?.contextId,
+    contextIds: opts?.contextIds,
+    targetCount: opts?.targetCount,
   });
 
 export const cancelScan = (scanId: string) =>

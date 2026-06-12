@@ -70,5 +70,7 @@
   "pending_events_sr_other": "{count} लंबित इवेंट",
   "cockpit": "Cockpit",
   "director_attention_sr": "{count} एजेंट को कोचिंग चाहिए",
-  "director_attention_sr_other": "{count} एजेंट को कोचिंग चाहिए"
+  "director_attention_sr_other": "{count} एजेंट को कोचिंग चाहिए",
+  "goals": "Goals",
+  "mission_control": "Mission control"
 }

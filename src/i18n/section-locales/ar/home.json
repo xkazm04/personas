@@ -93,6 +93,10 @@
     "plugins": {
       "label": "الإضافات",
       "description": "وسّع وكلاءك بإضافات طرف ثالث وامتدادات مخصصة"
+    },
+    "teams": {
+      "label": "الفِرَق",
+      "description": "ادمج عدة وكلاء في فريق واحد يعمل معاً على سير عمل متعددة الخطوات"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "إعادة التشغيل",
     "start_tour": "ابدأ الجولة",
     "steps_count": "{count} خطوات",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "الحركات المتقدمة",
+    "moves_used": "{used}/{total} مستخدم",
+    "try_it": "جرّبه",
+    "used_badge": "مستخدم",
+    "group_save_time": "توفير الوقت",
+    "group_prevent_failures": "تجنب الأعطال",
+    "group_level_up": "ترقية الوكلاء",
+    "group_orchestrate": "التنسيق والإدارة",
+    "pm_monitor_triage_title": "فرز الأسطول بالكامل من شريط العنوان",
+    "pm_schedule_delay_title": "تخطي تشغيل مجدول أو تأجيله",
+    "pm_bulk_rerun_title": "إعادة تشغيل التنفيذات الفاشلة دفعةً واحدة",
+    "pm_dead_letter_title": "استرداد الأحداث من قائمة الانتظار الميتة",
+    "pm_annotate_golden_title": "تمييز التشغيلات الذهبية وتصنيف الانحدارات",
+    "pm_credential_health_title": "دع الذكاء الاصطناعي يُصلح بيانات الاعتماد الفاشلة",
+    "pm_lab_measure_title": "قياس الأوامر عبر النماذج المختلفة",
+    "pm_prompt_rollback_title": "التراجع عن أمر سيئ بنقرة واحدة",
+    "pm_director_coaching_title": "احصل على توجيه المحفظة من Director",
+    "pm_event_chain_title": "ربط الوكلاء بمستمعي الأحداث",
+    "pm_live_stream_title": "مشاهدة تتالي السلاسل في الوقت الفعلي",
+    "pm_athena_fleet_title": "اطلب من Athena تحليل أسطولك"
   },
   "setup_stepper": {
     "your_profile": "ملفك الشخصي",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
     "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
   },
-  "commander": "القائد"
+  "commander": "القائد",
+  "resume": {
+    "failure": "فشل غير مقروء في {personaName} — تحقق من السبب",
+    "tour": "استئناف {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "متابعة تحرير {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} حادثة مفتوحة",
+    "incidents_other": "{count} حوادث مفتوحة",
+    "messages": "{count} رسالة غير مقروءة",
+    "messages_other": "{count} رسائل غير مقروءة",
+    "reviews": "{count} مراجعة معلّقة",
+    "reviews_other": "{count} مراجعات معلّقة",
+    "teams": "{count} فريق",
+    "teams_other": "{count} فِرَق",
+    "agents_active": "{count} وكيل نشط خلال آخر 24 ساعة",
+    "agents_active_other": "{count} وكلاء نشطون خلال آخر 24 ساعة",
+    "events_today": "{count} حدث خلال آخر 24 ساعة",
+    "events_today_other": "{count} أحداث خلال آخر 24 ساعة",
+    "connections_external": "{count} اتصال خارجي",
+    "connections_external_other": "{count} اتصالات خارجية",
+    "connections_builtin": "{count} موصّل مدمج",
+    "connections_builtin_other": "{count} موصّلات مدمجة",
+    "trend_up": "ارتفع {pct}% مقارنةً بالـ 24 ساعة السابقة",
+    "trend_down": "انخفض {pct}% مقارنةً بالـ 24 ساعة السابقة",
+    "trend_flat": "لا تغيير مقارنةً بالـ 24 ساعة السابقة"
+  }
 }

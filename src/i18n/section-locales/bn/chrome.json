@@ -44,6 +44,21 @@
     "section_workspace": "ওয়ার্কস্পেস",
     "toggle_sidebar": "সাইডবার সংকুচিত / প্রসারিত করুন",
     "toggle_monitor": "Persona Monitor খুলুন / বন্ধ করুন",
-    "toggle_athena": "Athena চ্যাট খুলুন / বন্ধ করুন"
+    "toggle_athena": "Athena চ্যাট খুলুন / বন্ধ করুন",
+    "nav_mode": "কীবোর্ড নেভিগেশন মোড চালু/বন্ধ করুন",
+    "nav_mode_back": "এক পৃষ্ঠা পিছনে যান (নেভিগেশন মোডে)"
+  },
+  "tray_schedules": "সময়সূচি",
+  "tray_schedules_today": "আজ {count}টি নির্ধারিত",
+  "tray_notifications": "বিজ্ঞপ্তি",
+  "tray_notifications_unread": "{count}টি অপঠিত বিজ্ঞপ্তি",
+  "system_load": {
+    "label": "সিস্টেম লোড",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB খালি)",
+    "measuring": "সিস্টেম লোড পরিমাপ হচ্ছে…",
+    "headroom_green": "আরো কাজের জন্য যথেষ্ট সক্ষমতা আছে",
+    "headroom_amber": "ব্যস্ত হয়ে পড়ছে — কিছুটা কমানোর কথা ভাবুন",
+    "headroom_red": "সর্বোচ্চ সক্ষমতায় — গতি কমানোর কথা ভাবুন"
   }
 }

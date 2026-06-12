@@ -16,6 +16,12 @@ enabled: boolean | null,
  */
 capabilitySummary: string | null, 
 /**
+ * Recipe provenance — set when the use case was adopted from a catalog
+ * recipe. Carried through Rust-side design_context rewrites so the
+ * catalog's "Adopted" badge and future staleness checks keep working.
+ */
+sourceRecipeId: string | null, 
+/**
  * Tool names the LLM should prefer when this capability is in focus.
  * Advisory only — all persona tools remain available at runtime.
  */

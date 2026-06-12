@@ -229,7 +229,9 @@
     "teams_label": "팀",
     "groups_label": "그룹",
     "cloud_label": "클라우드",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "팀 없음",
+    "whats_new_update": "업데이트됨 — 새로운 내용 확인"
   },
   "execution_detail": {
     "copy": "Copy",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "오늘",
+  "group_yesterday": "어제",
+  "group_this_week": "이번 주",
+  "group_this_month": "이번 달",
+  "group_older": "이전",
+  "code_expand_block": "코드 블록 펼치기",
+  "code_collapse_block": "코드 블록 접기",
+  "code_show_lines": "전체 {count}줄 보기"
 }

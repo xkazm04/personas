@@ -400,7 +400,15 @@
     "nextStep": "الخطوة التالية",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "أكمل توأمك",
-    "rosterFoundations": "{twins} توائم · {identities} لها هوية · {brains} لها قاعدة معرفة"
+    "rosterFoundations": "{twins} توائم · {identities} لها هوية · {brains} لها قاعدة معرفة",
+    "ready": "جاهز",
+    "satellites": "الأقمار الصناعية",
+    "rosterSpread": "توزيع القائمة",
+    "twinsConfigured": "التوائم المُعدّة",
+    "avgReadiness": "متوسط الجاهزية",
+    "activeChannels": "القنوات النشطة",
+    "memoriesApproved": "الذكريات المعتمدة",
+    "channelsInUse": "القنوات قيد الاستخدام"
   },
   "variantTabs": {
     "prototype": "Prototype",

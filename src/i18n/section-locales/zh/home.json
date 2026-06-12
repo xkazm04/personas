@@ -93,6 +93,10 @@
     "plugins": {
       "label": "插件",
       "description": "通过第三方插件和自定义扩展扩展您的代理"
+    },
+    "teams": {
+      "label": "团队",
+      "description": "将多个智能体组合成一个团队，共同完成多步骤工作流"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "重新开始",
     "start_tour": "开始教程",
     "steps_count": "{count} 个步骤",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "高效操作",
+    "moves_used": "已使用 {used}/{total}",
+    "try_it": "立即尝试",
+    "used_badge": "已使用",
+    "group_save_time": "节省时间",
+    "group_prevent_failures": "防止故障",
+    "group_level_up": "提升智能体",
+    "group_orchestrate": "编排",
+    "pm_monitor_triage_title": "从标题栏管理整个队列",
+    "pm_schedule_delay_title": "跳过或延迟计划运行",
+    "pm_bulk_rerun_title": "批量重新运行失败的执行",
+    "pm_dead_letter_title": "从死信队列中恢复事件",
+    "pm_annotate_golden_title": "标记优质运行，标注回归",
+    "pm_credential_health_title": "让 AI 修复失效凭证",
+    "pm_lab_measure_title": "跨模型测量提示词",
+    "pm_prompt_rollback_title": "一键回滚错误提示词",
+    "pm_director_coaching_title": "从 Director 获取组合建议",
+    "pm_event_chain_title": "通过事件监听器串联智能体",
+    "pm_live_stream_title": "实时观察链式反应",
+    "pm_athena_fleet_title": "让 Athena 分析您的队列"
   },
   "setup_stepper": {
     "your_profile": "您的个人资料",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
     "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "{personaName} 中有未读故障 — 请调查",
+    "tour": "继续 {tourTitle}（{stepIndex}/{totalSteps}）— {stepTitle}",
+    "edit": "继续编辑 {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} 个未解决事件",
+    "incidents_other": "{count} 个未解决事件",
+    "messages": "{count} 条未读消息",
+    "messages_other": "{count} 条未读消息",
+    "reviews": "{count} 个待审核",
+    "reviews_other": "{count} 个待审核",
+    "teams": "{count} 个团队",
+    "teams_other": "{count} 个团队",
+    "agents_active": "过去 24 小时内 {count} 个智能体活跃",
+    "agents_active_other": "过去 24 小时内 {count} 个智能体活跃",
+    "events_today": "过去 24 小时内 {count} 个事件",
+    "events_today_other": "过去 24 小时内 {count} 个事件",
+    "connections_external": "{count} 个外部连接",
+    "connections_external_other": "{count} 个外部连接",
+    "connections_builtin": "{count} 个内置连接器",
+    "connections_builtin_other": "{count} 个内置连接器",
+    "trend_up": "较前 24 小时上升 {pct}%",
+    "trend_down": "较前 24 小时下降 {pct}%",
+    "trend_flat": "较前 24 小时无变化"
+  }
 }

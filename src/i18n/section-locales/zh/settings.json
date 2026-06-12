@@ -29,7 +29,43 @@
     "updates_current_version": "当前版本 v{version}",
     "updates_last_checked": "上次检查 {time}",
     "updates_history_title": "近期更新",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "云端仪表板同步",
+    "cloud_sync_description": "将您的 personas、运行记录和活动的只读副本同步到私有云，以便在网页仪表板中查看。您的连接器凭据不会离开本设备。",
+    "cloud_sync_toggle": "同步到云端仪表板",
+    "cloud_sync_on": "您的数据正在同步到云端仪表板。",
+    "cloud_sync_off": "您的数据仅保留在本设备上。",
+    "cloud_sync_toggle_aria": "切换云端仪表板同步",
+    "cloud_sync_now": "立即同步",
+    "cloud_sync_syncing": "同步中...",
+    "cloud_sync_last": "上次同步",
+    "cloud_sync_never": "尚未同步",
+    "cloud_sync_error": "上次同步失败：{error}",
+    "cloud_sync_enable_failed": "无法更新同步设置",
+    "cloud_sync_now_failed": "同步失败。请检查连接后重试。",
+    "cloud_sync_now_done": "已同步 {count} 条记录",
+    "cloud_sync_state_off": "关闭",
+    "cloud_sync_state_active": "活跃",
+    "cloud_sync_state_syncing": "同步中…",
+    "cloud_sync_total": "累计已同步",
+    "cloud_sync_device": "设备 {id}",
+    "cloud_sync_tables_title": "已同步数据",
+    "cloud_sync_show_details": "显示详情",
+    "cloud_sync_hide_details": "隐藏详情",
+    "cloud_sync_retry": "重试",
+    "cloud_sync_rows": "行",
+    "cloud_sync_table_pending": "等待首次同步",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "执行记录",
+      "synced_events": "事件",
+      "synced_manual_reviews": "审核",
+      "synced_messages": "消息",
+      "synced_metrics_snapshots": "指标",
+      "synced_tool_usage": "工具使用",
+      "synced_memories": "记忆",
+      "synced_knowledge_patterns": "知识"
+    }
   },
   "appearance_extra": {
     "simple": "简单",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "团队记忆",
+    "import_team_memories": "{count} 条团队记忆",
+    "include_memories_label": "包含记忆",
+    "include_memories_note": "Persona 和团队记忆将随导出一起保存。关闭此选项可导出不含累积记忆的智能体和团队。"
   },
   "config": {
     "title": "配置解析",
@@ -610,6 +650,33 @@
     "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
     "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
     "no_ceiling_hint": "无ceiling is set. Enter a USD amount above to start tracking against a budget.",
-    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed.",
+    "concurrency_section": "并行执行",
+    "concurrency_hint": "同时运行的 persona 数量上限。超出的运行任务将进入队列，待有空闲槽位时自动启动。更改立即生效，无需重启。",
+    "concurrency_aria": "最大并行执行数",
+    "concurrency_range": "并发运行数在 {min} 到 {max} 之间。",
+    "concurrency_queued_note": "超出此限制的运行任务将进入队列，按优先级排序，优先级相同时按到达顺序，在当前运行完成后自动启动。"
+  },
+  "search": {
+    "placeholder": "搜索设置…",
+    "recommended": "推荐",
+    "section": "设置",
+    "trigger_hint": "搜索设置  ·  Ctrl / ⌘ K",
+    "trigger_aria": "打开设置搜索",
+    "reduce_motion": "减少动画",
+    "dim": "降低色彩强度",
+    "cvd_safe": "色盲安全调色板",
+    "high_contrast": "高对比度",
+    "ambient": "时段标题背景图",
+    "theme": "主题与颜色",
+    "text_size": "文字大小",
+    "brightness": "亮度",
+    "density": "布局密度",
+    "timezone": "时区",
+    "tabs": {
+      "limits": "限制",
+      "api_keys": "API 密钥",
+      "history": "历史记录"
+    }
   }
 }

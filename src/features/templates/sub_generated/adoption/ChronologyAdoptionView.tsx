@@ -36,6 +36,7 @@ import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { TriggerSelection } from "./useCasePickerShared";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
+import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch } from '@/lib/silentCatch';
@@ -451,6 +452,40 @@ function applyManualConnectors(
   return { ...designResult, suggested_connectors: [...suggested, ...added] };
 }
 
+/**
+ * Bake the user's Messages-petal channel choice onto the IR. Sets both the
+ * concrete `notification_channels` (ChannelSpecV2[], read by
+ * prepare_notification_channels → persona row) and `suggested_notification_channels`
+ * (the adoption matrix preview). Only called when the user actually edited the
+ * Messages petal, so untouched templates keep their authored channels.
+ */
+function applyNotificationChannels(
+  designResult: Record<string, unknown>,
+  channels: ChannelSpecV2[],
+): Record<string, unknown> {
+  return {
+    ...designResult,
+    notification_channels: channels,
+    suggested_notification_channels: channels,
+  };
+}
+
+/** Build-intent hint for the Messages petal. Empty selection instructs the
+ *  build to produce NO user-facing message (events / data only); a non-empty
+ *  selection lists the delivery channels (matches serializeQuickConfig). */
+function notificationChannelsHint(channels: ChannelSpecV2[] | null): string {
+  if (channels === null) return "";
+  if (channels.length === 0) {
+    return "\nMessages: none — this persona produces no user-facing messages; emit events / write data instead.";
+  }
+  const labels = channels
+    .filter((c) => c.type !== "built-in" && c.type !== "titlebar")
+    .map((c) => c.type);
+  return labels.length > 0
+    ? `\nDelivery channels: persona inbox, ${labels.join(", ")} (fan-out)`
+    : "\nDelivery channels: persona inbox";
+}
+
 /** One-line "Services: …" hint appended to the seed intent for the manually
  *  attached connectors (matches the glyph builder's serializeQuickConfig).
  *  Database connectors narrowed to a table subset render `(tables: a, b)`;
@@ -540,6 +575,14 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
   const seedInFlight = useRef(false);
+  // Approach 1 — always-on adjustment: the adoption build session id (captured
+  // at seed time) + guards so the LLM adjustment pass runs exactly once before
+  // the auto-test, specializing the pre-built base IR to the user's picks.
+  // `adjustedPersonaId` is state (not a ref) so completing the pass re-renders
+  // and lets the gated auto-test effect fire.
+  const adoptionSessionIdRef = useRef<string | null>(null);
+  const adjustingRef = useRef(false);
+  const [adjustedPersonaId, setAdjustedPersonaId] = useState<string | null>(null);
 
   // Parse + hydrate the design result. Templates store capabilities as
   // recipe_refs (Stage-B migration); the questionnaire renders before the
@@ -706,6 +749,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // Per-database-connector table scope (connector name → tables; [] = all).
   // Subsets ride into the seed intent so the build focuses the persona.
   const [connectorTables, setConnectorTables] = useState<Record<string, string[]>>({});
+
+  // Messaging channels set via the Messages petal. `null` = untouched (keep the
+  // template's default messaging); a non-null array = the user's explicit choice
+  // (empty array = no user-facing messages). Baked at seed via
+  // applyNotificationChannels + a build-intent hint.
+  const [notificationChannels, setNotificationChannels] = useState<ChannelSpecV2[] | null>(null);
 
   // Per-capability "Errors" sigil routing policy. Edited via the Error petal
   // in the Persona Layout; applied onto effectiveDesignResult.use_cases at
@@ -961,7 +1010,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     // Bake the cross-persona event subscriptions onto use_cases[].event_subscriptions.
     const withEvents = applyEventSubscriptions(withGenSettings, eventSubsByCap);
     // Append manually-attached connectors (Apps petal) to suggested_connectors.
-    const effectiveDesignResult = applyManualConnectors(withEvents, manualConnectors);
+    const withConnectors = applyManualConnectors(withEvents, manualConnectors);
+    // Bake the Messages-petal channel choice (only when the user edited it).
+    const effectiveDesignResult = notificationChannels !== null
+      ? applyNotificationChannels(withConnectors, notificationChannels)
+      : withConnectors;
     const dimensionData = extractDimensionData(
       effectiveDesignResult,
       credentialBindings,
@@ -1019,10 +1072,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           // builder's serializeQuickConfig approach).
           intent: (review.instruction || templateName)
             + manualConnectorsHint(manualConnectors, connectorTables)
+            + notificationChannelsHint(notificationChannels)
             + eventSubscriptionsHint(eventSubsByCap),
           agentIrJson,
           resolvedCellsJson,
         });
+        adoptionSessionIdRef.current = sessionId;
 
         // Register the adoption session in buildSessions via hydrateBuildSession.
         // This creates the session slot in the map (required by multi-draft slice)
@@ -1090,7 +1145,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         seedInFlight.current = false;
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, dimPolicyByCap, eventSubsByCap, manualConnectors, connectorTables, t, tx]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, dimPolicyByCap, eventSubsByCap, manualConnectors, connectorTables, notificationChannels, t, tx]);
 
   const build = useBuild({ personaId });
   const lifecycle = useLifecycle({ personaId });
@@ -1112,8 +1167,52 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   useEffect(() => {
     if (build.pendingQuestions && build.pendingQuestions.length > 0) {
       autoTestedRef.current = null;
+      // A new pending question means the user will answer again → re-adjust the
+      // base IR for the new answers before the next test round.
+      setAdjustedPersonaId((prev) => (prev === personaId ? null : prev));
     }
-  }, [build.pendingQuestions]);
+  }, [build.pendingQuestions, personaId]);
+
+  // Approach 1 — always-on LLM adjustment of the pre-built base IR. Runs once
+  // per adopted persona, after answers are seeded and BEFORE the auto-test, so
+  // the test + promote operate on a persona specialized to the user's actual
+  // connector/credential picks and configuration answers. The backend falls
+  // back to the untouched base IR on any failure/timeout, so a failed or slow
+  // adjustment never blocks adoption — it only degrades to today's behavior.
+  useEffect(() => {
+    if (!seeded || !personaId) return;
+    if (currentBuildPhase !== 'draft_ready') return;
+    if (hasFilteredQuestions && !questionsComplete) return;
+    if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
+    if (build.buildError) return;
+    if (adjustedPersonaId === personaId || adjustingRef.current) return;
+    const sessionId = adoptionSessionIdRef.current;
+    if (!sessionId) return;
+    adjustingRef.current = true;
+    void (async () => {
+      try {
+        void import("@/stores/overviewStore")
+          .then(({ useOverviewStore }) => {
+            useOverviewStore.getState().updateProcessStatus('template_adopt', 'running', {
+              lastEvent: 'Adjusting persona to your setup…',
+              runId: personaId,
+            });
+          })
+          .catch(() => {});
+        // Long timeout: above the backend's 600s LLM margin so the frontend
+        // never gives up before the backend resolves (scoped output keeps the
+        // typical pass well under a minute).
+        await invokeWithTimeout("adjust_adoption_draft", { sessionId }, { timeoutMs: 660_000 });
+      } catch (err) {
+        // Non-fatal: backend keeps the deterministic base IR on failure.
+        silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:adjust")(err);
+      } finally {
+        adjustingRef.current = false;
+        setAdjustedPersonaId(personaId);
+      }
+    })();
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId]);
+
   useEffect(() => {
     if (!seeded || !personaId) return;
     if (currentBuildPhase !== 'draft_ready') return;
@@ -1121,9 +1220,12 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     if (hasFilteredQuestions && !questionsComplete) return;
     if (build.pendingQuestions && build.pendingQuestions.length > 0) return;
     if (build.buildError) return;
+    // Wait for the always-on adjustment pass to finish so the test/promote run
+    // against the specialized IR.
+    if (adjustedPersonaId !== personaId) return;
     autoTestedRef.current = personaId;
     void lifecycle.handleStartTest();
-  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, lifecycle]);
+  }, [seeded, personaId, currentBuildPhase, hasFilteredQuestions, questionsComplete, build.pendingQuestions, build.buildError, adjustedPersonaId, lifecycle]);
   useEffect(() => {
     if (!seeded || !personaId) return;
     // Terminal phases: end the process activity
@@ -1372,6 +1474,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         onManualConnectorsChange={setManualConnectors}
         connectorTables={connectorTables}
         onConnectorTablesChange={setConnectorTables}
+        notificationChannels={notificationChannels}
+        onNotificationChannelsChange={setNotificationChannels}
       />
     );
 

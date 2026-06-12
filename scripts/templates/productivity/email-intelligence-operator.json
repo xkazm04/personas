@@ -14,7 +14,7 @@
     "knowledge base",
     "Local Database"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "email",

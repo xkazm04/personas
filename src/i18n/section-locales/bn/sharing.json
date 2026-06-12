@@ -172,5 +172,7 @@
   "share_link_copied_one": "Share link copied! {count} resource (expires in 24h, single use)",
   "share_link_copied_other": "Share link copied! {count} resources (expires in 24h, single use)",
   "imported_resources_one": "Imported {count} resource",
-  "imported_resources_other": "Imported {count} resources"
+  "imported_resources_other": "Imported {count} resources",
+  "identity_degraded_title": "স্বাক্ষর পরিচয় অনুপলব্ধ",
+  "identity_degraded_hint": "আপনার ডিভাইসের স্বাক্ষর কী লোড করা যায়নি — OS কীরিং রিসেট হয়ে থাকতে পারে। পরিচয় পুনরায় শুরু না করা পর্যন্ত পিয়ার ট্রাস্ট এবং সিঙ্ক ভেঙে আছে।"
 }

@@ -343,7 +343,9 @@
     "search_suggestions_aria": "Suggestions de recherche",
     "clear_search_aria": "Effacer la recherche",
     "search_with_ai_aria": "Rechercher avec l'IA",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "Brouillons"
   },
   "list": {
     "template_name": "Nom du modèle",
@@ -807,7 +809,25 @@
       "lab_desc": "Activer l'amélioration automatique du Lab (évolution des prompts) pour cette persona lorsque les échecs se répètent.",
       "escalate_after_label": "Escalader après",
       "escalate_after_desc": "Nombre d'échecs consécutifs avant de créer un incident ou d'envoyer au Lab."
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "Connexions",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "Vos sélections s'affichent ici au fur et à mesure que vous configurez chaque dimension.",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "Capacités",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "Inclure la capacité",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "Ignorer la capacité",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "Activé",
+    "policy_off": "Désactivé",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "Toutes les heures",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count} événement",
+    "events_count_other": "{count} événements"
   },
   "scan": {
     "scanning_draft": "Analyse du persona en cours...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count} questions, toutes par défaut",
     "questionnaire_member_summary_customized": "{count} questions, {customized} personnalisées",
     "questionnaire_member_no_config": "Aucune configuration requise",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "Sans retour",
+    "graph_legend_feedback": "Renvoie"
   },
   "compare": {
     "compare": "Comparer",

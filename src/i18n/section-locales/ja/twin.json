@@ -400,7 +400,15 @@
     "nextStep": "次のステップ",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "ツインを完成させる",
-    "rosterFoundations": "{twins} 体のツイン · {identities} 体に人物像 · {brains} 体に知識ベース"
+    "rosterFoundations": "{twins} 体のツイン · {identities} 体に人物像 · {brains} 体に知識ベース",
+    "ready": "準備完了",
+    "satellites": "サテライト",
+    "rosterSpread": "ロスター分布",
+    "twinsConfigured": "設定済みツイン",
+    "avgReadiness": "平均準備率",
+    "activeChannels": "アクティブチャンネル",
+    "memoriesApproved": "承認済みメモリ",
+    "channelsInUse": "使用中チャンネル"
   },
   "variantTabs": {
     "prototype": "Prototype",

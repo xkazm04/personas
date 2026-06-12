@@ -116,5 +116,10 @@
     "applied_toast": "Applied recipe: {name}",
     "run_now": "Run now",
     "run_now_toast": "Opening {name} in the recipe playground"
-  }
+  },
+  "discard": "破棄",
+  "yes": "はい",
+  "no": "いいえ",
+  "delete_confirm_question": "{name}を削除しますか？",
+  "tag_input_placeholder": "タグを入力してEnterを押してください..."
 }

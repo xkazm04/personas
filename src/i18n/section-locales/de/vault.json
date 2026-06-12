@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "Aktualisieren",
+    "tool_count_one": "{count} Tool",
+    "tool_count_other": "{count} Tools",
+    "tab_documents": "Dokumente",
+    "tab_search": "Suche",
+    "tab_settings": "Einstellungen"
   },
   "manager": {
     "title": "Zugangsdaten",
@@ -845,7 +851,10 @@
     "enabling": "Aktiviere...",
     "enable_rotation": "Rotation aktivieren",
     "enable_failed": "Rotation konnte nicht aktiviert werden: {error}",
-    "last_rotated": "Zuletzt rotiert {time}"
+    "last_rotated": "Zuletzt rotiert {time}",
+    "ring_aria_label": "Rotation in {countdown}",
+    "history_empty_title": "Noch kein Rotationsverlauf",
+    "history_empty_subtitle": "Rotationsereignisse werden hier angezeigt, sobald diese Zugangsdaten rotiert werden."
   },
   "event_config": {
     "event_triggers": "Ereignis-Trigger",
@@ -950,11 +959,24 @@
     "catalog_description": "Bekannten Dienst wie Slack, GitHub oder OpenAI auswählen. Vorkonfigurierte Felder und Healthchecks.",
     "ai_heading": "KI-gestaltete Zugangsdaten",
     "ai_description": "Dienst beschreiben und KI konfiguriert Felder, Authentifizierungstyp und Healthcheck für Sie.",
-    "works_with_any": "Funktioniert mit jeder API"
+    "works_with_any": "Funktioniert mit jeder API",
+    "recommended": "Empfohlen"
   },
   "credential_list": {
     "no_match": "Keine passenden Zugangsdaten",
-    "no_match_hint": "Filter oder Suchbegriff anpassen"
+    "no_match_hint": "Filter oder Suchbegriff anpassen",
+    "col_name": "Name",
+    "col_status": "Status",
+    "col_type": "Typ",
+    "col_category": "Kategorie",
+    "col_health": "Zustand",
+    "col_last_used": "Zuletzt verwendet",
+    "col_created": "Erstellt",
+    "filter_all": "Alle",
+    "filter_all_health": "Alle Zustände",
+    "health_healthy": "Gesund",
+    "health_failing": "Fehlerhaft",
+    "health_untested": "Ungetestet"
   },
   "wizard_detect": {
     "no_services": "Keine Dienste für \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\"{search}\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\" gefunden",

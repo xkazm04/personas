@@ -362,7 +362,8 @@
       "doc": "docs/features/companion/README.md",
       "sourceGlobs": [
         "src/features/plugins/companion/**",
-        "src-tauri/src/commands/companion/**"
+        "src-tauri/src/commands/companion/**",
+        "src-tauri/src/browser_bridge/**"
       ],
       "onboardingFlows": [
         "messages-tab",

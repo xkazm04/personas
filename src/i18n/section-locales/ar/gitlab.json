@@ -114,5 +114,7 @@
   "trigger_on": "تشغيل عند:",
   "connecting_to_gitlab": "جارٍ الاتصال بـ GitLab...",
   "deploying_to_gitlab": "جارٍ نشر الشخصية إلى GitLab...",
-  "pipeline_hash": "خط الأنابيب #"
+  "pipeline_hash": "خط الأنابيب #",
+  "notification_ask_athena": "اطلب من Athena التحليل",
+  "notification_athena_prompt": "يرجى تحليل هذا الإشعار الذي تلقيته والمشكلة الأساسية: \"{title}\" — {body} (الحالة: {status}). تحقق مما حدث والسبب الجذري الأرجح، وأخبرني بوضوح إذا كان أي شيء يحتاج إجراءً مني."
 }

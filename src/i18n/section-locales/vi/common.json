@@ -163,5 +163,7 @@
   "field_name_taken": "Đã được dùng",
   "field_name_taken_suggestion": "Already in use — try {name}",
   "form_error_summary_title_one": "{count} field needs your attention",
-  "form_error_summary_title_other": "{count} fields need your attention"
+  "form_error_summary_title_other": "{count} fields need your attention",
+  "error_boundary_chunk_subtitle": "Một phần của ứng dụng không thể tải được -- điều này có thể xảy ra sau khi cập nhật hoặc mất kết nối tạm thời. Dữ liệu của bạn an toàn; tải lại ứng dụng thường khắc phục được vấn đề này.",
+  "reload_app": "Tải lại ứng dụng"
 }

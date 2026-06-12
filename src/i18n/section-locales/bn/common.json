@@ -163,5 +163,7 @@
   "field_name_taken": "ইতিমধ্যে ব্যবহৃত",
   "field_name_taken_suggestion": "Already in use — try {name}",
   "form_error_summary_title_one": "{count} field needs your attention",
-  "form_error_summary_title_other": "{count} fields need your attention"
+  "form_error_summary_title_other": "{count} fields need your attention",
+  "error_boundary_chunk_subtitle": "অ্যাপের একটি অংশ লোড হয়নি — আপডেট বা সংযোগ সমস্যার পরে এটি হতে পারে। আপনার ডেটা নিরাপদ; অ্যাপ রিলোড করলে সাধারণত সমস্যা ঠিক হয়ে যায়।",
+  "reload_app": "অ্যাপ রিলোড করুন"
 }

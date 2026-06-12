@@ -219,7 +219,9 @@
     "stage_generating": "Đang tạo",
     "stage_completed": "Đã hoàn tất",
     "stage_failed": "Thất bại",
-    "tool_calls": "{count} lần gọi công cụ"
+    "tool_calls": "{count} lần gọi công cụ",
+    "connect_cloud_cta": "Kết nối mục tiêu đám mây",
+    "connect_gitlab_cta": "Kết nối GitLab"
   },
   "cloud_trigger_schedule": "Theo lịch (Cron)",
   "cloud_trigger_polling": "Polling",

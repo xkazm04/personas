@@ -133,7 +133,25 @@
     "source_provider": "제공자",
     "source_policy": "정책",
     "source_healing_issue": "복구 문제",
-    "source_execution_error": "실행 오류"
+    "source_execution_error": "실행 오류",
+    "action_start_work": "작업 시작",
+    "action_back_to_open": "미해결로 돌아가기",
+    "filter_status_in_progress": "진행 중",
+    "detail_title": "인시던트 상세",
+    "detail_label_status": "상태",
+    "detail_label_kind": "종류",
+    "detail_label_source": "출처",
+    "detail_label_persona": "에이전트",
+    "detail_label_detail": "상세 내용",
+    "detail_label_resolution_note": "해결 메모",
+    "detail_label_created": "생성일",
+    "detail_label_acknowledged": "확인됨",
+    "detail_label_resolved": "해결됨",
+    "detail_no_detail": "추가 내용 없음.",
+    "detail_note_label": "해결 메모 (선택 사항)",
+    "detail_no_persona": "에이전트 없음",
+    "empty_open_title": "모두 정상",
+    "empty_filtered_title": "일치하는 인시던트 없음"
   },
   "observability": {
     "title": "관측성",
@@ -187,7 +205,11 @@
     "curation_schedule_last_run_label": "Last run",
     "curation_schedule_disabled_state": "Curation is disabled for this agent",
     "curation_schedule_disable": "Disable schedule",
-    "curation_schedule_save": "Save schedule"
+    "curation_schedule_save": "Save schedule",
+    "delete_all": "모두 삭제",
+    "delete_all_confirm_title": "모든 메모리를 삭제할까요?",
+    "delete_all_confirm_body": "모든 메모리 {count}개를 영구 삭제합니다. 이 작업은 취소할 수 없습니다.",
+    "delete_all_confirm_cta": "모두 삭제"
   },
   "memory_review": {
     "all_conflicts_resolved": "모든 충돌이 해결되었습니다",
@@ -473,7 +495,18 @@
     "select_action_first": "먼저 제안된 작업 선택",
     "review_detail": "검토 세부 정보",
     "select_review": "검토를 선택해 보기",
-    "technical_context": "기술적 문맥"
+    "technical_context": "기술적 문맥",
+    "split": "분할",
+    "split_tooltip": "분할 보기 — 상세 패널이 있는 목록",
+    "table": "테이블",
+    "table_tooltip": "테이블 보기 — 그리드에 모든 검토 표시",
+    "backlog_group_title": "Dev Tools 백로그",
+    "backlog_accept": "수락",
+    "backlog_reject": "거부",
+    "delete_all": "모두 삭제",
+    "delete_all_confirm_title": "모든 검토를 삭제할까요?",
+    "delete_all_confirm_body": "이 작업은 {count}개의 모든 리뷰를 영구적으로 삭제합니다. 취소할 수 없습니다.",
+    "delete_all_confirm_cta": "모두 삭제"
   },
   "messages_view": {
     "title": "메시지",
@@ -541,7 +574,11 @@
     "action_play_in_chat": "Play in chat",
     "persona_link_title": "View persona",
     "pending_decisions_approve_all": "Approve all",
-    "pending_decisions_reject_all": "Reject all"
+    "pending_decisions_reject_all": "Reject all",
+    "delete_all": "모두 삭제",
+    "delete_all_confirm_title": "모든 메시지를 삭제하시겠습니까?",
+    "delete_all_confirm_body": "이 작업은 {count}개의 모든 메시지를 영구적으로 삭제합니다. 취소할 수 없습니다.",
+    "delete_all_confirm_cta": "모두 삭제"
   },
   "events": {
     "title": "이벤트",
@@ -809,7 +846,13 @@
     "create_persona": "페르소나 생성",
     "from_templates": "템플릿에서",
     "execution_label": "실행",
-    "unknown": "알 수 없음"
+    "unknown": "알 수 없음",
+    "value_section_title": "비즈니스 가치",
+    "value_delivered_rate": "가치 전달률",
+    "cost_per_value": "비용 / 가치 실행",
+    "value_delivered_count": "전달된 가치",
+    "all_models": "모든 모델",
+    "col_model": "모델"
   },
   "analytics_dashboard": {
     "title": "분석",
@@ -872,7 +915,10 @@
     "rotation_manage_all": "Manage",
     "rotation_open_in_connections": "Open in Connections",
     "rotation_started_for": "Rotation started for {name}",
-    "rotation_failed_for": "Failed to rotate {name}"
+    "rotation_failed_for": "Failed to rotate {name}",
+    "rotation_due_now": "지금 예정",
+    "rotation_countdown_days_hours": "{days}일 {hours}시간",
+    "rotation_countdown_hours": "{hours}h"
   },
   "saved_views": {
     "errors": {
@@ -998,7 +1044,12 @@
   "memory_filter": {
     "search_placeholder": "메모리 검색...",
     "all_agents": "전체 에이전트",
-    "all_categories": "전체 카테고리"
+    "all_categories": "전체 카테고리",
+    "tier_all": "활성 세트",
+    "tier_core": "핵심",
+    "tier_active": "활성",
+    "tier_working": "작업 중",
+    "tier_archived": "보관됨"
   },
   "memory_actions": {
     "dismiss_suggestion": "제안 무시",
@@ -1246,7 +1297,8 @@
     "reject_all": "전체 거부",
     "accept_all": "전체 수락",
     "retry_with_changes": "변경 사항으로 재시도",
-    "video_not_supported": "브라우저가 비디오 재생을 지원하지 않습니다."
+    "video_not_supported": "브라우저가 비디오 재생을 지원하지 않습니다.",
+    "carry_out_hint": "검토를 승인하고 페르소나를 실행하여 수행합니다"
   },
   "bulk_action_bar": {
     "pending_reviews_selected_one": "대기 중인 리뷰 {count}개 선택됨",
@@ -1257,7 +1309,8 @@
   },
   "memory_card": {
     "confirm": "확인",
-    "cancel": "취소"
+    "cancel": "취소",
+    "restore": "활성 세트로 복원"
   },
   "memory_detail": {
     "title_label": "제목",
@@ -1538,6 +1591,104 @@
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
     "linked_memories_empty": "No memories recorded for this execution.",
-    "compose_personas_prompt": "Compose a cockpit with an overview of all my 페르소나s — show their status, recent activity, and anything that needs my attention."
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my 페르소나s — show their status, recent activity, and anything that needs my attention.",
+    "subtitle_explaining": "Athena가 이 설명을 작성했습니다 — 종료하면 코크핏으로 돌아갑니다.",
+    "context_explaining": "Athena 설명 중: {title}",
+    "widget_empty": "아직 표시할 내용이 없습니다.",
+    "verdict_title": "Athena의 판정",
+    "verdict_confidence": "신뢰도",
+    "verdict_confidence_high": "높음",
+    "verdict_confidence_medium": "보통",
+    "verdict_confidence_low": "낮음",
+    "verdict_resolve": "지금 해결",
+    "comparison_recommended": "추천",
+    "flow_title": "진행 방식",
+    "timeline_title": "타임라인",
+    "log_title": "근거"
+  },
+  "certification": {
+    "title": "인증 관리 센터",
+    "subtitle": "팀 자율성 평가 실행 및 인증 상태 (개발 전용)",
+    "updated": "업데이트됨",
+    "refresh": "새로 고침",
+    "error_title": "평가 실행을 불러올 수 없습니다",
+    "loading": "평가 실행 불러오는 중…",
+    "loading_detail": "실행 세부 정보 불러오는 중…",
+    "tab_overview": "개요",
+    "tab_history": "실행 기록",
+    "back": "뒤로",
+    "empty_title": "평가 실행 없음",
+    "empty_desc": "eval 하네스(scripts/test/)를 실행하여 docs/test/runs/을 채우세요.",
+    "teams_certified": "팀 인증 완료",
+    "certified": "인증됨",
+    "streak_label": "연속 기록",
+    "held_out_runs": "보류 실행",
+    "provisional": "임시 판정 (심사 미완료)",
+    "final": "최종 판정",
+    "team_score": "팀 점수",
+    "cost": "비용",
+    "dims_title": "결정론적 차원",
+    "dim_cascade": "캐스케이드 완료",
+    "dim_density": "작업 밀도",
+    "dim_handoff": "인계 건전성",
+    "dim_learning": "학습 루프",
+    "dim_grounding": "근거 제시",
+    "dim_correctness": "정확성",
+    "dim_actionability": "실행 가능성",
+    "dim_specificity": "구체성",
+    "dim_role_fidelity": "역할 충실도",
+    "gates_title": "빌드 / 린트 / 테스트 게이트",
+    "gate_build": "빌드",
+    "gate_lint": "린트",
+    "gate_test": "테스트",
+    "gate_pass": "통과",
+    "gate_fail": "실패",
+    "gate_log": "로그",
+    "gate_copy_log": "로그 복사",
+    "gate_code_track": "코드 추적 실행",
+    "delivered": "master에 전달됨",
+    "cascade_stalled": "캐스케이드 중단",
+    "self_vetoed": "자체 거부됨",
+    "self_veto_capped": "팀이 판정을 자체 제한함:",
+    "grounding_title": "인용 근거",
+    "grounding_file": "파일",
+    "grounding_valid": "유효",
+    "grounding_pct": "%",
+    "grounding_invalid": "무효",
+    "grounding_na": "확인할 인용 없음",
+    "standards_title": "표준 및 브랜칭 준수",
+    "standards_subtitle": "실행이 프로젝트의 선언된 pre-commit + 브랜칭 정책을 얼마나 잘 준수했는지",
+    "standards_compliance": "준수도",
+    "standards_rule": "규칙",
+    "standards_basis": "근거",
+    "standards_na": "해당 없음",
+    "trajectory_title": "점수 추이",
+    "judge_title": "심사 패널",
+    "judge_mean": "평균",
+    "judge_min": "최소 출력",
+    "judge_balance": "균형",
+    "fact_executions": "완료됨",
+    "fact_failed": "실패",
+    "fact_members": "멤버",
+    "fact_reviews": "리뷰",
+    "fact_memories": "메모리",
+    "fact_cost": "비용",
+    "fact_window": "기간",
+    "col_team": "팀",
+    "col_seed": "시드",
+    "col_verdict": "판정",
+    "col_score": "점수",
+    "col_gates": "게이트",
+    "col_started": "시작됨"
+  },
+  "fleet_optimization": {
+    "title": "플릿 최적화",
+    "open_lab": "Lab 열기",
+    "open_lab_hint": "Lab에서 {persona}의 대체 모델 테스트",
+    "ask_athena": "Athena에게 묻기",
+    "ask_athena_hint": "이 제안을 Athena에게 전달하여 조사 요청",
+    "ask_athena_prompt": "에이전트에 대한 플릿 최적화 제안을 검토 중입니다: \"{title}\". {description} 제안된 조치: {action}. {focus}",
+    "ask_athena_focus_persona": "에이전트 \"{persona}\"를 살펴보고, 도움이 된다면 Lab을 열어 대체 모델을 테스트한 후 결과를 알려주세요.",
+    "ask_athena_focus_general": "이 내용을 살펴보고 변경할 사항을 추천해 주세요."
   }
 }

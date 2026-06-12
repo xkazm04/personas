@@ -60,6 +60,12 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: [['?'], ['mod', '/']], describe: (t) => t.chrome.shortcuts.show_shortcuts },
       { combos: [[';']], describe: (t) => t.chrome.shortcuts.nav_mode },
       { combos: [['←']], describe: (t) => t.chrome.shortcuts.nav_mode_back },
+      // Title-bar dock hint keys — handled by TitleBarDock, only in nav mode.
+      { combos: [['S']], describe: (t) => t.chrome.shortcuts.nav_mode_search },
+      { combos: [['C']], describe: (t) => t.chrome.shortcuts.nav_mode_schedules },
+      { combos: [['R']], describe: (t) => t.chrome.shortcuts.nav_mode_review },
+      { combos: [['M']], describe: (t) => t.chrome.shortcuts.nav_mode_monitor },
+      { combos: [['N']], describe: (t) => t.chrome.shortcuts.nav_mode_notifications },
       { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.close_overlay },
     ],
   },

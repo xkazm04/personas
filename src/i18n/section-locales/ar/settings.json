@@ -29,7 +29,43 @@
     "updates_current_version": "أنت تستخدم الإصدار v{version}",
     "updates_last_checked": "آخر فحص {time}",
     "updates_history_title": "التحديثات الأخيرة",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "مزامنة لوحة التحكم السحابية",
+    "cloud_sync_description": "زامن نسخة للقراءة فقط من شخصياتك وعمليات التشغيل والنشاط إلى سحابتك الخاصة لعرضها في لوحة التحكم على الويب. لن تغادر بيانات اعتماد الموصّل هذا الجهاز أبدًا.",
+    "cloud_sync_toggle": "مزامنة مع لوحة التحكم السحابية",
+    "cloud_sync_on": "تتم مزامنة بياناتك مع لوحة التحكم السحابية.",
+    "cloud_sync_off": "تبقى بياناتك على هذا الجهاز فقط.",
+    "cloud_sync_toggle_aria": "تبديل مزامنة لوحة التحكم السحابية",
+    "cloud_sync_now": "مزامنة الآن",
+    "cloud_sync_syncing": "جارٍ المزامنة...",
+    "cloud_sync_last": "آخر مزامنة",
+    "cloud_sync_never": "لم تتم المزامنة بعد",
+    "cloud_sync_error": "فشلت المزامنة الأخيرة: {error}",
+    "cloud_sync_enable_failed": "تعذّر تحديث إعداد المزامنة",
+    "cloud_sync_now_failed": "فشلت المزامنة. تحقق من اتصالك وحاول مجددًا.",
+    "cloud_sync_now_done": "تمت مزامنة {count} سجل",
+    "cloud_sync_state_off": "معطّل",
+    "cloud_sync_state_active": "نشط",
+    "cloud_sync_state_syncing": "جارٍ المزامنة…",
+    "cloud_sync_total": "مزامنة إجمالية",
+    "cloud_sync_device": "الجهاز {id}",
+    "cloud_sync_tables_title": "البيانات المزامنة",
+    "cloud_sync_show_details": "عرض التفاصيل",
+    "cloud_sync_hide_details": "إخفاء التفاصيل",
+    "cloud_sync_retry": "إعادة المحاولة",
+    "cloud_sync_rows": "صفوف",
+    "cloud_sync_table_pending": "في انتظار المزامنة الأولى",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "عمليات التشغيل",
+      "synced_events": "الأحداث",
+      "synced_manual_reviews": "المراجعات",
+      "synced_messages": "الرسائل",
+      "synced_metrics_snapshots": "المقاييس",
+      "synced_tool_usage": "استخدام الأداة",
+      "synced_memories": "الذكريات",
+      "synced_knowledge_patterns": "المعرفة"
+    }
   },
   "appearance_extra": {
     "simple": "بسيط",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "ذكريات الفريق",
+    "import_team_memories": "{count} ذاكرة فريق",
+    "include_memories_label": "تضمين الذكريات",
+    "include_memories_note": "تُصدَّر ذكريات الشخصية والفريق مع التصدير. أوقف هذا لتصدير الوكلاء والفرق دون ذكرياتهم المتراكمة."
   },
   "config": {
     "title": "حل الإعداد",
@@ -610,6 +650,33 @@
     "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
     "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
     "no_ceiling_hint": "لا ceiling is set. Enter a USD amount above to start tracking against a budget.",
-    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed.",
+    "concurrency_section": "عمليات التشغيل المتوازية",
+    "concurrency_hint": "عدد الشخصيات التي يمكنها العمل في الوقت ذاته. تنتظر عمليات التشغيل الإضافية في قائمة انتظار وتبدأ تلقائيًا عند توفر فتحات. تُطبَّق التغييرات فورًا — لا حاجة لإعادة تشغيل.",
+    "concurrency_aria": "الحد الأقصى لعمليات التشغيل المتوازية",
+    "concurrency_range": "بين {min} و{max} تشغيل متزامن.",
+    "concurrency_queued_note": "تُضاف عمليات التشغيل التي تتجاوز هذا الحد إلى قائمة الانتظار وتُرقَّى بالأولوية ثم ترتيب الوصول عند انتهاء التشغيلات الجارية."
+  },
+  "search": {
+    "placeholder": "البحث في الإعدادات…",
+    "recommended": "موصى به",
+    "section": "الإعدادات",
+    "trigger_hint": "البحث في الإعدادات  ·  Ctrl / ⌘ K",
+    "trigger_aria": "فتح البحث في الإعدادات",
+    "reduce_motion": "تقليل الحركة",
+    "dim": "تقليل كثافة الألوان",
+    "cvd_safe": "لوحة ألوان آمنة لعمى الألوان",
+    "high_contrast": "تباين عالٍ",
+    "ambient": "تصميم الرأس حسب وقت اليوم",
+    "theme": "المظهر والألوان",
+    "text_size": "حجم النص",
+    "brightness": "السطوع",
+    "density": "كثافة التخطيط",
+    "timezone": "المنطقة الزمنية",
+    "tabs": {
+      "limits": "الحدود",
+      "api_keys": "مفاتيح API",
+      "history": "السجل"
+    }
   }
 }

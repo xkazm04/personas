@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "Không tìm thấy bài báo arXiv nào khớp với truy vấn của bạn. Thử từ khóa rộng hơn hoặc khác.",
+  "arxiv_error_title": "Tìm kiếm thất bại",
+  "arxiv_error_timeout": "arXiv mất quá lâu để phản hồi — có thể đang giới hạn tốc độ yêu cầu. Thử lại sau một lúc.",
+  "arxiv_error_rate_limited": "arXiv đang giới hạn tốc độ yêu cầu lúc này. Chờ vài giây và thử lại.",
+  "arxiv_error_http": "arXiv trả về lỗi (HTTP {status}). Thử lại sớm.",
+  "arxiv_error_network": "Không thể kết nối arXiv. Kiểm tra kết nối của bạn và thử lại.",
+  "arxiv_error_feed": "arXiv không thể xử lý truy vấn đó. Thử từ khóa khác hoặc đơn giản hơn.",
+  "arxiv_error_generic": "Tìm kiếm arXiv thất bại. Thử lại."
 }

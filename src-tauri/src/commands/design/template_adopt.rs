@@ -2257,6 +2257,442 @@ async fn run_template_adopt_job(
     Ok(draft)
 }
 
+// -- Always-on adoption adjustment (Approach 1) ----------------------
+//
+// The pre-built base `agent_ir` seeded by `create_adoption_session` is
+// authored at the connector-CATEGORY level, so it can't reference the user's
+// ACTUAL connector/credential picks or questionnaire answers concretely. This
+// step runs an LLM "adjustment" pass that specializes the base to those picks,
+// then writes the adjusted IR back to the session so `promote_build_draft`
+// materializes the specialized persona.
+//
+// Scope + safety:
+//   * Only the PROSE (`system_prompt` + `structured_prompt`) is merged back;
+//     the deterministic structural IR (use_cases, triggers, events, connectors)
+//     is preserved untouched.
+//   * Divergence-scaled: an absolute-default adoption (no answers, no
+//     credential bindings) gets a light, cheap "just wire it, don't rewrite"
+//     pass; a diverged adoption gets a fuller Sonnet specialization.
+//   * HARD FALLBACK: any failure leaves the base IR untouched (never worse
+//     than the deterministic path).
+
+struct AdjustmentBrief {
+    /// "default" (light wire) | "configured" (full adjust)
+    divergence: &'static str,
+    /// model alias passed to --model (ties into the Approach 3 tier philosophy)
+    model: &'static str,
+    /// instruction injected as the adjustment_request
+    instruction: String,
+    user_answers_json: Option<String>,
+    connector_swaps_json: Option<String>,
+}
+
+/// Scan the base IR for any capability tiered to Opus (per the per-capability
+/// model tiers baked into the recipe seeds). A persona that carries opus-tier
+/// (high-judgment / high-stakes) capabilities warrants an Opus adjustment pass
+/// when the user diverges, so the specialization quality matches the stakes.
+fn persona_has_opus_capability(base_ir_json: &str) -> bool {
+    fn scan(node: &serde_json::Value) -> bool {
+        match node {
+            serde_json::Value::Object(map) => {
+                if let Some(mo) = map.get("model_override") {
+                    let tier = mo
+                        .as_str()
+                        .or_else(|| mo.get("model").and_then(|m| m.as_str()));
+                    if matches!(tier, Some(t) if t.to_ascii_lowercase().contains("opus")) {
+                        return true;
+                    }
+                }
+                map.values().any(scan)
+            }
+            serde_json::Value::Array(arr) => arr.iter().any(scan),
+            _ => false,
+        }
+    }
+    serde_json::from_str::<serde_json::Value>(base_ir_json)
+        .map(|v| scan(&v))
+        .unwrap_or(false)
+}
+
+/// Decide how much adjustment the user's choices warrant. Absolute-default
+/// (no answers, no credential bindings) → a LIGHT pass on Haiku that preserves
+/// the authored character but still finalizes protocol wiring (the LLM is
+/// always in the loop, just cheap). Anything configured → a fuller
+/// specialization that adapts instructions/tool-guidance to the actual
+/// connectors + answers; Opus when the persona carries opus-tier capabilities,
+/// Sonnet otherwise.
+fn assess_adjustment(
+    base_ir_json: &str,
+    answers: Option<&crate::engine::adoption_answers::AdoptionAnswers>,
+) -> AdjustmentBrief {
+    let has_answers = answers.map(|a| !a.answers.is_empty()).unwrap_or(false);
+    let has_bindings = answers.map(|a| !a.credential_bindings.is_empty()).unwrap_or(false);
+
+    let user_answers_json = answers
+        .filter(|a| !a.answers.is_empty())
+        .and_then(|a| serde_json::to_string(&a.answers).ok());
+    // The user's concrete connector→credential-service bindings double as the
+    // "connector swaps" context the refine prompt consumes to rewrite API
+    // references to the chosen services.
+    let connector_swaps_json = answers
+        .filter(|a| !a.credential_bindings.is_empty())
+        .and_then(|a| serde_json::to_string(&a.credential_bindings).ok());
+
+    if !has_answers && !has_bindings {
+        AdjustmentBrief {
+            divergence: "default",
+            model: "haiku",
+            instruction:
+                "The user kept all defaults (no answers, no bound credentials). Keep the authored \
+                 persona's character, structure, principles, and constraints intact — do NOT \
+                 rewrite or restructure them. Lightly finalize only: ensure the Personas protocol \
+                 instructions (user_message / agent_memory / manual_review) are present and coherent \
+                 where the persona interacts with the user, and substitute any {{param.*}} \
+                 placeholders that have values. Do not invent new behavior or connectors, and do \
+                 not shorten the authored content."
+                    .to_string(),
+            user_answers_json,
+            connector_swaps_json,
+        }
+    } else {
+        let model = if persona_has_opus_capability(base_ir_json) {
+            "opus"
+        } else {
+            "sonnet"
+        };
+        AdjustmentBrief {
+            divergence: "configured",
+            model,
+            instruction:
+                "Specialize this persona to the user's chosen connectors/credentials and \
+                 configuration answers: rewrite toolGuidance, instructions, and the system_prompt's \
+                 API references so they match the ACTUAL connectors the user selected, and embed the \
+                 user's concrete answer values (not placeholders). Preserve the persona's authored \
+                 character, principles, constraints, and overall structure — ADAPT it, do not \
+                 replace it. Quality and fidelity to the authored design matter more than brevity."
+                    .to_string(),
+            user_answers_json,
+            connector_swaps_json,
+        }
+    }
+}
+
+/// Safety net: flag an adjustment whose `system_prompt` collapsed to a fraction
+/// of the authored base (likely truncation or a model that gutted the prompt),
+/// so a bad pass can never degrade the authored quality — the caller keeps the
+/// base IR instead. Empty outputs are handled upstream by
+/// `merge_adjusted_prose` (which keeps the base), so this only guards the
+/// non-empty-but-drastically-shorter case. Tiny base prompts are ignored.
+fn adjustment_prose_degraded(base_ir_json: &str, new_system_prompt: &str) -> bool {
+    let new_len = new_system_prompt.trim().len();
+    if new_len == 0 {
+        return false;
+    }
+    let base_len = serde_json::from_str::<serde_json::Value>(base_ir_json)
+        .ok()
+        .and_then(|v| {
+            v.get("system_prompt")
+                .and_then(|s| s.as_str())
+                .map(|s| s.trim().len())
+        })
+        .unwrap_or(0);
+    base_len > 200 && new_len < base_len * 2 / 5
+}
+
+/// Merge the LLM-refined PROSE back onto the deterministic base IR. Only
+/// `system_prompt` / `full_prompt_markdown` / `structured_prompt` are written;
+/// every structural field of the base is preserved. Returns the merged IR JSON
+/// string, or None if the base is unparseable.
+fn merge_adjusted_prose(
+    base_ir_json: &str,
+    new_system_prompt: &str,
+    new_structured_prompt: Option<&serde_json::Value>,
+) -> Option<String> {
+    let mut base: serde_json::Value = serde_json::from_str(base_ir_json).ok()?;
+    let obj = base.as_object_mut()?;
+
+    if !new_system_prompt.trim().is_empty() {
+        obj.insert(
+            "system_prompt".to_string(),
+            serde_json::Value::String(new_system_prompt.to_string()),
+        );
+        // Keep full_prompt_markdown in sync when the base carries it (the
+        // editor's plain-text panel and some composers read it).
+        if obj.contains_key("full_prompt_markdown") {
+            obj.insert(
+                "full_prompt_markdown".to_string(),
+                serde_json::Value::String(new_system_prompt.to_string()),
+            );
+        }
+    }
+    if let Some(structured) = new_structured_prompt {
+        if structured.is_object() {
+            obj.insert("structured_prompt".to_string(), structured.clone());
+        }
+    }
+
+    serde_json::to_string(&base).ok()
+}
+
+/// The narrow shape the scoped adjustment prompt returns — just the prose we
+/// merge. (Avoids making the LLM regenerate the whole persona JSON.)
+#[derive(serde::Deserialize)]
+struct AdjustedProse {
+    #[serde(default)]
+    system_prompt: String,
+    #[serde(default)]
+    structured_prompt: Option<serde_json::Value>,
+}
+
+/// Build a FOCUSED adjustment prompt that returns ONLY the refined prose
+/// (system_prompt + structured_prompt), not a whole persona. Regenerating the
+/// full persona JSON (the legacy `build_template_adopt_prompt`) made even a tiny
+/// persona take 77s (haiku) / 235s+ (sonnet, hitting the 420s timeout) — scoping
+/// the OUTPUT to the two fields we actually merge cuts output tokens ~5-10x.
+fn build_adoption_adjust_prompt(
+    base_system_prompt: &str,
+    base_structured_prompt_json: &str,
+    instruction: &str,
+    user_answers_json: Option<&str>,
+    connector_swaps_json: Option<&str>,
+) -> String {
+    let answers = user_answers_json
+        .filter(|a| !a.trim().is_empty() && a.trim() != "{}")
+        .map(|a| format!("\n## User configuration answers (embed concrete values, not placeholders)\n{a}\n"))
+        .unwrap_or_default();
+    let swaps = connector_swaps_json
+        .filter(|s| !s.trim().is_empty() && s.trim() != "{}")
+        .map(|s| format!(
+            "\n## Chosen connectors (connector -> credential service)\nRewrite tool/API references to the REPLACEMENT service's APIs, authentication, and endpoints:\n{s}\n"
+        ))
+        .unwrap_or_default();
+
+    format!(
+        r#"You are refining ONE existing persona's instructions to fit the user's actual setup. Do NOT invent a new persona, add tools, or change its purpose.
+
+CURRENT system_prompt:
+---
+{base_system_prompt}
+---
+
+CURRENT structured_prompt (JSON):
+---
+{base_structured_prompt_json}
+---
+{swaps}{answers}
+TASK: {instruction}
+
+Preserve the persona's authored character, principles, constraints, the Personas protocol-message instructions (user_message / agent_memory / manual_review), and overall structure.
+
+Return ONLY a single JSON object with EXACTLY these two top-level keys and nothing else — no commentary, no markdown fences:
+{{"system_prompt": "<full refined system prompt markdown>", "structured_prompt": {{"identity": "...", "instructions": "...", "toolGuidance": "...", "examples": "...", "errorHandling": "...", "webSearch": "...", "customSections": [{{"title": "...", "content": "..."}}]}}}}
+"#
+    )
+}
+
+fn parse_adjusted_prose(output: &str) -> Result<AdjustedProse, AppError> {
+    let json_str = extract_first_json_object(output)
+        .ok_or_else(|| AppError::Internal("no JSON object in adjustment output".into()))?;
+    serde_json::from_str(&json_str)
+        .map_err(|e| AppError::Internal(format!("adjustment output parse error: {e}")))
+}
+
+/// Result of an always-on adoption adjustment pass.
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AdoptionAdjustResult {
+    /// true if the session's agent_ir was specialized; false = base kept (fallback or no-op)
+    pub adjusted: bool,
+    pub divergence: String,
+    pub model: Option<String>,
+    /// human-readable note (e.g. fallback reason)
+    pub note: Option<String>,
+    pub elapsed_ms: u64,
+}
+
+/// Run the always-on adjustment pass for a draft build session and write the
+/// specialized IR back to `build_sessions.agent_ir`. Safe to call before
+/// `promote_build_draft`. On any failure it returns `adjusted: false` and
+/// leaves the base IR intact — the caller can promote regardless.
+#[tauri::command]
+pub async fn adjust_adoption_draft(
+    state: State<'_, Arc<AppState>>,
+    session_id: String,
+) -> Result<AdoptionAdjustResult, AppError> {
+    require_auth_sync(&state)?;
+    let pool = state.db.clone();
+    let started = std::time::Instant::now();
+
+    let session = crate::db::repos::core::build_sessions::get_by_id(&pool, &session_id)?
+        .ok_or_else(|| AppError::NotFound(format!("Build session {session_id}")))?;
+
+    let base_ir = match session.agent_ir.as_deref() {
+        Some(s) if !s.trim().is_empty() => s.to_string(),
+        _ => {
+            return Ok(AdoptionAdjustResult {
+                adjusted: false,
+                divergence: "none".into(),
+                model: None,
+                note: Some("session has no base agent_ir".into()),
+                elapsed_ms: started.elapsed().as_millis() as u64,
+            })
+        }
+    };
+
+    let answers: Option<crate::engine::adoption_answers::AdoptionAnswers> = session
+        .adoption_answers
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok());
+
+    let brief = assess_adjustment(&base_ir, answers.as_ref());
+
+    // Optimization 1 — skip the LLM entirely on an absolute-default adopt.
+    // When the user supplied no answers and no credential bindings, there is
+    // nothing to specialize: the deterministic base IR (authored prose + the
+    // promote-time `{{param.*}}` substitution) is already correct. Running the
+    // pass here was measured at ~42s of pure overhead for zero value. Any real
+    // divergence (a credential binding, a custom answer, a connector swap) is
+    // classified "configured" and still runs the full specialization below.
+    if brief.divergence == "default" {
+        tracing::info!(
+            session_id = %session_id,
+            "adjust_adoption_draft: no divergence (default adopt) — skipping LLM, keeping deterministic base"
+        );
+        return Ok(AdoptionAdjustResult {
+            adjusted: false,
+            divergence: "default".into(),
+            model: None,
+            note: Some(
+                "no answers or credential bindings — deterministic base already correct; LLM adjustment skipped"
+                    .into(),
+            ),
+            elapsed_ms: started.elapsed().as_millis() as u64,
+        });
+    }
+
+    // Scoped output: feed the base prose, ask for ONLY the refined prose back.
+    let base_val: serde_json::Value =
+        serde_json::from_str(&base_ir).unwrap_or(serde_json::Value::Null);
+    let base_system_prompt = base_val
+        .get("system_prompt")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let base_structured_prompt_json = base_val
+        .get("structured_prompt")
+        .map(|v| v.to_string())
+        .unwrap_or_else(|| "{}".to_string());
+
+    let prompt_text = build_adoption_adjust_prompt(
+        &base_system_prompt,
+        &base_structured_prompt_json,
+        &brief.instruction,
+        brief.user_answers_json.as_deref(),
+        brief.connector_swaps_json.as_deref(),
+    );
+
+    let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(brief.model.to_string());
+
+    tracing::info!(
+        session_id = %session_id,
+        divergence = brief.divergence,
+        model = brief.model,
+        "adjust_adoption_draft: starting always-on adjustment pass"
+    );
+
+    let noop = |_line: &str| {};
+    // 600s safety margin for large personas (scoped output keeps the typical
+    // pass well under this; raised from the legacy 420s).
+    let llm_result =
+        run_claude_prompt_text_inner(prompt_text, &cli_args, Some(&noop), None, None, 600).await;
+
+    let elapsed_ms = started.elapsed().as_millis() as u64;
+
+    let output_text = match llm_result {
+        Ok((text, _sid, _)) => text,
+        Err(e) => {
+            tracing::warn!(session_id = %session_id, error = %e, "adjust_adoption_draft: LLM failed; keeping base IR");
+            return Ok(AdoptionAdjustResult {
+                adjusted: false,
+                divergence: brief.divergence.into(),
+                model: Some(brief.model.into()),
+                note: Some(format!("adjustment LLM failed; base kept: {e}")),
+                elapsed_ms,
+            });
+        }
+    };
+
+    let prose = match parse_adjusted_prose(&output_text) {
+        Ok(p) => p,
+        Err(e) => {
+            tracing::warn!(session_id = %session_id, error = %e, "adjust_adoption_draft: output parse failed; keeping base IR");
+            return Ok(AdoptionAdjustResult {
+                adjusted: false,
+                divergence: brief.divergence.into(),
+                model: Some(brief.model.into()),
+                note: Some(format!("adjustment output unparseable; base kept: {e}")),
+                elapsed_ms,
+            });
+        }
+    };
+
+    // Quality safety net: never let a collapsed/truncated adjustment replace the
+    // authored base prose.
+    if adjustment_prose_degraded(&base_ir, &prose.system_prompt) {
+        tracing::warn!(
+            session_id = %session_id,
+            "adjust_adoption_draft: adjusted system_prompt drastically shorter than base; keeping base IR"
+        );
+        return Ok(AdoptionAdjustResult {
+            adjusted: false,
+            divergence: brief.divergence.into(),
+            model: Some(brief.model.into()),
+            note: Some("adjusted prompt too short vs authored base; base kept".into()),
+            elapsed_ms,
+        });
+    }
+
+    let merged = match merge_adjusted_prose(&base_ir, &prose.system_prompt, prose.structured_prompt.as_ref()) {
+        Some(m) => m,
+        None => {
+            return Ok(AdoptionAdjustResult {
+                adjusted: false,
+                divergence: brief.divergence.into(),
+                model: Some(brief.model.into()),
+                note: Some("nothing to merge; base kept".into()),
+                elapsed_ms,
+            })
+        }
+    };
+
+    crate::db::repos::core::build_sessions::update(
+        &pool,
+        &session_id,
+        &crate::db::models::UpdateBuildSession {
+            agent_ir: Some(Some(merged)),
+            ..Default::default()
+        },
+    )?;
+
+    tracing::info!(
+        session_id = %session_id,
+        divergence = brief.divergence,
+        model = brief.model,
+        elapsed_ms,
+        "adjust_adoption_draft: specialized IR written back to session"
+    );
+
+    Ok(AdoptionAdjustResult {
+        adjusted: true,
+        divergence: brief.divergence.into(),
+        model: Some(brief.model.into()),
+        note: None,
+        elapsed_ms,
+    })
+}
+
 // -- Template integrity verification (backend trust boundary) --------
 
 /// Verify a single template's content integrity against the embedded Rust manifest.
@@ -2525,5 +2961,175 @@ fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_jso
         );
     }
 
+    // Per-UC model tier — carry the capability's `model_override` (and its
+    // human-readable `model_rationale`) through to design_context so the
+    // runner's per-UC override resolution (runner/mod.rs §Phase 9) can
+    // right-size the model per capability. Without this, recipe-baked tiers
+    // (haiku for mechanical caps, opus for high-judgment caps) are silently
+    // dropped on the template instant-adopt path — they only survived the
+    // Glyph build→promote path (build_sessions.rs build_structured_use_cases).
+    if let Some(mo) = obj.get("model_override").filter(|v| !v.is_null()) {
+        out.insert("model_override".into(), mo.clone());
+    }
+    if let Some(mr) = obj.get("model_rationale").filter(|v| !v.is_null()) {
+        out.insert("model_rationale".into(), mr.clone());
+    }
+
     serde_json::Value::Object(out)
+}
+
+#[cfg(test)]
+mod model_tier_mapping_tests {
+    use super::map_template_use_case_to_design_use_case;
+    use serde_json::json;
+
+    #[test]
+    fn carries_model_override_and_rationale_into_design_use_case() {
+        let uc = json!({
+            "id": "uc_triage",
+            "title": "Triage",
+            "model_override": "haiku",
+            "model_rationale": "mechanical label triage, fixed buckets",
+        });
+        let out = map_template_use_case_to_design_use_case(&uc);
+        assert_eq!(out.get("model_override").and_then(|v| v.as_str()), Some("haiku"));
+        assert_eq!(
+            out.get("model_rationale").and_then(|v| v.as_str()),
+            Some("mechanical label triage, fixed buckets"),
+        );
+    }
+
+    #[test]
+    fn omits_tier_keys_when_absent_or_null() {
+        // Default (sonnet) tier: recipe stores model_override:null and no
+        // rationale → neither key should appear on the design use_case.
+        let uc = json!({
+            "id": "uc_report",
+            "title": "Weekly Report",
+            "model_override": serde_json::Value::Null,
+        });
+        let out = map_template_use_case_to_design_use_case(&uc);
+        assert!(out.get("model_override").is_none(), "null override is not propagated");
+        assert!(out.get("model_rationale").is_none());
+
+        let bare = json!({ "id": "uc_bare", "title": "Bare" });
+        let out2 = map_template_use_case_to_design_use_case(&bare);
+        assert!(out2.get("model_override").is_none());
+        assert!(out2.get("model_rationale").is_none());
+    }
+}
+
+#[cfg(test)]
+mod adoption_adjust_tests {
+    use super::{
+        adjustment_prose_degraded, assess_adjustment, merge_adjusted_prose,
+        persona_has_opus_capability,
+    };
+    use crate::engine::adoption_answers::AdoptionAnswers;
+    use serde_json::json;
+    use std::collections::HashMap;
+
+    fn empty_answers() -> AdoptionAnswers {
+        AdoptionAnswers {
+            answers: HashMap::new(),
+            questions: vec![],
+            credential_bindings: HashMap::new(),
+        }
+    }
+
+    #[test]
+    fn divergence_default_when_no_answers_or_bindings() {
+        let a = empty_answers();
+        let brief = assess_adjustment("{}", Some(&a));
+        assert_eq!(brief.divergence, "default");
+        assert_eq!(brief.model, "haiku", "absolute-default → light Haiku wire pass");
+        // None answers also → default
+        assert_eq!(assess_adjustment("{}", None).divergence, "default");
+    }
+
+    #[test]
+    fn divergence_configured_with_answers_or_bindings() {
+        let mut a = empty_answers();
+        a.answers.insert("q1".into(), "value".into());
+        let brief = assess_adjustment("{}", Some(&a));
+        assert_eq!(brief.divergence, "configured");
+        assert_eq!(brief.model, "sonnet", "configured + non-opus persona → Sonnet");
+        assert!(brief.user_answers_json.is_some());
+
+        let mut b = empty_answers();
+        b.credential_bindings.insert("email".into(), "gmail".into());
+        let brief_b = assess_adjustment("{}", Some(&b));
+        assert_eq!(brief_b.divergence, "configured");
+        assert!(brief_b.connector_swaps_json.is_some(), "bindings feed connector_swaps");
+    }
+
+    #[test]
+    fn configured_escalates_to_opus_for_opus_tier_persona() {
+        let base = json!({
+            "use_cases": [
+                {"id": "uc_a", "model_override": "sonnet"},
+                {"id": "uc_b", "model_override": "opus"}
+            ]
+        })
+        .to_string();
+        assert!(persona_has_opus_capability(&base));
+        let mut a = empty_answers();
+        a.answers.insert("q1".into(), "v".into());
+        let brief = assess_adjustment(&base, Some(&a));
+        assert_eq!(brief.divergence, "configured");
+        assert_eq!(brief.model, "opus", "opus-tier persona + divergence → Opus adjustment");
+
+        // No opus capability → stays Sonnet
+        let base2 = json!({"use_cases": [{"id": "uc_a", "model_override": "haiku"}]}).to_string();
+        assert!(!persona_has_opus_capability(&base2));
+        assert_eq!(assess_adjustment(&base2, Some(&a)).model, "sonnet");
+    }
+
+    #[test]
+    fn degradation_guard_flags_collapsed_prompt() {
+        let long = "x".repeat(1000);
+        let base = json!({"system_prompt": long}).to_string();
+        // A 100-char output vs a 1000-char base → degraded (< 40%).
+        assert!(adjustment_prose_degraded(&base, &"y".repeat(100)));
+        // A 900-char output → acceptable restructuring, not degraded.
+        assert!(!adjustment_prose_degraded(&base, &"y".repeat(900)));
+        // Empty output is handled upstream (merge keeps base), not flagged here.
+        assert!(!adjustment_prose_degraded(&base, "   "));
+        // Tiny base prompts are not guarded.
+        let tiny = json!({"system_prompt": "short"}).to_string();
+        assert!(!adjustment_prose_degraded(&tiny, "y"));
+    }
+
+    #[test]
+    fn merge_replaces_prose_preserves_structure() {
+        let base = json!({
+            "name": "Base",
+            "system_prompt": "OLD",
+            "full_prompt_markdown": "OLD",
+            "structured_prompt": {"identity": "old"},
+            "use_cases": [{"id": "uc_1"}],
+            "triggers": [{"trigger_type": "manual"}]
+        })
+        .to_string();
+        let structured = json!({"identity": "new", "instructions": "do x"});
+        let merged = merge_adjusted_prose(&base, "NEW PROMPT", Some(&structured)).expect("merge ok");
+        let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        // prose specialized
+        assert_eq!(v["system_prompt"], "NEW PROMPT");
+        assert_eq!(v["full_prompt_markdown"], "NEW PROMPT", "full_prompt_markdown synced");
+        assert_eq!(v["structured_prompt"]["identity"], "new");
+        assert_eq!(v["structured_prompt"]["instructions"], "do x");
+        // deterministic structure preserved untouched
+        assert_eq!(v["use_cases"][0]["id"], "uc_1");
+        assert_eq!(v["triggers"][0]["trigger_type"], "manual");
+        assert_eq!(v["name"], "Base");
+    }
+
+    #[test]
+    fn merge_keeps_base_prompt_when_draft_prompt_blank() {
+        let base = json!({"system_prompt": "OLD", "use_cases": []}).to_string();
+        let merged = merge_adjusted_prose(&base, "   ", None).expect("merge ok");
+        let v: serde_json::Value = serde_json::from_str(&merged).unwrap();
+        assert_eq!(v["system_prompt"], "OLD", "blank draft prompt must not clobber base");
+    }
 }

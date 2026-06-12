@@ -180,37 +180,6 @@ export function PresetCustomizePanel({ a, customizing }: { a: PresetAdoptionCont
   );
 }
 
-/**
- * Compact per-member status list (role · template name · live badge).
- * Used by variants whose primary surface (e.g. the schematic graph)
- * can't render per-member status inline during adoption.
- */
-export function PresetMemberStatusList({ a }: { a: PresetAdoptionController }) {
-  const teamColorRows = a.rows;
-  return (
-    <ul className="space-y-1.5" data-testid="preset-member-status-list">
-      {teamColorRows.map((row) => {
-        const meta = a.schemaByRole.get(row.role);
-        return (
-          <li
-            key={row.role}
-            data-status={row.status}
-            className="flex items-center gap-3 px-3 py-2 rounded-card border border-primary/10 bg-secondary/20"
-          >
-            <span className="typo-body font-medium min-w-[96px] uppercase tracking-wider text-[11px] text-foreground">
-              {row.role}
-            </span>
-            <span className="typo-body text-foreground/90 flex-1 truncate">
-              {meta?.name ?? row.templateId}
-            </span>
-            <PresetStatusBadge row={row} />
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 /** Short status line for a preset's footer, mirrors the modal's hint copy. */
 export function PresetFooterHint({ a }: { a: PresetAdoptionController }) {
   const { t, tx } = useTranslation();

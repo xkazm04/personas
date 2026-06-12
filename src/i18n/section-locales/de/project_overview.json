@@ -47,5 +47,6 @@
   "sentry_discovery_failed": "Sentry discovery failed: {error}",
   "try_auto_discovery": "Try auto-discovery again",
   "enter_slugs_manually": "Enter slugs manually instead",
-  "today_activity_heading": "HEUTE"
+  "today_activity_heading": "HEUTE",
+  "pipeline_heading": "Pipeline"
 }

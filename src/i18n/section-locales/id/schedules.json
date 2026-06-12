@@ -105,5 +105,12 @@
   "sparkline_aria": "Sparkline riwayat run, {days} hari terakhir",
   "sparkline_window": "{days} hari terakhir",
   "sparkline_no_data": "Tidak ada run di jendela",
-  "sparkline_failure_rate": "{total} run · {rate}% gagal"
+  "sparkline_failure_rate": "{total} run · {rate}% gagal",
+  "run_status_incomplete": "Tidak Lengkap",
+  "last24h_title": "24 Jam Terakhir",
+  "last24h_empty": "Tidak ada eksekusi terjadwal dalam 24 jam terakhir.",
+  "last24h_failed_count": "{count} gagal",
+  "last24h_show_all": "Tampilkan semua ({count})",
+  "last24h_show_less": "Tampilkan lebih sedikit",
+  "last24h_retry_at": "coba ulang otomatis {time}"
 }

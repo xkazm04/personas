@@ -145,11 +145,15 @@
       "notification_channels_default": [
         {
           "type": "slack",
-          "description": "Hiring team channel for stage transition updates and weekly funnel reports."
+          "description": "Hiring team channel receives privacy-safe candidate stage transition updates and the Monday weekly funnel report."
         },
         {
           "type": "email",
-          "description": "Recruiting team distribution list for weekly metrics reports and critical alerts."
+          "description": "Candidate-facing stage emails (acknowledgment, interview prep, rejection) and recruiting team distribution list for the weekly metrics report."
+        },
+        {
+          "type": "built-in",
+          "description": "Offer emails are never auto-sent — each draft is held in the in-app human-review queue for recruiter approval before dispatch."
         }
       ],
       "core_memories": []

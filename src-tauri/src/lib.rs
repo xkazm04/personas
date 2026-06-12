@@ -1,5 +1,6 @@
 pub mod background_job;
 pub mod bench;
+mod browser_bridge;
 mod cloud;
 mod commands;
 mod companion;
@@ -836,6 +837,28 @@ pub fn run() {
             }
             st.checkpoint("gitlab_restore");
 
+            // Browser-bridge pairing token: persist across runs so the
+            // extension pairs once. Env override (QA) wins inside
+            // init_pairing_token; first run mints + stores a token.
+            match db::repos::core::settings::get(
+                &pool,
+                db::settings_keys::BROWSER_BRIDGE_PAIRING_TOKEN,
+            ) {
+                Ok(Some(t)) if !t.trim().is_empty() => {
+                    browser_bridge::init_pairing_token(&t);
+                }
+                _ => {
+                    let t = browser_bridge::pairing_token();
+                    if let Err(e) = db::repos::core::settings::set(
+                        &pool,
+                        db::settings_keys::BROWSER_BRIDGE_PAIRING_TOKEN,
+                        &t,
+                    ) {
+                        tracing::warn!(error = %e, "browser-bridge: pairing token persist failed (runtime token still works)");
+                    }
+                }
+            }
+
             // Start the in-app HTTP server (binds 127.0.0.1, free port at-or
             // above 17400). Hosts authenticated-redirect routes for the
             // user's default browser. Register routers BEFORE starting;
@@ -857,6 +880,10 @@ pub fn run() {
                 "mcp",
                 companion::orchestration::mcp::router(app.handle().clone()),
             );
+            // Browser bridge (Athena × Chrome tester arc, Phase 1) —
+            // /browser-bridge/ws for the extension, /browser-bridge/mcp for
+            // browser-test turns' --mcp-config.
+            local_http::register_router("browser-bridge", browser_bridge::router());
             // Fleet background workers — staleness ticker + JSONL watcher.
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.
@@ -1754,6 +1781,8 @@ pub fn run() {
             // 2026-05-09; only snapshot poll + instant adopt remain wired)
             commands::design::template_adopt::get_template_adopt_snapshot,
             commands::design::template_adopt::instant_adopt_template,
+            // Approach 1 -- always-on adjustment of the pre-built base IR
+            commands::design::template_adopt::adjust_adoption_draft,
             // Design -- Team Presets (filesystem-shipped multi-template bundles)
             commands::design::team_presets::list_team_presets,
             commands::design::team_presets::get_team_preset,
@@ -2441,6 +2470,10 @@ pub fn run() {
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
+            commands::companion::approvals::companion_daily_brief,
+            commands::companion::browser_test::browser_bridge_status,
+            commands::companion::browser_test::browser_bridge_regenerate_token,
+            commands::companion::browser_test::companion_file_browser_defects,
             commands::companion::brain::companion_list_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,

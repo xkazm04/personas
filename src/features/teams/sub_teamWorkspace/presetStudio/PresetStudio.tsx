@@ -3,7 +3,6 @@ import { ArrowLeft, Layers } from 'lucide-react';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
-import { PresetCard } from '@/features/templates/sub_presets';
 import { listTeamPresets } from '@/api/templates/teamPresets';
 import { silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -11,6 +10,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import { PresetProcessHost } from './PresetProcessHost';
+import { PresetGalleryShowcase } from './PresetGalleryShowcase';
 
 /**
  * In-app preset-adoption flow for the Teams section — the migration of
@@ -55,7 +55,6 @@ export function PresetStudio() {
             </span>
           }
           title={chosen.name}
-          subtitle={chosen.description}
           actions={
             <button
               type="button"
@@ -67,6 +66,14 @@ export function PresetStudio() {
             </button>
           }
         />
+        {/* Description bar — full preset summary, lifted out of the header so
+            it has room to read as the flow's intro. */}
+        <div
+          className="flex-shrink-0 px-6 py-3 border-b border-primary/10 bg-secondary/15 flex items-start gap-3"
+          style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.7)}` }}
+        >
+          <p className="typo-body text-foreground leading-relaxed max-w-3xl">{chosen.description}</p>
+        </div>
         <PresetProcessHost
           preset={chosen}
           onOpenTeam={(result) => {
@@ -108,11 +115,7 @@ export function PresetStudio() {
           <EmptyState icon={Layers} title={t.templates.presets.empty_title} description={t.templates.presets.empty_hint} />
         )}
         {presets && presets.length > 0 && (
-          <div className="grid gap-4 max-w-5xl mx-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-            {presets.map((p) => (
-              <PresetCard key={p.id} preset={p} onOpen={() => setChosen(p)} />
-            ))}
-          </div>
+          <PresetGalleryShowcase presets={presets} onPick={setChosen} />
         )}
       </div>
     </ContentBox>

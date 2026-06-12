@@ -74,5 +74,9 @@
   "recovered_title": "We caught that for you",
   "recovered_illustration_aria": "Recovery in progress",
   "n8n_invalid_shape_message": "This file doesn't look like an n8n workflow export.",
-  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps."
+  "n8n_invalid_shape_suggestion": "Open your workflow in n8n, choose Download (or use the API to export the workflow JSON), and upload that file. See https://docs.n8n.io/workflows/export-import/ for the full export steps.",
+  "usage_limit_weekly_message": "Se alcanzó el límite de uso semanal de Claude.",
+  "usage_limit_weekly_suggestion": "Las ejecuciones seguirán fallando hasta que se restablezca el límite semanal: pausa los horarios o mejora tu plan.",
+  "usage_limit_window_message": "La ventana de uso de Claude está agotada.",
+  "usage_limit_window_suggestion": "La ejecución se reintentará automáticamente cuando se restablezca la ventana; no se requiere ninguna acción."
 }

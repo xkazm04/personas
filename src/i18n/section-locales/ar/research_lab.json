@@ -173,5 +173,13 @@
   "anon_author": "Anon.",
   "arxiv_search_hint": "Type a query and press Enter to search arXiv.",
   "preview_action": "Preview",
-  "recent": "Recent"
+  "recent": "Recent",
+  "arxiv_no_results_hint": "لم تتطابق أي أوراق بحثية من arXiv مع استعلامك. جرّب كلمات مفتاحية أوسع أو مختلفة.",
+  "arxiv_error_title": "فشل البحث",
+  "arxiv_error_timeout": "استغرق arXiv وقتاً طويلاً للرد — قد يكون يُقيّد الطلبات. أعد المحاولة بعد لحظة.",
+  "arxiv_error_rate_limited": "يُقيّد arXiv الطلبات الآن. انتظر بضع ثوانٍ وأعد المحاولة.",
+  "arxiv_error_http": "أعاد arXiv خطأ (HTTP {status}). أعد المحاولة قريباً.",
+  "arxiv_error_network": "تعذّر الوصول إلى arXiv. تحقق من اتصالك وأعد المحاولة.",
+  "arxiv_error_feed": "تعذّر على arXiv معالجة هذا الاستعلام. جرّب كلمات مفتاحية مختلفة أو أبسط.",
+  "arxiv_error_generic": "فشل بحث arXiv. أعد المحاولة."
 }

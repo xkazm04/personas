@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms} ms",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "Versionen & Bewertungen",
+    "vr_subtitle": "Jede Prompt-Version × Modell, das du gemessen hast. Eine Zeile ist live.",
+    "vr_col_version": "Version",
+    "vr_col_model": "Modell",
+    "vr_col_rating": "Bewertung",
+    "vr_col_delta": "Basislinie",
+    "vr_col_cost": "Kosten",
+    "vr_col_status": "Status",
+    "vr_col_actions": "Aktionen",
+    "vr_status_active": "Aktiv",
+    "vr_status_baseline": "Basislinie",
+    "vr_status_archived": "Archiviert",
+    "vr_status_measured": "Gemessen",
+    "vr_status_unmeasured": "Nicht gemessen",
+    "vr_action_activate": "Diese Version + Modell aktivieren",
+    "vr_action_active": "Aktuell live",
+    "vr_action_measure": "Über Modelle hinweg messen (Arena)",
+    "vr_action_measuring": "Wird gemessen…",
+    "vr_action_improve": "Mit Athena verbessern",
+    "vr_action_diff": "Prompt mit aktivem vergleichen",
+    "vr_action_archive": "Version archivieren",
+    "vr_action_unarchive": "Version dearchivieren",
+    "vr_action_pin_baseline": "Als Regressions-Basislinie festlegen",
+    "vr_action_unpin_baseline": "Basislinie lösen",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} Probe",
+    "vr_samples_other": "{count} Proben",
+    "vr_empty_title": "Noch keine Versionen",
+    "vr_empty_desc": "Bearbeite und speichere den Prompt der Persona, um die erste Version zu erstellen, und miss sie hier.",
+    "vr_measuring_toast": "Messe v{version} über alle Modelle…",
+    "vr_measure_modal_title": "v{version} messen",
+    "vr_measure_scope_banner": "Version {version} wird gemessen — ihr Prompt wird gegen die ausgewählten Modelle ausgeführt. Bewertungen erscheinen in der Tabelle.",
+    "vr_diff_title": "v{version} vs. aktiv",
+    "vr_diff_no_active": "Keine aktive Version zum Vergleichen vorhanden.",
+    "vr_improve_seed_measured": "Verbessere Persona „{name}\" v{version}. Schwächste gemessene Kennzahl: {metric} {score}/100 auf {model}. Worauf soll ich mich konzentrieren? ",
+    "vr_improve_seed_plain": "Verbessere Persona „{name}\" v{version} — noch nicht gemessen. Worauf soll ich mich konzentrieren? ",
+    "vr_metric_tool": "Tool-Genauigkeit",
+    "vr_metric_quality": "Ausgabequalität",
+    "vr_metric_protocol": "Protokoll-Konformität"
   },
   "design": {
     "select_agent": "Agenten auswählen, um Designanalyse zu starten",
@@ -903,7 +944,9 @@
     "next": "Weiter",
     "go_back_hint": "Zurück und Fragen beantworten, um den Agenten zu konfigurieren.",
     "additional_instructions": "Zusätzliche Anweisungen oder Kontext (optional)",
-    "additional_instructions_placeholder": "Spezifische Anforderungen, Domänenwissen oder Einschränkungen hinzufügen..."
+    "additional_instructions_placeholder": "Spezifische Anforderungen, Domänenwissen oder Einschränkungen hinzufügen...",
+    "role_user": "Nutzer",
+    "role_ai": "KI"
   },
   "connectors": {
     "connectors_label": "Konnektoren",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "Dies führt {title} für {persona} aus"
+    "schedule_will_run": "Dies führt {title} für {persona} aus",
+    "_comment_manual_run_in_progress": "Tooltip des „Jetzt ausführen\"-Buttons während ein manueller Lauf läuft",
+    "manual_run_in_progress": "Manueller Lauf läuft",
+    "_comment_run_now_tooltip": "Tooltip des „Jetzt ausführen\"-Buttons — unterscheidet echte Ausführung von Test",
+    "run_now_tooltip": "Diesen Anwendungsfall jetzt ausführen — startet echte Ausführung und nachgelagerte Ereignisse",
+    "_comment_run_now": "Label des „Jetzt ausführen\"-Buttons (Detailbereich + Funktions-Tab-Leiste)",
+    "run_now": "Jetzt ausführen",
+    "_comment_event_type_options": "Optionsbeschriftungen des Ereignistyp-Dropdowns im UseCaseSubscriptionForm",
+    "event_type_webhook_received": "Webhook empfangen",
+    "event_type_execution_completed": "Ausführung abgeschlossen",
+    "event_type_execution_failed": "Ausführung fehlgeschlagen",
+    "event_type_persona_action": "Persona-Aktion",
+    "event_type_file_changed": "Datei geändert",
+    "event_type_schedule_triggered": "Zeitplan ausgelöst",
+    "_comment_dim_review_title": "Überschrift der ReviewDimCard",
+    "dim_review_title": "Überprüfung",
+    "_comment_pill_on": "EIN-Zustand-Pill der ToggleDimCard (Speicher/Ereignisse)",
+    "pill_on": "EIN",
+    "_comment_pill_off": "AUS-Zustand-Pill, geteilt von ToggleDimCard und ReviewDimCard aus",
+    "pill_off": "AUS",
+    "_comment_review_pill_queue": "WARTESCHLANGE-Zustand-Pill der ReviewDimCard",
+    "review_pill_queue": "WARTESCHLANGE",
+    "_comment_review_pill_trust": "VERTRAUEN-Zustand-Pill der ReviewDimCard",
+    "review_pill_trust": "VERTRAUEN",
+    "_comment_dim_status_activated": "PersonaSigilSummary-Wert, wenn eine boolesche Dimension (Speicher/Überprüfung/Ereignis/Fehler) für die Funktion aktiv ist",
+    "dim_status_activated": "Aktiviert"
   },
   "tools": {
     "no_persona": "Keine Persona ausgewählt",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "Urteil",
+    "verdict_none": "Noch nicht vom Director bewertet",
+    "verdict_tooltip": "Director-Urteil: {score}/5"
   },
   "chat": {
     "select_persona": "Persona auswählen, um zu chatten",
@@ -2293,7 +2364,8 @@
     "delete_agents": "{count} Agent(en) löschen",
     "delete_agents_message": "{count} Agent(en) und ihre gesamte Konfiguration werden dauerhaft entfernt.",
     "delete_drafts": "{count} Entwurf/-würfe löschen",
-    "delete_drafts_message": "{count} Entwurfs-Agent(en) werden dauerhaft entfernt."
+    "delete_drafts_message": "{count} Entwurfs-Agent(en) werden dauerhaft entfernt.",
+    "system_persona_undeletable": "Der Director ist eine Systempersona und kann nicht gelöscht werden."
   },
   "persona_list": {
     "all_personas": "Alle Personas",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "Noch keine Gruppen — erstelle eine unter Agents → Gruppen",
     "batch_move_to_ungrouped": "Ohne Gruppe",
     "batch_moved_success": "{count} Personas nach {group} verschoben",
-    "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen"
+    "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen",
+    "render_cap_notice": "Zeige {shown} von {total} — Suche oder Filter eingrenzen, um weitere zu sehen.",
+    "star_director_add": "Markieren, um zum Coaching-Bereich des Directors hinzuzufügen",
+    "star_director_remove": "Markiert — im Coaching-Bereich des Directors. Klicken zum Entfernen."
   },
   "design_preview": {
     "preview": "Vorschau",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "Auf eingehende Slack-Nachrichten prüfen",
+    "slack_poll_inbound_help": "Wenn aktiviert, liest die Persona alle 5s neue Nachrichten in diesem Kanal und antwortet im Thread mit der Ausgabe. Lade den Bot zuerst in den Kanal ein."
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "Für diese Fähigkeit aktiv",
   "sigil_edit_inactive": "Inaktiv — zum Aktivieren einschalten",
   "sigil_edit_enable": "Für diese Fähigkeit aktivieren",
-  "sigil_edit_disable": "Für diese Fähigkeit deaktivieren"
+  "sigil_edit_disable": "Für diese Fähigkeit deaktivieren",
+  "design_subtabs": {
+    "use_cases": "Anwendungsfälle",
+    "prompt": "Prompt",
+    "connectors": "Connectors & Tools",
+    "triggers": "Ereignisse & Trigger",
+    "messaging": "Nachrichten",
+    "automations": "Automatisierungen",
+    "triggers_desc": "Personenbezogene Ereignisabonnements und Trigger-Konfiguration werden in diesem Tab verfügbar sein.",
+    "messaging_desc": "Benachrichtigungskanäle und Posteingangs-Routing für diesen Agenten werden hier zu finden sein.",
+    "automations_desc": "Eigenständige Automatisierungsregeln für diesen Agenten werden hier zu finden sein."
+  },
+  "parameters_card": {
+    "title": "Parameter",
+    "saved": "Gespeichert",
+    "apply": "Anwenden",
+    "on": "Ein",
+    "off": "Aus",
+    "reset": "Zurücksetzen"
+  },
+  "editor_empty": {
+    "title": "Keine Persona ausgewählt",
+    "subtitle": "Wähle einen Agenten aus der Seitenleiste zum Bearbeiten aus oder erstelle einen neuen.",
+    "create": "Persona erstellen",
+    "resume_label": "Weiter machen"
+  },
+  "build_template_match_label": "Schnellerer Weg",
+  "build_template_match_title": "„{name}\" scheint zu passen",
+  "build_template_match_body": "Diese fertige Vorlage deckt ab, was du beschrieben hast — übernimm sie, um diese Fragen zu überspringen. Sie ist bereits eingerichtet und getestet.",
+  "build_template_match_adopt": "Diese Vorlage verwenden",
+  "build_template_match_dismiss": "Weiter aufbauen",
+  "build_template_match_loading": "Suche nach passenden Vorlagen…",
+  "build_template_match_more": "Oder starten mit",
+  "_comment_glyph_db_scope": "Datenbank-Connector-Tabellen-Scoping-Panel im Connector-Picker",
+  "glyph_db_scope_heading": "Datenbanktabellen",
+  "glyph_db_scope_all": "Alle Tabellen",
+  "glyph_db_scope_loading": "Tabellen werden geladen…",
+  "glyph_db_scope_error": "Tabellen konnten nicht geladen werden — erneut versuchen",
+  "glyph_db_scope_empty": "Keine Tabellen gefunden",
+  "glyph_db_scope_selected": "{count} von {total} Tabellen"
 }

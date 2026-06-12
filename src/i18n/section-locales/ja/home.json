@@ -93,6 +93,10 @@
     "plugins": {
       "label": "プラグイン",
       "description": "サードパーティプラグインとカスタム拡張機能でエージェントを拡張"
+    },
+    "teams": {
+      "label": "チーム",
+      "description": "複数のエージェントをチームにまとめ、複数ステップのワークフローで協調して作業させる"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "再スタート",
     "start_tour": "ツアーを開始",
     "steps_count": "{count} ステップ",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "パワームーブ",
+    "moves_used": "{used}/{total} 使用済み",
+    "try_it": "試してみる",
+    "used_badge": "使用済み",
+    "group_save_time": "時間を節約",
+    "group_prevent_failures": "障害を防止",
+    "group_level_up": "エージェントをレベルアップ",
+    "group_orchestrate": "オーケストレート",
+    "pm_monitor_triage_title": "タイトルバーからフリート全体をトリアージ",
+    "pm_schedule_delay_title": "スケジュール実行をスキップまたは遅延",
+    "pm_bulk_rerun_title": "失敗した実行を一括再実行",
+    "pm_dead_letter_title": "デッドレターキューからイベントを救出",
+    "pm_annotate_golden_title": "ゴールデン実行をスター、リグレッションにタグ付け",
+    "pm_credential_health_title": "AIに失敗した認証情報を修復させる",
+    "pm_lab_measure_title": "複数モデルでプロンプトを計測",
+    "pm_prompt_rollback_title": "ワンクリックで不正なプロンプトをロールバック",
+    "pm_director_coaching_title": "Directorからポートフォリオコーチングを受ける",
+    "pm_event_chain_title": "イベントリスナーでエージェントをチェーン",
+    "pm_live_stream_title": "チェーンのカスケードをリアルタイムで監視",
+    "pm_athena_fleet_title": "Athenaにフリートを分析させる"
   },
   "setup_stepper": {
     "your_profile": "プロフィール",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
     "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "{personaName} で未読のエラーあり — 調査してください",
+    "tour": "{tourTitle} を再開（{stepIndex}/{totalSteps}）— {stepTitle}",
+    "edit": "{personaName}の編集を続ける"
+  },
+  "nav_status": {
+    "incidents": "{count}件のオープンインシデント",
+    "incidents_other": "{count}件のオープンインシデント",
+    "messages": "{count}件の未読メッセージ",
+    "messages_other": "{count}件の未読メッセージ",
+    "reviews": "{count}件の保留中レビュー",
+    "reviews_other": "{count}件の保留中レビュー",
+    "teams": "{count}チーム",
+    "teams_other": "{count}チーム",
+    "agents_active": "過去24時間で{count}件のエージェントがアクティブ",
+    "agents_active_other": "過去24時間で{count}件のエージェントがアクティブ",
+    "events_today": "過去24時間で{count}件のイベント",
+    "events_today_other": "過去24時間で{count}件のイベント",
+    "connections_external": "{count}件の外部接続",
+    "connections_external_other": "{count}件の外部接続",
+    "connections_builtin": "{count}件の組み込みコネクター",
+    "connections_builtin_other": "{count}件の組み込みコネクター",
+    "trend_up": "前の24時間比で{pct}%増",
+    "trend_down": "前の24時間比で{pct}%減",
+    "trend_flat": "前の24時間比で変化なし"
+  }
 }

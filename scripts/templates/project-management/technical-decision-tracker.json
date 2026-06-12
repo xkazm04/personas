@@ -105,8 +105,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "ADR lifecycle notifications: creation confirmations, stakeholder sign-off requests, review cycle batches, stalled escalations, and deprecation notices."
+          "type": "built-in",
+          "description": "ADR lifecycle notifications delivered in-app: creation confirmations, stakeholder sign-off requests (manual_review gates), review cycle batches, stalled escalations, and deprecation notices. No external messaging connector is declared — all output surfaces in-app."
         }
       ],
       "core_memories": []

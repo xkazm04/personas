@@ -8,7 +8,7 @@
   "category": [
     "development"
   ],
-  "is_published": true,
+  "is_published": false,
   "service_flow": [
     "knowledge base",
     "messaging",

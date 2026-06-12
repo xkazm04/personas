@@ -343,7 +343,9 @@
     "search_suggestions_aria": "অনুসন্ধান পরামর্শ",
     "clear_search_aria": "অনুসন্ধান সাফ করুন",
     "search_with_ai_aria": "AI দিয়ে অনুসন্ধান করুন",
-    "density_filter_aria": "Layout density"
+    "density_filter_aria": "Layout density",
+    "_comment_coverage_chips": "Template gallery coverage filter chips — keep to 1 word each. 'Drafts' = unpublished dev-only templates.",
+    "coverage_drafts": "খসড়া"
   },
   "list": {
     "template_name": "টেমপ্লেটের নাম",
@@ -807,7 +809,25 @@
       "lab_desc": "ব্যর্থতা বারবার হলে এই পারসোনার জন্য Lab auto-improvement (prompt evolution) চালু করুন।",
       "escalate_after_label": "এর পরে এসকেলেট করুন",
       "escalate_after_desc": "ইনসিডেন্ট তৈরি বা ল্যাবে পাঠানোর আগে ধারাবাহিক ব্যর্থতার সংখ্যা।"
-    }
+    },
+    "_comment_left_connections_heading": "Heading above the connector card in the adoption left panel — keep 1 word",
+    "left_connections_heading": "সংযোগ",
+    "_comment_left_empty_placeholder": "Muted placeholder in the adoption left panel before anything is configured",
+    "left_empty_placeholder": "প্রতিটি মাত্রা কনফিগার করার সাথে সাথে আপনার নির্বাচনগুলি এখানে প্রদর্শিত হবে।",
+    "_comment_capabilities_aria": "Accessibility label for the adoption capability tab strip",
+    "capabilities_aria": "সক্ষমতা",
+    "_comment_capability_include": "Tooltip on the per-capability power toggle when the capability is skipped — click to include it",
+    "capability_include": "সক্ষমতা অন্তর্ভুক্ত করুন",
+    "_comment_capability_skip": "Tooltip on the per-capability power toggle when the capability is on — click to skip it",
+    "capability_skip": "সক্ষমতা এড়িয়ে যান",
+    "_comment_policy_on": "On/off state shown for the Memory and Review dimensions — keep 1 word",
+    "policy_on": "চালু",
+    "policy_off": "বন্ধ",
+    "_comment_schedule_hourly": "Schedule summary label for the hourly cadence — keep short",
+    "schedule_hourly": "প্রতি ঘণ্টায়",
+    "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
+    "events_count_one": "{count}টি ইভেন্ট",
+    "events_count_other": "{count}টি ইভেন্ট"
   },
   "scan": {
     "scanning_draft": "পার্সোনা ড্রাফট স্ক্যান হচ্ছে...",
@@ -1177,7 +1197,9 @@
     "questionnaire_member_summary_default": "{count}টি প্রশ্ন, সব ডিফল্ট",
     "questionnaire_member_summary_customized": "{count}টি প্রশ্ন, {customized}টি কাস্টমাইজড",
     "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই",
-    "preview_members_select_hint": "Click to include / exclude"
+    "preview_members_select_hint": "Click to include / exclude",
+    "graph_legend_sequential": "হাত ছাড়া",
+    "graph_legend_feedback": "ফেরত পাঠায়"
   },
   "compare": {
     "compare": "তুলনা করুন",

@@ -400,7 +400,15 @@
     "nextStep": "Langkah berikutnya",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "Lengkapi twin Anda",
-    "rosterFoundations": "{twins} twin · {identities} punya identitas · {brains} punya basis pengetahuan"
+    "rosterFoundations": "{twins} twin · {identities} punya identitas · {brains} punya basis pengetahuan",
+    "ready": "Siap",
+    "satellites": "Satelit",
+    "rosterSpread": "Sebaran anggota",
+    "twinsConfigured": "Twin dikonfigurasi",
+    "avgReadiness": "Rata-rata kesiapan",
+    "activeChannels": "Saluran aktif",
+    "memoriesApproved": "Memori disetujui",
+    "channelsInUse": "Saluran digunakan"
   },
   "variantTabs": {
     "prototype": "Prototype",

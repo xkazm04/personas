@@ -61,6 +61,7 @@ import {
   companionResetConversation,
   companionSendMessage,
   companionAnalyzeFleet,
+  companionDailyBrief,
   type BackgroundJob,
   type BrainKind,
   type CompanionRecallPreviewEvent,
@@ -2262,6 +2263,14 @@ function Body(props: BodyProps) {
           // (which streams back into this panel) + writes the timeline note.
           void companionAnalyzeFleet().catch(silentCatch('companion_analyze_fleet'));
           useToastStore.getState().addToast(t.plugins.companion.analyze_fleet_started, 'success');
+        }}
+        onDailyBrief={() => {
+          // Deterministic trigger — pre-gathers the three operational inboxes
+          // (Messages / Human Review / Incidents) from the execution store and
+          // spawns a proactive turn that summarizes them in this panel. Bypasses
+          // chat so Athena can't shortcut past her wrong-DB connector.
+          void companionDailyBrief().catch(silentCatch('companion_daily_brief'));
+          useToastStore.getState().addToast(t.plugins.companion.daily_brief_started, 'success');
         }}
         onOpenBrain={() =>
           setBrainView({

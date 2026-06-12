@@ -1,1 +1,13 @@
-{}
+{
+  "title": "远程运行请求",
+  "body": "您的仪表板请求在此设备上运行 {persona}。",
+  "safety_note": "此操作将使用本设备自身的凭据在本地运行。在您批准之前不会执行任何操作。",
+  "approve": "批准并运行",
+  "approving": "正在启动…",
+  "reject": "拒绝",
+  "queue_count": "第 {index} 项，共 {total} 项待处理",
+  "prompt_label": "提示词",
+  "no_prompt": "未提供提示词。",
+  "from_dashboard": "来自网页仪表板的请求",
+  "later": "稍后决定"
+}

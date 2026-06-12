@@ -39,10 +39,10 @@ export function useDevToolsActions() {
     },
 
     // Scanner
-    runScan: (agentKeys: string[], contextId?: string) => {
+    runScan: (agentKeys: string[], opts?: devApi.RunScanOptions) => {
       const store = s();
       store.setScanAgentSelection(agentKeys);
-      return store.runScan(pid(), contextId);
+      return store.runScan(pid(), opts);
     },
 
     // Triage

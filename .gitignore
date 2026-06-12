@@ -96,3 +96,6 @@ docs/test/runs/
 # (often capture env vars in output_preview — secret-scanning hazard)
 logs/
 tools/test-mcp/reports/
+
+# Athena browser extension QA pairing config (carries a live token)
+tools/athena-browser-extension/config.json

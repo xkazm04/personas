@@ -29,7 +29,43 @@
     "updates_current_version": "Sie nutzen v{version}",
     "updates_last_checked": "Zuletzt geprüft {time}",
     "updates_history_title": "Letzte Aktualisierungen",
-    "avatar_alt": "Profile picture"
+    "avatar_alt": "Profile picture",
+    "cloud_sync_title": "Cloud-Dashboard-Synchronisierung",
+    "cloud_sync_description": "Synchronisiert eine schreibgeschützte Kopie Ihrer Personas, Läufe und Aktivitäten in Ihre private Cloud, sodass Sie diese im Web-Dashboard einsehen können. Ihre Connector-Zugangsdaten verlassen dieses Gerät nie.",
+    "cloud_sync_toggle": "Mit Cloud-Dashboard synchronisieren",
+    "cloud_sync_on": "Ihre Daten werden mit dem Cloud-Dashboard synchronisiert.",
+    "cloud_sync_off": "Ihre Daten bleiben nur auf diesem Gerät.",
+    "cloud_sync_toggle_aria": "Cloud-Dashboard-Synchronisierung umschalten",
+    "cloud_sync_now": "Jetzt synchronisieren",
+    "cloud_sync_syncing": "Synchronisiere...",
+    "cloud_sync_last": "Zuletzt synchronisiert",
+    "cloud_sync_never": "Noch nicht synchronisiert",
+    "cloud_sync_error": "Letzte Synchronisierung fehlgeschlagen: {error}",
+    "cloud_sync_enable_failed": "Synchronisierungseinstellung konnte nicht aktualisiert werden",
+    "cloud_sync_now_failed": "Synchronisierung fehlgeschlagen. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    "cloud_sync_now_done": "{count} Datensätze synchronisiert",
+    "cloud_sync_state_off": "Aus",
+    "cloud_sync_state_active": "Aktiv",
+    "cloud_sync_state_syncing": "Synchronisiere…",
+    "cloud_sync_total": "gesamt synchronisiert",
+    "cloud_sync_device": "Gerät {id}",
+    "cloud_sync_tables_title": "Synchronisierte Daten",
+    "cloud_sync_show_details": "Aufschlüsselung anzeigen",
+    "cloud_sync_hide_details": "Aufschlüsselung ausblenden",
+    "cloud_sync_retry": "Wiederholen",
+    "cloud_sync_rows": "Zeilen",
+    "cloud_sync_table_pending": "Wartet auf erste Synchronisierung",
+    "cloud_sync_tables": {
+      "synced_personas": "Personas",
+      "synced_executions": "Ausführungen",
+      "synced_events": "Ereignisse",
+      "synced_manual_reviews": "Überprüfungen",
+      "synced_messages": "Nachrichten",
+      "synced_metrics_snapshots": "Metriken",
+      "synced_tool_usage": "Tool-Nutzung",
+      "synced_memories": "Erinnerungen",
+      "synced_knowledge_patterns": "Wissen"
+    }
   },
   "appearance_extra": {
     "simple": "Einfach",
@@ -459,7 +495,11 @@
     "selective_export_failed": "Selective export failed",
     "import_failed": "Import failed",
     "cred_export_failed": "Credential export failed",
-    "cred_import_failed": "Credential import failed"
+    "cred_import_failed": "Credential import failed",
+    "team_memories": "Team-Erinnerungen",
+    "import_team_memories": "{count} Team-Erinnerung(en)",
+    "include_memories_label": "Erinnerungen einschließen",
+    "include_memories_note": "Persona- und Team-Erinnerungen werden mit dem Export übertragen. Deaktivieren Sie dies, um Agenten und Teams ohne ihre gespeicherten Erinnerungen zu exportieren."
   },
   "config": {
     "title": "Konfigurationsauflösung",
@@ -510,7 +550,12 @@
     "over_budget": "Sie haben Ihre monatliche Obergrenze überschritten. In Stufe 2 werden neue Ausführungen in diesem Fall blockiert; vorerst ist dies lediglich als Warnung zu verstehen.",
     "approaching_budget": "Sie nähern sich Ihrer monatlichen Obergrenze. Erwägen Sie eine Überprüfung der letzten Ausführungen.",
     "no_ceiling_hint": "Es ist keine Obergrenze festgelegt. Geben Sie oben einen USD-Betrag ein, um mit der Budgetverfolgung zu beginnen.",
-    "stage1_note": "Stufe 1: nur informativ. Stufe 2 wird die Ausführungsverteilung blockieren, sobald die Obergrenze überschritten wird."
+    "stage1_note": "Stufe 1: nur informativ. Stufe 2 wird die Ausführungsverteilung blockieren, sobald die Obergrenze überschritten wird.",
+    "concurrency_section": "Parallele Ausführungen",
+    "concurrency_hint": "Wie viele Personas gleichzeitig ausgeführt werden können. Weitere Läufe warten in einer Warteschlange und starten automatisch, sobald Slots frei werden. Änderungen werden sofort übernommen — kein Neustart erforderlich.",
+    "concurrency_aria": "Maximale parallele Ausführungen",
+    "concurrency_range": "Zwischen {min} und {max} gleichzeitigen Läufen.",
+    "concurrency_queued_note": "Läufe, die dieses Limit überschreiten, werden in die Warteschlange eingereiht und nach Priorität, dann Eingangsreihenfolge, befördert, sobald laufende Ausführungen abgeschlossen sind."
   },
   "recent_change": {
     "label": "Letzte {action}: {when}",
@@ -611,5 +656,27 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "search": {
+    "placeholder": "Einstellungen suchen…",
+    "recommended": "Empfohlen",
+    "section": "Einstellungen",
+    "trigger_hint": "Einstellungen suchen  ·  Ctrl / ⌘ K",
+    "trigger_aria": "Einstellungssuche öffnen",
+    "reduce_motion": "Bewegung reduzieren",
+    "dim": "Farbintensität reduzieren",
+    "cvd_safe": "Farbenblind-sichere Palette",
+    "high_contrast": "Hoher Kontrast",
+    "ambient": "Tageszeit-Kopfbild",
+    "theme": "Design & Farben",
+    "text_size": "Textgröße",
+    "brightness": "Helligkeit",
+    "density": "Layoutdichte",
+    "timezone": "Zeitzone",
+    "tabs": {
+      "limits": "Limits",
+      "api_keys": "API-Schlüssel",
+      "history": "Verlauf"
+    }
   }
 }

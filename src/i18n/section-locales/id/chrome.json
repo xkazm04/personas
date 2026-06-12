@@ -44,6 +44,21 @@
     "section_workspace": "Ruang kerja",
     "toggle_sidebar": "Ciutkan / perluas bilah samping",
     "toggle_monitor": "Buka / tutup Persona Monitor",
-    "toggle_athena": "Buka / tutup chat Athena"
+    "toggle_athena": "Buka / tutup chat Athena",
+    "nav_mode": "Aktifkan/nonaktifkan mode navigasi keyboard",
+    "nav_mode_back": "Kembali satu halaman (dalam mode navigasi)"
+  },
+  "tray_schedules": "Jadwal",
+  "tray_schedules_today": "{count} terjadwal hari ini",
+  "tray_notifications": "Notifikasi",
+  "tray_notifications_unread": "{count} notifikasi belum dibaca",
+  "system_load": {
+    "label": "Beban sistem",
+    "cpu": "CPU {pct}%",
+    "ram": "RAM {pct}% ({free} GB tersisa)",
+    "measuring": "Mengukur beban sistem…",
+    "headroom_green": "Masih banyak ruang untuk pekerjaan lebih",
+    "headroom_amber": "Mulai sibuk — pertimbangkan untuk mengurangi",
+    "headroom_red": "Sudah penuh — pertimbangkan untuk memperlambat"
   }
 }

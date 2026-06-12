@@ -1,0 +1,192 @@
+[
+  {
+    "id": "de4c0127-0738-5507-8600-b80ccc6abbce",
+    "tier": "haiku",
+    "rationale": "Threshold-based overdue detection + aging-bucket bucketing + templated monthly summary — fully mechanical."
+  },
+  {
+    "id": "c6b1f5c6-063b-5fac-af37-315a5229e5e4",
+    "tier": "sonnet",
+    "rationale": "Monthly retainer report requires editorial judgment on health narrative and upsell hook framing."
+  },
+  {
+    "id": "1bdd7c5e-6522-5f6e-9110-b263c5b7d408",
+    "tier": "sonnet",
+    "rationale": "Priority + SLA assignment from unstructured inbox requires moderate classification judgment and prose acknowledgment."
+  },
+  {
+    "id": "19030844-10d7-5e77-b626-04d9b3fb8137",
+    "tier": "haiku",
+    "rationale": "SLA breach detection against thresholds and rule-based escalation routing — no synthesis, purely mechanical."
+  },
+  {
+    "id": "266fd356-f09f-5ce7-a817-b75f3fb4c038",
+    "tier": "opus",
+    "rationale": "Autonomous codebase edits under a complexity gate — code reasoning and quality judgments are high-stakes."
+  },
+  {
+    "id": "814f451b-1e0e-576b-8b4d-3740d5f9afdb",
+    "tier": "haiku",
+    "rationale": "Webhook → parse booking fields → CRM write → notify team — deterministic pipeline, no synthesis."
+  },
+  {
+    "id": "262d4972-c244-5af0-9605-f6daf4a25eb2",
+    "tier": "sonnet",
+    "rationale": "Follow-up email requires tone judgment and optional human-review gate; prose must feel personalized."
+  },
+  {
+    "id": "c80b13ec-016c-508e-8b27-e865fdfad261",
+    "tier": "haiku",
+    "rationale": "Fixed-template reminder email + messaging ping triggered 24h before meeting — fully templated, no judgment."
+  },
+  {
+    "id": "cbfac734-11d3-525a-8425-89c0cdfc28ea",
+    "tier": "haiku",
+    "rationale": "Deterministic webhook-to-onboarding pipeline: OTP, KB stub, welcome email, team ping — rule-driven steps."
+  },
+  {
+    "id": "18a33df8-2fb4-589a-a3c6-e80c8272045c",
+    "tier": "haiku",
+    "rationale": "KB phase detection → templated milestone email + team update with dedup — mechanical state-machine logic."
+  },
+  {
+    "id": "312eb968-c41f-5f06-950b-10483b79398f",
+    "tier": "sonnet",
+    "rationale": "Monthly portfolio metrics with trend deltas require numeric synthesis and narrative framing for client delivery."
+  },
+  {
+    "id": "599fa37f-f76a-5f8e-9551-27767952c25c",
+    "tier": "haiku",
+    "rationale": "Tiered stall escalation on time thresholds with fixed channel routing — rule-based, no synthesis needed."
+  },
+  {
+    "id": "3a821ac2-9c71-5583-a860-8c254df191f2",
+    "tier": "haiku",
+    "rationale": "Calendar mirror with create/update/delete and id mapping — pure data-sync, deterministic CRUD."
+  },
+  {
+    "id": "ec453445-1d7b-5148-98d5-d3e662980ba1",
+    "tier": "haiku",
+    "rationale": "Time-threshold reminders at 48h/4h/15min with per-threshold dedup — fully rule-driven, no judgment."
+  },
+  {
+    "id": "1e7811b0-c04a-5c2f-a9d4-fda47856cd09",
+    "tier": "haiku",
+    "rationale": "Overdue detection → list move + comment + alert — rule-triggered pipeline, pattern memory is just state storage."
+  },
+  {
+    "id": "eff0d838-88c1-5121-8377-48e59da49b5a",
+    "tier": "sonnet",
+    "rationale": "Multi-channel urgency + intent classification from unstructured inbound requires moderate NLU judgment."
+  },
+  {
+    "id": "fd182e6d-dec7-55e3-b130-43270a5df4c6",
+    "tier": "sonnet",
+    "rationale": "Duplicate detection + confidence-gated human-review queue needs semantic similarity judgment beyond simple rules."
+  },
+  {
+    "id": "987b9406-630d-5ed3-be71-c08a9213698a",
+    "tier": "haiku",
+    "rationale": "Prep reminder + status ping with idempotent per-event state — templated notifications, mechanical."
+  },
+  {
+    "id": "33fc8376-4cba-5803-969a-af2e502566a3",
+    "tier": "sonnet",
+    "rationale": "Action-item extraction from meeting notes + distribution requires NLU and editorial judgment on what matters."
+  },
+  {
+    "id": "171b983b-e643-5af2-bd57-989a84fa5283",
+    "tier": "sonnet",
+    "rationale": "Open-ended messaging classification into routes needs intent reasoning; confidence gate adds moderate judgment."
+  },
+  {
+    "id": "344f23eb-28c7-5eb3-95c3-6308794963a7",
+    "tier": "sonnet",
+    "rationale": "Critical/Warning signal triage with duplicate detection needs threshold + semantic judgment; low-confidence gate."
+  },
+  {
+    "id": "95cfab27-c6a7-5aa1-9da4-546992542379",
+    "tier": "sonnet",
+    "rationale": "Three-tier classification from webhook payloads with multi-destination fan-out; confidence gate implies ambiguity."
+  },
+  {
+    "id": "9e027497-a2d9-5c54-bc10-5700c6486ce9",
+    "tier": "haiku",
+    "rationale": "Spreadsheet polling + numeric scoring + write-back + broadcast — deterministic scoring pipeline."
+  },
+  {
+    "id": "c914eb39-a506-58d5-bf1a-adefa1bd73e7",
+    "tier": "sonnet",
+    "rationale": "Tier-adaptive follow-up email requires prose generation with tone calibration per recipient tier + retry queue."
+  },
+  {
+    "id": "e6d13cd7-cff5-5c1b-bf08-a5c766846d10",
+    "tier": "sonnet",
+    "rationale": "PR/commit discovery + ADR wiring requires understanding code context and linking intent to decisions."
+  },
+  {
+    "id": "4f29ec87-d241-555f-9347-90e3504c7b6a",
+    "tier": "opus",
+    "rationale": "Full ADR authoring with enrichment interview, alternatives matrix, and sign-off gate — deep technical reasoning required."
+  },
+  {
+    "id": "43eb2670-30f4-54c7-8f40-cbd8bebac8c0",
+    "tier": "opus",
+    "rationale": "review_mode=always + Reaffirm/Re-evaluate/Deprecate decisions on technical ADRs — consequential, high-judgment reasoning."
+  },
+  {
+    "id": "efb53700-bed3-55ab-8b58-4257387c9f5a",
+    "tier": "opus",
+    "rationale": "Six-pass legal contract analysis — nuance, high stakes, errors are costly; quality is the primary deliverable."
+  },
+  {
+    "id": "5f9bbd4a-20c7-53c2-b5a4-c7bb691281ff",
+    "tier": "sonnet",
+    "rationale": "Statistical significance gating + promote/revert proposals — review_mode=always but judgment is mostly analytical/numeric."
+  },
+  {
+    "id": "064f4f72-8bad-5c40-9d22-a84b114064d2",
+    "tier": "opus",
+    "rationale": "Threat scoring 1-10 + deep abuse analysis + drafted reports — security reasoning is high-stakes and nuanced."
+  },
+  {
+    "id": "8da6a5c2-b3d4-564b-bce3-13d6fe886089",
+    "tier": "haiku",
+    "rationale": "Billing scan against thresholds with conditional anomaly alert — rule-based detection, no narrative synthesis."
+  },
+  {
+    "id": "4addfe48-e025-58fb-83fe-156095da7135",
+    "tier": "sonnet",
+    "rationale": "Database-wide signature mining with confidence-gated auto-updates requires pattern recognition across varied records."
+  },
+  {
+    "id": "38a501e5-4c83-54b8-821f-8c2c23228edb",
+    "tier": "haiku",
+    "rationale": "Daily incremental scan merging fresh signature fields into existing contacts — structured data merge, deterministic."
+  },
+  {
+    "id": "560d295f-224c-55e4-b332-e5226950aa39",
+    "tier": "haiku",
+    "rationale": "Stale-contact flagging by age threshold + history pruning — rule-based DB health sweep, no synthesis."
+  },
+  {
+    "id": "48b81c2e-ea42-5586-83d2-5daa0bb2e3d2",
+    "tier": "sonnet",
+    "rationale": "Email signature parsing with confidence scoring and conflict-aware DB merge needs moderate NLU + heuristic judgment."
+  },
+  {
+    "id": "b6e5f270-369c-5a31-b920-92d8550646a4",
+    "tier": "sonnet",
+    "rationale": "CRM quality scoring across multiple dimensions + safe auto-fix selection requires moderate analytical judgment."
+  },
+  {
+    "id": "fcff41fe-7d00-5ecf-a303-97dee11d5274",
+    "tier": "haiku",
+    "rationale": "DB reachability probe + Critical incident creation on failure — binary health check, rule-driven escalation."
+  },
+  {
+    "id": "590a0c44-7538-5080-9a35-870ed40d31e5",
+    "tier": "sonnet",
+    "rationale": "Cross-referencing deploy timestamps against error spike timelines requires correlation reasoning, not just threshold rules."
+  }
+]

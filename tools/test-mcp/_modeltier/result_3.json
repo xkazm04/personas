@@ -1,0 +1,192 @@
+[
+  {
+    "id": "c3722109-62e6-52eb-b796-1a501121766a",
+    "tier": "opus",
+    "rationale": "Autonomous creative loop: concept generation, gallery curation, and memory learning require high aesthetic judgment."
+  },
+  {
+    "id": "97fd94fc-4473-5c29-8b0f-c85f2cb5a851",
+    "tier": "sonnet",
+    "rationale": "Multi-step workflow dispatching reviewer decision to KB update + notifications; moderate orchestration, review_mode=always."
+  },
+  {
+    "id": "c34a5ae4-0556-5cce-866e-6d7a7430b1d3",
+    "tier": "haiku",
+    "rationale": "Mechanical dispatch: pull KB entry, compose reviewer email and approval card from template."
+  },
+  {
+    "id": "7d32142c-5609-53a2-b382-ad2bba698f66",
+    "tier": "haiku",
+    "rationale": "Threshold-based escalation by configurable SLA policy — deterministic rule-firing, no synthesis."
+  },
+  {
+    "id": "5e07793e-c964-590f-95dc-f72631789f48",
+    "tier": "haiku",
+    "rationale": "Event-driven single-step dispatch: approved flag → platform connector → confirmation; no judgment needed."
+  },
+  {
+    "id": "b1c5780a-ff95-5663-b9e1-c42174b5daee",
+    "tier": "sonnet",
+    "rationale": "Platform-tuned prose drafts fan-out from source artifact with voice-doc grounding and approval gate."
+  },
+  {
+    "id": "ccb41ed3-bc75-5bf6-9e7d-e2afbc0c7896",
+    "tier": "sonnet",
+    "rationale": "Analyzing sample posts and synthesizing a per-platform voice profile needs editorial judgment."
+  },
+  {
+    "id": "d872e8c7-ca52-517a-99aa-08ff353d7b0a",
+    "tier": "sonnet",
+    "rationale": "Anomaly detection over content metrics requires pattern reasoning to distinguish signal from noise."
+  },
+  {
+    "id": "7329af31-cd20-5e2d-9c1a-ae10787a016a",
+    "tier": "sonnet",
+    "rationale": "WoW ranking + anomaly detection + recommendations requires multi-metric synthesis and editorial judgment."
+  },
+  {
+    "id": "99c24f3f-06ee-5f7c-a13f-fff4cfb52dae",
+    "tier": "sonnet",
+    "rationale": "Codebase-grounded walkthrough planning with tiered capture and preference learning needs solid judgment."
+  },
+  {
+    "id": "fc73b552-a9df-5fd9-b98d-722e9c8ec92c",
+    "tier": "sonnet",
+    "rationale": "Script + strategy → TTS → video composition pipeline with stage-scoped rework requires creative orchestration."
+  },
+  {
+    "id": "ed25d219-8a77-57a3-81d2-e9a01eed114e",
+    "tier": "sonnet",
+    "rationale": "AI sprite-sheet generation with canvas normalization involves creative+technical coordination, human review always."
+  },
+  {
+    "id": "0090e32b-60f3-5e80-aaee-4ce3f21361f7",
+    "tier": "haiku",
+    "rationale": "Mechanical pipeline: image input → video generator API → save to storage; minimal judgment."
+  },
+  {
+    "id": "f895592e-2eff-50fe-9b02-cf75b51fe222",
+    "tier": "haiku",
+    "rationale": "Fully procedural 4-frame idle animation, no AI, deterministic math — pure mechanical execution."
+  },
+  {
+    "id": "99d7c2b2-f602-553e-a508-4ff143713b2e",
+    "tier": "sonnet",
+    "rationale": "Multi-step scan→score→select→write→assemble→deliver pipeline with editorial selection and prose writing."
+  },
+  {
+    "id": "58b47096-e109-5b73-9ae4-c29b59b5fb91",
+    "tier": "opus",
+    "rationale": "Rule-cited diff + clean rewrite requires deep writing quality judgment and per-rule voice learning."
+  },
+  {
+    "id": "8175b459-7cd6-558d-abe5-aacef9979308",
+    "tier": "sonnet",
+    "rationale": "Brand kit + platform-tuned copy variations with selection-driven learning; creative but structured."
+  },
+  {
+    "id": "8e06e944-dd39-536e-b758-fd66d65f4fe5",
+    "tier": "haiku",
+    "rationale": "Mechanical export: call Canva export API, retrieve download links or fallback URL — no judgment."
+  },
+  {
+    "id": "e300b1db-400a-5b38-9a53-5f8cdcad95c2",
+    "tier": "sonnet",
+    "rationale": "Brief-grounded image generation with quality loop and human review needs creative reasoning."
+  },
+  {
+    "id": "d9189ae3-df8a-5843-b174-86befb61a0ad",
+    "tier": "sonnet",
+    "rationale": "Generating a design brief from codebase analysis requires synthesis and design reasoning beyond template fill."
+  },
+  {
+    "id": "acdf652b-4876-5fb1-afd2-07515bb78e65",
+    "tier": "opus",
+    "rationale": "End-to-end research report with source grounding and confidence scoring — quality is the entire point."
+  },
+  {
+    "id": "02ca2e3f-0d4d-568c-9d3e-f6d18cfe74b6",
+    "tier": "sonnet",
+    "rationale": "Cross-session trend synthesis over multiple research sessions requires pattern recognition and editorial synthesis."
+  },
+  {
+    "id": "2975ba49-79d7-5cb4-9e76-a70ddf60774e",
+    "tier": "sonnet",
+    "rationale": "Impact-scored briefing with source grounding and cross-session trend awareness is multi-source synthesis."
+  },
+  {
+    "id": "34e9138a-1af0-5323-bbac-712d396d6f50",
+    "tier": "sonnet",
+    "rationale": "Scanning and interpreting congressional stock disclosures involves domain judgment beyond simple field extraction."
+  },
+  {
+    "id": "90eeee84-f53f-5467-b795-be8ba315fed7",
+    "tier": "opus",
+    "rationale": "Finding under-covered stock gems in sectors is high-judgment research synthesis with financial stakes."
+  },
+  {
+    "id": "20ed97c9-0baf-53b4-bc99-71ddf808010d",
+    "tier": "sonnet",
+    "rationale": "Codebase-grounded web harvesting across multiple sources requires relevance judgment to produce triage candidates."
+  },
+  {
+    "id": "563cf0cd-126c-5e8f-9ea2-ff1d04df897e",
+    "tier": "sonnet",
+    "rationale": "Categorized HTML briefing across sources with trending-topic identification; moderate multi-source synthesis."
+  },
+  {
+    "id": "2ecd8643-83ad-52e8-a8cb-7426b30c3cfb",
+    "tier": "haiku",
+    "rationale": "Polling ingestion + dedup + importance scoring is structured extraction pipeline with rule-based alerting."
+  },
+  {
+    "id": "5ca4c73a-35d9-5fe2-82cd-61f47e2575e6",
+    "tier": "sonnet",
+    "rationale": "Per-company diff + importance scoring over LinkedIn data requires pattern judgment; rate-limit orchestration."
+  },
+  {
+    "id": "5bb6b6b6-5c62-5401-a309-28a15122ccf9",
+    "tier": "sonnet",
+    "rationale": "Cross-company weekly pattern digest with ranking and quiet-company callouts needs synthesis across companies."
+  },
+  {
+    "id": "29115c99-de65-5219-839a-5657fd52c39b",
+    "tier": "sonnet",
+    "rationale": "Cross-referencing news against flagged markets for contextual confidence requires multi-source correlation."
+  },
+  {
+    "id": "36c3affe-b12f-50aa-9b3c-8a2355107191",
+    "tier": "sonnet",
+    "rationale": "Per-attendee behavioral profiling from multiple sources and building prep page requires synthesis and judgment."
+  },
+  {
+    "id": "215be562-1e76-5a51-9d57-4263ca1c13c7",
+    "tier": "sonnet",
+    "rationale": "Codebase-grounded web scan for implementation opportunities needs relevance judgment and technical assessment."
+  },
+  {
+    "id": "c868be14-e5b0-503d-a691-e8d238d924a3",
+    "tier": "sonnet",
+    "rationale": "Multi-source academic discovery with PMR summaries and cross-references requires research comprehension."
+  },
+  {
+    "id": "f026e7a3-90d7-5514-921e-c47ad9a3f43d",
+    "tier": "haiku",
+    "rationale": "Batch website fetch + classify into 7 fixed dimensions; structured extraction with clear schema."
+  },
+  {
+    "id": "ce7e3575-0844-51c5-9dd2-5a4c93df0eaf",
+    "tier": "sonnet",
+    "rationale": "Research gate + ranking 5-10 topic candidates from multi-platform data requires editorial judgment."
+  },
+  {
+    "id": "8591dfd3-fb0a-5bd1-9b6f-5255927e2344",
+    "tier": "haiku",
+    "rationale": "Weekly rollup of session log stats + quality trend is structured aggregation with minimal synthesis."
+  },
+  {
+    "id": "29e6ea99-4ce7-5fbe-9b01-9bb86891de36",
+    "tier": "haiku",
+    "rationale": "Weekday digest: run saved BI queries, apply threshold anomaly flagging, format with deep links — deterministic."
+  }
+]

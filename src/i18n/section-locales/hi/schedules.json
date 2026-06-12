@@ -105,5 +105,12 @@
   "sparkline_aria": "रन इतिहास स्पार्कलाइन, पिछले {days} दिन",
   "sparkline_window": "पिछले {days} दिन",
   "sparkline_no_data": "विंडो में कोई रन नहीं",
-  "sparkline_failure_rate": "{total} रन · {rate}% विफल"
+  "sparkline_failure_rate": "{total} रन · {rate}% विफल",
+  "run_status_incomplete": "अधूरा",
+  "last24h_title": "पिछले 24 घंटे",
+  "last24h_empty": "पिछले 24 घंटों में कोई शेड्यूल रन नहीं।",
+  "last24h_failed_count": "{count} विफल",
+  "last24h_show_all": "सभी दिखाएं ({count})",
+  "last24h_show_less": "कम दिखाएं",
+  "last24h_retry_at": "स्वतः-पुनः प्रयास {time}"
 }

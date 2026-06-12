@@ -540,7 +540,8 @@
     "bulk_rerun_diff": "Diff",
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
-    "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+    "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+    "tab_director": "Director"
   },
   "lab": {
     "mode_arena": "竞技场",
@@ -818,7 +819,47 @@
     "event_duration_ms": "+{ms}毫秒",
     "arena_use_case_prefers": "Use case prefers",
     "arena_add_pinned_to_roster": "Add to roster",
-    "arena_pinned_in_roster": "In roster"
+    "arena_pinned_in_roster": "In roster",
+    "vr_title": "版本与评分",
+    "vr_subtitle": "您测量过的每个提示词版本 × 模型组合。其中一行为当前运行中。",
+    "vr_col_version": "版本",
+    "vr_col_model": "模型",
+    "vr_col_rating": "评分",
+    "vr_col_delta": "基准",
+    "vr_col_cost": "费用",
+    "vr_col_status": "状态",
+    "vr_col_actions": "操作",
+    "vr_status_active": "活跃",
+    "vr_status_baseline": "基准",
+    "vr_status_archived": "已归档",
+    "vr_status_measured": "已测量",
+    "vr_status_unmeasured": "未测量",
+    "vr_action_activate": "激活此版本 + 模型",
+    "vr_action_active": "当前运行中",
+    "vr_action_measure": "跨模型测量（竞技场）",
+    "vr_action_measuring": "测量中…",
+    "vr_action_improve": "通过 Athena 改进",
+    "vr_action_diff": "与当前版本比较提示词",
+    "vr_action_archive": "归档版本",
+    "vr_action_unarchive": "取消归档版本",
+    "vr_action_pin_baseline": "固定为回归基准",
+    "vr_action_unpin_baseline": "取消固定基准",
+    "vr_unmeasured": "—",
+    "vr_no_model": "—",
+    "vr_samples": "{count} 个样本",
+    "vr_samples_other": "{count} 个样本",
+    "vr_empty_title": "暂无版本",
+    "vr_empty_desc": "编辑并保存角色的提示词以创建第一个版本，然后在此处进行评测。",
+    "vr_measuring_toast": "正在跨模型评测 v{version}…",
+    "vr_measure_modal_title": "评测 v{version}",
+    "vr_measure_scope_banner": "正在评测版本 {version} — 其提示词将在您选择的模型上运行。评分结果将显示在评分表中。",
+    "vr_diff_title": "v{version} 与当前版本对比",
+    "vr_diff_no_active": "没有可用的活跃版本进行比较。",
+    "vr_improve_seed_measured": "改进角色\"{name}\" v{version}。最弱的评测指标：{metric} 在 {model} 上得分 {score}/100。我应该重点关注什么？",
+    "vr_improve_seed_plain": "改进角色\"{name}\" v{version} — 尚未评测。我应该重点关注什么？",
+    "vr_metric_tool": "工具准确性",
+    "vr_metric_quality": "输出质量",
+    "vr_metric_protocol": "协议合规性"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",
@@ -903,7 +944,9 @@
     "next": "下一步",
     "go_back_hint": "返回并回答问题以配置代理。",
     "additional_instructions": "附加说明或上下文（可选）",
-    "additional_instructions_placeholder": "添加具体需求、领域知识或约束..."
+    "additional_instructions_placeholder": "添加具体需求、领域知识或约束...",
+    "role_user": "用户",
+    "role_ai": "AI"
   },
   "connectors": {
     "connectors_label": "连接器",
@@ -1549,7 +1592,32 @@
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
     "persona_layout_capabilities_heading": "Capabilities",
-    "schedule_will_run": "这将为 {persona} 运行 {title}"
+    "schedule_will_run": "这将为 {persona} 运行 {title}",
+    "_comment_manual_run_in_progress": "手动运行进行中时\"立即运行\"按钮的提示文字",
+    "manual_run_in_progress": "手动运行中",
+    "_comment_run_now_tooltip": "\"立即运行\"按钮提示文字 — 区分真实执行与测试",
+    "run_now_tooltip": "立即运行此用例 — 触发真实执行及下游事件",
+    "_comment_run_now": "\"立即运行\"按钮标签（详情面板 + 功能标签栏）",
+    "run_now": "立即运行",
+    "_comment_event_type_options": "UseCaseSubscriptionForm 事件类型下拉选项标签",
+    "event_type_webhook_received": "已接收 Webhook",
+    "event_type_execution_completed": "执行已完成",
+    "event_type_execution_failed": "执行失败",
+    "event_type_persona_action": "角色操作",
+    "event_type_file_changed": "文件已更改",
+    "event_type_schedule_triggered": "计划已触发",
+    "_comment_dim_review_title": "ReviewDimCard 标题",
+    "dim_review_title": "审核",
+    "_comment_pill_on": "ToggleDimCard 开启状态标签（记忆/事件）",
+    "pill_on": "开启",
+    "_comment_pill_off": "关闭状态标签，ToggleDimCard 和 ReviewDimCard 共用",
+    "pill_off": "关闭",
+    "_comment_review_pill_queue": "ReviewDimCard 队列状态标签",
+    "review_pill_queue": "队列",
+    "_comment_review_pill_trust": "ReviewDimCard 信任状态标签",
+    "review_pill_trust": "信任",
+    "_comment_dim_status_activated": "PersonaSigilSummary 中布尔维度（记忆/审核/事件/错误）激活时显示的值",
+    "dim_status_activated": "已激活"
   },
   "tools": {
     "no_persona": "未选择代理",
@@ -1994,7 +2062,10 @@
     "annotation_section_title": "Annotations",
     "annotation_tags_label": "Tags",
     "annotation_note_label": "Note",
-    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later."
+    "annotation_empty": "No annotation yet — tag, note, or star this run to make it easy to find later.",
+    "col_verdict": "评定",
+    "verdict_none": "尚未经过 Director 审核",
+    "verdict_tooltip": "Director 评定：{score}/5"
   },
   "chat": {
     "select_persona": "选择代理开始聊天",
@@ -2293,7 +2364,8 @@
     "delete_agents": "删除 {count} 个代理",
     "delete_agents_message": "{count} 个代理及其所有配置将被永久删除。",
     "delete_drafts": "删除 {count} 个草稿",
-    "delete_drafts_message": "{count} 个草稿代理将被永久删除。"
+    "delete_drafts_message": "{count} 个草稿代理将被永久删除。",
+    "system_persona_undeletable": "Director 是系统角色，无法删除。"
   },
   "persona_list": {
     "all_personas": "所有代理",
@@ -2326,7 +2398,10 @@
     "batch_move_to_group_empty": "尚无分组 — 在 智能体 → 分组 中创建",
     "batch_move_to_ungrouped": "未分组",
     "batch_moved_success": "已将 {count} 个人格移至 {group}",
-    "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败"
+    "batch_moved_partial": "已移动 {ok} 个到 {group}；{failed} 个失败",
+    "render_cap_notice": "显示 {total} 中的 {shown} 个 — 通过搜索或筛选来查看其余内容。",
+    "star_director_add": "收藏以加入 Director 的辅导范围",
+    "star_director_remove": "已收藏 — 在 Director 的辅导范围内。点击取消。"
   },
   "design_preview": {
     "preview": "预览",
@@ -2526,7 +2601,9 @@
       "to": "user@example.com"
     },
     "discord_poll_inbound_label": "Poll for incoming Discord messages",
-    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+    "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+    "slack_poll_inbound_label": "轮询接收 Slack 消息",
+    "slack_poll_inbound_help": "勾选后，角色每 5 秒读取该频道的新消息，并在对话串中回复运行结果。请先将机器人邀请至该频道。"
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
@@ -2544,5 +2621,44 @@
   "sigil_edit_active": "已为此能力启用",
   "sigil_edit_inactive": "未启用 — 开启以启用",
   "sigil_edit_enable": "为此能力启用",
-  "sigil_edit_disable": "为此能力停用"
+  "sigil_edit_disable": "为此能力停用",
+  "design_subtabs": {
+    "use_cases": "使用场景",
+    "prompt": "提示词",
+    "connectors": "连接器与工具",
+    "triggers": "事件与触发器",
+    "messaging": "消息",
+    "automations": "自动化",
+    "triggers_desc": "每个角色的事件订阅和触发器配置将在此标签页中提供。",
+    "messaging_desc": "此智能体的通知渠道和收件箱路由将在此处显示。",
+    "automations_desc": "此智能体的独立自动化规则将在此处显示。"
+  },
+  "parameters_card": {
+    "title": "参数",
+    "saved": "已保存",
+    "apply": "应用",
+    "on": "开启",
+    "off": "关闭",
+    "reset": "重置"
+  },
+  "editor_empty": {
+    "title": "未选择角色",
+    "subtitle": "从侧边栏选择一个智能体开始编辑，或创建一个新的。",
+    "create": "创建角色",
+    "resume_label": "继续上次"
+  },
+  "build_template_match_label": "更快捷的方式",
+  "build_template_match_title": "\"{name}\" 似乎与某个模板匹配",
+  "build_template_match_body": "这个现成模板涵盖了您描述的内容——采用它可跳过这些问题。它已设置完毕并经过测试。",
+  "build_template_match_adopt": "使用此模板",
+  "build_template_match_dismiss": "继续构建",
+  "build_template_match_loading": "正在查找匹配模板…",
+  "build_template_match_more": "或从以下开始",
+  "_comment_glyph_db_scope": "连接器选择器中的数据库连接器表范围面板",
+  "glyph_db_scope_heading": "数据库表",
+  "glyph_db_scope_all": "所有表",
+  "glyph_db_scope_loading": "正在加载表…",
+  "glyph_db_scope_error": "无法加载表——请重试",
+  "glyph_db_scope_empty": "未找到表",
+  "glyph_db_scope_selected": "{total} 个表中已选 {count} 个"
 }

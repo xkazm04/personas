@@ -1,0 +1,192 @@
+[
+  {
+    "id": "db563881-c358-5d0d-aab5-7a22573f050d",
+    "tier": "sonnet",
+    "rationale": "Severity classification with memory context needs judgment; review_mode=always raises stakes above haiku."
+  },
+  {
+    "id": "7458572a-4829-55a0-830b-336f16147659",
+    "tier": "sonnet",
+    "rationale": "Baseline-aware anomaly flagging requires moderate statistical reasoning and contextual comparison."
+  },
+  {
+    "id": "5224824b-5ab7-5380-9957-d77d31fbdbf7",
+    "tier": "haiku",
+    "rationale": "Polling + filtering + NLP field extraction from emails into fixed schema — deterministic pipeline."
+  },
+  {
+    "id": "9af11e96-6c3d-5124-8445-2f6ec7bac270",
+    "tier": "sonnet",
+    "rationale": "Weighted multi-signal scoring with three-tier dedup involves moderate judgment beyond mechanical mapping."
+  },
+  {
+    "id": "9de4e0b9-026c-5d93-b56c-fe5a711ca26a",
+    "tier": "sonnet",
+    "rationale": "NLP action-item extraction with confidence scoring needs language understanding beyond simple parsing."
+  },
+  {
+    "id": "3fd414ff-d43a-5df7-8e85-f0b5882601c8",
+    "tier": "opus",
+    "rationale": "Financial signal synthesis (RSI/MACD/news composite) for trade decisions; review_mode=always; high-stakes."
+  },
+  {
+    "id": "e51901e2-5b39-567a-b89b-890395eb1ed3",
+    "tier": "opus",
+    "rationale": "Codebase-grounded feasibility + effort + benefit analysis requires deep multi-factor reasoning."
+  },
+  {
+    "id": "a18a805e-77be-502b-b202-8d9a42cd2777",
+    "tier": "sonnet",
+    "rationale": "Pipeline health check with re-scoring stale prospects involves moderate CRM judgment and prioritization."
+  },
+  {
+    "id": "ef3400dc-08ae-5ede-a04d-67a5fb664a9b",
+    "tier": "sonnet",
+    "rationale": "Market anomaly detection with price-movement/spread analysis needs statistical pattern recognition."
+  },
+  {
+    "id": "d5ecd4c3-6dd8-5afe-90fa-f20f7a68ecdb",
+    "tier": "sonnet",
+    "rationale": "Five-stage enrichment pipeline combines moderate data transformation, lookup, and synthesis steps."
+  },
+  {
+    "id": "92b1856b-e8b8-5a20-84a9-5ca453704779",
+    "tier": "haiku",
+    "rationale": "Sync + categorize + threshold flag is deterministic data movement with fixed categorization rules."
+  },
+  {
+    "id": "b78cbca1-0855-5fa0-9bd1-157cc0b08acc",
+    "tier": "sonnet",
+    "rationale": "Morning analytics briefing with delta/anomaly interpretation requires editorial judgment for digest framing."
+  },
+  {
+    "id": "0cc7cfe6-5605-5449-a052-50bad4e63372",
+    "tier": "sonnet",
+    "rationale": "EWMA baseline computation plus severity classification and persistence tracking is moderately analytical."
+  },
+  {
+    "id": "4a151e59-6b19-5164-8d66-867b66091542",
+    "tier": "sonnet",
+    "rationale": "Clustering, sentiment labeling, and themed digest generation needs balanced NLP and editorial judgment."
+  },
+  {
+    "id": "5a0a2392-2d9d-552c-912c-734a6e531550",
+    "tier": "haiku",
+    "rationale": "Per-source failure tracking with threshold-based health events is mechanical rule-driven bookkeeping."
+  },
+  {
+    "id": "ac78ce22-63c5-58a0-a4f9-551e9b62adca",
+    "tier": "sonnet",
+    "rationale": "Rising/declining trend identification across research topics requires multi-source pattern synthesis."
+  },
+  {
+    "id": "295d0871-6f35-5c8c-b728-5e87c145c72f",
+    "tier": "sonnet",
+    "rationale": "Short-interval event polling with CRM enrichment and composite scoring needs moderate judgment."
+  },
+  {
+    "id": "7dd523ae-6f86-59eb-ab66-3e5b56f2e233",
+    "tier": "haiku",
+    "rationale": "Real-time Stripe → spreadsheet reconciliation with event classification is deterministic data sync."
+  },
+  {
+    "id": "0c9d12e6-2019-58bc-a67b-161916dd7987",
+    "tier": "opus",
+    "rationale": "7-dimension win/loss segmentation with cross-dimensional interaction detection is complex analytical reasoning."
+  },
+  {
+    "id": "feab4cf2-fec3-5fcc-a57a-4d4b01b4b744",
+    "tier": "opus",
+    "rationale": "Stack-trace root cause analysis with ranked resolutions is deep code reasoning; review_mode=always."
+  },
+  {
+    "id": "892975a6-d166-51ed-b7e4-44c3ca430393",
+    "tier": "haiku",
+    "rationale": "Finance platform → spreadsheet reconciliation with notifications is deterministic event sync pipeline."
+  },
+  {
+    "id": "555079dd-836b-532f-a6ad-802a6c1cfdd7",
+    "tier": "sonnet",
+    "rationale": "Multi-layer NLP (sentiment + theme + trend + anomaly) needs balanced analytical and editorial judgment."
+  },
+  {
+    "id": "41e87ce8-6c73-5361-b10a-81b5978bb176",
+    "tier": "sonnet",
+    "rationale": "Detecting paid cannibalization of organic keywords involves moderate cross-channel pattern matching."
+  },
+  {
+    "id": "b921e672-5496-5cdd-9ec1-57e3ca6e4624",
+    "tier": "haiku",
+    "rationale": "WoW delta flagging across paid+organic channels is mechanical threshold comparison on structured metrics."
+  },
+  {
+    "id": "cee0f180-00d5-5ce0-be9e-75a9e05387ad",
+    "tier": "sonnet",
+    "rationale": "Side-by-side 8-category scoring of competitor URLs needs judgment to evaluate qualitative dimensions."
+  },
+  {
+    "id": "26b39db7-df93-55ed-b2c5-a0c20c46c9d1",
+    "tier": "opus",
+    "rationale": "Weighted conversion audit with revenue-impact prioritization + learning from reviews; review_mode=always."
+  },
+  {
+    "id": "e1fe464d-f530-5fe5-a9f1-789d99934946",
+    "tier": "sonnet",
+    "rationale": "10-dimension audit + redesign prompt generation needs editorial and UX judgment, though not truly deep."
+  },
+  {
+    "id": "d9b3f724-35ef-54fd-a781-97b2af5a8d84",
+    "tier": "sonnet",
+    "rationale": "Landscape summary with white-space analysis needs moderate synthesis; archived for longitudinal comparison."
+  },
+  {
+    "id": "b2e9f57f-8c68-5d35-8be9-12045d6cc51b",
+    "tier": "sonnet",
+    "rationale": "7-category error classification with remediation suggestions needs moderate diagnostic reasoning."
+  },
+  {
+    "id": "e9f4f48e-ec0c-52d3-8a0b-918530f2c0b6",
+    "tier": "sonnet",
+    "rationale": "Recurring/cascading/time-cluster pattern detection across workflows needs multi-dimensional pattern reasoning."
+  },
+  {
+    "id": "b1ad906c-e348-5b78-8de2-e36711317a1e",
+    "tier": "sonnet",
+    "rationale": "Document ingestion with structured metadata extraction and index building is moderately complex ETL."
+  },
+  {
+    "id": "09c107a0-b84d-57af-85c8-dddb063d1595",
+    "tier": "sonnet",
+    "rationale": "Semantic search with inline link resolution needs NLP reasoning but is bounded and interactive."
+  },
+  {
+    "id": "5789b2b7-638e-5747-861d-27445ef3bd1b",
+    "tier": "haiku",
+    "rationale": "Corpus growth stats + contributor activity digest is mechanical aggregation formatted into a report."
+  },
+  {
+    "id": "c390fe3a-d6a9-5f46-bcfb-d0f7ffcf8909",
+    "tier": "sonnet",
+    "rationale": "Platform-tuned caption generation per channel requires tone and editorial judgment per audience."
+  },
+  {
+    "id": "8ce82ac0-86e8-5f15-9a1b-9deda71dca93",
+    "tier": "haiku",
+    "rationale": "Pull engagement metrics and flag viral/underperformance by threshold — mechanical monitoring pipeline."
+  },
+  {
+    "id": "3e54df29-6813-566a-8721-60a604efbb13",
+    "tier": "sonnet",
+    "rationale": "Top/bottom performer ranking + strategy adjustment digest needs editorial synthesis and platform judgment."
+  },
+  {
+    "id": "2969b6b1-5462-573c-970e-832844526258",
+    "tier": "haiku",
+    "rationale": "TTS synthesis → ffmpeg concat → MP3 with duration check is a deterministic audio production pipeline."
+  },
+  {
+    "id": "5c57371e-abb1-5e5f-b57d-3f5ec30cce12",
+    "tier": "sonnet",
+    "rationale": "Source distillation → two-host script drafting needs creative writing and editorial voice judgment."
+  }
+]

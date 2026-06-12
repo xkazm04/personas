@@ -62,11 +62,24 @@ fn bump_version(version: &str) -> String {
     "1.0.0".to_string()
 }
 
-/// Extract a UC's display name with a sensible fallback chain.
+/// Extract a UC's display name with a sensible fallback chain. Inline UCs
+/// name themselves with `title` (the DesignUseCase shape) — `name` is only
+/// kept for older hand-authored payloads. Without the `title` arm every
+/// derived recipe fell through to the technical `uc_*` id.
 fn extract_uc_name(uc: &Value) -> Option<String> {
     uc.get("name")
         .and_then(|v| v.as_str())
+        .or_else(|| uc.get("title").and_then(|v| v.as_str()))
         .or_else(|| uc.get("id").and_then(|v| v.as_str()))
+        .map(|s| s.to_string())
+}
+
+/// Per-UC category. Wins over the template-level category: the UC declares
+/// what the work is (analysis / reporting / …); the template category
+/// describes the persona's domain.
+fn extract_uc_category(uc: &Value) -> Option<String> {
+    uc.get("category")
+        .and_then(|v| v.as_str())
         .map(|s| s.to_string())
 }
 
@@ -166,6 +179,7 @@ pub fn derive_recipes_from_template_inner(
             .to_string();
 
         let uc_name = extract_uc_name(uc);
+        let uc_category = extract_uc_category(uc).or_else(|| category.clone());
         let uc_description = extract_uc_description(uc);
         let uc_tools = extract_uc_tools_json(uc);
         let synthesized_prompt = synthesize_prompt_template(uc);
@@ -185,7 +199,7 @@ pub fn derive_recipes_from_template_inner(
                     use_case_id: None,
                     name: uc_name.clone().unwrap_or_else(|| uc_id.clone()),
                     description: uc_description.clone(),
-                    category: category.clone(),
+                    category: uc_category.clone(),
                     prompt_template: synthesized_prompt,
                     input_schema: None,
                     output_contract: None,
@@ -238,7 +252,7 @@ pub fn derive_recipes_from_template_inner(
                     let update = UpdateRecipeInput {
                         name: uc_name.clone(),
                         description: uc_description,
-                        category: category.clone(),
+                        category: uc_category.clone(),
                         prompt_template: Some(current_prompt),
                         input_schema: None,
                         output_contract: None,
@@ -361,6 +375,34 @@ mod tests {
         let uc = serde_json::json!({ "description": long });
         let result = extract_uc_description(&uc).unwrap();
         assert_eq!(result.chars().count(), 500); // 499 chars + ellipsis
+    }
+
+    #[test]
+    fn extract_uc_name_prefers_title_over_id() {
+        let uc = serde_json::json!({ "id": "uc_approval_workflow", "title": "Approval Workflow" });
+        assert_eq!(extract_uc_name(&uc), Some("Approval Workflow".to_string()));
+    }
+
+    #[test]
+    fn extract_uc_name_explicit_name_beats_title() {
+        let uc = serde_json::json!({ "id": "uc_x", "name": "Custom", "title": "Title" });
+        assert_eq!(extract_uc_name(&uc), Some("Custom".to_string()));
+    }
+
+    #[test]
+    fn extract_uc_name_falls_back_to_id() {
+        let uc = serde_json::json!({ "id": "uc_x" });
+        assert_eq!(extract_uc_name(&uc), Some("uc_x".to_string()));
+    }
+
+    #[test]
+    fn extract_uc_category_string_only() {
+        assert_eq!(
+            extract_uc_category(&serde_json::json!({ "category": "analysis" })),
+            Some("analysis".to_string()),
+        );
+        assert_eq!(extract_uc_category(&serde_json::json!({ "category": 3 })), None);
+        assert_eq!(extract_uc_category(&serde_json::json!({})), None);
     }
 
     // ========================================================================

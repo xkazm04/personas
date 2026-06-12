@@ -1,17 +1,27 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { categoryLabel } from '../libs/categoryLabels';
 import { EligibilityChip } from './EligibilityChip';
 import type { Recipe, Eligibility } from '../types';
 
 interface ResultsProps {
   recipes: Recipe[];
   eligibilityMap: Map<string, Eligibility>;
+  /** Active search query — matching substrings in the name column light up. */
+  highlight?: string;
+  /** Eligibility is a per-persona verdict; without a selected persona the
+   *  chips would claim READY/LOCKED against nothing — render neutral. */
+  personaSelected: boolean;
+  /** Recipe ids the selected persona has already adopted (provenance via
+   *  DesignUseCase.source_recipe_id) — rows get an "Adopted" chip. */
+  adoptedRecipeIds: ReadonlySet<string>;
   onOpenDetail: (recipeId: string) => void;
 }
 
-type SortKey = 'name' | 'category' | 'bindings' | 'version' | 'eligibility';
+type SortKey = 'name' | 'category' | 'connectors' | 'version' | 'eligibility';
 type SortDir = 'asc' | 'desc';
 
 const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
@@ -35,7 +45,7 @@ const ELIGIBILITY_RANK: Record<Eligibility['state'], number> = {
  * Clicking the button adopts; clicking the row opens detail. Both stop
  * at the right place.
  */
-export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: ResultsProps) {
+export function RecipesTableResults({ recipes, eligibilityMap, highlight, personaSelected, adoptedRecipeIds, onOpenDetail }: ResultsProps) {
   const { t } = useTranslation();
   const [sort, setSort] = useState<{ key: SortKey; dir: SortDir }>({ key: 'name', dir: 'asc' });
 
@@ -50,8 +60,8 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
         case 'category':
           cmp = a.category.localeCompare(b.category) || a.name.localeCompare(b.name);
           break;
-        case 'bindings':
-          cmp = a.bindings.length - b.bindings.length;
+        case 'connectors':
+          cmp = a.requiredConnectors.length - b.requiredConnectors.length;
           if (cmp === 0) cmp = a.name.localeCompare(b.name);
           break;
         case 'version':
@@ -78,7 +88,7 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
   };
 
   return (
-    <div className="rounded-card border border-card-border bg-secondary/15 overflow-hidden">
+    <div className="rounded-card border border-card-border bg-secondary/15 overflow-hidden" data-testid="recipes-table">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse">
           <thead className="sticky top-0 z-10 bg-secondary/85 backdrop-blur-sm">
@@ -92,18 +102,18 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
                 active={sort.key === 'category'}
                 dir={sort.dir}
                 onClick={() => toggleSort('category')}
-                className="w-32"
+                className="w-36"
               >
                 {t.recipes_catalog.col_category}
               </Th>
               <Th
                 sortable
-                active={sort.key === 'bindings'}
+                active={sort.key === 'connectors'}
                 dir={sort.dir}
-                onClick={() => toggleSort('bindings')}
-                className="w-24 text-right"
+                onClick={() => toggleSort('connectors')}
+                className="w-28"
               >
-                {t.recipes_catalog.col_bindings}
+                {t.recipes_catalog.col_connectors}
               </Th>
               <Th
                 sortable
@@ -132,6 +142,9 @@ export function RecipesTableResults({ recipes, eligibilityMap, onOpenDetail }: R
                 key={r.id}
                 recipe={r}
                 eligibility={eligibilityMap.get(r.id) ?? { state: 'eligible' }}
+                highlight={highlight}
+                personaSelected={personaSelected}
+                adopted={adoptedRecipeIds.has(r.id)}
                 onOpenDetail={() => onOpenDetail(r.id)}
               />
             ))}
@@ -181,18 +194,39 @@ function Th({ children, className = '', sortable, active, dir, onClick }: ThProp
 interface RecipeRowProps {
   recipe: Recipe;
   eligibility: Eligibility;
+  highlight?: string;
+  personaSelected: boolean;
+  adopted: boolean;
   onOpenDetail: () => void;
 }
 
-function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
+/** Case-insensitive first-match emphasis for the active search query. */
+function HighlightedName({ text, query }: { text: string; query?: string }) {
+  const q = query?.trim().toLowerCase();
+  if (!q) return <>{text}</>;
+  const idx = text.toLowerCase().indexOf(q);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-primary/25 text-foreground rounded-interactive px-0.5 -mx-0.5">
+        {text.slice(idx, idx + q.length)}
+      </mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
+function RecipeRow({ recipe, eligibility, highlight, personaSelected, adopted, onOpenDetail }: RecipeRowProps) {
   const { t } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
   const iconMeta = iconKey ? getConnectorMeta(iconKey) : null;
-  const incompatible = eligibility.state === 'incompatible';
+  const incompatible = personaSelected && eligibility.state === 'incompatible';
 
   return (
     <tr
       onClick={onOpenDetail}
+      data-testid={`recipe-row-${recipe.slug}`}
       className={`group h-10 border-b border-card-border/30 last:border-b-0 transition-colors cursor-pointer ${
         incompatible ? 'opacity-65 hover:bg-secondary/30' : 'hover:bg-secondary/40'
       }`}
@@ -216,22 +250,49 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
 
       {/* Name — summary moved to row tooltip / detail view */}
       <td className="px-2 align-middle" title={recipe.summary}>
-        <div className="typo-caption font-medium text-foreground truncate min-w-0 max-w-[420px]">
-          {recipe.name}
+        <div className="flex items-center gap-1.5 min-w-0 max-w-[420px]">
+          <span className="typo-caption font-medium text-foreground truncate min-w-0">
+            <HighlightedName text={recipe.name} query={highlight} />
+          </span>
+          {adopted && (
+            <Tooltip content={t.recipes_catalog.adopted_badge_tooltip}>
+              <span className="inline-flex items-center gap-0.5 shrink-0 typo-label uppercase tracking-wider px-1 py-0.5 rounded border border-status-success/35 bg-status-success/10 text-status-success">
+                <Check className="w-2.5 h-2.5" />
+                {t.recipes_catalog.adopted_badge}
+              </span>
+            </Tooltip>
+          )}
         </div>
       </td>
 
       {/* Category */}
       <td className="px-2 align-middle">
-        <span className="typo-label uppercase tracking-wider text-foreground truncate">
-          {recipe.category.replace(/-/g, ' ')}
+        <span className="inline-flex typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border border-card-border/60 bg-secondary/40 text-foreground whitespace-nowrap">
+          {categoryLabel(t, recipe.category)}
         </span>
       </td>
 
-      {/* Bindings count */}
-      <td className="px-2 align-middle text-right">
-        <span className="typo-data font-mono text-foreground/85">
-          {recipe.bindings.length}
+      {/* Required connectors — icon strip, replaces the always-zero bindings count */}
+      <td className="px-2 align-middle">
+        <span className="inline-flex items-center gap-1">
+          {recipe.requiredConnectors.slice(0, 3).map((slug) => {
+            const m = getConnectorMeta(slug);
+            return (
+              <span
+                key={slug}
+                className="inline-flex items-center justify-center w-5 h-5 rounded border bg-secondary/40 shrink-0"
+                style={{ borderColor: `${m.color}4d` }}
+                title={m.label}
+              >
+                <ConnectorIcon meta={m} size="w-3 h-3" />
+              </span>
+            );
+          })}
+          {recipe.requiredConnectors.length > 3 && (
+            <span className="typo-label font-mono text-foreground">
+              +{recipe.requiredConnectors.length - 3}
+            </span>
+          )}
         </span>
       </td>
 
@@ -242,9 +303,17 @@ function RecipeRow({ recipe, eligibility, onOpenDetail }: RecipeRowProps) {
         </span>
       </td>
 
-      {/* Eligibility */}
+      {/* Eligibility — neutral dash until a persona gives the verdict meaning */}
       <td className="px-2 align-middle">
-        <EligibilityChip eligibility={eligibility} />
+        {personaSelected ? (
+          <EligibilityChip eligibility={eligibility} />
+        ) : (
+          <Tooltip content={t.recipes_catalog.eligibility_no_persona}>
+            <span className="typo-caption text-foreground" aria-label={t.recipes_catalog.eligibility_no_persona}>
+              —
+            </span>
+          </Tooltip>
+        )}
       </td>
 
       {/* Adopt button — hover-revealed */}

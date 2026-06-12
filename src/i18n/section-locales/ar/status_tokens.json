@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "إنتاج",
+    "promising": "واعد",
+    "not_ready": "غير جاهز",
+    "broken": "معطوب"
+  },
+  "deployment": {
+    "active": "نشط",
+    "paused": "متوقف مؤقتًا",
+    "failed": "فاشل",
+    "unknown": "غير معروف"
+  },
+  "delivery": {
+    "delivered": "تم التسليم",
+    "failed": "فاشل",
+    "pending": "معلّق",
+    "queued": "في قائمة الانتظار"
+  },
+  "rotation": {
+    "anomaly": "شذوذ",
+    "paused": "متوقف مؤقتًا",
+    "disabled": "معطّل",
+    "perm_errors": "أخطاء دائمة",
+    "degrading": "متدهور",
+    "backoff": "تراجع",
+    "fresh": "جديد",
+    "active": "نشط"
   }
 }

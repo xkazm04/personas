@@ -19,14 +19,20 @@
 import type { NotificationChannelType } from '@/lib/types/frontendTypes';
 
 /** Coarse top-level taxonomy used for filter chips in the catalog. Avoid
- *  proliferation — when in doubt, choose the closest existing bucket. */
+ *  proliferation — when in doubt, choose the closest existing bucket.
+ *  The 2026-06 extension (development / content / productivity) tracks the
+ *  real distribution of the 298 seeded recipes — those three buckets alone
+ *  cover ~40% of the corpus, which previously collapsed into 'automation'. */
 export type RecipeCategory =
   | 'monitoring'
   | 'reporting'
   | 'automation'
   | 'communication'
   | 'data-sync'
-  | 'analysis';
+  | 'analysis'
+  | 'development'
+  | 'content'
+  | 'productivity';
 
 /** Kind of value the user supplies during adoption for a `RecipeBinding`.
  *  Each kind that names a connector is an *implicit* dependency on that
@@ -95,6 +101,28 @@ export interface RecipeUseCaseTemplate {
     reviews?: 'on' | 'off' | 'trust_llm';
     events?: 'on' | 'off';
   };
+  /** Prose explanation of when a human reviews this recipe's output —
+   *  extracted from the UC's review_policy. `mode` is the raw machine
+   *  token (always / never / on_low_confidence / …). */
+  reviewPolicy?: { mode?: string; context?: string };
+  /** What the agent persists across runs — from the UC's memory_policy. */
+  memoryPolicy?: { enabled?: boolean; context?: string };
+  /** Prose description of failure handling — from the UC. */
+  errorHandling?: string;
+  /** Events the recipe listens to and emits — from event_subscriptions. */
+  eventSubscriptions?: Array<{
+    eventType: string;
+    direction: 'listen' | 'emit';
+    description?: string;
+  }>;
+  /** Tunable inputs from the UC's input_schema (display-only; the adoption
+   *  wizard collects real values through `bindings`). */
+  inputParameters?: Array<{
+    name: string;
+    type?: string;
+    defaultValue?: string;
+    description?: string;
+  }>;
   /** LLM prompt template — `{{variable}}` placeholders for bindings. */
   promptTemplate: string;
 }

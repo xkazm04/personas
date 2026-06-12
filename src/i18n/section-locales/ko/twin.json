@@ -400,7 +400,15 @@
     "nextStep": "다음 단계",
     "scoreDelta": "+{pct}%",
     "checklistHeading": "트윈 완성하기",
-    "rosterFoundations": "{twins}개 트윈 · {identities}개 정체성 보유 · {brains}개 지식 베이스 보유"
+    "rosterFoundations": "{twins}개 트윈 · {identities}개 정체성 보유 · {brains}개 지식 베이스 보유",
+    "ready": "준비됨",
+    "satellites": "위성",
+    "rosterSpread": "명단 분포",
+    "twinsConfigured": "트윈 구성됨",
+    "avgReadiness": "평균 준비도",
+    "activeChannels": "활성 채널",
+    "memoriesApproved": "승인된 메모리",
+    "channelsInUse": "사용 중인 채널"
   },
   "variantTabs": {
     "prototype": "Prototype",

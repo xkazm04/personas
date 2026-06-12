@@ -114,5 +114,7 @@
   "trigger_on": "по:",
   "connecting_to_gitlab": "Подключение к GitLab...",
   "deploying_to_gitlab": "Развёртывание агента в GitLab...",
-  "pipeline_hash": "Пайплайн №"
+  "pipeline_hash": "Пайплайн №",
+  "notification_ask_athena": "Попросить Athena проанализировать",
+  "notification_athena_prompt": "Проанализируй это уведомление и связанную задачу: «{title}» — {body} (статус: {status}). Разберись, что произошло, в чём вероятная первопричина, и чётко скажи, нужны ли мои действия."
 }

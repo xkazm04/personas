@@ -229,7 +229,9 @@
     "teams_label": "团队",
     "groups_label": "分组",
     "cloud_label": "云",
-    "cloud_dev_pill": "dev"
+    "cloud_dev_pill": "dev",
+    "no_team": "无团队",
+    "whats_new_update": "已更新 — 查看新内容"
   },
   "execution_detail": {
     "copy": "复制",
@@ -323,5 +325,13 @@
   "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
   "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
   "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
-  "devtools_no_projects_action": "Add a Codebase connector"
+  "devtools_no_projects_action": "Add a Codebase connector",
+  "group_today": "今天",
+  "group_yesterday": "昨天",
+  "group_this_week": "本周",
+  "group_this_month": "本月",
+  "group_older": "更早",
+  "code_expand_block": "展开代码块",
+  "code_collapse_block": "折叠代码块",
+  "code_show_lines": "显示全部 {count} 行"
 }

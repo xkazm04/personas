@@ -141,7 +141,12 @@ async function loadAndVerify(): Promise<VerifiedEntry[]> {
     const id = (template as unknown as { id?: unknown })?.id;
     const safeId = typeof id === 'string' ? id : null;
 
-    if ((template as unknown as Record<string, unknown>).is_published === false) {
+    // Unpublished "draft" templates: in PRODUCTION they never load (leak-proof
+    // — absent from the gallery, trending, home, everywhere). In DEV builds they
+    // fall through to the same checksum + schema verification as published ones
+    // and are included, tagged via the entry's `is_published: false`, so the
+    // gallery's "Drafts" filter can surface them for testing.
+    if ((template as unknown as Record<string, unknown>).is_published === false && !import.meta.env.DEV) {
       skipped.push({ relPath, id: safeId, reason: 'unpublished' });
       continue;
     }

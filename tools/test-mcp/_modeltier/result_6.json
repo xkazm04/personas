@@ -1,0 +1,192 @@
+[
+  {
+    "id": "ab17ac27-093b-5eb8-89e1-48a617575788",
+    "tier": "sonnet",
+    "rationale": "Reconciling contradictory field updates needs judgment to resolve which source wins; review_mode=always."
+  },
+  {
+    "id": "ff3bdd83-f667-521c-a417-aef94d719359",
+    "tier": "sonnet",
+    "rationale": "Batch conflict resolution across fields requires moderate judgment per conflict pair; review_mode=always."
+  },
+  {
+    "id": "11b980d2-65b3-5fbb-8f34-52181f543d50",
+    "tier": "sonnet",
+    "rationale": "Presenting CRM fix suggestions for approval needs clarity and editorial framing; review_mode=always."
+  },
+  {
+    "id": "8751850c-6824-588f-ab7d-f2abe3c1b2eb",
+    "tier": "sonnet",
+    "rationale": "Triage with memorized category preferences adds adaptive judgment beyond simple bucketing; review_mode=always."
+  },
+  {
+    "id": "1e3b8fa3-8146-510a-8294-21593e156389",
+    "tier": "sonnet",
+    "rationale": "Recipient-specific draft composition with style-profile learning requires tone and editorial judgment."
+  },
+  {
+    "id": "f7b82e12-5dbe-5bfc-9c31-093905c1b55d",
+    "tier": "sonnet",
+    "rationale": "Three-route review logic (fast-track, dedup merge, low-confidence) needs multi-path judgment; review_mode=always."
+  },
+  {
+    "id": "bbace830-43f9-5583-b675-a71aa969127d",
+    "tier": "haiku",
+    "rationale": "Accept/reject triage against memory-trained weights is mechanical binary routing with no prose generation."
+  },
+  {
+    "id": "6a86eaad-5306-5e13-81a1-930cf03972e6",
+    "tier": "sonnet",
+    "rationale": "Post-mortem generation with 90-day pattern detection requires synthesis and structured narrative writing."
+  },
+  {
+    "id": "c30aea9f-1584-5db0-be3b-792abacba11f",
+    "tier": "sonnet",
+    "rationale": "Severity-tiered escalation with whitelist and memory requires moderate judgment on anomaly classification."
+  },
+  {
+    "id": "b24d85f3-4ab7-5a01-8f1c-0f28cfcdd894",
+    "tier": "haiku",
+    "rationale": "Rating capture (1-4) and memory-tuned calibration update is deterministic form processing, no synthesis."
+  },
+  {
+    "id": "d7d804cf-5ac3-55d5-8b43-a1ba0d74a1f1",
+    "tier": "haiku",
+    "rationale": "Accept/reject triage with memory-trained relevance scoring is mechanical binary routing per candidate."
+  },
+  {
+    "id": "0419e838-2093-5027-9c82-bd257713b31f",
+    "tier": "sonnet",
+    "rationale": "Feedback loop that iteratively sharpens proposal quality requires reflective judgment on prior reviews."
+  },
+  {
+    "id": "4d115a03-9ba9-556b-88fa-abe921f7f3e1",
+    "tier": "haiku",
+    "rationale": "Webhook-driven envelope processing with spreadsheet upsert is deterministic event routing and data sync."
+  },
+  {
+    "id": "b66bf5ee-c0b7-5ba9-9480-5ba9a96896ae",
+    "tier": "haiku",
+    "rationale": "Calendar-to-spreadsheet mirroring with create/update/cancel diff is mechanical data sync, no judgment."
+  },
+  {
+    "id": "d227eebc-94f4-5dfd-8c07-8cad40de7b75",
+    "tier": "haiku",
+    "rationale": "Schema introspection and change notification is deterministic structural comparison with no synthesis."
+  },
+  {
+    "id": "b80fc21f-1b22-5355-879e-2fed6c38173d",
+    "tier": "sonnet",
+    "rationale": "Cross-article contradiction detection over a full wiki requires multi-source synthesis; review_mode=always."
+  },
+  {
+    "id": "ba138faf-c65e-5fd5-84f9-ca94efbd8496",
+    "tier": "sonnet",
+    "rationale": "Lint across memories, vector KBs, and vaults with severity tagging needs moderate analytical judgment."
+  },
+  {
+    "id": "b8e9e785-0c7f-5fe3-ba7b-186969b2b984",
+    "tier": "sonnet",
+    "rationale": "Orphan detection plus taxonomy suggestions requires light editorial/structural reasoning beyond raw counts."
+  },
+  {
+    "id": "554bb37e-8b55-5ed4-9249-4def9cf33486",
+    "tier": "haiku",
+    "rationale": "Ambiguous feedback routed via emoji reactions is simple classification into a fixed set of buckets."
+  },
+  {
+    "id": "82e93705-0730-5712-9d4d-a36f0b7d85e9",
+    "tier": "sonnet",
+    "rationale": "Real-time triage into Linear issues with dedup requires moderate judgment on ticket equivalence."
+  },
+  {
+    "id": "38427a7d-6e94-529b-8493-b89a758553a1",
+    "tier": "sonnet",
+    "rationale": "Weekly trend digest with category counts and top-theme extraction needs light synthesis and prose."
+  },
+  {
+    "id": "23684b5c-aa7a-5fb2-a726-2fab9087128b",
+    "tier": "haiku",
+    "rationale": "Daily metrics summary with fixed fields (rates, counts, trend) is structured templated reporting."
+  },
+  {
+    "id": "9a558941-eb7f-51cd-b1d7-f4c4eda03381",
+    "tier": "sonnet",
+    "rationale": "Confidence-gated triage with knowledge-gap detection across three routes needs moderate routing judgment."
+  },
+  {
+    "id": "7fc6a438-d677-58c5-9d4b-6aac8036adb4",
+    "tier": "sonnet",
+    "rationale": "Acknowledge customer + gap outline + frequency tracking + escalation requires editorial and analytical work."
+  },
+  {
+    "id": "8fe557a7-eeca-5e0c-b057-744adda03356",
+    "tier": "haiku",
+    "rationale": "KB update after completed review and messaging shoutouts are deterministic close-the-loop actions."
+  },
+  {
+    "id": "cf5b451c-b5d5-5944-aaa4-9091241ea0a4",
+    "tier": "haiku",
+    "rationale": "Rotation-based assignment with email reminders follows explicit rules; no prose judgment needed."
+  },
+  {
+    "id": "0dafb086-19bf-5d0c-88ea-da782f5c9b00",
+    "tier": "haiku",
+    "rationale": "Staged reminder escalation (gentle→urgent→manager) is threshold-driven dispatch with templated messages."
+  },
+  {
+    "id": "f8ff431a-12c9-5f46-920c-7737a6372198",
+    "tier": "sonnet",
+    "rationale": "Evidence-based priority triage with KB ticket creation requires judgment on severity and evidence weight."
+  },
+  {
+    "id": "ca297774-7bfd-592b-b71d-0bac7bcc77ec",
+    "tier": "haiku",
+    "rationale": "Three-stage SLA escalation by time threshold is deterministic rule-based dispatch with state updates."
+  },
+  {
+    "id": "70e00cca-ff11-55b0-bb95-b86ab0e8dd4d",
+    "tier": "sonnet",
+    "rationale": "HTML digest with trend analysis and recommendations for support lead needs synthesis and prose writing."
+  },
+  {
+    "id": "410bed86-bf86-5ef8-8c98-23ff437f33d2",
+    "tier": "sonnet",
+    "rationale": "Pattern enrichment on SLA breaches plus tier-based severity needs moderate analytical reasoning."
+  },
+  {
+    "id": "0e18c6ea-e50c-5f10-8c33-8c566fa38b7b",
+    "tier": "sonnet",
+    "rationale": "Auto-learning from solved tickets to grow KB requires extracting and synthesizing resolution knowledge."
+  },
+  {
+    "id": "43d1c9b8-25be-5abb-8b8e-55faeb9aedc1",
+    "tier": "haiku",
+    "rationale": "Single warning per threshold crossing with time-remaining context is deterministic threshold alerting."
+  },
+  {
+    "id": "5154b28a-cd99-562b-9ef1-d2a8e52b7ce5",
+    "tier": "sonnet",
+    "rationale": "Sentiment + urgency triage with KB-backed auto-suggestion needs multi-signal moderate judgment."
+  },
+  {
+    "id": "e5bf4917-2ab4-5e5d-b184-41f8ef4461c6",
+    "tier": "sonnet",
+    "rationale": "Consolidated personal briefing across research + goals + actions requires synthesis and prioritization."
+  },
+  {
+    "id": "149395d5-a987-55b6-a6ce-c953f3ed11a1",
+    "tier": "sonnet",
+    "rationale": "Goal retrospective + idea triage + decision surfacing requires reflective multi-domain judgment; review_mode=always."
+  },
+  {
+    "id": "42cd9785-71fd-5172-88f7-6d9ea100b5f6",
+    "tier": "haiku",
+    "rationale": "Morning meeting-day overview email is a fixed-format digest from calendar data, fully templated."
+  },
+  {
+    "id": "01c9ef1e-e182-5507-9071-a571f1aea0bc",
+    "tier": "haiku",
+    "rationale": "Nightly digest of the day's captures is a straightforward aggregation and format pass, no synthesis."
+  }
+]

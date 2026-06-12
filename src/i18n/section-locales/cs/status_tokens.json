@@ -100,5 +100,33 @@
     "low": "low",
     "medium": "medium",
     "high": "high"
+  },
+  "verdict": {
+    "production": "Produkce",
+    "promising": "Slibné",
+    "not_ready": "Není připraveno",
+    "broken": "Nefunkční"
+  },
+  "deployment": {
+    "active": "Aktivní",
+    "paused": "Pozastaveno",
+    "failed": "Selhalo",
+    "unknown": "Neznámé"
+  },
+  "delivery": {
+    "delivered": "Doručeno",
+    "failed": "Selhalo",
+    "pending": "Čeká",
+    "queued": "Ve frontě"
+  },
+  "rotation": {
+    "anomaly": "Anomálie",
+    "paused": "Pozastaveno",
+    "disabled": "Zakázáno",
+    "perm_errors": "Trvalé chyby",
+    "degrading": "Degraduje",
+    "backoff": "Backoff",
+    "fresh": "Čerstvý",
+    "active": "Aktivní"
   }
 }

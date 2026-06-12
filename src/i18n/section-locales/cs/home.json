@@ -93,6 +93,10 @@
     "plugins": {
       "label": "Pluginy",
       "description": "Rozšiřte své agenty o pluginy třetích stran a vlastní rozšíření"
+    },
+    "teams": {
+      "label": "Týmy",
+      "description": "Spojte více agentů do týmu, který spolupracuje na vícekrokových pracovních postupech"
     }
   },
   "learning": {
@@ -104,7 +108,27 @@
     "restart": "Restartovat",
     "start_tour": "Spustit prohlídku",
     "steps_count": "{count} kroků",
-    "tour_steps_label": "What you'll learn"
+    "tour_steps_label": "What you'll learn",
+    "power_moves": "Pokročilé tahy",
+    "moves_used": "{used}/{total} použito",
+    "try_it": "Vyzkoušet",
+    "used_badge": "Použito",
+    "group_save_time": "Ušetřit čas",
+    "group_prevent_failures": "Předcházet selháním",
+    "group_level_up": "Vylepšit agenty",
+    "group_orchestrate": "Orchestrovat",
+    "pm_monitor_triage_title": "Třídění celé flotily z panelu titulku",
+    "pm_schedule_delay_title": "Přeskočit nebo odložit naplánovaný běh",
+    "pm_bulk_rerun_title": "Hromadně opakovat neúspěšná spuštění",
+    "pm_dead_letter_title": "Zachránit události z fronty nedoručitelných zpráv",
+    "pm_annotate_golden_title": "Označit hvězdičkou zlaté běhy, tagovat regrese",
+    "pm_credential_health_title": "Nechat AI opravit selhávající přihlašovací údaje",
+    "pm_lab_measure_title": "Měřit prompty napříč modely",
+    "pm_prompt_rollback_title": "Vrátit špatný prompt jedním kliknutím",
+    "pm_director_coaching_title": "Získat koučink portfolia od Directora",
+    "pm_event_chain_title": "Řetězit agenty pomocí posluchačů událostí",
+    "pm_live_stream_title": "Sledovat kaskádu řetězů v reálném čase",
+    "pm_athena_fleet_title": "Požádat Athenu o analýzu vaší flotily"
   },
   "setup_stepper": {
     "your_profile": "Váš profil",
@@ -132,5 +156,31 @@
     "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
     "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
   },
-  "commander": "Commander"
+  "commander": "Commander",
+  "resume": {
+    "failure": "Nepřečtená chyba v {personaName} — prošetřit",
+    "tour": "Pokračovat v {tourTitle} ({stepIndex}/{totalSteps}) — {stepTitle}",
+    "edit": "Pokračovat v úpravách {personaName}"
+  },
+  "nav_status": {
+    "incidents": "{count} otevřený incident",
+    "incidents_other": "{count} otevřených incidentů",
+    "messages": "{count} nepřečtená zpráva",
+    "messages_other": "{count} nepřečtených zpráv",
+    "reviews": "{count} čekající přezkoumání",
+    "reviews_other": "{count} čekajících přezkoumání",
+    "teams": "{count} tým",
+    "teams_other": "{count} týmů",
+    "agents_active": "{count} agent aktivní za posledních 24 h",
+    "agents_active_other": "{count} agentů aktivních za posledních 24 h",
+    "events_today": "{count} událost za posledních 24 h",
+    "events_today_other": "{count} událostí za posledních 24 h",
+    "connections_external": "{count} externí připojení",
+    "connections_external_other": "{count} externích připojení",
+    "connections_builtin": "{count} vestavěný konektor",
+    "connections_builtin_other": "{count} vestavěných konektorů",
+    "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
+    "trend_down": "dolů o {pct} % oproti předchozím 24 h",
+    "trend_flat": "žádná změna oproti předchozím 24 h"
+  }
 }

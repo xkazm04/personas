@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useSystemStore } from '@/stores/systemStore';
 
@@ -10,7 +9,14 @@ import { useSystemStore } from '@/stores/systemStore';
  *   - `←` (ArrowLeft) → go back one page, mirroring the titlebar Back button
  *     (`useSystemStore().navigateBack` — closes an open header overlay, runs a
  *     registered back-interceptor, or pops the sidebar nav history).
+ *   - `S` / `C` / `R` / `M` / `N` → toggle the title-bar dock surfaces. The
+ *     dock (`TitleBarDock`) owns those handlers and renders a key hint under
+ *     each capsule; this component only owns the mode flag itself.
  *   - `;` again, or `Esc`, exits the mode.
+ *
+ * The active flag lives in the system store (`keyboardNavActive`) so hint
+ * surfaces like the dock can render from it; this component remains the only
+ * writer apart from the dock's exit-after-search.
  *
  * A subtle non-linear edge glow (see `.kbd-nav-glow` in globals.css) frames the
  * viewport while active so the changed control mode is visible at a glance.
@@ -19,8 +25,8 @@ import { useSystemStore } from '@/stores/systemStore';
  * sync. The toggle never fires while the user is typing into a field.
  */
 
-/** Don't hijack `;` / arrows while the user is typing into a field. */
-function isTypingTarget(target: EventTarget | null): boolean {
+/** Don't hijack `;` / arrows / hint keys while the user is typing into a field. */
+export function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
   const tag = el.tagName;
@@ -28,7 +34,8 @@ function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 export default function KeyboardNavMode() {
-  const [active, setActive] = useState(false);
+  const active = useSystemStore((s) => s.keyboardNavActive);
+  const setActive = useSystemStore((s) => s.setKeyboardNavActive);
 
   useAppKeyboard(
     (e) => {
@@ -36,7 +43,7 @@ export default function KeyboardNavMode() {
       if (e.key === ';' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         if (isTypingTarget(e.target)) return false;
         e.preventDefault();
-        setActive((prev) => !prev);
+        setActive(!active);
         return true;
       }
 

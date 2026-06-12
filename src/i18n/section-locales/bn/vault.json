@@ -687,7 +687,13 @@
     "scope_section_title": "Scope",
     "scope_edit": "Edit scope",
     "scope_broad": "Broad — all resources",
-    "scope_required_missing": "Required pick missing"
+    "scope_required_missing": "Required pick missing",
+    "refresh": "রিফ্রেশ",
+    "tool_count_one": "{count}টি টুল",
+    "tool_count_other": "{count}টি টুল",
+    "tab_documents": "ডকুমেন্ট",
+    "tab_search": "অনুসন্ধান",
+    "tab_settings": "সেটিংস"
   },
   "manager": {
     "title": "ক্রেডেনশিয়াল",
@@ -845,7 +851,10 @@
     "enabling": "সক্রিয় হচ্ছে...",
     "enable_rotation": "রোটেশন সক্রিয় করুন",
     "enable_failed": "রোটেশন সক্রিয় ব্যর্থ: {error}",
-    "last_rotated": "শেষ ঘোরানো হয়েছে {time}"
+    "last_rotated": "শেষ ঘোরানো হয়েছে {time}",
+    "ring_aria_label": "{countdown}-এ রোটেশন",
+    "history_empty_title": "এখনও কোনো রোটেশন ইতিহাস নেই",
+    "history_empty_subtitle": "এই ক্রেডেনশিয়াল রোটেট হলে রোটেশন ইভেন্টগুলো এখানে দেখাবে।"
   },
   "event_config": {
     "event_triggers": "ইভেন্ট ট্রিগার",
@@ -950,11 +959,24 @@
     "catalog_description": "Slack, GitHub, বা OpenAI-এর মতো পরিচিত সেবা বেছে নিন। পূর্ব-কনফিগার করা ফিল্ড ও হেলথচেক।",
     "ai_heading": "AI-ডিজাইন করা ক্রেডেনশিয়াল",
     "ai_description": "যেকোনো সেবা বর্ণনা করুন এবং AI আপনার জন্য ফিল্ড, auth টাইপ এবং হেলথচেক কনফিগার করবে।",
-    "works_with_any": "যেকোনো API-এর সাথে কাজ করে"
+    "works_with_any": "যেকোনো API-এর সাথে কাজ করে",
+    "recommended": "প্রস্তাবিত"
   },
   "credential_list": {
     "no_match": "কোনো ক্রেডেনশিয়াল মিলছে না",
-    "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন"
+    "no_match_hint": "আপনার ফিল্টার বা সার্চ টার্ম পরিবর্তন করুন",
+    "col_name": "নাম",
+    "col_status": "স্ট্যাটাস",
+    "col_type": "ধরন",
+    "col_category": "বিভাগ",
+    "col_health": "স্বাস্থ্য",
+    "col_last_used": "সর্বশেষ ব্যবহৃত",
+    "col_created": "তৈরি",
+    "filter_all": "সব",
+    "filter_all_health": "সব স্বাস্থ্য",
+    "health_healthy": "সুস্থ",
+    "health_failing": "ব্যর্থ",
+    "health_untested": "পরীক্ষিত নয়"
   },
   "wizard_detect": {
     "no_services": "\\\"{search}\\\" এর সাথে কোনো সেবা মিলছে না",

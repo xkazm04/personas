@@ -114,5 +114,7 @@
   "trigger_on": "on:",
   "connecting_to_gitlab": "Připojování ke GitLabu...",
   "deploying_to_gitlab": "Nasazování persony do GitLabu...",
-  "pipeline_hash": "Pipeline #"
+  "pipeline_hash": "Pipeline #",
+  "notification_ask_athena": "Požádat Athenu o analýzu",
+  "notification_athena_prompt": "Prosím analyzuj toto oznámení a podkladový problém: \"{title}\" — {body} (stav: {status}). Prozkoumej, co se stalo, pravděpodobnou příčinu, a řekni mi jasně, zda je potřeba moje akce."
 }

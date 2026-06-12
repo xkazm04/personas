@@ -105,5 +105,12 @@
   "sparkline_aria": "실행 기록 스파크라인, 최근 {days}일",
   "sparkline_window": "최근 {days}일",
   "sparkline_no_data": "기간 내 실행 없음",
-  "sparkline_failure_rate": "{total}회 실행 · {rate}% 실패"
+  "sparkline_failure_rate": "{total}회 실행 · {rate}% 실패",
+  "run_status_incomplete": "미완료",
+  "last24h_title": "최근 24시간",
+  "last24h_empty": "최근 24시간 내 예약된 실행이 없습니다.",
+  "last24h_failed_count": "{count}개 실패",
+  "last24h_show_all": "전체 보기 ({count})",
+  "last24h_show_less": "간략히 보기",
+  "last24h_retry_at": "{time}에 자동 재시도"
 }

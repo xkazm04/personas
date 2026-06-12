@@ -176,15 +176,8 @@ Raw memories:
         )));
     }
 
-    // 3. Build CLI args (mirrors review_memories_with_cli).
-    let (command, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
+    // 3. Build CLI args (shared resolver — verified absolute claude.cmd).
+    let (command, mut args) = crate::engine::cli_process::claude_cli_invocation();
     args.extend(
         [
             "-p",
@@ -213,6 +206,10 @@ Raw memories:
 
     cmd.env_remove("CLAUDECODE");
     cmd.env_remove("CLAUDE_CODE");
+    // Evaluation runs on the Claude monthly subscription only — never the API.
+    for key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
+        cmd.env_remove(key);
+    }
 
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
