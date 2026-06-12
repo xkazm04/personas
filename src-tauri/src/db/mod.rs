@@ -911,6 +911,23 @@ CREATE INDEX IF NOT EXISTS idx_companion_turn_created
     ON companion_turn(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_companion_turn_origin
     ON companion_turn(origin, created_at DESC);
+
+-- Phase D1 (Athena value expansion / direction 3): learned per-persona cost +
+-- duration baselines so execution triage flags deviation-from-own-norm instead
+-- of global constants. Computed from persona_executions (operational DB),
+-- cached here, refreshed lazily (24h) per companion::proactive::baselines.
+-- declared_* are optional user-set expected bands that override the learned p95.
+CREATE TABLE IF NOT EXISTS companion_persona_baseline (
+    persona_id            TEXT PRIMARY KEY,
+    p50_cost              REAL,
+    p95_cost              REAL,
+    p50_duration_ms       INTEGER,
+    p95_duration_ms       INTEGER,
+    sample_n              INTEGER NOT NULL DEFAULT 0,
+    declared_cost_usd     REAL,
+    declared_duration_ms  INTEGER,
+    computed_at           TEXT NOT NULL DEFAULT (datetime('now'))
+);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

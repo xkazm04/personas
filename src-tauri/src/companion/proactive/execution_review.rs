@@ -34,6 +34,7 @@
 use std::sync::LazyLock;
 use std::time::Duration;
 
+use super::baselines;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -142,6 +143,12 @@ struct ReviewCandidate {
     output_tail: Option<String>,
     created_at: String,
     reason: &'static str,
+    /// The persona's learned expected cost band (p95 / declared), when it has
+    /// enough history — lets the digest say "3.2× this persona's p95". `None`
+    /// when the persona is on the global fallback.
+    baseline_cost_band: Option<f64>,
+    /// Learned expected duration band (ms), same shape.
+    baseline_duration_band: Option<i64>,
 }
 
 /// Result of one cursor-window scan.
@@ -157,54 +164,88 @@ struct CandidateScan {
     window_saturated: bool,
 }
 
-/// Scan for qualifying executions after the cursor.
-fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, AppError> {
-    let conn = sys_db.get()?;
+/// Scan for qualifying executions after the cursor. Flag thresholds are
+/// per-persona-adaptive (see `baselines`): a run flags when it deviates from
+/// *its persona's* learned cost/duration norm, falling back to the global
+/// constants for personas without enough history.
+fn collect_candidates(
+    sys_db: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    cursor: &str,
+) -> Result<CandidateScan, AppError> {
     // Pull every terminal execution after the cursor (newest first) so we
     // can both pick triage candidates AND learn the newest timestamp to
-    // advance the cursor to.
-    let mut stmt = conn.prepare(
-        "SELECT e.id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,
-                e.duration_ms, COALESCE(e.cost_usd, 0.0), e.error_message,
-                e.output_data, e.created_at
-         FROM persona_executions e
-         LEFT JOIN personas p ON p.id = e.persona_id
-         WHERE e.created_at > ?1
-           AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
-         ORDER BY e.created_at DESC
-         LIMIT ?2",
-    )?;
-    let rows = stmt
-        .query_map(rusqlite::params![cursor, SCAN_LIMIT as i64], |row| {
-            let status: String = row.get(2)?;
-            let duration_ms: Option<i64> = row.get(3)?;
-            let cost_usd: f64 = row.get(4)?;
-            let error_message: Option<String> = row.get(5)?;
-            let output_data: Option<String> = row.get(6)?;
-            Ok((
-                row.get::<_, String>(0)?,   // id
-                row.get::<_, String>(1)?,   // persona_name
-                status,
-                duration_ms,
-                cost_usd,
-                error_message,
-                output_data,
-                row.get::<_, String>(7)?,   // created_at
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+    // advance the cursor to. Scope the borrow so the connection is released
+    // before the baseline pass opens its own.
+    let rows: Vec<(
+        String,
+        String,
+        String,
+        String,
+        Option<i64>,
+        f64,
+        Option<String>,
+        Option<String>,
+        String,
+    )> = {
+        let conn = sys_db.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT e.id, e.persona_id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,
+                    e.duration_ms, COALESCE(e.cost_usd, 0.0), e.error_message,
+                    e.output_data, e.created_at
+             FROM persona_executions e
+             LEFT JOIN personas p ON p.id = e.persona_id
+             WHERE e.created_at > ?1
+               AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
+             ORDER BY e.created_at DESC
+             LIMIT ?2",
+        )?;
+        let collected = stmt
+            .query_map(rusqlite::params![cursor, SCAN_LIMIT as i64], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,         // id
+                    row.get::<_, String>(1)?,         // persona_id
+                    row.get::<_, String>(2)?,         // persona_name
+                    row.get::<_, String>(3)?,         // status
+                    row.get::<_, Option<i64>>(4)?,    // duration_ms
+                    row.get::<_, f64>(5)?,            // cost_usd
+                    row.get::<_, Option<String>>(6)?, // error_message
+                    row.get::<_, Option<String>>(7)?, // output_data
+                    row.get::<_, String>(8)?,         // created_at
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        collected
+    };
 
-    let newest = rows.first().map(|r| r.7.clone());
+    let newest = rows.first().map(|r| r.8.clone());
     let window_saturated = rows.len() >= SCAN_LIMIT;
+
+    // Lazily refresh + load each persona's baseline so flagging uses its own
+    // norm. Best-effort: a persona without a baseline keeps the global
+    // constants (refresh_stale / load both degrade silently).
+    let persona_ids: Vec<String> = {
+        let mut seen = std::collections::HashSet::new();
+        rows.iter()
+            .filter(|r| seen.insert(r.1.clone()))
+            .map(|r| r.1.clone())
+            .collect()
+    };
+    baselines::refresh_stale(user_db, sys_db, &persona_ids);
+    let baseline_map = baselines::load(user_db, &persona_ids);
 
     let mut candidates = Vec::new();
     let mut qualifying_overflow = 0usize;
-    for (id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
+    for (id, persona_id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
         rows
     {
+        let b = baseline_map.get(&persona_id);
+        let expensive_threshold = baselines::PersonaBaseline::expensive_threshold(b, EXPENSIVE_USD);
+        let slow_threshold = baselines::PersonaBaseline::slow_threshold(b, SLOW_MS);
+
         let failed = matches!(status.as_str(), "failed" | "incomplete");
-        let slow = duration_ms.is_some_and(|d| d >= SLOW_MS);
-        let expensive = cost_usd >= EXPENSIVE_USD;
+        let expensive = cost_usd >= expensive_threshold;
+        let slow = duration_ms.is_some_and(|d| d >= slow_threshold);
         let reason = if failed {
             "failed"
         } else if expensive {
@@ -212,7 +253,7 @@ fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, Ap
         } else if slow {
             "slow"
         } else {
-            continue; // clean, cheap, fast — nothing to triage
+            continue; // within this persona's norms — nothing to triage
         };
         if candidates.len() >= MAX_BATCH_CANDIDATES {
             qualifying_overflow += 1; // counted, surfaced in the digest
@@ -228,6 +269,8 @@ fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, Ap
             output_tail: output_data.map(|s| truncate_tail(&s, 600)),
             created_at,
             reason,
+            baseline_cost_band: b.and_then(|x| x.cost_band()),
+            baseline_duration_band: b.and_then(|x| x.duration_band()),
         });
     }
     Ok(CandidateScan {
@@ -336,6 +379,33 @@ fn build_triage_prompt(groups: &[CandidateGroup], overflow: usize, saturated: bo
             cost = e.cost_usd,
             created = e.created_at,
         ));
+        // Per-persona baseline context (D1) — makes "expensive"/"slow" concrete:
+        // the flag is relative to THIS persona's learned norm, not a global cutoff.
+        match e.reason {
+            "expensive" => {
+                if let Some(band) = e.baseline_cost_band {
+                    if band > 0.0 {
+                        listing.push_str(&format!(
+                            "   Baseline: {:.1}× this persona's typical p95 of ${:.4}\n",
+                            e.cost_usd / band,
+                            band,
+                        ));
+                    }
+                }
+            }
+            "slow" => {
+                if let (Some(band), Some(d)) = (e.baseline_duration_band, e.duration_ms) {
+                    if band > 0 {
+                        listing.push_str(&format!(
+                            "   Baseline: {:.1}× this persona's typical p95 of {:.1}s\n",
+                            d as f64 / band as f64,
+                            band as f64 / 1000.0,
+                        ));
+                    }
+                }
+            }
+            _ => {}
+        }
         if let Some(err) = &e.error_tail {
             listing.push_str(&format!("   Error (tail): {err}\n"));
         } else if let Some(out) = &e.output_tail {
@@ -530,7 +600,7 @@ pub async fn review_recent_executions(
         advance_cursor(sys_db, &cursor);
     }
 
-    let scan = collect_candidates(sys_db, &cursor)?;
+    let scan = collect_candidates(sys_db, user_db, &cursor)?;
     // Wake window (docs/plans/athena-wake-window.md): gate BEFORE the cursor
     // advance so a skipped tick leaves the backlog accumulating. Exec triage
     // is observability — no priority bypass.
@@ -709,6 +779,8 @@ mod tests {
             output_tail: None,
             created_at: "2026-06-10T12:00:00Z".to_string(),
             reason,
+            baseline_cost_band: None,
+            baseline_duration_band: None,
         }
     }
 

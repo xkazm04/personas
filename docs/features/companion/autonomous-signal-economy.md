@@ -107,8 +107,16 @@ The Messages counterpart of Athena's human-review resolution
   hand them to the user one at a time.
 - **Per-source attention budgets** — a daily cap per trigger kind, so one
   noisy leg can't crowd out the others' cards.
-- **Severity registry** — let personas declare expected cost/duration bands so
-  "expensive/slow" flags are per-persona adaptive instead of global constants.
+- ~~**Severity registry**~~ — **SHIPPED (D1, direction 3).** Execution triage now
+  flags deviation from each persona's *own* learned norm, not the global
+  `EXPENSIVE_USD`/`SLOW_MS` constants. `proactive/baselines.rs` computes p50/p95
+  of cost + duration per persona over a trailing 30 days (cap 500 rows, `n ≥ 8`
+  or it keeps the global fallback), caches them in `companion_persona_baseline`
+  (lazy 24h refresh, only for personas in the current scan batch), and flags
+  `expensive`/`slow` at `max(floor, 1.5 × p95)`. `declared_cost_usd` /
+  `declared_duration_ms` columns let the user's word override the learned p95
+  (no UI yet — settable via the DB). Digest exemplar lines now read
+  "3.2× this persona's typical p95 of $0.41" so the verdict is concrete.
 - **Daily rollup** — one end-of-day digest summarizing everything that was
   dropped, for users who want the full audit without the live noise.
 - **Exec-leg retry cursor** — a two-phase cursor (scanned vs triaged) so a CLI

@@ -20,6 +20,7 @@
 //! where to emit). That makes the scheduler swappable — manual via a
 //! Tauri command in v1, tokio-task via `companion_init` in v1.5.
 
+pub mod baselines;
 pub mod budget;
 pub mod execution_review;
 pub mod fleet_triggers;
