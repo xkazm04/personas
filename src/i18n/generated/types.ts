@@ -6507,6 +6507,27 @@ export type Translations = {
       leg_browser_test: string;
       leg_execution_review: string;
       leg_other: string;
+      health_title: string;
+      health_hint: string;
+      health_no_activity: string;
+      triage_title: string;
+      triage_passes: string;
+      triage_drop: string;
+      triage_digest: string;
+      triage_attention: string;
+      triage_deep_dive: string;
+      triage_parse_failures: string;
+      proactive_title: string;
+      proactive_delivered: string;
+      proactive_engaged: string;
+      proactive_dismissed: string;
+      proactive_expired: string;
+      proactive_engaged_rate: string;
+      proactive_budget: string;
+      jobs_title: string;
+      jobs_completed: string;
+      jobs_failed: string;
+      errors: string;
     };
     activity: {
       title: string;

@@ -17,6 +17,7 @@ import { HealingIssuesPanel } from './HealingIssuesPanel';
 import { AiHealingStreamOverlay } from './AiHealingStreamOverlay';
 import { AlertRulesPanel } from './AlertRulesPanel';
 import { AlertHistoryPanel } from './AlertHistoryPanel';
+import { AthenaHealthPanel } from './AthenaHealthPanel';
 import { useObservabilityData } from '../libs/useObservabilityData';
 import { useHealingPanelState } from '../libs/useHealingPanelState';
 import { useAnomalyDrilldown } from '../libs/useAnomalyDrilldown';
@@ -292,6 +293,9 @@ export default function ObservabilityDashboard() {
         timelineLoading={d.healingTimelineLoading}
         selectedPersonaId={d.selectedPersonaId}
       />
+
+      {/* Athena operational health — triage funnel, proactive economy, jobs */}
+      <AthenaHealthPanel />
       </div>
 
       </ContentBody>

@@ -112,7 +112,7 @@ Overview has three event-related tiers:
 
 - `sub_realtime`: in-memory/live event bus, answering "what is happening now?"
 - `sub_events`: persisted `PersonaEvent` rows, answering "what happened and can I search it?"
-- `sub_observability`: traces, healing, alerts, and metrics, answering "why did it happen and how do I fix it?"
+- `sub_observability`: traces, healing, alerts, and metrics, answering "why did it happen and how do I fix it?" Carries the **Athena health** panel (`AthenaHealthPanel.tsx`, fed by `companion_get_health` via `useAthenaHealth.ts`) — Athena's operational quality rather than spend: the triage funnel (drop / digest / attention / deep-dive + parse failures — is the signal economy filtering?), the proactive economy (delivered / engaged / dismissed + engaged-rate + budget), and job/turn-error health (direction 6 auditability). Alerting on Athena-specific metric keys is a deferred follow-up.
 
 New panels should pick the narrowest existing submodule. Do not render trace trees from realtime events; use the trace engine and `sub_observability` helpers.
 
