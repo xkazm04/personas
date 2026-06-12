@@ -2506,6 +2506,8 @@ pub fn run() {
             commands::companion::consolidate::companion_unpin_widget_from_cockpit,
             commands::companion::consolidate::companion_enqueue_curation_run,
             commands::companion::consolidate::companion_discard_consolidation_run,
+            commands::companion::observability::companion_get_usage_dashboard,
+            commands::companion::observability::companion_get_health,
             commands::companion::proactive::companion_evaluate_proactive_now,
             commands::companion::proactive::companion_list_proactive_messages,
             commands::companion::proactive::companion_engage_proactive,

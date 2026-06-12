@@ -98,15 +98,21 @@ pub struct TurnRecord {
     pub outcome_json: Option<String>,
 }
 
-/// Record a turn. Best-effort: an insert failure logs and is swallowed so the
-/// ledger can never break a real turn.
-pub fn record_turn(pool: &UserDbPool, rec: &TurnRecord) {
-    if let Err(e) = try_record_turn(pool, rec) {
-        tracing::warn!(error = %e, origin = %rec.origin, "companion: turn-ledger insert failed");
+/// Record a turn and return its generated id. Best-effort: an insert failure
+/// logs and returns `None` so the ledger can never break a real turn. The id
+/// lets the headless triage legs attach verdict counts via [`update_outcome`]
+/// once they've parsed the decision.
+pub fn record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Option<String> {
+    match try_record_turn(pool, rec) {
+        Ok(id) => Some(id),
+        Err(e) => {
+            tracing::warn!(error = %e, origin = %rec.origin, "companion: turn-ledger insert failed");
+            None
+        }
     }
 }
 
-fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<(), AppError> {
+fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<String, AppError> {
     let id = format!("turn_{}", short_uuid());
     let u = rec.usage.clone().unwrap_or_default();
     let conn = pool.get()?;
@@ -134,7 +140,25 @@ fn try_record_turn(pool: &UserDbPool, rec: &TurnRecord) -> Result<(), AppError> 
             rec.outcome_json,
         ],
     )?;
-    Ok(())
+    Ok(id)
+}
+
+/// Best-effort: set the `outcome_json` on an existing ledger row. The headless
+/// triage legs call this after parsing their decision so the health funnel
+/// (A4) can report the drop / digest / attention / deep-dive distribution. A
+/// no-op if the original insert failed (`turn_id` won't exist).
+pub fn update_outcome(pool: &UserDbPool, turn_id: &str, outcome_json: &str) {
+    let res = (|| -> Result<(), AppError> {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE companion_turn SET outcome_json = ?1 WHERE id = ?2",
+            params![outcome_json, turn_id],
+        )?;
+        Ok(())
+    })();
+    if let Err(e) = res {
+        tracing::warn!(error = %e, turn_id, "companion: turn-ledger outcome update failed");
+    }
 }
 
 /// Delete ledger rows older than the retention window. Usage history earns a
@@ -262,7 +286,7 @@ mod tests {
     #[test]
     fn records_and_prunes_against_in_memory_db() {
         let pool = test_pool();
-        record_turn(
+        let id = record_turn(
             &pool,
             &TurnRecord {
                 origin: "chat".into(),
@@ -278,7 +302,8 @@ mod tests {
                 assistant_episode_id: Some("ep_xyz".into()),
                 outcome_json: Some(r#"{"approvals":1}"#.into()),
             },
-        );
+        )
+        .expect("insert should return an id");
         let conn = pool.get().unwrap();
         let (origin, cost, voice): (String, f64, i64) = conn
             .query_row(
@@ -290,6 +315,17 @@ mod tests {
         assert_eq!(origin, "chat");
         assert!((cost - 0.42).abs() < 1e-9);
         assert_eq!(voice, 1);
+
+        // update_outcome attaches verdict counts to the existing row.
+        update_outcome(&pool, &id, r#"{"groups":3,"drop":2}"#);
+        let outcome: String = conn
+            .query_row(
+                "SELECT outcome_json FROM companion_turn WHERE id = ?1",
+                [&id],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(outcome, r#"{"groups":3,"drop":2}"#);
 
         // Nothing older than the retention window yet → prune is a no-op.
         assert_eq!(prune_old_turns(&pool).unwrap(), 0);

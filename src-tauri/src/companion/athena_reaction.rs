@@ -403,7 +403,7 @@ async fn cli_decide(
     prompt_text: String,
     user_db: &crate::db::UserDbPool,
 ) -> Result<Option<AthenaChannelDecision>, AppError> {
-    let blob = cli_text_tracked(prompt_text, user_db, "reaction").await?;
+    let (blob, _turn_id) = cli_text_tracked(prompt_text, user_db, "reaction").await?;
     Ok(parse_athena_decision(&blob))
 }
 
@@ -422,14 +422,17 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
 
 /// Like [`cli_text`], but records a `companion_turn` ledger row
 /// (origin=`headless`, labeled with `trigger_kind`) for Athena's own usage
-/// accounting. Best-effort: a ledger insert failure never fails the decision.
+/// accounting. Returns `(display_text, turn_id)` — the triage legs use the id
+/// to attach their verdict counts via `turn_ledger::update_outcome` after they
+/// parse the decision. Best-effort: a ledger insert failure never fails the
+/// decision (the id is then `None`).
 pub(crate) async fn cli_text_tracked(
     prompt_text: String,
     user_db: &crate::db::UserDbPool,
     trigger_kind: &'static str,
-) -> Result<String, AppError> {
+) -> Result<(String, Option<String>), AppError> {
     let (text, usage) = cli_text_inner(prompt_text).await?;
-    crate::companion::turn_ledger::record_turn(
+    let turn_id = crate::companion::turn_ledger::record_turn(
         user_db,
         &crate::companion::turn_ledger::TurnRecord {
             origin: "headless".to_string(),
@@ -439,7 +442,7 @@ pub(crate) async fn cli_text_tracked(
             ..Default::default()
         },
     );
-    Ok(text)
+    Ok((text, turn_id))
 }
 
 /// Spawn + drain implementation shared by both wrappers. Returns the display
@@ -665,7 +668,7 @@ pub async fn run_athena_reaction_batch(
     }
     let prompt = build_batch_prompt(pool, &signals);
     let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let blob = cli_text_tracked(prompt, &state.user_db, "reaction_batch").await?;
+    let (blob, _turn_id) = cli_text_tracked(prompt, &state.user_db, "reaction_batch").await?;
     let Some(batch) = parse_athena_batch(&blob) else {
         tracing::warn!(
             signals = signals.len(),
@@ -1068,7 +1071,7 @@ pub async fn run_athena_review_resolution(
     let history = recent_channel_history(pool, &candidate.team_id);
     let prompt = build_review_resolution_prompt(&candidate, &history);
     let state = app.state::<std::sync::Arc<crate::AppState>>();
-    let blob = cli_text_tracked(prompt, &state.user_db, "review_resolution").await?;
+    let (blob, _turn_id) = cli_text_tracked(prompt, &state.user_db, "review_resolution").await?;
     let Some(decision) = parse_athena_review(&blob) else {
         tracing::warn!(team = %candidate.team_name, assignment = %candidate.assignment_id,
             "athena_review_resolution: no decision parsed");

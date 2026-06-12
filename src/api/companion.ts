@@ -1,5 +1,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
+import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
+import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -1141,6 +1143,25 @@ export interface CompanionDashboardSpec {
 
 export async function companionGetDashboard(): Promise<CompanionDashboardSpec | null> {
   return invoke<CompanionDashboardSpec | null>('companion_get_dashboard');
+}
+
+// ── Athena auditability — usage + health (direction 6, A2) ───────────
+
+/**
+ * Athena's own usage rollup over the last `days` — cost / turns / tokens by
+ * day and by action type. Powers the Overview → Activity "Athena lane" (A3).
+ */
+export async function companionGetUsageDashboard(days: number): Promise<AthenaUsageDashboard> {
+  return invoke<AthenaUsageDashboard>('companion_get_usage_dashboard', { days });
+}
+
+/**
+ * Athena's operational-health snapshot over the last `days` — triage funnel,
+ * proactive economy, job health. Powers the Overview → Observability "Athena
+ * health" panel (A4).
+ */
+export async function companionGetHealth(days: number): Promise<AthenaHealth> {
+  return invoke<AthenaHealth>('companion_get_health', { days });
 }
 
 // ── Cockpit (compose_cockpit op) ─────────────────────────────────────

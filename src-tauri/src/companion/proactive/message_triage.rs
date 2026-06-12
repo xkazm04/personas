@@ -273,7 +273,7 @@ pub async fn triage_unread_messages(
 
     tracing::info!(batch = batch.len(), "message_triage: running batched triage decision");
     let prompt = build_triage_prompt(&batch);
-    let blob =
+    let (blob, turn_id) =
         crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "msg_triage").await?;
     let Some(decision) = parse_message_triage(&blob) else {
         // Poison-batch guard: skip past it rather than re-running the
@@ -282,6 +282,13 @@ pub async fn triage_unread_messages(
         tracing::warn!(
             "message_triage: no decision parsed — skipping batch (messages stay unread)"
         );
+        if let Some(tid) = &turn_id {
+            crate::companion::turn_ledger::update_outcome(
+                user_db,
+                tid,
+                r#"{"parse_failure":true}"#,
+            );
+        }
         advance_cursor(sys_db, &batch_newest);
         return Ok(0);
     };
@@ -341,6 +348,18 @@ pub async fn triage_unread_messages(
         // Verdict-less messages stay unread with no annotation — the
         // user keeps them; the cursor still moves on (no livelock).
         tracing::info!(untouched, "message_triage: messages left untouched (no verdict)");
+    }
+
+    // Record the triage verdict distribution on the ledger row (A4 funnel).
+    if let Some(tid) = &turn_id {
+        let outcome = serde_json::json!({
+            "messages": batch.len(),
+            "done": done,
+            "digest": digested,
+            "attention": attention.len(),
+        })
+        .to_string();
+        crate::companion::turn_ledger::update_outcome(user_db, tid, &outcome);
     }
 
     advance_cursor(sys_db, &batch_newest);

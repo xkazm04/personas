@@ -566,16 +566,39 @@ pub async fn review_recent_executions(
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let blob =
+    let (blob, turn_id) =
         crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "exec_triage").await?;
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
+        if let Some(tid) = &turn_id {
+            crate::companion::turn_ledger::update_outcome(
+                user_db,
+                tid,
+                r#"{"parse_failure":true}"#,
+            );
+        }
         crate::companion::wake_window::log_wake(
             sys_db, "exec_triage", wake.reason, wake_pending, 1, 0,
             wake_started.elapsed().as_millis() as u64,
         );
         return Ok(0);
     };
+    // Record the triage verdict distribution on the ledger row so the Athena
+    // health funnel (A4) can show drop / digest / deep-dive at a glance.
+    if let Some(tid) = &turn_id {
+        let deep_dive = decision.groups.iter().filter(|v| v.verdict == "deep_dive").count();
+        let digest = decision.groups.iter().filter(|v| v.verdict == "digest").count();
+        let drop = decision.groups.len().saturating_sub(deep_dive + digest);
+        let outcome = serde_json::json!({
+            "groups": decision.groups.len(),
+            "drop": drop,
+            "digest": digest,
+            "deep_dive": deep_dive,
+            "escalate": decision.escalate_to_user,
+        })
+        .to_string();
+        crate::companion::turn_ledger::update_outcome(user_db, tid, &outcome);
+    }
     crate::companion::wake_window::log_wake(
         sys_db, "exec_triage", wake.reason, wake_pending, 1, decision.groups.len(),
         wake_started.elapsed().as_millis() as u64,
