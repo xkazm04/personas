@@ -12496,6 +12496,8 @@ export type Translations = {
       composer_placeholder: string;
       slash_palette_heading: string;
       slash_palette_empty: string;
+      slash_label_intake: string;
+      slash_message_intake: string;
       slash_label_goals: string;
       slash_message_goals: string;
       slash_label_queued: string;

@@ -88,6 +88,7 @@ Manual re-ingest uses `companion_reingest_doctrine`. It is idempotent: unchanged
 
 - **Athena's writes** go through the `update_identity` op — **approval-gated and never auto-approved** (deliberately absent from `AUTOAPPROVE_ALLOWLIST`, like `update_dev_goal`). Two param modes: `diffs: [{section, op, anchor_text?, new_text?, rationale}]` (≤5, the preferred incremental path — each bullet should cite its source episode ids; structurally validated in `dispatcher.rs`, anchor-existence checked at execute time with partial-failure reporting) and `content: "..."` (a full rewrite, reserved for the intake first draft). `execute_update_identity` (`approvals.rs`) backs up the prior file (`identity.bak-<ts>.md`) before every write and bumps the `updated` frontmatter. Constitution **v37** teaches the op + the discipline (evidence-only, one focused diff, never journal).
 - **The user is editor-of-record.** The Memory-tab BrainViewer renders the identity DetailView with an **Edit** affordance (textarea over the raw markdown → `companion_save_identity`, full write + backup) — the user can rewrite it wholesale, bypassing the diff machinery by design.
+- **Intake interview (F2).** The full first-conversation interview runs automatically on a fresh install (`prompt.rs::onboarding_addendum_if_needed` detects placeholder identity + no episodes and injects an ONBOARDING MODE block that ends in an `update_identity` proposal). It's also **re-runnable anytime** — a "Get to know me" `WelcomeHero` chip + a `/intake` slash preset seed the request, and constitution **v38** teaches Athena to run the same short interview on demand (anchored `diffs` when identity already has content, `content` for a fresh draft).
 
 ## Conversation flow
 
@@ -382,7 +383,7 @@ Constitution bumped to v18. With this, Athena has two complementary surfaces for
 
 ## Slash-command palette
 
-Typing `/` as the first character of an empty draft opens a small popover above the composer with a set of preset prompts (`SlashPalette.tsx`): show goals, what's queued, recent decisions, live ops, memory recap, capabilities. Subsequent keystrokes filter the list by case-insensitive substring on label or key; ↑/↓ navigate; Enter picks; Esc clears the draft and closes. Click works the same as Enter. Preset messages are i18n'd so non-English users get prompts in their own locale — Athena handles all 14 supported languages in chat.
+Typing `/` as the first character of an empty draft opens a small popover above the composer with a set of preset prompts (`SlashPalette.tsx`): **get to know me** (re-run the intake interview — F2), show goals, what's queued, recent decisions, live ops, memory recap, capabilities. Subsequent keystrokes filter the list by case-insensitive substring on label or key; ↑/↓ navigate; Enter picks; Esc clears the draft and closes. Click works the same as Enter. Preset messages are i18n'd so non-English users get prompts in their own locale — Athena handles all 14 supported languages in chat.
 
 The Send button stays disabled while the palette is open so typing `/` then Enter goes through the palette path (pick the active preset) instead of submitting the literal `/` as a chat message.
 

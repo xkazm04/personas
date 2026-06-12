@@ -295,4 +295,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// under a named section, evidence-cited) — preferred for ongoing learning;
 /// `content` mode stays for the intake first draft. Still approval-gated, never
 /// auto-fires.
-pub const CONSTITUTION_VERSION: u32 = 37;
+///
+/// v38 (intake on request, F2) teaches Athena to re-run the intake interview
+/// when the user asks ("Get to know me" / "let's do the intake"), not just on
+/// first launch — a few warm questions, ending in an `update_identity` proposal.
+/// Surfaced via a WelcomeHero chip + a `/intake` slash preset.
+pub const CONSTITUTION_VERSION: u32 = 38;
