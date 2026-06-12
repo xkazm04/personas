@@ -300,7 +300,9 @@ pub async fn run_athena_reaction(
             });
     let prompt = build_reaction_prompt(&signal, &history, ledger.as_deref());
 
-    let decision = cli_decide(prompt).await?;
+    // Athena's headless spend lands in the companion_turn ledger (user DB).
+    let state = app.state::<std::sync::Arc<crate::AppState>>();
+    let decision = cli_decide(prompt, &state.user_db).await?;
     let Some(decision) = decision else {
         tracing::warn!(team = %signal.team_name, kind = %signal.kind, "athena_reaction: no decision parsed from CLI output");
         return Ok(false);
@@ -397,8 +399,11 @@ fn post_reaction_message(
 /// Spawn the Claude CLI with the prompt on stdin, stream stdout, and parse the
 /// single `{"athena_channel": {...}}` decision object. Returns `Ok(None)` if
 /// no valid decision object was emitted.
-async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>, AppError> {
-    let blob = cli_text(prompt_text).await?;
+async fn cli_decide(
+    prompt_text: String,
+    user_db: &crate::db::UserDbPool,
+) -> Result<Option<AthenaChannelDecision>, AppError> {
+    let blob = cli_text_tracked(prompt_text, user_db, "reaction").await?;
     Ok(parse_athena_decision(&blob))
 }
 
@@ -407,7 +412,42 @@ async fn cli_decide(prompt_text: String) -> Result<Option<AthenaChannelDecision>
 /// handling without the scan-job bookkeeping; shared by the channel-reaction,
 /// review-resolution, execution-triage and message-triage decisions (each
 /// parses its own protocol object).
+///
+/// Untracked variant — kept for engine callers (`kpi_binding` / `kpi_derivation`)
+/// that don't carry a user-db handle. Prefer [`cli_text_tracked`] for Athena's
+/// headless decision legs so the spend lands in the `companion_turn` ledger.
 pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
+    Ok(cli_text_inner(prompt_text).await?.0)
+}
+
+/// Like [`cli_text`], but records a `companion_turn` ledger row
+/// (origin=`headless`, labeled with `trigger_kind`) for Athena's own usage
+/// accounting. Best-effort: a ledger insert failure never fails the decision.
+pub(crate) async fn cli_text_tracked(
+    prompt_text: String,
+    user_db: &crate::db::UserDbPool,
+    trigger_kind: &'static str,
+) -> Result<String, AppError> {
+    let (text, usage) = cli_text_inner(prompt_text).await?;
+    crate::companion::turn_ledger::record_turn(
+        user_db,
+        &crate::companion::turn_ledger::TurnRecord {
+            origin: "headless".to_string(),
+            trigger_kind: Some(trigger_kind.to_string()),
+            model: Some("claude-sonnet-4-6".to_string()),
+            usage,
+            ..Default::default()
+        },
+    );
+    Ok(text)
+}
+
+/// Spawn + drain implementation shared by both wrappers. Returns the display
+/// text plus the parsed terminal `result` usage (`None` if the CLI emitted no
+/// result event).
+async fn cli_text_inner(
+    prompt_text: String,
+) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
     let mut cli_args = crate::engine::prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push("claude-sonnet-4-6".to_string());
@@ -471,12 +511,18 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
     let mut reader = BufReader::new(stdout).lines();
 
     let mut blob = String::new();
+    let mut usage: Option<crate::companion::turn_ledger::CliUsage> = None;
     let timeout = std::time::Duration::from_secs(180);
     let stream = tokio::time::timeout(timeout, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if let Some(text) = extract_display_text(&line) {
                 blob.push_str(&text);
                 blob.push('\n');
+            }
+            // The terminal `result` event carries this decision's real cost /
+            // token usage / duration — capture it for the turn ledger.
+            if let Some(u) = crate::companion::turn_ledger::CliUsage::from_line(&line) {
+                usage = Some(u);
             }
         }
     })
@@ -489,7 +535,7 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
         let _ = child.wait().await;
     }
 
-    Ok(blob)
+    Ok((blob, usage))
 }
 
 /// Extract the `{"athena_channel": {...}}` object from the model's free-text
@@ -618,7 +664,8 @@ pub async fn run_athena_reaction_batch(
         return Ok(0);
     }
     let prompt = build_batch_prompt(pool, &signals);
-    let blob = cli_text(prompt).await?;
+    let state = app.state::<std::sync::Arc<crate::AppState>>();
+    let blob = cli_text_tracked(prompt, &state.user_db, "reaction_batch").await?;
     let Some(batch) = parse_athena_batch(&blob) else {
         tracing::warn!(
             signals = signals.len(),
@@ -1020,7 +1067,8 @@ pub async fn run_athena_review_resolution(
 ) -> Result<&'static str, AppError> {
     let history = recent_channel_history(pool, &candidate.team_id);
     let prompt = build_review_resolution_prompt(&candidate, &history);
-    let blob = cli_text(prompt).await?;
+    let state = app.state::<std::sync::Arc<crate::AppState>>();
+    let blob = cli_text_tracked(prompt, &state.user_db, "review_resolution").await?;
     let Some(decision) = parse_athena_review(&blob) else {
         tracing::warn!(team = %candidate.team_name, assignment = %candidate.assignment_id,
             "athena_review_resolution: no decision parsed");

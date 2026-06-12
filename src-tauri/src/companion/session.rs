@@ -516,7 +516,7 @@ pub async fn send_turn(
         TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "browser_test"
     );
 
-    let assistant_text = match timeout(
+    let (assistant_text, cli_usage) = match timeout(
         TURN_TIMEOUT,
         run_cli(
             app,
@@ -531,7 +531,7 @@ pub async fn send_turn(
     )
     .await
     {
-        Ok(Ok(text)) => text,
+        Ok(Ok(out)) => out,
         // Self-heal: if Claude can't find the resumed session id (deleted,
         // expired, or never existed), clear the stale pointer and retry
         // once with a fresh session. Every prior episode is still in the
@@ -558,7 +558,7 @@ pub async fn send_turn(
             )
             .await
             {
-                Ok(Ok(text)) => text,
+                Ok(Ok(out)) => out,
                 Ok(Err(e2)) => {
                     emit_error(app, &session_id, &turn_id, &e2.to_string());
                     return Err(e2);
@@ -644,6 +644,43 @@ pub async fn send_turn(
             episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, &display_text)?
         }
     };
+
+    // Athena value expansion / A1: record this turn's usage + dispatcher
+    // side-effect counts in the companion_turn ledger so the Overview
+    // dashboards can show what Athena costs and for what kind of work.
+    // Best-effort — never blocks the turn.
+    {
+        let (origin_str, trigger_kind) = match &origin {
+            TurnOrigin::User => ("chat", None),
+            TurnOrigin::Autonomous { .. } => ("autonomous", None),
+            TurnOrigin::Proactive { trigger_kind, .. } => {
+                ("proactive", Some(trigger_kind.clone()))
+            }
+            TurnOrigin::External { source } => ("external", Some(source.clone())),
+        };
+        let outcome_json = serde_json::to_string(&serde_json::json!({
+            "approvals": dispatched.approvals.len(),
+            "cards": dispatched.chat_cards.len(),
+            "navigations": dispatched.navigations.len(),
+            "lab_opens": dispatched.lab_opens.len(),
+            "dashboards": dispatched.dashboards.len(),
+            "cockpits": dispatched.cockpits.len(),
+            "continuation": dispatched.requests_continuation,
+        }))
+        .ok();
+        crate::companion::turn_ledger::record_turn(
+            &user_db,
+            &crate::companion::turn_ledger::TurnRecord {
+                origin: origin_str.to_string(),
+                trigger_kind,
+                model: Some(COMPANION_TURN_MODEL.to_string()),
+                usage: cli_usage,
+                voice: voice_enabled,
+                assistant_episode_id: Some(assistant_ep_id.clone()),
+                outcome_json,
+            },
+        );
+    }
 
     // Goal 3 — conservative autoapprove. When autonomous mode is on,
     // walk this turn's new approvals and resolve the ones on the
@@ -1008,6 +1045,16 @@ pub fn spawn_proactive_turn(
     });
 }
 
+/// The model every full companion turn runs on. Recorded into the turn ledger
+/// (`companion_turn.model`) and passed to the CLI `--model` flag — one source so
+/// the two never drift.
+const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
+
+/// `run_cli`'s output: the display text plus the parsed terminal `result`
+/// usage (`None` when the CLI emitted no result event — older CLI, or the turn
+/// errored before the result line).
+type CliRunOutput = (String, Option<crate::companion::turn_ledger::CliUsage>);
+
 async fn run_cli(
     app: &AppHandle,
     turn_id: &str,
@@ -1017,7 +1064,7 @@ async fn run_cli(
     user_message: &str,
     pool: &UserDbPool,
     browser_tools: bool,
-) -> Result<String, AppError> {
+) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
     // Resume if we have a session id, otherwise fresh.
@@ -1055,7 +1102,7 @@ async fn run_cli(
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        "claude-opus-4-8".into(),
+        COMPANION_TURN_MODEL.into(),
         "--system-prompt-file".into(),
         prompt_file.to_string_lossy().to_string(),
     ]);
@@ -1154,6 +1201,9 @@ async fn run_cli(
 
     let mut assistant_text = String::new();
     let mut new_claude_session_id: Option<String> = None;
+    // The CLI's terminal `result` event carries this turn's real cost / token
+    // usage / duration; captured here for the companion_turn ledger.
+    let mut result_usage: Option<crate::companion::turn_ledger::CliUsage> = None;
     let mut interrupt_tick = tokio::time::interval(Duration::from_millis(200));
     // Skip the immediate first tick — `interval` fires once at t=0 by
     // default, which would race the kill check before we've read a
@@ -1207,6 +1257,11 @@ async fn run_cli(
                                         }
                                     }
                                 }
+                            }
+                            if let Some(u) =
+                                crate::companion::turn_ledger::CliUsage::from_result_event(&value)
+                            {
+                                result_usage = Some(u);
                             }
                         }
                     }
@@ -1266,7 +1321,7 @@ async fn run_cli(
         } else {
             format!("{assistant_text}\n\n_[interrupted by user]_")
         };
-        return Ok(body);
+        return Ok((body, result_usage.take()));
     }
 
     // Stdout-mid-stream failure path: the CLI was producing output and
@@ -1283,7 +1338,7 @@ async fn run_cli(
         } else {
             format!("{assistant_text}\n\n_[interrupted by error: {err_msg}]_")
         };
-        return Ok(body);
+        return Ok((body, result_usage.take()));
     }
 
     if !status.success() {
@@ -1304,7 +1359,7 @@ async fn run_cli(
                 "{assistant_text}\n\n_[interrupted by error: claude exited with status {status}{}]_",
                 if trimmed.is_empty() { String::new() } else { format!(": {trimmed}") }
             );
-            return Ok(body);
+            return Ok((body, result_usage.take()));
         }
         // No partial — fall through to hard error as before.
         return Err(AppError::Internal(format!(
@@ -1323,7 +1378,7 @@ async fn run_cli(
         ));
     }
 
-    Ok(assistant_text)
+    Ok((assistant_text, result_usage))
 }
 
 /// Was this CLI failure caused by an expired/missing --resume session id?

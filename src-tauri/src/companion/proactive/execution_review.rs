@@ -566,7 +566,8 @@ pub async fn review_recent_executions(
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let blob = crate::companion::athena_reaction::cli_text(prompt).await?;
+    let blob =
+        crate::companion::athena_reaction::cli_text_tracked(prompt, user_db, "exec_triage").await?;
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
         crate::companion::wake_window::log_wake(

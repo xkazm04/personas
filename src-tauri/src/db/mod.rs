@@ -880,6 +880,37 @@ CREATE TABLE IF NOT EXISTS engine_project_pulse (
 );
 CREATE INDEX IF NOT EXISTS idx_engine_project_pulse_recent
     ON engine_project_pulse(project_id, day DESC);
+
+-- Phase A1 (Athena value expansion / direction 6): per-turn usage ledger.
+-- One row per Claude CLI spawn Athena makes — a chat/autonomous/proactive
+-- reasoning turn or a cheap headless decision leg (exec_triage, msg_triage,
+-- reaction, review_resolution). Captures the terminal `result` event's
+-- total_cost_usd / token usage / duration so the Overview dashboards can show
+-- what Athena costs and for what kind of work. Best-effort: usage columns are
+-- NULL when the CLI emitted no result event. Pruned to 90 days by
+-- companion::turn_ledger::prune_old_turns.
+CREATE TABLE IF NOT EXISTS companion_turn (
+    id                    TEXT PRIMARY KEY,
+    origin                TEXT NOT NULL,                 -- chat | autonomous | proactive | external | headless
+    trigger_kind          TEXT,                          -- proactive trigger kind, or headless leg label
+    model                 TEXT,
+    input_tokens          INTEGER,
+    output_tokens         INTEGER,
+    cache_read_tokens     INTEGER,
+    cache_creation_tokens INTEGER,
+    cost_usd              REAL,
+    duration_ms           INTEGER,
+    num_turns             INTEGER,                        -- CLI-internal assistant turns
+    is_error              INTEGER NOT NULL DEFAULT 0,
+    voice                 INTEGER NOT NULL DEFAULT 0,
+    assistant_episode_id  TEXT,                           -- NULL for headless rows
+    outcome_json          TEXT,                           -- dispatcher side-effect / triage verdict counts
+    created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_turn_created
+    ON companion_turn(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_turn_origin
+    ON companion_turn(origin, created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -460,6 +460,15 @@ A browser-test turn ends by emitting `show_browser_test_report { url, steps[], d
 
 Companion → Setup surfaces a **Browser testing** panel (`sub_setup/BrowserBridgePanel.tsx`): live "Extension connected" status, the bridge port, the copyable pairing token, and a regenerate button. The token persists in settings (`browser_bridge_pairing_token`) so the extension pairs once and survives restarts; `PERSONAS_BROWSER_BRIDGE_TOKEN` env override wins for QA. Commands: `browser_bridge_status`, `browser_bridge_regenerate_token`.
 
+## Turn usage ledger (`companion_turn`)
+
+Every Claude CLI spawn Athena makes records one durable row in `companion_turn` (companion user DB) so her own resource consumption is finally accountable — until now the CLI's terminal `result` event (carrying `total_cost_usd`, token `usage`, `duration_ms`, `num_turns`) was drained and dropped, leaving Athena able to triage the *fleet's* cost while her own was invisible. Backed by `src-tauri/src/companion/turn_ledger.rs`.
+
+- **Full turns** (`session.rs::run_cli`) record `origin` (`chat` / `autonomous` / `proactive` / `external`), the `trigger_kind` for proactive turns, the model, the parsed usage, a `voice` flag, the linked `assistant_episode_id`, and an `outcome_json` of dispatcher side-effect counts (approvals / cards / navigations / …).
+- **Headless decision legs** (`athena_reaction.rs::cli_text_tracked`) record `origin=headless` labeled by leg: `exec_triage`, `msg_triage`, `reaction`, `reaction_batch`, `review_resolution` — the highest-frequency autonomous spend.
+- Capture is **best-effort and never blocks a turn**: a missing/unparseable `result` event records NULL usage; an insert failure is a `tracing::warn!`. Rows prune at 90 days (`turn_ledger::prune_old_turns`, run alongside the background-job prune at `companion_init`).
+- Not yet surfaced in UI — the Overview → Activity "Athena lane" and Overview → Observability "Athena health" panels (directions A3/A4 of `docs/plans/athena-value-expansion.md`) read this table. Engine KPI cli_text callers (`kpi_binding` / `kpi_derivation`) still use the untracked `cli_text` and are a follow-up.
+
 ## State
 
 `src/features/plugins/companion/companionStore.ts` owns panel state, init status, messages, streaming text, approvals, quick replies, brain viewer cursor, self-improve state, and pending playback. `companionPluginSlice.ts` owns the plugin page tab and persistent plugin-level settings.
