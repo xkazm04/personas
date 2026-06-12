@@ -321,6 +321,84 @@ const kpiBlock = (() => {
   }
 })();
 
+// --- §11 cost (informational, NON-GATING — ALERT marker on sharp growth) ------
+// Answers "are the runs getting more expensive, and WHY": window spend,
+// unit costs ($/exec, $/done assignment, $/done goal), the volume drivers
+// (assignments created, QA bounces, Athena recycles) and a prior-window
+// comparison. Unit-price drift points at model/prompt changes; volume drift
+// points at the harness (goal supply, fix-loops, recycles). NOTE: headless
+// CLI decisions (Athena, KPI scans/derivation) are NOT in persona_executions
+// and are currently untracked spend — decision counts are listed as a proxy.
+const costBlock = (() => {
+  try {
+    const win = (fromH, toH) =>
+      db
+        .prepare(
+          `SELECT COUNT(*) n, ROUND(SUM(COALESCE(cost_usd,0)),2) cost
+           FROM persona_executions
+           WHERE datetime(created_at) > datetime('now', '-' || ? || ' hours')
+             AND datetime(created_at) <= datetime('now', '-' || ? || ' hours')`,
+        )
+        .get(String(fromH), String(toH));
+    const cur = win(HOURS, 0);
+    const prior = win(HOURS * 2, HOURS);
+    const doneAssignments = db
+      .prepare(
+        `SELECT COUNT(*) n FROM team_assignments
+         WHERE status IN ('done','completed') AND datetime(created_at) > ${sinceExpr}`,
+      )
+      .get().n;
+    const goalsDone = db
+      .prepare(
+        `SELECT COUNT(*) n FROM dev_goals g JOIN dev_projects dp ON dp.id = g.project_id
+         WHERE dp.team_id IS NOT NULL AND g.status IN ('done','completed')
+           AND g.completed_at IS NOT NULL AND datetime(g.completed_at) > ${sinceExpr}`,
+      )
+      .get().n;
+    const assignmentsCreated = db
+      .prepare(`SELECT COUNT(*) n FROM team_assignments WHERE datetime(created_at) > ${sinceExpr}`)
+      .get().n;
+    const qaBounces = db
+      .prepare(
+        `SELECT COUNT(*) n FROM team_assignment_events
+         WHERE (kind LIKE '%changes_requested%' OR kind LIKE '%rework%')
+           AND datetime(created_at) > ${sinceExpr}`,
+      )
+      .get().n;
+    const athenaDecisions = db
+      .prepare(
+        `SELECT COALESCE(json_extract(payload,'$.outcome'),'?') outcome, COUNT(*) n
+         FROM team_assignment_events
+         WHERE kind = 'athena_review_resolution' AND datetime(created_at) > ${sinceExpr}
+         GROUP BY 1`,
+      )
+      .all();
+    const recycles = athenaDecisions
+      .filter((d) => d.outcome === 'abort_retry' || d.outcome === 'goal_shelve')
+      .reduce((s, d) => s + d.n, 0);
+    const ratio = prior.cost > 5 ? Math.round((cur.cost / prior.cost) * 100) / 100 : null;
+    return {
+      windowCostUsd: cur.cost || 0,
+      execs: cur.n,
+      perExecUsd: cur.n ? Math.round(((cur.cost || 0) / cur.n) * 100) / 100 : null,
+      perDoneAssignmentUsd: doneAssignments
+        ? Math.round(((cur.cost || 0) / doneAssignments) * 100) / 100
+        : null,
+      doneAssignments,
+      goalsDone,
+      assignmentsCreated,
+      qaBounces,
+      athenaRecycles: recycles,
+      athenaDecisions: athenaDecisions.reduce((s, d) => s + d.n, 0),
+      priorWindowCostUsd: prior.cost || 0,
+      costRatioVsPrior: ratio,
+      alert: ratio != null && ratio > 1.5 && (cur.cost || 0) > 20,
+    };
+  } catch (e) {
+    return { error: String(e.message || e) };
+  }
+})();
+
 db.close();
 
 // --- verdict fold --------------------------------------------------------------
@@ -361,6 +439,7 @@ const report = {
   drain,
   fuel,
   kpi: kpiBlock,
+  cost: costBlock,
   ...(athena ? { athena_orchestration: athena } : {}),
   perTeam: perTeam.map((t) => ({
     team: t.teamName,
@@ -386,6 +465,15 @@ if (AS_JSON) {
   console.log(`fairness: ${fairness.teamsActive} teams active, top-2 share ${fairness.top2SharePct ?? 'n/a'}%${fairness.hoarding ? ' (HOARDING)' : ''}`);
   console.log(`drain: ${drain.parkedNow} parked, ${drain.athenaResolutions} athena resolution(s), oldest ${drain.oldestParkedDays}d${drain.blackHole ? ' (BLACK HOLE)' : ''}`);
   console.log(`fuel: ${fuel.goalsCreated} goals + ${fuel.ideasCreated} ideas created, ${fuel.goalRelations ?? 'n/a'} goal relations`);
+  if (costBlock && !costBlock.error) {
+    const c = costBlock;
+    console.log(
+      `cost §11 (informational${c.alert ? ' — ⚠️ ALERT' : ''}): $${c.windowCostUsd} this window` +
+        (c.costRatioVsPrior != null ? ` (${c.costRatioVsPrior}x prior $${c.priorWindowCostUsd})` : '') +
+        `; $${c.perExecUsd ?? 'n/a'}/exec, $${c.perDoneAssignmentUsd ?? 'n/a'}/done assignment (${c.doneAssignments} done, ${c.goalsDone} goals); ` +
+        `volume: ${c.assignmentsCreated} assignments started, ${c.qaBounces} QA bounce(s), ${c.athenaRecycles} athena recycle(s) of ${c.athenaDecisions} decision(s); headless CLI spend untracked`,
+    );
+  }
   if (kpiBlock && !kpiBlock.error) {
     if (kpiBlock.activeKpis === 0) {
       console.log('kpi §10: no active team-project KPIs (informational)');
