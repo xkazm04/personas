@@ -66,6 +66,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — Goal-UAT browser-test gate (web projects only) — P1 backend
+- Started: 2026-06-12 (worktree .claude/worktrees/goal-uat-gate, branch worktree-goal-uat-gate)
+- Status: started
+- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/companion/{dispatcher.rs,templates/}, src-tauri/src/commands/companion/approvals.rs, src/features/teams/sub_goals/**, src/features/home/sub_cockpit/widgets/BrowserTestReportWidget.tsx
+- Note: dev_goal_item with verify_kind=browser_test = UAT gate; runs run_browser_test when all other todos done; web-only (tech_stack react/nodejs/combined). Builds on the just-merged browser-testing arc (31a9b886c).
+
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
