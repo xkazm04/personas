@@ -939,6 +939,20 @@ CREATE TABLE IF NOT EXISTS companion_persona_baseline (
     declared_duration_ms  INTEGER,
     computed_at           TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Phase F3 (Athena value expansion / direction 7): lightweight behavioral
+-- signals the frontend records (refine-chip clicks, walkthrough completion,
+-- decision-queue usage) so the weekly profile-synthesis pass can learn how the
+-- user works from what they DO, not just what they say. payload_json is a tiny
+-- numbers/enums blob — never raw user content.
+CREATE TABLE IF NOT EXISTS companion_ux_signal (
+    id           TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL,
+    payload_json TEXT NOT NULL DEFAULT '{}',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_ux_signal_kind
+    ON companion_ux_signal(kind, created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

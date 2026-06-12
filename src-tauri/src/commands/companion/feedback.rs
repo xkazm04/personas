@@ -59,3 +59,17 @@ pub async fn companion_request_improvement(
         dev_session::run_improvement(&state.user_db, feedback).await
     }
 }
+
+/// Record one lightweight behavioral UX signal (F3) — fire-and-forget from the
+/// frontend (refine-chip clicks, walkthrough completion, decision-queue usage).
+/// `payload_json` is a tiny numbers/enums blob, never raw user content. Feeds
+/// the weekly profile-synthesis pass; never blocks the UI.
+#[tauri::command]
+pub fn companion_record_ux_signal(
+    state: State<'_, Arc<AppState>>,
+    kind: String,
+    payload_json: String,
+) -> Result<(), AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    crate::companion::brain::profile_synthesis::record_signal(&state.user_db, &kind, &payload_json)
+}

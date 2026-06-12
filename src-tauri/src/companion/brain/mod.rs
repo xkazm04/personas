@@ -19,6 +19,7 @@ pub mod goals;
 pub mod graph;
 pub mod identity;
 pub mod procedural;
+pub mod profile_synthesis;
 pub mod recall_synthesis;
 pub mod reflection;
 pub mod retrieval;

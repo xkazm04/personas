@@ -283,6 +283,17 @@ pub const COMPANION_DAILY_ROLLUP_HOUR_DEFAULT: u32 = 18;
 /// Free-form date value (no typed validation).
 pub const COMPANION_DAILY_ROLLUP_LAST: &str = "companion_daily_rollup_last";
 
+/// Whether Athena runs the weekly behavioral profile-synthesis pass (F3) —
+/// learns how the user works from engage/dismiss / refine-chip / approval stats
+/// and proposes evidence-cited identity diffs (always approval-gated). Default
+/// OFF — opt-in. Read by `companion::brain::profile_synthesis`.
+pub const COMPANION_PROFILE_SYNTHESIS: &str = "companion_profile_synthesis";
+/// Default for [`COMPANION_PROFILE_SYNTHESIS`] — off (opt-in).
+pub const COMPANION_PROFILE_SYNTHESIS_DEFAULT: bool = false;
+/// RFC3339 timestamp the synthesis pass last ran — gates the 7-day cadence.
+/// Free-form value (no typed validation).
+pub const COMPANION_PROFILE_SYNTHESIS_LAST: &str = "companion_profile_synthesis_last";
+
 /// Whether the autonomous assignment-retry tick may, unattended, resume a team
 /// assignment that soft-paused at `awaiting_review` because a step failed for a
 /// RETRYABLE reason (Claude session/usage limit or rate limit) — resetting the
@@ -506,6 +517,8 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_DAILY_ROLLUP,
     COMPANION_DAILY_ROLLUP_HOUR,
     COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_PROFILE_SYNTHESIS,
+    COMPANION_PROFILE_SYNTHESIS_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
@@ -619,6 +632,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | COMPANION_DAILY_ROLLUP
+        | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
         | AUTONOMOUS_BACKLOG_TO_GOAL

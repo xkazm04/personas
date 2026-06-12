@@ -1,4 +1,5 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { silentCatch } from '@/lib/silentCatch';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
@@ -927,6 +928,17 @@ export async function companionDeleteBrainItem(
  */
 export async function companionSaveIdentity(content: string): Promise<string> {
   return invoke<string>('companion_save_identity', { content });
+}
+
+/**
+ * Fire-and-forget behavioral UX signal (F3). `payloadJson` is a tiny
+ * numbers/enums blob (never raw content). Never blocks the UI — feeds the
+ * weekly profile-synthesis pass that learns how the user works.
+ */
+export function companionRecordUxSignal(kind: string, payloadJson: string): void {
+  void invoke<void>('companion_record_ux_signal', { kind, payloadJson }).catch(
+    silentCatch('companion_record_ux_signal'),
+  );
 }
 
 // ── Phase C: consolidation + reflection ────────────────────────────────

@@ -2481,6 +2481,7 @@ pub fn run() {
             commands::companion::brain::companion_save_identity,
             commands::companion::feedback::companion_beta_flags,
             commands::companion::feedback::companion_request_improvement,
+            commands::companion::feedback::companion_record_ux_signal,
             commands::companion::voice::companion_tts,
             commands::companion::voice::companion_tts_list_piper_voices,
             commands::companion::voice::companion_tts_download_piper_voice,

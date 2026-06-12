@@ -19,7 +19,7 @@
  * render path.
  */
 import { silentCatch } from '@/lib/silentCatch';
-import { companionSendMessage } from '@/api/companion';
+import { companionSendMessage, companionRecordUxSignal } from '@/api/companion';
 import { useCompanionStore } from '../companionStore';
 import type { DecisionOption, PendingDecision } from './types';
 
@@ -29,6 +29,7 @@ import type { DecisionOption, PendingDecision } from './types';
  * reported, never thrown), so every input method behaves the same.
  */
 export function runDecisionOption(option: DecisionOption): void {
+  const source = useCompanionStore.getState().pendingDecision?.source ?? 'unknown';
   try {
     const r = option.run();
     if (r && typeof (r as Promise<void>).then === 'function') {
@@ -37,6 +38,11 @@ export function runDecisionOption(option: DecisionOption): void {
   } catch (err) {
     silentCatch('companion/resolveDecision:run')(err);
   }
+  // F3 — he resolved a decision hands-free via the orb (vs falling through to chat).
+  companionRecordUxSignal(
+    'decision_resolved',
+    JSON.stringify({ via: 'orb', source, option: option.key }),
+  );
   useCompanionStore.getState().clearPendingDecision();
 }
 
