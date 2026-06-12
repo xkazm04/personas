@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2,
   Users, ListChecks, Activity, Pencil, GitMerge, ArrowRight,
+  Globe, Play, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -94,6 +95,10 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
   const [newItem, setNewItem] = useState('');
   const [advancing, setAdvancing] = useState(false);
   const [aborting, setAborting] = useState(false);
+  const [uatScenario, setUatScenario] = useState('');
+  const [uatUrl, setUatUrl] = useState('');
+  const [uatRunning, setUatRunning] = useState(false);
+  const [showUatForm, setShowUatForm] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!goalId) return;
@@ -211,6 +216,45 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
     }
   };
 
+  const handleSaveUat = async () => {
+    if (!goalId || !uatScenario.trim()) return;
+    try {
+      await devApi.setGoalVerification(goalId, uatScenario.trim(), uatUrl.trim() || undefined);
+      setShowUatForm(false);
+      setUatScenario('');
+      setUatUrl('');
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to add UAT gate')(err);
+    }
+  };
+
+  const handleClearUat = async () => {
+    if (!goalId) return;
+    try {
+      await devApi.clearGoalVerification(goalId);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to remove UAT gate')(err);
+    }
+  };
+
+  const handleRunUat = async () => {
+    if (!goalId) return;
+    setUatRunning(true);
+    try {
+      // Spawns the browser-test turn (panel-side); the report card closes the
+      // gate on a clean pass. Refresh shortly after so the "verifying" state
+      // and any same-turn completion reflect.
+      await devApi.runGoalUat(goalId);
+      setTimeout(() => void refresh(), 4000);
+    } catch (err) {
+      toastCatch('Failed to start UAT')(err);
+    } finally {
+      setUatRunning(false);
+    }
+  };
+
   const handleResolveStep = async (stepId: string, action: 'skip' | 'abort') => {
     try {
       await resolveTeamAssignmentReview(stepId, { action });
@@ -257,6 +301,15 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
 
   if (!goal) return null;
   const showNudge = progress && progress.total_count > 0 && progress.suggested !== goal.progress;
+  // Goal-UAT browser gate: web projects only (react/nodejs/combined). The
+  // verify item is rendered in its own section, NOT as a regular to-do row.
+  const project = projects.find((p) => p.id === goal.project_id);
+  const isWebProject = ['react', 'nodejs', 'combined'].includes(
+    (project?.tech_stack ?? '').trim().toLowerCase(),
+  );
+  const verifyItem = items.find((i) => i.verify_kind === 'browser_test') ?? null;
+  const todoItems = items.filter((i) => i.verify_kind == null);
+  const todosComplete = todoItems.every((i) => i.done);
   // Hand-off state: a team is already working this goal when any linked
   // assignment is queued/running/awaiting-review. hasTeam gates the control —
   // there's no AI team to hand to unless the project has one.
@@ -328,7 +381,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
       <Section icon={ListChecks} label={dl.goal_tasks_label}>
         <GoalTaskTable
           steps={steps}
-          items={items}
+          items={todoItems}
           personaById={personaById}
           onToggleItem={handleToggleItem}
           onDeleteItem={handleDeleteItem}
@@ -347,6 +400,73 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
           </Button>
         </div>
       </Section>
+
+      {/* Browser UAT gate — web projects only. A verification item only a
+          passing live browser test ticks; while open it keeps the goal under
+          100% (the goal can't be marked done until UAT passes). Eligible to
+          run only once the other to-dos are complete (final acceptance step). */}
+      {(isWebProject || verifyItem) && (
+        <Section icon={Globe} label={dl.uat_section_title}>
+          {verifyItem ? (
+            <div className="rounded-card border border-sky-500/25 bg-sky-500/[0.04] px-3 py-2.5">
+              <div className="flex items-center gap-2">
+                {verifyItem.done
+                  ? <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  : <Globe className="w-4 h-4 text-sky-400 shrink-0" />}
+                <span className="flex-1 typo-body text-foreground">
+                  {verifyItem.done ? dl.uat_passed : dl.uat_pending}
+                </span>
+                {!verifyItem.done && (
+                  <Button
+                    variant="accent"
+                    accentColor="sky"
+                    size="sm"
+                    icon={<Play className="w-3.5 h-3.5" />}
+                    disabled={uatRunning || !todosComplete}
+                    onClick={handleRunUat}
+                  >
+                    {uatRunning ? dl.uat_verifying : dl.uat_verify_now}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={handleClearUat}>{dl.uat_remove}</Button>
+              </div>
+              {!verifyItem.done && !todosComplete && (
+                <p className="typo-caption text-amber-400 mt-1.5">{dl.uat_blocked_todos}</p>
+              )}
+              {!verifyItem.done && (
+                <p className="typo-caption text-foreground/60 mt-1">{dl.uat_gate_hint}</p>
+              )}
+            </div>
+          ) : showUatForm ? (
+            <div className="rounded-card border border-primary/10 bg-card/30 px-3 py-2.5 space-y-2">
+              <label className="block typo-caption text-foreground/70">{dl.uat_scenario_label}</label>
+              <textarea
+                value={uatScenario}
+                onChange={(e) => setUatScenario(e.target.value)}
+                placeholder={dl.uat_scenario_placeholder}
+                rows={2}
+                className="w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/50 focus-ring"
+              />
+              <input
+                value={uatUrl}
+                onChange={(e) => setUatUrl(e.target.value)}
+                placeholder={dl.uat_url_label}
+                className="w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/50 focus-ring"
+              />
+              <div className="flex items-center gap-2">
+                <Button variant="accent" accentColor="sky" size="sm" disabled={!uatScenario.trim()} onClick={handleSaveUat}>
+                  {dl.uat_save}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowUatForm(false)}>{t.common.cancel}</Button>
+              </div>
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" icon={<Plus className="w-3.5 h-3.5" />} onClick={() => setShowUatForm(true)}>
+              {dl.uat_add}
+            </Button>
+          )}
+        </Section>
+      )}
 
       {/* Sub-goals */}
       {subgoals.length > 0 && (

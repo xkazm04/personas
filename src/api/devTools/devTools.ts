@@ -210,6 +210,24 @@ export const deleteGoalItem = (id: string) =>
 export const reorderGoalItems = (ids: string[]) =>
   invoke<void>("dev_tools_reorder_goal_items", { ids });
 
+// Goal-UAT browser-test gate (web projects only) -----------------------------
+
+/** Attach/replace a goal's browser-test UAT gate (web projects only). */
+export const setGoalVerification = (goalId: string, scenario: string, url?: string) =>
+  invoke<DevGoalItem>("dev_tools_set_goal_verification", { goalId, scenario, url });
+
+/** Remove a goal's browser-test UAT gate. Returns whether one was removed. */
+export const clearGoalVerification = (goalId: string) =>
+  invoke<boolean>("dev_tools_clear_goal_verification", { goalId });
+
+/** Run the goal's browser UAT now (requires all other to-dos done). */
+export const runGoalUat = (goalId: string) =>
+  invoke<string>("dev_tools_run_goal_uat", { goalId });
+
+/** Close the goal's UAT gate (ticks the verify item); returns new progress. */
+export const completeGoalUat = (goalId: string) =>
+  invoke<number>("dev_tools_complete_goal_uat", { goalId });
+
 export const listChildGoals = (parentGoalId: string) =>
   safeInvoke<DevGoal[]>([], "dev_tools_list_child_goals", { parentGoalId });
 

@@ -12674,6 +12674,7 @@ export type Translations = {
       browser_report_empty: string;
       browser_report_file_ideas: string;
       browser_report_filed: string;
+      browser_report_uat_passed: string;
       browser_bridge_title: string;
       browser_bridge_desc: string;
       browser_bridge_status_connected: string;
@@ -13014,6 +13015,22 @@ export type Translations = {
       scan_history: string;
     };
     dev_lifecycle: {
+      uat_section_title: string;
+      uat_add: string;
+      uat_remove: string;
+      uat_scenario_label: string;
+      uat_scenario_placeholder: string;
+      uat_url_label: string;
+      uat_save: string;
+      uat_verify_now: string;
+      uat_verifying: string;
+      uat_blocked_todos: string;
+      uat_pending: string;
+      uat_passed: string;
+      uat_passed_at: string;
+      uat_row_title: string;
+      uat_gate_hint: string;
+      uat_web_only: string;
       goal_new_title: string;
       goal_edit_title: string;
       goal_status_open: string;

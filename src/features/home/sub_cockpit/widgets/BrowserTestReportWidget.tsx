@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { AlertTriangle, Check, Globe, ShieldAlert, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { AlertTriangle, Check, Globe, ShieldAlert, ShieldCheck, X } from 'lucide-react';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { companionFileBrowserDefects } from '@/api/companion';
-import { toastCatch } from '@/lib/silentCatch';
+import { completeGoalUat } from '@/api/devTools/devTools';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CockpitWidgetProps } from '../widgetRegistry';
 
@@ -58,6 +59,21 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
     Array.isArray(config?.security_notes) ? config.security_notes : []
   ).map((n) => (typeof n === 'string' ? n : JSON.stringify(n)));
 
+  // Goal-UAT linkage: when this report is a goal's acceptance gate and EVERY
+  // step passed, close the gate (tick the verify item → goal can reach done).
+  const goalId = typeof config?.goal_id === 'string' ? config.goal_id : '';
+  const allPass = steps.length > 0 && steps.every((s) => s.result === 'pass');
+  const [uatClosed, setUatClosed] = useState(false);
+  const closeAttempted = useRef(false);
+  useEffect(() => {
+    if (goalId && allPass && !closeAttempted.current) {
+      closeAttempted.current = true;
+      completeGoalUat(goalId)
+        .then(() => setUatClosed(true))
+        .catch(silentCatch('BrowserTestReportWidget:completeGoalUat'));
+    }
+  }, [goalId, allPass]);
+
   if (steps.length === 0) {
     return (
       <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
@@ -88,6 +104,16 @@ export function BrowserTestReportWidget({ config, title }: CockpitWidgetProps) {
         <span className="font-medium">{title || c.browser_report_title}</span>
         {url && <span className="truncate text-foreground/60">{url}</span>}
       </header>
+
+      {goalId && uatClosed && (
+        <div
+          className="flex items-center gap-2 rounded-interactive border border-status-success/40 bg-status-success/[0.06] px-2.5 py-1.5"
+          data-testid="browser-report-uat-passed"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 shrink-0 text-status-success" />
+          <span className="typo-caption text-status-success">{c.browser_report_uat_passed}</span>
+        </div>
+      )}
 
       <ul className="space-y-1.5">
         {steps.map((s, i) => {
