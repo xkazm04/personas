@@ -13028,6 +13028,8 @@
       "uat_row_title": "Browser UAT passes",
       "uat_gate_hint": "This goal can't be marked done until the browser UAT passes.",
       "uat_web_only": "Browser UAT is available for web projects only.",
+      "uat_mark_passed": "Mark passed manually",
+      "uat_mark_passed_confirm": "Mark the UAT as passed without running it?",
       "goal_new_title": "New goal",
       "goal_edit_title": "Edit goal",
       "goal_status_open": "Open",

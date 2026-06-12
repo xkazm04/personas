@@ -13031,6 +13031,8 @@ export type Translations = {
       uat_row_title: string;
       uat_gate_hint: string;
       uat_web_only: string;
+      uat_mark_passed: string;
+      uat_mark_passed_confirm: string;
       goal_new_title: string;
       goal_edit_title: string;
       goal_status_open: string;

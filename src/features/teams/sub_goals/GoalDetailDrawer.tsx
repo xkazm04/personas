@@ -255,6 +255,20 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
     }
   };
 
+  const handleMarkUatPassed = async () => {
+    if (!goalId) return;
+    if (!window.confirm(dl.uat_mark_passed_confirm)) return;
+    try {
+      // Override path: closes the gate without a test run — for when UAT was
+      // verified out-of-band, or the report omitted goal_id so auto-close
+      // didn't fire. The gate re-opens if new work is added later.
+      await devApi.completeGoalUat(goalId);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to mark UAT passed')(err);
+    }
+  };
+
   const handleResolveStep = async (stepId: string, action: 'skip' | 'abort') => {
     try {
       await resolveTeamAssignmentReview(stepId, { action });
@@ -434,7 +448,16 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
                 <p className="typo-caption text-amber-400 mt-1.5">{dl.uat_blocked_todos}</p>
               )}
               {!verifyItem.done && (
-                <p className="typo-caption text-foreground/60 mt-1">{dl.uat_gate_hint}</p>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="typo-caption text-foreground/60">{dl.uat_gate_hint}</p>
+                  <button
+                    type="button"
+                    onClick={handleMarkUatPassed}
+                    className="typo-caption text-foreground/50 hover:text-foreground/80 underline underline-offset-2 transition-colors shrink-0"
+                  >
+                    {dl.uat_mark_passed}
+                  </button>
+                </div>
               )}
             </div>
           ) : showUatForm ? (

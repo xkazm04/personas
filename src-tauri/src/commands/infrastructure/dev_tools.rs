@@ -461,7 +461,11 @@ pub fn dev_tools_create_goal_item(
     title: String,
 ) -> Result<DevGoalItem, AppError> {
     require_auth_sync(&state)?;
-    repo::create_goal_item(&state.db, &goal_id, &title)
+    let item = repo::create_goal_item(&state.db, &goal_id, &title)?;
+    // New (incomplete) work invalidates a prior UAT pass — re-open the gate so
+    // "done" can't outlive the scope it was verified against.
+    let _ = repo::reopen_verification_if_passed(&state.db, &goal_id);
+    Ok(item)
 }
 
 #[tauri::command]
@@ -484,7 +488,13 @@ pub fn dev_tools_update_goal_item(
             }
         }
     }
-    repo::update_goal_item(&state.db, &id, title.as_deref(), done)
+    let updated = repo::update_goal_item(&state.db, &id, title.as_deref(), done)?;
+    // Un-completing a to-do re-introduces incomplete work → re-open a passed
+    // UAT gate (the goal must be re-verified before it's done again).
+    if done == Some(false) && updated.verify_kind.is_none() {
+        let _ = repo::reopen_verification_if_passed(&state.db, &updated.goal_id);
+    }
+    Ok(updated)
 }
 
 #[tauri::command]

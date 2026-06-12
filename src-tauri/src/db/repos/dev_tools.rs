@@ -931,6 +931,29 @@ pub fn set_goal_verification(
     })
 }
 
+/// Re-open a goal's browser-test gate if it had already passed — called when
+/// new/incomplete work is added to the goal so "done" never outlives the scope
+/// it was verified against. No-op when there's no gate or it's already open.
+/// Returns true if a passed gate was re-opened.
+pub fn reopen_verification_if_passed(pool: &DbPool, goal_id: &str) -> Result<bool, AppError> {
+    let Some(item) = goal_verification_item(pool, goal_id)? else {
+        return Ok(false);
+    };
+    if !item.done {
+        return Ok(false);
+    }
+    {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_goal_items SET done = 0, updated_at = ?1 WHERE id = ?2",
+            params![chrono::Utc::now().to_rfc3339(), item.id],
+        )?;
+    }
+    // Recompute so the goal drops out of done/100 (the gate now blocks again).
+    apply_resolved_goal_progress(pool, goal_id)?;
+    Ok(true)
+}
+
 /// Mark the goal's browser-test gate passed (done) and recompute progress —
 /// the close-loop a passing UAT triggers. Returns the new progress.
 pub fn complete_goal_verification(pool: &DbPool, goal_id: &str) -> Result<i32, AppError> {
@@ -1459,6 +1482,12 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
         if goal.started_at.is_none() {
             started_at = Some(Some(now.as_str()));
         }
+    } else if cur == "done" {
+        // Was done but progress dropped below 100 — e.g. a re-opened UAT gate
+        // re-blocked the goal, or new work was added. Demote out of done and
+        // clear the completion stamp so "done" never outlives 100%.
+        new_status = Some("in-progress");
+        completed_at = Some(None);
     } else if new_progress > 0 && cur == "open" {
         new_status = Some("in-progress");
         if goal.started_at.is_none() {
@@ -4230,6 +4259,27 @@ mod uat_gate_tests {
             !goal_todos_all_complete(&pool, &goal.id).unwrap(),
             "an open ordinary to-do makes the UAT ineligible"
         );
+    }
+
+    #[test]
+    fn reopen_gate_when_passed() {
+        let pool = test_pool();
+        let project =
+            create_project(&pool, "Web4", "/tmp/web4", None, None, Some("react"), None, None)
+                .unwrap();
+        let goal = create_goal(&pool, &project.id, "Feature", None, None, None, None, None).unwrap();
+        set_goal_verification(&pool, &goal.id, "test it", None).unwrap();
+        // Pass the gate → goal done.
+        complete_goal_verification(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&get_goal_by_id(&pool, &goal.id).unwrap().status), "done");
+        // Re-open: new work invalidates the pass.
+        let reopened = reopen_verification_if_passed(&pool, &goal.id).unwrap();
+        assert!(reopened);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_ne!(normalize_goal_status(&g.status), "done", "re-opening drops the goal out of done");
+        assert!(g.progress < 100);
+        // Idempotent: re-opening an already-open gate is a no-op.
+        assert!(!reopen_verification_if_passed(&pool, &goal.id).unwrap());
     }
 
     #[test]
