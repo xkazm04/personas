@@ -2,7 +2,7 @@
 
 A working guide for the model writing or evaluating a persona on behalf of the user. This doc is part of the companion's doctrine corpus: when Athena is asked "is this persona ready?" or "help me design this", these are the principles she should bring to the answer.
 
-The companion's existing reference docs (`features/personas/01-data-model.md`, `02-capabilities.md`, `03-trust-and-governance.md`, all template docs 01-07, `concepts/adoption-creation-unification.md`) describe *what* personas are and *how* the system runs them. This doc covers *how to make a good one*.
+The companion's existing reference docs (`features/personas/01-data-model.md`, `02-capabilities.md`, `03-trust-and-governance.md`, all template docs 01-07) describe *what* personas are and *how* the system runs them. This doc covers *how to make a good one*.
 
 ## The shape of a finished persona
 

@@ -129,7 +129,8 @@ back half (test → promote) and the same `matrixBuildSlice` state machine; the
 only difference is the front: a *generated* build (the LLM fills the 8
 dimensions via clarifying questions) vs a *seeded* build (the template's
 `agent_ir` arrives pre-populated and the questionnaire only binds parameters).
-Design + the full rollout plan: `docs/concepts/glyph-convergence.md`.
+(The glyph-convergence design that introduced this shipped 2026-06-01; the
+concept doc was retired once the feature landed.)
 
 ## Goal planning is a team concern, not a persona one
 

@@ -600,7 +600,6 @@ appended to this section, not re-discovered.
 - **Adoption flow design doc:** [`docs/features/templates/03-adoption-flow.md`](../features/templates/03-adoption-flow.md)
 - **Adoption answer pipeline:** [`docs/features/templates/07-adoption-answer-pipeline.md`](../features/templates/07-adoption-answer-pipeline.md)
 - **Template integrity & security:** [`docs/features/templates/06-integrity-and-security.md`](../features/templates/06-integrity-and-security.md)
-- **Recipe-from-template migration design:** [`docs/concepts/recipe-from-template-migration.md`](../concepts/recipe-from-template-migration.md)
 - **Test automation guide:** [`docs/test-automation-guide.md`](../test-automation-guide.md)
 - **APP context map:** [`tools/test-mcp/APP_CONTEXT_MAP.md`](../../tools/test-mcp/APP_CONTEXT_MAP.md)
 - **Glyph harness:** [`tools/test-mcp/e2e_build_from_scratch.py`](../../tools/test-mcp/e2e_build_from_scratch.py)

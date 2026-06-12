@@ -159,10 +159,6 @@ Once the SHIPPED-pending-MOVE entries (P0) are migrated:
 
 Audit found minor granularity issues — execution backend listed as `src-tauri/src/engine` generically, but is split across `runner.rs`, `scheduler.rs`, `bus.rs`, `chain.rs`, `healing_orchestrator.rs`. Expand the table for navigation help. **[S]**
 
-### `concepts/adoption-creation-unification.md`
-
-Audit could not confirm whether `matrixEditSlice` shipped or remains in-flight. Verify and update the status line in `concepts/README.md`. **[S]**
-
 ### `harness/`
 
 After the wave-report subdir cleanup applied in this pass, the remaining root files are:

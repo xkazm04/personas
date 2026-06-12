@@ -64,14 +64,10 @@ const INCLUDED_DOCS: &[&str] = &[
     "features/plugins/artist/media-studio-render-plan.md",
     "features/live-roadmap/live-roadmap.md",
     // Top-level concepts — design philosophy.
-    "concepts/adoption-creation-unification.md",
     "features/agents/operations-hub.md",
     "concepts/ambient-context-fusion.md",
-    "concepts/claude-code-routines-integration.md",
-    "concepts/cloud-deployment.md",
     "concepts/invisible-apps-p2p.md",
     "concepts/mobile.md",
-    "concepts/real-api-testing.md",
     "concepts/persona-design-best-practices.md",
     // Athena's own capability surface — kept in doctrine so the
     // "what can you do?" question pulls a current, honest answer via
@@ -170,10 +166,6 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
     ),
     // Top-level concepts
     (
-        "concepts/adoption-creation-unification.md",
-        include_str!("../../../../docs/concepts/adoption-creation-unification.md"),
-    ),
-    (
         "features/agents/operations-hub.md",
         include_str!("../../../../docs/features/agents/operations-hub.md"),
     ),
@@ -182,24 +174,12 @@ const EMBEDDED_DOCS: &[(&str, &str)] = &[
         include_str!("../../../../docs/concepts/ambient-context-fusion.md"),
     ),
     (
-        "concepts/claude-code-routines-integration.md",
-        include_str!("../../../../docs/concepts/claude-code-routines-integration.md"),
-    ),
-    (
-        "concepts/cloud-deployment.md",
-        include_str!("../../../../docs/concepts/cloud-deployment.md"),
-    ),
-    (
         "concepts/invisible-apps-p2p.md",
         include_str!("../../../../docs/concepts/invisible-apps-p2p.md"),
     ),
     (
         "concepts/mobile.md",
         include_str!("../../../../docs/concepts/mobile.md"),
-    ),
-    (
-        "concepts/real-api-testing.md",
-        include_str!("../../../../docs/concepts/real-api-testing.md"),
     ),
     (
         "concepts/persona-design-best-practices.md",
