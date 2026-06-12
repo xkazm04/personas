@@ -27,6 +27,7 @@ pub mod fleet_triggers;
 pub mod incident_triggers;
 pub mod message_triage;
 pub mod quiet;
+pub mod rollup;
 pub mod triggers;
 
 use chrono::Utc;

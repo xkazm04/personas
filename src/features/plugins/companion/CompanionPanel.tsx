@@ -1871,7 +1871,10 @@ function Body(props: BodyProps) {
             "Dismiss" silently resolves and removes the card.
           */}
           <AnimatePresence initial={false}>
-            {proactive.map((m) => (
+            {/* message_attention rows are per-message decision-queue items (C1);
+                they're already aggregated on the message_digest card, so they
+                don't render as standalone panel cards here. */}
+            {proactive.filter((m) => m.triggerKind !== 'message_attention').map((m) => (
               <motion.div
                 key={m.id}
                 initial={{ opacity: 0, y: -6, scale: 0.98 }}

@@ -132,6 +132,8 @@ export function triggerKindLabel(t: T, kind: string): string {
       return c.proactive_kind_execution_review;
     case 'message_digest':
       return c.proactive_kind_message_digest;
+    case 'daily_rollup':
+      return c.proactive_kind_daily_rollup;
     default:
       return c.proactive_kind_unknown;
   }

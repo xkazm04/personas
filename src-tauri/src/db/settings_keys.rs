@@ -260,6 +260,21 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Whether Athena emits a once-per-day end-of-day rollup card summarizing
+/// everything that was dropped / digested / surfaced that day (the "full audit
+/// without the live noise"). Default OFF — opt-in. Read by
+/// `companion::proactive::rollup`. Stored `"true"` / `"false"`.
+pub const COMPANION_DAILY_ROLLUP: &str = "companion_daily_rollup";
+/// Default for [`COMPANION_DAILY_ROLLUP`] — off (opt-in).
+pub const COMPANION_DAILY_ROLLUP_DEFAULT: bool = false;
+/// Local hour-of-day (0–23) at/after which the daily rollup may fire. Default 18.
+pub const COMPANION_DAILY_ROLLUP_HOUR: &str = "companion_daily_rollup_hour";
+/// Default for [`COMPANION_DAILY_ROLLUP_HOUR`] — 6pm local.
+pub const COMPANION_DAILY_ROLLUP_HOUR_DEFAULT: u32 = 18;
+/// The local `YYYY-MM-DD` the rollup last fired — so it fires at most once a day.
+/// Free-form date value (no typed validation).
+pub const COMPANION_DAILY_ROLLUP_LAST: &str = "companion_daily_rollup_last";
+
 /// Whether the autonomous assignment-retry tick may, unattended, resume a team
 /// assignment that soft-paused at `awaiting_review` because a step failed for a
 /// RETRYABLE reason (Claude session/usage limit or rate limit) — resetting the
@@ -479,6 +494,9 @@ const ALLOWED_KEYS: &[&str] = &[
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    COMPANION_DAILY_ROLLUP,
+    COMPANION_DAILY_ROLLUP_HOUR,
+    COMPANION_DAILY_ROLLUP_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
@@ -591,6 +609,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
+        | COMPANION_DAILY_ROLLUP
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
         | AUTONOMOUS_BACKLOG_TO_GOAL
@@ -613,6 +632,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
+            )),
+        },
+        COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
+            Ok(h) if h <= 23 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
         _ => Ok(()),

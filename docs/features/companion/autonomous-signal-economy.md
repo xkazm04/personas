@@ -129,8 +129,15 @@ The Messages counterpart of Athena's human-review resolution
   `declared_duration_ms` columns let the user's word override the learned p95
   (no UI yet — settable via the DB). Digest exemplar lines now read
   "3.2× this persona's typical p95 of $0.41" so the verdict is concrete.
-- **Daily rollup** — one end-of-day digest summarizing everything that was
-  dropped, for users who want the full audit without the live noise.
+- ~~**Daily rollup**~~ — **SHIPPED (C3).** `proactive/rollup.rs` emits one
+  `daily_rollup` ProactiveCard per local day (gated by `companion_daily_rollup`,
+  default off; fires at/after `companion_daily_rollup_hour` default 18, once per
+  day via `companion_daily_rollup_last`). Body is composed deterministically (no
+  model call) from the `companion_turn` ledger (turns + cost + triage verdict
+  sums + parse failures), the proactive table (cards created/engaged/dismissed),
+  and job failures — counts only, each line naming where to look. No budget cost
+  (`enqueue_external`), deduped on the date. Checked from both proactive
+  evaluation entry points (manual + desktop tick).
 - **Exec-leg retry cursor** — a two-phase cursor (scanned vs triaged) so a CLI
   failure doesn't skip the batch.
 

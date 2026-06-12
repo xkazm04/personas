@@ -387,6 +387,8 @@ async fn run_proactive_tick(
     // Goals hub: surface stalled / target-approaching project goals. dev_goals
     // live in the main app DB, reachable here via the managed AppState.
     let app_state = app.state::<Arc<AppState>>();
+    // C3: emit the once-daily end-of-day rollup if it's due (gated, no budget).
+    proactive_engine::rollup::maybe_emit_daily_rollup(pool, &app_state.db, app);
     extra.extend(proactive_engine::triggers::dev_goal_nudges(&app_state.db));
     // Incidents inbox: surface OPEN high/critical audit incidents (main app DB)
     // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an

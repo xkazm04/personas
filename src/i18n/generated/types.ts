@@ -12655,6 +12655,7 @@ export type Translations = {
       proactive_kind_incident_blocker: string;
       proactive_kind_execution_review: string;
       proactive_kind_message_digest: string;
+      proactive_kind_daily_rollup: string;
       proactive_kind_unknown: string;
       action_label_run_persona: string;
       action_label_resolve_human_review: string;
