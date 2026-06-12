@@ -263,7 +263,7 @@ pub fn companion_get_health(
                 dismissed: r.get(2)?,
                 expired: r.get(3)?,
                 budget_used_today: 0.0,
-                budget_cap: crate::companion::proactive::budget::DAILY_CAP as f64,
+                budget_cap: crate::companion::proactive::budget::GLOBAL_DAILY_CAP as f64,
             })
         },
     )?;

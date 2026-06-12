@@ -110,8 +110,15 @@ The Messages counterpart of Athena's human-review resolution
   → Messages + engage), **Mark read** (`mark_message_read` + engage), and
   **Dismiss** (the message stays unread). The aggregated digest card is
   unchanged — this is the per-item "needs your read" decision.
-- **Per-source attention budgets** — a daily cap per trigger kind, so one
-  noisy leg can't crowd out the others' cards.
+- ~~**Per-source attention budgets**~~ — **SHIPPED (C2).** The single daily cap
+  of 3 (too coarse, every kind shared it) is now a **global ceiling of 12** with
+  **per-trigger-kind sub-budgets** underneath (`execution_review`/`message_digest`
+  4, `incident_blocker` 6, `message_attention` 8, `dev_goal_*` 2,
+  `athena_scheduled` unthrottled, fallback 3). `budget::try_consume(kind)` claims
+  one global unit AND one per-kind unit atomically (rolls back the global
+  increment if the per-kind cap blocks), counted in `companion_attention_budget`.
+  A noisy leg now exhausts only its own sub-budget. (Live-tuning overrides + an
+  A4 per-kind display are a follow-up.)
 - ~~**Severity registry**~~ — **SHIPPED (D1, direction 3).** Execution triage now
   flags deviation from each persona's *own* learned norm, not the global
   `EXPENSIVE_USD`/`SLOW_MS` constants. `proactive/baselines.rs` computes p50/p95

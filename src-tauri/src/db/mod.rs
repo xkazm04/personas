@@ -748,7 +748,18 @@ CREATE INDEX IF NOT EXISTS idx_companion_design_decision_context
 -- delivery; a fresh row is created on the first nudge of any UTC date.
 CREATE TABLE IF NOT EXISTS companion_proactive_budget (
     date    TEXT PRIMARY KEY,                    -- 'YYYY-MM-DD' UTC
-    count   INTEGER NOT NULL DEFAULT 0
+    count   INTEGER NOT NULL DEFAULT 0           -- global daily ceiling counter
+);
+
+-- Phase C2 (Athena value expansion / direction 2): per-trigger-kind daily
+-- sub-budgets under the global ceiling, so one noisy leg can't crowd out
+-- another's cards. companion::proactive::budget claims one global unit AND one
+-- per-kind unit (atomically) per delivery.
+CREATE TABLE IF NOT EXISTS companion_attention_budget (
+    date          TEXT NOT NULL,                 -- 'YYYY-MM-DD' UTC
+    trigger_kind  TEXT NOT NULL,
+    count         INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (date, trigger_kind)
 );
 
 -- Phase F: connectors the user has attached to Athena's chat surface.
