@@ -222,3 +222,49 @@ dormant `ByomPolicy` `TaskComplexity::Simple` routing — replacing whole
 Sonnet calls beats delegating inside prompt-heavy executions by an order of
 magnitude. Second lever: the 20–37k prompt machinery itself (prompt diet),
 which mixed cannot touch.
+
+## 7. local_first (composer/validator) — first live verdict (2026-06-12)
+
+`engine_mode="local_first"` narrows Claude to COMPOSE → (local model
+produces all content) → VALIDATE & ASSEMBLE. Run I2 (six-team bulk UC,
+gemma3:4b delegate, hardened tool):
+
+| | G full Claude | H2 mixed | I2 local_first |
+|---|---|---|---|
+| Claude output tokens | 11,283 | 9,671 | **21,244** |
+| Claude cache write / read | 44,943 / 38,056 | 19,315 / 63,161 | 43,216 / **114,246** |
+| Turns | 2 | 2 | **14** |
+| Local calls (ok) | 0 | 1 | **13** (9.5k in / 5.1k out local) |
+| Wall | 3:37 | 3:36 | **19:34** |
+| Cost | $0.27 | $0.28 | **$2.06** |
+
+**Quality held; economics inverted.** The contract worked as designed —
+Claude issued 6 parallel work orders, caught ~5 misattributions per round in
+the local output (wrong engineer credited with commits, swapped hashes),
+issued revision orders, and line-by-line validated the final assembly: all
+six teams covered, rollup present, every surviving claim verified. But
+**validating + repairing an untrustworthy middle costs more Claude tokens
+than writing the content directly**: 14 turns (each tool result re-reads the
+cache), revision rounds, and forensic validation prose doubled Claude output
+and ~7×'d cost, while serialized local generation (17 min) nearly hit the
+20-minute engine ceiling.
+
+**Two model-class findings:**
+1. **Reasoning models are unusable as delegates.** lfm2.5 generates ~5×
+   its answer in thinking traces (10.3k chars thinking / 2.2k answer, 133s
+   for one 300-word digest); `think:false` and `/no_think` both fail to
+   suppress it. The tool is now reasoning-proof (300s timeout,
+   `num_predict=4096`, inline `<think>`-strip — commit 4ef308a7b), but the
+   delegate slot wants a non-reasoning workhorse (gemma3:4b: clean, 20–40s).
+2. **A 4B middle is below the trust threshold for composer mode.** The
+   validator caught its errors, so output quality survives — but at
+   rewrite-equivalent cost. The pattern's economics need a middle model with
+   a low enough error rate that validation can be spot-check, not forensic.
+
+**What would make local_first viable** (the future-trend bet, parked):
+a 12–30B-class middle (or Ollama Cloud free tier — the env plumbing already
+supports it), parallel local generation (`OLLAMA_NUM_PARALLEL`) to fix the
+serialized wall-clock, and a sampling validator (validate 2 of N sections +
+the rollup, not every line). Until then: `mixed` for opportunistic offload,
+full Claude for quality-critical capabilities, and the REAL near-term token
+lever stays the headless-call layer (wake window + future Simple routing).
