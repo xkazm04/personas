@@ -47,6 +47,122 @@ pub fn kind_cap(kind: &str) -> u32 {
     }
 }
 
+// ── F4: engagement-modulated caps (spend the profile) ─────────────────────
+//
+// The static per-kind caps adapt to how the user actually responds: a kind the
+// user reliably dismisses gets throttled; one they reliably engage gets a touch
+// more room. ±1 only, within hard bounds, requires enough signal to act — and
+// it only ever changes how OFTEN cards appear, never the message-triage safety
+// floor (high/urgent/critical can't be auto-resolved regardless — that's
+// enforced in message_triage, not here) and never the attention tier.
+
+/// Minimum 30-day engage+dismiss samples before modulation kicks in.
+const MODULATION_MIN_N: i64 = 5;
+
+/// The ±1 adjustment from engagement: dismissed ≥80% → −1; engaged ≥60% → +1;
+/// else 0. `None`-equivalent (0) below the sample floor.
+fn adjustment(engaged: i64, dismissed: i64) -> i64 {
+    let total = engaged + dismissed;
+    if total < MODULATION_MIN_N {
+        return 0;
+    }
+    let dismiss_rate = dismissed as f64 / total as f64;
+    let engage_rate = engaged as f64 / total as f64;
+    if dismiss_rate >= 0.80 {
+        -1
+    } else if engage_rate >= 0.60 {
+        1
+    } else {
+        0
+    }
+}
+
+/// 30-day engaged vs dismissed for one kind.
+fn engagement_30d(conn: &rusqlite::Connection, kind: &str) -> (i64, i64) {
+    conn.query_row(
+        "SELECT COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0)
+         FROM companion_proactive_message
+         WHERE trigger_kind = ?1 AND created_at >= datetime('now', '-30 days')
+           AND status IN ('engaged', 'dismissed')",
+        params![kind],
+        |r| Ok((r.get(0)?, r.get(1)?)),
+    )
+    .unwrap_or((0, 0))
+}
+
+/// The effective per-kind cap after engagement modulation. Scheduled check-ins
+/// (uncapped) and kinds without enough signal return their static cap.
+fn effective_kind_cap(conn: &rusqlite::Connection, kind: &str) -> u32 {
+    let base = kind_cap(kind);
+    if base == u32::MAX {
+        return base;
+    }
+    let (engaged, dismissed) = engagement_30d(conn, kind);
+    let adj = adjustment(engaged, dismissed);
+    if adj != 0 {
+        tracing::debug!(kind, base, adj, engaged, dismissed, "budget: engagement-modulated cap");
+    }
+    ((base as i64 + adj).clamp(1, base as i64 + 2)) as u32
+}
+
+/// One kind's adapted budget, for the transparency surface ("what Athena
+/// adapts").
+#[derive(Debug, Clone)]
+pub struct KindModulation {
+    pub kind: String,
+    pub base_cap: u32,
+    pub effective_cap: u32,
+    pub engaged: i64,
+    pub dismissed: i64,
+}
+
+/// Active engagement modulations — every kind with ≥[`MODULATION_MIN_N`] signal
+/// in the last 30 days whose effective cap differs from its base. Best-effort.
+pub fn modulations_summary(pool: &UserDbPool) -> Vec<KindModulation> {
+    let Ok(conn) = pool.get() else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT trigger_kind,
+                COALESCE(SUM(CASE WHEN status = 'engaged'   THEN 1 ELSE 0 END), 0),
+                COALESCE(SUM(CASE WHEN status = 'dismissed' THEN 1 ELSE 0 END), 0)
+         FROM companion_proactive_message
+         WHERE created_at >= datetime('now', '-30 days') AND status IN ('engaged', 'dismissed')
+         GROUP BY trigger_kind",
+    ) else {
+        return Vec::new();
+    };
+    let rows = stmt
+        .query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?, r.get::<_, i64>(2)?))
+        })
+        .map(|it| it.filter_map(Result::ok).collect::<Vec<_>>())
+        .unwrap_or_default();
+
+    let mut out = Vec::new();
+    for (kind, engaged, dismissed) in rows {
+        let base = kind_cap(&kind);
+        if base == u32::MAX {
+            continue;
+        }
+        let adj = adjustment(engaged, dismissed);
+        if adj == 0 {
+            continue; // only surface kinds we actually adapted
+        }
+        let effective = ((base as i64 + adj).clamp(1, base as i64 + 2)) as u32;
+        out.push(KindModulation {
+            kind,
+            base_cap: base,
+            effective_cap: effective,
+            engaged,
+            dismissed,
+        });
+    }
+    out.sort_by(|a, b| a.kind.cmp(&b.kind));
+    out
+}
+
 #[derive(Debug)]
 pub struct DailyBudget {
     pub date: String,
@@ -75,9 +191,10 @@ impl DailyBudget {
     /// guarantee from bug-hunt 2026-06-07 companion #2, now per-kind). Call
     /// AFTER a successful enqueue so a transient error doesn't burn budget.
     pub fn try_consume(&mut self, pool: &UserDbPool, kind: &str) -> Result<bool, AppError> {
-        let cap_kind = kind_cap(kind);
         let mut conn = pool.get()?;
         let tx = conn.transaction()?;
+        // F4: the per-kind cap adapts to how the user responds to this kind.
+        let cap_kind = effective_kind_cap(&tx, kind);
         // Ensure both counter rows exist so the conditional UPDATEs have a row.
         tx.execute(
             "INSERT OR IGNORE INTO companion_proactive_budget (date, count) VALUES (?1, 0)",
@@ -152,7 +269,10 @@ mod tests {
                     date TEXT PRIMARY KEY, count INTEGER NOT NULL DEFAULT 0);
                  CREATE TABLE IF NOT EXISTS companion_attention_budget (
                     date TEXT NOT NULL, trigger_kind TEXT NOT NULL, count INTEGER NOT NULL DEFAULT 0,
-                    PRIMARY KEY (date, trigger_kind));",
+                    PRIMARY KEY (date, trigger_kind));
+                 CREATE TABLE IF NOT EXISTS companion_proactive_message (
+                    id TEXT, trigger_kind TEXT, status TEXT,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')));",
             )
             .unwrap();
         pool
@@ -178,6 +298,46 @@ mod tests {
         assert!(!b.try_consume(&pool, "message_digest").unwrap());
         // A different kind still has its own budget.
         assert!(b.try_consume(&pool, "incident_blocker").unwrap());
+    }
+
+    #[test]
+    fn adjustment_rules() {
+        assert_eq!(adjustment(0, 0), 0); // no signal
+        assert_eq!(adjustment(1, 3), 0); // total < MIN_N
+        assert_eq!(adjustment(1, 9), -1); // 90% dismissed
+        assert_eq!(adjustment(7, 3), 1); // 70% engaged
+        assert_eq!(adjustment(4, 4), 0); // mixed
+    }
+
+    #[test]
+    fn dismiss_heavy_kind_is_throttled() {
+        let pool = test_pool();
+        {
+            let c = pool.get().unwrap();
+            // message_digest (base cap 4) dismissed 9/10 → effective 3.
+            for i in 0..9 {
+                c.execute(
+                    "INSERT INTO companion_proactive_message (id, trigger_kind, status) VALUES (?1, 'message_digest', 'dismissed')",
+                    params![format!("d{i}")],
+                ).unwrap();
+            }
+            c.execute(
+                "INSERT INTO companion_proactive_message (id, trigger_kind, status) VALUES ('e0', 'message_digest', 'engaged')",
+                [],
+            ).unwrap();
+        }
+        // The effective cap is 3, so the 4th claim fails (base would allow 4).
+        let mut b = today(&pool).unwrap();
+        for _ in 0..3 {
+            assert!(b.try_consume(&pool, "message_digest").unwrap());
+        }
+        assert!(!b.try_consume(&pool, "message_digest").unwrap());
+
+        let mods = modulations_summary(&pool);
+        assert_eq!(mods.len(), 1);
+        assert_eq!(mods[0].kind, "message_digest");
+        assert_eq!(mods[0].base_cap, 4);
+        assert_eq!(mods[0].effective_cap, 3);
     }
 
     #[test]

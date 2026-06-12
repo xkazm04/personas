@@ -12571,6 +12571,12 @@ export type Translations = {
       identity_save: string;
       identity_saving: string;
       identity_edit_hint: string;
+      identity_adapts_title: string;
+      identity_adapts_row: string;
+      identity_correct_title: string;
+      identity_correct_hint: string;
+      identity_wrong: string;
+      identity_wrong_proposed: string;
       brain_linked_label: string;
       episodes: string;
       doctrine: string;

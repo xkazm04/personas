@@ -304,3 +304,37 @@ pub fn companion_get_health(
         errors,
     })
 }
+
+// ── Adaptations (F4 — "what Athena adapts") ──────────────────────────────
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AthenaAdaptation {
+    pub kind: String,
+    pub base_cap: f64,
+    pub effective_cap: f64,
+    pub engaged: f64,
+    pub dismissed: f64,
+}
+
+/// The active engagement budget modulations (F4) — how Athena has adapted her
+/// nudge frequency to the user's behavior. Empty when nothing's been adapted.
+#[tauri::command]
+pub fn companion_get_adaptations(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<AthenaAdaptation>, AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    Ok(
+        crate::companion::proactive::budget::modulations_summary(&state.user_db)
+            .into_iter()
+            .map(|m| AthenaAdaptation {
+                kind: m.kind,
+                base_cap: m.base_cap as f64,
+                effective_cap: m.effective_cap as f64,
+                engaged: m.engaged as f64,
+                dismissed: m.dismissed as f64,
+            })
+            .collect(),
+    )
+}

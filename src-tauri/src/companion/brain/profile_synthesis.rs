@@ -93,13 +93,29 @@ async fn try_run(user_db: &UserDbPool, sys_db: &DbPool, app: &AppHandle) -> Resu
         return Ok(());
     }
 
-    let created = insert_identity_approval(user_db, &diffs)?;
-    // Headless pass → emit so the panel + hands-free decision queue surface the
-    // approval without waiting for the next chat turn.
-    if let Err(e) = app.emit(APPROVALS_EVENT, vec![created]) {
-        tracing::warn!(error = %e, "profile_synthesis: approvals event emit failed");
-    }
+    propose_identity_update(
+        user_db,
+        app,
+        &diffs,
+        "From a weekly look at how you've actually been working with me — please review.",
+    )?;
     tracing::info!(diffs = diffs.len(), "profile_synthesis: proposed identity diffs for review");
+    Ok(())
+}
+
+/// Insert a pending `update_identity` approval carrying `diffs` and emit the
+/// approvals event so the panel + hands-free decision queue surface it promptly.
+/// Shared by the synthesis pass and the "that's wrong" correction loop (F4).
+pub(crate) fn propose_identity_update(
+    user_db: &UserDbPool,
+    app: &AppHandle,
+    diffs: &[serde_json::Value],
+    rationale: &str,
+) -> Result<(), AppError> {
+    let created = insert_identity_approval(user_db, diffs, rationale)?;
+    if let Err(e) = app.emit(APPROVALS_EVENT, vec![created]) {
+        tracing::warn!(error = %e, "identity update: approvals event emit failed");
+    }
     Ok(())
 }
 
@@ -317,15 +333,14 @@ fn parse_diffs(blob: &str) -> Vec<serde_json::Value> {
 }
 
 /// Insert one pending `update_identity` approval carrying the diffs (mirrors the
-/// dispatcher's `insert_approval` INSERT, but from this headless pass).
+/// dispatcher's `insert_approval` INSERT, but from a headless/UI-driven path).
 fn insert_identity_approval(
     pool: &UserDbPool,
     diffs: &[serde_json::Value],
+    rationale: &str,
 ) -> Result<CreatedApproval, AppError> {
     let id = format!("appr_{}", short_id());
     let params = serde_json::json!({ "diffs": diffs });
-    let rationale =
-        "From a weekly look at how you've actually been working with me — please review.";
     let payload = serde_json::json!({
         "action": "update_identity",
         "params": params,
@@ -429,7 +444,7 @@ mod tests {
     fn inserts_pending_approval() {
         let p = pool();
         let diffs = vec![serde_json::json!({"section":"About Michal / What helps","op":"append","new_text":"x","rationale":"y"})];
-        let created = insert_identity_approval(&p, &diffs).unwrap();
+        let created = insert_identity_approval(&p, &diffs, "test").unwrap();
         assert_eq!(created.action, "update_identity");
         let (status, action): (String, String) = p
             .get()

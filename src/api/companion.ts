@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import { silentCatch } from '@/lib/silentCatch';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
+import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 
@@ -939,6 +940,19 @@ export function companionRecordUxSignal(kind: string, payloadJson: string): void
   void invoke<void>('companion_record_ux_signal', { kind, payloadJson }).catch(
     silentCatch('companion_record_ux_signal'),
   );
+}
+
+/**
+ * "That's wrong" correction loop (F4): mark one identity bullet as wrong.
+ * Records a correction episode and proposes a one-click RemoveBullet approval.
+ */
+export async function companionCorrectIdentityClaim(section: string, bullet: string): Promise<void> {
+  return invoke<void>('companion_correct_identity_claim', { section, bullet });
+}
+
+/** The active engagement budget modulations (F4) — what Athena adapts. */
+export async function companionGetAdaptations(): Promise<AthenaAdaptation[]> {
+  return invoke<AthenaAdaptation[]>('companion_get_adaptations');
 }
 
 // ── Phase C: consolidation + reflection ────────────────────────────────

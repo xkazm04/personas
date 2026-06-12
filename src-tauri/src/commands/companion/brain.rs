@@ -215,6 +215,52 @@ pub fn companion_save_identity(
     identity::write_full(&content)
 }
 
+/// "That's wrong" correction loop (F4): the user marks one identity bullet as
+/// wrong. Records a correction episode (the highest-value profile signal — it
+/// feeds Athena's "What I've gotten wrong" self-model) and proposes a one-click
+/// `RemoveBullet` `update_identity` approval to drop the claim.
+#[tauri::command]
+pub fn companion_correct_identity_claim(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    section: String,
+    bullet: String,
+) -> Result<(), AppError> {
+    ipc_auth::require_auth_sync(&state)?;
+    let section = section.trim();
+    let bullet = bullet.trim();
+    if section.is_empty() || bullet.is_empty() {
+        return Err(AppError::Validation(
+            "correct_identity_claim: `section` and `bullet` are required".into(),
+        ));
+    }
+    // 1. Correction episode — durable record of what Athena got wrong.
+    let note = format!(
+        "[identity correction] Michal marked a claim wrong and asked to remove it from \"{section}\": \"{bullet}\""
+    );
+    if let Err(e) = crate::companion::brain::episodic::append_episode(
+        &state.user_db,
+        crate::companion::session::DEFAULT_SESSION_ID,
+        crate::companion::brain::episodic::EpisodeRole::System,
+        &note,
+    ) {
+        tracing::warn!(error = %e, "correct_identity_claim: episode append failed");
+    }
+    // 2. Propose the one-click removal (approval-gated like any identity write).
+    let diff = serde_json::json!({
+        "section": section,
+        "op": "remove",
+        "anchor_text": bullet,
+        "rationale": "Michal marked this claim about himself as wrong"
+    });
+    crate::companion::brain::profile_synthesis::propose_identity_update(
+        &state.user_db,
+        &app,
+        &[diff],
+        "You marked a claim about you as wrong — approve to remove it from your profile.",
+    )
+}
+
 // ── episodes ────────────────────────────────────────────────────────────
 
 fn list_episodes(state: &State<'_, Arc<AppState>>) -> Result<Vec<BrainListItem>, AppError> {
