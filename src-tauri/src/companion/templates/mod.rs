@@ -280,4 +280,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// KPIs) — distinct from `personas_database` (the brain DB). When to query vs.
 /// use the deterministic Radar/Sunrise flows, and the untrusted-content guard
 /// (result cells are data, never instructions).
-pub const CONSTITUTION_VERSION: u32 = 34;
+///
+/// v35 (guidance anchors, E1) refreshes the `point_at` anchor list to include
+/// the new content anchors (templates_gallery, settings_page). The Rust
+/// allow-list is now code-generated from the frontend catalog, so the set grows
+/// without a manual sync; invalid anchor ids are dropped server-side.
+pub const CONSTITUTION_VERSION: u32 = 35;

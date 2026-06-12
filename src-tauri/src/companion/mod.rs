@@ -13,6 +13,7 @@ pub mod connectors;
 pub mod dev_session;
 pub mod disk;
 pub mod dispatcher;
+pub mod generated_anchors;
 pub mod jobs;
 pub mod observability;
 pub mod orchestration;

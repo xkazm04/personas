@@ -279,22 +279,12 @@ const ALLOWED_ROUTES: &[&str] = &[
 /// walkthrough name can't drive the orb to nowhere.
 const GUIDED_TOPICS: &[&str] = &["persona_creation", "connector_setup"];
 
-/// Anchors Athena may target via `point_at` / `compose_walkthrough`. Mirrors the
-/// frontend catalog keys in `guidance/anchorCatalog.ts` (`ANCHOR_IDS`). An
-/// anchor not listed here is rejected so a hallucinated selector can't drive the
-/// orb to an arbitrary or sensitive element.
-const ANCHOR_IDS: &[&str] = &[
-    "nav_home",
-    "nav_overview",
-    "nav_agents",
-    "nav_events",
-    "nav_connections",
-    "nav_templates",
-    "nav_plugins",
-    "nav_settings",
-    "vault",
-    "overview_dashboard",
-];
+/// Anchors Athena may target via `point_at` / `compose_walkthrough`. An anchor
+/// not listed here is rejected so a hallucinated selector can't drive the orb to
+/// an arbitrary or sensitive element. **Code-generated** from the frontend
+/// catalog (`guidance/anchorCatalog.ts`) by `scripts/generate-guidance-anchors.mjs`
+/// so the TS source of truth and this Rust allow-list can never drift.
+use crate::companion::generated_anchors::GUIDANCE_ANCHORS as ANCHOR_IDS;
 
 /// A composed walkthrough should be a *short* tour. One stop is `point_at`'s
 /// job; more than this reads as a slideshow the user won't sit through.
