@@ -713,11 +713,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
-### feature — Athena value expansion EXECUTION (phased build of docs/plans/athena-value-expansion.md)
-- Started: 2026-06-12. Completed: 2026-06-13. **16/17 phases shipped** (E2 deferred-by-design — needs LIVE testid verification with the running app).
-- Commits: A1 b3ae1e95d, A2 de55e9318, A3 7f8ee1692, A4 c13b1a6cf (auditability); D1 20114a3c0 (adaptive triage baselines); C1 5b816be68, C2 75d9450d5, C3 a4eb780d4, C4 e3422bed6 (signal economy); B1 685b8116f (ops connector v34); E1 813c4902c (anchor codegen v35), E3 80f1a2118 (walkthrough offer v36); F1 0f673f054 (identity engine + anchored update_identity v37), F2 4a7635a99 (re-runnable intake v38), F3 84d62d340 (behavioral synthesis), **F4 5a68d02ce (spend the profile: budget modulation + transparency + correction loop)**.
-- Branch: master (main checkout — deliberate: Rust-heavy sequential phases, worktree recompile cost prohibitive; scope src-tauri/src/companion/** disjoint from concurrent doc/credentials sessions). Per-file git add + atomic commit per phase; all gates green every phase.
-- Note: design doc docs/plans/athena-value-expansion.md (4c029ba58); constitution at v38 (F4 no bump — deterministic backend + UI, reuses update_identity grammar). REMAINING: E2 only (4 walkthrough topics: trigger_creation/template_adoption/incident_triage/goal_kpi_setup + Playwright — a walkthrough pointing at an unmounted testid silently fails to glow, so it needs live verification the user must drive). Memory: project_athena_value_expansion.md.
+### feature — Athena value expansion EXECUTION (phased build of docs/plans/athena-value-expansion.md) — COMPLETE
+- Started: 2026-06-12. Completed: 2026-06-13. **17/17 phases shipped** — the entire plan is done.
+- Commits: A1 b3ae1e95d, A2 de55e9318, A3 7f8ee1692, A4 c13b1a6cf (auditability); D1 20114a3c0 (adaptive triage baselines); C1 5b816be68, C2 75d9450d5, C3 a4eb780d4, C4 e3422bed6 (signal economy); B1 685b8116f (ops connector v34); E1 813c4902c (anchor codegen v35), **E2 fde9b4aaf (4 walkthrough coverage topics + testids, v39)**, E3 80f1a2118 (walkthrough offer v36); F1 0f673f054 (identity engine + anchored update_identity v37), F2 4a7635a99 (re-runnable intake v38), F3 84d62d340 (behavioral synthesis), F4 5a68d02ce (spend the profile: budget modulation + transparency + correction loop).
+- Branch: master (main checkout — deliberate: Rust-heavy sequential phases, worktree recompile cost prohibitive; scope src-tauri/src/companion/** + 4 read-only surface testid adds, disjoint from concurrent doc/credentials/GCP sessions). Per-file git add + atomic commit per phase; all gates green every phase.
+- Note: design doc docs/plans/athena-value-expansion.md (4c029ba58); constitution at v39. E2 (the previously-deferred phase) shipped robustly: every topic's first step rings an always-present route container + bounded waitForTestId degrades missing data-dependent targets to narration-only, so live verification is no longer a blocker (deterministic Playwright spec + dispatcher unit test cover the mechanics). Memory: project_athena_value_expansion.md.
 
 ### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (Fable design pass)
 - Started: 2026-06-12. Completed: 2026-06-12. Commit: 4c029ba58.
