@@ -64,8 +64,8 @@
       "connectors": [],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Daily 7am morning briefing, on-demand decision analyses, Sunday 6pm weekly review — each delivered as its own message."
+          "type": "built-in",
+          "description": "Daily 7am morning briefing, on-demand decision analyses (always reviewed before delivery), Sunday 6pm weekly review — each delivered as its own in-app message."
         }
       ],
       "core_memories": []

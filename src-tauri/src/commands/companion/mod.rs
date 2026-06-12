@@ -119,10 +119,12 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                     #[cfg(not(feature = "desktop"))]
                     let nudge_res = run_proactive_tick(&pool, &app_handle).await;
 
-                    // Goal 2: self-initiated execution review. Independent
-                    // of the nudge pipeline (which early-returns when no
-                    // candidates landed) — only runs when autonomous mode
-                    // is toggled on, so it's opt-in and off by default.
+                    // Self-initiated execution review. Independent of the
+                    // nudge pipeline (which early-returns when no candidates
+                    // landed) — only runs when autonomous mode is toggled
+                    // on, so it's opt-in and off by default. One batched
+                    // headless triage per tick: digest card + ≤1 deep-dive
+                    // turn (see proactive::execution_review module docs).
                     if crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
                         let review = crate::companion::proactive::execution_review::review_recent_executions(
                             &pool,
@@ -130,14 +132,37 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                             &app_handle,
                             #[cfg(feature = "ml")]
                             review_embedder.as_ref(),
-                        );
+                        )
+                        .await;
                         match review {
                             Ok(n) if n > 0 => {
-                                tracing::info!(reviews = n, "proactive: spawned execution-review turn(s)");
+                                tracing::info!(surfaced = n, "proactive: execution triage surfaced finding(s)");
                             }
                             Ok(_) => {}
                             Err(e) => {
                                 tracing::warn!(error = %e, "proactive: execution review failed");
+                            }
+                        }
+
+                        // Messages triage — Athena reads the Overview →
+                        // Messages inbox the way she resolves human reviews:
+                        // routine ones are read-and-done, business value is
+                        // summarized onto one digest card, and items that
+                        // need the user personally stay unread + escalate.
+                        // Distinct opt-in beyond autonomous mode.
+                        match crate::companion::proactive::message_triage::triage_unread_messages(
+                            &pool,
+                            &sys_db,
+                            &app_handle,
+                        )
+                        .await
+                        {
+                            Ok(n) if n > 0 => {
+                                tracing::info!(triaged = n, "proactive: message triage processed message(s)");
+                            }
+                            Ok(_) => {}
+                            Err(e) => {
+                                tracing::warn!(error = %e, "proactive: message triage failed");
                             }
                         }
                     }

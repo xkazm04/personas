@@ -134,6 +134,9 @@ pub mod pipeline_executor;
 pub mod platform_rules;
 pub mod goal_advance;
 pub mod incident_continuation;
+pub mod kpi_eval;
+pub mod kpi_derivation;
+pub mod kpi_binding;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod team_handoff;
@@ -1482,6 +1485,25 @@ impl ExecutionEngine {
                 );
             }
             healing::HealingAction::RetryAt { retry_at } => {
+                // ASSIGNMENT STEPS are excluded: the orchestrator's QA fix loop
+                // + AssignmentAutoResumeSubscription own a step's retry
+                // lifecycle (reset → pending → re-matched as a NEW execution).
+                // Scheduling the ORIGINAL step execution here too would
+                // double-drive the same step after the limit resets — two
+                // executions, duplicate PR attempts on one branch.
+                let is_step_execution = exec_repo::get_by_id(pool, exec_id)
+                    .ok()
+                    .and_then(|e| e.input_data)
+                    .map(|i| i.contains("\"assignment_id\""))
+                    .unwrap_or(false);
+                if is_step_execution {
+                    tracing::info!(
+                        persona_id = %persona_id,
+                        execution_id = %exec_id,
+                        "Healing analysis: usage-limit retry SKIPPED for assignment step (orchestrator owns step retries)",
+                    );
+                    return;
+                }
                 // Durable: a multi-hour in-memory sleep would not survive an
                 // app restart. Persist and let the event-bus tick drain it.
                 tracing::info!(
@@ -1988,7 +2010,18 @@ async fn handle_execution_result(
             result.output.as_deref().unwrap_or("")
         );
         let cooldown_secs = match failover::classify_error(&blob) {
-            Some(error_taxonomy::ErrorCategory::SessionLimit) => Some(QUOTA_COOLDOWN_SESSION_SECS),
+            Some(error_taxonomy::ErrorCategory::SessionLimit) => {
+                // Align the admission pause to the limit's ACTUAL reset when
+                // the CLI message carries one ("resets 1:50pm" / unix ts). A
+                // fixed 900s cooldown re-admitted a fresh wave into the
+                // still-active limit every 15 min — 58 burned executions over
+                // one 5h window (2026-06-10). Clamped to [60s, 6h]; the fixed
+                // fallback covers messages with no parseable timestamp.
+                let aligned = parser::parse_usage_limit(&blob)
+                    .and_then(|i| i.resets_at)
+                    .map(|t| ((t - chrono::Utc::now()).num_seconds() + 120).clamp(60, 6 * 3600));
+                Some(aligned.unwrap_or(QUOTA_COOLDOWN_SESSION_SECS))
+            }
             Some(error_taxonomy::ErrorCategory::RateLimit) => Some(QUOTA_COOLDOWN_RATE_SECS),
             _ => None,
         };
@@ -2512,9 +2545,14 @@ fn evaluate_healing_and_retry(
     circuit_breaker: Arc<failover::ProviderCircuitBreaker>,
     healing_personas: Arc<Mutex<HashSet<String>>>,
 ) {
-    let consecutive = exec_repo::get_recent_failures(pool, persona_id, 5)
-        .unwrap_or_default()
-        .len() as u32;
+    // True streak since the last success, excluding environmental failures
+    // (quota/limit/app-restart) — get_recent_failures(...).len() counted the
+    // last 5 failed rows regardless of interleaved successes, so any persona
+    // with >= 5 lifetime failures permanently read as "5 consecutive" and
+    // tripped the breaker on every subsequent failure (incident spam during
+    // the 2026-06-10 quota storm).
+    let consecutive = exec_repo::count_consecutive_real_failures(pool, persona_id)
+        .unwrap_or(0);
 
     let timeout_ms = if persona_timeout_ms > 0 {
         persona_timeout_ms as u64
@@ -2844,6 +2882,57 @@ fn check_circuit_breaker(
     issue_id: &str,
     persona_name: &str,
 ) {
+    // NEVER silently disable a TEAM MEMBER. Disabled members swallow the bus
+    // handoff (skip, no DLQ) and stall the whole team's cascade — the 06-09
+    // fleet deadlock traced partly to this: quota-storm + restart-kill
+    // failures tripped this breaker on Dev Clone / QA Guardian / Release /
+    // Docs across two teams (the E1 no-op breaker already skips team members
+    // for the same reason; this failure-path breaker predated that lesson).
+    // For a team member, raise a visible INCIDENT instead and leave it
+    // enabled — a member that keeps failing is the team's problem to surface,
+    // not a unit to silently amputate.
+    let home_team: Option<String> = pool
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT home_team_id FROM personas WHERE id = ?1",
+                rusqlite::params![persona_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok()
+        })
+        .flatten();
+    if let Some(home_team_id) = home_team {
+        tracing::warn!(
+            persona_id = %persona_id,
+            persona_name = %persona_name,
+            home_team_id = %home_team_id,
+            consecutive,
+            "circuit breaker: team member NOT disabled — raising incident instead (disable would stall the team cascade)"
+        );
+        let _ = crate::db::repos::execution::audit_incidents::promote(
+            pool,
+            crate::db::models::CreateAuditIncidentInput {
+                source_table: "circuit_breaker".to_string(),
+                source_id: persona_id.to_string(),
+                persona_id: Some(persona_id.to_string()),
+                persona_name: Some(persona_name.to_string()),
+                execution_id: Some(exec_id.to_string()),
+                severity: "high".to_string(),
+                kind: "team_member_failing".to_string(),
+                title: format!("{persona_name}: {consecutive} consecutive failures"),
+                detail: Some(format!(
+                    "Team member hit the circuit-breaker threshold ({consecutive} consecutive \
+                     failures) but was NOT auto-disabled — disabling a team member silently \
+                     breaks the team's handoff chain. Investigate the failure cause (quota \
+                     storm? credential? prompt regression?); the member stays enabled."
+                )),
+            },
+        );
+        return;
+    }
+
     tracing::warn!(
         persona_id = %persona_id,
         consecutive = consecutive,

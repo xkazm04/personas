@@ -584,8 +584,14 @@ impl From<CliCaptureError> for AppError {
     fn from(err: CliCaptureError) -> Self {
         match err {
             CliCaptureError::UnknownService => AppError::NotFound(err.to_string()),
+            // A dead CLI session is the CLI-credential equivalent of a revoked
+            // OAuth grant: only an interactive re-login (`gcloud auth login`)
+            // can fix it. Classifying it as OAuthRevoked lets the refresh
+            // engine's existing needs-reauth pipeline (ledger flag + event +
+            // OS notification + vault banner) fire instead of silently
+            // backing off while personas keep executing with a dead token.
+            CliCaptureError::Unauthenticated { .. } => AppError::OAuthRevoked(err.to_string()),
             CliCaptureError::BinaryMissing { .. }
-            | CliCaptureError::Unauthenticated { .. }
             | CliCaptureError::Timeout
             | CliCaptureError::CaptureFailed { .. } => AppError::Internal(err.to_string()),
         }
@@ -1099,6 +1105,46 @@ mod tests {
                 spec.service_type
             );
         }
+    }
+
+    /// Manual diagnostic: run the full gcloud capture chain on this machine.
+    /// Requires an installed + authenticated gcloud — not a CI test. Prints
+    /// field keys only, never secret values.
+    /// Run: cargo test --manifest-path src-tauri/Cargo.toml --lib --features desktop -- --ignored gcloud_capture
+    #[tokio::test]
+    #[ignore]
+    async fn gcloud_capture_chain_on_this_machine() {
+        let spec = find_spec("gcp_cloud").expect("gcp_cloud spec registered");
+        match run_spec(spec).await {
+            Ok(res) => {
+                let mut keys: Vec<&str> = res.fields.keys().map(|s| s.as_str()).collect();
+                keys.sort_unstable();
+                eprintln!("capture OK: fields={:?} expires_at={:?}", keys, res.expires_at);
+                assert!(res.fields.contains_key("service_account_json"));
+                assert!(res.fields.contains_key("project_id"));
+            }
+            Err(e) => panic!("capture failed: {e}"),
+        }
+    }
+
+    /// A dead CLI session must classify as OAuthRevoked so the refresh
+    /// engine's needs-reauth pipeline (ledger flag + event + notification)
+    /// fires; everything else stays a plain Internal error.
+    #[test]
+    fn unauthenticated_maps_to_oauth_revoked() {
+        let err: AppError = CliCaptureError::Unauthenticated {
+            instruction: "Run `gcloud auth login`".to_string(),
+        }
+        .into();
+        assert!(matches!(err, AppError::OAuthRevoked(_)));
+
+        let err: AppError = CliCaptureError::Timeout.into();
+        assert!(matches!(err, AppError::Internal(_)));
+        let err: AppError = CliCaptureError::BinaryMissing {
+            binary: "gcloud".to_string(),
+        }
+        .into();
+        assert!(matches!(err, AppError::Internal(_)));
     }
 
     /// Verify steps, when present, must reference the same binary as the

@@ -119,7 +119,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Per-concept notifications with title, theme, style, palette, and generation prompt. Sent on every generation."
+          "description": "Mandatory human curation review delivered per concept — title, theme, style, palette, generation prompt, and inline gallery image. Every generation requires explicit approve/reject before the next cycle runs."
         }
       ],
       "core_memories": []

@@ -1,0 +1,18 @@
+# .ai conformance — the hard-pass BACKSTOP for the .ai/ standard.
+# The SAME command runs in your pre-push hook (primary) and here on the merge gate (backstop):
+# the agent self-certifies locally, CI only confirms. The doctor exits non-zero on a hard failure,
+# which blocks the merge. Add --run to also execute capability commands (heavier; the repo's own
+# test/build CI usually already does that).
+name: ai-conformance
+on:
+  pull_request:
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: .ai conformance gate
+        run: node .ai/doctor.mjs

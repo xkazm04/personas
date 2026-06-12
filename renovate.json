@@ -1,0 +1,28 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "//": "D4 (agent-in-the-loop): automate dependency bumps so an agent evaluates them, never blind-merges. Requires enabling the Renovate GitHub App on this repo.",
+  "extends": ["config:recommended", ":semanticCommits", ":dependencyDashboard"],
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "npm": {
+    "rangeStrategy": "bump"
+  },
+  "packageRules": [
+    {
+      "description": "Safe, low-risk updates can auto-merge once CI (incl. the .ai conformance gate) is green.",
+      "matchUpdateTypes": ["patch", "pin", "digest"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true
+    },
+    {
+      "description": "Minor/major bumps open a PR for an agent + human to evaluate (changelog, breaking changes).",
+      "matchUpdateTypes": ["minor", "major"],
+      "automerge": false
+    },
+    {
+      "description": "Cargo (Rust) updates are reviewed manually — cargo-deny already gates supply chain on every PR.",
+      "matchManagers": ["cargo"],
+      "automerge": false
+    }
+  ]
+}

@@ -8,7 +8,7 @@
   "category": [
     "research"
   ],
-  "is_published": true,
+  "is_published": false,
   "service_flow": [
     "Academic APIs",
     "Messages"
@@ -63,7 +63,7 @@
       "notification_channels_default": [
         {
           "type": "messaging",
-          "description": "Daily scan summaries after each discovery cycle and weekly trend reports with rising / new / declining topics."
+          "description": "Daily scan summaries after each discovery cycle and weekly trend reports with rising / new / declining topics. Low-confidence papers are queued for human review rather than included in trend analysis."
         }
       ],
       "core_memories": []

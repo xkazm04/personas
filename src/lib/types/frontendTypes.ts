@@ -130,6 +130,10 @@ export interface DesignUseCase {
   input_schema?: UseCaseInputField[];
   suggested_trigger?: UseCaseSuggestedTrigger;
   model_override?: ModelProfile;
+  /** Mixed engine (docs/plans/mixed-engine-byom.md): "mixed" arms the run's
+   *  personas-mcp sidecar with the llm_delegate tool (local model for simple
+   *  self-contained subtasks). undefined/"claude" = full-Claude (default). */
+  engine_mode?: 'claude' | 'mixed';
   notification_channels?: NotificationChannel[];
   event_subscriptions?: UseCaseEventSubscription[];
   test_fixtures?: TestFixture[];

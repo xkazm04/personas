@@ -862,6 +862,45 @@ pub fn get_recent_failures(
     )
 }
 
+/// TRUE consecutive-failure streak for the circuit breaker: failures SINCE the
+/// persona's last completed execution (an interleaved success resets the
+/// streak — `get_recent_failures(...).len()` counted the last N failed rows
+/// regardless, so any persona with >= N lifetime failures permanently read as
+/// "N consecutive"), EXCLUDING environmental failures that say nothing about
+/// the persona itself: provider session/usage/rate limits and app-restart
+/// kills. One quota storm must not trip the breaker.
+pub fn count_consecutive_real_failures(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<u32, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::count_consecutive_real_failures",
+        {
+            let conn = pool.get()?;
+            let n: i64 = conn.query_row(
+                "SELECT COUNT(*) FROM persona_executions
+                 WHERE persona_id = ?1 AND status = 'failed'
+                   AND datetime(created_at) > COALESCE(
+                       (SELECT MAX(datetime(created_at)) FROM persona_executions
+                         WHERE persona_id = ?1 AND status = 'completed'),
+                       '1970-01-01')
+                   AND NOT (
+                        LOWER(COALESCE(error_message,'')) LIKE '%rate limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%usage limit%'
+                     OR LOWER(COALESCE(error_message,'')) LIKE '%session limit%'
+                     OR COALESCE(error_message,'') LIKE '%App restarted%'
+                     OR LOWER(COALESCE(output_data,'')) LIKE '%session limit%'
+                     OR LOWER(COALESCE(output_data,'')) LIKE '%usage limit%'
+                   )",
+                params![persona_id],
+                |r| r.get(0),
+            )?;
+            Ok(n.min(u32::MAX as i64) as u32)
+        }
+    )
+}
+
 pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     timed_query!("persona_executions", "persona_executions::get_running", {
         let conn = pool.get()?;

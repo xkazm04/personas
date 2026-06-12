@@ -81,8 +81,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Security report after each scan: findings by severity (Critical / High / Medium / Low) and per-severity counts."
+          "type": "built-in",
+          "description": "Security report delivered in-app after each scan: findings by severity (Critical / High / Medium / Low) and per-severity counts. No external messaging connector required."
         }
       ],
       "core_memories": []

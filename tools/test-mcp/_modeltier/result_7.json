@@ -1,0 +1,162 @@
+[
+  {
+    "id": "b362fec9-50d5-5133-90dc-21b34507f652",
+    "tier": "sonnet",
+    "rationale": "Coach reflection on journal entry requires tone judgment and empathetic prose grounded in vault context."
+  },
+  {
+    "id": "c62bbf82-5e82-5001-bea3-5e4f9d07f77d",
+    "tier": "sonnet",
+    "rationale": "Re-running a personalized coach reflection still requires editorial judgment; not purely mechanical replay."
+  },
+  {
+    "id": "cbdd0d9a-5661-5525-9abb-7ebc5c91bb7d",
+    "tier": "sonnet",
+    "rationale": "Multi-week pattern recognition across journal entries requires synthesis and thematic analysis."
+  },
+  {
+    "id": "6cde4c09-5287-53aa-8f38-dfa12d817e88",
+    "tier": "sonnet",
+    "rationale": "Priority scoring with adaptive sender weighting needs moderate reasoning; structured digest output."
+  },
+  {
+    "id": "d4aed9ee-b1f6-58dd-86df-44f927901980",
+    "tier": "sonnet",
+    "rationale": "review_mode=always + tiered dunning email tone judgment; exclusion/cooldown logic needs moderate care."
+  },
+  {
+    "id": "e632c344-787b-56ec-ba20-b1714ff72544",
+    "tier": "haiku",
+    "rationale": "Template generation from known inputs + config save is deterministic structured output, no judgment."
+  },
+  {
+    "id": "1a683240-1f50-56d7-a504-d8773e527d12",
+    "tier": "haiku",
+    "rationale": "Classify email into fixed topic buckets and route to matching channels — clear rule-based triage."
+  },
+  {
+    "id": "fb063483-e4fa-534d-878e-bef4195a0b2d",
+    "tier": "haiku",
+    "rationale": "Write structured row to KB from already-classified email — pure data persistence, no synthesis."
+  },
+  {
+    "id": "d45de649-64f6-5cbc-9482-5da7e27f37ce",
+    "tier": "sonnet",
+    "rationale": "Contextual lead scoring + CRM upsert requires moderate judgment on lead quality signals."
+  },
+  {
+    "id": "1ea23fca-d8a2-5333-a6d8-dd5c63dadd87",
+    "tier": "sonnet",
+    "rationale": "Personalized welcome email generation with tier-appropriate tone needs editorial judgment."
+  },
+  {
+    "id": "89f8b8dc-93c8-53e3-ba21-997fd98c0c55",
+    "tier": "sonnet",
+    "rationale": "Stage-specific outreach email per CRM transition requires contextual tone and messaging judgment."
+  },
+  {
+    "id": "84c29b58-bf62-50d9-aac6-ed5154310608",
+    "tier": "sonnet",
+    "rationale": "Maps/directory discovery with website scoring involves moderate judgment on prospect quality signals."
+  },
+  {
+    "id": "9b5001d0-c6fd-5b39-be02-3d00d93d1967",
+    "tier": "haiku",
+    "rationale": "Deadline check with tiered reminders and milestone detection is threshold-based with clear rules."
+  },
+  {
+    "id": "e8f3711d-4b76-5789-857d-a463154e98dd",
+    "tier": "sonnet",
+    "rationale": "Role-adaptive checklist generation per new hire requires moderate judgment to tailor to role context."
+  },
+  {
+    "id": "51adfa5d-a248-5032-af9a-1312a907e705",
+    "tier": "sonnet",
+    "rationale": "At-risk flagging and bottleneck analysis across onboarding cohort needs analytical reasoning."
+  },
+  {
+    "id": "325073de-6c2a-544d-a364-a00850948857",
+    "tier": "haiku",
+    "rationale": "One-line behavioral brief delivered on a timer — templated, low-judgment, deterministic output."
+  },
+  {
+    "id": "aec61d93-6c55-5902-a084-e46b75ebcc60",
+    "tier": "haiku",
+    "rationale": "Logging a daily briefing to KB entry is structured persistence — no synthesis or judgment needed."
+  },
+  {
+    "id": "aec1d257-421e-5281-ad40-268b713e7620",
+    "tier": "sonnet",
+    "rationale": "review_mode=always + offer email drafting is consequential; tone and offer framing need editorial care."
+  },
+  {
+    "id": "8ddb7f51-3346-51df-a23a-d781a554d3c3",
+    "tier": "sonnet",
+    "rationale": "Stage-appropriate candidate communication requires contextual tone judgment across pipeline stages."
+  },
+  {
+    "id": "fb223f0f-dd00-5f3e-bbec-4ba12a58b430",
+    "tier": "sonnet",
+    "rationale": "RSS curation with age/dedup filters plus quality batching needs moderate editorial judgment."
+  },
+  {
+    "id": "7baf2513-9711-552b-8c64-f4ca2a01d421",
+    "tier": "sonnet",
+    "rationale": "Three-tier summary with cross-references from arbitrary URL requires multi-level synthesis."
+  },
+  {
+    "id": "ff49a6f2-9b68-56ed-aac1-26f009e4052d",
+    "tier": "sonnet",
+    "rationale": "Natural-language rule editing with diff confirmation needs moderate NL understanding and config reasoning."
+  },
+  {
+    "id": "385ab63f-7e11-5332-9a53-eb362389f0f8",
+    "tier": "opus",
+    "rationale": "review_mode=always + live research + tiered proposal generation is high-stakes quality-critical output."
+  },
+  {
+    "id": "194648fe-5f11-5e3a-940f-4ecbc9799dc4",
+    "tier": "sonnet",
+    "rationale": "Security scan with Jira dedup and severity routing is structured automation with moderate judgment."
+  },
+  {
+    "id": "2dca09fb-1146-5617-8932-e3200967f31e",
+    "tier": "sonnet",
+    "rationale": "review_mode=always; CVE regression detection and loud alerting is consequential but rule-based logic."
+  },
+  {
+    "id": "1c822cb8-55ce-5b52-a4c6-c5e43671d6c0",
+    "tier": "sonnet",
+    "rationale": "Full-org sweep with bulk dedup and digest is orchestration-heavy but mechanically structured."
+  },
+  {
+    "id": "c83283bc-126d-5512-a0a3-50a962cbffa5",
+    "tier": "opus",
+    "rationale": "review_mode=always + web discovery with strategic good/bad tagging needs research synthesis and judgment."
+  },
+  {
+    "id": "7be5a3ac-a3a2-5f32-bb12-65c7583d6d16",
+    "tier": "sonnet",
+    "rationale": "FFmpeg edit pipeline guided by transcript analysis is procedural orchestration with light editorial steps."
+  },
+  {
+    "id": "5c43d914-56b5-55bd-b824-8aa15b060f37",
+    "tier": "sonnet",
+    "rationale": "review_mode=always; 5-section outline + title variants + thumbnail direction needs creative judgment."
+  },
+  {
+    "id": "c7f5f6bf-7bae-5232-853d-025fdc3a35e8",
+    "tier": "sonnet",
+    "rationale": "YouTube metadata generation (title/description/tags/chapters) needs editorial judgment but follows a template."
+  },
+  {
+    "id": "b9f8043b-d127-5ee4-b249-3500f697876c",
+    "tier": "sonnet",
+    "rationale": "review_mode=always; voice-matched script with revision learning needs strong prose and style consistency."
+  },
+  {
+    "id": "5dc1a005-a5c0-4a05-9e05-5dc1a0050005",
+    "tier": "opus",
+    "rationale": "Deep codebase security reasoning — CVEs, secrets, risky patterns, severity ranking + fix suggestions."
+  }
+]

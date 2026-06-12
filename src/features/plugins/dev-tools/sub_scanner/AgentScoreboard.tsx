@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, ChevronDown, ChevronRight, Trophy, ArrowUpDown } from 'lucide-react';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES, type ScanAgentDef } from '../constants/scanAgents';
@@ -121,6 +123,7 @@ export function AgentScoreboard() {
 
   const [expanded, setExpanded] = useState(false);
   const [sort, setSort] = useState<SortKey>('accept');
+  const { shouldAnimate } = useMotion();
 
   const rows = useMemo(() => computeAgentStats(ideas, tasks), [ideas, tasks]);
 
@@ -176,38 +179,49 @@ export function AgentScoreboard() {
           : <ChevronRight className="w-3.5 h-3.5 text-foreground" />}
       </button>
 
-      {/* Body */}
-      {expanded && (
-        <div className="p-4 border-t border-primary/10 bg-background/50">
-          {rows.length === 0 ? (
-            <p className="text-md text-foreground text-center py-8">{dt.scoreboard_empty}</p>
-          ) : (
-            <ScoreboardTable
-              rows={sortedRows}
-              sort={sort}
-              onSort={setSort}
-              fallback={fallback}
-              labels={{
-                agent: dt.scoreboard_col_agent,
-                ideas: dt.scoreboard_col_ideas,
-                accept: dt.scoreboard_col_accept_rate,
-                impl: dt.scoreboard_col_impl_rate,
-                impact: dt.scoreboard_col_avg_impact,
-                effort: dt.scoreboard_col_avg_effort,
-              }}
-              tips={{
-                ideas: dt.scoreboard_tip_ideas,
-                accept: dt.scoreboard_tip_accept_rate,
-                impl: dt.scoreboard_tip_impl_rate,
-                impact: dt.scoreboard_tip_avg_impact,
-                effort: dt.scoreboard_tip_avg_effort,
-              }}
-              renderPending={(n) => tx(dt.scoreboard_n_pending, { n })}
-              topPerformerLabel={dt.scoreboard_top_performer}
-            />
-          )}
-        </div>
-      )}
+      {/* Body — height/opacity transition on expand/collapse */}
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="scoreboard-body"
+            initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={shouldAnimate ? { height: 0, opacity: 0 } : { opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="p-4 border-t border-primary/10 bg-background/50">
+              {rows.length === 0 ? (
+                <p className="text-md text-foreground text-center py-8">{dt.scoreboard_empty}</p>
+              ) : (
+                <ScoreboardTable
+                  rows={sortedRows}
+                  sort={sort}
+                  onSort={setSort}
+                  fallback={fallback}
+                  labels={{
+                    agent: dt.scoreboard_col_agent,
+                    ideas: dt.scoreboard_col_ideas,
+                    accept: dt.scoreboard_col_accept_rate,
+                    impl: dt.scoreboard_col_impl_rate,
+                    impact: dt.scoreboard_col_avg_impact,
+                    effort: dt.scoreboard_col_avg_effort,
+                  }}
+                  tips={{
+                    ideas: dt.scoreboard_tip_ideas,
+                    accept: dt.scoreboard_tip_accept_rate,
+                    impl: dt.scoreboard_tip_impl_rate,
+                    impact: dt.scoreboard_tip_avg_impact,
+                    effort: dt.scoreboard_tip_avg_effort,
+                  }}
+                  renderPending={(n) => tx(dt.scoreboard_n_pending, { n })}
+                  topPerformerLabel={dt.scoreboard_top_performer}
+                />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

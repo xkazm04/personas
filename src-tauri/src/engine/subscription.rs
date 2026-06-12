@@ -2227,6 +2227,8 @@ impl ReactiveSubscription for IdeaReplenishSubscription {
             self.pool.clone(),
             project_id.clone(),
             lenses,
+            None,
+            None,
         )
         .await
         {
@@ -2475,7 +2477,10 @@ pub struct AthenaChannelReactionSubscription {
 /// Backstop cap on Athena reactions per tick (one CLI decision each). The real
 /// debounce is the per-team "newer than her last post" cursor; this only bounds
 /// a cold-start burst across many teams.
-const ATHENA_REACTION_MAX_PER_TICK: usize = 4;
+// Batch-size cap (was a per-CALL cap of 4 when reactions ran one CLI call
+// per signal). Signals are already deduped to one per team, so 10 covers the
+// whole fleet; the CLI-call count per tick is now exactly 1.
+const ATHENA_REACTION_MAX_PER_TICK: usize = 10;
 
 #[async_trait::async_trait]
 impl ReactiveSubscription for AthenaChannelReactionSubscription {
@@ -2509,6 +2514,52 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
             return;
         }
 
+        // Review-resolution pass FIRST (B): parked awaiting_review cap-outs
+        // starve the whole pipeline (goal-slot held → re-advance blocked →
+        // backlog promotion starved — the 06-09 fleet deadlock), so draining
+        // them outranks commentary. Opt-in via its own setting; each candidate
+        // is one CLI decision + (on approve) one resumed QA round.
+        let resolution_on = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_ATHENA_REVIEW_RESOLUTION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if resolution_on {
+            const MAX_RESOLUTIONS_PER_TICK: usize = 2;
+            let candidates = {
+                let pool = self.pool.clone();
+                tokio::task::spawn_blocking(move || {
+                    crate::companion::athena_reaction::find_review_resolution_candidates(
+                        &pool,
+                        MAX_RESOLUTIONS_PER_TICK,
+                    )
+                })
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .unwrap_or_default()
+            };
+            for candidate in candidates {
+                let team = candidate.team_name.clone();
+                let aid = candidate.assignment_id.clone();
+                match crate::companion::athena_reaction::run_athena_review_resolution(
+                    &self.app, &self.pool, candidate,
+                )
+                .await
+                {
+                    Ok(outcome) => {
+                        tracing::info!(team = %team, assignment = %aid, outcome, "athena_channel_reactions: review resolution done");
+                    }
+                    Err(e) => {
+                        tracing::warn!(team = %team, assignment = %aid, error = %e, "athena_channel_reactions: review resolution failed");
+                    }
+                }
+            }
+        }
+
         let signals = {
             let pool = self.pool.clone();
             tokio::task::spawn_blocking(move || {
@@ -2523,28 +2574,362 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
             return;
         }
 
-        let mut posted = 0usize;
-        for signal in signals.into_iter().take(ATHENA_REACTION_MAX_PER_TICK) {
-            let team = signal.team_name.clone();
-            let kind = signal.kind.clone();
-            match crate::companion::athena_reaction::run_athena_reaction(
-                &self.app, &self.pool, signal,
-            )
+        // Batched wake (docs/plans/athena-reaction-batching.md): ONE CLI call
+        // decides every pending signal — Athena sees the fleet side by side
+        // (cross-team patterns) and the doctrine is paid once per tick
+        // instead of once per signal.
+        let batch: Vec<_> = signals
+            .into_iter()
+            .take(ATHENA_REACTION_MAX_PER_TICK)
+            .collect();
+        let n = batch.len();
+        match crate::companion::athena_reaction::run_athena_reaction_batch(
+            &self.app, &self.pool, batch,
+        )
+        .await
+        {
+            Ok(posted) if posted > 0 => {
+                tracing::info!(posted, signals = n, "athena_channel_reactions: batch posted Athena reactions");
+            }
+            Ok(_) => {
+                tracing::debug!(signals = n, "athena_channel_reactions: batch declined all signals");
+            }
+            Err(e) => {
+                tracing::warn!(signals = n, error = %e, "athena_channel_reactions: batch failed");
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// KPI → Goal derivation — the outcome layer steering the goal loop
+// ---------------------------------------------------------------------------
+
+/// Opt-in autonomous loop: derive goals from OFF-TRACK KPIs (P4 of the KPI
+/// plan). Candidates are gated hard — fresh measurement, one open derived
+/// goal per KPI, re-measured since the last derived goal completed — and the
+/// headless decision may legitimately SKIP. Business categories (value /
+/// traffic) order before quality/technical: with 0 users, getting one beats
+/// raising coverage. ≤2 derivations per tick; quota-gated.
+pub struct KpiGoalDerivationSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+const KPI_DERIVATION_MAX_PER_TICK: usize = 2;
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for KpiGoalDerivationSubscription {
+    fn name(&self) -> &'static str {
+        "kpi_goal_derivation"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_KPI_GOAL_DERIVATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("kpi_goal_derivation: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let candidates = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || {
+                crate::engine::kpi_derivation::find_derivation_candidates(
+                    &pool,
+                    KPI_DERIVATION_MAX_PER_TICK,
+                )
+            })
             .await
-            {
-                Ok(true) => {
-                    posted += 1;
+            .ok()
+            .and_then(|r| r.ok())
+            .unwrap_or_default()
+        };
+        for kpi in candidates {
+            let name = kpi.name.clone();
+            match crate::engine::kpi_derivation::derive_goal_from_kpi(&self.pool, &kpi).await {
+                Ok(Some(title)) => {
+                    tracing::info!(kpi = %name, goal = %title, "kpi_goal_derivation: derived goal");
+                    crate::notifications::send(
+                        &self.app,
+                        "KPI steering",
+                        &format!("'{name}' is off track — derived goal: {title}"),
+                    );
                 }
-                Ok(false) => {
-                    tracing::debug!(team = %team, kind = %kind, "athena_channel_reactions: declined or no-op");
+                Ok(None) => {
+                    tracing::info!(kpi = %name, "kpi_goal_derivation: skip (no actionable goal)");
                 }
                 Err(e) => {
-                    tracing::warn!(team = %team, kind = %kind, error = %e, "athena_channel_reactions: reaction failed");
+                    tracing::warn!(kpi = %name, error = %e, "kpi_goal_derivation: failed");
                 }
             }
         }
-        if posted > 0 {
-            tracing::info!(posted, "athena_channel_reactions: posted Athena reactions to channels");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Autonomous KPI evaluation (default-OFF) — measure due KPIs on cadence
+// ---------------------------------------------------------------------------
+
+/// Measures due active KPIs across team-linked projects so the steering loop
+/// runs unattended. Without this tick `evaluate_due_kpis` is command-only —
+/// a human has to click Measure — and after 2× cadence the staleness guard in
+/// `kpi_derivation::find_derivation_candidates` (correctly) stops deriving
+/// goals, starving the KPI→goal loop on any multi-day run. Default-OFF
+/// (`AUTONOMOUS_KPI_EVALUATION`); codebase measurements run repo commands, so
+/// the tick is hourly and quota/cooldown-guarded like the other spend loops.
+pub struct KpiEvaluationSubscription {
+    pub pool: DbPool,
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for KpiEvaluationSubscription {
+    fn name(&self) -> &'static str {
+        "kpi_evaluation"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(3600)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(3600)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_KPI_EVALUATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("kpi_evaluation: quota cooldown active — skipping tick");
+            return;
+        }
+
+        // Team-linked projects that have at least one active non-manual KPI.
+        // `evaluate_due_kpis` re-checks per-KPI dueness, so this is just a
+        // cheap pre-filter to avoid no-op project iterations.
+        let projects: Vec<String> = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || -> Vec<String> {
+                let Ok(conn) = pool.get() else { return Vec::new() };
+                let Ok(mut stmt) = conn.prepare(
+                    "SELECT DISTINCT dp.id FROM dev_projects dp
+                     JOIN dev_kpis k ON k.project_id = dp.id
+                     WHERE dp.team_id IS NOT NULL AND k.status = 'active'
+                       AND k.measure_kind IN ('codebase','derived','connector')",
+                ) else {
+                    return Vec::new();
+                };
+                stmt.query_map([], |r| r.get::<_, String>(0))
+                    .map(|rows| rows.filter_map(Result::ok).collect())
+                    .unwrap_or_default()
+            })
+            .await
+            .unwrap_or_default()
+        };
+
+        for project_id in projects {
+            match crate::engine::kpi_eval::evaluate_due_kpis(&self.pool, &project_id).await {
+                Ok(results) if !results.is_empty() => {
+                    let failed: Vec<&str> = results
+                        .iter()
+                        .filter_map(|(k, v)| v.is_err().then_some(k.as_str()))
+                        .collect();
+                    tracing::info!(
+                        project_id = %project_id,
+                        measured = results.len() - failed.len(),
+                        failed = failed.len(),
+                        failed_kpis = ?failed,
+                        "kpi_evaluation: tick measured due KPIs"
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    tracing::warn!(project_id = %project_id, error = %e, "kpi_evaluation: project evaluation failed");
+                }
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Fleet liveness watchdog — a stalled autonomous fleet must never be silent
+// ---------------------------------------------------------------------------
+
+/// Always-on stall detector for the autonomous fleet. The 06-09 deadlock —
+/// parked reviews holding goal slots, starving re-advance AND backlog
+/// promotion — left the fleet producing NOTHING for two days with autonomy
+/// fully on, and no surface said so. This watchdog closes that gap: when
+/// autonomous goal advancement is ON, actionable work exists (open goals,
+/// pending backlog, or parked reviews), no quota cooldown explains the
+/// silence, and NO persona execution has started in `FLEET_STALL_HOURS`,
+/// it raises ONE deduped `fleet_stall` incident (severity high) + a desktop
+/// notification. Not gated by a setting — it spends nothing and only speaks
+/// when the fleet that should be moving isn't.
+pub struct FleetLivenessWatchdog {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// Hours of zero execution starts (with work available) that count as a stall.
+const FLEET_STALL_HOURS: i64 = 2;
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for FleetLivenessWatchdog {
+    fn name(&self) -> &'static str {
+        "fleet_liveness_watchdog"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    // Deliberately NOT slower when idle — "idle" is precisely the state this
+    // watchdog exists to interrogate.
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+
+    async fn tick(&self) {
+        let advancement_on = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !advancement_on {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            return; // silence is explained — the provider limit is in cooldown
+        }
+
+        let pool = self.pool.clone();
+        let stall: Option<(i64, i64, i64)> = tokio::task::spawn_blocking(move || {
+            let conn = pool.get().ok()?;
+            // Zero executions started in the stall window? (RFC3339 'T'
+            // timestamps — datetime()-wrap before comparing, the recurring
+            // bit class.)
+            let recent: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM persona_executions
+                     WHERE datetime(created_at) > datetime('now', ?1)",
+                    rusqlite::params![format!("-{FLEET_STALL_HOURS} hours")],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            if recent > 0 {
+                return None;
+            }
+            // Actionable work that SHOULD be producing executions.
+            let open_goals: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_goals g
+                     JOIN dev_projects dp ON dp.id = g.project_id
+                     WHERE dp.team_id IS NOT NULL
+                       AND g.status NOT IN ('done','completed') AND g.progress < 100",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            let pending_ideas: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_ideas i
+                     JOIN dev_projects dp ON dp.id = i.project_id
+                     WHERE dp.team_id IS NOT NULL AND i.status = 'pending'",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            let parked: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM team_assignments
+                     WHERE status = 'awaiting_review' AND team_id IS NOT NULL",
+                    [],
+                    |r| r.get(0),
+                )
+                .ok()?;
+            if open_goals + pending_ideas + parked == 0 {
+                return None; // genuinely nothing to do — not a stall
+            }
+            Some((open_goals, pending_ideas, parked))
+        })
+        .await
+        .ok()
+        .flatten();
+
+        let Some((open_goals, pending_ideas, parked)) = stall else {
+            return;
+        };
+
+        tracing::warn!(
+            open_goals,
+            pending_ideas,
+            parked,
+            "fleet_liveness_watchdog: FLEET STALL — autonomy on, work available, no executions in {FLEET_STALL_HOURS}h"
+        );
+        let detail = format!(
+            "Autonomous goal advancement is ON and work is available (open goals: {open_goals}, \
+             pending backlog ideas: {pending_ideas}, parked awaiting-review: {parked}), but NO \
+             persona execution has started in the last {FLEET_STALL_HOURS}h and no quota cooldown \
+             explains the silence. Likely causes: parked reviews holding every goal slot \
+             (resolve or enable Athena review resolution), disabled team members, or a \
+             subscription failure. The fleet is NOT making progress."
+        );
+        let promoted = crate::db::repos::execution::audit_incidents::promote(
+            &self.pool,
+            crate::db::models::CreateAuditIncidentInput {
+                source_table: "fleet".to_string(),
+                source_id: "fleet_stall".to_string(), // stable → dedupes to ONE open incident
+                persona_id: None,
+                persona_name: Some("Fleet watchdog".to_string()),
+                execution_id: None,
+                severity: "high".to_string(),
+                kind: "fleet_stall".to_string(),
+                title: format!("Fleet stalled: no executions in {FLEET_STALL_HOURS}h with work available"),
+                detail: Some(detail),
+            },
+        );
+        // Notify only when the incident is NEW (promote dedupes re-raises while
+        // one is open) — one stall, one page.
+        if let Ok(Some(_)) = promoted {
+            crate::notifications::send(
+                &self.app,
+                "Fleet stalled",
+                &format!(
+                    "No executions in {FLEET_STALL_HOURS}h with {open_goals} open goals, {pending_ideas} backlog ideas, {parked} parked reviews."
+                ),
+            );
         }
     }
 }

@@ -9,6 +9,8 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 ## [Unreleased]
 
 ### Added
+- **gcloud CLI auth for Google Cloud Platform** — the GCP connector's add-credential form now offers a "gcloud CLI" tab that imports your active `gcloud` session (no service-account key file needed). Captured tokens auto-refresh while the session is valid; persona API calls resolve the captured token as Bearer auth (`GcpCloudStrategy`) and recover mid-run expiry via the 401 retry path.
+- **CLI session re-auth recovery** — when a CLI-captured credential's underlying session dies (e.g. `gcloud` re-login required), the credential is flagged for re-auth, an OS notification fires, and the Vault banner shows the terminal login instruction with a "Retry capture" button instead of failing silently with backoff.
 - First public release of OSS contribution documentation: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue and PR templates, `CODEOWNERS`.
 - Repo-level `ARCHITECTURE.md` and `docs/DEVELOPMENT.md` for new contributors.
 - `.editorconfig` and `.gitattributes` for cross-platform consistency.

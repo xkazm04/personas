@@ -230,10 +230,11 @@ export function CommandPanelComposer({
         open={messagingOpen}
         onClose={() => setMessagingOpen(false)}
         selected={selectedChannels}
+        pinBuiltIn={false}
         onApply={(next) => {
-          // Always preserve the built-in inbox row regardless of picker output.
-          const hasBuiltIn = next.some((s) => s.type === "built-in");
-          setSelectedChannels(hasBuiltIn ? next : [BUILT_IN_INBOX, ...next]);
+          // The inbox is now a clearable option — honour the picker output as-is
+          // so the user can reach an empty (no user-facing message) selection.
+          setSelectedChannels(next);
           setMessagingOpen(false);
         }}
       />

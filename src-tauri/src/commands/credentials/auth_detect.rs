@@ -168,6 +168,11 @@ pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<Path
 
     // Canonicalize to resolve symlinks and normalise the path
     let canonical = std::fs::canonicalize(&resolved).unwrap_or_else(|_| resolved.clone());
+    // On Windows `fs::canonicalize` returns verbatim paths (`\\?\C:\...`),
+    // which fail the allowlist's `C:\...` prefix comparison and rejected
+    // every installed CLI as "not in an allowed directory". Strip the
+    // verbatim prefix for drive paths; spawning works with either form.
+    let canonical = strip_verbatim_prefix(canonical);
 
     if is_path_allowed(&canonical, extra_allowed) {
         tracing::debug!(cmd, path = %canonical.display(), "CLI probe: path validated");
@@ -180,6 +185,26 @@ pub(crate) fn resolve_cli_path(cmd: &str, extra_allowed: &[&str]) -> Option<Path
         );
         None
     }
+}
+
+/// Strip the Windows verbatim prefix (`\\?\`) from canonicalized drive
+/// paths so they compare against classic `C:\...` allowlist entries. UNC
+/// verbatim paths (`\\?\UNC\...`) are left untouched — no allowlist entry
+/// matches a network share anyway.
+#[cfg(target_os = "windows")]
+fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
+    let stripped = {
+        let s = path.to_string_lossy();
+        s.strip_prefix(r"\\?\")
+            .filter(|rest| rest.as_bytes().get(1) == Some(&b':'))
+            .map(PathBuf::from)
+    };
+    stripped.unwrap_or(path)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn strip_verbatim_prefix(path: PathBuf) -> PathBuf {
+    path
 }
 
 /// Check whether `binary_path` resides under one of the allowed directories.
@@ -661,6 +686,47 @@ fn probe_browser_cookies() -> Vec<AuthDetection> {
     }
 
     detected.into_values().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Regression: Windows `fs::canonicalize` returns verbatim `\\?\C:\...`
+    /// paths, which failed every allowlist prefix comparison — the credential
+    /// form's CLI tab reported installed CLIs as "not installed".
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn verbatim_drive_prefix_is_stripped() {
+        assert_eq!(
+            strip_verbatim_prefix(PathBuf::from(r"\\?\C:\Program Files\GitHub CLI\gh.exe")),
+            PathBuf::from(r"C:\Program Files\GitHub CLI\gh.exe")
+        );
+        // Classic paths pass through untouched.
+        let classic = PathBuf::from(r"C:\Program Files\GitHub CLI\gh.exe");
+        assert_eq!(strip_verbatim_prefix(classic.clone()), classic);
+        // Verbatim UNC paths are not drive paths — left as-is.
+        let unc = PathBuf::from(r"\\?\UNC\server\share\tool.exe");
+        assert_eq!(strip_verbatim_prefix(unc.clone()), unc);
+    }
+
+    #[cfg(target_os = "windows")]
+    #[test]
+    fn stripped_verbatim_path_passes_allowlist() {
+        let canonical =
+            strip_verbatim_prefix(PathBuf::from(r"\\?\C:\Program Files\GitHub CLI\gh.exe"));
+        assert!(is_path_allowed(&canonical, &[]));
+    }
+
+    /// Manual diagnostic against this machine's real install — not a CI test.
+    /// Run: cargo test --manifest-path src-tauri/Cargo.toml --lib --features desktop -- --ignored resolve_real
+    #[test]
+    #[ignore]
+    fn resolve_real_gcloud_on_this_machine() {
+        let path = resolve_cli_path("gcloud", &[]);
+        eprintln!("resolve_cli_path(gcloud) -> {:?}", path);
+        assert!(path.is_some());
+    }
 }
 
 /// Chrome epoch: microseconds since 1601-01-01 00:00:00 UTC.

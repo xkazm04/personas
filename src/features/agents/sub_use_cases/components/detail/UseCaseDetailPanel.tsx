@@ -1,4 +1,5 @@
-import { Play, Square, ArrowRight, Rocket } from 'lucide-react';
+import { Play, Square, ArrowRight, Rocket, GitMerge } from 'lucide-react';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { UseCaseModelDropdown } from './UseCaseModelDropdown';
 import { UseCaseChannelDropdown } from './UseCaseChannelDropdown';
@@ -36,6 +37,8 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
     handleManualRun,
     isManualRunning,
     handleModelSelect,
+    engineMode,
+    handleEngineToggle,
     handleSaveFixture,
     handleDeleteFixture,
     handleUpdateFixture,
@@ -70,8 +73,8 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
 
         <PipelineArrow />
 
-        {/* Transform: Model Config */}
-        <div className="min-w-0">
+        {/* Transform: Model Config + engine mode (mixed = local delegate tool) */}
+        <div className="min-w-0 space-y-1">
           <UseCaseModelDropdown
             hasOverride={hasOverride}
             modelLabel={modelLabel}
@@ -79,6 +82,24 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
             useCase={useCase}
             onSelectModel={handleModelSelect}
           />
+          <Tooltip content={engineMode === 'mixed' ? uc.engine_mixed_tooltip : uc.engine_claude_tooltip}>
+            <button
+              type="button"
+              onClick={handleEngineToggle}
+              aria-pressed={engineMode === 'mixed'}
+              data-testid="use-case-engine-toggle"
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-modal typo-caption font-medium border transition-all w-full ${
+                engineMode === 'mixed'
+                  ? 'bg-accent/10 border-accent/30 text-accent'
+                  : 'bg-background/30 border-primary/10 text-foreground/70 hover:border-primary/20'
+              }`}
+            >
+              <GitMerge className="w-3 h-3 flex-shrink-0" />
+              <span className="flex-1 text-left truncate">
+                {engineMode === 'mixed' ? uc.engine_mixed : uc.engine_claude}
+              </span>
+            </button>
+          </Tooltip>
         </div>
 
         <PipelineArrow />

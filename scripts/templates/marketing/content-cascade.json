@@ -181,8 +181,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Per-platform draft cards: platform name, hook line, full draft, character count, edit-points the agent is uncertain about, and approve / edit / reject CTA. After approval: a confirmation card with the publish destination, schedule time (if Buffer), and the published-artifact link."
+          "type": "built-in",
+          "description": "Per-platform draft cards routed through human review (approve / edit / reject per platform). After approval, dispatches to the platform-specific connector (LinkedIn, X, Notion, or Buffer). Nothing publishes without explicit per-platform approval."
         }
       ],
       "core_memories": []

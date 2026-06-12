@@ -95,12 +95,17 @@ export function serializeQuickConfig(state: QuickConfigState): string {
   // Slice 2 — surface picked delivery channels in the build prompt so the
   // session understands the user's intent (the structured value also flows
   // through to `personas.notification_channels` separately in Slice 3).
-  const externalChannels = state.notificationChannels.filter(
-    (c) => c.type !== 'built-in' && c.type !== 'titlebar',
-  );
-  if (externalChannels.length > 0) {
-    const labels = externalChannels.map((c) => c.type);
-    parts.push(`Delivery channels: persona inbox, ${labels.join(', ')} (fan-out)`);
+  // An empty selection is an explicit "no user-facing message" choice.
+  if (state.notificationChannels.length === 0) {
+    parts.push('Messages: none — this persona produces no user-facing messages; emit events / write data instead.');
+  } else {
+    const externalChannels = state.notificationChannels.filter(
+      (c) => c.type !== 'built-in' && c.type !== 'titlebar',
+    );
+    if (externalChannels.length > 0) {
+      const labels = externalChannels.map((c) => c.type);
+      parts.push(`Delivery channels: persona inbox, ${labels.join(', ')} (fan-out)`);
+    }
   }
 
   return parts.length > 0 ? `\n---\n${parts.join('\n')}` : '';

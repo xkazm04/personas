@@ -411,15 +411,8 @@ Memories to review:
 {memories_json}"#
     );
 
-    // 3. Build CLI args.
-    let (program, mut args) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    };
+    // 3. Build CLI args (shared resolver — verified absolute claude.cmd).
+    let (program, mut args) = crate::engine::cli_process::claude_cli_invocation();
     args.extend(
         [
             "-p",
@@ -446,6 +439,11 @@ Memories to review:
     }
     cmd.env_remove("CLAUDECODE");
     cmd.env_remove("CLAUDE_CODE");
+    // Evaluation runs on the Claude monthly subscription only — never bill the
+    // API account (strip any inherited/injected ANTHROPIC_* auth).
+    for key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
+        cmd.env_remove(key);
+    }
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {
             AppError::Internal(

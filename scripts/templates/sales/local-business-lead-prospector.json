@@ -12,7 +12,7 @@
     "Local Database",
     "Messages"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "Local Database",
@@ -87,8 +87,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Tiered lead lists per discovery run, hot-lead alerts, and weekly pipeline summaries."
+          "type": "built-in",
+          "description": "Tiered lead lists per discovery run, hot-lead alerts, and weekly pipeline summaries delivered in-app (no external messaging connector configured)."
         }
       ],
       "core_memories": []

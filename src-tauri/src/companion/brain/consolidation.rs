@@ -840,6 +840,8 @@ async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError>
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
+    // Subscription-only — never the API account.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
     // No console window on Windows (desktop-heap / 0xC0000142 guard).
     crate::companion::session::apply_no_console_window(&mut cmd);
     let mut child = cmd

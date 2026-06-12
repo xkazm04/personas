@@ -4,6 +4,7 @@ import {
   HelpCircle,
   Plus,
   Radar,
+  Sunrise,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -33,7 +34,9 @@ import { VoiceControlPopover } from './VoiceControlPopover';
  *      (codebase scan / idea gen / task batching / projects state)
  *      and when to lean on it. The user no longer triggers individual
  *      seed prompts; Athena leads the flow once she's aware.
- *   2. **Assist** (middle) — existing help / brain / voice trio.
+ *   2. **Assist** (middle) — help / analyze-fleet / daily-brief / brain /
+ *      voice. The deterministic action buttons (analyze-fleet, daily-brief)
+ *      spawn a pre-gathered proactive turn rather than a chat round-trip.
  *   3. **Connectors** (bottom) — pinned vault credentials. Click
  *      toggles enabled (visual: brighter ring + glow when on); right-
  *      click → "Remove from sidebar". Plus button opens the standard
@@ -46,12 +49,14 @@ import { VoiceControlPopover } from './VoiceControlPopover';
 export function CompanionToolbar({
   onAskCapabilities,
   onAnalyzeFleet,
+  onDailyBrief,
   onOpenBrain,
   brainOpen,
   disabled,
 }: {
   onAskCapabilities: () => void;
   onAnalyzeFleet: () => void;
+  onDailyBrief: () => void;
   onOpenBrain: () => void;
   brainOpen: boolean;
   disabled: boolean;
@@ -153,6 +158,13 @@ export function CompanionToolbar({
         onClick={onAnalyzeFleet}
         disabled={disabled}
         testId="companion-analyze-fleet"
+      />
+      <ToolbarButton
+        icon={<Sunrise className="w-4 h-4" />}
+        label={t.plugins.companion.daily_brief}
+        onClick={onDailyBrief}
+        disabled={disabled}
+        testId="companion-daily-brief"
       />
       <ToolbarButton
         icon={<Brain className="w-4 h-4" />}

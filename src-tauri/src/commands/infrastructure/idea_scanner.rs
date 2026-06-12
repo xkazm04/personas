@@ -69,6 +69,8 @@ fn build_idea_scan_prompt(
     context_summary: Option<&str>,
     rejected_titles: Option<&str>,
     team_ledger: Option<&str>,
+    scoped: bool,
+    target_count: Option<i32>,
 ) -> String {
     let mut agent_section = String::new();
     for agent in agents {
@@ -79,8 +81,24 @@ fn build_idea_scan_prompt(
     }
 
     let context_hint = context_summary
-        .map(|s| format!("\n## Existing Context Map\n{s}\n"))
+        .map(|s| {
+            if scoped {
+                format!("\n## Contexts In Scope — analyze ONLY these areas of the codebase; ignore everything outside them\n{s}\n")
+            } else {
+                format!("\n## Existing Context Map\n{s}\n")
+            }
+        })
         .unwrap_or_default();
+
+    // Granularity / target volume (optional). Aims the run at a desired number
+    // of findings without padding — quality stays the gate.
+    let granularity_hint = match target_count {
+        Some(n) if n > 0 => {
+            let scope_word = if scoped { "per context in scope" } else { "in total" };
+            format!("\n## Target volume\nAim for roughly {n} high-quality ideas {scope_word}. Favor signal over volume — produce fewer than {n} if the code doesn't warrant them; never pad with low-value or speculative findings.\n")
+        }
+        _ => String::new(),
+    };
 
     // Triage learning loop: feed back ideas the human already rejected so the
     // scan stops re-surfacing them (the dev-backlog equivalent of the
@@ -111,7 +129,7 @@ You are analyzing a codebase to generate actionable improvement ideas. You have 
 {context_hint}{rejected_hint}{ledger_hint}
 ## Active Scan Agents
 {agent_section}
-
+{granularity_hint}
 ## Your Task
 
 1. **Explore the codebase** using the file system tools available.
@@ -319,10 +337,17 @@ pub async fn dev_tools_run_scan(
     app: tauri::AppHandle,
     project_id: String,
     scan_types: Vec<String>,
-    _context_id: Option<String>,
+    context_id: Option<String>,
+    context_ids: Option<Vec<String>>,
+    target_count: Option<i32>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    run_scan_core(app, state.db.clone(), project_id, scan_types).await
+    // Multi-select scope takes precedence; fall back to the single legacy
+    // `context_id` (per-context "scan this context" + auto-scan callers).
+    let ids = context_ids
+        .filter(|v| !v.is_empty())
+        .or_else(|| context_id.filter(|c| !c.is_empty()).map(|c| vec![c]));
+    run_scan_core(app, state.db.clone(), project_id, scan_types, ids, target_count).await
 }
 
 /// Core scan launcher — shared by the `dev_tools_run_scan` command and the
@@ -335,8 +360,37 @@ pub async fn run_scan_core(
     db: crate::db::DbPool,
     project_id: String,
     scan_types: Vec<String>,
+    // When `Some(non-empty)`, scope the scan to exactly these context ids and
+    // instruct the agents to focus only on them. `None`/empty = whole project.
+    context_ids: Option<Vec<String>>,
+    // Optional target number of findings (granularity); injected into the prompt.
+    target_count: Option<i32>,
 ) -> Result<serde_json::Value, AppError> {
     let project = repo::get_project_by_id(&db, &project_id)?;
+
+    // Backlog backpressure: skip the whole scan round when the project's
+    // pending backlog is already saturated — producers must not stack ideas
+    // faster than triage + promotion can drain them (mirrors the per-idea
+    // guard at the `propose_backlog` dispatch chokepoint).
+    let pending: i64 = db
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM dev_ideas WHERE project_id = ?1 AND status = 'pending'",
+                rusqlite::params![project_id],
+                |r| r.get(0),
+            )
+            .ok()
+        })
+        .unwrap_or(0);
+    if pending >= crate::engine::dispatch::IDEA_BACKLOG_CAP {
+        return Err(AppError::Validation(format!(
+            "Idea scan skipped: backlog saturated ({pending} pending ideas ≥ cap {}). \
+             Triage / promote the existing backlog first.",
+            crate::engine::dispatch::IDEA_BACKLOG_CAP
+        )));
+    }
 
     // Resolve agents before creating any DB records to avoid orphaned "running" scans
     let all_agents = get_scan_agents();
@@ -363,8 +417,18 @@ pub async fn run_scan_core(
     IDEA_SCAN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), IdeaScanExtra)?;
     IDEA_SCAN_JOBS.set_status(&app, &scan_id, "running", None);
 
-    // Get existing context summary for richer analysis
-    let contexts = repo::list_contexts_by_project(&db, &project_id, None).unwrap_or_default();
+    // Get existing context summary for richer analysis. When the caller scoped
+    // the scan to specific contexts, summarize ONLY those and tell the agents to
+    // focus there (the prompt flips its heading accordingly).
+    let all_contexts = repo::list_contexts_by_project(&db, &project_id, None).unwrap_or_default();
+    let scoped = context_ids.as_ref().is_some_and(|v| !v.is_empty());
+    let contexts: Vec<_> = match &context_ids {
+        Some(ids) if !ids.is_empty() => all_contexts
+            .into_iter()
+            .filter(|c| ids.contains(&c.id))
+            .collect(),
+        _ => all_contexts,
+    };
     let context_summary = if contexts.is_empty() {
         None
     } else {
@@ -415,6 +479,8 @@ pub async fn run_scan_core(
         context_summary.as_deref(),
         rejected_titles.as_deref(),
         team_ledger.as_deref(),
+        scoped,
+        target_count,
     );
 
     let app_handle = app.clone();

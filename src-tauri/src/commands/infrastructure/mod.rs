@@ -10,6 +10,7 @@ pub mod dev_tools;
 pub mod director;
 pub mod gitlab;
 pub mod idea_scanner;
+pub mod kpi_scan;
 pub mod incremental_scan;
 pub mod research_lab;
 pub mod settings;

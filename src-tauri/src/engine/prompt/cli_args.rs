@@ -5,15 +5,10 @@ use crate::db::models::Persona;
 use super::super::types::{CliArgs, ModelProfile};
 
 /// Platform-specific command and initial args for invoking the Claude CLI.
+/// Delegates to the shared resolver so the spawn can't be shadowed by a broken
+/// `claude.cmd` earlier on PATH (see `cli_process::claude_cli_invocation`).
 pub(super) fn base_cli_setup() -> (String, Vec<String>) {
-    if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), vec![])
-    }
+    crate::engine::cli_process::claude_cli_invocation()
 }
 
 /// Apply provider-specific environment overrides and removals to a CliArgs.

@@ -1,0 +1,192 @@
+[
+  {
+    "id": "7e2b8d54-a141-5c16-8d76-b2a836a37fd5",
+    "tier": "sonnet",
+    "rationale": "Multi-level routing with timeout, escalation logic, and human-review gating needs moderate judgment; review_mode=always rules out haiku."
+  },
+  {
+    "id": "09e94e4a-ba35-54cd-8a61-59983b21e463",
+    "tier": "sonnet",
+    "rationale": "Audit digests + compliance reports require aggregation and structured prose; more than pure templating."
+  },
+  {
+    "id": "a8986af1-55b7-548c-bca4-82bfd0124281",
+    "tier": "haiku",
+    "rationale": "Fixed-format weekly HTML digest of reconciliation metrics — templated rollup with no synthesis judgment."
+  },
+  {
+    "id": "04756772-500e-5f72-a401-dd57b66f7251",
+    "tier": "sonnet",
+    "rationale": "KB page composition + email + threshold-gated alerts spans multiple output types with editorial judgment."
+  },
+  {
+    "id": "a3e4bb69-0833-59a9-8f3e-115a1782fb82",
+    "tier": "sonnet",
+    "rationale": "Threat trends, resolved cases, and defensive recommendations require synthesis and editorial judgment beyond templating."
+  },
+  {
+    "id": "572b538c-83b3-5f6b-83fd-73656e2f9077",
+    "tier": "sonnet",
+    "rationale": "30-day gap analysis + writer workload balance requires moderate analytical judgment; review_mode=on_low_confidence confirms non-trivial output."
+  },
+  {
+    "id": "2d63dd2d-ba14-5935-b82d-53f0fe1fb01e",
+    "tier": "haiku",
+    "rationale": "Fixed weekly expense summary with MTD tracking — straightforward aggregation into a known template."
+  },
+  {
+    "id": "cfb66ef1-c3a5-533a-b924-6c2aa3c6adf6",
+    "tier": "haiku",
+    "rationale": "Cash flow summary with AR aging and WoW deltas — mechanical aggregation of financial metrics into a fixed layout."
+  },
+  {
+    "id": "36e446ab-23cb-5087-a83c-17daaa964f64",
+    "tier": "sonnet",
+    "rationale": "Composite scoring + memory calibration based on review feedback requires iterative judgment; review_mode=always raises stakes."
+  },
+  {
+    "id": "4595040a-3353-54e0-8ede-e0224c005e5a",
+    "tier": "haiku",
+    "rationale": "Cross-channel spending summary with WoW deltas — mechanical financial metric aggregation into fixed digest format."
+  },
+  {
+    "id": "5d8deb6b-722b-5077-813f-4b684138c8a4",
+    "tier": "haiku",
+    "rationale": "HR funnel counts, conversions, and trends — metric aggregation with no analytical synthesis needed."
+  },
+  {
+    "id": "06f8a9ba-e1a3-5bff-a8fb-d0f707d842a6",
+    "tier": "sonnet",
+    "rationale": "MRR waterfall + health distribution + scoring calibration against outcomes involves multi-metric correlation and model adjustment."
+  },
+  {
+    "id": "ea6f518f-2af2-546d-96f0-fb667e8cc0ed",
+    "tier": "sonnet",
+    "rationale": "Trend analysis + anomaly detection on revenue data requires pattern recognition and interpretive judgment beyond simple templating."
+  },
+  {
+    "id": "1d856567-19e4-55be-93bb-6075384edf74",
+    "tier": "sonnet",
+    "rationale": "Per-finding memory and longitudinal intelligence building requires synthesis and structured knowledge capture beyond basic reporting."
+  },
+  {
+    "id": "bc91f855-b7ae-50cb-a744-02ef871a75f5",
+    "tier": "haiku",
+    "rationale": "Pipeline snapshot with velocity + at-risk detection — aggregating CRM fields by threshold rules into a daily digest."
+  },
+  {
+    "id": "090d463e-c41a-5f13-b813-f698797b993b",
+    "tier": "haiku",
+    "rationale": "Monday pipeline health report via messaging — standard metric aggregation into a fixed weekly format."
+  },
+  {
+    "id": "19da46d7-03f3-5082-b228-8a665dbf9fbc",
+    "tier": "haiku",
+    "rationale": "Daily sales digest with rolling-average trend indicators — templated metric rollup with deterministic trend computation."
+  },
+  {
+    "id": "8fec7960-5455-5c70-96bf-298ace875784",
+    "tier": "sonnet",
+    "rationale": "MRR waterfall + anomaly detection + multi-channel distribution requires pattern recognition and multi-output orchestration."
+  },
+  {
+    "id": "eadf1ac7-ecca-55a5-8cb6-76d68e80283a",
+    "tier": "sonnet",
+    "rationale": "Structured report composition from survey insights + baseline update involves synthesis and editorial judgment."
+  },
+  {
+    "id": "1d099bb7-fc9a-5e1a-832b-e7f808beefa1",
+    "tier": "haiku",
+    "rationale": "Daily ops rollup of command totals, service health, deploys — mechanical aggregation posted to channels."
+  },
+  {
+    "id": "6da5cc6d-838b-5344-9455-8305e6ca0e85",
+    "tier": "sonnet",
+    "rationale": "MTTR rankings + improvement recommendations require analytical synthesis; dual digest+weekly format adds orchestration complexity."
+  },
+  {
+    "id": "4d59fa79-cd36-5164-995b-a4d1dc1e04dd",
+    "tier": "haiku",
+    "rationale": "Email parsing, dedup, audit record creation, and high-privilege classification — structured extraction with rule-based routing."
+  },
+  {
+    "id": "bf47bb03-ad1e-5a9a-8458-094af1f403d1",
+    "tier": "haiku",
+    "rationale": "Finance platform ↔ bank-feed matching and discrepancy logging — deterministic record reconciliation with no synthesis."
+  },
+  {
+    "id": "8b08747a-a936-5a54-9c74-ab9f64f223fd",
+    "tier": "sonnet",
+    "rationale": "AI receipt extraction from unstructured email content requires parsing ambiguous formats; review_mode=on_low_confidence confirms non-trivial extraction."
+  },
+  {
+    "id": "29721ded-e4a9-50ff-940b-73eb561ccaf4",
+    "tier": "haiku",
+    "rationale": "Finance platform → Sheets sync with anomaly detection — deterministic data sync with threshold-based flagging."
+  },
+  {
+    "id": "b0bf1b02-f635-5a35-b766-1f7381f19724",
+    "tier": "sonnet",
+    "rationale": "Per-client invoice generation with human review gating and memory-learned overrides requires moderate judgment; review_mode=always rules out haiku."
+  },
+  {
+    "id": "ec061c32-9fef-5a33-ad80-c94df9eef861",
+    "tier": "sonnet",
+    "rationale": "Duplicate detection + severity-based routing on incident intake requires classification judgment across ambiguous inputs."
+  },
+  {
+    "id": "0c0e441a-fd86-5f63-86e5-cacd0f2c9a46",
+    "tier": "sonnet",
+    "rationale": "Escalation enforcement across every open incident with status processing; review_mode=always signals consequential output."
+  },
+  {
+    "id": "be6009e2-467f-5e8b-b140-201c66fc29f4",
+    "tier": "sonnet",
+    "rationale": "Multi-strategy invoice detection + structured extraction from varied email formats requires adaptive parsing judgment."
+  },
+  {
+    "id": "5220dac2-4efa-5035-afb9-724e8b76e4d4",
+    "tier": "sonnet",
+    "rationale": "Natural language command parsing with authorization checks requires NL understanding and security-aware judgment."
+  },
+  {
+    "id": "6b1cf829-3578-5444-a930-bb450b06ef5e",
+    "tier": "sonnet",
+    "rationale": "Two-step confirmation gate for destructive ops; review_mode=always + safety-critical context rules out haiku."
+  },
+  {
+    "id": "da49fd31-7746-593a-816b-9eb2c128d149",
+    "tier": "haiku",
+    "rationale": "Tiered alerting on reconciliation discrepancies with grouping — threshold-driven dispatch with deterministic rules."
+  },
+  {
+    "id": "f714c64f-0e3a-573e-8cbc-1241b34f9400",
+    "tier": "haiku",
+    "rationale": "30/14/7 day deadline reminders — calendar-driven notifications with no judgment beyond date arithmetic."
+  },
+  {
+    "id": "ed6cfd3a-ecb2-5b72-bde3-28d49bcb9c3f",
+    "tier": "haiku",
+    "rationale": "Credential-troubleshooting alerts when billing API is unreachable — simple status-check + alert dispatch."
+  },
+  {
+    "id": "2d6945b7-5cca-5f28-b91c-26b03249ea70",
+    "tier": "haiku",
+    "rationale": "Tiered unsigned-contract reminders with capped sends — rule-based cadence with deterministic escalation logic."
+  },
+  {
+    "id": "55bf5308-996a-5c0c-a3e3-6903823cc221",
+    "tier": "haiku",
+    "rationale": "60/30/14 day renewal alerts with duplicate suppression — calendar-driven threshold alerts with no synthesis needed."
+  },
+  {
+    "id": "36708684-7720-531a-ac5c-3b39a69b85ae",
+    "tier": "haiku",
+    "rationale": "Tiered deadline email reminders with duplicate suppression — rule-driven notification cadence, learned timing is minimal judgment."
+  },
+  {
+    "id": "532e3e92-b844-5b2d-99b3-f72a763312a1",
+    "tier": "haiku",
+    "rationale": "Threshold-triggered anomaly alerts with dedupe against history log — deterministic rule-based alerting."
+  }
+]

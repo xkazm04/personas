@@ -54,6 +54,7 @@
     "test:e2e:cli": "vitest run --config vitest.e2e.config.ts",
     "test:integration:cli": "vitest run --config vitest.integration.config.ts",
     "test:cli": "vitest run --config vitest.cli.config.ts",
+    "test:evals": "vitest run --config vitest.evals.config.ts",
     "tauri": "tauri",
     "analyze": "ANALYZE=true vite build",
     "check:budget": "node scripts/check-bundle-budget.mjs",

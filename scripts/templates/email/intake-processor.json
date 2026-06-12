@@ -13,7 +13,7 @@
     "messaging",
     "knowledge base"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "email",
@@ -155,7 +155,7 @@
       "notification_channels_default": [
         {
           "type": "slack",
-          "description": "Primary delivery for every classified email — the category-appropriate channel receives the summary."
+          "description": "Triage delivery channel (uc_intake_triage) — each classified email posts a formatted summary to the category-matched channel (#intake-urgent / #intake-{topic} / #intake-general). Knowledge-base tracking (uc_notion_tracking) writes silently to Notion and emits no user-facing notification."
         }
       ],
       "core_memories": []

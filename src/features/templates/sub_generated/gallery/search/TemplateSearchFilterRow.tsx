@@ -22,7 +22,7 @@ interface TemplateSearchFilterRowProps {
   availableConnectors: ConnectorWithCount[];
   coverageFilter?: string;
   onCoverageFilterChange?: (value: string) => void;
-  coverageCounts?: { all: number; ready: number; partial: number };
+  coverageCounts?: { all: number; ready: number; partial: number; drafts?: number };
   // Component filter
   componentFilter?: string[];
   onComponentFilterChange?: (components: string[]) => void;

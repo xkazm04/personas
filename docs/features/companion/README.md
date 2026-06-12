@@ -196,7 +196,12 @@ Athena proactively surfaces OPEN high/critical [audit incidents](../overview/REA
 - **React (proactive)** — `proactive::incident_triggers::incident_blocker_nudges(sys_db)` emits a single budget+dedupe-gated nudge (`trigger_kind = incident_blocker`) when there are OPEN incidents at `severity in (high, critical)`. It reuses `audit_incidents::list` (filtered to `status=open`, severity high/critical), is priority-ordered (critical first), count-aware in the message, and anchors `trigger_ref` on the most-severe incident's id. Because `audit_incidents` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from both the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`) — exactly like `dev_goal_nudges`.
 - **Engage** — clicking Engage on the `ProactiveCard` (rose accent, "incident needs attention" label) navigates to the **Overview → Incidents** inbox (`setSidebarSection('overview')` + `setOverviewTab('incidents')`). Landing on the inbox is the goal; deep-linking to a specific incident detail is a deliberate follow-up.
 
-## Fleet analysis (`analyze_fleet`)
+## Autonomous signal economy — execution triage + message triage
+
+At fleet scale (hundreds of executions an hour), the question stops being "can Athena review this?" and becomes "what may reach the user?". Both autonomous review legs route through ONE batched headless decision per pass (the `athena_reaction::cli_text` pattern — zero chat episodes) whose verdicts are tiered: **drop** (silent, tracing only) / **digest** (one line on one aggregated `ProactiveCard`, hour-bucketed dedupe) / **deep-dive or attention** (the only tier that spends chat or a desktop notification). Full gap analysis + architecture: [`autonomous-signal-economy.md`](./autonomous-signal-economy.md).
+
+- **Execution triage** (`proactive/execution_review.rs`, autonomous-mode-gated) — flagged finished runs (failed/slow/expensive) since the cursor are grouped by (persona, reason) — 14 identical PAT failures become one group — and triaged in one decision. Digest lines land on an `execution_review` card; AT MOST ONE group per batch graduates to a full `TurnOrigin::Proactive` reasoning turn (with a ≤120-word format contract); `escalate_to_user` fires a desktop notification (quiet-hours guarded). This replaced the per-candidate design that spawned ≤2 full chat turns per tick and persisted "No response requested." episodes forever (episodes are append-only by design).
+- **Message triage** (`proactive/message_triage.rs`, gated on `autonomous_message_triage` ON TOP of autonomous mode, default off) — the Overview → Messages counterpart of her human-review resolution: each unread message is classified **done** (routine — marked read with an `athena_triage` audit annotation in its metadata), **digest** (business value — summarized onto one `message_digest` card, then marked read) or **attention** (stays UNREAD for the user to read personally + notification). Code-level safety floor: high/urgent/critical priority can never be auto-resolved, whatever the model says. First enable seeds the cursor to "now" — the historical unread pile is never retroactively mass-read. Engaging the card lands on **Overview → Messages**.
 
 The post-certification "are the teams on track?" review. When the user lets all teams run and risks losing the thread, Athena can review the fleet against the certification rubric and propose fixes.
 
@@ -205,6 +210,37 @@ The post-certification "are the teams on track?" review. When the user lets all 
 - **Trigger** — a **Radar** button in the companion toolbar's Assist group (`CompanionToolbar`, `data-testid="companion-analyze-fleet"`) calls the **`companion_analyze_fleet`** Tauri command **directly** (deterministic — it spawns the rubric-graded proactive turn itself). This is by design: routing the button through a chat message let Athena reasonably *shortcut* to an inline read from her observability digest and skip the dedicated turn + the per-team timeline-memory write, so the button bypasses the chat turn entirely. (Athena can *also* propose `analyze_fleet` in chat when asked — both paths share `spawn_fleet_analysis` in `approvals.rs`.)
 - **Engine** — the deterministic read-only counterpart is `scripts/test/fleet-analyze.mjs` (per-team execution health, outcomes, Director verdicts, goal links, on-track flags); see [team-orchestration.md](../pipeline/team-orchestration.md). Athena reasons; the script measures.
 - **"Ask Athena" from the dashboard (via the orb)** — the Mission Control **Fleet optimization** card (`overview/sub_missionControl/cards/FleetOptimizationCard.tsx`) carries a per-recommendation **Ask Athena** button. Unlike `analyze_fleet` (a gated rubric-graded turn), this is a lightweight forward through the **`useForwardToAthena`** hook (`plugins/companion/useForwardToAthena.ts`). It composes the recommendation (title / description / suggested action + a persona-or-general focus, from `t.overview.fleet_optimization.ask_athena_*`) and then: surfaces the floating **orb** (`state='minimized'`, not the full panel — falls back to `'open'` only if the orb feature is off), fires a one-shot amber "message received" ack glow on the orb (`companionStore.pulseForwardAck` → `forwardAckPulse` → `AthenaOrb`), sends the turn through the always-mounted `voiceTurnRequest` consumer (so it runs panel-closed), and — when voice is enabled + configured — speaks a short scripted, translated acknowledgement (`forward_ack_speech` = "Understood, processing the message.") for immediate feedback while the (often slow) turn spins up. The sibling **Open Lab** button skips Athena and navigates the user straight into the affected agent's Lab in matrix (model-comparison) mode. (Note: the older `pendingPrompt` forward — still used by `CockpitPanel` / `MessageDetailModal` / `GoalsPage` — opens the full panel instead; both consumers now claim their request atomically so StrictMode's dev double-invoke can't double-send.)
+
+## Daily brief (`companion_daily_brief`)
+
+The morning "what happened while I was away" summary. A **Sunrise** button in the
+companion toolbar's Assist group (`CompanionToolbar`, `data-testid="companion-daily-brief"`)
+calls the **`companion_daily_brief`** Tauri command **directly** — the same
+deterministic, button-is-the-consent shape as the fleet-analysis Radar button, and
+for the same reason: routing it through a chat message would let Athena shortcut to
+an inline read, and her `personas_database` connector points at the companion-brain
+DB (`personas_data.db`), not the execution store, so she can't fetch the inbox data
+herself.
+
+- **What it does** — `gather_daily_brief_digest` (`src-tauri/src/commands/companion/approvals.rs`)
+  pre-gathers a compact digest from the **operational store** (`state.db` = `personas.db`)
+  across the three operational inboxes over the last `hours` (default 24, clamped 1–168):
+  **Messages** (`persona_messages` — count, unread, elevated-priority + recent titles),
+  **Human Review** (`persona_manual_reviews` — new-in-window count plus the current
+  all-ages `pending` backlog and its oldest titles, since an overdue review predates
+  the window), and **Incidents** (`audit_incidents` — new-in-window plus current
+  `open`/`acknowledged` backlog, severity-ordered, high/critical called out). The
+  24h window uses `julianday()` math so it's correct across the tables' mixed
+  `created_at` formats (RFC3339 for messages/reviews, datetime-text for incidents).
+  `build_daily_brief_directive` embeds the digest and tells Athena to write a short,
+  skimmable summary directly in chat — lead with the top thing to act on, one or two
+  lines per inbox, flag overdue reviews + open high/critical incidents, and close with
+  one concrete next action only if something needs it. Spawned via
+  `session::spawn_proactive_turn` (trigger kind `daily_brief`), so the brief streams
+  back into the panel like any proactive turn.
+- **No approval, no new op** — unlike `analyze_fleet`, the daily brief is button-only:
+  there is no `ALLOWED_ACTIONS` op and no constitution bump, because Athena never needs
+  to *propose* it from chat. The click is the whole trigger.
 
 ## MCP request panel (D3 — batched approvals)
 

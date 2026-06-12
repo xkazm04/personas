@@ -388,14 +388,8 @@ async fn spawn_detached(
         .map_err(|e| AppError::Internal(format!("create stderr file: {e}")))?;
 
     let repo_root = resolve_repo_root();
-    let (cmd_program, mut argv) = if cfg!(windows) {
-        (
-            "cmd".to_string(),
-            vec!["/C".to_string(), "claude.cmd".to_string()],
-        )
-    } else {
-        ("claude".to_string(), Vec::new())
-    };
+    // Shared resolver — verified absolute claude.cmd (PATH-shadow immune).
+    let (cmd_program, mut argv) = crate::engine::cli_process::claude_cli_invocation();
     argv.extend([
         "-p".into(),
         "-".into(),
@@ -413,6 +407,8 @@ async fn spawn_detached(
         .stdin(Stdio::piped())
         .stdout(Stdio::from(stdout_file))
         .stderr(Stdio::from(stderr_file));
+    // Subscription-only — never the API account.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     // Detach so the child keeps running if the parent dies (Tauri dev
     // restart). On Windows: `CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS`.

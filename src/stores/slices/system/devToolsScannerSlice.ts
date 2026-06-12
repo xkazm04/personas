@@ -42,7 +42,7 @@ export interface DevToolsScannerSlice {
 
   setScanAgentSelection: (keys: string[]) => void;
   toggleScanAgent: (key: string) => void;
-  runScan: (projectId: string, contextId?: string) => Promise<void>;
+  runScan: (projectId: string, opts?: { contextId?: string; contextIds?: string[]; targetCount?: number }) => Promise<void>;
   fetchScan: (id: string) => Promise<DevScan>;
   fetchScans: (projectId?: string, limit?: number) => Promise<DevScan[]>;
 
@@ -81,11 +81,11 @@ export const createDevToolsScannerSlice: StateCreator<SystemStore, [], [], DevTo
     });
   },
 
-  runScan: async (projectId, contextId) => {
+  runScan: async (projectId, opts) => {
     const { scanAgentSelection } = get();
     set({ scanPhase: "running", scanResults: [], currentScanId: null });
     try {
-      const result = await devApi.runScan(projectId, scanAgentSelection, contextId);
+      const result = await devApi.runScan(projectId, scanAgentSelection, opts);
       // The scan runs asynchronously via CLI — scan_id returned immediately.
       // Progress streams via "idea-scan-output" events, completion via "idea-scan-status".
       set({ currentScanId: (result as { scan_id: string }).scan_id, error: null });

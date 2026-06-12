@@ -126,10 +126,13 @@ for (const filePath of files) {
   const raw = readFileSync(filePath, 'utf-8');
   const parsed = JSON.parse(raw);
 
-  // Skip templates with is_published === false (unpublished drafts)
+  // Note: unpublished drafts (is_published === false) are STILL checksummed.
+  // They never seed in production (the catalog skips them unless the build is
+  // dev), but the dev "Drafts" filter loads + integrity-verifies them, so both
+  // the frontend and backend manifests must carry their hashes. Track the count
+  // for the log only.
   if (parsed.is_published === false) {
     skippedUnpublished++;
-    continue;
   }
 
   const rel = relative(TEMPLATES_DIR, filePath).replace(/\\/g, '/');
@@ -168,7 +171,7 @@ outputLines.push('');
 
 writeFileSync(OUTPUT_FILE, outputLines.join('\n'), 'utf-8');
 const publishedCount = Object.keys(checksums).length;
-console.log(`Generated ${OUTPUT_FILE} with ${publishedCount} checksums (${skippedUnpublished} unpublished templates skipped)`);
+console.log(`Generated ${OUTPUT_FILE} with ${publishedCount} checksums (incl. ${skippedUnpublished} unpublished drafts)`);
 
 // -- Generate Rust backend manifest -------------------------------------------
 
@@ -287,4 +290,4 @@ rustLines.push('}');
 rustLines.push('');
 
 writeFileSync(RUST_OUTPUT_FILE, rustLines.join('\n'), 'utf-8');
-console.log(`Generated ${RUST_OUTPUT_FILE} with ${publishedCount} checksums (Rust backend, ${skippedUnpublished} unpublished skipped)`);
+console.log(`Generated ${RUST_OUTPUT_FILE} with ${publishedCount} checksums (Rust backend, incl. ${skippedUnpublished} unpublished drafts)`);

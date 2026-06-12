@@ -19,6 +19,13 @@ pre-commit:
       glob: "*.{ts,tsx,js,cjs,mjs}"
       run: npx eslint --quiet --no-warn-ignored --max-warnings 99999 {staged_files}
 
+    # Secret scan on staged changes — the shift-left D9 control: a leaked key is blocked BEFORE it
+    # leaves the machine (CI catching it is already a leak). Runs gitleaks if installed, else skips
+    # with an install hint (the wrapper never breaks a commit). Read-only; never mutates the tree.
+    # Install gitleaks to enable: https://github.com/gitleaks/gitleaks
+    - name: gitleaks-staged
+      run: node scripts/secret-scan.mjs
+
 pre-push:
   jobs:
     - name: typecheck
@@ -26,3 +33,15 @@ pre-push:
 
     - name: i18n-coverage
       run: node scripts/i18n/check-coverage.mjs
+
+    # D8: agent/prompt eval contracts — keep the agent library from drifting into ambiguity.
+    - name: evals
+      run: npm run test:evals
+
+    # .ai/ standard: conformance gate (same script CI runs) + CONTEXT-freshness nag. Fast, advisory
+    # on warnings; the doctor exits non-zero only on a hard FAIL.
+    - name: ai-conformance
+      run: node .ai/doctor.mjs
+
+    - name: ai-context-freshness
+      run: node .ai/maintain.mjs check

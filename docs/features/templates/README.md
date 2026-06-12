@@ -93,6 +93,14 @@ src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
   readable without leaving the modal; hidden for templates without flows.
 - **Trending quick-adopt** (`gallery/explore/TrendingCarousel.tsx`): trending cards carry a
   hover-revealed adopt action that opens the adoption flow directly from the shelf.
+- **Coverage filter — All / Ready / Partial / Drafts** (`gallery/search/filters/FilterChips.tsx`
+  + `gallery/cards/useGalleryActions.ts`): Ready = 100% connector readiness, Partial = some.
+  **Drafts** isolates unpublished (`is_published: false`) templates and is **dev-build-only**:
+  the catalog skips drafts in production (`templateCatalog.ts` — `import.meta.env.DEV` gate), so
+  they never leak into All/Ready/Partial, trending, or home; in dev they seed with a `_draft`
+  marker on `design_result` and the Drafts chip appears (auto-hidden in prod since there are 0
+  drafts). To move a template to Drafts, set `"is_published": false` and rerun
+  `node scripts/generate-template-checksums.mjs` (drafts are still checksummed for dev integrity).
 - **Design summary bar** (`design-preview/DesignSummaryBar.tsx`): `DesignResultPreview`
   leads with count pills (connectors / tools / events / channels) plus the feasibility
   verdict, so a reviewer grasps a generated design's shape before scrolling its full section
@@ -133,6 +141,38 @@ Browse/adopt surface for the 298 seeded recipe definitions (derived use cases pa
   `scripts/templates/_recipe_seeds.json`**: see the CAUTION in
   `scripts/generate-recipe-seeds.py` (a re-run from the pinned ref drops the 9 SDLC recipes
   appended after it).
+
+### Per-capability model tiering
+
+Each recipe's serialized use-case carries a `model_override` (+ optional `model_rationale`)
+that right-sizes the Claude model **per capability** by *cognitive complexity* — not by how
+many tools it calls:
+
+- `"haiku"` — mechanical / low-judgment work (triage into fixed buckets, field extraction,
+  templated digests, rule-based routing).
+- `null` — the default tier (**Sonnet**); the majority of capabilities. `null` means "use the
+  persona's model", which is Sonnet by default, so it tracks any persona-level change.
+- `"opus"` — high-judgment / high-stakes work where output quality dominates (competitive
+  research synthesis, code review/refactor, legal/financial/compliance judgments, deep
+  multi-source analysis).
+
+Safety rule baked into the catalog: a capability with `review_policy.mode == "always"`
+(consequential output) is never `haiku`.
+
+Propagation: the tier rides the recipe's `prompt_template` → `hydrate_recipe_refs` →
+`map_template_use_case_to_design_use_case` (template adopt) **and** the Glyph
+build→promote path → `persona.design_context.useCases[].model_override`. At run time the
+runner reads it and seeds the primary model before the failover chain
+(`engine/runner/mod.rs`, "per-UC model override"); the value is passed verbatim to the CLI's
+`--model` (bare aliases `haiku`/`opus` are resolved by the Claude CLI). `null` tiers leave
+`--model` unset → persona default.
+
+Existing installs: the boot seeder (`engine/recipe_seed.rs`) field-merges the bundle's
+`model_override`/`model_rationale` into already-seeded **builtin** rows (`refresh_model_tier`),
+so a later retiering reaches existing DBs without clobbering other `prompt_template` edits.
+Fresh installs get it via the normal create path. To re-tier the catalog, edit
+`_recipe_seeds.json` in place (the underscore prefix excludes it from checksums) — do **not**
+regenerate.
 
 ## Common operations
 

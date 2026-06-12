@@ -13,7 +13,7 @@
     "Codebases",
     "Messages"
   ],
-  "is_published": true,
+  "is_published": false,
   "payload": {
     "service_flow": [
       "email",
@@ -113,8 +113,8 @@
       ],
       "notification_channels_default": [
         {
-          "type": "messaging",
-          "description": "Agency-facing alerts: SLA risk, SLA breach, complexity-gate escalations, scope-escalation notices, report delivery confirmations."
+          "type": "built-in",
+          "description": "Agency-facing alerts delivered in-app: SLA risk, SLA breach, complexity-gate escalations, scope-escalation notices, report delivery confirmations. No external messaging connector is declared — all internal alerts surface in-app alongside email delivery to clients."
         }
       ],
       "core_memories": []

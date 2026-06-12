@@ -1781,6 +1781,8 @@ pub fn run() {
             // 2026-05-09; only snapshot poll + instant adopt remain wired)
             commands::design::template_adopt::get_template_adopt_snapshot,
             commands::design::template_adopt::instant_adopt_template,
+            // Approach 1 -- always-on adjustment of the pre-built base IR
+            commands::design::template_adopt::adjust_adoption_draft,
             // Design -- Team Presets (filesystem-shipped multi-template bundles)
             commands::design::team_presets::list_team_presets,
             commands::design::team_presets::get_team_preset,
@@ -2468,6 +2470,7 @@ pub fn run() {
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
             commands::companion::approvals::companion_analyze_fleet,
+            commands::companion::approvals::companion_daily_brief,
             commands::companion::browser_test::browser_bridge_status,
             commands::companion::browser_test::browser_bridge_regenerate_token,
             commands::companion::browser_test::companion_file_browser_defects,
@@ -2711,6 +2714,26 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal,
             commands::infrastructure::dev_tools::dev_tools_delete_goal,
             commands::infrastructure::dev_tools::dev_tools_reorder_goals,
+            // Dev Tools -- KPIs (outcome layer above goals)
+            commands::infrastructure::dev_tools::dev_tools_list_kpis,
+            commands::infrastructure::dev_tools::dev_tools_get_kpi,
+            commands::infrastructure::dev_tools::dev_tools_create_kpi,
+            commands::infrastructure::dev_tools::dev_tools_update_kpi,
+            commands::infrastructure::dev_tools::dev_tools_delete_kpi,
+            commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements,
+            commands::infrastructure::dev_tools::dev_tools_record_kpi_measurement,
+            commands::infrastructure::kpi_scan::dev_tools_scan_kpis,
+            commands::infrastructure::kpi_scan::dev_tools_cancel_kpi_scan,
+            commands::infrastructure::kpi_scan::dev_tools_get_kpi_scan_status,
+            commands::infrastructure::dev_tools::dev_tools_evaluate_kpi,
+            commands::infrastructure::dev_tools::dev_tools_evaluate_due_kpis,
+            commands::infrastructure::dev_tools::dev_tools_list_all_kpis,
+            commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements_bulk,
+            commands::infrastructure::dev_tools::dev_tools_list_kpi_metric_types,
+            commands::infrastructure::dev_tools::dev_tools_kpi_matching_credentials,
+            commands::infrastructure::dev_tools::dev_tools_kpi_compose_binding,
+            commands::infrastructure::dev_tools::dev_tools_kpi_activate_binding,
+            commands::infrastructure::dev_tools::dev_tools_kpi_list_bindings,
             // Dev Tools -- Goal Dependencies
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies,
             commands::infrastructure::dev_tools::dev_tools_add_goal_dependency,

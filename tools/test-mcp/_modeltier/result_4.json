@@ -1,0 +1,192 @@
+[
+  {
+    "id": "34e0d640-bd1e-51a6-9f30-9b4de55db0fe",
+    "tier": "sonnet",
+    "rationale": "NL-to-SQL requires parsing intent, generating safe SQL, and maintaining conversation context — moderate reasoning."
+  },
+  {
+    "id": "02383179-2da1-5a73-a4c3-51be0a31eb72",
+    "tier": "sonnet",
+    "rationale": "Weekly rollup with pattern recognition and saved-query suggestions needs editorial synthesis, not just aggregation."
+  },
+  {
+    "id": "103f9f63-fab8-5879-8c7d-dbf798ca2193",
+    "tier": "haiku",
+    "rationale": "Event classification into fixed categories + threshold alerting is rule-based and deterministic."
+  },
+  {
+    "id": "005fdfeb-7a06-5e77-8d89-e620b3c3deb1",
+    "tier": "haiku",
+    "rationale": "Threshold-based escalation on accumulated signals — clear rules, no synthesis or nuanced judgment."
+  },
+  {
+    "id": "c6d64e9e-419a-5c90-bac2-a3f2d7039a87",
+    "tier": "opus",
+    "rationale": "Generating CRO variant hypotheses for underperforming pages + always-review gate demands high creative/analytical judgment."
+  },
+  {
+    "id": "3615618f-ff53-57d3-ba9b-a51cd0fdc286",
+    "tier": "opus",
+    "rationale": "Weighted decision matrix with kill criteria is high-stakes strategic analysis requiring deep multi-factor reasoning."
+  },
+  {
+    "id": "e0ae5617-752a-5ab1-82e8-da0c7311d617",
+    "tier": "opus",
+    "rationale": "Generating 5-8 data-grounded optimization proposals with human gate requires strategic synthesis and quality output."
+  },
+  {
+    "id": "244bbdd0-9a0e-5851-8cf1-10ae2727fe32",
+    "tier": "sonnet",
+    "rationale": "Combining in-flight CRO data, results, and proposals into a weekly briefing needs editorial judgment but is templated."
+  },
+  {
+    "id": "ffaf65e0-0be9-51c4-b2de-82c576e2527f",
+    "tier": "haiku",
+    "rationale": "Distributing a pre-composed briefing to messaging + KB is mechanical delivery with no synthesis."
+  },
+  {
+    "id": "136c0300-30bf-59af-a13d-4b55efb99489",
+    "tier": "haiku",
+    "rationale": "Threshold-triggered alert formatting and routing to messaging channel — deterministic dispatch."
+  },
+  {
+    "id": "22a3affc-2206-580b-8671-e24b66e1bba8",
+    "tier": "haiku",
+    "rationale": "Aggregating enrichment metrics and picking top-3 prospects by score is mechanical ranking and formatting."
+  },
+  {
+    "id": "d4388f24-9c1c-5043-95ff-65c67430a39f",
+    "tier": "sonnet",
+    "rationale": "Real-time churn/expansion threshold alerts + personalized email outreach requires tone and context judgment."
+  },
+  {
+    "id": "80257151-9304-500e-8952-560528229804",
+    "tier": "sonnet",
+    "rationale": "3-tier dunning sequence with mid-sequence reversal handling needs conditional logic and persuasive tone judgment."
+  },
+  {
+    "id": "c22f9a28-f97a-5b1c-8d25-db15556baaff",
+    "tier": "sonnet",
+    "rationale": "Escalating dunning with reversal + cancellation handling is multi-branch conditional flow with tone sensitivity."
+  },
+  {
+    "id": "0b13d1e5-9682-59b9-9e05-a76fbcb4bd18",
+    "tier": "haiku",
+    "rationale": "Counting and formatting auto-resolved/escalated/stale ticket metrics into a digest is purely aggregation."
+  },
+  {
+    "id": "0c01547d-42e9-580f-9fd9-ed78c53ebce2",
+    "tier": "sonnet",
+    "rationale": "Sentiment-routed stale issue classification + auto-resolution vs escalation decisions need moderate judgment."
+  },
+  {
+    "id": "26b22f83-5e22-535b-8faa-aa51aef63f23",
+    "tier": "sonnet",
+    "rationale": "Composing a comprehensive report with WoW trends and KB growth analysis requires data synthesis and editorial work."
+  },
+  {
+    "id": "8f3c3f7a-8973-5773-8056-55e3ff59bf29",
+    "tier": "sonnet",
+    "rationale": "Root-cause analysis of CI failures requires diagnostic reasoning, though output is structured messaging layout."
+  },
+  {
+    "id": "8257237e-c784-5b6d-b79b-53506c208a09",
+    "tier": "sonnet",
+    "rationale": "Ranking flaky tests with trend context needs pattern analysis and editorial framing, not just sorting."
+  },
+  {
+    "id": "841f8f1b-cf8e-578b-8624-de2446ae559a",
+    "tier": "haiku",
+    "rationale": "Creating/updating a bot comment on a PR keyed by number is a mechanical upsert operation."
+  },
+  {
+    "id": "ab3127cc-fb73-5ed1-9b58-0759373fe5ef",
+    "tier": "haiku",
+    "rationale": "Verifying and refreshing a context map is a deterministic validation and data-refresh task."
+  },
+  {
+    "id": "ef482e96-44e5-50d2-85f3-76cdbd5eae27",
+    "tier": "sonnet",
+    "rationale": "Four-dimension scoring per context group with actionable idea creation requires analytical judgment across dimensions."
+  },
+  {
+    "id": "d43905c2-ede5-5d18-9f23-1bdb345de4fd",
+    "tier": "sonnet",
+    "rationale": "Composing and delivering a monthly health report with snapshot appending requires synthesis and editorial framing."
+  },
+  {
+    "id": "2e703e9a-39ce-53fc-8291-63b078b5bb6a",
+    "tier": "haiku",
+    "rationale": "Label-driven type/priority mapping to create/update Linear tickets is rule-based field mapping."
+  },
+  {
+    "id": "d2c1953f-5589-50ea-9372-daa96a6d6f32",
+    "tier": "haiku",
+    "rationale": "Formatting a batched handoff summary with links into a messaging layout is templated, mechanical work."
+  },
+  {
+    "id": "9732a26d-735c-55dd-a477-57e437ea6b7b",
+    "tier": "haiku",
+    "rationale": "Version polling + component diff emission is deterministic detection with no synthesis."
+  },
+  {
+    "id": "f6ee8fac-c783-5607-819e-e5722c54b89f",
+    "tier": "sonnet",
+    "rationale": "Scanning codebase for backlog candidates requires pattern recognition and candidate evaluation judgment."
+  },
+  {
+    "id": "328df264-fffa-55ca-b666-85e2ed37c19e",
+    "tier": "opus",
+    "rationale": "End-to-end PR lifecycle with code changes, review-comment reactions, and always-review gate is high-stakes dev work."
+  },
+  {
+    "id": "95f66218-cd55-503c-8a7d-0c544e54378a",
+    "tier": "sonnet",
+    "rationale": "Release candidate bundling + human approval gate needs coordination judgment but follows a defined process."
+  },
+  {
+    "id": "2e575c2d-e918-5743-b7ba-bd186916302a",
+    "tier": "haiku",
+    "rationale": "Label-driven GitHub↔Jira sync with type/priority mapping is deterministic field translation."
+  },
+  {
+    "id": "c8e1cffe-150a-5d1c-8e16-5497881b9262",
+    "tier": "sonnet",
+    "rationale": "PR→Jira sync + messaging notification + oversized PR review gate mixes routing rules with threshold judgment."
+  },
+  {
+    "id": "d21717d3-d637-5a25-aa7f-973e68a4b4b8",
+    "tier": "haiku",
+    "rationale": "Mapping a release to Jira version + fixVersion + changelog is structured field mapping and formatting."
+  },
+  {
+    "id": "4eaacf80-5eea-510f-bdfb-1ac737466283",
+    "tier": "sonnet",
+    "rationale": "Per-owner email composition + commitment ledger + escalation routing requires tone and prioritization judgment."
+  },
+  {
+    "id": "e0d5d81d-6bb1-59e6-813f-bb49217a7b4a",
+    "tier": "haiku",
+    "rationale": "Aggregating doc health stats into a weekly team digest is mechanical metric formatting."
+  },
+  {
+    "id": "7ace1a42-fdda-5ff3-b67e-c413d78e16ed",
+    "tier": "haiku",
+    "rationale": "Per-page staleness tier classification + link validation is rule-based scoring with no synthesis."
+  },
+  {
+    "id": "1094568c-06f3-59fe-9561-0b491f5680b5",
+    "tier": "sonnet",
+    "rationale": "Winner detection + summary + rollout ticket creation requires statistical interpretation and editorial judgment."
+  },
+  {
+    "id": "f52ff647-1db4-5031-8e3f-44574dec70c8",
+    "tier": "haiku",
+    "rationale": "Near-real-time flag change detection + messaging notification is deterministic event dispatch."
+  },
+  {
+    "id": "3f4a0c32-57e0-5c36-8f73-84c9cec8bd82",
+    "tier": "sonnet",
+    "rationale": "Tiered stale-flag escalation with running-experiment exclusion needs contextual classification logic."
+  }
+]
