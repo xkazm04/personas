@@ -94,6 +94,31 @@ fn rel_of(root: &Path, abs: &Path) -> String {
 /// the provided input: no tools, no files, no conversation context. Errors
 /// surface as tool errors so the orchestrator simply does the work itself —
 /// a mixed run must never fail because the local model did.
+/// Remove <think>...</think> reasoning traces (and a dangling unclosed
+/// <think> head) that reasoning models emit inline in `content`.
+fn strip_think_blocks(raw: &str) -> String {
+    let mut out = String::with_capacity(raw.len());
+    let mut rest = raw;
+    loop {
+        match rest.find("<think>") {
+            None => {
+                out.push_str(rest);
+                break;
+            }
+            Some(start) => {
+                out.push_str(&rest[..start]);
+                match rest[start..].find("</think>") {
+                    Some(end_rel) => {
+                        rest = &rest[start + end_rel + "</think>".len()..];
+                    }
+                    None => break, // unclosed think head — drop the tail
+                }
+            }
+        }
+    }
+    out.trim().to_string()
+}
+
 fn handle_llm_delegate(args: &Value) -> Result<String, String> {
     let task = args
         .get("task")
@@ -125,8 +150,11 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         .map_err(|e| format!("runtime build failed: {e}"))?;
     let base = base_url.trim_end_matches('/').to_string();
     let outcome: Result<(String, String, u64, u64), String> = rt.block_on(async {
+        // 300s: reasoning models (LFM2.5-class) burn minutes thinking before
+        // the first byte of a non-streamed response; with stream:false the
+        // headers arrive only after the FULL generation.
         let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_secs(120))
+            .timeout(std::time::Duration::from_secs(300))
             .build()
             .map_err(|e| format!("client build failed: {e}"))?;
         // "auto" keeps the setting optional: first installed model wins.
@@ -158,7 +186,7 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
                 { "role": "user", "content": format!("{task}\n\n---\n\n{input}") }
             ],
             "stream": false,
-            "options": { "temperature": 0.2 }
+            "options": { "temperature": 0.2, "num_predict": 4096 }
         });
         let resp = client
             .post(format!("{base}/api/chat"))
@@ -177,14 +205,18 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         }
         let v: Value = serde_json::from_str(&text)
             .map_err(|_| "delegate response is not JSON".to_string())?;
-        let content = v
+        let raw = v
             .get("message")
             .and_then(|m| m.get("content"))
             .and_then(|c| c.as_str())
-            .unwrap_or("")
-            .to_string();
+            .unwrap_or("");
+        // Reasoning models leak <think>...</think> traces into content (and
+        // ignore think:false); the orchestrator only ever wants the answer.
+        let content = strip_think_blocks(raw);
         if content.trim().is_empty() {
-            return Err("delegate returned an empty response".to_string());
+            return Err(
+                "delegate returned an empty response (or thinking-only output)".to_string(),
+            );
         }
         let prompt_tokens = v.get("prompt_eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
         let eval_tokens = v.get("eval_count").and_then(|x| x.as_u64()).unwrap_or(0);
