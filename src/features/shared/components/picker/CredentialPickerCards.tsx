@@ -191,6 +191,14 @@ export function CredentialPickerCards({
                 <Check className="w-3 h-3" strokeWidth={3} />
               </span>
             )}
+            {item.badge && (
+              <span
+                className="absolute top-1.5 left-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full bg-primary/15 border border-primary/30 typo-caption font-medium text-primary"
+                title={item.badge}
+              >
+                {item.badge}
+              </span>
+            )}
           </button>
         );
       })}

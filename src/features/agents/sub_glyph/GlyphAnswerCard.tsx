@@ -81,6 +81,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
           value=""
           onChange={(serviceType) => submit(serviceType)}
           onAddFromCatalog={() => useSystemStore.getState().setSidebarSection("credentials")}
+          suggested={question.suggested}
         />
       ) : (
         <>

@@ -20,7 +20,18 @@ accepts_reference: boolean,
  * expose a smee.io URL input. Used when the LLM picks the
  * `webhook` trigger type for a capability.
  */
-accepts_webhook_source: boolean, } | { "type": "progress", session_id: string, dimension: string | null, message: string, percent: number | null, activity: string | null, } | { "type": "error", session_id: string, cell_key: string | null, message: string, retryable: boolean, } | { "type": "session_status", session_id: string, phase: string, resolved_count: number, total_count: number, } | { "type": "behavior_core_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_enumeration_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_resolution_update", session_id: string, capability_id: string, field: string, value: JsonValue, status: string, } | { "type": "persona_resolution_update", session_id: string, field: string, value: JsonValue, status: string, } | { "type": "clarifying_question_v3", session_id: string, 
+accepts_webhook_source: boolean, 
+/**
+ * Ambient Context Fusion (Case 1) — connector keywords implied by
+ * ambient desktop signals (focused app/window title, recent file
+ * paths) when the build intent is silent about which service to wire.
+ * The vault picker pre-ranks options matching these so the most likely
+ * connector floats to the top; the question still fires and the user
+ * confirms. Empty for non-connector questions, one-shot/headless
+ * builds, and when ambient context is disabled. Carries only matched
+ * connector vocabulary — never raw ambient content.
+ */
+suggested: Array<string>, } | { "type": "progress", session_id: string, dimension: string | null, message: string, percent: number | null, activity: string | null, } | { "type": "error", session_id: string, cell_key: string | null, message: string, retryable: boolean, } | { "type": "session_status", session_id: string, phase: string, resolved_count: number, total_count: number, } | { "type": "behavior_core_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_enumeration_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_resolution_update", session_id: string, capability_id: string, field: string, value: JsonValue, status: string, } | { "type": "persona_resolution_update", session_id: string, field: string, value: JsonValue, status: string, } | { "type": "clarifying_question_v3", session_id: string, 
 /**
  * One of: "mission" | "capability" | "field" | "connector_category"
  */
@@ -42,4 +53,11 @@ accepts_reference: boolean,
  * C7 — when true, the answering UI surfaces a smee.io URL input.
  * Emitted when the LLM picks the `webhook` trigger type (rule 24).
  */
-accepts_webhook_source: boolean, };
+accepts_webhook_source: boolean, 
+/**
+ * Ambient Context Fusion (Case 1) — connector keywords implied by
+ * ambient desktop signals; the vault picker pre-ranks matching
+ * options. See the `Question` variant for the full contract. Only
+ * meaningful for `scope: "connector_category"`.
+ */
+suggested: Array<string>, };

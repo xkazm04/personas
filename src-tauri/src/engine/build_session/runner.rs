@@ -302,6 +302,38 @@ pub(super) async fn run_session(
         );
     }
 
+    // 2026-06-12 — Ambient connector evidence (Ambient Context Fusion, Case 1:
+    // "pre-rank, still ask"). When the user is actively working with a service
+    // (its name appears in ambient desktop signals — focused app/window title,
+    // recent file paths) while building a persona whose intent is silent about
+    // which connector to use, the connector picker pre-ranks the matching
+    // option. The clarifying question still fires; the user confirms.
+    //
+    // Captured once per session, like registry_keywords above. Persona-agnostic
+    // (no persona exists yet) and desktop-only. Skipped in one-shot/autonomous
+    // mode (no user to confirm a pre-ranked option) and when ambient context is
+    // disabled. `connector_evidence` returns ONLY matched connector keywords —
+    // never raw window titles, paths, or clipboard text — so no ambient content
+    // leaks into the build UI through this path.
+    #[cfg(feature = "desktop")]
+    let ambient_connectors: Vec<String> = if one_shot {
+        Vec::new()
+    } else {
+        use tauri::Manager as _;
+        let state = app_handle.state::<std::sync::Arc<crate::AppState>>();
+        let guard = state.ambient_context.lock().await;
+        guard.connector_evidence(&registry_keywords)
+    };
+    #[cfg(not(feature = "desktop"))]
+    let ambient_connectors: Vec<String> = Vec::new();
+    if !ambient_connectors.is_empty() {
+        tracing::info!(
+            session_id = %session_id,
+            ambient_connectors = ?ambient_connectors,
+            "Ambient desktop signals imply connector(s); pre-ranking the connector picker"
+        );
+    }
+
     const MAX_TURNS: usize = 12;
 
     // Create a persistent temp dir shared across all turns so `--continue`
@@ -746,6 +778,7 @@ pub(super) async fn run_session(
                                     value,
                                     &pool,
                                     &session_id,
+                                    &ambient_connectors,
                                 );
                                 if !synth.is_empty() {
                                     pending_gate = Some(PendingGate {
@@ -850,6 +883,7 @@ pub(super) async fn run_session(
                                     &serde_json::Value::Null,
                                     &pool,
                                     &session_id,
+                                    &ambient_connectors,
                                 );
                                 if !synth.is_empty() {
                                     pending_gate = Some(PendingGate {

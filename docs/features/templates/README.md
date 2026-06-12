@@ -174,6 +174,27 @@ Fresh installs get it via the normal create path. To re-tier the catalog, edit
 `_recipe_seeds.json` in place (the underscore prefix excludes it from checksums) — do **not**
 regenerate.
 
+### Ambient connector pre-ranking (build-from-scratch)
+
+When the build-from-scratch flow asks *"which connector should this capability
+use?"* (`scope: connector_category`), the picker is **pre-ranked from ambient
+desktop signals** (Ambient Context Fusion, Case 1). If you're building a persona
+while `github.com` is the focused tab — or `*.docx` files just landed in a
+watched folder — the matching credential floats to the top of
+`VaultConnectorPicker` with a "Suggested" badge. The clarifying question still
+fires; you confirm.
+
+Pipeline: `build_session/runner.rs` computes `ambient_connectors` once per
+session via `AmbientContextFusion::connector_evidence(&registry_keywords)`
+(`engine/ambient_context.rs`), passes it through
+`gates::synthesize_gate_question` as a `suggested` array on the connector
+question; the `Question`/`ClarifyingQuestionV3` events
+(`db/models/build_session.rs`) carry it to the frontend. Persona-agnostic,
+desktop-only, skipped in one-shot builds, and gated behind the ambient master
+switch. It surfaces **only matched connector keywords** — never raw window
+titles, paths, or clipboard text — so no ambient content leaks into the build
+UI. See [`../../concepts/ambient-context-fusion.md`](../../concepts/ambient-context-fusion.md).
+
 ## Common operations
 
 ### Add a new template

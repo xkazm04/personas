@@ -242,6 +242,7 @@
   },
   "common": {
     "unknown_error": "Unknown error",
+    "suggested": "Suggested",
     "loading": "Loading...",
     "saving": "Saving...",
     "deleting": "Deleting...",

@@ -248,6 +248,7 @@ export type Translations = {
   };
   common: {
     unknown_error: string;
+    suggested: string;
     loading: string;
     saving: string;
     deleting: string;

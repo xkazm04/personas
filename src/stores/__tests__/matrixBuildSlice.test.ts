@@ -108,6 +108,7 @@ describe("matrixBuildSlice", () => {
         {
           cellKey: "use-cases",
           connectorCategory: null,
+          suggested: [],
           question: "What should this agent do?",
           options: ["Option A", "Option B"],
         },

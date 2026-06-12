@@ -727,6 +727,8 @@ export const createMatrixBuildSlice: StateCreator<
             // Preserve the connector_category hint from v3 clarifying_question
             // mirroring so the UI can route to the vault picker.
             connectorCategory: event.connector_category ?? null,
+            // Ambient Context Fusion (Case 1) — pre-rank hint for the picker.
+            suggested: event.suggested ?? [],
           },
         ],
         cellStates: { ...sess.cellStates, [event.cell_key]: "highlighted" },

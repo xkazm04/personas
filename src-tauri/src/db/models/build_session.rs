@@ -133,6 +133,16 @@ pub enum BuildEvent {
         /// `webhook` trigger type for a capability.
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         accepts_webhook_source: bool,
+        /// Ambient Context Fusion (Case 1) — connector keywords implied by
+        /// ambient desktop signals (focused app/window title, recent file
+        /// paths) when the build intent is silent about which service to wire.
+        /// The vault picker pre-ranks options matching these so the most likely
+        /// connector floats to the top; the question still fires and the user
+        /// confirms. Empty for non-connector questions, one-shot/headless
+        /// builds, and when ambient context is disabled. Carries only matched
+        /// connector vocabulary — never raw ambient content.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        suggested: Vec<String>,
     },
     Progress {
         session_id: String,
@@ -228,6 +238,12 @@ pub enum BuildEvent {
         /// Emitted when the LLM picks the `webhook` trigger type (rule 24).
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         accepts_webhook_source: bool,
+        /// Ambient Context Fusion (Case 1) — connector keywords implied by
+        /// ambient desktop signals; the vault picker pre-ranks matching
+        /// options. See the `Question` variant for the full contract. Only
+        /// meaningful for `scope: "connector_category"`.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        suggested: Vec<String>,
     },
 }
 
