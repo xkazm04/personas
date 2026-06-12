@@ -727,6 +727,21 @@ pub struct ReviewResolutionCandidate {
     /// The failed (cap-out / blocking) steps: (step_id, title, error_message,
     /// output_tail, assigned_persona_id, retry_count).
     pub failed_steps: Vec<FailedStepContext>,
+    /// Goal context (when the assignment advances a goal) — gives the
+    /// resolution decision goal-level authority: abort-and-retry the attempt,
+    /// roll back to-dos the failed attempt had checked, or shelve the goal.
+    pub goal: Option<GoalResolutionContext>,
+}
+
+pub struct GoalResolutionContext {
+    pub goal_id: String,
+    pub title: String,
+    pub status: String,
+    pub progress: i32,
+    /// (item_id, title, done)
+    pub items: Vec<(String, String, bool)>,
+    /// Prior ABORTED assignments on this goal — the repeat-attempt signal.
+    pub aborted_attempts: i64,
 }
 
 pub struct FailedStepContext {
@@ -739,7 +754,10 @@ pub struct FailedStepContext {
 }
 
 /// Parked `awaiting_review` assignments on goal-managed teams that Athena has
-/// NEVER resolved (the once-per-assignment guard). No recency cursor — parked
+/// not resolved SINCE THE NEWEST FAILURE (per-episode guard, was once-ever).
+/// An approve that re-bounces into a new park is new evidence and earns a new
+/// decision — with abort_retry/goal_shelve available, that second look is what
+/// converges the loop instead of deadlocking it. No recency cursor — parked
 /// work stays a candidate until resolved, however old.
 pub fn find_review_resolution_candidates(
     pool: &crate::db::DbPool,
@@ -747,25 +765,31 @@ pub fn find_review_resolution_candidates(
 ) -> Result<Vec<ReviewResolutionCandidate>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT a.id, a.team_id, t.name, a.title
+        "SELECT a.id, a.team_id, t.name, a.title, a.goal_id
          FROM team_assignments a
          JOIN persona_teams t ON t.id = a.team_id
          WHERE a.status = 'awaiting_review' AND a.team_id IS NOT NULL
-           AND NOT EXISTS (SELECT 1 FROM team_assignment_events e
-                             WHERE e.assignment_id = a.id
-                               AND e.kind = 'athena_review_resolution')
+           AND NOT EXISTS (
+                 SELECT 1 FROM team_assignment_events e
+                 WHERE e.assignment_id = a.id
+                   AND e.kind = 'athena_review_resolution'
+                   AND datetime(e.created_at) >= COALESCE(
+                         (SELECT MAX(datetime(s.completed_at))
+                          FROM team_assignment_steps s
+                          WHERE s.assignment_id = a.id AND s.status = 'failed'),
+                         datetime(e.created_at)))
          ORDER BY datetime(a.created_at) ASC
          LIMIT ?1",
     )?;
-    let heads: Vec<(String, String, String, String)> = stmt
+    let heads: Vec<(String, String, String, String, Option<String>)> = stmt
         .query_map([limit as i64], |r| {
-            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?))
+            Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?))
         })?
         .filter_map(Result::ok)
         .collect();
 
     let mut out = Vec::new();
-    for (assignment_id, team_id, team_name, title) in heads {
+    for (assignment_id, team_id, team_name, title, goal_id) in heads {
         let mut step_stmt = conn.prepare(
             "SELECT id, title, COALESCE(error_message,''), COALESCE(output_summary,''),
                     assigned_persona_id, retry_count
@@ -834,12 +858,37 @@ pub fn find_review_resolution_candidates(
             );
             continue;
         }
+        let goal = goal_id.as_deref().and_then(|gid| {
+            let g = crate::db::repos::dev_tools::get_goal_by_id(pool, gid).ok()?;
+            let items = crate::db::repos::dev_tools::list_goal_items(pool, gid)
+                .unwrap_or_default()
+                .into_iter()
+                .map(|i| (i.id, i.title, i.done))
+                .collect();
+            let aborted_attempts: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM team_assignments
+                     WHERE goal_id = ?1 AND status = 'aborted'",
+                    rusqlite::params![gid],
+                    |r| r.get(0),
+                )
+                .unwrap_or(0);
+            Some(GoalResolutionContext {
+                goal_id: gid.to_string(),
+                title: g.title,
+                status: g.status,
+                progress: g.progress,
+                items,
+                aborted_attempts,
+            })
+        });
         out.push(ReviewResolutionCandidate {
             assignment_id,
             team_id,
             team_name,
             title,
             failed_steps,
+            goal,
         });
     }
     Ok(out)
@@ -864,6 +913,11 @@ struct AthenaReviewDecision {
     /// Incident title when resolution = incident.
     #[serde(default)]
     incident_title: String,
+    /// EXACT goal to-do titles the failed attempt had checked but did NOT
+    /// truly deliver — unchecked on abort_retry / goal_shelve so the goal
+    /// reflects reality before the next attempt.
+    #[serde(default)]
+    uncheck_todos: Vec<String>,
 }
 
 fn build_review_resolution_prompt(c: &ReviewResolutionCandidate, history: &str) -> String {
@@ -886,6 +940,29 @@ fn build_review_resolution_prompt(c: &ReviewResolutionCandidate, history: &str) 
     } else {
         history.to_string()
     };
+    let goal_block = match &c.goal {
+        Some(g) => {
+            let todos = if g.items.is_empty() {
+                "  (no to-dos)".to_string()
+            } else {
+                g.items
+                    .iter()
+                    .map(|(_, t, done)| format!("  - [{}] {}", if *done { "x" } else { " " }, t))
+                    .collect::<Vec<_>>()
+                    .join("
+")
+            };
+            format!(
+                "
+This assignment advances the GOAL \"{}\" (status {}, progress {}%, {} prior aborted attempt(s) on this goal).
+Goal to-dos:
+{}
+",
+                g.title, g.status, g.progress, g.aborted_attempts, todos
+            )
+        }
+        None => String::new(),
+    };
 
     format!(
         r#"You are **Athena**, the autonomous orchestrator for the team "{team}". You are running unattended; the human is away. An assignment is PARKED in awaiting-review — the QA fix-loop reached its cap without a clean pass, and the team cannot exit this state on its own. You are the resolution authority of last resort before the human.
@@ -894,23 +971,26 @@ Assignment: {title}
 
 Blocking step(s):
 {steps}
-
+{goal_block}
 Recent channel activity (oldest → newest):
 {history}
 
 YOUR RESOLUTION — pick exactly one:
 - "approve": Use when the QA objections look RESOLVED, STALE, or ACCEPTABLE on the evidence (e.g. the PR already merged and the loop gated a closed PR; the remaining findings are nits; the failure is a flaky gate, not the work). This grants the team exactly ONE extra QA round: your message is delivered to the QA persona as a direct instruction, and QA re-verifies and keeps SOLE merge authority — you are not merging, you are un-parking the loop with your assessment. Write `message` as the instruction to QA: what you assessed, what to re-verify, and that they should merge if it passes.
 - "incident": Use when the real blocker is access/credential/environment-shaped — missing or invalid credential/PAT, 401/403/permission denied, unprovisioned environment, an external service the team cannot reach. That is not a review decision; it becomes a tracked INCIDENT for the human to fix. Set `incident_title` to a crisp one-liner naming the missing access.
+- "abort_retry": Use when this ATTEMPT is unsalvageable (QA keeps bouncing the same flawed approach; the work needs a fresh start) but the GOAL is still sound. The assignment is ABORTED, the goal stays open, and the team re-attempts it fresh. In `uncheck_todos`, list the EXACT to-do titles (from the goal to-dos above) that this failed attempt had checked but did NOT truly deliver — undone work must not stay checked. Write `message` as the team-channel directive the NEXT attempt reads BEFORE acting: what failed, what the new attempt must do differently. HARD RULE: if the goal already has 2+ prior aborted attempts, do NOT choose abort_retry — choose goal_shelve or escalate instead.
+- "goal_shelve": Use when the GOAL ITSELF is the problem — mis-scoped, not currently viable, or repeatedly failing for the same structural reason. The assignment is aborted AND the goal is moved to BLOCKED (autonomous advancement stops; the human un-blocks it from the Goals board). Also use `uncheck_todos` to roll back falsely-checked to-dos. Write `message` as why this goal should wait for the human.
 - "escalate": Use when this is a genuine product/business/policy call only the human can make, or the evidence is too ambiguous to approve safely. Write `message` as the concise brief to the human: what's blocked, what call is needed.
 
-Be honest and conservative: approve only what you can defend from the evidence above. `rationale` is one short clause explaining WHY (recorded as the audit footer).
+Be honest and conservative: approve only what you can defend from the evidence above; abort_retry beats endless QA rounds, goal_shelve beats endless attempts. `rationale` is one short clause explaining WHY (recorded as the audit footer).
 
 Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"athena_review": {{"resolution": "approve"|"incident"|"escalate", "message": "...", "rationale": "...", "incident_title": ""}}}}
+{{"athena_review": {{"resolution": "approve"|"incident"|"escalate"|"abort_retry"|"goal_shelve", "message": "...", "rationale": "...", "incident_title": "", "uncheck_todos": []}}}}
 "#,
         team = c.team_name,
         title = c.title,
         steps = steps_block,
+        goal_block = goal_block,
         history = history_block,
     )
 }
@@ -947,9 +1027,21 @@ pub async fn run_athena_review_resolution(
         return Ok("none");
     };
 
+    let aborted_attempts = candidate.goal.as_ref().map(|g| g.aborted_attempts).unwrap_or(0);
     let outcome: &'static str = match decision.resolution.as_str() {
         "approve" => "approve",
         "incident" => "incident",
+        // Deterministic restraint backstop: an abort→re-attempt→re-park cycle
+        // costs a full team attempt per lap. After 2 aborted attempts the
+        // prompt forbids abort_retry; if the model picks it anyway, downgrade
+        // to goal_shelve so the loop converges instead of orbiting.
+        "abort_retry" if aborted_attempts >= 2 => {
+            tracing::warn!(assignment = %candidate.assignment_id, aborted_attempts,
+                "athena_review_resolution: abort_retry downgraded to goal_shelve (repeat-attempt cap)");
+            "goal_shelve"
+        }
+        "abort_retry" => "abort_retry",
+        "goal_shelve" => "goal_shelve",
         _ => "escalate",
     };
 
@@ -1076,6 +1168,119 @@ pub async fn run_athena_review_resolution(
             );
             tracing::info!(team = %candidate.team_name, assignment = %candidate.assignment_id,
                 "athena_review_resolution: INCIDENT raised (access blocker)");
+        }
+        "abort_retry" | "goal_shelve" => {
+            let shelve = outcome == "goal_shelve";
+            // 1) Abort the attempt — frees the goal slot immediately.
+            let reason = format!(
+                "Athena {}: {}",
+                if shelve { "goal_shelve" } else { "abort_retry" },
+                decision.rationale.trim()
+            );
+            crate::engine::team_assignment_orchestrator::resolve_review_abort(
+                std::sync::Arc::new(pool.clone()),
+                app.clone(),
+                candidate.assignment_id.clone(),
+                Some(reason),
+            )?;
+            // 2) Goal-state authority: roll back falsely-checked to-dos so the
+            //    goal reflects reality, recompute progress DOWN from items, and
+            //    (shelve) move the goal to BLOCKED so advancement stops until
+            //    the human un-blocks it.
+            let mut unchecked = 0usize;
+            if let Some(goal) = &candidate.goal {
+                for want in &decision.uncheck_todos {
+                    let want_norm = want.trim().to_lowercase();
+                    if want_norm.is_empty() {
+                        continue;
+                    }
+                    for (item_id, item_title, done) in &goal.items {
+                        if !done {
+                            continue;
+                        }
+                        let t = item_title.trim().to_lowercase();
+                        if t == want_norm || t.contains(&want_norm) || want_norm.contains(&t) {
+                            if crate::db::repos::dev_tools::update_goal_item(
+                                pool, item_id, None, Some(false),
+                            )
+                            .is_ok()
+                            {
+                                unchecked += 1;
+                            }
+                        }
+                    }
+                }
+                let new_status: Option<&str> = if shelve { Some("blocked") } else { None };
+                let new_progress: Option<i32> = if unchecked > 0 && !goal.items.is_empty() {
+                    let done_now = goal
+                        .items
+                        .iter()
+                        .filter(|(_, _, d)| *d)
+                        .count()
+                        .saturating_sub(unchecked);
+                    Some(((done_now * 100) / goal.items.len()) as i32)
+                } else {
+                    None
+                };
+                if new_status.is_some() || new_progress.is_some() {
+                    let _ = crate::db::repos::dev_tools::update_goal(
+                        pool,
+                        &goal.goal_id,
+                        None,
+                        None,
+                        new_status,
+                        new_progress,
+                        None,
+                        None,
+                        None,
+                        None,
+                    );
+                }
+            }
+            // 3) The channel directive — consumer='inject', team-wide, so the
+            //    NEXT attempt's personas read it before acting (the existing
+            //    "TEAM CHANNEL — read before acting" pre-execution block).
+            let head = if shelve {
+                "🧊 Goal shelved (blocked) — attempt aborted; this goal waits for the human."
+            } else {
+                "⛔ Attempt aborted — goal stays open. Directive for the NEXT attempt:"
+            };
+            let body = format!(
+                "{}
+{}{}{}",
+                head,
+                decision.message.trim(),
+                if unchecked > 0 {
+                    format!("
+(rolled back {unchecked} to-do(s) the aborted attempt had checked)")
+                } else {
+                    String::new()
+                },
+                rationale_footer
+            );
+            let _ = channel_repo::create(
+                pool,
+                CreateChannelMessageInput {
+                    team_id: candidate.team_id.clone(),
+                    author_kind: "athena".into(),
+                    author_id: None,
+                    body,
+                    addressed_to: None,
+                    reply_to: None,
+                    assignment_id: Some(candidate.assignment_id.clone()),
+                    consumer: Some("inject".into()),
+                },
+            );
+            if shelve {
+                crate::notifications::send(
+                    app,
+                    &format!("Athena · {} — goal shelved", candidate.team_name),
+                    decision.message.trim(),
+                );
+            }
+            tracing::info!(team = %candidate.team_name, assignment = %candidate.assignment_id,
+                unchecked, shelve,
+                "athena_review_resolution: {}", if shelve { "GOAL SHELVED (blocked) + attempt aborted" } else { "ATTEMPT ABORTED — goal requeued with directive" });
         }
         _ => {
             let body = format!("⚠️ {}{}", decision.message.trim(), rationale_footer);
