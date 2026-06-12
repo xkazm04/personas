@@ -78,7 +78,7 @@ pub fn install_mcp_sidecar(
     project_root: Option<&Path>,
     api_key: Option<&str>,
     dev_project_id: Option<&str>,
-    delegate: Option<(&str, &str)>,
+    delegate: Option<(&str, &str, Option<&str>)>,
 ) -> Result<bool, AppError> {
     let Some(mcp_binary) = find_mcp_binary() else {
         tracing::debug!("cli_mcp_config: personas-mcp binary not found — skipping sidecar");
@@ -155,7 +155,7 @@ pub fn install_mcp_sidecar(
     // sidecar's `llm_delegate` tool with the local model endpoint. Only
     // written for capabilities that opted in (engine_mode == "mixed") — the
     // sidecar advertises the tool only when these vars are present.
-    if let Some((base_url, model)) = delegate {
+    if let Some((base_url, model, delegate_api_key)) = delegate {
         env_map.insert(
             "PERSONAS_DELEGATE_BASE_URL".to_string(),
             serde_json::Value::String(base_url.to_string()),
@@ -170,6 +170,14 @@ pub fn install_mcp_sidecar(
                 exec_dir.join(".claude").join("delegate-audit.jsonl").display().to_string(),
             ),
         );
+        // Hosted delegate backends (Ollama Cloud) need a Bearer token. Only
+        // written when configured; local Ollama leaves it unset.
+        if let Some(key) = delegate_api_key.filter(|k| !k.trim().is_empty()) {
+            env_map.insert(
+                "PERSONAS_DELEGATE_API_KEY".to_string(),
+                serde_json::Value::String(key.to_string()),
+            );
+        }
     }
 
     // `alwaysLoad: true` skips the CLI's tool-search deferral so personas-mcp

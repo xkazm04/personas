@@ -1117,7 +1117,7 @@ pub async fn run_execution(
     // Mixed engine: resolve the delegate endpoint from settings (device-level
     // — the local model is a property of the machine, not the capability).
     // "auto" defers model choice to the sidecar (first installed model).
-    let delegate_cfg: Option<(String, String)> = if engine_mode.is_some() {
+    let delegate_cfg: Option<(String, String, Option<String>)> = if engine_mode.is_some() {
         let base = crate::db::repos::core::settings::get(
             &pool,
             crate::db::settings_keys::DELEGATE_BASE_URL,
@@ -1134,11 +1134,21 @@ pub async fn run_execution(
         .flatten()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| "auto".to_string());
+        // Hosted delegate backends (Ollama Cloud) authenticate with the
+        // shared `ollama_api_key` setting. Unset for local Ollama.
+        let api_key = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::OLLAMA_API_KEY,
+        )
+        .ok()
+        .flatten()
+        .filter(|s| !s.trim().is_empty());
         logger.log(&format!(
-            "[mixed-engine] llm_delegate armed (mode: {}, model: {model}, base: {base})",
-            engine_mode.as_deref().unwrap_or("?")
+            "[mixed-engine] llm_delegate armed (mode: {}, model: {model}, base: {base}, auth: {})",
+            engine_mode.as_deref().unwrap_or("?"),
+            if api_key.is_some() { "yes" } else { "no" }
         ));
-        Some((base, model))
+        Some((base, model, api_key))
     } else {
         None
     };
@@ -1148,7 +1158,9 @@ pub async fn run_execution(
         None,
         bridge_api_key.as_deref(),
         pinned_dev_project.as_deref(),
-        delegate_cfg.as_ref().map(|(b, m)| (b.as_str(), m.as_str())),
+        delegate_cfg
+            .as_ref()
+            .map(|(b, m, k)| (b.as_str(), m.as_str(), k.as_deref())),
     ) {
         Ok(true) => {
             logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");

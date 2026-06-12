@@ -136,6 +136,12 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         .unwrap_or_else(|_| "http://localhost:11434".to_string());
     let model_pref =
         std::env::var("PERSONAS_DELEGATE_MODEL").unwrap_or_else(|_| "auto".to_string());
+    // Optional Bearer token for hosted backends (Ollama Cloud at
+    // https://ollama.com requires `Authorization: Bearer <OLLAMA_API_KEY>`).
+    // Absent for local Ollama, where no auth header is sent.
+    let api_key = std::env::var("PERSONAS_DELEGATE_API_KEY")
+        .ok()
+        .filter(|s| !s.trim().is_empty());
 
     let system = match format {
         "json" => "You are a precise text-processing assistant. Respond ONLY with valid JSON \u{2014} no prose, no code fences.",
@@ -159,8 +165,11 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
             .map_err(|e| format!("client build failed: {e}"))?;
         // "auto" keeps the setting optional: first installed model wins.
         let model = if model_pref == "auto" {
-            let tags: Value = client
-                .get(format!("{base}/api/tags"))
+            let mut req = client.get(format!("{base}/api/tags"));
+            if let Some(ref key) = api_key {
+                req = req.bearer_auth(key);
+            }
+            let tags: Value = req
                 .send()
                 .await
                 .map_err(|e| format!("local delegate unreachable at {base}: {e}"))?
@@ -181,6 +190,11 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
         };
         let body = json!({
             "model": model,
+            // `think:false` suppresses reasoning-model thinking traces at the
+            // protocol level (the `thinking` response field). Required for
+            // reasoning-class cloud models (e.g. nemotron-3-ultra), which
+            // otherwise return empty `content`; non-reasoning models ignore it.
+            "think": false,
             "messages": [
                 { "role": "system", "content": system },
                 { "role": "user", "content": format!("{task}\n\n---\n\n{input}") }
@@ -188,9 +202,11 @@ fn handle_llm_delegate(args: &Value) -> Result<String, String> {
             "stream": false,
             "options": { "temperature": 0.2, "num_predict": 4096 }
         });
-        let resp = client
-            .post(format!("{base}/api/chat"))
-            .json(&body)
+        let mut chat_req = client.post(format!("{base}/api/chat")).json(&body);
+        if let Some(ref key) = api_key {
+            chat_req = chat_req.bearer_auth(key);
+        }
+        let resp = chat_req
             .send()
             .await
             .map_err(|e| format!("delegate request failed: {e}"))?;
