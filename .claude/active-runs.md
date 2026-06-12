@@ -66,13 +66,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### feature — Athena value expansion EXECUTION (phased build of docs/plans/athena-value-expansion.md)
-- Started: 2026-06-12
-- Status: PARTS A + B(core) + C + E(core) + F1 COMPLETE + D1 (13/17 phases). A1 b3ae1e95d, A2 de55e9318, A3 7f8ee1692, A4 c13b1a6cf (A auditability); D1 20114a3c0 (baselines); C1 5b816be68, C2 75d9450d5, C3 a4eb780d4, C4 e3422bed6 (C — signal-economy future-work FULLY closed); B1 685b8116f (ops connector v34); E1 813c4902c (anchor codegen v35), E3 80f1a2118 (walkthrough offer v36); F1 0f673f054 (identity engine + anchored update_identity v37 — approval-gated, NEVER auto-approved; BrainViewer user-edit), F2 4a7635a99 (re-runnable intake: WelcomeHero chip + /intake preset + v38), F3 84d62d340 (behavioral synthesis: companion_ux_signal + record cmd instrumenting RefineChips/walkthrough/decision + profile_synthesis.rs weekly gated pass → ≤3 evidence-cited update_identity diffs as approval card; gate companion_profile_synthesis default-off). All gates green every phase. Constitution at v38 (F3 no bump — uses existing update_identity). REMAIN (2): E2 (4 walkthrough topics — DEFERRED: needs LIVE testid verification); F4 spend-the-profile (deterministic budget modulation from 30d engagement in budget.rs ±1 within bounds, never the safety floor; BrainViewer "what Athena adapts" caption; one-click "that's wrong" per-bullet correction → records correction episode + proposes RemoveBullet diff). Resume via docs/plans/athena-value-expansion.md §0.
-- Branch: master (main checkout — deliberate: Rust-heavy sequential phases, worktree recompile cost prohibitive; scope = src-tauri/src/companion/** disjoint from concurrent doc/credentials sessions). Per-file git add + atomic commit per phase.
-- Paths: src-tauri/src/companion/{session.rs,athena_reaction.rs,dispatcher.rs,proactive/*,brain/*,connectors.rs,operations_views.rs[new]}, src-tauri/src/commands/companion/observability.rs, src-tauri/src/db/{mod.rs,schema,settings_keys.rs}, src/features/overview/{sub_activity,sub_observability}/, src/features/plugins/companion/{decision,guidance,sub_memory,BrainViewer.tsx}, src/i18n/locales/en.json, docs/features/{companion,overview}/README.md, docs/plans/athena-value-expansion.md
-- Note: design doc = docs/plans/athena-value-expansion.md (committed 4c029ba58). Order: A1→A2→A3→A4→D→B→C1-4→E1-3→F1-4. Each phase atomic + gates green before next.
-
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
@@ -719,6 +712,12 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### feature — Athena value expansion EXECUTION (phased build of docs/plans/athena-value-expansion.md)
+- Started: 2026-06-12. Completed: 2026-06-13. **16/17 phases shipped** (E2 deferred-by-design — needs LIVE testid verification with the running app).
+- Commits: A1 b3ae1e95d, A2 de55e9318, A3 7f8ee1692, A4 c13b1a6cf (auditability); D1 20114a3c0 (adaptive triage baselines); C1 5b816be68, C2 75d9450d5, C3 a4eb780d4, C4 e3422bed6 (signal economy); B1 685b8116f (ops connector v34); E1 813c4902c (anchor codegen v35), E3 80f1a2118 (walkthrough offer v36); F1 0f673f054 (identity engine + anchored update_identity v37), F2 4a7635a99 (re-runnable intake v38), F3 84d62d340 (behavioral synthesis), **F4 5a68d02ce (spend the profile: budget modulation + transparency + correction loop)**.
+- Branch: master (main checkout — deliberate: Rust-heavy sequential phases, worktree recompile cost prohibitive; scope src-tauri/src/companion/** disjoint from concurrent doc/credentials sessions). Per-file git add + atomic commit per phase; all gates green every phase.
+- Note: design doc docs/plans/athena-value-expansion.md (4c029ba58); constitution at v38 (F4 no bump — deterministic backend + UI, reuses update_identity grammar). REMAINING: E2 only (4 walkthrough topics: trigger_creation/template_adoption/incident_triage/goal_kpi_setup + Playwright — a walkthrough pointing at an unmounted testid silently fails to glow, so it needs live verification the user must drive). Memory: project_athena_value_expansion.md.
 
 ### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (Fable design pass)
 - Started: 2026-06-12. Completed: 2026-06-12. Commit: 4c029ba58.
