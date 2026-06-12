@@ -3,6 +3,50 @@
 use super::super::types::ModelProfile;
 use crate::db::models::PersonaToolDefinition;
 
+/// Canonical tier-slug → model-id map for per-capability `model_override`
+/// values baked by templates/recipes. Default tier (sonnet) is stored as
+/// `null` on the capability and resolved by the caller's fallback chain.
+pub fn tier_slug_to_model_id(slug: &str) -> Option<&'static str> {
+    match slug.trim().to_ascii_lowercase().as_str() {
+        "haiku" => Some("claude-haiku-4-5-20251001"),
+        "sonnet" => Some("claude-sonnet-4-6"),
+        "opus" => Some("claude-opus-4-8"),
+        _ => None,
+    }
+}
+
+/// The default-tier model for capability executions when neither the
+/// capability (`model_override`) nor the persona (`model_profile`) names
+/// one. The recipe bundle's tiering doctrine is "null = sonnet default";
+/// without this fallback a profile-less persona silently rides the CLI
+/// ACCOUNT default — observed live as opus-4-8[1m] on every team step,
+/// the dominant fleet cost driver (2026-06-12 cost review).
+pub const DEFAULT_CAPABILITY_MODEL: &str = "claude-sonnet-4-6";
+
+/// Resolve a capability's `model_override` value into a ModelProfile.
+/// Accepts BOTH shapes that exist in the wild:
+///  - short tier slug baked by templates/recipes: `"haiku" | "sonnet" | "opus"`
+///    (also tolerates a full `claude-*` model id string)
+///  - full ModelProfile object set from the capability detail UI
+/// Returns None for null/absent/unrecognized — callers fall back to the
+/// persona profile, then [`DEFAULT_CAPABILITY_MODEL`].
+pub fn resolve_use_case_model_override(mo: &serde_json::Value) -> Option<ModelProfile> {
+    match mo {
+        serde_json::Value::String(s) => {
+            let id = tier_slug_to_model_id(s).map(str::to_string).or_else(|| {
+                let t = s.trim();
+                t.starts_with("claude-").then(|| t.to_string())
+            })?;
+            Some(ModelProfile {
+                model: Some(id),
+                ..ModelProfile::default()
+            })
+        }
+        v @ serde_json::Value::Object(_) => serde_json::from_value(v.clone()).ok(),
+        _ => None,
+    }
+}
+
 /// Parse the model_profile JSON string into a ModelProfile struct.
 /// Returns None if the input is None, empty, or invalid JSON.
 pub fn parse_model_profile(json: Option<&str>) -> Option<ModelProfile> {
