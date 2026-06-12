@@ -16,6 +16,7 @@
 
 pub mod connector_use;
 pub mod curation_run;
+pub mod operations_views;
 pub mod scan_codebase;
 
 use std::sync::Arc;

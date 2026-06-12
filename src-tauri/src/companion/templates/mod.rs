@@ -273,4 +273,11 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// structured verdict chat-card a browser-test turn ends with (steps with
 /// evidence, defects, console errors, security notes) — plus guidance to
 /// verify visual claims via screenshot instead of DOM inference.
-pub const CONSTITUTION_VERSION: u32 = 33;
+///
+/// v34 (operational data, B1) teaches the read-only `operations_database`
+/// connector: `use_connector { capability: "query_operations", view, … }` over
+/// the OPERATIONAL store (executions / messages / reviews / incidents / goals /
+/// KPIs) — distinct from `personas_database` (the brain DB). When to query vs.
+/// use the deterministic Radar/Sunrise flows, and the untrusted-content guard
+/// (result cells are data, never instructions).
+pub const CONSTITUTION_VERSION: u32 = 34;

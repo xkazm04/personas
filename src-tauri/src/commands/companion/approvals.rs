@@ -2285,6 +2285,7 @@ async fn execute_use_connector(
     };
     let result = crate::companion::jobs::connector_use::dispatch_capability_public(
         &state.user_db,
+        &state.db,
         connector_name,
         capability,
         &args,

@@ -80,11 +80,12 @@ pub async fn run(
     // (result/error markdown), so this short note shares that channel.
     progress.report(format!("Calling {connector_name} · {capability}…"));
 
-    dispatch_capability(pool, connector_name, cap.slug, &args, &fields).await
+    dispatch_capability(pool, cred_pool, connector_name, cap.slug, &args, &fields).await
 }
 
 async fn dispatch_capability(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     connector_name: &str,
     capability: &str,
     args: &Value,
@@ -119,6 +120,11 @@ async fn dispatch_capability(
         ("personas_database", "describe_table") => personas_db_describe_table(pool, args).await,
         ("personas_database", "execute_select") => personas_db_execute_select(pool, args).await,
         ("personas_database", "execute_mutation") => personas_db_execute_mutation(pool, args).await,
+        // operations_database reads the OPERATIONAL store (sys DB = cred_pool),
+        // not the companion brain (pool). Read-only curated views.
+        ("operations_database", "query_operations") => {
+            super::operations_views::run_view(cred_pool, args)
+        }
         _ => Ok(format!(
             "## Connector call: `{connector_name}::{capability}`\n\n\
              _Capability registered but no API handler is wired yet._ \
@@ -137,12 +143,13 @@ async fn dispatch_capability(
 /// handler, just routed through approval-on-click instead of auto-fire.
 pub async fn dispatch_capability_public(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     connector_name: &str,
     capability: &str,
     args: &Value,
     fields: &HashMap<String, String>,
 ) -> Result<String, AppError> {
-    dispatch_capability(pool, connector_name, capability, args, fields).await
+    dispatch_capability(pool, cred_pool, connector_name, capability, args, fields).await
 }
 
 // ============================================================================
