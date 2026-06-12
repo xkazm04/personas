@@ -1556,6 +1556,33 @@ pub async fn run_execution(
     // cancel_execution cannot kill the process (no PID in the map yet).
     driver.register_pid(&child_pids, &execution_id).await;
 
+    // Cost observability: stamp the model/effort this run was ACTUALLY
+    // spawned with (extracted from the final argv, so failover/resume paths
+    // are covered). Column-scoped + status-guarded; the stream's system-init
+    // event later overwrites model_used with the CLI-reported actual model —
+    // which also covers runs spawned WITHOUT --model (account default).
+    {
+        let flag_value = |flag: &str| -> Option<String> {
+            cli_args
+                .args
+                .iter()
+                .position(|a| a == flag)
+                .and_then(|i| cli_args.args.get(i + 1))
+                .cloned()
+        };
+        let launch_model = flag_value("--model");
+        let effort = flag_value("--effort")
+            .unwrap_or_else(|| crate::engine::prompt::DEFAULT_EFFORT.to_string());
+        if let Err(e) = exec_repo::set_launch_model_info(
+            &pool,
+            &execution_id,
+            launch_model.as_deref(),
+            &effort,
+        ) {
+            tracing::warn!(execution_id = %execution_id, "launch model/effort persist failed: {e}");
+        }
+    }
+
     // Check cancellation right after PID registration. This closes the race
     // window between task start and PID registration: if the user cancelled
     // during spawn, the flag is set but the process couldn't be killed (PID
@@ -1927,9 +1954,25 @@ pub async fn run_execution(
                             parser::update_metrics_from_result(&mut metrics, &line_type);
 
                             // Persist session_id to DB immediately when first captured
-                            if let StreamLineType::SystemInit { session_id: Some(ref sid), .. } = line_type {
+                            if let StreamLineType::SystemInit { ref model, session_id: Some(ref sid), .. } = line_type {
                                 if metrics.session_id.is_none() {
                                     metrics.session_id = Some(sid.clone());
+                                    // Actual model (authoritative over the configured
+                                    // flag — covers account-default runs). Same detached
+                                    // column-scoped pattern as the session_id persist.
+                                    if !model.is_empty() && model != "unknown" {
+                                        let pool_m = pool_for_stream.clone();
+                                        let exec_m = exec_id_for_stream.clone();
+                                        let model_m = model.clone();
+                                        tokio::spawn(async move {
+                                            if let Err(e) = exec_repo::set_model_used_actual(
+                                                &pool_m, &exec_m, &model_m,
+                                            ) {
+                                                tracing::warn!(execution_id = %exec_m,
+                                                    "actual-model persist failed: {e}");
+                                            }
+                                        });
+                                    }
                                     let pool_ref = pool_for_stream.clone();
                                     let exec_id_ref = exec_id_for_stream.clone();
                                     let sid_clone = sid.clone();

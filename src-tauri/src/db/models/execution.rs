@@ -29,6 +29,9 @@ pub struct PersonaExecution {
     #[ts(type = "unknown")]
     pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
+    /// Resolved Claude CLI `--effort` level the run was spawned with
+    /// (low/medium/high) — the "thinking" dial for cost observability.
+    pub thinking_level: Option<String>,
     #[ts(type = "number")]
     pub input_tokens: i64,
     #[ts(type = "number")]
@@ -142,6 +145,9 @@ pub struct GlobalExecutionRow {
     #[ts(type = "unknown")]
     pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
+    /// Resolved Claude CLI `--effort` level the run was spawned with
+    /// (low/medium/high) — the "thinking" dial for cost observability.
+    pub thinking_level: Option<String>,
     #[ts(type = "number")]
     pub input_tokens: i64,
     #[ts(type = "number")]

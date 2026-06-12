@@ -376,6 +376,17 @@ const costBlock = (() => {
     const recycles = athenaDecisions
       .filter((d) => d.outcome === 'abort_retry' || d.outcome === 'goal_shelve')
       .reduce((s, d) => s + d.n, 0);
+    // Power mix — model + effort actually used (stamped by the runner since
+    // 2026-06-12; older rows are '(untracked)').
+    const powerMix = db
+      .prepare(
+        `SELECT COALESCE(model_used,'(untracked)') || ' @' || COALESCE(thinking_level,'?') power,
+                COUNT(*) n, ROUND(SUM(COALESCE(cost_usd,0)),2) cost
+         FROM persona_executions
+         WHERE datetime(created_at) > ${sinceExpr} AND cost_usd > 0
+         GROUP BY 1 ORDER BY cost DESC LIMIT 6`,
+      )
+      .all();
     const ratio = prior.cost > 5 ? Math.round((cur.cost / prior.cost) * 100) / 100 : null;
     return {
       windowCostUsd: cur.cost || 0,
@@ -390,6 +401,7 @@ const costBlock = (() => {
       qaBounces,
       athenaRecycles: recycles,
       athenaDecisions: athenaDecisions.reduce((s, d) => s + d.n, 0),
+      powerMix,
       priorWindowCostUsd: prior.cost || 0,
       costRatioVsPrior: ratio,
       alert: ratio != null && ratio > 1.5 && (cur.cost || 0) > 20,
@@ -473,6 +485,11 @@ if (AS_JSON) {
         `; $${c.perExecUsd ?? 'n/a'}/exec, $${c.perDoneAssignmentUsd ?? 'n/a'}/done assignment (${c.doneAssignments} done, ${c.goalsDone} goals); ` +
         `volume: ${c.assignmentsCreated} assignments started, ${c.qaBounces} QA bounce(s), ${c.athenaRecycles} athena recycle(s) of ${c.athenaDecisions} decision(s); headless CLI spend untracked`,
     );
+    if (c.powerMix && c.powerMix.length) {
+      console.log(
+        '  power mix: ' + c.powerMix.map((m) => `${m.power} ×${m.n} $${m.cost}`).join(' | '),
+      );
+    }
   }
   if (kpiBlock && !kpiBlock.error) {
     if (kpiBlock.activeKpis === 0) {

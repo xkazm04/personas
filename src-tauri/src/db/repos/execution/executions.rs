@@ -21,6 +21,7 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         log_file_path: row.get("log_file_path")?,
         execution_flows: row.get("execution_flows")?,
         model_used: row.get("model_used")?,
+        thinking_level: row.get("thinking_level").unwrap_or(None),
         input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
         output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
         cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
@@ -220,6 +221,7 @@ pub fn get_all_global(
                     log_file_path: row.get("log_file_path")?,
                     execution_flows: row.get("execution_flows")?,
                     model_used: row.get("model_used")?,
+        thinking_level: row.get("thinking_level").unwrap_or(None),
                     input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
                     output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
                     cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
@@ -533,6 +535,57 @@ pub fn get_by_use_case_id(
 /// the time this fires, a status-writing `update_status` would resurrect the row
 /// to `running` and orphan it as a permanent zombie. Column-scoped + status-guard
 /// makes that impossible.
+/// Stamp the LAUNCH-time model/effort the CLI was actually spawned with
+/// (column-scoped; never touches status). `model` is the `--model` flag value
+/// when one was passed — when None the CLI ran on its account default and
+/// `set_model_used_actual` (stream init) fills the real name moments later.
+pub fn set_launch_model_info(
+    pool: &DbPool,
+    id: &str,
+    model: Option<&str>,
+    thinking_level: &str,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::set_launch_model_info",
+        {
+            let conn = pool.get()?;
+            if let Some(m) = model {
+                conn.execute(
+                    "UPDATE persona_executions SET model_used = ?1, thinking_level = ?2
+                     WHERE id = ?3 AND status IN ('queued','running')",
+                    params![m, thinking_level, id],
+                )?;
+            } else {
+                conn.execute(
+                    "UPDATE persona_executions SET thinking_level = ?1
+                     WHERE id = ?2 AND status IN ('queued','running')",
+                    params![thinking_level, id],
+                )?;
+            }
+            Ok(())
+        }
+    )
+}
+
+/// Stamp the ACTUAL model the CLI reported on its stream init event —
+/// authoritative over any configured value (covers account-default runs and
+/// provider-side aliasing). Status-guarded like `set_claude_session_id`.
+pub fn set_model_used_actual(pool: &DbPool, id: &str, model: &str) -> Result<(), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::set_model_used_actual",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_executions SET model_used = ?1 WHERE id = ?2 AND status = 'running'",
+                params![model, id],
+            )?;
+            Ok(())
+        }
+    )
+}
+
 pub fn set_claude_session_id(pool: &DbPool, id: &str, session_id: &str) -> Result<(), AppError> {
     timed_query!(
         "persona_executions",
