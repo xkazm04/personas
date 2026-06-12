@@ -1096,6 +1096,10 @@ pub fn dispatch(
                     config: serde_json::json!({
                         "url": url,
                         "project_name": env.params.get("project_name").and_then(|v| v.as_str()).unwrap_or(""),
+                        // Goal-UAT linkage: when this report is a goal's acceptance
+                        // gate, the directive injects goal_id so the card can close
+                        // the gate on a clean pass.
+                        "goal_id": env.params.get("goal_id").and_then(|v| v.as_str()).unwrap_or(""),
                         "steps": steps,
                         "defects": defects,
                         "console_errors": console_errors,

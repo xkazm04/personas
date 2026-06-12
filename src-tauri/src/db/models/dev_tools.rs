@@ -206,6 +206,11 @@ pub struct DevGoalItem {
     pub title: String,
     pub done: bool,
     pub order_index: i32,
+    /// Verification-gate kind. `None` = ordinary manual to-do. `Some("browser_test")`
+    /// = a UAT gate ticked only by a passing browser test (never manually).
+    pub verify_kind: Option<String>,
+    /// JSON config for a verification gate (`{scenario, url?}`); `None` for to-dos.
+    pub verify_config: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

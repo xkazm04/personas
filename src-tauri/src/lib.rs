@@ -2747,6 +2747,10 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_goal_item,
             commands::infrastructure::dev_tools::dev_tools_delete_goal_item,
             commands::infrastructure::dev_tools::dev_tools_reorder_goal_items,
+            commands::infrastructure::dev_tools::dev_tools_set_goal_verification,
+            commands::infrastructure::dev_tools::dev_tools_clear_goal_verification,
+            commands::infrastructure::dev_tools::dev_tools_run_goal_uat,
+            commands::infrastructure::dev_tools::dev_tools_complete_goal_uat,
             commands::infrastructure::dev_tools::dev_tools_list_child_goals,
             commands::infrastructure::dev_tools::dev_tools_resolve_goal_progress,
             // Dev Tools -- Goals v2 cross-project surfaces (Portfolio / Attention / Timeline / Map)

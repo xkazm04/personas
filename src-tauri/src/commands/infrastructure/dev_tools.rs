@@ -472,6 +472,18 @@ pub fn dev_tools_update_goal_item(
     done: Option<bool>,
 ) -> Result<DevGoalItem, AppError> {
     require_auth_sync(&state)?;
+    // A browser-test UAT gate is ticked only by a passing test — never by a
+    // manual checkbox. Block a done-toggle on a verification item so the gate
+    // can't be hand-waved closed.
+    if done.is_some() {
+        if let Ok(existing) = repo::get_goal_item_by_id(&state.db, &id) {
+            if existing.verify_kind.is_some() {
+                return Err(AppError::Validation(
+                    "This is a browser UAT gate — it's ticked by a passing test, not manually. Use 'Verify now'.".into(),
+                ));
+            }
+        }
+    }
     repo::update_goal_item(&state.db, &id, title.as_deref(), done)
 }
 
@@ -491,6 +503,118 @@ pub fn dev_tools_reorder_goal_items(
 ) -> Result<(), AppError> {
     require_auth_sync(&state)?;
     repo::reorder_goal_items(&state.db, &ids)
+}
+
+// ── Goal-UAT browser-test gate ───────────────────────────────────────────────
+
+/// Attach (or replace) a goal's browser-test UAT gate — a verification item
+/// only a passing live browser test can tick, which keeps the goal under 100%
+/// until then. Web projects only (react/nodejs/combined).
+#[tauri::command]
+pub fn dev_tools_set_goal_verification(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+    scenario: String,
+    url: Option<String>,
+) -> Result<DevGoalItem, AppError> {
+    require_auth_sync(&state)?;
+    if scenario.trim().is_empty() {
+        return Err(AppError::Validation("Scenario cannot be empty".into()));
+    }
+    let goal = repo::get_goal_by_id(&state.db, &goal_id)?;
+    let project = repo::get_project_by_id(&state.db, &goal.project_id)?;
+    if !repo::project_type_is_web(project.tech_stack.as_deref()) {
+        return Err(AppError::Validation(
+            "Browser UAT is only available for web projects (React / NodeJS / Combined).".into(),
+        ));
+    }
+    repo::set_goal_verification(&state.db, &goal_id, scenario.trim(), url.as_deref())
+}
+
+/// Remove a goal's browser-test UAT gate.
+#[tauri::command]
+pub fn dev_tools_clear_goal_verification(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let removed = match repo::goal_verification_item(&state.db, &goal_id)? {
+        Some(item) => repo::delete_goal_item(&state.db, &item.id)?,
+        None => false,
+    };
+    if removed {
+        let _ = repo::apply_resolved_goal_progress(&state.db, &goal_id);
+    }
+    Ok(removed)
+}
+
+/// Run the goal's browser-test UAT now. Requires: a web project, a configured
+/// gate, all other to-dos complete (UAT is the final acceptance step), and a
+/// resolvable target URL (the gate's `url`, else the project's `test_env_url`).
+/// Spawns the same `browser_test` proactive turn `run_browser_test` uses, with
+/// the goal_id threaded so a clean pass closes the gate.
+#[tauri::command]
+pub fn dev_tools_run_goal_uat(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    goal_id: String,
+) -> Result<String, AppError> {
+    require_auth_sync(&state)?;
+    let goal = repo::get_goal_by_id(&state.db, &goal_id)?;
+    let project = repo::get_project_by_id(&state.db, &goal.project_id)?;
+    if !repo::project_type_is_web(project.tech_stack.as_deref()) {
+        return Err(AppError::Validation(
+            "Browser UAT is only available for web projects.".into(),
+        ));
+    }
+    let gate = repo::goal_verification_item(&state.db, &goal_id)?
+        .ok_or_else(|| AppError::Validation("No browser UAT gate on this goal.".into()))?;
+    if !repo::goal_todos_all_complete(&state.db, &goal_id)? {
+        return Err(AppError::Validation(
+            "Complete the goal's other to-dos before running the UAT — the browser test is the final acceptance step.".into(),
+        ));
+    }
+    // Resolve scenario + target URL from the gate config, falling back to the
+    // project's configured test-environment URL.
+    let cfg: serde_json::Value =
+        serde_json::from_str(gate.verify_config.as_deref().unwrap_or("{}")).unwrap_or_default();
+    let scenario = cfg
+        .get("scenario")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let url = cfg
+        .get("url")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string)
+        .or_else(|| project.test_env_url.as_deref().map(str::trim).filter(|s| !s.is_empty()).map(str::to_string))
+        .ok_or_else(|| AppError::Validation(
+            "No target URL — set a test-environment URL on the project or a url on the UAT gate.".into(),
+        ))?;
+
+    crate::commands::companion::approvals::spawn_browser_test_turn(
+        &state,
+        &app,
+        &url,
+        Some(&project.name),
+        &scenario,
+        Some(&goal_id),
+    );
+    Ok(format!("Browser UAT started for \"{}\" against {url}.", goal.title))
+}
+
+/// Close a goal's browser-test UAT gate (ticks the verification item and
+/// recomputes progress). Called by the browser-test report card on a clean
+/// pass; returns the goal's new progress.
+#[tauri::command]
+pub fn dev_tools_complete_goal_uat(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+) -> Result<i32, AppError> {
+    require_auth_sync(&state)?;
+    repo::complete_goal_verification(&state.db, &goal_id)
 }
 
 #[tauri::command]

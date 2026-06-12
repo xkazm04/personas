@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use rusqlite::{params, Row};
+use rusqlite::{params, OptionalExtension, Row};
 
 use crate::db::models::{
     AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
@@ -533,6 +533,19 @@ pub fn get_goal_by_id(pool: &DbPool, id: &str) -> Result<DevGoal, AppError> {
     })
 }
 
+pub fn get_goal_item_by_id(pool: &DbPool, id: &str) -> Result<DevGoalItem, AppError> {
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT * FROM dev_goal_items WHERE id = ?1",
+        params![id],
+        row_to_goal_item,
+    )
+    .map_err(|e| match e {
+        rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Goal item {id}")),
+        other => AppError::Database(other),
+    })
+}
+
 pub fn create_goal(
     pool: &DbPool,
     project_id: &str,
@@ -729,6 +742,8 @@ fn row_to_goal_item(row: &Row) -> rusqlite::Result<DevGoalItem> {
         title: row.get("title")?,
         done: row.get::<_, i64>("done")? != 0,
         order_index: row.get("order_index")?,
+        verify_kind: row.get("verify_kind").ok(),
+        verify_config: row.get("verify_config").ok(),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -830,6 +845,105 @@ pub fn reorder_goal_items(pool: &DbPool, ids: &[String]) -> Result<(), AppError>
         }
         Ok(())
     })
+}
+
+// ── Goal-UAT browser-test gate ───────────────────────────────────────────────
+
+/// Project types that ship a browser UI and so can carry a browser-test UAT
+/// gate. Backend/desktop/unknown types (`fastapi`, `rust`, `python`, `other`)
+/// are excluded — the gate is hidden for them. `tech_stack` holds the
+/// project_type id (see PROJECT_TYPES in projectManagerTypes.tsx).
+pub fn project_type_is_web(tech_stack: Option<&str>) -> bool {
+    matches!(
+        tech_stack.map(|s| s.trim().to_lowercase()).as_deref(),
+        Some("react") | Some("nodejs") | Some("combined")
+    )
+}
+
+/// The single browser-test verification item on a goal, if one exists.
+pub fn goal_verification_item(
+    pool: &DbPool,
+    goal_id: &str,
+) -> Result<Option<DevGoalItem>, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT * FROM dev_goal_items \
+             WHERE goal_id = ?1 AND verify_kind = 'browser_test' LIMIT 1",
+            params![goal_id],
+            row_to_goal_item,
+        )
+        .optional()?;
+    Ok(row)
+}
+
+/// True when every ordinary to-do on the goal is done — i.e. the UAT gate is
+/// eligible to run (the browser test is the acceptance step *after* the work).
+/// Verification items themselves are excluded from the check.
+pub fn goal_todos_all_complete(pool: &DbPool, goal_id: &str) -> Result<bool, AppError> {
+    let items = list_goal_items(pool, goal_id)?;
+    Ok(items
+        .iter()
+        .filter(|i| i.verify_kind.is_none())
+        .all(|i| i.done))
+}
+
+/// Upsert the goal's browser-test UAT gate (one per goal). Stores
+/// `verify_config` JSON `{scenario, url?}`. Re-setting replaces the prior
+/// gate and resets it to open (a changed scenario must be re-verified).
+pub fn set_goal_verification(
+    pool: &DbPool,
+    goal_id: &str,
+    scenario: &str,
+    url: Option<&str>,
+) -> Result<DevGoalItem, AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::set_verification", {
+        let conn = pool.get()?;
+        let config = serde_json::json!({ "scenario": scenario.trim(), "url": url })
+            .to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        // Replace any existing gate so config edits don't pile up duplicates.
+        conn.execute(
+            "DELETE FROM dev_goal_items WHERE goal_id = ?1 AND verify_kind = 'browser_test'",
+            params![goal_id],
+        )?;
+        let id = uuid::Uuid::new_v4().to_string();
+        // Sort the gate last so it reads as the final acceptance step.
+        let max_order: i32 = conn
+            .query_row(
+                "SELECT COALESCE(MAX(order_index), -1) FROM dev_goal_items WHERE goal_id = ?1",
+                params![goal_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(-1);
+        conn.execute(
+            "INSERT INTO dev_goal_items \
+             (id, goal_id, title, done, order_index, verify_kind, verify_config, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, 0, ?4, 'browser_test', ?5, ?6, ?6)",
+            params![id, goal_id, "Browser UAT passes", max_order + 1, config, now],
+        )?;
+        conn.query_row(
+            "SELECT * FROM dev_goal_items WHERE id = ?1",
+            params![id],
+            row_to_goal_item,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+/// Mark the goal's browser-test gate passed (done) and recompute progress —
+/// the close-loop a passing UAT triggers. Returns the new progress.
+pub fn complete_goal_verification(pool: &DbPool, goal_id: &str) -> Result<i32, AppError> {
+    let item = goal_verification_item(pool, goal_id)?
+        .ok_or_else(|| AppError::NotFound(format!("no UAT gate on goal {goal_id}")))?;
+    {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE dev_goal_items SET done = 1, updated_at = ?1 WHERE id = ?2",
+            params![chrono::Utc::now().to_rfc3339(), item.id],
+        )?;
+    }
+    apply_resolved_goal_progress(pool, goal_id)
 }
 
 /// Sub-goals: `dev_goals` rows whose `parent_goal_id` is this goal.
@@ -1318,7 +1432,18 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
         steps_total,
     );
     // Never regress a manually-higher value; teams only push progress up.
-    let new_progress = sugg.suggested.max(goal.progress);
+    let mut new_progress = sugg.suggested.max(goal.progress);
+
+    // Goal-UAT gate: an OPEN browser-test verification item is a hard
+    // blocker — the goal cannot reach 100% / `done` until it passes,
+    // regardless of how the rest of the progress composes. This is the
+    // gate, independent of the suggestion formula.
+    let has_open_verify = items
+        .iter()
+        .any(|i| i.verify_kind.as_deref() == Some("browser_test") && !i.done);
+    if has_open_verify && new_progress >= 100 {
+        new_progress = 99;
+    }
 
     let now = chrono::Utc::now().to_rfc3339();
     let cur = normalize_goal_status(&goal.status);

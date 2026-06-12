@@ -4440,6 +4440,24 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Goal-UAT browser-test gate: a dev_goal_item carrying verify_kind +
+    // verify_config is a verification gate (not a manual to-do) — only a
+    // passing browser test ticks it, and an open one keeps the goal under
+    // 100% (the gate). verify_config is JSON `{scenario, url?}`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_goal_items.verify_kind",
+            description: "Browser-test UAT gate item on a dev goal",
+            already_applied: |conn| has_column(conn, "dev_goal_items", "verify_kind"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_goal_items ADD COLUMN verify_kind TEXT;")?;
+                ddl_step(conn, "ALTER TABLE dev_goal_items ADD COLUMN verify_config TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     // NOTE: the Groups→Teams Phase-3 DATA MIGRATION that used to live here was
     // relocated to the end of `run_incremental` (2026-05-24). It reads columns
     // (`persona_groups.shared_instructions`, `persona_teams.shared_instructions`,
