@@ -82,21 +82,35 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
             useCase={useCase}
             onSelectModel={handleModelSelect}
           />
-          <Tooltip content={engineMode === 'mixed' ? uc.engine_mixed_tooltip : uc.engine_claude_tooltip}>
+          <Tooltip
+            content={
+              engineMode === 'mixed'
+                ? uc.engine_mixed_tooltip
+                : engineMode === 'local_first'
+                  ? uc.engine_local_first_tooltip
+                  : uc.engine_claude_tooltip
+            }
+          >
             <button
               type="button"
               onClick={handleEngineToggle}
-              aria-pressed={engineMode === 'mixed'}
+              aria-pressed={engineMode !== 'claude'}
               data-testid="use-case-engine-toggle"
               className={`flex items-center gap-1.5 px-2 py-1 rounded-modal typo-caption font-medium border transition-all w-full ${
                 engineMode === 'mixed'
                   ? 'bg-accent/10 border-accent/30 text-accent'
-                  : 'bg-background/30 border-primary/10 text-foreground/70 hover:border-primary/20'
+                  : engineMode === 'local_first'
+                    ? 'bg-primary/10 border-primary/30 text-primary'
+                    : 'bg-background/30 border-primary/10 text-foreground/70 hover:border-primary/20'
               }`}
             >
               <GitMerge className="w-3 h-3 flex-shrink-0" />
               <span className="flex-1 text-left truncate">
-                {engineMode === 'mixed' ? uc.engine_mixed : uc.engine_claude}
+                {engineMode === 'mixed'
+                  ? uc.engine_mixed
+                  : engineMode === 'local_first'
+                    ? uc.engine_local_first
+                    : uc.engine_claude}
               </span>
             </button>
           </Tooltip>
