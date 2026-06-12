@@ -102,9 +102,14 @@ The Messages counterpart of Athena's human-review resolution
 
 ## Future work (known, not yet built)
 
-- **Decision-queue source for attention messages** — surface `attention`
-  items through `useDecisionQueue` (like pending human reviews) so the orb can
-  hand them to the user one at a time.
+- ~~**Decision-queue source for attention messages**~~ — **SHIPPED (C1).**
+  Each `attention` message triage now also enqueues a `message_attention`
+  proactive (no budget cost, deduped by message id, via `enqueue_external` +
+  `deliver_now`). `useDecisionQueue` maps those into the hands-free decision
+  queue as a fourth source (after incidents): options are **Open** (→ Overview
+  → Messages + engage), **Mark read** (`mark_message_read` + engage), and
+  **Dismiss** (the message stays unread). The aggregated digest card is
+  unchanged — this is the per-item "needs your read" decision.
 - **Per-source attention budgets** — a daily cap per trigger kind, so one
   noisy leg can't crowd out the others' cards.
 - ~~**Severity registry**~~ — **SHIPPED (D1, direction 3).** Execution triage now

@@ -39,6 +39,11 @@ use crate::error::AppError;
 /// Proactive-card trigger kind for the aggregated digest.
 pub const TRIGGER_KIND: &str = "message_digest";
 
+/// Trigger kind for per-message "needs your personal read" items fed into the
+/// hands-free decision queue (C1). One row per attention message, deduped by
+/// the message id, no budget cost — these already won triage.
+pub const ATTENTION_TRIGGER_KIND: &str = "message_attention";
+
 /// Most unread messages triaged per tick — one CLI decision covers the
 /// whole batch. At the 5-min cadence this drains ~240 messages/hour,
 /// which outruns any sane persona fleet; a deeper backlog just takes a
@@ -300,6 +305,8 @@ pub async fn triage_unread_messages(
     let mut done = 0usize;
     let mut digested = 0usize;
     let mut attention: Vec<(String, String, String)> = Vec::new();
+    // (message_id, persona, title, note) for the per-item decision-queue rows (C1).
+    let mut attention_refs: Vec<(String, String, String, String)> = Vec::new();
     let mut touched = 0usize;
     for v in &decision.items {
         // Ignore hallucinated ids — only messages from this batch count.
@@ -335,9 +342,12 @@ pub async fn triage_unread_messages(
                 }
             }
             _ => {
-                attention.push((
+                let title = m.title.clone().unwrap_or_else(|| "(untitled)".into());
+                attention.push((m.persona_name.clone(), title.clone(), v.note.clone()));
+                attention_refs.push((
+                    m.id.clone(),
                     m.persona_name.clone(),
-                    m.title.clone().unwrap_or_else(|| "(untitled)".into()),
+                    title,
                     v.note.clone(),
                 ));
             }
@@ -380,6 +390,31 @@ pub async fn triage_unread_messages(
                 "message_triage: digest deduped — an unresolved card for this hour already exists"
             ),
             Err(e) => tracing::warn!(error = %e, "message_triage: digest nudge enqueue failed"),
+        }
+    }
+
+    // Feed each attention item into the hands-free decision queue as its own
+    // `message_attention` proactive (no budget cost — it already won triage;
+    // deduped by message id). The digest card aggregates for everyone; this is
+    // the per-item "needs your read" decision the orb can hand over one at a
+    // time (gated by companionHandsFreeDecisions on the frontend).
+    for (id, persona, title, note) in &attention_refs {
+        let message = if note.trim().is_empty() {
+            format!("{persona}: {title}")
+        } else {
+            format!("{persona}: {title} — {}", note.trim())
+        };
+        let nudge = super::Nudge {
+            trigger_kind: ATTENTION_TRIGGER_KIND.to_string(),
+            trigger_ref: Some(id.clone()),
+            message,
+        };
+        match super::enqueue_external(user_db, &nudge) {
+            Ok(Some(m)) => super::deliver_now(user_db, app, m),
+            Ok(None) => {} // already surfaced for this message — dedupe
+            Err(e) => {
+                tracing::warn!(error = %e, id = %id, "message_triage: message_attention enqueue failed")
+            }
         }
     }
 

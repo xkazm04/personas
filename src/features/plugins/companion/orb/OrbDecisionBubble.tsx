@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
@@ -18,6 +18,7 @@ const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
   approval: ShieldCheck,
   human_review: MessageSquareText,
   incident: TriangleAlert,
+  message_attention: Mail,
   adhoc: Sparkles,
 };
 

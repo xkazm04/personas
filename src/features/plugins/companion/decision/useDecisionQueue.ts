@@ -24,6 +24,8 @@ import {
   updateManualReviewStatus,
   dispatchReviewAction,
 } from '@/api/overview/reviews';
+import { markMessageRead } from '@/api/overview/messages';
+import { companionEngageProactive } from '@/api/companion';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { SidebarSection } from '@/lib/types/types';
@@ -266,8 +268,84 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
 }
 
 /**
- * Build the current FIFO of decisions across all three sources. Approvals
- * first (most actionable), then blocking incidents, then human reviews.
+ * A `message_attention` proactive (C1) — a message Athena's triage flagged as
+ * needing the user's personal read. The orb hands it over as a decision: open
+ * it, mark it read, or dismiss the nudge (the message stays unread).
+ */
+function messageAttentionToDecision(message: ProactiveMessage): PendingDecision {
+  const t = getActiveTranslations();
+  const c = t.plugins.companion;
+
+  const engage = async (): Promise<void> => {
+    try {
+      await companionEngageProactive(message.id);
+      useCompanionStore.getState().removeProactive(message.id);
+    } catch (err) {
+      silentCatch('companion/decision:message-engage')(err);
+    }
+  };
+
+  const options: DecisionOption[] = [
+    {
+      key: 'open',
+      label: c.decision_open,
+      run: async () => {
+        useSystemStore.getState().setSidebarSection('overview');
+        useOverviewStore.getState().setOverviewTab('messages');
+        await engage();
+      },
+    },
+    {
+      key: 'mark_read',
+      label: c.decision_mark_read,
+      run: async () => {
+        // triggerRef is the underlying message id.
+        if (message.triggerRef) {
+          try {
+            await markMessageRead(message.triggerRef);
+          } catch (err) {
+            silentCatch('companion/decision:message-mark-read')(err);
+          }
+        }
+        await engage();
+      },
+    },
+    {
+      key: 'dismiss',
+      label: c.decision_dismiss,
+      danger: true,
+      run: async () => {
+        try {
+          await companionDismissProactive(message.id);
+          useCompanionStore.getState().removeProactive(message.id);
+        } catch (err) {
+          silentCatch('companion/decision:message-dismiss')(err);
+        }
+      },
+    },
+  ];
+
+  return {
+    id: `message:${message.id}`,
+    prompt: message.message,
+    options,
+    recommendation: c.decision_recommend_read,
+    source: 'message_attention',
+    sourceRef: message.id,
+    navigateRoute: 'overview',
+    payload: JSON.stringify({
+      trigger_kind: message.triggerKind,
+      trigger_ref: message.triggerRef,
+      message: message.message,
+      created_at: message.createdAt,
+    }),
+  };
+}
+
+/**
+ * Build the current FIFO of decisions across all four sources. Approvals first
+ * (most actionable), then blocking incidents, then human reviews, then
+ * attention messages.
  */
 async function buildQueue(): Promise<PendingDecision[]> {
   const queue: PendingDecision[] = [];
@@ -283,6 +361,10 @@ async function buildQueue(): Promise<PendingDecision[]> {
     const proactive = await companionListProactiveMessages(true);
     for (const m of proactive) {
       if (m.triggerKind === 'incident_blocker') queue.push(incidentToDecision(m));
+    }
+    // Attention messages sort after incidents (less urgent than a blocker).
+    for (const m of proactive) {
+      if (m.triggerKind === 'message_attention') queue.push(messageAttentionToDecision(m));
     }
   } catch (err) {
     silentCatch('companion/decision:list-proactive')(err);

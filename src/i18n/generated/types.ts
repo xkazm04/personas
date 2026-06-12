@@ -12343,6 +12343,8 @@ export type Translations = {
       decision_reject: string;
       decision_resolve: string;
       decision_open: string;
+      decision_mark_read: string;
+      decision_recommend_read: string;
       decision_recommend_approve: string;
       decision_recommend_review: string;
       decision_recommend_resolve: string;

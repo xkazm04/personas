@@ -12337,6 +12337,8 @@
       "decision_reject": "Reject",
       "decision_resolve": "Resolve",
       "decision_open": "Open",
+      "decision_mark_read": "Mark read",
+      "decision_recommend_read": "This one's worth your personal read — open it when you can.",
       "decision_recommend_approve": "This looks low-risk — I'd approve it.",
       "decision_recommend_review": "I'd take a closer look before approving this one.",
       "decision_recommend_resolve": "This is blocking work — I'd resolve it now.",
