@@ -6479,6 +6479,35 @@ export type Translations = {
       resume_subtitle: string;
       knowledge_hub: string;
     };
+    athena: {
+      section_title: string;
+      section_hint: string;
+      turns: string;
+      total_cost: string;
+      avg_cost: string;
+      tokens: string;
+      tokens_io: string;
+      vs_fleet: string;
+      vs_fleet_hint: string;
+      cost_by_action: string;
+      cost_per_day: string;
+      no_activity: string;
+      origin_chat: string;
+      origin_autonomous: string;
+      origin_proactive: string;
+      origin_external: string;
+      origin_headless: string;
+      leg_exec_triage: string;
+      leg_msg_triage: string;
+      leg_reaction: string;
+      leg_reaction_batch: string;
+      leg_review_resolution: string;
+      leg_fleet_analysis: string;
+      leg_daily_brief: string;
+      leg_browser_test: string;
+      leg_execution_review: string;
+      leg_other: string;
+    };
     activity: {
       title: string;
       recorded: string;
