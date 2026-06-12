@@ -67,6 +67,8 @@ Athena can *show* the user how to do something instead of only telling them: her
 
 When a user describes a persona they want, Athena offers both paths via `show_persona_creation_offer` — a card with **Build it for me** (the prefill / one-shot handoff) and **Show me how to build it** (`start_guided_walkthrough { topic: "persona_creation" }`). The first walkthrough rings the build studio, its sigil compose trigger, and the autonomous toggle. New ops are taught in constitution **v19**; topics are allow-listed in `dispatcher.rs` (`GUIDED_TOPICS`). Full design + the "how to add a walkthrough for any surface" recipe live in [`athena-guided-walkthroughs.md`](./athena-guided-walkthroughs.md).
 
+**Generalized offer (`show_walkthrough_offer`, E3, constitution v36).** The persona-creation offer is hard-wired to one topic; `show_walkthrough_offer { topic, summary? }` generalizes it to ANY allow-listed walkthrough — a `walkthrough_offer` chat-card (`WalkthroughOfferWidget`) with **Show me** (starts the tour via `startGuidance`) and **Just tell me** (seeds a chat explanation via `setPendingPrompt` + `autoSend`). It's the default response to "how do I X" when a walkthrough covers X; `topic` is validated against `GUIDED_TOPICS` and invalid ones are dropped. The backend anchor allow-list is now code-generated from `guidance/anchorCatalog.ts` (E1) so growing walkthrough coverage no longer needs a manual TS↔Rust sync.
+
 ## Athena desktop-aware lineage
 
 Companion's awareness of the user's desktop activity ships in phases. The decision-gate audit lives at [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md); the two shipped feature deliverables sit alongside this README:

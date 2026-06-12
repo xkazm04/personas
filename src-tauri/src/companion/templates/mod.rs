@@ -285,4 +285,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// the new content anchors (templates_gallery, settings_page). The Rust
 /// allow-list is now code-generated from the frontend catalog, so the set grows
 /// without a manual sync; invalid anchor ids are dropped server-side.
-pub const CONSTITUTION_VERSION: u32 = 35;
+///
+/// v36 (walkthrough offer, E3) adds `show_walkthrough_offer { topic, summary? }`
+/// — a generalized "Show me / Just tell me" card for any guided walkthrough
+/// topic, the default response to "how do I X" when a walkthrough covers X.
+pub const CONSTITUTION_VERSION: u32 = 36;

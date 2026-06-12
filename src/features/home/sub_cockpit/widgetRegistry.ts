@@ -25,6 +25,7 @@ import { DesignCapabilitiesWidget } from './widgets/DesignCapabilitiesWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
 import { PersonaCreationOfferWidget } from './widgets/PersonaCreationOfferWidget';
+import { WalkthroughOfferWidget } from './widgets/WalkthroughOfferWidget';
 import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { RecentDecisionsWidget } from './widgets/RecentDecisionsWidget';
@@ -145,6 +146,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // persona but hasn't said how to proceed. "Build" runs the prefill handoff;
   // "Show me how" starts the persona_creation guided walkthrough.
   persona_creation_offer: PersonaCreationOfferWidget,
+  // Two-button "Show me" / "Just tell me" offer for any guided walkthrough.
+  // Emitted via `show_walkthrough_offer { topic, summary? }` when a user asks
+  // "how do I X" and a walkthrough covers X. "Show me" starts the tour;
+  // "Just tell me" seeds a chat explanation instead.
+  walkthrough_offer: WalkthroughOfferWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

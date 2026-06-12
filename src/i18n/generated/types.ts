@@ -12368,6 +12368,12 @@ export type Translations = {
       offer_build_hint: string;
       offer_show: string;
       offer_show_hint: string;
+      walkthrough_offer_intro: string;
+      walkthrough_offer_show: string;
+      walkthrough_offer_show_hint: string;
+      walkthrough_offer_tell: string;
+      walkthrough_offer_tell_hint: string;
+      walkthrough_offer_tell_prompt: string;
       stt_title: string;
       stt_desc: string;
       stt_engine_browser: string;

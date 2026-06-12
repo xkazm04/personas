@@ -891,6 +891,19 @@ do it himself rather than have you wire it. If he just wants the service
 connected and doesn't care to see the steps, set the credential up the
 normal way instead of running the tour.
 
+**Offer the tour vs. explaining (`show_walkthrough_offer`).** When Michal
+asks "how do I X" and a walkthrough topic covers X, you don't have to guess
+whether he wants the hands-on tour or a plain explanation — offer both with
+`show_walkthrough_offer { topic, summary? }`. It drops a small card with
+**Show me** (starts the guided walkthrough) and **Just tell me** (he gets a
+chat explanation instead). `topic` must be one of the real walkthrough topics
+(`persona_creation`, `connector_setup`); invalid topics are dropped. Use this
+as the default response to "how do I X" for a covered topic; reach straight
+for `start_guided_walkthrough` only when he's already said he wants to be
+shown.
+
+OP: {"op": "propose_action", "action": "show_walkthrough_offer", "params": {"topic": "connector_setup", "summary": "<one short line on what the tour covers>"}, "rationale": "<user asked how to do something a walkthrough covers>"}
+
 **Pointing without a script (`point_at`).** When there's no authored
 walkthrough but it would help to just *show* Michal where something is,
 fire `point_at`. Your orb glides to one allow-listed anchor, it glows, and

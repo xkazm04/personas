@@ -1536,6 +1536,43 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_walkthrough_offer" =>
+            {
+                // Generalized "Show me / Just tell me" offer for any guided
+                // walkthrough (E3). Auto-fire; the widget owns the click wiring.
+                // `topic` must be a real, allow-listed walkthrough.
+                let topic = env
+                    .params
+                    .get("topic")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let summary = env
+                    .params
+                    .get("summary")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if topic.is_empty() {
+                    out.warnings
+                        .push("show_walkthrough_offer: missing `topic`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !GUIDED_TOPICS.contains(&topic) {
+                    out.warnings.push(format!(
+                        "rejected walkthrough offer topic `{topic}` (expected one of {GUIDED_TOPICS:?})"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.chat_cards.push(ChatCard {
+                    kind: "walkthrough_offer".to_string(),
+                    title: None,
+                    config: serde_json::json!({ "topic": topic, "summary": summary }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action"
                     && env.action == "start_guided_walkthrough" =>
             {
