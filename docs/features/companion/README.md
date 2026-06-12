@@ -430,6 +430,36 @@ Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layou
 
 When beta self-improve is enabled, `companion_request_improvement` runs a coding CLI session against user feedback. The result reports success, summary, modified files, critical files, elapsed time, and any error. Startup recovery checks for orphaned runs after Tauri dev reloads.
 
+## Live browser testing (`run_browser_test`)
+
+Athena can run a **live browser test** of a web app the user is building — the products of this app's Dev Tools projects — driving a real browser, walking the scenario, and reporting defects back into chat. The capability is the Athena-side counterpart to a QA engineer.
+
+### The op
+
+`run_browser_test { project_name? | url?, scenario }` is **approval-gated** (`ALLOWED_ACTIONS` in `dispatcher.rs`, `execute_run_browser_test` in `commands/companion/approvals.rs`) — twice over: it spawns a CLI reasoning turn (cost), and that turn drives a real browser (clicks/navigation/input on the user's machine). On approval the executor resolves the target URL (an explicit `url`, or the resolved Dev Tools project's `test_env_url`), registers the **approved origin** with the bridge, and spawns a proactive turn with `trigger_kind = "browser_test"`. Constitution **v32** teaches the op; **v33** adds the report card + screenshot-verification guidance.
+
+That trigger kind is what makes `companion/session.rs::run_cli` hand the single CLI spawn a browser-tools MCP server via `--mcp-config` (browser tools exist for **that turn only** — the directive tells Athena to complete the whole test in one pass, never deferring to a continuation). Two backends:
+
+- **Extension** — the user's real Chrome via the paired bridge + extension (preferred when connected).
+- **Playwright** — the bundled `@playwright/mcp` browser (fallback when no extension is connected; the proven first-cut path).
+
+### The browser bridge
+
+`src-tauri/src/browser_bridge/` mounts two routes on the shared `local_http` server (alongside `/mcp/rpc` and `/fleet/hooks/*`):
+
+- **`GET /browser-bridge/ws`** — the WebSocket the Chrome extension connects to. Authenticated by the **pairing token** *before* the upgrade — any web page can open a socket to `127.0.0.1`, so the token (which never reaches page JS) is the gate. Last-connection-wins for MV3 service-worker reconnects; pending requests fail cleanly on disconnect.
+- **`POST /browser-bridge/mcp`** — the JSON-RPC 2.0 MCP endpoint the browser-test turn discovers via `--mcp-config`. Tools: `browser_status / navigate / snapshot / click / type / screenshot / console / wait_for / detach`. Every `tools/call` authenticates the per-test session token AND enforces the approved origin **server-side** before relaying to the extension — the model never picks the origin; the approval did.
+
+Policy lives in the bridge (Rust), not the model and not the extension. The extension (`tools/athena-browser-extension/`, MV3) is hands and eyes only: it drives a dedicated test tab it created itself (never the user's existing tabs), captures console/network via `chrome.debugger` CDP, and reads/acts on the DOM via `chrome.scripting`. Pairing config lives in the extension's options page (or a packaged `config.json` for QA harnesses).
+
+### Report card + defects → ideas
+
+A browser-test turn ends by emitting `show_browser_test_report { url, steps[], defects[], console_errors[], security_notes[] }` — a structured verdict chat-card (`browser_test_report` widget, unclamped) instead of prose-only: each step with one line of observed evidence, defects with severity + suggested fix, verbatim console errors, and any prompt-injection / untrusted-content notes. The card carries a **File as ideas** affordance (`companion_file_browser_defects`) that writes each defect into the Dev Tools idea inbox (`dev_ideas`, `scan_type = "browser_test"`, status `pending`) so it flows into the normal [Idea Triage](../dev-tools.md) → Build → agent-fix loop.
+
+### Pairing UX
+
+Companion → Setup surfaces a **Browser testing** panel (`sub_setup/BrowserBridgePanel.tsx`): live "Extension connected" status, the bridge port, the copyable pairing token, and a regenerate button. The token persists in settings (`browser_bridge_pairing_token`) so the extension pairs once and survives restarts; `PERSONAS_BROWSER_BRIDGE_TOKEN` env override wins for QA. Commands: `browser_bridge_status`, `browser_bridge_regenerate_token`.
+
 ## State
 
 `src/features/plugins/companion/companionStore.ts` owns panel state, init status, messages, streaming text, approvals, quick replies, brain viewer cursor, self-improve state, and pending playback. `companionPluginSlice.ts` owns the plugin page tab and persistent plugin-level settings.
