@@ -6,6 +6,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import Button from '@/features/shared/components/buttons/Button';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import AdoptionWizardModal from '@/features/templates/sub_generated/adoption/AdoptionWizardModal';
 import { AppearanceStep } from './AppearanceStep';
@@ -17,13 +18,6 @@ import { useOnboardingState } from './useOnboardingState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 type OnboardingButtonTone = 'violet' | 'emerald';
-
-const ONBOARDING_BUTTON_TONE: Record<OnboardingButtonTone, string> = {
-  violet:
-    'bg-violet-500/15 text-violet-300 border border-violet-500/25 hover:bg-violet-500/25',
-  emerald:
-    'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25',
-};
 
 interface OnboardingActionButtonProps {
   onClick: () => void;
@@ -46,14 +40,9 @@ function OnboardingActionButton({
   title,
 }: OnboardingActionButtonProps) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className={`flex items-center gap-2 px-4 py-2.5 typo-heading rounded-modal transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${ONBOARDING_BUTTON_TONE[tone]}`}
-    >
+    <Button variant="accent" accentColor={tone} size="md" onClick={onClick} disabled={disabled} title={title}>
       {children}
-    </button>
+    </Button>
   );
 }
 
