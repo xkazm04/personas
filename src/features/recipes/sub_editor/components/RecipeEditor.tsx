@@ -6,6 +6,7 @@ import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { usePipelineStore } from "@/stores/pipelineStore";
 import { useToastStore } from '@/stores/toastStore';
 import { TagChipInput } from './TagChipInput';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { SchemaFieldBuilder, type SchemaField } from './SchemaFieldBuilder';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -183,16 +184,15 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
         {/* Category */}
         <div>
           <label className="block typo-body font-medium text-foreground mb-1.5">{t.recipes.category_label}</label>
-          <select
+          <ThemedSelect
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-modal border border-border/60 bg-background/50 px-3 py-2 typo-body text-foreground focus-visible:outline-none focus-visible:border-primary/50"
           >
             <option value="">{t.common.none}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>{t.recipes.editor.categories[c as keyof typeof t.recipes.editor.categories]}</option>
             ))}
-          </select>
+          </ThemedSelect>
         </div>
 
         {/* Prompt Template */}
