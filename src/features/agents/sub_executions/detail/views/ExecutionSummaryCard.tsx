@@ -2,7 +2,14 @@ import { useState } from 'react';
 import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins, RotateCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getStatusEntry } from '@/lib/utils/formatters';
+import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
 import { StatusIcon } from '../../runnerTypes';
+
+// Semantic marker colors for tool-call / file-change rows, sourced from the
+// status token map rather than raw green/orange/blue literals.
+const SUCCESS_TEXT = STATUS_PALETTE.success.text; // tool-call invoked
+const INFO_TEXT = STATUS_PALETTE.info.text;       // file read
+const CAUTION_TEXT = STATUS_PALETTE_EXTENDED.caution.text; // file modified
 import type { ExecutionSummary, ToolCallSummary, FileChangeSummary } from '@/hooks/execution/useExecutionSummary';
 
 interface ExecutionSummaryCardProps {
@@ -35,7 +42,7 @@ function ToolCallList({ toolCalls, uniqueTools }: { toolCalls: ToolCallSummary[]
         <div className="mt-1.5 ml-4 space-y-1 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
           {toolCalls.map((tc, i) => (
             <div key={i} className="flex items-start gap-2 typo-caption">
-              <span className="text-green-400 shrink-0">{'\u25B6'}</span>
+              <span className={`${SUCCESS_TEXT} shrink-0`}>{'\u25B6'}</span>
               <span className="font-medium shrink-0">{tc.name}</span>
               <span className="text-foreground truncate">{tc.inputPreview}</span>
             </div>
@@ -61,17 +68,17 @@ function FileChangeList({ fileChanges, writeCount, readCount }: { fileChanges: F
         <FileText className="w-3 h-3" />
         <span>{fileChanges.length} file{fileChanges.length !== 1 ? 's' : ''}</span>
         {writeCount > 0 && (
-          <span className="text-orange-400/70">{writeCount} modified</span>
+          <span className={CAUTION_TEXT}>{writeCount} modified</span>
         )}
         {readCount > 0 && (
-          <span className="text-blue-400/70">{readCount} read</span>
+          <span className={INFO_TEXT}>{readCount} read</span>
         )}
       </button>
       {expanded && (
         <div className="mt-1.5 ml-4 space-y-0.5 max-h-24 overflow-y-auto scrollbar-thin scrollbar-thumb-primary/15">
           {fileChanges.map((fc, i) => (
             <div key={i} className="flex items-center gap-2 typo-caption">
-              <span className={fc.changeType === 'read' ? 'text-blue-400' : 'text-orange-400'}>{'\u25CF'}</span>
+              <span className={fc.changeType === 'read' ? INFO_TEXT : CAUTION_TEXT}>{'\u25CF'}</span>
               <span className="text-foreground truncate">{fc.path.split('/').pop()}</span>
               <span className="text-foreground capitalize typo-caption">{fc.changeType}</span>
             </div>
