@@ -42,14 +42,32 @@ const RETENTION: Duration = Duration::from_secs(30 * 60);
 /// a cycle fans out variants × up-to-3 scenarios × (run + eval) CLI spawns.
 pub const DEFAULT_EVOLUTION_CEILING_USD: f64 = 2.0;
 
-/// Resolve the evolution ceiling from env, falling back to the default. A value
-/// of `0` (or negative) means "unlimited" — the ledger still tracks spend.
-pub fn evolution_ceiling_usd() -> f64 {
-    std::env::var("PERSONAS_RUN_BUDGET_EVOLUTION_USD")
+/// Default aggregate ceiling for a lab test run (scenarios × models).
+pub const DEFAULT_LAB_CEILING_USD: f64 = 3.0;
+/// Default aggregate ceiling for a team pipeline run (one CLI spawn per node).
+pub const DEFAULT_PIPELINE_CEILING_USD: f64 = 5.0;
+
+/// Resolve a ceiling from an env override, falling back to `default`. A value of
+/// `0` (or negative) means "unlimited" — the ledger still tracks spend. Env is
+/// also the cheap test seam for forcing the exceed path.
+fn env_ceiling(var: &str, default: f64) -> f64 {
+    std::env::var(var)
         .ok()
         .and_then(|s| s.trim().parse::<f64>().ok())
         .filter(|v| *v >= 0.0)
-        .unwrap_or(DEFAULT_EVOLUTION_CEILING_USD)
+        .unwrap_or(default)
+}
+
+pub fn evolution_ceiling_usd() -> f64 {
+    env_ceiling("PERSONAS_RUN_BUDGET_EVOLUTION_USD", DEFAULT_EVOLUTION_CEILING_USD)
+}
+
+pub fn lab_ceiling_usd() -> f64 {
+    env_ceiling("PERSONAS_RUN_BUDGET_LAB_USD", DEFAULT_LAB_CEILING_USD)
+}
+
+pub fn pipeline_ceiling_usd() -> f64 {
+    env_ceiling("PERSONAS_RUN_BUDGET_PIPELINE_USD", DEFAULT_PIPELINE_CEILING_USD)
 }
 
 /// Serializable snapshot of a run's budget state. Embedded in run summaries

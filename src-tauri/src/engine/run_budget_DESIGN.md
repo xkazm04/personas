@@ -1,6 +1,6 @@
 # `run_budget` — aggregate cost ceiling for multi-spawn runs (P2)
 
-Co-located design for `engine/run_budget.rs`. Status: **warn-only first cut shipped; evolution wired**. Companion to the P1 cache-token capture (`parser.rs`) — P1 made per-spawn cost accurate; P2 accumulates it across a run.
+Co-located design for `engine/run_budget.rs`. Status: **warn-only shipped; evolution + lab + pipeline wired**. Companion to the P1 cache-token capture (`parser.rs`) — P1 made per-spawn cost accurate; P2 accumulates it across a run.
 
 ## Problem
 
@@ -66,11 +66,15 @@ crossing sets `exceeded` + one `tracing::warn!`; the run continues.
 
 ## Staged follow-ups (not in this cut)
 
-1. **Lab + pipeline consumers** — same `register/record/finish` at `lab_*_runs` /
-   `pipeline_runs` boundaries. Lab/evolution spawn models **concurrently**
-   (`tokio::spawn`), so a future enforce-mode needs a pre-launch *reservation*
-   (estimate-then-reconcile) like `queue.rs::ConcurrencyTracker::admit`, not a
-   sequential gate.
+1. **~~Lab + pipeline consumers~~ DONE** — `register/record/finish` wired into
+   `test_runner::run_test` (records `scores.cost_usd` per scenario×model; ceiling
+   `PERSONAS_RUN_BUDGET_LAB_USD`, default $3) and `pipeline_executor::run_pipeline`
+   (records each node's `execution.cost_usd`; ceiling
+   `PERSONAS_RUN_BUDGET_PIPELINE_USD`, default $5). NOTE: lab spawns models
+   **concurrently** (`tokio::spawn`), so a future enforce-mode needs a pre-launch
+   *reservation* (estimate-then-reconcile) like `queue.rs::ConcurrencyTracker::admit`,
+   not a sequential gate. Also fixed an evolution double-count this pass:
+   `score_result` copies `output.cost_usd` into `scores.cost_usd`, so record once.
 2. **Enforce mode** — flip a per-run flag from warn → abort: stop launching new
    spawns once `exceeded`, finalize with a `budget_exhausted` terminal state +
    partial results. Needs each subsystem's result table to model partial runs.

@@ -256,6 +256,13 @@ pub async fn run_test(
         },
     );
 
+    // P2: track aggregate cost across this run's scenario × model spawns.
+    crate::engine::run_budget::ledger().register(
+        &run_id,
+        "lab",
+        crate::engine::run_budget::lab_ceiling_usd(),
+    );
+
     // Phase 2: Execute each scenario × model combination
     let total = scenario_count * model_configs.len();
     let mut current = 0usize;
@@ -353,6 +360,21 @@ pub async fn run_test(
                     tracing::error!("Test task panicked: {e}");
                 }
             };
+        }
+
+        // P2: record each model spawn's cost against the run budget (warn-only).
+        // scores.cost_usd mirrors lab_results.cost_usd, so the ledger total
+        // tracks SUM(lab_results.cost_usd) for this run.
+        for (_, _, scores) in &scenario_results {
+            let outcome = crate::engine::run_budget::ledger().record(&run_id, scores.cost_usd);
+            if outcome.exceeded_now {
+                tracing::warn!(
+                    run_id = %run_id,
+                    spent_usd = outcome.spent_usd,
+                    ceiling_usd = outcome.ceiling_usd,
+                    "Lab run exceeded its aggregate budget ceiling (warn-only; run continues)",
+                );
+            }
         }
 
         // Build batch inputs for DB write
@@ -495,6 +517,9 @@ pub async fn run_test(
             ..Default::default()
         },
     );
+
+    // P2: release the run's budget entry (retained 30m for post-run reads).
+    crate::engine::run_budget::ledger().finish(&run_id);
 }
 
 // -- Phase 1: Generate scenarios --------------------------------

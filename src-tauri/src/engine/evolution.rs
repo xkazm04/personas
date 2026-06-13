@@ -475,10 +475,12 @@ async fn evaluate_persona_on_scenarios(
         match execute_scenario(persona, tools, scenario, model).await {
             Ok(output) => {
                 let scores = score_result(&output, scenario, persona).await;
-                // P2: record this scenario's run + eval cost against the cycle's
-                // aggregate budget (warn-only — the cycle is not aborted).
+                // P2: record this scenario's cost against the cycle's aggregate
+                // budget (warn-only — the cycle is not aborted). score_result
+                // copies output.cost_usd into scores.cost_usd, so record it once
+                // (summing them would double-count).
                 let outcome = crate::engine::run_budget::ledger()
-                    .record(run_id, output.cost_usd + scores.cost_usd);
+                    .record(run_id, output.cost_usd);
                 if outcome.exceeded_now {
                     tracing::warn!(
                         run_id = %run_id,

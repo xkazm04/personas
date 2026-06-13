@@ -289,6 +289,7 @@ async fn run_node(
     db: &DbPool,
     engine: &ExecutionEngine,
     app: &tauri::AppHandle,
+    run_id: &str,
     member: &PersonaTeamMember,
     node_config: &NodeConfig,
     resolved_input: Option<serde_json::Value>,
@@ -304,6 +305,7 @@ async fn run_node(
                 db,
                 engine,
                 app,
+                run_id,
                 member,
                 node_config,
                 resolved_input,
@@ -320,6 +322,7 @@ async fn run_persona_node(
     db: &DbPool,
     engine: &ExecutionEngine,
     app: &tauri::AppHandle,
+    run_id: &str,
     member: &PersonaTeamMember,
     node_config: &NodeConfig,
     resolved_input: Option<serde_json::Value>,
@@ -429,6 +432,18 @@ async fn run_persona_node(
         if let Ok(execution) = exec_repo::get_by_id(db, &exec.id) {
             match execution.status.as_str() {
                 "completed" => {
+                    // P2: record this node's execution cost against the pipeline
+                    // run budget (warn-only — the pipeline is not aborted).
+                    let outcome = crate::engine::run_budget::ledger()
+                        .record(run_id, execution.cost_usd);
+                    if outcome.exceeded_now {
+                        tracing::warn!(
+                            run_id = %run_id,
+                            spent_usd = outcome.spent_usd,
+                            ceiling_usd = outcome.ceiling_usd,
+                            "Pipeline run exceeded its aggregate budget ceiling (warn-only; run continues)",
+                        );
+                    }
                     update_node_status(
                         statuses,
                         &member.id,
@@ -697,6 +712,13 @@ pub async fn run_pipeline(ctx: PipelineContext) {
     let mut has_failure = false;
     let mut memories_created: u32 = 0;
 
+    // P2: track aggregate cost across this pipeline's per-node CLI spawns.
+    crate::engine::run_budget::ledger().register(
+        &ctx.run_id,
+        "pipeline",
+        crate::engine::run_budget::pipeline_ceiling_usd(),
+    );
+
     for member_id in &ctx.execution_order {
         let member = match ctx.members.iter().find(|m| &m.id == member_id) {
             Some(m) => m,
@@ -829,6 +851,7 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             &ctx.db,
             &ctx.engine,
             &ctx.app,
+            &ctx.run_id,
             member,
             &node_config,
             node_input,
@@ -909,6 +932,9 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             );
         }
     }
+
+    // P2: release the pipeline's budget entry (retained 30m for post-run reads).
+    crate::engine::run_budget::ledger().finish(&ctx.run_id);
 }
 
 // ============================================================================
