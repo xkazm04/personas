@@ -36,6 +36,8 @@ CREATE TABLE persona_executions (
     input_tokens            INTEGER DEFAULT 0,
     output_tokens           INTEGER DEFAULT 0,
     cost_usd                REAL DEFAULT 0,
+    cache_read_tokens       INTEGER DEFAULT 0,   -- prompt-cache tokens served from cache (cheap reuse)
+    cache_creation_tokens   INTEGER DEFAULT 0,   -- prompt-cache tokens written this run
     error_message           TEXT,
     duration_ms             INTEGER,
     tool_steps              TEXT,        -- JSON array of ToolCallStep
