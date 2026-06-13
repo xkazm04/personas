@@ -20,12 +20,14 @@
 //! where to emit). That makes the scheduler swappable — manual via a
 //! Tauri command in v1, tokio-task via `companion_init` in v1.5.
 
+pub mod baselines;
 pub mod budget;
 pub mod execution_review;
 pub mod fleet_triggers;
 pub mod incident_triggers;
 pub mod message_triage;
 pub mod quiet;
+pub mod rollup;
 pub mod triggers;
 
 use chrono::Utc;
@@ -116,10 +118,10 @@ pub fn evaluate_with_extra_candidates(
         }
         match enqueue_if_new(pool, &nudge)? {
             Some(msg) => {
-                // Atomic claim — if a concurrent pass consumed the last unit
-                // between the check above and here, leave the row queued and
-                // stop so the cap holds (bug-hunt 2026-06-07 companion #2).
-                if budget.try_consume(pool)? {
+                // Atomic per-kind claim — if a concurrent pass consumed the last
+                // unit (global or per-kind) between the check above and here,
+                // leave the row queued and stop (bug-hunt 2026-06-07 companion #2).
+                if budget.try_consume(pool, &nudge.trigger_kind)? {
                     new_msgs.push(msg);
                 } else {
                     break;
@@ -294,8 +296,9 @@ pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>,
     let mut released = Vec::new();
     for msg in due {
         // Atomic claim doubles as the exhaustion check; overflow stays queued
-        // and due for the next tick (bug-hunt 2026-06-07 companion #2).
-        if !budget.try_consume(pool)? {
+        // and due for the next tick (bug-hunt 2026-06-07 companion #2). Scheduled
+        // check-ins have no per-kind throttle (only the global ceiling).
+        if !budget.try_consume(pool, &msg.trigger_kind)? {
             tracing::info!(
                 "proactive: daily budget exhausted ({}), remaining scheduled message(s) deferred",
                 budget.cap(),

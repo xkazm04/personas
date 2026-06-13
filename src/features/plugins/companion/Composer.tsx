@@ -56,6 +56,11 @@ export function Composer({
   const slashPresets: SlashPreset[] = useMemo(
     () => [
       {
+        key: 'intake',
+        label: t.plugins.companion.slash_label_intake,
+        message: t.plugins.companion.slash_message_intake,
+      },
+      {
         key: 'goals',
         label: t.plugins.companion.slash_label_goals,
         message: t.plugins.companion.slash_message_goals,

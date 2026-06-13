@@ -12,8 +12,9 @@ mod variables;
 pub use capabilities::{
     active_capabilities_fingerprint, build_tool_documentation, parse_model_profile,
     render_active_capabilities, render_capability_policy_lines, render_generation_policy_lines,
+    resolve_use_case_model_override, tier_slug_to_model_id, DEFAULT_CAPABILITY_MODEL,
 };
-pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args};
+pub use cli_args::{apply_provider_env, build_cli_args, build_resume_cli_args, DEFAULT_EFFORT};
 pub use resume_prompt::assemble_resume_prompt;
 pub use variables::replace_variables;
 

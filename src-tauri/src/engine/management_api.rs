@@ -2046,6 +2046,7 @@ mod tests {
             log_file_path: None,
             execution_flows: None,
             model_used: None,
+            thinking_level: None,
             input_tokens: 0,
             output_tokens: 0,
             cost_usd: 0.0,

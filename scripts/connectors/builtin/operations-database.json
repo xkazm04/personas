@@ -1,0 +1,32 @@
+{
+  "id": "builtin-operations-database",
+  "name": "operations_database",
+  "label": "Operational Data",
+  "color": "#0EA5E9",
+  "icon_url": "",
+  "category": "database",
+  "categories": [
+    "database",
+    "observability"
+  ],
+  "fields": [],
+  "healthcheck_config": null,
+  "services": [],
+  "events": [],
+  "metadata": {
+    "template_enabled": true,
+    "is_builtin": true,
+    "always_active": true,
+    "summary": "Read-only views over the operational store -- executions, messages, human reviews, incidents, goals, and KPIs. Available on first launch; lets agents answer ad-hoc operational questions without an external service. Curated, parameterized, row-capped queries only -- no mutation.",
+    "auth_type": "builtin",
+    "auth_type_label": "Built-in",
+    "auth_methods": [
+      {
+        "id": "builtin",
+        "label": "Built-in",
+        "type": "credential",
+        "is_default": true
+      }
+    ]
+  }
+}

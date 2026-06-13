@@ -277,24 +277,21 @@ const ALLOWED_ROUTES: &[&str] = &[
 /// frontend registry keys in `guidance/walkthroughs.ts` (`GUIDANCE_TOPICS`).
 /// A topic not listed here is rejected with a warning so a hallucinated
 /// walkthrough name can't drive the orb to nowhere.
-const GUIDED_TOPICS: &[&str] = &["persona_creation", "connector_setup"];
-
-/// Anchors Athena may target via `point_at` / `compose_walkthrough`. Mirrors the
-/// frontend catalog keys in `guidance/anchorCatalog.ts` (`ANCHOR_IDS`). An
-/// anchor not listed here is rejected so a hallucinated selector can't drive the
-/// orb to an arbitrary or sensitive element.
-const ANCHOR_IDS: &[&str] = &[
-    "nav_home",
-    "nav_overview",
-    "nav_agents",
-    "nav_events",
-    "nav_connections",
-    "nav_templates",
-    "nav_plugins",
-    "nav_settings",
-    "vault",
-    "overview_dashboard",
+const GUIDED_TOPICS: &[&str] = &[
+    "persona_creation",
+    "connector_setup",
+    "trigger_creation",
+    "template_adoption",
+    "incident_triage",
+    "goal_kpi_setup",
 ];
+
+/// Anchors Athena may target via `point_at` / `compose_walkthrough`. An anchor
+/// not listed here is rejected so a hallucinated selector can't drive the orb to
+/// an arbitrary or sensitive element. **Code-generated** from the frontend
+/// catalog (`guidance/anchorCatalog.ts`) by `scripts/generate-guidance-anchors.mjs`
+/// so the TS source of truth and this Rust allow-list can never drift.
+use crate::companion::generated_anchors::GUIDANCE_ANCHORS as ANCHOR_IDS;
 
 /// A composed walkthrough should be a *short* tour. One stop is `point_at`'s
 /// job; more than this reads as a slideshow the user won't sit through.
@@ -1550,6 +1547,43 @@ pub fn dispatch(
                 });
             }
             Ok(env)
+                if env.op == "propose_action" && env.action == "show_walkthrough_offer" =>
+            {
+                // Generalized "Show me / Just tell me" offer for any guided
+                // walkthrough (E3). Auto-fire; the widget owns the click wiring.
+                // `topic` must be a real, allow-listed walkthrough.
+                let topic = env
+                    .params
+                    .get("topic")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                let summary = env
+                    .params
+                    .get("summary")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if topic.is_empty() {
+                    out.warnings
+                        .push("show_walkthrough_offer: missing `topic`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !GUIDED_TOPICS.contains(&topic) {
+                    out.warnings.push(format!(
+                        "rejected walkthrough offer topic `{topic}` (expected one of {GUIDED_TOPICS:?})"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.chat_cards.push(ChatCard {
+                    kind: "walkthrough_offer".to_string(),
+                    title: None,
+                    config: serde_json::json!({ "topic": topic, "summary": summary }),
+                });
+            }
+            Ok(env)
                 if env.op == "propose_action"
                     && env.action == "start_guided_walkthrough" =>
             {
@@ -1690,6 +1724,29 @@ pub fn dispatch(
                         ));
                         cleaned_lines.push(line);
                         continue;
+                    }
+                }
+                // Identity diffs (F1): structurally validate the anchored-diff
+                // batch before it becomes an approval card. The full
+                // anchor-exists check happens at execute time (partial-failure
+                // reporting). `content`-mode (intake first draft) is unchecked.
+                if env.action == "update_identity" {
+                    if let Some(arr) = env.params.get("diffs").and_then(|v| v.as_array()) {
+                        use crate::companion::brain::identity::{IdentityDiff, MAX_DIFFS_PER_OP};
+                        if arr.is_empty() || arr.len() > MAX_DIFFS_PER_OP {
+                            out.warnings.push(format!(
+                                "rejected update_identity: 1..={MAX_DIFFS_PER_OP} diffs required, got {}",
+                                arr.len()
+                            ));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
+                        if let Some(err) = arr.iter().find_map(|d| IdentityDiff::from_json(d).err()) {
+                            out.warnings
+                                .push(format!("rejected update_identity: {err}"));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
                     }
                 }
                 match insert_approval(pool, session_id, &env) {
@@ -2273,6 +2330,25 @@ mod tests {
         let out = dispatch_op(op);
         assert_eq!(out.guide_walkthroughs, vec!["persona_creation".to_string()]);
         assert!(!out.cleaned_text.contains("start_guided_walkthrough"));
+    }
+
+    #[test]
+    fn start_guided_walkthrough_accepts_e2_topics() {
+        // The four E2 coverage topics must be allow-listed (mirrors the frontend
+        // registry); a regression that drops one would silently reject the tour.
+        for topic in [
+            "trigger_creation",
+            "template_adoption",
+            "incident_triage",
+            "goal_kpi_setup",
+        ] {
+            let op = format!(
+                r###"{{"op":"propose_action","action":"start_guided_walkthrough","params":{{"topic":"{topic}"}},"rationale":"show me"}}"###
+            );
+            let out = dispatch_op(&op);
+            assert_eq!(out.guide_walkthroughs, vec![topic.to_string()], "topic {topic} should be accepted");
+            assert!(out.warnings.is_empty(), "topic {topic} should not warn");
+        }
     }
 
     #[test]

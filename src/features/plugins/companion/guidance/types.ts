@@ -14,7 +14,13 @@ export type OrbAnchor = 'auto' | 'left' | 'right' | 'above' | 'below' | 'center'
  * closed enum (not arbitrary callbacks) so walkthroughs stay declarative data
  * and the set of things a guided step can *do* is auditable.
  */
-export type GuidancePreAction = 'open_build_entry' | 'open_credential_add';
+export type GuidancePreAction =
+  | 'open_build_entry'
+  | 'open_credential_add'
+  | 'open_trigger_builder'
+  | 'open_overview_incidents'
+  | 'open_goals_board'
+  | 'open_kpi_dashboard';
 
 /**
  * Allow-listed action a walkthrough's completion CTA can run — the "do it now"
@@ -22,7 +28,11 @@ export type GuidancePreAction = 'open_build_entry' | 'open_credential_add';
  * discipline as `GuidancePreAction` (auditable, not arbitrary callbacks); both
  * resolve through `guidance/appActions.ts`.
  */
-export type GuidanceCtaAction = 'build_persona' | 'open_connector_add';
+export type GuidanceCtaAction =
+  | 'build_persona'
+  | 'open_connector_add'
+  | 'create_trigger'
+  | 'setup_goal';
 
 /**
  * Primary button shown on a walkthrough's last step to hand the user off into

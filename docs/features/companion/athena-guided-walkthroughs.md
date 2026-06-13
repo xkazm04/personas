@@ -58,7 +58,7 @@ The store is intentionally dumb — it holds raw state; the runner owns the regi
 | `dwellMs?` | Override the auto-advance dwell; default derives from narration length. |
 | `holdForClick?` | Wait for the user to click the highlighted element before advancing (a "your turn" beat). |
 
-A `GuidanceWalkthrough` may also carry an optional **`cta`** — `{ label, action }` — rendered as a primary button on the last step to close the show→do loop. `action` is a closed enum (`GuidanceCtaAction`: `build_persona` / `open_connector_add`) resolved through `guidance/appActions.ts`, the same module that runs step `preAction`s — so the full set of app-driving effects guidance can trigger lives in one auditable place. `persona_creation` ends with **Start building** (opens the build studio); `connector_setup` ends with **Open the catalog** (drives the Vault to "Add new"). Clicking runs the action and stops the walkthrough. Ad-hoc walkthroughs (`point_at` / `compose`) carry no `cta`.
+A `GuidanceWalkthrough` may also carry an optional **`cta`** — `{ label, action }` — rendered as a primary button on the last step to close the show→do loop. `action` is a closed enum (`GuidanceCtaAction`: `build_persona` / `open_connector_add` / `create_trigger` / `setup_goal`) resolved through `guidance/appActions.ts`, the same module that runs step `preAction`s — so the full set of app-driving effects guidance can trigger lives in one auditable place. `persona_creation` ends with **Start building** (opens the build studio); `connector_setup` ends with **Open the catalog** (drives the Vault to "Add new"); `trigger_creation` ends with **Open the Builder**; `goal_kpi_setup` ends with **Set up a goal**. Clicking runs the action and stops the walkthrough. Ad-hoc walkthroughs (`point_at` / `compose`) carry no `cta`.
 
 ---
 
@@ -89,7 +89,7 @@ All bypass the approval pipeline (they're suggestions/navigation, not real-world
 
 ## Ad-hoc pointing & the anchor catalog (`point_at`)
 
-`point_at` is the non-scripted half of guidance: Athena names an `anchor` and a `narration` line, and the orb rings that one element and narrates it — no registry entry needed. The model can't target arbitrary DOM: it must pick from the **anchor catalog** (`guidance/anchorCatalog.ts`), an allow-list of stable, route-level testids. The backend mirrors the catalog keys in `dispatcher.rs` (`ANCHOR_IDS`) and rejects anything else, so a hallucinated selector can't drive the orb to a sensitive or non-existent element.
+`point_at` is the non-scripted half of guidance: Athena names an `anchor` and a `narration` line, and the orb rings that one element and narrates it — no registry entry needed. The model can't target arbitrary DOM: it must pick from the **anchor catalog** (`guidance/anchorCatalog.ts`), an allow-list of stable, route-level testids. The backend allow-list (`src-tauri/src/companion/generated_anchors.rs`, `GUIDANCE_ANCHORS`) is **code-generated** from that catalog by `scripts/generate-guidance-anchors.mjs` (wired into predev/prebuild via `run-codegen.mjs`), so the TS source of truth and the Rust validation can never drift — adding an anchor is a catalog edit only, no manual Rust sync. `dispatcher.rs` validates `point_at` / `compose_walkthrough` anchors against it and drops anything else, so a hallucinated selector can't drive the orb to a sensitive or non-existent element.
 
 Mechanically a `point_at` is a **single-step ad-hoc walkthrough**: `companionStore.adHocWalkthrough` holds a runtime-composed `GuidanceWalkthrough` (topic = the `ADHOC_TOPIC` sentinel), and `resolveWalkthrough(activeWalkthrough, adHoc)` returns it so the existing runner + `GuideCaption` walk it exactly like a registry walkthrough. `buildPointAtWalkthrough(anchorId, narration)` (`guidance/composeAdHoc.ts`) maps an anchor id → its testid + route and wraps the narration. Anchors with a `route` switch the sidebar first; the `nav_*` anchors are the always-visible primary sidebar items, so Athena can point at them from any screen without navigating. The single-step caption collapses to just narration + dismiss (no rail/Back/Skip). When the anchor is a `nav_*` item (it has a `dest` but no `route` — Athena pointed at the button without opening it), the builder attaches a **"Take me there"** CTA (an ad-hoc `onSelect` closure that navigates to `dest`); content anchors omit it since the runner already took the user there.
 
@@ -119,6 +119,25 @@ Four steps over always-visible Vault anchors (no modal):
 4. **outro** — orb returns to center; "Pin the credential to a persona and it can use the service."
 
 No new testids were needed — `credential-manager` and `vault-type-picker` already existed. Athena fires this topic when the user asks how to connect/add a service and wants to do it themselves (constitution v27).
+
+## The E2 coverage topics (constitution v39)
+
+E2 grew the registry from two topics to six so Athena can teach-by-showing across the surfaces users actually ask about — not just persona creation and connector setup. Each follows the same four-step authoring recipe (intro → navigate + ring a route-level container → ring the key element → outro), and each is allow-listed in `GUIDED_TOPICS`.
+
+Because several targets live on **sub-tabs** (the Events route defaults to the live-stream tab; Goals/KPIs are L2 tabs under Teams) or inside a **modal** (incident detail), four facts shaped the design:
+
+- **Sub-tab switching is a `preAction`.** Four new closed-enum pre-actions in `guidance/appActions.ts` set both the L1 section *and* the L2 sub-tab in one idempotent call: `open_trigger_builder` (Events → Builder), `open_overview_incidents` (Overview → Incidents), `open_goals_board` (Teams → Goals → board), `open_kpi_dashboard` (Teams → KPIs). `navigateRoute` only sets the L1 section, so anything with a sub-tab uses a pre-action instead.
+- **Modals are never ringed.** The incident *detail* opens in a `BaseModal` (z-10000, over the guide overlay), so `incident_triage` rings the inbox + a row and narrates "open one to resolve it" rather than driving into the modal.
+- **Data-dependent targets degrade gracefully.** A `template-adopt-button`, an `incident-row`, and a `goal-card` only exist when the user has data. `waitForTestId` is bounded, so a missing target falls back to narration-only — the tour never hangs. Every topic's first navigation step rings an **always-present route container** (`triggers-page`, `templates-page`, `incidents-inbox`, `goals-page`), so the deterministic Playwright assertions never depend on seeded data.
+
+| Topic | Steps (containers/elements ringed) | New testids | CTA |
+| --- | --- | --- | --- |
+| `trigger_creation` | intro → `triggers-page` (Events hub) → `routing-canvas` (Builder, via `open_trigger_builder`) → outro | `routing-canvas` | **Open the Builder** (`create_trigger`) |
+| `template_adoption` | intro → `templates-page` (gallery) → `template-adopt-button` (first card) → outro | `template-adopt-button` (card footer) | — |
+| `incident_triage` | intro → `incidents-inbox` (via `open_overview_incidents`) → `incident-row` → outro | `incidents-inbox`, `incident-row` | — |
+| `goal_kpi_setup` | intro → `goals-page` (via `open_goals_board`) → `goal-card` → `kpi-dashboard` (via `open_kpi_dashboard`) → outro | `goals-page`, `goal-card` | **Set up a goal** (`setup_goal`) |
+
+`kpi-dashboard`, `templates-page`, and `overview-page` already existed. The mechanics of all four are covered by `tests/playwright/athena-guided-walkthrough-topics.spec.ts` (deterministic, no live Claude turn) and a `dispatcher.rs` unit test (`start_guided_walkthrough_accepts_e2_topics`).
 
 ## Interactive progression (click-to-advance)
 

@@ -15,6 +15,7 @@ or partially-built forward work.
 | --- | --- |
 | [ambient-context-fusion.md](ambient-context-fusion.md) | **Largely shipped** — Fix A + Fix B/Case 2 live; **Case 1 (build-time connector gate seeding) shipped 2026-06-12** (`dc89c407b`). Cases 3/4 + daemon cross-process injection deferred |
 | [capability-audit.md](capability-audit.md) | Phase A (`#[requires]` macro) in-flight (~17%); Phase B (tier-sync CI check) still valid & unbuilt |
+| [empirical-model-tiering-harness.md](empirical-model-tiering-harness.md) | Proposal / hand-off — autonomous Template→Persona→Execution→Lab sweep to set per-capability model tiers empirically; documents Lab arena measurement-validity gaps (2026-06-13) |
 | [glyph-consolidation.md](glyph-consolidation.md) | Still valid & unbuilt — consolidate 5 sigil renderers into one parametric `<Sigil>` + `ConsolidatedGlyphLayout`. High-risk, design iteration pending |
 | [goals-direction-hub.md](goals-direction-hub.md) | Phases 1-3 shipped; Phase 4 (Athena propose/react) blocked on dispatcher refactor |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Retained as Phase 3+ (internet P2P, dynamic UI) design archive |

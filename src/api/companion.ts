@@ -1,5 +1,9 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
+import { silentCatch } from '@/lib/silentCatch';
 import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
+import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
+import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
+import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -917,6 +921,40 @@ export async function companionDeleteBrainItem(
   return invoke<void>('companion_delete_brain_item', { kind, id });
 }
 
+/**
+ * User-as-editor-of-record (F1): overwrite identity.md with directly edited
+ * markdown (BrainViewer Edit affordance). Returns the backup file name. The
+ * user owns this file and may rewrite it wholesale — this bypasses Athena's
+ * anchored-diff machinery deliberately.
+ */
+export async function companionSaveIdentity(content: string): Promise<string> {
+  return invoke<string>('companion_save_identity', { content });
+}
+
+/**
+ * Fire-and-forget behavioral UX signal (F3). `payloadJson` is a tiny
+ * numbers/enums blob (never raw content). Never blocks the UI — feeds the
+ * weekly profile-synthesis pass that learns how the user works.
+ */
+export function companionRecordUxSignal(kind: string, payloadJson: string): void {
+  void invoke<void>('companion_record_ux_signal', { kind, payloadJson }).catch(
+    silentCatch('companion_record_ux_signal'),
+  );
+}
+
+/**
+ * "That's wrong" correction loop (F4): mark one identity bullet as wrong.
+ * Records a correction episode and proposes a one-click RemoveBullet approval.
+ */
+export async function companionCorrectIdentityClaim(section: string, bullet: string): Promise<void> {
+  return invoke<void>('companion_correct_identity_claim', { section, bullet });
+}
+
+/** The active engagement budget modulations (F4) — what Athena adapts. */
+export async function companionGetAdaptations(): Promise<AthenaAdaptation[]> {
+  return invoke<AthenaAdaptation[]>('companion_get_adaptations');
+}
+
 // ── Phase C: consolidation + reflection ────────────────────────────────
 
 /**
@@ -1141,6 +1179,25 @@ export interface CompanionDashboardSpec {
 
 export async function companionGetDashboard(): Promise<CompanionDashboardSpec | null> {
   return invoke<CompanionDashboardSpec | null>('companion_get_dashboard');
+}
+
+// ── Athena auditability — usage + health (direction 6, A2) ───────────
+
+/**
+ * Athena's own usage rollup over the last `days` — cost / turns / tokens by
+ * day and by action type. Powers the Overview → Activity "Athena lane" (A3).
+ */
+export async function companionGetUsageDashboard(days: number): Promise<AthenaUsageDashboard> {
+  return invoke<AthenaUsageDashboard>('companion_get_usage_dashboard', { days });
+}
+
+/**
+ * Athena's operational-health snapshot over the last `days` — triage funnel,
+ * proactive economy, job health. Powers the Overview → Observability "Athena
+ * health" panel (A4).
+ */
+export async function companionGetHealth(days: number): Promise<AthenaHealth> {
+  return invoke<AthenaHealth>('companion_get_health', { days });
 }
 
 // ── Cockpit (compose_cockpit op) ─────────────────────────────────────

@@ -609,7 +609,7 @@ async fn run_step(
     // re-queued via an Edit-requirement (which clears persona+use_case).
     let (persona_id, use_case_id) = resolve_assignee(deps, strategy, &step).await?;
 
-    let persona = persona_repo::get_by_id(pool, &persona_id)?;
+    let mut persona = persona_repo::get_by_id(pool, &persona_id)?;
     let preflight = check_persona_eligible(&persona);
     if let Err(reason) = preflight {
         assignment_repo::update_step_status(
@@ -669,6 +669,41 @@ async fn run_step(
         &directive_values,
     );
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
+
+    // Per-capability model tier (user doctrine: capabilities carry the model
+    // decision, not the team). Resolution chain: the step's use case
+    // `model_override` (tier slug from the recipe bake or a ModelProfile
+    // object from the capability UI) → the persona's own `model_profile` →
+    // DEFAULT_CAPABILITY_MODEL (sonnet). This path previously bypassed
+    // model resolution entirely (it skips execute_persona_inner), so every
+    // team step rode the CLI account default — opus-4-8[1m] live.
+    if let Some(uc_id) = use_case_id.as_deref() {
+        let uc_override = persona
+            .design_context
+            .as_deref()
+            .and_then(|dc| serde_json::from_str::<serde_json::Value>(dc).ok())
+            .and_then(|dc| {
+                crate::engine::design_context::pick_use_cases_array(&dc).and_then(|ucs| {
+                    ucs.iter()
+                        .find(|uc| uc.get("id").and_then(|v| v.as_str()) == Some(uc_id))
+                        .and_then(|uc| uc.get("model_override").cloned())
+                })
+            });
+        if let Some(profile) = uc_override
+            .as_ref()
+            .and_then(crate::engine::prompt::resolve_use_case_model_override)
+        {
+            if let Ok(json) = serde_json::to_string(&profile) {
+                persona.model_profile = Some(json);
+            }
+        }
+    }
+    if persona.model_profile.is_none() {
+        persona.model_profile = Some(format!(
+            "{{\"model\":\"{}\"}}",
+            crate::engine::prompt::DEFAULT_CAPABILITY_MODEL
+        ));
+    }
 
     let exec = exec_repo::create(
         pool,

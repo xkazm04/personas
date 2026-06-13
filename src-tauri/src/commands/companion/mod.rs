@@ -271,6 +271,9 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     if let Err(e) = crate::companion::jobs::prune_terminal_jobs(&state.user_db) {
         tracing::warn!(error = %e, "companion: job history prune failed");
     }
+    if let Err(e) = crate::companion::turn_ledger::prune_old_turns(&state.user_db) {
+        tracing::warn!(error = %e, "companion: turn-ledger prune failed");
+    }
 
     // Spawn doctrine ingest in the background. `companion_init` is a sync
     // command, so we use Tauri's async runtime helper rather than
@@ -384,6 +387,10 @@ async fn run_proactive_tick(
     // Goals hub: surface stalled / target-approaching project goals. dev_goals
     // live in the main app DB, reachable here via the managed AppState.
     let app_state = app.state::<Arc<AppState>>();
+    // C3: emit the once-daily end-of-day rollup if it's due (gated, no budget).
+    proactive_engine::rollup::maybe_emit_daily_rollup(pool, &app_state.db, app);
+    // F3: run the weekly behavioral profile-synthesis pass if due (gated).
+    crate::companion::brain::profile_synthesis::maybe_run_synthesis(pool, &app_state.db, app).await;
     extra.extend(proactive_engine::triggers::dev_goal_nudges(&app_state.db));
     // Incidents inbox: surface OPEN high/critical audit incidents (main app DB)
     // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an

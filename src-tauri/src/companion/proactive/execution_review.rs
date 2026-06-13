@@ -34,6 +34,7 @@
 use std::sync::LazyLock;
 use std::time::Duration;
 
+use super::baselines;
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -142,6 +143,12 @@ struct ReviewCandidate {
     output_tail: Option<String>,
     created_at: String,
     reason: &'static str,
+    /// The persona's learned expected cost band (p95 / declared), when it has
+    /// enough history — lets the digest say "3.2× this persona's p95". `None`
+    /// when the persona is on the global fallback.
+    baseline_cost_band: Option<f64>,
+    /// Learned expected duration band (ms), same shape.
+    baseline_duration_band: Option<i64>,
 }
 
 /// Result of one cursor-window scan.
@@ -157,54 +164,88 @@ struct CandidateScan {
     window_saturated: bool,
 }
 
-/// Scan for qualifying executions after the cursor.
-fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, AppError> {
-    let conn = sys_db.get()?;
+/// Scan for qualifying executions after the cursor. Flag thresholds are
+/// per-persona-adaptive (see `baselines`): a run flags when it deviates from
+/// *its persona's* learned cost/duration norm, falling back to the global
+/// constants for personas without enough history.
+fn collect_candidates(
+    sys_db: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    cursor: &str,
+) -> Result<CandidateScan, AppError> {
     // Pull every terminal execution after the cursor (newest first) so we
     // can both pick triage candidates AND learn the newest timestamp to
-    // advance the cursor to.
-    let mut stmt = conn.prepare(
-        "SELECT e.id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,
-                e.duration_ms, COALESCE(e.cost_usd, 0.0), e.error_message,
-                e.output_data, e.created_at
-         FROM persona_executions e
-         LEFT JOIN personas p ON p.id = e.persona_id
-         WHERE e.created_at > ?1
-           AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
-         ORDER BY e.created_at DESC
-         LIMIT ?2",
-    )?;
-    let rows = stmt
-        .query_map(rusqlite::params![cursor, SCAN_LIMIT as i64], |row| {
-            let status: String = row.get(2)?;
-            let duration_ms: Option<i64> = row.get(3)?;
-            let cost_usd: f64 = row.get(4)?;
-            let error_message: Option<String> = row.get(5)?;
-            let output_data: Option<String> = row.get(6)?;
-            Ok((
-                row.get::<_, String>(0)?,   // id
-                row.get::<_, String>(1)?,   // persona_name
-                status,
-                duration_ms,
-                cost_usd,
-                error_message,
-                output_data,
-                row.get::<_, String>(7)?,   // created_at
-            ))
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+    // advance the cursor to. Scope the borrow so the connection is released
+    // before the baseline pass opens its own.
+    let rows: Vec<(
+        String,
+        String,
+        String,
+        String,
+        Option<i64>,
+        f64,
+        Option<String>,
+        Option<String>,
+        String,
+    )> = {
+        let conn = sys_db.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT e.id, e.persona_id, COALESCE(p.name, e.persona_id) AS persona_name, e.status,
+                    e.duration_ms, COALESCE(e.cost_usd, 0.0), e.error_message,
+                    e.output_data, e.created_at
+             FROM persona_executions e
+             LEFT JOIN personas p ON p.id = e.persona_id
+             WHERE e.created_at > ?1
+               AND e.status IN ('completed', 'failed', 'incomplete', 'cancelled')
+             ORDER BY e.created_at DESC
+             LIMIT ?2",
+        )?;
+        let collected = stmt
+            .query_map(rusqlite::params![cursor, SCAN_LIMIT as i64], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,         // id
+                    row.get::<_, String>(1)?,         // persona_id
+                    row.get::<_, String>(2)?,         // persona_name
+                    row.get::<_, String>(3)?,         // status
+                    row.get::<_, Option<i64>>(4)?,    // duration_ms
+                    row.get::<_, f64>(5)?,            // cost_usd
+                    row.get::<_, Option<String>>(6)?, // error_message
+                    row.get::<_, Option<String>>(7)?, // output_data
+                    row.get::<_, String>(8)?,         // created_at
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        collected
+    };
 
-    let newest = rows.first().map(|r| r.7.clone());
+    let newest = rows.first().map(|r| r.8.clone());
     let window_saturated = rows.len() >= SCAN_LIMIT;
+
+    // Lazily refresh + load each persona's baseline so flagging uses its own
+    // norm. Best-effort: a persona without a baseline keeps the global
+    // constants (refresh_stale / load both degrade silently).
+    let persona_ids: Vec<String> = {
+        let mut seen = std::collections::HashSet::new();
+        rows.iter()
+            .filter(|r| seen.insert(r.1.clone()))
+            .map(|r| r.1.clone())
+            .collect()
+    };
+    baselines::refresh_stale(user_db, sys_db, &persona_ids);
+    let baseline_map = baselines::load(user_db, &persona_ids);
 
     let mut candidates = Vec::new();
     let mut qualifying_overflow = 0usize;
-    for (id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
+    for (id, persona_id, persona_name, status, duration_ms, cost_usd, error_message, output_data, created_at) in
         rows
     {
+        let b = baseline_map.get(&persona_id);
+        let expensive_threshold = baselines::PersonaBaseline::expensive_threshold(b, EXPENSIVE_USD);
+        let slow_threshold = baselines::PersonaBaseline::slow_threshold(b, SLOW_MS);
+
         let failed = matches!(status.as_str(), "failed" | "incomplete");
-        let slow = duration_ms.is_some_and(|d| d >= SLOW_MS);
-        let expensive = cost_usd >= EXPENSIVE_USD;
+        let expensive = cost_usd >= expensive_threshold;
+        let slow = duration_ms.is_some_and(|d| d >= slow_threshold);
         let reason = if failed {
             "failed"
         } else if expensive {
@@ -212,7 +253,7 @@ fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, Ap
         } else if slow {
             "slow"
         } else {
-            continue; // clean, cheap, fast — nothing to triage
+            continue; // within this persona's norms — nothing to triage
         };
         if candidates.len() >= MAX_BATCH_CANDIDATES {
             qualifying_overflow += 1; // counted, surfaced in the digest
@@ -228,6 +269,8 @@ fn collect_candidates(sys_db: &DbPool, cursor: &str) -> Result<CandidateScan, Ap
             output_tail: output_data.map(|s| truncate_tail(&s, 600)),
             created_at,
             reason,
+            baseline_cost_band: b.and_then(|x| x.cost_band()),
+            baseline_duration_band: b.and_then(|x| x.duration_band()),
         });
     }
     Ok(CandidateScan {
@@ -336,6 +379,33 @@ fn build_triage_prompt(groups: &[CandidateGroup], overflow: usize, saturated: bo
             cost = e.cost_usd,
             created = e.created_at,
         ));
+        // Per-persona baseline context (D1) — makes "expensive"/"slow" concrete:
+        // the flag is relative to THIS persona's learned norm, not a global cutoff.
+        match e.reason {
+            "expensive" => {
+                if let Some(band) = e.baseline_cost_band {
+                    if band > 0.0 {
+                        listing.push_str(&format!(
+                            "   Baseline: {:.1}× this persona's typical p95 of ${:.4}\n",
+                            e.cost_usd / band,
+                            band,
+                        ));
+                    }
+                }
+            }
+            "slow" => {
+                if let (Some(band), Some(d)) = (e.baseline_duration_band, e.duration_ms) {
+                    if band > 0 {
+                        listing.push_str(&format!(
+                            "   Baseline: {:.1}× this persona's typical p95 of {:.1}s\n",
+                            d as f64 / band as f64,
+                            band as f64 / 1000.0,
+                        ));
+                    }
+                }
+            }
+            _ => {}
+        }
         if let Some(err) = &e.error_tail {
             listing.push_str(&format!("   Error (tail): {err}\n"));
         } else if let Some(out) = &e.output_tail {
@@ -510,6 +580,61 @@ fn read_cursor(sys_db: &DbPool) -> String {
     }
 }
 
+// ── Two-phase retry cursor (C4) ──────────────────────────────────────────
+use crate::db::settings_keys::COMPANION_EXEC_REVIEW_RETRY as RETRY_KEY;
+
+/// A triage batch is given this many attempts before the cursor advances past
+/// it (giving up on an unprocessable batch — bounded work, never a livelock).
+const MAX_TRIAGE_ATTEMPTS: u32 = 2;
+
+/// Attempts already spent on the batch starting at `cursor` (0 if the retry
+/// state is absent or anchored to a different cursor — i.e. a fresh window).
+fn retry_attempts_for(sys_db: &DbPool, cursor: &str) -> u32 {
+    let Ok(Some(json)) = crate::db::repos::core::settings::get(sys_db, RETRY_KEY) else {
+        return 0;
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&json) else {
+        return 0;
+    };
+    if v.get("cursor").and_then(|x| x.as_str()) == Some(cursor) {
+        v.get("attempts").and_then(|x| x.as_u64()).unwrap_or(0) as u32
+    } else {
+        0
+    }
+}
+
+fn set_retry(sys_db: &DbPool, cursor: &str, attempts: u32) {
+    let json = serde_json::json!({ "cursor": cursor, "attempts": attempts }).to_string();
+    let _ = crate::db::repos::core::settings::set(sys_db, RETRY_KEY, &json);
+}
+
+fn clear_retry(sys_db: &DbPool) {
+    let _ = crate::db::repos::core::settings::set(sys_db, RETRY_KEY, "");
+}
+
+/// Handle a triage CLI/parse failure: bump the attempt count and, only once the
+/// batch has failed [`MAX_TRIAGE_ATTEMPTS`] times, advance past it. Until then
+/// the main cursor stays put so the next pass re-scans the same window.
+fn handle_triage_failure(sys_db: &DbPool, window_cursor: &str, newest: Option<&str>, attempts: u32) {
+    let next = attempts + 1;
+    if next >= MAX_TRIAGE_ATTEMPTS {
+        if let Some(n) = newest {
+            advance_cursor(sys_db, n);
+        }
+        clear_retry(sys_db);
+        tracing::warn!(
+            attempts = next,
+            "exec_review: triage failed {MAX_TRIAGE_ATTEMPTS}× — advancing past the batch"
+        );
+    } else {
+        set_retry(sys_db, window_cursor, next);
+        tracing::info!(
+            attempts = next,
+            "exec_review: triage failed — retrying this batch next pass (cursor held)"
+        );
+    }
+}
+
 /// Entry point called from the proactive tick and the debouncer. Runs one
 /// batched triage pass over qualifying recent executions. Returns the
 /// number of surfaced findings (digest lines + deep dives) for telemetry.
@@ -530,7 +655,7 @@ pub async fn review_recent_executions(
         advance_cursor(sys_db, &cursor);
     }
 
-    let scan = collect_candidates(sys_db, &cursor)?;
+    let scan = collect_candidates(sys_db, user_db, &cursor)?;
     // Wake window (docs/plans/athena-wake-window.md): gate BEFORE the cursor
     // advance so a skipped tick leaves the backlog accumulating. Exec triage
     // is observability — no priority bypass.
@@ -545,15 +670,21 @@ pub async fn review_recent_executions(
     }
     let wake_started = std::time::Instant::now();
     let wake_pending = scan.candidates.len();
-    if let Some(newest) = &scan.newest {
-        // Advance past the whole window we scanned, not just triaged
-        // rows — bounds work and prevents an unreviewable backlog from
-        // re-scanning forever.
-        advance_cursor(sys_db, newest);
-    }
+    // Empty window — nothing to triage. Advance past it and clear any pending
+    // retry (the window is consumed, no failure possible).
     if scan.candidates.is_empty() {
+        if let Some(newest) = &scan.newest {
+            advance_cursor(sys_db, newest);
+        }
+        clear_retry(sys_db);
         return Ok(0);
     }
+
+    // Two-phase cursor (C4): the main cursor is NOT advanced until triage
+    // SUCCEEDS, so a CLI/parse failure re-scans this same window next pass
+    // (bounded by MAX_TRIAGE_ATTEMPTS, after which we give up and advance).
+    let attempts = retry_attempts_for(sys_db, &cursor);
+    let newest_window = scan.newest.clone();
 
     let overflow = scan.qualifying_overflow;
     let saturated = scan.window_saturated;
@@ -562,19 +693,63 @@ pub async fn review_recent_executions(
         groups = groups.len(),
         overflow,
         saturated,
+        attempt = attempts + 1,
         "exec_review: running batched triage decision"
     );
 
     let prompt = build_triage_prompt(&groups, overflow, saturated);
-    let blob = crate::companion::athena_reaction::cli_text(prompt).await?;
+    let (blob, turn_id) = match crate::companion::athena_reaction::cli_text_tracked(
+        prompt,
+        user_db,
+        "exec_triage",
+    )
+    .await
+    {
+        Ok(x) => x,
+        Err(e) => {
+            // Triage CLI failed (rate/usage limit, spawn error, …) — bounded
+            // retry instead of silently skipping the batch.
+            handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
+            return Err(e);
+        }
+    };
     let Some(decision) = parse_exec_triage(&blob) else {
         tracing::warn!("exec_review: no triage decision parsed from CLI output");
+        if let Some(tid) = &turn_id {
+            crate::companion::turn_ledger::update_outcome(
+                user_db,
+                tid,
+                r#"{"parse_failure":true}"#,
+            );
+        }
         crate::companion::wake_window::log_wake(
             sys_db, "exec_triage", wake.reason, wake_pending, 1, 0,
             wake_started.elapsed().as_millis() as u64,
         );
+        handle_triage_failure(sys_db, &cursor, newest_window.as_deref(), attempts);
         return Ok(0);
     };
+    // Triage succeeded — advance past the window and clear the retry state.
+    if let Some(newest) = &newest_window {
+        advance_cursor(sys_db, newest);
+    }
+    clear_retry(sys_db);
+    // Record the triage verdict distribution on the ledger row so the Athena
+    // health funnel (A4) can show drop / digest / deep-dive at a glance.
+    if let Some(tid) = &turn_id {
+        let deep_dive = decision.groups.iter().filter(|v| v.verdict == "deep_dive").count();
+        let digest = decision.groups.iter().filter(|v| v.verdict == "digest").count();
+        let drop = decision.groups.len().saturating_sub(deep_dive + digest);
+        let outcome = serde_json::json!({
+            "groups": decision.groups.len(),
+            "drop": drop,
+            "digest": digest,
+            "deep_dive": deep_dive,
+            "escalate": decision.escalate_to_user,
+        })
+        .to_string();
+        crate::companion::turn_ledger::update_outcome(user_db, tid, &outcome);
+    }
     crate::companion::wake_window::log_wake(
         sys_db, "exec_triage", wake.reason, wake_pending, 1, decision.groups.len(),
         wake_started.elapsed().as_millis() as u64,
@@ -673,6 +848,46 @@ pub async fn review_recent_executions(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use r2d2_sqlite::SqliteConnectionManager;
+
+    /// In-memory system pool with just the `app_settings` table the cursor /
+    /// retry helpers read and write.
+    fn sys_test_pool() -> DbPool {
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::builder().max_size(1).build(manager).expect("pool");
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE app_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL,
+                    updated_at TEXT NOT NULL DEFAULT (datetime('now')));",
+            )
+            .unwrap();
+        pool
+    }
+
+    #[test]
+    fn two_phase_cursor_retries_then_advances() {
+        let sys = sys_test_pool();
+        let cursor = "2026-06-12T00:00:00Z";
+        let newest = "2026-06-12T01:00:00Z";
+        let get = |k: &str| crate::db::repos::core::settings::get(&sys, k).unwrap();
+
+        // Fresh window — no attempts spent.
+        assert_eq!(retry_attempts_for(&sys, cursor), 0);
+
+        // First failure: cursor held (main cursor unset), one attempt recorded.
+        handle_triage_failure(&sys, cursor, Some(newest), 0);
+        assert_eq!(retry_attempts_for(&sys, cursor), 1);
+        assert_eq!(get(CURSOR_KEY), None, "main cursor must NOT advance on first failure");
+
+        // A retry anchored to a different cursor reads as fresh (0).
+        assert_eq!(retry_attempts_for(&sys, "different-cursor"), 0);
+
+        // Second failure hits the cap: advance past the batch + clear retry.
+        handle_triage_failure(&sys, cursor, Some(newest), 1);
+        assert_eq!(retry_attempts_for(&sys, cursor), 0, "retry cleared after giving up");
+        assert_eq!(get(CURSOR_KEY).as_deref(), Some(newest), "cursor advances after 2 failures");
+    }
 
     fn mk_candidate(persona: &str, reason: &'static str, cost: f64) -> ReviewCandidate {
         ReviewCandidate {
@@ -685,6 +900,8 @@ mod tests {
             output_tail: None,
             created_at: "2026-06-10T12:00:00Z".to_string(),
             reason,
+            baseline_cost_band: None,
+            baseline_duration_band: None,
         }
     }
 

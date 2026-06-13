@@ -4457,6 +4457,21 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "persona_executions.thinking_level",
+            description: "Resolved CLI effort level per execution (cost observability)",
+            already_applied: |conn| has_column(conn, "persona_executions", "thinking_level"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN thinking_level TEXT",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_goals.kpi_id",
             description: "Link a derived goal to the KPI it serves",
             already_applied: |conn| has_column(conn, "dev_goals", "kpi_id"),

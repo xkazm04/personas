@@ -237,6 +237,14 @@ pub const COMPANION_MSG_TRIAGE_CURSOR: &str = "companion_msg_triage_cursor";
 /// backfilled. Free-form timestamp value (no typed validation).
 pub const COMPANION_EXEC_REVIEW_CURSOR: &str = "companion_exec_review_cursor";
 
+/// Two-phase retry state for the exec-review leg (C4): JSON
+/// `{"cursor": <iso>, "attempts": N}` recording a triage batch whose CLI call
+/// or parse failed, so the next pass re-scans the same window instead of
+/// skipping it. After 2 failed attempts the main cursor advances past the batch
+/// (bounded work, no livelock) and this clears. Free-form JSON (no typed
+/// validation; empty string = no pending retry).
+pub const COMPANION_EXEC_REVIEW_RETRY: &str = "companion_exec_review_retry";
+
 /// Whether the Director may use the Obsidian Brain vault as long-term memory:
 /// read prior coaching notes before a review + write a verdict note after.
 /// Additionally gated on the vault being configured. Stored `"true"`/`"false"`.
@@ -259,6 +267,32 @@ pub const MONTHLY_COST_CEILING_USD_DEFAULT: f64 = 0.0;
 pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
+
+/// Whether Athena emits a once-per-day end-of-day rollup card summarizing
+/// everything that was dropped / digested / surfaced that day (the "full audit
+/// without the live noise"). Default OFF — opt-in. Read by
+/// `companion::proactive::rollup`. Stored `"true"` / `"false"`.
+pub const COMPANION_DAILY_ROLLUP: &str = "companion_daily_rollup";
+/// Default for [`COMPANION_DAILY_ROLLUP`] — off (opt-in).
+pub const COMPANION_DAILY_ROLLUP_DEFAULT: bool = false;
+/// Local hour-of-day (0–23) at/after which the daily rollup may fire. Default 18.
+pub const COMPANION_DAILY_ROLLUP_HOUR: &str = "companion_daily_rollup_hour";
+/// Default for [`COMPANION_DAILY_ROLLUP_HOUR`] — 6pm local.
+pub const COMPANION_DAILY_ROLLUP_HOUR_DEFAULT: u32 = 18;
+/// The local `YYYY-MM-DD` the rollup last fired — so it fires at most once a day.
+/// Free-form date value (no typed validation).
+pub const COMPANION_DAILY_ROLLUP_LAST: &str = "companion_daily_rollup_last";
+
+/// Whether Athena runs the weekly behavioral profile-synthesis pass (F3) —
+/// learns how the user works from engage/dismiss / refine-chip / approval stats
+/// and proposes evidence-cited identity diffs (always approval-gated). Default
+/// OFF — opt-in. Read by `companion::brain::profile_synthesis`.
+pub const COMPANION_PROFILE_SYNTHESIS: &str = "companion_profile_synthesis";
+/// Default for [`COMPANION_PROFILE_SYNTHESIS`] — off (opt-in).
+pub const COMPANION_PROFILE_SYNTHESIS_DEFAULT: bool = false;
+/// RFC3339 timestamp the synthesis pass last ran — gates the 7-day cadence.
+/// Free-form value (no typed validation).
+pub const COMPANION_PROFILE_SYNTHESIS_LAST: &str = "companion_profile_synthesis_last";
 
 /// Whether the autonomous assignment-retry tick may, unattended, resume a team
 /// assignment that soft-paused at `awaiting_review` because a step failed for a
@@ -474,11 +508,17 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
+    COMPANION_EXEC_REVIEW_RETRY,
     AUTONOMOUS_MESSAGE_TRIAGE,
     COMPANION_MSG_TRIAGE_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    COMPANION_DAILY_ROLLUP,
+    COMPANION_DAILY_ROLLUP_HOUR,
+    COMPANION_DAILY_ROLLUP_LAST,
+    COMPANION_PROFILE_SYNTHESIS,
+    COMPANION_PROFILE_SYNTHESIS_LAST,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
@@ -591,6 +631,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT
+        | COMPANION_DAILY_ROLLUP
+        | COMPANION_PROFILE_SYNTHESIS
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
         | AUTONOMOUS_BACKLOG_TO_GOAL
@@ -613,6 +655,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
+            )),
+        },
+        COMPANION_DAILY_ROLLUP_HOUR => match value.parse::<u32>() {
+            Ok(h) if h <= 23 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an hour 0–23, got {value:?}"
             )),
         },
         _ => Ok(()),

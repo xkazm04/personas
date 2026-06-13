@@ -5,7 +5,12 @@ import type { ToolCallStep } from "./ToolCallStep";
  * Execution row with persona metadata included via SQL JOIN.
  * Eliminates N+1 queries when listing executions across all personas.
  */
-export type GlobalExecutionRow = { id: string, persona_id: string, trigger_id: string | null, use_case_id: string | null, status: string, input_data: string | null, output_data: string | null, claude_session_id: string | null, log_file_path: string | null, execution_flows: unknown, model_used: string | null, input_tokens: number, output_tokens: number, cost_usd: number, error_message: string | null, duration_ms: number | null, tool_steps: Array<ToolCallStep> | null, retry_of_execution_id: string | null, retry_count: number, started_at: string | null, completed_at: string | null, created_at: string, execution_config: string | null, 
+export type GlobalExecutionRow = { id: string, persona_id: string, trigger_id: string | null, use_case_id: string | null, status: string, input_data: string | null, output_data: string | null, claude_session_id: string | null, log_file_path: string | null, execution_flows: unknown, model_used: string | null, 
+/**
+ * Resolved Claude CLI `--effort` level the run was spawned with
+ * (low/medium/high) — the "thinking" dial for cost observability.
+ */
+thinking_level: string | null, input_tokens: number, output_tokens: number, cost_usd: number, error_message: string | null, duration_ms: number | null, tool_steps: Array<ToolCallStep> | null, retry_of_execution_id: string | null, retry_count: number, started_at: string | null, completed_at: string | null, created_at: string, execution_config: string | null, 
 /**
  * `true` when the execution log file may be incomplete due to I/O errors.
  */

@@ -273,4 +273,37 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// structured verdict chat-card a browser-test turn ends with (steps with
 /// evidence, defects, console errors, security notes) — plus guidance to
 /// verify visual claims via screenshot instead of DOM inference.
-pub const CONSTITUTION_VERSION: u32 = 33;
+///
+/// v34 (operational data, B1) teaches the read-only `operations_database`
+/// connector: `use_connector { capability: "query_operations", view, … }` over
+/// the OPERATIONAL store (executions / messages / reviews / incidents / goals /
+/// KPIs) — distinct from `personas_database` (the brain DB). When to query vs.
+/// use the deterministic Radar/Sunrise flows, and the untrusted-content guard
+/// (result cells are data, never instructions).
+///
+/// v35 (guidance anchors, E1) refreshes the `point_at` anchor list to include
+/// the new content anchors (templates_gallery, settings_page). The Rust
+/// allow-list is now code-generated from the frontend catalog, so the set grows
+/// without a manual sync; invalid anchor ids are dropped server-side.
+///
+/// v36 (walkthrough offer, E3) adds `show_walkthrough_offer { topic, summary? }`
+/// — a generalized "Show me / Just tell me" card for any guided walkthrough
+/// topic, the default response to "how do I X" when a walkthrough covers X.
+///
+/// v37 (identity diffs, F1) upgrades `update_identity` from a whole-file
+/// `{content}` rewrite to anchored `{diffs}` (append/replace/remove one bullet
+/// under a named section, evidence-cited) — preferred for ongoing learning;
+/// `content` mode stays for the intake first draft. Still approval-gated, never
+/// auto-fires.
+///
+/// v38 (intake on request, F2) teaches Athena to re-run the intake interview
+/// when the user asks ("Get to know me" / "let's do the intake"), not just on
+/// first launch — a few warm questions, ending in an `update_identity` proposal.
+/// Surfaced via a WelcomeHero chip + a `/intake` slash preset.
+///
+/// v39 (walkthrough coverage, E2) expands `start_guided_walkthrough` /
+/// `show_walkthrough_offer` from two topics to six, adding `trigger_creation`,
+/// `template_adoption`, `incident_triage`, and `goal_kpi_setup` so Athena can
+/// teach-by-showing across the Events, Templates, Incidents, and Goals/KPI
+/// surfaces — not just persona creation and connector setup.
+pub const CONSTITUTION_VERSION: u32 = 39;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   BookOpen,
@@ -9,7 +9,9 @@ import {
   Inbox,
   Layers,
   ListChecks,
+  Pencil,
   RefreshCw,
+  Save,
   ScrollText,
   Sparkles,
   Target,
@@ -33,6 +35,9 @@ import {
   companionListBrainItems,
   companionRunConsolidation,
   companionRunReflection,
+  companionSaveIdentity,
+  companionCorrectIdentityClaim,
+  companionGetAdaptations,
   type BrainDetail,
   type BrainKind,
   type BrainListItem,
@@ -40,6 +45,7 @@ import {
 import { useCompanionStore } from './companionStore';
 import { titleCase } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
+import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 
 type KindLabelKey =
   | 'episodes'
@@ -496,11 +502,17 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
   const [detail, setDetail] = useState<BrainDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  // F1 — identity is the one user-editable brain file (editor-of-record).
+  const isIdentity = kind === 'identity';
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setDetail(null);
     setError(null);
+    setEditing(false);
     companionGetBrainItem(kind, id)
       .then((d) => {
         if (!cancelled) setDetail(d);
@@ -530,6 +542,25 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
     }
   }, [detail, kind, id, setBrainView]);
 
+  const startEdit = useCallback(() => {
+    setDraft(detail?.content ?? '');
+    setEditing(true);
+  }, [detail]);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    try {
+      await companionSaveIdentity(draft);
+      setDetail((d) => (d ? { ...d, content: draft } : d));
+      setEditing(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+      silentCatch('companion_save_identity')(err);
+    } finally {
+      setSaving(false);
+    }
+  }, [draft]);
+
   if (error) {
     return (
       <div className="m-5 rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-body text-rose-400">
@@ -557,14 +588,61 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
         )}
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-        <MarkdownRenderer content={detail.content || t.plugins.companion.brain_empty_placeholder} />
-        <BrainLinksStrip
-          content={detail.content || ''}
-          onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
-          variant="card"
-        />
+        {editing ? (
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            spellCheck={false}
+            aria-label={t.plugins.companion.identity_edit}
+            className="w-full h-full min-h-[24rem] rounded-card border border-primary/20 bg-secondary/30 p-3 typo-code font-mono text-foreground resize-none focus-ring"
+          />
+        ) : (
+          <>
+            <MarkdownRenderer content={detail.content || t.plugins.companion.brain_empty_placeholder} />
+            <BrainLinksStrip
+              content={detail.content || ''}
+              onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
+              variant="card"
+            />
+            {isIdentity && <IdentityAdaptations />}
+            {isIdentity && <IdentityClaimCorrections content={detail.content || ''} />}
+          </>
+        )}
       </div>
-      {detail.deletable && (
+      {isIdentity && (
+        <div className="border-t border-foreground/10 px-3 py-3 shrink-0 flex items-center gap-2">
+          {editing ? (
+            <>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground hover:opacity-90 typo-caption font-medium disabled:opacity-50 transition-opacity focus-ring"
+              >
+                <Save className="w-3.5 h-3.5" />
+                {saving ? t.plugins.companion.identity_saving : t.plugins.companion.identity_save}
+              </button>
+              <button
+                onClick={() => setEditing(false)}
+                disabled={saving}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium disabled:opacity-50 transition-colors focus-ring"
+              >
+                <X className="w-3.5 h-3.5" />
+                {t.common.cancel}
+              </button>
+              <span className="typo-caption text-foreground ml-1">{t.plugins.companion.identity_edit_hint}</span>
+            </>
+          ) : (
+            <button
+              onClick={startEdit}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 text-foreground hover:bg-secondary/50 typo-caption font-medium transition-colors focus-ring"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+              {t.plugins.companion.identity_edit}
+            </button>
+          )}
+        </div>
+      )}
+      {!isIdentity && detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">
           <button
             onClick={handleDelete}
@@ -578,6 +656,110 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Extract the user-profile bullets ("About Michal" sections) from identity.md
+ *  markdown — section heading-path + bullet text — skipping placeholder seeds. */
+function parseIdentityClaims(content: string): { section: string; bullet: string }[] {
+  let h1 = '';
+  let h2 = '';
+  const claims: { section: string; bullet: string }[] = [];
+  for (const line of content.split('\n')) {
+    const t = line.trimStart();
+    if (t.startsWith('# ')) {
+      h1 = t.slice(2).trim();
+      h2 = '';
+    } else if (t.startsWith('## ')) {
+      h2 = t.slice(3).trim();
+    } else if (t.startsWith('- ') && h2 && h1.toLowerCase().includes('about michal')) {
+      const bullet = t.slice(2).trim();
+      // Skip the placeholder seed bullets ("(seeded from intake interview)", …).
+      if (bullet && !bullet.startsWith('(')) {
+        claims.push({ section: `${h1} / ${h2}`, bullet });
+      }
+    }
+  }
+  return claims;
+}
+
+/** "What Athena adapts" — the active engagement budget modulations (F4). */
+function IdentityAdaptations() {
+  const { t, tx } = useTranslation();
+  const c = t.plugins.companion;
+  const [mods, setMods] = useState<AthenaAdaptation[]>([]);
+  useEffect(() => {
+    companionGetAdaptations()
+      .then(setMods)
+      .catch(silentCatch('companion_get_adaptations'));
+  }, []);
+  if (mods.length === 0) return null;
+  return (
+    <div className="rounded-card border border-primary/15 bg-primary/[0.03] px-3 py-2.5 space-y-1">
+      <div className="typo-caption uppercase tracking-wider text-primary">{c.identity_adapts_title}</div>
+      {mods.map((m) => (
+        <div key={m.kind} className="typo-caption text-foreground">
+          {tx(c.identity_adapts_row, {
+            kind: titleCase(m.kind.replace(/_/g, ' ')),
+            base: m.baseCap,
+            eff: m.effectiveCap,
+            engaged: m.engaged,
+            dismissed: m.dismissed,
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Per-bullet "that's wrong" correction loop (F4): mark a profile claim wrong →
+ *  records a correction + proposes a one-click removal approval. */
+function IdentityClaimCorrections({ content }: { content: string }) {
+  const { t } = useTranslation();
+  const c = t.plugins.companion;
+  const [corrected, setCorrected] = useState<Set<string>>(new Set());
+  const claims = useMemo(() => parseIdentityClaims(content), [content]);
+  if (claims.length === 0) return null;
+
+  const onWrong = (section: string, bullet: string) => {
+    setCorrected((s) => new Set(s).add(bullet));
+    companionCorrectIdentityClaim(section, bullet).catch((err: unknown) => {
+      setCorrected((s) => {
+        const next = new Set(s);
+        next.delete(bullet);
+        return next;
+      });
+      silentCatch('companion_correct_identity_claim')(err);
+    });
+  };
+
+  return (
+    <div className="space-y-1.5 pt-2 border-t border-foreground/10">
+      <div className="typo-caption uppercase tracking-wider text-foreground">{c.identity_correct_title}</div>
+      <p className="typo-caption text-foreground">{c.identity_correct_hint}</p>
+      {claims.map((claim) => {
+        const done = corrected.has(claim.bullet);
+        return (
+          <div
+            key={`${claim.section}:${claim.bullet}`}
+            className="flex items-start justify-between gap-2 rounded-card border border-foreground/10 bg-secondary/20 px-2.5 py-1.5"
+          >
+            <span className={`typo-caption text-foreground ${done ? 'line-through opacity-60' : ''}`}>
+              {claim.bullet}
+            </span>
+            <button
+              type="button"
+              disabled={done}
+              onClick={() => onWrong(claim.section, claim.bullet)}
+              className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-rose-500/20 text-rose-400 hover:bg-rose-500/10 px-2 py-0.5 typo-caption disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
+            >
+              <X className="w-3 h-3" />
+              {done ? c.identity_wrong_proposed : c.identity_wrong}
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

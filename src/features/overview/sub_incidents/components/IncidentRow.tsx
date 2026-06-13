@@ -57,6 +57,7 @@ export function IncidentRow({
   return (
     <div
       id={`incident-row-${incident.id}`}
+      data-testid="incident-row"
       className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 transition-colors ${
         focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
       }`}

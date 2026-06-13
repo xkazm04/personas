@@ -101,6 +101,151 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       action: 'open_connector_add',
     },
   },
+
+  trigger_creation: {
+    topic: 'trigger_creation',
+    title: (t) => t.plugins.companion.guide_trig_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_trig_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'hub',
+        narration: (t) => t.plugins.companion.guide_trig_hub,
+        navigateRoute: 'events',
+        // The Events route container — present on every event-bus sub-tab.
+        highlightTestId: 'triggers-page',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'builder',
+        narration: (t) => t.plugins.companion.guide_trig_create,
+        // Switch to the visual Builder tab and ring its routing canvas.
+        preAction: 'open_trigger_builder',
+        highlightTestId: 'routing-canvas',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_trig_outro,
+        orbAnchor: 'center',
+      },
+    ],
+    cta: {
+      label: (t) => t.plugins.companion.guide_cta_create_trigger,
+      action: 'create_trigger',
+    },
+  },
+
+  template_adoption: {
+    topic: 'template_adoption',
+    title: (t) => t.plugins.companion.guide_tmpl_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_tmpl_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'gallery',
+        narration: (t) => t.plugins.companion.guide_tmpl_gallery,
+        navigateRoute: 'design-reviews',
+        // The templates gallery route container.
+        highlightTestId: 'templates-page',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'adopt',
+        narration: (t) => t.plugins.companion.guide_tmpl_adopt,
+        // The first card's Adopt button — copies the template into the workspace.
+        highlightTestId: 'template-adopt-button',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_tmpl_outro,
+        orbAnchor: 'center',
+      },
+    ],
+  },
+
+  incident_triage: {
+    topic: 'incident_triage',
+    title: (t) => t.plugins.companion.guide_inc_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_inc_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'inbox',
+        narration: (t) => t.plugins.companion.guide_inc_inbox,
+        // Open Overview → Incidents and ring the inbox.
+        preAction: 'open_overview_incidents',
+        highlightTestId: 'incidents-inbox',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'row',
+        narration: (t) => t.plugins.companion.guide_inc_row,
+        // The most recent incident row (degrades to narration-only if the
+        // inbox is empty — the detail itself opens in a modal, so we don't ring it).
+        highlightTestId: 'incident-row',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_inc_outro,
+        orbAnchor: 'center',
+      },
+    ],
+  },
+
+  goal_kpi_setup: {
+    topic: 'goal_kpi_setup',
+    title: (t) => t.plugins.companion.guide_goal_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_goal_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'board',
+        narration: (t) => t.plugins.companion.guide_goal_board,
+        // Teams → Goals → board view.
+        preAction: 'open_goals_board',
+        highlightTestId: 'goals-page',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'card',
+        narration: (t) => t.plugins.companion.guide_goal_card,
+        highlightTestId: 'goal-card',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'kpi',
+        narration: (t) => t.plugins.companion.guide_goal_kpi,
+        // Teams → KPIs dashboard — where a goal is bound to a metric.
+        preAction: 'open_kpi_dashboard',
+        highlightTestId: 'kpi-dashboard',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_goal_outro,
+        orbAnchor: 'center',
+      },
+    ],
+    cta: {
+      label: (t) => t.plugins.companion.guide_cta_setup_goal,
+      action: 'setup_goal',
+    },
+  },
 };
 
 /** Topics Athena is allowed to trigger. Mirrored by the backend allow-list. */

@@ -44,11 +44,15 @@ const TASKS = {
   // index of shared components (referenced from CLAUDE.md). Keeps it fresh so
   // new/removed shared components surface without a manual step.
   catalog:   "scripts/docs/gen-shared-catalog.mjs",
+  // Regenerates src-tauri/src/companion/generated_anchors.rs (the Rust allow-list
+  // of guidance anchors) from the frontend anchorCatalog.ts so Athena's
+  // point_at / compose_walkthrough validation never drifts from the catalog.
+  "guidance-anchors": "scripts/generate-guidance-anchors.mjs",
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "guidance-anchors"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "guidance-anchors"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;

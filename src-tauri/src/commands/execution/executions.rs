@@ -268,10 +268,26 @@ pub(crate) async fn execute_persona_inner(
 
         // Apply model_override (if any) by mutating the persona's model_profile
         // for this execution. Engine reads persona.model_profile at spawn time.
+        // The override carries one of two shapes — a tier slug baked by
+        // templates/recipes ("haiku"/"opus") or a full ModelProfile object set
+        // in the capability UI; resolve_use_case_model_override handles both.
+        // (The old `mo.to_string()` JSON-quoted tier slugs into a string
+        // parse_model_profile silently rejected — tiers never took effect.)
         if let Some(mo) = use_case.get("model_override") {
-            if !mo.is_null() {
-                persona.model_profile = Some(mo.to_string());
+            if let Some(profile) = crate::engine::prompt::resolve_use_case_model_override(mo) {
+                if let Ok(json) = serde_json::to_string(&profile) {
+                    persona.model_profile = Some(json);
+                }
             }
+        }
+        // Capability executions never ride the CLI account default: the
+        // recipe tiering doctrine is "no override = sonnet default". Without
+        // this, profile-less personas ran opus-4-8[1m] invisibly.
+        if persona.model_profile.is_none() {
+            persona.model_profile = Some(format!(
+                "{{\"model\":\"{}\"}}",
+                crate::engine::prompt::DEFAULT_CAPABILITY_MODEL
+            ));
         }
     }
 

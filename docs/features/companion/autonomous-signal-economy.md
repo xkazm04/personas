@@ -96,23 +96,56 @@ The Messages counterpart of Athena's human-review resolution
 - **Digest dedupe hit** → the card for that hour already pending; lines are
   logged, items were still annotated/marked correctly. Cards are pointers, the
   durable state lives in Messages/Executions.
-- **Exec cursor semantics unchanged** (advance past the scanned window even if
-  triage later fails): bounds work, never re-reviews; the trade is a missed
-  batch on CLI failure, same as before.
+- **Exec cursor is two-phase (C4)**: the cursor advances only when triage
+  succeeds (or the window is empty), so a CLI/parse failure re-scans the same
+  window next pass. Bounded to 2 attempts (`companion_exec_review_retry`), after
+  which it advances past the batch — bounds work, never re-reviews a succeeded
+  batch, never livelocks on a poison one.
 
 ## Future work (known, not yet built)
 
-- **Decision-queue source for attention messages** — surface `attention`
-  items through `useDecisionQueue` (like pending human reviews) so the orb can
-  hand them to the user one at a time.
-- **Per-source attention budgets** — a daily cap per trigger kind, so one
-  noisy leg can't crowd out the others' cards.
-- **Severity registry** — let personas declare expected cost/duration bands so
-  "expensive/slow" flags are per-persona adaptive instead of global constants.
-- **Daily rollup** — one end-of-day digest summarizing everything that was
-  dropped, for users who want the full audit without the live noise.
-- **Exec-leg retry cursor** — a two-phase cursor (scanned vs triaged) so a CLI
-  failure doesn't skip the batch.
+- ~~**Decision-queue source for attention messages**~~ — **SHIPPED (C1).**
+  Each `attention` message triage now also enqueues a `message_attention`
+  proactive (no budget cost, deduped by message id, via `enqueue_external` +
+  `deliver_now`). `useDecisionQueue` maps those into the hands-free decision
+  queue as a fourth source (after incidents): options are **Open** (→ Overview
+  → Messages + engage), **Mark read** (`mark_message_read` + engage), and
+  **Dismiss** (the message stays unread). The aggregated digest card is
+  unchanged — this is the per-item "needs your read" decision.
+- ~~**Per-source attention budgets**~~ — **SHIPPED (C2).** The single daily cap
+  of 3 (too coarse, every kind shared it) is now a **global ceiling of 12** with
+  **per-trigger-kind sub-budgets** underneath (`execution_review`/`message_digest`
+  4, `incident_blocker` 6, `message_attention` 8, `dev_goal_*` 2,
+  `athena_scheduled` unthrottled, fallback 3). `budget::try_consume(kind)` claims
+  one global unit AND one per-kind unit atomically (rolls back the global
+  increment if the per-kind cap blocks), counted in `companion_attention_budget`.
+  A noisy leg now exhausts only its own sub-budget. (Live-tuning overrides + an
+  A4 per-kind display are a follow-up.)
+- ~~**Severity registry**~~ — **SHIPPED (D1, direction 3).** Execution triage now
+  flags deviation from each persona's *own* learned norm, not the global
+  `EXPENSIVE_USD`/`SLOW_MS` constants. `proactive/baselines.rs` computes p50/p95
+  of cost + duration per persona over a trailing 30 days (cap 500 rows, `n ≥ 8`
+  or it keeps the global fallback), caches them in `companion_persona_baseline`
+  (lazy 24h refresh, only for personas in the current scan batch), and flags
+  `expensive`/`slow` at `max(floor, 1.5 × p95)`. `declared_cost_usd` /
+  `declared_duration_ms` columns let the user's word override the learned p95
+  (no UI yet — settable via the DB). Digest exemplar lines now read
+  "3.2× this persona's typical p95 of $0.41" so the verdict is concrete.
+- ~~**Daily rollup**~~ — **SHIPPED (C3).** `proactive/rollup.rs` emits one
+  `daily_rollup` ProactiveCard per local day (gated by `companion_daily_rollup`,
+  default off; fires at/after `companion_daily_rollup_hour` default 18, once per
+  day via `companion_daily_rollup_last`). Body is composed deterministically (no
+  model call) from the `companion_turn` ledger (turns + cost + triage verdict
+  sums + parse failures), the proactive table (cards created/engaged/dismissed),
+  and job failures — counts only, each line naming where to look. No budget cost
+  (`enqueue_external`), deduped on the date. Checked from both proactive
+  evaluation entry points (manual + desktop tick).
+- ~~**Exec-leg retry cursor**~~ — **SHIPPED (C4).** The main cursor no longer
+  advances until triage *succeeds*, so a CLI/parse failure re-scans the same
+  window next pass instead of skipping the batch. Bounded by
+  `companion_exec_review_retry` (`{cursor, attempts}`): after
+  `MAX_TRIAGE_ATTEMPTS` (2) failures the cursor advances past the batch and the
+  retry clears — never a livelock on a poison batch.
 
 ## Related
 

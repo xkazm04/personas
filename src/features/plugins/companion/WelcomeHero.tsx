@@ -31,10 +31,10 @@ export function WelcomeHero({
   const c = t.plugins.companion;
 
   const starters: Starter[] = [
+    { key: 'intake', label: c.slash_label_intake, message: c.slash_message_intake },
     { key: 'capabilities', label: c.slash_label_capabilities, message: c.slash_message_capabilities },
     { key: 'goals', label: c.slash_label_goals, message: c.slash_message_goals },
     { key: 'decisions', label: c.slash_label_decisions, message: c.slash_message_decisions },
-    { key: 'memory_recap', label: c.slash_label_memory_recap, message: c.slash_message_memory_recap },
   ];
 
   return (

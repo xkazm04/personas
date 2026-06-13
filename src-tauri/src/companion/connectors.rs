@@ -230,6 +230,24 @@ pub fn capabilities_for(service_type: &str) -> Option<&'static [ConnectorCapabil
                 requires_approval: true,
             },
         ]),
+        // Read-only views over the OPERATIONAL store (executions / messages /
+        // reviews / incidents / goals / KPIs) — distinct from `personas_database`,
+        // which reads the companion brain DB. Lets Athena answer ad-hoc
+        // operational questions directly instead of deflecting (the bespoke
+        // fleet-analysis / daily-brief gatherers stay as the deterministic
+        // button paths). Curated, parameterized, row-capped views only — no
+        // mutation. Auto-fire (read-only); the free-form SELECT escape hatch is
+        // a follow-up. See `companion::jobs::operations_views`.
+        "operations_database" => Some(&[ConnectorCapability {
+            slug: "query_operations",
+            description: "Run a curated read-only view over the operational store. \
+                          `view` ∈ executions_recent (days?,limit?,persona?,status?), \
+                          cost_by_persona_day (days?), messages_inbox (days?,limit?,unread_only?), \
+                          reviews_pending (limit?), incidents (days?,limit?,status?), \
+                          goals_active, kpis_latest. Returns a markdown table.",
+            args: "view: string, days?: number, limit?: number, persona?: string, status?: string, unread_only?: boolean",
+            requires_approval: false,
+        }]),
         _ => None,
     }
 }

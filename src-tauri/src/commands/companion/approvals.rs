@@ -634,37 +634,83 @@ async fn execute_run_persona(
     )))
 }
 
-/// Write a new identity.md, backing up the existing one. Used by the
-/// onboarding interview at the end of the intake, and by reflection
-/// cycles later (Phase 5).
+/// Apply an approved `update_identity` op. Two modes (F1):
+///   - `diffs: [...]` — anchored edits (AppendBullet / ReplaceBullet /
+///     RemoveBullet) against named sections. Preferred for incremental learning
+///     (reflection / synthesis): targeted, reviewable, preserves the rest.
+///   - `content: "..."` — a full identity.md replacement. The intake interview's
+///     first-draft path (nothing exists yet to diff against).
+/// Both back up the prior file first.
 fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+    use crate::companion::brain::identity;
+
+    // Anchored-diff mode (preferred).
+    if let Some(arr) = params.get("diffs").and_then(|v| v.as_array()) {
+        if arr.is_empty() || arr.len() > identity::MAX_DIFFS_PER_OP {
+            return Err(AppError::Validation(format!(
+                "update_identity: 1..={} diffs required, got {}",
+                identity::MAX_DIFFS_PER_OP,
+                arr.len()
+            )));
+        }
+        let mut diffs = Vec::with_capacity(arr.len());
+        let mut parse_failures = Vec::new();
+        for dj in arr {
+            match identity::IdentityDiff::from_json(dj) {
+                Ok(d) => diffs.push(d),
+                Err(e) => parse_failures.push(e.to_string()),
+            }
+        }
+        if diffs.is_empty() {
+            return Err(AppError::Validation(format!(
+                "update_identity: no valid diffs ({})",
+                parse_failures.join("; ")
+            )));
+        }
+        let (applied, mut skipped, backup) = identity::apply_diffs_on_disk(&diffs)?;
+        skipped.extend(parse_failures);
+        let mut msg = format!(
+            "Identity updated — {} change(s) applied:\n{}",
+            applied.len(),
+            applied
+                .iter()
+                .map(|a| format!("- {a}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        );
+        if !skipped.is_empty() {
+            msg.push_str(&format!(
+                "\n\n{} skipped:\n{}",
+                skipped.len(),
+                skipped
+                    .iter()
+                    .map(|f| format!("- {f}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ));
+        }
+        if !backup.is_empty() {
+            msg.push_str(&format!("\n\nPrevious version backed up to {backup}."));
+        }
+        return Ok(ExecuteResult::message(msg));
+    }
+
+    // Full-content mode (intake first draft).
     let content = params
         .get("content")
         .and_then(|v| v.as_str())
-        .ok_or_else(|| AppError::Internal("update_identity: missing `content`".into()))?;
-    let root = crate::companion::disk::brain_root()?;
-    let identity_path = root.join("identity.md");
-    let backup_path = root.join(format!(
-        "identity.bak-{}-{}.md",
-        chrono::Utc::now().format("%Y%m%dT%H%M%S%.3f"),
-        uuid::Uuid::new_v4()
-    ));
-    if identity_path.exists() {
-        std::fs::copy(&identity_path, &backup_path).map_err(|e| {
-            AppError::Internal(format!(
-                "update_identity: failed to back up identity.md to {}: {e}",
-                backup_path.display()
-            ))
+        .ok_or_else(|| {
+            AppError::Internal("update_identity: need `diffs` (anchored) or `content` (full)".into())
         })?;
-    }
-    std::fs::write(&identity_path, content)?;
+    let backup = identity::write_full(content)?;
+    let backup_note = if backup.is_empty() {
+        String::new()
+    } else {
+        format!(" Previous version backed up to {backup}.")
+    };
     Ok(ExecuteResult::message(format!(
-        "identity.md updated ({} bytes). Previous version backed up to {}.",
+        "identity.md updated ({} bytes).{backup_note}",
         content.len(),
-        backup_path
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("identity.bak-*.md")
     )))
 }
 
@@ -2317,6 +2363,7 @@ async fn execute_use_connector(
     };
     let result = crate::companion::jobs::connector_use::dispatch_capability_public(
         &state.user_db,
+        &state.db,
         connector_name,
         capability,
         &args,

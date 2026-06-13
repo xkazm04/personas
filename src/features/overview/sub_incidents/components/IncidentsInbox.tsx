@@ -398,7 +398,7 @@ export default function IncidentsInbox() {
   }, [loading, incidents.length, isNarrowed]);
 
   return (
-    <ContentBox>
+    <ContentBox data-testid="incidents-inbox">
       <ContentHeader
         icon={<Inbox className="w-5 h-5 text-amber-400" />}
         iconColor="amber"

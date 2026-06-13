@@ -1,4 +1,5 @@
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { storeBus } from '@/lib/storeBus';
 import type { SidebarSection } from '@/lib/types/types';
 import type { GuidanceCtaAction, GuidancePreAction } from './types';
@@ -39,6 +40,45 @@ export function navigateToSection(section: SidebarSection) {
   useSystemStore.getState().setSidebarSection(section);
 }
 
+/**
+ * Open the Events route on its visual Builder tab (the `trigger_creation`
+ * walkthrough rings the routing canvas here). The Events route defaults to the
+ * live-stream tab, so we switch the sub-tab too — both setters are idempotent.
+ */
+export function openTriggerBuilder() {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('events');
+  sys.setEventBusTab('builder');
+}
+
+/**
+ * Open Overview on its Incidents sub-tab (the `incident_triage` walkthrough
+ * rings the inbox here). The Overview sub-tab lives in its own store slice.
+ */
+export function openOverviewIncidents() {
+  useSystemStore.getState().setSidebarSection('overview');
+  useOverviewStore.getState().setOverviewTab('incidents');
+}
+
+/**
+ * Open the Goals board (Teams → Goals → board view) — the first half of the
+ * `goal_kpi_setup` walkthrough. Goals/KPIs are L2 tabs under the Teams route,
+ * so we set the section, the teams sub-tab, and the goals view.
+ */
+export function openGoalsBoard() {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('teams');
+  sys.setTeamsTab('goals');
+  sys.setGoalsTab('board');
+}
+
+/** Open the KPI dashboard (Teams → KPIs) — the second half of `goal_kpi_setup`. */
+export function openKpiDashboard() {
+  const sys = useSystemStore.getState();
+  sys.setSidebarSection('teams');
+  sys.setTeamsTab('kpis');
+}
+
 /** Run a step's allow-listed pre-action (open a surface so its anchor mounts). */
 export function runPreAction(action: GuidancePreAction) {
   switch (action) {
@@ -47,6 +87,18 @@ export function runPreAction(action: GuidancePreAction) {
       break;
     case 'open_credential_add':
       openCredentialAddView();
+      break;
+    case 'open_trigger_builder':
+      openTriggerBuilder();
+      break;
+    case 'open_overview_incidents':
+      openOverviewIncidents();
+      break;
+    case 'open_goals_board':
+      openGoalsBoard();
+      break;
+    case 'open_kpi_dashboard':
+      openKpiDashboard();
       break;
   }
 }
@@ -59,6 +111,12 @@ export function runGuidanceCta(action: GuidanceCtaAction) {
       break;
     case 'open_connector_add':
       openCredentialAddView();
+      break;
+    case 'create_trigger':
+      openTriggerBuilder();
+      break;
+    case 'setup_goal':
+      openGoalsBoard();
       break;
   }
 }

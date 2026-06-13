@@ -43,6 +43,11 @@ pub async fn companion_evaluate_proactive_now(
     app: AppHandle,
 ) -> Result<usize, AppError> {
     ipc_auth::require_auth(&state).await?;
+    // C3: emit the once-daily end-of-day rollup if it's due (gated, no budget).
+    proactive::rollup::maybe_emit_daily_rollup(&state.user_db, &state.db, &app);
+    // F3: run the weekly behavioral profile-synthesis pass if due (gated).
+    crate::companion::brain::profile_synthesis::maybe_run_synthesis(&state.user_db, &state.db, &app)
+        .await;
     // Extra candidates sourced from the main app DB (not the companion
     // user_db): project-goal nudges + OPEN high/critical incident nudges.
     // Same guards (quiet hours / budget / dedupe) apply via the evaluator.

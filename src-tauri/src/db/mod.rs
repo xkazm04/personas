@@ -748,7 +748,18 @@ CREATE INDEX IF NOT EXISTS idx_companion_design_decision_context
 -- delivery; a fresh row is created on the first nudge of any UTC date.
 CREATE TABLE IF NOT EXISTS companion_proactive_budget (
     date    TEXT PRIMARY KEY,                    -- 'YYYY-MM-DD' UTC
-    count   INTEGER NOT NULL DEFAULT 0
+    count   INTEGER NOT NULL DEFAULT 0           -- global daily ceiling counter
+);
+
+-- Phase C2 (Athena value expansion / direction 2): per-trigger-kind daily
+-- sub-budgets under the global ceiling, so one noisy leg can't crowd out
+-- another's cards. companion::proactive::budget claims one global unit AND one
+-- per-kind unit (atomically) per delivery.
+CREATE TABLE IF NOT EXISTS companion_attention_budget (
+    date          TEXT NOT NULL,                 -- 'YYYY-MM-DD' UTC
+    trigger_kind  TEXT NOT NULL,
+    count         INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (date, trigger_kind)
 );
 
 -- Phase F: connectors the user has attached to Athena's chat surface.
@@ -880,6 +891,68 @@ CREATE TABLE IF NOT EXISTS engine_project_pulse (
 );
 CREATE INDEX IF NOT EXISTS idx_engine_project_pulse_recent
     ON engine_project_pulse(project_id, day DESC);
+
+-- Phase A1 (Athena value expansion / direction 6): per-turn usage ledger.
+-- One row per Claude CLI spawn Athena makes — a chat/autonomous/proactive
+-- reasoning turn or a cheap headless decision leg (exec_triage, msg_triage,
+-- reaction, review_resolution). Captures the terminal `result` event's
+-- total_cost_usd / token usage / duration so the Overview dashboards can show
+-- what Athena costs and for what kind of work. Best-effort: usage columns are
+-- NULL when the CLI emitted no result event. Pruned to 90 days by
+-- companion::turn_ledger::prune_old_turns.
+CREATE TABLE IF NOT EXISTS companion_turn (
+    id                    TEXT PRIMARY KEY,
+    origin                TEXT NOT NULL,                 -- chat | autonomous | proactive | external | headless
+    trigger_kind          TEXT,                          -- proactive trigger kind, or headless leg label
+    model                 TEXT,
+    input_tokens          INTEGER,
+    output_tokens         INTEGER,
+    cache_read_tokens     INTEGER,
+    cache_creation_tokens INTEGER,
+    cost_usd              REAL,
+    duration_ms           INTEGER,
+    num_turns             INTEGER,                        -- CLI-internal assistant turns
+    is_error              INTEGER NOT NULL DEFAULT 0,
+    voice                 INTEGER NOT NULL DEFAULT 0,
+    assistant_episode_id  TEXT,                           -- NULL for headless rows
+    outcome_json          TEXT,                           -- dispatcher side-effect / triage verdict counts
+    created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_turn_created
+    ON companion_turn(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_companion_turn_origin
+    ON companion_turn(origin, created_at DESC);
+
+-- Phase D1 (Athena value expansion / direction 3): learned per-persona cost +
+-- duration baselines so execution triage flags deviation-from-own-norm instead
+-- of global constants. Computed from persona_executions (operational DB),
+-- cached here, refreshed lazily (24h) per companion::proactive::baselines.
+-- declared_* are optional user-set expected bands that override the learned p95.
+CREATE TABLE IF NOT EXISTS companion_persona_baseline (
+    persona_id            TEXT PRIMARY KEY,
+    p50_cost              REAL,
+    p95_cost              REAL,
+    p50_duration_ms       INTEGER,
+    p95_duration_ms       INTEGER,
+    sample_n              INTEGER NOT NULL DEFAULT 0,
+    declared_cost_usd     REAL,
+    declared_duration_ms  INTEGER,
+    computed_at           TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Phase F3 (Athena value expansion / direction 7): lightweight behavioral
+-- signals the frontend records (refine-chip clicks, walkthrough completion,
+-- decision-queue usage) so the weekly profile-synthesis pass can learn how the
+-- user works from what they DO, not just what they say. payload_json is a tiny
+-- numbers/enums blob — never raw user content.
+CREATE TABLE IF NOT EXISTS companion_ux_signal (
+    id           TEXT PRIMARY KEY,
+    kind         TEXT NOT NULL,
+    payload_json TEXT NOT NULL DEFAULT '{}',
+    created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_companion_ux_signal_kind
+    ON companion_ux_signal(kind, created_at DESC);
 "#;
 
 /// Seed all built-in local credentials if they don't already exist.

@@ -5,6 +5,7 @@ import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
 import { resolveWalkthrough } from './walkthroughs';
 import { runPreAction } from './appActions';
+import { companionRecordUxSignal } from '@/api/companion';
 import type { GuidanceWalkthrough, OrbAnchor } from './types';
 
 const ORB_GAP = 18;
@@ -129,6 +130,8 @@ export function useGuidanceRunner() {
           break;
         case 'Escape':
           e.preventDefault();
+          // F3 — guidance-taste signal: he bailed out of the tour.
+          companionRecordUxSignal('walkthrough_abort', JSON.stringify({ topic: activeWalkthrough }));
           store.stopGuidance();
           break;
         case ' ':
@@ -167,6 +170,8 @@ export function useGuidanceRunner() {
     }
     if (stepIndex >= wt.steps.length) {
       // Walked off the end — finish (clears highlight + orb target; orb docks).
+      // F3 — guidance-taste signal: he saw the whole tour through.
+      companionRecordUxSignal('walkthrough_complete', JSON.stringify({ topic: activeWalkthrough }));
       store.stopGuidance();
       return;
     }

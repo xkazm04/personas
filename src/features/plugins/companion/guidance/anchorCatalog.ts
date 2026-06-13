@@ -15,8 +15,11 @@ import type { SidebarSection } from '@/lib/types/types';
  * at them without navigating ("your agents live right here →"). The handful of
  * content anchors carry a `route` so the runner switches to it first.
  *
- * To add an anchor: add a stable `data-testid` to the target, add an entry
- * here, and add the same key to `ANCHOR_IDS` in the backend dispatcher.
+ * To add an anchor: add a stable `data-testid` to the target and an entry here.
+ * The backend allow-list (`generated_anchors.rs`, `GUIDANCE_ANCHORS`) is
+ * **code-generated** from this catalog by `scripts/generate-guidance-anchors.mjs`
+ * (wired into predev/prebuild), so the two can never drift — no manual Rust
+ * edit needed.
  */
 export interface GuidanceAnchor {
   /** `data-testid` of the element to ring + park the orb beside. */
@@ -47,6 +50,8 @@ export const ANCHOR_CATALOG: Record<string, GuidanceAnchor> = {
   // Route-level content containers — carry a route so the surface mounts.
   vault: { testId: 'credential-manager', route: 'credentials' },
   overview_dashboard: { testId: 'overview-page', route: 'overview' },
+  templates_gallery: { testId: 'templates-page', route: 'design-reviews' },
+  settings_page: { testId: 'settings-page', route: 'settings' },
 };
 
 /** Anchor ids Athena may name. Mirrored by the backend `ANCHOR_IDS`. */

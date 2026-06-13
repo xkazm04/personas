@@ -25,6 +25,7 @@ export function TemplateCardFooter({
     <div className="px-4 py-3.5 border-t border-primary/5 flex items-center justify-between">
       <div className="flex items-center gap-2">
         <button
+          data-testid="template-adopt-button"
           onClick={(e) => {
             e.stopPropagation();
             onAdopt();
