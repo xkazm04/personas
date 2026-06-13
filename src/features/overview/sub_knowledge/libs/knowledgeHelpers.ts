@@ -35,12 +35,7 @@ export const formatDuration = (ms: number) => _formatDuration(ms, { precision: '
 import { formatCost as _formatCost } from '@/lib/utils/formatters';
 export const formatCost = (usd: number) => _formatCost(usd, { precision: 'auto' });
 
-export const COLOR_MAP: Record<string, { text: string; bg: string; border: string }> = {
-  emerald: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
-  red: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-  blue: { text: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
-  violet: { text: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
-  amber: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-  cyan: { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-  sky: { text: 'text-sky-400', bg: 'bg-sky-500/10', border: 'border-sky-500/20' },
-};
+// Knowledge type/scope pills render via the shared `StatusBadge` (accent variant),
+// which is the single source of truth for these accent colors — see
+// `StatusBadge` ACCENT_CLASSES. The per-type `color` strings in KNOWLEDGE_TYPES /
+// SCOPE_TYPES double as `BadgeAccent` keys, so no local color table is needed.

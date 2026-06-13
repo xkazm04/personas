@@ -3,9 +3,10 @@ import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { ChevronDown, ChevronRight, CheckCircle, X, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
-import { KNOWLEDGE_TYPES, SCOPE_TYPES, COLOR_MAP, formatDuration, formatCost } from '../libs/knowledgeHelpers';
+import { KNOWLEDGE_TYPES, SCOPE_TYPES, formatDuration, formatCost } from '../libs/knowledgeHelpers';
 import { verifyKnowledgeAnnotation, dismissKnowledgeAnnotation } from '@/api/overview/intelligence/knowledge';
 import { ConfidenceArc } from '@/features/shared/components/display/ConfidenceArc';
+import { StatusBadge, type BadgeAccent } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -172,11 +173,11 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
   const config = KNOWLEDGE_TYPES[entry.knowledge_type];
   const total = entry.success_count + entry.failure_count;
   const confidencePct = Math.round(entry.confidence * 100);
-  const colors = COLOR_MAP[config?.color ?? 'blue'] ?? COLOR_MAP.blue!;
+  const typeAccent = (config?.color ?? 'blue') as BadgeAccent;
   const isAnnotation = entry.knowledge_type === 'agent_annotation' || entry.knowledge_type === 'user_annotation';
   const scopeConfig = SCOPE_TYPES[entry.scope_type] ?? SCOPE_TYPES.persona!;
   const ScopeIcon = scopeConfig.icon;
-  const scopeColors = COLOR_MAP[scopeConfig.color] ?? COLOR_MAP.violet!;
+  const scopeAccent = scopeConfig.color as BadgeAccent;
 
   const patternData = parseJsonOrDefault<Record<string, unknown>>(entry.pattern_data, {});
   const recentResults = Array.isArray(patternData.recentResults)
@@ -216,14 +217,13 @@ export function KnowledgeRow({ entry, personaName, onMutated }: KnowledgeRowProp
             <span className="typo-body font-medium text-foreground/90 truncate">
               {isAnnotation && entry.annotation_text ? entry.annotation_text : entry.pattern_key}
             </span>
-            <span className={`typo-caption px-1.5 py-0.5 rounded-full ${colors.bg} ${colors.text} border ${colors.border} font-medium`}>
+            <StatusBadge accent={typeAccent} size="sm" pill>
               {config?.label ?? entry.knowledge_type}
-            </span>
+            </StatusBadge>
             {entry.scope_type !== 'persona' && (
-              <span className={`typo-caption px-1.5 py-0.5 rounded-full ${scopeColors.bg} ${scopeColors.text} border ${scopeColors.border} font-medium flex items-center gap-1`}>
-                <ScopeIcon className="w-2.5 h-2.5" />
+              <StatusBadge accent={scopeAccent} size="sm" pill icon={<ScopeIcon className="w-2.5 h-2.5" />}>
                 {entry.scope_id ?? entry.scope_type}
-              </span>
+              </StatusBadge>
             )}
             {entry.is_verified && (
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
