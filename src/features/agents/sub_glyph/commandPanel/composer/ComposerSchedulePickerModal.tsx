@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Calendar, CalendarDays, CalendarRange, ChevronLeft } from "lucide-react";
 import type { Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
+import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerScheduleRhythmCard, type Rhythm } from "./ComposerScheduleRhythmCard";
 import { ComposerScheduleDetailForm } from "./ComposerScheduleDetailForm";
@@ -101,6 +102,7 @@ export function ComposerSchedulePickerModal({
       title={debtText("auto_when_should_this_agent_run_f33725ba")}
       subtitle={preview}
       icon={<Clock className="w-5 h-5" />}
+      accentColor={DIM_META.trigger.color}
       footer={
         <>
           {step === "detail" && (
