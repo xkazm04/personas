@@ -12,6 +12,7 @@ import {
   type CloudDeployment, type CloudTrigger, type CloudTriggerFiring,
 } from '@/api/system/cloud';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -190,10 +191,9 @@ export function CloudWebhooksTab() {
               <label className="block typo-caption font-medium text-foreground mb-1.5">
                 {t.triggers.deployed_persona_label}
               </label>
-              <select
+              <ThemedSelect
                 value={createPersonaId}
                 onChange={(e) => setCreatePersonaId(e.target.value)}
-                className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40"
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
@@ -201,7 +201,7 @@ export function CloudWebhooksTab() {
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-              </select>
+              </ThemedSelect>
             </div>
             <div className="flex items-center gap-2">
               <Button

@@ -7,6 +7,7 @@ import {
   AlertCircle, Trash2, Pause, Play, Filter, X, CheckCircle2,
 } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -264,16 +265,15 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
                   {t.triggers.relay_route_to_agent} <span className="text-foreground">{t.triggers.optional_suffix}</span>
                 </label>
-                <select
+                <ThemedSelect
                   value={addPersonaId}
                   onChange={(e) => setAddPersonaId(e.target.value)}
-                  className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground focus:outline-none focus:ring-1 focus:ring-purple-500/40"
                 >
                   <option value="">{t.triggers.broadcast_to_all}</option>
                   {personas.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-                </select>
+                </ThemedSelect>
               </div>
               <div>
                 <label className="block typo-caption font-medium text-foreground mb-1.5">
