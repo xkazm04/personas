@@ -123,3 +123,31 @@ a session on their own.
 - **Method**: 14 isolated `general-purpose` subagents, each grounded in `_REFERENCE.md` (the design-system brief), each writing one report, replying with terse stats only.
 - **Verification**: counts reconciled two ways — header-sum (128) and per-finding Severity-bullet count (128, after excluding the reference-template line).
 - **Baseline health** (pre-fix): 4 pre-existing TS errors; this scan modified zero source files.
+
+---
+
+## Run closed — 2026-06-13
+
+This run is **closed and merged to master**. Final outcome: **18 of 128 findings fixed** across 5 verified
+waves (status tokens, buttons, number/time primitives, selects, one static table), **0 regressions**, every
+fix `tsc`- and eslint-clean and atomically committed with a report reference. An 11-item pattern catalogue
+was produced (see the `FIXES-WAVE-*.md` files).
+
+**All remaining items are formally descoped / deferred — not scheduled work.** They fall in three buckets:
+
+1. **Behavior-sensitive refactors (need a running app to verify, NOT `tsc`/eslint-gateable):**
+   - persona-chat #1 (critical) — `ChatMessageContent` → catalog `MarkdownRenderer` (requires extending the
+     shared component for `onSendToLab` + streaming/meta-filtering behavior).
+   - creative-plugins #1 (critical) — Artist whole-surface vocabulary (buttons + spinners + dots + focus).
+   - credential-vault #1 (high) — secret fields → `PasswordToggleField` (mask-on-blur behavior).
+   - events/messages #1, execution #9 — virtualized lists → `UnifiedTable` (windowing/scroll behavior).
+   Each is documented in its wave summary with the exact verification it needs.
+
+2. **More of the same adoption themes (mechanical, resumable any time from this INDEX):** the remaining
+   token/button/form/time/list findings, plus the untouched Waves 3 (states), 7 (hierarchy/typography),
+   8 (polish/a11y).
+
+3. **Intentional small skips** noted inline in wave summaries (e.g. `SchemaFieldBuilder` compact select).
+
+A future session can resume any of bucket 2 directly; buckets 1 and 3 should be picked up only in a
+session that launches the app and visually verifies parity. No further work is planned under this run.
