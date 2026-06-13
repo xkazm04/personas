@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
-import { CopyButton } from '@/features/shared/components/buttons';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CopyButton, Button } from '@/features/shared/components/buttons';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
@@ -179,13 +178,9 @@ export function CloudWebhooksTab() {
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.cloud_webhook_triggers}
           </h3>
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
+          <Button variant="accent" accentColor="blue" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
             {t.triggers.add_webhook}
-          </button>
+          </Button>
         </div>
 
         {/* Create form */}
@@ -209,20 +204,19 @@ export function CloudWebhooksTab() {
               </select>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="accent"
+                accentColor="blue"
                 onClick={handleCreate}
-                disabled={!createPersonaId || isCreating}
-                className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-50 transition-colors"
+                disabled={!createPersonaId}
+                loading={isCreating}
+                icon={<Webhook className="w-3.5 h-3.5" />}
               >
-                {isCreating ? <LoadingSpinner size="sm" /> : <Webhook className="w-3.5 h-3.5" />}
                 {t.triggers.create_webhook}
-              </button>
-              <button
-                onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}
-                className="px-3 py-2 typo-body text-foreground hover:text-foreground transition-colors"
-              >
+              </Button>
+              <Button variant="ghost" onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}>
                 {t.common.cancel}
-              </button>
+              </Button>
             </div>
           </div>
         )}
