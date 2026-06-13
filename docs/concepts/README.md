@@ -12,6 +12,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [ambient-context-fusion.md](ambient-context-fusion.md) | Mostly wired — Fix A (file_watcher producer) shipped 2026-05-11 + Fix B (runner injection) via Athena Phase 3 c. Cases 1/3/4 in Part 3 remain open leverage points |
 | [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal — descoped-reopenable (2026-04-15); blockers tracked |
 | [cloud-deployment.md](cloud-deployment.md) | Proposal — design spec for *optional* server-side orchestrator deployment, not the Desktop app |
+| [empirical-model-tiering-harness.md](empirical-model-tiering-harness.md) | Proposal / hand-off — autonomous Template→Persona→Execution→Lab sweep to set per-capability model tiers empirically; documents Lab arena measurement-validity gaps (2026-06-13) |
 | [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Doc retained as Phase 3+ design archive (banner cross-linked 2026-05-10) |
 | [matrix-retire-glyph-only.md](matrix-retire-glyph-only.md) | Proposal — retire `<PersonaMatrix>` template-preview surface, default to GlyphGrid; reclaims ~25 files |
 | [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded (Android feature flag, Gradle project, responsive React started); LLM HTTP client + ForegroundService missing |
