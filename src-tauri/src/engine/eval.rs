@@ -446,9 +446,16 @@ pub struct LlmEvalResult {
     pub tool_accuracy: i32,
     pub output_quality: i32,
     pub protocol_compliance: i32,
-    /// Combined rationale string (backwards-compatible). Built from per-metric fields.
+    /// Combined rationale string (backwards-compatible). Built from per-metric
+    /// fields by `validate_llm_result` when absent — so it MUST be `default`,
+    /// not required: the judge emits the per-metric `*_rationale` fields and
+    /// omits this top-level one, which previously failed deserialization and
+    /// silently degraded EVERY LLM eval to the keyword-match heuristic.
+    #[serde(default)]
     pub rationale: String,
-    /// Combined suggestions string (backwards-compatible).
+    /// Combined suggestions string (backwards-compatible). Same default
+    /// rationale as `rationale` — the judge often omits it.
+    #[serde(default)]
     pub suggestions: String,
     /// Per-metric rationale for rich UI display (optional for backwards compat).
     #[serde(default)]
