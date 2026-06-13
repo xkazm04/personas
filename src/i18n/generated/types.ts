@@ -8176,6 +8176,8 @@ export type Translations = {
       persona_layout_dim_disable_title: string;
       _comment_persona_layout_dim_reenable: string;
       persona_layout_dim_reenable: string;
+      _comment_persona_layout_rail_activated: string;
+      persona_layout_rail_activated: string;
       _comment_persona_layout_dim_open_hint: string;
       persona_layout_dim_open_hint: string;
       _comment_persona_layout_center_questions_to_answer_one: string;

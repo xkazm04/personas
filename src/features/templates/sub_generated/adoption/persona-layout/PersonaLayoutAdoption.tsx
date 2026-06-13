@@ -13,6 +13,7 @@ import { DIM_META, GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
 import { useAdoptionDimensionModel } from './useAdoptionDimensionModel';
@@ -33,14 +34,21 @@ const STATE_PIP: Record<PetalState, string> = {
   idle: 'bg-foreground/25',
 };
 
-/** One symbolic petal switch in the left quick-action rail. */
-function PetalSwitch({
-  dim, state, active, impact, onSelect,
+/**
+ * One row in the left quick-action rail: the symbolic petal icon (state by
+ * colour/fill + status pip) plus a fixed-width info box that surfaces the
+ * petal's *resolved value at a glance* — connector brand icons for Apps, the
+ * schedule shortcut for When, "Activated" for Memory/Review, etc. The whole
+ * row is clickable and routes to the petal's action.
+ */
+function PetalRow({
+  dim, state, active, impact, info, onSelect,
 }: {
   dim: GlyphDimension;
   state: PetalState;
   active: boolean;
   impact: DimImpact | undefined;
+  info: React.ReactNode;
   onSelect: (d: GlyphDimension) => void;
 }) {
   const meta = DIM_META[dim];
@@ -54,22 +62,37 @@ function PetalSwitch({
         type="button"
         onClick={() => onSelect(dim)}
         aria-label={impact?.label ?? dim}
-        className={`relative flex h-11 w-11 items-center justify-center rounded-card border transition-all cursor-pointer ${
-          active
-            ? 'border-primary/70 ring-2 ring-primary/40'
-            : state === 'pending'
-              ? 'border-status-warning/55'
-              : lit
-                ? 'border-card-border/40'
-                : 'border-card-border/25'
+        className={`group flex w-full items-center gap-2 rounded-card transition-all cursor-pointer ${
+          active ? 'ring-2 ring-primary/40' : ''
         }`}
-        style={lit ? { backgroundColor: `${meta.color}1c` } : undefined}
       >
-        <Icon
-          className={`h-5 w-5 transition-opacity ${lit ? '' : 'opacity-40'}`}
-          style={lit ? { color: meta.color } : undefined}
-        />
-        <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-card-bg ${STATE_PIP[state]}`} />
+        <span
+          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-card border transition-all ${
+            active
+              ? 'border-primary/70'
+              : state === 'pending'
+                ? 'border-status-warning/55'
+                : lit
+                  ? 'border-card-border/40'
+                  : 'border-card-border/25'
+          }`}
+          style={lit ? { backgroundColor: `${meta.color}1c` } : undefined}
+        >
+          <Icon
+            className={`h-5 w-5 transition-opacity ${lit ? '' : 'opacity-40'}`}
+            style={lit ? { color: meta.color } : undefined}
+          />
+          <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-card-bg ${STATE_PIP[state]}`} />
+        </span>
+        {/* Fixed-width info box — flex-1 fills the fixed-width rail so every
+            row's box aligns. Bordered only when it carries content. */}
+        <span
+          className={`flex h-11 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-card px-2 ${
+            info ? 'border border-card-border/30 bg-secondary/20' : 'border border-transparent'
+          }`}
+        >
+          {info}
+        </span>
       </button>
     </Tooltip>
   );
@@ -93,24 +116,58 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
   const model = useAdoptionDimensionModel(props);
   const impactByDim = (d: GlyphDimension) => model.dimImpacts.find((i) => i.dim === d);
 
+  // The right-hand info box per petal row — its resolved value at a glance.
+  // Apps → connector brand icons; Memory/Review → "Activated"/empty; everything
+  // else → the impact sentence (schedule shortcut, event count, escalation…).
+  const infoForDim = (dim: GlyphDimension): React.ReactNode => {
+    if (dim === 'connector') {
+      const cons = model.connectorsForActive;
+      if (cons.length === 0) return null;
+      const shown = cons.slice(0, 4);
+      return (
+        <>
+          {shown.map((c) => (
+            <ConnectorIcon key={c.key ?? c.label} meta={getConnectorMeta(c.key ?? c.label)} size="w-4 h-4" />
+          ))}
+          {cons.length > 4 && (
+            <span className="typo-caption tabular-nums text-foreground/55">+{cons.length - 4}</span>
+          )}
+        </>
+      );
+    }
+    if (dim === 'memory' || dim === 'review') {
+      return model.petalStates[dim] === 'resolved' ? (
+        <span className="typo-caption truncate text-status-success">
+          {t.templates.adopt_modal.persona_layout_rail_activated}
+        </span>
+      ) : null;
+    }
+    const imp = impactByDim(dim);
+    if (imp && imp.tone !== 'muted') {
+      return <span className={`typo-caption truncate ${VAL[imp.tone]}`}>{imp.value}</span>;
+    }
+    return null;
+  };
+
   // Left rail — symbolic petal switches. Each icon's colour/fill encodes the
   // dimension's state (lit = configured/on, pip = success/pending/idle); click
   // routes to the petal's action (toggle for memory/review, editor/picker for
   // the rest); the words live in the hover tooltip.
   const leftSlot = (
-    <div className="flex flex-col items-center gap-3">
+    <div className="flex flex-col gap-3">
       <div className="flex w-full items-center justify-between px-0.5">
         <span className="typo-label uppercase tracking-[0.2em] text-foreground/45">Petals</span>
         <span className="typo-caption tabular-nums text-foreground/45">{model.answeredCount}/{model.totalCount}</span>
       </div>
-      <div className="flex flex-col items-center gap-2">
+      <div className="flex flex-col gap-2">
         {GLYPH_DIMENSIONS.map((dim) => (
-          <PetalSwitch
+          <PetalRow
             key={dim}
             dim={dim}
             state={model.petalStates[dim]}
             active={model.activeDim === dim}
             impact={impactByDim(dim)}
+            info={infoForDim(dim)}
             onSelect={model.handlePetalClick}
           />
         ))}

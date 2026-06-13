@@ -8170,6 +8170,8 @@
       "persona_layout_dim_disable_title": "Disable this sigil for the active capability — its questions will be skipped during build.",
       "_comment_persona_layout_dim_reenable": "Tooltip on the Disable toggle when the dimension is currently disabled",
       "persona_layout_dim_reenable": "Re-enable this sigil for the active capability — its questions will reappear.",
+      "_comment_persona_layout_rail_activated": "Left quick-action rail info box: shown next to the Memory/Review petal icon when that dimension is enabled — keep 1 word",
+      "persona_layout_rail_activated": "Activated",
       "_comment_persona_layout_dim_open_hint": "Hint shown when there are pending questions but no petal is active",
       "persona_layout_dim_open_hint": "Click a glowing petal to answer its questions.",
       "_comment_persona_layout_center_questions_to_answer_one": "Center-button label (singular) below the count when there is 1 unanswered adoption question",
