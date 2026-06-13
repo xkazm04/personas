@@ -170,6 +170,44 @@ Empirically probed during `/research` run 2026-05-31 (Claude Code 'workflow' mec
 
 Also note: the headless `init` `tools` list exposes `Skill`, `Cron*`, `Monitor`, `RemoteTrigger`, **`EnterWorktree`/`ExitWorktree`** (native CLI worktree tools), `AskUserQuestion`, and `Task*` — personas deliberately constrains a persona's effective surface via prompt + bound connectors regardless. Probe recipe for future capability questions: mirror the exact `build_cli_args` flags + env removals, set `--max-turns 1 --max-budget-usd 0.25` as cost backstops, inspect the `system/init` event — never trust marketing prose over the init tool registry.
 
+### Orchestration is EXTERNAL (N separate `claude -p` processes), not in-CLI
+
+Mapped during /research run 2026-06-13 (CLI 2.1.169–176 orchestration analysis).
+Personas orchestrates multi-step / multi-agent work by spawning a **separate
+`claude -p` process per unit**, with **no context sharing** between them:
+
+- **Pipelines:** each node = one fresh spawn via `run_persona_node`
+  (`engine/pipeline_executor.rs:~319`). Topological order, Rust-driven.
+- **Chains:** event-cascade (`engine/chain.rs`, `MAX_CHAIN_DEPTH=8`) — each hop
+  creates a `persona_events` row that later fires its own spawn. Not a single session.
+- **Teams:** each member = one spawn; the team-alignment block
+  (`runner/team_context.rs`) is baked into every member's prompt text, not delegated.
+- **No shared session → every hop re-sends the full prompt** (system prompt +
+  directives + team block + connector creds + tool docs ≈ 5–11 KB fixed overhead
+  before capabilities), re-paying input tokens (mitigated only by the API prompt cache).
+- **Budget/turns are PER-PROCESS** (`prompt/cli_args.rs:132-145`) — no aggregate
+  ceiling across a pipeline/chain/team run. This is the prerequisite gap behind the
+  `Patterns/descoped-reopenable.md` budget-ceiling entries.
+- **Cost tracking reads TOTALS ONLY** (`engine/parser.rs:~225-260`:
+  total_cost/input/output) — `cache_read_input_tokens` / `cache_creation_input_tokens`
+  are NOT captured, so prompt-cache effectiveness is currently invisible.
+- **Global concurrency cap = 4** (`engine/queue.rs:92` `GLOBAL_MAX_CONCURRENT`).
+- **The in-CLI `Workflow`/`Task` fan-out is exposed but UNUSED** — no `agent_id` /
+  `parent_agent_id` parsing anywhere; OTEL sub-agent spans are wired
+  (`build_cli_args_with_trace`) but the stream/UI doesn't render sub-agent structure.
+
+**Routing implication:** a /research finding about "deeper orchestration" or "token
+efficiency" lands against THIS model. The big lever (consolidate fan-out into one
+`claude -p` via the Workflow tool → pay the system prompt once, share prompt cache
+across sub-agents) has hard prerequisites: an aggregate budget ceiling, sub-agent
+stream observability, and tier-gating (`Workflow ∈ tools` only on Max/Team).
+Measurement first (capture cache tokens) before any of it.
+
+> Also: for CLI-release-log runs, the source of truth for "last reviewed CLI version"
+> is the `minimum_version()` floor string + its narrative comment in
+> `engine/provider/claude.rs`, NOT the vault's most-recent note — vault notes can lag
+> the code (the 2026-06-08 floor→2.1.166 run left no vault note).
+
 ---
 
 ## 3. Persona Schema (data shape)
