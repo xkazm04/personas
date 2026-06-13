@@ -2622,6 +2622,19 @@ pub async fn run_execution(
     if let Err(e) = crate::db::repos::execution::traces::save(&pool, &final_trace) {
         tracing::warn!(execution_id = %execution_id, "Failed to save execution trace: {}", e);
     }
+    // Persist prompt-cache token breakdown (P1 cache visibility). Column-scoped
+    // write keyed by execution_id; skipped when the CLI reported no cache usage
+    // so older CLIs / uncached runs keep the default 0/0.
+    if metrics.cache_read_tokens > 0 || metrics.cache_creation_tokens > 0 {
+        if let Err(e) = crate::db::repos::execution::executions::set_cache_tokens(
+            &pool,
+            &execution_id,
+            metrics.cache_read_tokens as i64,
+            metrics.cache_creation_tokens as i64,
+        ) {
+            tracing::warn!(execution_id = %execution_id, "Failed to persist cache tokens: {}", e);
+        }
+    }
     // Emit the complete trace to frontend
     emit_to(&*emitter, event_name::EXECUTION_TRACE, &final_trace);
 

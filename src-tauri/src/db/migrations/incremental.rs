@@ -4485,6 +4485,14 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- persona_executions: prompt-cache token visibility (P1). Capture how
+    // many input tokens were served from cache vs. written, so prompt-cache
+    // effectiveness is measurable. Both NOT NULL DEFAULT 0 — existing rows read
+    // as 0/0 (no cache data), never null. Written at finalize via
+    // executions::set_cache_tokens; surfaced on the execution detail.
+    ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0;").ok();
+    ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN cache_creation_tokens INTEGER NOT NULL DEFAULT 0;").ok();
+
     // NOTE: the Groups→Teams Phase-3 DATA MIGRATION that used to live here was
     // relocated to the end of `run_incremental` (2026-05-24). It reads columns
     // (`persona_groups.shared_instructions`, `persona_teams.shared_instructions`,

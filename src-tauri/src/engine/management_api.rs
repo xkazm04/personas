@@ -2049,6 +2049,8 @@ mod tests {
             input_tokens: 0,
             output_tokens: 0,
             cost_usd: 0.0,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
             error_message: error.map(|s| s.to_string()),
             duration_ms: None,
             tool_steps: None,

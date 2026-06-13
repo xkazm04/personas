@@ -24,6 +24,10 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         input_tokens: row.get::<_, Option<i64>>("input_tokens")?.unwrap_or(0),
         output_tokens: row.get::<_, Option<i64>>("output_tokens")?.unwrap_or(0),
         cost_usd: row.get::<_, Option<f64>>("cost_usd")?.unwrap_or(0.0),
+        cache_read_tokens: row.get::<_, Option<i64>>("cache_read_tokens")?.unwrap_or(0),
+        cache_creation_tokens: row
+            .get::<_, Option<i64>>("cache_creation_tokens")?
+            .unwrap_or(0),
         error_message: row.get("error_message")?,
         duration_ms: row.get("duration_ms")?,
         tool_steps: row.get("tool_steps")?,
@@ -542,6 +546,30 @@ pub fn set_claude_session_id(pool: &DbPool, id: &str, session_id: &str) -> Resul
             conn.execute(
                 "UPDATE persona_executions SET claude_session_id = ?1 WHERE id = ?2 AND status = 'running'",
                 params![session_id, id],
+            )?;
+            Ok(())
+        }
+    )
+}
+
+/// Persist the prompt-cache token breakdown for an execution (P1 cache
+/// visibility). Column-scoped — touches only the two cache columns and is keyed
+/// by id, so the runner's finalize can call it without racing the status write
+/// or risking a zombie-status flip.
+pub fn set_cache_tokens(
+    pool: &DbPool,
+    id: &str,
+    cache_read_tokens: i64,
+    cache_creation_tokens: i64,
+) -> Result<(), AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::set_cache_tokens",
+        {
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE persona_executions SET cache_read_tokens = ?1, cache_creation_tokens = ?2 WHERE id = ?3",
+                params![cache_read_tokens, cache_creation_tokens, id],
             )?;
             Ok(())
         }
