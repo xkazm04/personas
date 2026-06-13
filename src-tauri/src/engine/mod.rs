@@ -151,6 +151,7 @@ pub mod protocol;
 pub mod provider;
 pub mod quality_gate;
 pub mod queue;
+pub mod run_budget;
 pub mod resource_governor;
 pub mod rate_limiter;
 pub mod recipe_eligibility;

@@ -1136,7 +1136,7 @@ pub(crate) struct ExecutionOutput {
     tool_calls: Vec<String>,
     input_tokens: u64,
     output_tokens: u64,
-    cost_usd: f64,
+    pub(crate) cost_usd: f64,
     duration_ms: u64,
     error: Option<String>,
     /// Per-event capture of the CLI stream-JSON lines, in order. Used by lab

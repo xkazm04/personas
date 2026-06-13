@@ -77,6 +77,10 @@ pub struct EvolutionCycleSummary {
     pub warnings: Vec<String>,
     /// Raw fitness objective JSON from the policy, preserved for forensic debugging.
     pub raw_fitness_objective: Option<String>,
+    /// Aggregate cost-budget state for this cycle's many CLI spawns (P2). `None`
+    /// on cycles that ran before budget tracking. Surfaced in the cycle UI.
+    #[serde(default)]
+    pub budget: Option<crate::engine::run_budget::RunBudgetState>,
 }
 
 // =============================================================================
@@ -129,6 +133,14 @@ fn try_status_update(
 pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id: String) {
     let persona_id = policy.persona_id.clone();
     let mut status_reliable = true;
+
+    // P2: track aggregate cost across this cycle's many CLI spawns (variants ×
+    // scenarios × run+eval). Warn-only — see engine/run_budget.rs.
+    crate::engine::run_budget::ledger().register(
+        &cycle_id,
+        "evolution",
+        crate::engine::run_budget::evolution_ceiling_usd(),
+    );
 
     // Phase 1: Breeding
     if !try_status_update(&pool, &cycle_id, EvolutionCycleStatus::Breeding, None) {
@@ -312,7 +324,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
 
     // Score the incumbent first (baseline)
     let incumbent_avg =
-        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model).await;
+        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model, &cycle_id).await;
 
     // Score each variant
     let mut best_variant_idx: Option<usize> = None;
@@ -326,7 +338,8 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         variant_persona.structured_prompt = None;
 
         let variant_avg =
-            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model).await;
+            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model, &cycle_id)
+                .await;
 
         tracing::debug!(
             cycle_id = %cycle_id,
@@ -407,6 +420,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         status_reliable,
         warnings: objective_warnings,
         raw_fitness_objective: Some(policy.fitness_objective.clone()),
+        budget: crate::engine::run_budget::ledger().state(&cycle_id),
     };
 
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();
@@ -435,6 +449,9 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
             );
         }
     }
+
+    // P2: release the cycle's budget entry (retained 30m for post-run reads).
+    crate::engine::run_budget::ledger().finish(&cycle_id);
 }
 
 // =============================================================================
@@ -447,6 +464,7 @@ async fn evaluate_persona_on_scenarios(
     tools: &[PersonaToolDefinition],
     scenarios: &[super::test_runner::TestScenario],
     model: &TestModelConfig,
+    run_id: &str,
 ) -> f64 {
     let mut total_score: f64 = 0.0;
     let mut count: usize = 0;
@@ -457,6 +475,18 @@ async fn evaluate_persona_on_scenarios(
         match execute_scenario(persona, tools, scenario, model).await {
             Ok(output) => {
                 let scores = score_result(&output, scenario, persona).await;
+                // P2: record this scenario's run + eval cost against the cycle's
+                // aggregate budget (warn-only — the cycle is not aborted).
+                let outcome = crate::engine::run_budget::ledger()
+                    .record(run_id, output.cost_usd + scores.cost_usd);
+                if outcome.exceeded_now {
+                    tracing::warn!(
+                        run_id = %run_id,
+                        spent_usd = outcome.spent_usd,
+                        ceiling_usd = outcome.ceiling_usd,
+                        "Evolution cycle exceeded its aggregate budget ceiling (warn-only; cycle continues)",
+                    );
+                }
                 let composite = (scores.tool_accuracy.unwrap_or(0) as f64 * 0.3
                     + scores.output_quality.unwrap_or(0) as f64 * 0.4
                     + scores.protocol_compliance.unwrap_or(0) as f64 * 0.3)
