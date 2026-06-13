@@ -41,6 +41,8 @@ import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { AdoptionAnswerCard } from './AdoptionAnswerCard';
 import { ErrorPolicyCard } from './ErrorPolicyCard';
 import { groupQuestionsByDimension, questionToDimension } from './questionDimMap';
+import { PersonaLayoutAdoptionVariant1 } from './PersonaLayoutAdoptionVariant1';
+import { PersonaLayoutAdoptionVariant2 } from './PersonaLayoutAdoptionVariant2';
 
 /** Dims that toggle on/off directly on petal click (no card / picker). */
 const POLICY_TOGGLE_DIMS = new Set<GlyphDimension>(['memory', 'review']);
@@ -141,7 +143,7 @@ interface PersonaLayoutAdoptionProps {
  *     so the hero never re-centers between empty / filled states.
  *   • Right — QuestionnaireStoryThread.
  */
-export function PersonaLayoutAdoption({
+function PersonaLayoutAdoptionBaseline({
   designResult,
   templateName,
   selectedUseCaseIds,
@@ -862,6 +864,49 @@ export function PersonaLayoutAdoption({
           setMessagingOpen(false);
         }}
       />
+    </div>
+  );
+}
+
+// ---- Prototype tab switcher (Phase 2, throwaway scaffolding) ---------------
+// A/B the adoption body across the baseline + two directional variants.
+// Consolidation removes this strip and renders the winner directly. Default =
+// baseline so nothing changes on load. Consumers (ChronologyAdoptionView) stay
+// untouched — they still import { PersonaLayoutAdoption }.
+type AdoptVariant = 'baseline' | 'briefing' | 'control';
+const ADOPT_VARIANT_TABS: { id: AdoptVariant; label: string; sub: string }[] = [
+  { id: 'baseline', label: 'Baseline', sub: 'current' },
+  { id: 'briefing', label: 'Briefing', sub: 'plain-language rail' },
+  { id: 'control', label: 'Control Surface', sub: 'spec readout' },
+];
+
+export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
+  const [variant, setVariant] = useState<AdoptVariant>('baseline');
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="shrink-0 flex items-stretch gap-1 border-b border-border bg-foreground/[0.02] px-3 py-1.5">
+        {ADOPT_VARIANT_TABS.map((tab) => {
+          const active = variant === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setVariant(tab.id)}
+              className={`flex flex-col items-start rounded-interactive px-3 py-1 text-left transition-colors cursor-pointer ${
+                active ? 'bg-primary/15 ring-1 ring-primary/40' : 'hover:bg-foreground/[0.05]'
+              }`}
+            >
+              <span className={`typo-caption font-medium ${active ? 'text-foreground' : 'text-foreground/65'}`}>{tab.label}</span>
+              <span className="typo-label uppercase tracking-[0.12em] text-foreground/40">{tab.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'baseline' && <PersonaLayoutAdoptionBaseline {...props} />}
+        {variant === 'briefing' && <PersonaLayoutAdoptionVariant1 {...props} />}
+        {variant === 'control' && <PersonaLayoutAdoptionVariant2 {...props} />}
+      </div>
     </div>
   );
 }

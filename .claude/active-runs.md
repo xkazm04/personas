@@ -66,6 +66,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype — Adopt Template modal (sidebars + header + petal CX) — directional variants
+- Started: 2026-06-13
+- Status: started
+- Branch: master (main checkout — variants must render in the user's live dev server, per /prototype repo precedent)
+- Paths: src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx (tab-switcher host), PersonaLayoutAdoption.tsx, AdoptionLeftPanel.tsx, + new sibling variant files PersonaLayoutAdoptionVariant{1,2}.tsx, .claude/active-runs.md
+- Note: 2 directional variants behind a tab switcher; keep petal/Sigil mechanism + layout; fix typography hierarchy, natural question flow (preset vs open), consistent per-petal editing UX, and impact-translated sidebars (left shows "Memory activated" not on/off). Additive files only — no edits to other sessions' scope.
+
 ### feature — Goal-UAT browser-test gate (web projects only) — P1 backend
 - Started: 2026-06-12 (worktree .claude/worktrees/goal-uat-gate, branch worktree-goal-uat-gate)
 - Status: started
