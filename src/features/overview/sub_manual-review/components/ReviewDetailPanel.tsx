@@ -6,7 +6,8 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
@@ -111,7 +112,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 <SeverityIndicator severity={review.severity} />
                 <span className="typo-body text-foreground">{SEVERITY_LABELS[review.severity] ?? 'Info'} {t.overview.review.severity_label}</span>
                 <span className="typo-body text-foreground">·</span>
-                <span className="typo-body text-foreground">{formatRelativeTime(review.created_at)}</span>
+                <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
                 {isCloud && (<><span className="typo-body text-foreground">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />{t.overview.review.cloud_badge}</span></>)}
               </div>
             </div>
@@ -135,7 +136,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="typo-body font-medium text-violet-400">{review.persona_name || t.overview.review.agent}</span>
-              <span className="typo-body text-foreground">{formatRelativeTime(review.created_at)}</span>
+              <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
             </div>
             <div className="rounded-modal bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
               <MarkdownRenderer content={review.content} className="typo-body text-foreground leading-relaxed" />
@@ -247,7 +248,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <div className={`flex-1 min-w-0 ${isUser ? 'flex flex-col items-end' : ''}`}>
                 <div className={`flex items-center gap-2 mb-1 ${isUser ? 'flex-row-reverse' : ''}`}>
                   <span className={`typo-body font-medium ${isUser ? 'text-blue-400' : 'text-violet-400'}`}>{isUser ? t.overview.review.you : (review.persona_name || t.overview.review.agent)}</span>
-                  <span className="typo-body text-foreground">{formatRelativeTime(msg.created_at)}</span>
+                  <RelativeTime timestamp={msg.created_at} className="typo-body text-foreground" />
                 </div>
                 <div className={`rounded-modal px-3.5 py-2.5 max-w-[85%] ${isUser ? 'bg-blue-500/[0.08] border border-blue-500/15' : 'bg-violet-500/[0.06] border border-violet-500/15'}`}>
                   <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -261,7 +262,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center gap-2 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10">
             <Check className="w-3.5 h-3.5 text-emerald-400" />
             <span className="typo-body text-foreground">
-              Review {review.status} {review.resolved_at ? `on ${new Date(review.resolved_at).toLocaleString()}` : ''}
+              Review {review.status} {review.resolved_at ? <>on <AbsoluteTime timestamp={review.resolved_at} /></> : ''}
             </span>
             {review.reviewer_notes && <span className="typo-body text-foreground italic ml-1">-- {review.reviewer_notes}</span>}
           </div>
