@@ -73,12 +73,6 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx (tab-switcher host), PersonaLayoutAdoption.tsx, AdoptionLeftPanel.tsx, + new sibling variant files PersonaLayoutAdoptionVariant{1,2}.tsx, .claude/active-runs.md
 - Note: 2 directional variants behind a tab switcher; keep petal/Sigil mechanism + layout; fix typography hierarchy, natural question flow (preset vs open), consistent per-petal editing UX, and impact-translated sidebars (left shows "Memory activated" not on/off). Additive files only — no edits to other sessions' scope.
 
-### feature — Goal-UAT browser-test gate (web projects only) — P1 backend
-- Started: 2026-06-12 (worktree .claude/worktrees/goal-uat-gate, branch worktree-goal-uat-gate)
-- Status: started
-- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/companion/{dispatcher.rs,templates/}, src-tauri/src/commands/companion/approvals.rs, src/features/teams/sub_goals/**, src/features/home/sub_cockpit/widgets/BrowserTestReportWidget.tsx
-- Note: dev_goal_item with verify_kind=browser_test = UAT gate; runs run_browser_test when all other todos done; web-only (tech_stack react/nodejs/combined). Builds on the just-merged browser-testing arc (31a9b886c).
-
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
@@ -725,6 +719,10 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### feature — Goal-UAT browser-test gate (web projects only) — completed (merged to master 9a419fea3)
+- 2026-06-12 → 2026-06-13. Worktree goal-uat-gate (4 feature commits + 2 merge commits), merged to master via fast-forward, worktree/branch removed (junction-first, main node_modules safe). NOT yet pushed to origin (pending user go).
+- Shipped: dev_goal_item verify_kind='browser_test' = UAT acceptance gate; apply_resolved_goal_progress hard-caps progress <100 while open AND demotes a done goal forced below 100 (clears completed_at); web-only (tech_stack react/nodejs/combined). Commands: set/clear/run/complete goal UAT, reusing run_browser_test via spawn_browser_test_turn with goal_id threaded → report card auto-closes the gate on all-pass. P2 UI: drawer Add-UAT + Verify-now (eligible only when other todos done) + manual override. P3: staleness re-open (new work re-opens a passed gate). 6 deterministic Rust gate tests + live close-path verified (report card → completeGoalUat → goal done/100 in real DB). NOT built: deterministic Playwright path (production-fragile — needs shipped browser binaries; NL scenario needs an agent anyway).
 
 ### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (Fable design pass)
 - Started: 2026-06-12. Completed: 2026-06-12. Commit: 4c029ba58.
