@@ -1,7 +1,7 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { Trash2, Layers, RotateCcw, Archive } from 'lucide-react';
 import type { PersonaMemory } from '@/lib/types/types';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { importanceColor, importanceGradient } from '../libs/memoryVisualTokens';
@@ -175,7 +175,7 @@ export function MemoryRow({
         <div className="px-4 min-w-0"><span className="typo-body text-foreground truncate block">{stripHtml(memory.title)}</span></div>
         <div className="px-2 flex items-center gap-1 min-w-0">{scopeBadge}{categoryBadge}{archivedBadge}</div>
         <div className="px-4 min-w-0"><ImportanceBar value={memory.importance} /></div>
-        <span className="px-4 typo-body text-foreground text-right">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
+        <RelativeTime timestamp={memory.created_at} className="px-4 typo-body text-foreground text-right" />
         <div className="px-2 flex justify-end items-center gap-1">{restoreButton}{deleteButton}</div>
       </div>
 
@@ -191,7 +191,7 @@ export function MemoryRow({
           {categoryBadge}
           {archivedBadge}
           <ImportanceBar value={memory.importance} />
-          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(memory.created_at).replace(/ ago$/, '')}</span>
+          <RelativeTime timestamp={memory.created_at} className="typo-body text-foreground ml-auto" />
         </div>
       </div>
     </div>
