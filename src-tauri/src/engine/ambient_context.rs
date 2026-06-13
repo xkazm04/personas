@@ -795,6 +795,74 @@ impl AmbientContextFusion {
         });
         format_signals_for_prompt(&snapshot.signals, label.as_deref())
     }
+
+    /// Build-time connector evidence: which of the supplied connector
+    /// `keywords` appear in the current ambient state, ranked newest-first.
+    ///
+    /// Used by the build-session gate seeder (`build_session::gates`) to
+    /// pre-rank the connector-picker options when the user's stated intent
+    /// is silent about which service to wire — e.g. the user is building a
+    /// persona while `github.com` is the focused tab, or `*.docx` files just
+    /// landed in a watched folder.
+    ///
+    /// Privacy posture: this is *persona-agnostic* on purpose (there is no
+    /// persona yet during a build) so it bypasses per-persona `SensoryPolicy`,
+    /// but it still honours the master `enabled` switch and only ever reads
+    /// signals that the per-source capture gates already let into the window
+    /// (clipboard content arrives pre-redacted). Critically, it returns
+    /// **only matched keywords from the caller-supplied connector vocabulary**
+    /// — never raw window titles, file paths, or clipboard text. The output
+    /// is a small set of service identifiers, so no ambient content can leak
+    /// into the build UI or the persona prompt through this path.
+    ///
+    /// Returns an empty Vec when disabled, when there are no signals, or when
+    /// nothing matches. Multi-word keywords (`"google drive"`) are matched as
+    /// substrings; matching is case-insensitive.
+    pub fn connector_evidence(&self, keywords: &[String]) -> Vec<String> {
+        if !self.enabled || keywords.is_empty() {
+            return Vec::new();
+        }
+
+        // Ordered fragments, newest-first: the active app/title is "right
+        // now", then the rolling window from newest to oldest. Each fragment
+        // is matched independently so the first (most recent) appearance of a
+        // keyword fixes its rank.
+        let mut fragments: Vec<String> = Vec::new();
+        if let Some(app) = &self.current_app {
+            let mut frag = app.to_lowercase();
+            if let Some(title) = &self.current_window_title {
+                frag.push(' ');
+                frag.push_str(&title.to_lowercase());
+            }
+            fragments.push(frag);
+        }
+        for sig in self.signals.iter().rev() {
+            let mut frag = sig.summary.to_lowercase();
+            if let Some(content) = &sig.redacted_content {
+                frag.push(' ');
+                frag.push_str(&content.to_lowercase());
+            }
+            for path in &sig.raw_paths {
+                frag.push(' ');
+                frag.push_str(&path.to_lowercase());
+            }
+            fragments.push(frag);
+        }
+
+        let lowered: Vec<String> = keywords.iter().map(|k| k.to_lowercase()).collect();
+        let mut matched: Vec<String> = Vec::new();
+        for frag in &fragments {
+            for (kw_lower, kw_original) in lowered.iter().zip(keywords.iter()) {
+                if kw_lower.is_empty() {
+                    continue;
+                }
+                if frag.contains(kw_lower) && !matched.iter().any(|m| m == kw_original) {
+                    matched.push(kw_original.clone());
+                }
+            }
+        }
+        matched
+    }
 }
 
 /// Pure renderer for the ambient prompt block.
@@ -1425,6 +1493,40 @@ mod tests {
         }
         // Should have at most 5 signals
         assert!(fusion.signals.len() <= 5);
+    }
+
+    #[test]
+    fn test_connector_evidence_ranks_newest_first() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        // Oldest first: a slack-named file, then a github-named file.
+        // raw_paths survive verbatim (no redaction), so matching is stable.
+        fusion.push_file_change("create", &["C:/work/slack-notes.md".to_string()]);
+        fusion.push_file_change("modify", &["C:/work/github-issues.json".to_string()]);
+
+        let keywords = vec![
+            "github".to_string(),
+            "slack".to_string(),
+            "notion".to_string(),
+        ];
+        let ev = fusion.connector_evidence(&keywords);
+        // github is the most recent signal → ranked first; slack present;
+        // notion never appears, so it's absent.
+        assert_eq!(ev, vec!["github".to_string(), "slack".to_string()]);
+    }
+
+    #[test]
+    fn test_connector_evidence_empty_when_disabled_or_no_match() {
+        let mut fusion = AmbientContextFusion::new_for_tests();
+        fusion.push_file_change("modify", &["C:/work/github-issues.json".to_string()]);
+        // No matching keyword → empty.
+        assert!(fusion
+            .connector_evidence(&["dropbox".to_string()])
+            .is_empty());
+        // Master switch off → empty regardless of signals.
+        fusion.set_enabled(false);
+        assert!(fusion
+            .connector_evidence(&["github".to_string()])
+            .is_empty());
     }
 
     #[test]

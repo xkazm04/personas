@@ -11,6 +11,10 @@ export interface DiscoveredItem {
   value: string;
   label: string;
   sublabel: string | null;
+  /** Optional corner pill, e.g. "Suggested" when ambient evidence (Ambient
+   *  Context Fusion, Case 1) pre-ranks this option. Rendered by
+   *  `CredentialPickerCards` only when present; other pickers omit it. */
+  badge?: string | null;
 }
 
 /**

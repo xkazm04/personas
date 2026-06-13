@@ -130,6 +130,16 @@ pub fn companion_set_autonomous_mode(
     )
 }
 
+/// Wake-window setting + last-24h autonomy-impact aggregates
+/// (docs/plans/athena-wake-window.md) for the Companion cadence UI.
+#[tauri::command]
+pub fn companion_wake_stats(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::companion::wake_window::stats_24h(&state.db)
+}
+
 /// Read the persisted autonomous-mode flag. Used by the backend
 /// proactive scheduler; defaults to `false` (mode off) when the row was
 /// never written. Not exposed as an IPC command — the frontend owns the

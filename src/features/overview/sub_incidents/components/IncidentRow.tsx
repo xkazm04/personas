@@ -1,11 +1,11 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
+import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
   isStaleIncident,
   severityBadgeClass,
-  severityRank,
   severityShapeStatus,
   severityUrgencyLabel,
   sourceTableIcon,
@@ -13,6 +13,8 @@ import {
   relativeTime,
   statusLabel,
 } from '../libs/incidentTaxonomy';
+
+const WARNING = STATUS_PALETTE.warning;
 
 interface Props {
   incident: AuditIncident;
@@ -40,18 +42,17 @@ export function IncidentRow({
   const isAcknowledged = incident.status === 'acknowledged';
   const isClosed = incident.status === 'resolved' || incident.status === 'dismissed';
 
-  // Severity gutter-accent, matching the overview tables: critical/high read
-  // red, medium reads amber, and closed incidents are muted to neutral so the
-  // open work stands out.
-  const rank = severityRank(incident.severity);
+  // Severity gutter-accent, derived from the SAME severity→status mapping that
+  // drives the StatusShape glyph (severityShapeStatus), so the stripe and the
+  // glyph can never disagree: error → red, warning → amber, else neutral. Closed
+  // incidents are muted to neutral so the open work stands out.
+  const shape = severityShapeStatus(incident.severity);
   const stale = isStaleIncident(incident);
-  const accent = isClosed
+  const accent = isClosed || shape === 'neutral'
     ? 'border-l-transparent'
-    : rank >= 3
+    : shape === 'error'
       ? 'border-l-red-400/70'
-      : rank === 2
-        ? 'border-l-amber-400/70'
-        : 'border-l-transparent';
+      : 'border-l-amber-400/70';
 
   return (
     <div
@@ -82,7 +83,7 @@ export function IncidentRow({
             <span className="typo-caption text-foreground">· {statusLabel(t, incident.status)}</span>
           )}
           {stale && (
-            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-amber-400/40 text-amber-400">
+            <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${WARNING.border} ${WARNING.text}`}>
               {t.overview.incidents.stale_label}
             </span>
           )}
@@ -93,7 +94,7 @@ export function IncidentRow({
           <span>·</span>
           <span>{sourceTableLabel(t, incident.sourceTable)}</span>
           <span>·</span>
-          <span className={stale ? 'text-amber-400' : undefined}>{relativeTime(t, incident.createdAt)}</span>
+          <span className={stale ? WARNING.text : undefined}>{relativeTime(t, incident.createdAt)}</span>
           {incident.resolvedAt && (
             <>
               <span>·</span>

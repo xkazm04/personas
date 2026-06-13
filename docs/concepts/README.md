@@ -6,20 +6,40 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 
 ## Active concept docs
 
+A 2026-06-12 re-audit cross-checked every concept doc against the codebase and
+removed those that had fully shipped (captured under `docs/features/`) or were
+invalidated/shelved — see **Removed** below. What remains is genuinely unbuilt
+or partially-built forward work.
+
 | Concept | Status |
 | --- | --- |
-| [adoption-creation-unification.md](adoption-creation-unification.md) | Proposal — verify whether `matrixEditSlice` shipped before reclassifying |
-| [ambient-context-fusion.md](ambient-context-fusion.md) | Mostly wired — Fix A (file_watcher producer) shipped 2026-05-11 + Fix B (runner injection) via Athena Phase 3 c. Cases 1/3/4 in Part 3 remain open leverage points |
-| [claude-code-routines-integration.md](claude-code-routines-integration.md) | Proposal — descoped-reopenable (2026-04-15); blockers tracked |
-| [cloud-deployment.md](cloud-deployment.md) | Proposal — design spec for *optional* server-side orchestrator deployment, not the Desktop app |
-| [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Doc retained as Phase 3+ design archive (banner cross-linked 2026-05-10) |
-| [matrix-retire-glyph-only.md](matrix-retire-glyph-only.md) | Proposal — retire `<PersonaMatrix>` template-preview surface, default to GlyphGrid; reclaims ~25 files |
-| [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded (Android feature flag, Gradle project, responsive React started); LLM HTTP client + ForegroundService missing |
-| [personas-as-long-lived-processes.md](personas-as-long-lived-processes.md) | Shelved — kept for future consideration |
-| [per-persona-claude-code-skills.md](per-persona-claude-code-skills.md) | Proposal — generalization of in-flight `engine/skills_sidecar/` work |
-| [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal |
-| [persona-hub-marketplace.md](persona-hub-marketplace.md) | Shelved — engineering foundation in active backlog; marketplace pending Recipe redesign + adoption signal |
-| [recipe-from-template-migration.md](recipe-from-template-migration.md) | Design — Stage B in flight; Phase 1a (schema additions) ready to implement |
+| [ambient-context-fusion.md](ambient-context-fusion.md) | **Largely shipped** — Fix A + Fix B/Case 2 live; **Case 1 (build-time connector gate seeding) shipped 2026-06-12** (`dc89c407b`). Cases 3/4 + daemon cross-process injection deferred |
+| [capability-audit.md](capability-audit.md) | Phase A (`#[requires]` macro) in-flight (~17%); Phase B (tier-sync CI check) still valid & unbuilt |
+| [glyph-consolidation.md](glyph-consolidation.md) | Still valid & unbuilt — consolidate 5 sigil renderers into one parametric `<Sigil>` + `ConsolidatedGlyphLayout`. High-risk, design iteration pending |
+| [goals-direction-hub.md](goals-direction-hub.md) | Phases 1-3 shipped; Phase 4 (Athena propose/react) blocked on dispatcher refactor |
+| [invisible-apps-p2p.md](invisible-apps-p2p.md) | **Phases 1-2 shipped** → see [`features/sharing/README.md`](../features/sharing/README.md). Retained as Phase 3+ (internet P2P, dynamic UI) design archive |
+| [local-first-middle-model.md](local-first-middle-model.md) | Plumbing shipped; composer/validator hypothesis unresolved — awaiting a 12-32B model/hardware round |
+| [mobile.md](mobile.md) | Proposal — Strategy A vs B undecided; ~30% Strategy B scaffolded; LLM HTTP client + ForegroundService missing |
+| [per-persona-claude-code-skills.md](per-persona-claude-code-skills.md) | Connector `skills_sidecar` variant live; domain-skills generalization unbuilt |
+| [persona-design-best-practices.md](persona-design-best-practices.md) | Operationalized in Athena doctrine + chat ops; retained as the design-guidance doctrine source |
+| [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal — greenfield, unbuilt |
+| [requires-macro-migration.md](requires-macro-migration.md) | In-flight — ~983 commands left to migrate to `#[requires(level)]` |
+
+## Removed (2026-06-12 re-audit)
+
+Deleted from `concepts/` as shipped-and-captured-elsewhere or invalidated. The
+four doctrine-referenced ones were also removed from `companion/brain/doctrine.rs`.
+
+- **matrix-retire-glyph-only** — shipped; `gallery/matrix/` deleted, GlyphGrid is the default preview.
+- **glyph-convergence** — shipped 2026-06-01 (mid-build template suggestion); see [`../features/personas/README.md`](../features/personas/README.md).
+- **recipe-from-template-migration** — shipped (all phases); design now in [`../features/templates/README.md`](../features/templates/README.md).
+- **claude-managed-agents-deployment** — shipped (Phases 1-4, `claude` deploy target).
+- **cloud-deployment** — shipped; reference lives in [`../features/deployment/README.md`](../features/deployment/README.md). *(was doctrine-referenced)*
+- **adoption-creation-unification** — invalidated; superseded by glyph-convergence (the PersonaMatrix layer it targeted was retired). *(was doctrine-referenced)*
+- **claude-code-routines-integration** — descoped 2026-04-15, externally blocked (no public creation API); Claude Managed Agents is the chosen cloud-execution path. *(was doctrine-referenced)*
+- **real-api-testing** — a doctrine stub already archived to `_archive/`. *(was doctrine-referenced)*
+- **personas-as-long-lived-processes** — shelved; full re-architecture, low ROI absent incidents.
+- **persona-hub-marketplace** — shelved behind unmet decision gates; only the signing foundation is active.
 
 ## Moved out
 

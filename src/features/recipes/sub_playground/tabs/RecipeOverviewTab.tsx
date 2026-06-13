@@ -1,5 +1,6 @@
 import { Tag, Cpu, FileText } from 'lucide-react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { parseTags, parseInputSchema } from '@/features/recipes/shared/recipeParseUtils';
@@ -13,6 +14,12 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
   const { t } = useTranslation();
   const tags = parseTags(recipe.tags);
   const inputs = parseInputSchema(recipe.input_schema).fields;
+
+  const inputColumns: TableColumn<(typeof inputs)[number]>[] = [
+    { key: 'key', label: t.recipes.col_key, width: '1fr', render: (f) => <span className="font-mono text-foreground">{f.key}</span> },
+    { key: 'type', label: t.recipes.col_type, width: '1fr', render: (f) => <span className="text-foreground">{f.type}</span> },
+    { key: 'label', label: t.recipes.col_label, width: '1fr', render: (f) => <span className="text-foreground">{f.label}</span> },
+  ];
 
   return (
     <div className="p-4 space-y-4">
@@ -53,26 +60,11 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide flex items-center gap-1.5">
             <FileText className="w-3 h-3" /> {t.recipes.input_fields}
           </h3>
-          <div className="rounded-card border border-border/40 overflow-hidden">
-            <table className="w-full typo-body">
-              <thead>
-                <tr className="border-b border-border/30 bg-muted/20">
-                  <th className="text-left px-3 py-1.5 text-foreground font-medium">{t.recipes.col_key}</th>
-                  <th className="text-left px-3 py-1.5 text-foreground font-medium">{t.recipes.col_type}</th>
-                  <th className="text-left px-3 py-1.5 text-foreground font-medium">{t.recipes.col_label}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inputs.map((field) => (
-                  <tr key={field.key} className="border-b border-border/20 last:border-0">
-                    <td className="px-3 py-1.5 font-mono text-foreground">{field.key}</td>
-                    <td className="px-3 py-1.5 text-foreground">{field.type}</td>
-                    <td className="px-3 py-1.5 text-foreground">{field.label}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <UnifiedTable
+            columns={inputColumns}
+            data={inputs}
+            getRowKey={(f) => f.key}
+          />
         </div>
       )}
 

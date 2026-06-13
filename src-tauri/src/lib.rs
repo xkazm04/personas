@@ -2458,6 +2458,7 @@ pub fn run() {
             commands::companion::chat::companion_interrupt_turn,
             commands::companion::chat::companion_cancel_autonomy,
             commands::companion::chat::companion_set_autonomous_mode,
+            commands::companion::chat::companion_wake_stats,
             commands::companion::chat::companion_review_recent_executions_now,
             commands::companion::fleet_bridge::companion_record_fleet_event,
             commands::companion::fleet_bridge::companion_get_operative_memory_digest,

@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
-import { CopyButton } from '@/features/shared/components/buttons';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CopyButton, Button } from '@/features/shared/components/buttons';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
@@ -12,7 +11,8 @@ import {
   cloudDeleteTrigger, cloudListTriggerFirings, cloudGetBaseUrl,
   type CloudDeployment, type CloudTrigger, type CloudTriggerFiring,
 } from '@/api/system/cloud';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -161,7 +161,7 @@ export function CloudWebhooksTab() {
           <div className="flex items-center gap-2">
             {relay.last_poll_at && (
               <span className="typo-caption text-foreground">
-                {t.triggers.last_poll_label} {formatRelativeTime(relay.last_poll_at)}
+                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.last_poll_at} />
               </span>
             )}
             <button
@@ -179,13 +179,9 @@ export function CloudWebhooksTab() {
           <h3 className="text-sm font-mono text-foreground uppercase tracking-wider">
             {t.triggers.cloud_webhook_triggers}
           </h3>
-          <button
-            onClick={() => setShowCreate(!showCreate)}
-            className="flex items-center gap-1.5 px-3 py-1.5 typo-body font-medium rounded-modal bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/15 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" />
+          <Button variant="accent" accentColor="blue" onClick={() => setShowCreate(!showCreate)} icon={<Plus className="w-3.5 h-3.5" />}>
             {t.triggers.add_webhook}
-          </button>
+          </Button>
         </div>
 
         {/* Create form */}
@@ -195,10 +191,9 @@ export function CloudWebhooksTab() {
               <label className="block typo-caption font-medium text-foreground mb-1.5">
                 {t.triggers.deployed_persona_label}
               </label>
-              <select
+              <ThemedSelect
                 value={createPersonaId}
                 onChange={(e) => setCreatePersonaId(e.target.value)}
-                className="w-full px-3 py-2 typo-body rounded-card border border-border/40 bg-secondary/30 text-foreground focus:outline-none focus:ring-1 focus:ring-blue-500/40"
               >
                 <option value="">{t.triggers.select_persona}</option>
                 {personas
@@ -206,23 +201,22 @@ export function CloudWebhooksTab() {
                   .map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
                   ))}
-              </select>
+              </ThemedSelect>
             </div>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="accent"
+                accentColor="blue"
                 onClick={handleCreate}
-                disabled={!createPersonaId || isCreating}
-                className="flex items-center gap-2 px-4 py-2 typo-body font-medium rounded-card bg-blue-500/15 text-blue-400 border border-blue-500/25 hover:bg-blue-500/25 disabled:opacity-50 transition-colors"
+                disabled={!createPersonaId}
+                loading={isCreating}
+                icon={<Webhook className="w-3.5 h-3.5" />}
               >
-                {isCreating ? <LoadingSpinner size="sm" /> : <Webhook className="w-3.5 h-3.5" />}
                 {t.triggers.create_webhook}
-              </button>
-              <button
-                onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}
-                className="px-3 py-2 typo-body text-foreground hover:text-foreground transition-colors"
-              >
+              </Button>
+              <Button variant="ghost" onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}>
                 {t.common.cancel}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -273,7 +267,7 @@ export function CloudWebhooksTab() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {row.trigger.lastTriggeredAt && (
                       <span className="typo-caption text-foreground">
-                        {t.triggers.last_label} {formatRelativeTime(row.trigger.lastTriggeredAt)}
+                        {t.triggers.last_label} <RelativeTime timestamp={row.trigger.lastTriggeredAt} />
                       </span>
                     )}
                     <span onClick={(e) => e.stopPropagation()}>
@@ -335,7 +329,7 @@ export function CloudWebhooksTab() {
                       {f.status}
                     </span>
                     <span className="text-foreground">
-                      {f.firedAt ? formatRelativeTime(f.firedAt) : '—'}
+                      <RelativeTime timestamp={f.firedAt ?? null} fallback="—" />
                     </span>
                     <span className="text-foreground">
                       {f.durationMs != null ? `${f.durationMs}ms` : '—'}

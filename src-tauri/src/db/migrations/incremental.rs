@@ -4430,6 +4430,33 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "athena_wake_log",
+            description: "Athena autonomy wake/impact ledger (wake-window design)",
+            already_applied: |conn| has_table(conn, "athena_wake_log"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS athena_wake_log (
+                        id              TEXT PRIMARY KEY,
+                        surface         TEXT NOT NULL,
+                        trigger_reason  TEXT NOT NULL,
+                        signals_pending INTEGER NOT NULL DEFAULT 0,
+                        oldest_age_min  INTEGER NOT NULL DEFAULT 0,
+                        cli_calls       INTEGER NOT NULL DEFAULT 0,
+                        actions_taken   INTEGER NOT NULL DEFAULT 0,
+                        duration_ms     INTEGER NOT NULL DEFAULT 0,
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_athena_wake_log_surface
+                        ON athena_wake_log(surface, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_goals.kpi_id",
             description: "Link a derived goal to the KPI it serves",
             already_applied: |conn| has_column(conn, "dev_goals", "kpi_id"),

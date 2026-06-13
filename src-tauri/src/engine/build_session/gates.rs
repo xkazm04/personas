@@ -1042,6 +1042,7 @@ pub(super) fn synthesize_all_unopen_gates(
     proposed_value_for_connectors: &serde_json::Value,
     pool: &DbPool,
     session_id: &str,
+    ambient_connectors: &[String],
 ) -> Vec<BuildEvent> {
     let mut out: Vec<BuildEvent> = Vec::new();
     let title = capability_titles
@@ -1068,6 +1069,7 @@ pub(super) fn synthesize_all_unopen_gates(
             proposed_value_for_connectors,
             pool,
             session_id,
+            ambient_connectors,
         );
         if synth.is_empty() {
             continue;
@@ -1127,6 +1129,12 @@ pub(super) fn synthesize_gate_question(
     proposed_value: &serde_json::Value,
     pool: &DbPool,
     session_id: &str,
+    // Ambient-derived connector evidence (newest-first), used only by the
+    // `connectors` branch to pre-rank the picker when the user's intent is
+    // silent about which service to wire. Empty in headless/one-shot builds
+    // and when ambient context is disabled. See
+    // `ambient_context::AmbientContextFusion::connector_evidence`.
+    ambient_connectors: &[String],
 ) -> Vec<BuildEvent> {
     // Resolve the displayable title. The caller passes whatever it has;
     // we humanise on the way out so the UI never shows raw ids.
@@ -1225,6 +1233,24 @@ pub(super) fn synthesize_gate_question(
                 )),
             );
             obj.insert("options".into(), serde_json::json!([]));
+            // Pre-rank hint: when the user is actively working with a service
+            // (its name shows up in ambient desktop signals) while building a
+            // persona whose intent doesn't name a connector, surface those
+            // service keywords so the picker can highlight / float them to the
+            // top. The question still fires — the user confirms. Only the
+            // matched connector vocabulary is carried here, never raw ambient
+            // content. Omitted entirely when there's no evidence.
+            if !ambient_connectors.is_empty() {
+                obj.insert(
+                    "suggested".into(),
+                    serde_json::Value::Array(
+                        ambient_connectors
+                            .iter()
+                            .map(|s| serde_json::Value::String(s.clone()))
+                            .collect(),
+                    ),
+                );
+            }
         }
         "sample_output" => {
             // 2026-05-05 — output-shape question. `accepts_reference: true`
@@ -1921,6 +1947,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         assert_question_envelope(&events, "suggested_trigger");
     }
@@ -1934,6 +1961,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         assert_question_envelope(&events, "review_policy");
     }
@@ -1947,6 +1975,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         assert_question_envelope(&events, "memory_policy");
     }
@@ -1960,6 +1989,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         assert!(
             events.is_empty(),
@@ -1993,6 +2023,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         let v3 = events
             .iter()
@@ -2018,6 +2049,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         let v3 = events
             .iter()
@@ -2045,6 +2077,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         let v3 = events
             .iter()
@@ -2072,6 +2105,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
 
         let v3_fields: Vec<String> = events
@@ -2122,6 +2156,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
 
         let v3_fields: Vec<String> = events
@@ -2150,6 +2185,7 @@ mod tests {
             &serde_json::Value::Null,
             &dummy_pool(),
             "session-1",
+            &[],
         );
         assert!(
             events.is_empty(),

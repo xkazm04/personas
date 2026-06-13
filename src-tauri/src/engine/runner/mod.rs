@@ -245,7 +245,7 @@ pub async fn run_execution(
     //   { "model": "claude-haiku-4-5-20251001" }   — full ModelProfile-shaped object
     // Fields other than `model` on the object merge into the persona's base
     // profile (provider, temperature, etc.). If no override: untouched.
-    let mut mixed_engine = false;
+    let mut engine_mode: Option<String> = None;
     if let (Some(uc_id), Some(ref dc_json)) = (&execution_use_case_id, &persona.design_context) {
         if let Ok(dc) = serde_json::from_str::<serde_json::Value>(dc_json) {
             let uc_value = crate::engine::design_context::pick_use_cases_array(&dc)
@@ -255,14 +255,17 @@ pub async fn run_execution(
                 })
                 .cloned();
             // Mixed engine (docs/plans/mixed-engine-byom.md): this capability
-            // opted into the local delegate tool. Resolved into sidecar env at
-            // MCP install; the prompt gains a one-paragraph offload doctrine.
-            mixed_engine = uc_value
+            // opted into the local delegate tool. "mixed" = delegate as helper
+            // for simple subtasks; "local_first" = composer mode (Claude plans
+            // + validates, the delegate produces ALL middle content). Resolved
+            // into sidecar env at MCP install; the prompt gains the matching
+            // doctrine section.
+            engine_mode = uc_value
                 .as_ref()
                 .and_then(|uc| uc.get("engine_mode"))
                 .and_then(|v| v.as_str())
-                .map(|m| m.eq_ignore_ascii_case("mixed"))
-                .unwrap_or(false);
+                .map(|m| m.to_ascii_lowercase())
+                .filter(|m| m == "mixed" || m == "local_first");
             let uc_override = uc_value
                 .as_ref()
                 .and_then(|uc| uc.get("model_override"))
@@ -808,14 +811,19 @@ pub async fn run_execution(
         prompt_text
     };
 
-    // Mixed engine: tell the orchestrator WHEN to reach for the delegate.
-    // The tool description (personas-mcp `llm_delegate`) carries the details.
-    let prompt_text = if mixed_engine {
-        format!(
+    // Mixed engine: tell the orchestrator HOW to use the delegate. "mixed"
+    // keeps Claude as the worker with an offload hatch; "local_first" inverts
+    // the hierarchy \u{2014} Claude composes work orders and validates, the local
+    // model produces every piece of deliverable content (the composer/validator
+    // pattern; docs/plans/mixed-engine-byom.md \u{00a7}7).
+    let prompt_text = match engine_mode.as_deref() {
+        Some("mixed") => format!(
             "{prompt_text}\n\n## Local Delegate Available\n\nThis run has the `llm_delegate` tool: a fast LOCAL model for simple, self-contained subtasks \u{2014} bulk summarization, field extraction, classification, reformatting of content you already have in hand. Delegating these saves premium-model capacity. Pass everything it needs in `input` (it has no context, no tools, no files) and review its output before using it. Do NOT delegate reasoning, planning, code changes, or anything needing judgment. If the tool errors, just do the subtask yourself.\n"
-        )
-    } else {
-        prompt_text
+        ),
+        Some("local_first") => format!(
+            "{prompt_text}\n\n## Local-First Execution Contract\n\nThis run uses the `llm_delegate` tool (a LOCAL model) as the PRIMARY content producer. Your role is narrowed to three phases:\n\n1. COMPOSE \u{2014} analyze the input and break the deliverable into sections. For each section, issue one `llm_delegate` call whose `task` is a complete, self-contained work order (exact format, length, constraints) and whose `input` carries ALL the source material that section needs. The delegate has no memory, context, tools, or files \u{2014} everything must be in the call.\n2. PRODUCE LOCALLY \u{2014} ALL substantive content (prose, summaries, extractions, tables, lists) MUST come from the delegate. Do NOT write deliverable content yourself. If a section comes back wrong, send ONE revised work order with a sharper instruction; do not silently rewrite it.\n3. VALIDATE & ASSEMBLE \u{2014} check every delegate output against the source for faithfulness (discard or re-order invented items), then assemble the final deliverable by joining the validated sections with minimal connective text (headings, a one-line intro). Protocol envelopes (user_message, memories, events) remain yours and are exempt from the contract.\n\nFallback: if the delegate errors twice in a row, abandon the contract and complete the task yourself \u{2014} a finished deliverable always beats a pure process.\n"
+        ),
+        _ => prompt_text,
     };
 
     // Team-alignment "pre-ritual" — wrap every member execution with awareness
@@ -1109,7 +1117,7 @@ pub async fn run_execution(
     // Mixed engine: resolve the delegate endpoint from settings (device-level
     // — the local model is a property of the machine, not the capability).
     // "auto" defers model choice to the sidecar (first installed model).
-    let delegate_cfg: Option<(String, String)> = if mixed_engine {
+    let delegate_cfg: Option<(String, String, Option<String>)> = if engine_mode.is_some() {
         let base = crate::db::repos::core::settings::get(
             &pool,
             crate::db::settings_keys::DELEGATE_BASE_URL,
@@ -1126,10 +1134,21 @@ pub async fn run_execution(
         .flatten()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| "auto".to_string());
+        // Hosted delegate backends (Ollama Cloud) authenticate with the
+        // shared `ollama_api_key` setting. Unset for local Ollama.
+        let api_key = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::OLLAMA_API_KEY,
+        )
+        .ok()
+        .flatten()
+        .filter(|s| !s.trim().is_empty());
         logger.log(&format!(
-            "[mixed-engine] llm_delegate armed (model: {model}, base: {base})"
+            "[mixed-engine] llm_delegate armed (mode: {}, model: {model}, base: {base}, auth: {})",
+            engine_mode.as_deref().unwrap_or("?"),
+            if api_key.is_some() { "yes" } else { "no" }
         ));
-        Some((base, model))
+        Some((base, model, api_key))
     } else {
         None
     };
@@ -1139,7 +1158,9 @@ pub async fn run_execution(
         None,
         bridge_api_key.as_deref(),
         pinned_dev_project.as_deref(),
-        delegate_cfg.as_ref().map(|(b, m)| (b.as_str(), m.as_str())),
+        delegate_cfg
+            .as_ref()
+            .map(|(b, m, k)| (b.as_str(), m.as_str(), k.as_deref())),
     ) {
         Ok(true) => {
             logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");

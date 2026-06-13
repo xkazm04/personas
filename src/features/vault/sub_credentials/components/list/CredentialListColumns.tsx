@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, timeAgo } from '@/lib/utils/formatters';
@@ -17,25 +18,22 @@ export function HealthBadge({ success }: { success: boolean | null }) {
   const { t } = useTranslation();
   if (success === null) {
     return (
-      <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-secondary/60 text-foreground border border-primary/15">
-        <HelpCircle className="w-3 h-3" />
+      <StatusBadge variant="neutral" icon={<HelpCircle className="w-3 h-3" />}>
         {t.vault.credential_list.health_untested}
-      </span>
+      </StatusBadge>
     );
   }
   if (success) {
     return (
-      <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border border-emerald-600/25 dark:border-emerald-500/20">
-        <CheckCircle2 className="w-3 h-3" />
+      <StatusBadge variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>
         {t.vault.credential_list.health_healthy}
-      </span>
+      </StatusBadge>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-red-600/15 text-red-700 dark:text-red-400 border border-red-600/25 dark:border-red-500/20">
-      <XCircle className="w-3 h-3" />
+    <StatusBadge variant="error" icon={<XCircle className="w-3 h-3" />}>
       {t.vault.credential_list.health_failing}
-    </span>
+    </StatusBadge>
   );
 }
 

@@ -165,6 +165,12 @@ export type BuildEvent =
        *  clarifying_question_v3 with scope=connector_category. UI should
        *  route answering through the vault-aware connector picker. */
       connector_category?: string | null;
+      /** Ambient Context Fusion (Case 1) — connector keywords implied by
+       *  ambient desktop signals when the build intent is silent about which
+       *  service to wire. The vault picker pre-ranks matching options.
+       *  Omitted (empty) for non-connector questions and when ambient context
+       *  is off. */
+      suggested?: string[];
     }
   | {
       type: "progress";
@@ -243,6 +249,12 @@ export interface BuildQuestion {
    *  vault-backed connector picker instead of a plain option list, filtered
    *  by this category token. */
   connectorCategory?: string | null;
+  /** Ambient Context Fusion (Case 1) — connector keywords implied by ambient
+   *  desktop signals; the vault picker pre-ranks options matching these so the
+   *  most likely connector floats to the top. The question still fires. Empty
+   *  unless this is a connector_category question and ambient context surfaced
+   *  evidence. */
+  suggested?: string[];
   /** C7 — true when the v3 question carried `accepts_reference: true`. The
    *  answering UI should expose a "+ Attach reference" affordance (file
    *  picker + URL input). The submitted answer payload may carry an optional

@@ -1,5 +1,6 @@
 import { ArrowLeft, ArrowRight, RefreshCw, Check, AlertCircle, FlaskConical, CheckCircle2, Wand2, Hammer } from 'lucide-react';
 import type { N8nWizardStep } from '../hooks/useN8nImportReducer';
+import Button, { type AccentColor } from '@/features/shared/components/buttons/Button';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface N8nWizardFooterProps {
@@ -81,14 +82,9 @@ export function N8nWizardFooter({
   return (
     <div className="flex items-center justify-between px-6 py-4 border-t border-primary/10 bg-secondary/10">
       {/* Left: ghost Back button */}
-      <button
-        onClick={onBack}
-        disabled={!canGoBack}
-        className="flex items-center gap-2 px-3 py-2 typo-body font-medium rounded-modal text-foreground hover:text-muted-foreground hover:bg-secondary/40 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
+      <Button variant="ghost" size="md" onClick={onBack} disabled={!canGoBack} icon={<ArrowLeft className="w-3.5 h-3.5" />}>
         {t.templates.n8n.back}
-      </button>
+      </Button>
 
       {/* Separator */}
       <div className="w-px h-6 bg-primary/10 mx-2 flex-shrink-0" />
@@ -112,71 +108,60 @@ export function N8nWizardFooter({
 
         {/* Test Persona button -- secondary action on edit step */}
         {step === 'edit' && onTest && (
-          <button
+          <Button
+            variant="accent"
+            accentColor={testStatus === 'passed' ? 'emerald' : testStatus === 'failed' ? 'rose' : 'blue'}
             onClick={onTest}
-            disabled={testStatus === 'running' || !hasDraft}
-            className={`flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-              testStatus === 'passed'
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/25'
-                : testStatus === 'failed'
-                  ? 'bg-red-500/10 text-red-300 border-red-500/25 hover:bg-red-500/20'
-                  : 'bg-blue-500/10 text-blue-300 border-blue-500/25 hover:bg-blue-500/20'
-            }`}
+            disabled={!hasDraft}
+            loading={testStatus === 'running'}
+            loadingLabel={t.templates.n8n.testing_btn}
+            icon={testStatus === 'passed'
+              ? <CheckCircle2 className="w-4 h-4" />
+              : testStatus === 'failed'
+                ? <AlertCircle className="w-4 h-4" />
+                : <FlaskConical className="w-4 h-4" />}
           >
-            {testStatus === 'running' ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> {t.templates.n8n.testing_btn}</>
-            ) : testStatus === 'passed' ? (
-              <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> {t.templates.n8n.test_passed}</>
-            ) : testStatus === 'failed' ? (
-              <><AlertCircle className="w-4 h-4 text-red-400" /> {t.templates.n8n.retest}</>
-            ) : (
-              <><FlaskConical className="w-4 h-4" /> {t.templates.n8n.test_persona}</>
-            )}
-          </button>
+            {testStatus === 'passed'
+              ? t.templates.n8n.test_passed
+              : testStatus === 'failed'
+                ? t.templates.n8n.retest
+                : t.templates.n8n.test_persona}
+          </Button>
         )}
 
         {/* Fix & Regenerate -- shown on edit step when test failed */}
         {step === 'edit' && testStatus === 'failed' && onApplyAdjustment && (
-          <button
-            onClick={onApplyAdjustment}
-            className="flex items-center gap-2 px-4 py-2.5 typo-body font-medium rounded-modal border bg-amber-500/10 text-amber-300 border-amber-500/25 hover:bg-amber-500/20 transition-colors"
-          >
-            <Wand2 className="w-4 h-4" />
+          <Button variant="accent" accentColor="amber" onClick={onApplyAdjustment} icon={<Wand2 className="w-4 h-4" />}>
             {t.templates.n8n.fix_and_regenerate}
-          </button>
+          </Button>
         )}
 
         {/* Build Persona -- primary action on analyze step */}
         {step === 'analyze' && onProcessWithMatrix && hasParseResult && (
-          <button
+          <Button
+            variant="accent"
+            accentColor="violet"
             onClick={onProcessWithMatrix}
-            disabled={analyzing}
-            className="flex items-center gap-2 px-4 py-2.5 typo-heading font-semibold rounded-modal border bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            loading={analyzing}
+            loadingLabel={t.templates.n8n.analyzing_btn}
+            icon={<Hammer className="w-4 h-4" />}
           >
-            {analyzing ? (
-              <><RefreshCw className="w-4 h-4 animate-spin" /> {t.templates.n8n.analyzing_btn}</>
-            ) : (
-              <><Hammer className="w-4 h-4" /> {t.templates.n8n.build_persona}</>
-            )}
-          </button>
+            {t.templates.n8n.build_persona}
+          </Button>
         )}
 
         {/* Primary CTA -- filled background, bolder weight */}
         {nextAction && (
-          <button
+          <Button
+            variant="accent"
+            accentColor={nextAction.variant as AccentColor}
             onClick={onNext}
             disabled={nextAction.disabled}
-            className={`flex items-center gap-2 px-4 py-2.5 typo-heading font-semibold rounded-modal border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-              nextAction.variant === 'emerald'
-                ? 'bg-emerald-500/25 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/35'
-                : 'bg-violet-500/25 text-violet-300 border-violet-500/30 hover:bg-violet-500/35'
-            }`}
+            loading={nextAction.spinning}
+            icon={<nextAction.icon className="w-4 h-4" />}
           >
-            <nextAction.icon
-              className={`w-4 h-4 ${nextAction.spinning ? 'animate-spin' : ''}`}
-            />
             {nextAction.label}
-          </button>
+          </Button>
         )}
       </div>
     </div>

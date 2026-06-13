@@ -1,11 +1,54 @@
 # Ambient Context Fusion — Mostly-Wired Feature
 
-**Status:** Concept / partially shipped (Phase 3 c v1/v3 + Fix A)
-**Author:** Investigation 2026-04-27; revised 2026-05-11
+**Status:** Largely shipped. Fix A + Fix B/Case 2 + Case 1 all live; Cases 3/4 deferred (narrow), daemon cross-process injection deferred.
+**Author:** Investigation 2026-04-27; revised 2026-05-11; re-audited + Case 1 shipped 2026-06-12
 **Scope:** Settings.Engine "Ambient Context Fusion" panel, `engine/ambient_context.rs`, `engine/context_rules.rs`, build-session gates, prompt assembly, event wrapping
-**Update history:**
-- 2026-05-09: Fix B (runner injection) shipped via the Athena Phase 3 c v1 → v3 lineage — see [`../features/companion/athena-daemon-bridge.md`](../features/companion/athena-daemon-bridge.md). Capture-time per-source gates + window-title redaction landed in the same wave (Phase 2 expansion).
+
+## 2026-06-12 re-audit — what actually shipped vs. what this doc claimed
+
+A fresh codebase pass found this doc's body had drifted out of sync with the
+code. Corrected ground truth:
+
+| Piece | Old doc claim | Actual state (2026-06-12) |
+| --- | --- | --- |
+| **Fix A** (file_watcher producer) | shipped 2026-05-11 | ✅ Shipped — `file_watcher.rs` `file_watcher_tick` calls `ctx.push_file_change(kind, paths)` |
+| **Fix B / Case 2** (runner prompt injection) | body said "unbuilt, runner passes `None`" — **contradicting** the header's "shipped" | ✅ Shipped, via a **different mechanism** than Part 2 anticipated. Injection happens at the engine spawn layer (`engine/mod.rs:283-287`: `format_ambient_for_persona` → `prepend_ambient_to_system_prompt`) **before** `run_execution`, mutating `persona.system_prompt`. The runner's `assemble_prompt(... None)` + "injected by the engine layer (see mod.rs)" comment is therefore **accurate now**, not stale. Part 2/Appendix below are obsolete on this point. |
+| **Case 1** (build-time gate seeding) | "highest ROI", unbuilt | ✅ **Shipped 2026-06-12** (this pass) — see below |
+| **Cases 3 / 4** (event/rule enrichment) | unbuilt, narrow | ❌ Still unbuilt, still narrow — defer until a concrete persona needs them |
+| Daemon-path injection | n/a | ❌ Cross-process gap (`ambient_context.rs` notes near `format_ambient_for_persona`): the `personas-daemon` process can't see the windowed watchers' signals. Explicitly deferred. |
+
+### Case 1 as shipped — "pre-rank, still ask"
+
+The aggressive variants (auto-resolve a connector from ambient, or skip the
+question when ambient corroborates the LLM) were **rejected** on
+correctness/privacy grounds — a wrong ambient guess silently picking the wrong
+connector is worse than one extra confirm. Shipped behavior:
+
+- `AmbientContextFusion::connector_evidence(&keywords)` (`engine/ambient_context.rs`)
+  returns which of the supplied connector keywords appear in current ambient
+  state (focused app/window title, recent file paths), newest-first. It is
+  **persona-agnostic** (no persona exists yet during a build), honours the
+  master `enabled` switch, and reads only signals the per-source capture gates
+  already admitted. Critically it returns **only matched connector vocabulary
+  — never raw window titles, paths, or clipboard text** — so no ambient content
+  can leak into the build UI or the prompt through this path.
+- `build_session/runner.rs` computes `ambient_connectors` once per session (next
+  to `registry_keywords`/`ambiguous_services`), skipping it in one-shot mode.
+- `build_session/gates.rs::synthesize_gate_question` carries the evidence as a
+  `suggested` array on the `connector_category` question; the legacy `Question`
+  + `ClarifyingQuestionV3` events (`db/models/build_session.rs`) and the
+  `build_clarifying_question_events` parser pass it through.
+- Frontend `VaultConnectorPicker` floats matching credentials to the top and
+  badges them "Suggested" (`CredentialPickerCards` gained an optional `badge`).
+  **The clarifying question still fires; the user confirms.**
+
+**Update history (pre-re-audit):**
+- 2026-05-09: Fix B (runner injection) shipped via the Athena Phase 3 c v1 → v3 lineage — see [`../features/companion/athena-daemon-bridge.md`](../features/companion/athena-daemon-bridge.md). (NB: the 2026-06-12 re-audit clarifies this was the **Athena daemon** prompt path; the **persona runner** injection landed separately at `engine/mod.rs:283`.) Capture-time per-source gates + window-title redaction landed in the same wave (Phase 2 expansion).
 - 2026-05-11: **Fix A (file_watcher producer) shipped (`8b7cdd7d`)** — `file_watcher_tick` now pushes coalesced+debounced FS events through `push_file_change`, mirrored to the SQL projection, daemon picks them up automatically. The "two-thirds wired" framing of Part 1 is now "fully wired"; Cases 1/3/4 in Part 3 remain the open leverage points.
+
+> **Everything below this line is the original 2026-04-27/05-11 investigation,
+> preserved for context. Parts 2 and the Appendix are partly obsolete per the
+> re-audit table above — read them as history, not current state.**
 
 ## TL;DR
 

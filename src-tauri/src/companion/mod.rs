@@ -19,6 +19,7 @@ pub mod orchestration;
 pub mod plugins;
 pub mod proactive;
 pub mod projects;
+pub mod wake_window;
 pub mod prompt;
 pub mod session;
 pub mod stt;

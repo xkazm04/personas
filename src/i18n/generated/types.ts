@@ -248,6 +248,7 @@ export type Translations = {
   };
   common: {
     unknown_error: string;
+    suggested: string;
     loading: string;
     saving: string;
     deleting: string;
@@ -2427,6 +2428,8 @@ export type Translations = {
       engine_mixed: string;
       engine_claude_tooltip: string;
       engine_mixed_tooltip: string;
+      engine_local_first: string;
+      engine_local_first_tooltip: string;
     };
     tools: {
       no_persona: string;
@@ -8166,6 +8169,15 @@ export type Translations = {
       persona_layout_dim_all_answered: string;
       _comment_persona_layout_dim_done: string;
       persona_layout_dim_done: string;
+      _comment_persona_layout_dim_disable: string;
+      persona_layout_dim_disable: string;
+      persona_layout_dim_disabled: string;
+      _comment_persona_layout_dim_disable_title: string;
+      persona_layout_dim_disable_title: string;
+      _comment_persona_layout_dim_reenable: string;
+      persona_layout_dim_reenable: string;
+      _comment_persona_layout_rail_activated: string;
+      persona_layout_rail_activated: string;
       _comment_persona_layout_dim_open_hint: string;
       persona_layout_dim_open_hint: string;
       _comment_persona_layout_center_questions_to_answer_one: string;
@@ -12962,6 +12974,13 @@ export type Translations = {
       };
       decision_hide: string;
       decision_show: string;
+      wake_cadence_label: string;
+      wake_cadence_hint: string;
+      wake_reactive: string;
+      wake_30: string;
+      wake_60: string;
+      wake_120: string;
+      wake_impact_line: string;
     };
     ocr: {
       title: string;

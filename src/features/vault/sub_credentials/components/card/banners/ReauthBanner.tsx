@@ -6,6 +6,9 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { listCliSpecs, refreshCredentialCliNow, type CliSpecInfo } from '@/api/auth/cliCapture';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
+import { STATUS_PALETTE } from '@/lib/design/statusTokens';
+
+const WARNING = STATUS_PALETTE.warning;
 
 interface ReauthEntry {
   credentialId: string;
@@ -91,12 +94,12 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
           <div
             key={entry.credentialId}
             role="alert"
-            className="px-4 py-3 bg-amber-600/10 border border-amber-500/25 rounded-modal typo-body text-amber-300"
+            className={`px-4 py-3 ${WARNING.bg} border ${WARNING.border} rounded-modal typo-body ${WARNING.text}`}
           >
             <div className="flex items-center gap-2.5">
               {isCli
-                ? <Terminal className="w-4 h-4 shrink-0 text-amber-400" />
-                : <AlertTriangle className="w-4 h-4 shrink-0 text-amber-400" />}
+                ? <Terminal className={`w-4 h-4 shrink-0 ${WARNING.text}`} />
+                : <AlertTriangle className={`w-4 h-4 shrink-0 ${WARNING.text}`} />}
               <span className="flex-1">
                 <strong>{entry.credentialName}</strong> ({entry.serviceType}
                 {isCli ? t.vault.reauth_banner.cli_expired : t.vault.reauth_banner.access_revoked}
@@ -105,7 +108,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
                 <button
                   onClick={() => void retryCliCapture(entry)}
                   disabled={retryingId === entry.credentialId}
-                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 typo-caption font-medium shrink-0 disabled:opacity-50"
+                  className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 disabled:opacity-50 focus-ring rounded-card`}
                 >
                   {retryingId === entry.credentialId
                     ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -115,7 +118,7 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
               ) : onNavigate && (
                 <button
                   onClick={() => onNavigate(entry.credentialId)}
-                  className="flex items-center gap-1 text-amber-400 hover:text-amber-300 typo-caption font-medium shrink-0"
+                  className={`flex items-center gap-1 ${WARNING.text} hover:opacity-80 typo-caption font-medium shrink-0 focus-ring rounded-card`}
                 >
                   <ExternalLink className="w-3 h-3" />
                   {t.vault.reauth_banner.reconnect}
@@ -123,14 +126,14 @@ export function ReauthBanner({ onNavigate }: { onNavigate?: (credentialId: strin
               )}
               <button
                 onClick={() => dismiss(entry.credentialId)}
-                className="text-amber-400/60 hover:text-amber-400 shrink-0"
+                className={`${WARNING.text} opacity-60 hover:opacity-100 shrink-0 focus-ring rounded-card`}
                 aria-label={t.common.dismiss}
               >
                 <X className="w-3.5 h-3.5" />
               </button>
             </div>
             {isCli && spec && (
-              <div className="mt-1 pl-6 typo-caption text-amber-300/90">
+              <div className={`mt-1 pl-6 typo-caption ${WARNING.text} opacity-90`}>
                 {spec.auth_instruction}
               </div>
             )}

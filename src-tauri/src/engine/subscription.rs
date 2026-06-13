@@ -1383,7 +1383,9 @@ fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, 
          FROM dev_goals g
          JOIN dev_projects dp ON dp.id = g.project_id
          WHERE dp.team_id IS NOT NULL
-           AND g.status NOT IN ('done', 'completed')
+           -- 'blocked' = shelved (Athena goal_shelve or human) — advancement
+           -- stops until the human un-blocks it from the Goals board.
+           AND g.status NOT IN ('done', 'completed', 'blocked')
            AND g.progress < 100
            AND NOT EXISTS (
              SELECT 1 FROM team_assignments ta
@@ -2583,6 +2585,15 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
             .take(ATHENA_REACTION_MAX_PER_TICK)
             .collect();
         let n = batch.len();
+        // Wake window (docs/plans/athena-wake-window.md): awaiting-review
+        // cap-outs are human-blocking — they bypass the timer.
+        let has_priority = batch.iter().any(|s| s.kind == "awaiting_review");
+        let wake =
+            crate::companion::wake_window::gate(&self.pool, "channel_reactions", n, has_priority);
+        if !wake.due {
+            return; // per-team cursors keep the signals queued
+        }
+        let wake_started = std::time::Instant::now();
         match crate::companion::athena_reaction::run_athena_reaction_batch(
             &self.app, &self.pool, batch,
         )
@@ -2590,9 +2601,17 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
         {
             Ok(posted) if posted > 0 => {
                 tracing::info!(posted, signals = n, "athena_channel_reactions: batch posted Athena reactions");
+                crate::companion::wake_window::log_wake(
+                    &self.pool, "channel_reactions", wake.reason, n, 1, posted,
+                    wake_started.elapsed().as_millis() as u64,
+                );
             }
             Ok(_) => {
                 tracing::debug!(signals = n, "athena_channel_reactions: batch declined all signals");
+                crate::companion::wake_window::log_wake(
+                    &self.pool, "channel_reactions", wake.reason, n, 1, 0,
+                    wake_started.elapsed().as_millis() as u64,
+                );
             }
             Err(e) => {
                 tracing::warn!(signals = n, error = %e, "athena_channel_reactions: batch failed");

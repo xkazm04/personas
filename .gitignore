@@ -56,6 +56,7 @@ recordings/
 !.claude/CLAUDE.md
 !.claude/active-runs.md
 !.claude/skills/
+!.claude/agents/
 !.claude/codebase-catalogs.md
 !.claude/codebase-context.md
 !.claude/codebase-context-overrides.md

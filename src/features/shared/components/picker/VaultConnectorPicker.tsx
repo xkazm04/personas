@@ -22,6 +22,7 @@
  */
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from '@/stores/vaultStore';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
@@ -45,6 +46,17 @@ export interface VaultConnectorPickerProps {
    *  `category`). After the credential lands, `useVaultStore` updates and
    *  the picker re-renders without re-mounting. */
   onAddFromCatalog?: (category: string) => void;
+  /** Ambient Context Fusion (Case 1) — connector keywords implied by ambient
+   *  desktop signals. Eligible credentials whose service_type matches one of
+   *  these float to the top and get a "Suggested" pill. Purely a pre-rank
+   *  hint: the user still picks. Omit / empty to disable. */
+  suggested?: string[];
+}
+
+/** Normalise a connector keyword or service_type for fuzzy matching:
+ *  lowercase, strip non-alphanumerics (so "google drive" ≈ "google_drive"). */
+function normalizeConnector(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
 export function VaultConnectorPicker({
@@ -52,7 +64,9 @@ export function VaultConnectorPicker({
   value,
   onChange,
   onAddFromCatalog,
+  suggested,
 }: VaultConnectorPickerProps) {
+  const { t } = useTranslation();
   const credentials = useVaultStore((s) => s.credentials);
   const [showQuickAdd, setShowQuickAdd] = useState(false);
 
@@ -71,13 +85,32 @@ export function VaultConnectorPicker({
   // pivot to the QuickAdd modal even when the picker already has matches —
   // common when their build strategy doesn't fit the auto-detected category.
   const items: DiscoveredItem[] = useMemo(() => {
+    // Ambient pre-rank: a credential is "suggested" when its service_type
+    // fuzzy-matches any ambient connector keyword (Case 1, "pre-rank still
+    // ask"). Suggested credentials float above the rest; both groups stay
+    // A→Z internally so ordering is stable when there's no ambient evidence.
+    const suggestedNorm = (suggested ?? [])
+      .map(normalizeConnector)
+      .filter(Boolean);
+    const isSuggested = (serviceType: string): boolean => {
+      if (suggestedNorm.length === 0) return false;
+      const st = normalizeConnector(serviceType);
+      return suggestedNorm.some((k) => st.includes(k) || k.includes(st));
+    };
+
     const eligible = credentials
       .filter((c) => connectorCategoryTags(c.service_type).includes(category))
-      .sort((a, b) => (a.name || a.service_type).localeCompare(b.name || b.service_type));
+      .sort((a, b) => {
+        const sa = isSuggested(a.service_type) ? 0 : 1;
+        const sb = isSuggested(b.service_type) ? 0 : 1;
+        if (sa !== sb) return sa - sb;
+        return (a.name || a.service_type).localeCompare(b.name || b.service_type);
+      });
     const out: DiscoveredItem[] = eligible.map((c) => ({
       value: c.service_type,
       label: c.name || c.service_type,
       sublabel: c.service_type,
+      badge: isSuggested(c.service_type) ? t.common.suggested : null,
     }));
     out.push({
       value: ADD_FROM_VAULT_SENTINEL,
@@ -85,7 +118,7 @@ export function VaultConnectorPicker({
       sublabel: 'Pick from catalog',
     });
     return out;
-  }, [credentials, category]);
+  }, [credentials, category, suggested, t]);
 
   if (items.length === 0) {
     return (

@@ -133,9 +133,21 @@ export function useUseCaseDetail(useCaseId: string) {
   const personaDefaultLabel = personaDefault.label;
   const modelLabel = resolved.label;
 
-  const engineMode: 'claude' | 'mixed' = useCase?.engine_mode === 'mixed' ? 'mixed' : 'claude';
+  const engineMode: 'claude' | 'mixed' | 'local_first' =
+    useCase?.engine_mode === 'mixed' || useCase?.engine_mode === 'local_first'
+      ? useCase.engine_mode
+      : 'claude';
+  // Cycle claude -> mixed (delegate as helper) -> local_first (Claude composes
+  // + validates, the local model produces all content) -> claude.
   const handleEngineToggle = useCallback(() => {
-    handleUpdate((uc) => ({ engine_mode: uc.engine_mode === 'mixed' ? undefined : 'mixed' }));
+    handleUpdate((uc) => ({
+      engine_mode:
+        uc.engine_mode === 'mixed'
+          ? ('local_first' as const)
+          : uc.engine_mode === 'local_first'
+            ? undefined
+            : ('mixed' as const),
+    }));
   }, [handleUpdate]);
 
   const handleModelSelect = (opt: ModelOption) => {

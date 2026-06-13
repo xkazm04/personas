@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, Check, Power } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Power } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import { DIM_LABEL } from '@/features/shared/glyph/persona-sigil';
+import { ComposerPickerShell } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell';
 import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { QuestionnaireHeroQuestion } from '../questionnaire/QuestionnaireHeroQuestion';
 import {
@@ -144,170 +144,130 @@ export function AdoptionAnswerCard({
   const dimMeta = DIM_META[dim];
   const dimColor = dimMeta.color;
   const dimLabel = DIM_LABEL[dim];
+  const DimIcon = dimMeta.icon;
 
-  return (
-    <AnimatePresence>
-      {/* Keyed by `dim` only — the card mounts once per dimension and stays
-          put while the user steps through that dim's questions (the inner
-          QuestionnaireHeroQuestion handles the per-question transition). Keying
-          by question id too made the whole card scale-remount on every Next,
-          which read as laggy. */}
-      <motion.div
-        key={dim}
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.98 }}
-        transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full grid"
-        style={{
-          borderColor: `${dimColor}66`,
-          boxShadow: `0 0 24px ${dimColor}33, 0 8px 32px rgba(0,0,0,0.35)`,
-          // Grid with auto/1fr/auto rows so the body's `1fr` track is what
-          // actually has a constrained height. A flex column with only
-          // `maxHeight` doesn't bound `flex-1` against — the body grows to
-          // content and `overflow-y-auto` never engages. Grid's 1fr track,
-          // combined with the card's maxHeight, makes the body the
-          // scrollable region exactly where the user expects.
-          gridTemplateRows: 'auto minmax(0, 1fr) auto',
-          maxHeight: 'min(85vh, 800px)',
+  const subtitle = allAnswered
+    ? t.templates.adopt_modal.persona_layout_dim_all_answered
+    : orderedQuestions.length > 1
+      ? tx(t.templates.adopt_modal.question_number_of, { current: activeIdx + 1, total: orderedQuestions.length })
+      : tx(t.templates.adopt_modal.persona_layout_continue_remaining, { count: unansweredCount });
+
+  // Footer — per-cap dim toggle, prev / next / done. One full-width row; the
+  // shell wraps it in its pinned footer band.
+  const footer = (
+    <div className="flex items-center gap-2 w-full">
+      {/* Dim toggle — only when the parent wired it. Disabling the dim
+          skips this capability's bound questions (filtered out upstream)
+          and dims the petal. Re-enabling restores. */}
+      {onToggleDim && (
+        <button
+          type="button"
+          onClick={() => onToggleDim(isDimActive === false)}
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
+            isDimActive === false
+              ? 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
+              : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
+          }`}
+          title={
+            isDimActive === false
+              ? t.templates.adopt_modal.persona_layout_dim_reenable
+              : t.templates.adopt_modal.persona_layout_dim_disable_title
+          }
+        >
+          <Power className="w-3 h-3" />
+          {isDimActive === false ? t.templates.adopt_modal.persona_layout_dim_disabled : t.templates.adopt_modal.persona_layout_dim_disable}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => {
+          const next = Math.max(0, activeIdx - 1);
+          setActiveIdx(next);
+          onQuestionChange?.(orderedQuestions[next]!.id);
         }}
+        disabled={activeIdx === 0}
+        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
       >
-        {/* Dim-colored accent bar */}
-        <div
-          className="absolute top-0 left-0 w-full h-1 rounded-t-modal"
-          style={{
-            background: `linear-gradient(90deg, ${dimColor}, transparent)`,
-          }}
-        />
+        <ChevronLeft className="w-3.5 h-3.5" />
+        {t.templates.adopt_modal.previous}
+      </button>
 
-        {/* Header — dim label + close */}
-        <div className="flex items-center gap-2 px-6 pt-4 pb-2">
-          <span
-            className="typo-label uppercase tracking-[0.2em] font-bold"
-            style={{ color: dimColor }}
-          >
-            {dimLabel}
+      <div className="flex-1 text-center">
+        {allAnswered ? (
+          <span className="typo-caption text-status-success inline-flex items-center gap-1.5">
+            <Check className="w-3.5 h-3.5" />
+            {t.templates.adopt_modal.persona_layout_dim_all_answered}
           </span>
-          {orderedQuestions.length > 1 && (
-            <span className="typo-caption text-foreground tabular-nums">
-              · {tx(t.templates.adopt_modal.question_number_of, {
-                current: activeIdx + 1,
-                total: orderedQuestions.length,
-              })}
-            </span>
-          )}
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-card text-foreground hover:text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
-            aria-label={t.common.close}
-            title={t.common.close}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+        ) : (
+          <span className="typo-caption text-foreground">
+            {tx(t.templates.adopt_modal.persona_layout_continue_remaining, { count: unansweredCount })}
+          </span>
+        )}
+      </div>
 
-        <div className="px-8 pb-4 min-h-0 overflow-y-auto scrollbar-thin">
-          <QuestionnaireHeroQuestion
-            question={activeQuestion}
-            answer={answer}
-            options={options}
-            isStackable={stackable}
-            isBlocked={isBlocked}
-            isAutoDetected={isAutoDetected}
-            activeIdx={activeIdx}
-            totalCount={orderedQuestions.length}
-            isAtEnd={activeIdx === orderedQuestions.length - 1}
-            canSubmit={false}
-            onAnswerUpdated={onAnswerUpdated}
-            onAddCredential={onAddCredential}
-            filteredOptions={filteredOptions?.[activeQuestion.id]}
-            dynamicState={dynamicOptions?.[activeQuestion.id]}
-            onRetryDynamic={onRetryDynamic}
-            useCaseTitleById={useCaseTitleById}
-            compact
-          />
-        </div>
+      {activeIdx < orderedQuestions.length - 1 ? (
+        <button
+          type="button"
+          onClick={() => {
+            const next = Math.min(orderedQuestions.length - 1, activeIdx + 1);
+            setActiveIdx(next);
+            onQuestionChange?.(orderedQuestions[next]!.id);
+          }}
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
+        >
+          {t.templates.adopt_modal.next}
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={onClose}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full typo-caption text-foreground bg-primary/25 hover:bg-primary/40 border border-primary/40 cursor-pointer transition-colors"
+        >
+          {t.templates.adopt_modal.persona_layout_dim_done}
+          <Check className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
 
-        {/* Footer — prev / next / done, plus per-cap dim toggle */}
-        <div className="shrink-0 flex items-center gap-2 px-6 py-3 border-t border-card-border bg-foreground/[0.02] rounded-b-modal">
-          {/* Dim toggle — only when the parent wired it. Disabling the dim
-              skips this capability's bound questions (filtered out
-              upstream) and dims the petal. Re-enabling restores. */}
-          {onToggleDim && (
-            <button
-              type="button"
-              onClick={() => onToggleDim(isDimActive === false)}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-                isDimActive === false
-                  ? 'bg-primary/15 hover:bg-primary/30 text-primary border border-primary/40'
-                  : 'bg-foreground/5 hover:bg-foreground/10 text-foreground'
-              }`}
-              title={
-                isDimActive === false
-                  ? 'Re-enable this sigil for the active capability — its questions will reappear.'
-                  : 'Disable this sigil for the active capability — its questions will be skipped during build.'
-              }
-            >
-              <Power className="w-3 h-3" />
-              {isDimActive === false ? 'Disabled' : 'Disable'}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              const next = Math.max(0, activeIdx - 1);
-              setActiveIdx(next);
-              onQuestionChange?.(orderedQuestions[next]!.id);
-            }}
-            disabled={activeIdx === 0}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            {t.templates.adopt_modal.previous}
-          </button>
-
-          <div className="flex-1 text-center">
-            {allAnswered ? (
-              <span className="typo-caption text-status-success inline-flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5" />
-                {t.templates.adopt_modal.persona_layout_dim_all_answered}
-              </span>
-            ) : (
-              <span className="typo-caption text-foreground">
-                {tx(t.templates.adopt_modal.persona_layout_continue_remaining, {
-                  count: unansweredCount,
-                })}
-              </span>
-            )}
-          </div>
-
-          {activeIdx < orderedQuestions.length - 1 ? (
-            <button
-              type="button"
-              onClick={() => {
-                const next = Math.min(orderedQuestions.length - 1, activeIdx + 1);
-                setActiveIdx(next);
-                onQuestionChange?.(orderedQuestions[next]!.id);
-              }}
-              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full typo-caption text-foreground hover:text-foreground hover:bg-foreground/[0.06] cursor-pointer transition-colors"
-            >
-              {t.templates.adopt_modal.next}
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full typo-caption text-foreground bg-primary/25 hover:bg-primary/40 border border-primary/40 cursor-pointer transition-colors"
-            >
-              {t.templates.adopt_modal.persona_layout_dim_done}
-              <Check className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </motion.div>
-    </AnimatePresence>
+  // Gold-standard petal modal: the shared ComposerPickerShell carries the
+  // dim's identity (accent bar, tinted border + glow, tinted icon chip) AND
+  // gives the editor real app-level space (portaled, centered, scroll-bounded)
+  // instead of the old cramped inline overlay on the Sigil.
+  return (
+    <ComposerPickerShell
+      open
+      onClose={onClose}
+      title={dimLabel}
+      subtitle={subtitle}
+      icon={<DimIcon className="w-5 h-5" />}
+      accentColor={dimColor}
+      size="lg"
+      solid
+      footer={footer}
+    >
+      <div className="px-8 py-5">
+        <QuestionnaireHeroQuestion
+          question={activeQuestion}
+          answer={answer}
+          options={options}
+          isStackable={stackable}
+          isBlocked={isBlocked}
+          isAutoDetected={isAutoDetected}
+          activeIdx={activeIdx}
+          totalCount={orderedQuestions.length}
+          isAtEnd={activeIdx === orderedQuestions.length - 1}
+          canSubmit={false}
+          onAnswerUpdated={onAnswerUpdated}
+          onAddCredential={onAddCredential}
+          filteredOptions={filteredOptions?.[activeQuestion.id]}
+          dynamicState={dynamicOptions?.[activeQuestion.id]}
+          onRetryDynamic={onRetryDynamic}
+          useCaseTitleById={useCaseTitleById}
+          compact
+        />
+      </div>
+    </ComposerPickerShell>
   );
 }

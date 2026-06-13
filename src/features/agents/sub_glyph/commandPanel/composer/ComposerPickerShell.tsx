@@ -33,10 +33,24 @@ interface ComposerPickerShellProps {
    * for those callers so the modal feels like its own surface.
    */
   solid?: boolean;
+  /**
+   * Per-petal identity (the "gold standard" merge). When set — typically
+   * `DIM_META[dim].color` — the shell carries the dimension's colour the
+   * way the adoption answer card does: a top accent bar, a colour-tinted
+   * border + glow, and a tinted icon chip. Omit for the neutral
+   * primary-accented look (existing scratch-glyph callers are unchanged).
+   */
+  accentColor?: string;
+  /**
+   * Small uppercase eyebrow label rendered above the title in `accentColor`
+   * (e.g. the dimension label "APPS" / "MESSAGES"). No-op without accentColor.
+   */
+  eyebrow?: string;
 }
 
 export function ComposerPickerShell({
   open, onClose, onApply, title, subtitle, icon, children, footer, size = "md", solid = false,
+  accentColor, eyebrow,
 }: ComposerPickerShellProps) {
   const { t } = useTranslation();
   useEffect(() => {
@@ -80,16 +94,35 @@ export function ComposerPickerShell({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border border-card-border ${solid ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[88vh]`}
+            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border ${accentColor ? "" : "border-card-border"} ${solid || accentColor ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[88vh]`}
+            style={accentColor ? { borderColor: `${accentColor}66`, boxShadow: `0 0 28px ${accentColor}26, 0 12px 40px rgba(0,0,0,0.4)` } : undefined}
             onClick={(e) => e.stopPropagation()}
           >
-            <header className="flex items-center gap-3 px-5 py-4 border-b border-border/25 bg-gradient-to-r from-primary/10 via-transparent to-transparent">
+            {/* Dim accent bar — petal identity (matches the adoption answer card). */}
+            {accentColor && (
+              <div
+                className="absolute top-0 left-0 w-full h-1"
+                style={{ background: `linear-gradient(90deg, ${accentColor}, transparent)` }}
+              />
+            )}
+            <header
+              className={`flex items-center gap-3 px-5 py-4 border-b border-border/25 ${accentColor ? "" : "bg-gradient-to-r from-primary/10 via-transparent to-transparent"}`}
+              style={accentColor ? { background: `linear-gradient(90deg, ${accentColor}1a, transparent 70%)` } : undefined}
+            >
               {icon && (
-                <div className="shrink-0 w-10 h-10 rounded-interactive bg-primary/25 text-primary flex items-center justify-center">
+                <div
+                  className={`shrink-0 w-10 h-10 rounded-interactive flex items-center justify-center ${accentColor ? "" : "bg-primary/25 text-primary"}`}
+                  style={accentColor ? { backgroundColor: `${accentColor}26`, color: accentColor } : undefined}
+                >
                   {icon}
                 </div>
               )}
               <div className="flex-1 min-w-0">
+                {eyebrow && accentColor && (
+                  <span className="typo-label uppercase tracking-[0.2em] font-bold block truncate" style={{ color: accentColor }}>
+                    {eyebrow}
+                  </span>
+                )}
                 <h2 className="typo-heading-sm text-foreground font-semibold truncate">{title}</h2>
                 {subtitle && (
                   <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>

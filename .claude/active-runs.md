@@ -66,19 +66,25 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype — Adopt Template modal (sidebars + header + petal CX) — directional variants
+- Started: 2026-06-13
+- Status: started
+- Branch: master (main checkout — variants must render in the user's live dev server, per /prototype repo precedent)
+- Paths: src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx (tab-switcher host), PersonaLayoutAdoption.tsx, AdoptionLeftPanel.tsx, + new sibling variant files PersonaLayoutAdoptionVariant{1,2}.tsx, .claude/active-runs.md
+- Note: 2 directional variants behind a tab switcher; keep petal/Sigil mechanism + layout; fix typography hierarchy, natural question flow (preset vs open), consistent per-petal editing UX, and impact-translated sidebars (left shows "Memory activated" not on/off). Additive files only — no edits to other sessions' scope.
+
+### feature — Goal-UAT browser-test gate (web projects only) — P1 backend
+- Started: 2026-06-12 (worktree .claude/worktrees/goal-uat-gate, branch worktree-goal-uat-gate)
+- Status: started
+- Paths: src-tauri/src/db/{migrations/incremental.rs,models/dev_tools.rs,repos/dev_tools.rs}, src-tauri/src/commands/infrastructure/dev_tools.rs, src-tauri/src/companion/{dispatcher.rs,templates/}, src-tauri/src/commands/companion/approvals.rs, src/features/teams/sub_goals/**, src/features/home/sub_cockpit/widgets/BrowserTestReportWidget.tsx
+- Note: dev_goal_item with verify_kind=browser_test = UAT gate; runs run_browser_test when all other todos done; web-only (tech_stack react/nodejs/combined). Builds on the just-merged browser-testing arc (31a9b886c).
+
 ### feature — GCP gcloud CLI auth method + execution strategy + CLI re-auth pipeline (/add-credential)
 - Started: 2026-06-11
 - Status: implementation complete, all gates green (tsc, eslint, i18n, cargo check, clippy clean on touched files, 8/8 unit tests, vitest 1883/1886 — 3 failures pre-existing: shortcutRegistry stub drift from titlebar nav-mode session, webview2-compat, customRules parser resolution); UNCOMMITTED, awaiting user commit decision
 - Branch: master (main checkout — controlled-chaos, scope disjoint from concurrent sessions)
 - Paths: scripts/connectors/builtin/gcp-cloud.json, src-tauri/src/db/builtin_connectors.rs (generated), src-tauri/src/engine/{connector_strategy.rs,oauth_refresh.rs}, src-tauri/src/commands/credentials/{cli_capture.rs,auth_detect.rs}, src/lib/eventRegistry.ts, src/features/vault/sub_credentials/components/card/banners/ReauthBanner.tsx, src/i18n/locales/en.json (+generated), docs/features/connections/README.md, CHANGELOG.md, .claude/active-runs.md
 - Note: auth_detect.rs fix — Windows fs::canonicalize verbatim `\\?\C:\` paths failed the CLI allowlist prefix check, so EVERY installed CLI reported "not installed"; affected all 14 capture specs, surfaced on first real use of the CLI tab. Live-verified resolve + full gcloud capture chain via ignored diagnostics.
-
-### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
-- Started: 2026-06-11 ~20:00
-- Status: started
-- Paths: scripts/test/loop-certify.mjs (§10 KPI block), docs/plans/kpi-driven-orchestration.md, .claude/active-runs.md. Live DB via bridge (no tree edits): accept ai-paralegal KPI proposals, scan 6 team projects, resume 7 awaiting_review parks, flip 10 autonomy settings ON.
-- Note: next validation window after the R-fix day-run analysis (06:41 UTC autonomy sweep confirmed user-driven). External-connector KPIs stay parked; internally measurable (codebase/derived) only. Run objective: observe goal↔KPI relation — not all goals must follow KPIs.
-
 
 ### feature — Daily backend credential healthcheck (kill on-visit IPC stampede → false "degraded")
 - Started: 2026-06-10 17:50
@@ -720,6 +726,16 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### athena-value-expansion-design — comprehensive design doc for Athena directions 1,2,3,5,6,7 (Fable design pass)
+- Started: 2026-06-12. Completed: 2026-06-12. Commit: 4c029ba58.
+- Paths: docs/plans/athena-value-expansion.md (new, 807 lines), .claude/active-runs.md.
+- Note: design-only (no src edits). 6 parts / 17 phases with verified code anchors: A=companion_turn ledger + Overview Athena lanes; B=operations_database read connector; C=attention queue + per-source budgets + daily rollup; D=adaptive triage baselines; E=anchor catalog + walkthrough scale-out; F=identity layer v2 (stub at brain/identity.rs → write loop/intake/synthesis). Execution by Opus sessions, one phase per session per the doc's §0 contract.
+
+### kpi-run-2 — seed internal KPIs + §10 cert block + restart autonomy run (session 2c665603)
+- Started: 2026-06-11 ~20:00. Completed: 2026-06-12 ~00:00. Commits: 76023d0f1 (§10 cert block), 89be34943 (KpiEvaluationSubscription), be8e8116a (plan addendum).
+- Paths: scripts/test/loop-certify.mjs, src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/db/settings_keys.rs, docs/plans/kpi-driven-orchestration.md.
+- Note: run-2 LIVE — 27 internal KPIs active across 7/7 teams (scans + Windows-safe recipe rewrites; 2 non-portable recipes archived as negative feedback), 11 autonomy settings ON (incl. new autonomous_kpi_evaluation), goal_advance/auto_resume/backlog_to_goal ticks verified firing, KPI-derived goal being advanced by a team. Known scan defect queued: kpi_scan composes Unix-piped measure_config cmds that fail under cmd /C.
+
 ### feature — Athena browser-testing arc (Phases 0-3) — completed (merge: 31a9b886c, pushed to origin)
 - 2026-06-11 → 2026-06-12. Worktree athena-browser-p0 (7 phase commits + merge), merged to master + pushed, worktree/branch removed (junction-first, main node_modules safe).
 - Shipped: `run_browser_test` approval-gated op (Playwright MCP into companion turns, constitution v32) → `browser_bridge` module (WS relay + JSON-RPC MCP endpoint, pairing-token WS auth, per-test origin allowlist enforced server-side) → MV3 Chrome extension (`tools/athena-browser-extension/`, chrome.debugger CDP console + chrome.scripting DOM, drives only its own test tab) → `show_browser_test_report` card + File-as-ideas → `dev_ideas` + Companion Setup pairing panel (constitution v33). All 4 phases LIVE-QA'd on isolated instance: Phase 2 drove a REAL Chromium tab, Athena cited true DOM evidence + the seeded ReferenceError stack line + refused the planted prompt injection (every run). Docs synced (companion README, dev-tools, feature-doc-map). GOTCHAS: branded Chrome stable dropped --load-extension → use Playwright Chromium (scripts/test/launch-ext-chromium.mjs); native ~/.local/bin/claude.exe resolver needed (npm global removed) — master had converged on the same fix; companion-brain markdown root is ~/.personas (shared), NOT PERSONAS_DATA_DIR (isolation gap). NEXT: wire the ability into app features + Athena's proactive surfaces (design discussion pending).
@@ -733,6 +749,7 @@ timestamp — the next session can recognize it as abandoned.
 - 2026-06-10 20:27 → 2026-06-11 00:16. Branch: master (main checkout — variants had to render in the user's live dev server).
 - Round 1: BaselineTray extraction + Dock (inline count capsules) + Ledger (annunciator strip) behind a temporary left-side switcher. Consolidation: Dock promoted to TitleBarDock (sole tray), Ledger/baseline/switcher/ProcessActivityIndicator deleted, `;` nav mode lifted to uiSlice.keyboardNavActive + S/C/R/M/N dock hint keys (keycap chips under capsules; registered in shortcutRegistry). tsc 0, eslint 0 errors, uiSlice tests 7/7. NOT live-verified in-app.
 - Incidents: installed missing gitleaks binary for the new pre-commit secret-scan job (winget, 8.30.1); first round-1 commit swept ~85 foreign staged files during the install window — corrected via reset --soft + commit --only (foreign work re-staged, untouched). en.json sweeps noted in both commit messages.
+
 ### feature — Athena signal economy: orb-bubble fix + exec-review batch triage + autonomous Messages triage — MERGED TO MASTER (5c1b6b660)
 - 2026-06-10 18:20 → 2026-06-11 00:20. Worktree worktree-athena-signal-economy off master; 6 commits 6cbaebda6..f3360543a, merge 5c1b6b660. Worktree + branch removed (⚠ junction lesson re-learned: `git worktree remove --force` followed the node_modules junction and emptied the MAIN checkout's node_modules/.bin before dying on a long path — `cmd /c rmdir` the junction FIRST, always; repaired via npm install, 111 shims back, tsc clean).
 - (1) OrbDecisionBubble (incl. arrow handle + collapsed chip) now renders only while presence is 'minimized' — no more floating bubble over an open chat; fresh decisions no longer force-close an open panel. (2) exec review redesigned: per-candidate proactive chat turns (2/tick, "No response requested." episodes) → ONE headless sonnet triage per pass over (persona,reason) groups; verdicts drop/digest/deep_dive; digest → hour-bucketed 'execution_review' ProactiveCard via new proactive::deliver_now; ≤1 deep-dive turn w/ ≤120-word format contract; escalate→notification (quiet-hours guarded). (3) NEW message_triage.rs: unread persona_messages batched 20/tick oldest-first through done/digest/attention (athena_triage metadata audit annotation; high/urgent/critical can NEVER be auto-resolved; first enable seeds cursor to now); 'message_digest' card engages to Overview→Messages. New settings: autonomous_message_triage (default OFF — flip live to enable) + companion_msg_triage_cursor.

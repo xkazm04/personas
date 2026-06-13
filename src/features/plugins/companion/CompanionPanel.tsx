@@ -80,6 +80,7 @@ import { CompanionAssignmentCards } from './CompanionAssignmentCards';
 import { useCompanionAssignmentBridge } from './useCompanionAssignmentBridge';
 import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
+import { WakeCadence } from './WakeCadence';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
@@ -520,6 +521,7 @@ export default function CompanionPanel() {
               }
             }}
           />
+          {autonomousMode && <WakeCadence />}
           <Body
             initialized={initialized}
             initError={initError}

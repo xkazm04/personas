@@ -1,6 +1,6 @@
 import { ChevronRight, Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -123,7 +123,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
             <span className="typo-heading text-foreground/90 truncate">{review.persona_name || 'Unknown'}</span>
-            <span className="typo-body text-foreground flex-shrink-0">{formatRelativeTime(review.created_at)}</span>
+            <RelativeTime timestamp={review.created_at} className="typo-body text-foreground flex-shrink-0" />
           </div>
           <p className="typo-body text-foreground truncate mt-0.5">{review.content.slice(0, 80)}</p>
           <div className="flex items-center gap-2 mt-1">

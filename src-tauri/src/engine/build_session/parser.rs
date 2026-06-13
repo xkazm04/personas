@@ -316,6 +316,7 @@ pub(super) fn parse_json_object(
             connector_category: None,
             accepts_reference: false,
             accepts_webhook_source: false,
+            suggested: Vec::new(),
         }];
     }
 
@@ -440,6 +441,18 @@ pub(super) fn build_clarifying_question_events(
         .get("accepts_webhook_source")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
+    // Ambient Context Fusion (Case 1) — connector keywords the build-session
+    // gate seeder derived from ambient desktop signals. Optional + defaults to
+    // empty so streams without the hint keep working.
+    let suggested: Vec<String> = obj
+        .get("suggested")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|item| item.as_str().map(|s| s.to_string()))
+                .collect()
+        })
+        .unwrap_or_default();
 
     let mut events = vec![BuildEvent::ClarifyingQuestionV3 {
         session_id: session_id.to_string(),
@@ -451,6 +464,7 @@ pub(super) fn build_clarifying_question_events(
         category: category.clone(),
         accepts_reference,
         accepts_webhook_source,
+        suggested: suggested.clone(),
     }];
 
     // Legacy Question mirror — the old UI keys by `cell_key`. Pick the most
@@ -482,6 +496,9 @@ pub(super) fn build_clarifying_question_events(
         connector_category: legacy_category,
         accepts_reference,
         accepts_webhook_source,
+        // Pre-rank hint only carries meaning on the connector_category mirror;
+        // for other scopes the gate seeder leaves it empty.
+        suggested,
     });
 
     events

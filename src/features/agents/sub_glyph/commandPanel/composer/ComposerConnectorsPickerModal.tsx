@@ -15,6 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plug, Package, Database } from "lucide-react";
 import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
+import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";
@@ -129,6 +130,7 @@ export function ComposerConnectorsPickerModal({
         ? t.agents.glyph_apps_subtitle_empty
         : tx(draft.length === 1 ? t.agents.glyph_apps_selected_one : t.agents.glyph_apps_selected_other, { count: draft.length })}
       icon={<Plug className="w-5 h-5" />}
+      accentColor={DIM_META.connector.color}
       size="lg"
       solid={solid}
       footer={

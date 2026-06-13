@@ -72,6 +72,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
           value=""
           onChange={(serviceType) => submit(serviceType)}
           onAddFromCatalog={openVaultCatalog}
+          suggested={question.suggested}
         />
       ) : (
         <>

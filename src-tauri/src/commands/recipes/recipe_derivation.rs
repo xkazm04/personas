@@ -7,8 +7,9 @@
 //! `(source_template_id, source_use_case_id)` pair has a partial unique
 //! index, so re-running this command is idempotent.
 //!
-//! See `docs/concepts/recipe-from-template-migration.md` for the design
-//! and stable-key justification.
+//! See `docs/features/templates/README.md` for the recipe-ref design and
+//! stable-key (UUIDv5) justification. (The original migration concept doc was
+//! retired once the migration shipped.)
 
 use std::sync::Arc;
 
