@@ -3,6 +3,7 @@ import { Timer, DollarSign, Wrench, FileText, ChevronDown, ChevronRight, Coins, 
 import { useTranslation } from '@/i18n/useTranslation';
 import { getStatusEntry } from '@/lib/utils/formatters';
 import { STATUS_PALETTE, STATUS_PALETTE_EXTENDED } from '@/lib/design/statusTokens';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { StatusIcon } from '../../runnerTypes';
 
 // Semantic marker colors for tool-call / file-change rows, sourced from the
@@ -109,21 +110,21 @@ export function ExecutionSummaryCard({ summary, compact, onResume }: ExecutionSu
         {summary.durationMs != null && (
           <div className="flex items-center gap-1 text-foreground">
             <Timer className="w-3 h-3" />
-            <span className="typo-code">{(summary.durationMs / 1000).toFixed(1)}s</span>
+            <Numeric value={summary.durationMs} unit="ms" className="typo-code" />
           </div>
         )}
 
         {summary.costUsd != null && (
           <div className="flex items-center gap-1 text-foreground">
             <DollarSign className="w-3 h-3" />
-            <span className="typo-code">${summary.costUsd.toFixed(4)}</span>
+            <Numeric value={summary.costUsd} unit="usd" precision={4} className="typo-code" />
           </div>
         )}
 
         {summary.totalTokens != null && (
           <div className="flex items-center gap-1 text-foreground">
             <Coins className="w-3 h-3" />
-            <span className="typo-code">{summary.totalTokens.toLocaleString()} tokens</span>
+            <span className="typo-code"><Numeric value={summary.totalTokens} /> tokens</span>
           </div>
         )}
       </div>
