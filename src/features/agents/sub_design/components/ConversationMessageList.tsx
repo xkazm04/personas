@@ -5,7 +5,7 @@ import type { DesignConversation, DesignConversationMessage } from '@/lib/types/
 import { parseConversationMessages } from '@/lib/types/designTypes';
 import type { DesignDriftEvent } from '@/lib/design/designDrift';
 import { DRIFT_KIND_META } from '@/lib/design/designDrift';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -29,7 +29,7 @@ export function MessageBubble({ message }: { message: DesignConversationMessage 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className={`typo-body font-medium uppercase tracking-wide ${isUser ? 'text-primary/80' : 'text-status-info/80'}`}>{typeLabel}</span>
-          <span className="typo-body text-foreground">{formatRelativeTime(message.timestamp, '-', { dateFallbackDays: 7 })}</span>
+          <RelativeTime timestamp={message.timestamp} fallback="-" className="typo-body text-foreground" />
         </div>
         <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap break-words">{displayContent}</p>
       </div>
@@ -60,7 +60,7 @@ export function ConversationCard({
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <span className="typo-data text-foreground tabular-nums">{tx(messageCount === 1 ? t.agents.design.msg_count_one : t.agents.design.msg_count_other, { count: messageCount })}</span>
           <span className="typo-body text-foreground">·</span>
-          <span className="typo-body text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" />{formatRelativeTime(conversation.updatedAt, '-', { dateFallbackDays: 7 })}</span>
+          <span className="typo-body text-foreground flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /><RelativeTime timestamp={conversation.updatedAt} fallback="-" /></span>
           {!isActive && conversation.status === 'active' && (
             <button onClick={(e) => { e.stopPropagation(); onResume(); }} className="ml-1 px-2 py-0.5 typo-body font-medium rounded bg-primary/20 text-primary hover:bg-primary/30 transition-colors" data-testid={`conversation-resume-${conversation.id}`}>{t.agents.design.resume}</button>
           )}
