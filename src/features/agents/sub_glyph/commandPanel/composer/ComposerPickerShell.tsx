@@ -94,7 +94,7 @@ export function ComposerPickerShell({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border ${accentColor ? "" : "border-card-border"} ${solid || accentColor ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[88vh]`}
+            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border ${accentColor ? "" : "border-card-border"} ${accentColor ? "bg-background" : solid ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[88vh]`}
             style={accentColor ? { borderColor: `${accentColor}66`, boxShadow: `0 0 28px ${accentColor}26, 0 12px 40px rgba(0,0,0,0.4)` } : undefined}
             onClick={(e) => e.stopPropagation()}
           >

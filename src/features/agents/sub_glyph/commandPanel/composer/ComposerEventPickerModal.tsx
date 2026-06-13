@@ -15,6 +15,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Zap } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
+import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerEventPersonaList, type PersonaSummary } from "./ComposerEventPersonaList";
 import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTemplateList";
@@ -86,6 +87,7 @@ export function ComposerEventPickerModal({
         ? "Pick a persona and choose which events this agent should react to"
         : `${draft.length} subscription${draft.length === 1 ? "" : "s"} ready`}
       icon={<Zap className="w-5 h-5" />}
+      accentColor={DIM_META.event.color}
       size="lg"
       footer={
         <>

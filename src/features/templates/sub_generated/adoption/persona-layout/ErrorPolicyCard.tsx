@@ -1,7 +1,7 @@
-import { motion } from 'framer-motion';
-import { X, AlertTriangle, Inbox, FlaskConical } from 'lucide-react';
+import { AlertTriangle, Inbox, FlaskConical } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
+import { ComposerPickerShell } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerPickerShell';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { UseCaseErrorPolicy } from '@/lib/types/frontendTypes';
@@ -44,42 +44,19 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
   };
   const patch = (p: Partial<UseCaseErrorPolicy>) => onChange({ ...effective, ...p });
 
+  // Gold-standard petal modal — same shared shell as the answer card, carrying
+  // the Error dimension's identity (accent bar / tinted border + glow / icon).
   return (
-    <motion.div
-      key="error-policy"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.98 }}
-      transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full max-w-xl mx-auto flex flex-col"
-      style={{
-        borderColor: `${dimColor}66`,
-        boxShadow: `0 0 24px ${dimColor}33, 0 8px 32px rgba(0,0,0,0.35)`,
-        maxHeight: 'min(85vh, 640px)',
-      }}
+    <ComposerPickerShell
+      open
+      onClose={onClose}
+      title={ep.title}
+      subtitle={capabilityTitle}
+      icon={<AlertTriangle className="w-5 h-5" />}
+      accentColor={dimColor}
+      size="md"
     >
-      <div className="absolute top-0 left-0 w-full h-1 rounded-t-modal" style={{ background: `linear-gradient(90deg, ${dimColor}, transparent)` }} />
-
-      {/* Header */}
-      <div className="flex items-center gap-2 px-6 pt-4 pb-2">
-        <AlertTriangle className="w-4 h-4" style={{ color: dimColor }} />
-        <span className="typo-label uppercase tracking-[0.2em] font-bold" style={{ color: dimColor }}>
-          {ep.title}
-        </span>
-        <span className="typo-caption text-foreground truncate">· {capabilityTitle}</span>
-        <div className="flex-1" />
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 rounded-card text-foreground hover:bg-foreground/[0.06] transition-colors cursor-pointer"
-          aria-label={t.common.close}
-          title={t.common.close}
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      <div className="px-6 pb-5 space-y-4 overflow-y-auto scrollbar-thin">
+      <div className="px-6 py-5 space-y-4">
         <p className="typo-caption text-foreground leading-relaxed">
           {ep.intro}
         </p>
@@ -127,6 +104,6 @@ export function ErrorPolicyCard({ capabilityTitle, policy, onChange, onClose }: 
           />
         </div>
       </div>
-    </motion.div>
+    </ComposerPickerShell>
   );
 }

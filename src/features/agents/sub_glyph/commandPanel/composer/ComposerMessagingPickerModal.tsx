@@ -26,6 +26,7 @@ import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { ChannelSpecV2Type } from "@/lib/bindings/ChannelSpecV2Type";
 import type { JsonValue } from "@/lib/bindings/serde_json/JsonValue";
 import { useTranslation } from "@/i18n/useTranslation";
+import { DIM_META } from "@/features/shared/glyph/dimMeta";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
 import { DebtText } from '@/i18n/DebtText';
@@ -293,6 +294,7 @@ export function ComposerMessagingPickerModal({
             )
       }
       icon={<MessageSquare className="w-5 h-5" />}
+      accentColor={DIM_META.message.color}
       size="lg"
       solid={solid}
       footer={
