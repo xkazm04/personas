@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -289,7 +290,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           <div className="flex items-center justify-between">
             <span className="typo-caption text-foreground">{isCloud ? t.overview.review.cloud_action_hint : t.overview.review.reply_hint}</span>
             <div className="flex items-center gap-2">
-              <button onClick={() => {
+              <Button onClick={() => {
                 // Include per-item decisions in reviewer notes for multi-decision reviews
                 let notes = input.trim() || undefined;
                 if (hasDecisions && (acceptedCount > 0 || rejectedCount > 0)) {
@@ -300,10 +301,10 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('approved', notes);
-              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <Check className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
-              </button>
-              <button onClick={() => {
+              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" accentColor="emerald" icon={<Check className="w-3.5 h-3.5" />}>
+                {hasDecisions && acceptedCount > 0 ? `${t.overview.review.approve} (${acceptedCount}/${decisions.length})` : t.overview.review.approve}
+              </Button>
+              <Button onClick={() => {
                 let notes = input.trim() || undefined;
                 if (hasDecisions && (acceptedCount > 0 || rejectedCount > 0)) {
                   const decisionSummary = decisions
@@ -313,9 +314,9 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                   notes = notes ? `${notes}\n\nDecisions:\n${decisionSummary}` : `Decisions:\n${decisionSummary}`;
                 }
                 handleAction('rejected', notes);
-              }} disabled={isProcessing || actionFiredRef.current} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                <X className="w-3.5 h-3.5" />{isProcessing ? t.overview.review.processing : t.overview.review.reject}
-              </button>
+              }} disabled={actionFiredRef.current} loading={isProcessing} loadingLabel={t.overview.review.processing} variant="accent" accentColor="rose" icon={<X className="w-3.5 h-3.5" />}>
+                {t.overview.review.reject}
+              </Button>
             </div>
           </div>
         </div>
