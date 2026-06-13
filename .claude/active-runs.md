@@ -66,6 +66,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### /research — claude-code-2-1-147-to-177
+- Started: 2026-06-13
+- Status: completed (commit: 2a29431cc) — findings 2+3 shipped; Fable 5 (1) descoped, access blocked
+- Branch: master (main checkout — scope disjoint from concurrent sessions)
+- Paths: src-tauri/src/engine/provider/claude.rs (version floor), possibly engine/ wrapping-contract files; Obsidian vault (outside repo); src/data/releases.json + releases i18n (Phase 12); .claude/active-runs.md
+- Note: 9th CLI-release-log run; range v2.1.147 to v2.1.177 (last in memory = v2.1.146). Catch-dominant source type. active-runs.md NOT staged in my commit (536KB, concurrent-write hazard).
+
 ### prototype — Adopt Template modal (sidebars + header + petal CX) — directional variants
 - Started: 2026-06-13
 - Status: started
