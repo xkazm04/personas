@@ -11,7 +11,7 @@ import {
   cloudDeleteTrigger, cloudListTriggerFirings, cloudGetBaseUrl,
   type CloudDeployment, type CloudTrigger, type CloudTriggerFiring,
 } from '@/api/system/cloud';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -160,7 +160,7 @@ export function CloudWebhooksTab() {
           <div className="flex items-center gap-2">
             {relay.last_poll_at && (
               <span className="typo-caption text-foreground">
-                {t.triggers.last_poll_label} {formatRelativeTime(relay.last_poll_at)}
+                {t.triggers.last_poll_label} <RelativeTime timestamp={relay.last_poll_at} />
               </span>
             )}
             <button
@@ -267,7 +267,7 @@ export function CloudWebhooksTab() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {row.trigger.lastTriggeredAt && (
                       <span className="typo-caption text-foreground">
-                        {t.triggers.last_label} {formatRelativeTime(row.trigger.lastTriggeredAt)}
+                        {t.triggers.last_label} <RelativeTime timestamp={row.trigger.lastTriggeredAt} />
                       </span>
                     )}
                     <span onClick={(e) => e.stopPropagation()}>
@@ -329,7 +329,7 @@ export function CloudWebhooksTab() {
                       {f.status}
                     </span>
                     <span className="text-foreground">
-                      {f.firedAt ? formatRelativeTime(f.firedAt) : '—'}
+                      <RelativeTime timestamp={f.firedAt ?? null} fallback="—" />
                     </span>
                     <span className="text-foreground">
                       {f.durationMs != null ? `${f.durationMs}ms` : '—'}
