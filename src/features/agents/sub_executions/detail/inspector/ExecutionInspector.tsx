@@ -1,6 +1,6 @@
 import { useMemo, Fragment } from 'react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Wrench, Clock, DollarSign, Zap } from 'lucide-react';
+import { Wrench, Clock, DollarSign, Zap, Database } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { parseToolSteps, formatCost, formatTimeGap } from './inspectorTypes';
 import { ToolCallCard } from './ToolCallCard';
@@ -16,6 +16,15 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
   const e = t.agents.executions;
   const steps = useMemo(() => parseToolSteps(execution.tool_steps ?? null), [execution.tool_steps]);
   const model = execution.model_used || 'claude-sonnet-4';
+
+  // Prompt-cache efficiency (P1 cache visibility). Hit ratio = tokens served
+  // from cache / total input tokens (uncached + cache-read + cache-write).
+  const cacheRead = execution.cache_read_tokens ?? 0;
+  const cacheCreation = execution.cache_creation_tokens ?? 0;
+  const hasCacheData = cacheRead > 0 || cacheCreation > 0;
+  const totalInputWithCache = execution.input_tokens + cacheRead + cacheCreation;
+  const cacheHitPct =
+    totalInputWithCache > 0 ? Math.round((cacheRead / totalInputWithCache) * 100) : 0;
 
   // Timeline rail animation state
   const isLive = execution.status === 'running' || execution.status === 'queued';
@@ -35,7 +44,7 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
   return (
     <div className="space-y-6">
       {/* Metrics Summary Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
           <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
             <Zap className="w-3 h-3" />
@@ -64,6 +73,21 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           <div className="typo-body-lg font-mono text-foreground/90">
             {formatCost(execution.cost_usd)}
           </div>
+        </div>
+
+        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
+          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
+            <Database className="w-3 h-3" />
+            {e.cache_hit}
+          </div>
+          <div className="typo-body-lg font-mono text-foreground/90">
+            {hasCacheData ? `${cacheHitPct}%` : '–'}
+          </div>
+          {hasCacheData && (
+            <div className="typo-code text-foreground/90">
+              {cacheRead.toLocaleString()} {e.cached}
+            </div>
+          )}
         </div>
 
         <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">

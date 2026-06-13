@@ -220,6 +220,10 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
           // per-persona Activity list (full PersonaExecution) carries them.
           director_score: null,
           director_review_md: null,
+          // Cache-token breakdown isn't part of the global JOIN row either; the
+          // per-execution detail (full PersonaExecution) carries the real values.
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
           persona_name: r.persona_name ?? undefined,
           persona_icon: r.persona_icon ?? undefined,
           persona_color: r.persona_color ?? undefined,

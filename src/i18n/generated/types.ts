@@ -1348,6 +1348,8 @@ export type Translations = {
       runner_input_placeholder: string;
       compare_starred_pair: string;
       compare_starred_pair_tooltip: string;
+      cache_hit: string;
+      cached: string;
     };
     lab: {
       vr_title: string;

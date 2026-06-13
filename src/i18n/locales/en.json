@@ -1341,7 +1341,9 @@
       "next_error_nav": "Next error (E)",
       "runner_input_placeholder": "{\"key\": \"value\"}",
       "compare_starred_pair": "Compare starred",
-      "compare_starred_pair_tooltip": "Compare the two most recently starred executions"
+      "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
+      "cache_hit": "Cache hit",
+      "cached": "cached"
     },
     "lab": {
       "vr_title": "Versions & Ratings",

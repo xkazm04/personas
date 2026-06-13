@@ -57,6 +57,10 @@ export interface ResultEvent {
   cost_usd?: number;
   input_tokens?: number;
   output_tokens?: number;
+  /** Prompt-cache tokens served from cache (cheap input reuse). */
+  cache_read_tokens?: number;
+  /** Prompt-cache tokens written this run (cache-creation cost). */
+  cache_creation_tokens?: number;
   model?: string;
   session_id?: string;
 }

@@ -272,6 +272,8 @@ export type ExecutionEventPayload =
       cost_usd?: number;
       input_tokens?: number;
       output_tokens?: number;
+      cache_read_tokens?: number;
+      cache_creation_tokens?: number;
       model?: string;
       session_id?: string;
     }
