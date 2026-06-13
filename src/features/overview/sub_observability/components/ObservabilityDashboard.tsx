@@ -2,6 +2,7 @@ import { DollarSign, Zap, CheckCircle, TrendingUp, Stethoscope, RefreshCw, Bell,
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAiHealingStream } from '@/hooks/execution/useAiHealingStream';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useShallow } from 'zustand/react/shallow';
@@ -49,26 +50,23 @@ function PanelStatusChips({ pipelineErrors, pipelineFetchedAt, errorRecovery }: 
 
         if (hasError) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-red-500/10 text-red-400 border border-red-500/20">
-              <AlertCircle className="w-3 h-3" />
+            <StatusBadge key={key} variant="error" icon={<AlertCircle className="w-3 h-3" />}>
               {label}: {errorRecovery.panel_failed}
-            </span>
+            </StatusBadge>
           );
         }
         if (isStale) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <AlertCircle className="w-3 h-3" />
+            <StatusBadge key={key} variant="warning" icon={<AlertCircle className="w-3 h-3" />}>
               {label}: {errorRecovery.panel_stale}
-            </span>
+            </StatusBadge>
           );
         }
         if (hasFetched) {
           return (
-            <span key={key} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              <CheckCircle2 className="w-3 h-3" />
+            <StatusBadge key={key} variant="success" icon={<CheckCircle2 className="w-3 h-3" />}>
               {label}
-            </span>
+            </StatusBadge>
           );
         }
         return null;
