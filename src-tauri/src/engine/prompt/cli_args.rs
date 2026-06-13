@@ -212,6 +212,18 @@ pub(super) fn build_cli_args_inner(
     cli_args
         .env_overrides
         .push(("CLAUDE_CODE_HIDE_CWD".to_string(), "1".to_string()));
+    // Hide Claude Code's bundled skills, workflows, and built-in slash commands
+    // from the model. Personas injects its own prompt and never relies on CC's
+    // bundled skill surface; suppressing it shrinks the per-execution tool/skill
+    // surface (lower token cost, more deterministic across CLI versions) and cuts
+    // the bundled slash-command/skill scan that made `claude -p` slow on Windows
+    // (the 2.1.161→2.1.169 regression). Env var introduced in CLI 2.1.169; no-op
+    // on older CLIs. Scoped to the headless `-p` path — Fleet's interactive PTY
+    // spawn is unaffected.
+    cli_args.env_overrides.push((
+        "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS".to_string(),
+        "1".to_string(),
+    ));
 
     // Forward persona timeout as API_TIMEOUT_MS so the CLI's inner API request
     // timeout aligns with the persona's outer process-kill deadline. Subtract 5s
@@ -294,6 +306,12 @@ pub(super) fn build_resume_cli_args_inner(claude_session_id: &str) -> CliArgs {
             // Parity with fresh runs — see the matching block in `build_cli_args`.
             ("DISABLE_UPDATES".to_string(), "1".to_string()),
             ("CLAUDE_CODE_HIDE_CWD".to_string(), "1".to_string()),
+            // Parity with build_cli_args — hide CC's bundled skill/workflow/
+            // slash-command surface from resumed sessions too.
+            (
+                "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS".to_string(),
+                "1".to_string(),
+            ),
         ],
         env_removals: vec![
             "CLAUDECODE".to_string(),

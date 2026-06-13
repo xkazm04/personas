@@ -54,8 +54,25 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.166 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.170 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.169–2.1.176: floor advanced to 2.1.170. 2.1.169 fixes `claude
+        //   -p` being slow / appearing to hang on Windows while waiting for the
+        //   bundled slash-command/skill scan (regression in 2.1.161 — the prior
+        //   2.1.166 floor sat INSIDE that broken window, and Windows is the
+        //   primary platform with dozens of `-p` spawns per session). 2.1.170
+        //   (the Fable 5 launch build) additionally fixes sessions not saving
+        //   transcripts / not appearing in `--resume` when launched from a shell
+        //   that inherited Claude Code env vars — personas already strips
+        //   `CLAUDECODE`/`CLAUDE_CODE` (`prompt/cli_args.rs`), so this is passive
+        //   insurance for the chat `--resume` path. Nothing in 2.1.171–2.1.176
+        //   touches the `-p`/stream-json wire (Fable 5 model-id `[1m]`
+        //   normalization, `availableModels`/`enforceAvailableModels` enterprise
+        //   gates, Bedrock cred caching, TUI/background-session fixes), so 2.1.170
+        //   is the ceiling. Separately adopted this run:
+        //   `CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1` (2.1.169) in `build_cli_args`
+        //   to shrink the same bundled-skill scan surface. Fable 5 catalog entry
+        //   descoped (access blocked). /research run 2026-06-13.
         // - 2.1.155–2.1.166: floor advanced past 2.1.154 because the prior
         //   floor ITSELF carries defects personas is exposed to. 2.1.163 fixes
         //   a `$TMPDIR` override (a regression introduced in 2.1.154) that
@@ -197,7 +214,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.166")
+        Some("2.1.170")
     }
 }
 
@@ -284,6 +301,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.166");
+        assert_eq!(min.unwrap(), "2.1.170");
     }
 }
