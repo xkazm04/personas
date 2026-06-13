@@ -112,6 +112,11 @@ pub enum StreamLineType {
         total_cost_usd: Option<f64>,
         total_input_tokens: Option<u64>,
         total_output_tokens: Option<u64>,
+        /// Prompt-cache tokens served from cache (cheap input reuse). High
+        /// values mean personas' cross-execution prompt caching is working.
+        cache_read_input_tokens: Option<u64>,
+        /// Prompt-cache tokens written this run (cache-creation cost).
+        cache_creation_input_tokens: Option<u64>,
         model: Option<String>,
         session_id: Option<String>,
     },
@@ -369,6 +374,10 @@ pub struct ExecutionMetrics {
     pub model_used: Option<String>,
     pub input_tokens: u64,
     pub output_tokens: u64,
+    /// Prompt-cache tokens served from cache this run (cheap input reuse).
+    pub cache_read_tokens: u64,
+    /// Prompt-cache tokens written this run (cache-creation cost).
+    pub cache_creation_tokens: u64,
     pub cost_usd: f64,
     pub session_id: Option<String>,
 }
@@ -622,6 +631,8 @@ pub enum StructuredExecutionEvent {
         cost_usd: Option<f64>,
         input_tokens: Option<u64>,
         output_tokens: Option<u64>,
+        cache_read_tokens: Option<u64>,
+        cache_creation_tokens: Option<u64>,
         model: Option<String>,
         session_id: Option<String>,
     },

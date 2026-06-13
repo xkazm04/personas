@@ -2014,12 +2014,14 @@ pub async fn run_execution(
                                         session_id: session_id.clone(),
                                     })
                                 }
-                                StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, model, session_id } => Some(StructuredExecutionEvent::ExecutionResult {
+                                StreamLineType::Result { duration_ms, total_cost_usd, total_input_tokens, total_output_tokens, cache_read_input_tokens, cache_creation_input_tokens, model, session_id } => Some(StructuredExecutionEvent::ExecutionResult {
                                     execution_id: exec_id_for_stream.clone(),
                                     duration_ms: *duration_ms,
                                     cost_usd: *total_cost_usd,
                                     input_tokens: *total_input_tokens,
                                     output_tokens: *total_output_tokens,
+                                    cache_read_tokens: *cache_read_input_tokens,
+                                    cache_creation_tokens: *cache_creation_input_tokens,
                                     model: model.clone(),
                                     session_id: session_id.clone(),
                                 }),

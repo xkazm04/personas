@@ -227,6 +227,35 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
             let total_cost_usd = value.get("total_cost_usd").and_then(|c| c.as_f64());
             let total_input_tokens = value.get("total_input_tokens").and_then(|t| t.as_u64());
             let total_output_tokens = value.get("total_output_tokens").and_then(|t| t.as_u64());
+            // Prompt-cache token breakdown. Canonical location is the `usage`
+            // object; fall back to top-level fields, and (per CLI 2.1.152) to the
+            // nested `cache_creation` ephemeral breakdown when cache writes are
+            // reported only there.
+            let usage = value.get("usage");
+            let cache_read_input_tokens = usage
+                .and_then(|u| u.get("cache_read_input_tokens"))
+                .or_else(|| value.get("cache_read_input_tokens"))
+                .and_then(serde_json::Value::as_u64);
+            let cache_creation_input_tokens = usage
+                .and_then(|u| u.get("cache_creation_input_tokens"))
+                .or_else(|| value.get("cache_creation_input_tokens"))
+                .and_then(serde_json::Value::as_u64)
+                .or_else(|| {
+                    usage
+                        .and_then(|u| u.get("cache_creation"))
+                        .map(|cc| {
+                            let m5 = cc
+                                .get("ephemeral_5m_input_tokens")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0);
+                            let h1 = cc
+                                .get("ephemeral_1h_input_tokens")
+                                .and_then(serde_json::Value::as_u64)
+                                .unwrap_or(0);
+                            m5 + h1
+                        })
+                        .filter(|&n| n > 0)
+                });
             let model = value
                 .get("model")
                 .and_then(|m| m.as_str())
@@ -253,6 +282,8 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     total_cost_usd,
                     total_input_tokens,
                     total_output_tokens,
+                    cache_read_input_tokens,
+                    cache_creation_input_tokens,
                     model,
                     session_id,
                 },
@@ -580,6 +611,8 @@ pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &St
         total_cost_usd,
         total_input_tokens,
         total_output_tokens,
+        cache_read_input_tokens,
+        cache_creation_input_tokens,
         model,
         session_id,
         ..
@@ -593,6 +626,12 @@ pub fn update_metrics_from_result(metrics: &mut ExecutionMetrics, line_type: &St
         }
         if let Some(output) = total_output_tokens {
             metrics.output_tokens = *output;
+        }
+        if let Some(cr) = cache_read_input_tokens {
+            metrics.cache_read_tokens = *cr;
+        }
+        if let Some(cc) = cache_creation_input_tokens {
+            metrics.cache_creation_tokens = *cc;
         }
         if let Some(ref m) = model {
             metrics.model_used = Some(m.clone());
@@ -941,7 +980,7 @@ mod tests {
 
     #[test]
     fn test_parse_result_with_metrics() {
-        let line = r#"{"type":"result","duration_ms":5200,"total_cost_usd":0.0123,"total_input_tokens":1500,"total_output_tokens":800,"model":"claude-sonnet-4-20250514","session_id":"sess-456"}"#;
+        let line = r#"{"type":"result","duration_ms":5200,"total_cost_usd":0.0123,"total_input_tokens":1500,"total_output_tokens":800,"usage":{"cache_read_input_tokens":1200,"cache_creation_input_tokens":300},"model":"claude-sonnet-4-20250514","session_id":"sess-456"}"#;
         let (st, display) = parse_stream_line(line);
 
         match st {
@@ -950,6 +989,8 @@ mod tests {
                 total_cost_usd,
                 total_input_tokens,
                 total_output_tokens,
+                cache_read_input_tokens,
+                cache_creation_input_tokens,
                 model,
                 session_id,
             } => {
@@ -957,6 +998,8 @@ mod tests {
                 assert_eq!(total_cost_usd, Some(0.0123));
                 assert_eq!(total_input_tokens, Some(1500));
                 assert_eq!(total_output_tokens, Some(800));
+                assert_eq!(cache_read_input_tokens, Some(1200));
+                assert_eq!(cache_creation_input_tokens, Some(300));
                 assert_eq!(model, Some("claude-sonnet-4-20250514".to_string()));
                 assert_eq!(session_id, Some("sess-456".to_string()));
             }
@@ -1255,6 +1298,8 @@ Finished."#;
             total_cost_usd: Some(0.05),
             total_input_tokens: Some(2000),
             total_output_tokens: Some(500),
+            cache_read_input_tokens: Some(1700),
+            cache_creation_input_tokens: Some(300),
             model: Some("claude-sonnet-4-20250514".to_string()),
             session_id: Some("sess-789".to_string()),
         };
@@ -1264,6 +1309,8 @@ Finished."#;
         assert_eq!(metrics.cost_usd, 0.05);
         assert_eq!(metrics.input_tokens, 2000);
         assert_eq!(metrics.output_tokens, 500);
+        assert_eq!(metrics.cache_read_tokens, 1700);
+        assert_eq!(metrics.cache_creation_tokens, 300);
         assert_eq!(
             metrics.model_used,
             Some("claude-sonnet-4-20250514".to_string())
