@@ -762,6 +762,7 @@ pub fn dev_tools_create_context_group(
     color: Option<String>,
     icon: Option<String>,
     group_type: Option<String>,
+    domain: Option<String>,
 ) -> Result<DevContextGroup, AppError> {
     require_auth_sync(&state)?;
     repo::create_context_group(
@@ -771,6 +772,7 @@ pub fn dev_tools_create_context_group(
         color.as_deref(),
         icon.as_deref(),
         group_type.as_deref(),
+        domain.as_deref(),
     )
 }
 
@@ -785,6 +787,7 @@ pub fn dev_tools_update_context_group(
     group_type: Option<Option<String>>,
     health_score: Option<Option<i32>>,
     last_scan_at: Option<Option<String>>,
+    domain: Option<Option<String>>,
 ) -> Result<DevContextGroup, AppError> {
     require_auth_sync(&state)?;
     repo::update_context_group(
@@ -796,6 +799,7 @@ pub fn dev_tools_update_context_group(
         group_type.as_ref().map(|o| o.as_deref()),
         health_score,
         last_scan_at.as_ref().map(|o| o.as_deref()),
+        domain.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -855,6 +859,8 @@ pub fn dev_tools_create_context(
     api_surface: Option<String>,
     cross_refs: Option<String>,
     tech_stack: Option<String>,
+    category: Option<String>,
+    business_feature: Option<String>,
 ) -> Result<DevContext, AppError> {
     require_auth_sync(&state)?;
     repo::create_context(
@@ -870,6 +876,8 @@ pub fn dev_tools_create_context(
         api_surface.as_deref(),
         cross_refs.as_deref(),
         tech_stack.as_deref(),
+        category.as_deref(),
+        business_feature.as_deref(),
     )
 }
 
@@ -887,6 +895,8 @@ pub fn dev_tools_update_context(
     api_surface: Option<Option<String>>,
     cross_refs: Option<Option<String>>,
     tech_stack: Option<Option<String>>,
+    category: Option<Option<String>>,
+    business_feature: Option<Option<String>>,
 ) -> Result<DevContext, AppError> {
     require_auth_sync(&state)?;
     repo::update_context(
@@ -901,6 +911,8 @@ pub fn dev_tools_update_context(
         api_surface.as_ref().map(|o| o.as_deref()),
         cross_refs.as_ref().map(|o| o.as_deref()),
         tech_stack.as_ref().map(|o| o.as_deref()),
+        category.as_ref().map(|o| o.as_deref()),
+        business_feature.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -2783,6 +2795,7 @@ pub fn dev_tools_create_kpi(
     rationale: Option<String>,
     needed_connector: Option<String>,
     metric_type: Option<String>,
+    context_id: Option<String>,
 ) -> Result<DevKpi, AppError> {
     require_auth_sync(&state)?;
     repo::create_kpi(
@@ -2805,6 +2818,7 @@ pub fn dev_tools_create_kpi(
         rationale.as_deref(),
         needed_connector.as_deref(),
         metric_type.as_deref(),
+        context_id.as_deref(),
     )
 }
 
@@ -2816,6 +2830,7 @@ pub fn dev_tools_update_kpi(
     name: Option<String>,
     description: Option<Option<String>>,
     context_group_id: Option<Option<String>>,
+    context_id: Option<Option<String>>,
     category: Option<String>,
     measure_kind: Option<String>,
     measure_config: Option<String>,
@@ -2837,6 +2852,7 @@ pub fn dev_tools_update_kpi(
         name.as_deref(),
         description.as_ref().map(|o| o.as_deref()),
         context_group_id.as_ref().map(|o| o.as_deref()),
+        context_id.as_ref().map(|o| o.as_deref()),
         category.as_deref(),
         measure_kind.as_deref(),
         measure_config.as_deref(),

@@ -187,7 +187,12 @@ fn build_derivation_prompt(pool: &DbPool, kpi: &DevKpi) -> String {
     let contexts: String = repo::list_contexts_by_project(pool, &kpi.project_id, None)
         .unwrap_or_default()
         .iter()
-        .filter(|c| kpi.context_group_id.is_none() || c.group_id == kpi.context_group_id)
+        .filter(|c| match &kpi.context_id {
+            // Context-scoped KPI: offer only its own context (deterministic target).
+            Some(cid) => &c.id == cid,
+            // Group-scoped: the group's contexts; project-level: all.
+            None => kpi.context_group_id.is_none() || c.group_id == kpi.context_group_id,
+        })
         .take(20)
         .map(|c| format!("- id={} {}: {}", c.id, c.name, c.description.as_deref().unwrap_or("").chars().take(120).collect::<String>()))
         .collect::<Vec<_>>()
@@ -231,7 +236,7 @@ Rules:
 - ONE goal, scoped to ship in days not weeks, that a software team can execute autonomously and that plausibly MOVES THIS METRIC. Title imperative and concrete.{floor_breach}
 - The description must say HOW the work moves the metric (the causal claim the next measurement will test).
 - If the metric is not movable by team work right now (needs humans, marketing, external dependency), answer skip with the reason.
-- `rationale`: one short clause — recorded in the goal's provenance.
+- `rationale`: one short clause — recorded in the goal's provenance.{scope_hint}
 
 Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON object and nothing else on that line:
 {{"kpi_goal": {{"skip": false, "title": "...", "description": "...", "context_id": null, "target_date": null, "rationale": "..."}}}}
@@ -256,6 +261,10 @@ Respond with the analysis you need, then emit EXACTLY ONE line that is this JSON
         history = if history.is_empty() { "(single measurement)".into() } else { history },
         contexts = if contexts.is_empty() { "(no context map)".to_string() } else { contexts },
         recent_goals = if recent_goals.is_empty() { "(none)".to_string() } else { recent_goals },
+        scope_hint = match &kpi.context_id {
+            Some(cid) => format!("\n- This KPI is scoped to context id={cid}; default `context_id` to it unless the work clearly belongs to another listed context."),
+            None => String::new(),
+        },
         floor_breach = if kpi_floor_breached(kpi) {
             "\n- FLOOR BREACH: this business metric is at ZERO. Do not propose incremental optimization — propose the single most direct path to ESTABLISH THE FIRST UNIT OF VALUE (the first user, the first real request). Distribution/instrumentation/activation work beats internal quality work here."
         } else {
@@ -347,6 +356,7 @@ mod tests {
             id: "k".into(),
             project_id: "p".into(),
             context_group_id: None,
+            context_id: None,
             name: "t".into(),
             description: None,
             category: "technical".into(),

@@ -4401,6 +4401,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "dev_kpis.context_id",
+            description: "Context-level KPIs: scope a KPI to a single dev_context (NULL = project/group-level)",
+            already_applied: |conn| has_column(conn, "dev_kpis", "context_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_kpis ADD COLUMN context_id TEXT REFERENCES dev_contexts(id) ON DELETE SET NULL;",
+                )?;
+                ddl_step(
+                    conn,
+                    "CREATE INDEX IF NOT EXISTS idx_dev_kpis_context ON dev_kpis(context_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_kpi_bindings",
             description: "Swappable connector bindings for type-bound KPIs (P6)",
             already_applied: |conn| has_table(conn, "dev_kpi_bindings"),
@@ -4516,6 +4535,49 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // earlier `initial::run` phase, so on a fresh DB those columns did not yet
     // exist and the migration aborted startup with "no such column:
     // g.shared_instructions". Moving it to phase 2 satisfies every dependency.
+
+    // -- Context categorization parity with Vibeman: a technical `category` and
+    // a human `business_feature` on contexts, plus a business `domain` on groups.
+    // Standardizes the context map (comparable across projects) and enables
+    // domain-scoped scanning / KPI targeting. Nullable TEXT — existing rows read
+    // as null until the next context scan re-populates them.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_contexts.category",
+            description: "Add technical category to dev_contexts",
+            already_applied: |conn| has_column(conn, "dev_contexts", "category"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_contexts ADD COLUMN category TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_contexts.business_feature",
+            description: "Add business_feature to dev_contexts",
+            already_applied: |conn| has_column(conn, "dev_contexts", "business_feature"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_contexts ADD COLUMN business_feature TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_context_groups.domain",
+            description: "Add business domain to dev_context_groups",
+            already_applied: |conn| has_column(conn, "dev_context_groups", "domain"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_context_groups ADD COLUMN domain TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

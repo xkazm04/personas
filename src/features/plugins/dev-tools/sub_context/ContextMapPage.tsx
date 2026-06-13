@@ -130,8 +130,10 @@ export default function ContextMapPage() {
   const storeContexts = useSystemStore((s) => s.contexts);
   const storeGoals = useSystemStore((s) => s.goals);
   const storeIdeas = useSystemStore((s) => s.ideas);
+  const storeKpis = useSystemStore((s) => s.kpis);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
+  const fetchKpis = useSystemStore((s) => s.fetchKpis);
   const scanPhase = useSystemStore((s) => s.scanPhase);
   const addToast = useToastStore((s) => s.addToast);
   const [scanningContextId, setScanningContextId] = useState<string | null>(null);
@@ -147,8 +149,9 @@ export default function ContextMapPage() {
     if (activeProjectId) {
       fetchGoals(activeProjectId);
       fetchIdeas(activeProjectId);
+      fetchKpis(activeProjectId);
     }
-  }, [activeProjectId, fetchGoals, fetchIdeas]);
+  }, [activeProjectId, fetchGoals, fetchIdeas, fetchKpis]);
 
   // contextId → { count, firstGoalId } so each ContextCard can show its
   // goal-coverage badge and seed the spotlight handoff in one click.
@@ -173,6 +176,17 @@ export default function ContextMapPage() {
     }
     return map;
   }, [storeIdeas]);
+
+  // contextId → non-archived KPI count, so each ContextCard shows how many KPIs
+  // are scoped to it (Part 3 context-level KPIs; mirrors the goal/idea badges).
+  const kpiCoverageByContext = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const k of storeKpis) {
+      if (!k.context_id || k.status === 'archived') continue;
+      map.set(k.context_id, (map.get(k.context_id) ?? 0) + 1);
+    }
+    return map;
+  }, [storeKpis]);
 
   const codebaseScanPhase = useSystemStore((s) => s.codebaseScanPhase);
   const scanning = codebaseScanPhase === 'scanning';
@@ -489,6 +503,7 @@ export default function ContextMapPage() {
             onScan={handleScan}
             goalCoverageByContext={goalCoverageByContext}
             ideaCoverageByContext={ideaCoverageByContext}
+            kpiCoverageByContext={kpiCoverageByContext}
             onScanContext={handleScanContext}
             scanningContextId={scanningContextId}
             scanBusy={scanPhase === 'running'}

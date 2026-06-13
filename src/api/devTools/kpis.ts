@@ -22,6 +22,7 @@ export interface CreateKpiInput {
   name: string;
   description?: string;
   contextGroupId?: string;
+  contextId?: string;
   category: string;
   measureKind: string;
   measureConfig?: string;
@@ -46,6 +47,7 @@ export interface UpdateKpiInput {
   name?: string;
   description?: string | null;
   contextGroupId?: string | null;
+  contextId?: string | null;
   category?: string;
   measureKind?: string;
   measureConfig?: string;

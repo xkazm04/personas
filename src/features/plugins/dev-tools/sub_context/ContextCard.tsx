@@ -1,4 +1,4 @@
-import { File, Tag, Target, Lightbulb, Sparkles } from 'lucide-react';
+import { File, Tag, Target, Lightbulb, Sparkles, Gauge } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -11,6 +11,7 @@ export default function ContextCard({
   goalCount = 0,
   firstGoalId,
   ideaCount = 0,
+  kpiCount = 0,
   onScan,
   scanning = false,
   scanDisabled = false,
@@ -21,11 +22,12 @@ export default function ContextCard({
   goalCount?: number;
   firstGoalId?: string;
   ideaCount?: number;
+  kpiCount?: number;
   onScan?: () => void;
   scanning?: boolean;
   scanDisabled?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
 
@@ -89,6 +91,15 @@ export default function ContextCard({
             <Lightbulb className="w-3 h-3" />
             {ideaCount} {ideaCount === 1 ? t.plugins.dev_tools.context_idea_singular : t.plugins.dev_tools.context_idea_plural}
           </button>
+        )}
+        {kpiCount > 0 && (
+          <span
+            title={t.kpis.context_kpis_title}
+            className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-300"
+          >
+            <Gauge className="w-3 h-3" />
+            {tx(t.kpis.kpi_count, { count: kpiCount })}
+          </span>
         )}
         {onScan && (
           <button

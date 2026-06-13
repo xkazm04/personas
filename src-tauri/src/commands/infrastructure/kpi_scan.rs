@@ -98,6 +98,10 @@ struct KpiProposal {
     /// Semantic metric type for connector/parked KPIs (P6 type binding).
     #[serde(default)]
     metric_type: String,
+    /// Single context (subsystem) this KPI is scoped to within its group;
+    /// empty = group-level or project-level.
+    #[serde(default)]
+    context_name: String,
 }
 
 fn parse_kpi_proposal(line: &str) -> Option<KpiProposal> {
@@ -142,6 +146,7 @@ Explore the repository (you are in its root) to ground your proposals: which tes
 
 Rules:
 1. Per-group KPIs use the EXACT group name from the context map; cross-cutting KPIs use an empty group_name (project-level).
+1b. To scope a KPI to a SINGLE context (one subsystem) within a group, set `context_name` to the EXACT context name from the map AND set its `group_name`. Use this only when one specific context clearly owns the outcome (e.g. p95 latency for a `checkout-api` context). Leave `context_name` empty for group-level or project-level KPIs.
 2. `category`: technical (coverage, lint debt, build time, bundle size), quality (defect/bounce/incident rates), traffic (users, requests — connector-gated), value (conversion, revenue, retention — connector-gated).
 3. `measure_kind` + `measure_config` must be a REAL, executable procedure:
    - codebase: {{"cmd": "<command runnable in repo root>", "parse": "coverage_pct" | "count_lines" | "regex:<pattern with one capture group>" | "json_path:<dot.path>"}}
@@ -155,7 +160,7 @@ Rules:
 7. `rationale`: ONE sentence the user reads in the review queue — why THIS metric steers value.
 
 For each proposal emit EXACTLY ONE line that is this JSON object and nothing else on that line:
-{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": ""}}}}
+{{"kpi_proposal": {{"group_name": "...", "name": "...", "description": "...", "category": "technical", "measure_kind": "codebase", "measure_config": {{}}, "unit": "%", "direction": "up", "baseline_hint": null, "suggested_target": 70, "target_date": null, "cadence": "weekly", "rationale": "...", "needed_connector": "", "metric_type": "", "context_name": ""}}}}
 
 Finish with one line: {{"kpi_scan_summary": {{"proposals": <count>}}}}
 "#,
@@ -398,6 +403,16 @@ async fn run_kpi_scan(
         .filter(|k| k.status != "archived")
         .map(|k| k.name.to_lowercase())
         .collect();
+    // Context-name → (context_id, parent_group_id) lookup for context-scoped
+    // proposals. A resolved context overrides the named group with its own
+    // parent group so context_group_id stays consistent; hallucinated names
+    // fall back to group/project-level rather than a broken FK.
+    let context_lookup: std::collections::HashMap<String, (String, Option<String>)> =
+        repo::list_contexts_by_project(pool, project_id, None)
+            .unwrap_or_default()
+            .into_iter()
+            .map(|c| (c.name.to_lowercase(), (c.id, c.group_id)))
+            .collect();
 
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
@@ -480,6 +495,13 @@ async fn run_kpi_scan(
                     continue;
                 }
                 let group_id = group_ids.get(&p.group_name.to_lowercase()).cloned();
+                // Optional single-context scope. A resolved context supplies
+                // its own parent group, overriding a mismatched group_name.
+                let (context_id, group_id) =
+                    match context_lookup.get(&p.context_name.trim().to_lowercase()) {
+                        Some((cid, cgid)) => (Some(cid.as_str()), cgid.clone().or(group_id)),
+                        None => (None, group_id),
+                    };
                 let measure_config = if p.measure_config.is_null() {
                     "{}".to_string()
                 } else {
@@ -514,6 +536,7 @@ async fn run_kpi_scan(
                     if p.rationale.is_empty() { None } else { Some(&p.rationale) },
                     if needed.is_empty() { None } else { Some(needed) },
                     if p.metric_type.is_empty() { None } else { Some(&p.metric_type) },
+                    context_id,
                 ) {
                     Ok(kpi) => {
                         created += 1;

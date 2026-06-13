@@ -1,16 +1,59 @@
-import { useMemo } from 'react';
-import { X, File, ArrowUpRight, Target, ListChecks } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { toastCatch } from '@/lib/silentCatch';
+import { kpiTrack } from '@/features/teams/sub_kpis/kpiMath';
+import { TRACK_COLOR } from '@/features/teams/sub_kpis/kpiMeta';
 import type { ContextItem } from './contextMapTypes';
 
 export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onClose: () => void }) {
   const { t, tx } = useTranslation();
   const goals = useSystemStore((s) => s.goals);
   const tasks = useSystemStore((s) => s.tasks);
+  const kpis = useSystemStore((s) => s.kpis);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const createKpi = useSystemStore((s) => s.createKpi);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+
+  // KPIs scoped to this context (Part 3 context-level KPIs).
+  const linkedKpis = useMemo(
+    () => kpis.filter((k) => k.context_id === ctx.id && k.status !== 'archived'),
+    [kpis, ctx.id],
+  );
+  const [adding, setAdding] = useState(false);
+  const [kpiName, setKpiName] = useState('');
+  const [kpiTarget, setKpiTarget] = useState('');
+  const [kpiUnit, setKpiUnit] = useState('');
+
+  const handleCreateKpi = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!kpiName.trim() || !activeProjectId) return;
+    // '__ungrouped__' is a UI sentinel, not a real group id — drop it so the FK
+    // stays valid (the KPI is still scoped to the context via context_id).
+    const groupId = ctx.groupId && ctx.groupId !== '__ungrouped__' ? ctx.groupId : undefined;
+    try {
+      await createKpi({
+        projectId: activeProjectId,
+        name: kpiName.trim(),
+        contextId: ctx.id,
+        contextGroupId: groupId,
+        category: 'technical',
+        measureKind: 'manual',
+        unit: kpiUnit.trim() || undefined,
+        targetValue: kpiTarget ? Number(kpiTarget) : undefined,
+        status: 'active',
+      });
+      setKpiName('');
+      setKpiTarget('');
+      setKpiUnit('');
+      setAdding(false);
+    } catch (err) {
+      toastCatch('ContextDetail:createKpi', t.kpis.create_kpi_failed)(err);
+    }
+  };
 
   // Goals scoped to this context + per-goal task summary (done / total).
   const linkedGoals = useMemo(() => {
@@ -69,6 +112,79 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
                     </p>
                   )}
                 </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* KPIs scoped to this context (Part 3 context-level KPIs) */}
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-[10px] uppercase tracking-wider text-primary font-medium flex items-center gap-1.5">
+            <Gauge className="w-3 h-3" />
+            {t.kpis.context_kpis_title} ({linkedKpis.length})
+          </h4>
+          <button
+            type="button"
+            onClick={() => setAdding((a) => !a)}
+            className="typo-caption text-primary hover:underline inline-flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" />
+            {t.kpis.add_kpi_for_context}
+          </button>
+        </div>
+
+        {adding && (
+          <form onSubmit={handleCreateKpi} className="mb-2 rounded-modal border border-primary/10 bg-card/30 p-2 space-y-2">
+            <input
+              value={kpiName}
+              onChange={(e) => setKpiName(e.target.value)}
+              placeholder={t.kpis.create_kpi_name_ph}
+              autoFocus
+              className="w-full px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+            />
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={kpiTarget}
+                onChange={(e) => setKpiTarget(e.target.value)}
+                placeholder={t.kpis.create_kpi_target_ph}
+                className="w-20 px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring tabular-nums"
+              />
+              <input
+                value={kpiUnit}
+                onChange={(e) => setKpiUnit(e.target.value)}
+                placeholder={t.kpis.create_kpi_unit_ph}
+                className="w-16 px-2 py-1 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+              />
+              <Button type="submit" variant="accent" accentColor="amber" size="sm" disabled={!kpiName.trim()}>
+                {t.kpis.create_kpi_submit}
+              </Button>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setAdding(false)}>
+                {t.kpis.create_kpi_cancel}
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {linkedKpis.length === 0 && !adding ? (
+          <p className="typo-caption text-foreground italic">{t.kpis.context_no_kpis}</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {linkedKpis.map((k) => (
+              <li
+                key={k.id}
+                className="rounded-modal border border-primary/10 bg-card/30 px-2.5 py-1.5 flex items-center gap-2"
+              >
+                <span
+                  className="w-2 h-2 rounded-full flex-shrink-0"
+                  style={{ background: TRACK_COLOR[kpiTrack(k)] }}
+                />
+                <span className="typo-caption text-foreground font-medium truncate flex-1">{k.name}</span>
+                <span className="typo-caption text-foreground tabular-nums shrink-0">
+                  {k.current_value ?? '—'} / {k.target_value ?? '—'} {k.unit}
+                </span>
               </li>
             ))}
           </ul>

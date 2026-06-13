@@ -2784,6 +2784,7 @@ pub fn run() {
             commands::infrastructure::context_generation::dev_tools_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_get_scan_codebase_status,
+            commands::infrastructure::context_audit::dev_tools_audit_contexts,
             commands::infrastructure::incremental_scan::dev_tools_compute_scan_delta,
             // System operations (trigger → built-in op automations; Chain Studio + Context Map)
             commands::infrastructure::system_ops::system_ops_list_kinds,

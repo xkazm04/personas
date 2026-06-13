@@ -84,6 +84,7 @@ fn row_to_context_group(row: &Row) -> rusqlite::Result<DevContextGroup> {
         color: row.get("color")?,
         icon: row.get("icon")?,
         group_type: row.get("group_type")?,
+        domain: row.get("domain").unwrap_or(None),
         position: row.get("position")?,
         health_score: row.get("health_score")?,
         last_scan_at: row.get("last_scan_at")?,
@@ -106,6 +107,8 @@ fn row_to_context(row: &Row) -> rusqlite::Result<DevContext> {
         api_surface: row.get("api_surface")?,
         cross_refs: row.get("cross_refs")?,
         tech_stack: row.get("tech_stack")?,
+        category: row.get("category").unwrap_or(None),
+        business_feature: row.get("business_feature").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -1826,6 +1829,7 @@ pub fn create_context_group(
     color: Option<&str>,
     icon: Option<&str>,
     group_type: Option<&str>,
+    domain: Option<&str>,
 ) -> Result<DevContextGroup, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Name cannot be empty".into()));
@@ -1850,9 +1854,9 @@ pub fn create_context_group(
             let position = max_pos + 1;
 
             conn.execute(
-            "INSERT INTO dev_context_groups (id, project_id, name, color, icon, group_type, position, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-            params![id, project_id, name, color, icon, group_type, position, now],
+            "INSERT INTO dev_context_groups (id, project_id, name, color, icon, group_type, domain, position, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+            params![id, project_id, name, color, icon, group_type, domain, position, now],
         )?;
 
             conn.query_row(
@@ -1875,6 +1879,7 @@ pub fn update_context_group(
     group_type: Option<Option<&str>>,
     health_score: Option<Option<i32>>,
     last_scan_at: Option<Option<&str>>,
+    domain: Option<Option<&str>>,
 ) -> Result<DevContextGroup, AppError> {
     timed_query!(
         "dev_context_groups",
@@ -1892,6 +1897,7 @@ pub fn update_context_group(
             push_field!(group_type, "group_type", sets, param_idx);
             push_field!(health_score, "health_score", sets, param_idx);
             push_field!(last_scan_at, "last_scan_at", sets, param_idx);
+            push_field!(domain, "domain", sets, param_idx);
 
             let sql = format!(
                 "UPDATE dev_context_groups SET {} WHERE id = ?{}",
@@ -1916,6 +1922,9 @@ pub fn update_context_group(
                 param_values.push(Box::new(v));
             }
             if let Some(v) = last_scan_at {
+                param_values.push(Box::new(v.map(|s| s.to_string())));
+            }
+            if let Some(v) = domain {
                 param_values.push(Box::new(v.map(|s| s.to_string())));
             }
             param_values.push(Box::new(id.to_string()));
@@ -2136,6 +2145,8 @@ pub fn create_context(
     api_surface: Option<&str>,
     cross_refs: Option<&str>,
     tech_stack: Option<&str>,
+    category: Option<&str>,
+    business_feature: Option<&str>,
 ) -> Result<DevContext, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Name cannot be empty".into()));
@@ -2148,9 +2159,9 @@ pub fn create_context(
 
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO dev_contexts (id, project_id, group_id, name, description, file_paths, entry_points, db_tables, keywords, api_surface, cross_refs, tech_stack, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13)",
-            params![id, project_id, group_id, name, description, file_paths, entry_points, db_tables, keywords, api_surface, cross_refs, tech_stack, now],
+            "INSERT INTO dev_contexts (id, project_id, group_id, name, description, file_paths, entry_points, db_tables, keywords, api_surface, cross_refs, tech_stack, category, business_feature, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?15)",
+            params![id, project_id, group_id, name, description, file_paths, entry_points, db_tables, keywords, api_surface, cross_refs, tech_stack, category, business_feature, now],
         )?;
 
         get_context_by_id(pool, &id)
@@ -2170,6 +2181,8 @@ pub fn update_context(
     api_surface: Option<Option<&str>>,
     cross_refs: Option<Option<&str>>,
     tech_stack: Option<Option<&str>>,
+    category: Option<Option<&str>>,
+    business_feature: Option<Option<&str>>,
 ) -> Result<DevContext, AppError> {
     timed_query!("dev_contexts", "dev_contexts::update_context", {
         get_context_by_id(pool, id)?;
@@ -2188,6 +2201,8 @@ pub fn update_context(
         push_field!(api_surface, "api_surface", sets, param_idx);
         push_field!(cross_refs, "cross_refs", sets, param_idx);
         push_field!(tech_stack, "tech_stack", sets, param_idx);
+        push_field!(category, "category", sets, param_idx);
+        push_field!(business_feature, "business_feature", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_contexts SET {} WHERE id = ?{}",
@@ -2221,6 +2236,12 @@ pub fn update_context(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = tech_stack {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = category {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = business_feature {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));
@@ -2353,6 +2374,8 @@ pub fn scan_codebase(
                 None,
                 description.as_deref(),
                 Some(&file_paths_json),
+                None,
+                None,
                 None,
                 None,
                 None,
@@ -4310,6 +4333,7 @@ pub fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
         id: row.get("id")?,
         project_id: row.get("project_id")?,
         context_group_id: row.get("context_group_id")?,
+        context_id: row.get("context_id").unwrap_or(None),
         name: row.get("name")?,
         description: row.get("description")?,
         category: row.get("category")?,
@@ -4405,6 +4429,7 @@ pub fn create_kpi(
     rationale: Option<&str>,
     needed_connector: Option<&str>,
     metric_type: Option<&str>,
+    context_id: Option<&str>,
 ) -> Result<DevKpi, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("KPI name cannot be empty".into()));
@@ -4416,14 +4441,14 @@ pub fn create_kpi(
             "INSERT INTO dev_kpis (id, project_id, context_group_id, name, description,
                 category, measure_kind, measure_config, unit, direction,
                 baseline_value, target_value, target_date, cadence, status,
-                created_by, rationale, needed_connector, metric_type)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19)",
+                created_by, rationale, needed_connector, metric_type, context_id)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20)",
             params![
                 id, project_id, context_group_id, name.trim(), description,
                 category, measure_kind, measure_config, unit, direction,
                 baseline_value, target_value, target_date, cadence,
                 status.unwrap_or("proposed"), created_by, rationale, needed_connector,
-                metric_type
+                metric_type, context_id
             ],
         )?;
         drop(conn);
@@ -4440,6 +4465,7 @@ pub fn update_kpi(
     name: Option<&str>,
     description: Option<Option<&str>>,
     context_group_id: Option<Option<&str>>,
+    context_id: Option<Option<&str>>,
     category: Option<&str>,
     measure_kind: Option<&str>,
     measure_config: Option<&str>,
@@ -4466,6 +4492,7 @@ pub fn update_kpi(
         if let Some(v) = name { push(&mut sets, "name", Box::new(v.to_string()), &mut vals); }
         if let Some(v) = description { push(&mut sets, "description", Box::new(v.map(str::to_string)), &mut vals); }
         if let Some(v) = context_group_id { push(&mut sets, "context_group_id", Box::new(v.map(str::to_string)), &mut vals); }
+        if let Some(v) = context_id { push(&mut sets, "context_id", Box::new(v.map(str::to_string)), &mut vals); }
         if let Some(v) = category { push(&mut sets, "category", Box::new(v.to_string()), &mut vals); }
         if let Some(v) = measure_kind { push(&mut sets, "measure_kind", Box::new(v.to_string()), &mut vals); }
         if let Some(v) = measure_config { push(&mut sets, "measure_config", Box::new(v.to_string()), &mut vals); }

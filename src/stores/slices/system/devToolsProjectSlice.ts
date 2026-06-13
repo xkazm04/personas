@@ -66,6 +66,7 @@ export interface DevToolsProjectSlice {
   /** Measurement series per KPI id, for the dashboard trend chart. */
   kpiTrends: Record<string, import("@/lib/bindings/DevKpiMeasurement").DevKpiMeasurement[]>;
   fetchKpiTrends: (kpiIds: string[]) => Promise<void>;
+  createKpi: (input: kpiApi.CreateKpiInput) => Promise<DevKpi>;
   updateKpi: (id: string, updates: kpiApi.UpdateKpiInput) => Promise<void>;
   deleteKpi: (id: string) => Promise<void>;
   fetchKpiMeasurements: (kpiId: string) => Promise<void>;
@@ -343,6 +344,17 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       set({ kpiTrends, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch KPI trends", set);
+    }
+  },
+
+  createKpi: async (input) => {
+    try {
+      const kpi = await kpiApi.createKpi(input);
+      set((state) => ({ kpis: [kpi, ...state.kpis], error: null }));
+      return kpi;
+    } catch (err) {
+      reportError(err, "Failed to create KPI", set);
+      throw err;
     }
   },
 

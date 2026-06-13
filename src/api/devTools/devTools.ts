@@ -418,16 +418,17 @@ export function parseCompetitionSlotDiffStats(
 export const listContextGroups = (projectId: string) =>
   safeInvoke<DevContextGroup[]>([], "dev_tools_list_context_groups", { projectId });
 
-export const createContextGroup = (projectId: string, name: string, color: string, icon?: string, groupType?: string) =>
+export const createContextGroup = (projectId: string, name: string, color: string, icon?: string, groupType?: string, domain?: string) =>
   invoke<DevContextGroup>("dev_tools_create_context_group", {
     projectId,
     name,
     color,
     icon: icon,
     groupType: groupType,
+    domain: domain,
   });
 
-export const updateContextGroup = (id: string, updates: { name?: string; color?: string; icon?: string; groupType?: string; healthScore?: number }) =>
+export const updateContextGroup = (id: string, updates: { name?: string; color?: string; icon?: string; groupType?: string; healthScore?: number; domain?: string }) =>
   invoke<DevContextGroup>("dev_tools_update_context_group", {
     id,
     name: updates.name,
@@ -435,6 +436,7 @@ export const updateContextGroup = (id: string, updates: { name?: string; color?:
     icon: updates.icon,
     groupType: updates.groupType,
     healthScore: updates.healthScore,
+    domain: updates.domain,
   });
 
 export const deleteContextGroup = (id: string) =>
@@ -465,6 +467,8 @@ export const createContext = (
   apiSurface?: string,
   crossRefs?: string,
   techStack?: string,
+  category?: string,
+  businessFeature?: string,
 ) =>
   invoke<DevContext>("dev_tools_create_context", {
     projectId,
@@ -478,6 +482,8 @@ export const createContext = (
     apiSurface: apiSurface,
     crossRefs: crossRefs,
     techStack: techStack,
+    category: category,
+    businessFeature: businessFeature,
   });
 
 export const updateContext = (id: string, updates: {
@@ -491,6 +497,8 @@ export const updateContext = (id: string, updates: {
   crossRefs?: string;
   techStack?: string;
   groupId?: string;
+  category?: string;
+  businessFeature?: string;
 }) =>
   invoke<DevContext>("dev_tools_update_context", {
     id,
@@ -504,6 +512,8 @@ export const updateContext = (id: string, updates: {
     crossRefs: updates.crossRefs,
     techStack: updates.techStack,
     groupId: updates.groupId,
+    category: updates.category,
+    businessFeature: updates.businessFeature,
   });
 
 export const deleteContext = (id: string) =>
@@ -527,6 +537,49 @@ export const getScanCodebaseStatus = (scanId: string) =>
 
 export const generateContextDescription = (contextId: string) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_generate_context_description", { contextId }, undefined, 60_000);
+
+// Advisory context-balance audit. Mirrors the Rust `ContextAuditReport`
+// (commands/infrastructure/context_audit.rs). Typed inline so the frontend
+// compiles before the ts_rs bindings are regenerated.
+export interface ContextAuditFinding {
+  severity: "error" | "warn" | "info";
+  kind: string;
+  target: string;
+  message: string;
+}
+export interface ContextAuditTotals {
+  groups: number;
+  contexts: number;
+  files_mapped: number;
+  uncategorized_contexts: number;
+  groups_missing_domain: number;
+  overlapping_files: number;
+}
+export interface ContextAuditReport {
+  project_id: string;
+  generated_at: string;
+  balanced: boolean;
+  totals: ContextAuditTotals;
+  findings: ContextAuditFinding[];
+}
+
+const EMPTY_AUDIT: ContextAuditReport = {
+  project_id: "",
+  generated_at: "",
+  balanced: true,
+  totals: {
+    groups: 0,
+    contexts: 0,
+    files_mapped: 0,
+    uncategorized_contexts: 0,
+    groups_missing_domain: 0,
+    overlapping_files: 0,
+  },
+  findings: [],
+};
+
+export const auditContexts = (projectId: string) =>
+  safeInvoke<ContextAuditReport>(EMPTY_AUDIT, "dev_tools_audit_contexts", { projectId });
 
 // ============================================================================
 // Context Group Relationships

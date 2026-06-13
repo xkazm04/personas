@@ -168,6 +168,7 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 - Create 4-10 groups representing major **business domains** (not layers)
 - **Naming**: Use Title Case, domain-oriented names (e.g., "User Authentication", "Payment Processing", "Analytics Dashboard"). Never use technical layer names like "Components", "Hooks", "Utils"
 - Each group should have a color from: red, orange, amber, emerald, blue, indigo, violet, pink
+- **domain (REQUIRED)**: the group's business role — EXACTLY one of: `feature` (user-facing capability), `infrastructure` (auth/logging/config/build/deploy/observability), `shared` (reusable primitives used across features), `integration` (external services / third-party / webhooks), `data` (persistence: schema/repositories/migrations)
 - Groups should be mutually exclusive (a file should belong to only one context)
 
 ## Context Guidelines
@@ -180,6 +181,8 @@ You are analyzing a codebase to create a **Context Map** — a structured invent
 - **db_tables**: If this context reads/writes database tables, list them (e.g., ["users", "sessions", "auth_tokens"])
 - **api_surface**: If this context exposes or consumes APIs, describe them briefly (e.g., "POST /api/auth/login, GET /api/auth/session")
 - **cross_refs**: List other context names this code depends on or is depended on by (e.g., ["user-profile", "notification-service"])
+- **category (REQUIRED)**: the context's primary technical layer — EXACTLY one of: `ui`, `api`, `lib`, `data`, `test`, `config`. NOTE: "integration" is a GROUP domain, NOT a context category — never use it here.
+- **business_feature (REQUIRED)**: a short human-readable feature name (often similar to the context name, in Title Case)
 
 ## Protocol Messages
 
@@ -187,12 +190,12 @@ Output these JSON objects on their own lines in your response:
 
 To create a context group:
 ```
-{{"context_map_group": {{"project_id": "{project_id}", "name": "Group Name", "color": "amber"}}}}
+{{"context_map_group": {{"project_id": "{project_id}", "name": "Group Name", "color": "amber", "domain": "feature"}}}}
 ```
 
 To create a context within a group:
 ```
-{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "context-name", "description": "2-3 sentence description of business purpose, how it works, and key dependencies", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "db_tables": ["users", "sessions"], "api_surface": "POST /api/auth/login", "cross_refs": ["user-profile"], "tech_stack": ["React", "TypeScript"]}}}}
+{{"context_map_context": {{"project_id": "{project_id}", "group_name": "Group Name", "name": "context-name", "description": "2-3 sentence description of business purpose, how it works, and key dependencies", "file_paths": ["src/foo.ts", "src/bar.ts"], "entry_points": ["src/foo.ts"], "keywords": ["authentication", "login"], "db_tables": ["users", "sessions"], "api_surface": "POST /api/auth/login", "cross_refs": ["user-profile"], "tech_stack": ["React", "TypeScript"], "category": "api", "business_feature": "User Authentication"}}}}
 ```
 
 At the end, output a summary:
@@ -219,6 +222,7 @@ At the end, output a summary:
 - For each context, populate db_tables if it touches a database, api_surface if it exposes/calls APIs, and cross_refs for dependencies between contexts
 - Use kebab-case for context names (e.g., "user-auth-flow" not "User Auth Flow")
 - Use Title Case for group names (e.g., "User Management" not "user-management")
+- Every context MUST set `category` (ui|api|lib|data|test|config) + `business_feature`; every group MUST set `domain` (feature|infrastructure|shared|integration|data). Use EXACTLY these enum values.
 
 Begin by exploring the codebase structure."#
     )
@@ -234,6 +238,7 @@ enum ContextMapProtocol {
         project_id: String,
         name: String,
         color: String,
+        domain: Option<String>,
     },
     Context {
         project_id: String,
@@ -247,6 +252,8 @@ enum ContextMapProtocol {
         api_surface: Option<String>,
         cross_refs: Vec<String>,
         tech_stack: Vec<String>,
+        category: Option<String>,
+        business_feature: Option<String>,
     },
     #[allow(dead_code)]
     Update {
@@ -262,6 +269,23 @@ enum ContextMapProtocol {
     },
 }
 
+/// Canonical context taxonomy (parity with Vibeman). A context's technical
+/// layer and a group's business domain — validated post-parse so an LLM that
+/// emits a bogus value (e.g. "integration" as a context category — it's a group
+/// domain) gets it dropped rather than persisted.
+pub const CONTEXT_CATEGORIES: &[&str] = &["ui", "api", "lib", "data", "test", "config"];
+pub const GROUP_DOMAINS: &[&str] = &["feature", "infrastructure", "shared", "integration", "data"];
+
+pub fn normalize_category(s: Option<&str>) -> Option<String> {
+    let v = s?.trim().to_lowercase();
+    CONTEXT_CATEGORIES.contains(&v.as_str()).then_some(v)
+}
+
+pub fn normalize_domain(s: Option<&str>) -> Option<String> {
+    let v = s?.trim().to_lowercase();
+    GROUP_DOMAINS.contains(&v.as_str()).then_some(v)
+}
+
 fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
     let val: serde_json::Value = serde_json::from_str(text).ok()?;
 
@@ -274,6 +298,7 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .and_then(|c| c.as_str())
                 .unwrap_or("amber")
                 .to_string(),
+            domain: normalize_domain(group.get("domain").and_then(|d| d.as_str())),
         });
     }
 
@@ -307,6 +332,11 @@ fn parse_context_map_protocol(text: &str) -> Option<ContextMapProtocol> {
                 .map(|s| s.to_string()),
             cross_refs: arr_to_vec("cross_refs"),
             tech_stack: arr_to_vec("tech_stack"),
+            category: normalize_category(ctx.get("category").and_then(|v| v.as_str())),
+            business_feature: ctx
+                .get("business_feature")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string()),
         });
     }
 
@@ -864,13 +894,13 @@ async fn run_context_generation(
                     let proto_trimmed = proto_line.trim();
                     if let Some(protocol) = parse_context_map_protocol(proto_trimmed) {
                         match protocol {
-                            ContextMapProtocol::Group { project_id: pid, name, color } => {
+                            ContextMapProtocol::Group { project_id: pid, name, color, domain } => {
                                 if needs_lazy_clear && !map_cleared {
                                     let _ = repo::clear_project_context_map(pool, project_id);
                                     map_cleared = true;
                                     CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
                                 }
-                                match repo::create_context_group(pool, &pid, &name, Some(&color), None, None) {
+                                match repo::create_context_group(pool, &pid, &name, Some(&color), None, None, domain.as_deref()) {
                                     Ok(group) => {
                                         group_name_to_id.insert(name.clone(), group.id.clone());
                                         groups_created += 1;
@@ -886,6 +916,7 @@ async fn run_context_generation(
                                 project_id: pid, group_name, name, description,
                                 file_paths, entry_points, keywords, db_tables,
                                 api_surface, cross_refs, tech_stack,
+                                category, business_feature,
                             } => {
                                 if needs_lazy_clear && !map_cleared {
                                     let _ = repo::clear_project_context_map(pool, project_id);
@@ -904,6 +935,7 @@ async fn run_context_generation(
                                 match repo::create_context(
                                     pool, &pid, &name, group_id.as_deref(), description.as_deref(),
                                     Some(&fp_json), Some(&ep_json), db_json.as_deref(), Some(&kw_json), api_surface.as_deref(), cr_json.as_deref(), Some(&ts_json),
+                                    category.as_deref(), business_feature.as_deref(),
                                 ) {
                                     Ok(_) => {
                                         contexts_created += 1;
@@ -927,6 +959,7 @@ async fn run_context_generation(
                                     None, None,
                                     kw_json.as_ref().map(|k| Some(k.as_str())),
                                     None, None, None,
+                                    None, None, // category, business_feature
                                 ) {
                                     Ok(_) => {
                                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Updated] Context: {context_id}"));
@@ -984,6 +1017,7 @@ async fn run_context_generation(
             // Persist hashes even on partial success — better to under-detect
             // changes next time than to over-trigger full rescans.
             persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
+            write_harness_docs(app, scan_id, pool, project_id, root_path);
             return Ok(ContextGenSummary {
                 scan_id: scan_id.to_string(),
                 groups_created,
@@ -1048,6 +1082,10 @@ async fn run_context_generation(
     // scan can run in delta mode. Always overwrites — anything missing from
     // the live snapshot is dropped (deleted files don't accumulate).
     persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
+
+    // Write the server-free harness docs (context-map.json + managed CLAUDE.md
+    // section) into the managed project so a CLI opened there sees the map.
+    write_harness_docs(app, scan_id, pool, project_id, root_path);
 
     Ok(ContextGenSummary {
         scan_id: scan_id.to_string(),
@@ -1115,6 +1153,35 @@ async fn persist_scan_hashes(
                 format!(
                     "[Warn] Failed to persist hash cache: {e}. Next scan will be a full rescan."
                 ),
+            );
+        }
+    }
+}
+
+/// Write the project-side harness docs (`context-map.json` + the managed
+/// `CLAUDE.md` section) so a CLI working directly in the managed project sees
+/// the context map without Personas running. Best-effort: a failure here is
+/// logged but never fails a scan that already committed contexts to the DB.
+fn write_harness_docs(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    root_path: &str,
+) {
+    match super::context_map_export::write_context_map_artifacts(pool, project_id, root_path) {
+        Ok(n) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Harness] Wrote context-map.json ({n} contexts) + CLAUDE.md section."),
+            );
+        }
+        Err(e) => {
+            CONTEXT_GEN_JOBS.emit_line(
+                app,
+                scan_id,
+                format!("[Warn] Failed to write harness docs: {e}. Contexts are still in the DB."),
             );
         }
     }

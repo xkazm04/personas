@@ -17,8 +17,9 @@ import { KPIDashboard } from './KPIDashboard';
 import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KPIDetailDrawer } from './KPIDetailDrawer';
 import { KPIExplainer } from './KPIExplainer';
+import { ContextKpiDashboard } from './ContextKpiDashboard';
 
-type KpiView = 'dashboard' | 'proposals';
+type KpiView = 'dashboard' | 'rollup' | 'proposals';
 
 export default function KPIsPage() {
   const { t } = useTranslation();
@@ -69,6 +70,7 @@ export default function KPIsPage() {
 
   const viewTabs = [
     { id: 'dashboard' as KpiView, label: t.kpis.view_dashboard },
+    { id: 'rollup' as KpiView, label: t.kpis.view_rollup },
     {
       id: 'proposals' as KpiView,
       label: proposedCount > 0 ? `${t.kpis.view_proposals} (${proposedCount})` : t.kpis.view_proposals,
@@ -113,6 +115,8 @@ export default function KPIsPage() {
         <KPIExplainer />
         {view === 'proposals' ? (
           <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
+        ) : view === 'rollup' ? (
+          <ContextKpiDashboard onOpen={(id) => setOpenKpiId(id)} />
         ) : (
           <KPIDashboard
             loading={kpisLoading}

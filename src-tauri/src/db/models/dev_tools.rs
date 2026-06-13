@@ -226,6 +226,10 @@ pub struct DevKpi {
     pub project_id: String,
     /// NULL = project-level KPI; otherwise attached to a context group.
     pub context_group_id: Option<String>,
+    /// NULL unless the KPI is scoped to a single context. When set,
+    /// `context_group_id` is expected to be that context's parent group —
+    /// see context_taxonomy / Part 3 context-level KPIs.
+    pub context_id: Option<String>,
     pub name: String,
     pub description: Option<String>,
     /// 'technical' | 'traffic' | 'value' | 'quality'
@@ -399,6 +403,8 @@ pub struct DevContextGroup {
     pub color: String,
     pub icon: Option<String>,
     pub group_type: Option<String>,
+    /// Business domain (feature|infrastructure|shared|integration|data) — see context_taxonomy.
+    pub domain: Option<String>,
     pub position: i32,
     pub health_score: Option<i32>,
     pub last_scan_at: Option<String>,
@@ -425,6 +431,10 @@ pub struct DevContext {
     pub api_surface: Option<String>,
     pub cross_refs: Option<String>,
     pub tech_stack: Option<String>,
+    /// Technical category (ui|api|lib|data|test|config) — see context_taxonomy.
+    pub category: Option<String>,
+    /// Human-readable business feature name (often equals the context name).
+    pub business_feature: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
