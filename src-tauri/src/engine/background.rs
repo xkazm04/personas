@@ -843,7 +843,12 @@ pub(crate) async fn event_bus_tick(
     };
 
     // 3. Bulk-fetch all subscriptions and listeners for these event types (2 queries)
-    let all_subs = match event_repo::get_subscriptions_by_event_types(pool, &event_types) {
+    //    Subscriptions: fetch the full enabled set and let `bus::match_event`
+    //    filter by CANONICAL event type. An exact `event_type IN (...)` pre-filter
+    //    silently dropped subscriptions whose separator style differed from the
+    //    emitted event (`code_review.completed` vs `code-review.completed`), so
+    //    downstream steps starved. The set is small; canonical matching is in bus.
+    let all_subs = match event_repo::get_all_enabled_subscriptions(pool) {
         Ok(s) => s,
         Err(e) => {
             tracing::error!("Event bus: bulk subscription fetch failed: {}", e);
