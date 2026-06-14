@@ -11,6 +11,8 @@ import type {
   ResultEvent,
   FileChangeEvent,
   HeartbeatEvent,
+  SubagentStartedEvent,
+  SubagentUpdateEvent,
 } from '@/lib/types/terminalEvents';
 
 export interface StreamHandlers {
@@ -22,6 +24,8 @@ export interface StreamHandlers {
   onResult?: (event: ResultEvent) => void;
   onFileChange?: (event: FileChangeEvent) => void;
   onHeartbeat?: (event: HeartbeatEvent) => void;
+  onSubagentStarted?: (event: SubagentStartedEvent) => void;
+  onSubagentUpdate?: (event: SubagentUpdateEvent) => void;
 }
 
 /**
@@ -70,6 +74,12 @@ export function useStructuredStream(
           break;
         case 'heartbeat':
           h.onHeartbeat?.(payload);
+          break;
+        case 'subagent_started':
+          h.onSubagentStarted?.(payload);
+          break;
+        case 'subagent_update':
+          h.onSubagentUpdate?.(payload);
           break;
       }
     });

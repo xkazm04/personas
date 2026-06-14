@@ -79,6 +79,25 @@ export interface HeartbeatEvent {
   silence_ms: number;
 }
 
+export interface SubagentStartedEvent {
+  type: 'subagent_started';
+  execution_id: string;
+  task_id: string;
+  /** tool_use_id of the parent Task call — links to the fan-out tree. */
+  tool_use_id: string;
+  subagent_type: string;
+  description: string;
+}
+
+export interface SubagentUpdateEvent {
+  type: 'subagent_update';
+  execution_id: string;
+  task_id: string;
+  status: string;
+  total_tokens?: number;
+  duration_ms?: number;
+}
+
 export type StructuredExecutionEvent =
   | TextEvent
   | ToolUseEvent
@@ -87,4 +106,6 @@ export type StructuredExecutionEvent =
   | SystemInitEvent
   | ResultEvent
   | FileChangeEvent
-  | HeartbeatEvent;
+  | HeartbeatEvent
+  | SubagentStartedEvent
+  | SubagentUpdateEvent;

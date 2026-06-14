@@ -278,7 +278,9 @@ export type ExecutionEventPayload =
       session_id?: string;
     }
   | { type: 'file_change'; execution_id: string; path: string; change_type: string }
-  | { type: 'heartbeat'; execution_id: string; elapsed_ms: number; silence_ms: number };
+  | { type: 'heartbeat'; execution_id: string; elapsed_ms: number; silence_ms: number }
+  | { type: 'subagent_started'; execution_id: string; task_id: string; tool_use_id: string; subagent_type: string; description: string }
+  | { type: 'subagent_update'; execution_id: string; task_id: string; status: string; total_tokens?: number; duration_ms?: number };
 
 /** Cloud execution progress (cloud/runner.rs). */
 export interface ExecutionProgressPayload {
