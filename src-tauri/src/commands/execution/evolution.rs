@@ -117,6 +117,19 @@ pub fn evolution_list_cycles(
     evolution_repo::list_cycles_for_persona(&state.db, &persona_id, limit)
 }
 
+/// Read the live aggregate run-budget state for any multi-spawn run — pass an
+/// evolution cycle id, a lab run id, or a pipeline run id. Returns `None` once
+/// the run's entry has been swept (~30 min after it finished). Uniform
+/// observability across all three consumers — see `engine/run_budget.rs`.
+#[tauri::command]
+pub fn get_run_budget_state(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<Option<crate::engine::run_budget::RunBudgetState>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::run_budget::ledger().state(&run_id))
+}
+
 /// Manually trigger an evolution cycle for a persona.
 #[tauri::command]
 pub async fn evolution_trigger_cycle(
