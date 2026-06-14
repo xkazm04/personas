@@ -15,6 +15,7 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 import { QuickStatsBar } from './QuickStatsBar';
+import { DeepFanoutToggle } from './DeepFanoutToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaEditorHeaderProps {
@@ -179,6 +180,9 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       }
     >
       {selectedPersona?.id && <QuickStatsBar personaId={selectedPersona.id} />}
+      {selectedPersona?.id && (
+        <DeepFanoutToggle personaId={selectedPersona.id} parameters={selectedPersona.parameters} />
+      )}
     </ContentHeader>
   );
 }

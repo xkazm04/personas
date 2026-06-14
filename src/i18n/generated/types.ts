@@ -1351,6 +1351,9 @@ export type Translations = {
       cache_hit: string;
       cached: string;
       subagents: string;
+      deep_fanout: string;
+      deep_fanout_hint: string;
+      deep_fanout_unavailable: string;
     };
     lab: {
       vr_title: string;

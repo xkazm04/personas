@@ -1344,7 +1344,10 @@
       "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
       "cache_hit": "Cache hit",
       "cached": "cached",
-      "subagents": "Subagents"
+      "subagents": "Subagents",
+      "deep_fanout": "Deep fan-out",
+      "deep_fanout_hint": "Delegate independent parallel sub-tasks to subagents. Set a budget cap.",
+      "deep_fanout_unavailable": "Unavailable on this plan — needs the Workflow/Task tools (Max/Team)."
     },
     "lab": {
       "vr_title": "Versions & Ratings",
