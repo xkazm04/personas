@@ -144,6 +144,21 @@ pub fn list_run_budgets(
     crate::db::repos::run_budget::list_recent(&state.db, kind.as_deref(), limit.unwrap_or(50))
 }
 
+/// Probe the Claude Code CLI's exposed capabilities (P4 fan-out gate). Spawns a
+/// bounded `claude -p` and reads its tool/agent registry from the init event;
+/// result is cached unless `force`. Surfaces whether `Workflow`/`Task` fan-out is
+/// available on this machine + account (tier-gated).
+#[tauri::command]
+pub async fn probe_cli_capabilities(
+    state: State<'_, Arc<AppState>>,
+    force: Option<bool>,
+) -> Result<crate::engine::cli_capabilities::CliCapabilities, AppError> {
+    require_auth(&state).await?;
+    crate::engine::cli_capabilities::get_or_probe(force.unwrap_or(false))
+        .await
+        .map_err(AppError::Internal)
+}
+
 /// Manually trigger an evolution cycle for a persona.
 #[tauri::command]
 pub async fn evolution_trigger_cycle(
