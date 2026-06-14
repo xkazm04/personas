@@ -561,6 +561,7 @@ export type Translations = {
     director_attention_sr: string;
     director_attention_sr_other: string;
     kpis: string;
+    factory: string;
   };
   home: {
     welcome: string;

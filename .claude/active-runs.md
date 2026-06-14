@@ -66,6 +66,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### /prototype + nav — Factory next-gen KPI-management variants + KPIs sidebar sub-items
+- Started: 2026-06-14
+- Status: started
+- Branch: master (main checkout — variants must render in the live dev app; data-dir-singleton precedent from prototype-kpi-card)
+- Paths: src/features/teams/sub_factory/ (NEW: FactoryPage host + 3 variants + factoryMock), src/features/teams/sub_kpis/KPIsPage.tsx, src/features/shared/components/layout/sidebar/sections/TeamsSidebarNav.tsx, src/lib/types/types.ts (TeamsTab+KpisTab), src/stores/slices/system/uiSlice.ts (kpisTab), src/features/personas/PersonasPage.tsx (router), src/i18n/locales/en.json (sidebar.factory), .claude/active-runs.md
+- Note: Task 1 = KPIs sidebar sub-items mirroring Goals (Dashboard/By context/Proposals). Task 2 = new "Factory" Teams item, 3 directional mocked variants (Command Deck / Calibration Bench / Signal Ledger) for multilayer KPI management. No file overlap with the started "Adopt Template modal" /prototype (adoption/ surface). active-runs.md NOT staged in commits (537KB concurrent-write hazard).
+
 ### /research — claude-code-2-1-147-to-177
 - Started: 2026-06-13
 - Status: completed (commit: 2a29431cc) — findings 2+3 shipped; Fable 5 (1) descoped, access blocked

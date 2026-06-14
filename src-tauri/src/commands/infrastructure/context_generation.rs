@@ -643,6 +643,19 @@ pub fn dev_tools_get_scan_codebase_status(
     }
 }
 
+/// HTTP-bridge accessor for a scan's status — mirrors
+/// `dev_tools_get_scan_codebase_status` without the IPC `State`, for the
+/// local_http `/dev-tools/scan-status/{id}` route.
+pub(crate) fn scan_status_json(scan_id: &str) -> serde_json::Value {
+    match CONTEXT_GEN_JOBS.lock() {
+        Ok(jobs) => match jobs.get(scan_id) {
+            Some(job) => json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines }),
+            None => json!({ "scan_id": scan_id, "status": "not_found" }),
+        },
+        Err(_) => json!({ "scan_id": scan_id, "status": "error", "error": "scan registry lock poisoned" }),
+    }
+}
+
 // =============================================================================
 // Core generation logic
 // =============================================================================
@@ -800,6 +813,10 @@ async fn run_context_generation(
     for (key, val) in &cli_args.env_overrides {
         cmd.env(key, val);
     }
+    // Force monthly-subscription auth (strip ANTHROPIC_API_KEY etc.) so the scan
+    // never falls back to pay-as-you-go API billing — parity with every other
+    // headless Claude spawn (e.g. athena_reaction).
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {

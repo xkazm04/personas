@@ -251,8 +251,19 @@ pub async fn dev_tools_scan_kpis(
     project_id: String,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-    let pool = state.db.clone();
-    let project = repo::get_project_by_id(&pool, &project_id)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    launch_kpi_scan(app, &state.db, &project)
+}
+
+/// Launch a KPI proposal scan as a background task. Shared by the
+/// `dev_tools_scan_kpis` command and the headless `/dev-tools/scan-kpis` route.
+/// Returns immediately with `{scan_id}`; the scan runs in a spawned task.
+pub(crate) fn launch_kpi_scan(
+    app: tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    project: &crate::db::models::DevProject,
+) -> Result<serde_json::Value, AppError> {
+    let project_id = project.id.clone();
 
     // Review-queue backpressure — same doctrine as the idea-backlog cap.
     let pending: i64 = pool
@@ -272,13 +283,13 @@ pub async fn dev_tools_scan_kpis(
 
     let prompt_text = build_kpi_scan_prompt(
         &project.name,
-        &context_map_block(&pool, &project_id),
-        &kpi_list_block(&pool, &project_id, false),
-        &kpi_list_block(&pool, &project_id, true),
-        &connectors_block(&pool),
+        &context_map_block(pool, &project_id),
+        &kpi_list_block(pool, &project_id, false),
+        &kpi_list_block(pool, &project_id, true),
+        &connectors_block(pool),
     );
 
-    let scan = repo::create_scan(&pool, Some(&project_id), "kpi-scan", Some("running"))?;
+    let scan = repo::create_scan(pool, Some(&project_id), "kpi-scan", Some("running"))?;
     let scan_id = scan.id.clone();
     let cancel_token = CancellationToken::new();
     KPI_SCAN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), KpiScanExtra)?;
@@ -286,6 +297,7 @@ pub async fn dev_tools_scan_kpis(
 
     let app_handle = app.clone();
     let scan_id_for_task = scan_id.clone();
+    let pool_task = pool.clone();
     let root_path = project.root_path.clone();
     let project_name = project.name.clone();
     tokio::spawn(async move {
@@ -296,7 +308,7 @@ pub async fn dev_tools_scan_kpis(
             res = run_kpi_scan(
                 &app_handle,
                 &scan_id_for_task,
-                &pool,
+                &pool_task,
                 &project_id,
                 &root_path,
                 prompt_text,
@@ -305,7 +317,7 @@ pub async fn dev_tools_scan_kpis(
         match result {
             Ok(created) => {
                 let _ = repo::update_scan(
-                    &pool, &scan_id_for_task, Some("complete"), Some(created),
+                    &pool_task, &scan_id_for_task, Some("complete"), Some(created),
                     None, None, None, None,
                 );
                 KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
@@ -322,7 +334,7 @@ pub async fn dev_tools_scan_kpis(
             Err(e) => {
                 let msg = format!("{e}");
                 let _ = repo::update_scan(
-                    &pool, &scan_id_for_task, Some("error"), None,
+                    &pool_task, &scan_id_for_task, Some("error"), None,
                     None, None, None, Some(Some(&msg)),
                 );
                 KPI_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg.clone()));
@@ -372,6 +384,32 @@ pub fn dev_tools_get_kpi_scan_status(
     } else {
         Ok(json!({ "scan_id": scan_id, "status": "not_found" }))
     }
+}
+
+/// HTTP-bridge accessor for a KPI scan's status (mirrors the command without the
+/// IPC `State`), for the local_http `/dev-tools/kpi-scan-status/{id}` route.
+pub(crate) fn kpi_scan_status_json(scan_id: &str) -> serde_json::Value {
+    match KPI_SCAN_JOBS.lock() {
+        Ok(jobs) => match jobs.get(scan_id) {
+            Some(job) => json!({ "scan_id": scan_id, "status": job.status, "error": job.error, "lines": job.lines }),
+            None => json!({ "scan_id": scan_id, "status": "not_found" }),
+        },
+        Err(_) => json!({ "scan_id": scan_id, "status": "error", "error": "kpi scan registry lock poisoned" }),
+    }
+}
+
+/// Build the exact KPI-scan prompt for a project, so it can be run MANUALLY
+/// (paste into a Claude CLI from the repo root) with zero app dependency — the
+/// `/dev-tools/kpi-scan-prompt/{project_id}` route returns this verbatim.
+pub(crate) fn kpi_scan_prompt(pool: &crate::db::DbPool, project_id: &str) -> Result<String, AppError> {
+    let project = repo::get_project_by_id(pool, project_id)?;
+    Ok(build_kpi_scan_prompt(
+        &project.name,
+        &context_map_block(pool, project_id),
+        &kpi_list_block(pool, project_id, false),
+        &kpi_list_block(pool, project_id, true),
+        &connectors_block(pool),
+    ))
 }
 
 // =============================================================================
@@ -439,6 +477,10 @@ async fn run_kpi_scan(
     for (key, val) in &cli_args.env_overrides {
         cmd.env(key, val);
     }
+    // Force monthly-subscription auth (strip ANTHROPIC_API_KEY etc.) so the KPI
+    // scan never falls back to pay-as-you-go API billing — parity with the rest
+    // of the app's headless Claude spawns.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {

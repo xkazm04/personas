@@ -31,6 +31,7 @@ const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/m
 const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
 const KPIsPage = lazyRetry(() => import('@/features/teams/sub_kpis/KPIsPage'));
+const FactoryPage = lazyRetry(() => import('@/features/teams/sub_factory/FactoryPage'));
 const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
 const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
@@ -232,7 +233,10 @@ export default function PersonasPage() {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'teams') {
-      // Teams 1st-level section: Workspace (canvas/Studio) or the Goals hub.
+      // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
+      if (teamsTab === 'factory') {
+        return <ErrorBoundary name="Factory"><Suspense fallback={SectionFallback}><FactoryPage /></Suspense></ErrorBoundary>;
+      }
       if (teamsTab === 'kpis') {
         return <ErrorBoundary name="KPIs"><Suspense fallback={SectionFallback}><KPIsPage /></Suspense></ErrorBoundary>;
       }

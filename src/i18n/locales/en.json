@@ -554,7 +554,8 @@
     "pending_events_sr_other": "{count} pending events",
     "director_attention_sr": "{count} agent needs coaching",
     "director_attention_sr_other": "{count} agents need coaching",
-    "kpis": "KPIs"
+    "kpis": "KPIs",
+    "factory": "Factory"
   },
   "home": {
     "welcome": "Welcome",

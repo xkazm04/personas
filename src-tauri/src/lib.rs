@@ -884,6 +884,13 @@ pub fn run() {
             // /browser-bridge/ws for the extension, /browser-bridge/mcp for
             // browser-test turns' --mcp-config.
             local_http::register_router("browser-bridge", browser_bridge::router());
+            // Dev-tools headless bridge — trigger a context-map scan (and
+            // register/list projects) from a terminal without the UI:
+            //   POST /dev-tools/scan-codebase {"project_id":...} → {scan_id}
+            local_http::register_router(
+                "dev-tools",
+                commands::infrastructure::dev_tools_http::router(app.handle().clone()),
+            );
             // Fleet background workers — staleness ticker + JSONL watcher.
             // Both fire-and-forget; the staleness ticker is safe everywhere,
             // the JSONL watcher is desktop-only because `notify` is feature-gated.

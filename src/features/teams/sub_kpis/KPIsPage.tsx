@@ -9,7 +9,6 @@ import { Activity, ScanSearch } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
@@ -18,8 +17,6 @@ import { KPIProposalsQueue } from './KPIProposalsQueue';
 import { KPIDetailDrawer } from './KPIDetailDrawer';
 import { KPIExplainer } from './KPIExplainer';
 import { ContextKpiDashboard } from './ContextKpiDashboard';
-
-type KpiView = 'dashboard' | 'rollup' | 'proposals';
 
 export default function KPIsPage() {
   const { t } = useTranslation();
@@ -30,8 +27,10 @@ export default function KPIsPage() {
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const scanKpis = useSystemStore((s) => s.scanKpis);
   const evaluateDueKpis = useSystemStore((s) => s.evaluateDueKpis);
+  // View selection lives in the sidebar (kpisTab) now, mirroring Goals.
+  const kpisTab = useSystemStore((s) => s.kpisTab);
+  const setKpisTab = useSystemStore((s) => s.setKpisTab);
 
-  const [view, setView] = useState<KpiView>('dashboard');
   const [openKpiId, setOpenKpiId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -41,15 +40,14 @@ export default function KPIsPage() {
     void fetchProjects();
   }, [fetchAllKpis, fetchProjects]);
 
-  const proposedCount = useMemo(() => kpis.filter((k) => k.status === 'proposed').length, [kpis]);
   const openKpi = useMemo(() => kpis.find((k) => k.id === openKpiId) ?? null, [kpis, openKpiId]);
 
   const handleScan = async () => {
     if (!activeProjectId) return;
     try {
       await scanKpis(activeProjectId);
-      // Proposals stream in as the scan runs; refresh when the user looks.
-      setView('proposals');
+      // Proposals stream in as the scan runs; jump to the proposals view.
+      setKpisTab('proposals');
     } catch (err) {
       toastCatch('kpi scan', t.kpis.scan_failed)(err);
     }
@@ -68,15 +66,6 @@ export default function KPIsPage() {
     }
   };
 
-  const viewTabs = [
-    { id: 'dashboard' as KpiView, label: t.kpis.view_dashboard },
-    { id: 'rollup' as KpiView, label: t.kpis.view_rollup },
-    {
-      id: 'proposals' as KpiView,
-      label: proposedCount > 0 ? `${t.kpis.view_proposals} (${proposedCount})` : t.kpis.view_proposals,
-    },
-  ];
-
   return (
     <ContentBox>
       <ContentHeader
@@ -84,8 +73,6 @@ export default function KPIsPage() {
         subtitle={t.kpis.subtitle}
         toolbar={
           <div className="flex items-center gap-2 flex-wrap">
-            <SegmentedTabs<KpiView> tabs={viewTabs} activeTab={view} onTabChange={setView} ariaLabel={t.kpis.title} />
-            <div className="flex-1" />
             <LifecycleProjectPicker />
             <AsyncButton
               size="sm"
@@ -113,15 +100,15 @@ export default function KPIsPage() {
       />
       <ContentBody>
         <KPIExplainer />
-        {view === 'proposals' ? (
+        {kpisTab === 'proposals' ? (
           <KPIProposalsQueue onRefresh={() => void fetchAllKpis()} />
-        ) : view === 'rollup' ? (
+        ) : kpisTab === 'rollup' ? (
           <ContextKpiDashboard onOpen={(id) => setOpenKpiId(id)} />
         ) : (
           <KPIDashboard
             loading={kpisLoading}
             onOpen={(id) => setOpenKpiId(id)}
-            onReviewProposals={() => setView('proposals')}
+            onReviewProposals={() => setKpisTab('proposals')}
           />
         )}
         {openKpi && <KPIDetailDrawer kpi={openKpi} onClose={() => setOpenKpiId(null)} />}

@@ -2,7 +2,7 @@ import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsTab, KpisTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /**
@@ -60,6 +60,8 @@ export interface UiSlice {
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
   goalsTab: GoalsTab;
+  /** Sub-view within the KPIs hub (sidebar sub-items mirror GoalsTab). */
+  kpisTab: KpisTab;
   /** L2 inside the Teams section: workspace (canvas/Studio) or the Goals hub. */
   teamsTab: TeamsTab;
   /**
@@ -176,6 +178,7 @@ export interface UiSlice {
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
   setGoalsTab: (tab: GoalsTab) => void;
+  setKpisTab: (tab: KpisTab) => void;
   setTeamsTab: (tab: TeamsTab) => void;
   setHomeReleaseVersion: (version: string) => void;
   /** Record `version` as the acknowledged "What's New" version (clears the dot). */
@@ -294,6 +297,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
+  kpisTab: "dashboard" as KpisTab,
   teamsTab: "workspace" as TeamsTab,
   homeReleaseVersion: "roadmap",
   whatsNewSeenVersion: null,
@@ -382,6 +386,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
+  setKpisTab: (tab) => startTransition(() => set({ kpisTab: tab })),
   setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
   setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
   markWhatsNewSeen: (version) => set((state) =>

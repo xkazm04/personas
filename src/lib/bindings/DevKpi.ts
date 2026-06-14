@@ -4,13 +4,13 @@ export type DevKpi = { id: string, project_id: string,
 /**
  * NULL = project-level KPI; otherwise attached to a context group.
  */
-context_group_id: string | null,
+context_group_id: string | null, 
 /**
  * NULL unless the KPI is scoped to a single context. When set,
  * `context_group_id` is expected to be that context's parent group —
  * see context_taxonomy / Part 3 context-level KPIs.
  */
-context_id: string | null, name: string, description: string | null,
+context_id: string | null, name: string, description: string | null, 
 /**
  * 'technical' | 'traffic' | 'value' | 'quality'
  */
