@@ -75,9 +75,15 @@ crossing sets `exceeded` + one `tracing::warn!`; the run continues.
    *reservation* (estimate-then-reconcile) like `queue.rs::ConcurrencyTracker::admit`,
    not a sequential gate. Also fixed an evolution double-count this pass:
    `score_result` copies `output.cost_usd` into `scores.cost_usd`, so record once.
-2. **Enforce mode** — flip a per-run flag from warn → abort: stop launching new
-   spawns once `exceeded`, finalize with a `budget_exhausted` terminal state +
-   partial results. Needs each subsystem's result table to model partial runs.
+2. **~~Enforce mode~~ DONE (launch-gate)** — opt-in via `PERSONAS_RUN_BUDGET_ENFORCE`
+   (default warn-only). `ledger.should_halt(run_id)` = `enforce && exceeded`;
+   each consumer checks it at the top of its unit loop (evolution variants / lab
+   scenarios / pipeline nodes) and `break`s — in-flight spawns finish, partial
+   results are preserved, the run finalizes normally. Remaining refinement: a
+   distinct `budget_exhausted` terminal status per subsystem (today the run
+   completes and the ledger's `exceeded`/enforce state is the observable "why"),
+   and a pre-launch *reservation* (estimate-then-reconcile) for the concurrent
+   within-scenario lab spawns to bound overshoot tighter.
 3. **DB persistence** — run-level cumulative cost columns on the grouping tables
    for historical/aggregate dashboards (today it lives in-memory + the cycle
    summary).

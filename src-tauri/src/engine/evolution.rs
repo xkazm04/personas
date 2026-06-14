@@ -331,6 +331,17 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     let mut best_variant_score: f64 = 0.0;
 
     for (i, variant) in variants.iter().enumerate() {
+        // P2 enforce-mode: stop evaluating further variants once the cycle's
+        // budget is exhausted (warn-only mode never halts). Already-evaluated
+        // variants still compete for promotion below.
+        if crate::engine::run_budget::ledger().should_halt(&cycle_id) {
+            tracing::warn!(
+                cycle_id = %cycle_id,
+                evaluated = i,
+                "Evolution cycle halted variant evaluation — budget ceiling reached (enforce mode)",
+            );
+            break;
+        }
         // Create ephemeral persona from variant genome
         let mut variant_persona = persona.clone();
         variant_persona.system_prompt = variant.reassemble_prompt();

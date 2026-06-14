@@ -289,6 +289,17 @@ pub async fn run_test(
             return;
         }
 
+        // P2 enforce-mode: stop launching further scenarios once the run's budget
+        // is exhausted (warn-only never halts). The run finalizes below (Phase 3)
+        // with the partial results already collected.
+        if crate::engine::run_budget::ledger().should_halt(&run_id) {
+            tracing::warn!(
+                run_id = %run_id,
+                "Lab run halted scenario execution — budget ceiling reached (enforce mode)",
+            );
+            break;
+        }
+
         // Spawn all model executions for this scenario concurrently
         let mut handles = Vec::new();
         for (mi, model) in model_configs.iter().enumerate() {

@@ -720,6 +720,17 @@ pub async fn run_pipeline(ctx: PipelineContext) {
     );
 
     for member_id in &ctx.execution_order {
+        // P2 enforce-mode: stop launching further nodes once the pipeline's
+        // budget is exhausted (warn-only never halts). Remaining nodes are left
+        // unstarted; the pipeline finalizes below with the work done so far.
+        if crate::engine::run_budget::ledger().should_halt(&ctx.run_id) {
+            tracing::warn!(
+                run_id = %ctx.run_id,
+                "Pipeline halted — budget ceiling reached (enforce mode)",
+            );
+            has_failure = true;
+            break;
+        }
         let member = match ctx.members.iter().find(|m| &m.id == member_id) {
             Some(m) => m,
             None => continue,

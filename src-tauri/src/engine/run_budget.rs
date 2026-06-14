@@ -70,6 +70,17 @@ pub fn pipeline_ceiling_usd() -> f64 {
     env_ceiling("PERSONAS_RUN_BUDGET_PIPELINE_USD", DEFAULT_PIPELINE_CEILING_USD)
 }
 
+/// Whether enforce-mode is active: a run that crosses its ceiling stops launching
+/// new spawns (`should_halt`) instead of merely warning. Opt-in via
+/// `PERSONAS_RUN_BUDGET_ENFORCE` (`1`/`true`/`yes`/`on`); **default off** so
+/// existing runs keep their warn-only behavior unless an operator turns it on.
+pub fn enforce_enabled() -> bool {
+    matches!(
+        std::env::var("PERSONAS_RUN_BUDGET_ENFORCE").ok().as_deref(),
+        Some("1") | Some("true") | Some("yes") | Some("on")
+    )
+}
+
 /// Serializable snapshot of a run's budget state. Embedded in run summaries
 /// (e.g. `EvolutionCycleSummary.budget`) and returned by `state()`.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -183,6 +194,25 @@ impl RunBudgetLedger {
     pub fn state(&self, run_id: &str) -> Option<RunBudgetState> {
         let runs = self.runs.lock().unwrap();
         runs.get(run_id).map(|e| e.state.clone())
+    }
+
+    /// `true` once cumulative spend has crossed this run's (non-zero) ceiling.
+    /// Pure (env-independent) — `should_halt` layers the enforce toggle on top.
+    pub fn is_exceeded(&self, run_id: &str) -> bool {
+        self.runs
+            .lock()
+            .unwrap()
+            .get(run_id)
+            .map(|e| e.state.exceeded)
+            .unwrap_or(false)
+    }
+
+    /// Whether the orchestrator should stop launching NEW spawns for this run:
+    /// enforce-mode is on AND the ceiling has been crossed. Always `false` in
+    /// warn-only mode (the default). A **launch gate** checked before the next
+    /// unit — not a real-time kill of in-flight spawns.
+    pub fn should_halt(&self, run_id: &str) -> bool {
+        enforce_enabled() && self.is_exceeded(run_id)
     }
 
     /// Mark a run complete. The entry is retained for [`RETENTION`] so summaries
@@ -333,5 +363,31 @@ mod tests {
         // Not asserting env parsing (process-global env is test-order-sensitive);
         // just that the default constant is the documented value.
         assert_eq!(DEFAULT_EVOLUTION_CEILING_USD, 2.0);
+    }
+
+    #[test]
+    fn is_exceeded_reflects_ceiling_crossing() {
+        let l = RunBudgetLedger::new();
+        l.register("r1", "lab", 1.0);
+        assert!(!l.is_exceeded("r1"));
+        l.record("r1", 1.5);
+        assert!(l.is_exceeded("r1"));
+        assert!(!l.is_exceeded("ghost"));
+    }
+
+    #[test]
+    fn should_halt_is_false_in_warn_only_mode() {
+        // Default (env unset) = warn-only → never halts, even when exceeded.
+        // Guard on enforce_enabled() so the assertion is robust regardless of the
+        // ambient PERSONAS_RUN_BUDGET_ENFORCE value in the test process.
+        let l = RunBudgetLedger::new();
+        l.register("r1", "lab", 1.0);
+        l.record("r1", 2.0);
+        assert!(l.is_exceeded("r1"));
+        if !enforce_enabled() {
+            assert!(!l.should_halt("r1"));
+        }
+        // should_halt is always false for an unregistered run.
+        assert!(!l.should_halt("ghost"));
     }
 }
