@@ -310,6 +310,40 @@ pub async fn run_execution(
         }
     }
 
+    // Capability-tier floor — the single authoritative chokepoint for EVERY
+    // execution entry path (command, team-step, chain/event cascade, schedule).
+    // When neither the capability's `model_override` nor the persona's
+    // `model_profile` names a model, a persona execution must NOT silently
+    // inherit the CLI ACCOUNT DEFAULT — observed live as `claude-opus-4-8[1m]`,
+    // the dominant fleet cost leak. Chain/event-fired executions (NULL trigger
+    // `use_case_id`, no `model_profile`) were slipping past the per-path floors
+    // in `execute_persona_inner` and the team orchestrator and landing on the
+    // account default. Pin sonnet here per the recipe-bake doctrine ("no
+    // override = sonnet default"). Only applies to the Anthropic provider with
+    // no model set; a non-Anthropic/BYOM profile or any explicit model is left
+    // untouched, and an explicit per-UC override already won above.
+    {
+        let provider_is_anthropic = model_profile
+            .as_ref()
+            .and_then(|p| p.provider.as_deref())
+            .map(|pr| pr.trim().is_empty() || pr.eq_ignore_ascii_case("anthropic"))
+            .unwrap_or(true);
+        let model_missing = model_profile
+            .as_ref()
+            .and_then(|p| p.model.as_deref())
+            .map(|m| m.trim().is_empty())
+            .unwrap_or(true);
+        if provider_is_anthropic && model_missing {
+            let mut p = model_profile.take().unwrap_or_default();
+            p.model = Some(prompt::DEFAULT_CAPABILITY_MODEL.to_string());
+            model_profile = Some(p);
+            tracing::debug!(
+                execution_id = %execution_id,
+                "model-tier floor applied — no capability/persona model resolved, pinned sonnet default",
+            );
+        }
+    }
+
     if let Some(Continuation::PromptHint(ref hint)) = continuation {
         let mut obj = input_data
             .as_ref()

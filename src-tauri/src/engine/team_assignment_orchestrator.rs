@@ -1246,6 +1246,42 @@ fn build_step_input(
 ///   `llm_eval` is always available (subscription path).
 /// - On success, persists the match to the step (assigned_persona_id +
 ///   use_case_id + match_confidence + match_rationale + step_matched event).
+/// Resolve a pre-bound persona's capability when the step left it unscoped.
+/// Returns the persona's sole enabled use-case id, or — for a multi-capability
+/// persona on an implement-shaped step — the implementation capability. `None`
+/// when the persona has no enabled capabilities or the choice is ambiguous
+/// (multiple capabilities, not implement-shaped) — the caller leaves it NULL
+/// and the runner's sonnet floor still applies.
+fn scope_sole_or_impl_use_case(persona: &Persona, step_title: &str) -> Option<String> {
+    let dc: serde_json::Value =
+        serde_json::from_str(persona.design_context.as_deref().unwrap_or("")).ok()?;
+    let ucs = crate::engine::design_context::pick_use_cases_array(&dc)?;
+    let enabled: Vec<&serde_json::Value> = ucs
+        .iter()
+        .filter(|uc| uc.get("enabled").and_then(|v| v.as_bool()) != Some(false))
+        .collect();
+    let id_of = |uc: &serde_json::Value| uc.get("id").and_then(|v| v.as_str()).map(String::from);
+    match enabled.len() {
+        0 => None,
+        1 => id_of(enabled[0]),
+        _ => {
+            // Ambiguous — only resolve the common implement case deterministically.
+            if step_title.to_ascii_lowercase().contains("implement") {
+                enabled
+                    .iter()
+                    .find(|uc| {
+                        let id = uc.get("id").and_then(|v| v.as_str()).unwrap_or("");
+                        let cat = uc.get("category").and_then(|v| v.as_str()).unwrap_or("");
+                        id.contains("impl") || cat.eq_ignore_ascii_case("implementation")
+                    })
+                    .and_then(|uc| id_of(uc))
+            } else {
+                None
+            }
+        }
+    }
+}
+
 async fn resolve_assignee(
     deps: &OrchestratorDeps,
     strategy: &str,
@@ -1254,7 +1290,34 @@ async fn resolve_assignee(
     // Pre-bound path — manual matching, or a re-queued step that retains
     // its previous (or just-overridden) persona pick.
     if let Some(pid) = step.assigned_persona_id.as_ref() {
-        return Ok((pid.clone(), step.assigned_use_case_id.clone()));
+        // If the capability is already bound, use it verbatim.
+        if step.assigned_use_case_id.is_some() {
+            return Ok((pid.clone(), step.assigned_use_case_id.clone()));
+        }
+        // Persona pinned but capability unscoped — the decompose path leaves
+        // `use_case` None when the LLM suggests a persona only, and the
+        // implement-step pin clears it deliberately. That dropped per-capability
+        // ATTRIBUTION and (post-tiering) per-capability MODEL SELECTION for
+        // every such step (use_case_id NULL → the runner can't resolve the
+        // capability's model_override, so it floors to sonnet even for an
+        // opus-tiered capability). Recover the capability deterministically:
+        // a persona with exactly ONE enabled capability IS the answer; for a
+        // multi-capability engineer, scope an implement-shaped step to its
+        // implementation capability. No LLM, no extra latency.
+        let resolved_uc = persona_repo::get_by_id(&deps.pool, pid)
+            .ok()
+            .and_then(|p| scope_sole_or_impl_use_case(&p, &step.title));
+        if let Some(ref uc) = resolved_uc {
+            let _ = assignment_repo::set_step_match_result(
+                &deps.pool,
+                &step.id,
+                pid,
+                Some(uc),
+                None,
+                Some("scoped pre-bound persona to its capability"),
+            );
+        }
+        return Ok((pid.clone(), resolved_uc));
     }
 
     // Auto-match needs the team's roster. Fetch members + personas + filter
