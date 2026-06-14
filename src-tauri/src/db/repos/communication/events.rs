@@ -1095,6 +1095,32 @@ pub fn get_all_subscriptions(pool: &DbPool) -> Result<Vec<PersonaEventSubscripti
     )
 }
 
+/// All enabled subscriptions, unfiltered by event type. The live event-bus
+/// dispatch (`background.rs`) fetches the full set and lets `bus::match_event`
+/// filter by CANONICAL event type — separator styles drift across the fleet's
+/// emitted event names (`code_review.completed` vs `code-review.completed`), so
+/// an exact `event_type IN (...)` pre-filter silently dropped variant-spelled
+/// subscriptions before the canonical matcher ever saw them. The subscription
+/// set is small (tens–low hundreds); if it grows large, replace this with a
+/// canonical generated column + indexed lookup.
+pub fn get_all_enabled_subscriptions(
+    pool: &DbPool,
+) -> Result<Vec<PersonaEventSubscription>, AppError> {
+    timed_query!(
+        "event_subscriptions",
+        "event_subscriptions::get_all_enabled_subscriptions",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT * FROM persona_event_subscriptions WHERE enabled = 1
+                 ORDER BY created_at DESC",
+            )?;
+            let rows = stmt.query_map([], row_to_subscription)?;
+            Ok(collect_rows(rows, "get_all_enabled_subscriptions"))
+        }
+    )
+}
+
 pub fn get_subscriptions_by_event_type(
     pool: &DbPool,
     event_type: &str,

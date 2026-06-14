@@ -54,8 +54,43 @@ impl MatchableSubscription for PersonaEventSubscription {
         self.use_case_id.as_deref()
     }
     fn is_eligible(&self, event: &PersonaEvent) -> bool {
-        self.enabled && self.event_type == event.event_type
+        // Canonical match (not exact): emitted event names drift in separator
+        // style — `code_review.completed` / `code-review.completed`,
+        // `ux.review.completed` / `ux_review.completed`, `goal.progress` /
+        // `goal_progress` all coexist in the live bus (LLM-emitted; the recipe
+        // contracts are inconsistent). Exact matching silently dropped events
+        // whose separator style differed from the subscription's, starving
+        // downstream steps. Canonicalizing separators unifies the stylistic
+        // variants without merging semantically-distinct events.
+        self.enabled && canonical_event_type(&self.event_type) == canonical_event_type(&event.event_type)
     }
+}
+
+/// Canonical form of an event type for separator-insensitive matching.
+/// Lowercases and collapses the three separators used interchangeably in the
+/// fleet's event vocabulary (`-`, `_`, `.`) to a single `.`, so
+/// `code_review.completed`, `code-review.completed`, and `code.review.completed`
+/// all compare equal. Does NOT merge events that differ in their actual words
+/// (e.g. `code-reviewer.pr.reviewed` stays distinct from `code_review.completed`)
+/// — that semantic drift is a recipe-contract concern, not a separator one.
+pub fn canonical_event_type(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut last_sep = false;
+    for ch in s.trim().chars() {
+        if ch == '-' || ch == '_' || ch == '.' {
+            if !last_sep && !out.is_empty() {
+                out.push('.');
+            }
+            last_sep = true;
+        } else {
+            out.push(ch.to_ascii_lowercase());
+            last_sep = false;
+        }
+    }
+    while out.ends_with('.') {
+        out.pop();
+    }
+    out
 }
 
 /// Wrapper that pairs a `PersonaTrigger` with its parsed `TriggerConfig`.
@@ -336,6 +371,34 @@ mod tests {
         let subs = vec![make_sub("p1", "build_complete")];
         let matches = match_event(&event, &subs);
         assert!(matches.is_empty());
+    }
+
+    #[test]
+    fn test_canonical_event_type_unifies_separators() {
+        assert_eq!(canonical_event_type("code_review.completed"), "code.review.completed");
+        assert_eq!(canonical_event_type("code-review.completed"), "code.review.completed");
+        assert_eq!(canonical_event_type("code.review.completed"), "code.review.completed");
+        assert_eq!(canonical_event_type("ux_review.completed"), "ux.review.completed");
+        assert_eq!(canonical_event_type("ux.review.completed"), "ux.review.completed");
+        assert_eq!(canonical_event_type("Goal_Progress"), "goal.progress");
+        // semantically-distinct names stay distinct (different words, not separators)
+        assert_ne!(
+            canonical_event_type("code-reviewer.pr.reviewed"),
+            canonical_event_type("code_review.completed")
+        );
+    }
+
+    #[test]
+    fn test_match_across_separator_variants() {
+        // Event emitted dotted; subscription stored underscored — must still match.
+        let event = make_event("ux.review.completed");
+        let subs = vec![make_sub("p1", "ux_review.completed")];
+        let matches = match_event(&event, &subs);
+        assert_eq!(matches.len(), 1, "separator variants must match canonically");
+        // And the reverse direction + hyphen form.
+        let event2 = make_event("code-review.completed");
+        let subs2 = vec![make_sub("p2", "code_review.completed")];
+        assert_eq!(match_event(&event2, &subs2).len(), 1);
     }
 
     #[test]
