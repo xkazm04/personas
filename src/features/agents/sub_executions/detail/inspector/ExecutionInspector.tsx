@@ -5,6 +5,7 @@ import { formatDuration } from '@/lib/utils/formatters';
 import { parseToolSteps, formatCost, formatTimeGap } from './inspectorTypes';
 import { ToolCallCard } from './ToolCallCard';
 import { CostBreakdownBar } from './CostBreakdownBar';
+import { SubagentTree } from './SubagentTree';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ExecutionInspectorProps {
@@ -105,6 +106,9 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
       <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4">
         <CostBreakdownBar model={model} inputTokens={execution.input_tokens} outputTokens={execution.output_tokens} />
       </div>
+
+      {/* Subagent fan-out (P4 observability) — live-only, renders when present */}
+      <SubagentTree executionId={execution.id} />
 
       {/* Tool Call Timeline */}
       {steps.length > 0 && (

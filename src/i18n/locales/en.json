@@ -1343,7 +1343,8 @@
       "compare_starred_pair": "Compare starred",
       "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
       "cache_hit": "Cache hit",
-      "cached": "cached"
+      "cached": "cached",
+      "subagents": "Subagents"
     },
     "lab": {
       "vr_title": "Versions & Ratings",

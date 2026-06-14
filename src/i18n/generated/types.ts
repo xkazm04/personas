@@ -1350,6 +1350,7 @@ export type Translations = {
       compare_starred_pair_tooltip: string;
       cache_hit: string;
       cached: string;
+      subagents: string;
     };
     lab: {
       vr_title: string;
