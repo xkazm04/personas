@@ -130,6 +130,20 @@ pub fn get_run_budget_state(
     Ok(crate::engine::run_budget::ledger().state(&run_id))
 }
 
+/// Recent persisted run budgets for cost-trend dashboards. `kind` optionally
+/// filters to `"evolution"` / `"lab"` / `"pipeline"`; `limit` defaults to 50
+/// (clamped 1..=500). Reads the durable `run_budgets` table (survives restarts),
+/// unlike `get_run_budget_state` which reads the live in-memory ledger.
+#[tauri::command]
+pub fn list_run_budgets(
+    state: State<'_, Arc<AppState>>,
+    kind: Option<String>,
+    limit: Option<i64>,
+) -> Result<Vec<crate::engine::run_budget::RunBudgetRecord>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::run_budget::list_recent(&state.db, kind.as_deref(), limit.unwrap_or(50))
+}
+
 /// Manually trigger an evolution cycle for a persona.
 #[tauri::command]
 pub async fn evolution_trigger_cycle(

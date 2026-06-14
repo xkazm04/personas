@@ -1,6 +1,6 @@
 # `run_budget` — aggregate cost ceiling for multi-spawn runs (P2)
 
-Co-located design for `engine/run_budget.rs`. Status: **warn-only shipped; evolution + lab + pipeline wired**. Companion to the P1 cache-token capture (`parser.rs`) — P1 made per-spawn cost accurate; P2 accumulates it across a run.
+Co-located design for `engine/run_budget.rs`. Status: **shipped — evolution + lab + pipeline wired; enforce-mode (opt-in) + DB persistence done**. Companion to the P1 cache-token capture (`parser.rs`) — P1 made per-spawn cost accurate; P2 accumulates it across a run.
 
 ## Problem
 
@@ -84,8 +84,17 @@ crossing sets `exceeded` + one `tracing::warn!`; the run continues.
    completes and the ledger's `exceeded`/enforce state is the observable "why"),
    and a pre-launch *reservation* (estimate-then-reconcile) for the concurrent
    within-scenario lab spawns to bound overshoot tighter.
-3. **DB persistence** — run-level cumulative cost columns on the grouping tables
-   for historical/aggregate dashboards (today it lives in-memory + the cycle
-   summary).
+3. **~~DB persistence~~ DONE** — a uniform `run_budgets` table (one row per run,
+   keyed by run_id + kind) written at each consumer's finalize via
+   `repos::run_budget::persist` (captures the global enforce flag + timestamps).
+   Read for dashboards via the `list_run_budgets` command → `RunBudgetRecord`.
+   The live ledger + `get_run_budget_state` cover the current run; this table is
+   the durable history. NOTE: only completed runs persist (early-exit/cancelled
+   runs skip finalize) — a register-time upsert would capture those too if needed.
+
+### Observability surfaces
+- `EvolutionCycleSummary.budget` — embedded final state (evolution only).
+- `get_run_budget_state(run_id)` — live in-memory state, any consumer.
+- `list_run_budgets(kind?, limit?)` → `RunBudgetRecord[]` — durable history for dashboards.
 4. **chain** — would need a `cascade_id` propagated through `persona_events`;
    deferred (depth is already capped at 8).

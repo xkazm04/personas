@@ -4527,6 +4527,28 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN cache_read_tokens INTEGER NOT NULL DEFAULT 0;").ok();
     ddl_step(conn, "ALTER TABLE persona_executions ADD COLUMN cache_creation_tokens INTEGER NOT NULL DEFAULT 0;").ok();
 
+    // -- run_budgets (P2): persisted aggregate cost per multi-spawn run for
+    // historical / cost-trend dashboards. Mirrors the in-memory RunBudgetLedger
+    // (engine/run_budget.rs); written at each consumer's finalize. Keyed by the
+    // run identity (evolution cycle id / lab run id / pipeline run id).
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS run_budgets (
+            run_id       TEXT PRIMARY KEY,
+            kind         TEXT NOT NULL,
+            ceiling_usd  REAL NOT NULL DEFAULT 0,
+            spent_usd    REAL NOT NULL DEFAULT 0,
+            spawn_count  INTEGER NOT NULL DEFAULT 0,
+            exceeded     INTEGER NOT NULL DEFAULT 0,
+            enforce      INTEGER NOT NULL DEFAULT 0,
+            finished     INTEGER NOT NULL DEFAULT 0,
+            created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    )
+    .ok();
+    ddl_step(conn, "CREATE INDEX IF NOT EXISTS idx_run_budgets_kind ON run_budgets(kind, updated_at);").ok();
+
     // NOTE: the Groups→Teams Phase-3 DATA MIGRATION that used to live here was
     // relocated to the end of `run_incremental` (2026-05-24). It reads columns
     // (`persona_groups.shared_instructions`, `persona_teams.shared_instructions`,

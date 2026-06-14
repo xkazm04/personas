@@ -529,8 +529,13 @@ pub async fn run_test(
         },
     );
 
-    // P2: release the run's budget entry (retained 30m for post-run reads).
-    crate::engine::run_budget::ledger().finish(&run_id);
+    // P2: finalize + persist the run's budget (in-memory 30m; the row survives
+    // restarts for cost-trend dashboards).
+    if let Some(budget) = crate::engine::run_budget::ledger().finish(&run_id) {
+        if let Err(e) = crate::db::repos::run_budget::persist(&pool, &budget) {
+            tracing::warn!(run_id = %run_id, "run-budget persist failed: {e}");
+        }
+    }
 }
 
 // -- Phase 1: Generate scenarios --------------------------------

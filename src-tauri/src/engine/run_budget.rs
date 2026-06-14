@@ -102,6 +102,25 @@ pub struct RunBudgetState {
     pub finished: bool,
 }
 
+/// A persisted budget row (table `run_budgets`) for historical / cost-trend
+/// dashboards. Superset of [`RunBudgetState`] with the captured enforce flag and
+/// row timestamps. Written at each consumer's finalize via `repos::run_budget`.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct RunBudgetRecord {
+    pub run_id: String,
+    pub kind: String,
+    pub ceiling_usd: f64,
+    pub spent_usd: f64,
+    pub spawn_count: u32,
+    pub exceeded: bool,
+    pub enforce: bool,
+    pub finished: bool,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 /// Returned by [`RunBudgetLedger::record`] so the caller can warn exactly once
 /// on the first ceiling crossing without re-reading state.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -215,13 +234,17 @@ impl RunBudgetLedger {
         enforce_enabled() && self.is_exceeded(run_id)
     }
 
-    /// Mark a run complete. The entry is retained for [`RETENTION`] so summaries
-    /// / UI fetches still resolve, then swept on a later mutation.
-    pub fn finish(&self, run_id: &str) {
+    /// Mark a run complete and return its final state (for persistence). The
+    /// entry is retained for [`RETENTION`] so summaries / UI fetches still
+    /// resolve, then swept on a later mutation. `None` for an unknown id.
+    pub fn finish(&self, run_id: &str) -> Option<RunBudgetState> {
         let mut runs = self.runs.lock().unwrap();
         if let Some(entry) = runs.get_mut(run_id) {
             entry.state.finished = true;
             entry.last_touch = Instant::now();
+            Some(entry.state.clone())
+        } else {
+            None
         }
     }
 

@@ -944,8 +944,13 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         }
     }
 
-    // P2: release the pipeline's budget entry (retained 30m for post-run reads).
-    crate::engine::run_budget::ledger().finish(&ctx.run_id);
+    // P2: finalize + persist the pipeline's budget (in-memory 30m; the row
+    // survives restarts for cost-trend dashboards).
+    if let Some(budget) = crate::engine::run_budget::ledger().finish(&ctx.run_id) {
+        if let Err(e) = crate::db::repos::run_budget::persist(&ctx.db, &budget) {
+            tracing::warn!(run_id = %ctx.run_id, "run-budget persist failed: {e}");
+        }
+    }
 }
 
 // ============================================================================

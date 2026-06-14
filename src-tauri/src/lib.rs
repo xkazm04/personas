@@ -1706,6 +1706,7 @@ pub fn run() {
             commands::execution::evolution::evolution_trigger_cycle,
             commands::execution::evolution::evolution_check_eligibility,
             commands::execution::evolution::get_run_budget_state,
+            commands::execution::evolution::list_run_budgets,
             // Execution -- Healing
             commands::execution::healing::list_healing_issues,
             commands::execution::healing::get_healing_issue,

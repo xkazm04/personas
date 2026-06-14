@@ -461,8 +461,13 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         }
     }
 
-    // P2: release the cycle's budget entry (retained 30m for post-run reads).
-    crate::engine::run_budget::ledger().finish(&cycle_id);
+    // P2: finalize + persist the cycle's budget (retained 30m in-memory; the row
+    // survives restarts for cost-trend dashboards).
+    if let Some(budget) = crate::engine::run_budget::ledger().finish(&cycle_id) {
+        if let Err(e) = crate::db::repos::run_budget::persist(&pool, &budget) {
+            tracing::warn!(cycle_id = %cycle_id, "run-budget persist failed: {e}");
+        }
+    }
 }
 
 // =============================================================================
