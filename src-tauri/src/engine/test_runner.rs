@@ -1313,6 +1313,32 @@ async fn spawn_cli_and_collect_structured(
                         ts_ms_relative: ts_ms,
                     });
                 }
+                StreamLineType::TaskStarted {
+                    description,
+                    subagent_type,
+                    ..
+                } => {
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "subagent_started".to_string(),
+                        tool_name: Some(subagent_type),
+                        tool_args_preview: None,
+                        tool_result_preview: None,
+                        text_preview: Some(description),
+                        ts_ms_relative: ts_ms,
+                    });
+                }
+                StreamLineType::TaskNotification { status, .. } => {
+                    events.push(CreateLabResultEventInput {
+                        event_index: idx,
+                        event_type: "subagent_update".to_string(),
+                        tool_name: None,
+                        tool_args_preview: None,
+                        tool_result_preview: Some(status),
+                        text_preview: None,
+                        ts_ms_relative: ts_ms,
+                    });
+                }
                 StreamLineType::Unknown => {}
             }
         })

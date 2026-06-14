@@ -2068,6 +2068,20 @@ pub async fn run_execution(
                                     model: model.clone(),
                                     session_id: session_id.clone(),
                                 }),
+                                StreamLineType::TaskStarted { task_id, tool_use_id, subagent_type, description } => Some(StructuredExecutionEvent::SubagentStarted {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    task_id: task_id.clone(),
+                                    tool_use_id: tool_use_id.clone(),
+                                    subagent_type: subagent_type.clone(),
+                                    description: description.clone(),
+                                }),
+                                StreamLineType::TaskNotification { task_id, status, total_tokens, duration_ms, .. } => Some(StructuredExecutionEvent::SubagentUpdate {
+                                    execution_id: exec_id_for_stream.clone(),
+                                    task_id: task_id.clone(),
+                                    status: status.clone(),
+                                    total_tokens: *total_tokens,
+                                    duration_ms: *duration_ms,
+                                }),
                                 StreamLineType::Unknown => None,
                             };
                             if let Some(event) = structured_event {

@@ -95,6 +95,38 @@ pub fn parse_stream_line(line: &str) -> (StreamLineType, Option<String>) {
                     },
                     Some(display),
                 )
+            } else if subtype == "task_started" {
+                // P4: a Task/Workflow subagent launched. `tool_use_id` links it
+                // to the parent Task tool call (fan-out tree reconstruction).
+                let s = |k: &str| value.get(k).and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                let subagent_type = s("subagent_type");
+                let description = s("description");
+                let display = format!("  subagent started: {description} ({subagent_type})");
+                (
+                    StreamLineType::TaskStarted {
+                        task_id: s("task_id"),
+                        tool_use_id: s("tool_use_id"),
+                        subagent_type,
+                        description,
+                    },
+                    Some(display),
+                )
+            } else if subtype == "task_notification" {
+                // P4: subagent progress / completion + its own usage.
+                let s = |k: &str| value.get(k).and_then(|v| v.as_str()).unwrap_or_default().to_string();
+                let usage = value.get("usage");
+                let u = |k: &str| usage.and_then(|o| o.get(k)).and_then(serde_json::Value::as_u64);
+                let status = s("status");
+                (
+                    StreamLineType::TaskNotification {
+                        task_id: s("task_id"),
+                        tool_use_id: s("tool_use_id"),
+                        status: status.clone(),
+                        total_tokens: u("total_tokens"),
+                        duration_ms: u("duration_ms"),
+                    },
+                    Some(format!("  subagent {status}")),
+                )
             } else {
                 (StreamLineType::Unknown, None)
             }
@@ -1285,6 +1317,31 @@ Finished."#;
         assert!(parse_usage_limit("rate limit exceeded").is_none());
         assert!(parse_usage_limit("Command not found").is_none());
         assert!(parse_usage_limit("").is_none());
+    }
+
+    #[test]
+    fn test_parse_task_started_and_notification() {
+        // Fixtures captured from a real Task fan-out (p4_fanout_DESIGN.md Phase 0).
+        let started = r#"{"type":"system","subtype":"task_started","task_id":"a036","tool_use_id":"toolu_01","description":"Reply ALPHA","subagent_type":"claude","task_type":"local_agent"}"#;
+        match parse_stream_line(started).0 {
+            StreamLineType::TaskStarted { task_id, tool_use_id, subagent_type, description } => {
+                assert_eq!(task_id, "a036");
+                assert_eq!(tool_use_id, "toolu_01");
+                assert_eq!(subagent_type, "claude");
+                assert_eq!(description, "Reply ALPHA");
+            }
+            other => panic!("expected TaskStarted, got {other:?}"),
+        }
+        let notif = r#"{"type":"system","subtype":"task_notification","task_id":"a036","tool_use_id":"toolu_01","status":"completed","usage":{"total_tokens":14235,"tool_uses":0,"duration_ms":1598}}"#;
+        match parse_stream_line(notif).0 {
+            StreamLineType::TaskNotification { task_id, status, total_tokens, duration_ms, .. } => {
+                assert_eq!(task_id, "a036");
+                assert_eq!(status, "completed");
+                assert_eq!(total_tokens, Some(14235));
+                assert_eq!(duration_ms, Some(1598));
+            }
+            other => panic!("expected TaskNotification, got {other:?}"),
+        }
     }
 
     #[test]

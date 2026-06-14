@@ -120,6 +120,23 @@ pub enum StreamLineType {
         model: Option<String>,
         session_id: Option<String>,
     },
+    /// A `Task`/`Workflow` subagent was launched (CLI `system/task_started`).
+    /// `tool_use_id` links it to the parent Task tool call (P4 fan-out tree).
+    TaskStarted {
+        task_id: String,
+        tool_use_id: String,
+        subagent_type: String,
+        description: String,
+    },
+    /// Subagent progress / completion (CLI `system/task_notification`) carrying
+    /// the subagent's own token usage + duration.
+    TaskNotification {
+        task_id: String,
+        tool_use_id: String,
+        status: String,
+        total_tokens: Option<u64>,
+        duration_ms: Option<u64>,
+    },
     Unknown,
 }
 
@@ -635,6 +652,25 @@ pub enum StructuredExecutionEvent {
         cache_creation_tokens: Option<u64>,
         model: Option<String>,
         session_id: Option<String>,
+    },
+    /// A subagent was launched (P4 fan-out). `tool_use_id` links it to the
+    /// parent Task tool call so the frontend can build the fan-out tree.
+    #[serde(rename = "subagent_started")]
+    SubagentStarted {
+        execution_id: String,
+        task_id: String,
+        tool_use_id: String,
+        subagent_type: String,
+        description: String,
+    },
+    /// Subagent progress / completion with its own token usage + duration.
+    #[serde(rename = "subagent_update")]
+    SubagentUpdate {
+        execution_id: String,
+        task_id: String,
+        status: String,
+        total_tokens: Option<u64>,
+        duration_ms: Option<u64>,
     },
     FileChange {
         execution_id: String,
