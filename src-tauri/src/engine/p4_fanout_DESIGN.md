@@ -66,8 +66,8 @@ field is the linking key for attribution.
 |---|---|---|
 | **0 — Empirical validation** | ✅ DONE | this doc |
 | **1 — Capability gate** | ✅ DONE | `engine/cli_capabilities.rs` probes a bounded `claude -p` (mirrors `build_cli_args`), reads init `tools`+`agents` → `CliCapabilities{has_workflow,has_task,deep_fanout_available,…}` (cached); `probe_cli_capabilities` command. Phase 2 gates the persona capability on this. |
-| **3 — Sub-agent observability** | TODO (shape known) | parse `task_started`/`task_notification` + `parent_tool_use_id` → new `StreamLineType` variants + `StructuredExecutionEvent`s (the lockstep triplet: `types.rs` + `terminalEvents.ts` + `eventRegistry.ts` + `useStructuredStream.ts`) → render a fan-out tree in the execution inspector. Mirrors the P1/TodoWrite pattern. |
-| **2 — Opt-in fan-out capability** | TODO | a persona param that (when enabled + Workflow/Task available) injects an `assemble_prompt` directive to delegate parallel sub-tasks via Task/Workflow; **requires** a `--max-budget-usd`; tier-gated. Do AFTER Phase 3 so fan-out isn't a black box. |
+| **3 — Sub-agent observability** | ✅ DONE | parse `task_started`/`task_notification` + `parent_tool_use_id` → new `StreamLineType` variants + `StructuredExecutionEvent`s (the lockstep triplet: `types.rs` + `terminalEvents.ts` + `eventRegistry.ts` + `useStructuredStream.ts`) → render a fan-out tree in the execution inspector. Mirrors the P1/TodoWrite pattern. |
+| **2 — Opt-in fan-out capability** | ✅ DONE (backend) | a persona param `deep_fanout` that (when enabled + Workflow/Task available) injects an `assemble_prompt` directive to delegate parallel sub-tasks via Task/Workflow; **requires** a `--max-budget-usd`; tier-gated. Do AFTER Phase 3 so fan-out isn't a black box. |
 
 **Risk (unchanged):** trades Rust-side orchestration control (conditional nodes,
 approval gates, per-node memory, `review_decision.*` chaining) for opaque in-CLI

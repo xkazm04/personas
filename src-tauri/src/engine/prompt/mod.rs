@@ -83,6 +83,38 @@ impl DisciplineMode {
     }
 }
 
+/// Directive (P4) appended when a persona enables the `deep_fanout` parameter:
+/// instructs the model to delegate independent parallel sub-tasks to subagents
+/// via the Task tool. Harmless on plans that don't expose Task (the model simply
+/// can't call it). Cost is bounded by the persona's `--max-budget-usd`, which a
+/// fan-out persona should set (a fan-out can spawn many subagents).
+const FANOUT_DIRECTIVE: &str = "\n## Parallel Delegation (deep fan-out)\nWhen the work contains independent sub-tasks that can run concurrently — gathering from multiple sources, reviewing multiple items, analyzing multiple angles — delegate each to a parallel subagent via the Task tool instead of doing them sequentially yourself, then synthesize their results. This is faster and reuses the cached system context. Delegate only genuinely independent work; keep dependent or sequential steps in the main thread.\n\n";
+
+/// Whether the persona opted into deep fan-out (P4) via the `deep_fanout`
+/// boolean parameter. Mirrors `DisciplineMode::resolve`'s parameter lookup.
+fn deep_fanout_enabled(persona: &Persona) -> bool {
+    let Some(params_json) = persona.parameters.as_deref() else {
+        return false;
+    };
+    let Ok(params) = serde_json::from_str::<Vec<serde_json::Value>>(params_json) else {
+        return false;
+    };
+    for p in params {
+        if p.get("key").and_then(|v| v.as_str()) == Some("deep_fanout") {
+            let v = p
+                .get("value")
+                .or_else(|| p.get("default_value"))
+                .or_else(|| p.get("default"));
+            return match v {
+                Some(serde_json::Value::Bool(b)) => *b,
+                Some(serde_json::Value::String(s)) => s == "true",
+                _ => false,
+            };
+        }
+    }
+    false
+}
+
 /// Assemble the full prompt string from persona configuration, tools, input data,
 /// optional credential environment variable hints, and optional workspace shared instructions.
 pub fn assemble_prompt(
@@ -131,6 +163,13 @@ pub fn assemble_prompt(
         DisciplineMode::Deliberate => DELIBERATE_MODE_DIRECTIVE,
     };
     prompt.push_str(directive);
+
+    // P4: opt-in deep fan-out — instruct the model to delegate independent
+    // parallel sub-tasks to subagents (Task tool). No-op on plans without Task;
+    // sub-agent activity surfaces in the inspector (Phase 3 observability).
+    if deep_fanout_enabled(persona) {
+        prompt.push_str(FANOUT_DIRECTIVE);
+    }
 
     // Triggering Event — when the runtime wraps input_data with `_event` metadata
     // (see engine/background.rs), surface which event fired this execution so the
@@ -913,6 +952,42 @@ mod tests {
         assert!(
             !prompt.contains("## Execution Mode: DELIBERATE"),
             "DELIBERATE directive should NOT appear when mode is autonomous"
+        );
+    }
+
+    #[test]
+    fn assemble_prompt_injects_fanout_directive_when_enabled() {
+        let mut persona = test_persona();
+        // Off by default — no directive.
+        let base = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        assert!(!base.contains("Parallel Delegation"));
+
+        // Opted in via the deep_fanout parameter (accepts bool or "true").
+        persona.parameters = Some(
+            serde_json::json!([{ "key": "deep_fanout", "type": "boolean", "value": true }]).to_string(),
+        );
+        let prompt = assemble_prompt(
+            &persona,
+            &[],
+            None,
+            None,
+            None,
+            None,
+            #[cfg(feature = "desktop")]
+            None,
+        );
+        assert!(
+            prompt.contains("## Parallel Delegation (deep fan-out)"),
+            "deep_fanout=true should inject the fan-out directive"
         );
     }
 
