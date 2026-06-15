@@ -96,6 +96,7 @@ export default function SidebarLevel3({
               key={item.id}
               type="button"
               role="tab"
+              data-testid={`l3-nav-${item.id}`}
               aria-selected={isActive}
               aria-current={isActive ? 'page' : undefined}
               onClick={() => onSelect(item.id)}
