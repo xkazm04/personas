@@ -1935,9 +1935,19 @@ function Body(props: BodyProps) {
               const prev = i > 0 ? messages[i - 1] : undefined;
               const next = i < messages.length - 1 ? messages[i + 1] : undefined;
               // Group consecutive same-role messages: only the first shows the
-              // avatar, and the run is pulled tighter together.
-              const groupStart = !prev || prev.role !== m.role;
-              const groupEnd = !next || next.role !== m.role;
+              // avatar, and the run is pulled tighter together. PROGRESS asides
+              // are a distinct visual kind even though they're role=assistant —
+              // treat them separately so a real reply after an aside still
+              // shows its avatar (and asides cluster among themselves).
+              const kindOf = (msg?: { role: string; content: string }) =>
+                msg
+                  ? msg.role === 'assistant' && msg.content.trimStart().startsWith('PROGRESS:')
+                    ? 'assistant-aside'
+                    : msg.role
+                  : '';
+              const myKind = kindOf(m);
+              const groupStart = !prev || kindOf(prev) !== myKind;
+              const groupEnd = !next || kindOf(next) !== myKind;
               // Day separator above the first message of each new calendar day.
               const daySep =
                 m.createdAt &&

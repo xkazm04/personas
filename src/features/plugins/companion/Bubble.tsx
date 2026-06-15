@@ -86,6 +86,32 @@ export function Bubble({
     );
   }
 
+  // Conversational PROGRESS aside — a beat Athena emitted mid-turn,
+  // persisted as its own lightweight assistant episode (sentinel prefix
+  // `PROGRESS:`). Renders as a slim, quiet line with a small dot in the
+  // avatar gutter — her thinking-aloud while she works, visually distinct
+  // from the considered final reply. (Live, in-flight beats are surfaced
+  // separately by the streaming bubble; this is the persisted form.)
+  const isAside = !isUser && !isSystem && isString && (children as string).trimStart().startsWith('PROGRESS:');
+  if (isAside) {
+    const beat = (children as string).trimStart().replace(/^PROGRESS:\s*/, '').trim();
+    return (
+      <div
+        className={`group flex gap-2.5 justify-start ${groupStart ? '' : '-mt-1'}`}
+        data-testid="companion-bubble-aside"
+        data-companion-bubble-role="assistant-aside"
+        data-companion-bubble-index={index}
+      >
+        <div className="w-7 flex justify-center shrink-0" aria-hidden>
+          <span className="w-1.5 h-1.5 mt-2 rounded-full bg-primary/40" />
+        </div>
+        <div className="min-w-0 max-w-[85%] py-0.5 typo-caption italic text-foreground/55 leading-relaxed">
+          {beat}
+        </div>
+      </div>
+    );
+  }
+
   // Display-time safety net: strip any machine-grammar lines (`OP:`,
   // `QR:`, `TTS:`, raw `{"op":`) from assistant/system prose before it
   // renders. The backend dispatcher strips these on the happy path, but

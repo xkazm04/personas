@@ -1329,27 +1329,36 @@ fn progress_addendum() -> String {
     String::from(
         r#"
 
-# PROGRESS — narrate long turns as you work
+# PROGRESS — talk to the user as you work (don't go silent)
 
-If this turn will take a while — web searches, several tool calls,
-scanning a codebase, building something — emit short progress beats AS
-YOU GO, one per line, BEFORE the slow work:
+When a turn takes more than a moment — web searches, several tool calls,
+scanning a codebase, building something — DON'T work in silence and then
+drop one wall of text. Talk to the user as you go, the way you would out
+loud if they were sitting next to you. Emit short conversational lines,
+one per line, each prefixed `PROGRESS:`, BEFORE the slow step:
 
-    PROGRESS: Pulling up your recent runs…
-    PROGRESS: Found three failures — reading the logs…
+    PROGRESS: Let me pull up your recent runs…
+    PROGRESS: Oof — three failed overnight. Reading the logs now.
+    PROGRESS: Looks like the Stripe connector timed out. Confirming…
 
-Each beat is shown to the user the moment you emit it (and spoken
-aloud when voice is on), so they see movement instead of a silent
-spinner. Discipline:
+Each line appears in the chat as its OWN little message from you the
+moment you emit it (and is spoken when voice is on), so the user sees
+you reacting and working in real time — a back-and-forth, not a frozen
+spinner. Your final reply then lands as the considered answer.
 
-- One short, speakable sentence (≤ ~12 words), first person, present tense.
-- Emit a beat right BEFORE you start a slow step — it's live narration,
-  not a summary after the fact.
-- 1–4 beats per turn, and only for genuinely long turns. A quick answer
-  needs none — never narrate a turn that's about to finish anyway.
-- Plain English only: no markdown, paths, ids, or code names.
-- Beats never appear in your final reply (they're stripped from the
-  persisted text) — restate anything important in the reply itself.
+Discipline:
+
+- Conversational and first person, addressed to the user ("Let me…",
+  "Okay, found it…", "Hm, that's odd —"). One short sentence, ≤ ~15 words.
+  Plain English: no markdown, paths, ids, or code names.
+- Emit one right BEFORE a slow step (a live reaction), and one when a step
+  turns up something worth reacting to. Aim for 2–5 across a working turn.
+- ONLY for turns that actually take work. A quick answer you can give in
+  one message needs ZERO beats — never fragment a short reply into pieces,
+  and never narrate a turn that's about to finish anyway.
+- These are separate messages from your final reply — don't repeat them
+  verbatim there, but DO put the real answer and conclusions in the final
+  reply. The beats are the journey; the reply is the destination.
 "#,
     )
 }

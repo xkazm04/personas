@@ -94,6 +94,11 @@ pub struct Dispatched {
     /// Any malformed op blocks we encountered. Logged but otherwise
     /// silent — never block the turn for a syntax error.
     pub warnings: Vec<String>,
+    /// `PROGRESS:` conversational asides Athena emitted mid-turn, in order.
+    /// Stripped from the final reply (above) and persisted by session.rs as
+    /// their own lightweight assistant episodes so the chat reads as a
+    /// progressive back-and-forth, not one silent block then a wall of text.
+    pub progress_beats: Vec<String>,
 }
 
 /// One inline chat-card request. `config` is widget-specific JSON the
@@ -336,7 +341,11 @@ pub fn dispatch(
         // frontend detects + speaks these the instant their line completes
         // in the stream; here we only strip them from the persisted reply so
         // they never appear in the final bubble.
-        if trimmed.strip_prefix("PROGRESS:").is_some() {
+        if let Some(beat) = trimmed.strip_prefix("PROGRESS:") {
+            let beat = beat.trim();
+            if !beat.is_empty() {
+                out.progress_beats.push(beat.to_string());
+            }
             continue;
         }
 
@@ -2011,6 +2020,16 @@ mod tests {
             out.cleaned_text.contains("three failing personas"),
             "real prose must survive the strip: {:?}",
             out.cleaned_text
+        );
+        // Beats are now CAPTURED (persisted by session.rs as aside messages),
+        // not merely discarded — in emission order.
+        assert_eq!(
+            out.progress_beats,
+            vec![
+                "Pulling up your recent runs…".to_string(),
+                "Checking the logs…".to_string()
+            ],
+            "PROGRESS beats must be captured in order"
         );
     }
 

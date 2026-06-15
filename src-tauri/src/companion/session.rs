@@ -606,9 +606,27 @@ pub async fn send_turn(
                     tts_text: None,
                     requests_continuation: false,
                     warnings: vec![format!("dispatcher error: {e}")],
+                    progress_beats: Vec::new(),
                 }
             }
         };
+
+    // Persist each conversational PROGRESS beat as its own lightweight
+    // assistant episode BEFORE the final reply, so the transcript reads as
+    // a progressive back-and-forth (the user chose "persist as messages").
+    // The `PROGRESS:` sentinel prefix is how the frontend renders them as
+    // asides; they're append-only (no embedding) — ephemeral conversational
+    // texture, not memory-worthy facts.
+    for beat in &dispatched.progress_beats {
+        if let Err(e) = episodic::append_episode(
+            &user_db,
+            &session_id,
+            EpisodeRole::Assistant,
+            &format!("PROGRESS: {beat}"),
+        ) {
+            tracing::warn!(error = %e, "failed to persist progress beat episode");
+        }
+    }
     let display_text = if dispatched.cleaned_text.trim().is_empty() {
         // The whole reply was ops with no prose. Don't render an empty
         // bubble — replace with a tiny placeholder.
