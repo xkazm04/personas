@@ -68,10 +68,10 @@ export interface ThemeDefinition {
 export const THEMES: ThemeDefinition[] = [
   { id: 'dark-midnight', label: 'Midnight', primaryColor: '#3b82f6', accentColor: '#8b5cf6', backgroundSample: '#0a0a12', foregroundSample: '#f0f0f5', isLight: false },
   { id: 'dark-cyan', label: 'Cyan', primaryColor: '#06b6d4', accentColor: '#22d3ee', backgroundSample: '#0a1214', foregroundSample: '#e0f2fe', isLight: false },
-  { id: 'dark-bronze', label: 'Bronze', primaryColor: '#d97706', accentColor: '#f59e0b', backgroundSample: '#121008', foregroundSample: '#fef3c7', isLight: false },
+  { id: 'dark-bronze', label: 'Bronze', primaryColor: '#e0820a', accentColor: '#f59e0b', backgroundSample: '#0c0b08', foregroundSample: '#ece7df', isLight: false },
   { id: 'dark-frost', label: 'Frost', primaryColor: '#e2e8f0', accentColor: '#f8fafc', backgroundSample: '#0f1115', foregroundSample: '#f1f5f9', isLight: false },
-  { id: 'dark-purple', label: 'Purple', primaryColor: '#a855f7', accentColor: '#c084fc', backgroundSample: '#0e0a14', foregroundSample: '#f3e8ff', isLight: false },
-  { id: 'dark-pink', label: 'Pink', primaryColor: '#ec4899', accentColor: '#f472b6', backgroundSample: '#140a10', foregroundSample: '#fce7f3', isLight: false },
+  { id: 'dark-purple', label: 'Purple', primaryColor: '#b667f7', accentColor: '#c084fc', backgroundSample: '#0b0a0f', foregroundSample: '#e9e6ee', isLight: false },
+  { id: 'dark-pink', label: 'Pink', primaryColor: '#f0529e', accentColor: '#f472b6', backgroundSample: '#0f0a0d', foregroundSample: '#ece5e9', isLight: false },
   { id: 'dark-red', label: 'Red', primaryColor: '#cc0000', accentColor: '#e60000', backgroundSample: '#080808', foregroundSample: '#ededed', isLight: false },
   { id: 'dark-matrix', label: 'Matrix', primaryColor: '#00ff41', accentColor: '#20c20e', backgroundSample: '#050505', foregroundSample: '#e8e8e8', isLight: false },
   { id: 'light', label: 'Light', primaryColor: '#2563eb', accentColor: '#3b82f6', backgroundSample: '#f7f8fa', foregroundSample: '#0f172a', isLight: true },

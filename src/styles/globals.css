@@ -2025,34 +2025,39 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --status-processing: #22d3ee;
 }
 
-/* Dark: Bronze — warm amber palette, hue-coherent neutrals */
+/* Dark: Bronze — "Foundry". Restrained pattern (à la Red/Matrix): warm-graphite
+   neutral canvas, molten-bronze reserved as the accent. Text + structure stay
+   near-achromatic (faint warm cast only); the hue lives in primary/accent, a
+   warm-metal brand spectrum (brass→gold→copper→terracotta), and the
+   scrollbar/selection/dot-grid signatures further down. */
 [data-theme="dark-bronze"] {
-  --primary: #d97706;
+  --primary: #e0820a;
   --accent: #f59e0b;
-  --background: #121008;
-  --foreground: #fef3c7;
-  --secondary: #1c1505;
-  --muted: #9b7737;
-  --muted-dark: #524018;
-  --muted-foreground: #d4b482;
-  --border: #78350f;
-  --card-bg: rgba(245, 158, 11, 0.04);
+  --background: #0c0b08;
+  --foreground: #ece7df;
+  --secondary: #16130c;
+  --muted: #867d6b;
+  --muted-dark: #443d30;
+  --muted-foreground: #aaa092;
+  --border: #2a251b;
+  --card-bg: rgba(255, 244, 224, 0.022);
   --card-border: rgba(245, 158, 11, 0.10);
-  --brand-cyan: #fbbf24;
-  --brand-purple: #ea580c;
-  --brand-emerald: #ca8a04;
-  --brand-amber: #fbbf24;
-  --brand-rose: #f97316;
-  --btn-primary: #92400e;
-  --glass-bg: rgba(217, 119, 6, 0.04);
+  --brand-amber: #f59e0b;
+  --brand-cyan: #d9c391;
+  --brand-emerald: #caa45e;
+  --brand-purple: #b97633;
+  --brand-rose: #d8843f;
+  --btn-primary: #95540d;
+  --glass-bg: rgba(217, 119, 6, 0.035);
   --glass-border: rgba(217, 119, 6, 0.12);
-  --status-success: #84cc16;
+  /* Status stays semantic & legible (success≠canvas), harmonised toward warm. */
+  --status-success: #66b06e;
   --status-warning: #f59e0b;
-  --status-error: #ef4444;
-  --status-info: #fbbf24;
-  --status-pending: #f59e0b;
-  --status-processing: #fbbf24;
-  --status-neutral: #a8956b;
+  --status-error: #e25d52;
+  --status-info: #cba65d;
+  --status-pending: #f0a73a;
+  --status-processing: #d8a14a;
+  --status-neutral: #978c79;
 }
 
 /* Dark: Frost -- intentionally desaturated neutral slate; full surface coverage
@@ -2081,64 +2086,74 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --glass-border: rgba(255, 255, 255, 0.06);
 }
 
-/* Dark: Purple — violet palette, hue-coherent neutrals */
+/* Dark: Purple — "Amethyst". Restrained pattern (à la Red/Matrix): slate-violet
+   graphite neutral canvas, amethyst reserved as the accent. Text + structure
+   stay near-achromatic (faint cool cast only); the hue lives in primary/accent,
+   a violet brand spectrum (periwinkle→lavender→orchid), and the
+   scrollbar/selection/dot-grid signatures further down. */
 [data-theme="dark-purple"] {
-  --primary: #a855f7;
+  --primary: #b667f7;
   --accent: #c084fc;
-  --background: #0e0a14;
-  --foreground: #f3e8ff;
-  --secondary: #1a1028;
-  --muted: #8d6ead;
-  --muted-dark: #463057;
-  --muted-foreground: #c4a7e7;
-  --border: #4c1d95;
-  --card-bg: rgba(168, 85, 247, 0.04);
+  --background: #0b0a0f;
+  --foreground: #e9e6ee;
+  --secondary: #151320;
+  --muted: #837e8f;
+  --muted-dark: #403c4c;
+  --muted-foreground: #a7a1b3;
+  --border: #272338;
+  --card-bg: rgba(244, 240, 255, 0.022);
   --card-border: rgba(168, 85, 247, 0.10);
-  --brand-cyan: #818cf8;
   --brand-purple: #c084fc;
+  --brand-cyan: #9b8cf0;
   --brand-emerald: #a78bfa;
-  --brand-amber: #d8b4fe;
-  --brand-rose: #d946ef;
+  --brand-amber: #cbb4f4;
+  --brand-rose: #d473e0;
   --btn-primary: #6d28d9;
-  --glass-bg: rgba(168, 85, 247, 0.04);
+  --glass-bg: rgba(168, 85, 247, 0.035);
   --glass-border: rgba(168, 85, 247, 0.12);
-  --status-success: #6ee7b7;
-  --status-warning: #fbbf24;
-  --status-error: #f87171;
-  --status-info: #c4b5fd;
-  --status-pending: #fbbf24;
+  /* Status stays semantic & legible; info/processing held in the violet family. */
+  --status-success: #5fb88a;
+  --status-warning: #e2b340;
+  --status-error: #ef6f6f;
+  --status-info: #b6a8f5;
+  --status-pending: #e2b340;
   --status-processing: #c4b5fd;
-  --status-neutral: #a392b8;
+  --status-neutral: #968ca6;
 }
 
-/* Dark: Pink — rose palette, hue-coherent neutrals */
+/* Dark: Pink — "Rosewood". Restrained pattern (à la Red/Matrix): warm-graphite
+   neutral canvas, rose reserved as the accent. Text + structure stay
+   near-achromatic (faint rose cast only); the hue lives in primary/accent, a
+   rose brand spectrum (dusty-rose→magenta→coral), and the
+   scrollbar/selection/dot-grid signatures further down. */
 [data-theme="dark-pink"] {
-  --primary: #ec4899;
+  --primary: #f0529e;
   --accent: #f472b6;
-  --background: #140a10;
-  --foreground: #fce7f3;
-  --secondary: #200d1a;
-  --muted: #ad648b;
-  --muted-dark: #532a40;
-  --muted-foreground: #d4a3c4;
-  --border: #831843;
-  --card-bg: rgba(236, 72, 153, 0.04);
+  --background: #0f0a0d;
+  --foreground: #ece5e9;
+  --secondary: #1b1219;
+  --muted: #8a7c83;
+  --muted-dark: #483a42;
+  --muted-foreground: #ad9fa7;
+  --border: #2c2127;
+  --card-bg: rgba(255, 240, 247, 0.022);
   --card-border: rgba(236, 72, 153, 0.10);
-  --brand-cyan: #f9a8d4;
-  --brand-purple: #db2777;
-  --brand-emerald: #f0abfc;
-  --brand-amber: #fda4af;
   --brand-rose: #f472b6;
+  --brand-cyan: #e09ac0;
+  --brand-purple: #d76aa8;
+  --brand-emerald: #e8a0cf;
+  --brand-amber: #f0a8b8;
   --btn-primary: #9d174d;
-  --glass-bg: rgba(236, 72, 153, 0.04);
+  --glass-bg: rgba(236, 72, 153, 0.035);
   --glass-border: rgba(236, 72, 153, 0.12);
-  --status-success: #34d399;
-  --status-warning: #fbbf24;
-  --status-error: #f87171;
-  --status-info: #f472b6;
-  --status-pending: #fbbf24;
+  /* Status stays semantic & legible; info/processing held in the rose family. */
+  --status-success: #5cb88f;
+  --status-warning: #e8b045;
+  --status-error: #f06b6b;
+  --status-info: #f48fc0;
+  --status-pending: #e8b045;
   --status-processing: #f9a8d4;
-  --status-neutral: #b8889a;
+  --status-neutral: #a08e97;
 }
 
 /* Dark: Deadpool -- black/white canvas with blood-red accents */
@@ -2714,6 +2729,61 @@ html[data-motion="reduce"] .animate-channel-row-in {
 }
 
 /*-- Deadpool theme specials -- */
+/* -- Bronze / Purple / Pink signatures --
+   Scrollbar, text-selection and dot-grid get the theme's reserved accent so the
+   hue reads as deliberate punctuation on the neutral canvas (the Red/Matrix
+   pattern) rather than an all-over wash. Kept faint — accent, not flood. */
+[data-theme="dark-bronze"] * {
+  scrollbar-color: rgba(217, 119, 6, 0.22) transparent;
+}
+[data-theme="dark-bronze"] ::-webkit-scrollbar-thumb {
+  background: rgba(217, 119, 6, 0.24);
+}
+[data-theme="dark-bronze"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(217, 119, 6, 0.42);
+}
+[data-theme="dark-bronze"] ::selection {
+  background-color: rgba(217, 119, 6, 0.28);
+  color: #fff7ec;
+}
+[data-theme="dark-bronze"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(217, 119, 6, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="dark-purple"] * {
+  scrollbar-color: rgba(168, 85, 247, 0.22) transparent;
+}
+[data-theme="dark-purple"] ::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.24);
+}
+[data-theme="dark-purple"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.42);
+}
+[data-theme="dark-purple"] ::selection {
+  background-color: rgba(168, 85, 247, 0.30);
+  color: #f6f0ff;
+}
+[data-theme="dark-purple"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+}
+
+[data-theme="dark-pink"] * {
+  scrollbar-color: rgba(236, 72, 153, 0.22) transparent;
+}
+[data-theme="dark-pink"] ::-webkit-scrollbar-thumb {
+  background: rgba(236, 72, 153, 0.24);
+}
+[data-theme="dark-pink"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(236, 72, 153, 0.42);
+}
+[data-theme="dark-pink"] ::selection {
+  background-color: rgba(236, 72, 153, 0.30);
+  color: #fff0f7;
+}
+[data-theme="dark-pink"] .dot-grid {
+  background-image: radial-gradient(circle, rgba(236, 72, 153, 0.05) 1px, transparent 1px);
+}
+
 [data-theme="dark-red"] * {
   scrollbar-color: rgba(204, 0, 0, 0.25) transparent;
 }
