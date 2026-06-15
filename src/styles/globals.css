@@ -2222,18 +2222,24 @@ html[data-motion="reduce"] .animate-channel-row-in {
    tinted everything beige (#e9e6df) which made the UI read as a writing
    app; this rewrite targets professional dashboard polish. */
 [data-theme="light"] {
-  --primary: #2563eb;
-  --primary-rgb: 37, 99, 235;
+  --primary: #1d4ed8;
+  --primary-rgb: 29, 78, 216;
   --accent: #3b82f6;
-  --background: #f7f8fa;
+  /* Tonal structure (not a near-white sheet): the canvas recedes to a soft
+     gray and cards come forward as crisp white. The old palette sat the whole
+     UI in a 90-99% white band with the *content card* as the brightest element
+     — glare with no anchors. Now: canvas ~#ecef2 < panels < white cards, so the
+     eye reads depth and the bright field that caused fatigue is gone. muted
+     tiers darkened to hold AA on the softer canvas (verified by check:themes). */
+  --background: #eceef2;
   --foreground: #0f172a;
-  --secondary: #eef0f3;
-  --muted: #627289;
-  --muted-dark: #475569;
-  --muted-foreground: #435063;
-  --border: #d2dae5;
-  --card-bg: rgba(255, 255, 255, 0.82);
-  --card-border: rgba(15, 23, 42, 0.10);
+  --secondary: #e3e7ee;
+  --muted: #586883;
+  --muted-dark: #45536a;
+  --muted-foreground: #3e4a5c;
+  --border: #cdd5e1;
+  --card-bg: rgba(255, 255, 255, 0.92);
+  --card-border: rgba(15, 23, 42, 0.08);
   --brand-cyan: #0891b2;
   --brand-purple: #7c3aed;
   --brand-emerald: #059669;
@@ -2242,16 +2248,16 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --btn-primary: #1d4ed8;
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(15, 23, 42, 0.06);
-  /* Status colors calibrated to ≥ AA against the cool near-white canvas.
-     amber-800 / emerald-700 replace amber-600 / emerald-600 which only
-     reached AA-lg on this background (surfaced by check:themes). */
+  /* Status colors re-seated for the softer gray canvas — error/info/primary
+     dropped to AA-lg when the background receded, so they go one step deeper
+     (red-700, blue-700) to clear AA proper for chips, links and accent text. */
   --status-success: #047857;
   --status-warning: #92400e;
-  --status-error: #dc2626;
-  --status-info: #2563eb;
+  --status-error: #be1b1b;
+  --status-info: #1d4ed8;
   --status-pending: #92400e;
-  --status-processing: #2563eb;
-  --status-neutral: #64748b;
+  --status-processing: #1d4ed8;
+  --status-neutral: #5b6878;
   /* Depth strengthened: the near-white canvas + near-white cards left
      surfaces visually flat. Borders + elevation deepened (non-text → no
      contrast impact) so cards/modals read as layered, not floating. */
