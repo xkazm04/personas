@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Target, Plus, Sparkles, CheckCircle2, Inbox } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -13,6 +13,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import GoalConstellation from './GoalConstellation';
+import { GoalAcceptanceView } from './GoalAcceptanceView';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
 import { GoalViewExplainer } from './GoalViewExplainer';
@@ -74,6 +75,9 @@ export default function GoalsPage() {
   const [showDone, setShowDone] = useState(readShowDone);
   // Board/Timeline scope (persisted). The Map ignores it (always project-scoped).
   const [scope, setScope] = useState<GoalScope>(readScope);
+  // PROTOTYPE: temporary toggle to preview the Goal Acceptance View variants.
+  // Removed when the winner is promoted to a real `goalsTab` view.
+  const [acceptPreview, setAcceptPreview] = useState(false);
 
   // Cross-project view is only meaningful for Board + Timeline; the Map needs
   // one project's dependency graph + saved node positions, so it stays scoped.
@@ -181,6 +185,17 @@ export default function GoalsPage() {
             )}
             {/* Target + primary action pushed to the right edge of the bar. */}
             <div className="ml-auto flex items-center gap-2">
+              {/* PROTOTYPE: preview toggle for the Goal Acceptance View. */}
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Inbox className="w-3.5 h-3.5" />}
+                aria-pressed={acceptPreview}
+                onClick={() => setAcceptPreview((v) => !v)}
+                className={acceptPreview ? 'text-violet-400' : ''}
+              >
+                Acceptance
+              </Button>
               <LifecycleProjectPicker />
               <Button
                 variant="accent"
@@ -198,7 +213,9 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {goalsTab === 'timeline' ? (
+        {acceptPreview ? (
+          <GoalAcceptanceView />
+        ) : goalsTab === 'timeline' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
             <GoalsTimeline showProject={crossProject} />
