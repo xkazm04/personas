@@ -205,6 +205,16 @@ Athena is wired into the project [Goals](../goals/README.md) surface at the **re
 - **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated and deliberately NOT in `AUTOAPPROVE_ALLOWLIST`** — goal writes never auto-resolve, even in autonomous mode. On approval it writes an `athena_update` `dev_goal_signal`.
 - **React (proactive)** — `proactive::triggers::dev_goal_nudges(sys_db)` emits budget+dedupe-gated nudges (`dev_goal_target`, `dev_goal_stalled`) when a project goal is target-approaching/overdue or stalled (in-progress/blocked, untouched ≥ 7 days). Because `dev_goals` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`). On engage, the prompt context lets her reason and propose the gated update.
 
+## Project KPIs (outcome steering) — read + manage
+
+KPIs are the [outcome layer above goals](../kpis.md): a KPI going off-track is what *derives* a goal. Athena manages that steering layer on the user's behalf, at the same **read + propose, writes-gated** authority as goals (constitution **v40**):
+
+- **Read** — `prompt.rs::format_project_kpis(sys_db)` injects each dev project's **active** KPIs (id, current/target + unit, tier, and an `on track` / `OFF TRACK` / `unmeasured` state) into her system prompt, appended to the plugins block in both builders. The off-track state is computed by the SAME rule the derivation loop obeys (`kpi_derivation::kpi_is_off_track`), so what she sees as `OFF TRACK` is exactly what will derive a goal — there's no second opinion to drift.
+- **Manage (gated)** — three ops in `ALLOWED_ACTIONS` + `approvals.rs`, all **approval-gated and NOT in `AUTOAPPROVE_ALLOWLIST`** (they change what the autonomous loop optimizes for, so the user signs off):
+  - **`calibrate_kpi { kpi_id, target_value?, target_date?, tier?, cadence?, status?, warn_at?, crit_at? }`** (`execute_calibrate_kpi`) — adjust the steering levers. Targets / tier / cadence / status route through `update_kpi`; the `warn_at` / `crit_at` lines route through `save_kpi_assessment` (the same path the Factory console writes). `crit_at` is the **hard "off track" line the derivation loop now honors** — moving it directly changes when this KPI derives a goal. Enum fields are validated so a hallucinated token can't poison steering.
+  - **`evaluate_kpi { kpi_id }`** (`execute_evaluate_kpi`) — measure the KPI now (codebase / derived / connector), saving a fresh point to its history. Lets her un-stale a KPI before reasoning about whether to steer.
+  - **`scan_kpis { project_name?, path? }`** (`execute_scan_kpis`) — launch a KPI proposal scan for a project (resolves id/name/path with a most-recent fallback, like `enqueue_dev_job`). Proposals land in the review queue; nothing goes active without the user's accept.
+
 ## Incidents (proactive blocker nudge)
 
 Athena proactively surfaces OPEN high/critical [audit incidents](../overview/README.md) so the user is nudged about them even while away/unattended.

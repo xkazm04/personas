@@ -153,6 +153,7 @@ Rules:
    - derived: {{"metric": "<one of: qa_bounce_rate | exec_failure_rate | incident_rate | parked_review_age_days>"}} (measured from the orchestrator's own DB)
    - connector: {{"connector": "<service>", "instruction": "<what to fetch and how to reduce it to ONE number>"}}
    - manual: {{"instruction": "<what the human should check/enter>"}}
+   Prefer codebase for technical KPIs, connector for traffic/value, codebase or derived for quality, and manual only for value/business signals a human must judge. For any codebase KPI, RUN the command from the repo root to confirm it actually yields a number before proposing it, and set baseline_hint from that real value.
 4. If a traffic/value KPI needs a connector that is NOT in the vault list above, still propose it with `measure_kind: "manual"` and set `needed_connector` to the missing service name (e.g. "google_analytics", "stripe", "posthog") — the UI offers one-click onboarding for it.
 4b. Every connector-shaped KPI (current or future) MUST set `metric_type` to one of: unique_visitors, api_requests, llm_tokens, llm_cost, revenue, open_errors. The KPI is bound to the TYPE; the concrete tool is wired later and swappable. Leave metric_type empty for codebase/derived KPIs.
 5. `baseline_hint`: your measured/estimated CURRENT value when you can ground it from the repo (run the codebase command if cheap); otherwise null. `suggested_target`: ambitious but reachable in ~4-6 weeks. `direction`: "up" if higher is better, else "down".

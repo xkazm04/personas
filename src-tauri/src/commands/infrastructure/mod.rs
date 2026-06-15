@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod autopilot;
 #[cfg(feature = "desktop")]
 pub mod bridge_manifest;
 pub mod byom;

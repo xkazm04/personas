@@ -43,6 +43,7 @@ import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalHandoffPanel } from './GoalHandoffPanel';
+import { GoalKpiLink } from './GoalKpiLink';
 import { GoalTaskTable } from './GoalTaskTable';
 import { isComplete } from './goalStatus';
 
@@ -365,6 +366,11 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
           <MarkdownRenderer content={goal.description} className="typo-body leading-relaxed" />
         </div>
       )}
+
+      {/* KPI cross-reference — when this goal serves/derives from a KPI, lead
+          with the outcome it's steering (read-only projection; stays silent if
+          the KPI was archived). */}
+      {goal.kpi_id && <GoalKpiLink kpiId={goal.kpi_id} />}
 
       {/* Hybrid progress nudge */}
       {showNudge && progress && (

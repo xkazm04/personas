@@ -17,6 +17,7 @@ pub mod app_focus;
 pub mod audit_incidents_promoter;
 pub mod auto_rollback;
 pub mod auto_triage;
+pub mod autopilot;
 pub mod automation_runner;
 pub mod backend;
 pub mod background;

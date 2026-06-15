@@ -191,6 +191,15 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "open_test_env",
     // Goals hub — propose a dev-goal progress/status update (approval-gated).
     "update_dev_goal",
+    // KPI layer (the outcome steering above goals). All three go through
+    // approval because they change what the autonomous loop optimizes for:
+    //   - calibrate_kpi: adjust a KPI's target/date/tier/cadence/status or its
+    //     warn/critical lines — the lever that decides when a goal gets derived.
+    //   - evaluate_kpi: measure a KPI now (a codebase/connector run has cost).
+    //   - scan_kpis: propose new KPIs for a project (an LLM scan, cost).
+    "calibrate_kpi",
+    "evaluate_kpi",
+    "scan_kpis",
     // Athena's future check-in commitments. Goes through approval
     // because it puts a future obligation on the user's attention —
     // unlike connector calls (real-world action that runs once on

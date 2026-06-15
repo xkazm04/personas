@@ -10,24 +10,13 @@
 // Calibration/assessment edits flow up via onEdit; persistence to dev_kpis is
 // handled by the caller (FactoryShell) so the same widget works on mock + live.
 import { useState } from 'react';
-import { Clock, SlidersHorizontal, Activity, Play, Pencil, Loader2 } from 'lucide-react';
+import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2 } from 'lucide-react';
 
-import { evaluateKpi, updateKpi } from '@/api/devTools/kpis';
+import { evaluateKpi } from '@/api/devTools/kpis';
 import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit } from './factoryMock';
 import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
-
-/** Robustly stringify a Tauri/AppError so the UI never shows "[object Object]". */
-function errMsg(e: unknown): string {
-  if (typeof e === 'string') return e;
-  if (e instanceof Error) return e.message;
-  if (e && typeof e === 'object') {
-    const o = e as Record<string, unknown>;
-    if (typeof o.message === 'string') return o.message;
-    if (typeof o.error === 'string') return o.error;
-    try { return JSON.stringify(e); } catch { return String(e); }
-  }
-  return String(e);
-}
+import { errMsg } from './composeTask';
+import { MeasureSetupModal } from './MeasureSetupModal';
 
 function domain(kpi: MockKpi): { min: number; max: number } {
   const vals = [kpi.baseline, kpi.target, kpi.warnAt, kpi.critAt, kpi.current ?? kpi.baseline];
@@ -73,20 +62,8 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
     }
   };
 
-  // Adjust methodic — edits measure_config, persists via dev_tools_update_kpi.
-  const [editingCfg, setEditingCfg] = useState(false);
-  const [cfgDraft, setCfgDraft] = useState(kpi.measureConfig ?? '{}');
-  const [cfgMsg, setCfgMsg] = useState<string | null>(null);
-  const handleSaveCfg = async () => {
-    try {
-      JSON.parse(cfgDraft); // validate
-      await updateKpi(kpi.id, { measureConfig: cfgDraft });
-      setEditingCfg(false);
-      setCfgMsg('methodic saved');
-    } catch (e) {
-      setCfgMsg(errMsg(e));
-    }
-  };
+  // Measurement setup — opens the per-type configuration modal.
+  const [showSetup, setShowSetup] = useState(false);
 
   return (
     <div className="grid lg:grid-cols-2 gap-4" data-testid="factory-kpi-console">
@@ -127,25 +104,14 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
             </button>
           </div>
 
-          {/* methodic: preview + adjust */}
+          {/* methodic: preview + configure */}
           <div className="rounded-interactive border border-primary/10 bg-background/40 p-2.5 mb-2">
             <div className="flex items-start gap-2">
               <span className="typo-caption flex-1 break-words">{describeMethodic(kpi.measureConfig)}</span>
-              <button type="button" onClick={() => { setEditingCfg((v) => !v); setCfgDraft(kpi.measureConfig ?? '{}'); setCfgMsg(null); }} className="typo-caption inline-flex items-center gap-1 text-primary hover:underline flex-shrink-0">
-                <Pencil className="w-3 h-3" /> {editingCfg ? 'cancel' : 'adjust'}
+              <button type="button" onClick={() => setShowSetup(true)} className="typo-caption inline-flex items-center gap-1 text-primary hover:underline flex-shrink-0">
+                <Settings2 className="w-3 h-3" /> configure
               </button>
             </div>
-            {editingCfg && (
-              <div className="mt-2">
-                <textarea value={cfgDraft} onChange={(e) => setCfgDraft(e.target.value)} rows={4} spellCheck={false}
-                  className="w-full px-2 py-1.5 typo-code bg-secondary/40 border border-primary/10 rounded-interactive text-foreground focus-ring resize-none" />
-                <div className="flex items-center gap-2 mt-1.5">
-                  <button type="button" onClick={handleSaveCfg} className="typo-caption rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20">Save methodic</button>
-                  {cfgMsg && <span className="typo-caption text-foreground/70">{cfgMsg}</span>}
-                </div>
-              </div>
-            )}
-            {!editingCfg && cfgMsg && <p className="typo-caption text-foreground/60 mt-1">{cfgMsg}</p>}
           </div>
 
           <div className="flex items-center justify-between">
@@ -178,6 +144,7 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
           />
         </section>
       </div>
+      {showSetup && <MeasureSetupModal kpi={kpi} onClose={() => setShowSetup(false)} />}
     </div>
   );
 }

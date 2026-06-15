@@ -2749,6 +2749,9 @@ pub fn run() {
             commands::infrastructure::kpi_compose::dev_tools_cancel_kpi_compose,
             commands::infrastructure::dev_tools::dev_tools_evaluate_kpi,
             commands::infrastructure::dev_tools::dev_tools_evaluate_due_kpis,
+            // Per-project autopilot (one switch over the KPI→goal→team loop)
+            commands::infrastructure::autopilot::dev_tools_get_autopilot_mode,
+            commands::infrastructure::autopilot::dev_tools_set_autopilot_mode,
             commands::infrastructure::dev_tools::dev_tools_list_all_kpis,
             commands::infrastructure::dev_tools::dev_tools_list_kpi_measurements_bulk,
             commands::infrastructure::dev_tools::dev_tools_list_kpi_metric_types,

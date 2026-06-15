@@ -243,9 +243,10 @@ pub async fn build_system_prompt(
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
     let plugins_md = format!(
-        "{}{}",
+        "{}{}{}",
         format_plugins(&plugin_names, &projects, &tracking_pulses_md),
         format_project_goals(sys_db),
+        format_project_kpis(sys_db),
     );
 
     let preview = summarize_recall(&recall, briefing.is_some());
@@ -331,9 +332,10 @@ pub async fn build_system_prompt(
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
     let plugins_md = format!(
-        "{}{}",
+        "{}{}{}",
         format_plugins(&plugin_names, &projects, &tracking_pulses_md),
         format_project_goals(sys_db),
+        format_project_kpis(sys_db),
     );
 
     let preview = summarize_recall(&recall, false);
@@ -473,6 +475,70 @@ fn format_project_goals(sys_db: &DbPool) -> String {
     }
     format!(
         "\n\n# Project goals (dev direction + progress)\n\nProject-level goals you can track. To propose a change, use `update_dev_goal` with the goal's id.{body}"
+    )
+}
+
+/// KPI layer: inject each dev project's ACTIVE KPIs (the outcome layer above
+/// goals) so Athena can reference one by id and propose `calibrate_kpi` /
+/// `evaluate_kpi` / `scan_kpis`. Reads the main app DB (sys_db). Off-track
+/// status uses the SAME rule the derivation loop obeys
+/// (`kpi_derivation::kpi_is_off_track`), so what Athena sees as "OFF TRACK" is
+/// exactly what will derive a goal. Capped to keep the prompt lean.
+fn format_project_kpis(sys_db: &DbPool) -> String {
+    use crate::db::repos::dev_tools as dt;
+    use crate::engine::kpi_derivation::kpi_is_off_track;
+    let projects = match dt::list_projects(sys_db, None) {
+        Ok(p) => p,
+        Err(_) => return String::new(),
+    };
+    let mut body = String::new();
+    let mut shown = 0usize;
+    for proj in &projects {
+        if shown >= 12 {
+            break;
+        }
+        let kpis = dt::list_kpis(sys_db, &proj.id, Some("active")).unwrap_or_default();
+        if kpis.is_empty() {
+            continue;
+        }
+        body.push_str(&format!("\n**{}**\n", proj.name.trim()));
+        for k in kpis.iter().take(6) {
+            if shown >= 12 {
+                break;
+            }
+            let cur = k
+                .current_value
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "—".into());
+            let tgt = k
+                .target_value
+                .map(|v| v.to_string())
+                .unwrap_or_else(|| "—".into());
+            let state_label = if k.current_value.is_none() {
+                "unmeasured"
+            } else if kpi_is_off_track(k) {
+                "OFF TRACK"
+            } else {
+                "on track"
+            };
+            body.push_str(&format!(
+                "- {name} (id {id}) — {cur}/{tgt} {unit} · {tier} · {state}\n",
+                name = k.name.trim(),
+                id = k.id,
+                cur = cur,
+                tgt = tgt,
+                unit = k.unit,
+                tier = k.tier,
+                state = state_label,
+            ));
+            shown += 1;
+        }
+    }
+    if body.is_empty() {
+        return String::new();
+    }
+    format!(
+        "\n\n# Project KPIs (the outcome layer above goals)\n\nMeasurable success metrics per project. To steer one, propose `calibrate_kpi` (adjust its target / due date / tier / cadence / status, or draw the warn + critical lines), `evaluate_kpi` (measure it now), or `scan_kpis` (propose new KPIs for a project that has none). A KPI going OFF TRACK is what derives goals for the team — managing KPIs is how you steer development by outcomes, not activity.{body}"
     )
 }
 

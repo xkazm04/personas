@@ -15,8 +15,13 @@
 //! 3. Post-completion cooldown: if the most recent derived goal for this KPI
 //!    completed AFTER the last measurement, the needle hasn't been re-read
 //!    since the work landed — wait for the next measurement.
-//! 4. The pace math says off-track (or the target is simply missed with no
-//!    date to pace against — direction-aware).
+//! 4. The off-track verdict (`kpi_is_off_track`) fires on ANY of: a floor
+//!    breach (business metric at zero), the user's calibrated CRITICAL line
+//!    (`crit_at`) being crossed, or the pace math lagging. The `crit_at` arm
+//!    is what makes the Factory console's "red derives a goal" lever *real* —
+//!    the threshold the user drags is the same fact this steering loop obeys.
+//!    `warn_at` ("yellow") is deliberately NOT a derivation trigger; it is the
+//!    softer Athena-nudge band (see athena_reaction.rs).
 //!
 //! The decision itself may answer `{"kpi_goal": {"skip": true, ...}}` — a
 //! measured "nothing actionable" is a legitimate outcome (same restraint
@@ -31,11 +36,16 @@ use crate::error::AppError;
 /// `kpiMath.ts` — keep the two in sync).
 const TOLERANCE_FRAC: f64 = 0.1;
 
-/// Rust port of the UI's `kpiTrack` off-track rule. Returns true when the KPI
-/// is provably lagging: with a target_date + baseline, current lags the
-/// linearly-paced expectation by more than the tolerance; without a date,
-/// only a missed target with nothing to pace against is NOT treated as
-/// off-track (matching the UI's 'on-track' verdict for that case).
+/// Rust port of the UI's `kpiTrack` off-track rule (keep in sync with
+/// `src/features/teams/sub_kpis/kpiMath.ts`). Returns true when the KPI is
+/// off-track by ANY of three direction-aware tests, checked in order:
+///   1. floor breach — a business metric sitting at zero (`kpi_floor_breached`);
+///   2. the user's calibrated CRITICAL line (`crit_at`) being crossed — the
+///      Factory console lever, honored independently of pace;
+///   3. pace lag — with a target_date + baseline, current lags the linearly-
+///      paced expectation by more than the tolerance.
+/// Without any of these (e.g. a missed target but no date to pace against and
+/// no crit line drawn) the verdict is on-track, matching the UI.
 pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     if kpi_floor_breached(kpi) {
         return true;
@@ -45,7 +55,17 @@ pub fn kpi_is_off_track(kpi: &DevKpi) -> bool {
     };
     let met = if kpi.direction == "down" { cur <= target } else { cur >= target };
     if met {
-        return false;
+        return false; // a met target wins over any threshold or pace verdict
+    }
+    // The user's hard CRITICAL line. When calibrated (crit_at set) and crossed,
+    // that is an explicit off-track verdict on its own — earlier than, and
+    // independent of, the pace math below. This is the lever the Factory console
+    // exposes; until the user draws it, crit_at is NULL and we fall through.
+    if let Some(crit) = kpi.crit_at {
+        let breached = if kpi.direction == "down" { cur >= crit } else { cur <= crit };
+        if breached {
+            return true;
+        }
     }
     let (Some(date), Some(baseline)) = (kpi.target_date.as_deref(), kpi.baseline_value) else {
         return false;
@@ -413,6 +433,40 @@ mod tests {
             Some(50.0), Some(70.0), Some(50.0),
             Some(&far.format("%Y-%m-%d").to_string()), "up", &created
         )));
+    }
+
+    #[test]
+    fn crit_threshold_breach_is_off_track_even_when_pace_is_fine() {
+        // Window barely opened (pace expects ≈ baseline) and current == baseline:
+        // pace alone says on-track. But the user drew a crit line the value has
+        // crossed → off-track. This is the Factory lever made real.
+        let far = chrono::Utc::now() + chrono::Duration::days(60);
+        let created = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let date = far.format("%Y-%m-%d").to_string();
+        let mut k = kpi(Some(50.0), Some(70.0), Some(50.0), Some(&date), "up", &created);
+        assert!(!kpi_is_off_track(&k), "no crit line + fresh window → on-track");
+        // up KPI: breached when current <= crit. 50 <= 55 → breached.
+        k.crit_at = Some(55.0);
+        assert!(kpi_is_off_track(&k), "current crossed the user's crit line → off-track");
+    }
+
+    #[test]
+    fn crit_threshold_not_crossed_stays_on_track() {
+        let far = chrono::Utc::now() + chrono::Duration::days(60);
+        let created = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let date = far.format("%Y-%m-%d").to_string();
+        let mut k = kpi(Some(60.0), Some(70.0), Some(50.0), Some(&date), "up", &created);
+        k.crit_at = Some(55.0); // up: 60 <= 55? no → not breached, pace fresh → on-track
+        assert!(!kpi_is_off_track(&k));
+    }
+
+    #[test]
+    fn met_target_beats_a_crossed_crit_line() {
+        // direction down, target met (3 <= 5); even a crit line above current
+        // must not flip a met KPI to off-track — met short-circuits first.
+        let mut k = kpi(Some(3.0), Some(5.0), Some(10.0), Some("2030-01-01"), "down", "2026-01-01 00:00:00");
+        k.crit_at = Some(2.0); // down: breached when cur >= crit; 3 >= 2 is true, but met wins
+        assert!(!kpi_is_off_track(&k));
     }
 
     #[test]

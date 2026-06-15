@@ -306,4 +306,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// `template_adoption`, `incident_triage`, and `goal_kpi_setup` so Athena can
 /// teach-by-showing across the Events, Templates, Incidents, and Goals/KPI
 /// surfaces — not just persona creation and connector setup.
-pub const CONSTITUTION_VERSION: u32 = 39;
+///
+/// v40 (KPI management) teaches the `calibrate_kpi` / `evaluate_kpi` /
+/// `scan_kpis` ops + the `# Project KPIs` context digest, so Athena can manage
+/// the outcome layer (adjust targets/tiers/critical lines, measure now, propose
+/// new KPIs) on the user's behalf — the steering layer above goals.
+pub const CONSTITUTION_VERSION: u32 = 40;

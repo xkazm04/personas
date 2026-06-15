@@ -5,19 +5,51 @@ import type { DevKpiMeasurement } from '@/lib/bindings/DevKpiMeasurement';
 
 export type KpiTrack = 'on-track' | 'off-track' | 'met' | 'unmeasured';
 
+/** Why a KPI is off-track — the three direction-aware triggers, in priority
+ *  order. `null` when it isn't off-track. Drives the "what the system will do
+ *  about this" copy in the Factory console + the Goals KPI cross-reference. */
+export type OffTrackReason = 'floor' | 'crit' | 'pace';
+
 /**
- * Pace-based off-track test. With a target_date: expected =
- * baseline + (target − baseline) × elapsed/total; off-track when `current`
- * lags expected by more than `tolerance` (default 10% of the span) in the
- * KPI's direction. Without a date: simply which side of the target the
- * current value sits on.
+ * Mirror of `engine/kpi_derivation.rs::kpi_floor_breached`. A measured business
+ * metric (traffic/value, higher-is-better) sitting at or below zero is treated
+ * as maximally off-track — there is no pace toward a target when the floor
+ * itself is breached ("0 users beats 100% coverage").
+ */
+export function kpiFloorBreached(kpi: DevKpi): boolean {
+  return (
+    (kpi.category === 'traffic' || kpi.category === 'value') &&
+    kpi.direction === 'up' &&
+    kpi.current_value != null &&
+    kpi.current_value <= 0
+  );
+}
+
+/**
+ * The single source of truth for "is this KPI off-track?" — the exact port of
+ * `engine/kpi_derivation.rs::kpi_is_off_track` (keep the two in sync). Off-track
+ * fires on ANY of three direction-aware tests, checked in order:
+ *   1. floor breach (`kpiFloorBreached`);
+ *   2. the user's calibrated CRITICAL line (`crit_at`) being crossed — the
+ *      Factory console lever, honored independently of pace;
+ *   3. pace lag — with a target_date + baseline, `current` lags the linearly-
+ *      paced expectation by more than `tolerance` (default 10% of the span).
+ * A met target wins over every threshold/pace verdict.
  */
 export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   const { current_value: cur, target_value: target, baseline_value: baseline, direction } = kpi;
   if (cur == null) return 'unmeasured';
+  if (kpiFloorBreached(kpi)) return 'off-track';
   if (target == null) return 'on-track';
   const better = direction === 'down' ? cur <= target : cur >= target;
   if (better) return 'met';
+
+  // The user's hard CRITICAL line — off-track regardless of pace, the moment
+  // `current` crosses it. Null until the user calibrates it in the console.
+  if (kpi.crit_at != null) {
+    const breached = direction === 'down' ? cur >= kpi.crit_at : cur <= kpi.crit_at;
+    if (breached) return 'off-track';
+  }
 
   if (kpi.target_date && baseline != null) {
     const start = new Date(kpi.created_at.replace(' ', 'T')).getTime();
@@ -34,6 +66,20 @@ export function kpiTrack(kpi: DevKpi, toleranceFrac = 0.1): KpiTrack {
   }
   // No pace info — not met yet, but not provably lagging either.
   return 'on-track';
+}
+
+/** Which of the three triggers put this KPI off-track (null when on-track/met/
+ *  unmeasured). Same priority order as `kpiTrack`, so the reason the UI shows
+ *  matches the trigger the derivation loop will actually fire on. */
+export function kpiOffTrackReason(kpi: DevKpi): OffTrackReason | null {
+  if (kpiTrack(kpi) !== 'off-track') return null;
+  if (kpiFloorBreached(kpi)) return 'floor';
+  const cur = kpi.current_value;
+  if (cur != null && kpi.crit_at != null) {
+    const breached = kpi.direction === 'down' ? cur >= kpi.crit_at : cur <= kpi.crit_at;
+    if (breached) return 'crit';
+  }
+  return 'pace';
 }
 
 /** Percent progress from baseline toward target (clamped 0–100), or null. */

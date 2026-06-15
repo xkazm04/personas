@@ -6,7 +6,7 @@
 // Thresholds (warn/crit) and manual rating don't exist on real KPIs yet, so we
 // DERIVE sensible threshold bands for display — the calibration console can
 // re-tune them locally (persisting them back to the schema is a later step).
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 
 import * as devApi from '@/api/devTools/devTools';
 import * as kpiApi from '@/api/devTools/kpis';
@@ -164,16 +164,20 @@ interface FactoryData {
   projects: MockProject[];
   loading: boolean;
   error: string | null;
+  /** Re-fetch live data (after adding a KPI, configuring a measurement, etc.). */
+  reload: () => void;
 }
 
-const FactoryDataContext = createContext<FactoryData>({ projects: [], loading: true, error: null });
+const FactoryDataContext = createContext<FactoryData>({ projects: [], loading: true, error: null, reload: () => {} });
 
 export function useFactoryData(): FactoryData {
   return useContext(FactoryDataContext);
 }
 
 export function FactoryDataProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<FactoryData>({ projects: [], loading: true, error: null });
+  const [data, setData] = useState<{ projects: MockProject[]; loading: boolean; error: string | null }>({ projects: [], loading: true, error: null });
+  const [nonce, setNonce] = useState(0);
+  const reload = useCallback(() => setNonce((n) => n + 1), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -200,7 +204,7 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [nonce]);
 
-  return <FactoryDataContext.Provider value={data}>{children}</FactoryDataContext.Provider>;
+  return <FactoryDataContext.Provider value={{ ...data, reload }}>{children}</FactoryDataContext.Provider>;
 }

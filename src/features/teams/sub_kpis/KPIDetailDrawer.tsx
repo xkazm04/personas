@@ -25,6 +25,7 @@ import { paceDescriptor } from './kpiMath';
 import { categoryMeta, cadenceMeta, kindMeta } from './kpiMeta';
 import { describeMeasurement } from './describeMeasurement';
 import { ComposedByBadge, KPIConnectWizard } from './KPIConnectWizard';
+import { KpiSteeringPanel } from './KpiSteeringPanel';
 
 export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => void }) {
   const { t, tx } = useTranslation();
@@ -126,6 +127,10 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
             </p>
           )}
         </div>
+
+        {/* What the system is doing about this KPI — in-flight goals + the
+            outcome trace of shipped ones (cockpit direction D3). */}
+        <KpiSteeringPanel kpi={kpi} linkedGoals={linkedGoals} measurements={measurements} />
 
         {kpi.description && <p className="typo-body text-foreground">{kpi.description}</p>}
         <p className="typo-body text-foreground opacity-90">{describeMeasurement(kpi, t, tx)}</p>

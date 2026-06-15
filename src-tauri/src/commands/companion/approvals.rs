@@ -225,6 +225,10 @@ pub async fn companion_approve_action(
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
         "open_test_env" => execute_open_test_env(&state, &app, &params),
         "update_dev_goal" => execute_update_dev_goal(&state, &params),
+        // KPI layer — outcome steering on the user's behalf.
+        "calibrate_kpi" => execute_calibrate_kpi(&state, &params),
+        "evaluate_kpi" => execute_evaluate_kpi(&state, &params).await,
+        "scan_kpis" => execute_scan_kpis(&state, &app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -1037,6 +1041,218 @@ fn execute_update_dev_goal(
     let _ = dt::create_goal_signal(&state.db, goal_id, "athena_update", None, progress, Some(&summary));
     Ok(ExecuteResult::message(format!(
         "Dev goal `{goal_id}` updated — {summary}."
+    )))
+}
+
+/// KPI layer — recalibrate a KPI's steering levers on the user's behalf
+/// (approval-gated). Targets/tier/cadence/status go through `update_kpi`; the
+/// warn/critical lines go through `save_kpi_assessment` (the same path the
+/// Factory console uses). `crit_at` is the lever the derivation loop now obeys
+/// (`kpi_derivation::kpi_is_off_track`), so adjusting it here directly changes
+/// when this KPI derives a goal.
+fn execute_calibrate_kpi(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::db::repos::dev_tools as dt;
+    let kpi_id = params
+        .get("kpi_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("calibrate_kpi: missing `kpi_id`".into()))?;
+
+    let target_value = params.get("target_value").and_then(|v| v.as_f64());
+    let target_date = params.get("target_date").and_then(|v| v.as_str());
+    let tier = params.get("tier").and_then(|v| v.as_str());
+    let cadence = params.get("cadence").and_then(|v| v.as_str());
+    let status = params.get("status").and_then(|v| v.as_str());
+    let warn_at = params.get("warn_at").and_then(|v| v.as_f64());
+    let crit_at = params.get("crit_at").and_then(|v| v.as_f64());
+
+    // Validate enums up front so a hallucinated token can't poison steering.
+    if let Some(t) = tier {
+        if !matches!(t, "north_star" | "primary" | "supporting") {
+            return Err(AppError::Validation(format!(
+                "calibrate_kpi: tier must be north_star|primary|supporting, got `{t}`"
+            )));
+        }
+    }
+    if let Some(c) = cadence {
+        if !matches!(c, "manual" | "daily" | "weekly") {
+            return Err(AppError::Validation(format!(
+                "calibrate_kpi: cadence must be manual|daily|weekly, got `{c}`"
+            )));
+        }
+    }
+    if let Some(s) = status {
+        if !matches!(s, "active" | "paused" | "archived") {
+            return Err(AppError::Validation(format!(
+                "calibrate_kpi: status must be active|paused|archived, got `{s}`"
+            )));
+        }
+    }
+    if target_value.is_none()
+        && target_date.is_none()
+        && tier.is_none()
+        && cadence.is_none()
+        && status.is_none()
+        && warn_at.is_none()
+        && crit_at.is_none()
+    {
+        return Err(AppError::Validation(
+            "calibrate_kpi: nothing to change (set at least one of target_value, target_date, \
+             tier, cadence, status, warn_at, crit_at)"
+                .into(),
+        ));
+    }
+
+    // Confirm the KPI exists before we touch anything (clearer error + name).
+    let _ = dt::get_kpi(&state.db, kpi_id)?;
+
+    if target_value.is_some()
+        || target_date.is_some()
+        || tier.is_some()
+        || cadence.is_some()
+        || status.is_some()
+    {
+        dt::update_kpi(
+            &state.db,
+            kpi_id,
+            None,                    // name
+            None,                    // description
+            None,                    // context_group_id
+            None,                    // context_id
+            None,                    // category
+            None,                    // measure_kind
+            None,                    // measure_config
+            None,                    // unit
+            None,                    // direction
+            None,                    // baseline_value
+            target_value.map(Some),  // target_value
+            target_date.map(Some),   // target_date
+            cadence,
+            status,
+            None,                    // needed_connector
+            None,                    // metric_type
+            tier,
+        )?;
+    }
+    if warn_at.is_some() || crit_at.is_some() {
+        dt::save_kpi_assessment(&state.db, kpi_id, warn_at, crit_at, None, None, None)?;
+    }
+
+    let after = dt::get_kpi(&state.db, kpi_id)?;
+    let mut parts: Vec<String> = Vec::new();
+    if let Some(tv) = target_value {
+        parts.push(format!("target → {tv} {}", after.unit));
+    }
+    if let Some(td) = target_date {
+        parts.push(format!("due → {td}"));
+    }
+    if let Some(t) = tier {
+        parts.push(format!("tier → {t}"));
+    }
+    if let Some(c) = cadence {
+        parts.push(format!("cadence → {c}"));
+    }
+    if let Some(s) = status {
+        parts.push(format!("status → {s}"));
+    }
+    if let Some(w) = warn_at {
+        parts.push(format!("warn line → {w} {}", after.unit));
+    }
+    if let Some(cr) = crit_at {
+        parts.push(format!("critical line → {cr} {}", after.unit));
+    }
+    Ok(ExecuteResult::message(format!(
+        "Recalibrated KPI \"{}\": {}.",
+        after.name,
+        parts.join(", ")
+    )))
+}
+
+/// KPI layer — measure one KPI now (codebase/derived/connector), saving a fresh
+/// point to its history. The derivation loop reads the freshest measurement, so
+/// this is how Athena un-stales a KPI before reasoning about whether to steer.
+async fn execute_evaluate_kpi(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let kpi_id = params
+        .get("kpi_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("evaluate_kpi: missing `kpi_id`".into()))?;
+    let kpi = crate::db::repos::dev_tools::get_kpi(&state.db, kpi_id)?;
+    let m = crate::engine::kpi_eval::evaluate_kpi(&state.db, kpi_id).await?;
+    Ok(ExecuteResult::message(format!(
+        "Measured \"{}\": {} {} (saved to its history). The next derivation check reads this fresh value.",
+        kpi.name, m.value, kpi.unit
+    )))
+}
+
+/// KPI layer — launch a KPI proposal scan for a project (LLM reads the context
+/// map and proposes measurable KPIs across technical/quality/traffic/value).
+/// Resolves the project by id / name / path with a most-recent fallback, mirroring
+/// `execute_enqueue_dev_job`. Proposals land in the review queue, never active.
+fn execute_scan_kpis(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::db::repos::dev_tools as dt;
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        params.get("project_name").and_then(|v| v.as_str()),
+        params.get("name").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        if found.is_none() {
+            found = conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok();
+        }
+        found.ok_or_else(|| {
+            AppError::Validation(
+                "No Dev Tools projects registered yet. Register one first with register_project."
+                    .into(),
+            )
+        })?
+    };
+    let project = dt::get_project_by_id(&state.db, &project_id)?;
+    crate::commands::infrastructure::kpi_scan::launch_kpi_scan(app.clone(), &state.db, &project)?;
+    Ok(ExecuteResult::message(format!(
+        "KPI proposal scan started for `{}` — Claude is reading its context map and proposing \
+         measurable KPIs across technical, quality, traffic, and value. They'll land in the KPIs \
+         review queue for you to accept or adjust; nothing goes active without your sign-off.",
+        project.name
     )))
 }
 

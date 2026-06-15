@@ -17,6 +17,7 @@ import { StatCard } from '@/features/shared/components/display/StatCard';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { paceDescriptor, kpiProgressPct } from './kpiMath';
 import { TRACK_COLOR } from './kpiMeta';
+import { AutopilotControl } from './AutopilotControl';
 
 const CHART_ROW_H = 38;
 
@@ -72,6 +73,10 @@ export function KPIDashboard({
   );
   const kpiProjects = useMemo(() => [...new Set(active.map((k) => k.project_id))], [active]);
   const hasProposals = useMemo(() => kpis.some((k) => k.status === 'proposed'), [kpis]);
+  // The project whose autopilot the switch controls: the active filter, or the
+  // sole project when there's only one. With multiple projects and "All"
+  // selected, there's no single target — pick one via the filter chips first.
+  const autopilotProject = projectFilter ?? (kpiProjects.length === 1 ? kpiProjects[0] : null);
 
   const activeIdsKey = useMemo(() => active.map((k) => k.id).join(','), [active]);
   useEffect(() => {
@@ -163,6 +168,12 @@ export function KPIDashboard({
             </FilterChip>
           ))}
         </div>
+      )}
+
+      {/* Per-project autopilot — the single switch over this project's
+          KPI → goal → team loop (D2). Shown for the selected/sole project. */}
+      {autopilotProject && (
+        <AutopilotControl projectId={autopilotProject} className="rounded-card border border-primary/15 bg-secondary/10 px-4 py-3" />
       )}
 
       {/* Needs attention — the only loud element on the page */}

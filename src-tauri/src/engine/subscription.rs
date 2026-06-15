@@ -1374,12 +1374,15 @@ fn quota_cooldown_active(pool: &DbPool) -> bool {
 }
 
 /// Goal-linked teams with an active, unworked goal and no recent assignment.
-/// Returns `(team_id, goal_id)` pairs. The cooldown via `created_at` (2h for the
-/// soak test, default 30m) prevents stampede + failure-retry loops.
-fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, crate::error::AppError> {
+/// Returns `(team_id, goal_id, project_id)` triples — the project id lets the
+/// caller apply each project's autopilot mode. The cooldown via `created_at`
+/// (2h for the soak test, default 30m) prevents stampede + failure-retry loops.
+fn find_goal_advance_candidates(
+    pool: &DbPool,
+) -> Result<Vec<(String, String, String)>, crate::error::AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT dp.team_id, g.id
+        "SELECT dp.team_id, g.id, dp.id
          FROM dev_goals g
          JOIN dev_projects dp ON dp.id = g.project_id
          WHERE dp.team_id IS NOT NULL
@@ -1399,7 +1402,13 @@ fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, 
          ORDER BY g.updated_at ASC",
     )?;
     let rows = stmt
-        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .query_map([], |r| {
+            Ok((
+                r.get::<_, String>(0)?,
+                r.get::<_, String>(1)?,
+                r.get::<_, String>(2)?,
+            ))
+        })?
         .filter_map(Result::ok)
         .collect();
     Ok(rows)
@@ -1427,8 +1436,11 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
     }
 
     async fn tick(&self) {
-        // Default-OFF gate — opt-in only.
-        let enabled = crate::db::repos::core::settings::get(
+        use crate::engine::autopilot::{self, Capability};
+        // Default-OFF gate — opt-in only, per-project autopilot overrides it.
+        // A project in `full` mode advances even when the global flag is off;
+        // when neither is on, the tick is a no-op (as before).
+        let global = crate::db::repos::core::settings::get(
             &self.pool,
             crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
         )
@@ -1436,7 +1448,8 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         .flatten()
         .as_deref()
             == Some("true");
-        if !enabled {
+        let modes = autopilot::load_modes(&self.pool);
+        if !global && !autopilot::any_enabled(&modes) {
             return;
         }
         // G1: quota-aware backpressure — don't start NEW team work while the
@@ -1467,9 +1480,14 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         // One-per-team spreads the budget across distinct teams; the 120-min
         // cooldown then rotates which teams advance on subsequent ticks.
         let mut seen_teams: std::collections::HashSet<String> = std::collections::HashSet::new();
-        for (team_id, goal_id) in candidates.into_iter() {
+        for (team_id, goal_id, project_id) in candidates.into_iter() {
             if started >= GOAL_ADVANCE_MAX_PER_TICK {
                 break;
+            }
+            // Only `full`-mode projects auto-advance (or legacy global-on
+            // projects with no explicit mode).
+            if !autopilot::cap_enabled(&modes, &project_id, global, Capability::GoalAdvancement) {
+                continue;
             }
             if !seen_teams.insert(team_id.clone()) {
                 continue; // a goal for this team was already attempted this tick
@@ -2653,7 +2671,8 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(
+        use crate::engine::autopilot::{self, Capability};
+        let global = crate::db::repos::core::settings::get(
             &self.pool,
             crate::db::settings_keys::AUTONOMOUS_KPI_GOAL_DERIVATION,
         )
@@ -2661,7 +2680,8 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
         .flatten()
         .as_deref()
             == Some("true");
-        if !enabled {
+        let modes = autopilot::load_modes(&self.pool);
+        if !global && !autopilot::any_enabled(&modes) {
             return;
         }
         if quota_cooldown_active(&self.pool) {
@@ -2671,17 +2691,25 @@ impl ReactiveSubscription for KpiGoalDerivationSubscription {
 
         let candidates = {
             let pool = self.pool.clone();
+            // Over-fetch, then filter by per-project autopilot mode and truncate
+            // to the per-tick cap — so projects NOT on suggest/full don't crowd
+            // out eligible ones at the front of the (business-first) ordering.
+            let fetch = KPI_DERIVATION_MAX_PER_TICK.max(1) * 8;
             tokio::task::spawn_blocking(move || {
-                crate::engine::kpi_derivation::find_derivation_candidates(
-                    &pool,
-                    KPI_DERIVATION_MAX_PER_TICK,
-                )
+                crate::engine::kpi_derivation::find_derivation_candidates(&pool, fetch)
             })
             .await
             .ok()
             .and_then(|r| r.ok())
             .unwrap_or_default()
         };
+        let mut candidates: Vec<_> = candidates
+            .into_iter()
+            .filter(|kpi| {
+                autopilot::cap_enabled(&modes, &kpi.project_id, global, Capability::KpiGoalDerivation)
+            })
+            .collect();
+        candidates.truncate(KPI_DERIVATION_MAX_PER_TICK);
         for kpi in candidates {
             let name = kpi.name.clone();
             match crate::engine::kpi_derivation::derive_goal_from_kpi(&self.pool, &kpi).await {
@@ -2735,7 +2763,10 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
     }
 
     async fn tick(&self) {
-        let enabled = crate::db::repos::core::settings::get(
+        use crate::engine::autopilot::{self, Capability};
+        // Per-project autopilot overrides the global flag; when the global flag
+        // is off AND no project opted in, this tick is a no-op (as before).
+        let global = crate::db::repos::core::settings::get(
             &self.pool,
             crate::db::settings_keys::AUTONOMOUS_KPI_EVALUATION,
         )
@@ -2743,7 +2774,8 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
         .flatten()
         .as_deref()
             == Some("true");
-        if !enabled {
+        let modes = autopilot::load_modes(&self.pool);
+        if !global && !autopilot::any_enabled(&modes) {
             return;
         }
         if quota_cooldown_active(&self.pool) {
@@ -2775,6 +2807,9 @@ impl ReactiveSubscription for KpiEvaluationSubscription {
         };
 
         for project_id in projects {
+            if !autopilot::cap_enabled(&modes, &project_id, global, Capability::KpiEvaluation) {
+                continue; // this project's autopilot mode doesn't include measuring
+            }
             match crate::engine::kpi_eval::evaluate_due_kpis(&self.pool, &project_id).await {
                 Ok(results) if !results.is_empty() => {
                     let failed: Vec<&str> = results
@@ -2846,7 +2881,13 @@ impl ReactiveSubscription for FleetLivenessWatchdog {
         .flatten()
         .as_deref()
             == Some("true");
-        if !advancement_on {
+        // A project on `full` autopilot advances even with the global flag off,
+        // so the stall watchdog must arm for it too — otherwise per-project
+        // advancement would have no liveness protection.
+        let any_full = crate::engine::autopilot::load_modes(&self.pool)
+            .values()
+            .any(|m| *m == crate::engine::autopilot::AutopilotMode::Full);
+        if !advancement_on && !any_full {
             return;
         }
         if quota_cooldown_active(&self.pool) {

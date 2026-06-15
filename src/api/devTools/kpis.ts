@@ -131,6 +131,84 @@ export async function getKpiScanStatus(scanId: string): Promise<{
   return invoke("dev_tools_get_kpi_scan_status", { scanId });
 }
 
+// =============================================================================
+// Measurement composition (Factory "measurement setup") — headless Claude in the
+// project root composes + TESTS a codebase measurement, or proposes a whole KPI
+// from a one-line intent. Both are background tasks polled for their result.
+// =============================================================================
+
+/** A tested codebase measurement composed by the AI agent. */
+export interface KpiMeasureComposed {
+  cmd: string;
+  parse: string;
+  value: number;
+  evidence?: string;
+}
+
+/** A full KPI proposed by the AI agent from a one-line intent. */
+export interface KpiProposed {
+  name: string;
+  description?: string;
+  category: string;
+  tier?: string;
+  measure_kind: string;
+  measure_config?: unknown;
+  unit?: string;
+  direction?: string;
+  baseline_hint?: number | null;
+  suggested_target?: number | null;
+  cadence?: string;
+  rationale?: string;
+  needed_connector?: string;
+  metric_type?: string;
+}
+
+export interface KpiComposeStatus {
+  task_id: string;
+  status: string; // running | completed | failed | cancelled | not_found
+  error?: string | null;
+  lines?: string[];
+  /** Present once completed: the composed envelope. `kpi_measure: null` means
+   * "not measurable from the codebase". `result` itself is null until then. */
+  result?: { kpi_measure?: KpiMeasureComposed | null; kpi_proposal?: KpiProposed | null } | null;
+}
+
+/** Start composing + testing a codebase measurement for one existing KPI. */
+export async function composeKpiMeasure(kpiId: string): Promise<{ task_id: string }> {
+  return invoke<{ task_id: string }>("dev_tools_compose_kpi_measure", { kpiId }, { timeoutMs: 30_000 });
+}
+
+export interface ProposeKpiInput {
+  contextGroupId?: string;
+  contextId?: string;
+  intent: string;
+}
+
+/** Start proposing a complete KPI (metadata + tested measurement) from intent. */
+export async function proposeKpi(
+  projectId: string,
+  input: ProposeKpiInput,
+): Promise<{ task_id: string }> {
+  return invoke<{ task_id: string }>(
+    "dev_tools_propose_kpi",
+    {
+      projectId,
+      contextGroupId: input.contextGroupId,
+      contextId: input.contextId,
+      intent: input.intent,
+    },
+    { timeoutMs: 30_000 },
+  );
+}
+
+export async function getKpiComposeStatus(taskId: string): Promise<KpiComposeStatus> {
+  return invoke<KpiComposeStatus>("dev_tools_get_kpi_compose_status", { taskId });
+}
+
+export async function cancelKpiCompose(taskId: string): Promise<boolean> {
+  return invoke<boolean>("dev_tools_cancel_kpi_compose", { taskId });
+}
+
 /** Measure one KPI now (codebase/derived). Coverage runs take minutes. */
 export async function evaluateKpi(kpiId: string): Promise<DevKpiMeasurement> {
   return invoke<DevKpiMeasurement>("dev_tools_evaluate_kpi", { kpiId }, { timeoutMs: 360_000 });

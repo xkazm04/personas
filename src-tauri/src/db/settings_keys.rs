@@ -472,6 +472,12 @@ pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
 
+/// Per-project **autopilot** mode. Full key: `autopilot_mode:<project_id>`,
+/// value ∈ {`off`, `measure`, `suggest`, `full`}. Owns whether that project's
+/// KPI → goal → team loop runs unattended (see `engine/autopilot.rs`). Absent =
+/// fall back to the legacy global `autonomous_*` flags.
+pub const AUTOPILOT_MODE_PREFIX: &str = "autopilot_mode:";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -554,6 +560,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     AUTO_OPTIMIZE_PREFIX,
     HEALTH_WATCH_PREFIX,
     CLOUD_SYNC_CURSOR_PREFIX,
+    AUTOPILOT_MODE_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -600,6 +607,15 @@ pub fn validate_key(key: &str) -> Result<(), String> {
 /// - `SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR` → positive integer (u32 range)
 /// - `FILE_WATCHER_DEBOUNCE_MS` → non-negative integer (u32 range, milliseconds)
 pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
+    // Per-project autopilot mode (prefix key) — constrained enum value.
+    if key.starts_with(AUTOPILOT_MODE_PREFIX) {
+        return match value {
+            "off" | "measure" | "suggest" | "full" => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be one of off|measure|suggest|full, got {value:?}"
+            )),
+        };
+    }
     match key {
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => {
             value.parse::<u32>().map(|_| ()).map_err(|_| {
