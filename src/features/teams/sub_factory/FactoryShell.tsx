@@ -10,6 +10,7 @@ import { saveKpiAssessment } from '@/api/devTools/kpis';
 import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryMock';
 import { Breadcrumb } from './factoryPrimitives';
 import { AttentionBand } from './AttentionBand';
+import { KpiProposalsPanel } from './KpiProposalsPanel';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
@@ -59,7 +60,7 @@ export function FactoryShell({
     return () => clearTimeout(t);
   }, [kpiId, edits]);
 
-  const { projects } = useFactoryData();
+  const { projects, reload } = useFactoryData();
   const project = useMemo(() => projects.find((p) => p.id === projectId) ?? null, [projects, projectId]);
   const group = useMemo(() => project?.groups.find((g) => g.id === groupId) ?? null, [project, groupId]);
   const kpi = useMemo(() => {
@@ -115,6 +116,8 @@ export function FactoryShell({
       <>
         <Breadcrumb trail={[{ label: 'Projects', onClick: () => setProjectId(null) }, { label: project.name }]} />
         <p className="typo-caption mb-3">{project.stack}</p>
+        {/* D5 — proposal on-ramp: scan + accept/adjust/reject; accepting reloads the matrix. */}
+        <KpiProposalsPanel projectId={project.id} onAccepted={reload} />
         {renderGroups({ project, ed, openGroup, openKpi })}
       </>
     );

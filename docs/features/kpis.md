@@ -55,6 +55,12 @@ same live `dev_kpis` data. Two cockpit moves land here first:
   what the system does to *this* KPI at those lines right now ("past your red
   line — the system derives a goal to fix this now" / "clear of both lines —
   nothing triggers"), so the lever is legible instead of abstract.
+- **Proposal on-ramp** (`KpiProposalsPanel`, in the project view): "Scan for
+  KPIs" runs the proposal scan and the review queue accepts (with an inline
+  *Adjust* for target/cadence) / rejects each proposed KPI, wired to the live
+  commands — so the cockpit can bootstrap its own KPIs without leaving for the
+  Teams › KPIs queue. Accepting reloads the matrix; the matrix itself now shows
+  only **managed** (active/paused) KPIs, so proposals don't masquerade as live.
 
 ## The proposal scan
 

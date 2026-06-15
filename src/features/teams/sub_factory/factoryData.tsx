@@ -194,7 +194,11 @@ export function FactoryDataProvider({ children }: { children: ReactNode }) {
         const perProject = await Promise.all(
           projects.map(async (p) => {
             const [groups, contexts] = await Promise.all([devApi.listContextGroups(p.id), devApi.listContexts(p.id)]);
-            const pk = allKpis.filter((k) => k.project_id === p.id);
+            // Matrix shows MANAGED KPIs only; proposed ones live in the
+            // proposals on-ramp (KpiProposalsPanel) and archived are gone.
+            const pk = allKpis.filter(
+              (k) => k.project_id === p.id && (k.status === 'active' || k.status === 'paused'),
+            );
             return assembleProject(p, groups, contexts, pk, seriesByKpi);
           }),
         );
