@@ -4353,6 +4353,11 @@ pub fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
         needed_connector: row.get("needed_connector")?,
         metric_type: row.get("metric_type").unwrap_or(None),
         tier: row.get("tier").unwrap_or_else(|_| "supporting".to_string()),
+        warn_at: row.get("warn_at").unwrap_or(None),
+        crit_at: row.get("crit_at").unwrap_or(None),
+        manual_rating: row.get("manual_rating").unwrap_or(None),
+        assessment_pros: row.get("assessment_pros").unwrap_or(None),
+        assessment_cons: row.get("assessment_cons").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -4529,6 +4534,39 @@ pub fn delete_kpi(pool: &DbPool, id: &str) -> Result<bool, AppError> {
         let conn = pool.get()?;
         let n = conn.execute("DELETE FROM dev_kpis WHERE id = ?1", params![id])?;
         Ok(n > 0)
+    })
+}
+
+/// Persist Factory-console calibration + assessment. Each field is COALESCEd, so
+/// a partial save (only the fields the user just changed) preserves the rest.
+#[allow(clippy::too_many_arguments)]
+pub fn save_kpi_assessment(
+    pool: &DbPool,
+    id: &str,
+    warn_at: Option<f64>,
+    crit_at: Option<f64>,
+    manual_rating: Option<i32>,
+    pros: Option<&str>,
+    cons: Option<&str>,
+) -> Result<DevKpi, AppError> {
+    timed_query!("dev_kpis", "dev_kpis::save_kpi_assessment", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE dev_kpis SET
+                warn_at = COALESCE(?2, warn_at),
+                crit_at = COALESCE(?3, crit_at),
+                manual_rating = COALESCE(?4, manual_rating),
+                assessment_pros = COALESCE(?5, assessment_pros),
+                assessment_cons = COALESCE(?6, assessment_cons),
+                updated_at = datetime('now')
+             WHERE id = ?1",
+            params![id, warn_at, crit_at, manual_rating, pros, cons],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("KPI {id} not found")));
+        }
+        drop(conn);
+        get_kpi(pool, id)
     })
 }
 

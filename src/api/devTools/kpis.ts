@@ -71,6 +71,25 @@ export async function deleteKpi(id: string): Promise<boolean> {
   return invoke<boolean>("dev_tools_delete_kpi", { id });
 }
 
+/** Persist the Factory console's calibration + assessment. Omitted fields are preserved. */
+export interface KpiAssessmentInput {
+  warnAt?: number;
+  critAt?: number;
+  manualRating?: number;
+  pros?: string;
+  cons?: string;
+}
+export async function saveKpiAssessment(id: string, a: KpiAssessmentInput): Promise<DevKpi> {
+  return invoke<DevKpi>("dev_tools_save_kpi_assessment", {
+    id,
+    warnAt: a.warnAt,
+    critAt: a.critAt,
+    manualRating: a.manualRating,
+    pros: a.pros,
+    cons: a.cons,
+  });
+}
+
 export async function listKpiMeasurements(
   kpiId: string,
   limit?: number,

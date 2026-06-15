@@ -2878,6 +2878,31 @@ pub fn dev_tools_delete_kpi(
     repo::delete_kpi(&state.db, &id)
 }
 
+/// Persist the Factory KPI console's calibration thresholds + manual assessment
+/// (rating / pros / cons). Each field is optional; omitted fields are preserved.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub fn dev_tools_save_kpi_assessment(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    warn_at: Option<f64>,
+    crit_at: Option<f64>,
+    manual_rating: Option<i32>,
+    pros: Option<String>,
+    cons: Option<String>,
+) -> Result<DevKpi, AppError> {
+    require_auth_sync(&state)?;
+    repo::save_kpi_assessment(
+        &state.db,
+        &id,
+        warn_at,
+        crit_at,
+        manual_rating,
+        pros.as_deref(),
+        cons.as_deref(),
+    )
+}
+
 #[tauri::command]
 pub fn dev_tools_list_kpi_measurements(
     state: State<'_, Arc<AppState>>,

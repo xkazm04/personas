@@ -53,4 +53,8 @@ metric_type: string | null,
  * `north_star` | `primary` | `supporting` — derivation precedence
  * ("0 users beats 100% coverage").
  */
-tier: string, created_at: string, updated_at: string, };
+tier: string,
+/**
+ * Factory KPI console — persisted calibration thresholds + assessment.
+ */
+warn_at: number | null, crit_at: number | null, manual_rating: number | null, assessment_pros: string | null, assessment_cons: string | null, created_at: string, updated_at: string, };

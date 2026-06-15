@@ -34,6 +34,13 @@ export interface MockKpi {
   cadence: 'daily' | 'weekly' | 'manual';
   /** 0–5 manual confidence/quality rating the user can dial in; null = unrated. */
   manualRating: number | null;
+  /** Free-text note explaining the rating — the calibration journal entry. */
+  ratingNote?: string | null;
+  /** Extended assessment: what's working / what isn't about this signal. */
+  pros?: string | null;
+  cons?: string | null;
+  /** The measurement methodic (JSON measure_config string) — surfaced for preview. */
+  measureConfig?: string;
   lastMeasuredAt: string; // relative label, e.g. "2h ago"
   series: number[]; // oldest → newest, for sparklines
 }
@@ -162,6 +169,9 @@ export interface KpiEdit {
   warnAt?: number;
   critAt?: number;
   rating?: number;
+  ratingNote?: string;
+  pros?: string;
+  cons?: string;
 }
 /** Apply pending threshold/rating edits to a KPI (returns a new object). */
 export function applyEdit(k: MockKpi, e?: KpiEdit): MockKpi {
@@ -171,7 +181,16 @@ export function applyEdit(k: MockKpi, e?: KpiEdit): MockKpi {
     warnAt: e.warnAt ?? k.warnAt,
     critAt: e.critAt ?? k.critAt,
     manualRating: e.rating ?? k.manualRating,
+    ratingNote: e.ratingNote ?? k.ratingNote,
+    pros: e.pros ?? k.pros,
+    cons: e.cons ?? k.cons,
   };
+}
+
+/** Format a value with its unit: space word-units ("0 errors") but not "%" ("78%"). */
+export function fmtUnit(v: number | null | undefined, unit: string): string {
+  const num = v ?? '—';
+  return unit && unit !== '%' ? `${num} ${unit}` : `${num}${unit}`;
 }
 
 /** Green/yellow/red/gray tallies for a set of KPIs — the traffic-light summary. */

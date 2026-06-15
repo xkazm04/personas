@@ -1,11 +1,9 @@
-// Shared L3 — the "efficient table with bar ratings" (round-3 point 5). One KPI
-// per row, aggregated for a context group; click a row to open the calibration
-// console. Parameterised so each variant explores a different table language:
-//   · bar variant — the bar-rating look ('bar' | 'segments' | 'meter')
-//   · density     — 'compact' | 'comfortable' | 'spacious'
-// Rows are sorted worst → best so attention lands at the top.
+// Shared L3 — the KPI table. One KPI per row (single line); click a row to open
+// the calibration console. The KPI category is its own column rendered as a
+// lucide icon (no more "Technical · weekly" subtitle — cadence dropped, type
+// promoted to an icon column). Rows sort worst → best so attention lands on top.
 import { useState } from 'react';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, Wrench, ShieldCheck, Activity, Gem, type LucideIcon } from 'lucide-react';
 
 import {
   STATUS_COLOR,
@@ -19,8 +17,25 @@ import { Sparkline, StatusDot, StatusPill, KpiBarRating } from './factoryPrimiti
 
 const SEV: Record<KpiStatus, number> = { crit: 0, warn: 1, ok: 2, met: 3, unmeasured: 4 };
 
+/** KPI category enum → lucide icon (its own column). */
+const CATEGORY_ICON: Record<string, LucideIcon> = {
+  technical: Wrench,
+  quality: ShieldCheck,
+  traffic: Activity,
+  value: Gem,
+};
+
+function TypeIcon({ category }: { category: string }) {
+  const Icon = CATEGORY_ICON[category] ?? Wrench;
+  return (
+    <span className="justify-self-center" title={CATEGORY_LABEL[category as keyof typeof CATEGORY_LABEL] ?? category}>
+      <Icon className="w-4 h-4 text-foreground/70" aria-label={category} />
+    </span>
+  );
+}
+
 type Density = 'compact' | 'comfortable' | 'spacious';
-const ROW_PAD: Record<Density, string> = { compact: 'py-1.5', comfortable: 'py-2.5', spacious: 'py-3.5' };
+const ROW_PAD: Record<Density, string> = { compact: 'py-1.5', comfortable: 'py-2', spacious: 'py-3' };
 
 export function KpiTable({
   kpis,
@@ -46,6 +61,7 @@ export function KpiTable({
     <div className="rounded-card border border-primary/10 overflow-hidden">
       {/* header */}
       <div className={`grid items-center gap-3 px-3 ${pad} bg-secondary/20 border-b border-primary/10`} style={{ gridTemplateColumns: cols(withContext) }}>
+        <span aria-hidden="true" />
         <button type="button" onClick={() => setSortWorst((s) => !s)} className="flex items-center gap-1 typo-label text-foreground/70 hover:text-foreground justify-self-start">
           KPI <ArrowUpDown className="w-3 h-3" />
         </button>
@@ -68,12 +84,10 @@ export function KpiTable({
               className={`w-full grid items-center gap-3 px-3 ${pad} text-left hover:bg-secondary/20 transition-colors`}
               style={{ gridTemplateColumns: cols(withContext) }}
             >
+              <TypeIcon category={kpi.category} />
               <span className="flex items-center gap-2 min-w-0">
                 <StatusDot status={st} size={9} />
-                <span className="min-w-0">
-                  <span className="typo-title truncate block leading-tight">{kpi.name}</span>
-                  <span className="typo-caption truncate block">{CATEGORY_LABEL[kpi.category]} · {kpi.cadence}</span>
-                </span>
+                <span className="typo-title truncate">{kpi.name}</span>
               </span>
               {withContext && <span className="typo-caption truncate hidden lg:block">{contextName}</span>}
               <span className="flex items-center gap-2">
@@ -97,8 +111,8 @@ export function KpiTable({
 }
 
 function cols(withContext: boolean): string {
-  // name | (context) | rating | value | trend | status
+  // type | name | (context) | rating | value | trend | status
   return withContext
-    ? 'minmax(160px,2fr) minmax(0,1fr) minmax(140px,1.2fr) 110px 72px 110px'
-    : 'minmax(160px,2.4fr) minmax(140px,1.2fr) 110px 72px 110px';
+    ? '36px minmax(150px,2fr) minmax(0,1fr) minmax(140px,1.2fr) 110px 72px 110px'
+    : '36px minmax(150px,2.4fr) minmax(140px,1.2fr) 110px 72px 110px';
 }

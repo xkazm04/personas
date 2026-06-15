@@ -3,7 +3,9 @@
 // the keyed fade-slide transition between layers. Variants supply ONLY the L2
 // group/context overview (via renderGroups) + the L3 table look (bar/density) —
 // that's the surface we're still exploring.
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+
+import { saveKpiAssessment } from '@/api/devTools/kpis';
 
 import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryMock';
 import { Breadcrumb } from './factoryPrimitives';
@@ -38,6 +40,23 @@ export function FactoryShell({
   const [kpiId, setKpiId] = useState<string | null>(null);
   const [edits, setEdits] = useState<Record<string, KpiEdit>>({});
   const ed = (k: MockKpi) => applyEdit(k, edits[k.id]);
+
+  // Persist the open KPI's calibration + assessment edits to dev_kpis (debounced).
+  useEffect(() => {
+    if (!kpiId) return;
+    const e = edits[kpiId];
+    if (!e) return;
+    const t = setTimeout(() => {
+      void saveKpiAssessment(kpiId, {
+        warnAt: e.warnAt,
+        critAt: e.critAt,
+        manualRating: e.rating,
+        pros: e.pros,
+        cons: e.cons,
+      }).catch(() => {});
+    }, 600);
+    return () => clearTimeout(t);
+  }, [kpiId, edits]);
 
   const { projects } = useFactoryData();
   const project = useMemo(() => projects.find((p) => p.id === projectId) ?? null, [projects, projectId]);

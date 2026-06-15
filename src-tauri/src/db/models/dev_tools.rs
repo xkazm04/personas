@@ -262,6 +262,12 @@ pub struct DevKpi {
     /// `north_star` | `primary` | `supporting` — derivation precedence
     /// ("0 users beats 100% coverage").
     pub tier: String,
+    /// Factory KPI console — persisted calibration thresholds + assessment.
+    pub warn_at: Option<f64>,
+    pub crit_at: Option<f64>,
+    pub manual_rating: Option<i32>,
+    pub assessment_pros: Option<String>,
+    pub assessment_cons: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

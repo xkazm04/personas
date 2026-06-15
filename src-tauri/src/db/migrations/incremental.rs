@@ -4420,6 +4420,22 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "dev_kpis.factory_calibration",
+            description: "Factory KPI console: persisted warn/crit thresholds, manual rating, pros/cons assessment",
+            already_applied: |conn| has_column(conn, "dev_kpis", "warn_at"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN warn_at REAL;")?;
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN crit_at REAL;")?;
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN manual_rating INTEGER;")?;
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN assessment_pros TEXT;")?;
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN assessment_cons TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_kpi_bindings",
             description: "Swappable connector bindings for type-bound KPIs (P6)",
             already_applied: |conn| has_table(conn, "dev_kpi_bindings"),

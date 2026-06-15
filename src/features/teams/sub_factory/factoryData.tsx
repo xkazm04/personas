@@ -46,14 +46,25 @@ function rel(iso: string | null): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
+/** "agent-deployment" → "Agent deployment". */
+function humanize(s: string): string {
+  return s.replace(/[-_]+/g, ' ').replace(/^\s*\w/, (c) => c.toUpperCase()).trim();
+}
+/** Readable context name: the human business feature, else a de-kebabbed id. */
+function contextDisplayName(c: DevContext): string {
+  const bf = c.business_feature?.trim();
+  return bf && bf.length > 0 ? bf : humanize(c.name);
+}
+
 function toKpi(k: DevKpi, series: number[]): MockKpi {
   const baseline = k.baseline_value ?? k.current_value ?? 0;
   const target = k.target_value ?? (baseline || 1);
   const spanAbs = Math.abs(target - baseline) || Math.abs(target) || 1;
   const up = k.direction !== 'down';
-  // Derived bands: slightly-worse-than-baseline = red, a third toward target = yellow.
-  const critAt = up ? baseline - spanAbs * 0.1 : baseline + spanAbs * 0.1;
-  const warnAt = up ? baseline + spanAbs * 0.35 : baseline - spanAbs * 0.35;
+  // Persisted thresholds win; else derive (worse-than-baseline = red, a third
+  // toward target = yellow).
+  const critAt = k.crit_at ?? Math.round((up ? baseline - spanAbs * 0.1 : baseline + spanAbs * 0.1) * 100) / 100;
+  const warnAt = k.warn_at ?? Math.round((up ? baseline + spanAbs * 0.35 : baseline - spanAbs * 0.35) * 100) / 100;
   return {
     id: k.id,
     name: k.name,
@@ -65,10 +76,13 @@ function toKpi(k: DevKpi, series: number[]): MockKpi {
     baseline,
     current: k.current_value,
     target,
-    warnAt: Math.round(warnAt * 100) / 100,
-    critAt: Math.round(critAt * 100) / 100,
+    warnAt,
+    critAt,
     cadence: (['daily', 'weekly', 'manual'].includes(k.cadence) ? k.cadence : 'manual') as 'daily' | 'weekly' | 'manual',
-    manualRating: null,
+    manualRating: k.manual_rating ?? null,
+    pros: k.assessment_pros ?? null,
+    cons: k.assessment_cons ?? null,
+    measureConfig: k.measure_config,
     lastMeasuredAt: rel(k.last_measured_at),
     series,
   };
@@ -99,7 +113,7 @@ function assembleProject(
       .filter((c) => c.group_id === g.id)
       .map((c) => ({
         id: c.id,
-        name: c.name,
+        name: contextDisplayName(c),
         category: (CONTEXT_CATS.includes(c.category as ContextCategory) ? c.category : 'lib') as ContextCategory,
         kpis: byContext.get(c.id) ?? [],
       }));
@@ -124,7 +138,7 @@ function assembleProject(
       color: '#64748b',
       contexts: ungrouped.map((c) => ({
         id: c.id,
-        name: c.name,
+        name: contextDisplayName(c),
         category: (CONTEXT_CATS.includes(c.category as ContextCategory) ? c.category : 'lib') as ContextCategory,
         kpis: byContext.get(c.id) ?? [],
       })),

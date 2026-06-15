@@ -3,7 +3,7 @@
 // metaphor. These are the "extractable" pieces a winning variant would graft
 // back into the real KPI surface.
 import { Star, ChevronLeft } from 'lucide-react';
-import { STATUS_COLOR, STATUS_LABEL, TRAFFIC_COLOR, trafficCounts, progressPct, type Traffic, type KpiStatus, type MockKpi, kpiStatus } from './factoryMock';
+import { STATUS_COLOR, STATUS_LABEL, TRAFFIC_COLOR, trafficCounts, progressPct, fmtUnit, type Traffic, type KpiStatus, type MockKpi, kpiStatus } from './factoryMock';
 
 /** Compact measurement sparkline (oldest → newest). */
 export function Sparkline({
@@ -139,8 +139,8 @@ export function CalibrationTrack({ kpi, height = 30 }: { kpi: MockKpi; height?: 
         )}
       </div>
       <div className="flex justify-between mt-1 typo-caption text-muted-foreground tabular-nums">
-        <span>base {kpi.baseline}{kpi.unit}</span>
-        <span style={{ color: TRAFFIC_COLOR.green }}>target {kpi.target}{kpi.unit}</span>
+        <span>base {fmtUnit(kpi.baseline, kpi.unit)}</span>
+        <span style={{ color: TRAFFIC_COLOR.green }}>target {fmtUnit(kpi.target, kpi.unit)}</span>
       </div>
     </div>
   );
@@ -156,6 +156,92 @@ export function StatusPill({ status, className = '' }: { status: KpiStatus; clas
       <span className="w-1.5 h-1.5 rounded-full" style={{ background: STATUS_COLOR[status] }} />
       {STATUS_LABEL[status]}
     </span>
+  );
+}
+
+/** A labelled threshold slider — the clear, visual way to calibrate a band. */
+export function ThresholdSlider({
+  label,
+  color,
+  value,
+  min,
+  max,
+  unit,
+  onChange,
+}: {
+  label: string;
+  color: string;
+  value: number;
+  min: number;
+  max: number;
+  unit: string;
+  onChange: (v: number) => void;
+}) {
+  const step = Math.max(0.01, Math.round(((max - min) / 100) * 100) / 100);
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <span className="inline-flex items-center gap-1.5 typo-caption">
+          <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+          {label}
+        </span>
+        <span className="typo-data tabular-nums" style={{ color }}>{fmtUnit(value, unit)}</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full h-1.5 cursor-pointer"
+        style={{ accentColor: color }}
+        aria-label={label}
+      />
+    </div>
+  );
+}
+
+/** Rate (0–5) + capture pros & cons — the extended assessment / calibration journal. */
+export function AssessmentEditor({
+  rating,
+  pros,
+  cons,
+  onRate,
+  onPros,
+  onCons,
+  size = 24,
+}: {
+  rating: number | null;
+  pros: string | null | undefined;
+  cons: string | null | undefined;
+  onRate: (v: number) => void;
+  onPros: (v: string) => void;
+  onCons: (v: string) => void;
+  size?: number;
+}) {
+  const ta = 'w-full px-2.5 py-1.5 typo-body bg-secondary/40 border border-primary/10 rounded-interactive text-foreground placeholder:text-foreground/40 focus-ring resize-none';
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-3">
+        <RatingStars value={rating} onChange={onRate} size={size} />
+        <span className="typo-caption">{rating != null ? `${rating}/5 confidence` : 'not yet rated'}</span>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <label className="block">
+          <span className="typo-caption flex items-center gap-1.5 mb-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: TRAFFIC_COLOR.green }} /> Pros — what's working
+          </span>
+          <textarea value={pros ?? ''} onChange={(e) => onPros(e.target.value)} rows={3} placeholder="Strengths of this signal…" className={ta} />
+        </label>
+        <label className="block">
+          <span className="typo-caption flex items-center gap-1.5 mb-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: TRAFFIC_COLOR.red }} /> Cons — what's off
+          </span>
+          <textarea value={cons ?? ''} onChange={(e) => onCons(e.target.value)} rows={3} placeholder="Caveats, gaps, risks…" className={ta} />
+        </label>
+      </div>
+    </div>
   );
 }
 

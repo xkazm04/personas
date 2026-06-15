@@ -158,6 +158,9 @@ event_names! {
     KPI_SCAN_STATUS            => "kpi-scan-status",
     KPI_SCAN_OUTPUT            => "kpi-scan-output",
     KPI_SCAN_COMPLETE          => "kpi-scan-complete",
+    // KPI measurement compose/propose (Factory measurement setup)
+    KPI_COMPOSE_STATUS         => "kpi-compose-status",
+    KPI_COMPOSE_OUTPUT         => "kpi-compose-output",
 
     // Task executor
     TASK_EXEC_STATUS           => "task-exec-status",

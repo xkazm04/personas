@@ -376,6 +376,11 @@ mod tests {
             needed_connector: None,
             metric_type: None,
             tier: "supporting".into(),
+            warn_at: None,
+            crit_at: None,
+            manual_rating: None,
+            assessment_pros: None,
+            assessment_cons: None,
             created_at: created.into(),
             updated_at: created.into(),
         }

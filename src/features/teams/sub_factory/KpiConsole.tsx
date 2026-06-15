@@ -1,91 +1,183 @@
-// Shared deepest layer for ALL Factory variants — a single KPI's calibration
-// console. This is the "Command Deck content" the user wants as the baseline:
-// the live value, a calibration track, the threshold tuners (the steering
-// lever), the manual rating, and the measurement process. Rendered full-width
-// inside whatever drill-down chrome a variant provides.
-import { Activity, Clock, SlidersHorizontal, Gauge } from 'lucide-react';
+// L4 — KPI detail console (consolidated to the "Console" two-pane layout the
+// user picked). Left pane = read (status, hero value, calibration track,
+// measurement methodic). Right pane = steer (threshold sliders + rate/pros/cons).
+//
+// Round-6 wiring:
+//   · number↔unit spacing via fmtUnit ("0 errors", "78%")
+//   · assessment = rating + Pros + Cons (extended note)
+//   · "Measure now" calls the REAL eval engine (dev_tools_evaluate_kpi)
+//   · the measurement methodic (measure_config) is shown + editable (adjust)
+// Calibration/assessment edits flow up via onEdit; persistence to dev_kpis is
+// handled by the caller (FactoryShell) so the same widget works on mock + live.
+import { useState } from 'react';
+import { Clock, SlidersHorizontal, Activity, Play, Pencil, Loader2 } from 'lucide-react';
 
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, type MockKpi, type KpiEdit } from './factoryMock';
-import { Sparkline, RatingStars, CalibrationTrack, StatusPill } from './factoryPrimitives';
+import { evaluateKpi, updateKpi } from '@/api/devTools/kpis';
+import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit } from './factoryMock';
+import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
+
+/** Robustly stringify a Tauri/AppError so the UI never shows "[object Object]". */
+function errMsg(e: unknown): string {
+  if (typeof e === 'string') return e;
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === 'object') {
+    const o = e as Record<string, unknown>;
+    if (typeof o.message === 'string') return o.message;
+    if (typeof o.error === 'string') return o.error;
+    try { return JSON.stringify(e); } catch { return String(e); }
+  }
+  return String(e);
+}
+
+function domain(kpi: MockKpi): { min: number; max: number } {
+  const vals = [kpi.baseline, kpi.target, kpi.warnAt, kpi.critAt, kpi.current ?? kpi.baseline];
+  const lo = Math.min(...vals);
+  const hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.15 || 1;
+  return { min: Math.round((lo - pad) * 100) / 100, max: Math.round((hi + pad) * 100) / 100 };
+}
+
+/** Human one-liner describing the measurement methodic (measure_config). */
+function describeMethodic(cfg: string | undefined): string {
+  if (!cfg) return '(no methodic configured)';
+  try {
+    const o = JSON.parse(cfg) as Record<string, unknown>;
+    if (o.cmd) return `runs \`${o.cmd}\`${o.parse ? ` · parse ${o.parse}` : ''}`;
+    if (o.metric) return `orchestrator metric: ${o.metric}`;
+    if (o.connector) return `connector ${o.connector}${o.instruction ? `: ${o.instruction}` : ''}`;
+    if (o.instruction) return String(o.instruction);
+    return cfg;
+  } catch {
+    return cfg;
+  }
+}
 
 export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiEdit) => void }) {
   const st = kpiStatus(kpi);
   const pct = progressPct(kpi);
+  const { min, max } = domain(kpi);
+
+  // Measure now — calls the real eval engine.
+  const [measuring, setMeasuring] = useState(false);
+  const [measureMsg, setMeasureMsg] = useState<string | null>(null);
+  const handleMeasure = async () => {
+    setMeasuring(true);
+    setMeasureMsg(null);
+    try {
+      const m = await evaluateKpi(kpi.id);
+      setMeasureMsg(`Measured ${fmtUnit(m.value, kpi.unit)} — saved`);
+    } catch (e) {
+      setMeasureMsg(errMsg(e));
+    } finally {
+      setMeasuring(false);
+    }
+  };
+
+  // Adjust methodic — edits measure_config, persists via dev_tools_update_kpi.
+  const [editingCfg, setEditingCfg] = useState(false);
+  const [cfgDraft, setCfgDraft] = useState(kpi.measureConfig ?? '{}');
+  const [cfgMsg, setCfgMsg] = useState<string | null>(null);
+  const handleSaveCfg = async () => {
+    try {
+      JSON.parse(cfgDraft); // validate
+      await updateKpi(kpi.id, { measureConfig: cfgDraft });
+      setEditingCfg(false);
+      setCfgMsg('methodic saved');
+    } catch (e) {
+      setCfgMsg(errMsg(e));
+    }
+  };
+
   return (
-    <div className="grid lg:grid-cols-[minmax(300px,380px)_1fr] gap-4" data-testid="factory-kpi-console">
-      {/* hero — read the state */}
+    <div className="grid lg:grid-cols-2 gap-4" data-testid="factory-kpi-console">
+      {/* READ */}
       <div className="rounded-card border border-primary/15 bg-secondary/10 p-5">
         <div className="flex items-center gap-2 mb-2">
           <StatusPill status={st} />
-          <span className="ml-auto typo-caption text-foreground capitalize">{kpi.tier.replace('_', ' ')} · {CATEGORY_LABEL[kpi.category]}</span>
+          <span className="ml-auto typo-caption capitalize">{kpi.tier.replace('_', ' ')} · {CATEGORY_LABEL[kpi.category]}</span>
         </div>
-        <h2 className="typo-section-title text-foreground leading-tight mb-4">{kpi.name}</h2>
+        <h2 className="typo-section-title mb-3 leading-tight">{kpi.name}</h2>
         <div className="flex items-end gap-2 mb-4">
-          <span className="text-5xl font-bold tabular-nums leading-none" style={{ color: STATUS_COLOR[st] }}>{kpi.current ?? '—'}</span>
-          <span className="typo-body text-foreground mb-1.5">{kpi.unit}</span>
+          <span className="text-5xl font-bold tabular-nums" style={{ color: STATUS_COLOR[st] }}>{kpi.current ?? '—'}</span>
+          <span className="typo-body mb-1.5">{kpi.unit}</span>
           {pct != null && (
-            <span className="ml-auto mb-1 leading-none text-right">
+            <span className="ml-auto mb-1 text-right leading-none">
               <span className="typo-data-lg tabular-nums" style={{ color: STATUS_COLOR[st] }}>{pct}%</span>
               <span className="block typo-caption">to target</span>
             </span>
           )}
         </div>
-        <CalibrationTrack kpi={kpi} height={38} />
-        <div className="flex items-center justify-between mt-3 typo-caption text-foreground">
-          <span>Baseline <b className="tabular-nums">{kpi.baseline}{kpi.unit}</b></span>
-          <span className="text-foreground/70">{kpi.direction === 'up' ? 'higher is better' : 'lower is better'}</span>
-          <span style={{ color: TRAFFIC_COLOR.green }}>Target <b className="tabular-nums">{kpi.target}{kpi.unit}</b></span>
+        <CalibrationTrack kpi={kpi} height={36} />
+
+        {/* measurement methodic */}
+        <div className="mt-5">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="typo-label text-foreground flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Measurement</h3>
+            <span className="typo-caption lowercase ml-1">{kpi.measureKind}</span>
+            <span className="typo-caption flex items-center gap-1"><Clock className="w-3 h-3" /> {kpi.cadence}</span>
+            <span className="flex-1" />
+            <button
+              type="button"
+              onClick={handleMeasure}
+              disabled={measuring}
+              className="typo-caption inline-flex items-center gap-1 rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20 transition-colors disabled:opacity-50"
+            >
+              {measuring ? <Loader2 className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
+              {measuring ? 'Measuring…' : 'Measure now'}
+            </button>
+          </div>
+
+          {/* methodic: preview + adjust */}
+          <div className="rounded-interactive border border-primary/10 bg-background/40 p-2.5 mb-2">
+            <div className="flex items-start gap-2">
+              <span className="typo-caption flex-1 break-words">{describeMethodic(kpi.measureConfig)}</span>
+              <button type="button" onClick={() => { setEditingCfg((v) => !v); setCfgDraft(kpi.measureConfig ?? '{}'); setCfgMsg(null); }} className="typo-caption inline-flex items-center gap-1 text-primary hover:underline flex-shrink-0">
+                <Pencil className="w-3 h-3" /> {editingCfg ? 'cancel' : 'adjust'}
+              </button>
+            </div>
+            {editingCfg && (
+              <div className="mt-2">
+                <textarea value={cfgDraft} onChange={(e) => setCfgDraft(e.target.value)} rows={4} spellCheck={false}
+                  className="w-full px-2 py-1.5 typo-code bg-secondary/40 border border-primary/10 rounded-interactive text-foreground focus-ring resize-none" />
+                <div className="flex items-center gap-2 mt-1.5">
+                  <button type="button" onClick={handleSaveCfg} className="typo-caption rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20">Save methodic</button>
+                  {cfgMsg && <span className="typo-caption text-foreground/70">{cfgMsg}</span>}
+                </div>
+              </div>
+            )}
+            {!editingCfg && cfgMsg && <p className="typo-caption text-foreground/60 mt-1">{cfgMsg}</p>}
+          </div>
+
+          <div className="flex items-center justify-between">
+            <Sparkline series={kpi.series} color={STATUS_COLOR[st]} width={360} height={34} />
+            <span className="typo-caption">last {kpi.lastMeasuredAt}</span>
+          </div>
+          {measureMsg && <p className="typo-caption mt-1.5" style={{ color: STATUS_COLOR[st] }}>{measureMsg}</p>}
         </div>
       </div>
 
-      {/* controls — steer the development */}
-      <div className="space-y-3">
-        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-          <h3 className="typo-label text-foreground mb-1 flex items-center gap-1.5"><SlidersHorizontal className="w-3.5 h-3.5" /> Calibrate thresholds</h3>
-          <p className="typo-caption text-foreground/70 mb-3">When the value crosses a band the autonomous loop escalates — yellow nudges, red derives a goal.</p>
-          <Stepper label="Yellow (at risk) at" dot={TRAFFIC_COLOR.yellow} value={kpi.warnAt} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
-          <Stepper label="Red (off track) at" dot={TRAFFIC_COLOR.red} value={kpi.critAt} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
-        </div>
-
-        <div className="grid sm:grid-cols-2 gap-3">
-          <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-            <h3 className="typo-label text-foreground mb-2 flex items-center gap-1.5"><Gauge className="w-3.5 h-3.5" /> Manual rating</h3>
-            <RatingStars value={kpi.manualRating} onChange={(v) => onEdit({ rating: v })} size={22} />
-            <p className="typo-caption text-foreground/70 mt-2">{kpi.manualRating != null ? `${kpi.manualRating}/5 — your confidence in this signal` : 'Rate your confidence in this signal'}</p>
+      {/* STEER */}
+      <div className="space-y-4">
+        <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
+          <h3 className="typo-label text-foreground mb-3 flex items-center gap-1.5"><SlidersHorizontal className="w-3.5 h-3.5" /> Calibrate thresholds</h3>
+          <div className="space-y-5">
+            <ThresholdSlider label="Yellow — at risk" color={TRAFFIC_COLOR.yellow} value={kpi.warnAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
+            <ThresholdSlider label="Red — off track" color={TRAFFIC_COLOR.red} value={kpi.critAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
           </div>
-
-          <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-            <h3 className="typo-label text-foreground mb-2 flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Measurement</h3>
-            <dl className="space-y-1 typo-caption text-foreground">
-              <div className="flex justify-between"><dt className="text-foreground/70">Method</dt><dd className="font-medium lowercase">{kpi.measureKind}</dd></div>
-              <div className="flex justify-between"><dt className="text-foreground/70">Cadence</dt><dd className="font-medium flex items-center gap-1"><Clock className="w-3 h-3" />{kpi.cadence}</dd></div>
-              <div className="flex justify-between"><dt className="text-foreground/70">Last reading</dt><dd className="font-medium">{kpi.lastMeasuredAt}</dd></div>
-            </dl>
-          </div>
-        </div>
-
-        <div className="rounded-card border border-primary/10 bg-secondary/10 p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="typo-label text-foreground">Measurement history</h3>
-            <button type="button" className="typo-caption rounded-interactive border border-primary/20 bg-primary/10 px-2.5 py-1 text-foreground hover:bg-primary/20 transition-colors">Measure now</button>
-          </div>
-          <Sparkline series={kpi.series} color={STATUS_COLOR[st]} width={420} height={44} />
-        </div>
+          <p className="typo-caption mt-3">Yellow nudges the team; red derives a goal. Baseline {fmtUnit(kpi.baseline, kpi.unit)} → target {fmtUnit(kpi.target, kpi.unit)}.</p>
+        </section>
+        <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
+          <h3 className="typo-label text-foreground mb-3">Assess</h3>
+          <AssessmentEditor
+            rating={kpi.manualRating}
+            pros={kpi.pros}
+            cons={kpi.cons}
+            onRate={(v) => onEdit({ rating: v })}
+            onPros={(v) => onEdit({ pros: v })}
+            onCons={(v) => onEdit({ cons: v })}
+          />
+        </section>
       </div>
-    </div>
-  );
-}
-
-function Stepper({ label, dot, value, unit, onChange }: { label: string; dot: string; value: number; unit: string; onChange: (v: number) => void }) {
-  const step = Math.max(0.1, Math.abs(value) * 0.05);
-  const round = (n: number) => Math.round(n * 100) / 100;
-  return (
-    <div className="flex items-center gap-2 mb-2 last:mb-0">
-      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: dot }} />
-      <span className="typo-caption text-foreground flex-1">{label}</span>
-      <button type="button" onClick={() => onChange(round(value - step))} className="w-6 h-6 rounded-interactive border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 leading-none">−</button>
-      <span className="typo-data tabular-nums text-foreground w-16 text-center">{round(value)}{unit}</span>
-      <button type="button" onClick={() => onChange(round(value + step))} className="w-6 h-6 rounded-interactive border border-primary/15 bg-secondary/30 text-foreground hover:bg-secondary/50 leading-none">+</button>
     </div>
   );
 }
