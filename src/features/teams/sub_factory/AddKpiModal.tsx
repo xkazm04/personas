@@ -11,6 +11,8 @@ import * as kpiApi from '@/api/devTools/kpis';
 
 import {
   CATEGORY_LABEL,
+  KIND_LABEL,
+  CADENCE_LABEL,
   type KpiCategory,
   type KpiTier,
   type MeasureKind,
@@ -193,8 +195,8 @@ export function AddKpiModal({
             </div>
             <div>
               <label className="typo-label text-foreground block mb-1">Measurement</label>
-              <select value={measureKind} onChange={(e) => setMeasureKind(e.target.value as MeasureKind)} className={`${sel} w-full capitalize`}>
-                {KINDS.map((k) => <option key={k} value={k}>{k}</option>)}
+              <select value={measureKind} onChange={(e) => setMeasureKind(e.target.value as MeasureKind)} className={`${sel} w-full`}>
+                {KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
               </select>
             </div>
             <div>
@@ -210,8 +212,8 @@ export function AddKpiModal({
             </div>
             <div>
               <label className="typo-label text-foreground block mb-1">Cadence</label>
-              <select value={cadence} onChange={(e) => setCadence(e.target.value)} className={`${sel} w-full capitalize`}>
-                {CADENCES.map((c) => <option key={c} value={c}>{c}</option>)}
+              <select value={cadence} onChange={(e) => setCadence(e.target.value)} className={`${sel} w-full`}>
+                {CADENCES.map((c) => <option key={c} value={c}>{CADENCE_LABEL[c]}</option>)}
               </select>
             </div>
             <div>

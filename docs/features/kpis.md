@@ -62,6 +62,12 @@ same live `dev_kpis` data. Two cockpit moves land here first:
   Teams › KPIs queue. Accepting reloads the matrix; the matrix itself now shows
   only **managed** (active/paused) KPIs, so proposals don't masquerade as live.
 
+The Factory renders every enum (category, measurement kind, cadence, tier,
+status, domain) through human labels — **no raw tokens** (`codebase`, `weekly`,
+`supporting`) reach the user, and no raw measurement JSON is shown (it's parsed
+into prose / configured via `MeasureSetupModal`). Full **i18n** of the surface
+(it is still English-only) remains a follow-up.
+
 ## The proposal scan
 
 "Scan for KPIs" (`dev_tools_scan_kpis`) runs a headless Claude pass that

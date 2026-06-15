@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2 } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryMock';
+import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryMock';
 import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
 import { errMsg } from './composeTask';
 import { MeasureSetupModal } from './MeasureSetupModal';
@@ -71,7 +71,7 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
       <div className="rounded-card border border-primary/15 bg-secondary/10 p-5">
         <div className="flex items-center gap-2 mb-2">
           <StatusPill status={st} />
-          <span className="ml-auto typo-caption capitalize">{kpi.tier.replace('_', ' ')} · {CATEGORY_LABEL[kpi.category]}</span>
+          <span className="ml-auto typo-caption">{TIER_LABEL[kpi.tier]} · {CATEGORY_LABEL[kpi.category]}</span>
         </div>
         <h2 className="typo-section-title mb-3 leading-tight">{kpi.name}</h2>
         <div className="flex items-end gap-2 mb-4">
@@ -90,8 +90,8 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
         <div className="mt-5">
           <div className="flex items-center gap-2 mb-2">
             <h3 className="typo-label text-foreground flex items-center gap-1.5"><Activity className="w-3.5 h-3.5" /> Measurement</h3>
-            <span className="typo-caption lowercase ml-1">{kpi.measureKind}</span>
-            <span className="typo-caption flex items-center gap-1"><Clock className="w-3 h-3" /> {kpi.cadence}</span>
+            <span className="typo-caption ml-1">{KIND_LABEL[kpi.measureKind]}</span>
+            <span className="typo-caption flex items-center gap-1"><Clock className="w-3 h-3" /> {CADENCE_LABEL[kpi.cadence]}</span>
             <span className="flex-1" />
             <button
               type="button"

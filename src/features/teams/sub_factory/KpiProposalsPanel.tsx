@@ -13,7 +13,10 @@ import { Sparkles, Check, X, SlidersHorizontal, Loader2, Lightbulb } from 'lucid
 import { listKpis, updateKpi, scanKpis, getKpiScanStatus } from '@/api/devTools/kpis';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 
-import { CATEGORY_LABEL, fmtUnit, type KpiCategory } from './factoryMock';
+import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, type KpiCategory } from './factoryMock';
+
+/** Cadence token → label, tolerant of any stored string. */
+const cadenceLabel = (c: string) => CADENCE_LABEL[c as 'daily' | 'weekly' | 'manual'] ?? c;
 import { errMsg } from './composeTask';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -161,7 +164,7 @@ function ProposalCard({
           </div>
           {kpi.rationale && <p className="typo-caption opacity-80 mt-0.5">{kpi.rationale}</p>}
           <p className="typo-caption opacity-60 mt-0.5">
-            target {fmtUnit(kpi.target_value ?? 0, kpi.unit)} · {kpi.cadence}
+            target {fmtUnit(kpi.target_value ?? 0, kpi.unit)} · {cadenceLabel(kpi.cadence)}
           </p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
@@ -190,9 +193,9 @@ function ProposalCard({
             cadence
             <select value={cadence} onChange={(e) => setCadence(e.target.value)}
               className="px-1.5 py-0.5 typo-caption bg-secondary/40 border border-primary/10 rounded-interactive text-foreground">
-              <option value="manual">manual</option>
-              <option value="daily">daily</option>
-              <option value="weekly">weekly</option>
+              <option value="manual">{CADENCE_LABEL.manual}</option>
+              <option value="daily">{CADENCE_LABEL.daily}</option>
+              <option value="weekly">{CADENCE_LABEL.weekly}</option>
             </select>
           </label>
           <span className="typo-caption opacity-60">applied on accept</span>

@@ -15,7 +15,7 @@ import * as kpiApi from '@/api/devTools/kpis';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { KPIConnectWizard } from '@/features/teams/sub_kpis/KPIConnectWizard';
 
-import { CATEGORY_LABEL, fmtUnit, type MeasureKind, type MockKpi } from './factoryMock';
+import { CATEGORY_LABEL, KIND_LABEL, fmtUnit, type MeasureKind, type MockKpi } from './factoryMock';
 import { useFactoryData } from './factoryData';
 import { useComposeTask, CATEGORY_DEFAULT_KIND, DERIVED_METRICS, errMsg } from './composeTask';
 
@@ -242,7 +242,7 @@ export function MeasureSetupModal({ kpi, onClose }: { kpi: MockKpi; onClose: () 
 
         {/* Footer */}
         <div className="flex items-center px-5 py-3 border-t border-primary/10">
-          <span className="typo-caption">Current: {kpi.measureKind}</span>
+          <span className="typo-caption">Current: {KIND_LABEL[kpi.measureKind]}</span>
           <span className="flex-1" />
           <button type="button" onClick={onClose} className="rounded-interactive border border-primary/15 px-3 py-1.5 typo-body text-foreground hover:bg-secondary/40">Done</button>
         </div>

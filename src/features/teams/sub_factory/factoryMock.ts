@@ -116,6 +116,28 @@ export const DOMAIN_LABEL: Record<GroupDomain, string> = {
   data: 'Data',
 };
 
+// Human labels for the remaining enums, so the UI never shows a raw token
+// (D7 acceptance: zero raw enum tokens visible). English for now; the whole
+// Factory still awaits an i18n pass.
+export const KIND_LABEL: Record<MeasureKind, string> = {
+  codebase: 'Codebase',
+  connector: 'Connector',
+  manual: 'Manual',
+  derived: 'Derived',
+};
+
+export const CADENCE_LABEL: Record<'daily' | 'weekly' | 'manual', string> = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  manual: 'Manual',
+};
+
+export const TIER_LABEL: Record<KpiTier, string> = {
+  north_star: 'North star',
+  primary: 'Primary',
+  supporting: 'Supporting',
+};
+
 // -- derivations --------------------------------------------------------------
 
 export function kpiStatus(k: MockKpi): KpiStatus {
