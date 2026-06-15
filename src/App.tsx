@@ -3,6 +3,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
+import { LiveChannelPrototype } from "@/features/shared/components/layout/monitor/live/LiveChannelPrototype";
 import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
 import { FirstUseConsentModal, hasUserConsented, storedConsentVersion } from "@/features/shared/components/overlays/FirstUseConsentModal";
 import { useAuthStore } from "@/stores/authStore";
@@ -323,6 +324,8 @@ export default function App() {
           )}
           <ChartGradientDefs />
           <ToastContainer />
+          {/* PROTOTYPE — PersonaMonitor live-mode corner overlay (/prototype). Remove at consolidation. */}
+          <LiveChannelPrototype />
           {/* Global host for the credential resource-scope picker.
               Mounted at App root so the picker outlives parent unmounts
               when Catalog dispatches GO_LIST, autopilot panels reset,
