@@ -2231,9 +2231,9 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --muted: #627289;
   --muted-dark: #475569;
   --muted-foreground: #435063;
-  --border: #e2e8f0;
+  --border: #d2dae5;
   --card-bg: rgba(255, 255, 255, 0.82);
-  --card-border: rgba(15, 23, 42, 0.06);
+  --card-border: rgba(15, 23, 42, 0.10);
   --brand-cyan: #0891b2;
   --brand-purple: #7c3aed;
   --brand-emerald: #059669;
@@ -2252,18 +2252,24 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --status-pending: #92400e;
   --status-processing: #2563eb;
   --status-neutral: #64748b;
-  --shadow-elevation-1: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
-  --shadow-elevation-2: 0 2px 6px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.05);
-  --shadow-elevation-3: 0 4px 12px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
-  --shadow-elevation-4: 0 8px 24px rgba(15, 23, 42, 0.10), 0 16px 48px rgba(15, 23, 42, 0.08);
+  /* Depth strengthened: the near-white canvas + near-white cards left
+     surfaces visually flat. Borders + elevation deepened (non-text → no
+     contrast impact) so cards/modals read as layered, not floating. */
+  --shadow-elevation-1: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.10);
+  --shadow-elevation-2: 0 2px 6px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.08);
+  --shadow-elevation-3: 0 4px 12px rgba(15, 23, 42, 0.10), 0 8px 24px rgba(15, 23, 42, 0.10);
+  --shadow-elevation-4: 0 8px 24px rgba(15, 23, 42, 0.14), 0 16px 48px rgba(15, 23, 42, 0.12);
   --chart-grid-stroke: rgba(15, 23, 42, 0.08);
   --chart-axis-fill: rgba(15, 23, 42, 0.55);
 }
 
 /* Light: Ice -- icy blue-white palette, toned-down brightness */
 [data-theme="light-ice"] {
-  --primary: #2563eb;
-  --primary-rgb: 37, 99, 235;
+  /* primary deepened blue-600 → blue-700 so accent text/links clear AA (4.5:1)
+     on the blue-tinted canvas; blue-600 landed a hair under (surfaced by
+     check:themes as AA-lg). */
+  --primary: #1d4ed8;
+  --primary-rgb: 29, 78, 216;
   --accent: #38bdf8;
   --background: #e8eff6;
   --foreground: #0f172a;
@@ -2323,6 +2329,17 @@ html[data-motion="reduce"] .animate-channel-row-in {
 [data-theme="light"] ::selection {
   background-color: rgba(37, 84, 176, 0.2);
   color: #1c1c28;
+}
+
+/* Light: cards get a gentle lift so they separate from the near-white canvas
+   (light-ice / light-news already do this; the default light theme was the one
+   left flat). Soft + neutral to keep the "Paper Pro" register. */
+[data-theme="light"] .rounded-xl {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .rounded-xl:hover {
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.07), 0 4px 12px rgba(15, 23, 42, 0.05);
 }
 
 [data-theme="light-ice"] * {
