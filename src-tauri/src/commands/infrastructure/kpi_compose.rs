@@ -99,6 +99,65 @@ pub async fn dev_tools_propose_kpi(
     launch_compose(app, project.root_path, prompt_text)
 }
 
+/// Create a PROPOSED KPI from structured metadata and (for the codebase
+/// mechanism) launch a TRULY-BACKGROUND measurement setup that applies the
+/// tested measurement + first reading to the KPI when it finishes — so the
+/// modal can close immediately and the proposal lands in Teams › KPIs, filling
+/// in its measurement on its own. Derived KPIs carry the chosen metric;
+/// connector KPIs carry `needed_connector` and are bound via the Connect flow.
+#[tauri::command]
+#[allow(clippy::too_many_arguments)]
+pub async fn dev_tools_propose_kpi_auto(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    project_id: String,
+    context_group_id: Option<String>,
+    context_id: Option<String>,
+    name: String,
+    description: Option<String>,
+    category: String,
+    tier: String,
+    direction: String,
+    measure_kind: String,
+    cadence: String,
+    unit: Option<String>,
+    needed_connector: Option<String>,
+    derived_metric: Option<String>,
+) -> Result<crate::db::models::DevKpi, AppError> {
+    require_auth(&state).await?;
+    if name.trim().is_empty() {
+        return Err(AppError::Validation("Give the KPI a name.".into()));
+    }
+    let measure_config = if measure_kind == "derived" {
+        derived_metric
+            .as_deref()
+            .filter(|m| !m.is_empty())
+            .map(|m| json!({ "metric": m }).to_string())
+            .unwrap_or_else(|| "{}".to_string())
+    } else {
+        "{}".to_string()
+    };
+    let kpi = repo::create_kpi(
+        &state.db, &project_id, name.trim(), description.as_deref(),
+        context_group_id.as_deref(), &category, &measure_kind, &measure_config,
+        unit.as_deref().unwrap_or(""), &direction,
+        None, None, None, &cadence, Some("proposed"), "user", None,
+        needed_connector.as_deref(), None, context_id.as_deref(),
+    )?;
+    if tier != "supporting" {
+        let _ = repo::update_kpi(
+            &state.db, &kpi.id, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, Some(&tier),
+        );
+    }
+    if measure_kind == "codebase" {
+        let project = repo::get_project_by_id(&state.db, &project_id)?;
+        let prompt_text = build_measure_compose_prompt(&kpi);
+        launch_compose_apply(app, state.db.clone(), kpi.id.clone(), project.root_path, prompt_text);
+    }
+    repo::get_kpi(&state.db, &kpi.id)
+}
+
 /// Poll a compose/propose task. Returns `{task_id, status, error, lines, result}`
 /// where `result` is the composed envelope once `status == "completed"`.
 #[tauri::command]
@@ -176,6 +235,82 @@ fn launch_compose(
     });
 
     Ok(json!({ "task_id": task_id }))
+}
+
+/// Like `launch_compose`, but on success it APPLIES the composed measurement to
+/// `kpi_id` (measure_config + a first recorded reading, seeding the baseline
+/// when none was set) before marking the job complete. Fire-and-forget: the
+/// caller returns immediately and the proposed KPI fills in its measurement on
+/// its own.
+fn launch_compose_apply(
+    app: tauri::AppHandle,
+    pool: crate::db::DbPool,
+    kpi_id: String,
+    root_path: String,
+    prompt_text: String,
+) -> String {
+    let task_id = uuid::Uuid::new_v4().to_string();
+    let cancel_token = CancellationToken::new();
+    let _ = KPI_COMPOSE_JOBS.insert_running(task_id.clone(), cancel_token.clone(), ComposeExtra::default());
+    KPI_COMPOSE_JOBS.set_status(&app, &task_id, "running", None);
+
+    let app_handle = app.clone();
+    let task = task_id.clone();
+    tokio::spawn(async move {
+        let result = tokio::select! {
+            _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
+            res = run_compose(&app_handle, &task, &root_path, prompt_text) => res,
+        };
+        match result {
+            Ok(true) => {
+                if let Some(env) = KPI_COMPOSE_JOBS.read_extra(&task, |e| e.result.clone()) {
+                    let _ = tokio::task::spawn_blocking(move || {
+                        apply_composed_measure(&pool, &kpi_id, &env);
+                    })
+                    .await;
+                }
+                KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "completed", None);
+            }
+            Ok(false) => KPI_COMPOSE_JOBS.set_status(
+                &app_handle,
+                &task,
+                "failed",
+                Some("The model returned no measurement.".into()),
+            ),
+            Err(e) => {
+                let msg = format!("{e}");
+                KPI_COMPOSE_JOBS.emit_line(&app_handle, &task, format!("[Error] {msg}"));
+                KPI_COMPOSE_JOBS.set_status(&app_handle, &task, "failed", Some(msg));
+            }
+        }
+    });
+    task_id
+}
+
+/// Write a composed `{"kpi_measure": {cmd, parse, value}}` envelope onto a KPI:
+/// set its measure_config, record the verified reading, and seed the baseline
+/// if the user left it blank. Best-effort — failures are swallowed (background).
+fn apply_composed_measure(pool: &crate::db::DbPool, kpi_id: &str, env: &Value) {
+    let Some(m) = env.get("kpi_measure") else { return };
+    let cmd = m.get("cmd").and_then(|v| v.as_str()).unwrap_or("");
+    let parse = m.get("parse").and_then(|v| v.as_str()).unwrap_or("");
+    if cmd.is_empty() || parse.is_empty() {
+        return;
+    }
+    let config = json!({ "cmd": cmd, "parse": parse }).to_string();
+    let _ = repo::update_kpi(
+        pool, kpi_id, None, None, None, None, None, None, Some(&config), None, None, None,
+        None, None, None, None, None, None, None,
+    );
+    if let Some(value) = m.get("value").and_then(|v| v.as_f64()) {
+        let _ = repo::record_kpi_measurement(pool, kpi_id, value, "ai-compose", None, None);
+        if matches!(repo::get_kpi(pool, kpi_id), Ok(k) if k.baseline_value.is_none()) {
+            let _ = repo::update_kpi(
+                pool, kpi_id, None, None, None, None, None, None, None, None, None,
+                Some(Some(value)), None, None, None, None, None, None, None,
+            );
+        }
+    }
 }
 
 /// Pull the first `{"kpi_measure": …}` / `{"kpi_proposal": …}` envelope out of a

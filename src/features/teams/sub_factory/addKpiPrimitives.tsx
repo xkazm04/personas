@@ -46,7 +46,8 @@ export function Label({ children, htmlFor }: { children: ReactNode; htmlFor?: st
 /** The dedicated 3-column "How it's measured" block: Measured · Measurement ·
  *  Cadence, plus the Connector picker when an automatic connector source. */
 export function MeasurementFields({
-  measured, setMeasured, autoKind, setAutoKind, connector, setConnector, cadence, setCadence, connectorOpts,
+  measured, setMeasured, autoKind, setAutoKind, connector, setConnector,
+  derivedMetric, setDerivedMetric, cadence, setCadence, connectorOpts, derivedOpts,
 }: {
   measured: Measured;
   setMeasured: (v: Measured) => void;
@@ -54,9 +55,12 @@ export function MeasurementFields({
   setAutoKind: (v: MeasureKind) => void;
   connector: string;
   setConnector: (v: string) => void;
+  derivedMetric: string;
+  setDerivedMetric: (v: string) => void;
   cadence: string;
   setCadence: (v: string) => void;
   connectorOpts: ThemedSelectOption[];
+  derivedOpts: ThemedSelectOption[];
 }) {
   const isManual = measured === 'manual';
   return (
@@ -89,6 +93,21 @@ export function MeasurementFields({
               onValueChange={setConnector}
               placeholder={connectorOpts.length ? 'Pick a connector from your vault' : 'No connectors in the vault yet'}
               aria-label="Connector"
+            />
+            <p className="typo-caption text-foreground/50 mt-1">The connection is verified when its measurement is bound.</p>
+          </div>
+        )}
+        {!isManual && autoKind === 'derived' && (
+          <div className="col-span-3">
+            <Label>Metric</Label>
+            <ThemedSelect
+              filterable
+              hideSearch
+              options={derivedOpts}
+              value={derivedMetric}
+              onValueChange={setDerivedMetric}
+              placeholder="Pick an orchestrator metric"
+              aria-label="Derived metric"
             />
           </div>
         )}

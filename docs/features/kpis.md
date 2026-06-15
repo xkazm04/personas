@@ -73,10 +73,14 @@ into prose / configured via `MeasureSetupModal`). Full **i18n** of the surface
   chat). A wide 3-column layout with theme-toned labels and themed dropdowns
   (`ThemedSelect`). A **Measured** control branches the flow: **Manually** (all
   fields required → creates the KPI active immediately, no LLM) vs
-  **Automatically** (pick the mechanism + a vault **Connector**; "Set up with AI"
-  creates a *proposed* KPI and runs the LLM measurement setup — composing,
-  testing, and applying the measurement + baseline — landing it in Teams › KPIs
-  to review/adjust).
+  **Automatically** (pick the mechanism — codebase / a vault **Connector** /
+  a derived **Metric**; "Set up with AI" calls `dev_tools_propose_kpi_auto`,
+  which creates a *proposed* KPI and, for the codebase mechanism, runs a
+  **truly-background** compose that applies the tested measurement + baseline on
+  its own — so the modal closes immediately and the proposal lands in Teams ›
+  KPIs to review/adjust). Connector KPIs carry `needed_connector` and are
+  verified at bind time (the Connect flow); derived KPIs carry the chosen metric.
+  State + actions live in `useAddKpi`; the modal is a thin shell.
 - **Honest "over to you" state** (the KPI console): when the derivation looked
   at an off-track KPI and judged that **no team work would move it** (it answers
   `skip` — needs humans / marketing / an external dependency), the console says

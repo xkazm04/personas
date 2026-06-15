@@ -201,6 +201,29 @@ export async function proposeKpi(
   );
 }
 
+export interface ProposeKpiAutoInput {
+  contextGroupId?: string;
+  contextId?: string;
+  name: string;
+  description?: string;
+  category: string;
+  tier: string;
+  direction: string;
+  measureKind: string;
+  cadence: string;
+  unit?: string;
+  neededConnector?: string;
+  derivedMetric?: string;
+}
+
+/** Create a PROPOSED KPI from structured metadata; for the codebase mechanism a
+ * truly-background compose then applies the tested measurement + baseline. The
+ * KPI is returned immediately (the modal closes; the proposal fills in on its
+ * own and lands in the Teams › KPIs review queue). */
+export async function proposeKpiAuto(projectId: string, input: ProposeKpiAutoInput): Promise<DevKpi> {
+  return invoke<DevKpi>("dev_tools_propose_kpi_auto", { projectId, ...input }, { timeoutMs: 30_000 });
+}
+
 export async function getKpiComposeStatus(taskId: string): Promise<KpiComposeStatus> {
   return invoke<KpiComposeStatus>("dev_tools_get_kpi_compose_status", { taskId });
 }
