@@ -2284,8 +2284,9 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --muted-dark: #2e4862;
   --muted-foreground: #324c6a;
   --border: #b0c8e0;
-  --card-bg: rgba(255, 255, 255, 0.65);
-  --card-border: rgba(59, 130, 246, 0.12);
+  /* Crisp white cards pop off the icy canvas (was translucent → blue-tinted). */
+  --card-bg: rgba(255, 255, 255, 0.88);
+  --card-border: rgba(59, 130, 246, 0.16);
   --brand-cyan: #0284c7;
   --brand-purple: #6366f1;
   --brand-emerald: #0d9488;
@@ -2420,8 +2421,10 @@ html[data-motion="reduce"] .animate-channel-row-in {
   --muted-dark: #424242;
   --muted-foreground: #424242;
   --border: #ada8a0;
-  --card-bg: rgba(255, 255, 255, 0.55);
-  --card-border: rgba(0, 0, 0, 0.10);
+  /* Crisper cards lift off the newsprint canvas — kept a touch translucent so
+     the vintage paper tone still reads (not pure clinical white). */
+  --card-bg: rgba(255, 255, 255, 0.72);
+  --card-border: rgba(0, 0, 0, 0.12);
   --brand-cyan: #333333;
   --brand-purple: #444444;
   --brand-emerald: #3a3a3a;
