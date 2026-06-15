@@ -1,7 +1,7 @@
 # Team orchestration — the logic
 
 > Developer-facing mental model of how a **team** actually runs, for the next
-> wave of team/orchestration work. The [pipeline README](./README.md) maps the
+> wave of team/orchestration work. The [pipeline doc](./pipeline.md) maps the
 > UI surfaces; this doc explains the *logic* underneath — how members relate,
 > the **two orchestration modes**, what shared state reaches a running persona,
 > and the observability/analysis layer that judges the result.
@@ -56,7 +56,7 @@ Status machines: assignment `queued → running → awaiting_review | done | fai
 
 **Provenance matters:** `source = 'athena'` assignments carry a `companion_op_id` (tie back to a companion operation); `source = 'team_ui'` assignments surface via the checklist/board only; `source = 'api'` is the programmatic goal-advance initiator below.
 
-**Advancing a goal (2026-05-29):** `engine/goal_advance.rs::advance_goal` — invoked by the `advance_team_goal` command, the goal-drawer *Advance with team* button, and the default-OFF `GoalAdvanceSubscription` tick — creates a **goal-linked** assignment (`goal_id` set, `source = 'api'`) and runs it. **Hybrid step source**: one step per open `dev_goal_item` (title verbatim) if the goal has to-dos, else an LLM decomposition. A one-active-assignment-per-goal guard prevents double-spawn. When the assignment reaches `done`, the orchestrator checks off the worked to-dos (step title ↔ to-do title) and writes the goal's progress via `dev_tools::apply_resolved_goal_progress` (status `open → in-progress → done`; never regresses a manual value) — closing the loop so a team that does the work actually moves its goal. Full detail: [goals/README.md › Advancing a goal](../goals/README.md#advancing-a-goal-teams-work-it).
+**Advancing a goal (2026-05-29):** `engine/goal_advance.rs::advance_goal` — invoked by the `advance_team_goal` command, the goal-drawer *Advance with team* button, and the default-OFF `GoalAdvanceSubscription` tick — creates a **goal-linked** assignment (`goal_id` set, `source = 'api'`) and runs it. **Hybrid step source**: one step per open `dev_goal_item` (title verbatim) if the goal has to-dos, else an LLM decomposition. A one-active-assignment-per-goal guard prevents double-spawn. When the assignment reaches `done`, the orchestrator checks off the worked to-dos (step title ↔ to-do title) and writes the goal's progress via `dev_tools::apply_resolved_goal_progress` (status `open → in-progress → done`; never regresses a manual value) — closing the loop so a team that does the work actually moves its goal. Full detail: [goals.md › Advancing a goal](./goals.md#advancing-a-goal-teams-work-it).
 
 ## Shared state reaching a running persona
 

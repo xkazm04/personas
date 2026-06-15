@@ -6,26 +6,25 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 
 ## Page host
 
-`src/features/pipeline/components/TeamCanvas.tsx` is the page host, lazy-mounted in `src/features/personas/PersonasPage.tsx` for `sidebarSection === 'teams'`. The Teams sub-view is gated and currently surfaced through dev/team builds (sidebar entry depends on tier).
+`src/features/teams/sub_teamWorkspace/TeamCanvas.tsx` is the host for the Teams workspace, lazy-mounted in `src/features/personas/PersonasPage.tsx` for `sidebarSection === 'teams'`. That section is split into four L2 tabs (the `teamsTab` state, set via `setTeamsTab`): **Workspace** (default), **Goals** (`GoalsPage`, see [goals.md](./goals.md)), **KPIs** (`KPIsPage`, see [kpis.md](./kpis.md)), and **Factory**. `TeamCanvas` owns the Workspace tab: with no team selected it renders the `TeamList` management table; with a team selected it renders the **Team Studio** (`teamStudio/TeamStudioSplitVariant.tsx`). The Teams sub-view is gated and currently surfaced through dev/team builds (sidebar entry depends on tier).
 
-## Top-level surface
+## Top-level surface (the Workspace tab)
+
+`TeamCanvas.tsx` is the Workspace-tab router: no team selected → the `TeamList` management table; a team selected → the **Team Studio** (see below). It consumes `usePipelineStore`.
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Team list | Sidebar list of existing teams with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save. The form also has a **Codebase repository** section (GitHub connector picker + repo selector + optional main branch); when a repo is set, submitting provisions a `Codebase — <team>` connector (`service_type: codebase`) carrying `team_id` + `github_url` (+ `main_branch`, `mode: 'team'`), giving the team a single source-control truth that Dev Tools' "Team" source mode consumes | `TeamList.tsx`, `CreateTeamForm.tsx`, `TeamCard.tsx` |
-| Canvas | xyflow graph of persona nodes + connection edges | `TeamCanvas.tsx`, `canvas/CanvasFlowLayer.tsx`, `canvas/CanvasOverlays.tsx` |
-| Team config | Per-team settings panel | `TeamConfigPanel.tsx` |
-| Drag panel | Drag-source for adding personas to the canvas | `TeamDragPanel.tsx`, `canvas/useCanvasDragDrop.ts` |
+| Team list | The teams management table with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save. The form also has a **Codebase repository** section (GitHub connector picker + repo selector + optional main branch); when a repo is set, submitting provisions a `Codebase — <team>` connector (`service_type: codebase`) carrying `team_id` + `github_url` (+ `main_branch`, `mode: 'team'`), giving the team a single source-control truth that Dev Tools' "Team" source mode consumes | `TeamList.tsx`, `CreateTeamForm.tsx` |
+| Team Studio | The per-team console (roster rail + mode panes) opened when a team is selected — orchestration, board, collab, red-room, memory, settings | `teamStudio/TeamStudioSplitVariant.tsx` (see [Team Studio](#team-studio--the-workspace-console-orchestration-lives-here)) |
 | Auto-team | LLM-assisted team composition | `AutoTeamModal.tsx`, `useAutoTeam.ts` |
-| Preset team | "Preset Team" button (+ empty-state CTA) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`), `sub_presets/usePresetAdoption.ts` |
-| Pipeline templates | Curated multi-persona starters | `templates/PipelineTemplateGallery.tsx`, `templates/MiniCanvas.tsx`, `templates/pipelineTemplateData.ts` |
+| Preset team | "Preset Team" button (+ empty-state CTA) opens the in-app **`PresetStudio`** (full content area, routed by `pipelineStore.presetFlowOpen` in `TeamCanvas` — not a modal): a gallery of best-practice, pre-wired presets under `scripts/templates/_team_presets/` (e.g. the **Web Development Team**) → on pick, the **Blueprint** adoption process. Its connection graph (`PresetConnectionGraph`) is the hero and the include/exclude surface — tap a node to toggle a member; sequential vs feedback edges are distinguished, and edge event-labels reveal on hover. Adopts the selected subset in one pass. Shares the `usePresetAdoption` state machine with the Templates → Presets modal. See [templates/08-team-presets.md](../templates/08-team-presets.md) | `TeamList.tsx`, `TeamCanvas.tsx`, `presetStudio/` (`PresetStudio`, `PresetProcessHost`, `PresetProcessBlueprint`, `PresetConnectionGraph`, `PresetGalleryShowcase`), `sub_presets/usePresetAdoption.ts` |
 | Blueprint preview | Read-only render of a team blueprint | `BlueprintPreview.tsx` |
 
-`TeamCanvas` consumes `usePipelineStore` and `useAgentStore`; `useDerivedCanvasState` and `useCanvasReducer` (in `sub_canvas/libs/`) keep canvas state separate from store state.
+> The earlier standalone, edge-wiring **xyflow canvas** (with `TeamConfigPanel` / `TeamDragPanel` / a pipeline-template gallery) is no longer the primary composition surface — teams are now assembled from presets / auto-team and operated from the **Team Studio**. The node/edge primitives in `sub_canvas/` survive as the graph mechanics behind the preset **blueprint** graph and the dry-run debugger.
 
 ## sub_canvas — graph mechanics
 
-`src/features/pipeline/sub_canvas/` owns the inside of the canvas: nodes, edges, debugger, optimizer, and assistant.
+`src/features/teams/sub_canvas/` owns the graph primitives — nodes, edges, debugger, optimizer, and assistant — reused by the preset blueprint graph and dry-run debugger.
 
 | Area | Files |
 | --- | --- |
@@ -41,7 +40,7 @@ The barrel `sub_canvas/index.ts` exports `CanvasDragProvider`, the toolbar, and 
 
 ## sub_teamMemory — shared memory across a team
 
-`src/features/pipeline/sub_teamMemory/` is the panel and timeline UI for memories that belong to a team rather than a single persona.
+`src/features/teams/sub_teamMemory/` is the panel and timeline UI for memories that belong to a team rather than a single persona.
 
 | Area | Files |
 | --- | --- |
@@ -49,37 +48,43 @@ The barrel `sub_canvas/index.ts` exports `CanvasDragProvider`, the toolbar, and 
 | Timeline | `components/timeline/MemoryTimeline.tsx`, `TimelineItem.tsx`, `TimelineControls.tsx` |
 | Run diff | `components/diff/RunDiffView.tsx`, `DiffHeader.tsx`, `DiffContent.tsx` |
 
-## sub_assignments — goal-driven team assignments
+## Team Studio — the workspace console (orchestration lives here)
 
-`src/features/pipeline/sub_assignments/` is the assignment system layered on top of a team: instead of pre-wiring every node, the user gives the team a **goal**, the orchestrator decomposes it into a checklist of steps, matches each step to a persona, and runs them in a parallel DAG with human review on failure.
+Selecting a team opens the **Team Studio** (`sub_teamWorkspace/teamStudio/TeamStudioSplitVariant.tsx`) — a split console with a **roster rail** on the left and a **mode pane** on the right. The right pane is a discriminated union (`RightMode` in `TeamStudioSplitVariant.tsx`) with these modes:
 
-The surface is a floating panel on the canvas (the orange `ListChecks` badge at bottom-left, next to the team-memory brain badge). It is **not** a separate sidebar route — assignments are scoped to the team whose canvas you're viewing.
+| Mode | What it is | Renders |
+| --- | --- | --- |
+| `member` | Adjust one member's capability scope | member detail in the studio |
+| **`orchestrate`** | **Give the team a goal → decompose → assign & run** | `OrchestrationConsole` (`teamStudio/teamStudioShared.tsx`) |
+| `board` | Mission-control flight deck — live per-step checklist + relay | `TeamAssignmentBoard.tsx` → `TeamAssignmentBoardFlightDeck.tsx` |
+| `redroom` | Read-only comm log (see sub_redRoom below) | `RedRoomPane.tsx` |
+| `collab` | Living team chat + intervention (see sub_collab below) | `CollabPane.tsx` |
+| `memory` | Team memory timeline (see sub_teamMemory below) | `TeamMemoryPane.tsx` |
+| `workspace` | Team settings + disband (see sub_teamWorkspace below) | `TeamWorkspacePane.tsx` |
 
-| Area | Files |
-| --- | --- |
-| Badge + panel | `AssignmentsButton.tsx`, `AssignmentsPanel.tsx` (mounted in `canvas/CanvasOverlays.tsx`) |
-| Live updates | `useAssignmentProgressListener.ts` (listens to `TEAM_ASSIGNMENT_PROGRESS`), `useAssignmentNotificationDispatcher.ts` (global, fires bell-icon notifications on `awaiting_review`) |
+> The earlier model — a floating `AssignmentsPanel` badge on the xyflow canvas — has been retired. Assignment composition and the live checklist now live in the studio's **Orchestrate** and **Board** modes; `src/features/teams/sub_assignments/` is now **listener-only** (`useAssignmentProgressListener.ts` / `useGlobalAssignmentProgressListener.ts` listen to `TEAM_ASSIGNMENT_PROGRESS`; `useAssignmentNotificationDispatcher.ts` fires bell-icon notifications on `awaiting_review`).
 
-### Composer
+### Orchestrate mode — goal-driven assignments
 
-- **Goal** + per-step rows (title, optional description, persona picker, use-case picker). The use-case dropdown is sourced from the persona's `design_context.use_cases` array.
-- **Matching strategy** dropdown:
-  - `manual` — the user pins a persona per step at creation time.
-  - `embedding` — local fastembed cosine match between the step text and each eligible candidate's capability summary (requires the `ml` build; auto-falls back to `llm_eval` below 0.45 confidence).
-  - `llm_eval` — one Sonnet call per step (via the user's Anthropic subscription through the Claude provider) picks the best persona.
-- **Auto-decompose** (violet Sparkles button) — one Sonnet call turns the goal into 2–6 editable step proposals with suggested personas.
-- **`max_parallel_steps`** slider (1–8) caps concurrent step executions.
-- **Save as template** — persists the current title/goal/strategy/steps as a reusable template for this team.
+`OrchestrationConsole` (in `teamStudio/teamStudioShared.tsx`) is the assignment composer: the user gives the team a **goal**, the orchestrator decomposes it into a checklist of steps, matches each step to a persona, and runs them in a parallel DAG with human review on failure.
 
-### Checklist + review
+- **Goal** — a single textarea (`data-testid="team-goal-input"`).
+- **Preview / decompose** (`data-testid="team-preview-button"`) — one Sonnet call (`decomposeTeamAssignmentGoal`) turns the goal into editable step proposals with suggested personas.
+- **Assign & Run** (`data-testid="team-assign-button"`) — creates + starts the assignment, then a live checklist renders inline (`data-testid="team-live-checklist"`).
+- **Matching strategy** is `llm_eval` (one Sonnet call per step, via the user's Anthropic subscription through the Claude provider, picks the best persona) and **`max_parallel_steps`** is `16` — both are **hardcoded defaults in the console today**, not user-facing knobs. (The engine still supports `manual` and `embedding` strategies and a configurable cap; they're just not exposed in this UI.)
 
-- Each step renders a status dot (`pending → matching → running → done | failed | skipped | awaiting_review`), the matched persona, match confidence + rationale (auto modes), and the output snippet / error.
-- On failure the assignment pauses (only that assignment — siblings continue) and the step row exposes inline **Edit requirement / Reassign / Skip** actions. A title-bar notification (`team_assignment_failed` / `team_assignment_unmatched` process types) deep-links here.
+### Board mode — flight deck (checklist + review)
+
+`TeamAssignmentBoard` → `TeamAssignmentBoardFlightDeck` is the mission-control board for a running assignment:
+
+- Each step renders a status (`pending → matching → running → done | failed | skipped | awaiting_review`), the matched persona, match confidence + rationale (auto modes), and the output snippet / error.
+- On failure the assignment pauses (only that assignment — siblings continue) and the step exposes inline **Edit requirement / Reassign / Skip** actions. A title-bar notification (`team_assignment_failed` / `team_assignment_unmatched` process types) deep-links here.
 - Cascade-skip: skipping a step auto-skips every step that depends on it.
+- `AssignmentReplay.tsx` replays a finished assignment's step timeline.
 
-### Templates
+### Templates (backend-only today)
 
-Saved templates appear as violet chips above the assignment list. Click a chip to instantiate (clones into a fresh assignment + auto-expands); hover-X deletes. Templates store the full step list as JSON and stamp out a new `team_assignments` row on use.
+The assignment slice (`src/stores/slices/pipeline/assignmentSlice.ts`) and backend retain save / list / instantiate template methods (templates store the full step list as JSON and stamp out a new `team_assignments` row on use), but the studio console does **not** currently expose a save-as-template affordance.
 
 ### Athena chat dispatch
 
@@ -224,9 +229,9 @@ dev project's canonical team.
 - Backend repos: `src-tauri/src/db/repos/core/{teams.rs,groups.rs}` + `src-tauri/src/db/repos/orchestration/team_assignments.rs`.
 - Orchestration engine: `src-tauri/src/engine/{team_assignment_orchestrator.rs,team_assignment_matching.rs}`. Tables: `team_assignments`, `team_assignment_steps`, `team_assignment_events`, `team_assignment_templates`.
 
-The composition canvas itself does not directly invoke executions — wiring nodes produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)). Assignments are the third path: the orchestrator drives persona executions step-by-step against a goal.
+Composing a team (presets / auto-team) does not directly invoke executions — it produces a stored team graph, and execution happens when the assigned trigger fires (see [events/README.md](../events/README.md)) or the user runs the team manually (see [execution/README.md](../execution/README.md)). Assignments are the third path: the orchestrator drives persona executions step-by-step against a goal (the Studio's Orchestrate mode).
 
 ## Known gaps
 
 - The dry-run debugger uses `debuggerMocks.ts` for sample variable state; it does not yet step through a real cached execution.
-- Pipeline templates (`templates/`) are checked-in static data, not catalog-loaded — adding one requires editing `pipelineTemplateData.ts`.
+- The Orchestrate console hardcodes the matching strategy (`llm_eval`) and `max_parallel_steps` (`16`), and exposes no save-as-template affordance, even though the engine + assignment slice support configurable strategies/caps and templates.
