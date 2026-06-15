@@ -66,6 +66,26 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — Athena interactive in-turn replies (conversational beats persisted as messages) — Phase A
+- Started: 2026-06-16 (worktree .claude/worktrees/athena-interactive, branch worktree-athena-interactive)
+- Status: Phase A DONE + LIVE-QA PASSED (commit 19b19aebf, branch unmerged). Phase B (progressive prose segments) optional next.
+- Paths: src-tauri/src/companion/{prompt.rs,dispatcher.rs,session.rs}, src/features/plugins/companion/{CompanionPanel.tsx,Bubble.tsx}
+- Note: reframed PROGRESS grammar → conversational first-person asides; dispatcher captures beats (was discarding) → session.rs persists each as own assistant episode (PROGRESS: sentinel, non-embedded) before final reply; Bubble renders PROGRESS: msg as slim dim aside (dot gutter), grouping treats asides as distinct kind so reply keeps avatar. Lives in per-turn prompt (prompt.rs) NOT constitution.md → no version bump. LIVE: web-search ask produced 2 conversational asides (ep_aca444a9/c485117f) before/after the search + clean final reply (ep_698419dc, no PROGRESS leak). GOTCHA: companion-brain episodes write to ~/.personas (shared) + UTC date dir, not PERSONAS_DATA_DIR. Known redundancy: post-finish NarrationTrail still shows beats too (collapsed) — dedupe candidate. Research: native thinking gone from stream-json v2.1.8+, marker-based is the only lever.
+
+### /prototype — PersonaMonitor live mode (bottom-right channel-message overlay) — 3 directional variants
+- Started: 2026-06-15
+- Status: completed (commit: 61cf4b0f7, pushed to origin) — Comms Stack (A) won; B/C + demo deleted; wired to real useTeamChannel feed + persisted monitorLiveMode toggle (Channels->Timeline) + Timeline deep-link redirect; tsc/eslint/i18n/catalog green; commit bundled the concurrent sub_goals acceptance stream per user request
+- Branch: master (main checkout — overlay must render in the live dev app; worktree can't run a 2nd app instance, data-dir-singleton precedent)
+- Paths: src/features/shared/components/layout/monitor/live/ (NEW: liveModel + demo + 3 variants + LiveChannelPrototype host), src/App.tsx (one-line prototype mount near ToastContainer), .claude/active-runs.md
+- Note: NEW always-mounted sibling to ToastContainer (NOT a change to PersonaMonitor's render). Reads the same useTeamChannel feed. Variants: A Comms Stack / B Team Lanes / C Pulse Strip. i18n deferred to consolidation (local COPY object — avoids touching concurrently-edited en.json + regen sweep). NOT committing (user's in-flight kpi/companion work is intermixed). No overlap with the sub_factory/sub_kpis or adoption/ /prototype sessions. active-runs.md NOT staged (538KB concurrent-write hazard).
+
+### /prototype — Persona Monitor compact fleet variants (Action + Project columns) + header live toggle
+- Started: 2026-06-15
+- Status: completed (commit: ce40dc8d4, pushed to origin) — Project columns WON; Standard pillar grid + Action variant removed; ported health-line + failed-bg + active-run pulse + initials glyph into columns; un-gated the Channels->Timeline entry (3-zone ChannelTimelineWorkspace confirmed intact, was hidden by teams.length gate); always-on header live toggle. Commit bundled concurrent goals-graph-retire + dev-tools streams per user. Follow-ups: i18n the COPY strings, wire real active-goals (team<->project_id map) over the preview mocks.
+- Branch: master (main checkout — variants must render in the live dev app)
+- Paths: src/features/shared/components/layout/monitor/triage/ (NEW: triageModel + PersonaGlyph + MonitorActionGrid + MonitorProjectColumns), src/features/shared/components/layout/monitor/PersonaMonitor.tsx (fleet layout switcher host + always-visible live toggle in header), .claude/active-runs.md
+- Note: Investigated "channels removed" — NOT our doing; Channels button + MonitorChannelGrid intact, gated on teams.length>0. Goals: (1) actionable-only personas, (2) no status caption + initials-fallback glyph, (3) team-column project overview. Active-goals data MOCKED for round 1 (goals keyed by project_id, personas by home_team_id — bridge at consolidation). Prototype copy via local COPY (no en.json churn). NOT committing yet.
+
 ### /prototype + nav — Factory next-gen KPI-management variants + KPIs sidebar sub-items
 - Started: 2026-06-14
 - Status: started
