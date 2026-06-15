@@ -53,8 +53,15 @@ metric_type: string | null,
  * `north_star` | `primary` | `supporting` — derivation precedence
  * ("0 users beats 100% coverage").
  */
-tier: string,
+tier: string, 
 /**
  * Factory KPI console — persisted calibration thresholds + assessment.
  */
-warn_at: number | null, crit_at: number | null, manual_rating: number | null, assessment_pros: string | null, assessment_cons: string | null, created_at: string, updated_at: string, };
+warn_at: number | null, crit_at: number | null, manual_rating: number | null, assessment_pros: string | null, assessment_cons: string | null, 
+/**
+ * Derivation looked at this off-track KPI and judged no team work would
+ * move it (needs humans / marketing / an external dependency). Set on a
+ * `skip` verdict; becomes stale (and re-derivable) once `last_measured_at`
+ * advances past it. Surfaced as the honest "over to you" state.
+ */
+last_skip_at: string | null, last_skip_rationale: string | null, created_at: string, updated_at: string, };

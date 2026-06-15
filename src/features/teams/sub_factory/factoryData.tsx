@@ -65,6 +65,13 @@ function toKpi(k: DevKpi, series: number[]): MockKpi {
   // toward target = yellow).
   const critAt = k.crit_at ?? Math.round((up ? baseline - spanAbs * 0.1 : baseline + spanAbs * 0.1) * 100) / 100;
   const warnAt = k.warn_at ?? Math.round((up ? baseline + spanAbs * 0.35 : baseline - spanAbs * 0.35) * 100) / 100;
+  // A skip verdict is "fresh" (still standing) only if the derivation looked at
+  // this KPI AFTER its latest measurement — once re-measured, the verdict is
+  // stale and the loop may try again. Same-format datetimes → epoch compare.
+  const ms = (s: string) => new Date(s.replace(' ', 'T')).getTime();
+  const skipFresh =
+    k.last_skip_at != null &&
+    (k.last_measured_at == null || ms(k.last_skip_at) >= ms(k.last_measured_at));
   return {
     id: k.id,
     name: k.name,
@@ -83,6 +90,8 @@ function toKpi(k: DevKpi, series: number[]): MockKpi {
     pros: k.assessment_pros ?? null,
     cons: k.assessment_cons ?? null,
     measureConfig: k.measure_config,
+    skipFresh,
+    skipRationale: k.last_skip_rationale ?? null,
     lastMeasuredAt: rel(k.last_measured_at),
     series,
   };

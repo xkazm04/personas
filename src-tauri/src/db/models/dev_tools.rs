@@ -268,6 +268,12 @@ pub struct DevKpi {
     pub manual_rating: Option<i32>,
     pub assessment_pros: Option<String>,
     pub assessment_cons: Option<String>,
+    /// Derivation looked at this off-track KPI and judged no team work would
+    /// move it (needs humans / marketing / an external dependency). Set on a
+    /// `skip` verdict; becomes stale (and re-derivable) once `last_measured_at`
+    /// advances past it. Surfaced as the honest "over to you" state.
+    pub last_skip_at: Option<String>,
+    pub last_skip_rationale: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

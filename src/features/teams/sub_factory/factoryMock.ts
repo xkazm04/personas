@@ -41,6 +41,11 @@ export interface MockKpi {
   cons?: string | null;
   /** The measurement methodic (JSON measure_config string) — surfaced for preview. */
   measureConfig?: string;
+  /** Derivation looked at this off-track KPI and judged nothing team-actionable
+   *  would move it; true only while that verdict is fresh (set since the last
+   *  measurement). Surfaced as the honest "over to you" state. */
+  skipFresh?: boolean;
+  skipRationale?: string | null;
   lastMeasuredAt: string; // relative label, e.g. "2h ago"
   series: number[]; // oldest → newest, for sparklines
 }

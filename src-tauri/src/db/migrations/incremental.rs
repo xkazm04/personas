@@ -4436,6 +4436,19 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "dev_kpis.skip_memory",
+            description: "KPI derivation skip: remember an off-track KPI judged not team-actionable (cooldown + honest 'over to you' UI)",
+            already_applied: |conn| has_column(conn, "dev_kpis", "last_skip_at"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN last_skip_at TEXT;")?;
+                ddl_step(conn, "ALTER TABLE dev_kpis ADD COLUMN last_skip_rationale TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "dev_kpi_bindings",
             description: "Swappable connector bindings for type-bound KPIs (P6)",
             already_applied: |conn| has_table(conn, "dev_kpi_bindings"),

@@ -68,6 +68,15 @@ status, domain) through human labels — **no raw tokens** (`codebase`, `weekly`
 into prose / configured via `MeasureSetupModal`). Full **i18n** of the surface
 (it is still English-only) remains a follow-up.
 
+- **Honest "over to you" state** (the KPI console): when the derivation looked
+  at an off-track KPI and judged that **no team work would move it** (it answers
+  `skip` — needs humans / marketing / an external dependency), the console says
+  so plainly with the reason, instead of leaving the off-track KPI silently
+  unaddressed. The verdict is also **remembered** (`dev_kpis.last_skip_at` /
+  `last_skip_rationale`): the derivation loop won't re-spend an LLM call on the
+  same un-actionable KPI every tick — the skip stands until the KPI is
+  re-measured, at which point the loop may try again.
+
 ## The proposal scan
 
 "Scan for KPIs" (`dev_tools_scan_kpis`) runs a headless Claude pass that

@@ -4358,6 +4358,8 @@ pub fn row_to_kpi(row: &Row) -> rusqlite::Result<DevKpi> {
         manual_rating: row.get("manual_rating").unwrap_or(None),
         assessment_pros: row.get("assessment_pros").unwrap_or(None),
         assessment_cons: row.get("assessment_cons").unwrap_or(None),
+        last_skip_at: row.get("last_skip_at").unwrap_or(None),
+        last_skip_rationale: row.get("last_skip_rationale").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })

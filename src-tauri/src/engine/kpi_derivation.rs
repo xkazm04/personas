@@ -145,6 +145,10 @@ pub fn find_derivation_candidates(pool: &DbPool, limit: usize) -> Result<Vec<Dev
                             WHERE g2.kpi_id = k.id
                               AND g2.completed_at IS NOT NULL
                               AND datetime(g2.completed_at) >= datetime(k.last_measured_at))
+           -- skip cooldown: a not-team-actionable verdict stands until the KPI
+           -- is re-measured (don't re-spend an LLM call on the same dead end)
+           AND (k.last_skip_at IS NULL
+                OR datetime(k.last_skip_at) < datetime(k.last_measured_at))
          ORDER BY CASE k.tier WHEN 'north_star' THEN 0 WHEN 'primary' THEN 1 ELSE 2 END,
                   CASE k.category WHEN 'value' THEN 0 WHEN 'traffic' THEN 1
                                   WHEN 'quality' THEN 2 ELSE 3 END,
@@ -307,7 +311,20 @@ pub async fn derive_goal_from_kpi(
         ));
     };
     if decision.skip || decision.title.trim().is_empty() {
-        tracing::info!(kpi = %kpi.name, rationale = %decision.rationale,
+        let reason = decision.rationale.trim();
+        // Remember the skip so (a) the loop doesn't re-spend an LLM call on this
+        // KPI every tick until it's re-measured, and (b) the UI can surface the
+        // honest "the system looked, nothing it can build — over to you" state.
+        if let Ok(conn) = pool.get() {
+            let _ = conn.execute(
+                "UPDATE dev_kpis SET last_skip_at = datetime('now'), last_skip_rationale = ?1 WHERE id = ?2",
+                rusqlite::params![
+                    if reason.is_empty() { None } else { Some(reason) },
+                    kpi.id
+                ],
+            );
+        }
+        tracing::info!(kpi = %kpi.name, rationale = %reason,
             "kpi_derivation: SKIP — no team-actionable goal");
         return Ok(None);
     }
@@ -401,6 +418,8 @@ mod tests {
             manual_rating: None,
             assessment_pros: None,
             assessment_cons: None,
+            last_skip_at: None,
+            last_skip_rationale: None,
             created_at: created.into(),
             updated_at: created.into(),
         }

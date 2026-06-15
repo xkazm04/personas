@@ -10,7 +10,7 @@
 // Calibration/assessment edits flow up via onEdit; persistence to dev_kpis is
 // handled by the caller (FactoryShell) so the same widget works on mock + live.
 import { useState } from 'react';
-import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2 } from 'lucide-react';
+import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2, Hand } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
 import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryMock';
@@ -85,6 +85,18 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
           )}
         </div>
         <CalibrationTrack kpi={kpi} height={36} />
+
+        {/* D9 — honest "over to you" state: the derivation looked at this
+            off-track KPI and judged nothing the team can build would move it. */}
+        {kpi.skipFresh && (
+          <div className="mt-4 rounded-interactive border border-primary/15 bg-secondary/20 px-3 py-2">
+            <p className="typo-caption text-foreground flex items-start gap-1.5">
+              <Hand className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-foreground/60" />
+              <span>The system looked and found nothing it can build for this right now — over to you.</span>
+            </p>
+            {kpi.skipRationale && <p className="typo-caption opacity-70 mt-1 ml-5">{kpi.skipRationale}</p>}
+          </div>
+        )}
 
         {/* measurement methodic */}
         <div className="mt-5">
