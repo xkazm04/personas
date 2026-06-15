@@ -223,6 +223,7 @@ export default function ProjectManagerPage() {
             size="sm"
             icon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => { setEditingProject(null); setShowModal(true); }}
+            data-testid="dev-project-new"
           >
             {t.plugins.dev_projects.new_project}
           </Button>

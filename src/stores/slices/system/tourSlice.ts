@@ -67,7 +67,13 @@ export const TOUR_EVENTS = [
   'tour:templates-page-viewed',
   'tour:template-adopted',
   'tour:recipes-explored',
-  // Teams & Orchestration
+  // Teams & Orchestration — the hands-on pipeline (project → context → KPI →
+  // team → orchestrate) then the model underneath.
+  'tour:pipeline-project-explored',
+  'tour:pipeline-context-explored',
+  'tour:pipeline-kpis-explored',
+  'tour:pipeline-team-explored',
+  'tour:pipeline-orchestrate-explored',
   'tour:team-canvas-explored',
   'tour:team-chaining-understood',
   'tour:team-assignment-explored',
@@ -123,6 +129,11 @@ export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
   'tour:template-adopted',
   'tour:recipes-explored',
   // Teams & Orchestration — all walk-around stops (acknowledge advances)
+  'tour:pipeline-project-explored',
+  'tour:pipeline-context-explored',
+  'tour:pipeline-kpis-explored',
+  'tour:pipeline-team-explored',
+  'tour:pipeline-orchestrate-explored',
   'tour:team-canvas-explored',
   'tour:team-chaining-understood',
   'tour:team-assignment-explored',
@@ -613,6 +624,89 @@ const TEMPLATES_RECIPES_STEPS: TourStepDef[] = [
 ];
 
 const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
+  // ── The hands-on pipeline: register a repo → map it → define success →
+  //    assemble a team → put it to work. Each is a walk-around stop that rings
+  //    the real action button, so a broken/missing step in the chain surfaces.
+  {
+    id: "pipeline-project",
+    title: "1 · Register your repo",
+    description: "The pipeline starts by making a local code repository a first-class object the app can reason about. In Dev Tools › Projects, create a project: pick the folder, then under Source control bind it to a team (or a GitHub PAT) and pick the repo. Leave \"Create Codebase connector\" on — it wires a Codebase — <project> connector to the repo so agents read the right code.",
+    hint: "Click \"New project\" and walk the three-stage stepper: Project → Source control → Standards.",
+    nav: { sidebarSection: "plugins", subTab: "projects", subTabSetter: "setDevToolsTab" },
+    completeOn: "tour:pipeline-project-explored",
+    panelWidth: 380,
+    highlightTestId: "dev-project-new",
+    narration: "Everything starts with a repo. Register your project here, point it at the folder, connect your source control, and it becomes something the whole fleet can read and reason about.",
+    subSteps: [
+      { id: "folder", label: "Pick the folder", hint: "The project name auto-fills from the folder; the field stays editable." },
+      { id: "source", label: "Connect source control", hint: "Bind a team or a GitHub PAT, then pick the repo — this also provisions the Codebase connector." },
+      { id: "standards", label: "Set standards (optional)", hint: "Pre-commit gates, PR base branch, and auto-merge — the policy the team's agents will respect at run time." },
+    ],
+  },
+  {
+    id: "pipeline-context",
+    title: "2 · Map the codebase",
+    description: "A context-map scan reads the repo and organizes it into business-domain groups and per-feature contexts — each with its files, entry points, keywords, and API/DB surface. This map is the shared understanding the KPI scan and every agent reason over; without it they're working blind. The scan runs in the background and streams progress.",
+    hint: "On the Context Map tab, run the scan — then look at the groups and contexts it produced.",
+    nav: { sidebarSection: "plugins", subTab: "context-map", subTabSetter: "setDevToolsTab" },
+    completeOn: "tour:pipeline-context-explored",
+    panelWidth: 380,
+    highlightTestId: "context-scan-button",
+    narration: "Next, map the code. The scan turns your repo into business-domain groups and per-feature contexts — the shared map your KPIs and your agents both read from.",
+    subSteps: [
+      { id: "scan", label: "Run the scan", hint: "It maps the repo in the background and notifies on completion — large codebases can take a few minutes." },
+      { id: "groups", label: "Groups & contexts", hint: "Each context card shows its files, keywords, and coverage badges (goals + ideas it produced)." },
+      { id: "rescan", label: "Keep it fresh", hint: "Re-scan (incremental) maps only changed files since last time; Plan update schedules a weekly automatic scan." },
+    ],
+  },
+  {
+    id: "pipeline-kpi",
+    title: "3 · Define success with KPIs",
+    description: "KPIs are the outcome layer above goals — what \"working\" actually means for the project. Scan for KPIs and Claude reads the context map to propose measurable metrics across technical / quality / traffic / value, grounded in the repo. Accept or adjust them. A KPI going off-track is what derives a goal for the team, so this is where you set the targets that steer the work.",
+    hint: "In Teams › KPIs, run \"Scan for KPIs\" and review the proposals it files.",
+    nav: { sidebarSection: "teams", subTab: "kpis", subTabSetter: "setTeamsTab" },
+    completeOn: "tour:pipeline-kpis-explored",
+    panelWidth: 380,
+    highlightTestId: "kpi-scan-button",
+    narration: "Now define what success means. Scan for KPIs and Claude proposes measurable metrics from your codebase. These are the targets — an off-track KPI is what tells a team there's work to do.",
+    subSteps: [
+      { id: "scan", label: "Scan for KPIs", hint: "Claude reads the context map + connectors and proposes measurable KPIs across four categories." },
+      { id: "review", label: "Accept / adjust", hint: "Each proposal shows its measurement procedure + rationale; accept (optionally adjusting the target/cadence) or reject." },
+      { id: "steer", label: "How they steer", hint: "When a KPI drifts off its target, the loop derives a goal for the team — outcomes drive the work, not activity." },
+    ],
+  },
+  {
+    id: "pipeline-team",
+    title: "4 · Assemble a team from a preset",
+    description: "Rather than wiring a team by hand, adopt a pre-wired preset — a best-practice roster with its connection graph already drawn (e.g. the Web Development Team). The blueprint graph is the include/exclude surface: tap a node to keep or drop a member, then adopt the subset in one pass. Pin the team to your project so every member reads the right repo.",
+    hint: "Click \"Preset Team\" to open the preset studio, then adopt one (e.g. Web Development Team).",
+    nav: { sidebarSection: "teams", subTab: "workspace", subTabSetter: "setTeamsTab" },
+    completeOn: "tour:pipeline-team-explored",
+    panelWidth: 380,
+    highlightTestId: "team-preset-btn",
+    narration: "You don't have to build a team from scratch. Adopt a preset — a best-practice roster already wired together — pick which members you want, and you've got a working team in one pass.",
+    subSteps: [
+      { id: "gallery", label: "Browse presets", hint: "Each preset is a pre-wired team of agents for a workflow (e.g. an SDLC web-dev team)." },
+      { id: "blueprint", label: "Tune the blueprint", hint: "The connection graph is the hero — toggle members on/off; sequential vs feedback edges are distinguished." },
+      { id: "bind", label: "Bind to the project", hint: "Adopting for your repo pins every member to it, so the whole team works the same codebase." },
+    ],
+  },
+  {
+    id: "pipeline-orchestrate",
+    title: "5 · Put the team to work",
+    description: "With a team in place, open its Orchestrate mode, give it a goal in plain language, and Assign & Run. The orchestrator decomposes the goal into a checklist, matches each step to the best-fit agent, and runs them in a parallel DAG — pausing for your review only on failure. Shared team memory and the project's KPIs keep the team converging instead of repeating itself. You set direction; the team does the work.",
+    hint: "Open a team, switch to Orchestrate, type a goal, and Assign & Run — then watch the live checklist.",
+    nav: { sidebarSection: "teams", subTab: "workspace", subTabSetter: "setTeamsTab" },
+    completeOn: "tour:pipeline-orchestrate-explored",
+    panelWidth: 380,
+    highlightTestId: "team-goal-input",
+    narration: "Finally, put the team to work. Give it a goal in your own words, hit Assign and Run, and it breaks the goal down, picks agents, and executes in parallel — pausing only when it needs you.",
+    subSteps: [
+      { id: "goal", label: "Describe the goal", hint: "Plain language — \"add tests for the billing module and open a PR\". The system decomposes it." },
+      { id: "run", label: "Assign & run", hint: "Each step is matched to an agent (manual / embedding / LLM) and runs in a parallel DAG." },
+      { id: "watch", label: "Watch + steer", hint: "The live checklist shows each step's status; failures pause only that assignment with Edit / Reassign / Skip." },
+    ],
+  },
   {
     id: "team-canvas-intro",
     title: "What a Team Is",
@@ -862,7 +956,7 @@ export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "teams-orchestration",
     title: "Teams & Orchestration",
-    description: "Compose multiple agents into a team, run them as event-chains or goal-driven assignments, and steer the whole team with shared memory and goals.",
+    description: "Walk the whole pipeline: register a repo, map its codebase, define success with KPIs, assemble a team from a preset, and put it to work on a goal — then see the orchestration model underneath (event-chains, assignments, shared memory).",
     icon: "GitBranch",
     color: "emerald",
     steps: TEAMS_ORCHESTRATION_STEPS,

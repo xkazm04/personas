@@ -121,6 +121,17 @@ export default function GuidedTour() {
             const sys = useSystemStore.getState();
             sys.setPluginTab('obsidian-brain');
             sys.setObsidianBrainTab(step.nav.subTab as Parameters<typeof sys.setObsidianBrainTab>[0]);
+          } else if (step.nav.subTabSetter === 'setTeamsTab') {
+            // Teams L2 sub-nav (workspace / goals / kpis / factory).
+            const sys = useSystemStore.getState();
+            sys.setTeamsTab(step.nav.subTab as Parameters<typeof sys.setTeamsTab>[0]);
+          } else if (step.nav.subTabSetter === 'setDevToolsTab') {
+            // Dev Tools tabs live one level below the plugins section — open the
+            // dev-tools plugin surface first, then its sub-tab (projects /
+            // context-map / …). Mirrors the obsidian-brain pattern above.
+            const sys = useSystemStore.getState();
+            sys.setPluginTab('dev-tools');
+            sys.setDevToolsTab(step.nav.subTab as Parameters<typeof sys.setDevToolsTab>[0]);
           }
         }, 100);
       }

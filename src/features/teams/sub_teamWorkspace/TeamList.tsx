@@ -146,7 +146,7 @@ export default function TeamList() {
         subtitle={countLabel}
         actions={
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)}>
+            <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)} data-testid="team-preset-btn">
               {t.pipeline.preset_team}
             </Button>
             <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>

@@ -398,7 +398,7 @@ export function ProjectModal({
 
             <div className="flex justify-center gap-2">
               <Button variant="ghost" size="sm" onClick={handleClose}>{dp.skip_for_now}</Button>
-              <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow}>
+              <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow} data-testid="dev-project-scan-now">
                 {dp.scan_codebase}
               </Button>
             </div>

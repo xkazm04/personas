@@ -478,11 +478,11 @@ export default function ContextMapPage() {
           {hasContexts ? (
             <>
               <Button variant="accent" accentColor="amber" size="sm" icon={<RefreshCw className="w-3.5 h-3.5" />} loading={scanning} onClick={handleRescan}>{t.plugins.dev_tools.context_rescan}</Button>
-              <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.context_full_rescan}</Button>
+              <Button variant="secondary" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan} data-testid="context-scan-button">{t.plugins.dev_tools.context_full_rescan}</Button>
               <Button variant="secondary" size="sm" icon={<CalendarClock className="w-3.5 h-3.5" />} loading={planning} onClick={handlePlanUpdate}>{t.plugins.dev_tools.context_plan_update}</Button>
             </>
           ) : (
-            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan}>{t.plugins.dev_tools.scan_codebase}</Button>
+            <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} loading={scanning} onClick={handleScan} data-testid="context-scan-button">{t.plugins.dev_tools.scan_codebase}</Button>
           )}
           {lastScannedAt && (
             <span className="ml-auto inline-flex items-center gap-1.5 typo-caption text-foreground">
