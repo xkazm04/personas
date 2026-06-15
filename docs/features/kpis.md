@@ -68,6 +68,15 @@ status, domain) through human labels — **no raw tokens** (`codebase`, `weekly`
 into prose / configured via `MeasureSetupModal`). Full **i18n** of the surface
 (it is still English-only) remains a follow-up.
 
+- **Add-KPI modal** (`AddKpiModal`): a structured authoring surface (no free-text
+  "describe → AI fills the form" — that conversational path is pointed at Athena's
+  chat). A wide 3-column layout with theme-toned labels and themed dropdowns
+  (`ThemedSelect`). A **Measured** control branches the flow: **Manually** (all
+  fields required → creates the KPI active immediately, no LLM) vs
+  **Automatically** (pick the mechanism + a vault **Connector**; "Set up with AI"
+  creates a *proposed* KPI and runs the LLM measurement setup — composing,
+  testing, and applying the measurement + baseline — landing it in Teams › KPIs
+  to review/adjust).
 - **Honest "over to you" state** (the KPI console): when the derivation looked
   at an off-track KPI and judged that **no team work would move it** (it answers
   `skip` — needs humans / marketing / an external dependency), the console says
