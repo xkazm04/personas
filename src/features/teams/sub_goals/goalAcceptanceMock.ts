@@ -18,8 +18,17 @@ export interface PendingTeam {
   monogram: string;
 }
 
+export interface PendingProject {
+  id: string;
+  name: string;
+  /** Tech-stack kicker (display only). */
+  stack: string;
+}
+
 export interface PendingKpi {
   id: string;
+  /** The project this KPI belongs to (dev_kpis.project_id). */
+  projectId: string;
   name: string;
   unit: string;
   direction: 'up' | 'down';
@@ -32,6 +41,8 @@ export interface PendingKpi {
 
 export interface PendingGoal {
   id: string;
+  /** The project this goal belongs to (dev_goals.project_id). */
+  projectId: string;
   title: string;
   /** One-line of what the team actually shipped (the agent's outcome summary). */
   summary: string;
@@ -51,24 +62,30 @@ export const MOCK_TEAMS: PendingTeam[] = [
   { id: 't-platform', name: 'Platform Ops', color: '#a855f7', monogram: 'PO' },
 ];
 
+export const MOCK_PROJECTS: PendingProject[] = [
+  { id: 'p-shopfront', name: 'shopfront', stack: 'React · Node · Stripe' },
+  { id: 'p-paralegal', name: 'ai-paralegal', stack: 'Next.js · Postgres' },
+];
+
 export const MOCK_KPIS: PendingKpi[] = [
-  { id: 'k-cov', name: 'Billing test coverage', unit: '%', direction: 'up', baseline: 31, current: 38, target: 70, offTrack: true },
-  { id: 'k-signup', name: 'Signup conversion', unit: '%', direction: 'up', baseline: 4.1, current: 4.4, target: 6.5, offTrack: true },
-  { id: 'k-latency', name: 'p95 checkout latency', unit: 'ms', direction: 'down', baseline: 980, current: 540, target: 400, offTrack: false },
+  { id: 'k-signup', projectId: 'p-shopfront', name: 'Signup conversion', unit: '%', direction: 'up', baseline: 4.1, current: 4.4, target: 6.5, offTrack: true },
+  { id: 'k-latency', projectId: 'p-shopfront', name: 'p95 checkout latency', unit: 'ms', direction: 'down', baseline: 980, current: 540, target: 400, offTrack: false },
+  { id: 'k-cov', projectId: 'p-paralegal', name: 'Billing test coverage', unit: '%', direction: 'up', baseline: 31, current: 38, target: 70, offTrack: true },
 ];
 
 export const MOCK_PENDING_GOALS: PendingGoal[] = [
-  // Billing coverage (off-track) — two teams pushed on it.
-  { id: 'g-1', title: 'Add integration tests for the statement generator', summary: 'Wrote 24 tests across the billing statement path; coverage 31→48% in that module.', teamId: 't-sdlc', kpiId: 'k-cov', completedAt: '2h ago', prs: 2 },
-  { id: 'g-2', title: 'Cover the refund + proration edge cases', summary: 'Added property tests for proration rounding and partial refunds; closed 3 untested branches.', teamId: 't-quality', kpiId: 'k-cov', completedAt: '5h ago', prs: 1 },
-  // Signup conversion (off-track) — growth + a platform assist.
-  { id: 'g-3', title: 'Shorten the signup form to 3 fields', summary: 'Dropped company/role/phone from step 1; deferred to post-signup. A/B scaffolding in place.', teamId: 't-growth', kpiId: 'k-signup', completedAt: '1d ago', prs: 3 },
-  { id: 'g-4', title: 'Add social login (Google + GitHub)', summary: 'Wired OAuth via Clerk; both providers live behind a feature flag on staging.', teamId: 't-sdlc', kpiId: 'k-signup', completedAt: '1d ago', prs: 2 },
-  // Latency (on-track) — single team.
-  { id: 'g-5', title: 'Cache the cart-totals computation', summary: 'Memoised line-item totals + added a 30s edge cache; p95 980→540ms locally.', teamId: 't-platform', kpiId: 'k-latency', completedAt: '3h ago', prs: 1 },
-  // Standalone (no KPI link).
-  { id: 'g-6', title: 'Upgrade the app to React 19', summary: 'Bumped React + adjusted 11 effect-cleanup sites; full suite green.', teamId: 't-sdlc', kpiId: null, completedAt: '6h ago', prs: 4 },
-  { id: 'g-7', title: 'Ship audit-log CSV export', summary: 'Added the export endpoint + a download button to the admin settings page.', teamId: 't-quality', kpiId: null, completedAt: '2d ago', prs: 1 },
+  // shopfront · Signup conversion (off-track) — growth + a platform assist.
+  { id: 'g-3', projectId: 'p-shopfront', title: 'Shorten the signup form to 3 fields', summary: 'Dropped company/role/phone from step 1; deferred to post-signup. A/B scaffolding in place.', teamId: 't-growth', kpiId: 'k-signup', completedAt: '1d ago', prs: 3 },
+  { id: 'g-4', projectId: 'p-shopfront', title: 'Add social login (Google + GitHub)', summary: 'Wired OAuth via Clerk; both providers live behind a feature flag on staging.', teamId: 't-sdlc', kpiId: 'k-signup', completedAt: '1d ago', prs: 2 },
+  // shopfront · Latency (on-track) — single team.
+  { id: 'g-5', projectId: 'p-shopfront', title: 'Cache the cart-totals computation', summary: 'Memoised line-item totals + added a 30s edge cache; p95 980→540ms locally.', teamId: 't-platform', kpiId: 'k-latency', completedAt: '3h ago', prs: 1 },
+  // shopfront · Standalone (no KPI link).
+  { id: 'g-6', projectId: 'p-shopfront', title: 'Upgrade the app to React 19', summary: 'Bumped React + adjusted 11 effect-cleanup sites; full suite green.', teamId: 't-sdlc', kpiId: null, completedAt: '6h ago', prs: 4 },
+  // ai-paralegal · Billing coverage (off-track) — two teams pushed on it.
+  { id: 'g-1', projectId: 'p-paralegal', title: 'Add integration tests for the statement generator', summary: 'Wrote 24 tests across the billing statement path; coverage 31→48% in that module.', teamId: 't-sdlc', kpiId: 'k-cov', completedAt: '2h ago', prs: 2 },
+  { id: 'g-2', projectId: 'p-paralegal', title: 'Cover the refund + proration edge cases', summary: 'Added property tests for proration rounding and partial refunds; closed 3 untested branches.', teamId: 't-quality', kpiId: 'k-cov', completedAt: '5h ago', prs: 1 },
+  // ai-paralegal · Standalone (no KPI link).
+  { id: 'g-7', projectId: 'p-paralegal', title: 'Ship audit-log CSV export', summary: 'Added the export endpoint + a download button to the admin settings page.', teamId: 't-quality', kpiId: null, completedAt: '2d ago', prs: 1 },
 ];
 
 // -- derivations the variants share ------------------------------------------
@@ -115,4 +132,36 @@ export function countByTeam(goals: PendingGoal[]): Map<string, number> {
   const m = new Map<string, number>();
   for (const g of goals) m.set(g.teamId, (m.get(g.teamId) ?? 0) + 1);
   return m;
+}
+
+export interface ProjectGroup {
+  project: PendingProject;
+  /** KPI sub-groups within the project (standalone bucket last). */
+  kpiGroups: KpiGroup[];
+  /** Total pending goals in the project (rollup). */
+  total: number;
+  /** Distinct teams that contributed (rollup chip). */
+  teams: number;
+}
+
+/** Group pending goals by PROJECT, then KPI sub-groups within each project.
+ *  Projects with no pending goals are omitted; project order follows `projects`. */
+export function groupByProjectThenKpi(
+  goals: PendingGoal[],
+  kpis: PendingKpi[],
+  projects: PendingProject[],
+): ProjectGroup[] {
+  const out: ProjectGroup[] = [];
+  for (const project of projects) {
+    const pGoals = goals.filter((g) => g.projectId === project.id);
+    if (pGoals.length === 0) continue;
+    const pKpis = kpis.filter((k) => k.projectId === project.id);
+    out.push({
+      project,
+      kpiGroups: groupByKpi(pGoals, pKpis),
+      total: pGoals.length,
+      teams: new Set(pGoals.map((g) => g.teamId)).size,
+    });
+  }
+  return out;
 }

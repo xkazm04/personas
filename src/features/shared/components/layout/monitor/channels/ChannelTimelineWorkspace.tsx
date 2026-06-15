@@ -1,9 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Radio, Activity, Send, Users, ChevronDown, Check, Sparkles, User,
+  Radio, Activity, Send, Users, ChevronDown, Check, Sparkles, User, Bell,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { postTeamDirective } from '@/api/pipeline/teamChannel';
@@ -286,6 +287,8 @@ function WorkspaceInner({
   personaIndex: ReturnType<typeof usePersonaIndex>;
 }) {
   const { t } = useTranslation();
+  const liveOn = useSystemStore((s) => s.monitorLiveMode);
+  const toggleLive = useSystemStore((s) => s.toggleMonitorLiveMode);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [filter, setFilter] = useState<FeedFilter>('all');
@@ -369,6 +372,21 @@ function WorkspaceInner({
               </button>
             ))}
           </div>
+          {/* Live-mode toggle — corner pop-ups for incoming channel messages. */}
+          <button
+            type="button"
+            onClick={toggleLive}
+            aria-pressed={liveOn}
+            title={t.monitor.live_toggle_hint}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 typo-caption transition-colors ${
+              liveOn
+                ? 'border-status-success/40 bg-status-success/15 text-status-success'
+                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+            }`}
+          >
+            <Bell className="h-3 w-3" />
+            {t.monitor.live_toggle}
+          </button>
           {layoutControl}
         </div>
       </div>

@@ -160,6 +160,22 @@ export interface UiSlice {
   monitorCollapsedGroups: string[];
 
   /**
+   * Whether the live-mode corner pop-up layer is on — incoming team-channel
+   * messages surface as bottom-right pop-ups app-wide (the `LiveChannelOverlay`
+   * at App root). Persisted; surfaced as a toggle in the Channels → Timeline
+   * view. Defaults on so the feature is discoverable.
+   */
+  monitorLiveMode: boolean;
+
+  /**
+   * Transient deep-link telling the Monitor which view to open into on its next
+   * mount (or while already open). `'channels'` lands on the merged Timeline —
+   * set by a live pop-up's "open in Timeline" click. Cleared once consumed.
+   * Never persisted.
+   */
+  monitorInitialView: 'fleet' | 'channels' | null;
+
+  /**
    * Ids of below-the-fold Home (Mission Control) sections the user has hidden
    * via the dashboard Customize popover. Stored as a string[] (not Set) so the
    * persist middleware can JSON-serialize it. Empty = every section visible.
@@ -174,6 +190,9 @@ export interface UiSlice {
   setMonitorOpen: (open: boolean) => void;
   setMonitorGroupBy: (mode: 'none' | 'group') => void;
   toggleMonitorGroupCollapsed: (groupId: string) => void;
+  setMonitorLiveMode: (on: boolean) => void;
+  toggleMonitorLiveMode: () => void;
+  setMonitorInitialView: (view: 'fleet' | 'channels' | null) => void;
   toggleHomeSection: (sectionId: string) => void;
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
@@ -294,6 +313,8 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setKeyboardNavActive: (active) => set({ keyboardNavActive: active }),
   monitorGroupBy: 'none' as const,
   monitorCollapsedGroups: [],
+  monitorLiveMode: true,
+  monitorInitialView: null,
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
@@ -356,6 +377,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
       : state.sidebarSection,
   })),
   setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
+  setMonitorLiveMode: (on) => set({ monitorLiveMode: on }),
+  toggleMonitorLiveMode: () => set((state) => ({ monitorLiveMode: !state.monitorLiveMode })),
+  setMonitorInitialView: (view) => set({ monitorInitialView: view }),
   toggleHomeSection: (sectionId) =>
     set((state) => {
       const idx = state.homeHiddenSections.indexOf(sectionId);

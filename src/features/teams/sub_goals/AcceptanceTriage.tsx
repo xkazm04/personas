@@ -9,8 +9,7 @@ import { ChevronDown, ChevronRight, Check, Inbox } from 'lucide-react';
 
 import type { PendingGoal, PendingKpi, PendingTeam } from './goalAcceptanceMock';
 import { groupByKpi } from './goalAcceptanceMock';
-import { AcceptRejectControls, KpiMiniGauge, TeamMonogram } from './acceptancePrimitives';
-import { EmptyQueue } from './AcceptanceLedger';
+import { AcceptRejectControls, KpiMiniGauge, TeamMonogram, EmptyQueue } from './acceptancePrimitives';
 
 interface Props {
   goals: PendingGoal[];
@@ -41,7 +40,7 @@ export function AcceptanceTriage({ goals, teams, kpis, onAccept, onReject }: Pro
   return (
     <div className="space-y-3">
       {/* Summary bar — the "how much is waiting on me" headline */}
-      <div className="flex items-center gap-2 rounded-card border border-primary/10 bg-secondary/15 px-3.5 py-2.5">
+      <div className="flex items-center gap-2 rounded-card bg-secondary/20 px-3.5 py-2.5">
         <Inbox className="w-4 h-4 text-violet-400 shrink-0" />
         <p className="typo-body text-foreground">
           <span className="font-semibold tabular-nums">{goals.length}</span> goals from{' '}
@@ -57,7 +56,7 @@ export function AcceptanceTriage({ goals, teams, kpis, onAccept, onReject }: Pro
         const gid = group.kpi?.id ?? 'standalone';
         const isCollapsed = collapsed.has(gid);
         return (
-          <div key={gid} className="rounded-card border border-primary/10 overflow-hidden">
+          <div key={gid} className="rounded-card overflow-hidden bg-secondary/5">
             {/* Section header — rollup + collapse + batch accept */}
             <div className="flex items-center gap-2 px-3 py-2 bg-secondary/15">
               <button type="button" onClick={() => toggle(gid)} className="flex items-center gap-2 min-w-0 flex-1 text-left">
@@ -66,7 +65,7 @@ export function AcceptanceTriage({ goals, teams, kpis, onAccept, onReject }: Pro
                   {group.kpi ? group.kpi.name : 'Standalone'}
                 </span>
                 {group.kpi?.offTrack && (
-                  <span className="typo-caption px-1.5 py-0.5 rounded-full text-[var(--destructive)] border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 shrink-0">
+                  <span className="typo-caption px-1.5 py-0.5 rounded-full text-[var(--destructive)] bg-[var(--destructive)]/15 shrink-0">
                     off track
                   </span>
                 )}
@@ -76,7 +75,7 @@ export function AcceptanceTriage({ goals, teams, kpis, onAccept, onReject }: Pro
               <button
                 type="button"
                 onClick={() => group.goals.forEach((g) => onAccept(g.id))}
-                className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--success)] border border-[var(--success)]/30 bg-[var(--success)]/10 hover:bg-[var(--success)]/20 transition-colors shrink-0"
+                className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors shrink-0"
               >
                 <Check className="w-3.5 h-3.5" /> Accept all
               </button>

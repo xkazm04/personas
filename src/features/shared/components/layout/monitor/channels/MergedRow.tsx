@@ -11,8 +11,9 @@ import { MERGED_ROW_HEIGHT, type TaggedItem } from './types';
 
 /* The compact one-line row used by the combined Timeline. */
 
-/** Resolve the compact event label + tone + one-line message for any item. */
-function resolveCompact(item: TeamChannelItem): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
+/** Resolve the compact event label + tone + one-line message for any item.
+ *  Exported so the live-mode corner overlay projects messages identically. */
+export function resolveCompact(item: TeamChannelItem): { event: string; tone: string; message: string | null; artifact: { url: string; label: string } | null; isError: boolean; alert: boolean } {
   if (item.kind === 'step') {
     return {
       event: STEP_VERB[item.label] ?? item.label,

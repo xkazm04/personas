@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**199 reusable components** live under `src/features/shared/components/`.
+**201 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -173,6 +173,8 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `EqualizerBars` | the YT progress bar occupies). |
 | `FleetActivityStrip` | _(add a `@catalog` tag)_ |
 | `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
+| `LiveChannelOverlay` | Live-mode corner pop-ups for incoming team-channel messages — app-wide bottom-right stack driven by the shared channel feed, gated |
+| `LiveCommsStack` | Bottom-right chat-style stack of live channel-message pop-ups (latest 3 + overflow chip) with click-to-dismiss, hover-paused auto- |
 | `MergedRow` | Resolve the compact event label + tone + one-line message for any item. |
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorChannelGrid` | Channel mode — watch multiple team channels at once. |
@@ -283,4 +285,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_199 components, 97 without a `@catalog` description._
+_201 components, 97 without a `@catalog` description._

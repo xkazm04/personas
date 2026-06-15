@@ -4,7 +4,7 @@
 // second variant needed the same piece (per the prototype skill's "hoist shared
 // pieces mid-prototype" rule). i18n extraction is deferred to consolidation.
 import { useState } from 'react';
-import { Check, X, RotateCcw, Gauge, Send } from 'lucide-react';
+import { Check, RotateCcw, Send } from 'lucide-react';
 
 import type { PendingKpi, PendingTeam } from './goalAcceptanceMock';
 import { kpiPct } from './goalAcceptanceMock';
@@ -35,21 +35,6 @@ export function TeamMonogram({ team, size = 22 }: { team: PendingTeam; size?: nu
   );
 }
 
-/** Column header for a team: monogram + name + completed count. */
-export function TeamColumnHeader({ team, count }: { team: PendingTeam; count: number }) {
-  return (
-    <div className="flex items-center gap-2 min-w-0">
-      <TeamMonogram team={team} />
-      <div className="min-w-0">
-        <p className="typo-label text-foreground truncate leading-tight">{team.name}</p>
-        <p className="typo-caption tabular-nums" style={{ color: team.color }}>
-          {count} ready
-        </p>
-      </div>
-    </div>
-  );
-}
-
 /** A compact baseline→target gauge with the current value as a marker, tinted
  *  by track state. The signature KPI visual reused across the variants. */
 export function KpiMiniGauge({ kpi, width = 150 }: { kpi: PendingKpi; width?: number }) {
@@ -62,7 +47,7 @@ export function KpiMiniGauge({ kpi, width = 150 }: { kpi: PendingKpi; width?: nu
           {kpi.current}
           {kpi.unit}
         </span>
-        <span className="typo-caption text-foreground/60 tabular-nums">
+        <span className="typo-caption text-muted-foreground tabular-nums">
           → {kpi.target}
           {kpi.unit}
         </span>
@@ -73,45 +58,6 @@ export function KpiMiniGauge({ kpi, width = 150 }: { kpi: PendingKpi; width?: nu
           style={{ width: `${pct}%`, background: tint }}
         />
       </div>
-    </div>
-  );
-}
-
-/** KPI group header — the outcome a cluster of goals is bidding to move.
- *  `ready` is the count of completed goals waiting under it. */
-export function KpiGroupHeader({
-  kpi,
-  ready,
-  accent = 'var(--primary)',
-}: {
-  kpi: PendingKpi | null;
-  ready: number;
-  accent?: string;
-}) {
-  if (!kpi) {
-    return (
-      <div className="flex items-center gap-2">
-        <span className="h-3 w-0.5 rounded-full bg-primary/40" />
-        <span className="typo-caption uppercase tracking-[0.18em] text-foreground/70">
-          Standalone
-        </span>
-        <span className="typo-caption text-foreground/50 tabular-nums">· {ready} ready</span>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center gap-3 flex-wrap">
-      <span className="flex items-center gap-1.5">
-        <Gauge className="w-3.5 h-3.5" style={{ color: accent }} />
-        <span className="typo-label text-foreground">{kpi.name}</span>
-      </span>
-      {kpi.offTrack && (
-        <span className="typo-caption px-1.5 py-0.5 rounded-full text-[var(--destructive)] border border-[var(--destructive)]/30 bg-[var(--destructive)]/5">
-          off track
-        </span>
-      )}
-      <KpiMiniGauge kpi={kpi} width={130} />
-      <span className="typo-caption text-foreground/55 tabular-nums">{ready} ready</span>
     </div>
   );
 }
@@ -143,21 +89,21 @@ export function AcceptRejectControls({
           onChange={(e) => setComment(e.target.value)}
           placeholder="Why is this not acceptable? (sent back to the team)"
           rows={2}
-          className="w-full px-2 py-1.5 typo-caption bg-secondary/40 border border-[var(--destructive)]/25 rounded-input text-foreground placeholder:text-foreground/40 focus-ring resize-none"
+          className="w-full px-2 py-1.5 typo-caption bg-secondary/50 rounded-input text-foreground placeholder:text-muted-foreground focus-ring resize-none"
         />
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             disabled={!comment.trim()}
             onClick={() => onReject(comment.trim())}
-            className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--destructive)] border border-[var(--destructive)]/30 bg-[var(--destructive)]/10 hover:bg-[var(--destructive)]/20 transition-colors disabled:opacity-40"
+            className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--destructive)] bg-[var(--destructive)]/15 hover:bg-[var(--destructive)]/25 transition-colors disabled:opacity-40"
           >
             <Send className="w-3 h-3" /> Send back
           </button>
           <button
             type="button"
             onClick={() => { setRejecting(false); setComment(''); }}
-            className="typo-caption rounded-interactive px-2 py-1 text-foreground/60 hover:text-foreground hover:bg-primary/10 transition-colors"
+            className="typo-caption rounded-interactive px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
           >
             Cancel
           </button>
@@ -171,7 +117,7 @@ export function AcceptRejectControls({
       <button
         type="button"
         onClick={onAccept}
-        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-[var(--success)] border border-[var(--success)]/30 bg-[var(--success)]/10 hover:bg-[var(--success)]/20 transition-colors`}
+        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors`}
       >
         <Check className="w-3.5 h-3.5" /> Accept
       </button>
@@ -180,7 +126,7 @@ export function AcceptRejectControls({
         onClick={() => setRejecting(true)}
         aria-label="Reject with comment"
         title="Send back with a comment"
-        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-foreground/60 border border-primary/15 hover:text-[var(--destructive)] hover:border-[var(--destructive)]/30 transition-colors`}
+        className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-muted-foreground bg-primary/10 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
       >
         <RotateCcw className="w-3.5 h-3.5" /> Send back
       </button>
@@ -188,11 +134,37 @@ export function AcceptRejectControls({
   );
 }
 
-/** Tiny dismiss/empty marker for an empty team cell in the strict matrix. */
-export function EmptyCell() {
+/**
+ * Thin KPI sub-group divider — a hairline rule carrying a small label, the
+ * off-track state, a count, and an inline current→target. The compact,
+ * border-free replacement for the boxed KPI section header, used when goals are
+ * grouped by PROJECT first and KPIs become sub-headers within each project.
+ */
+export function KpiDivider({ kpi, count }: { kpi: PendingKpi | null; count: number }) {
+  const tint = kpi ? (kpi.offTrack ? 'var(--destructive)' : 'var(--success)') : 'var(--muted-foreground)';
   return (
-    <span className="flex items-center justify-center text-foreground/15 select-none">
-      <X className="w-3 h-3" strokeWidth={1.5} />
-    </span>
+    <div className="flex items-center gap-2.5 pt-3 pb-1.5">
+      {/* typo-label = 12px uppercase tracked — reads cleanly as a sub-divider
+          marker, one tier below the project section-title above it. */}
+      <span className="typo-label" style={{ color: tint }}>{kpi ? kpi.name : 'Standalone'}</span>
+      {kpi?.offTrack && <span className="typo-label text-[var(--destructive)]">off track</span>}
+      {kpi && (
+        <span className="typo-caption text-muted-foreground tabular-nums">
+          {kpi.current}{kpi.unit} → {kpi.target}{kpi.unit}
+        </span>
+      )}
+      <span className="h-px flex-1 bg-primary/10" />
+      <span className="typo-caption text-muted-foreground tabular-nums">{count}</span>
+    </div>
+  );
+}
+
+/** Shown when the acceptance queue is empty — shared across variants. */
+export function EmptyQueue() {
+  return (
+    <div className="py-12 text-center">
+      <p className="typo-title text-foreground">Nothing waiting on you</p>
+      <p className="typo-body text-muted-foreground mt-1">Completed goals appear here for your acceptance.</p>
+    </div>
   );
 }

@@ -11,8 +11,9 @@ import { memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { useTranslation } from '@/i18n/useTranslation';
 import {
-  LiveAvatar, authorAccent, authorName, COPY, LIVE_TTL_MS,
+  LiveAvatar, authorAccent, authorName, LIVE_TTL_MS,
   type LiveMessage, type LiveVariantProps,
 } from './liveModel';
 
@@ -27,6 +28,7 @@ function Bubble({
   onHover: (id: string, hovered: boolean) => void;
   reducedMotion: boolean;
 }) {
+  const { t } = useTranslation();
   const accent = authorAccent(m);
   return (
     <motion.div
@@ -43,7 +45,7 @@ function Bubble({
       <button
         type="button"
         onClick={() => onOpenTimeline(m.teamId)}
-        title={COPY.openTimeline}
+        title={t.monitor.live_open_timeline}
         className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.03]"
       >
         <LiveAvatar m={m} size="sm" />
@@ -53,13 +55,13 @@ function Bubble({
               {authorName(m)}
             </span>
             <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${m.tone}`}>{m.event}</span>
-            <span className="ml-auto flex-shrink-0 typo-caption text-foreground/45">
+            <span className="ml-auto flex-shrink-0 typo-caption text-foreground">
               <RelativeTime timestamp={m.at} />
             </span>
           </div>
           <div className="mt-0.5 flex items-center gap-1.5">
             <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full" style={{ backgroundColor: m.teamColor }} />
-            <span className="typo-caption text-foreground/50 truncate">{m.teamName}</span>
+            <span className="typo-caption text-foreground truncate">{m.teamName}</span>
           </div>
           {m.message && (
             <p className="mt-1 typo-body text-foreground/85 line-clamp-2">{m.message}</p>
@@ -71,9 +73,9 @@ function Bubble({
       <button
         type="button"
         onClick={() => onDismiss(m.id)}
-        aria-label={COPY.dismiss}
-        title={COPY.dismiss}
-        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-foreground/55 opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+        aria-label={t.monitor.live_dismiss}
+        title={t.monitor.live_dismiss}
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-primary/15 bg-background/80 text-foreground opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
       >
         <X className="h-3 w-3" />
       </button>
@@ -95,6 +97,7 @@ function Bubble({
 }
 
 function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline, onHover, reducedMotion }: LiveVariantProps) {
+  const { t, tx } = useTranslation();
   if (messages.length === 0) return null;
   const visible = messages.slice(0, MAX_VISIBLE);
   const overflow = messages.length - visible.length;
@@ -111,13 +114,13 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline,
             exit={{ opacity: 0 }}
             className="pointer-events-auto flex items-center gap-2 self-end rounded-full border border-primary/12 bg-secondary/80 px-2.5 py-1 backdrop-blur-sm"
           >
-            <span className="typo-caption text-foreground/70">{COPY.more(overflow)}</span>
+            <span className="typo-caption text-foreground">{tx(t.monitor.live_more, { count: overflow })}</span>
             <button
               type="button"
               onClick={onDismissAll}
-              className="typo-caption font-medium text-foreground/55 transition-colors hover:text-foreground"
+              className="typo-caption font-medium text-primary transition-colors hover:text-primary/80"
             >
-              {COPY.dismissAll}
+              {t.monitor.live_clear_all}
             </button>
           </motion.div>
         )}
@@ -142,5 +145,8 @@ function LiveCommsStackImpl({ messages, onDismiss, onDismissAll, onOpenTimeline,
   );
 }
 
+/**
+ * @catalog Bottom-right chat-style stack of live channel-message pop-ups (latest 3 + overflow chip) with click-to-dismiss, hover-paused auto-timeout, and open-in-Timeline.
+ */
 export const LiveCommsStack = memo(LiveCommsStackImpl);
 export default LiveCommsStack;

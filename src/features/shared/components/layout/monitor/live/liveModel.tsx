@@ -9,6 +9,9 @@
 
 import { Sparkles, Compass, User, AlertCircle, type LucideIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { resolveCompact } from '../channels/MergedRow';
+import type { TaggedItem } from '../channels/types';
+import type { Persona } from '@/lib/bindings/Persona';
 
 /** A single channel message, projected for the corner live overlay. */
 export interface LiveMessage {
@@ -37,21 +40,6 @@ export interface LiveMessage {
   /** Date.now() when the overlay first saw it — drives auto-dismiss timing. */
   receivedAt: number;
 }
-
-/** Prototype copy. Promote to `t.monitor.live_*` at consolidation (Phase 6). */
-export const COPY = {
-  title: 'Live channel',
-  openTimeline: 'Open in Timeline',
-  dismiss: 'Dismiss',
-  dismissAll: 'Clear all',
-  more: (n: number) => `+${n} more`,
-  newLabel: 'new',
-  quiet: 'Caught up — incoming channel messages land here',
-  expand: 'Show messages',
-  collapse: 'Collapse',
-  teamsActive: (teams: number, count: number) =>
-    `${teams} ${teams === 1 ? 'team' : 'teams'} · ${count} new`,
-} as const;
 
 /** Resolve the accent colour for a message's author (team-agnostic). */
 export function authorAccent(m: LiveMessage): string {
@@ -125,4 +113,30 @@ export interface LiveVariantProps {
   /** Report hover so the host can pause/resume that message's auto-expire. */
   onHover: (id: string, hovered: boolean) => void;
   reducedMotion: boolean;
+}
+
+/** Project a live team-channel item into a render-ready LiveMessage. Resolution
+ *  (event label / tone / message / alert) is delegated to the channel's shared
+ *  `resolveCompact`, so a corner pop-up always says exactly what the Timeline
+ *  row says. `now` stamps the arrival for the auto-timeout. */
+export function projectChannelItem(tagged: TaggedItem, persona: Persona | undefined, now: number): LiveMessage {
+  const { item, team } = tagged;
+  const { event, tone, message, alert } = resolveCompact(item);
+  return {
+    id: item.id,
+    teamId: team.teamId,
+    teamName: team.teamName,
+    teamColor: team.teamColor,
+    personaId: item.personaId,
+    personaName: persona ? persona.name.replace(/^T: /, '') : '',
+    personaIcon: persona?.icon ?? null,
+    personaColor: persona?.color ?? null,
+    kind: item.kind as LiveMessage['kind'],
+    event,
+    tone,
+    message,
+    at: item.at,
+    alert,
+    receivedAt: now,
+  };
 }

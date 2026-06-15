@@ -57,8 +57,16 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
 
   // View mode — the fleet persona grid, or "channel mode" (multiple team
-  // channels watched in parallel).
-  const [viewMode, setViewMode] = useState<'fleet' | 'channels'>('fleet');
+  // channels watched in parallel). A live-mode pop-up can deep-link here via the
+  // transient `monitorInitialView` signal, landing straight on the Timeline.
+  const monitorInitialView = useSystemStore((s) => s.monitorInitialView);
+  const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
+  const [viewMode, setViewMode] = useState<'fleet' | 'channels'>(monitorInitialView ?? 'fleet');
+  useEffect(() => {
+    if (!monitorInitialView) return;
+    setViewMode(monitorInitialView);
+    setMonitorInitialView(null);
+  }, [monitorInitialView, setMonitorInitialView]);
 
   // Persona fulltext search — replaces the old Dev-Tools project filter. The
   // monitor defaults to showing ALL personas; the search narrows the grid by

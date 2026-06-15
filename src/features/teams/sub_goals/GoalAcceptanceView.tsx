@@ -1,29 +1,29 @@
-// Goal Acceptance View — PROTOTYPE host. Renders three directional variants of
-// the human-acceptance queue behind a tab switcher so we can A/B them live:
-//   · Ledger        — strict team-column × goal-row matrix, KPI bands (dense)
-//   · Outcome Board  — KPI cluster panels, gauge-as-hero (card-forward)
-//   · Triage Console — collapsible sections, batch-accept (throughput)
+// Goal Acceptance View — PROTOTYPE host. Round 4: Triage is the winner; this
+// round polishes it. Two tabs, before/after, so the typography + grouping
+// improvement is directly comparable:
+//   · Polished — project grouping + KPI thin sub-dividers + a real type ladder
+//   · Before   — the kept-baseline Triage (KPI-grouped, flat 14px typography)
 //
-// All three receive identical props (pending goals + teams + kpis + accept/
-// reject handlers). The host owns the resolution state so accepting removes a
-// goal from the queue (the real flow: → `done`, off the Board) and rejecting
-// moves it (the real flow: → `in-progress`, Agent's turn, with the comment).
-// Sample data for now (goalAcceptanceMock); live wiring follows winner-pick.
+// All variants receive identical core props (goals + teams + kpis + accept/reject
+// handlers); the project-grouped variants also receive `projects`. The host owns
+// resolution state so accepting removes a goal (real flow: → `done`, off the
+// Board) and rejecting moves it (→ `in-progress`, Agent's turn, with the
+// comment). Sample data for now (goalAcceptanceMock); live wiring follows
+// winner-pick.
 import { useMemo, useState } from 'react';
 import { CheckCircle2, RotateCcw, Undo2 } from 'lucide-react';
 
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 
-import { MOCK_PENDING_GOALS, MOCK_TEAMS, MOCK_KPIS } from './goalAcceptanceMock';
-import { AcceptanceLedger } from './AcceptanceLedger';
-import { AcceptanceOutcomeBoard } from './AcceptanceOutcomeBoard';
+import { MOCK_PENDING_GOALS, MOCK_TEAMS, MOCK_KPIS, MOCK_PROJECTS } from './goalAcceptanceMock';
 import { AcceptanceTriage } from './AcceptanceTriage';
+import { AcceptanceTriagePolished } from './AcceptanceTriagePolished';
 
-type VariantId = 'ledger' | 'board' | 'triage';
+type VariantId = 'polished' | 'before';
 type Resolution = { action: 'accepted' | 'rejected'; comment?: string };
 
 export function GoalAcceptanceView() {
-  const [variant, setVariant] = useState<VariantId>('ledger');
+  const [variant, setVariant] = useState<VariantId>('polished');
   const [resolved, setResolved] = useState<Map<string, Resolution>>(new Map());
 
   const pending = useMemo(
@@ -51,13 +51,12 @@ export function GoalAcceptanceView() {
           activeTab={variant}
           onTabChange={setVariant}
           tabs={[
-            { id: 'ledger', label: 'Ledger' },
-            { id: 'board', label: 'Outcome Board' },
-            { id: 'triage', label: 'Triage' },
+            { id: 'polished', label: 'Polished' },
+            { id: 'before', label: 'Before' },
           ]}
         />
         {resolved.size > 0 && (
-          <div className="flex items-center gap-3 typo-caption text-foreground/60">
+          <div className="flex items-center gap-3 typo-caption text-muted-foreground">
             <span className="inline-flex items-center gap-1 text-[var(--success)]">
               <CheckCircle2 className="w-3.5 h-3.5" /> {accepted} accepted
             </span>
@@ -77,9 +76,8 @@ export function GoalAcceptanceView() {
         )}
       </div>
 
-      {variant === 'ledger' && <AcceptanceLedger {...shared} />}
-      {variant === 'board' && <AcceptanceOutcomeBoard {...shared} />}
-      {variant === 'triage' && <AcceptanceTriage {...shared} />}
+      {variant === 'polished' && <AcceptanceTriagePolished {...shared} projects={MOCK_PROJECTS} />}
+      {variant === 'before' && <AcceptanceTriage {...shared} />}
     </div>
   );
 }
