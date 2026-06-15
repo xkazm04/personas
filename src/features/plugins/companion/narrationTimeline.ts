@@ -60,11 +60,12 @@ export function completeNarrationTool(
 }
 
 /**
- * Is this trail worth pinning under the completed bubble? A single
- * fast step isn't a story — it would put a noise row under every
- * trivial turn. Two or more entries (or any model-authored beat,
- * which Athena only emits for genuinely long turns) qualify.
+ * Is this trail worth pinning under the completed bubble? The trail now
+ * shows only TOOL calls (beats persist as their own aside messages — Phase
+ * A/B), so it's worth keeping iff there's at least one tool call. A pure
+ * conversational turn (beats only, no tools) has no trail — its beats are
+ * already visible as messages.
  */
 export function isTrailWorthKeeping(entries: NarrationEntry[]): boolean {
-  return entries.length >= 2 || entries.some((e) => e.kind === 'beat');
+  return entries.some((e) => e.kind === 'tool');
 }

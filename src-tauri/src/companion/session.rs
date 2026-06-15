@@ -516,7 +516,7 @@ pub async fn send_turn(
         TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "browser_test"
     );
 
-    let (assistant_text, cli_usage) = match timeout(
+    let (assistant_text, segments, cli_usage) = match timeout(
         TURN_TIMEOUT,
         run_cli(
             app,
@@ -627,12 +627,40 @@ pub async fn send_turn(
             tracing::warn!(error = %e, "failed to persist progress beat episode");
         }
     }
-    let display_text = if dispatched.cleaned_text.trim().is_empty() {
+
+    // Phase B — progressive prose segments. In a multi-step (tool-using) turn
+    // the CLI emits one `assistant` message per agentic step; each carries the
+    // prose Athena "said" at that step. Surface every NON-FINAL step's prose as
+    // its own interim message (persisted before the reply, non-embedded — it's
+    // the journey, not a memory-worthy fact), and let the LAST step be the
+    // considered final reply. A single-segment turn (a quick answer, no tool
+    // loop) produces no interim messages — quick answers stay one-shot. Ops
+    // were already dispatched from the full blob above, so nothing is dropped.
+    let seg_clean: Vec<String> = segments
+        .iter()
+        .map(|s| clean_segment_for_display(s))
+        .filter(|s| !s.trim().is_empty())
+        .collect();
+    let reply_text: String = if seg_clean.len() >= 2 {
+        for interim in &seg_clean[..seg_clean.len() - 1] {
+            if let Err(e) =
+                episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
+            {
+                tracing::warn!(error = %e, "failed to persist interim segment episode");
+            }
+        }
+        seg_clean[seg_clean.len() - 1].clone()
+    } else {
+        // 0–1 prose segments: keep today's behavior (full cleaned blob).
+        dispatched.cleaned_text.clone()
+    };
+
+    let display_text = if reply_text.trim().is_empty() {
         // The whole reply was ops with no prose. Don't render an empty
         // bubble — replace with a tiny placeholder.
         "(proposing actions — see cards below)".to_string()
     } else {
-        dispatched.cleaned_text.clone()
+        reply_text
     };
 
     let assistant_ep_id = {
@@ -1071,7 +1099,34 @@ const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
 /// `run_cli`'s output: the display text plus the parsed terminal `result`
 /// usage (`None` when the CLI emitted no result event — older CLI, or the turn
 /// errored before the result line).
-type CliRunOutput = (String, Option<crate::companion::turn_ledger::CliUsage>);
+/// `(full_text, segments, usage)`. `segments` is the per-assistant-message
+/// text in emission order — in a multi-step (tool-using) turn the CLI emits a
+/// separate `assistant` message per agentic step (talk → tool → talk → …), so
+/// each entry is one "she talked here" beat of prose. `full_text` is the
+/// concatenation (what the dispatcher parses for ops/beats — unchanged);
+/// `segments` lets send_turn surface non-final steps as interim messages.
+type CliRunOutput = (String, Vec<String>, Option<crate::companion::turn_ledger::CliUsage>);
+
+/// Strip machine-grammar lines from one assistant-message segment so it can be
+/// shown as an interim message. Mirrors the frontend `stripModelDirectives`
+/// (OP: / QR: / TTS: / raw `{"op"`) and also drops `PROGRESS:` lines — those
+/// are persisted separately as their own beat-asides, so a segment's prose
+/// must not duplicate them. Display-only: the dispatcher remains the authority
+/// for ops/beats, run on the full concatenated text.
+fn clean_segment_for_display(seg: &str) -> String {
+    let kept: Vec<&str> = seg
+        .lines()
+        .filter(|line| {
+            let t = line.trim_start();
+            !(t.starts_with("OP:")
+                || t.starts_with("QR:")
+                || t.starts_with("TTS:")
+                || t.starts_with("PROGRESS:")
+                || t.starts_with("{\"op\""))
+        })
+        .collect();
+    kept.join("\n").trim().to_string()
+}
 
 async fn run_cli(
     app: &AppHandle,
@@ -1218,6 +1273,8 @@ async fn run_cli(
     };
 
     let mut assistant_text = String::new();
+    // Per-assistant-message text, in emission order (Phase B interim segments).
+    let mut segments: Vec<String> = Vec::new();
     let mut new_claude_session_id: Option<String> = None;
     // The CLI's terminal `result` event carries this turn's real cost / token
     // usage / duration; captured here for the companion_turn ledger.
@@ -1264,15 +1321,25 @@ async fn run_cli(
                                     .and_then(|m| m.get("content"))
                                     .and_then(|c| c.as_array())
                                 {
+                                    // Collect THIS message's text blocks into one
+                                    // segment, then fold into the running full text.
+                                    let mut msg_text = String::new();
                                     for block in content {
                                         if block.get("type").and_then(|v| v.as_str()) == Some("text") {
                                             if let Some(text) = block.get("text").and_then(|v| v.as_str()) {
-                                                if !assistant_text.is_empty() {
-                                                    assistant_text.push('\n');
+                                                if !msg_text.is_empty() {
+                                                    msg_text.push('\n');
                                                 }
-                                                assistant_text.push_str(text);
+                                                msg_text.push_str(text);
                                             }
                                         }
+                                    }
+                                    if !msg_text.is_empty() {
+                                        if !assistant_text.is_empty() {
+                                            assistant_text.push('\n');
+                                        }
+                                        assistant_text.push_str(&msg_text);
+                                        segments.push(msg_text);
                                     }
                                 }
                             }
@@ -1339,7 +1406,7 @@ async fn run_cli(
         } else {
             format!("{assistant_text}\n\n_[interrupted by user]_")
         };
-        return Ok((body, result_usage.take()));
+        return Ok((body, Vec::new(), result_usage.take()));
     }
 
     // Stdout-mid-stream failure path: the CLI was producing output and
@@ -1356,7 +1423,7 @@ async fn run_cli(
         } else {
             format!("{assistant_text}\n\n_[interrupted by error: {err_msg}]_")
         };
-        return Ok((body, result_usage.take()));
+        return Ok((body, Vec::new(), result_usage.take()));
     }
 
     if !status.success() {
@@ -1377,7 +1444,7 @@ async fn run_cli(
                 "{assistant_text}\n\n_[interrupted by error: claude exited with status {status}{}]_",
                 if trimmed.is_empty() { String::new() } else { format!(": {trimmed}") }
             );
-            return Ok((body, result_usage.take()));
+            return Ok((body, Vec::new(), result_usage.take()));
         }
         // No partial — fall through to hard error as before.
         return Err(AppError::Internal(format!(
@@ -1396,7 +1463,7 @@ async fn run_cli(
         ));
     }
 
-    Ok((assistant_text, result_usage))
+    Ok((assistant_text, segments, result_usage))
 }
 
 /// Was this CLI failure caused by an expired/missing --resume session id?

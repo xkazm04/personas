@@ -94,9 +94,13 @@ export function NarrationLiveLog({ entries }: { entries: NarrationEntry[] }) {
 export function NarrationTrail({ narration }: { narration: StoredNarration }) {
   const { t, tx } = useTranslation();
   const [open, setOpen] = useState(false);
-  if (narration.entries.length === 0) return null;
+  // Beats now persist as their own conversational aside messages (Phase A/B),
+  // so the collapsed trail keeps only the tool-call history with durations —
+  // its unique value — and never double-shows the beats.
+  const toolEntries = narration.entries.filter((e) => e.kind === 'tool');
+  if (toolEntries.length === 0) return null;
   const c = t.plugins.companion;
-  const count = narration.entries.length;
+  const count = toolEntries.length;
   const steps = tx(count === 1 ? c.narration_steps_one : c.narration_steps_other, {
     count,
   });
@@ -123,7 +127,7 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
       </button>
       {open && (
         <ul className="mt-1 space-y-1 rounded-card border border-foreground/10 bg-foreground/[0.04] px-3 py-2">
-          {narration.entries.map((e) => (
+          {toolEntries.map((e) => (
             <EntryRow key={e.id} entry={e} />
           ))}
         </ul>
