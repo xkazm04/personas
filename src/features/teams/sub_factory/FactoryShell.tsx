@@ -9,6 +9,7 @@ import { saveKpiAssessment } from '@/api/devTools/kpis';
 
 import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryMock';
 import { Breadcrumb } from './factoryPrimitives';
+import { AttentionBand } from './AttentionBand';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
 import { KpiConsole } from './KpiConsole';
@@ -70,6 +71,11 @@ export function FactoryShell({
 
   const openGroup = (gid: string, cid: string | null) => { setGroupId(gid); setContextFilter(cid); setKpiId(null); };
   const openKpi = (gid: string, kid: string) => { setGroupId(gid); setContextFilter(null); setKpiId(kid); };
+  // Deep-link straight to a KPI's console from the cross-project attention band
+  // (sets all three nav levels at once, skipping the drill-down).
+  const jumpToKpi = (pid: string, gid: string, kid: string) => {
+    setProjectId(pid); setGroupId(gid); setContextFilter(null); setKpiId(kid);
+  };
 
   let layerKey = 'projects';
   let content: ReactNode;
@@ -113,7 +119,12 @@ export function FactoryShell({
       </>
     );
   } else {
-    content = <ProjectsLayer onOpen={setProjectId} ed={ed} />;
+    content = (
+      <>
+        <AttentionBand projects={projects} ed={ed} onJump={jumpToKpi} />
+        <ProjectsLayer onOpen={setProjectId} ed={ed} />
+      </>
+    );
   }
 
   return (

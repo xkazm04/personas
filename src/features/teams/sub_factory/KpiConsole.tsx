@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2 } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit } from './factoryMock';
+import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryMock';
 import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
 import { errMsg } from './composeTask';
 import { MeasureSetupModal } from './MeasureSetupModal';
@@ -130,7 +130,7 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
             <ThresholdSlider label="Yellow — at risk" color={TRAFFIC_COLOR.yellow} value={kpi.warnAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ warnAt: v })} />
             <ThresholdSlider label="Red — off track" color={TRAFFIC_COLOR.red} value={kpi.critAt} min={min} max={max} unit={kpi.unit} onChange={(v) => onEdit({ critAt: v })} />
           </div>
-          <p className="typo-caption mt-3">Yellow nudges the team; red derives a goal. Baseline {fmtUnit(kpi.baseline, kpi.unit)} → target {fmtUnit(kpi.target, kpi.unit)}.</p>
+          <ConsequencePreview st={st} kpi={kpi} />
         </section>
         <section className="rounded-card border border-primary/10 bg-secondary/10 p-4">
           <h3 className="typo-label text-foreground mb-3">Assess</h3>
@@ -145,6 +145,40 @@ export function KpiConsole({ kpi, onEdit }: { kpi: MockKpi; onEdit: (patch: KpiE
         </section>
       </div>
       {showSetup && <MeasureSetupModal kpi={kpi} onClose={() => setShowSetup(false)} />}
+    </div>
+  );
+}
+
+/**
+ * D8 — calibration consequence preview. The threshold sliders used to end in a
+ * static "red derives a goal" caption; this turns the lever LEGIBLE by reading
+ * the live calibrated status (`kpiStatus`, which recomputes as the sliders move)
+ * and saying what the system does to THIS KPI at the current lines, right now.
+ * It scopes the statement to the thresholds the user is dragging (a breach is
+ * the slider's direct consequence); pace-lag is a separate trigger the slider
+ * doesn't control.
+ */
+function ConsequencePreview({ st, kpi }: { st: KpiStatus; kpi: MockKpi }) {
+  const cur = kpi.current != null ? fmtUnit(kpi.current, kpi.unit) : null;
+  const text =
+    st === 'crit'
+      ? `${cur} is past your red line — the system derives a goal to fix this now.`
+      : st === 'warn'
+        ? `${cur} is in the watch zone — the team gets a nudge, no goal yet.`
+        : st === 'met'
+          ? `Target met at ${cur} — nothing to steer.`
+          : st === 'unmeasured'
+            ? 'Not measured yet — your lines take effect on the next measurement.'
+            : `${cur} is clear of both lines — nothing triggers.`;
+  return (
+    <div className="mt-3">
+      <p className="typo-caption flex items-start gap-1.5" style={{ color: STATUS_COLOR[st] }}>
+        <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{ background: STATUS_COLOR[st] }} />
+        <span>{text}</span>
+      </p>
+      <p className="typo-caption mt-1 opacity-70">
+        Baseline {fmtUnit(kpi.baseline, kpi.unit)} → target {fmtUnit(kpi.target, kpi.unit)}.
+      </p>
     </div>
   );
 }

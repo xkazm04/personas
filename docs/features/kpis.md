@@ -40,6 +40,22 @@ KPIs that need a connector that isn't in the vault yet arrive parked as
 catalog is extendable (see `/add-credential`) as KPI use cases demand new
 analytics/traffic services.
 
+### The Factory (next-gen cockpit)
+
+A sibling surface (`src/features/teams/sub_factory/`) explores the KPI cockpit
+as a drill-down — projects → context×KPI matrix → KPI **console** — over the
+same live `dev_kpis` data. Two cockpit moves land here first:
+
+- **Attention-first band** (`AttentionBand`) at the entry: off-track (red) KPIs
+  across *all* projects as chips that deep-link straight into a KPI's console,
+  plus an at-risk count — so the entry answers "what needs me?" before the
+  structural drill-down.
+- **Calibration consequence preview** (`KpiConsole`): as the user drags the
+  warn/red threshold sliders, a live line reads the calibrated status and says
+  what the system does to *this* KPI at those lines right now ("past your red
+  line — the system derives a goal to fix this now" / "clear of both lines —
+  nothing triggers"), so the lever is legible instead of abstract.
+
 ## The proposal scan
 
 "Scan for KPIs" (`dev_tools_scan_kpis`) runs a headless Claude pass that
