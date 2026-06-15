@@ -70,6 +70,7 @@ export function GroupKpiLayer({
       {showAdd && (
         <AddKpiModal
           projectId={project.id}
+          projectName={project.name}
           contextGroupId={realGroupId}
           contextId={realContextId ?? undefined}
           scopeLabel={scopeLabel}

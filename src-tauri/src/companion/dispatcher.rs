@@ -197,9 +197,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     //     warn/critical lines — the lever that decides when a goal gets derived.
     //   - evaluate_kpi: measure a KPI now (a codebase/connector run has cost).
     //   - scan_kpis: propose new KPIs for a project (an LLM scan, cost).
+    //   - propose_kpi: configure ONE specific KPI from a guided conversation
+    //     (create it as a proposal + background measurement setup).
     "calibrate_kpi",
     "evaluate_kpi",
     "scan_kpis",
+    "propose_kpi",
     // Athena's future check-in commitments. Goes through approval
     // because it puts a future obligation on the user's attention —
     // unlike connector calls (real-world action that runs once on

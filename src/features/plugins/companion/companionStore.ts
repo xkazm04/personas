@@ -229,6 +229,15 @@ interface CompanionStore {
   setVoiceTurnRequest: (text: string | null) => void;
 
   /**
+   * A starter message dropped into the chat from elsewhere in the app (e.g. the
+   * Add-KPI modal's "Ask Athena" action). The always-mounted panel opens itself
+   * and sends it, beginning a guided conversation. Latest-wins; the consumer
+   * clears it before calling `send()`.
+   */
+  pendingChatPrompt: string | null;
+  setPendingChatPrompt: (text: string | null) => void;
+
+  /**
    * Monotonic nonce bumped each time a pre-composed message is forwarded to
    * Athena from an outside surface (e.g. the dashboard "Ask Athena" button).
    * The orb subscribes to it and fires a one-shot "message received" ack glow
@@ -642,6 +651,8 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   voiceTurnRequest: null,
   setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+  pendingChatPrompt: null,
+  setPendingChatPrompt: (pendingChatPrompt) => set({ pendingChatPrompt }),
 
   forwardAckPulse: 0,
   pulseForwardAck: () => set((s) => ({ forwardAckPulse: s.forwardAckPulse + 1 })),

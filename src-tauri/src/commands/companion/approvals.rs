@@ -229,6 +229,7 @@ pub async fn companion_approve_action(
         "calibrate_kpi" => execute_calibrate_kpi(&state, &params),
         "evaluate_kpi" => execute_evaluate_kpi(&state, &params).await,
         "scan_kpis" => execute_scan_kpis(&state, &app, &params),
+        "propose_kpi" => execute_propose_kpi(&state, &app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -1253,6 +1254,104 @@ fn execute_scan_kpis(
          measurable KPIs across technical, quality, traffic, and value. They'll land in the KPIs \
          review queue for you to accept or adjust; nothing goes active without your sign-off.",
         project.name
+    )))
+}
+
+/// Configure ONE specific KPI from a guided conversation — Athena gathers the
+/// shape (name, what it measures, target direction, cadence, how it's measured)
+/// and proposes it. Creates a PROPOSED KPI and, for the codebase mechanism, a
+/// background measurement setup; the user verifies it in the Teams › KPIs queue.
+fn execute_propose_kpi(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let name = params
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("propose_kpi: missing `name`".into()))?;
+    // Resolve the project (id / name / path → most-recent fallback).
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        params.get("project_name").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        if found.is_none() {
+            found = conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok();
+        }
+        found.ok_or_else(|| {
+            AppError::Validation(
+                "No Dev Tools projects registered yet. Register one first with register_project."
+                    .into(),
+            )
+        })?
+    };
+
+    let category = params.get("category").and_then(|v| v.as_str()).unwrap_or("technical");
+    if !matches!(category, "technical" | "quality" | "traffic" | "value") {
+        return Err(AppError::Validation(format!(
+            "propose_kpi: category must be technical|quality|traffic|value, got `{category}`"
+        )));
+    }
+    let measure_kind = params.get("measure_kind").and_then(|v| v.as_str()).unwrap_or("manual");
+    if !matches!(measure_kind, "codebase" | "connector" | "manual" | "derived") {
+        return Err(AppError::Validation(format!(
+            "propose_kpi: measure_kind must be codebase|connector|manual|derived, got `{measure_kind}`"
+        )));
+    }
+    let tier = params.get("tier").and_then(|v| v.as_str()).unwrap_or("supporting");
+    let direction = params.get("direction").and_then(|v| v.as_str()).unwrap_or("up");
+    let cadence = params.get("cadence").and_then(|v| v.as_str()).unwrap_or("weekly");
+    let unit = params.get("unit").and_then(|v| v.as_str());
+    let description = params.get("description").and_then(|v| v.as_str());
+    let needed_connector = params.get("needed_connector").and_then(|v| v.as_str());
+    let derived_metric = params.get("derived_metric").and_then(|v| v.as_str());
+
+    let kpi = crate::commands::infrastructure::kpi_compose::propose_kpi_auto_inner(
+        &state.db, app.clone(), &project_id, None, None, name, description, category, tier,
+        direction, measure_kind, cadence, unit, needed_connector, derived_metric,
+    )?;
+    let setup = match measure_kind {
+        "codebase" => " Its measurement is being set up in the background.",
+        "connector" => " Bind its connector in the proposal to finish setup.",
+        _ => "",
+    };
+    Ok(ExecuteResult::message(format!(
+        "Proposed KPI \"{}\" — review it in Teams › KPIs (status: proposed).{setup}",
+        kpi.name
     )))
 }
 

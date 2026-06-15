@@ -125,12 +125,40 @@ pub async fn dev_tools_propose_kpi_auto(
     derived_metric: Option<String>,
 ) -> Result<crate::db::models::DevKpi, AppError> {
     require_auth(&state).await?;
+    propose_kpi_auto_inner(
+        &state.db, app, &project_id, context_group_id.as_deref(), context_id.as_deref(),
+        &name, description.as_deref(), &category, &tier, &direction, &measure_kind, &cadence,
+        unit.as_deref(), needed_connector.as_deref(), derived_metric.as_deref(),
+    )
+}
+
+/// Shared logic for `dev_tools_propose_kpi_auto` — also called by Athena's
+/// `propose_kpi` op so she can configure a KPI conversationally. Creates the
+/// PROPOSED KPI and, for the codebase mechanism, launches the background
+/// compose that applies the measurement on its own.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn propose_kpi_auto_inner(
+    db: &crate::db::DbPool,
+    app: tauri::AppHandle,
+    project_id: &str,
+    context_group_id: Option<&str>,
+    context_id: Option<&str>,
+    name: &str,
+    description: Option<&str>,
+    category: &str,
+    tier: &str,
+    direction: &str,
+    measure_kind: &str,
+    cadence: &str,
+    unit: Option<&str>,
+    needed_connector: Option<&str>,
+    derived_metric: Option<&str>,
+) -> Result<crate::db::models::DevKpi, AppError> {
     if name.trim().is_empty() {
         return Err(AppError::Validation("Give the KPI a name.".into()));
     }
     let measure_config = if measure_kind == "derived" {
         derived_metric
-            .as_deref()
             .filter(|m| !m.is_empty())
             .map(|m| json!({ "metric": m }).to_string())
             .unwrap_or_else(|| "{}".to_string())
@@ -138,24 +166,22 @@ pub async fn dev_tools_propose_kpi_auto(
         "{}".to_string()
     };
     let kpi = repo::create_kpi(
-        &state.db, &project_id, name.trim(), description.as_deref(),
-        context_group_id.as_deref(), &category, &measure_kind, &measure_config,
-        unit.as_deref().unwrap_or(""), &direction,
-        None, None, None, &cadence, Some("proposed"), "user", None,
-        needed_connector.as_deref(), None, context_id.as_deref(),
+        db, project_id, name.trim(), description, context_group_id, category, measure_kind,
+        &measure_config, unit.unwrap_or(""), direction,
+        None, None, None, cadence, Some("proposed"), "user", None, needed_connector, None, context_id,
     )?;
     if tier != "supporting" {
         let _ = repo::update_kpi(
-            &state.db, &kpi.id, None, None, None, None, None, None, None, None, None, None,
-            None, None, None, None, None, None, Some(&tier),
+            db, &kpi.id, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, Some(tier),
         );
     }
     if measure_kind == "codebase" {
-        let project = repo::get_project_by_id(&state.db, &project_id)?;
+        let project = repo::get_project_by_id(db, project_id)?;
         let prompt_text = build_measure_compose_prompt(&kpi);
-        launch_compose_apply(app, state.db.clone(), kpi.id.clone(), project.root_path, prompt_text);
+        launch_compose_apply(app, db.clone(), kpi.id.clone(), project.root_path, prompt_text);
     }
-    repo::get_kpi(&state.db, &kpi.id)
+    repo::get_kpi(db, &kpi.id)
 }
 
 /// Poll a compose/propose task. Returns `{task_id, status, error, lines, result}`

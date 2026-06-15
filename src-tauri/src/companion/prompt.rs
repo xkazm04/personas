@@ -538,7 +538,7 @@ fn format_project_kpis(sys_db: &DbPool) -> String {
         return String::new();
     }
     format!(
-        "\n\n# Project KPIs (the outcome layer above goals)\n\nMeasurable success metrics per project. To steer one, propose `calibrate_kpi` (adjust its target / due date / tier / cadence / status, or draw the warn + critical lines), `evaluate_kpi` (measure it now), or `scan_kpis` (propose new KPIs for a project that has none). A KPI going OFF TRACK is what derives goals for the team — managing KPIs is how you steer development by outcomes, not activity.{body}"
+        "\n\n# Project KPIs (the outcome layer above goals)\n\nMeasurable success metrics per project. To steer an existing one, propose `calibrate_kpi` (adjust its target / due date / tier / cadence / status, or draw the warn + critical lines) or `evaluate_kpi` (measure it now). To add KPIs: `scan_kpis` proposes a batch from the context map; `propose_kpi` configures ONE specific KPI the user describes.\n\nWhen the user asks to set up / configure / add a KPI, GUIDE them: ask what they want to measure, whether higher or lower is better, a rough target, how often, and whether it's measured by hand or automatically (a repo command / a vault connector / an orchestrator metric). Then emit `propose_kpi` with what you gathered and tell them to verify it in Teams › KPIs — it lands as a proposal (the codebase measurement sets itself up in the background). A KPI going OFF TRACK is what derives goals for the team — managing KPIs is how you steer development by outcomes, not activity.{body}"
     )
 }
 

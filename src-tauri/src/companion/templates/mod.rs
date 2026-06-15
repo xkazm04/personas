@@ -311,4 +311,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// `scan_kpis` ops + the `# Project KPIs` context digest, so Athena can manage
 /// the outcome layer (adjust targets/tiers/critical lines, measure now, propose
 /// new KPIs) on the user's behalf — the steering layer above goals.
-pub const CONSTITUTION_VERSION: u32 = 40;
+///
+/// v41 (guided KPI config) adds the `propose_kpi` op + digest guidance: when the
+/// user asks to set up/configure a KPI, Athena gathers its shape conversationally
+/// and proposes ONE specific KPI (created proposed + background measurement
+/// setup) for the user to verify in Teams › KPIs.
+pub const CONSTITUTION_VERSION: u32 = 41;

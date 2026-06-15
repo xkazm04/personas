@@ -11,15 +11,17 @@ import { Plus, Loader2, Sparkles, X, MessageSquare } from 'lucide-react';
 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 import { type KpiCategory, type KpiTier } from './factoryMock';
 import { useAddKpi } from './useAddKpi';
 import { CATEGORY_OPTS, TIER_OPTS, DIRECTION_OPTS, INPUT, Label, MeasurementFields } from './addKpiPrimitives';
 
 export function AddKpiModal({
-  projectId, contextGroupId, contextId, scopeLabel, onClose,
+  projectId, projectName, contextGroupId, contextId, scopeLabel, onClose,
 }: {
   projectId: string;
+  projectName?: string;
   contextGroupId?: string;
   contextId?: string;
   scopeLabel?: string;
@@ -28,6 +30,16 @@ export function AddKpiModal({
   const k = useAddKpi({ projectId, contextGroupId, contextId, onClose });
   const { isManual, busy } = k;
   const optional = !isManual && <span className="text-foreground/40"> · optional</span>;
+
+  // Hand off to Athena for a guided, conversational setup (she gathers the
+  // shape, proposes the KPI, and the user verifies it in Teams › KPIs).
+  const askAthena = () => {
+    const where = projectName ? ` for the "${projectName}" project` : '';
+    useCompanionStore.getState().setPendingChatPrompt(
+      `I'd like to add a new KPI${where}. Walk me through configuring it — ask me what to measure, whether higher or lower is better, a rough target, how often, and how it's measured.`,
+    );
+    onClose();
+  };
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="factory-add-kpi-title" size="6xl" portal>
@@ -93,13 +105,18 @@ export function AddKpiModal({
             </div>
           </div>
 
-          {/* Athena pointer (replaces the old describe→populate AI box) */}
-          <div className="flex items-center gap-2 rounded-card border border-primary/10 bg-primary/[0.04] px-3 py-2">
+          {/* Hand off to Athena for a guided conversational setup. */}
+          <button
+            type="button"
+            onClick={askAthena}
+            className="w-full flex items-center gap-2 rounded-card border border-primary/15 bg-primary/[0.06] hover:bg-primary/[0.12] transition-colors px-3 py-2 text-left"
+            data-testid="factory-ask-athena-kpi"
+          >
             <MessageSquare className="w-4 h-4 text-primary flex-shrink-0" />
             <span className="typo-caption text-foreground/80">
-              Prefer to describe it in words? Ask <span className="text-foreground font-medium">Athena</span> in the chat — she can propose and set up KPIs for this project for you.
+              Prefer to describe it in words? <span className="text-foreground font-medium">Ask Athena</span> — she'll guide you through it and set it up.
             </span>
-          </div>
+          </button>
 
           {k.msg && <p className="typo-caption text-status-error">{k.msg}</p>}
         </div>

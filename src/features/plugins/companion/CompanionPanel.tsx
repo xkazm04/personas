@@ -1753,6 +1753,19 @@ function Body(props: BodyProps) {
     void send(req);
   }, [voiceTurnRequest, streaming, send]);
 
+  // App-initiated chat starters (e.g. the Add-KPI modal's "Ask Athena" action):
+  // OPEN the panel and send the preset, beginning a guided conversation. Same
+  // atomic claim-against-the-store pattern as the voice turn above.
+  const pendingChatPrompt = useCompanionStore((s) => s.pendingChatPrompt);
+  useEffect(() => {
+    if (!pendingChatPrompt || streaming) return;
+    const req = useCompanionStore.getState().pendingChatPrompt;
+    if (!req) return;
+    useCompanionStore.getState().setPendingChatPrompt(null);
+    useCompanionStore.getState().setState('open');
+    void send(req);
+  }, [pendingChatPrompt, streaming, send]);
+
   // Slice 6 — speak the hands-free decision aloud ONLY on Explain/Recommend.
   // The decision text/description is NOT auto-read when the bubble surfaces
   // (it's on-screen to read); Athena speaks only when the user picks `0`
