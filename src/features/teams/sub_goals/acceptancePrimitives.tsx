@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Check, RotateCcw, Send } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PendingKpi, PendingTeam } from './goalAcceptanceMock';
 import { kpiPct } from './goalAcceptanceMock';
 
@@ -76,6 +77,8 @@ export function AcceptRejectControls({
   onReject: (comment: string) => void;
   size?: 'sm' | 'md';
 }) {
+  const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const [rejecting, setRejecting] = useState(false);
   const [comment, setComment] = useState('');
   const pad = size === 'sm' ? 'px-2 py-1' : 'px-2.5 py-1.5';
@@ -87,7 +90,7 @@ export function AcceptRejectControls({
           autoFocus
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Why is this not acceptable? (sent back to the team)"
+          placeholder={dl.accept_send_back_placeholder}
           rows={2}
           className="w-full px-2 py-1.5 typo-caption bg-secondary/50 rounded-input text-foreground placeholder:text-muted-foreground focus-ring resize-none"
         />
@@ -98,14 +101,14 @@ export function AcceptRejectControls({
             onClick={() => onReject(comment.trim())}
             className="inline-flex items-center gap-1 typo-caption rounded-interactive px-2 py-1 text-[var(--destructive)] bg-[var(--destructive)]/15 hover:bg-[var(--destructive)]/25 transition-colors disabled:opacity-40"
           >
-            <Send className="w-3 h-3" /> Send back
+            <Send className="w-3 h-3" /> {dl.accept_send_back}
           </button>
           <button
             type="button"
             onClick={() => { setRejecting(false); setComment(''); }}
             className="typo-caption rounded-interactive px-2 py-1 text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors"
           >
-            Cancel
+            {dl.accept_cancel}
           </button>
         </div>
       </div>
@@ -119,16 +122,16 @@ export function AcceptRejectControls({
         onClick={onAccept}
         className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors`}
       >
-        <Check className="w-3.5 h-3.5" /> Accept
+        <Check className="w-3.5 h-3.5" /> {dl.accept_accept}
       </button>
       <button
         type="button"
         onClick={() => setRejecting(true)}
-        aria-label="Reject with comment"
-        title="Send back with a comment"
+        aria-label={dl.accept_send_back}
+        title={dl.accept_send_back}
         className={`inline-flex items-center gap-1 typo-caption rounded-interactive ${pad} text-muted-foreground bg-primary/10 hover:text-[var(--destructive)] hover:bg-[var(--destructive)]/15 transition-colors`}
       >
-        <RotateCcw className="w-3.5 h-3.5" /> Send back
+        <RotateCcw className="w-3.5 h-3.5" /> {dl.accept_send_back}
       </button>
     </div>
   );
@@ -141,13 +144,15 @@ export function AcceptRejectControls({
  * grouped by PROJECT first and KPIs become sub-headers within each project.
  */
 export function KpiDivider({ kpi, count }: { kpi: PendingKpi | null; count: number }) {
+  const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const tint = kpi ? (kpi.offTrack ? 'var(--destructive)' : 'var(--success)') : 'var(--muted-foreground)';
   return (
     <div className="flex items-center gap-2.5 pt-3 pb-1.5">
       {/* typo-label = 12px uppercase tracked — reads cleanly as a sub-divider
           marker, one tier below the project section-title above it. */}
-      <span className="typo-label" style={{ color: tint }}>{kpi ? kpi.name : 'Standalone'}</span>
-      {kpi?.offTrack && <span className="typo-label text-[var(--destructive)]">off track</span>}
+      <span className="typo-label" style={{ color: tint }}>{kpi ? kpi.name : dl.accept_standalone}</span>
+      {kpi?.offTrack && <span className="typo-label text-[var(--destructive)]">{dl.accept_off_track}</span>}
       {kpi && (
         <span className="typo-caption text-muted-foreground tabular-nums">
           {kpi.current}{kpi.unit} → {kpi.target}{kpi.unit}
@@ -159,12 +164,14 @@ export function KpiDivider({ kpi, count }: { kpi: PendingKpi | null; count: numb
   );
 }
 
-/** Shown when the acceptance queue is empty — shared across variants. */
+/** Shown when the acceptance queue is empty. */
 export function EmptyQueue() {
+  const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   return (
     <div className="py-12 text-center">
-      <p className="typo-title text-foreground">Nothing waiting on you</p>
-      <p className="typo-body text-muted-foreground mt-1">Completed goals appear here for your acceptance.</p>
+      <p className="typo-title text-foreground">{dl.accept_empty_title}</p>
+      <p className="typo-body text-muted-foreground mt-1">{dl.accept_empty_sub}</p>
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2,
   Users, ListChecks, Activity, Pencil, GitMerge, ArrowRight,
-  Globe, Play, ShieldCheck,
+  Globe, Play, ShieldCheck, BadgeCheck,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -45,7 +45,8 @@ import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalHandoffPanel } from './GoalHandoffPanel';
 import { GoalKpiLink } from './GoalKpiLink';
 import { GoalTaskTable } from './GoalTaskTable';
-import { isComplete } from './goalStatus';
+import { AcceptRejectControls } from './acceptancePrimitives';
+import { isComplete, isAwaitingAcceptance } from './goalStatus';
 
 /** Dependency kinds the drawer authors (free-text on the wire; cycle-checked
  *  backend-side for 'blocks'). 'blocks' = must finish first; 'follows' = sequence. */
@@ -79,6 +80,8 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
   // Fall back to the passed object for cross-project goals not in the store.
   const goal = storeGoal ?? (goalFallback && goalFallback.id === goalId ? goalFallback : null);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const acceptGoal = useSystemStore((s) => s.acceptGoal);
+  const rejectGoal = useSystemStore((s) => s.rejectGoal);
   const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const projects = useSystemStore((s) => s.projects);
   const personas = useAgentStore((s) => s.personas);
@@ -372,6 +375,22 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
           the KPI was archived). */}
       {goal.kpi_id && <GoalKpiLink kpiId={goal.kpi_id} />}
 
+      {/* Acceptance gate — the agent/team finished; the user accepts (→ done,
+          off the board) or sends it back to the team (→ in-progress, with a
+          comment). Shown instead of the hand-off panel while pending. */}
+      {isAwaitingAcceptance(goal.status) && (
+        <div className="mb-4 rounded-card bg-teal-500/10 px-4 py-3">
+          <div className="flex items-center gap-2 mb-2.5">
+            <BadgeCheck className="w-4 h-4 text-teal-300 shrink-0" />
+            <span className="typo-title text-foreground">{dl.goal_status_awaiting_acceptance}</span>
+          </div>
+          <AcceptRejectControls
+            onAccept={async () => { await acceptGoal(goal.id); await refresh(); }}
+            onReject={async (c) => { await rejectGoal(goal.id, c); await refresh(); }}
+          />
+        </div>
+      )}
+
       {/* Hybrid progress nudge */}
       {showNudge && progress && (
         <div className="mb-4 rounded-card border border-violet-500/25 bg-violet-500/5 px-4 py-3 flex items-center gap-3">
@@ -519,7 +538,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
           carries the "Stop the team" (abort) control. (The live team steps are
           now rows in the Tasks table above, so awaiting-review intervention is
           never buried.) */}
-      {!isComplete(goal.status) && hasTeam && (
+      {!isComplete(goal.status) && !isAwaitingAcceptance(goal.status) && hasTeam && (
         <GoalHandoffPanel
           hasActiveAssignment={hasActiveAssignment}
           advancing={advancing}

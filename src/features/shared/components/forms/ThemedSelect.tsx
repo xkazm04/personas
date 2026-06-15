@@ -185,7 +185,9 @@ function FilterableSelect({
       {open && dropdownPos && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[9990] rounded-xl shadow-elevation-3 overflow-hidden border border-primary/15"
+          // z must clear portal-mode BaseModals (Z_INDEX_PORTAL_BASE = 10000 +
+          // depth*10) so the options never render UNDER the modal they're in.
+          className="fixed z-[10200] rounded-xl shadow-elevation-3 overflow-hidden border border-primary/15"
           style={{
             top: dropdownPos.flipUp ? undefined : dropdownPos.top,
             bottom: dropdownPos.flipUp ? window.innerHeight - dropdownPos.top : undefined,

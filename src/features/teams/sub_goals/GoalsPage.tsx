@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Target, Plus, Sparkles, CheckCircle2, Inbox } from 'lucide-react';
+import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -73,15 +73,11 @@ export default function GoalsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   // Board-only: the Done lane is hidden by default (persisted preference).
   const [showDone, setShowDone] = useState(readShowDone);
-  // Board/Timeline scope (persisted). The Map ignores it (always project-scoped).
+  // Board/Timeline scope (persisted). The accept view is always cross-project.
   const [scope, setScope] = useState<GoalScope>(readScope);
-  // PROTOTYPE: temporary toggle to preview the Goal Acceptance View variants.
-  // Removed when the winner is promoted to a real `goalsTab` view.
-  const [acceptPreview, setAcceptPreview] = useState(false);
 
-  // Cross-project view is only meaningful for Board + Timeline; the Map needs
-  // one project's dependency graph + saved node positions, so it stays scoped.
-  const crossProject = scope === 'all' && (goalsTab === 'board' || goalsTab === 'timeline');
+  // Board + Timeline both honor the cross-project scope switch.
+  const crossProject = scope === 'all';
 
   const toggleShowDone = () => {
     const next = !showDone;
@@ -108,8 +104,7 @@ export default function GoalsPage() {
   // mounts once goals exist. Fetching here means an empty board still loads on
   // refresh. In cross-project scope we pull every project's goals into the same
   // store array (so drag-to-move / progress still work); otherwise the active
-  // project's. `crossProject` flips false when switching to the Map, which
-  // re-scopes the store to the active project before the Map reads it.
+  // project's.
   useEffect(() => {
     if (crossProject) {
       void fetchAllGoals();
@@ -185,17 +180,6 @@ export default function GoalsPage() {
             )}
             {/* Target + primary action pushed to the right edge of the bar. */}
             <div className="ml-auto flex items-center gap-2">
-              {/* PROTOTYPE: preview toggle for the Goal Acceptance View. */}
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={<Inbox className="w-3.5 h-3.5" />}
-                aria-pressed={acceptPreview}
-                onClick={() => setAcceptPreview((v) => !v)}
-                className={acceptPreview ? 'text-violet-400' : ''}
-              >
-                Acceptance
-              </Button>
               <LifecycleProjectPicker />
               <Button
                 variant="accent"
@@ -213,7 +197,7 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {acceptPreview ? (
+        {goalsTab === 'accept' ? (
           <GoalAcceptanceView />
         ) : goalsTab === 'timeline' ? (
           <div className="space-y-3">
@@ -309,11 +293,11 @@ export default function GoalsPage() {
               </div>
             </div>
             <GoalViewExplainer
-              key={goalsTab}
-              view={goalsTab === 'map' ? 'map' : 'board'}
-              text={goalsTab === 'map' ? dl.goal_explainer_map : dl.goal_explainer_board}
+              key="board"
+              view="board"
+              text={dl.goal_explainer_board}
             />
-            <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} showProject={crossProject} />
+            <GoalConstellation showDoneLane={showDone} showProject={crossProject} />
           </div>
         )}
       </ContentBody>

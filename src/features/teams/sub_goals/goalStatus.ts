@@ -9,13 +9,16 @@
  * compares a raw status string or carries its own colour map.
  */
 import type { ComponentType } from 'react';
-import { Circle, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Circle, Clock, AlertCircle, CheckCircle2, BadgeCheck } from 'lucide-react';
 import type { Translations } from '@/i18n/en';
 
-/** The four canonical dev-goal statuses (hyphen form — what the DB persists). */
-export type GoalStatus = 'open' | 'in-progress' | 'blocked' | 'done';
+/** The canonical dev-goal statuses (hyphen form — what the DB persists).
+ *  `awaiting_acceptance` = agent/team finished the work; it sits in the
+ *  human-acceptance queue (Your-turn lane) until the user accepts (→ done) or
+ *  rejects (→ in-progress). */
+export type GoalStatus = 'open' | 'in-progress' | 'awaiting_acceptance' | 'blocked' | 'done';
 
-export const GOAL_STATUSES: readonly GoalStatus[] = ['open', 'in-progress', 'blocked', 'done'];
+export const GOAL_STATUSES: readonly GoalStatus[] = ['open', 'in-progress', 'awaiting_acceptance', 'blocked', 'done'];
 
 /** Kanban lanes (your turn → agent's turn → done). */
 export type GoalLane = 'your_turn' | 'agent_turn' | 'done';
@@ -32,6 +35,10 @@ export function normalizeGoalStatus(raw: string | null | undefined): GoalStatus 
     case 'active':
     case 'matching':
       return 'in-progress';
+    case 'awaiting_acceptance':
+    case 'awaiting-acceptance':
+    case 'pending_acceptance':
+      return 'awaiting_acceptance';
     case 'blocked':
     case 'review':
     case 'awaiting_review':
@@ -54,6 +61,8 @@ export const isComplete = (s: string): boolean => normalizeGoalStatus(s) === 'do
 export const isBlocked = (s: string): boolean => normalizeGoalStatus(s) === 'blocked';
 export const isInProgress = (s: string): boolean => normalizeGoalStatus(s) === 'in-progress';
 export const isOpen = (s: string): boolean => normalizeGoalStatus(s) === 'open';
+/** Agent-completed, waiting on the user to accept or reject. */
+export const isAwaitingAcceptance = (s: string): boolean => normalizeGoalStatus(s) === 'awaiting_acceptance';
 /** Not terminal — counts as active work (drives at-risk rollups + the Timeline). */
 export const isOngoing = (s: string): boolean => normalizeGoalStatus(s) !== 'done';
 
@@ -83,6 +92,15 @@ export const GOAL_STATUS_META: Record<GoalStatus, GoalStatusMeta> = {
     tint: 'text-amber-400',
     map: { fill: '#F59E0B', stroke: '#FBBF24', glow: 'rgba(245, 158, 11, 0.4)' },
   },
+  // Agent finished; the user's turn to accept/reject. Distinct teal so it reads
+  // as a call-to-action, not "done" (emerald) nor "blocked" (red).
+  awaiting_acceptance: {
+    icon: BadgeCheck,
+    lane: 'your_turn',
+    chipClass: 'text-teal-300 border-teal-500/25 bg-teal-500/10',
+    tint: 'text-teal-300',
+    map: { fill: '#2DD4BF', stroke: '#5EEAD4', glow: 'rgba(45, 212, 191, 0.4)' },
+  },
   blocked: {
     icon: AlertCircle,
     lane: 'your_turn',
@@ -111,6 +129,8 @@ export function goalStatusLabel(dl: DevLifecycleT, status: string): string {
       return dl.goal_status_open;
     case 'in-progress':
       return dl.goal_status_in_progress;
+    case 'awaiting_acceptance':
+      return dl.goal_status_awaiting_acceptance;
     case 'blocked':
       return dl.goal_status_blocked;
     case 'done':

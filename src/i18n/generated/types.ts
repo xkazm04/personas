@@ -428,6 +428,8 @@ export type Translations = {
     tray_schedules_today: string;
     tray_notifications: string;
     tray_notifications_unread: string;
+    tray_acceptance: string;
+    tray_acceptance_pending: string;
     system_load: {
       label: string;
       cpu: string;
@@ -13163,8 +13165,24 @@ export type Translations = {
       goal_edit_title: string;
       goal_status_open: string;
       goal_status_in_progress: string;
+      goal_status_awaiting_acceptance: string;
       goal_status_blocked: string;
       goal_status_done: string;
+      accept_view_standfirst_one: string;
+      accept_view_standfirst_other: string;
+      accept_view_teams_kpis: string;
+      accept_empty_title: string;
+      accept_empty_sub: string;
+      accept_standalone: string;
+      accept_off_track: string;
+      accept_accept: string;
+      accept_accept_all: string;
+      accept_send_back: string;
+      accept_send_back_placeholder: string;
+      accept_cancel: string;
+      accept_resolved_accepted: string;
+      accept_resolved_sent_back: string;
+      accept_reset: string;
       timeline_title: string;
       timeline_no_dated: string;
       timeline_no_dated_sub: string;
@@ -13457,6 +13475,7 @@ export type Translations = {
       goal_view_board: string;
       goal_view_map: string;
       goal_view_timeline: string;
+      goal_view_accept: string;
     };
     dev_projects: {
       bulk_selected_one: string;

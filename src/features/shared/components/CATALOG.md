@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**201 reusable components** live under `src/features/shared/components/`.
+**203 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -179,9 +179,11 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorChannelGrid` | Channel mode — watch multiple team channels at once. |
 | `MonitorDrawer` | _(add a `@catalog` tag)_ |
+| `MonitorProjectColumns` | _(add a `@catalog` tag)_ |
 | `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
 | `OrbitDots` | _(add a `@catalog` tag)_ |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
+| `PersonaGlyph` | _(add a `@catalog` tag)_ |
 | `PersonaMonitor` | _(add a `@catalog` tag)_ |
 | `PluginsSidebarNav` | _(add a `@catalog` tag)_ |
 | `QuickAnswerBody` | _(add a `@catalog` tag)_ |
@@ -285,4 +287,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_201 components, 97 without a `@catalog` description._
+_203 components, 99 without a `@catalog` description._

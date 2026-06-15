@@ -1000,6 +1000,10 @@ pub fn normalize_goal_status(raw: &str) -> &'static str {
     match raw.trim().to_ascii_lowercase().as_str() {
         "in-progress" | "in_progress" | "running" | "active" | "matching" => "in-progress",
         "blocked" | "review" | "awaiting_review" => "blocked",
+        // Agent/team completed the work; it sits in the human-acceptance queue
+        // until the user accepts (→ done) or rejects (→ in-progress). Distinct
+        // from `done` (accepted) and from `blocked`/`awaiting_review`.
+        "awaiting_acceptance" | "awaiting-acceptance" | "pending_acceptance" => "awaiting_acceptance",
         "done" | "completed" | "complete" | "skipped" => "done",
         _ => "open",
     }
@@ -1025,6 +1029,109 @@ pub fn list_all_goals(pool: &DbPool) -> Result<Vec<DevGoal>, AppError> {
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+/// First paragraph of a goal description, with the autonomous-provenance footer
+/// (`\n\n---\n*Derived from KPI ...*`) stripped — the human-readable summary the
+/// acceptance view shows under each goal title.
+fn goal_summary(description: Option<String>) -> Option<String> {
+    let d = description?;
+    let head = d.split("\n---").next().unwrap_or(&d);
+    let head = head.split("\n\n").next().unwrap_or(head);
+    let s: String = head.trim().chars().take(200).collect();
+    if s.is_empty() { None } else { Some(s) }
+}
+
+/// Enriched list of goals in `awaiting_acceptance` (the human-acceptance queue),
+/// joined to project + the project's owning team + the KPI each serves. Backs
+/// the Goal Acceptance view; flat so the frontend groups it by project → KPI.
+pub fn list_pending_acceptance(
+    pool: &DbPool,
+) -> Result<Vec<crate::db::models::PendingAcceptanceGoal>, AppError> {
+    timed_query!("dev_goals", "dev_goals::list_pending_acceptance", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT g.id, g.title, g.description, g.project_id, g.completed_at, g.kpi_id,
+                    dp.name, dp.team_id, pt.name,
+                    k.name, k.unit, k.current_value, k.target_value, k.baseline_value, k.direction
+             FROM dev_goals g
+             JOIN dev_projects dp ON dp.id = g.project_id
+             LEFT JOIN persona_teams pt ON pt.id = dp.team_id
+             LEFT JOIN dev_kpis k ON k.id = g.kpi_id
+             WHERE g.status = 'awaiting_acceptance'
+             ORDER BY dp.name, datetime(g.completed_at) DESC",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            let description: Option<String> = r.get(2)?;
+            Ok(crate::db::models::PendingAcceptanceGoal {
+                goal_id: r.get(0)?,
+                title: r.get(1)?,
+                summary: goal_summary(description),
+                project_id: r.get(3)?,
+                completed_at: r.get(4)?,
+                kpi_id: r.get(5)?,
+                project_name: r.get(6)?,
+                team_id: r.get(7)?,
+                team_name: r.get(8)?,
+                kpi_name: r.get(9)?,
+                kpi_unit: r.get(10)?,
+                kpi_current: r.get(11)?,
+                kpi_target: r.get(12)?,
+                kpi_baseline: r.get(13)?,
+                kpi_direction: r.get(14)?,
+            })
+        })?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+/// Cheap count of goals awaiting acceptance — backs the TitleBar pending badge.
+pub fn count_pending_acceptance(pool: &DbPool) -> Result<i64, AppError> {
+    timed_query!("dev_goals", "dev_goals::count_pending_acceptance", {
+        let conn = pool.get()?;
+        let n: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_goals WHERE status = 'awaiting_acceptance'",
+            [],
+            |r| r.get(0),
+        )?;
+        Ok(n)
+    })
+}
+
+/// Resolve a pending-acceptance goal. `accept` → `done` (off-board, completion
+/// stamp kept) + a `goal_accepted` signal. Reject → `in-progress` (back to the
+/// team's lane) with the completion stamp cleared + a `goal_rejected` signal
+/// carrying the user's comment (the feedback the team reworks against).
+pub fn resolve_goal_acceptance(
+    pool: &DbPool,
+    goal_id: &str,
+    accept: bool,
+    comment: Option<&str>,
+) -> Result<DevGoal, AppError> {
+    let goal = get_goal_by_id(pool, goal_id)?;
+    if normalize_goal_status(&goal.status) != "awaiting_acceptance" {
+        return Err(AppError::Validation(format!(
+            "goal {goal_id} is not awaiting acceptance (status: {})",
+            goal.status
+        )));
+    }
+    if accept {
+        let updated = update_goal(
+            pool, goal_id, None, None, Some("done"), None, None, None, None, None,
+        )?;
+        let _ = create_goal_signal(pool, goal_id, "goal_accepted", None, None, Some("Accepted by the user."));
+        Ok(updated)
+    } else {
+        // Reject → back to the team; clear the completion stamp.
+        let updated = update_goal(
+            pool, goal_id, None, None, Some("in-progress"), None, None, None, None, Some(None),
+        )?;
+        let msg = comment
+            .map(|c| format!("Sent back: {c}"))
+            .unwrap_or_else(|| "Sent back to the team.".into());
+        let _ = create_goal_signal(pool, goal_id, "goal_rejected", None, None, Some(&msg));
+        Ok(updated)
+    }
 }
 
 /// All dependency edges whose goal lives in the given project — one query
@@ -1478,17 +1585,23 @@ pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32,
     let mut completed_at: Option<Option<&str>> = None;
 
     if new_progress >= 100 {
-        if cur != "done" {
-            new_status = Some("done");
+        // Acceptance gate: agent/team-driven completion lands in
+        // `awaiting_acceptance` (the human-acceptance queue, surfaced in the
+        // Board's "Your turn" lane + the Goal Acceptance view), NEVER straight to
+        // `done`. The user accepts (→ done, off-board) or rejects (→ in-progress
+        // with a comment) via `dev_tools_resolve_goal_acceptance`. A goal already
+        // accepted (`done`) or already pending (`awaiting_acceptance`) stays put.
+        if cur != "done" && cur != "awaiting_acceptance" {
+            new_status = Some("awaiting_acceptance");
             completed_at = Some(Some(now.as_str()));
         }
         if goal.started_at.is_none() {
             started_at = Some(Some(now.as_str()));
         }
-    } else if cur == "done" {
-        // Was done but progress dropped below 100 — e.g. a re-opened UAT gate
-        // re-blocked the goal, or new work was added. Demote out of done and
-        // clear the completion stamp so "done" never outlives 100%.
+    } else if cur == "done" || cur == "awaiting_acceptance" {
+        // Was complete/pending-acceptance but progress dropped below 100 — e.g. a
+        // re-opened UAT gate or new work added. Demote out of the terminal/pending
+        // state and clear the completion stamp so it never outlives 100%.
         new_status = Some("in-progress");
         completed_at = Some(None);
     } else if new_progress > 0 && cur == "open" {

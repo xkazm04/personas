@@ -308,6 +308,33 @@ pub struct DevKpiMeasurement {
     pub note: Option<String>,
 }
 
+/// One enriched row for the Goal Acceptance view — a goal in
+/// `awaiting_acceptance` joined to its project, the project's owning team, and
+/// (if linked) the KPI it serves. Flat so the frontend can group it by project
+/// → KPI without N round-trips; `current/target/baseline/direction` let the UI
+/// render the KPI gauge + a simple "met vs not" tint.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+pub struct PendingAcceptanceGoal {
+    pub goal_id: String,
+    pub title: String,
+    /// First paragraph of the goal description (provenance footer stripped).
+    pub summary: Option<String>,
+    pub project_id: String,
+    pub project_name: String,
+    pub team_id: Option<String>,
+    pub team_name: Option<String>,
+    pub kpi_id: Option<String>,
+    pub kpi_name: Option<String>,
+    pub kpi_unit: Option<String>,
+    pub kpi_current: Option<f64>,
+    pub kpi_target: Option<f64>,
+    pub kpi_baseline: Option<f64>,
+    /// 'up' | 'down' — which way is better.
+    pub kpi_direction: Option<String>,
+    pub completed_at: Option<String>,
+}
+
 // ============================================================================
 // Goal progress suggestion (hybrid auto-suggest, computed on read)
 // ============================================================================

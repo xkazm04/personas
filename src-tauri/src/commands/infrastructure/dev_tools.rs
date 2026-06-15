@@ -693,6 +693,47 @@ pub fn dev_tools_list_all_goals(
     repo::list_all_goals(&state.db)
 }
 
+/// Goals in the human-acceptance queue (`awaiting_acceptance`), enriched with
+/// project + owning team + served KPI for the Goal Acceptance view.
+#[tauri::command]
+pub fn dev_tools_list_pending_acceptance(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::db::models::PendingAcceptanceGoal>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_pending_acceptance(&state.db)
+}
+
+/// Count of goals awaiting acceptance — backs the TitleBar pending badge.
+#[tauri::command]
+pub fn dev_tools_count_pending_acceptance(
+    state: State<'_, Arc<AppState>>,
+) -> Result<i64, AppError> {
+    require_auth_sync(&state)?;
+    repo::count_pending_acceptance(&state.db)
+}
+
+/// Accept (→ `done`, off-board) or reject (→ `in-progress`, with a comment) a
+/// pending-acceptance goal. `decision` is `accept` | `reject`.
+#[tauri::command]
+pub fn dev_tools_resolve_goal_acceptance(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+    decision: String,
+    comment: Option<String>,
+) -> Result<DevGoal, AppError> {
+    require_auth_sync(&state)?;
+    let accept = match decision.as_str() {
+        "accept" => true,
+        "reject" => false,
+        other => {
+            return Err(AppError::Validation(format!(
+                "unknown acceptance decision `{other}` (expected accept|reject)"
+            )))
+        }
+    };
+    repo::resolve_goal_acceptance(&state.db, &goal_id, accept, comment.as_deref())
+}
+
 /// All dependency edges for one project's goals (single query; Map edges).
 #[tauri::command]
 pub fn dev_tools_list_goal_dependencies_for_project(

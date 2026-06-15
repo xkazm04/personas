@@ -10,6 +10,7 @@ import type { DevKpi } from "@/lib/bindings/DevKpi";
 import type { DevKpiMeasurement } from "@/lib/bindings/DevKpiMeasurement";
 import * as devApi from "@/api/devTools/devTools";
 import * as kpiApi from "@/api/devTools/kpis";
+import { silentCatch } from "@/lib/silentCatch";
 
 export interface DevToolsProjectSlice {
   // -- Projects --------------------------------------------------------
@@ -46,6 +47,15 @@ export interface DevToolsProjectSlice {
   reorderGoals: (projectId: string, goalIds: string[]) => Promise<void>;
   recordGoalSignal: (goalId: string, signalType: string, delta?: number, message?: string, sourceId?: string) => Promise<DevGoalSignal>;
   fetchGoalSignals: (goalId: string) => Promise<void>;
+
+  // -- Goal acceptance queue (human-acceptance gate) --------------------
+  /** Count of goals in `awaiting_acceptance` — drives the TitleBar badge. */
+  pendingAcceptanceCount: number;
+  refreshPendingAcceptance: () => Promise<void>;
+  /** Accept a pending goal → `done` (off-board). Updates the goals array + count. */
+  acceptGoal: (id: string) => Promise<void>;
+  /** Reject a pending goal with a comment → `in-progress` (Agent's turn). */
+  rejectGoal: (id: string, comment: string) => Promise<void>;
 
   // -- Goal Dependencies -------------------------------------------------
   goalDependencies: DevGoalDependency[];
@@ -186,6 +196,7 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
   goals: [],
   goalsLoading: false,
   goalSignals: [],
+  pendingAcceptanceCount: 0,
 
   fetchGoals: async (projectId) => {
     set({ goalsLoading: true });
@@ -260,6 +271,36 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     } catch (err) {
       reportError(err, "Failed to record goal signal", set);
       throw err;
+    }
+  },
+
+  refreshPendingAcceptance: async () => {
+    try {
+      const n = await devApi.countPendingAcceptance();
+      set({ pendingAcceptanceCount: n });
+    } catch (err) {
+      // Best-effort badge count — never toast on a background refresh.
+      silentCatch("devTools.refreshPendingAcceptance")(err);
+    }
+  },
+
+  acceptGoal: async (id) => {
+    try {
+      const updated = await devApi.resolveGoalAcceptance(id, "accept");
+      set((state) => ({ goals: state.goals.map((g) => (g.id === id ? updated : g)), error: null }));
+      await get().refreshPendingAcceptance();
+    } catch (err) {
+      reportError(err, "Failed to accept goal", set);
+    }
+  },
+
+  rejectGoal: async (id, comment) => {
+    try {
+      const updated = await devApi.resolveGoalAcceptance(id, "reject", comment);
+      set((state) => ({ goals: state.goals.map((g) => (g.id === id ? updated : g)), error: null }));
+      await get().refreshPendingAcceptance();
+    } catch (err) {
+      reportError(err, "Failed to send goal back", set);
     }
   },
 

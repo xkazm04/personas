@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -38,7 +38,20 @@ export function useTitleBarTray() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
+  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
+  const pendingAcceptance = useSystemStore((s) => s.pendingAcceptanceCount);
+  const refreshPendingAcceptance = useSystemStore((s) => s.refreshPendingAcceptance);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
+
+  // Keep the pending-acceptance badge live — cheap COUNT on mount + a 30s poll
+  // (goals complete in the background, so the badge can't be derived from the
+  // page-scoped goals array).
+  useEffect(() => {
+    void refreshPendingAcceptance();
+    const id = setInterval(() => void refreshPendingAcceptance(), 30_000);
+    return () => clearInterval(id);
+  }, [refreshPendingAcceptance]);
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -71,12 +84,20 @@ export function useTitleBarTray() {
   const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
   const openSearch = () => openPalette('settings');
+  // Pending-acceptance badge → jump straight to Teams › Goals › Accept.
+  const openAcceptance = () => {
+    setHeaderOverlay('none');
+    setSidebarSection('teams');
+    setTeamsTab('goals');
+    setGoalsTab('accept');
+  };
 
   return {
     todayScheduleCount,
     quickCount,
     monitorAttention,
     unreadCount,
+    pendingAcceptance,
     running,
     notificationsOpen,
     reviewOpen,
@@ -87,6 +108,7 @@ export function useTitleBarTray() {
     toggleReview,
     toggleMonitor,
     openSearch,
+    openAcceptance,
   };
 }
 

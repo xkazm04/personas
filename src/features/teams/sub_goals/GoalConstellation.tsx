@@ -1,34 +1,23 @@
 /**
- * Board + Map — the two consolidated goal surfaces, selected by the Goals L2
- * sub-nav (`variant`). Clicking a goal in either opens the shared
- * GoalDetailDrawer. The Map is a pan/zoom React Flow canvas (`GoalGraphMap`)
- * over parent/child + dependency edges; node colour comes from the canonical
- * `goalStatus` model.
+ * Board host — the goal kanban plus the shared detail drawer + editor modal.
+ * Clicking a goal card opens GoalDetailDrawer; the drawer's Edit hands off to
+ * GoalEditorModal. (The Map view was removed; this surface is Board-only now.)
  */
 import { useState, useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
-import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
-import * as devApi from '@/api/devTools/devTools';
-import { silentCatch } from '@/lib/silentCatch';
 import GoalKanban from './GoalKanban';
-import { GoalGraphMap } from './GoalGraphMap';
 import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
 
-type VariantId = 'board' | 'map';
-
 export default function GoalConstellation({
-  variant = 'board',
   showDoneLane = false,
   showProject = false,
-}: { variant?: VariantId; showDoneLane?: boolean; showProject?: boolean } = {}) {
-  const goals = useSystemStore((s) => s.goals);
+}: { showDoneLane?: boolean; showProject?: boolean } = {}) {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
-  const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
-  // Goal opened in the detail drawer (from a Board card or a Map node), and the
-  // goal being edited (the drawer's Edit hands off to GoalEditorModal).
+  // Goal opened in the detail drawer (from a Board card), and the goal being
+  // edited (the drawer's Edit hands off to GoalEditorModal).
   const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
   const [editGoal, setEditGoal] = useState<DevGoal | null>(null);
 
@@ -42,28 +31,9 @@ export default function GoalConstellation({
 
   // (Goals are fetched at the GoalsPage level so an empty board still loads.)
 
-  // Dependencies (Map edges) — only the Map needs them. One project-scoped query
-  // (no per-goal fan-out); refetches when the project or goal count changes.
-  useEffect(() => {
-    if (variant !== 'map' || !activeProjectId || goals.length === 0) return;
-    let cancelled = false;
-    devApi.listGoalDependenciesForProject(activeProjectId)
-      .then((deps) => { if (!cancelled) setDependencies(deps); })
-      .catch(silentCatch('GoalConstellation.loadDeps'));
-    return () => { cancelled = true; };
-  }, [variant, activeProjectId, goals.length]);
-
   return (
     <div className="space-y-3">
-      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} showProject={showProject} />}
-      {variant === 'map' && (
-        <GoalGraphMap
-          goals={goals}
-          dependencies={dependencies}
-          projectId={activeProjectId}
-          onGoalClick={setDetailGoalId}
-        />
-      )}
+      <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} showProject={showProject} />
 
       <GoalDetailDrawer
         isOpen={!!detailGoalId}

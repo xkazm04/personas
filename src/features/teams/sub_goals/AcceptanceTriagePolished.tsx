@@ -13,8 +13,9 @@
 //       so each role uses the token that already carries the right size+weight+colour.)
 // No borders/outlines anywhere — fills + hairlines only.
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Check, FolderGit2, Clock, GitPullRequest } from 'lucide-react';
+import { ChevronDown, ChevronRight, Check, FolderGit2, Clock, Target } from 'lucide-react';
 
+import { useTranslation } from '@/i18n/useTranslation';
 import type { PendingGoal, PendingProject, PendingTeam, PendingKpi } from './goalAcceptanceMock';
 import { groupByProjectThenKpi } from './goalAcceptanceMock';
 import { AcceptRejectControls, KpiDivider, TeamMonogram, EmptyQueue } from './acceptancePrimitives';
@@ -29,6 +30,8 @@ interface Props {
 }
 
 export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccept, onReject }: Props) {
+  const { t, tx } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
   const grouped = groupByProjectThenKpi(goals, kpis, projects);
   const teamById = new Map(teams.map((t) => [t.id, t]));
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -49,8 +52,9 @@ export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccep
     <div className="space-y-6">
       {/* Standfirst — a quiet context line, no box */}
       <p className="typo-body text-muted-foreground">
-        <span className="text-foreground font-semibold tabular-nums">{goals.length}</span> completed goals
-        await your acceptance · {teamCount} teams · {kpiCount} KPIs
+        {tx(goals.length === 1 ? dl.accept_view_standfirst_one : dl.accept_view_standfirst_other, { count: goals.length })}
+        {' · '}
+        {tx(dl.accept_view_teams_kpis, { teams: teamCount, kpis: kpiCount })}
       </p>
 
       {grouped.map((pg) => {
@@ -63,15 +67,16 @@ export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccep
                 {isCollapsed ? <ChevronRight className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
                 <FolderGit2 className="w-4 h-4 text-violet-400 shrink-0" />
                 <span className="typo-section-title truncate">{pg.project.name}</span>
-                <span className="typo-caption text-muted-foreground truncate">{pg.project.stack}</span>
-                <span className="typo-caption text-muted-foreground tabular-nums shrink-0">{pg.total} goals · {pg.teams} teams</span>
+                <span className="typo-caption text-muted-foreground tabular-nums shrink-0 inline-flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5" /> {pg.total}
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => pg.kpiGroups.flatMap((kg) => kg.goals).forEach((g) => onAccept(g.id))}
                 className="inline-flex items-center gap-1.5 typo-caption font-medium rounded-interactive px-2.5 py-1 text-[var(--success)] bg-[var(--success)]/15 hover:bg-[var(--success)]/25 transition-colors shrink-0"
               >
-                <Check className="w-3.5 h-3.5" /> Accept all
+                <Check className="w-3.5 h-3.5" /> {dl.accept_accept_all}
               </button>
             </div>
             <div className="h-px bg-primary/15" />
@@ -94,8 +99,9 @@ export function AcceptanceTriagePolished({ goals, teams, kpis, projects, onAccep
                           <div className="flex items-center justify-between gap-2 flex-wrap mt-2">
                             <span className="typo-caption text-muted-foreground inline-flex items-center gap-3">
                               <span style={{ color: team?.color }}>{team?.name}</span>
-                              <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{goal.completedAt}</span>
-                              <span className="inline-flex items-center gap-1 tabular-nums"><GitPullRequest className="w-3 h-3" />{goal.prs} PRs</span>
+                              {goal.completedAt && (
+                                <span className="inline-flex items-center gap-1"><Clock className="w-3 h-3" />{goal.completedAt}</span>
+                              )}
                             </span>
                             <AcceptRejectControls size="sm" onAccept={() => onAccept(goal.id)} onReject={(c) => onReject(goal.id, c)} />
                           </div>

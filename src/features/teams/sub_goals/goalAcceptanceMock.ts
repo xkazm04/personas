@@ -1,18 +1,14 @@
-// Throwaway prototype data for the Goal Acceptance View (the human-acceptance
-// queue for agent-completed goals). Models the real domain shape so the three
-// directional variants can prove the UX before we wire live state:
-//   team (column)  ×  completed goal (row)  ·  subtly grouped by the KPI it serves
-//
-// Real wiring later: teams come from `dev_tools_goal_advancing_teams` /
-// team_assignments; the KPI from `dev_goals.kpi_id` → `getKpi`; "completed
-// awaiting acceptance" is the new `awaiting_acceptance` status (see the state-
-// management plan). For the prototype these are inline so the variants render
-// against representative data with no store dependency.
+// Goal Acceptance — domain model + the live adapter that maps the backend's
+// flat `PendingAcceptanceGoal` rows into the grouped view-model the variant
+// consumes (team → KPI → goal). (Prototyping is over; the MOCK_* fixtures were
+// removed when the view went live — the filename is retained only to avoid
+// churn on the importers.)
+import type { PendingAcceptanceGoal } from '@/lib/bindings/PendingAcceptanceGoal';
 
 export interface PendingTeam {
   id: string;
   name: string;
-  /** Semantic-ish accent (CSS color) — the team's column tint. */
+  /** Accent (CSS color) — the team's monogram tint, derived from its id. */
   color: string;
   /** 2-letter monogram for the avatar. */
   monogram: string;
@@ -21,74 +17,34 @@ export interface PendingTeam {
 export interface PendingProject {
   id: string;
   name: string;
-  /** Tech-stack kicker (display only). */
-  stack: string;
 }
 
 export interface PendingKpi {
   id: string;
-  /** The project this KPI belongs to (dev_kpis.project_id). */
-  projectId: string;
   name: string;
   unit: string;
   direction: 'up' | 'down';
   baseline: number;
   current: number;
   target: number;
-  /** Pre-computed (the real view derives this from kpiMath.kpiTrack). */
+  /** Simple "not met yet" display flag (the gauge tint). */
   offTrack: boolean;
 }
 
 export interface PendingGoal {
   id: string;
-  /** The project this goal belongs to (dev_goals.project_id). */
   projectId: string;
   title: string;
-  /** One-line of what the team actually shipped (the agent's outcome summary). */
+  /** One-line of what the team shipped (the goal's outcome summary). */
   summary: string;
   teamId: string;
   /** The KPI this goal serves, or null for standalone goals. */
   kpiId: string | null;
   /** Relative completion label, e.g. "2h ago". */
   completedAt: string;
-  /** Merged PRs the agent landed for this goal — a credibility signal. */
-  prs: number;
 }
 
-export const MOCK_TEAMS: PendingTeam[] = [
-  { id: 't-sdlc', name: 'SDLC Core', color: '#3b82f6', monogram: 'SC' },
-  { id: 't-growth', name: 'Growth Squad', color: '#10b981', monogram: 'GS' },
-  { id: 't-quality', name: 'Quality Guild', color: '#f59e0b', monogram: 'QG' },
-  { id: 't-platform', name: 'Platform Ops', color: '#a855f7', monogram: 'PO' },
-];
-
-export const MOCK_PROJECTS: PendingProject[] = [
-  { id: 'p-shopfront', name: 'shopfront', stack: 'React · Node · Stripe' },
-  { id: 'p-paralegal', name: 'ai-paralegal', stack: 'Next.js · Postgres' },
-];
-
-export const MOCK_KPIS: PendingKpi[] = [
-  { id: 'k-signup', projectId: 'p-shopfront', name: 'Signup conversion', unit: '%', direction: 'up', baseline: 4.1, current: 4.4, target: 6.5, offTrack: true },
-  { id: 'k-latency', projectId: 'p-shopfront', name: 'p95 checkout latency', unit: 'ms', direction: 'down', baseline: 980, current: 540, target: 400, offTrack: false },
-  { id: 'k-cov', projectId: 'p-paralegal', name: 'Billing test coverage', unit: '%', direction: 'up', baseline: 31, current: 38, target: 70, offTrack: true },
-];
-
-export const MOCK_PENDING_GOALS: PendingGoal[] = [
-  // shopfront · Signup conversion (off-track) — growth + a platform assist.
-  { id: 'g-3', projectId: 'p-shopfront', title: 'Shorten the signup form to 3 fields', summary: 'Dropped company/role/phone from step 1; deferred to post-signup. A/B scaffolding in place.', teamId: 't-growth', kpiId: 'k-signup', completedAt: '1d ago', prs: 3 },
-  { id: 'g-4', projectId: 'p-shopfront', title: 'Add social login (Google + GitHub)', summary: 'Wired OAuth via Clerk; both providers live behind a feature flag on staging.', teamId: 't-sdlc', kpiId: 'k-signup', completedAt: '1d ago', prs: 2 },
-  // shopfront · Latency (on-track) — single team.
-  { id: 'g-5', projectId: 'p-shopfront', title: 'Cache the cart-totals computation', summary: 'Memoised line-item totals + added a 30s edge cache; p95 980→540ms locally.', teamId: 't-platform', kpiId: 'k-latency', completedAt: '3h ago', prs: 1 },
-  // shopfront · Standalone (no KPI link).
-  { id: 'g-6', projectId: 'p-shopfront', title: 'Upgrade the app to React 19', summary: 'Bumped React + adjusted 11 effect-cleanup sites; full suite green.', teamId: 't-sdlc', kpiId: null, completedAt: '6h ago', prs: 4 },
-  // ai-paralegal · Billing coverage (off-track) — two teams pushed on it.
-  { id: 'g-1', projectId: 'p-paralegal', title: 'Add integration tests for the statement generator', summary: 'Wrote 24 tests across the billing statement path; coverage 31→48% in that module.', teamId: 't-sdlc', kpiId: 'k-cov', completedAt: '2h ago', prs: 2 },
-  { id: 'g-2', projectId: 'p-paralegal', title: 'Cover the refund + proration edge cases', summary: 'Added property tests for proration rounding and partial refunds; closed 3 untested branches.', teamId: 't-quality', kpiId: 'k-cov', completedAt: '5h ago', prs: 1 },
-  // ai-paralegal · Standalone (no KPI link).
-  { id: 'g-7', projectId: 'p-paralegal', title: 'Ship audit-log CSV export', summary: 'Added the export endpoint + a download button to the admin settings page.', teamId: 't-quality', kpiId: null, completedAt: '2d ago', prs: 1 },
-];
-
-// -- derivations the variants share ------------------------------------------
+// -- grouping ----------------------------------------------------------------
 
 /** 0–100 progress from baseline toward target (direction-agnostic, clamped). */
 export function kpiPct(k: PendingKpi): number {
@@ -103,8 +59,7 @@ export interface KpiGroup {
   goals: PendingGoal[];
 }
 
-/** Group pending goals by the KPI they serve; standalone goals last. Groups
- *  preserve KPI declaration order; the standalone bucket is appended if any. */
+/** Group goals by the KPI they serve; standalone goals last. */
 export function groupByKpi(goals: PendingGoal[], kpis: PendingKpi[]): KpiGroup[] {
   const byId = new Map(kpis.map((k) => [k.id, k]));
   const buckets = new Map<string, PendingGoal[]>();
@@ -127,13 +82,6 @@ export function groupByKpi(goals: PendingGoal[], kpis: PendingKpi[]): KpiGroup[]
   return groups;
 }
 
-/** Per-team completed count (drives column headers + the "who shipped most"). */
-export function countByTeam(goals: PendingGoal[]): Map<string, number> {
-  const m = new Map<string, number>();
-  for (const g of goals) m.set(g.teamId, (m.get(g.teamId) ?? 0) + 1);
-  return m;
-}
-
 export interface ProjectGroup {
   project: PendingProject;
   /** KPI sub-groups within the project (standalone bucket last). */
@@ -144,8 +92,7 @@ export interface ProjectGroup {
   teams: number;
 }
 
-/** Group pending goals by PROJECT, then KPI sub-groups within each project.
- *  Projects with no pending goals are omitted; project order follows `projects`. */
+/** Group goals by PROJECT, then KPI sub-groups within each project. */
 export function groupByProjectThenKpi(
   goals: PendingGoal[],
   kpis: PendingKpi[],
@@ -155,7 +102,7 @@ export function groupByProjectThenKpi(
   for (const project of projects) {
     const pGoals = goals.filter((g) => g.projectId === project.id);
     if (pGoals.length === 0) continue;
-    const pKpis = kpis.filter((k) => k.projectId === project.id);
+    const pKpis = kpis.filter((k) => goals.some((g) => g.kpiId === k.id && g.projectId === project.id));
     out.push({
       project,
       kpiGroups: groupByKpi(pGoals, pKpis),
@@ -164,4 +111,92 @@ export function groupByProjectThenKpi(
     });
   }
   return out;
+}
+
+// -- live adapter ------------------------------------------------------------
+
+export interface AcceptanceData {
+  goals: PendingGoal[];
+  teams: PendingTeam[];
+  kpis: PendingKpi[];
+  projects: PendingProject[];
+}
+
+const TEAM_PALETTE = ['#6366f1', '#10b981', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#ec4899', '#14b8a6'];
+
+function teamColor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return TEAM_PALETTE[h % TEAM_PALETTE.length] ?? '#6366f1';
+}
+
+function monogram(name: string): string {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '··';
+  if (words.length === 1) return (words[0] ?? '').slice(0, 2).toUpperCase() || '··';
+  const a = words[0]?.[0] ?? '';
+  const b = words[1]?.[0] ?? '';
+  return ((a + b).toUpperCase()) || '··';
+}
+
+function rel(iso: string | null): string {
+  if (!iso) return '';
+  const t = new Date(iso.replace(' ', 'T')).getTime();
+  if (!Number.isFinite(t)) return '';
+  const mins = Math.max(0, (Date.now() - t) / 60000);
+  if (mins < 60) return `${Math.round(mins)}m ago`;
+  const hrs = mins / 60;
+  if (hrs < 24) return `${Math.round(hrs)}h ago`;
+  return `${Math.round(hrs / 24)}d ago`;
+}
+
+const UNASSIGNED_ID = '__unassigned';
+
+/** Map the backend's flat enriched rows into the grouped view-model. Dedupes
+ *  the team / KPI / project dimensions; goals reference them by id. */
+export function adaptPendingAcceptance(rows: PendingAcceptanceGoal[]): AcceptanceData {
+  const teams = new Map<string, PendingTeam>();
+  const kpis = new Map<string, PendingKpi>();
+  const projects = new Map<string, PendingProject>();
+  const goals: PendingGoal[] = [];
+
+  for (const r of rows) {
+    projects.set(r.project_id, { id: r.project_id, name: r.project_name });
+
+    const teamId = r.team_id ?? UNASSIGNED_ID;
+    if (!teams.has(teamId)) {
+      teams.set(teamId, r.team_id
+        ? { id: r.team_id, name: r.team_name ?? 'Team', color: teamColor(r.team_id), monogram: monogram(r.team_name ?? 'Team') }
+        : { id: UNASSIGNED_ID, name: 'Unassigned', color: 'var(--muted-foreground)', monogram: '··' });
+    }
+
+    const kpiMeasured = r.kpi_id != null && r.kpi_current != null && r.kpi_target != null;
+    if (kpiMeasured && !kpis.has(r.kpi_id!)) {
+      const dir: 'up' | 'down' = r.kpi_direction === 'down' ? 'down' : 'up';
+      const current = r.kpi_current!;
+      const target = r.kpi_target!;
+      kpis.set(r.kpi_id!, {
+        id: r.kpi_id!,
+        name: r.kpi_name ?? 'KPI',
+        unit: r.kpi_unit ?? '',
+        direction: dir,
+        baseline: r.kpi_baseline ?? current,
+        current,
+        target,
+        offTrack: dir === 'up' ? current < target : current > target,
+      });
+    }
+
+    goals.push({
+      id: r.goal_id,
+      projectId: r.project_id,
+      title: r.title,
+      summary: r.summary ?? '',
+      teamId,
+      kpiId: kpiMeasured ? r.kpi_id! : null,
+      completedAt: rel(r.completed_at),
+    });
+  }
+
+  return { goals, teams: [...teams.values()], kpis: [...kpis.values()], projects: [...projects.values()] };
 }

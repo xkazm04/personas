@@ -8,6 +8,7 @@ import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
 import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
 import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
 import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
+import type { PendingAcceptanceGoal } from "@/lib/bindings/PendingAcceptanceGoal";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -243,6 +244,18 @@ export const resolveGoalProgress = (goalId: string) =>
 /** Every goal across all projects — backs the Board/Timeline "All projects" scope. */
 export const listAllGoals = () =>
   invoke<DevGoal[]>("dev_tools_list_all_goals", {});
+
+/** Goals awaiting acceptance (enriched: project + owning team + served KPI). */
+export const listPendingAcceptance = () =>
+  invoke<PendingAcceptanceGoal[]>("dev_tools_list_pending_acceptance", {});
+
+/** Count of goals awaiting acceptance — backs the TitleBar pending badge. */
+export const countPendingAcceptance = () =>
+  invoke<number>("dev_tools_count_pending_acceptance", {});
+
+/** Accept (→ done, off-board) or reject (→ in-progress, with a comment) a goal. */
+export const resolveGoalAcceptance = (goalId: string, decision: "accept" | "reject", comment?: string) =>
+  invoke<DevGoal>("dev_tools_resolve_goal_acceptance", { goalId, decision, comment });
 
 /** All dependency edges for one project's goals in a single query (Map). */
 export const listGoalDependenciesForProject = (projectId: string) =>

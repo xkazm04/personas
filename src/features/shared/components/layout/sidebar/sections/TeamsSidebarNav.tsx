@@ -13,12 +13,12 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **Workspace** — the team management table / canvas. Carries the team
  *   roster underneath (click a team to open its Studio), preserving the
  *   roster UX that previously lived inside the Agents section.
- * - **Goals** — the Goals hub, with its view submenu (Board / Map / Timeline)
+ * - **Goals** — the Goals hub, with its view submenu (Board / Timeline)
  *   nested underneath, mirroring the team-roster indent pattern.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_map' | 'goal_view_timeline' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_accept' | 'goal_view_timeline' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
-  { id: 'map', icon: Waypoints, labelKey: 'goal_view_map' },
+  { id: 'accept', icon: Inbox, labelKey: 'goal_view_accept' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
 ];
 
@@ -112,7 +112,7 @@ export function TeamsSidebarNav() {
         </div>
       )}
 
-      {/* Goals hub — view submenu (board/map/timeline) underneath */}
+      {/* Goals hub — view submenu (board/timeline) underneath */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
         <button
           data-testid="teams-goals-nav"
