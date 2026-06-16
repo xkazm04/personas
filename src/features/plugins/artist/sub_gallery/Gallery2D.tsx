@@ -38,25 +38,40 @@ interface Gallery2DProps {
 }
 
 export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: Gallery2DProps) {
-  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // Track the open lightbox by asset *id*, not index. An index goes stale the
+  // moment the gallery mutates (delete / rename / refetch reorders `assets`),
+  // making it point at the wrong asset — or out of bounds. Resolving by id each
+  // render keeps the viewer pinned to the asset they opened, and lets us close
+  // gracefully if that asset is deleted out from under them.
+  const [lightboxId, setLightboxId] = useState<string | null>(null);
   const { selectedIds, isSelected, toggle, clear, count } = useGallerySelection(assets);
   const inSelectMode = count > 0;
 
-  const openLightbox = useCallback((index: number) => {
-    setLightboxIndex(index);
+  const openLightbox = useCallback((id: string) => {
+    setLightboxId(id);
   }, []);
 
   const closeLightbox = useCallback(() => {
-    setLightboxIndex(null);
+    setLightboxId(null);
   }, []);
 
   const goNext = useCallback(() => {
-    setLightboxIndex((i) => (i !== null ? (i + 1) % assets.length : null));
-  }, [assets.length]);
+    setLightboxId((id) => {
+      if (id === null || assets.length === 0) return id;
+      const i = assets.findIndex((a) => a.id === id);
+      if (i < 0) return id;
+      return assets[(i + 1) % assets.length]?.id ?? id;
+    });
+  }, [assets]);
 
   const goPrev = useCallback(() => {
-    setLightboxIndex((i) => (i !== null ? (i - 1 + assets.length) % assets.length : null));
-  }, [assets.length]);
+    setLightboxId((id) => {
+      if (id === null || assets.length === 0) return id;
+      const i = assets.findIndex((a) => a.id === id);
+      if (i < 0) return id;
+      return assets[(i - 1 + assets.length) % assets.length]?.id ?? id;
+    });
+  }, [assets]);
 
   const handleToggle = useCallback(
     (id: string, index: number) => (e: ReactMouseEvent) => toggle(id, index, e.shiftKey),
@@ -83,7 +98,8 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: 
     [selectedIds, clear, assets, onUpdateTags],
   );
 
-  const currentAsset = lightboxIndex !== null ? assets[lightboxIndex] : null;
+  const lightboxIndex = lightboxId !== null ? assets.findIndex((a) => a.id === lightboxId) : -1;
+  const currentAsset = lightboxIndex >= 0 ? assets[lightboxIndex] : null;
 
   return (
     <>
@@ -110,7 +126,7 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: 
             onDelete={onDelete}
             onUpdateTags={onUpdateTags}
             onRename={onRename}
-            onClick={() => openLightbox(i)}
+            onClick={() => openLightbox(asset.id)}
             selected={isSelected(asset.id)}
             inSelectMode={inSelectMode}
             onToggleSelect={handleToggle(asset.id, i)}
@@ -118,7 +134,7 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: 
         ))}
       </AnimatedList>
 
-      {currentAsset && lightboxIndex !== null && !inSelectMode && (
+      {currentAsset && !inSelectMode && (
         <LightboxOverlay
           asset={currentAsset}
           index={lightboxIndex}
