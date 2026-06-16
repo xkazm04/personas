@@ -452,10 +452,25 @@ fn resolve_ready_credential(conn: &Connection, connector_name: &str) -> Option<S
     }
 }
 
+/// Parse a credential-related timestamp tolerantly. Rust writes RFC3339 (via
+/// `to_rfc3339()`), but `credential_fields.updated_at` defaults to SQLite's
+/// `datetime('now')` format (`YYYY-MM-DD HH:MM:SS`, UTC, no offset). Returns
+/// `None` for anything we can't confidently parse so callers fail safe.
+fn parse_credential_ts(s: &str) -> Option<chrono::DateTime<chrono::Utc>> {
+    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(s) {
+        return Some(dt.with_timezone(&chrono::Utc));
+    }
+    chrono::NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")
+        .ok()
+        .map(|naive| chrono::DateTime::from_naive_utc_and_offset(naive, chrono::Utc))
+}
+
 /// Whether a stored credential has the substance required to count as ready:
-/// at least one field carrying an actual value, and `healthcheck_last_success`
-/// is not an explicit `Some(false)`. A never-probed credential (`None`) is
-/// allowed — it is not presumed broken — but an empty or last-failed one is not.
+/// at least one field carrying an actual value, `healthcheck_last_success`
+/// is not an explicit `Some(false)`, and the last success did not PREDATE the
+/// most recent field edit (a stale success validated values that have since
+/// changed). A never-probed credential (`None`) is allowed — it is not presumed
+/// broken — but an empty, last-failed, or stale-success one is not.
 fn credential_is_usable(conn: &Connection, credential_id: &str) -> bool {
     // 1. Must have at least one field carrying a value. An empty `data: {}`
     //    credential creates zero `credential_fields` rows; a field cleared to
@@ -481,7 +496,38 @@ fn credential_is_usable(conn: &Connection, credential_id: &str) -> bool {
         .ok()
         .flatten();
     let ledger = crate::db::models::CredentialLedger::parse(metadata.as_deref());
-    ledger.healthcheck_last_success != Some(false)
+    if ledger.healthcheck_last_success == Some(false) {
+        return false;
+    }
+
+    // 3. Staleness ordering: if the fields were edited AFTER the last successful
+    //    healthcheck, that success validated values that no longer exist —
+    //    don't promote to Ready until a fresh probe. Conservative: only demote
+    //    when BOTH timestamps parse AND the fields are strictly newer; a parse
+    //    miss keeps the success-based verdict rather than over-rejecting.
+    if let Some(success_at) = ledger
+        .healthcheck_last_success_at
+        .as_deref()
+        .and_then(parse_credential_ts)
+    {
+        let fields_at = conn
+            .query_row(
+                "SELECT MAX(updated_at) FROM credential_fields WHERE credential_id = ?1",
+                [credential_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok()
+            .flatten()
+            .as_deref()
+            .and_then(parse_credential_ts);
+        if let Some(fields_at) = fields_at {
+            if fields_at > success_at {
+                return false;
+            }
+        }
+    }
+
+    true
 }
 
 /// Resolve, for every `Credential`-class connector in `connector_names`, the
