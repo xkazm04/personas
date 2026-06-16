@@ -1571,6 +1571,8 @@ pub fn run() {
             // Core -- Import/Export
             commands::core::import_export::export_persona,
             commands::core::import_export::import_persona,
+            // Core -- Gallery (public share loop)
+            commands::core::gallery::gallery_publish_persona,
             // Core -- Data Portability
             commands::core::data_portability::get_export_stats,
             commands::core::data_portability::export_full,

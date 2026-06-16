@@ -16,6 +16,7 @@ import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 import { QuickStatsBar } from './QuickStatsBar';
 import { DeepFanoutToggle } from './DeepFanoutToggle';
+import { ShareAgentButton } from './ShareAgentButton';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface PersonaEditorHeaderProps {
@@ -128,6 +129,7 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       }
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
+          {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
           {/* Active toggle — governance only. Per-capability Run/Simulate lives in the Use Case tab. */}
           <div className="flex items-center gap-2">
             <span

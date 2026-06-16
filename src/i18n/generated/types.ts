@@ -758,6 +758,12 @@ export type Translations = {
     };
   };
   agents: {
+    share: {
+      button: string;
+      published: string;
+      hint: string;
+      failed: string;
+    };
     design_subtabs: {
       use_cases: string;
       prompt: string;
@@ -13166,6 +13172,8 @@ export type Translations = {
       goal_status_open: string;
       goal_status_in_progress: string;
       goal_status_awaiting_acceptance: string;
+      accept_overlay_title: string;
+      accept_overlay_subtitle: string;
       goal_status_blocked: string;
       goal_status_done: string;
       accept_view_standfirst_one: string;

@@ -149,6 +149,18 @@ orchestration/teams docs for the assignment model.
 The per-persona editor surfaces are tabbed in `EditorTabBar`:
 `Activity · Matrix · Design · Use Cases · Lab · Chat · Settings`.
 
+**Share to the gallery.** The editor header (`PersonaEditorHeader`) carries a
+**Share** button (`ShareAgentButton`) that publishes the persona to the public
+web gallery via the `gallery_publish_persona` command — it builds the same
+versioned `.persona.json` bundle the file-export uses (shared
+`import_export::build_persona_bundle`) and POSTs it to personas-web
+(`/api/personas/publish`, base overridable with `PERSONAS_WEB_URL`), returning a
+`personas.ai/p/<slug>` link the user copies to share. The recipient opens it in
+one click (`Open in Personas`) or downloads the bundle. This is the share half of
+the growth loop; it records the `shared` activation milestone (see
+`lib/analytics/activation.ts`). Custom icons are downgraded to a built-in at the
+publish boundary, same as every other export path.
+
 The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
 
 **Design is a hub, not a single view.** It absorbs three former tabs

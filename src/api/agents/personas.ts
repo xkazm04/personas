@@ -94,6 +94,7 @@ export const resolveEffectiveConfigBulk = (personaIds: string[]) =>
 
 import type { ImportResult } from "@/lib/bindings/ImportResult";
 export type { ImportResult } from "@/lib/bindings/ImportResult";
+import type { GalleryPublishResult } from "@/lib/bindings/GalleryPublishResult";
 
 /** Opens a save dialog and writes the persona bundle to disk. Returns false if cancelled. */
 export const exportPersona = (personaId: string) =>
@@ -103,6 +104,20 @@ export const exportPersona = (personaId: string) =>
  *  ImportResult where `warnings` lists any sub-resource creation failures. */
 export const importPersona = () =>
   invoke<ImportResult | null>("import_persona");
+
+/** Publishes a persona to the public web gallery; returns its share slug + URL.
+ *  `installId` is the caller's pseudonymous analytics install id (abuse
+ *  attribution only). */
+export const publishPersonaToGallery = (
+  personaId: string,
+  publisher?: string | null,
+  installId?: string | null,
+) =>
+  invoke<GalleryPublishResult>("gallery_publish_persona", {
+    personaId,
+    publisher: publisher ?? null,
+    installId: installId ?? null,
+  });
 
 // ============================================================================
 // Typed partial update helper

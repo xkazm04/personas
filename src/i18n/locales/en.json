@@ -752,6 +752,12 @@
     }
   },
   "agents": {
+    "share": {
+      "button": "Share",
+      "published": "Shared — copy the link to send it",
+      "hint": "Anyone with the link can open this agent in Personas in one click.",
+      "failed": "Couldn't publish this agent to the gallery"
+    },
     "design_subtabs": {
       "use_cases": "Use Cases",
       "prompt": "Prompt",
@@ -13160,6 +13166,8 @@
       "goal_status_open": "Open",
       "goal_status_in_progress": "In progress",
       "goal_status_awaiting_acceptance": "Awaiting acceptance",
+      "accept_overlay_title": "Accept goals",
+      "accept_overlay_subtitle": "Review and accept the work your teams completed",
       "goal_status_blocked": "Blocked",
       "goal_status_done": "Done",
       "accept_view_standfirst_one": "{count} completed goal awaits your acceptance",

@@ -66,7 +66,7 @@ struct PersonaExportData {
 /// additions, changed field semantics, or changed nested shapes require a new
 /// schema version and a matching up-migrator in `migrate_export_bundle`.
 #[derive(Debug, Serialize, Deserialize)]
-struct PersonaExportBundle {
+pub(crate) struct PersonaExportBundle {
     version: u32,
     exported_at: String,
     persona: PersonaExportData,
@@ -138,22 +138,19 @@ pub struct ImportResult {
 // Commands
 // ============================================================================
 
-#[tauri::command]
-pub async fn export_persona(
-    state: State<'_, Arc<AppState>>,
-    app: AppHandle,
-    persona_id: String,
-) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    let pool = &state.db;
-
-    // Gather data
-    let persona = persona_repo::get_by_id(pool, &persona_id)?;
-    let triggers = trigger_repo::get_by_persona_id(pool, &persona_id)?;
-    let subscriptions = event_repo::get_subscriptions_by_persona(pool, &persona_id)?;
+/// Build the versioned `.persona.json` export bundle for one persona. Shared by
+/// the file-export command and the gallery publish command so both produce an
+/// identical, round-trippable envelope.
+pub(crate) fn build_persona_bundle(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+) -> Result<PersonaExportBundle, AppError> {
+    let persona = persona_repo::get_by_id(pool, persona_id)?;
+    let triggers = trigger_repo::get_by_persona_id(pool, persona_id)?;
+    let subscriptions = event_repo::get_subscriptions_by_persona(pool, persona_id)?;
     let memories = memory_repo::get_all(
         pool,
-        Some(&persona_id),
+        Some(persona_id),
         None,
         None,
         None,
@@ -163,7 +160,7 @@ pub async fn export_persona(
         None,
     )?;
 
-    let bundle = PersonaExportBundle {
+    Ok(PersonaExportBundle {
         version: CURRENT_SCHEMA_VERSION,
         exported_at: chrono::Utc::now().to_rfc3339(),
         persona: PersonaExportData {
@@ -213,12 +210,24 @@ pub async fn export_persona(
                 tags: m.tags.clone(),
             })
             .collect(),
-    };
+    })
+}
+
+#[tauri::command]
+pub async fn export_persona(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    persona_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let pool = &state.db;
+
+    let bundle = build_persona_bundle(pool, &persona_id)?;
 
     let json =
         serde_json::to_string_pretty(&bundle).map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let file_name = format!("{}.persona.json", persona.name.replace(' ', "_"));
+    let file_name = format!("{}.persona.json", bundle.persona.name.replace(' ', "_"));
     let app_clone = app.clone();
     let save_path = tokio::task::spawn_blocking(move || {
         app_clone
