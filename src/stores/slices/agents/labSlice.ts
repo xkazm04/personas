@@ -12,6 +12,7 @@ import type { LabEvalRun } from "@/lib/bindings/LabEvalRun";
 import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { LabVersionRating } from "@/lib/bindings/LabVersionRating";
+import type { LabVersionEconomics } from "@/lib/bindings/LabVersionEconomics";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
@@ -318,6 +319,9 @@ export interface LabSlice {
   // Version × Model ratings (consolidated "Versions & Ratings" table)
   versionRatings: LabVersionRating[];
   fetchVersionRatings: (personaId: string) => Promise<void>;
+  // Version × Model eval economics (F21: attempted/resolved + cost-per-success)
+  versionEconomics: LabVersionEconomics[];
+  fetchVersionEconomics: (personaId: string) => Promise<void>;
   /** Make (version, model) the persona's live config: roll the version's prompt
    *  in + tag it production, then switch the active model. */
   activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<void>;
@@ -523,6 +527,16 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         set({ versionRatings: ratings });
       } catch (err) {
         reportError(err, "Failed to fetch version ratings", set, { action: "lab.fetchVersionRatings" });
+      }
+    },
+
+    versionEconomics: [],
+    fetchVersionEconomics: async (personaId) => {
+      try {
+        const economics = await api.labGetVersionEconomics(personaId);
+        set({ versionEconomics: economics });
+      } catch (err) {
+        reportError(err, "Failed to fetch version economics", set, { action: "lab.fetchVersionEconomics" });
       }
     },
     activateVersion: async (personaId, versionId, modelId, provider) => {

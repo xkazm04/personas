@@ -12,6 +12,7 @@ import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
 import type { LabVersionRating } from "@/lib/bindings/LabVersionRating";
+import type { LabVersionEconomics } from "@/lib/bindings/LabVersionEconomics";
 import type { LabResultEvent } from "@/lib/bindings/LabResultEvent";
 import type { LabResultKind } from "@/lib/bindings/LabResultKind";
 import type { LabToolCall } from "@/lib/bindings/LabToolCall";
@@ -179,6 +180,9 @@ export const labGetRatings = (runId: string) =>
 
 export const labGetVersionRatings = (personaId: string) =>
   invoke<LabVersionRating[]>("lab_get_version_ratings", { personaId });
+
+export const labGetVersionEconomics = (personaId: string) =>
+  invoke<LabVersionEconomics[]>("lab_get_version_economics", { personaId });
 
 // ============================================================================
 // Prompt Improvement Engine

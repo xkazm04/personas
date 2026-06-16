@@ -1376,6 +1376,14 @@ export type Translations = {
     lab: {
       vr_title: string;
       vr_subtitle: string;
+      eco_title: string;
+      eco_subtitle: string;
+      eco_col_model: string;
+      eco_col_attempted: string;
+      eco_col_resolved: string;
+      eco_col_rate: string;
+      eco_col_cost_success: string;
+      eco_empty: string;
       vr_col_version: string;
       vr_col_model: string;
       vr_col_rating: string;
