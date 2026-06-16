@@ -35,6 +35,7 @@ interface Props {
 
 export function FleetBroadcastModal({ open, onClose, initialText, title }: Props) {
   const sessions = useSystemStore((s) => s.fleetSessions);
+  const fleetRefresh = useSystemStore((s) => s.fleetRefresh);
 
   const [text, setText] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -50,6 +51,14 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
       setSelected(new Set());
     }
   }, [open, initialText]);
+
+  // Sync the live session list when the modal opens. The store-cached
+  // fleetSessions can lag Rust state, so without this the target list (and the
+  // broadcast itself) could include sessions that have already exited —
+  // writing into dead PTYs. Stale selections still fail per-session at send.
+  useEffect(() => {
+    if (open) void fleetRefresh();
+  }, [open, fleetRefresh]);
 
   const targetable = useMemo(
     () => sessions.filter((s) => s.state !== 'exited'),
