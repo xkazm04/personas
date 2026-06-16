@@ -254,8 +254,17 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   },
 
   finishChatStream: async (fullResponse, personaId, sessionId, executionId) => {
+    // Idempotency guard. A single terminal EXECUTION_STATUS event is observed by
+    // BOTH chatSlice's per-execution listener AND executionSlice.finishExecution
+    // (and cancelExecution is a third entry point). Previously chatStreaming was
+    // only flipped false AFTER the `await createChatMessage` below, so two callers
+    // entering before that await resolved both saw chatStreaming===true and both
+    // INSERTed an assistant row — permanent duplicate messages (and a doubled
+    // session-id upsert / summary). Flip the flag synchronously here, before any
+    // await, so concurrent callers short-circuit.
+    if (!get().chatStreaming) return;
+    set({ chatStreaming: false });
     if (!fullResponse.trim()) {
-      set({ chatStreaming: false });
       return;
     }
     try {
