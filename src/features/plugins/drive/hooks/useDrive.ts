@@ -322,40 +322,55 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
     }
   }, [entries, kindFilter]);
 
+  // Monotonic guard for recursive search. driveSearch is async and uncancellable;
+  // without this a result that resolves AFTER the user cleared/navigated/started
+  // a newer search would resurrect stale results (or overwrite the newer ones).
+  // Every clear path bumps this so any in-flight search's late result is dropped.
+  const recursiveSearchSeq = useRef(0);
+
   // Recursive search — escalation path when the local folder filter has
   // no hits. Driven by the consumer (DriveFileList CTA), not auto-fired.
   const runRecursiveSearch = useCallback(async () => {
     const q = searchQuery.trim();
     if (q.length < 2) return;
+    const seq = ++recursiveSearchSeq.current;
     setRecursiveLoading(true);
     try {
       const results = await driveSearch(q);
+      if (seq !== recursiveSearchSeq.current) return; // superseded or cleared — drop
       setRecursiveResults(results);
       setRecursiveQuery(q);
     } catch (e) {
+      if (seq !== recursiveSearchSeq.current) return;
       toastCatch("drive:search")(e);
     } finally {
-      setRecursiveLoading(false);
+      if (seq === recursiveSearchSeq.current) setRecursiveLoading(false);
     }
   }, [searchQuery]);
 
   const clearRecursiveSearch = useCallback(() => {
+    recursiveSearchSeq.current++; // invalidate any in-flight search
     setRecursiveResults(null);
     setRecursiveQuery(null);
+    setRecursiveLoading(false);
   }, []);
 
   // Drop recursive results when the user changes path or clears the query —
   // the results are tied to "what was the user searching for at the
   // moment of escalation," and stale results would mislead the next view.
   useEffect(() => {
+    recursiveSearchSeq.current++; // a path change must drop any in-flight result too
     setRecursiveResults(null);
     setRecursiveQuery(null);
+    setRecursiveLoading(false);
   }, [currentPath]);
 
   useEffect(() => {
     if (searchQuery.trim() === "") {
+      recursiveSearchSeq.current++; // clearing the query invalidates an in-flight search
       setRecursiveResults(null);
       setRecursiveQuery(null);
+      setRecursiveLoading(false);
     }
   }, [searchQuery]);
 
