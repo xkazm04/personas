@@ -377,8 +377,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     } catch (err) {
       reportError(err, "Failed to cancel execution", set, { action: "cancelExecution" });
     } finally {
-      // If a chat stream is active, finalize it before clearing state.
-      const { chatStreaming: streaming, activeChatSessionId: sid, executionPersonaId: pid, executionOutput: out } = get();
+      // If a chat stream is active, finalize it before clearing state. Use the
+      // stream-pinned session/persona so a mid-stream thread switch can't make
+      // this finalize into the wrong thread.
+      const { chatStreaming: streaming, streamingChatSessionId: sid, streamingChatPersonaId: pid, executionOutput: out } = get();
       if (streaming && sid && pid) {
         const textLines = out.filter((l) => classifyLine(l) === 'text');
         const fullResponse = textLines.join('\n').trim();
@@ -434,11 +436,14 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
     // If a chat stream is active, finalize it now -- this runs at the store
     // level so it works even when ChatTab is unmounted (e.g. user switched tabs).
-    const { chatStreaming, executionOutput: output, activeChatSessionId, executionPersonaId: chatPersonaId } = get();
-    if (chatStreaming && activeChatSessionId && chatPersonaId) {
+    // Use the stream-pinned session/persona, NOT activeChatSessionId — the user
+    // may have switched threads while the reply was streaming, and finalizing
+    // against the live active session would misattribute the reply.
+    const { chatStreaming, executionOutput: output, streamingChatSessionId, streamingChatPersonaId } = get();
+    if (chatStreaming && streamingChatSessionId && streamingChatPersonaId) {
       const textLines = output.filter((l) => classifyLine(l) === 'text');
       const fullResponse = textLines.join('\n').trim();
-      void get().finishChatStream(fullResponse, chatPersonaId, activeChatSessionId, get().activeExecutionId ?? undefined);
+      void get().finishChatStream(fullResponse, streamingChatPersonaId, streamingChatSessionId, get().activeExecutionId ?? undefined);
     }
 
     // Capture context for drift detection before resetting state.

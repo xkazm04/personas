@@ -29,6 +29,16 @@ export interface ChatSlice {
   chatMessages: ChatMessage[];
   activeChatSessionId: string | null;
   chatStreaming: boolean;
+  /**
+   * The session + persona the *currently streaming* chat reply belongs to,
+   * pinned at stream start. `activeChatSessionId` follows the user's thread
+   * selection and can change mid-stream; the central finalize/cancel paths in
+   * executionSlice read it and would misattribute the reply into the
+   * newly-switched thread. These fields stay bound to the originating thread
+   * for the life of the stream so finalization always targets the right one.
+   */
+  streamingChatSessionId: string | null;
+  streamingChatPersonaId: string | null;
   chatMode: ChatMode;
   chatSessionContext: ChatSessionContext | null;
   /**
@@ -91,6 +101,8 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
   chatMessages: [],
   activeChatSessionId: null,
   chatStreaming: false,
+  streamingChatSessionId: null,
+  streamingChatPersonaId: null,
   chatMode: 'advisory' as ChatMode,
   chatSessionContext: null,
   chatPreloaded: false,
@@ -208,7 +220,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     }
 
     // 4. Start execution — set executionPersonaId so useExecutionStream can match output
-    set({ chatStreaming: true, executionPersonaId: personaId, executionOutput: [], isExecuting: true });
+    set({ chatStreaming: true, streamingChatSessionId: sessionId, streamingChatPersonaId: personaId, executionPersonaId: personaId, executionOutput: [], isExecuting: true });
     try {
       const exec = await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
       if (exec?.id) {
@@ -263,7 +275,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // session-id upsert / summary). Flip the flag synchronously here, before any
     // await, so concurrent callers short-circuit.
     if (!get().chatStreaming) return;
-    set({ chatStreaming: false });
+    set({ chatStreaming: false, streamingChatSessionId: null, streamingChatPersonaId: null });
     if (!fullResponse.trim()) {
       return;
     }
