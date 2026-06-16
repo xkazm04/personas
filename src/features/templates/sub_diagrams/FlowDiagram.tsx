@@ -13,33 +13,40 @@ export default function FlowDiagram({
   flow: UseCaseFlow;
   onNodeClick: (node: FlowNode, e: React.MouseEvent) => void;
 }) {
+  // The backend shape-checks use_case_flows only one level deep, and the TS type
+  // asserts nodes/edges are arrays the LLM may actually omit. Normalize on read
+  // so a single malformed flow (missing `nodes` or `edges`) can't throw
+  // "x is not iterable" inside a useMemo and blank the whole diagram modal.
+  const safeNodes = useMemo(() => flow.nodes ?? [], [flow.nodes]);
+  const safeEdges = useMemo(() => flow.edges ?? [], [flow.edges]);
+
   // Build adjacency from edges
   const adjacency = useMemo(() => {
     const adj = new Map<string, { target: string; label?: string }[]>();
-    for (const edge of flow.edges) {
+    for (const edge of safeEdges) {
       const list = adj.get(edge.source) || [];
       list.push({ target: edge.target, label: edge.label });
       adj.set(edge.source, list);
     }
     return adj;
-  }, [flow.edges]);
+  }, [safeEdges]);
 
   // BFS layering
   const layers = useMemo(() => {
     const inDegree = new Map<string, number>();
-    for (const node of flow.nodes) inDegree.set(node.id, 0);
-    for (const edge of flow.edges) {
+    for (const node of safeNodes) inDegree.set(node.id, 0);
+    for (const edge of safeEdges) {
       inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
     }
 
     const visited = new Set<string>();
     const result: string[][] = [];
-    let queue = flow.nodes
+    let queue = safeNodes
       .filter(n => n.type === 'start' || (inDegree.get(n.id) || 0) === 0)
       .map(n => n.id);
 
-    if (queue.length === 0 && flow.nodes.length > 0) {
-      const first = flow.nodes[0];
+    if (queue.length === 0 && safeNodes.length > 0) {
+      const first = safeNodes[0];
       if (first) queue = [first.id];
     }
 
@@ -59,7 +66,7 @@ export default function FlowDiagram({
     }
 
     // Add orphaned nodes
-    for (const node of flow.nodes) {
+    for (const node of safeNodes) {
       if (!visited.has(node.id)) {
         if (result.length === 0) result.push([]);
         const lastLevel = result[result.length - 1];
@@ -68,9 +75,9 @@ export default function FlowDiagram({
     }
 
     return result;
-  }, [flow.nodes, flow.edges, adjacency]);
+  }, [safeNodes, safeEdges, adjacency]);
 
-  const nodeMap = useMemo(() => new Map(flow.nodes.map(n => [n.id, n])), [flow.nodes]);
+  const nodeMap = useMemo(() => new Map(safeNodes.map(n => [n.id, n])), [safeNodes]);
 
   // Collect unique edge labels between consecutive layers
   const interLayerLabels = useMemo(() => {
@@ -80,7 +87,7 @@ export default function FlowDiagram({
       const prevSet = new Set(layers[i - 1]);
       const currSet = new Set(layers[i]);
       const labels: string[] = [];
-      for (const edge of flow.edges) {
+      for (const edge of safeEdges) {
         if (prevSet.has(edge.source) && currSet.has(edge.target) && edge.label) {
           if (!labels.includes(edge.label)) labels.push(edge.label);
         }
@@ -88,7 +95,7 @@ export default function FlowDiagram({
       result.push(labels);
     }
     return result;
-  }, [layers, flow.edges]);
+  }, [layers, safeEdges]);
 
   return (
     <div className="flex flex-col items-center gap-1 py-6 px-4 overflow-auto">
