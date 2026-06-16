@@ -33,6 +33,11 @@ import type {
 const TWIN_PROFILES_FRESH_MS = 10_000;
 let twinProfilesInflight: Promise<void> | null = null;
 let twinProfilesFetchedAt = 0;
+// Serializes twin switches. Rapid picker selections (A then B) would otherwise
+// race two setActiveProfile calls on the backend with no ordering guarantee —
+// if A's lands last, the backend's single-active flag and the store diverge.
+// Chaining forces them to run in issue order, so the last selection wins.
+let activeTwinSwitchChain: Promise<void> = Promise.resolve();
 
 export interface TwinSlice {
   // -- State -----------------------------------------------------------
@@ -388,14 +393,25 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   },
 
   setActiveTwin: async (id) => {
-    try {
-      await twinApi.setActiveProfile(id);
-      // Re-fetch so every row's is_active flag stays in sync with the
-      // single-active invariant the backend enforces.
-      await get().fetchTwinProfiles({ force: true });
-    } catch (err) {
-      reportError(err, "Failed to set active twin", set);
-    }
+    // Already active — no-op. Re-selecting the current twin in the picker
+    // would otherwise re-fire setActiveProfile + a forced refetch, causing a
+    // pointless round-trip and a row-flicker.
+    if (get().activeTwinId === id) return;
+    const run = activeTwinSwitchChain.then(async () => {
+      // It may have become active while this switch waited its turn.
+      if (get().activeTwinId === id) return;
+      try {
+        await twinApi.setActiveProfile(id);
+        // Re-fetch so every row's is_active flag stays in sync with the
+        // single-active invariant the backend enforces.
+        await get().fetchTwinProfiles({ force: true });
+      } catch (err) {
+        reportError(err, "Failed to set active twin", set);
+      }
+    });
+    // Keep the chain alive even if this link rejects so later switches run.
+    activeTwinSwitchChain = run.catch(() => {});
+    return run;
   },
 
   // -- Tone actions (P1) -----------------------------------------------
