@@ -404,11 +404,14 @@ fn apply_transition(
         IncidentStatus::InProgress => conn.execute(
             // Stamp acknowledged_at if not already (entering in_progress implies
             // it's been seen). resolution fields stay clear — work isn't done.
+            // continued_at is reset too: leaving the resolved state starts a
+            // fresh lifecycle, so a later re-resolution must be continuable
+            // again (the continuation scanner skips rows where it's non-NULL).
             "UPDATE audit_incidents
              SET status = 'in_progress',
                  acknowledged_at = COALESCE(acknowledged_at, ?1),
                  acknowledged_by = COALESCE(acknowledged_by, 'user'),
-                 resolved_at = NULL, resolution_note = NULL
+                 resolved_at = NULL, resolution_note = NULL, continued_at = NULL
              WHERE id = ?2",
             params![now, id],
         )?,
@@ -425,9 +428,13 @@ fn apply_transition(
             params![now, resolution_note, id],
         )?,
         IncidentStatus::Open => conn.execute(
+            // Reopen resets the whole lifecycle, including the continuation
+            // claim — otherwise a reopened persona_blocker that gets resolved
+            // again would never re-continue (continued_at stayed stamped, so the
+            // scanner's `continued_at IS NULL` claim never matches it again).
             "UPDATE audit_incidents
              SET status = 'open', acknowledged_at = NULL, acknowledged_by = NULL,
-                 resolved_at = NULL, resolution_note = NULL
+                 resolved_at = NULL, resolution_note = NULL, continued_at = NULL
              WHERE id = ?1",
             params![id],
         )?,
