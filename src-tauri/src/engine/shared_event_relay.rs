@@ -120,6 +120,19 @@ pub async fn shared_event_relay_tick(
                 // remainder re-polls next tick.
                 let mut last_published_at: Option<&str> = None;
                 for firing in &firings {
+                    // Dedup: the feed cursor is a bare `fired_at` with no id
+                    // tiebreaker, so a firing sharing a boundary timestamp can be
+                    // re-delivered on the next poll. Skip any firing already
+                    // relayed (by its source id) but still advance the cursor
+                    // through it so we don't stall. (The inverse — a firing
+                    // *dropped* because the remote uses strict `>` on a shared
+                    // timestamp — needs a server-side composite cursor and can't
+                    // be recovered here.)
+                    if event_repo::exists_by_source_id(pool, &firing.id).unwrap_or(false) {
+                        last_published_at = Some(firing.fired_at.as_str());
+                        continue;
+                    }
+
                     // 3. Publish to local event bus
                     let event_type = format!("shared:{}", sub.slug);
                     let input = CreatePersonaEventInput {

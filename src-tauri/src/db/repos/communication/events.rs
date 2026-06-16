@@ -447,6 +447,20 @@ pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError>
     })
 }
 
+/// Whether any event already references this polymorphic `source_id`. Used by
+/// the shared-event relay to dedup re-delivered firings: the remote feed cursor
+/// is a bare `fired_at` timestamp with no id tiebreaker, so firings sharing a
+/// boundary timestamp can be re-sent and would otherwise be re-published.
+pub fn exists_by_source_id(pool: &DbPool, source_id: &str) -> Result<bool, AppError> {
+    timed_query!("persona_events", "persona_events::exists_by_source_id", {
+        let conn = pool.get()?;
+        let mut stmt = conn
+            .prepare_cached("SELECT EXISTS(SELECT 1 FROM persona_events WHERE source_id = ?1)")?;
+        let exists: i64 = stmt.query_row(params![source_id], |row| row.get(0))?;
+        Ok(exists != 0)
+    })
+}
+
 /// Count events of one type emitted by one persona since a timestamp. Used by
 /// the team-assignment orchestrator to detect that a step's execution emitted
 /// a verdict event (e.g. `qa.pr.changes_requested`) during its run window —
