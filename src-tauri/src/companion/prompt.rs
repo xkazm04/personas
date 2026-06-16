@@ -240,7 +240,7 @@ pub async fn build_system_prompt(
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
-    let projects = crate::companion::projects::list(user_db).unwrap_or_default();
+    let projects = dev_tools_registry_for_prompt(sys_db);
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
     let plugins_md = format!(
         "{}{}{}",
@@ -329,7 +329,7 @@ pub async fn build_system_prompt(
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
-    let projects = crate::companion::projects::list(user_db).unwrap_or_default();
+    let projects = dev_tools_registry_for_prompt(sys_db);
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
     let plugins_md = format!(
         "{}{}{}",
@@ -423,6 +423,48 @@ fn capitalize(s: &str) -> String {
 /// user said they're working toward. NOT cited the way facts are —
 /// goals are ongoing, not historical claims.
 /// Goals hub: inject the dev projects' goals + latest progress signal so Athena
+/// The REAL Dev Tools registry (`dev_projects`, execution store) shaped for the
+/// prompt's dev-tools block. Sources from `sys_db` — the SAME rows
+/// `enqueue_dev_job` scans against — so what Athena sees matches what she acts
+/// on. Previously the block read `companion_known_project` (brain DB), which
+/// had drifted to worktree/duplicate registrations unrelated to the Dev Tools
+/// projects the user actually manages — so she'd "analyze" a registry that
+/// bore no relation to reality. Scan recency comes from the latest `dev_scans`
+/// row per project.
+fn dev_tools_registry_for_prompt(sys_db: &DbPool) -> Vec<crate::companion::projects::KnownProject> {
+    use crate::companion::projects::KnownProject;
+    use crate::db::repos::dev_tools as dt;
+    let projects = match dt::list_projects(sys_db, None) {
+        Ok(p) => p,
+        Err(_) => return Vec::new(),
+    };
+    projects
+        .into_iter()
+        .map(|p| {
+            let latest = dt::list_scans(sys_db, Some(p.id.as_str()), Some(1))
+                .ok()
+                .and_then(|s| s.into_iter().next());
+            let (last_scan_at, last_scan_summary) = match latest {
+                Some(s) => (
+                    Some(s.created_at),
+                    Some(format!("{} scan, {} ideas", s.scan_type, s.idea_count)),
+                ),
+                None => (None, None),
+            };
+            KnownProject {
+                id: p.id,
+                name: p.name,
+                path: p.root_path,
+                description: p.description,
+                last_scan_at,
+                last_scan_summary,
+                created_at: String::new(),
+                updated_at: String::new(),
+            }
+        })
+        .collect()
+}
+
 /// is aware of project-level direction and can reference a goal by id when she
 /// proposes an `update_dev_goal`. Reads the main app DB (sys_db). Ungated so it
 /// runs in both ml and non-ml prompt builds. Capped to keep the prompt lean.
@@ -1353,6 +1395,13 @@ Discipline:
   Plain English: no markdown, paths, ids, or code names.
 - Emit one right BEFORE a slow step (a live reaction), and one when a step
   turns up something worth reacting to. Aim for 2–5 across a working turn.
+- This ALSO applies when there are NO tool calls. If you're about to write a
+  substantial, multi-part answer — analyzing several things, walking through a
+  list/registry, comparing options, reviewing a project — OPEN with a beat or
+  two so the user sees you engage immediately ("Good timing — let me look at
+  your projects…" → "Okay, I see six; one's genuinely stale —") instead of
+  staring at a spinner while you compose the whole thing. The wait the user
+  feels is your composition time, not just tool time.
 - ONLY for turns that actually take work. A quick answer you can give in
   one message needs ZERO beats — never fragment a short reply into pieces,
   and never narrate a turn that's about to finish anyway.

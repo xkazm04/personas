@@ -2895,11 +2895,13 @@ fn execute_enqueue_dev_job(
     let mut candidates: Vec<String> = Vec::new();
     for v in [
         params.get("project_id").and_then(|v| v.as_str()),
+        params.get("project_name").and_then(|v| v.as_str()),
+        params.get("name").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
         p.get("project_id").and_then(|v| v.as_str()),
         p.get("project_name").and_then(|v| v.as_str()),
         p.get("name").and_then(|v| v.as_str()),
         p.get("path").and_then(|v| v.as_str()),
-        params.get("path").and_then(|v| v.as_str()),
     ]
     .into_iter()
     .flatten()
@@ -2955,9 +2957,17 @@ fn execute_enqueue_dev_job(
         }
     };
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
-    let stale_id_note = if !candidates.is_empty()
-        && !candidates.iter().any(|c| c == &project.id || c == &project.name)
-    {
+    // Only call it a "miss" if NONE of the candidates matched by id, name, OR
+    // (slash-normalized) path — the same three keys the SELECT matched on.
+    // Without the path check this fired even on a correct path match (the
+    // candidate is a path, never the id/name), making Athena wrongly report
+    // "didn't match — using most-recent" for a scan that hit the right project.
+    let norm = |s: &str| s.replace('\\', "/");
+    let project_path_norm = norm(&project.root_path);
+    let matched = candidates
+        .iter()
+        .any(|c| c == &project.id || c == &project.name || norm(c) == project_path_norm);
+    let stale_id_note = if !candidates.is_empty() && !matched {
         format!(
             " (note: requested {:?} didn't match any project — using the most-recently-registered one)",
             candidates
