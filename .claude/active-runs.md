@@ -66,12 +66,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### feature — Athena interactive in-turn replies (conversational beats persisted as messages) — Phase A
-- Started: 2026-06-16 (worktree .claude/worktrees/athena-interactive, branch worktree-athena-interactive)
-- Status: Phase A + Phase B DONE + LIVE-QA PASSED (commits 19b19aebf, 0d05a032d; branch unmerged). Ready to merge.
-- Paths: src-tauri/src/companion/{prompt.rs,dispatcher.rs,session.rs}, src/features/plugins/companion/{CompanionPanel.tsx,Bubble.tsx}
-- Note: A = reframed PROGRESS grammar → conversational asides; dispatcher captures beats → session.rs persists each as own assistant episode (PROGRESS: sentinel, non-embedded) before reply; Bubble renders PROGRESS: msg as slim dim aside, grouping treats asides as distinct kind. B = run_cli returns per-assistant-message segments (full blob still dispatched → no op-drop); send_turn persists non-final cleaned segments as interim messages, last=reply; single-segment turns stay one-shot; error/interrupt paths return empty segments; NarrationTrail now tool-only (no double-show beats). clean_segment_for_display mirrors frontend strip + drops PROGRESS. Lives in per-turn prompt NOT constitution → no bump. LIVE A: web-search ask → 2 asides + clean reply. LIVE B: multi-search ask → exactly 1 final reply (no fragmentation) + asides; quick math q → strict one-shot (1 user+1 assistant). Interim-PROSE-segment path correct but not directly observed firing (model used markers; segments are the unmarked-prose safety net). GOTCHAS: companion-brain episodes → ~/.personas (shared) + UTC date dir not PERSONAS_DATA_DIR; e2e-target exe locks across instances (taskkill personas-desktop.exe before relaunch). Research: native thinking gone from stream-json v2.1.8+, marker-based is the only lever.
-
 ### /prototype — PersonaMonitor live mode (bottom-right channel-message overlay) — 3 directional variants
 - Started: 2026-06-15
 - Status: completed (commit: 61cf4b0f7, pushed to origin) — Comms Stack (A) won; B/C + demo deleted; wired to real useTeamChannel feed + persisted monitorLiveMode toggle (Channels->Timeline) + Timeline deep-link redirect; tsc/eslint/i18n/catalog green; commit bundled the concurrent sub_goals acceptance stream per user request
@@ -753,6 +747,10 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### feature — Athena interactive in-turn replies (conversational beats + progressive segments) — completed (merged to master 473b8eed1)
+- 2026-06-16. Worktree athena-interactive (2 feature commits 19b19aebf + 0d05a032d + merge), fast-forwarded to master, worktree/branch removed (junction-first, main node_modules safe). NOT pushed to origin (user ran the local app to check).
+- Shipped: Athena now talks AS she works instead of one silent block. A = PROGRESS grammar reframed to conversational first-person asides; dispatcher captures beats (was discarding) → session.rs persists each as its own assistant episode (PROGRESS: sentinel, non-embedded) before the reply; Bubble renders them as slim dim asides, grouping treats asides as a distinct kind. B = run_cli returns per-assistant-message segments (full blob still dispatched → no op-drop); non-final cleaned segments persist as interim messages, last=reply; single-segment turns stay strictly one-shot; error/interrupt paths return empty segments; NarrationTrail now tool-only. Lives in the per-turn prompt (prompt.rs), NOT constitution.md → no version bump, effective next turn. LIVE-QA both phases (web-search → asides + clean reply; multi-search → 1 final reply no fragmentation; quick math → one-shot). NOT built: deterministic thinking stream (gone from stream-json v2.1.8+). GOTCHAS: companion-brain episodes → ~/.personas + UTC date dir not PERSONAS_DATA_DIR; e2e-target exe locks across instances (taskkill personas-desktop.exe before relaunch).
 
 ### feature — Goal-UAT browser-test gate (web projects only) — completed (merged to master 9a419fea3)
 - 2026-06-12 → 2026-06-13. Worktree goal-uat-gate (4 feature commits + 2 merge commits), merged to master via fast-forward, worktree/branch removed (junction-first, main node_modules safe). NOT yet pushed to origin (pending user go).
