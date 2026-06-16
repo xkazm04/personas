@@ -323,7 +323,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if needs_chain_migration {
         ddl_step(
                     conn,
-                            "CREATE TABLE IF NOT EXISTS persona_triggers_new (
+                            "DROP TABLE IF EXISTS persona_triggers_new;
+            CREATE TABLE persona_triggers_new (
                 id                TEXT PRIMARY KEY,
                 persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
                 trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
@@ -334,7 +335,15 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 created_at        TEXT NOT NULL,
                 updated_at        TEXT NOT NULL
             );
-            INSERT INTO persona_triggers_new SELECT * FROM persona_triggers;
+            -- Explicit column list (not SELECT *): a positional copy across two
+            -- independently-authored shapes shifts values into the wrong columns
+            -- if a legacy DB's column order/count drifted. Same discipline as
+            -- fk_hygiene::recreate_with_fk. (use_case_id is added by a later
+            -- migration, so it is intentionally not part of this older shape.)
+            INSERT INTO persona_triggers_new
+                (id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at)
+                SELECT id, persona_id, trigger_type, config, enabled, last_triggered_at, next_trigger_at, created_at, updated_at
+                FROM persona_triggers;
             DROP TABLE persona_triggers;
             ALTER TABLE persona_triggers_new RENAME TO persona_triggers;
             CREATE INDEX IF NOT EXISTS idx_ptr_persona      ON persona_triggers(persona_id);
@@ -916,7 +925,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if !trigger_sql.contains("'event_listener'") {
         ddl_step(
                     conn,
-                            "CREATE TABLE IF NOT EXISTS persona_triggers_new (
+                            "DROP TABLE IF EXISTS persona_triggers_new;
+            CREATE TABLE persona_triggers_new (
                 id                TEXT PRIMARY KEY,
                 persona_id        TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
                 trigger_type      TEXT NOT NULL CHECK(trigger_type IN ('manual', 'schedule', 'polling', 'webhook', 'chain', 'event_listener')),
@@ -2038,7 +2048,8 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     if needs_role_migration {
         ddl_step(
                     conn,
-                            "CREATE TABLE chat_messages_new (
+                            "DROP TABLE IF EXISTS chat_messages_new;
+            CREATE TABLE chat_messages_new (
                 id              TEXT PRIMARY KEY,
                 persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
                 session_id      TEXT NOT NULL,
