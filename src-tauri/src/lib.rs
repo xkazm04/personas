@@ -1738,6 +1738,7 @@ pub fn run() {
             commands::execution::lab::lab_rate_result,
             commands::execution::lab::lab_get_ratings,
             commands::execution::lab::lab_get_version_ratings,
+            commands::execution::lab::lab_get_version_economics,
             commands::execution::lab::lab_get_result_events,
             commands::execution::lab::lab_get_tool_calls,
             commands::execution::lab::lab_get_score_weights,

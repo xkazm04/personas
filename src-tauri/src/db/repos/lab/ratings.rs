@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::{CreateRatingInput, LabUserRating, LabVersionRating};
+use crate::db::models::{CreateRatingInput, LabUserRating, LabVersionEconomics, LabVersionRating};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -177,6 +177,51 @@ pub fn get_version_ratings(
                     duration_ms: row.get::<_, Option<f64>>("dur_avg")?.unwrap_or(0.0),
                     sample_count: row.get("sample_count")?,
                     last_measured_at: row.get("last_measured_at")?,
+                })
+            })
+            .map_err(AppError::Database)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// F21: per (version × model) eval economics — attempted-vs-resolved + cost-per-
+/// success. Unlike [`get_version_ratings`] (which filters to completed results),
+/// this counts ALL eval attempts so the resolve rate and cost efficiency are
+/// visible. Scoped to `lab_eval_results` (the table that carries `error_message`).
+pub fn get_version_economics(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<LabVersionEconomics>, AppError> {
+    timed_query!("lab_version_economics", "lab::get_version_economics", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT r.version_id AS version_id, r.model_id AS model_id,
+                    MAX(r.provider) AS provider,
+                    COUNT(*) AS attempted,
+                    SUM(CASE WHEN r.status = 'completed'
+                                  AND (r.error_message IS NULL OR r.error_message = '')
+                             THEN 1 ELSE 0 END) AS resolved,
+                    COALESCE(SUM(r.cost_usd), 0) AS total_cost
+             FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
+             WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL
+             GROUP BY r.version_id, r.model_id
+             ORDER BY r.model_id",
+        )?;
+        let rows = stmt
+            .query_map(params![persona_id], |row| {
+                let attempted: i64 = row.get("attempted")?;
+                let resolved: i64 = row.get("resolved")?;
+                let total_cost: f64 = row.get::<_, Option<f64>>("total_cost")?.unwrap_or(0.0);
+                Ok(LabVersionEconomics {
+                    version_id: row.get("version_id")?,
+                    model_id: row.get("model_id")?,
+                    provider: row.get::<_, Option<String>>("provider")?.unwrap_or_default(),
+                    attempted,
+                    resolved,
+                    resolve_rate: (attempted > 0).then(|| resolved as f64 / attempted as f64),
+                    total_cost_usd: total_cost,
+                    cost_per_success: (resolved > 0).then(|| total_cost / resolved as f64),
                 })
             })
             .map_err(AppError::Database)?;
