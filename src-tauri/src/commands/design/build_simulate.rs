@@ -204,6 +204,13 @@ pub async fn simulate_build_draft(
 
     let persona_id = session.persona_id.clone();
 
+    // Serialize simulations for THIS persona — they share the one
+    // design_context column (see sim_lock_for / DesignContextRestore). Held for
+    // the whole command; different personas still simulate in parallel. Acquired
+    // before reading prior_design_context so no other sim's snapshot is live.
+    let sim_lock_arc = sim_lock_for(&persona_id);
+    let _sim_lock = sim_lock_arc.lock().await;
+
     // Read persona once, up front. Two reasons:
     //   1. fallback agent_ir source when session.agent_ir is null;
     //   2. capture the *current* design_context BEFORE the snapshot
@@ -252,6 +259,15 @@ pub async fn simulate_build_draft(
             rusqlite::params![&snapshot, &now, &persona_id],
         )?;
     }
+
+    // From here the persona row carries a throwaway snapshot. Restore its prior
+    // design_context on EVERY exit path below (the `?`s and the final execute)
+    // via this RAII guard, which drops while the per-persona lock is still held.
+    let _restore = DesignContextRestore {
+        pool: state.db.clone(),
+        persona_id: persona_id.clone(),
+        prior: prior_design_context.clone(),
+    };
 
     tracing::info!(
         session_id = %session_id,
@@ -319,6 +335,48 @@ pub async fn simulate_build_draft(
         /* is_simulation */ true,
     )
     .await
+}
+
+/// Per-persona serialization for build-draft simulations. Two concurrent sims
+/// for the SAME persona both UPDATE the shared `personas.design_context` column;
+/// without serialization the second's write can land between the first's write
+/// and its execute-read, so a dry-run runs against the wrong snapshot and the
+/// restore guards race to leave a stale snapshot behind. Different personas
+/// still simulate in parallel.
+fn sim_lock_for(persona_id: &str) -> std::sync::Arc<tokio::sync::Mutex<()>> {
+    static LOCKS: std::sync::LazyLock<
+        std::sync::Mutex<std::collections::HashMap<String, std::sync::Arc<tokio::sync::Mutex<()>>>>,
+    > = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+    let mut map = LOCKS.lock().unwrap_or_else(|e| e.into_inner());
+    map.entry(persona_id.to_string())
+        .or_insert_with(|| std::sync::Arc::new(tokio::sync::Mutex::new(())))
+        .clone()
+}
+
+/// RAII guard that restores a persona's pre-simulation `design_context` when the
+/// command returns (success, error, OR an early `?`). `simulate_build_draft`
+/// writes a STRIPPED snapshot (use_cases + summary only) onto the shared,
+/// persistent column so `execute_persona_inner` can read it; without restoring,
+/// an abandoned — or even a normal — dry-run would leave the persona pointing at
+/// that throwaway snapshot (losing live triggers/channels/policies until the
+/// next promote), which other readers (getPersonaDetail, the matrix) consume as
+/// truth.
+struct DesignContextRestore {
+    pool: crate::db::DbPool,
+    persona_id: String,
+    prior: Option<String>,
+}
+
+impl Drop for DesignContextRestore {
+    fn drop(&mut self) {
+        if let Ok(conn) = self.pool.get() {
+            let now = chrono::Utc::now().to_rfc3339();
+            let _ = conn.execute(
+                "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![&self.prior, &now, &self.persona_id],
+            );
+        }
+    }
 }
 
 /// Normalize a caller-supplied `use_case_id` into one that matches the
