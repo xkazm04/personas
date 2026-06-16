@@ -1,5 +1,12 @@
 # Athena — what she can do today
 
+> **Currency: refreshed 2026-06-16 against constitution v41.** The
+> 2026-05-26 version of this doc stopped at v18 and missed ~12 ops
+> (KPI suite, team orchestration, browser testing, goals, genome,
+> cockpit-explain) + 3 chat cards. The dispatcher `ALLOWED_ACTIONS`,
+> the chat-card arms in `dispatcher.rs`, and `prompt.rs::compose` remain
+> the ground truth — re-derive from them, not from prose, when in doubt.
+
 A concrete, honest inventory of Athena's capability surface as shipped
 on `master`. The chat is **not** a fixed menu — what she can actually
 do depends on what's pinned, what's enabled, and what's been wired
@@ -534,7 +541,7 @@ deliver. As of this session, the list is shorter:
 | --- | --- |
 | Op dispatcher (grammar, allowlists, parse, `continue_autonomously`) | `src-tauri/src/companion/dispatcher.rs` |
 | Prompt builder (compose, addenda, recall, tools, autonomous) | `src-tauri/src/companion/prompt.rs` |
-| Constitution (op grammar reference, v7) | `src-tauri/src/companion/templates/constitution.md` |
+| Constitution (op grammar reference, v41) | `src-tauri/src/companion/templates/constitution.md` (version pin: `templates/mod.rs::CONSTITUTION_VERSION`) |
 | Session runtime (turn lifecycle, A5 interrupt, A2 continuation scheduler) | `src-tauri/src/companion/session.rs` |
 | Background-job worker (`JobEventSink`, scan/connector/curation) | `src-tauri/src/companion/jobs/` |
 | Connector capability registry + real handlers | `src-tauri/src/companion/connectors.rs`, `jobs/connector_use.rs` |
@@ -554,7 +561,10 @@ A flat, grouped list of every Athena-driven capability shipping on
 `master`. Use this as the test matrix; each row should have at least
 one happy-path scenario and (where applicable) one rejection scenario.
 Numbers in brackets indicate the constitution version that introduced
-the op (current: **v18**).
+the op (current: **v41**). Ops added after v18 (KPI suite, team
+orchestration, browser testing, dev-goals, genome, cockpit-explain) are
+marked `[post-v18]` where the exact introducing version isn't pinned in
+source.
 
 ### A. Op grammar (chat-emitted JSON envelopes)
 
@@ -566,6 +576,8 @@ the op (current: **v18**).
   Companion → Dashboard. 9 widget kinds.
 - `compose_cockpit { title, widgets[] }` — persists + navigates to
   Home → Cockpit. 6 widget kinds.
+- `explain_in_cockpit { ... }` [post-v18] — composes an explanation
+  overlay into the Cockpit (the "Explain-in-Cockpit" decision-0 flow).
 - `continue_autonomously { rationale }` — autonomous-mode only;
   schedules next tick.
 
@@ -586,6 +598,12 @@ renders inline:
 - `show_decision_log { intent, decisions[] }` [v15] — also persists to
   `companion_design_decision`
 - `show_persona_ready { intent, recommended_action, summary }` [v16]
+- `show_browser_test_report { url, steps[] }` [post-v18] — renders the
+  verdict card for a `run_browser_test` run (per-step pass/fail).
+- `show_persona_creation_offer { intent }` [post-v18] — inline "want me
+  to build this?" offer when the user describes a persona in passing.
+- `show_walkthrough_offer { ... }` [post-v18] — offers to start the
+  guided design walkthrough rather than emitting it unprompted.
 
 **A3. Auto-fire background job** — no approval card, enqueues:
 
@@ -608,6 +626,15 @@ renders inline:
   (no picker to answer), so the build reaches `promoted` unattended. Interactive
   `prefill_persona_create` is unchanged (still opens the screen for review).
 - `run_arena { persona_id, models[], use_case_filter? }`
+- `companion_breed_personas { ... }` [post-v18] — headless genome breed.
+  The Lab descoped Breed/Evolve from the UI (consolidated Versions &
+  Ratings table), so Athena is now the **only** surface that drives them.
+- `companion_evolve_persona { ... }` [post-v18] — headless genome evolve.
+- `run_browser_test { project_id?, scenario? }` [post-v18] — live browser
+  test of a dev project's configured `test_env_url`. Doubly gated: spawns a
+  CLI reasoning turn **and** drives a real browser via Playwright MCP
+  (clicks/navigation/input on the user's machine). Emits
+  `show_browser_test_report` on completion.
 
 **A5. Approval-gated — reviews**:
 
@@ -635,13 +662,31 @@ or the dispatcher rejects at parse time):
 
 - `schedule_proactive { message, when_iso }` [v8]
 
-**A8. Approval-gated — projects + dev jobs**:
+**A8. Approval-gated — projects, dev jobs, goals + KPIs**:
 
 - `register_project { name, path, description? }`
 - `enqueue_dev_job { kind, project_id?, params? }` — currently only
-  supports `scan_codebase`.
+  supports `scan_codebase`. **Registry source-of-truth note (2026-06-16
+  fix):** the prompt's dev-tools registry is now sourced from the real
+  `dev_projects` table (via `prompt.rs::dev_tools_registry_for_prompt`),
+  **not** the companion's drifted `companion_known_project` table — which
+  previously caused Athena to name phantom worktrees/duplicates when
+  asked to "rescan all Dev Tools projects." Job matching counts a
+  normalized `root_path` match, not just id/name.
+- `open_test_env { project_id? }` [post-v18] — opens a registered
+  project's configured test-environment URL (`OpenExternalUrl` action).
+- `update_dev_goal { goal_id, progress?, status? }` [post-v18] — propose
+  a dev-goal progress/status change against the Goals hub.
+- `propose_kpi { ... }` / `scan_kpis { ... }` / `evaluate_kpi { ... }` /
+  `calibrate_kpi { ... }` [post-v18] — the KPI layer (outcome steering
+  above goals). All four are approval-gated because they change what the
+  autonomous loop optimizes for or incur measurement cost: `propose_kpi`
+  configures one KPI from a guided conversation; `scan_kpis` proposes a
+  new set (an LLM scan); `evaluate_kpi` measures one now (a real run);
+  `calibrate_kpi` adjusts a KPI's target/date/tier/cadence/warn-critical
+  lines (the lever that decides when a goal gets derived).
 
-**A9. Approval-gated — fleet (Phase J)**:
+**A9. Approval-gated — fleet + team orchestration (Phase J / C3)**:
 
 - `fleet_send_input { session_id, text, press_enter? }`
 - `fleet_broadcast { target, text, ids?, press_enter? }` (target ∈
@@ -653,11 +698,25 @@ or the dispatcher rejects at parse time):
 - `fleet_intervene { session_id, message }` — D9; capped at 1 per
   session
 - `fleet_redirect_op { op_id, new_intent, message? }` — D9
+- `assign_team { team_id, goal, title? }` [post-v18] — C3 team-assignment
+  dispatch ("have the X team handle Y"). Spawns multiple persona
+  executions in parallel; approval body is the proposed step list.
+- `analyze_fleet { ... }` [post-v18] — manually-requested "how are the
+  teams doing?" review. Spawns a proactive Athena reasoning turn over the
+  fleet (executions, outcomes, Director verdicts, goal progress) on the
+  certification rubric; writes a per-team timeline note + proposes
+  improvements.
 
 **A10. Reply-shaping helpers** (stripped from display, transient):
 
 - `TTS: "..."` — spoken summary line; first wins per turn
 - `QR: ["..."]` — up to 6 quick-reply chips
+- `PROGRESS: ...` [post-v18] — conversational in-turn beats. Each beat is
+  persisted as its own slim "aside" assistant message (rendered dim,
+  `data-testid="companion-bubble-aside"`) **before** the final reply, so a
+  multi-step or long-composition turn streams progressively instead of
+  landing as one silent block. Non-final cleaned CLI segments are also
+  surfaced as interim messages (Phase B); the last segment is the reply.
 
 ### B. MCP server tools (Athena exposes to fleet workers)
 
@@ -678,7 +737,17 @@ or the dispatcher rejects at parse time):
 | `github` | `list_open_prs` | `owner, repo, limit?` (≤100) | wired |
 | `slack` | `list_channels` | `limit?` (≤200) | wired |
 | `gmail` / `google_workspace` | `list_recent_threads` | `limit?` (≤50) | wired |
-| any other registered service-type | (any) | — | stub markdown only |
+| any other registered service-type | (any) | — | **stub markdown only** |
+
+> **Wired-vs-stub gap (open finding, 2026-06-16 audit).** Only the four
+> rows above have real read handlers. The other ~20 registered connectors
+> return the v1 stub — but Athena's prompt surface does **not** distinguish
+> wired from stub, so when asked to "pull my Notion pages" she confidently
+> promises a fetch that returns nothing useful. The hardening step is to
+> inject per-connector wired/stub status into the prompt so she says
+> "Notion's connected but I don't have a read capability for it yet."
+> Adding a real handler is one match arm in
+> `connector_use::dispatch_capability`.
 
 ### D. Background job kinds
 
