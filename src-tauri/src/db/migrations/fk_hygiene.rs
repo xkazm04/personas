@@ -74,15 +74,19 @@ fn recreate_with_fk(
         return Ok(());
     }
 
+    // Disable FK enforcement for the rebuild — in AUTOCOMMIT, BEFORE opening the
+    // transaction. `PRAGMA foreign_keys` is a documented no-op while a
+    // transaction is active, so the previous in-transaction `OFF` did nothing:
+    // FKs stayed ON for the whole rebuild, and `DROP TABLE` below then fired the
+    // ON DELETE CASCADE of any other table referencing this one, silently wiping
+    // child rows on a legacy upgrade. The guard sets OFF now and restores the
+    // prior state when it drops (after commit). Mirrors the executions rebuild.
+    let _fk_guard = crate::db::FkDisabledGuard::new(conn).map_err(AppError::Database)?;
+
     // Purge any pre-existing orphans that would violate the new FK. Done
     // inside the same transaction so a partial cleanup can't leak if the
     // rebuild fails.
     let tx = conn.unchecked_transaction()?;
-
-    // foreign_keys must be OFF for DROP TABLE to skip the cascade chain on
-    // any current FK that points the other way, AND to allow the rename to
-    // succeed without triggering checks against the in-progress shape.
-    tx.execute_batch("PRAGMA foreign_keys = OFF;")?;
 
     for sql in cleanup_orphans_sql {
         tx.execute_batch(sql)?;
@@ -126,10 +130,10 @@ fn recreate_with_fk(
         tx.execute_batch(index_sql)?;
     }
 
-    // Re-enable FKs and verify the new state has no violations before
-    // committing. If a violation slipped past cleanup_orphans_sql, the
-    // foreign_key_check pragma surfaces it now and we abort.
-    tx.execute_batch("PRAGMA foreign_keys = ON;")?;
+    // Verify the new state has no violations before committing. The
+    // foreign_key_check pragma runs regardless of the (guard-disabled)
+    // enforcement setting; the guard restores enforcement after commit. If a
+    // violation slipped past cleanup_orphans_sql, abort.
     let violations: i64 = tx
         .prepare("SELECT COUNT(*) FROM pragma_foreign_key_check")?
         .query_row([], |row| row.get(0))?;
