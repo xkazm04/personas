@@ -689,9 +689,16 @@ async fn execute_tool_guarded(
     persona_name: Option<&str>,
     depth: usize,
 ) -> Result<McpToolResult, AppError> {
-    // Per-tool rate limiting
+    // Per-tool rate limiting. Scope the key to the credential id, NOT the bare
+    // tool_name: gateway calls arrive as "<member>::<tool>" and the member
+    // prefix is caller-influenced, so keying on the name alone let an attacker
+    // mint a fresh limiter bucket per prefix and bypass the per-tool cap. The
+    // credential_id is server-assigned and stable, and the gateway recursion
+    // re-enters here with the member credential id + the real tool name — so
+    // the same underlying tool always lands in the same bucket regardless of
+    // which gateway prefix routed to it.
     if let Some(rl) = rate_limiter {
-        let rate_key = format!("mcp_tool:{tool_name}");
+        let rate_key = format!("mcp_tool:{credential_id}:{tool_name}");
         if let Err(retry_after) = rl.check(
             &rate_key,
             TOOL_EXECUTION_MAX_PER_MINUTE,
