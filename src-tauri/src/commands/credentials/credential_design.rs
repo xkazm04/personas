@@ -55,7 +55,14 @@ pub async fn start_credential_design(
 
     let design_id = uuid::Uuid::new_v4().to_string();
     let registry = state.process_registry.clone();
-    registry.set_id("credential_design", design_id.clone());
+    // begin_run (not set_id): atomically install this run, cancel the previous
+    // one, and take its PID to kill — so two concurrent starts can't both pass a
+    // get_id()/set_id() guard, spawn duplicate CLIs, and silently discard one
+    // result. Mirrors design/analysis.rs.
+    let (old_pid, _cancelled) = registry.begin_run("credential_design", design_id.clone());
+    if let Some(pid) = old_pid {
+        crate::engine::kill_process(pid);
+    }
 
     let truncated = if instruction.len() > 120 {
         format!("{}...", crate::utils::text::truncate_on_char_boundary(&instruction, 120))

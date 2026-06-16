@@ -63,7 +63,15 @@ pub async fn start_credential_negotiation(
     // Use a dedicated domain so negotiation and credential design don't
     // corrupt each other's state when a user switches between flows.
     let registry = state.process_registry.clone();
-    registry.set_id("negotiation", negotiation_id.clone());
+    // begin_run (not set_id): atomically install this run, cancel the previous
+    // one's token, and take its PID to kill. A get_id()-then-set_id() pair lets
+    // two concurrent starts both pass the guard, spawning a duplicate CLI while
+    // the first's completion check sees the displaced id and returns without
+    // emitting (silently discarded result). Mirrors design/analysis.rs.
+    let (old_pid, _cancelled) = registry.begin_run("negotiation", negotiation_id.clone());
+    if let Some(pid) = old_pid {
+        crate::engine::kill_process(pid);
+    }
 
     let _ = audit_log::insert(
         &state.db,
