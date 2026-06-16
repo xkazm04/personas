@@ -146,14 +146,25 @@ pub fn companion_list_pending_approvals(
 
     let mut out = Vec::with_capacity(rows.len());
     for (id, payload, human_review_id, created_at) in rows {
-        let v: serde_json::Value = serde_json::from_str(&payload).unwrap_or_default();
+        // Skip corrupt/empty payloads instead of unwrap_or_default()-ing them
+        // into a card with a blank action — that rendered an *actionable*
+        // approval (the user can click Approve) whose action is "", a consent
+        // surface showing a no-op as if it were a real decision.
+        let v: serde_json::Value = match serde_json::from_str(&payload) {
+            Ok(v) => v,
+            Err(e) => {
+                tracing::warn!(approval_id = %id, error = %e, "skipping approval with unparseable payload");
+                continue;
+            }
+        };
+        let action = v.get("action").and_then(|x| x.as_str()).unwrap_or("").trim();
+        if action.is_empty() {
+            tracing::warn!(approval_id = %id, "skipping approval with no action (would render a blank actionable card)");
+            continue;
+        }
         out.push(PendingApproval {
             id,
-            action: v
-                .get("action")
-                .and_then(|x| x.as_str())
-                .unwrap_or("")
-                .into(),
+            action: action.to_string(),
             rationale: v
                 .get("rationale")
                 .and_then(|x| x.as_str())
