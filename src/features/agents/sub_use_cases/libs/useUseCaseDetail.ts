@@ -8,6 +8,7 @@ import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCase
 import type { NotificationChannelType, ModelProfile, ModelProvider, TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel, type ModelOption } from './useCaseDetailHelpers';
 import { executePersona } from '@/api/agents/executions';
+import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { createLogger } from "@/lib/log";
 
@@ -92,6 +93,20 @@ export function useUseCaseDetail(useCaseId: string) {
         liveSelectedId,
         useCaseId,
       });
+      return;
+    }
+    // Enforce the budget pause here too. This manual "Run" calls the raw IPC
+    // binding directly (real, paid CLI spawn), bypassing the store action
+    // `executePersona` where the gate lives — so a budget-exceeded/stale persona
+    // could spend through this second button while the Runner UI shows it paused.
+    // Mirror the gate the other call sites use (useScheduleActions, the runner).
+    // (Server-side enforcement in execute_persona_inner is the deeper fix; the
+    // backend has no budget-pause state today.)
+    if (useAgentStore.getState().isBudgetBlocked(expectedPersonaId)) {
+      useToastStore.getState().addToast(
+        `Budget enforcement for "${selectedPersona.name}" — execution blocked (budget exceeded or data unavailable)`,
+        'error',
+      );
       return;
     }
     setIsManualRunning(true);
