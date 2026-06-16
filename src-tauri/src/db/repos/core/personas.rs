@@ -590,11 +590,19 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
         // collision so the user can tell them apart in lists/sidebar
         // without changing intent semantics. Only mutates `input.name`
         // when needed; original name is preserved when unique.
+        let mut conn = pool.get()?;
+        // Serialize the name-uniqueness check + INSERT under one IMMEDIATE
+        // transaction. Previously the check and the INSERT used two separate
+        // pooled connections, so two concurrent creates of the same name both
+        // passed the "does it exist?" probe and inserted duplicates — a TOCTOU
+        // with no DB unique constraint behind it. IMMEDIATE takes the write lock
+        // before the SELECT, forcing concurrent creators to serialize so the
+        // second sees the first's row and suffixes correctly.
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         {
-            let conn = pool.get()?;
             let mut suffix = 2u32;
             loop {
-                let exists: bool = conn
+                let exists: bool = tx
                     .query_row(
                         "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 LIMIT 1",
                         params![project_id, input.name],
@@ -635,43 +643,45 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
             other => other.clone(),
         };
 
-        let conn = pool.get()?;
-        conn.query_row(
-            "INSERT INTO personas
+        let persona = tx
+            .query_row(
+                "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
               model_profile, max_budget_usd, max_turns, design_context,
               notification_channels, created_at, updated_at)
              VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)
              RETURNING *",
-            params![
-                id,
-                project_id,
-                input.name,
-                input.description,
-                input.system_prompt,
-                input.structured_prompt,
-                input.icon,
-                input.color,
-                enabled,
-                sensitive,
-                max_concurrent,
-                timeout_ms,
-                encrypted_profile,
-                input.max_budget_usd,
-                input.max_turns,
-                input.design_context,
-                encrypted_channels,
-                now,
-            ],
-            row_to_persona,
-        )
-        .map_err(|e| match e {
-            rusqlite::Error::QueryReturnedNoRows => {
-                AppError::Internal("Failed to create persona".into())
-            }
-            other => AppError::Database(other),
-        })
+                params![
+                    id,
+                    project_id,
+                    input.name,
+                    input.description,
+                    input.system_prompt,
+                    input.structured_prompt,
+                    input.icon,
+                    input.color,
+                    enabled,
+                    sensitive,
+                    max_concurrent,
+                    timeout_ms,
+                    encrypted_profile,
+                    input.max_budget_usd,
+                    input.max_turns,
+                    input.design_context,
+                    encrypted_channels,
+                    now,
+                ],
+                row_to_persona,
+            )
+            .map_err(|e| match e {
+                rusqlite::Error::QueryReturnedNoRows => {
+                    AppError::Internal("Failed to create persona".into())
+                }
+                other => AppError::Database(other),
+            })?;
+        tx.commit()?;
+        Ok(persona)
     })
 }
 
@@ -937,11 +947,16 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
 pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> {
     timed_query!("personas", "personas::update_name", {
         validate_name(name)?;
-        let conn = pool.get()?;
+        let mut conn = pool.get()?;
+        // IMMEDIATE transaction so the collision check + UPDATE are atomic vs.
+        // other writers — otherwise two concurrent renames (or a rename racing
+        // a create) both pass the "does another row have this name?" probe and
+        // land duplicates (TOCTOU, no DB unique constraint).
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
 
         // Look up project_id of the target persona so the uniqueness
         // check is project-scoped (mirrors create()).
-        let project_id: String = conn
+        let project_id: String = tx
             .query_row(
                 "SELECT project_id FROM personas WHERE id = ?1",
                 params![id],
@@ -955,7 +970,7 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
         let mut final_name = name.to_string();
         let mut suffix = 2u32;
         loop {
-            let collides: bool = conn
+            let collides: bool = tx
                 .query_row(
                     "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 AND id <> ?3 LIMIT 1",
                     params![project_id, final_name, id],
@@ -976,10 +991,11 @@ pub fn update_name(pool: &DbPool, id: &str, name: &str) -> Result<(), AppError> 
             }
         }
 
-        conn.execute(
+        tx.execute(
             "UPDATE personas SET name = ?1, updated_at = datetime('now') WHERE id = ?2",
             params![final_name, id],
         )?;
+        tx.commit()?;
         Ok(())
     })
 }
