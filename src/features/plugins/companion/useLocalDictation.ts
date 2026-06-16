@@ -89,6 +89,13 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const chunksRef = useRef<Float32Array[]>([]);
+  // getUserMedia shows an async permission prompt; `start` only flips
+  // `listening` true once it resolves. If the user releases (or the component
+  // unmounts) DURING that prompt, `stop`/teardown can't see an in-flight start
+  // and the late resolution strands the UI in "listening". `pendingStartRef`
+  // marks the in-flight window; `abortStartRef` is raised to cancel it.
+  const pendingStartRef = useRef(false);
+  const abortStartRef = useRef(false);
   const modelRef = useRef<string | null>(modelId);
   modelRef.current = modelId;
   const langRef = useRef<string | undefined>(lang);
@@ -112,7 +119,9 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
     }
   }, []);
 
-  useEffect(() => () => teardown(), [teardown]);
+  // On unmount, also abort any in-flight start so a getUserMedia that resolves
+  // after teardown releases its stream instead of leaking a live mic.
+  useEffect(() => () => { abortStartRef.current = true; teardown(); }, [teardown]);
 
   const start = useCallback(() => {
     if (listening) return;
@@ -130,9 +139,19 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
       setError('audio_unsupported');
       return;
     }
+    pendingStartRef.current = true;
+    abortStartRef.current = false;
     navigator.mediaDevices
       .getUserMedia({ audio: true })
       .then((stream) => {
+        pendingStartRef.current = false;
+        // Released / unmounted while the permission prompt was up — don't enter
+        // listening; just release the freshly-acquired mic so it isn't left on.
+        if (abortStartRef.current) {
+          abortStartRef.current = false;
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         streamRef.current = stream;
         const ctx = new Ctor({ sampleRate: TARGET_SAMPLE_RATE });
         ctxRef.current = ctx;
@@ -149,6 +168,8 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
         setListening(true);
       })
       .catch((err: unknown) => {
+        pendingStartRef.current = false;
+        abortStartRef.current = false;
         setError(err instanceof Error ? err.message : 'mic_denied');
         teardown();
         setListening(false);
@@ -191,6 +212,12 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
   }, [teardown]);
 
   const stop = useCallback(() => {
+    // Released before the mic permission resolved — abort the pending start so
+    // the late getUserMedia resolution doesn't strand us in "listening".
+    if (pendingStartRef.current) {
+      abortStartRef.current = true;
+      return;
+    }
     if (!listening) return;
     finishAndTranscribe();
   }, [listening, finishAndTranscribe]);
