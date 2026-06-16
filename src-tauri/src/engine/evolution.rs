@@ -374,7 +374,14 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
 
     let threshold = policy.improvement_threshold;
     let promoted = if let Some(idx) = best_variant_idx {
-        let improvement = best_variant_score - incumbent_fitness.overall;
+        // Compare LIKE-for-LIKE: both incumbent_avg and best_variant_score come
+        // from evaluate_persona_on_scenarios (live quality eval, same 0–1 scale).
+        // Previously this subtracted incumbent_fitness.overall — a historical
+        // cost/speed-weighted blend on a different distribution — so the core
+        // promote/reject decision compared apples to oranges (cheap+fast
+        // incumbents never evolved; expensive ones promoted mediocre variants).
+        // incumbent_fitness is retained for reporting only.
+        let improvement = best_variant_score - incumbent_avg;
         if improvement >= threshold {
             // Promote: update the persona with the winning variant's genome
             let winner = &variants[idx];
