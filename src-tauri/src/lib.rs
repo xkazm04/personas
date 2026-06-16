@@ -2613,6 +2613,7 @@ pub fn run() {
             commands::infrastructure::system::health_check_account,
             commands::infrastructure::system::health_check_circuit_breaker,
             commands::infrastructure::system::health_check_subscriptions,
+            commands::infrastructure::system::health_check_environment,
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::open_local_path,
             commands::infrastructure::system::register_claude_desktop_mcp,

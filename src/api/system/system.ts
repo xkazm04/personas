@@ -27,6 +27,8 @@ export const healthCheckCircuitBreaker = () =>
   invoke<HealthCheckSection>("health_check_circuit_breaker");
 export const healthCheckSubscriptions = () =>
   invoke<HealthCheckSection>("health_check_subscriptions");
+export const healthCheckEnvironment = () =>
+  invoke<HealthCheckSection>("health_check_environment");
 
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });

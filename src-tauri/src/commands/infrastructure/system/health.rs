@@ -35,6 +35,11 @@ pub struct HealthCheckItem {
     pub status: HealthCheckStatus,
     pub detail: Option<String>,
     pub installable: bool,
+    /// Human-readable fix instruction for a failing check (F4 — fabro `doctor`
+    /// remediation-per-check lesson). `None` for passing/informational items.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[ts(optional)]
+    pub remediation: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -75,6 +80,9 @@ pub async fn system_health_check(
         &state.binary_probe_cache,
     );
     sections.push(local_section);
+
+    // -- Section 1b: Environment (F4 — doctor-style footgun checks) --
+    sections.push(build_environment_section(&state.db));
 
     // -- Section 2: Agents --
     sections.push(build_agents_section(&state.db));
@@ -128,6 +136,7 @@ pub async fn system_health_check(
                 status: fe_status,
                 detail: Some(fe_detail),
                 installable: false,
+            remediation: None,
             }],
         });
     }
@@ -209,6 +218,14 @@ pub fn health_check_subscriptions(
     Ok(build_subscriptions_section(&state))
 }
 
+#[tauri::command]
+pub fn health_check_environment(
+    state: State<'_, Arc<AppState>>,
+) -> Result<HealthCheckSection, AppError> {
+    require_auth_sync(&state)?;
+    Ok(build_environment_section(&state.db))
+}
+
 // =============================================================================
 // Section Builders
 // =============================================================================
@@ -218,6 +235,113 @@ struct EngineProbe {
     label: &'static str,
     setting_key: &'static str,
     candidates: &'static [&'static str],
+}
+
+/// F4: environment footgun checks with actionable remediation — the personas
+/// analogue of `fabro doctor`. Catches the two failure modes most likely to
+/// silently break a build: the mock keyring backend (credentials never persist)
+/// and an unwritable database. Each failing item carries a `remediation` string.
+fn build_environment_section(db: &crate::db::DbPool) -> HealthCheckSection {
+    let mut items = Vec::new();
+
+    // 1. Keyring persistence round-trip. A keyring built without a native
+    //    backend feature silently no-ops writes, so credentials never persist
+    //    (see CLAUDE.md `feedback_keyring_backend_required`). Probe with a
+    //    throwaway entry: write → read-back → delete.
+    #[cfg(feature = "desktop")]
+    {
+        const PROBE_KEY: &str = "__personas_health_probe__";
+        let (status, detail, remediation) = match keyring::Entry::new("personas-desktop", PROBE_KEY)
+        {
+            Ok(entry) => {
+                let _ = entry.set_password("probe");
+                match entry.get_password() {
+                    Ok(v) if v == "probe" => {
+                        let _ = entry.delete_credential();
+                        (
+                            HealthCheckStatus::Ok,
+                            "Credentials persist correctly".to_string(),
+                            None,
+                        )
+                    }
+                    _ => (
+                        HealthCheckStatus::Error,
+                        "Keyring writes are not persisting".to_string(),
+                        Some(
+                            "This build is using a mock keyring backend, so stored credentials \
+                             are silently lost. Rebuild with a native keyring backend feature \
+                             (windows-native / apple-native / sync-secret-service) enabled."
+                                .to_string(),
+                        ),
+                    ),
+                }
+            }
+            Err(e) => (
+                HealthCheckStatus::Warn,
+                format!("Keyring unavailable: {e}"),
+                Some(
+                    "The OS keyring could not be reached. On Linux, ensure a Secret Service \
+                     (gnome-keyring / KWallet) is running; otherwise credentials cannot be \
+                     stored securely."
+                        .to_string(),
+                ),
+            ),
+        };
+        items.push(HealthCheckItem {
+            id: "keyring_roundtrip".into(),
+            label: "Credential Keyring".into(),
+            status,
+            detail: Some(detail),
+            installable: false,
+            remediation,
+        });
+    }
+
+    // 2. Database writability — a temp-table write probe.
+    let (status, detail, remediation) = match db.get() {
+        Ok(conn) => match conn.execute_batch(
+            "CREATE TEMP TABLE IF NOT EXISTS _personas_health_probe(x); \
+             DROP TABLE _personas_health_probe;",
+        ) {
+            Ok(()) => (
+                HealthCheckStatus::Ok,
+                "Database is writable".to_string(),
+                None,
+            ),
+            Err(e) => (
+                HealthCheckStatus::Error,
+                format!("Database write failed: {e}"),
+                Some(
+                    "The local SQLite database rejected a write. Check free disk space and that \
+                     no other Personas instance holds an exclusive lock on the database file."
+                        .to_string(),
+                ),
+            ),
+        },
+        Err(e) => (
+            HealthCheckStatus::Error,
+            format!("Database unavailable: {e}"),
+            Some(
+                "The database connection pool is exhausted or the file is missing. Restart \
+                 Personas; if it persists, check the app data directory permissions."
+                    .to_string(),
+            ),
+        ),
+    };
+    items.push(HealthCheckItem {
+        id: "db_writable".into(),
+        label: "Local Database".into(),
+        status,
+        detail: Some(detail),
+        installable: false,
+        remediation,
+    });
+
+    HealthCheckSection {
+        id: "environment".into(),
+        label: "Environment".into(),
+        items,
+    }
 }
 
 fn build_local_section(
@@ -263,6 +387,7 @@ fn build_local_section(
                 status: HealthCheckStatus::Ok,
                 detail: Some(format!("{version} ({command_name})")),
                 installable: false,
+            remediation: None,
             });
         } else if detected_in_path {
             local_items.push(HealthCheckItem {
@@ -273,6 +398,7 @@ fn build_local_section(
                     "CLI executable detected in PATH, but version probe failed. Try opening a new terminal session or reinstalling.".into(),
                 ),
                 installable: true,
+            remediation: None,
             });
         } else {
             local_items.push(HealthCheckItem {
@@ -290,6 +416,7 @@ fn build_local_section(
                     "Not installed (optional)".into()
                 }),
                 installable: true,
+            remediation: None,
             });
         }
     }
@@ -312,6 +439,7 @@ fn build_local_section(
             status: HealthCheckStatus::Ok,
             detail: Some(format!("{version} ({command_name})")),
             installable: false,
+            remediation: None,
         });
     } else {
         local_items.push(HealthCheckItem {
@@ -323,6 +451,7 @@ fn build_local_section(
                     .into(),
             ),
             installable: true,
+            remediation: None,
         });
     }
 
@@ -342,6 +471,7 @@ fn build_local_section(
             "Not connected -- click Connect to enable Personas tools in Claude Desktop".into()
         }),
         installable: false,
+            remediation: None,
     });
 
     local_items.push(HealthCheckItem {
@@ -358,6 +488,7 @@ fn build_local_section(
             "Not started yet".into()
         }),
         installable: false,
+            remediation: None,
     });
 
     HealthCheckSection {
@@ -386,6 +517,7 @@ fn build_agents_section(db: &crate::db::DbPool) -> HealthCheckSection {
             "Not configured (optional) -- add a free API key to unlock Ollama Cloud models like Qwen3 Coder, GLM-5, and Kimi K2.5".into()
         }),
         installable: false,
+            remediation: None,
     });
 
     let litellm_url_configured =
@@ -416,6 +548,7 @@ fn build_agents_section(db: &crate::db::DbPool) -> HealthCheckSection {
             },
         ),
         installable: false,
+            remediation: None,
     });
 
     HealthCheckSection {
@@ -443,6 +576,7 @@ fn build_cloud_section(cloud_connected: bool) -> HealthCheckSection {
                 "Not deployed -- agents only run while this app is open".into()
             }),
             installable: false,
+            remediation: None,
         }],
     }
 }
@@ -474,6 +608,7 @@ fn build_account_section(auth_resp: &super::super::auth::AuthStateResponse) -> H
             },
             detail: Some(user_detail),
             installable: false,
+            remediation: None,
         });
     } else {
         auth_items.push(HealthCheckItem {
@@ -482,6 +617,7 @@ fn build_account_section(auth_resp: &super::super::auth::AuthStateResponse) -> H
             status: HealthCheckStatus::Inactive,
             detail: Some("Not signed in -- optional, enables sync and extended features".into()),
             installable: false,
+            remediation: None,
         });
     }
 
@@ -524,6 +660,7 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
             status,
             detail: Some(detail),
             installable: false,
+            remediation: None,
         });
     }
 
@@ -562,6 +699,7 @@ fn build_circuit_breaker_section(state: &AppState) -> HealthCheckSection {
         status: global_status,
         detail: Some(global_detail),
         installable: false,
+            remediation: None,
     });
 
     HealthCheckSection {
@@ -582,6 +720,7 @@ fn build_subscriptions_section(state: &AppState) -> HealthCheckSection {
             status: HealthCheckStatus::Info,
             detail: Some("Scheduler not started yet -- no subscriptions registered".into()),
             installable: false,
+            remediation: None,
         });
     } else {
         for sub in &health {
@@ -626,6 +765,7 @@ fn build_subscriptions_section(state: &AppState) -> HealthCheckSection {
                 status,
                 detail: Some(detail),
                 installable: false,
+            remediation: None,
             });
         }
     }
@@ -653,6 +793,7 @@ mod tests {
             status: HealthCheckStatus::Ok,
             detail: Some("v1.0".into()),
             installable: false,
+            remediation: None,
         };
         let json = serde_json::to_string(&item).unwrap();
         assert!(json.contains("\"status\":\"ok\""));
@@ -693,6 +834,7 @@ mod tests {
                 status: HealthCheckStatus::Ok,
                 detail: None,
                 installable: false,
+            remediation: None,
             }],
         };
         let json = serde_json::to_string(&section).unwrap();
@@ -712,6 +854,7 @@ mod tests {
                         status: HealthCheckStatus::Ok,
                         detail: None,
                         installable: false,
+            remediation: None,
                     },
                     HealthCheckItem {
                         id: "b".into(),
@@ -719,6 +862,7 @@ mod tests {
                         status: HealthCheckStatus::Error,
                         detail: Some("fail".into()),
                         installable: true,
+            remediation: None,
                     },
                 ],
             }],
