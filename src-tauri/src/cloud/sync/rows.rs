@@ -480,6 +480,15 @@ const TOOL_USAGE_COLS: &str = "id, execution_id, persona_id, tool_name, invocati
 /// Run the changed-since query and stamp `device_id` on every row. `cursor_col`
 /// is the watermark column; when `resync_floor` is set, rows whose `created_at`
 /// is within the resync window are also re-read (to capture in-place mutations).
+/// Runs the changed-since query and returns the mapped rows alongside the
+/// **maximum `cursor_col` value actually present in the result set** (or `None`
+/// if empty). The caller advances the sync cursor to that observed max, never
+/// to wall-clock `now()`: `now()` skipped any row committed *after* the SELECT's
+/// read snapshot but stamped before the pass started, permanently losing it,
+/// whereas the observed max can never be ahead of a row this pass didn't read.
+/// The watermark column is selected under a stable `__cursor_val` alias so it is
+/// readable regardless of whether `cols` projects it (mappers use positional
+/// indices, so the appended column doesn't disturb them).
 fn fetch<T, M>(
     pool: &DbPool,
     table: &str,
@@ -488,26 +497,39 @@ fn fetch<T, M>(
     cursor_prev: &str,
     resync_floor: Option<&str>,
     mapper: M,
-) -> Result<Vec<T>, AppError>
+) -> Result<(Vec<T>, Option<String>), AppError>
 where
     M: Fn(&Row) -> rusqlite::Result<T>,
 {
     let conn = pool.get()?;
-    let result: Vec<T> = if let Some(floor) = resync_floor {
+    let pairs: Vec<(T, String)> = if let Some(floor) = resync_floor {
         let sql = format!(
-            "SELECT {cols} FROM {table} \
+            "SELECT {cols}, {cursor_col} AS __cursor_val FROM {table} \
              WHERE datetime({cursor_col}) > datetime(?1) OR datetime(created_at) > datetime(?2)"
         );
         let mut stmt = conn.prepare(&sql)?;
-        let it = stmt.query_map(params![cursor_prev, floor], |r| mapper(r))?;
-        it.collect::<Result<Vec<T>, _>>()?
+        let it = stmt.query_map(params![cursor_prev, floor], |r| {
+            let mapped = mapper(r)?;
+            let cursor_val: String = r.get("__cursor_val")?;
+            Ok((mapped, cursor_val))
+        })?;
+        it.collect::<Result<Vec<(T, String)>, _>>()?
     } else {
-        let sql = format!("SELECT {cols} FROM {table} WHERE datetime({cursor_col}) > datetime(?1)");
+        let sql = format!(
+            "SELECT {cols}, {cursor_col} AS __cursor_val FROM {table} \
+             WHERE datetime({cursor_col}) > datetime(?1)"
+        );
         let mut stmt = conn.prepare(&sql)?;
-        let it = stmt.query_map(params![cursor_prev], |r| mapper(r))?;
-        it.collect::<Result<Vec<T>, _>>()?
+        let it = stmt.query_map(params![cursor_prev], |r| {
+            let mapped = mapper(r)?;
+            let cursor_val: String = r.get("__cursor_val")?;
+            Ok((mapped, cursor_val))
+        })?;
+        it.collect::<Result<Vec<(T, String)>, _>>()?
     };
-    Ok(result)
+    let max_cursor = pairs.iter().map(|(_, c)| c.clone()).max();
+    let rows = pairs.into_iter().map(|(t, _)| t).collect();
+    Ok((rows, max_cursor))
 }
 
 macro_rules! stamp {
@@ -525,9 +547,9 @@ pub fn fetch_personas(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedPersonaRow>, AppError> {
-    let rows = fetch(pool, "personas", PERSONA_COLS, "updated_at", &cursor_prev, None, row_to_persona)?;
-    Ok(stamp!(rows, device_id))
+) -> Result<(Vec<SyncedPersonaRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(pool, "personas", PERSONA_COLS, "updated_at", &cursor_prev, None, row_to_persona)?;
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_executions(
@@ -535,12 +557,12 @@ pub fn fetch_executions(
     cursor_prev: String,
     resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedExecutionRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedExecutionRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_executions", EXECUTION_COLS, "created_at", &cursor_prev,
         resync_floor.as_deref(), row_to_execution,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_events(
@@ -548,12 +570,12 @@ pub fn fetch_events(
     cursor_prev: String,
     resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedEventRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedEventRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_events", EVENT_COLS, "created_at", &cursor_prev,
         resync_floor.as_deref(), row_to_event,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_reviews(
@@ -561,11 +583,11 @@ pub fn fetch_reviews(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedReviewRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedReviewRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_manual_reviews", REVIEW_COLS, "updated_at", &cursor_prev, None, row_to_review,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_messages(
@@ -573,12 +595,12 @@ pub fn fetch_messages(
     cursor_prev: String,
     resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedMessageRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedMessageRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_messages", MESSAGE_COLS, "created_at", &cursor_prev,
         resync_floor.as_deref(), row_to_message,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_metrics(
@@ -586,12 +608,12 @@ pub fn fetch_metrics(
     cursor_prev: String,
     resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedMetricsRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedMetricsRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_metrics_snapshots", METRICS_COLS, "created_at", &cursor_prev,
         resync_floor.as_deref(), row_to_metrics,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_tool_usage(
@@ -599,11 +621,11 @@ pub fn fetch_tool_usage(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedToolUsageRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedToolUsageRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_tool_usage", TOOL_USAGE_COLS, "created_at", &cursor_prev, None, row_to_tool_usage,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 // ---------------------------------------------------------------------------
@@ -692,11 +714,11 @@ pub fn fetch_memories(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedMemoryRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedMemoryRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_memories", MEMORY_COLS, "updated_at", &cursor_prev, None, row_to_memory,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_knowledge_patterns(
@@ -704,11 +726,11 @@ pub fn fetch_knowledge_patterns(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedKnowledgePatternRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedKnowledgePatternRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "execution_knowledge", KNOWLEDGE_COLS, "updated_at", &cursor_prev, None, row_to_knowledge,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 // ---------------------------------------------------------------------------
@@ -762,14 +784,14 @@ pub fn fetch_healing_issues(
     cursor_prev: String,
     resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedHealingIssueRow>, AppError> {
+) -> Result<(Vec<SyncedHealingIssueRow>, Option<String>), AppError> {
     // created_at watermark + resync window: healing issues mutate in place
     // (status open→resolved, auto_fixed flips), so re-pull recent rows.
-    let rows = fetch(
+    let (rows, max_cursor) = fetch(
         pool, "persona_healing_issues", HEALING_COLS, "created_at", &cursor_prev,
         resync_floor.as_deref(), row_to_healing,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 pub fn fetch_triggers(
@@ -777,11 +799,11 @@ pub fn fetch_triggers(
     cursor_prev: String,
     _resync_floor: Option<String>,
     device_id: String,
-) -> Result<Vec<SyncedTriggerRow>, AppError> {
-    let rows = fetch(
+) -> Result<(Vec<SyncedTriggerRow>, Option<String>), AppError> {
+    let (rows, max_cursor) = fetch(
         pool, "persona_triggers", TRIGGER_COLS, "updated_at", &cursor_prev, None, row_to_trigger,
     )?;
-    Ok(stamp!(rows, device_id))
+    Ok((stamp!(rows, device_id), max_cursor))
 }
 
 // ---------------------------------------------------------------------------

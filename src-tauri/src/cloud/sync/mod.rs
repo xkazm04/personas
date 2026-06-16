@@ -196,7 +196,9 @@ async fn sync_table<T, F>(
 ) -> LastTable
 where
     T: Serialize + Send + 'static,
-    F: Fn(&DbPool, String, Option<String>, String) -> Result<Vec<T>, AppError> + Send + 'static,
+    F: Fn(&DbPool, String, Option<String>, String) -> Result<(Vec<T>, Option<String>), AppError>
+        + Send
+        + 'static,
 {
     match sync_table_inner(
         pool,
@@ -234,10 +236,11 @@ async fn sync_table_inner<T, F>(
 ) -> Result<u64, AppError>
 where
     T: Serialize + Send + 'static,
-    F: Fn(&DbPool, String, Option<String>, String) -> Result<Vec<T>, AppError> + Send + 'static,
+    F: Fn(&DbPool, String, Option<String>, String) -> Result<(Vec<T>, Option<String>), AppError>
+        + Send
+        + 'static,
 {
     let cursor_prev = cursor::get_cursor(pool, cursor_name, full_backfill);
-    let tick_start = now_rfc3339();
     let resync_floor = if resync {
         Some((chrono::Utc::now() - chrono::Duration::hours(24)).to_rfc3339())
     } else {
@@ -246,13 +249,26 @@ where
 
     let pool_c = pool.clone();
     let device = device_id.to_string();
-    let rows = tokio::task::spawn_blocking(move || fetch(&pool_c, cursor_prev, resync_floor, device))
-        .await
-        .map_err(|e| AppError::Internal(format!("cloud sync fetch join: {e}")))??;
+    // Keep a copy for the cursor fallback; the closure moves its own.
+    let cursor_prev_fallback = cursor_prev.clone();
+    let (rows, observed_max) =
+        tokio::task::spawn_blocking(move || fetch(&pool_c, cursor_prev, resync_floor, device))
+            .await
+            .map_err(|e| AppError::Internal(format!("cloud sync fetch join: {e}")))??;
 
     let n = rows.len() as u64;
     client.upsert(remote_table, &rows).await?;
-    cursor::set_cursor(pool, cursor_name, &tick_start)?;
+    // Advance the cursor to the MAX watermark value actually present in the rows
+    // we just synced, or leave it unchanged if none. Previously this set the
+    // cursor to wall-clock `now()` captured at pass start, which moved it past
+    // any row committed to SQLite after the SELECT's read snapshot but stamped
+    // before that instant — permanently excluding it from every later pass
+    // (`get_recent_after`/the changed-since filter only return rows newer than
+    // the cursor). The observed max can never be ahead of a row this pass didn't
+    // read. The read filter wraps both sides in datetime(), so the stored value's
+    // exact format doesn't affect future comparisons.
+    let new_cursor = observed_max.unwrap_or(cursor_prev_fallback);
+    cursor::set_cursor(pool, cursor_name, &new_cursor)?;
     Ok(n)
 }
 
