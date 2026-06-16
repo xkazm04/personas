@@ -35,6 +35,14 @@ use client::SyncClient;
 /// the loop can sync promptly instead of waiting for the next periodic tick.
 static SYNC_WAKE: LazyLock<Notify> = LazyLock::new(Notify::new);
 
+/// Persistent "local data changed since the last pass started" flag. `Notify`
+/// alone is lossy here: its single permit can be consumed by the `notified()`
+/// future that `tokio::select!` drops when the periodic tick wins the same
+/// poll, and a mutation that lands mid-pass (after its table was already read)
+/// has nothing durable to force a follow-up. The loop clears this BEFORE each
+/// pass and re-wakes itself if it's set again afterward, so no wake is lost.
+static SYNC_DIRTY: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
 /// In-memory status surfaced by `cloud_sync_status`.
 static RUNTIME: LazyLock<Mutex<RuntimeState>> = LazyLock::new(|| Mutex::new(RuntimeState::default()));
 
@@ -137,6 +145,9 @@ fn now_rfc3339() -> String {
 
 /// Signal that local data changed; the sync loop debounces and pushes.
 pub fn notify_dirty() {
+    // Set the durable flag first, then wake — so even if the wake permit is
+    // lost to a select!-drop, the loop still observes the dirty flag.
+    SYNC_DIRTY.store(true, std::sync::atomic::Ordering::Release);
     SYNC_WAKE.notify_one();
 }
 
@@ -450,9 +461,22 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
                 continue;
             }
 
+            // Clear the dirty flag BEFORE the pass: a mutation that lands during
+            // the pass (after its table was already read) re-sets it and forces
+            // a follow-up below, instead of being silently folded into a pass
+            // that already missed it.
+            SYNC_DIRTY.store(false, std::sync::atomic::Ordering::Release);
+
             // run_sync_once writes the status snapshot internally and logs any
             // per-table failures (in sync_table); nothing more for the loop to do.
             run_sync_once(&state).await;
+
+            // A mutation arrived mid-pass — wake ourselves so the next select
+            // returns immediately and re-syncs, rather than waiting for the
+            // 45s tick (or losing the wake entirely to a select!-drop).
+            if SYNC_DIRTY.load(std::sync::atomic::Ordering::Acquire) {
+                SYNC_WAKE.notify_one();
+            }
         }
     });
 }
