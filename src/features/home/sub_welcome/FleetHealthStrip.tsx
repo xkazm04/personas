@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Activity, CheckCircle2, Bot, Key, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { getMetricsSummary } from '@/api/overview/observability';
@@ -18,31 +18,44 @@ interface FleetMetrics {
   hasFailureSpike: boolean;
 }
 
+const FLEET_METRICS_REFRESH_MS = 30_000;
+
 function useFleetMetrics() {
   const [metrics, setMetrics] = useState<FleetMetrics | null>(null);
 
-  const load = useCallback(async () => {
-    try {
-      const [summary, credentials] = await Promise.all([
-        getMetricsSummary(1),
-        listCredentials(),
-      ]);
+  useEffect(() => {
+    // `cancelled` guards against a state write after unmount (the fetch can
+    // resolve once the home view is gone). The interval keeps the strip fresh —
+    // it previously loaded once on mount and then froze for the session.
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const [summary, credentials] = await Promise.all([
+          getMetricsSummary(1),
+          listCredentials(),
+        ]);
+        if (cancelled) return;
 
-      const rate = summary.totalExecutions > 0
-        ? Math.round((summary.successfulExecutions / summary.totalExecutions) * 100)
-        : 100;
+        const rate = summary.totalExecutions > 0
+          ? Math.round((summary.successfulExecutions / summary.totalExecutions) * 100)
+          : 100;
 
-      setMetrics({
-        executionsToday: summary.totalExecutions,
-        successRate: rate,
-        activePersonas: summary.activePersonas,
-        credentialCount: credentials.length,
-        hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
-      });
-    } catch (err) { silentCatch("features/home/sub_welcome/FleetHealthStrip:catch1")(err); }
+        setMetrics({
+          executionsToday: summary.totalExecutions,
+          successRate: rate,
+          activePersonas: summary.activePersonas,
+          credentialCount: credentials.length,
+          hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
+        });
+      } catch (err) {
+        if (!cancelled) silentCatch("features/home/sub_welcome/FleetHealthStrip:catch1")(err);
+      }
+    };
+
+    void load();
+    const id = setInterval(() => void load(), FLEET_METRICS_REFRESH_MS);
+    return () => { cancelled = true; clearInterval(id); };
   }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   return metrics;
 }
