@@ -5,6 +5,7 @@ import { useEngineCapabilities } from '@/hooks/utility/data/useEngineCapabilitie
 import { CLI_OPERATIONS, PROVIDERS } from '../libs/engineCapabilities';
 import { OperationRow } from './OperationRow';
 import { AmbientContextPanel } from '@/features/settings/components/AmbientContextPanel';
+import { ModelRoutingSection } from './ModelRoutingSection';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export default function EngineSettings() {
@@ -138,6 +139,8 @@ export default function EngineSettings() {
           <div className="rounded-modal border border-primary/10 bg-card-bg p-6">
             <AmbientContextPanel />
           </div>
+
+          <ModelRoutingSection />
 
           {/* Protocol warning */}
           <div className="rounded-modal border border-amber-500/20 bg-amber-500/5 p-4 flex items-start gap-3">

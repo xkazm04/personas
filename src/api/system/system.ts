@@ -121,3 +121,9 @@ export const storageUsage = () =>
   invoke<import('@/lib/bindings/StorageReport').StorageReport>("storage_usage");
 export const pruneStorage = (olderThanHours?: number, dryRun?: boolean) =>
   invoke<import('@/lib/bindings/PruneResult').PruneResult>("prune_storage", { olderThanHours, dryRun });
+
+// F10: model-routing rules
+export const getModelRoutingRules = () =>
+  invoke<import('@/lib/bindings/ModelRoutingRule').ModelRoutingRule[]>("get_model_routing_rules");
+export const setModelRoutingRules = (rules: import('@/lib/bindings/ModelRoutingRule').ModelRoutingRule[]) =>
+  invoke<void>("set_model_routing_rules", { rules });

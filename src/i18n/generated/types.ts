@@ -9624,6 +9624,15 @@ export type Translations = {
     engine: {
       title: string;
       loading_capabilities: string;
+      routing_title: string;
+      routing_subtitle: string;
+      routing_empty: string;
+      routing_category_ph: string;
+      routing_model_ph: string;
+      routing_effort_inherit: string;
+      routing_add: string;
+      routing_save: string;
+      routing_remove: string;
       detecting_providers: string;
       subtitle: string;
       capability_map: string;
