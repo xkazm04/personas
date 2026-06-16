@@ -376,6 +376,33 @@ fn load_principles_and_context(
 }
 
 fn apply_verdict(ctx: &SpawnedEvaluatorContext, decision: AutoTriageDecision) {
+    // The evaluator ran async; while the LLM was thinking a human may have
+    // resolved this review (or GC may have removed it). Only Pending → verdict
+    // is a legitimate transition here. If the review already left Pending the
+    // human decision wins — apply nothing (the update_status CAS keys on the
+    // CURRENT status, so it would otherwise happily overwrite the human's
+    // resolution, and the Resolved fallback below would clobber it too).
+    match review_repo::get_by_id(&ctx.pool, &ctx.review_id) {
+        Ok(review) if review.status == ManualReviewStatus::Pending => {}
+        Ok(review) => {
+            tracing::info!(
+                review_id = %ctx.review_id,
+                current = %review.status.as_str(),
+                verdict = decision.verdict.as_str(),
+                "auto_triage verdict superseded — review already resolved; dropping verdict",
+            );
+            return;
+        }
+        Err(e) => {
+            tracing::info!(
+                review_id = %ctx.review_id,
+                error = %e,
+                "auto_triage could not load review (likely GC'd) — dropping verdict",
+            );
+            return;
+        }
+    }
+
     let (status, audit_tag) = match decision.verdict {
         AutoTriageVerdict::Approve => (ManualReviewStatus::Approved, "review.auto_triage.approved"),
         AutoTriageVerdict::Reject => (ManualReviewStatus::Rejected, "review.auto_triage.rejected"),
