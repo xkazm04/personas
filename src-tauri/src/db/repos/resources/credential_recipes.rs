@@ -69,9 +69,15 @@ pub fn upsert(
                 oauth_type = excluded.oauth_type,
                 fields_json = excluded.fields_json,
                 healthcheck_json = excluded.healthcheck_json,
-                setup_instructions = excluded.setup_instructions,
-                summary = excluded.summary,
-                docs_url = excluded.docs_url,
+                -- Enrichment columns: MERGE, never clobber. The negotiator
+                -- caches a stub on session start with empty instructions/summary
+                -- (mapped to NULL), and its ON CONFLICT update would otherwise
+                -- wipe a richer Design recipe setup_instructions/summary/docs_url
+                -- and downgrade a verified recipe to a stub. Keep the existing
+                -- value when the incoming one is NULL or empty.
+                setup_instructions = COALESCE(NULLIF(excluded.setup_instructions, ''), setup_instructions),
+                summary = COALESCE(NULLIF(excluded.summary, ''), summary),
+                docs_url = COALESCE(NULLIF(excluded.docs_url, ''), docs_url),
                 source = excluded.source,
                 updated_at = excluded.updated_at
              RETURNING *",
