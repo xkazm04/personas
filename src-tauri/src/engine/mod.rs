@@ -93,6 +93,7 @@ pub mod failure_signature;
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
 pub mod fix_loop;
+pub mod git_checkpoint;
 pub mod genome;
 pub mod genome_critique;
 pub mod google_oauth;

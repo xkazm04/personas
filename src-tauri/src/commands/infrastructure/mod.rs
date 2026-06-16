@@ -12,6 +12,7 @@ pub mod context_map_export;
 pub mod dev_tools;
 pub mod dev_tools_http;
 pub mod director;
+pub mod git_checkpoint;
 pub mod gitlab;
 pub mod idea_scanner;
 pub mod kpi_compose;
