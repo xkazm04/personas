@@ -1236,6 +1236,16 @@ pub fn drive_copy(
     if !src.exists() {
         return Err(AppError::NotFound(format!("Source not found: {}", src_rel)));
     }
+    // Refuse to overwrite an existing destination — mirrors drive_move. Without
+    // this, a paste over a same-named file (or a persona export colliding with a
+    // user file) did `std::fs::copy` in place, irrecoverably overwriting it
+    // (not even soft-deleted to .trash) while a success toast fired.
+    if dst.exists() {
+        return Err(AppError::Validation(format!(
+            "Destination already exists: {}",
+            dst_rel
+        )));
+    }
     if let Some(parent) = dst.parent() {
         std::fs::create_dir_all(parent)?;
     }
