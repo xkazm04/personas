@@ -699,15 +699,31 @@ pub async fn test_build_draft(
         }
     }
 
-    // Transition to testing phase
-    build_session_repo::update(
-        &state.db,
-        &session_id,
-        &UpdateBuildSession {
-            phase: Some(BuildPhase::Testing.as_str().to_string()),
-            ..Default::default()
-        },
-    )?;
+    // Transition to testing phase — as an atomic compare-and-set, not a blind
+    // write. Phase is the mutual-exclusion token, but it was read-checked
+    // (validate_transition above) and written non-atomically, so two rapid
+    // `test_build_draft` calls both passed and both ran real tool APIs, then
+    // clobbered `last_test_report`. The conditional UPDATE claims the session
+    // only from a genuinely testable phase and rejects a concurrent re-entry
+    // (validate_transition otherwise allows testing -> testing).
+    let claimed = {
+        let conn = state.db.get()?;
+        conn.execute(
+            "UPDATE build_sessions SET phase = ?1, updated_at = ?2 \
+             WHERE id = ?3 AND phase IN ('draft_ready', 'test_complete')",
+            rusqlite::params![
+                BuildPhase::Testing.as_str(),
+                chrono::Utc::now().to_rfc3339(),
+                &session_id,
+            ],
+        )?
+    };
+    if claimed != 1 {
+        return Err(AppError::Validation(
+            "A test is already running for this draft (or it is no longer in a testable phase)."
+                .into(),
+        ));
+    }
 
     // Run real API tests — on failure, revert to draft_ready so the user can retry
     let result =
