@@ -47,11 +47,28 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
     try {
       switch (resolution) {
         case 'keep_a':
-          await deleteMemory(conflict.memoryB.id);
+        case 'keep_b': {
+          // Resolve to explicit keep/delete memories and ASSERT they differ, so
+          // any future reorder of memoryA/memoryB (the `superseded` kind already
+          // swaps them) can never silently hard-delete the one the user chose to
+          // keep. Refuse to delete a core (user-pinned identity) memory — the
+          // same protection archive_by_ids/delete_all enforce, which the raw
+          // deleteMemory path lacks.
+          const keep = resolution === 'keep_a' ? conflict.memoryA : conflict.memoryB;
+          const remove = resolution === 'keep_a' ? conflict.memoryB : conflict.memoryA;
+          if (keep.id === remove.id) {
+            throw new Error('conflict resolution would delete the kept memory');
+          }
+          if (remove.tier === 'core') {
+            useToastStore.getState().addToast(
+              'Cannot delete a core (pinned) memory — resolve this conflict manually',
+              'error',
+            );
+            return;
+          }
+          await deleteMemory(remove.id);
           break;
-        case 'keep_b':
-          await deleteMemory(conflict.memoryA.id);
-          break;
+        }
         case 'merge': {
           const merged = mergeMemories(conflict.memoryA, conflict.memoryB);
           const ok = await mergeMemoriesAction(merged, conflict.memoryA.id, conflict.memoryB.id);
