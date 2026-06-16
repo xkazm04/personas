@@ -865,6 +865,12 @@ function Body(props: BodyProps) {
   // transcript at `finished` so the new assistant bubble actually
   // appears in the panel instead of only landing in the brain.
   const backendTurnActiveRef = useRef(false);
+  // Synchronous re-entrancy guard for `send`. `setStreaming(true)` updates the
+  // store synchronously, but the `streaming` value captured in render closures
+  // (e.g. sendOrQueue's gate) stays stale until React re-renders — so two sends
+  // dispatched in the same tick can both pass `!streaming` and double-fire a
+  // turn. This ref flips the instant a send starts, before any await.
+  const sendingRef = useRef(false);
 
   // Token-level streaming bookkeeping (--include-partial-messages).
   // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
@@ -1565,6 +1571,11 @@ function Body(props: BodyProps) {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
+      // Re-entrancy guard: a turn is already starting/running. Without this,
+      // two rapid sends both pass sendOrQueue's stale-closure gate and call
+      // send() concurrently, producing duplicate turns. Cleared in finally.
+      if (sendingRef.current) return;
+      sendingRef.current = true;
       setSendError(null);
       // Quick-replies + inline chat-cards are one-shot — clear before the
       // new turn so they don't linger if Athena's reply doesn't offer fresh
@@ -1673,6 +1684,7 @@ function Body(props: BodyProps) {
         // an explicit reset here is the safety net.
         useCompanionStore.getState().setStreamingPhase(null);
         useCompanionStore.getState().setStreamingBeat(null);
+        sendingRef.current = false;
       }
     },
     [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
@@ -1686,7 +1698,10 @@ function Body(props: BodyProps) {
     (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) return;
-      if (!streaming) {
+      // Gate on the live store value (+ the in-flight ref), not the render
+      // closure `streaming`: the closure lags a render behind setStreaming(true),
+      // so two sends in one tick would both fall into the direct-send branch.
+      if (!useCompanionStore.getState().streaming && !sendingRef.current) {
         void send(trimmed);
         return;
       }
@@ -1696,7 +1711,7 @@ function Body(props: BodyProps) {
       // queued message the instant `streaming` flips false.
       if (mode === 'interrupt') handleInterrupt();
     },
-    [streaming, send, handleInterrupt],
+    [send, handleInterrupt],
   );
 
   // Drain the queue one message per turn completion. Watches the streaming
