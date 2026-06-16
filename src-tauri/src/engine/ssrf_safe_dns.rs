@@ -58,6 +58,22 @@ pub(crate) fn build_ssrf_safe_client() -> reqwest::Client {
     reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(30))
         .dns_resolver(std::sync::Arc::new(SsrfSafeDnsResolver))
+        // The DNS resolver above only sees *hostnames*, so it blocks DNS
+        // rebinding but NOT a `Location: http://169.254.169.254/...` (or any
+        // raw IP literal) returned by an upstream redirect — that target skips
+        // DNS entirely. Without a redirect policy reqwest auto-follows up to 10
+        // hops and would issue the credential's authenticated request straight
+        // to cloud-metadata / an internal service. Re-validate every hop's
+        // target IP, mirroring the twin ingest client (commands/.../twin.rs).
+        .redirect(reqwest::redirect::Policy::custom(|attempt| {
+            if super::url_safety::is_url_target_private(attempt.url()) {
+                attempt.error("redirect target is a private/internal address")
+            } else if attempt.previous().len() >= 5 {
+                attempt.stop()
+            } else {
+                attempt.follow()
+            }
+        }))
         .build()
         .expect("Failed to build SSRF-safe HTTP client")
 }
