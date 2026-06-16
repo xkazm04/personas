@@ -598,19 +598,45 @@ async fn tick_loop(
                 let goal_id = assignment.goal_id.clone();
 
                 let handle = tokio::spawn(async move {
-                    let result = run_step(&deps_clone, &strategy, step_clone, goal_id).await;
-                    if let Err(e) = result {
+                    use futures_util::FutureExt;
+                    // catch_unwind so a PANIC inside run_step (an unwrap deep in
+                    // matching / start_execution) still writes a terminal status.
+                    // Without it the task finishes, the reaper drops its handle,
+                    // and the step is left non-terminal forever — the assignment
+                    // hangs in `running` until ASSIGNMENT_MAX_TICKS (2h) or a
+                    // restart's orphan-recovery, with no terminal write ever.
+                    let outcome = std::panic::AssertUnwindSafe(run_step(
+                        &deps_clone,
+                        &strategy,
+                        step_clone,
+                        goal_id,
+                    ))
+                    .catch_unwind()
+                    .await;
+                    let failure: Option<String> = match outcome {
+                        Ok(Ok(())) => None,
+                        Ok(Err(e)) => Some(e.to_string()),
+                        Err(panic) => Some(format!(
+                            "step worker panicked: {}",
+                            panic
+                                .downcast_ref::<&str>()
+                                .map(|s| (*s).to_string())
+                                .or_else(|| panic.downcast_ref::<String>().cloned())
+                                .unwrap_or_else(|| "unknown panic".to_string())
+                        )),
+                    };
+                    if let Some(msg) = failure {
                         tracing::error!(
                             step_id = %step_id,
                             assignment_id = %assignment_id_owned,
-                            error = %e,
+                            error = %msg,
                             "Step task failed",
                         );
                         let _ = assignment_repo::update_step_status(
                             &deps_clone.pool,
                             &step_id,
                             "failed",
-                            Some(&e.to_string()),
+                            Some(&msg),
                             None,
                         );
                         emit_progress(&deps_clone.app, &assignment_id_owned, "running", Some(&step_id));
