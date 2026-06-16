@@ -234,10 +234,22 @@ fn snippet_for(body: &str, query_lc: &str) -> String {
 }
 
 fn ensure_within_vault(vault_root: &Path, target: &Path) -> Result<(), AppError> {
+    // Canonicalize BOTH sides as a hard requirement. The previous code used
+    // `unwrap_or(<raw path>)`, which turned a canonicalize *failure* into a
+    // guard BYPASS: a target that failed to canonicalize (or a Windows `\\?\`
+    // verbatim-prefix mismatch when only one side resolved) was compared
+    // un-normalized, so a crafted note_path with `..` segments or a symlink
+    // could read files outside the vault. Requiring both to canonicalize means
+    // `..` and symlinks are fully resolved before the prefix check and the two
+    // paths share a consistent representation; any failure is a rejection, not
+    // a fallback. Absolute in-vault paths (which the UI legitimately passes
+    // from search/graph results) still resolve and pass.
     let canonical_root = vault_root
         .canonicalize()
-        .unwrap_or(vault_root.to_path_buf());
-    let canonical_target = target.canonicalize().unwrap_or(target.to_path_buf());
+        .map_err(|_| AppError::Validation("Vault path could not be resolved".into()))?;
+    let canonical_target = target
+        .canonicalize()
+        .map_err(|_| AppError::Validation("Path is outside the configured vault".into()))?;
     if !canonical_target.starts_with(&canonical_root) {
         return Err(AppError::Validation(
             "Path is outside the configured vault".into(),
