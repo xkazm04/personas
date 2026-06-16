@@ -1118,6 +1118,11 @@ pub fn run() {
                 });
             }
 
+            // F7 quality-gate fix-loop worker: drives opt-in persona re-entries
+            // after a completed-but-quality-failed run, decoupled from the
+            // execution pipeline to avoid a recursive async type cycle.
+            crate::engine::init_fix_loop_worker(app.handle().clone());
+
             // Radio: footer-anchored dual-engine player (YouTube IFrame for
             // curated tracklists, HTML5 audio for internet-radio streams).
             // Stations are baked into the binary; runtime state (current
