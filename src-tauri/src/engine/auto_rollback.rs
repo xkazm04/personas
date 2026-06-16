@@ -293,6 +293,30 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
             continue;
         }
 
+        // The current version cleared the 2x threshold — but only roll back if
+        // the target is GENUINELY healthier. `previous` is just the
+        // highest-numbered non-production version; with no check that its error
+        // rate is actually lower (and acceptable), a 90%-error current could be
+        // "rolled back" onto an 80%-error baseline, landing on a still-broken
+        // version while emitting a confident auto_rollback event.
+        const ROLLBACK_TARGET_MAX_ERROR_RATE: f64 = 0.5;
+        if previous_error_rate >= current_error_rate
+            || previous_error_rate > ROLLBACK_TARGET_MAX_ERROR_RATE
+        {
+            tracing::warn!(
+                persona_id = %persona.id,
+                current_error_rate = %format!("{:.1}%", current_error_rate * 100.0),
+                previous_error_rate = %format!("{:.1}%", previous_error_rate * 100.0),
+                "Auto-rollback: skipping — previous version is not a healthier baseline \
+                 (not lower than current, or above the {:.0}% ceiling); leaving production in place",
+                ROLLBACK_TARGET_MAX_ERROR_RATE * 100.0,
+            );
+            // (A future enhancement could raise a healing issue here so the
+            // degradation still surfaces rather than being silently left.)
+            skipped += 1;
+            continue;
+        }
+
         tracing::info!(
             persona_id = %persona.id,
             persona_name = %persona.name,
