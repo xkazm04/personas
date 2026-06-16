@@ -209,6 +209,19 @@ pub async fn remote_command_list_pending(
         .collect())
 }
 
+/// Validate that a remote-command `id` is a canonical UUID before it is
+/// interpolated into a PostgREST query path. PostgREST treats `&`, `=`, and
+/// `eq.` as structured query syntax, so an unvalidated `id` (e.g.
+/// `x&status=eq.pending`) would let a caller widen the WHERE clause of a
+/// tenant-scoped GET/PATCH under the user's own JWT — mass-reject, status
+/// spoofing, or appending a permissive filter to defeat per-device scoping. A
+/// parsed UUID contains only hex + hyphens, so it cannot carry that syntax.
+fn validate_command_id(id: &str) -> Result<(), AppError> {
+    uuid::Uuid::parse_str(id)
+        .map(|_| ())
+        .map_err(|_| AppError::Validation("Invalid remote command id".into()))
+}
+
 /// Approve a remote run-request: run the persona locally and write the result
 /// (execution id) back to the command row. Requires a live Google session.
 #[tauri::command]
@@ -218,6 +231,7 @@ pub async fn remote_command_approve(
     app: AppHandle,
     id: String,
 ) -> Result<String, AppError> {
+    validate_command_id(&id)?;
     let jwt = read_token(&state)
         .await
         .ok_or_else(|| AppError::Auth("Not signed in".into()))?;
@@ -298,6 +312,7 @@ pub async fn remote_command_reject(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<(), AppError> {
+    validate_command_id(&id)?;
     let jwt = read_token(&state)
         .await
         .ok_or_else(|| AppError::Auth("Not signed in".into()))?;
