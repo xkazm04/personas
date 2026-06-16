@@ -44,6 +44,7 @@ pub mod compiler;
 pub mod composite;
 pub mod config_merge;
 pub mod connector_strategy;
+pub mod context_fidelity;
 #[cfg(feature = "desktop")]
 pub mod context_rules;
 pub mod cost;
