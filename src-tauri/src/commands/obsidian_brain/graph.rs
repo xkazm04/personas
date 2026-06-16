@@ -480,6 +480,28 @@ fn resolve_daily_note_path(vault_root: &Path, date: &NaiveDate) -> (PathBuf, Str
     (file, date_str)
 }
 
+/// Write `contents` to `path` atomically: write a unique sibling temp file, then
+/// rename it over the target (`std::fs::rename` replaces the destination on both
+/// Unix and Windows). A crash or concurrent reader can never observe a torn /
+/// half-written note — readers see either the old file or the complete new one.
+/// (A concurrent read-modify-write on the same note can still last-writer-wins
+/// the merge; a per-path lock is the further fix.)
+fn atomic_write(path: &Path, contents: &[u8]) -> std::io::Result<()> {
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("note");
+    let tmp = path.with_file_name(format!(".{}.{}.tmp", file_name, uuid::Uuid::new_v4()));
+    std::fs::write(&tmp, contents)?;
+    match std::fs::rename(&tmp, path) {
+        Ok(()) => Ok(()),
+        Err(e) => {
+            let _ = std::fs::remove_file(&tmp);
+            Err(e)
+        }
+    }
+}
+
 #[tauri::command]
 pub fn obsidian_graph_append_daily_note(
     state: State<'_, Arc<AppState>>,
@@ -531,7 +553,7 @@ pub fn obsidian_graph_append_daily_note(
     existing.push_str(body.trim_end());
     existing.push('\n');
 
-    std::fs::write(&file_path, &existing)
+    atomic_write(&file_path, existing.as_bytes())
         .map_err(|e| AppError::Validation(format!("Failed to write daily note: {e}")))?;
 
     Ok(DailyNoteRef {
@@ -597,7 +619,7 @@ pub fn obsidian_graph_write_meeting_note(
     md.push_str(body.trim_end());
     md.push('\n');
 
-    std::fs::write(&file_path, md)
+    atomic_write(&file_path, md.as_bytes())
         .map_err(|e| AppError::Validation(format!("Failed to write meeting note: {e}")))?;
 
     Ok(VaultLinkRef {
