@@ -1,0 +1,872 @@
+[
+  {
+    "idx": 1,
+    "id": "ctx_1781386748241_v1suv1e",
+    "name": "Capabilities, Use Cases & Model Config",
+    "slug": "capabilities-use-cases-model-config",
+    "group": "Persona & Agent Studio",
+    "files": [
+      "src/features/agents/sub_model_config/components/CustomModelConfigForm.tsx",
+      "src/features/agents/sub_model_config/components/BudgetControls.tsx",
+      "src/features/agents/sub_new_persona/capabilityView/CapabilityRow.tsx",
+      "src/features/agents/sub_use_cases/libs/useUseCaseDetail.ts",
+      "src/features/agents/sub_use_cases/libs/useCaseHelpers.ts",
+      "src/features/agents/sub_tool_runner/components/ToolRunnerPanel.tsx",
+      "src/stores/slices/agents/budgetEnforcementSlice.ts",
+      "src/stores/slices/agents/toolSlice.ts",
+      "src-tauri/src/commands/core/use_cases.rs",
+      "src-tauri/src/engine/capability.rs",
+      "src-tauri/src/engine/capability_contract.rs"
+    ]
+  },
+  {
+    "idx": 2,
+    "id": "ctx_1781386748234_1fgv5c9",
+    "name": "Agent Lab & Versions",
+    "slug": "agent-lab-versions",
+    "group": "Persona & Agent Studio",
+    "files": [
+      "src/features/agents/sub_lab/shared/DiffViewer.tsx",
+      "src/stores/slices/agents/labSlice.ts",
+      "src/stores/slices/agents/testSlice.ts",
+      "src/stores/slices/agents/matrixBuildSlice.ts",
+      "src-tauri/src/commands/execution/lab.rs",
+      "src-tauri/src/commands/execution/tests.rs",
+      "src-tauri/src/commands/execution/test_suites.rs",
+      "src-tauri/src/db/models/lab.rs",
+      "src-tauri/src/engine/eval.rs",
+      "src-tauri/src/engine/test_runner.rs"
+    ]
+  },
+  {
+    "idx": 3,
+    "id": "ctx_1781386748225_it0o8zd",
+    "name": "Agent Chat",
+    "slug": "agent-chat",
+    "group": "Persona & Agent Studio",
+    "files": [
+      "src/features/agents/components/ChatThread.tsx",
+      "src/features/agents/components/ChatMessageContent.tsx",
+      "src/stores/slices/agents/chatSlice.ts",
+      "src/stores/slices/agents/backgroundChatSlice.ts",
+      "src/stores/slices/agents/miniPlayerSlice.ts",
+      "src-tauri/src/commands/core/chat.rs",
+      "src-tauri/src/db/models/chat.rs",
+      "src-tauri/src/db/models/message.rs"
+    ]
+  },
+  {
+    "idx": 4,
+    "id": "ctx_1781386748211_04b9mh9",
+    "name": "Persona Editor & CRUD",
+    "slug": "persona-editor-crud",
+    "group": "Persona & Agent Studio",
+    "files": [
+      "src/features/agents/sub_editor/components/PersonaEditor.tsx",
+      "src/features/agents/sub_editor/components/EditorBody.tsx",
+      "src/features/agents/sub_editor/components/EditorTabBar.tsx",
+      "src/features/agents/sub_editor/components/EditorLazyTabs.tsx",
+      "src/features/agents/sub_new_persona/capabilityView/CapabilityAddModal.tsx",
+      "src/stores/slices/agents/personaSlice.ts",
+      "src-tauri/src/commands/core/personas.rs",
+      "src-tauri/src/commands/core/persona_icons.rs",
+      "src-tauri/src/commands/core/persona_icon_gen.rs",
+      "src-tauri/src/engine/persona_icon.rs",
+      "src-tauri/src/db/models/identity.rs"
+    ]
+  },
+  {
+    "idx": 5,
+    "id": "ctx_1781386748274_jdotemv",
+    "name": "Director & Leadership",
+    "slug": "director-leadership",
+    "group": "Execution Engine",
+    "files": [
+      "src/api/director.ts",
+      "src-tauri/src/engine/director.rs",
+      "src-tauri/src/engine/director_brain.rs",
+      "src-tauri/src/engine/director_memory.rs",
+      "src-tauri/src/engine/leadership.rs",
+      "src-tauri/src/engine/goal_advance.rs",
+      "src-tauri/src/engine/kpi_eval.rs"
+    ]
+  },
+  {
+    "idx": 6,
+    "id": "ctx_1781386748268_8o2vbr8",
+    "name": "Genome & Evolution",
+    "slug": "genome-evolution",
+    "group": "Execution Engine",
+    "files": [
+      "src-tauri/src/commands/execution/genome.rs",
+      "src-tauri/src/commands/execution/evolution.rs",
+      "src-tauri/src/engine/genome.rs",
+      "src-tauri/src/engine/genome_critique.rs",
+      "src-tauri/src/engine/evolution.rs",
+      "src-tauri/src/engine/dream_replay.rs",
+      "src-tauri/src/db/models/genome.rs",
+      "src-tauri/src/db/models/evolution.rs"
+    ]
+  },
+  {
+    "idx": 7,
+    "id": "ctx_1781386748261_sa3fgef",
+    "name": "Self-Healing & Auto-Rollback",
+    "slug": "self-healing-auto-rollback",
+    "group": "Execution Engine",
+    "files": [
+      "src/features/overview/sub_observability/components/HealingTimeline.tsx",
+      "src/features/overview/sub_observability/components/HealingIssuesPanel.tsx",
+      "src/features/agents/sub_executions/detail/AiHealingCounters.tsx",
+      "src-tauri/src/commands/execution/healing.rs",
+      "src-tauri/src/engine/healing.rs",
+      "src-tauri/src/engine/ai_healing.rs",
+      "src-tauri/src/engine/healing_orchestrator.rs",
+      "src-tauri/src/engine/auto_rollback.rs",
+      "src-tauri/src/engine/healing_timeline.rs",
+      "src-tauri/src/db/models/healing.rs"
+    ]
+  },
+  {
+    "idx": 8,
+    "id": "ctx_1781386748254_d6pq53y",
+    "name": "Scheduler & Cron Agents",
+    "slug": "scheduler-cron-agents",
+    "group": "Execution Engine",
+    "files": [
+      "src/features/overview/sub_cron_agents/components/CronAgentsPage.tsx",
+      "src/features/overview/sub_cron_agents/components/CronAgentCard.tsx",
+      "src/features/schedules/components/BackfillModal.tsx",
+      "src-tauri/src/commands/execution/scheduler.rs",
+      "src-tauri/src/engine/scheduler.rs",
+      "src-tauri/src/engine/cron.rs",
+      "src-tauri/src/engine/persona_jobs.rs",
+      "src-tauri/src/commands/core/persona_jobs.rs",
+      "src-tauri/src/db/models/automation.rs"
+    ]
+  },
+  {
+    "idx": 9,
+    "id": "ctx_1781386748247_aavb9ax",
+    "name": "Execution Runner & Inspector",
+    "slug": "execution-runner-inspector",
+    "group": "Execution Engine",
+    "files": [
+      "src/features/agents/sub_executions/detail/ExecutionDetail.tsx",
+      "src/features/agents/sub_executions/detail/ExecutionDetailContent.tsx",
+      "src/features/agents/sub_executions/detail/ExecutionDetailTabs.tsx",
+      "src/stores/slices/agents/executionSlice.ts",
+      "src/stores/slices/agents/runLifecycle.ts",
+      "src-tauri/src/commands/execution/executions.rs",
+      "src-tauri/src/engine/backend.rs",
+      "src-tauri/src/engine/dispatch.rs",
+      "src-tauri/src/engine/queue.rs",
+      "src-tauri/src/engine/pipeline_executor.rs",
+      "src-tauri/src/db/models/execution.rs"
+    ]
+  },
+  {
+    "idx": 10,
+    "id": "ctx_1781386748303_0vgpkgh",
+    "name": "Credential Design & Negotiation",
+    "slug": "credential-design-negotiation",
+    "group": "Credential Vault & Connectors",
+    "files": [
+      "src/features/vault/sub_dependencies/BlastRadiusPanel.tsx",
+      "src-tauri/src/commands/credentials/credential_design.rs",
+      "src-tauri/src/commands/credentials/credential_recipes.rs",
+      "src-tauri/src/commands/credentials/negotiator.rs",
+      "src-tauri/src/commands/credentials/intelligence.rs",
+      "src-tauri/src/engine/credential_design.rs",
+      "src-tauri/src/engine/credential_negotiator.rs",
+      "src-tauri/src/db/models/credential_recipe.rs"
+    ]
+  },
+  {
+    "idx": 11,
+    "id": "ctx_1781386748298_k6pnjkb",
+    "name": "MCP Gateways & Tools",
+    "slug": "mcp-gateways-tools",
+    "group": "Credential Vault & Connectors",
+    "files": [
+      "src-tauri/src/commands/credentials/mcp_gateways.rs",
+      "src-tauri/src/commands/credentials/mcp_tools.rs",
+      "src-tauri/src/engine/mcp_tools.rs",
+      "src-tauri/src/engine/cli_mcp_config.rs",
+      "src-tauri/src/engine/tool_runner.rs",
+      "src-tauri/src/commands/companion/mcp_bridge.rs",
+      "src-tauri/src/mcp_server/mod.rs"
+    ]
+  },
+  {
+    "idx": 12,
+    "id": "ctx_1781386748292_lt9lomc",
+    "name": "OAuth, API Proxy & Foraging",
+    "slug": "oauth-api-proxy-foraging",
+    "group": "Credential Vault & Connectors",
+    "files": [
+      "src-tauri/src/commands/credentials/api_proxy.rs",
+      "src-tauri/src/commands/credentials/foraging.rs",
+      "src-tauri/src/commands/credentials/auth_detect.rs",
+      "src-tauri/src/commands/credentials/discovery.rs",
+      "src-tauri/src/engine/api_proxy.rs",
+      "src-tauri/src/engine/oauth_refresh.rs",
+      "src-tauri/src/engine/oauth_refresh_lock.rs",
+      "src-tauri/src/engine/google_oauth.rs",
+      "src-tauri/src/engine/ssrf_safe_dns.rs",
+      "src-tauri/src/engine/url_safety.rs"
+    ]
+  },
+  {
+    "idx": 13,
+    "id": "ctx_1781386748286_e0a953g",
+    "name": "Connector Catalog",
+    "slug": "connector-catalog",
+    "group": "Credential Vault & Connectors",
+    "files": [
+      "src/features/vault/sub_dependencies/CredentialRelationshipGraph.tsx",
+      "src-tauri/src/commands/credentials/connectors.rs",
+      "src-tauri/src/commands/design/connector_explorer.rs",
+      "src-tauri/src/commands/design/connector_readiness.rs",
+      "src-tauri/src/db/builtin_connectors.rs",
+      "src-tauri/src/db/models/connector.rs",
+      "src-tauri/src/engine/connector_strategy.rs",
+      "src-tauri/src/engine/recipe_eligibility.rs"
+    ]
+  },
+  {
+    "idx": 14,
+    "id": "ctx_1781386748280_1vhg1ta",
+    "name": "Credential Vault CRUD",
+    "slug": "credential-vault-crud",
+    "group": "Credential Vault & Connectors",
+    "files": [
+      "src/features/vault/sub_credentials/manager/CredentialManager.tsx",
+      "src/features/vault/sub_credentials/manager/CredentialAddViews.tsx",
+      "src/features/vault/sub_credentials/manager/CredentialManagerViews.tsx",
+      "src/features/vault/sub_databases/DatabaseListView.tsx",
+      "src-tauri/src/commands/credentials/crud.rs",
+      "src-tauri/src/commands/credentials/db_schema.rs",
+      "src-tauri/src/db/models/credential.rs",
+      "src-tauri/src/db/models/credential_ledger.rs"
+    ]
+  },
+  {
+    "idx": 15,
+    "id": "ctx_1781386748328_cmg05r8",
+    "name": "Design Reviews & Diagrams",
+    "slug": "design-reviews-diagrams",
+    "group": "Templates & Recipes",
+    "files": [
+      "src/features/templates/components/DesignReviewsPage.tsx",
+      "src/features/templates/sub_diagrams/FlowDiagram.tsx",
+      "src/features/templates/sub_diagrams/ActivityDiagramModal.tsx",
+      "src/features/templates/sub_diagrams/FlowNodeCard.tsx",
+      "src-tauri/src/commands/design/reviews.rs",
+      "src-tauri/src/commands/design/conversations.rs",
+      "src-tauri/src/commands/design/analysis.rs",
+      "src-tauri/src/db/models/design_conversation.rs"
+    ]
+  },
+  {
+    "idx": 16,
+    "id": "ctx_1781386748321_oayr171",
+    "name": "Recipes & Use-Case Blueprints",
+    "slug": "recipes-use-case-blueprints",
+    "group": "Templates & Recipes",
+    "files": [
+      "src/features/recipes/shared/RecipeBookIllustration.tsx",
+      "src-tauri/src/commands/recipes/mod.rs",
+      "src-tauri/src/engine/recipe_seed.rs",
+      "src-tauri/src/engine/recipe_matcher.rs",
+      "src-tauri/src/engine/recipe_eligibility.rs",
+      "src-tauri/src/engine/curation_scheduler.rs"
+    ]
+  },
+  {
+    "idx": 17,
+    "id": "ctx_1781386748316_mkvtwfg",
+    "name": "Build Sessions & PersonaMatrix",
+    "slug": "build-sessions-personamatrix",
+    "group": "Templates & Recipes",
+    "files": [
+      "src/stores/slices/agents/matrixBuildSlice.ts",
+      "src-tauri/src/commands/design/build_sessions.rs",
+      "src-tauri/src/commands/design/build_simulate.rs",
+      "src-tauri/src/engine/build_session/mod.rs",
+      "src-tauri/src/engine/compiler.rs",
+      "src-tauri/src/engine/compilation_pipeline.rs",
+      "src-tauri/src/engine/intent_compiler.rs",
+      "src-tauri/src/engine/workflow_compiler.rs"
+    ]
+  },
+  {
+    "idx": 18,
+    "id": "ctx_1781386748310_0pwor7v",
+    "name": "Persona Templates",
+    "slug": "persona-templates",
+    "group": "Templates & Recipes",
+    "files": [
+      "src/features/templates/sub_presets/PresetLibraryPage.tsx",
+      "src/features/templates/sub_presets/PresetPreviewModal.tsx",
+      "src/features/templates/sub_presets/PresetQuestionnaireForm.tsx",
+      "src-tauri/src/commands/design/template_adopt.rs",
+      "src-tauri/src/commands/design/template_feedback.rs",
+      "src-tauri/src/engine/template_v3.rs",
+      "src-tauri/src/engine/template_checksums.rs",
+      "src-tauri/src/engine/adoption_answers.rs",
+      "src-tauri/src/db/models/build_session.rs"
+    ]
+  },
+  {
+    "idx": 19,
+    "id": "ctx_1781386748361_c3g3xjj",
+    "name": "Messages & Notifications",
+    "slug": "messages-notifications",
+    "group": "Triggers & Events",
+    "files": [
+      "src/features/schedules/components/EventBlock.tsx",
+      "src-tauri/src/commands/communication/messages.rs",
+      "src-tauri/src/commands/communication/notifications.rs",
+      "src-tauri/src/commands/communication/shared_events.rs",
+      "src-tauri/src/engine/shared_event_relay.rs",
+      "src-tauri/src/db/models/message.rs",
+      "src-tauri/src/db/models/notification_subscription.rs"
+    ]
+  },
+  {
+    "idx": 20,
+    "id": "ctx_1781386748340_lwe39ho",
+    "name": "Webhooks & Channel Pollers",
+    "slug": "webhooks-channel-pollers",
+    "group": "Triggers & Events",
+    "files": [
+      "src/features/triggers/sub_cloud_webhooks/CloudWebhooksTab.tsx",
+      "src/features/triggers/sub_dead_letter/DeadLetterTab.tsx",
+      "src-tauri/src/engine/webhook.rs",
+      "src-tauri/src/engine/webhook_notifier.rs",
+      "src-tauri/src/engine/discord_poller.rs",
+      "src-tauri/src/engine/slack_poller.rs",
+      "src-tauri/src/engine/smee_relay.rs",
+      "src-tauri/src/engine/cloud_webhook_relay.rs",
+      "src-tauri/src/engine/channel_reply.rs"
+    ]
+  },
+  {
+    "idx": 21,
+    "id": "ctx_1781386748334_zuzoeuc",
+    "name": "Triggers & Event Registry",
+    "slug": "triggers-event-registry",
+    "group": "Triggers & Events",
+    "files": [
+      "src/features/triggers/sub_builder/EventCanvas.tsx",
+      "src/features/triggers/sub_live_stream/LiveStreamTab.tsx",
+      "src/features/triggers/sub_shared/CatalogCard.tsx",
+      "src-tauri/src/commands/communication/events.rs",
+      "src-tauri/src/engine/event_registry.rs",
+      "src-tauri/src/engine/events.rs",
+      "src-tauri/src/db/models/event.rs"
+    ]
+  },
+  {
+    "idx": 22,
+    "id": "ctx_1781386748405_va3l5cx",
+    "name": "Knowledge Base & Memories",
+    "slug": "knowledge-base-memories",
+    "group": "Observability & Analytics",
+    "files": [
+      "src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx",
+      "src/features/overview/sub_memories/components/CreateMemoryForm.tsx",
+      "src/features/overview/sub_memories/components/ConflictCard.tsx",
+      "src-tauri/src/commands/execution/knowledge.rs",
+      "src-tauri/src/commands/core/memories.rs",
+      "src-tauri/src/commands/core/memory_compile.rs",
+      "src-tauri/src/engine/knowledge.rs",
+      "src-tauri/src/engine/kb_index.rs",
+      "src-tauri/src/engine/kb_ingest.rs",
+      "src-tauri/src/db/models/memory.rs",
+      "src-tauri/src/db/models/knowledge.rs"
+    ]
+  },
+  {
+    "idx": 23,
+    "id": "ctx_1781386748396_lsummhq",
+    "name": "Incidents & Manual Review",
+    "slug": "incidents-manual-review",
+    "group": "Observability & Analytics",
+    "files": [
+      "src/features/overview/sub_incidents/components/IncidentDetailBreakdown.tsx",
+      "src/features/overview/sub_manual-review/components/ActionZone.tsx",
+      "src/features/overview/sub_manual-review/components/BacklogInboxGroup.tsx",
+      "src-tauri/src/commands/execution/audit_incidents.rs",
+      "src-tauri/src/engine/audit_incidents_promoter.rs",
+      "src-tauri/src/engine/auto_triage.rs",
+      "src-tauri/src/engine/incident_continuation.rs",
+      "src-tauri/src/db/models/audit_incident.rs"
+    ]
+  },
+  {
+    "idx": 24,
+    "id": "ctx_1781386748388_12zpwns",
+    "name": "Analytics, SLA & Usage",
+    "slug": "analytics-sla-usage",
+    "group": "Observability & Analytics",
+    "files": [
+      "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx",
+      "src/features/overview/sub_analytics/components/RotationOverviewPanel.tsx",
+      "src/features/overview/sub_sla/components/SLADashboard.tsx",
+      "src/features/overview/sub_sla/components/SLACard.tsx",
+      "src/features/overview/sub_usage/charts/ChartTooltip.tsx",
+      "src/features/overview/sub_leaderboard/components/DetailPanel.tsx",
+      "src-tauri/src/commands/communication/sla.rs",
+      "src-tauri/src/engine/cost.rs"
+    ]
+  },
+  {
+    "idx": 25,
+    "id": "ctx_1781386748379_cexzrbv",
+    "name": "Observability & Alerts",
+    "slug": "observability-alerts",
+    "group": "Observability & Analytics",
+    "files": [
+      "src/features/overview/sub_observability/components/AlertRulesPanel.tsx",
+      "src/features/overview/sub_observability/components/AlertHistoryPanel.tsx",
+      "src/features/overview/sub_observability/components/AnomalyDrilldownPanel.tsx",
+      "src/features/overview/sub_observability/components/IpcPerformancePanel.tsx",
+      "src-tauri/src/commands/communication/observability/mod.rs",
+      "src-tauri/src/db/models/observability.rs"
+    ]
+  },
+  {
+    "idx": 26,
+    "id": "ctx_1781386748371_lufm4fi",
+    "name": "Dashboard & Mission Control",
+    "slug": "dashboard-mission-control",
+    "group": "Observability & Analytics",
+    "files": [
+      "src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx",
+      "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx",
+      "src/stores/slices/overview/index.ts",
+      "src/features/overview/sub_certification/CertificationCommandCenter.tsx"
+    ]
+  },
+  {
+    "idx": 27,
+    "id": "ctx_1781386748437_m9986p9",
+    "name": "Fleet Control",
+    "slug": "fleet-control",
+    "group": "Teams & Fleet Orchestration",
+    "files": [
+      "src/features/plugins/fleet/FleetPage.tsx",
+      "src/features/plugins/fleet/FleetOverlayTile.tsx",
+      "src/features/plugins/fleet/FleetTilePreview.tsx",
+      "src/features/plugins/fleet/FleetBroadcastModal.tsx",
+      "src-tauri/src/commands/fleet/mod.rs",
+      "src-tauri/src/commands/companion/fleet_bridge.rs",
+      "src/api/fleet/index.ts"
+    ]
+  },
+  {
+    "idx": 28,
+    "id": "ctx_1781386748429_zz56s47",
+    "name": "Pipeline & Agent Chains",
+    "slug": "pipeline-agent-chains",
+    "group": "Teams & Fleet Orchestration",
+    "files": [
+      "src/stores/slices/pipeline/index.ts",
+      "src/api/pipeline/index.ts",
+      "src-tauri/src/engine/pipeline.rs",
+      "src-tauri/src/engine/pipeline_executor.rs",
+      "src-tauri/src/engine/chain.rs",
+      "src-tauri/src/engine/composite.rs",
+      "src-tauri/src/engine/a2a/mod.rs"
+    ]
+  },
+  {
+    "idx": 29,
+    "id": "ctx_1781386748421_rwh3iqu",
+    "name": "Team Assignment & Handoff",
+    "slug": "team-assignment-handoff",
+    "group": "Teams & Fleet Orchestration",
+    "files": [
+      "src/features/teams/sub_kpis/KPIDashboard.tsx",
+      "src/features/teams/sub_redRoom/RedRoomPane.tsx",
+      "src-tauri/src/commands/teams/assignments.rs",
+      "src-tauri/src/engine/team_assignment_matching.rs",
+      "src-tauri/src/engine/team_assignment_orchestrator.rs",
+      "src-tauri/src/engine/team_handoff.rs",
+      "src-tauri/src/engine/kpi_binding.rs"
+    ]
+  },
+  {
+    "idx": 30,
+    "id": "ctx_1781386748414_mv89y8p",
+    "name": "Team Builder & Workspace",
+    "slug": "team-builder-workspace",
+    "group": "Teams & Fleet Orchestration",
+    "files": [
+      "src/features/teams/sub_teamWorkspace/AutoTeamModal.tsx",
+      "src/features/teams/sub_teamWorkspace/BlueprintPreview.tsx",
+      "src/features/teams/sub_canvas/components/OptimizerPanel.tsx",
+      "src/features/teams/sub_goals/GoalConstellation.tsx",
+      "src/features/teams/sub_teamMemory/TeamMemoryPane.tsx",
+      "src-tauri/src/commands/teams/teams.rs",
+      "src-tauri/src/commands/teams/team_memories.rs",
+      "src-tauri/src/engine/team_preset_loader.rs",
+      "src-tauri/src/engine/team_preset_adopter.rs"
+    ]
+  },
+  {
+    "idx": 31,
+    "id": "ctx_1781386748511_fb3dvba",
+    "name": "Cockpit, Voice & Sensory",
+    "slug": "cockpit-voice-sensory",
+    "group": "Athena Companion",
+    "files": [
+      "src/features/home/sub_cockpit/CockpitPanel.tsx",
+      "src/features/home/sub_cockpit/widgets/DecisionLogWidget.tsx",
+      "src/features/plugins/companion/sub_voice/PiperVoicePanel.tsx",
+      "src/features/plugins/companion/sub_voice/SttPanel.tsx",
+      "src-tauri/src/commands/companion/voice.rs",
+      "src-tauri/src/commands/companion/stt.rs",
+      "src-tauri/src/commands/companion/sensory.rs",
+      "src-tauri/src/companion/stt/mod.rs",
+      "src-tauri/src/companion/tts/mod.rs"
+    ]
+  },
+  {
+    "idx": 32,
+    "id": "ctx_1781386748503_tabvxyw",
+    "name": "Companion Brain & Proactivity",
+    "slug": "companion-brain-proactivity",
+    "group": "Athena Companion",
+    "files": [
+      "src/features/plugins/companion/BrainViewer.tsx",
+      "src/features/plugins/companion/BrainLinksStrip.tsx",
+      "src-tauri/src/commands/companion/brain.rs",
+      "src-tauri/src/commands/companion/proactive.rs",
+      "src-tauri/src/commands/companion/project_tracking.rs",
+      "src-tauri/src/companion/brain/mod.rs",
+      "src-tauri/src/companion/proactive/mod.rs",
+      "src-tauri/src/companion/projects.rs",
+      "src-tauri/src/companion/wake_window.rs"
+    ]
+  },
+  {
+    "idx": 33,
+    "id": "ctx_1781386748496_hecx92x",
+    "name": "Approvals & Decisions",
+    "slug": "approvals-decisions",
+    "group": "Athena Companion",
+    "files": [
+      "src/features/plugins/companion/ApprovalCard.tsx",
+      "src/features/plugins/companion/sub_decisions/DecisionsPanel.tsx",
+      "src/features/plugins/companion/orb/OrbDecisionBubble.tsx",
+      "src-tauri/src/commands/companion/approvals.rs",
+      "src-tauri/src/commands/companion/decisions.rs",
+      "src-tauri/src/commands/companion/feedback.rs",
+      "src-tauri/src/companion/athena_reaction.rs"
+    ]
+  },
+  {
+    "idx": 34,
+    "id": "ctx_1781386748488_4dgcl17",
+    "name": "Companion Runtime & Chat",
+    "slug": "companion-runtime-chat",
+    "group": "Athena Companion",
+    "files": [
+      "src/features/plugins/companion/CompanionPanel.tsx",
+      "src/features/plugins/companion/Bubble.tsx",
+      "src/features/plugins/companion/ActivityTray.tsx",
+      "src/features/plugins/companion/ChatSearch.tsx",
+      "src-tauri/src/commands/companion/chat.rs",
+      "src-tauri/src/companion/session.rs",
+      "src-tauri/src/companion/dispatcher.rs",
+      "src-tauri/src/companion/prompt.rs",
+      "src-tauri/src/companion/mod.rs",
+      "src/api/companion.ts"
+    ]
+  },
+  {
+    "idx": 35,
+    "id": "ctx_1781386748574_9r2nkzy",
+    "name": "Obsidian Brain",
+    "slug": "obsidian-brain",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx",
+      "src/features/plugins/obsidian-brain/sub_graph/GraphPanel.tsx",
+      "src/features/plugins/obsidian-brain/sub_browse/BrowsePanel.tsx",
+      "src-tauri/src/commands/obsidian_brain/mod.rs",
+      "src/api/obsidianBrain/index.ts",
+      "src-tauri/src/db/models/obsidian_brain.rs"
+    ]
+  },
+  {
+    "idx": 36,
+    "id": "ctx_1781386748566_11lifsz",
+    "name": "Google Drive",
+    "slug": "google-drive",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/drive/components/DriveFileList.tsx",
+      "src/features/plugins/drive/components/DriveDetailsPane.tsx",
+      "src/features/plugins/drive/components/DriveContextMenu.tsx",
+      "src-tauri/src/commands/drive.rs",
+      "src/api/drive.ts",
+      "src-tauri/src/engine/google_oauth.rs"
+    ]
+  },
+  {
+    "idx": 37,
+    "id": "ctx_1781386748560_hbibm39",
+    "name": "Dev Tools & Context Map",
+    "slug": "dev-tools-context-map",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/dev-tools/DevToolsPage.tsx",
+      "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx",
+      "src/features/plugins/dev-tools/sub_context/ContextDetail.tsx",
+      "src/features/plugins/dev-tools/sub_context/GroupList.tsx",
+      "src-tauri/src/commands/tools/tools.rs",
+      "src-tauri/src/commands/tools/automations.rs",
+      "src-tauri/src/commands/tools/github_platform.rs",
+      "src-tauri/src/db/repos/dev_tools.rs"
+    ]
+  },
+  {
+    "idx": 38,
+    "id": "ctx_1781386748554_5nbh6pj",
+    "name": "Research Lab",
+    "slug": "research-lab",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/research-lab/ResearchLabPage.tsx",
+      "src/features/plugins/research-lab/shared/ResearchLabFormModal.tsx",
+      "src/features/plugins/research-lab/shared/PrototypeTabs.tsx",
+      "src/api/researchLab/index.ts",
+      "src-tauri/src/db/repos/research_lab.rs"
+    ]
+  },
+  {
+    "idx": 39,
+    "id": "ctx_1781386748549_gnr5fs5",
+    "name": "Personas Twin",
+    "slug": "personas-twin",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/twin/shared/TwinReadinessRibbon.tsx",
+      "src/features/plugins/twin/shared/TwinPicker.tsx",
+      "src/features/plugins/twin/shared/TwinHeaderBand.tsx",
+      "src/features/plugins/twin/CoachMark.tsx",
+      "src/api/twin/index.ts",
+      "src-tauri/src/db/repos/twin.rs"
+    ]
+  },
+  {
+    "idx": 40,
+    "id": "ctx_1781386748542_vxbnlnx",
+    "name": "Artist Studio",
+    "slug": "artist-studio",
+    "group": "First-Party Plugins",
+    "files": [
+      "src/features/plugins/artist/ArtistPage.tsx",
+      "src/features/plugins/artist/sub_blender/CreativeStudioPanel.tsx",
+      "src/features/plugins/artist/sub_gallery/Gallery2D.tsx",
+      "src/features/plugins/artist/sub_gallery/AssetCard.tsx",
+      "src-tauri/src/commands/artist/mod.rs",
+      "src/api/artist/index.ts",
+      "src-tauri/src/db/models/artist.rs"
+    ]
+  },
+  {
+    "idx": 41,
+    "id": "ctx_1781386748606_3qwr7m2",
+    "name": "Cloud Sync & Deployment",
+    "slug": "cloud-sync-deployment",
+    "group": "Onboarding, Home & Settings",
+    "files": [
+      "src/features/settings/sub_account/components/CloudSyncCard.tsx",
+      "src/features/agents/sub_deployment/components/UnifiedDeploymentDashboard.tsx",
+      "src/features/agents/sub_deployment/components/DeploymentTable.tsx",
+      "src/api/cloudSync.ts",
+      "src-tauri/src/engine/workspace_sync/mod.rs",
+      "src-tauri/src/engine/desktop_runtime.rs",
+      "src-tauri/src/engine/desktop_discovery.rs"
+    ]
+  },
+  {
+    "idx": 42,
+    "id": "ctx_1781386748599_dvhfmrc",
+    "name": "Settings & BYOM",
+    "slug": "settings-byom",
+    "group": "Onboarding, Home & Settings",
+    "files": [
+      "src/features/settings/components/SettingsPage.tsx",
+      "src/features/settings/sub_byom/components/ByomSettings.tsx",
+      "src/features/settings/sub_byom/components/ByomProviderList.tsx",
+      "src/features/settings/sub_byom/components/ByomRoutingRules.tsx",
+      "src/features/settings/sub_api_keys/components/ApiKeysSettings.tsx",
+      "src/features/settings/sub_account/components/AccountSettings.tsx",
+      "src-tauri/src/commands/credentials/external_api_keys.rs",
+      "src-tauri/src/engine/byom.rs",
+      "src-tauri/src/engine/management_api.rs"
+    ]
+  },
+  {
+    "idx": 43,
+    "id": "ctx_1781386748593_7i67hm6",
+    "name": "Onboarding Tour",
+    "slug": "onboarding-tour",
+    "group": "Onboarding, Home & Settings",
+    "files": [
+      "src/features/onboarding/components/GuidedTour.tsx",
+      "src/features/onboarding/components/OnboardingOverlay.tsx",
+      "src/features/onboarding/components/AppearanceStep.tsx",
+      "src/features/onboarding/components/ExecutionStep.tsx",
+      "src/features/onboarding/components/DesktopDiscoveryStep.tsx",
+      "src/features/onboarding/components/OnboardingProgressBar.tsx"
+    ]
+  },
+  {
+    "idx": 44,
+    "id": "ctx_1781386748584_8v20nzy",
+    "name": "Home & Roadmap",
+    "slug": "home-roadmap",
+    "group": "Onboarding, Home & Settings",
+    "files": [
+      "src/features/home/components/HomePage.tsx",
+      "src/features/home/sub_welcome/HomeWelcome.tsx",
+      "src/features/home/sub_welcome/HeroHeader.tsx",
+      "src/features/home/sub_welcome/FleetHealthStrip.tsx",
+      "src/api/liveRoadmap.ts",
+      "src-tauri/src/commands/live_roadmap.rs"
+    ]
+  },
+  {
+    "idx": 45,
+    "id": "ctx_1781386748638_yyhcyaq",
+    "name": "Error Handling, Hooks & Utilities",
+    "slug": "error-handling-hooks-utilities",
+    "group": "Platform Foundation",
+    "files": [
+      "src/lib/silentCatch.ts",
+      "src/lib/errors/errorRegistry.ts",
+      "src/hooks/index.ts",
+      "src/lib/tauriInvoke.ts"
+    ]
+  },
+  {
+    "idx": 46,
+    "id": "ctx_1781386748629_an9riy6",
+    "name": "Internationalization (i18n)",
+    "slug": "internationalization-i18n",
+    "group": "Platform Foundation",
+    "files": [
+      "src/i18n/useTranslation.ts",
+      "src/i18n/routeSections.ts",
+      "src/i18n/tokenMaps.ts",
+      "src/i18n/en.ts",
+      "src/i18n/useTranslatedError.ts"
+    ]
+  },
+  {
+    "idx": 47,
+    "id": "ctx_1781386748624_8tp9kr8",
+    "name": "Tauri IPC Bridge & API",
+    "slug": "tauri-ipc-bridge-api",
+    "group": "Platform Foundation",
+    "files": [
+      "src/lib/tauriInvoke.ts",
+      "src/api/enums.ts",
+      "src/api/systemOps.ts",
+      "src/api/remoteCommands.ts",
+      "src/api/director.ts",
+      "src-tauri/src/commands/mod.rs"
+    ]
+  },
+  {
+    "idx": 48,
+    "id": "ctx_1781386748617_gxl5zx7",
+    "name": "State Management (Zustand)",
+    "slug": "state-management-zustand",
+    "group": "Platform Foundation",
+    "files": [
+      "src/stores/personaStore.ts",
+      "src/stores/storeTypes.ts",
+      "src/stores/slices/processActivitySlice.ts",
+      "src/stores/slices/agents/personaSlice.ts",
+      "src/stores/slices/overview/index.ts",
+      "src/stores/slices/vault/index.ts",
+      "src/stores/slices/system/index.ts"
+    ]
+  },
+  {
+    "idx": 49,
+    "id": "ctx_1781386748611_e7hkjnv",
+    "name": "Shared UI Component Library",
+    "slug": "shared-ui-component-library",
+    "group": "Platform Foundation",
+    "files": [
+      "src/features/shared/components/CATALOG.md",
+      "src/features/shared/components/feedback/EmptyState.tsx",
+      "src/features/shared/components/feedback/ConfirmDialog.tsx",
+      "src/features/shared/components/feedback/ErrorBanner.tsx",
+      "src/features/shared/components/feedback/AriaLiveProvider.tsx",
+      "src/features/shared/components/layout/PanelTabBar.tsx",
+      "src/features/shared/components/buttons/Button.tsx",
+      "src/features/shared/components/buttons/CopyButton.tsx"
+    ]
+  },
+  {
+    "idx": 50,
+    "id": "ctx_1781386748655_k164j9j",
+    "name": "Crypto & Secure Storage",
+    "slug": "crypto-secure-storage",
+    "group": "Data & Persistence",
+    "files": [
+      "src-tauri/src/engine/crypto.rs",
+      "src-tauri/src/engine/enclave.rs",
+      "src-tauri/src/engine/desktop_security.rs",
+      "src-tauri/src/engine/path_safety.rs",
+      "src-tauri/src/engine/scope_enforcement.rs",
+      "src-tauri/src/db/models/external_api_key.rs",
+      "src-tauri/src/db/cdc.rs"
+    ]
+  },
+  {
+    "idx": 51,
+    "id": "ctx_1781386748649_8yehw4z",
+    "name": "Repositories & Models",
+    "slug": "repositories-models",
+    "group": "Data & Persistence",
+    "files": [
+      "src-tauri/src/db/repos/mod.rs",
+      "src-tauri/src/db/repos/core/mod.rs",
+      "src-tauri/src/db/repos/execution/mod.rs",
+      "src-tauri/src/db/repos/communication/mod.rs",
+      "src-tauri/src/db/repos/orchestration/mod.rs",
+      "src-tauri/src/db/repos/resources/mod.rs",
+      "src-tauri/src/db/models/mod.rs",
+      "src-tauri/src/db/models/execution.rs",
+      "src-tauri/src/db/models/credential.rs"
+    ]
+  },
+  {
+    "idx": 52,
+    "id": "ctx_1781386748644_vgpz4dz",
+    "name": "Database Schema & Migrations",
+    "slug": "database-schema-migrations",
+    "group": "Data & Persistence",
+    "files": [
+      "src-tauri/src/db/mod.rs",
+      "src-tauri/src/db/migrations/initial.rs",
+      "src-tauri/src/db/migrations/incremental.rs",
+      "src-tauri/src/db/migrations/schema.rs",
+      "src-tauri/src/db/migrations/fk_hygiene.rs",
+      "src-tauri/src/db/migrations/helpers.rs",
+      "src-tauri/src/db/query_builder.rs",
+      "src-tauri/src/db/settings_keys.rs"
+    ]
+  }
+]

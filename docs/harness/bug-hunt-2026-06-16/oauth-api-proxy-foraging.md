@@ -1,0 +1,49 @@
+# Bug Hunter — OAuth, API Proxy & Foraging
+
+> Total: 5 findings (1 critical, 2 high, 1 medium, 1 low)
+> Context: oauth-api-proxy-foraging | Group: Credential Vault & Connectors
+
+## 1. API-proxy HTTP client follows redirects with no SSRF guard — redirect to raw internal IP bypasses every check
+- **Severity**: Critical
+- **Category**: Latent failure / SSRF bypass (trust boundary)
+- **File**: `src-tauri/src/engine/ssrf_safe_dns.rs:57-63` (client) consumed by `src-tauri/src/engine/api_proxy.rs:792`
+- **Scenario**: An attacker controls (or compromises) an upstream API that a stored credential talks to — or controls a credential `base_url`/`domain`/`host` field. The first request goes to a *public* host (passes `validate_healthcheck_url` + the SSRF-safe DNS resolver). The upstream replies `302 Location: http://169.254.169.254/latest/meta-data/iam/security-credentials/` (or `http://10.0.0.5/admin`). reqwest auto-follows up to 10 redirects by default, and `build_ssrf_safe_client()` sets **no** `redirect::Policy`. The custom DNS resolver is only invoked for *hostnames*; a redirect `Location` carrying a raw IP literal never hits the resolver, so the proxy issues an authenticated request straight to the cloud-metadata endpoint / internal service and returns the body to the caller.
+- **Root cause**: SSRF defenses are all front-loaded: `validate_healthcheck_url` only validates the *initial* full_url (api_proxy.rs:686), and `SsrfSafeDnsResolver` (ssrf_safe_dns.rs:19-51) only filters resolved hostnames. Nothing re-validates redirect targets. The codebase even *has* the right primitive — `url_safety::is_url_target_private` (url_safety.rs:172) catches IP-literal redirect Locations and is correctly wired into `twin.rs:1570` via a `redirect::Policy::custom` — but the credential proxy client never uses it and never disables redirects.
+- **Impact**: Full SSRF with the credential's auth header attached to the redirected request (api_proxy.rs:821 reapplies `strategy.apply_auth`), exfiltrating cloud IAM metadata / hitting internal admin endpoints. This is the highest-value target in the whole context and it is currently open.
+- **Fix sketch**: Build the proxy client with `.redirect(reqwest::redirect::Policy::custom(|attempt| { if is_url_target_private(attempt.url()) { attempt.stop() } else { attempt.follow() } }))` (mirroring twin.rs), or `Policy::none()` and re-validate+re-resolve each hop manually. Either way every redirect hop must pass `is_url_target_private` *and* the SSRF DNS resolver.
+
+## 2. `EnvResolver` imports every matching secret for a service, not the one the user approved
+- **Severity**: High
+- **Category**: Silent failure / over-broad secret handling (trust boundary)
+- **File**: `src-tauri/src/commands/credentials/foraging.rs:745-763`
+- **Scenario**: The forage scan groups all env vars for a service under one entry (`scan_env_vars`, e.g. `env:aws` collapses `AWS_ACCESS_KEY_ID`+`AWS_SECRET_ACCESS_KEY`). At import, `EnvResolver::resolve` takes only `svc = parts[0]` and then loops the *entire* `ENV_PATTERNS` table importing **every** env var whose `service_type == svc`. For services with multiple distinct secrets this is benign, but the `service_type` written to the vault row comes from the **client-supplied** `service_type` param (foraging.rs:668-669) while values come from the foraged_id; the real `_service_type` arg is unused (foraging.rs:912). A caller can therefore request `foraged_id="env:supabase"` but store it under `service_type="github"`, and `resolve_real_values` happily reads/imports the `supabase` secret material under a mislabeled credential — or import `supabase`'s `service_role_key` when the user only saw a masked `api_key` in the UI.
+- **Root cause**: Resolution dispatches on `foraged_id` parts while the persisted `service_type` and the displayed field set are decoupled from what is actually read. No cross-check that the resolved fields match the approved foraged entry.
+- **Impact**: User approves importing one credential and silently gets a different/broader secret stored under an attacker- or bug-chosen service label, defeating the scope/consent the foraging UI implies.
+- **Fix sketch**: Pass the exact field keys the scan surfaced into `resolve` and import only those; assert the resolver-derived service matches the persisted `service_type` (reject mismatch) instead of ignoring `_service_type`.
+
+## 3. 401-retry re-resolves token outside the per-credential lock — stale/wrong token can be sent on retry
+- **Severity**: High
+- **Category**: Race condition (TOCTOU on refresh lock)
+- **File**: `src-tauri/src/engine/api_proxy.rs:849-869`
+- **Scenario**: On a 401 from an OAuth connector the proxy `drop(lock_holder.take())` (api_proxy.rs:850) to avoid re-entrant deadlock, then calls `force_refresh_single_credential`, then **after the lock is gone** re-reads fields and re-resolves the token (api_proxy.rs:861-865) for the retry. Between `force_refresh` releasing its internal lock and this re-read, the background `oauth_refresh_tick` (or a concurrent proxy call) can acquire the lock and rotate the refresh_token / write a *newer* access_token, or a second 401-retry can run. The retry then sends a token resolved from an interleaved DB state — potentially an access_token already superseded, producing a second spurious 401 or, with refresh_token rotation (RFC 6749 §6), racing two exchanges that invalidate each other.
+- **Root cause**: The careful per-credential lock (`oauth_refresh_lock`) is deliberately dropped for the entire force-refresh + re-resolve + rebuild + resend window, so the read-resolve-send sequence on the retry path is unsynchronized. The lock guarantees single-flight *refresh* but not single-flight *use-after-refresh*.
+- **Impact**: Intermittent auth failures and, under refresh_token rotation, the documented "second exchange invalidates the first" failure the lock module exists to prevent (oauth_refresh_lock.rs:1-11) — just on the retry path instead of the proactive path.
+- **Fix sketch**: Have `force_refresh_single_credential` return the freshly-resolved token (it already holds the lock during the exchange) so the proxy uses *that* value directly rather than a second unlocked DB re-read; or re-acquire the lock around the re-read+resend.
+
+## 4. `oauth_token_expires_at` is stamped from wall-clock at refresh, so a backward clock change strands the token un-refreshed
+- **Severity**: Medium
+- **Category**: Edge case (clock skew) / token never refreshed before expiry
+- **File**: `src-tauri/src/engine/oauth_refresh.rs:443-447, 168-176, 49`
+- **Scenario**: Expiry is computed as `Utc::now() + expires_in` and stored as RFC3339 (oauth_refresh.rs:446-447). All refresh decisions compare `expires_at - now` (oauth_refresh.rs:171-175, 332-333). If the host clock jumps **forward** (NTP correction, VM resume, DST/TZ misconfig) by more than `STALENESS_CEILING_SECS` (7 days, line 49) past a token's stored expiry, the proactive tick's `remaining >= -STALENESS_CEILING_SECS` guard treats it as "too stale to refresh, needs re-auth" and **skips it forever** — even though a refresh_token exchange would succeed. Conversely a backward jump can make a genuinely-expired token look valid and skip proactive refresh until the next 401. The provider's actual TTL is ignored; only local wall-clock math drives the decision.
+- **Root cause**: Refresh eligibility is derived purely from locally-computed wall-clock expiry with no monotonic fallback and no "expired-but-refresh_token-present → still try" escape hatch once past the staleness ceiling.
+- **Impact**: On machines with clock drift/large corrections (laptops resumed from sleep, VMs), credentials silently fall into a permanent un-refreshable hole that masquerades as needs-reauth, the exact daily-401 class this engine was built to kill.
+- **Fix sketch**: When `refresh_token` is present, attempt a refresh on 401 / on launch regardless of the staleness ceiling (let the provider be the authority on validity); treat the ceiling as a backoff hint, not a hard skip. Optionally sanity-check expiry against a monotonic clock.
+
+## 5. SSRF allowlists diverge across the three validators — `is_private_ip` in healthcheck omits CGN/doc/v4-mapped ranges the proxy relies on
+- **Severity**: Low
+- **Category**: Latent failure / defensive gap (inconsistent trust boundary)
+- **File**: `src-tauri/src/engine/healthcheck.rs:1279-1304` vs `src-tauri/src/engine/url_safety.rs:15-36`
+- **Scenario**: The API proxy's *up-front* URL check is `validate_healthcheck_url` → healthcheck.rs `is_private_ip` (oauth/api_proxy.rs:686). That version does **not** block 100.64.0.0/10 CGN-shared, the TEST-NET doc ranges, or IPv4-mapped-IPv6 private addresses — whereas `url_safety.rs::is_private_ip` (the SSRF-DNS path) *does*. A `base_url` literal like `http://[::ffff:10.0.0.1]/` or `http://100.64.0.1/` passes the proxy's literal-IP front check. It is still caught later by `validate_field_values`/DNS in some paths, but the three near-duplicate `is_private_ip` implementations (healthcheck, url_safety, plus the resolver) drift independently, so any path that relies solely on the healthcheck variant has weaker coverage.
+- **Root cause**: Three copy-pasted private-IP predicates with different range sets and no shared source of truth; the proxy's primary literal check uses the weakest one.
+- **Impact**: Inconsistent SSRF coverage; a future caller wiring only `validate_healthcheck_url` inherits the gaps (CGN/doc/v4-mapped). Low today because the SSRF-safe client backstops hostname paths, but it is a latent regression magnet.
+- **Fix sketch**: Collapse to a single canonical `is_private_ip` (the url_safety.rs version, which is the most complete) and have healthcheck + the DNS resolver call it, so all three SSRF entry points share identical range coverage.

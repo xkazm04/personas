@@ -1,0 +1,2602 @@
+[
+ {
+  "slug": "agent-chat",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Chat",
+  "num": 1,
+  "title": "Triple finalization path persists the assistant reply twice (duplicate message)",
+  "sev": "critical",
+  "cat": "Race condition / silent data corruption",
+  "file": "src/stores/slices/agents/chatSlice.ts:256 (and executionSlice.ts:435, executionSlice.ts:379)"
+ },
+ {
+  "slug": "agent-chat",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Chat",
+  "num": 2,
+  "title": "Stale-closure session/persona binding finalizes a reply into the wrong (newly-switched) thread",
+  "sev": "high",
+  "cat": "Race condition / lost & misattributed messages",
+  "file": "src/stores/slices/agents/executionSlice.ts:431"
+ },
+ {
+  "slug": "agent-chat",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Chat",
+  "num": 3,
+  "title": "Stream death mid-flight leaves chat wedged with no recovery",
+  "sev": "high",
+  "cat": "Latent failure / recovery gap",
+  "file": "src/stores/slices/agents/chatSlice.ts:427"
+ },
+ {
+  "slug": "agent-chat",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Chat",
+  "num": 4,
+  "title": "`--resume` continuation can attach to a deleted/foreign Claude session (id mismatch)",
+  "sev": "medium",
+  "cat": "Edge case / session-id mismatch",
+  "file": "src/stores/slices/agents/chatSlice.ts:182"
+ },
+ {
+  "slug": "agent-chat",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Chat",
+  "num": 5,
+  "title": "User message content rendered without markdown sanitization parity (and DB strips HTML it then displays raw)",
+  "sev": "low",
+  "cat": "Edge case / markdown & injection",
+  "file": "src/features/agents/components/ChatThread.tsx:66"
+ },
+ {
+  "slug": "agent-lab-versions",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Lab & Versions",
+  "num": 1,
+  "title": "`activateVersion` writes the model to the *selected* persona, not the target persona",
+  "sev": "critical",
+  "cat": "state corruption / wrong-target write",
+  "file": "src/stores/slices/agents/labSlice.ts:528"
+ },
+ {
+  "slug": "agent-lab-versions",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Lab & Versions",
+  "num": 2,
+  "title": "A/B and Eval runs share one lifecycle flag — cancelling/finishing one clobbers the other",
+  "sev": "high",
+  "cat": "race condition / concurrent-run state collision",
+  "file": "src/stores/slices/agents/labSlice.ts:340"
+ },
+ {
+  "slug": "agent-lab-versions",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Lab & Versions",
+  "num": 3,
+  "title": "`fetchResults` terminal-state cache short-circuit serves stale results forever",
+  "sev": "high",
+  "cat": "stale cache / silent wrong result",
+  "file": "src/stores/slices/agents/labSlice.ts:167"
+ },
+ {
+  "slug": "agent-lab-versions",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Lab & Versions",
+  "num": 4,
+  "title": "Version-rating composite divides by `wsum` but averages can be poisoned by error rows scored 0",
+  "sev": "medium",
+  "cat": "edge case / misleading aggregate",
+  "file": "src-tauri/src/db/repos/lab/ratings.rs:119"
+ },
+ {
+  "slug": "agent-lab-versions",
+  "group": "Persona & Agent Studio",
+  "name": "Agent Lab & Versions",
+  "num": 5,
+  "title": "`lab_accept_matrix_draft` idempotency fast-path reads run, then claims in a *different* connection — TOCTOU on the prompt write",
+  "sev": "medium",
+  "cat": "race condition / partial-write",
+  "file": "src-tauri/src/commands/execution/lab.rs:541"
+ },
+ {
+  "slug": "analytics-sla-usage",
+  "group": "Observability & Analytics",
+  "name": "Analytics, SLA & Usage",
+  "num": 1,
+  "title": "SLA daily-trend bars render at zero height — the trend chart is silently blank",
+  "sev": "high",
+  "cat": "Silent failure (success theater)",
+  "file": "src/features/overview/sub_sla/components/SLACard.tsx:132"
+ },
+ {
+  "slug": "analytics-sla-usage",
+  "group": "Observability & Analytics",
+  "name": "Analytics, SLA & Usage",
+  "num": 2,
+  "title": "Heatmap day buckets are UTC on the server but local-time on the client — wrong-day attribution",
+  "sev": "high",
+  "cat": "Edge case / wrong-but-plausible (timezone bucket misalignment)",
+  "file": "src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx:77 (and server src-tauri/src/db/repos/execution/metrics.rs:1973)"
+ },
+ {
+  "slug": "analytics-sla-usage",
+  "group": "Observability & Analytics",
+  "name": "Analytics, SLA & Usage",
+  "num": 3,
+  "title": "Speed & cost dimensions score a hardcoded 50 when the fleet average is 0 — masks real performance",
+  "sev": "medium",
+  "cat": "Silent failure / wrong-but-plausible (single-datapoint & empty-window stats)",
+  "file": "src/features/overview/sub_leaderboard/libs/leaderboardScoring.ts:70"
+ },
+ {
+  "slug": "analytics-sla-usage",
+  "group": "Observability & Analytics",
+  "name": "Analytics, SLA & Usage",
+  "num": 4,
+  "title": "Global avg latency mis-weights by total executions instead of timed executions",
+  "sev": "medium",
+  "cat": "Wrong-number bug (numeric aggregation)",
+  "file": "src-tauri/src/db/repos/communication/sla.rs:334"
+ },
+ {
+  "slug": "analytics-sla-usage",
+  "group": "Observability & Analytics",
+  "name": "Analytics, SLA & Usage",
+  "num": 5,
+  "title": "Heatmap & rotation parse server timestamps with `new Date(...)` — silent NaN on legacy/naive shapes",
+  "sev": "medium",
+  "cat": "Latent failure / silent failure (timestamp parsing across boundaries)",
+  "file": "src/features/overview/sub_analytics/components/RotationOverviewPanel.tsx:63 (also :78)"
+ },
+ {
+  "slug": "approvals-decisions",
+  "group": "Athena Companion",
+  "name": "Approvals & Decisions",
+  "num": 1,
+  "title": "Orb decision clears BEFORE the approve/reject IPC resolves — failed consent action shown as done (success theater)",
+  "sev": "critical",
+  "cat": "💀 Silent failure / consent gap",
+  "file": "src/features/plugins/companion/decision/resolveDecision.ts:31 (with src/features/plugins/companion/decision/useDecisionQueue.ts:101)"
+ },
+ {
+  "slug": "approvals-decisions",
+  "group": "Athena Companion",
+  "name": "Approvals & Decisions",
+  "num": 2,
+  "title": "Pending approvals never expire — an approval can be acted on long after its target is gone, with no consent freshness",
+  "sev": "high",
+  "cat": "🔮 Latent failure / 🕳️ edge case",
+  "file": "src-tauri/src/commands/companion/approvals.rs:123 (companion_list_pending_approvals) and :488 (load_pending)"
+ },
+ {
+  "slug": "approvals-decisions",
+  "group": "Athena Companion",
+  "name": "Approvals & Decisions",
+  "num": 3,
+  "title": "resolve_human_review approval auto-fires no event-publish error to the user; an Athena-resolved review can silently lose its decision side effects",
+  "sev": "high",
+  "cat": "💀 Silent failure",
+  "file": "src-tauri/src/commands/companion/approvals.rs:757"
+ },
+ {
+  "slug": "approvals-decisions",
+  "group": "Athena Companion",
+  "name": "Approvals & Decisions",
+  "num": 4,
+  "title": "Corrupt/empty approval payload still renders an actionable card with a blank action",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 silent",
+  "file": "src-tauri/src/commands/companion/approvals.rs:149"
+ },
+ {
+  "slug": "approvals-decisions",
+  "group": "Athena Companion",
+  "name": "Approvals & Decisions",
+  "num": 5,
+  "title": "In-chat approve failure leaves a stuck card with no recovery path",
+  "sev": "low",
+  "cat": "🕳️ Edge case / UX-of-consent",
+  "file": "src/features/plugins/companion/ApprovalCard.tsx:118"
+ },
+ {
+  "slug": "artist-studio",
+  "group": "First-Party Plugins",
+  "name": "Artist Studio",
+  "num": 1,
+  "title": "Concurrent generations clobber the single shared session-tracking slot — second generate orphans the first",
+  "sev": "critical",
+  "cat": "⚡ Race condition / 💀 silent failure",
+  "file": "src/features/plugins/artist/hooks/useCreativeSession.ts:33 (and src/stores/slices/system/artistSlice.ts:69,124)"
+ },
+ {
+  "slug": "artist-studio",
+  "group": "First-Party Plugins",
+  "name": "Artist Studio",
+  "num": 2,
+  "title": "`[Error]`/`failed` status event flips `running=false` but never finalizes the session record",
+  "sev": "high",
+  "cat": "💀 Silent failure / 🔮 latent",
+  "file": "src/features/plugins/artist/hooks/useCreativeSession.ts:116-133"
+ },
+ {
+  "slug": "artist-studio",
+  "group": "First-Party Plugins",
+  "name": "Artist Studio",
+  "num": 3,
+  "title": "Lightbox index races gallery mutation — wrong asset shown or deleted out from under the viewer",
+  "sev": "high",
+  "cat": "⚡ Race condition / 🕳️ edge case",
+  "file": "src/features/plugins/artist/sub_gallery/Gallery2D.tsx:53-59,86,121"
+ },
+ {
+  "slug": "artist-studio",
+  "group": "First-Party Plugins",
+  "name": "Artist Studio",
+  "num": 4,
+  "title": "`artist_read_image_base64` rejects every gallery image when the artist folder is a symlink path mismatch / first-segment case",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 silent failure",
+  "file": "src-tauri/src/commands/artist/mod.rs:374-384"
+ },
+ {
+  "slug": "artist-studio",
+  "group": "First-Party Plugins",
+  "name": "Artist Studio",
+  "num": 5,
+  "title": "Module-level data-URL cache retains base64 of deleted/renamed assets",
+  "sev": "low",
+  "cat": "🔮 Latent / resource retention",
+  "file": "src/features/plugins/artist/hooks/useLocalImage.ts:10-22,49-54"
+ },
+ {
+  "slug": "build-sessions-personamatrix",
+  "group": "Templates & Recipes",
+  "name": "Build Sessions & PersonaMatrix",
+  "num": 1,
+  "title": "`simulate_build_draft` clobbers `personas.design_context` with no restore — abandoned simulations corrupt the row, concurrent sims of one persona race",
+  "sev": "critical",
+  "cat": "🔮 Latent failure / ⚡ Race condition / 💀 Silent failure",
+  "file": "src-tauri/src/commands/design/build_simulate.rs:248-254"
+ },
+ {
+  "slug": "build-sessions-personamatrix",
+  "group": "Templates & Recipes",
+  "name": "Build Sessions & PersonaMatrix",
+  "num": 2,
+  "title": "`test_build_draft` TOCTOU on phase + per-persona report clobber under concurrent/double test",
+  "sev": "high",
+  "cat": "⚡ Race condition / 💀 Silent failure",
+  "file": "src-tauri/src/commands/design/build_sessions.rs:582-710"
+ },
+ {
+  "slug": "build-sessions-personamatrix",
+  "group": "Templates & Recipes",
+  "name": "Build Sessions & PersonaMatrix",
+  "num": 3,
+  "title": "Promote/adoption silently swallow normalization + recipe-hydration errors, producing a structurally-broken persona",
+  "sev": "high",
+  "cat": "💀 Silent failure / 🕳️ Edge case (malformed LLM/template JSON)",
+  "file": "src-tauri/src/commands/design/build_sessions.rs:2507-2521 (and create_adoption_session 236-255)"
+ },
+ {
+  "slug": "build-sessions-personamatrix",
+  "group": "Templates & Recipes",
+  "name": "Build Sessions & PersonaMatrix",
+  "num": 4,
+  "title": "Workflow compile aborts the whole team on a single out-of-bounds LLM index — `warnings`/`dropped_connections` recovery path is dead",
+  "sev": "medium",
+  "cat": "🕳️ Edge case (malformed LLM output) / 🔮 Latent failure (no partial recovery)",
+  "file": "src-tauri/src/engine/workflow_compiler.rs:111-128, 311-319"
+ },
+ {
+  "slug": "build-sessions-personamatrix",
+  "group": "Templates & Recipes",
+  "name": "Build Sessions & PersonaMatrix",
+  "num": 5,
+  "title": "`handleBuildCellUpdate` persona-name write via deferred microtask can clobber a concurrent rename, and \"8 vs 9\" progress drift",
+  "sev": "low",
+  "cat": "⚡ Race condition / 💀 Silent failure (lost progress accuracy)",
+  "file": "src/stores/slices/agents/matrixBuildSlice.ts:659-664; runner src-tauri/src/engine/build_session/runner.rs:1299,1032"
+ },
+ {
+  "slug": "capabilities-use-cases-model-config",
+  "group": "Persona & Agent Studio",
+  "name": "Capabilities, Use Cases & Model Config",
+  "num": 1,
+  "title": "Manual capability run bypasses budget enforcement entirely (real paid CLI spawn)",
+  "sev": "critical",
+  "cat": "validation-gap / budget-enforcement-bypass",
+  "file": "src/features/agents/sub_use_cases/libs/useUseCaseDetail.ts:106 (the executePersona(...) call inside handleManualRun)"
+ },
+ {
+  "slug": "capabilities-use-cases-model-config",
+  "group": "Persona & Agent Studio",
+  "name": "Capabilities, Use Cases & Model Config",
+  "num": 2,
+  "title": "Automation credential requirement checks the wrong column — guaranteed false \"unmet\"",
+  "sev": "high",
+  "cat": "silent-failure / state-corruption (false design-time diagnostic)",
+  "file": "src-tauri/src/engine/capability_contract.rs:210 (service_type: cred_id.clone())"
+ },
+ {
+  "slug": "capabilities-use-cases-model-config",
+  "group": "Persona & Agent Studio",
+  "name": "Capabilities, Use Cases & Model Config",
+  "num": 3,
+  "title": "Budget exceeded-ratio derives \"ok\" when spend is non-finite or maxBudget is non-positive",
+  "sev": "high",
+  "cat": "edge-case / divide-by-zero-class (fail-open budget math)",
+  "file": "src/stores/slices/agents/budgetEnforcementSlice.ts:71 (if (!maxBudget || maxBudget <= 0) return { ratio: 0, status: 'ok' })"
+ },
+ {
+  "slug": "capabilities-use-cases-model-config",
+  "group": "Persona & Agent Studio",
+  "name": "Capabilities, Use Cases & Model Config",
+  "num": 4,
+  "title": "`count_event_listeners` mis-escapes the LIKE needle, under/over-counting affected consumers",
+  "sev": "medium",
+  "cat": "edge-case / silent-wrong-result",
+  "file": "src-tauri/src/commands/core/use_cases.rs:448 (event_type.replace('\"', \"\\\\\\\"\"))"
+ },
+ {
+  "slug": "capabilities-use-cases-model-config",
+  "group": "Persona & Agent Studio",
+  "name": "Capabilities, Use Cases & Model Config",
+  "num": 5,
+  "title": "Use-case auto-save reports success while a write is still queued/in-flight (success theater)",
+  "sev": "high",
+  "cat": "silent-failure / recovery-gap",
+  "file": "src/features/agents/sub_use_cases/libs/useUseCaseDetail.ts:45 (setIsDirty(false) right after await mutateSingleUseCase)"
+ },
+ {
+  "slug": "cloud-sync-deployment",
+  "group": "Onboarding, Home & Settings",
+  "name": "Cloud Sync & Deployment",
+  "num": 1,
+  "title": "Sync cursor advances to a watermark captured *before* the read snapshot, silently dropping rows committed during the pass",
+  "sev": "critical",
+  "cat": "🔮 Latent failure / silent data loss",
+  "file": "src-tauri/src/cloud/sync/rows.rs:496 and src-tauri/src/cloud/sync/mod.rs:239"
+ },
+ {
+  "slug": "cloud-sync-deployment",
+  "group": "Onboarding, Home & Settings",
+  "name": "Cloud Sync & Deployment",
+  "num": 2,
+  "title": "`notify_dirty()` wakes that arrive while a pass is running are coalesced into a single already-in-flight pass and lost",
+  "sev": "high",
+  "cat": "⚡ Race condition / missed sync",
+  "file": "src-tauri/src/cloud/sync/mod.rs:420 (loop) and mod.rs:139 (notify_dirty)"
+ },
+ {
+  "slug": "cloud-sync-deployment",
+  "group": "Onboarding, Home & Settings",
+  "name": "Cloud Sync & Deployment",
+  "num": 3,
+  "title": "Last-write-wins conflict resolution trusts client `updated_at` wall clocks, so a device with a skewed clock silently overwrites newer edits",
+  "sev": "high",
+  "cat": "🕳️ Edge case (clock skew) → 💀 silent wrong resolution",
+  "file": "src-tauri/src/engine/workspace_sync/merge.rs:140 (last_writer_wins) / merge.rs:161 (compare_rfc3339)"
+ },
+ {
+  "slug": "cloud-sync-deployment",
+  "group": "Onboarding, Home & Settings",
+  "name": "Cloud Sync & Deployment",
+  "num": 4,
+  "title": "Deployment row actions render success on a stale snapshot — pause/undeploy a deployment another device already removed reports success against a ghost",
+  "sev": "medium",
+  "cat": "💀 Silent failure / success theater",
+  "file": "src/stores/slices/system/cloudSlice.ts:304 (cloudPauseDeploy) and cloudSlice.ts:334 (cloudRemoveDeploy)"
+ },
+ {
+  "slug": "cloud-sync-deployment",
+  "group": "Onboarding, Home & Settings",
+  "name": "Cloud Sync & Deployment",
+  "num": 5,
+  "title": "Desktop runtime executes a plan against `running`/`installed` state that was sampled at discovery time, not validated at execute time",
+  "sev": "low",
+  "cat": "🕳️ Edge case (runtime discovered then gone) / deploy to stale runtime",
+  "file": "src-tauri/src/engine/desktop_runtime.rs:131 (execute_plan) with desktop_discovery.rs:228 (discover_apps)"
+ },
+ {
+  "slug": "cockpit-voice-sensory",
+  "group": "Athena Companion",
+  "name": "Cockpit, Voice & Sensory",
+  "num": 1,
+  "title": "Main TTS reply playback has no handle — consecutive turns talk over each other",
+  "sev": "critical",
+  "cat": "Race condition / overlapping audio",
+  "file": "src/features/plugins/companion/CompanionPanel.tsx:1620"
+ },
+ {
+  "slug": "cockpit-voice-sensory",
+  "group": "Athena Companion",
+  "name": "Cockpit, Voice & Sensory",
+  "num": 2,
+  "title": "Main reply object URLs are never revoked — unbounded blob memory leak per turn",
+  "sev": "high",
+  "cat": "Latent failure / resource (memory) leak",
+  "file": "src/features/plugins/companion/CompanionPanel.tsx:1618"
+ },
+ {
+  "slug": "cockpit-voice-sensory",
+  "group": "Athena Companion",
+  "name": "Cockpit, Voice & Sensory",
+  "num": 3,
+  "title": "STT `getUserMedia` permission prompt can leave the hold-to-talk UI stuck in \"listening\"",
+  "sev": "high",
+  "cat": "Race condition / latent stuck-state",
+  "file": "src/features/plugins/companion/useLocalDictation.ts:117"
+ },
+ {
+  "slug": "cockpit-voice-sensory",
+  "group": "Athena Companion",
+  "name": "Cockpit, Voice & Sensory",
+  "num": 4,
+  "title": "STT `start()` while `listening` is false but a capture is mid-teardown drops audio silently",
+  "sev": "medium",
+  "cat": "Silent failure / edge case",
+  "file": "src/features/plugins/companion/useLocalDictation.ts:158"
+ },
+ {
+  "slug": "cockpit-voice-sensory",
+  "group": "Athena Companion",
+  "name": "Cockpit, Voice & Sensory",
+  "num": 5,
+  "title": "Whisper transcript success theater — engine exit 0 with empty/garbage stdout returns a blank transcript as success",
+  "sev": "low",
+  "cat": "Silent failure",
+  "file": "src-tauri/src/companion/stt/whisper.rs:196"
+ },
+ {
+  "slug": "companion-brain-proactivity",
+  "group": "Athena Companion",
+  "name": "Companion Brain & Proactivity",
+  "num": 1,
+  "title": "Wake gate is decided before the wake is logged → double-wake / duplicate autonomous CLI turns",
+  "sev": "critical",
+  "cat": "Race condition / latent cost runaway",
+  "file": "src-tauri/src/companion/wake_window.rs:67 (gate read) + src-tauri/src/companion/proactive/execution_review.rs:662 & 753 (gate→work→log_wake) + src-tauri/src/commands/companion/mod.rs:128-167 (tick has no in-flight guard)"
+ },
+ {
+  "slug": "companion-brain-proactivity",
+  "group": "Athena Companion",
+  "name": "Companion Brain & Proactivity",
+  "num": 2,
+  "title": "Autonomous exec/message triage ignores quiet hours entirely",
+  "sev": "high",
+  "cat": "Edge case / silent policy bypass (wake during quiet hours)",
+  "file": "src-tauri/src/commands/companion/mod.rs:128-167 (triage calls) vs src-tauri/src/companion/proactive/quiet.rs:63 (is_quiet_now)"
+ },
+ {
+  "slug": "companion-brain-proactivity",
+  "group": "Athena Companion",
+  "name": "Companion Brain & Proactivity",
+  "num": 3,
+  "title": "Empty / partially-edited quiet window silently turns \"quiet\" into \"always awake\"",
+  "sev": "high",
+  "cat": "Silent failure / edge case (empty doctrine-style config)",
+  "file": "src-tauri/src/companion/proactive/quiet.rs:81-97"
+ },
+ {
+  "slug": "companion-brain-proactivity",
+  "group": "Athena Companion",
+  "name": "Companion Brain & Proactivity",
+  "num": 4,
+  "title": "Brain memory + proactive_message tables grow unbounded (no retention)",
+  "sev": "medium",
+  "cat": "Latent failure (unbounded growth → drift & slow queries)",
+  "file": "src-tauri/src/companion/proactive/mod.rs:166-211 (insert, no prune) + src-tauri/src/commands/companion/proactive.rs:358 (get_by_id comment notes \"proactive rows are never pruned\")"
+ },
+ {
+  "slug": "companion-brain-proactivity",
+  "group": "Athena Companion",
+  "name": "Companion Brain & Proactivity",
+  "num": 5,
+  "title": "Project registry path uniqueness is case/normalization-naive → tracking drift on Windows",
+  "sev": "low",
+  "cat": "Edge case / data drift (project tracking drift)",
+  "file": "src-tauri/src/companion/projects.rs:101-124 (upsert keyed on raw path)"
+ },
+ {
+  "slug": "companion-runtime-chat",
+  "group": "Athena Companion",
+  "name": "Companion Runtime & Chat",
+  "num": 1,
+  "title": "Stale-session retry replays the wrong text on autonomous / proactive / external turns",
+  "sev": "critical",
+  "cat": "💀 Silent failure / message corruption",
+  "file": "src-tauri/src/companion/session.rs:556"
+ },
+ {
+  "slug": "companion-runtime-chat",
+  "group": "Athena Companion",
+  "name": "Companion Runtime & Chat",
+  "num": 2,
+  "title": "`INTERRUPTED_TURNS` entries leak when an interrupt targets a turn that never runs",
+  "sev": "high",
+  "cat": "⚡ Race condition / 🔮 latent failure",
+  "file": "src-tauri/src/companion/session.rs:110 (request_interrupt), cleared only at :1377 (clear_interrupt inside run_cli)"
+ },
+ {
+  "slug": "companion-runtime-chat",
+  "group": "Athena Companion",
+  "name": "Companion Runtime & Chat",
+  "num": 3,
+  "title": "Concurrent user sends both pass the `!streaming` gate and double-fire turns",
+  "sev": "high",
+  "cat": "⚡ Race condition / double-send",
+  "file": "src/features/plugins/companion/CompanionPanel.tsx:1657 (sendOrQueue) + :1548 (send)"
+ },
+ {
+  "slug": "companion-runtime-chat",
+  "group": "Athena Companion",
+  "name": "Companion Runtime & Chat",
+  "num": 4,
+  "title": "ChatSearch only searches the loaded 50-message window, silently missing older history",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 silent failure (success theater)",
+  "file": "src/features/plugins/companion/ChatSearch.tsx:41 (filters messages) ← fed by companionListRecentMessages(50) at CompanionPanel.tsx:840/1587"
+ },
+ {
+  "slug": "companion-runtime-chat",
+  "group": "Athena Companion",
+  "name": "Companion Runtime & Chat",
+  "num": 5,
+  "title": "ActivityTray shows in-turn tool tasks that are never cleared when a turn dies via IPC rejection",
+  "sev": "low",
+  "cat": "💀 Silent failure (stale UI state) / 🔮 latent",
+  "file": "src/features/plugins/companion/ActivityTray.tsx:21 (reads inTurnToolJobs) ← populated/cleared in CompanionPanel.tsx:1029–1190"
+ },
+ {
+  "slug": "connector-catalog",
+  "group": "Credential Vault & Connectors",
+  "name": "Connector Catalog",
+  "num": 1,
+  "title": "Promote-time readiness is cached on the persona and never recomputed when a credential is deleted, rotated, or fails its healthcheck",
+  "sev": "critical",
+  "cat": "🔮 Latent failure / 💀 Silent failure (success theater on \"ready\")",
+  "file": "src-tauri/src/commands/design/build_sessions.rs:2725 (and :874, :2760); resolver in src-tauri/src/commands/design/connector_readiness.rs:251"
+ },
+ {
+  "slug": "connector-catalog",
+  "group": "Credential Vault & Connectors",
+  "name": "Connector Catalog",
+  "num": 2,
+  "title": "`connector_definitions.name` has no UNIQUE constraint — a custom connector can shadow a builtin and flip its classification/readiness",
+  "sev": "high",
+  "cat": "🔮 Latent failure (builtin/custom id collision) / Trust boundary (connector definition validation)",
+  "file": "src-tauri/src/db/migrations/schema.rs:495 (no UNIQUE on name); src-tauri/src/db/repos/resources/connectors.rs:71 (create does no name-existence check)"
+ },
+ {
+  "slug": "connector-catalog",
+  "group": "Credential Vault & Connectors",
+  "name": "Connector Catalog",
+  "num": 3,
+  "title": "Healthcheck-driven readiness ignores credential field staleness vs. last-success timestamp ordering",
+  "sev": "high",
+  "cat": "⚡ Race condition (readiness racing credential edits) / 💀 Silent failure",
+  "file": "src-tauri/src/commands/design/connector_readiness.rs:459 (credential_is_usable)"
+ },
+ {
+  "slug": "connector-catalog",
+  "group": "Credential Vault & Connectors",
+  "name": "Connector Catalog",
+  "num": 4,
+  "title": "`simulateRevocation` failover suggestions and revenue total trust unfiltered/unhealthy credentials and unbounded burn rates",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 Silent failure (graph showing misleading relationships)",
+  "file": "src/features/vault/sub_dependencies/credentialGraph.ts:298 and :292"
+ },
+ {
+  "slug": "connector-catalog",
+  "group": "Credential Vault & Connectors",
+  "name": "Connector Catalog",
+  "num": 5,
+  "title": "Empty / non-array `services` and `events` JSON on a connector definition is never validated on create/update",
+  "sev": "low",
+  "cat": "🕳️ Edge case (malformed connector def) / Trust boundary",
+  "file": "src-tauri/src/db/repos/resources/connectors.rs:71 (create) and :119 (update)"
+ },
+ {
+  "slug": "credential-design-negotiation",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Design & Negotiation",
+  "num": 1,
+  "title": "Negotiator overwrites a richer Design recipe with an empty stub at session start",
+  "sev": "critical",
+  "cat": "Silent failure / data corruption (wrong recipe silently bound)",
+  "file": "src/hooks/design/credential/useCredentialNegotiator.ts:162"
+ },
+ {
+  "slug": "credential-design-negotiation",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Design & Negotiation",
+  "num": 2,
+  "title": "`get_dependents` substring join inflates blast radius with false-positive dependents",
+  "sev": "high",
+  "cat": "Latent failure (blast-radius miscalculation / eligibility false positive)",
+  "file": "src-tauri/src/db/repos/resources/audit_log.rs:235"
+ },
+ {
+  "slug": "credential-design-negotiation",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Design & Negotiation",
+  "num": 3,
+  "title": "Concurrent design/negotiation starts race the registry guard and silently discard a result",
+  "sev": "high",
+  "cat": "Race condition (negotiation state corruption / success theater)",
+  "file": "src-tauri/src/commands/credentials/negotiator.rs:66"
+ },
+ {
+  "slug": "credential-design-negotiation",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Design & Negotiation",
+  "num": 4,
+  "title": "Healthcheck `headers` skips non-string values, letting auth headers vanish silently",
+  "sev": "medium",
+  "cat": "Silent failure (success theater on binding validation)",
+  "file": "src-tauri/src/commands/credentials/credential_design.rs:202"
+ },
+ {
+  "slug": "credential-design-negotiation",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Design & Negotiation",
+  "num": 5,
+  "title": "Docs-URL extraction grabs the first URL anywhere in setup instructions",
+  "sev": "low",
+  "cat": "Edge case (recipe metadata wrong, mildly misleading)",
+  "file": "src/lib/credentials/credentialRecipeRegistry.ts:84"
+ },
+ {
+  "slug": "credential-vault-crud",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Vault CRUD",
+  "num": 1,
+  "title": "`sanitize_secrets` is run over the entire ledger JSON on every metadata write, silently corrupting/erasing legitimate OAuth + custom ledger fields",
+  "sev": "critical",
+  "cat": "💀 Silent failure / data corruption",
+  "file": "src-tauri/src/db/repos/resources/credentials.rs:829-835 (also :684-691, :757-758, :957-964)"
+ },
+ {
+  "slug": "credential-vault-crud",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Vault CRUD",
+  "num": 2,
+  "title": "Two metadata write mechanisms race on the same column: raw `json_set` (`record_usage`) vs. parse→reserialize (`append_healthcheck_metadata`/`update_ledger`), causing lost updates",
+  "sev": "high",
+  "cat": "⚡ Race condition / latent ledger divergence",
+  "file": "src-tauri/src/db/repos/resources/credentials.rs:845-869 vs :776-841 / :921-970"
+ },
+ {
+  "slug": "credential-vault-crud",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Vault CRUD",
+  "num": 3,
+  "title": "Editing one field of a multi-field credential via `updateCredential` re-encrypts and DELETEs+reinserts every field; a mid-loop encryption failure or a dropped field silently revokes the rest",
+  "sev": "high",
+  "cat": "🕳️ Edge case / 💀 silent secret loss",
+  "file": "src-tauri/src/db/repos/resources/credentials.rs:393-420; src-tauri/src/commands/credentials/crud.rs:138-157"
+ },
+ {
+  "slug": "credential-vault-crud",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Vault CRUD",
+  "num": 4,
+  "title": "`persona_credentials.name` has no uniqueness constraint and no duplicate guard — duplicate-named credentials of the same service are silently created and become unresolvable",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / data integrity",
+  "file": "src-tauri/src/db/migrations/schema.rs:160-170; src-tauri/src/commands/credentials/crud.rs:32-116"
+ },
+ {
+  "slug": "credential-vault-crud",
+  "group": "Credential Vault & Connectors",
+  "name": "Credential Vault CRUD",
+  "num": 5,
+  "title": "AES-256-GCM uses 96-bit random nonces with no per-key write counter; the single static master key encrypts unbounded fields, edging toward the birthday-bound nonce-reuse risk with no detection",
+  "sev": "low",
+  "cat": "🔮 Latent failure / trust boundary (nonce reuse)",
+  "file": "src-tauri/src/engine/crypto.rs:1263-1275 (encrypt_for_db), :1250-1260 (single cached cipher / static key)"
+ },
+ {
+  "slug": "crypto-secure-storage",
+  "group": "Data & Persistence",
+  "name": "Crypto & Secure Storage",
+  "num": 1,
+  "title": "Enclave signature verifies re-serialized struct, not signed bytes (pretty vs compact mismatch)",
+  "sev": "critical",
+  "cat": "🔮 Latent failure / signature bypass (trust boundary)",
+  "file": "src-tauri/src/engine/enclave.rs:157 (seal) vs src-tauri/src/engine/enclave.rs:214 (verify)"
+ },
+ {
+  "slug": "crypto-secure-storage",
+  "group": "Data & Persistence",
+  "name": "Crypto & Secure Storage",
+  "num": 2,
+  "title": "Enclave `verify()` returns advisory flags; caller never enforces signature/integrity/trust",
+  "sev": "high",
+  "cat": "💀 Silent failure / fail-open trust boundary",
+  "file": "src-tauri/src/engine/enclave.rs:232 and src-tauri/src/commands/network/enclave.rs:39"
+ },
+ {
+  "slug": "crypto-secure-storage",
+  "group": "Data & Persistence",
+  "name": "Crypto & Secure Storage",
+  "num": 3,
+  "title": "`validate_file_access_path` never canonicalizes — symlink/junction escape past home/system guards",
+  "sev": "high",
+  "cat": "🕳️ Path safety / symlink escape",
+  "file": "src-tauri/src/engine/path_safety.rs:299"
+ },
+ {
+  "slug": "crypto-secure-storage",
+  "group": "Data & Persistence",
+  "name": "Crypto & Secure Storage",
+  "num": 4,
+  "title": "CDC silently drops change events under load → stale UI / missed credential & audit notifications",
+  "sev": "medium",
+  "cat": "💀 Silent failure / dropped events",
+  "file": "src-tauri/src/db/cdc.rs:129 (tx.try_send) and :84 (bounded sync_channel)"
+ },
+ {
+  "slug": "crypto-secure-storage",
+  "group": "Data & Persistence",
+  "name": "Crypto & Secure Storage",
+  "num": 5,
+  "title": "External API key compared by indexed SQL equality on SHA-256 hash (no per-token salt; lookup is non-constant-time)",
+  "sev": "low",
+  "cat": "🔐 Crypto hygiene / timing & precompute exposure",
+  "file": "src-tauri/src/db/repos/resources/external_api_keys.rs:30 (hash_token) and :114 (WHERE key_hash = ?1)"
+ },
+ {
+  "slug": "dashboard-mission-control",
+  "group": "Observability & Analytics",
+  "name": "Dashboard & Mission Control",
+  "num": 1,
+  "title": "Upcoming routines freeze at mount time — labels never tick, past runs never drop",
+  "sev": "high",
+  "cat": "Latent failure / stale data (frozen clock)",
+  "file": "src/features/overview/sub_missionControl/cards/UpcomingRoutinesCard.tsx:57-80"
+ },
+ {
+  "slug": "dashboard-mission-control",
+  "group": "Observability & Analytics",
+  "name": "Dashboard & Mission Control",
+  "num": 2,
+  "title": "Cost-anomaly \"Cost Spike Detected\" is not time-bounded — a 29-day-old spike shows as a live critical",
+  "sev": "high",
+  "cat": "Silent failure / stale critical alert",
+  "file": "src/features/overview/libs/fleetOptimizer.ts:151-172"
+ },
+ {
+  "slug": "dashboard-mission-control",
+  "group": "Observability & Analytics",
+  "name": "Dashboard & Mission Control",
+  "num": 3,
+  "title": "Success-rate uses lifetime healing count against windowed executions → false \"High Cost, Low Success\"",
+  "sev": "medium",
+  "cat": "Edge case / divide-and-clamp misattribution",
+  "file": "src/features/overview/libs/fleetOptimizer.ts:104-110 (with healingSlice.ts:38-45)"
+ },
+ {
+  "slug": "dashboard-mission-control",
+  "group": "Observability & Analytics",
+  "name": "Dashboard & Mission Control",
+  "num": 4,
+  "title": "Certification run-detail fetch has no sequence guard — clicking two runs shows the wrong one",
+  "sev": "medium",
+  "cat": "Race condition (last-write-wins)",
+  "file": "src/stores/slices/overview/certificationSlice.ts:84-94 (consumed at CertificationCommandCenter.tsx:41-47)"
+ },
+ {
+  "slug": "dashboard-mission-control",
+  "group": "Observability & Analytics",
+  "name": "Dashboard & Mission Control",
+  "num": 5,
+  "title": "Empty-fleet \"healthy\" rec divides anomaly/persona data that may be zero-length and shows 0% as a status",
+  "sev": "medium",
+  "cat": "Edge case / missing-data defensive gap",
+  "file": "src/features/overview/libs/fleetOptimizer.ts:244-256 (gate at FleetOptimizationCard.tsx:249-252)"
+ },
+ {
+  "slug": "database-schema-migrations",
+  "group": "Data & Persistence",
+  "name": "Database Schema & Migrations",
+  "num": 1,
+  "title": "FK-hygiene rebuild turns off foreign keys *inside* a transaction — a no-op that lets DROP TABLE cascade-wipe child rows on legacy upgrades",
+  "sev": "critical",
+  "cat": "Latent failure / silent data loss (non-idempotent-path data corruption on upgrade)",
+  "file": "src-tauri/src/db/migrations/fk_hygiene.rs:80-85"
+ },
+ {
+  "slug": "database-schema-migrations",
+  "group": "Data & Persistence",
+  "name": "Database Schema & Migrations",
+  "num": 2,
+  "title": "Incremental table rebuilds use `INSERT INTO ..._new SELECT *` — a silent corruption trap when column order/count drifted",
+  "sev": "high",
+  "cat": "Silent failure / latent corruption",
+  "file": "src-tauri/src/db/migrations/incremental.rs:337 (persona_triggers chain rebuild) and :931 (event_listener rebuild)"
+ },
+ {
+  "slug": "database-schema-migrations",
+  "group": "Data & Persistence",
+  "name": "Database Schema & Migrations",
+  "num": 3,
+  "title": "Migrations run statement-by-statement (no outer transaction) — a crash mid-`run_incremental` leaves a permanently half-migrated DB",
+  "sev": "high",
+  "cat": "Latent failure (non-atomic multi-step migration) / brick-on-upgrade",
+  "file": "src-tauri/src/db/migrations/incremental.rs:33-38 (ddl_step) and mod.rs:230-234 (orchestration in init_db)"
+ },
+ {
+  "slug": "database-schema-migrations",
+  "group": "Data & Persistence",
+  "name": "Database Schema & Migrations",
+  "num": 4,
+  "title": "`QueryBuilder::build_clauses` mis-numbers `OFFSET` when `LIMIT`/`OFFSET` interleave with later params (e.g. `where_raw` after `limit`)",
+  "sev": "medium",
+  "cat": "Silent failure (wrong SQL from query builder on edge input)",
+  "file": "src-tauri/src/db/query_builder.rs:282-288"
+ },
+ {
+  "slug": "database-schema-migrations",
+  "group": "Data & Persistence",
+  "name": "Database Schema & Migrations",
+  "num": 5,
+  "title": "`order_by` / `order_by_multiple` interpolate column + direction with zero validation — injection if any caller forwards user input",
+  "sev": "low",
+  "cat": "Trust boundary / defensive gap (latent injection)",
+  "file": "src-tauri/src/db/query_builder.rs:201-214"
+ },
+ {
+  "slug": "design-reviews-diagrams",
+  "group": "Templates & Recipes",
+  "name": "Design Reviews & Diagrams",
+  "num": 1,
+  "title": "Missing `nodes`/`edges` arrays in LLM-generated flow crash the diagram render",
+  "sev": "critical",
+  "cat": "Trust boundary / Silent-then-fatal failure",
+  "file": "src/features/templates/sub_diagrams/FlowDiagram.tsx:19 (also :30, :73, :83)"
+ },
+ {
+  "slug": "design-reviews-diagrams",
+  "group": "Templates & Recipes",
+  "name": "Design Reviews & Diagrams",
+  "num": 2,
+  "title": "Duplicate node IDs from LLM output silently drop nodes and produce React key collisions",
+  "sev": "high",
+  "cat": "Edge case / Silent failure",
+  "file": "src/features/templates/sub_diagrams/FlowDiagram.tsx:73 (nodeMap), :139 (key={node.id})"
+ },
+ {
+  "slug": "design-reviews-diagrams",
+  "group": "Templates & Recipes",
+  "name": "Design Reviews & Diagrams",
+  "num": 3,
+  "title": "Rebuild reuses a deterministic job key — concurrent/repeat rebuilds of the same review collide",
+  "sev": "high",
+  "cat": "Race condition",
+  "file": "src-tauri/src/commands/design/reviews.rs:660 (rebuild-{id}), :667 (insert_running)"
+ },
+ {
+  "slug": "design-reviews-diagrams",
+  "group": "Templates & Recipes",
+  "name": "Design Reviews & Diagrams",
+  "num": 4,
+  "title": "`start_design_review_run` swallows whole-batch failures into per-item DB errors with no run-level guarantee",
+  "sev": "medium",
+  "cat": "Silent failure / success theater",
+  "file": "src-tauri/src/commands/design/reviews.rs:390 / :428 / :457 (DB-write error branches) and :481 (completion emit)"
+ },
+ {
+  "slug": "design-reviews-diagrams",
+  "group": "Templates & Recipes",
+  "name": "Design Reviews & Diagrams",
+  "num": 5,
+  "title": "Conversation message ordering relies on caller-supplied JSON array, not server timestamps",
+  "sev": "low",
+  "cat": "Latent failure / conversation ordering",
+  "file": "src-tauri/src/db/repos/core/design_conversations.rs:107 (append_single_message), model design_conversation.rs:8 (timestamp is just a string field)"
+ },
+ {
+  "slug": "dev-tools-context-map",
+  "group": "First-Party Plugins",
+  "name": "Dev Tools & Context Map",
+  "num": 1,
+  "title": "Concurrent context scans of the same project can wipe the map mid-write",
+  "sev": "critical",
+  "cat": "Race condition / data loss",
+  "file": "src-tauri/src/commands/infrastructure/context_generation.rs:460 (launch_context_scan); destructive call at :916/:939"
+ },
+ {
+  "slug": "dev-tools-context-map",
+  "group": "First-Party Plugins",
+  "name": "Dev Tools & Context Map",
+  "num": 2,
+  "title": "`move_context_to_group` silently succeeds on a non-existent / wrong context",
+  "sev": "high",
+  "cat": "Silent failure",
+  "file": "src-tauri/src/db/repos/dev_tools.rs:2378 (move_context_to_group)"
+ },
+ {
+  "slug": "dev-tools-context-map",
+  "group": "First-Party Plugins",
+  "name": "Dev Tools & Context Map",
+  "num": 3,
+  "title": "Patch-release CICD is not idempotent — concurrent/retried runs create duplicate or conflicting releases",
+  "sev": "high",
+  "cat": "Race condition / latent failure",
+  "file": "src-tauri/src/engine/platforms/github.rs:473 (create_patch_release); commands at src-tauri/src/commands/tools/github_platform.rs:37"
+ },
+ {
+  "slug": "dev-tools-context-map",
+  "group": "First-Party Plugins",
+  "name": "Dev Tools & Context Map",
+  "num": 4,
+  "title": "Backend file-walk skip list diverges from the LLM scan prompt — stale/garbage contexts",
+  "sev": "medium",
+  "cat": "Latent failure / drift",
+  "file": "src-tauri/src/commands/infrastructure/incremental_scan.rs:33 (SKIP_DIRS) vs the prompt at context_generation.rs:217 and the legacy walker dev_tools.rs:2433"
+ },
+ {
+  "slug": "dev-tools-context-map",
+  "group": "First-Party Plugins",
+  "name": "Dev Tools & Context Map",
+  "num": 5,
+  "title": "3-second fallback timer can double-finalize a scan and emit a bogus \"success\" notification",
+  "sev": "low",
+  "cat": "Silent failure / success theater",
+  "file": "src/features/plugins/dev-tools/sub_context/ContextMapPage.tsx:252 (handleScanStatus setTimeout) vs :276 (handleScanComplete)"
+ },
+ {
+  "slug": "director-leadership",
+  "group": "Execution Engine",
+  "name": "Director & Leadership",
+  "num": 1,
+  "title": "Score-trend sparkline collapses to a single point — every Director cycle overwrites the SAME target execution row",
+  "sev": "high",
+  "cat": "Latent failure / silent data loss",
+  "file": "src-tauri/src/engine/director.rs:662"
+ },
+ {
+  "slug": "director-leadership",
+  "group": "Execution Engine",
+  "name": "Director & Leadership",
+  "num": 2,
+  "title": "KPI cadence ignores its own catalog — `weekly`/`daily` only, every other cadence silently never auto-measures",
+  "sev": "medium",
+  "cat": "Silent failure",
+  "file": "src-tauri/src/engine/kpi_eval.rs:112"
+ },
+ {
+  "slug": "director-leadership",
+  "group": "Execution Engine",
+  "name": "Director & Leadership",
+  "num": 3,
+  "title": "`exec_failure_rate` divide path is fine, but `qa_bounce_rate`/`exec_failure_rate` treat NULL aggregates and zero windows identically to a \"0% / healthy\" KPI",
+  "sev": "medium",
+  "cat": "Edge case / silent default",
+  "file": "src-tauri/src/engine/kpi_eval.rs:320"
+ },
+ {
+  "slug": "director-leadership",
+  "group": "Execution Engine",
+  "name": "Director & Leadership",
+  "num": 4,
+  "title": "`json_path` KPI parser walks INTO scalars and stops on missing segments without failing — returns wrong-node values",
+  "sev": "medium",
+  "cat": "Silent failure / edge case",
+  "file": "src-tauri/src/engine/kpi_eval.rs:252"
+ },
+ {
+  "slug": "director-leadership",
+  "group": "Execution Engine",
+  "name": "Director & Leadership",
+  "num": 5,
+  "title": "`read_brain_history` sorts vault notes lexicographically and assumes timestamped filenames — wrong \"most-recent 3\" when names diverge",
+  "sev": "low",
+  "cat": "Assumption landmine / latent failure",
+  "file": "src-tauri/src/engine/director_brain.rs:60"
+ },
+ {
+  "slug": "error-handling-hooks-utilities",
+  "group": "Platform Foundation",
+  "name": "Error Handling, Hooks & Utilities",
+  "num": 1,
+  "title": "Auto-dedup returns a SHARED object/array reference to every concurrent caller — mutation by one corrupts the others",
+  "sev": "critical",
+  "cat": "🕳️ Edge case / shared mutable state",
+  "file": "src/lib/tauriInvoke.ts:279-318 (auto-dedup) and :97 (AUTO_DEDUP_TTL_MS = 250)"
+ },
+ {
+  "slug": "error-handling-hooks-utilities",
+  "group": "Platform Foundation",
+  "name": "Error Handling, Hooks & Utilities",
+  "num": 2,
+  "title": "`silentCatch`/`extractMessage` drops the original Error cause and stack — every swallowed/logged failure loses its post-mortem trail",
+  "sev": "high",
+  "cat": "🔮 Latent failure / success theater in the foundation",
+  "file": "src/lib/silentCatch.ts:19-58 (extractMessage returns err.message only; silentCatch logs only { error: msg })"
+ },
+ {
+  "slug": "error-handling-hooks-utilities",
+  "group": "Platform Foundation",
+  "name": "Error Handling, Hooks & Utilities",
+  "num": 3,
+  "title": "IPC timeout metric is detected by duration (`>= 29_000ms`) instead of by error type — short-timeout commands never count as timeouts; long ones miscount slow successes",
+  "sev": "high",
+  "cat": "💀 Silent failure / success theater (foundation)",
+  "file": "src/lib/ipcMetrics.ts:75 & :124 (durationMs >= 29_000) vs src/lib/tauriInvoke.ts:37 (DEFAULT_TIMEOUT_MS = 90_000) and InvokeTimeoutError at :67"
+ },
+ {
+  "slug": "error-handling-hooks-utilities",
+  "group": "Platform Foundation",
+  "name": "Error Handling, Hooks & Utilities",
+  "num": 4,
+  "title": "Registry rule ordering: generic `'timed out'` and `'Validation'` substrings can shadow more specific later rules",
+  "sev": "medium",
+  "cat": "🔮 Latent failure / error code mismapping",
+  "file": "src/lib/errors/errorRegistry.ts:54 ('timed out') vs :88 ('OAuth authorization timed out'); :420 ('Validation') vs later validators"
+ },
+ {
+  "slug": "error-handling-hooks-utilities",
+  "group": "Platform Foundation",
+  "name": "Error Handling, Hooks & Utilities",
+  "num": 5,
+  "title": "`extractMessage` JSON-stringifies plain objects, leaking raw payloads (incl. PII) into toasts and logs",
+  "sev": "low",
+  "cat": "🕳️ Edge case / trust boundary",
+  "file": "src/lib/silentCatch.ts:30-37 (JSON.stringify fallback) → consumed by toastCatch at :82 (Failed to load data. ${msg})"
+ },
+ {
+  "slug": "execution-runner-inspector",
+  "group": "Execution Engine",
+  "name": "Execution Runner & Inspector",
+  "num": 1,
+  "title": "Queue stalls forever when a promoted execution's context is missing (lost drain → permanent starvation)",
+  "sev": "critical",
+  "cat": "⚡ Race condition / 🔮 Latent failure (queue starvation)",
+  "file": "src-tauri/src/engine/mod.rs:1899 (and the function drain_and_start_next, 1668–1905)"
+ },
+ {
+  "slug": "execution-runner-inspector",
+  "group": "Execution Engine",
+  "name": "Execution Runner & Inspector",
+  "num": 2,
+  "title": "`queued` executions are never reaped — stuck forever during indefinite/aligned quota cooldowns",
+  "sev": "high",
+  "cat": "🔮 Latent failure (stuck state, no recovery)",
+  "file": "src-tauri/src/db/repos/execution/executions.rs:1452 (sweep_zombie_executions); interacts with mod.rs:2023 (cooldown alignment) and queue.rs:343,391 (drains held during cooldown)"
+ },
+ {
+  "slug": "execution-runner-inspector",
+  "group": "Execution Engine",
+  "name": "Execution Runner & Inspector",
+  "num": 3,
+  "title": "Pipeline node poll times out at 600 s even while its execution is still legitimately `queued`",
+  "sev": "high",
+  "cat": "🕳️ Edge case / 💀 Silent failure (success theater / false failure)",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:411-483 (run_persona_node poll loop)"
+ },
+ {
+  "slug": "execution-runner-inspector",
+  "group": "Execution Engine",
+  "name": "Execution Runner & Inspector",
+  "num": 4,
+  "title": "Early-return failure paths in the runner use the unconditional `update_status`, racing the cancel safety-net",
+  "sev": "medium",
+  "cat": "⚡ Race condition (lost-cancel / status clobber)",
+  "file": "src-tauri/src/engine/runner/mod.rs:1580 (and 475, 997, 1227, 1666); contrast execution_engine/persist.rs:138 and executions.rs:863"
+ },
+ {
+  "slug": "execution-runner-inspector",
+  "group": "Execution Engine",
+  "name": "Execution Runner & Inspector",
+  "num": 5,
+  "title": "Cache-read tokens are dropped from the cache-hit ratio on cancelled/failed runs, and never persisted via the cancel branch",
+  "sev": "low",
+  "cat": "💀 Silent failure (metric miscounting)",
+  "file": "src-tauri/src/engine/runner/mod.rs:2716-2728 (set_cache_tokens) + src-tauri/src/engine/mod.rs:1059-1064 (cancel-branch metrics) + src/features/.../inspector/ExecutionInspector.tsx:26"
+ },
+ {
+  "slug": "fleet-control",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Fleet Control",
+  "num": 1,
+  "title": "Broadcast result is success-theater: full success is silent, full failure looks like a \"delivery\"",
+  "sev": "critical",
+  "cat": "Silent failure / success theater",
+  "file": "src/features/plugins/fleet/FleetBroadcastModal.tsx:75"
+ },
+ {
+  "slug": "fleet-control",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Fleet Control",
+  "num": 2,
+  "title": "Broadcast targets a stale, store-cached session list that lags live Rust state — writes into dead PTYs",
+  "sev": "high",
+  "cat": "Race condition / silent failure",
+  "file": "src/features/plugins/fleet/FleetBroadcastModal.tsx:54"
+ },
+ {
+  "slug": "fleet-control",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Fleet Control",
+  "num": 3,
+  "title": "Selection Set retains ids of removed sessions; broadcast iterates dead ids and the target counter desyncs",
+  "sev": "medium",
+  "cat": "Edge case / stale state (session id retention)",
+  "file": "src/features/plugins/fleet/FleetBroadcastModal.tsx:36"
+ },
+ {
+  "slug": "fleet-control",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Fleet Control",
+  "num": 4,
+  "title": "Killed/crashed tile can show stale \"running\" forever — exit emit is fire-and-forget with no client-side reconciliation",
+  "sev": "high",
+  "cat": "Latent failure (tile leak / stale status)",
+  "file": "src-tauri/src/commands/fleet/commands.rs:122"
+ },
+ {
+  "slug": "fleet-control",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Fleet Control",
+  "num": 5,
+  "title": "`fleet_write_input` is an unvalidated, unauthenticated trust boundary — oversized / control-sequence broadcast injected verbatim into every PTY",
+  "sev": "low",
+  "cat": "Trust boundary / input validation",
+  "file": "src-tauri/src/commands/fleet/commands.rs:45"
+ },
+ {
+  "slug": "genome-evolution",
+  "group": "Execution Engine",
+  "name": "Genome & Evolution",
+  "num": 1,
+  "title": "Promotion compares two incompatible fitness scales",
+  "sev": "critical",
+  "cat": "Silent failure / logic error",
+  "file": "src-tauri/src/engine/evolution.rs:377"
+ },
+ {
+  "slug": "genome-evolution",
+  "group": "Execution Engine",
+  "name": "Genome & Evolution",
+  "num": 2,
+  "title": "Concurrent evolution cycles for one persona — no in-flight guard",
+  "sev": "high",
+  "cat": "Race condition",
+  "file": "src-tauri/src/engine/mod.rs:2213 (and commands/execution/evolution.rs:190)"
+ },
+ {
+  "slug": "genome-evolution",
+  "group": "Execution Engine",
+  "name": "Genome & Evolution",
+  "num": 3,
+  "title": "Variant `prompt_segments` can be emptied → blank system prompt promoted/adopted",
+  "sev": "high",
+  "cat": "Edge case / silent failure",
+  "file": "src-tauri/src/engine/genome.rs:436 (mutate drop branch) and :216 (reassemble)"
+ },
+ {
+  "slug": "genome-evolution",
+  "group": "Execution Engine",
+  "name": "Genome & Evolution",
+  "num": 4,
+  "title": "Fitness/quality scores using NaN sort silently lose the best genome",
+  "sev": "medium",
+  "cat": "Silent failure / edge case",
+  "file": "src-tauri/src/commands/execution/genome.rs:180 (and evolution.rs:363)"
+ },
+ {
+  "slug": "genome-evolution",
+  "group": "Execution Engine",
+  "name": "Genome & Evolution",
+  "num": 5,
+  "title": "`breed_generation` mutates `crossover_point` floor when a parent has 0 segments",
+  "sev": "low",
+  "cat": "Edge case",
+  "file": "src-tauri/src/engine/genome.rs:244"
+ },
+ {
+  "slug": "google-drive",
+  "group": "First-Party Plugins",
+  "name": "Google Drive",
+  "num": 1,
+  "title": "`drive_copy` silently overwrites an existing destination file — paste/copy data loss",
+  "sev": "critical",
+  "cat": "💀 Silent failure / data loss",
+  "file": "src-tauri/src/commands/drive.rs:1228 (the file branch at :1251, std::fs::copy)"
+ },
+ {
+  "slug": "google-drive",
+  "group": "First-Party Plugins",
+  "name": "Google Drive",
+  "num": 2,
+  "title": "`pathCacheRef` is never invalidated on mutation — columns view & cached panes act on stale/deleted files",
+  "sev": "high",
+  "cat": "🔮 Latent failure / stale file list",
+  "file": "src/features/plugins/drive/hooks/useDrive.ts:238 (cache) + :256 (only writer) and DriveFileList.tsx:1042 (AsyncColumnEntries seeds from it)"
+ },
+ {
+  "slug": "google-drive",
+  "group": "First-Party Plugins",
+  "name": "Google Drive",
+  "num": 3,
+  "title": "Recursive-search results are a frozen snapshot with no in-flight cancellation — acts on deleted/renamed files & can resurrect cleared results",
+  "sev": "high",
+  "cat": "⚡ Race condition / 🕳️ file deleted between list and action",
+  "file": "src/features/plugins/drive/hooks/useDrive.ts:327 (runRecursiveSearch) + DriveFileList.tsx:1148 (RecursiveResultRow actions)"
+ },
+ {
+  "slug": "google-drive",
+  "group": "First-Party Plugins",
+  "name": "Google Drive",
+  "num": 4,
+  "title": "Open / OS-action failures on a row deleted out-from-under the user are swallowed or shown as a generic toast — no list reconciliation",
+  "sev": "medium",
+  "cat": "💀 Silent failure / edge case (file deleted between list and action)",
+  "file": "src/features/plugins/drive/DrivePage.tsx (open/reveal handlers via driveOpenInOs/driveRevealInOs) + DriveDetailsPane.tsx:474 (driveReadText) / :603 (driveRead)"
+ },
+ {
+  "slug": "google-drive",
+  "group": "First-Party Plugins",
+  "name": "Google Drive",
+  "num": 5,
+  "title": "OAuth client secret is read from `.env` files walked up the cwd tree (and from cwd in dev-drive resolution) — secret-exposure / wrong-root surface",
+  "sev": "low",
+  "cat": "Trust boundary / 🕳️ environment edge case",
+  "file": "src-tauri/src/engine/google_oauth.rs:20 (dotenv_var_first_nonempty) + drive.rs:337 (dev-drive uses current_dir())"
+ },
+ {
+  "slug": "home-roadmap",
+  "group": "Onboarding, Home & Settings",
+  "name": "Home & Roadmap",
+  "num": 1,
+  "title": "Fleet health strip mounts once, never refreshes, and writes state after unmount",
+  "sev": "high",
+  "cat": "Race condition / latent failure (stale state + unmount-write)",
+  "file": "src/features/home/sub_welcome/FleetHealthStrip.tsx:24-48"
+ },
+ {
+  "slug": "home-roadmap",
+  "group": "Onboarding, Home & Settings",
+  "name": "Home & Roadmap",
+  "num": 2,
+  "title": "\"Active agents\" pill shows agents that executed today, not agents that are active",
+  "sev": "high",
+  "cat": "Silent failure (success theater / wrong number)",
+  "file": "src/features/home/sub_welcome/FleetHealthStrip.tsx:38 + src-tauri/src/db/repos/execution/metrics.rs:427"
+ },
+ {
+  "slug": "home-roadmap",
+  "group": "Onboarding, Home & Settings",
+  "name": "Home & Roadmap",
+  "num": 3,
+  "title": "Roadmap fetched once on mount with a 1-hour disk TTL — no live polling",
+  "sev": "medium",
+  "cat": "Latent failure (roadmap never updating without user action)",
+  "file": "src/features/home/sub_releases/useLiveRoadmap.ts:66-68 + src-tauri/src/commands/live_roadmap.rs:45,177-186"
+ },
+ {
+  "slug": "home-roadmap",
+  "group": "Onboarding, Home & Settings",
+  "name": "Home & Roadmap",
+  "num": 4,
+  "title": "Empty fleet renders a confident green \"100%\" success rate",
+  "sev": "medium",
+  "cat": "Edge case / silent failure (misleading default on zero data)",
+  "file": "src/features/home/sub_welcome/FleetHealthStrip.tsx:31-33"
+ },
+ {
+  "slug": "home-roadmap",
+  "group": "Onboarding, Home & Settings",
+  "name": "Home & Roadmap",
+  "num": 5,
+  "title": "Roadmap status pill clamps future timestamps but the green \"fresh\" dot can still misrepresent a clock-skewed cache",
+  "sev": "medium",
+  "cat": "Edge case / trust boundary (untrusted timestamp from disk cache)",
+  "file": "src/features/home/sub_releases/LiveRoadmapStatusPill.tsx:30-40 + src-tauri/src/commands/live_roadmap.rs:237-241"
+ },
+ {
+  "slug": "incidents-manual-review",
+  "group": "Observability & Analytics",
+  "name": "Incidents & Manual Review",
+  "num": 1,
+  "title": "Reopened persona_blocker incident can never re-continue (continued_at is never cleared)",
+  "sev": "high",
+  "cat": "Latent failure / state-machine integrity",
+  "file": "src-tauri/src/db/repos/execution/audit_incidents.rs:427"
+ },
+ {
+  "slug": "incidents-manual-review",
+  "group": "Observability & Analytics",
+  "name": "Incidents & Manual Review",
+  "num": 2,
+  "title": "auto_triage evaluator races GC / human resolve; LLM verdict silently lost",
+  "sev": "high",
+  "cat": "Race condition / silent failure",
+  "file": "src-tauri/src/engine/auto_triage.rs:392"
+ },
+ {
+  "slug": "incidents-manual-review",
+  "group": "Observability & Analytics",
+  "name": "Incidents & Manual Review",
+  "num": 3,
+  "title": "raise_incident dedup is per-execution, but the open-title guard silences distinct real blockers",
+  "sev": "medium",
+  "cat": "Edge case / latent failure",
+  "file": "src-tauri/src/db/repos/execution/audit_incidents.rs:139"
+ },
+ {
+  "slug": "incidents-manual-review",
+  "group": "Observability & Analytics",
+  "name": "Incidents & Manual Review",
+  "num": 4,
+  "title": "bulk_resolve is non-transactional; a mid-batch DB error leaves a partially-resolved set and aborts publishing",
+  "sev": "low",
+  "cat": "Silent failure / partial-commit",
+  "file": "src-tauri/src/db/repos/execution/audit_incidents.rs:544"
+ },
+ {
+  "slug": "incidents-manual-review",
+  "group": "Observability & Analytics",
+  "name": "Incidents & Manual Review",
+  "num": 5,
+  "title": "Incident continuation re-runs work even when the originating execution was a simulation / its input is gone",
+  "sev": "critical",
+  "cat": "Latent failure / context loss",
+  "file": "src-tauri/src/engine/incident_continuation.rs:190"
+ },
+ {
+  "slug": "internationalization-i18n",
+  "group": "Platform Foundation",
+  "name": "Internationalization (i18n)",
+  "num": 1,
+  "title": "`interpolate()` crashes on a missing/undefined translation leaf",
+  "sev": "high",
+  "cat": "🕳️ Edge case / 💀 Silent-turned-loud failure",
+  "file": "src/i18n/useTranslation.ts:288"
+ },
+ {
+  "slug": "internationalization-i18n",
+  "group": "Platform Foundation",
+  "name": "Internationalization (i18n)",
+  "num": 2,
+  "title": "Manual plural ternary breaks for non-binary plural languages (ru/ar/cs/etc.)",
+  "sev": "high",
+  "cat": "🕳️ Pluralization boundary / 🔮 latent",
+  "file": "src/i18n/useTranslation.ts:288 (interpolate) + call sites, e.g. src/features/shared/components/layout/quick-answer/QuickAnswerQuestionGroup.tsx:84, src/features/vault/sub_dependencies/NodeChip.tsx:38"
+ },
+ {
+  "slug": "internationalization-i18n",
+  "group": "Platform Foundation",
+  "name": "Internationalization (i18n)",
+  "num": 3,
+  "title": "`tx()` interpolation feeds `dangerouslySetInnerHTML` — translator-controlled XSS surface",
+  "sev": "medium",
+  "cat": "⚡ Trust boundary / 🔮 latent",
+  "file": "src/features/vault/sub_dependencies/SimulationPanel.tsx:64"
+ },
+ {
+  "slug": "internationalization-i18n",
+  "group": "Platform Foundation",
+  "name": "Internationalization (i18n)",
+  "num": 4,
+  "title": "Error/token resolvers swallow the real error and silently downgrade the message",
+  "sev": "medium",
+  "cat": "💀 Silent failure / 🔮 latent",
+  "file": "src/i18n/useTranslatedError.ts:137 and src/i18n/tokenMaps.ts:39"
+ },
+ {
+  "slug": "internationalization-i18n",
+  "group": "Platform Foundation",
+  "name": "Internationalization (i18n)",
+  "num": 5,
+  "title": "Route-section map drift silently denies translations to a route",
+  "sev": "low",
+  "cat": "🔮 Latent / route section mismatch",
+  "file": "src/i18n/routeSections.ts:20"
+ },
+ {
+  "slug": "knowledge-base-memories",
+  "group": "Observability & Analytics",
+  "name": "Knowledge Base & Memories",
+  "num": 1,
+  "title": "Conflict resolution picks the wrong winner — UI \"keep\" buttons mis-mapped for `superseded` conflicts",
+  "sev": "critical",
+  "cat": "🔮 Latent failure (silent data loss — conflict resolution picks wrong winner)",
+  "file": "src/features/overview/sub_memories/libs/memoryConflicts.ts:119 (and src/features/overview/sub_memories/components/MemoryConflictReview.tsx:49)"
+ },
+ {
+  "slug": "knowledge-base-memories",
+  "group": "Observability & Analytics",
+  "name": "Knowledge Base & Memories",
+  "num": 2,
+  "title": "KB ingest reports `status: \"completed\"` even when every document failed (success theater)",
+  "sev": "high",
+  "cat": "💀 Silent failure (swarmed ingest errors, success theater on compile)",
+  "file": "src-tauri/src/engine/kb_ingest.rs:83 and :89–:98"
+ },
+ {
+  "slug": "knowledge-base-memories",
+  "group": "Observability & Analytics",
+  "name": "Knowledge Base & Memories",
+  "num": 3,
+  "title": "Knowledge-graph `confidence` permanently overweights early outcomes — running average never reflects recent reality",
+  "sev": "high",
+  "cat": "🔮 Latent failure (stale/wrong injected guidance)",
+  "file": "src-tauri/src/db/repos/execution/knowledge.rs:112–:116 (and avg_cost/avg_duration at :102–:111)"
+ },
+ {
+  "slug": "knowledge-base-memories",
+  "group": "Observability & Analytics",
+  "name": "Knowledge Base & Memories",
+  "num": 4,
+  "title": "KB index drifts from source — auto-mirror only runs on the persona's *own* executions and on-disk index is never rebuilt on change",
+  "sev": "medium",
+  "cat": "🔮 Latent failure (index drift vs source) / ⚡ index rebuild racing query",
+  "file": "src-tauri/src/engine/kb_index.rs:136 (build_and_write_index) and src-tauri/src/engine/knowledge.rs:141"
+ },
+ {
+  "slug": "knowledge-base-memories",
+  "group": "Observability & Analytics",
+  "name": "Knowledge Base & Memories",
+  "num": 5,
+  "title": "Empty-KB / tiny-corpus compile and review are valid but silently produce zero output with no user signal",
+  "sev": "low",
+  "cat": "🕳️ Edge case (empty KB, < threshold sources) / 💀 silent no-op",
+  "file": "src-tauri/src/commands/core/memory_compile.rs:98–:126 and :305"
+ },
+ {
+  "slug": "mcp-gateways-tools",
+  "group": "Credential Vault & Connectors",
+  "name": "MCP Gateways & Tools",
+  "num": 1,
+  "title": "Pooled stdio sessions have no JSON-RPC id correlation — desynced session returns the wrong tool's result to the wrong caller",
+  "sev": "critical",
+  "cat": "Race condition / silent failure (response mismatch)",
+  "file": "src-tauri/src/engine/mcp_tools.rs:1639 (read_session_jsonrpc), used by execute_tool_on_session:991 and fetch_tools_paginated_stdio:925"
+ },
+ {
+  "slug": "mcp-gateways-tools",
+  "group": "Credential Vault & Connectors",
+  "name": "MCP Gateways & Tools",
+  "num": 2,
+  "title": "Gateway membership allows nested/cyclic gateways → unbounded recursion and stack overflow on tools/list and tools/call",
+  "sev": "high",
+  "cat": "Edge case / latent failure (no recursion guard)",
+  "file": "src-tauri/src/db/repos/resources/mcp_gateways.rs:45 (only self-ref blocked) → recursion at src-tauri/src/engine/mcp_tools.rs:545 and :668"
+ },
+ {
+  "slug": "mcp-gateways-tools",
+  "group": "Credential Vault & Connectors",
+  "name": "MCP Gateways & Tools",
+  "num": 3,
+  "title": "Gateway tool calls are rate-limited by name only — member prefix bypasses the per-tool limiter, and the limiter keys on attacker-influenced strings",
+  "sev": "high",
+  "cat": "Silent failure / trust boundary (rate-limit evasion)",
+  "file": "src-tauri/src/engine/mcp_tools.rs:617 (rate_key = format!(\"mcp_tool:{tool_name}\")) vs gateway recursion at :668"
+ },
+ {
+  "slug": "mcp-gateways-tools",
+  "group": "Credential Vault & Connectors",
+  "name": "MCP Gateways & Tools",
+  "num": 4,
+  "title": "`parse_tool_result` and `list_tools_on_session` silently swallow malformed/oversized content blocks — success theater on garbage responses",
+  "sev": "medium",
+  "cat": "Silent failure (dropped/mismatched results)",
+  "file": "src-tauri/src/engine/mcp_tools.rs:1733 (parse_tool_result content filter_map), :957 and :1097 (tools list filter_map(... .ok()))"
+ },
+ {
+  "slug": "mcp-gateways-tools",
+  "group": "Credential Vault & Connectors",
+  "name": "MCP Gateways & Tools",
+  "num": 5,
+  "title": "`validate_url_safety` is bypassed for SSE pagination/initialize requests' redirects only by luck, and stderr from MCP child is discarded — failures are undiagnosable",
+  "sev": "low",
+  "cat": "Latent failure / observability gap",
+  "file": "src-tauri/src/engine/mcp_tools.rs:1593 (.stderr(Stdio::null())); error reporting at spawn_stdio_session:315-316 (init response discarded as _init_resp)"
+ },
+ {
+  "slug": "messages-notifications",
+  "group": "Triggers & Events",
+  "name": "Messages & Notifications",
+  "num": 1,
+  "title": "Webhook watermark advances past events that failed to deliver — permanent silent delivery gap",
+  "sev": "critical",
+  "cat": "Silent failure / latent data loss",
+  "file": "src-tauri/src/engine/webhook_notifier.rs:472"
+ },
+ {
+  "slug": "messages-notifications",
+  "group": "Triggers & Events",
+  "name": "Messages & Notifications",
+  "num": 2,
+  "title": "Shared-event relay cursor uses bare `fired_at` timestamp with no id tiebreaker — duplicate or dropped firings",
+  "sev": "high",
+  "cat": "Race condition / edge case (ordering)",
+  "file": "src-tauri/src/engine/shared_event_relay.rs:144"
+ },
+ {
+  "slug": "messages-notifications",
+  "group": "Triggers & Events",
+  "name": "Messages & Notifications",
+  "num": 3,
+  "title": "Cursor advances by guessed count even on partial publish failure — corrupted relay accounting + skipped firings",
+  "sev": "high",
+  "cat": "Silent failure / latent failure",
+  "file": "src-tauri/src/engine/shared_event_relay.rs:143"
+ },
+ {
+  "slug": "messages-notifications",
+  "group": "Triggers & Events",
+  "name": "Messages & Notifications",
+  "num": 4,
+  "title": "Same-day title dedup is non-transactional and content-blind — distinct messages silently swallowed",
+  "sev": "medium",
+  "cat": "Edge case / silent failure (success theater)",
+  "file": "src-tauri/src/db/repos/communication/messages.rs:174"
+ },
+ {
+  "slug": "messages-notifications",
+  "group": "Triggers & Events",
+  "name": "Messages & Notifications",
+  "num": 5,
+  "title": "Unbounded message growth — no retention/cleanup for persona_messages",
+  "sev": "low",
+  "cat": "Latent failure (resource exhaustion)",
+  "file": "src-tauri/src/db/repos/communication/messages.rs:482"
+ },
+ {
+  "slug": "oauth-api-proxy-foraging",
+  "group": "Credential Vault & Connectors",
+  "name": "OAuth, API Proxy & Foraging",
+  "num": 1,
+  "title": "API-proxy HTTP client follows redirects with no SSRF guard — redirect to raw internal IP bypasses every check",
+  "sev": "critical",
+  "cat": "Latent failure / SSRF bypass (trust boundary)",
+  "file": "src-tauri/src/engine/ssrf_safe_dns.rs:57-63 (client) consumed by src-tauri/src/engine/api_proxy.rs:792"
+ },
+ {
+  "slug": "oauth-api-proxy-foraging",
+  "group": "Credential Vault & Connectors",
+  "name": "OAuth, API Proxy & Foraging",
+  "num": 2,
+  "title": "`EnvResolver` imports every matching secret for a service, not the one the user approved",
+  "sev": "high",
+  "cat": "Silent failure / over-broad secret handling (trust boundary)",
+  "file": "src-tauri/src/commands/credentials/foraging.rs:745-763"
+ },
+ {
+  "slug": "oauth-api-proxy-foraging",
+  "group": "Credential Vault & Connectors",
+  "name": "OAuth, API Proxy & Foraging",
+  "num": 3,
+  "title": "401-retry re-resolves token outside the per-credential lock — stale/wrong token can be sent on retry",
+  "sev": "high",
+  "cat": "Race condition (TOCTOU on refresh lock)",
+  "file": "src-tauri/src/engine/api_proxy.rs:849-869"
+ },
+ {
+  "slug": "oauth-api-proxy-foraging",
+  "group": "Credential Vault & Connectors",
+  "name": "OAuth, API Proxy & Foraging",
+  "num": 4,
+  "title": "`oauth_token_expires_at` is stamped from wall-clock at refresh, so a backward clock change strands the token un-refreshed",
+  "sev": "medium",
+  "cat": "Edge case (clock skew) / token never refreshed before expiry",
+  "file": "src-tauri/src/engine/oauth_refresh.rs:443-447, 168-176, 49"
+ },
+ {
+  "slug": "oauth-api-proxy-foraging",
+  "group": "Credential Vault & Connectors",
+  "name": "OAuth, API Proxy & Foraging",
+  "num": 5,
+  "title": "SSRF allowlists diverge across the three validators — `is_private_ip` in healthcheck omits CGN/doc/v4-mapped ranges the proxy relies on",
+  "sev": "low",
+  "cat": "Latent failure / defensive gap (inconsistent trust boundary)",
+  "file": "src-tauri/src/engine/healthcheck.rs:1279-1304 vs src-tauri/src/engine/url_safety.rs:15-36"
+ },
+ {
+  "slug": "observability-alerts",
+  "group": "Observability & Analytics",
+  "name": "Observability & Alerts",
+  "num": 1,
+  "title": "Persona-scoped alert rules evaluate against global metrics — wrong alerts fire (or don't)",
+  "sev": "high",
+  "cat": "Latent failure / correctness",
+  "file": "src/stores/slices/overview/alertSlice.ts:384"
+ },
+ {
+  "slug": "observability-alerts",
+  "group": "Observability & Analytics",
+  "name": "Observability & Alerts",
+  "num": 2,
+  "title": "In-memory-only cooldown re-fires every persisted alert on each reload",
+  "sev": "high",
+  "cat": "Latent failure / duplicate alerts",
+  "file": "src/stores/slices/overview/alertSlice.ts:181"
+ },
+ {
+  "slug": "observability-alerts",
+  "group": "Observability & Analytics",
+  "name": "Observability & Alerts",
+  "num": 3,
+  "title": "Alerts never fire unless the Observability tab is open",
+  "sev": "high",
+  "cat": "Silent failure / alerts silently not firing",
+  "file": "src/features/overview/sub_observability/libs/useObservabilityData.ts:69"
+ },
+ {
+  "slug": "observability-alerts",
+  "group": "Observability & Analytics",
+  "name": "Observability & Alerts",
+  "num": 4,
+  "title": "IPC timeout/error rates divide cumulative count by a 500-cap window — rates wrong after 500 calls",
+  "sev": "medium",
+  "cat": "Silent failure / IPC perf numbers wrong",
+  "file": "src/lib/ipcMetrics.ts:133"
+ },
+ {
+  "slug": "observability-alerts",
+  "group": "Observability & Analytics",
+  "name": "Observability & Alerts",
+  "num": 5,
+  "title": "`>=`/`<=` operators with a default threshold of 0 make \"executions\" and rate rules fire constantly",
+  "sev": "medium",
+  "cat": "Edge case / boundary (>= vs >)",
+  "file": "src/stores/slices/overview/alertSlice.ts:99"
+ },
+ {
+  "slug": "obsidian-brain",
+  "group": "First-Party Plugins",
+  "name": "Obsidian Brain",
+  "num": 1,
+  "title": "Graph commands accept absolute paths and the containment guard silently disables itself on canonicalize failure",
+  "sev": "critical",
+  "cat": "Trust boundary / path traversal (silent guard bypass)",
+  "file": "src-tauri/src/commands/obsidian_brain/graph.rs:236 (guard) + :300, :342 (callers)"
+ },
+ {
+  "slug": "obsidian-brain",
+  "group": "First-Party Plugins",
+  "name": "Obsidian Brain",
+  "num": 2,
+  "title": "Daily-note / meeting-note writers are non-atomic with a read-modify-write race",
+  "sev": "high",
+  "cat": "Race condition / latent data loss",
+  "file": "src-tauri/src/commands/obsidian_brain/graph.rs:497, :501, :522 (append_daily_note); :588 (write_meeting_note)"
+ },
+ {
+  "slug": "obsidian-brain",
+  "group": "First-Party Plugins",
+  "name": "Obsidian Brain",
+  "num": 3,
+  "title": "Drive pull overwrites local edits with no conflict check and skips all nested folders",
+  "sev": "high",
+  "cat": "Silent failure / data loss + incomplete sync",
+  "file": "src-tauri/src/commands/obsidian_brain/drive.rs:604 (subfolder skip), :627-:645 (overwrite + non-atomic write)"
+ },
+ {
+  "slug": "obsidian-brain",
+  "group": "First-Party Plugins",
+  "name": "Obsidian Brain",
+  "num": 4,
+  "title": "Every graph operation re-walks and reads the entire vault into memory, with no size cap, on the UI's critical path",
+  "sev": "medium",
+  "cat": "Latent failure / huge-vault freeze",
+  "file": "src-tauri/src/commands/obsidian_brain/graph.rs:96 (walk_vault) + all callers (:272, :313, :362, :387, :419, :440)"
+ },
+ {
+  "slug": "obsidian-brain",
+  "group": "First-Party Plugins",
+  "name": "Obsidian Brain",
+  "num": 5,
+  "title": "test_connection note count is shallow and availability ignores a deleted vault — success theater",
+  "sev": "low",
+  "cat": "Silent failure / success theater (stale state)",
+  "file": "src-tauri/src/commands/obsidian_brain/mod.rs:155-176 (shallow count), :260-274 (resolve_availability); also :1636 (goal sync stores absolute path)"
+ },
+ {
+  "slug": "onboarding-tour",
+  "group": "Onboarding, Home & Settings",
+  "name": "Onboarding Tour",
+  "num": 1,
+  "title": "Skipping the last step silently marks the WHOLE tour complete",
+  "sev": "critical",
+  "cat": "💀 Silent failure / off-by-one boundary",
+  "file": "src/features/onboarding/components/GuidedTour.tsx:202 (and src/stores/slices/system/tourSlice.ts:1382)"
+ },
+ {
+  "slug": "onboarding-tour",
+  "group": "Onboarding, Home & Settings",
+  "name": "Onboarding Tour",
+  "num": 2,
+  "title": "Persisted `currentStepIndex` is hydrated unclamped — tour can vanish",
+  "sev": "high",
+  "cat": "🕳️ Edge case / 🔮 latent failure",
+  "file": "src/stores/slices/system/tourSlice.ts:1293"
+ },
+ {
+  "slug": "onboarding-tour",
+  "group": "Onboarding, Home & Settings",
+  "name": "Onboarding Tour",
+  "num": 3,
+  "title": "ExecutionStep can auto-complete on a pre-existing, unrelated execution",
+  "sev": "high",
+  "cat": "⚡ Race condition / stale state",
+  "file": "src/features/onboarding/components/ExecutionStep.tsx:45"
+ },
+ {
+  "slug": "onboarding-tour",
+  "group": "Onboarding, Home & Settings",
+  "name": "Onboarding Tour",
+  "num": 4,
+  "title": "Restoring the minimized panel re-fires every step side effect",
+  "sev": "medium",
+  "cat": "🔮 Latent failure / unintended side effects",
+  "file": "src/features/onboarding/components/GuidedTour.tsx:397"
+ },
+ {
+  "slug": "onboarding-tour",
+  "group": "Onboarding, Home & Settings",
+  "name": "Onboarding Tour",
+  "num": 5,
+  "title": "Appearance baseline is captured but never compared — step completes on a no-op",
+  "sev": "low",
+  "cat": "💀 Silent failure / dead defensive code",
+  "file": "src/features/onboarding/components/GuidedTour.tsx:140 + src/lib/storeBusWiring.ts:104"
+ },
+ {
+  "slug": "persona-editor-crud",
+  "group": "Persona & Agent Studio",
+  "name": "Persona Editor & CRUD",
+  "num": 1,
+  "title": "Icon-pick is draft-only — selecting/generating an icon is silently lost if the editor closes before the 800 ms debounce",
+  "sev": "high",
+  "cat": "Silent failure / unsaved-changes loss",
+  "file": "src/features/agents/sub_settings/components/PersonaSettingsTab.tsx:156 (onChange={(icon) => patch({ icon })}), feeding src/features/agents/sub_editor/libs/useEditorSave.ts:191-211"
+ },
+ {
+  "slug": "persona-editor-crud",
+  "group": "Persona & Agent Studio",
+  "name": "Persona Editor & CRUD",
+  "num": 2,
+  "title": "Deleting a persona orphans its custom/AI-generated icon file forever",
+  "sev": "medium",
+  "cat": "Latent failure / orphaned resource (Tauri file-write boundary)",
+  "file": "src-tauri/src/commands/core/personas.rs:469-623 (delete_persona / delete_persona_inner); icon files written by src-tauri/src/commands/core/persona_icons.rs:101-134"
+ },
+ {
+  "slug": "persona-editor-crud",
+  "group": "Persona & Agent Studio",
+  "name": "Persona Editor & CRUD",
+  "num": 3,
+  "title": "Deleting a shared custom icon in the picker silently breaks every *other* persona using it",
+  "sev": "high",
+  "cat": "Silent failure / data integrity",
+  "file": "src/features/shared/components/forms/PersonaIconPickerModal.tsx:122-132 (handleDeleteCustom)"
+ },
+ {
+  "slug": "persona-editor-crud",
+  "group": "Persona & Agent Studio",
+  "name": "Persona Editor & CRUD",
+  "num": 4,
+  "title": "`fetchPersonas` icon-assignment guard checks the wrong localStorage key (v1 vs v2)",
+  "sev": "medium",
+  "cat": "Latent failure / dead-or-misfiring guard",
+  "file": "src/stores/slices/agents/personaSlice.ts:138 (!localStorage.getItem('personas-icon-auto-assigned-v1')) vs src/lib/icons/autoAssignIcons.ts:15 (ASSIGNMENT_KEY = 'personas-icon-auto-assigned-v2')"
+ },
+ {
+  "slug": "persona-editor-crud",
+  "group": "Persona & Agent Studio",
+  "name": "Persona Editor & CRUD",
+  "num": 5,
+  "title": "Optimistic create prepends the persona to the list but never selects it / loads detail — `detailCache` stays empty",
+  "sev": "low",
+  "cat": "Edge case / partial state",
+  "file": "src/stores/slices/agents/personaSlice.ts:319-346 (createPersona), interacting with deriveSelectedPersona (lines 42-53) and fetchDetail (190-242)"
+ },
+ {
+  "slug": "persona-templates",
+  "group": "Templates & Recipes",
+  "name": "Persona Templates",
+  "num": 1,
+  "title": "Backend integrity check can never match a real adoption — silently skipped in dev, hard-rejects every adoption in release",
+  "sev": "critical",
+  "cat": "Silent failure + trust-boundary / latent failure",
+  "file": "src-tauri/src/commands/design/template_adopt.rs:28 (and call site :260), src-tauri/src/engine/template_checksums.rs:166"
+ },
+ {
+  "slug": "persona-templates",
+  "group": "Templates & Recipes",
+  "name": "Persona Templates",
+  "num": 2,
+  "title": "Build-session adoption flow performs NO integrity check at all",
+  "sev": "high",
+  "cat": "Trust boundary / silent failure",
+  "file": "src-tauri/src/commands/design/build_sessions.rs:204 (create_adoption_session), :2441 (promote_build_draft_inner)"
+ },
+ {
+  "slug": "persona-templates",
+  "group": "Templates & Recipes",
+  "name": "Persona Templates",
+  "num": 3,
+  "title": "Concurrent / double adoption produces duplicate teams and personas with no idempotency guard",
+  "sev": "high",
+  "cat": "Race condition",
+  "file": "src-tauri/src/engine/team_preset_adopter.rs:244 (adopt_preset), src/features/templates/sub_presets/usePresetAdoption.ts:113 (adopt)"
+ },
+ {
+  "slug": "persona-templates",
+  "group": "Templates & Recipes",
+  "name": "Persona Templates",
+  "num": 4,
+  "title": "Questionnaire variable substitution rewrites EVERY string in the IR, including structural/id fields, with unsanitized user input",
+  "sev": "medium",
+  "cat": "Edge case / latent failure (data corruption)",
+  "file": "src-tauri/src/engine/adoption_answers.rs:79 (walk_and_substitute)"
+ },
+ {
+  "slug": "persona-templates",
+  "group": "Templates & Recipes",
+  "name": "Persona Templates",
+  "num": 5,
+  "title": "Number-typed answers accepting `inf`/`nan` silently collapse to a non-default value",
+  "sev": "low",
+  "cat": "Silent failure / edge case",
+  "file": "src-tauri/src/commands/design/template_adopt.rs:1218 (coerce_answer_to_param_value), :644 (preset override stringification)"
+ },
+ {
+  "slug": "personas-twin",
+  "group": "First-Party Plugins",
+  "name": "Personas Twin",
+  "num": 1,
+  "title": "Shared `twinPendingMemories` slice is status-filtered by whoever fetched last, silently corrupting the readiness score",
+  "sev": "critical",
+  "cat": "Silent failure / latent desync",
+  "file": "src/features/plugins/twin/useTwinReadiness.ts:90-94 (consumer); src/stores/slices/system/twinSlice.ts:469-479 (overwrite); src/features/plugins/twin/sub_brain/RejectionPatternsPanel.tsx:35 and src/features/plugins/twin/sub_knowledge/KnowledgeAtelier.tsx:103 (poisoning writers)"
+ },
+ {
+  "slug": "personas-twin",
+  "group": "First-Party Plugins",
+  "name": "Personas Twin",
+  "num": 2,
+  "title": "`useReadinessCelebration` cross-twin baseline poisoning + missed celebration on slow hydration",
+  "sev": "high",
+  "cat": "Race condition / success theater",
+  "file": "src/features/plugins/twin/useReadinessCelebration.ts:33-53"
+ },
+ {
+  "slug": "personas-twin",
+  "group": "First-Party Plugins",
+  "name": "Personas Twin",
+  "num": 3,
+  "title": "Picker `onSelect` fires for the already-active twin and races concurrent selections with no in-flight guard",
+  "sev": "high",
+  "cat": "Race condition",
+  "file": "src/features/plugins/twin/shared/TwinPicker.tsx:176,237; src/stores/slices/system/twinSlice.ts:383-392"
+ },
+ {
+  "slug": "personas-twin",
+  "group": "First-Party Plugins",
+  "name": "Personas Twin",
+  "num": 4,
+  "title": "CoachMark hydration race renders a one-frame flash and re-shows a just-dismissed mark on `id` change",
+  "sev": "medium",
+  "cat": "Race condition / edge case",
+  "file": "src/features/plugins/twin/CoachMark.tsx:24-40"
+ },
+ {
+  "slug": "personas-twin",
+  "group": "First-Party Plugins",
+  "name": "Personas Twin",
+  "num": 5,
+  "title": "`TwinPicker` is fully built but wired into nothing — empty-state + stale-list paths are dead code that will rot",
+  "sev": "low",
+  "cat": "Latent failure / silent gap",
+  "file": "src/features/plugins/twin/shared/TwinPicker.tsx:88 (no importer anywhere in src/)"
+ },
+ {
+  "slug": "pipeline-agent-chains",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Pipeline & Agent Chains",
+  "num": 1,
+  "title": "Fan-in nodes silently drop all but one predecessor's output",
+  "sev": "critical",
+  "cat": "💀 Silent failure / lost intermediate output",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:961 (resolve_node_input)"
+ },
+ {
+  "slug": "pipeline-agent-chains",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Pipeline & Agent Chains",
+  "num": 2,
+  "title": "Approval pre-arm race: approve/reject before the gate registers is lost forever",
+  "sev": "high",
+  "cat": "⚡ Race condition / 🔮 latent hang",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:651 (poll_for_approval), src-tauri/src/commands/teams/teams.rs:380 (approve_pipeline_node)"
+ },
+ {
+  "slug": "pipeline-agent-chains",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Pipeline & Agent Chains",
+  "num": 3,
+  "title": "Persona-node timeout leaves the CLI process running (zombie spawn + budget leak)",
+  "sev": "high",
+  "cat": "🔮 Latent failure / recovery gap",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:472 (run_persona_node timeout branch)"
+ },
+ {
+  "slug": "pipeline-agent-chains",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Pipeline & Agent Chains",
+  "num": 4,
+  "title": "Conditional edge with stale/empty predecessor output silently skips downstream nodes",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 silent failure",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:190 (should_skip_node) + :139 (evaluate_condition)"
+ },
+ {
+  "slug": "pipeline-agent-chains",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Pipeline & Agent Chains",
+  "num": 5,
+  "title": "Per-node DB status write failure is swallowed; UI keeps last-known-good while the node really ran",
+  "sev": "low",
+  "cat": "💀 Silent failure / success theater",
+  "file": "src-tauri/src/engine/pipeline_executor.rs:71 (StatusEmitter::emit)"
+ },
+ {
+  "slug": "recipes-use-case-blueprints",
+  "group": "Templates & Recipes",
+  "name": "Recipes & Use-Case Blueprints",
+  "num": 1,
+  "title": "Scheduled curation never fires — date-format mismatch between writer and reader",
+  "sev": "critical",
+  "cat": "Silent failure / success theater",
+  "file": "src-tauri/src/engine/curation_scheduler.rs:80-96"
+ },
+ {
+  "slug": "recipes-use-case-blueprints",
+  "group": "Templates & Recipes",
+  "name": "Recipes & Use-Case Blueprints",
+  "num": 2,
+  "title": "Recipe suggestion chip is mathematically unreachable for the shipped catalog",
+  "sev": "high",
+  "cat": "Silent failure / dead feature",
+  "file": "src-tauri/src/engine/recipe_matcher.rs:23-33,114-127,169"
+ },
+ {
+  "slug": "recipes-use-case-blueprints",
+  "group": "Templates & Recipes",
+  "name": "Recipes & Use-Case Blueprints",
+  "num": 3,
+  "title": "Curation scheduler can double-enqueue (and double-run) when `mark_run_now` fails after enqueue",
+  "sev": "high",
+  "cat": "Race condition / latent failure",
+  "file": "src-tauri/src/engine/curation_scheduler.rs:123-147; src-tauri/src/engine/persona_jobs.rs:101-118"
+ },
+ {
+  "slug": "recipes-use-case-blueprints",
+  "group": "Templates & Recipes",
+  "name": "Recipes & Use-Case Blueprints",
+  "num": 4,
+  "title": "Eligibility falls back to a long-description prompt and silently treats UC connectors/credentials as no-requirements",
+  "sev": "medium",
+  "cat": "Eligibility false positive / silent wrong-state",
+  "file": "src-tauri/src/engine/recipe_eligibility.rs:201-257; src-tauri/src/commands/recipes/recipe_adoption.rs:76-86"
+ },
+ {
+  "slug": "recipes-use-case-blueprints",
+  "group": "Templates & Recipes",
+  "name": "Recipes & Use-Case Blueprints",
+  "num": 5,
+  "title": "Recipe seed create + builtin-flag are non-atomic; a crash between them mints a user-looking builtin",
+  "sev": "low",
+  "cat": "Latent failure / partial write",
+  "file": "src-tauri/src/engine/recipe_seed.rs:240-244; src-tauri/src/db/repos/resources/recipes.rs:55-116"
+ },
+ {
+  "slug": "repositories-models",
+  "group": "Data & Persistence",
+  "name": "Repositories & Models",
+  "num": 1,
+  "title": "Persona name-uniqueness check is a TOCTOU race with no DB constraint behind it",
+  "sev": "high",
+  "cat": "Race condition (read-modify-write without transaction / serialization)",
+  "file": "src-tauri/src/db/repos/core/personas.rs:593 (also update_name at :937)"
+ },
+ {
+  "slug": "repositories-models",
+  "group": "Data & Persistence",
+  "name": "Repositories & Models",
+  "num": 2,
+  "title": "Multi-row maintenance sweeps (`cleanup_old_executions`, `sweep_zombie_executions`) run without a transaction → partial completion + interleaving",
+  "sev": "medium",
+  "cat": "Latent failure (transaction missing across multi-statement mutation)",
+  "file": "src-tauri/src/db/repos/execution/executions.rs:1556 (cleanup_old_executions); :1452 (sweep_zombie_executions)"
+ },
+ {
+  "slug": "repositories-models",
+  "group": "Data & Persistence",
+  "name": "Repositories & Models",
+  "num": 3,
+  "title": "`row_mapper!` `[opt]` and the many `.ok().flatten()` column reads silently swallow real DB/decode errors as `None`/defaults",
+  "sev": "medium",
+  "cat": "Silent failure (error mapped away, masks corruption)",
+  "file": "src-tauri/src/db/macros.rs:116 (@get … opt → row.get(...).ok().flatten()); used pervasively, e.g. personas.rs:395-423, executions.rs:24,40,50"
+ },
+ {
+  "slug": "repositories-models",
+  "group": "Data & Persistence",
+  "name": "Repositories & Models",
+  "num": 4,
+  "title": "`collect_rows` drops individual corrupt rows from list results — list endpoints silently return incomplete data",
+  "sev": "medium",
+  "cat": "Silent failure (partial result presented as complete)",
+  "file": "src-tauri/src/db/repos/utils.rs:5; callers include crud_get_all! (macros.rs:187) and personas.rs:444,512,524,543"
+ },
+ {
+  "slug": "repositories-models",
+  "group": "Data & Persistence",
+  "name": "Repositories & Models",
+  "num": 5,
+  "title": "`blast_radius` chain-dependency check interpolates the persona id into an un-escaped `LIKE` pattern",
+  "sev": "low",
+  "cat": "Edge case (unescaped LIKE wildcard / substring false-positive)",
+  "file": "src-tauri/src/db/repos/core/personas.rs:1432 (persona); mirrored in resources/credentials.rs:522 (cd.services LIKE '%'||ptd.name||'%')"
+ },
+ {
+  "slug": "research-lab",
+  "group": "First-Party Plugins",
+  "name": "Research Lab",
+  "num": 1,
+  "title": "AI synthesis is never persisted — lost silently on drawer close",
+  "sev": "high",
+  "cat": "🔮 Latent failure / 💀 Silent failure (lost session work)",
+  "file": "src/features/plugins/research-lab/sub_reports/ReportPreviewDrawer.tsx:48,143"
+ },
+ {
+  "slug": "research-lab",
+  "group": "First-Party Plugins",
+  "name": "Research Lab",
+  "num": 2,
+  "title": "Report compiled from another project's data (cross-project store leak)",
+  "sev": "critical",
+  "cat": "💀 Silent failure / 🕳️ Edge case (partial results shown as complete)",
+  "file": "src/features/plugins/research-lab/sub_reports/ReportPreviewDrawer.tsx:88-99 (and researchLabSlice.ts:131-258)"
+ },
+ {
+  "slug": "research-lab",
+  "group": "First-Party Plugins",
+  "name": "Research Lab",
+  "num": 3,
+  "title": "arXiv \"Added N sources\" toast lies when sources are de-duplicated",
+  "sev": "high",
+  "cat": "💀 Silent failure (success theater) / 🕳️ Edge case (duplicates)",
+  "file": "src/features/plugins/research-lab/sub_literature/ArxivSearchModal.tsx:90-113 + src-tauri/src/db/repos/research_lab.rs:172-223"
+ },
+ {
+  "slug": "research-lab",
+  "group": "First-Party Plugins",
+  "name": "Research Lab",
+  "num": 4,
+  "title": "Concurrent runs of different experiments race the runs drawer / refresh token",
+  "sev": "medium",
+  "cat": "⚡ Race condition (tab/run state)",
+  "file": "src/features/plugins/research-lab/sub_experiments/ExperimentsPanel.tsx:33-101,234-241 + ExperimentRunsDrawer.tsx:29-43"
+ },
+ {
+  "slug": "research-lab",
+  "group": "First-Party Plugins",
+  "name": "Research Lab",
+  "num": 5,
+  "title": "Sources auto-marked \"indexed\" though no real KB ingestion happens (and ingest rollback hides failure)",
+  "sev": "low",
+  "cat": "💀 Silent failure (success theater)",
+  "file": "src/features/plugins/research-lab/sub_literature/ArxivSearchModal.tsx:104-107 + src/features/plugins/research-lab/shared/useIngestSource.ts:20-35"
+ },
+ {
+  "slug": "scheduler-cron-agents",
+  "group": "Execution Engine",
+  "name": "Scheduler & Cron Agents",
+  "num": 1,
+  "title": "Cron \"next fire\" is computed from system-LOCAL time but the UI hard-labels it \"UTC\", and two schedulers disagree on the zone",
+  "sev": "high",
+  "cat": "Clock/timezone bug (UTC vs local mismatch)",
+  "file": "src-tauri/src/engine/scheduler.rs:72 (next_fire_time_local) + src/features/overview/sub_cron_agents/components/CronAgentCard.tsx:73"
+ },
+ {
+  "slug": "scheduler-cron-agents",
+  "group": "Execution Engine",
+  "name": "Scheduler & Cron Agents",
+  "num": 2,
+  "title": "Interval triggers accumulate unbounded drift — next fire is `now + interval`, not `scheduled + interval`",
+  "sev": "high",
+  "cat": "Latent failure (drift accumulation)",
+  "file": "src-tauri/src/engine/scheduler.rs:78-83 (compute_next_from_config, interval arm)"
+ },
+ {
+  "slug": "scheduler-cron-agents",
+  "group": "Execution Engine",
+  "name": "Scheduler & Cron Agents",
+  "num": 3,
+  "title": "DST \"spring-forward\" gap: a daily cron whose hour does not exist that day silently slips a day (or misfires)",
+  "sev": "medium",
+  "cat": "Clock/timezone bug (DST transition)",
+  "file": "src-tauri/src/engine/cron.rs:468-534 (next_fire_time_in_zone)"
+ },
+ {
+  "slug": "scheduler-cron-agents",
+  "group": "Execution Engine",
+  "name": "Scheduler & Cron Agents",
+  "num": 4,
+  "title": "Backfill is bounded per-tick but not across ticks — sustained thundering-herd after long downtime",
+  "sev": "medium",
+  "cat": "Latent failure (backfill flooding / thundering herd)",
+  "file": "src-tauri/src/engine/background.rs:1503-1561 (compute_missed_backfill_slots) + 1727-1850 (per-tick backfill loop)"
+ },
+ {
+  "slug": "scheduler-cron-agents",
+  "group": "Execution Engine",
+  "name": "Scheduler & Cron Agents",
+  "num": 5,
+  "title": "Curation scheduler can enqueue duplicate runs when `mark_run_now` fails; relies on a different table's idempotency that doesn't apply",
+  "sev": "high",
+  "cat": "Race condition / silent duplicate (success theater)",
+  "file": "src-tauri/src/engine/curation_scheduler.rs:123-156"
+ },
+ {
+  "slug": "self-healing-auto-rollback",
+  "group": "Execution Engine",
+  "name": "Self-Healing & Auto-Rollback",
+  "num": 1,
+  "title": "AI healing reports \"completed\" and schedules a real retry even when the healing run itself failed (success theater + bad-diagnosis retry)",
+  "sev": "critical",
+  "cat": "Silent failure / latent failure",
+  "file": "src-tauri/src/engine/mod.rs:3264 (and 3327, 3353)"
+ },
+ {
+  "slug": "self-healing-auto-rollback",
+  "group": "Execution Engine",
+  "name": "Self-Healing & Auto-Rollback",
+  "num": 2,
+  "title": "Auto-rollback picks \"previous\" version by version number only — can roll back to a known-bad / corrupt baseline",
+  "sev": "high",
+  "cat": "Latent failure (rollback to corrupt known-good)",
+  "file": "src-tauri/src/engine/auto_rollback.rs:136 (selection) and :270 (threshold)"
+ },
+ {
+  "slug": "self-healing-auto-rollback",
+  "group": "Execution Engine",
+  "name": "Self-Healing & Auto-Rollback",
+  "num": 3,
+  "title": "AI-healing retry shares the same `retry_count` as the healing execution (off-by-one budget collision)",
+  "sev": "high",
+  "cat": "Edge case (attempt-counter accounting) / latent failure",
+  "file": "src-tauri/src/engine/mod.rs:3167 vs :3365"
+ },
+ {
+  "slug": "self-healing-auto-rollback",
+  "group": "Execution Engine",
+  "name": "Self-Healing & Auto-Rollback",
+  "num": 4,
+  "title": "AI healing can re-enable a persona that the circuit breaker disabled, defeating the safety valve",
+  "sev": "medium",
+  "cat": "Trust boundary / latent failure",
+  "file": "src-tauri/src/engine/ai_healing.rs:518 (enabled fix) and mod.rs:3150 (enabled re-check)"
+ },
+ {
+  "slug": "self-healing-auto-rollback",
+  "group": "Execution Engine",
+  "name": "Self-Healing & Auto-Rollback",
+  "num": 5,
+  "title": "Dropped-fix detection relies on a brittle substring match and the audit write ignores errors",
+  "sev": "low",
+  "cat": "Silent failure",
+  "file": "src-tauri/src/engine/ai_healing.rs:273 (fix_text_was_dropped) and :295 / :361 (audit inserts)"
+ },
+ {
+  "slug": "settings-byom",
+  "group": "Onboarding, Home & Settings",
+  "name": "Settings & BYOM",
+  "num": 1,
+  "title": "Routing rules with `Simple`/`Critical` complexity never fire — cost-routing contract is silently unfulfilled",
+  "sev": "high",
+  "cat": "🕳️ Edge case / 💀 Silent failure",
+  "file": "src-tauri/src/engine/runner/mod.rs:1259 (call site) + src-tauri/src/engine/byom.rs:445"
+ },
+ {
+  "slug": "settings-byom",
+  "group": "Onboarding, Home & Settings",
+  "name": "Settings & BYOM",
+  "num": 2,
+  "title": "BYOM provider \"Test connection\" only probes a local CLI binary — it never validates the external model endpoint or API key (success theater)",
+  "sev": "high",
+  "cat": "💀 Silent failure / 🔮 Latent failure",
+  "file": "src-tauri/src/commands/infrastructure/byom.rs:132 (test_provider_connection) + ByomProviderList.tsx:160"
+ },
+ {
+  "slug": "settings-byom",
+  "group": "Onboarding, Home & Settings",
+  "name": "Settings & BYOM",
+  "num": 3,
+  "title": "`delete_external_api_key` (hard delete) bypasses the management-API auth that `revoke` preserves — and there is no confirmation safety on the destructive path",
+  "sev": "medium",
+  "cat": "🕳️ Edge case / 💀 Silent failure",
+  "file": "src-tauri/src/db/repos/resources/external_api_keys.rs:154 (delete) + ApiKeysSettings.tsx:115"
+ },
+ {
+  "slug": "settings-byom",
+  "group": "Onboarding, Home & Settings",
+  "name": "Settings & BYOM",
+  "num": 4,
+  "title": "Management-API CORS allows any origin (`allow_origin(Any)`) on a localhost server reachable from every visited web page",
+  "sev": "critical",
+  "cat": "Trust boundary / 🔮 Latent failure",
+  "file": "src-tauri/src/engine/management_api.rs:122-125"
+ },
+ {
+  "slug": "settings-byom",
+  "group": "Onboarding, Home & Settings",
+  "name": "Settings & BYOM",
+  "num": 5,
+  "title": "`find_by_token` updates `last_used_at` on a best-effort basis but the auth path returns success even if the touch fails — and lookup is a non-constant-time hash-index probe",
+  "sev": "low",
+  "cat": "💀 Silent failure / 🔮 Latent failure",
+  "file": "src-tauri/src/db/repos/resources/external_api_keys.rs:124-130"
+ },
+ {
+  "slug": "shared-ui-component-library",
+  "group": "Platform Foundation",
+  "name": "Shared UI Component Library",
+  "num": 1,
+  "title": "ConfirmDialog has no in-flight guard — double-click confirms the action twice",
+  "sev": "critical",
+  "cat": "Race condition / double-submit",
+  "file": "src/features/shared/components/feedback/ConfirmDialog.tsx:53 (confirm <button>)"
+ },
+ {
+  "slug": "shared-ui-component-library",
+  "group": "Platform Foundation",
+  "name": "Shared UI Component Library",
+  "num": 2,
+  "title": "AriaLiveProvider unmount blindly nulls the global imperative handle",
+  "sev": "high",
+  "cat": "Latent failure / silent no-op",
+  "file": "src/features/shared/components/feedback/AriaLiveProvider.tsx:46-49"
+ },
+ {
+  "slug": "shared-ui-component-library",
+  "group": "Platform Foundation",
+  "name": "Shared UI Component Library",
+  "num": 3,
+  "title": "Rapid consecutive announce() calls collapse — intermediate messages dropped silently",
+  "sev": "high",
+  "cat": "Race condition / silent failure",
+  "file": "src/features/shared/components/feedback/AriaLiveProvider.tsx:34-43"
+ },
+ {
+  "slug": "shared-ui-component-library",
+  "group": "Platform Foundation",
+  "name": "Shared UI Component Library",
+  "num": 4,
+  "title": "CopyButton shows \"Copied\" for empty string and trusts unchecked managed onCopy",
+  "sev": "medium",
+  "cat": "Edge case / silent failure / trust boundary",
+  "file": "src/features/shared/components/buttons/CopyButton.tsx:58-65"
+ },
+ {
+  "slug": "shared-ui-component-library",
+  "group": "Platform Foundation",
+  "name": "Shared UI Component Library",
+  "num": 5,
+  "title": "PanelTabBar shares one framer-motion layoutId across instances and lacks keyboard tab nav",
+  "sev": "low",
+  "cat": "Edge case / race condition",
+  "file": "src/features/shared/components/layout/PanelTabBar.tsx:24,50"
+ },
+ {
+  "slug": "state-management-zustand",
+  "group": "Platform Foundation",
+  "name": "State Management (Zustand)",
+  "num": 1,
+  "title": "`goals` array clobbered when toggling project / all-projects scope (shared-array-overwrite)",
+  "sev": "high",
+  "cat": "⚡ Race condition — shared slice array overwritten by sibling consumers",
+  "file": "src/stores/slices/system/devToolsProjectSlice.ts:201 (fetchGoals) and :211 (fetchAllGoals); consumer src/features/teams/sub_goals/GoalsPage.tsx:109-111"
+ },
+ {
+  "slug": "state-management-zustand",
+  "group": "Platform Foundation",
+  "name": "State Management (Zustand)",
+  "num": 2,
+  "title": "`contexts` is a single array but `fetchContexts(projectId, groupId)` writes a filtered subset into it",
+  "sev": "medium",
+  "cat": "🔮 Latent failure — shared array overwrite (group-filtered vs full list)",
+  "file": "src/stores/slices/system/devToolsContextSlice.ts:103 (fetchContexts)"
+ },
+ {
+  "slug": "state-management-zustand",
+  "group": "Platform Foundation",
+  "name": "State Management (Zustand)",
+  "num": 3,
+  "title": "`_pendingReadIds` Set never reset on `fetchMessages(reset)` — permanent no-op guard for recycled IDs",
+  "sev": "medium",
+  "cat": "💀 Silent failure — stale in-flight guard survives list replacement",
+  "file": "src/stores/slices/overview/messageSlice.ts:58 (fetchMessages), guard at :88"
+ },
+ {
+  "slug": "state-management-zustand",
+  "group": "Platform Foundation",
+  "name": "State Management (Zustand)",
+  "num": 4,
+  "title": "`fetchExecutions` `finally` unconditionally writes `executionsLoading:false`, racing a sibling persona fetch",
+  "sev": "high",
+  "cat": "⚡ Race condition — concurrent actions clobbering loading flag + shared list",
+  "file": "src/stores/slices/agents/executionSlice.ts:499 (fetchExecutions, finally at :544)"
+ },
+ {
+  "slug": "state-management-zustand",
+  "group": "Platform Foundation",
+  "name": "State Management (Zustand)",
+  "num": 5,
+  "title": "`processStarted`/`processQueued` desync `activeProcessCount` when a key flips status family",
+  "sev": "low",
+  "cat": "🔮 Latent failure — derived counter drift vs source map",
+  "file": "src/stores/slices/processActivitySlice.ts:240 (processStarted), :331 (processQueued)"
+ },
+ {
+  "slug": "tauri-ipc-bridge-api",
+  "group": "Platform Foundation",
+  "name": "Tauri IPC Bridge & API",
+  "num": 1,
+  "title": "PostgREST filter injection via unvalidated `id` in remote-command handlers",
+  "sev": "critical",
+  "cat": "Trust boundary / injection",
+  "file": "src-tauri/src/cloud/remote_commands.rs:307 (also :233, :253, :105)"
+ },
+ {
+  "slug": "tauri-ipc-bridge-api",
+  "group": "Platform Foundation",
+  "name": "Tauri IPC Bridge & API",
+  "num": 2,
+  "title": "`remote_command_reject` runs on any device + skips device scoping (cross-device tampering)",
+  "sev": "high",
+  "cat": "Trust boundary / silent failure",
+  "file": "src-tauri/src/cloud/remote_commands.rs:297"
+ },
+ {
+  "slug": "tauri-ipc-bridge-api",
+  "group": "Platform Foundation",
+  "name": "Tauri IPC Bridge & API",
+  "num": 3,
+  "title": "`system_ops_*` write/run commands are auth-gated only by a no-op guard",
+  "sev": "high",
+  "cat": "Trust boundary / privilege",
+  "file": "src-tauri/src/commands/infrastructure/system_ops.rs:51,121,129,140"
+ },
+ {
+  "slug": "tauri-ipc-bridge-api",
+  "group": "Platform Foundation",
+  "name": "Tauri IPC Bridge & API",
+  "num": 4,
+  "title": "Enum drift: `twin_record_interaction` accepts any `channel`/`direction` string, silently persisting garbage",
+  "sev": "medium",
+  "cat": "Silent failure / enum drift",
+  "file": "src-tauri/src/commands/infrastructure/twin.rs:491 (and repo db/repos/twin.rs:562, :316)"
+ },
+ {
+  "slug": "tauri-ipc-bridge-api",
+  "group": "Platform Foundation",
+  "name": "Tauri IPC Bridge & API",
+  "num": 5,
+  "title": "`use_vault` conflict resolution logs success even when the DB update is silently skipped",
+  "sev": "low",
+  "cat": "Silent failure",
+  "file": "src-tauri/src/commands/obsidian_brain/mod.rs:1276"
+ },
+ {
+  "slug": "team-assignment-handoff",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Assignment & Handoff",
+  "num": 1,
+  "title": "Double-started assignment runs two tick loops → same step assigned & executed twice",
+  "sev": "critical",
+  "cat": "Race condition / double-assignment",
+  "file": "src-tauri/src/engine/team_assignment_orchestrator.rs:106 (run_assignment), :400 (in_flight), :540-583 (launch); gate doc at :103-105"
+ },
+ {
+  "slug": "team-assignment-handoff",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Assignment & Handoff",
+  "num": 2,
+  "title": "Persona running multiple steps concurrently can exceed its `max_concurrent` and collide on one repo",
+  "sev": "high",
+  "cat": "Race condition / concurrent orchestration",
+  "file": "src-tauri/src/engine/team_assignment_orchestrator.rs:538-583 (budget + launch loop)"
+ },
+ {
+  "slug": "team-assignment-handoff",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Assignment & Handoff",
+  "num": 3,
+  "title": "Step failure inside a detached task can be lost, wedging the assignment forever",
+  "sev": "high",
+  "cat": "Silent failure / orphaned assignment",
+  "file": "src-tauri/src/engine/team_assignment_orchestrator.rs:562-583 (spawned step task), :449 (reap)"
+ },
+ {
+  "slug": "team-assignment-handoff",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Assignment & Handoff",
+  "num": 4,
+  "title": "KPI distance/normalization divides by a near-zero current value, producing absurd percentages",
+  "sev": "medium",
+  "cat": "Edge case / divide-by-(near)-zero, KPI miscount",
+  "file": "src/features/teams/sub_kpis/KPIDashboard.tsx:31 (distancePct), :43 (normValue)"
+ },
+ {
+  "slug": "team-assignment-handoff",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Assignment & Handoff",
+  "num": 5,
+  "title": "Handoff wiring silently drops edges and never prunes stale triggers after a roster/graph edit",
+  "sev": "low",
+  "cat": "Silent failure / latent (orphaned wiring)",
+  "file": "src-tauri/src/engine/team_handoff.rs:111-121 (endpoint resolve skip), :138-156 (create-failure swallow), whole-file (no delete pass)"
+ },
+ {
+  "slug": "team-builder-workspace",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Builder & Workspace",
+  "num": 1,
+  "title": "Double-submit on Enter creates two orphaned teams",
+  "sev": "critical",
+  "cat": "⚡ Race condition / double-create",
+  "file": "src/features/teams/sub_teamWorkspace/AutoTeamModal.tsx:44 (and useAutoTeam.ts:89)"
+ },
+ {
+  "slug": "team-builder-workspace",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Builder & Workspace",
+  "num": 2,
+  "title": "Auto-team reports connection count that overstates what actually persisted",
+  "sev": "high",
+  "cat": "💀 Silent failure / success theater",
+  "file": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:148"
+ },
+ {
+  "slug": "team-builder-workspace",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Builder & Workspace",
+  "num": 3,
+  "title": "Preset adoption can leave an empty team shell with all errors buried in a list",
+  "sev": "high",
+  "cat": "🔮 Latent failure / silent partial team",
+  "file": "src-tauri/src/engine/team_preset_adopter.rs:244 (team shell) + :296 (member loop)"
+ },
+ {
+  "slug": "team-builder-workspace",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Builder & Workspace",
+  "num": 4,
+  "title": "Seeded team memories duplicate and diverge with no dedupe or cap enforcement",
+  "sev": "medium",
+  "cat": "🔮 Latent failure / shared-memory divergence",
+  "file": "src/features/teams/sub_teamWorkspace/useAutoTeam.ts:187 + src-tauri/src/db/repos/resources/team_memories.rs:438"
+ },
+ {
+  "slug": "team-builder-workspace",
+  "group": "Teams & Fleet Orchestration",
+  "name": "Team Builder & Workspace",
+  "num": 5,
+  "title": "Optimizer panel renders accept/dismiss but `onAcceptSuggestion` has no live consumer; stale suggestions reference deleted members",
+  "sev": "low",
+  "cat": "🕳️ Edge case / optimizer stale",
+  "file": "src/features/teams/sub_canvas/components/OptimizerPanel.tsx:11 + OptimizerResults.tsx:144"
+ },
+ {
+  "slug": "triggers-event-registry",
+  "group": "Triggers & Events",
+  "name": "Triggers & Event Registry",
+  "num": 1,
+  "title": "Live-stream status updates are silently dropped — events freeze on their first-seen status",
+  "sev": "high",
+  "cat": "Silent failure / Event registry desync",
+  "file": "src/features/triggers/sub_live_stream/LiveStreamTab.tsx:76 (with src-tauri/src/db/cdc.rs:252)"
+ },
+ {
+  "slug": "triggers-event-registry",
+  "group": "Triggers & Events",
+  "name": "Triggers & Event Registry",
+  "num": 2,
+  "title": "No cycle/depth guard on event-driven trigger chains — a self-emitting persona is an unbounded event amplifier",
+  "sev": "critical",
+  "cat": "Edge case / Latent failure (cyclic trigger, unbounded growth)",
+  "file": "src-tauri/src/engine/background.rs:799 (event_bus_tick), src-tauri/src/engine/bus.rs:147 (match_event)"
+ },
+ {
+  "slug": "triggers-event-registry",
+  "group": "Triggers & Events",
+  "name": "Triggers & Event Registry",
+  "num": 3,
+  "title": "\"No subscribers\" is recorded as `Delivered`, not `Skipped` — masking dead/misrouted triggers",
+  "sev": "medium",
+  "cat": "Silent failure / Success theater",
+  "file": "src-tauri/src/engine/background.rs:896-905"
+ },
+ {
+  "slug": "triggers-event-registry",
+  "group": "Triggers & Events",
+  "name": "Triggers & Event Registry",
+  "num": 4,
+  "title": "CatalogCard subscribe/unsubscribe has no in-flight guard or error feedback — double-clicks and failed toggles silently desync",
+  "sev": "high",
+  "cat": "Race condition / Silent failure",
+  "file": "src/features/triggers/sub_shared/CatalogCard.tsx:50-51"
+ },
+ {
+  "slug": "triggers-event-registry",
+  "group": "Triggers & Events",
+  "name": "Triggers & Event Registry",
+  "num": 5,
+  "title": "EventCanvas backfills only the latest 1000 events for type discovery — older event types silently absent from the canvas palette",
+  "sev": "low",
+  "cat": "Edge case / Latent failure (registry desync)",
+  "file": "src/features/triggers/sub_builder/EventCanvas.tsx:31"
+ },
+ {
+  "slug": "webhooks-channel-pollers",
+  "group": "Triggers & Events",
+  "name": "Webhooks & Channel Pollers",
+  "num": 1,
+  "title": "Outbound webhook delivery failures are silently dropped — watermark advances past them",
+  "sev": "critical",
+  "cat": "💀 Silent failure / dropped events",
+  "file": "src-tauri/src/engine/webhook_notifier.rs:482"
+ },
+ {
+  "slug": "webhooks-channel-pollers",
+  "group": "Triggers & Events",
+  "name": "Webhooks & Channel Pollers",
+  "num": 2,
+  "title": "Slack/Discord pollers silently skip messages when a burst exceeds FETCH_LIMIT between ticks",
+  "sev": "high",
+  "cat": "🕳️ Edge case / missed messages",
+  "file": "src-tauri/src/engine/slack_poller.rs:352 (and discord_poller.rs:359)"
+ },
+ {
+  "slug": "webhooks-channel-pollers",
+  "group": "Triggers & Events",
+  "name": "Webhooks & Channel Pollers",
+  "num": 3,
+  "title": "webhook_notifier watermark uses strict `created_at >` — events sharing the boundary timestamp are dropped",
+  "sev": "high",
+  "cat": "⚡ Cursor race / 🕳️ boundary edge case",
+  "file": "src-tauri/src/db/repos/communication/events.rs:397 (consumed by webhook_notifier.rs:457 + :497)"
+ },
+ {
+  "slug": "webhooks-channel-pollers",
+  "group": "Triggers & Events",
+  "name": "Webhooks & Channel Pollers",
+  "num": 4,
+  "title": "Slack/Discord cursor advances over messages whose dispatch errored, and the reply pass excludes them — input lost, no retry",
+  "sev": "medium",
+  "cat": "💀 Silent failure / dropped input",
+  "file": "src-tauri/src/engine/slack_poller.rs:259 (and discord_poller.rs:253)"
+ },
+ {
+  "slug": "webhooks-channel-pollers",
+  "group": "Triggers & Events",
+  "name": "Webhooks & Channel Pollers",
+  "num": 5,
+  "title": "Self-reply / loop guard relies only on the bot author flag; a second persona bot in the same channel can ping-pong",
+  "sev": "low",
+  "cat": "💀 Infinite reply loop / trust boundary",
+  "file": "src-tauri/src/engine/discord_poller.rs:212 (and slack_poller.rs:216)"
+ }
+]

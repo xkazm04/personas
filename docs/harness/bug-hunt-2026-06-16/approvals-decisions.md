@@ -1,0 +1,49 @@
+# Bug Hunter — Approvals & Decisions
+
+> Total: 5 findings (1 critical, 2 high, 1 medium, 1 low)
+> Context: approvals-decisions | Group: Athena Companion
+
+## 1. Orb decision clears BEFORE the approve/reject IPC resolves — failed consent action shown as done (success theater)
+- **Severity**: Critical
+- **Category**: 💀 Silent failure / consent gap
+- **File**: `src/features/plugins/companion/decision/resolveDecision.ts:31` (with `src/features/plugins/companion/decision/useDecisionQueue.ts:101`)
+- **Scenario**: The user answers an approval on the orb bubble (clicks chip `1`/`2`, presses the `;`-leader digit, or speaks the number). `runDecisionOption` fires `option.run()`, attaches a `.catch()` that only writes a Sentry breadcrumb, then *immediately* calls `clearPendingDecision()` and emits a `decision_resolved` "via orb" UX signal — without awaiting the result. `option.run()` ultimately calls `resolve(() => companionApproveAction(approval.id))` in `approvalToDecision`. If that backend call rejects — `load_pending` returns `approval is 'running'/'rejected', not pending` (a concurrent/duplicate resolution), a DB-pool error, or an executor failure that surfaces as a thrown `AppError` — the bubble is already gone and the analytics already recorded the decision as resolved.
+- **Root cause**: Fire-and-forget resolution. The clear + UX signal are unconditional and synchronous; the only error handling is `silentCatch`, which by design surfaces nothing to the user. Unlike the in-chat `ApprovalCard` (which has an `error`/`failedOutcome` state and keeps the card mounted on failure), the orb path has no failure surface at all.
+- **Impact**: On the approval surface this is the worst class of bug: the user believes they approved (or denied) an action and the system silently did neither — or, on an `approved_failed` outcome, believes the action ran when it did not. The decision also disappears from the queue, so it never re-surfaces for a retry; the user has no way to know consent didn't land. Reject failures are symmetric: the user thinks they denied an action that is in fact still pending and can be approved later.
+- **Fix sketch**: Make `runDecisionOption` await `run()` and only `clearPendingDecision()` + record the UX signal on success. On rejection, keep the decision pending and set a visible error token on the bubble (mirror `ApprovalCard`'s `error`/`failedOutcome` states). The `decision_resolved` signal should fire after the resolve, not before.
+
+## 2. Pending approvals never expire — an approval can be acted on long after its target is gone, with no consent freshness
+- **Severity**: High
+- **Category**: 🔮 Latent failure / 🕳️ edge case
+- **File**: `src-tauri/src/commands/companion/approvals.rs:123` (`companion_list_pending_approvals`) and `:488` (`load_pending`)
+- **Scenario**: An approval row is created `status='pending'` and there is no TTL, no `expired` state, and no creation-age check anywhere in the approve path. A card created days ago (`run_persona {persona_id}`, `resolve_human_review {review_id}`, `assign_team`, `enqueue_dev_job`) can be approved at any later time. By then the persona may be deleted, the review already resolved by the user, the team disbanded, the dev project unregistered. `load_pending` only checks `status='pending'` — it does not re-validate that the action target still exists or that the rationale still holds. The list query returns up to 50 pending rows ordered by `created_at DESC`, so stale rows persist indefinitely and keep surfacing on the orb queue.
+- **Root cause**: No lifecycle for pending approvals. Consent has no freshness window, and the executors trust the params captured at propose time without re-checking world state at approve time (except the fleet TOCTOU re-check, which is the lone exception).
+- **Impact**: Consent for an action proposed against one world state is applied against a different world state. `resolve_human_review` against an already-resolved review fails closed (`update_status` transition guard → `approved_failed`), which is acceptable, but `assign_team` / `enqueue_dev_job` / `run_persona` will happily execute against whatever the stale params name — spinning up work the user reasonably forgot they queued, or that no longer matches their intent. Decisions also accumulate forever in the orb queue.
+- **Fix sketch**: Add a `created_at` cutoff to `companion_list_pending_approvals` (and a periodic sweep that flips overdue rows to a new `expired` status). In `load_pending`, reject (fail closed) when the approval is older than a freshness window, returning an error the UI maps to "this proposal expired — ask Athena again."
+
+## 3. resolve_human_review approval auto-fires no event-publish error to the user; an Athena-resolved review can silently lose its decision side effects
+- **Severity**: High
+- **Category**: 💀 Silent failure
+- **File**: `src-tauri/src/commands/companion/approvals.rs:757`
+- **Scenario**: `execute_resolve_human_review` calls `manual_repo::update_status(...)?` (this correctly propagates and fails the approval closed if the review was already resolved), but then does `if let Ok(review) = manual_repo::get_by_id(...)` before calling `publish_review_decision` and `react_to_review_decision`. If `get_by_id` returns `Err` (transient pool contention, row vanished between the update and the read), the status flip has *already committed* but the event publish and the resume-loop reaction are silently skipped. The executor still returns `Ok(...)`, so the approval finalizes as `approved` and the user sees "Human Review marked approved."
+- **Root cause**: The decision (status flip) and its downstream effects (event bus signal + execution resume) are not atomic, and the failure of the second half is swallowed by `if let Ok(...)` with no else branch. The comment even notes this path previously "emitted nothing" — the fix added the publish but left it best-effort.
+- **Impact**: A human review the user (via Athena) approved is recorded as resolved, but the held execution is never resumed and downstream subscribers never see the `review_decision.*` signal. The work the review was gating stalls forever, while the UI and the audit episode both say it was approved — a divergence between the recorded decision and its actual effect.
+- **Fix sketch**: Treat the `get_by_id` failure as an executor error (return `Err` so the outcome is `approved_failed` and the user is told the resolution only half-applied), or restructure so the publish/react happen on the same fetched row that drove the update and any failure is surfaced rather than dropped.
+
+## 4. Corrupt/empty approval payload still renders an actionable card with a blank action
+- **Severity**: Medium
+- **Category**: 🕳️ Edge case / 💀 silent
+- **File**: `src-tauri/src/commands/companion/approvals.rs:149`
+- **Scenario**: `companion_list_pending_approvals` parses each row's payload with `serde_json::from_str(&payload).unwrap_or_default()` and then pulls `action`/`rationale`/`params` with `.unwrap_or("")` / `.unwrap_or("{}")`. A row whose payload is non-JSON or missing `action` (truncated write, manual DB edit, a schema drift) yields a `PendingApproval { action: "", rationale: "", paramsJson: "{}" }`. The frontend `ApprovalCard` renders it with an empty `actionLabel` and an enabled Approve button; the orb `approvalToDecision` surfaces it as a numbered choice with a generic prompt.
+- **Root cause**: Fail-open parsing for display — a malformed approval is shown as a normal, approvable card rather than being filtered out or flagged. (Approving it does fail closed downstream: `load_pending` re-parses with a real error and the unknown-empty action hits the `other =>` arm → `approved_failed`. So this is misleading-UI, not a consent bypass.)
+- **Impact**: The user is presented with a blank, content-free approval card they cannot meaningfully evaluate, on a surface whose entire job is informed consent. Clicking Approve wastes a round-trip and returns a confusing failure. On the orb it consumes the single-decision slot, blocking legitimate decisions behind it.
+- **Fix sketch**: In the list query, skip (or tag as malformed and render non-actionable) any row that fails to parse or lacks a non-empty `action`. Optionally sweep such rows to a terminal status so they stop surfacing.
+
+## 5. In-chat approve failure leaves a stuck card with no recovery path
+- **Severity**: Low
+- **Category**: 🕳️ Edge case / UX-of-consent
+- **File**: `src/features/plugins/companion/ApprovalCard.tsx:118`
+- **Scenario**: In `ApprovalCard.handle`, when `companionApproveAction`/`companionRejectAction` throw (e.g. the backend `load_pending` reports the row is no longer `pending` because the orb surface or a concurrent window already resolved it), the `catch` sets `error` and resets `busy` to `null`. It does **not** call `onResolved`, so the card stays mounted, and the buttons re-enable. The displayed error is the raw backend string ("approval `appr_x` is `rejected`, not pending"), and re-clicking Approve just throws the same error again.
+- **Root cause**: The catch path treats every failure as retryable, but the most common real failure here — "already resolved on another surface" — is terminal. There is no reconciliation against the canonical pending list when an approve fails, so a card that the backend considers gone lingers in the chat.
+- **Impact**: A confusing dead card the user can click forever with no effect, exposing internal id/status strings. Minor (no wrong action is taken) but it is friction on the approval gate and undermines trust that the surface reflects real state.
+- **Fix sketch**: On catch, distinguish "already resolved/not pending" (call `onResolved`/`removeApproval` and refetch the canonical list to drop the card) from genuinely retryable errors; map raw backend strings to a translated message.
