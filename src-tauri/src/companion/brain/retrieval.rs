@@ -53,6 +53,20 @@ const ALWAYS_INCLUDE_TOP_PROCEDURALS: u32 = 6;
 const ALWAYS_INCLUDE_OPEN_BACKLOG: u32 = 6;
 /// Vector top-K for procedurals matched against the user's query.
 const VECTOR_PROCEDURAL_TOPK: usize = 4;
+/// Relevance floor for vector-matched recall. `companion_embedding` is L2
+/// over fastembed-normalized 384-d MiniLM vectors, so distance maps to
+/// cosine as `L2² = 2(1 − cos)`: ~1.0 ≈ cos 0.5 (related), ~1.41 ≈
+/// orthogonal (noise). Without this floor, retrieval was pure top-K-by-rank
+/// (`embeddings::search_similar` returns `distance` but `retrieve` discarded
+/// it), so an off-topic turn still got padded with the least-irrelevant
+/// rows — the "mixing unrelated data" failure. Hits beyond this distance are
+/// dropped, letting a lane return *empty* when nothing is actually close.
+/// Conservative on purpose (keeps cos ≳ 0.15); calibrate against a populated
+/// brain via the `recall_distance` debug log if it proves too loose/tight.
+const MAX_VECTOR_DISTANCE: f32 = 1.30;
+/// Doctrine rides its own kind-scoped scan (see `search_similar_kind`); fetch
+/// a little wider than the top-K so the distance floor has headroom to trim.
+const VECTOR_DOCTRINE_FETCH: usize = 24;
 
 /// What the prompt builder gets back per turn.
 #[derive(Debug, Default)]
@@ -130,19 +144,21 @@ pub async fn retrieve(
     )?;
 
     let mut episode_ids: Vec<String> = Vec::new();
-    let mut doctrine_ids: Vec<String> = Vec::new();
     let mut fact_ids: Vec<String> = Vec::new();
     let mut procedural_ids: Vec<String> = Vec::new();
-    for (id, _dist) in &hits {
+    let mut dropped_far = 0usize;
+    for (id, dist) in &hits {
+        // Relevance floor (see MAX_VECTOR_DISTANCE): top-K-by-rank without a
+        // floor padded recall with the least-irrelevant rows on off-topic
+        // turns. Dropping far hits lets a lane stay empty instead.
+        if *dist > MAX_VECTOR_DISTANCE {
+            dropped_far += 1;
+            continue;
+        }
         match kinds.get(id).map(String::as_str) {
             Some("episode") => {
                 if !recent_ids.contains(id) && episode_ids.len() < VECTOR_EPISODE_TOPK {
                     episode_ids.push(id.clone());
-                }
-            }
-            Some("doctrine") => {
-                if doctrine_ids.len() < VECTOR_DOCTRINE_TOPK {
-                    doctrine_ids.push(id.clone());
                 }
             }
             Some("fact") => {
@@ -159,9 +175,35 @@ pub async fn retrieve(
                     procedural_ids_in_recall.insert(id.clone());
                 }
             }
-            _ => {} // Reflections, goals, rituals, backlog don't ride the vector lane.
+            // Doctrine rides its own kind-scoped lane below; goals/rituals/
+            // backlog don't ride the vector lane at all.
+            _ => {}
         }
     }
+
+    // Doctrine: a dedicated kind-scoped scan so it can't be starved out of the
+    // shared top-K by an episode-heavy corpus (the gap that made memory/policy
+    // questions answer from the constitution instead of retrieval). Same floor.
+    let doctrine_ids: Vec<String> =
+        embeddings::search_similar_kind(pool, embedder, query, "doctrine", VECTOR_DOCTRINE_FETCH)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|(_, dist)| *dist <= MAX_VECTOR_DISTANCE)
+            .take(VECTOR_DOCTRINE_TOPK)
+            .map(|(id, _)| id)
+            .collect();
+
+    tracing::debug!(
+        target: "companion::recall",
+        episodes = episode_ids.len(),
+        doctrine = doctrine_ids.len(),
+        facts = fact_ids.len(),
+        procedurals = procedural_ids.len(),
+        dropped_far,
+        nearest = hits.first().map(|(_, d)| *d),
+        "recall_distance"
+    );
 
     // Episodes: load from disk (markdown), then merge with recent oldest-first.
     let mut extra_episodes = load_episodes_by_ids(pool, &episode_ids).unwrap_or_default();
