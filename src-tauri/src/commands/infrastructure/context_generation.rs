@@ -5,7 +5,7 @@
 //! and creates DevContextGroup + DevContext entries via protocol messages.
 //! Progress is streamed to the frontend via Tauri events.
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use serde::Serialize;
 use serde_json::json;
@@ -19,12 +19,22 @@ use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
 use crate::engine::event_registry::event_name;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::engine::parser::parse_stream_line;
 use crate::engine::prompt;
 use crate::engine::types::StreamLineType;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
 use crate::AppState;
+
+/// Per-project single-flight guard for context-map scans. Two concurrent
+/// rescans of one project interleave `clear_project_context_map` (a full DELETE
+/// of the project's contexts + groups) with each other's freshly-written rows,
+/// leaving an arbitrary partial mix — or a near-empty map if a late clear lands
+/// after the other run finished — silently destroying a hand-curated context
+/// map and orphaning dev_goals/dev_kpis `context_id` references, all while still
+/// reporting success. Mirrors INFLIGHT_TRIGGERS in commands/tools/automations.rs.
+static CONTEXT_GEN_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 // =============================================================================
 // Job state
@@ -465,6 +475,19 @@ pub(crate) fn launch_context_scan(
     delta_mode: bool,
 ) -> Result<serde_json::Value, AppError> {
     let project_id = project.id.clone();
+
+    // Refuse a second concurrent scan of the same project (manual re-scan
+    // double-click, weekly system-op scan overlapping a manual one, or Athena's
+    // register_project auto-scan racing a user scan). The RAII handle is moved
+    // into the spawned task below so it stays held for the scan's full lifetime
+    // and releases on completion/cancellation; early-return paths here drop it
+    // and release immediately. Without it the lazy-clear corrupts the map.
+    let scan_guard = CONTEXT_GEN_INFLIGHT.guard(&project_id).ok_or_else(|| {
+        AppError::Validation(format!(
+            "A context scan is already running for project {project_id}"
+        ))
+    })?;
+
     let scan_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
     CONTEXT_GEN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), ContextGenExtra)?;
@@ -513,6 +536,9 @@ pub(crate) fn launch_context_scan(
     let project_name = project.name.clone();
 
     tokio::spawn(async move {
+        // Hold the per-project single-flight guard for the task's whole life;
+        // it releases on drop when this task ends (success, error, or cancel).
+        let _scan_guard = scan_guard;
         let result = tokio::select! {
             _ = token_for_task.cancelled() => {
                 Err(AppError::Internal("Context generation cancelled by user".into()))
