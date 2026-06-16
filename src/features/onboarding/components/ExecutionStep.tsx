@@ -22,7 +22,10 @@ export function ExecutionStep({
   const { t } = useTranslation();
   const executePersona = useAgentStore((s) => s.executePersona);
   const executionOutput = useAgentStore((s) => s.executionOutput);
-  const activeExecutionId = useAgentStore((s) => s.activeExecutionId);
+  // The execution THIS step started. We must NOT key completion off the global
+  // activeExecutionId — if an unrelated execution was already running when the
+  // step mounted, its terminal event would auto-complete onboarding.
+  const [startedExecId, setStartedExecId] = useState<string | null>(null);
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
   const [executionError, setExecutionError] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export function ExecutionStep({
   // late-arriving registration, and guard the handler against firing into
   // an unmounted/stale component.
   useEffect(() => {
-    if (!activeExecutionId) return;
+    if (!startedExecId) return;
 
     let cancelled = false;
     let unlisten: UnlistenFn | null = null;
@@ -52,7 +55,7 @@ export function ExecutionStep({
       'execution-complete',
       (event) => {
         if (cancelled) return;
-        if (event.payload.execution_id === activeExecutionId) {
+        if (event.payload.execution_id === startedExecId) {
           setFinished(true);
           if (event.payload.status === 'completed') {
             onComplete();
@@ -81,7 +84,7 @@ export function ExecutionStep({
       unlisten = null;
       unlistenRef.current = null;
     };
-  }, [activeExecutionId, onComplete]);
+  }, [startedExecId, onComplete]);
 
   const handleRun = async () => {
     setStarted(true);
@@ -90,6 +93,8 @@ export function ExecutionStep({
     if (!execId) {
       setExecutionError(t.onboarding.execution_failed);
       setStarted(false);
+    } else {
+      setStartedExecId(execId);
     }
   };
 
