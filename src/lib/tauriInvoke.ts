@@ -281,7 +281,22 @@ export function invokeWithTimeout<T>(
     if (argHash !== null) {
       autoKey = `${cmd}:${argHash}`;
       const existing = inflightAutoDedup.get(autoKey);
-      if (existing) return existing as Promise<T>;
+      if (existing) {
+        // Hand each ADDITIONAL concurrent caller an independent deep copy.
+        // Auto-dedup folds identical read-only calls into one round-trip and
+        // would otherwise return the SAME object/array instance to every caller
+        // (held for the TTL), so one caller's in-place mutation (.sort()/.push(),
+        // a mutating store reducer) silently corrupts the others. IPC results are
+        // JSON values, so structuredClone is safe; fall back to the shared ref
+        // only if a value is somehow non-cloneable.
+        return (existing as Promise<T>).then((v) => {
+          try {
+            return structuredClone(v);
+          } catch {
+            return v;
+          }
+        });
+      }
     }
   }
 
