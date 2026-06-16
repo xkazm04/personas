@@ -177,6 +177,20 @@ pub async fn run_execution(
     // Parse model profile
     let mut model_profile = prompt::parse_model_profile(persona.model_profile.as_deref());
 
+    // F10: declarative model-routing cascade. Only fills the model when the persona
+    // has no explicit one — an explicit model_profile.model always wins (mirroring
+    // fabro's "explicit node attr beats stylesheet"). Lets operators tier models by
+    // persona category/id without editing each persona.
+    if model_profile.as_ref().and_then(|p| p.model.as_ref()).is_none() {
+        if let Some(resolved) = crate::engine::model_routing::resolve_for_persona(&pool, &persona) {
+            let profile = model_profile.get_or_insert_with(Default::default);
+            profile.model = Some(resolved.model);
+            if profile.effort.is_none() {
+                profile.effort = resolved.effort;
+            }
+        }
+    }
+
     // Resolve global provider settings (Ollama, LiteLLM) from app settings DB
     if let Some(ref mut profile) = model_profile {
         resolve_global_provider_settings(&pool, profile);

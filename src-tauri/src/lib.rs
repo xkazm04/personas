@@ -2634,6 +2634,8 @@ pub fn run() {
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::get_app_settings_bulk,
             commands::infrastructure::settings::set_app_setting,
+            commands::infrastructure::settings::get_model_routing_rules,
+            commands::infrastructure::settings::set_model_routing_rules,
             commands::infrastructure::settings::delete_app_setting,
             commands::infrastructure::settings::get_quality_gate_config,
             commands::infrastructure::settings::set_quality_gate_config,

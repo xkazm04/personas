@@ -116,6 +116,7 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
+pub mod model_routing;
 pub mod oauth_refresh;
 pub mod oauth_refresh_lock;
 // Ollama-as-CLI-engine is deferred (decision recorded 2026-05-05). The native
