@@ -11,7 +11,14 @@ import { buildSynthesisPrompt } from './buildSynthesisPrompt';
 import { parseSynthesisOutput } from './parseSynthesis';
 import { runPersonaAndWait } from '../shared/runPersona';
 import { downloadStringAsFile, copyToClipboard } from '../shared/downloadFile';
-import type { ResearchReport } from '@/api/researchLab/researchLab';
+import type {
+  ResearchReport,
+  ResearchSource,
+  ResearchHypothesis,
+  ResearchExperiment,
+  ResearchFinding,
+} from '@/api/researchLab/researchLab';
+import { listSources, listHypotheses, listExperiments, listFindings } from '@/api/researchLab/researchLab';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -26,17 +33,20 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const projects = useSystemStore((s) => s.researchProjects);
-  const sources = useSystemStore((s) => s.researchSources);
-  const hypotheses = useSystemStore((s) => s.researchHypotheses);
-  const experiments = useSystemStore((s) => s.researchExperiments);
-  const findings = useSystemStore((s) => s.researchFindings);
-
   const personas = useAgentStore((s) => s.personas);
 
-  const fetchSources = useSystemStore((s) => s.fetchResearchSources);
-  const fetchHypotheses = useSystemStore((s) => s.fetchResearchHypotheses);
-  const fetchExperiments = useSystemStore((s) => s.fetchResearchExperiments);
-  const fetchFindings = useSystemStore((s) => s.fetchResearchFindings);
+  // Fetch THIS report's project data into LOCAL state, not the global store.
+  // Fetching into the shared researchSources/... arrays overwrote whatever the
+  // active project had loaded — so opening a Project-B report while Project A is
+  // active corrupted A's panels, and compileReport could run against A's stale
+  // arrays (wrong data) or an empty in-flight array (false "no sources"). Local
+  // state keeps each drawer's data isolated, and dataLoaded gates compileReport
+  // until B's data is confirmed present.
+  const [sources, setSources] = useState<ResearchSource[]>([]);
+  const [hypotheses, setHypotheses] = useState<ResearchHypothesis[]>([]);
+  const [experiments, setExperiments] = useState<ResearchExperiment[]>([]);
+  const [findings, setFindings] = useState<ResearchFinding[]>([]);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   const [view, setView] = useState<View>('preview');
   const [justCopied, setJustCopied] = useState(false);
@@ -58,11 +68,28 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
   }, [personas]);
 
   useEffect(() => {
-    fetchSources(report.projectId);
-    fetchHypotheses(report.projectId);
-    fetchExperiments(report.projectId);
-    fetchFindings(report.projectId);
-  }, [report.projectId, fetchSources, fetchHypotheses, fetchExperiments, fetchFindings]);
+    let cancelled = false;
+    setDataLoaded(false);
+    const pid = report.projectId;
+    Promise.all([
+      listSources(pid),
+      listHypotheses(pid),
+      listExperiments(pid),
+      listFindings(pid),
+    ])
+      .then(([s, h, e, f]) => {
+        if (cancelled) return;
+        setSources(s);
+        setHypotheses(h);
+        setExperiments(e);
+        setFindings(f);
+        setDataLoaded(true);
+      })
+      .catch(toastCatch('research-report:load', 'Failed to load report data'));
+    return () => {
+      cancelled = true;
+    };
+  }, [report.projectId]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -86,7 +113,9 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
   );
 
   const markdown = useMemo(() => {
-    if (!project) return '';
+    // Gate on dataLoaded so the report is never compiled against an empty or
+    // wrong-project dataset mid-fetch.
+    if (!project || !dataLoaded) return '';
     return compileReport({
       report,
       project,
@@ -96,7 +125,7 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
       findings: projectFindings,
       synthesis: synthesis ?? undefined,
     });
-  }, [project, report, sources, projectHypotheses, projectExperiments, projectFindings, synthesis]);
+  }, [project, dataLoaded, report, sources, projectHypotheses, projectExperiments, projectFindings, synthesis]);
 
   const handleCopy = async () => {
     const ok = await copyToClipboard(markdown);
