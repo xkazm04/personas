@@ -34,7 +34,7 @@
 //! the step or terminates the assignment, then re-tickles the loop.
 
 use std::collections::{HashMap, HashSet};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use serde_json::json;
 use tauri::{AppHandle, Emitter};
@@ -95,14 +95,29 @@ const ASSIGNMENT_MAX_TICKS: u64 = 7200; // 2 hours
 // Public entry — kick off an assignment
 // ----------------------------------------------------------------------------
 
+/// Process-wide set of assignment ids that currently own a live tick task.
+/// `run_assignment` is reached from `start_team_assignment` AND from every
+/// `resume_assignment` caller (review edit/reassign/skip, auto-resume,
+/// orphan-recovery), any of which can fire while a loop is already running.
+/// Without a single-flight guard each call `tokio::spawn`s an independent
+/// `tick_loop` that re-scans the same step DAG and launches the same pending
+/// step again — two persona executions, two PRs, doubled token spend. The
+/// per-loop `in_flight` map only dedupes within one loop instance, not across
+/// instances. Mirrors the singleton-registry pattern used elsewhere.
+fn live_assignments() -> &'static Mutex<HashSet<String>> {
+    static LIVE: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+    LIVE.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
 /// Spawn the orchestrator's tick task for `assignment_id`. The task owns the
 /// assignment's lifecycle until it reaches a terminal status. Does NOT block
 /// the caller — Tauri commands return immediately and the frontend follows
 /// progress via TEAM_ASSIGNMENT_PROGRESS events.
 ///
-/// Idempotency: if the assignment is already terminal or already running
-/// (status check), this is a no-op. The DB transition `queued → running`
-/// is the gate.
+/// Idempotency: single-flight on `assignment_id` via `live_assignments()`. If a
+/// tick task is already live for this assignment, this is a no-op — a resume
+/// that arrives while the loop still runs is absorbed by the running loop
+/// (which re-reads status each tick), instead of forking a second loop.
 pub fn run_assignment(
     pool: Arc<DbPool>,
     app: AppHandle,
@@ -110,6 +125,21 @@ pub fn run_assignment(
     embedding_manager: Option<Arc<EmbeddingManager>>,
     assignment_id: String,
 ) {
+    // Claim the single-flight slot before spawning. `insert` returns false if
+    // the id was already present → another tick task owns this assignment.
+    {
+        let mut live = live_assignments()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+        if !live.insert(assignment_id.clone()) {
+            tracing::debug!(
+                assignment_id = %assignment_id,
+                "run_assignment: tick task already live, skipping duplicate spawn",
+            );
+            return;
+        }
+    }
+
     let deps = OrchestratorDeps {
         pool,
         app,
@@ -117,7 +147,15 @@ pub fn run_assignment(
         embedding_manager,
     };
     tokio::spawn(async move {
-        if let Err(e) = tick_loop(&deps, &assignment_id).await {
+        let result = tick_loop(&deps, &assignment_id).await;
+        // Release the single-flight slot as soon as the loop exits — before the
+        // error branch — so a failed/terminated assignment can be resumed and
+        // re-acquire the slot.
+        live_assignments()
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .remove(&assignment_id);
+        if let Err(e) = result {
             tracing::error!(
                 assignment_id = %assignment_id,
                 error = %e,
