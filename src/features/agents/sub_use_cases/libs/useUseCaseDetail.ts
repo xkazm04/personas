@@ -39,11 +39,20 @@ export function useUseCaseDetail(useCaseId: string) {
       setIsDirty(true);
       setSaveError(null);
       try {
-        await mutateSingleUseCase(selectedPersona.id, useCaseId, (uc) => {
+        const result = await mutateSingleUseCase(selectedPersona.id, useCaseId, (uc) => {
           const partial = typeof update === 'function' ? update(uc) : update;
           return { ...uc, ...partial };
         });
-        setIsDirty(false);
+        // The mutation queue reports failures via the returned result, NOT a
+        // throw — so clearing dirty unconditionally was success theater: a
+        // failed write (persona gone, serialize error) still showed "saved".
+        // Only clear the dirty flag when the write actually applied.
+        if (result.applied) {
+          setIsDirty(false);
+        } else {
+          logger.error('Use case save was not applied', { reason: result.reason });
+          setSaveError(result.reason || 'Failed to save changes');
+        }
       } catch (error) {
         logger.error('Failed to update use case', { error });
         setSaveError(error instanceof Error ? error.message : 'Failed to save changes');
