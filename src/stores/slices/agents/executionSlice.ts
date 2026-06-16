@@ -224,6 +224,12 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
   // Deduplication: track in-flight fetch so concurrent callers reuse the same promise.
   let inflightFetch: { personaId: string; promise: Promise<void> } | null = null;
+  // Monotonic guard: single-slot dedup only covers same-persona overlap, not an
+  // A→B→A interleaving. Each fetch captures a seq; only the newest may write the
+  // visible executions/loading state, so a slow earlier fetch can't clobber a
+  // newer persona's list or flip the spinner off mid-load. The per-persona cache
+  // is always written (it's keyed and correct regardless of order).
+  let fetchExecSeq = 0;
 
   return ({
     executions: [],
@@ -512,10 +518,12 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       });
       return;
     }
+    const seq = ++fetchExecSeq;
     const doFetch = async () => {
       set({ executionsLoading: true, executionsError: false });
       try {
         const executions = await listExecutionsSummary(personaId);
+        const isLatest = seq === fetchExecSeq;
         set((state) => {
           const nextCache = { ...state.executionsCache, [personaId]: executions };
           const nextAt = { ...state.executionsCacheAt, [personaId]: Date.now() };
@@ -531,19 +539,26 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
               delete nextAt[stale];
             }
           }
-          return {
-            executions,
-            executionsPersonaId: personaId,
-            executionsCache: nextCache,
-            executionsCacheAt: nextAt,
-          };
+          // Always refresh the cache; only the newest fetch writes the VISIBLE
+          // list/header so a stale resolution can't clobber a newer persona.
+          return isLatest
+            ? {
+                executions,
+                executionsPersonaId: personaId,
+                executionsCache: nextCache,
+                executionsCacheAt: nextAt,
+              }
+            : { executionsCache: nextCache, executionsCacheAt: nextAt };
         });
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });
-        set({ executionsError: true });
+        if (seq === fetchExecSeq) set({ executionsError: true });
       } finally {
-        set({ executionsLoading: false });
-        inflightFetch = null;
+        // Only the newest fetch owns the loading flag + dedup slot.
+        if (seq === fetchExecSeq) {
+          set({ executionsLoading: false });
+          inflightFetch = null;
+        }
       }
     };
     const promise = doFetch();
