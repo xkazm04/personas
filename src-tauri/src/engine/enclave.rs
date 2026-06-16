@@ -208,10 +208,14 @@ pub fn seal(
 /// 3. Whether the creator is a trusted peer
 pub fn verify(pool: &DbPool, enclave_bytes: &[u8]) -> Result<EnclaveVerifyResult, AppError> {
     let enclave_hash = hex::encode(Sha256::digest(enclave_bytes));
-    let (manifest, sig, persona_json) = parse_enclave(enclave_bytes)?;
+    let (manifest, manifest_json, sig, persona_json) = parse_enclave(enclave_bytes)?;
 
-    // Verify Ed25519 signature over manifest
-    let manifest_json = serde_json::to_string(&manifest)?;
+    // Verify the Ed25519 signature over the EXACT manifest.json bytes from the
+    // archive — the same bytes seal() signed. Previously this re-serialized the
+    // parsed struct with serde_json::to_string (compact), but seal() signed
+    // to_string_pretty (indented): the byte strings differ, so every honest
+    // enclave failed verification, and verifying a round-tripped struct silently
+    // dropped any unsigned/extra fields the on-disk manifest carried.
     let signature_valid = identity::verify_signature(
         &sig.signer_public_key_b64,
         manifest_json.as_bytes(),
@@ -250,10 +254,13 @@ const MAX_DECOMPRESSED_SIZE: u64 = 50 * 1024 * 1024;
 
 fn parse_enclave(
     enclave_bytes: &[u8],
-) -> Result<(EnclaveManifest, EnclaveSignature, String), AppError> {
+) -> Result<(EnclaveManifest, String, EnclaveSignature, String), AppError> {
     let mut archive = zip::ZipArchive::new(std::io::Cursor::new(enclave_bytes))
         .map_err(|e| AppError::Validation(format!("Invalid enclave archive: {e}")))?;
 
+    // Keep the RAW manifest.json bytes: the signature is verified over exactly
+    // these (the same bytes seal() signed and wrote), never over a re-serialized
+    // struct, so reformatting/reordering/extra fields can't slip past the check.
     let manifest_json = read_zip_entry(&mut archive, "manifest.json")?;
     let manifest: EnclaveManifest = serde_json::from_str(&manifest_json)
         .map_err(|e| AppError::Validation(format!("Invalid enclave manifest: {e}")))?;
@@ -264,7 +271,7 @@ fn parse_enclave(
 
     let persona_json = read_zip_entry(&mut archive, "persona.json")?;
 
-    Ok((manifest, sig, persona_json))
+    Ok((manifest, manifest_json, sig, persona_json))
 }
 
 fn read_zip_entry<R: Read + std::io::Seek>(
