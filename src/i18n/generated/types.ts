@@ -9820,6 +9820,15 @@ export type Translations = {
     portability: {
       title: string;
       subtitle: string;
+      storage_title: string;
+      storage_subtitle: string;
+      storage_db_size: string;
+      storage_total: string;
+      storage_removable: string;
+      storage_prune: string;
+      storage_confirm: string;
+      storage_confirm_yes: string;
+      storage_pruned: string;
       workspace_overview: string;
       loading_stats: string;
       stats_error: string;

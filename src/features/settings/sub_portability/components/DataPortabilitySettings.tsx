@@ -5,6 +5,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { useDataPortability } from '../libs/useDataPortability';
 import { ExportSection } from './ExportSection';
 import { CredentialPortability } from './CredentialPortability';
+import { StorageUsageSection } from './StorageUsageSection';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function StatCard({ label, value }: { label: string; value: number }) {
@@ -87,6 +88,8 @@ export default function DataPortabilitySettings() {
             onCredImport={dp.handleCredImport}
             onCredImportWithResolutions={dp.handleCredImportWithResolutions}
           />
+
+          <StorageUsageSection />
 
           {/* Error display */}
           {dp.errorMsg && (

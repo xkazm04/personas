@@ -115,3 +115,9 @@ export const sendAppNotification = (title: string, body: string) =>
 
 export const getNotificationDeliveryStats = () =>
   invoke<import('@/lib/bindings/NotificationDeliveryStats').NotificationDeliveryStats>("get_notification_delivery_stats");
+
+// F18: storage usage + prune
+export const storageUsage = () =>
+  invoke<import('@/lib/bindings/StorageReport').StorageReport>("storage_usage");
+export const pruneStorage = (olderThanHours?: number, dryRun?: boolean) =>
+  invoke<import('@/lib/bindings/PruneResult').PruneResult>("prune_storage", { olderThanHours, dryRun });
