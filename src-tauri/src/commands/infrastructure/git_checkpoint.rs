@@ -30,9 +30,24 @@ pub async fn dev_checkpoint_stage(
     status: String,
 ) -> Result<Option<String>, AppError> {
     require_auth_sync(&state)?;
-    git_checkpoint::checkpoint_stage(Path::new(&repo_dir), &run_id, &stage, &status)
+    let sha = git_checkpoint::checkpoint_stage(Path::new(&repo_dir), &run_id, &stage, &status)
         .await
-        .map_err(AppError::Internal)
+        .map_err(AppError::Internal)?;
+    // Record the stage→SHA in the index so the run's checkpoints are queryable.
+    if let Some(ref sha) = sha {
+        crate::db::repos::dev_run_checkpoints::insert(&state.db, &run_id, &stage, sha, &status)?;
+    }
+    Ok(sha)
+}
+
+/// List a dev-tools run's recorded checkpoints (oldest first).
+#[tauri::command]
+pub fn dev_list_run_checkpoints(
+    state: State<'_, Arc<AppState>>,
+    run_id: String,
+) -> Result<Vec<crate::db::repos::dev_run_checkpoints::DevRunCheckpoint>, AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::dev_run_checkpoints::list(&state.db, &run_id)
 }
 
 /// Fork a fresh run branch from a checkpoint SHA (verifies ancestry first).

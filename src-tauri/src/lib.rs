@@ -2647,6 +2647,7 @@ pub fn run() {
             commands::infrastructure::git_checkpoint::dev_checkpoint_stage,
             commands::infrastructure::git_checkpoint::dev_fork_from_checkpoint,
             commands::infrastructure::git_checkpoint::dev_rollback_to_checkpoint,
+            commands::infrastructure::git_checkpoint::dev_list_run_checkpoints,
             commands::infrastructure::settings::delete_app_setting,
             commands::infrastructure::settings::get_quality_gate_config,
             commands::infrastructure::settings::set_quality_gate_config,
