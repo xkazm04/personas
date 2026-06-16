@@ -937,6 +937,11 @@ function Body(props: BodyProps) {
   // can stop it; `spokenTiersRef` de-dupes tiers within a turn.
   const progressAudioRef = useRef<HTMLAudioElement | null>(null);
   const progressUrlRef = useRef<string | null>(null);
+  // Main spoken-reply clip — single-owner, like the progress channel, so two
+  // back-to-back replies (non-blocking composer / autonomous beats) don't talk
+  // over each other and the user can stop a long answer.
+  const mainAudioRef = useRef<HTMLAudioElement | null>(null);
+  const mainUrlRef = useRef<string | null>(null);
   const spokenTiersRef = useRef<Set<number>>(new Set());
   // Variant B — model-authored progress beats. `progressFiredRef` counts the
   // `PROGRESS:` lines already surfaced this turn (streamingText only grows,
@@ -1482,6 +1487,17 @@ function Body(props: BodyProps) {
     }
   }, []);
 
+  // Stop + release the in-flight main spoken reply (so a new reply, or closing
+  // the panel mid-speech, never leaves two answers playing at once).
+  const stopMainAudio = useCallback(() => {
+    mainAudioRef.current?.pause();
+    mainAudioRef.current = null;
+    if (mainUrlRef.current) {
+      URL.revokeObjectURL(mainUrlRef.current);
+      mainUrlRef.current = null;
+    }
+  }, []);
+
   // Synthesize + play one short progress clip on the exclusive progress
   // channel (latest beat/ack wins — we stop the prior so they never stack).
   // Bails when voice isn't active or the real reply is already queued.
@@ -1605,9 +1621,10 @@ function Body(props: BodyProps) {
             audioUrl: null as string | null,
           };
           setPendingPlayback(playback);
-          // The real reply is committed — cut off any ack/heartbeat clip
-          // so it doesn't talk over Athena's answer.
+          // The real reply is committed — cut off any ack/heartbeat clip AND
+          // any still-playing prior reply so they don't talk over this answer.
           stopProgressAudio();
+          stopMainAudio();
           synthesizeTts(
             result.ttsText,
             synthesisCredentialId,
@@ -1617,10 +1634,21 @@ function Body(props: BodyProps) {
           )
             .then((url) => {
               setPlaybackAudioUrl(url);
-              const { done } = playAudio(url);
+              // Single-owner: a reply that lands while this one is still playing
+              // calls stopMainAudio() above first, so they never stack.
+              mainUrlRef.current = url;
+              const { audio, done } = playAudio(url);
+              mainAudioRef.current = audio;
               done
                 .then(() => markPlaybackPlayed())
-                .catch(silentCatch('companion_tts_play'));
+                .catch(silentCatch('companion_tts_play'))
+                .finally(() => {
+                  if (mainUrlRef.current === url) {
+                    URL.revokeObjectURL(url);
+                    mainUrlRef.current = null;
+                    mainAudioRef.current = null;
+                  }
+                });
             })
             .catch(silentCatch('companion_tts_synthesize'));
         }
@@ -1647,7 +1675,7 @@ function Body(props: BodyProps) {
         useCompanionStore.getState().setStreamingBeat(null);
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
 
   // Async-UX phase 4 — non-blocking send. The composer is never disabled;
