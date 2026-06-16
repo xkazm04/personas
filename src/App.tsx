@@ -1,4 +1,4 @@
-import { Component, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
+import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
@@ -34,6 +34,16 @@ import { lazyRetry } from "@/lib/lazyRetry";
 initPseudoLocale();
 
 const appLogger = createLogger("App");
+
+// Dev-only "click a component → copy its source path" overlay (Ctrl+Shift+L).
+// Conditional + lazy so the module and its chunk are absent from prod builds:
+// in prod `import.meta.env.DEV` is replaced with `false`, the dynamic import is
+// never referenced, and Rollup drops it.
+const DevInspector = import.meta.env.DEV
+  ? lazy(() =>
+      import("@/lib/dev/DevInspector").then((m) => ({ default: m.DevInspector })),
+    )
+  : null;
 
 // --- Startup freeze attribution (dev only) ----------------------------------
 // The freeze watchdog reports `lastAction` when the main thread stalls, but the
@@ -270,6 +280,11 @@ export default function App() {
       <AppKeyboardProvider>
         <ModalStackProvider>
         <DevMobilePreviewShortcut />
+        {DevInspector && (
+          <Suspense fallback={null}>
+            <DevInspector />
+          </Suspense>
+        )}
         <ShortcutCheatSheet />
         <WorkspaceShortcuts />
         <KeyboardNavMode />

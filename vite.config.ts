@@ -7,6 +7,10 @@ import {
   needsTransform,
   transformForWebView2,
 } from "./scripts/webview2-compat";
+// Dev-only: stamps host JSX elements with data-loc for the in-app DevInspector
+// (Ctrl+Shift+L). Self-gates to `command === 'serve' && PERSONAS_INSPECTOR=1`,
+// so it never reaches a production / tauri build and is off in normal dev.
+import { devSourceLocPlugin } from "./scripts/babel/dev-source-loc-vite-plugin.mjs";
 
 const host = process.env.TAURI_DEV_HOST;
 const isMobile = !!process.env.TAURI_ANDROID || !!process.env.TAURI_IOS;
@@ -29,6 +33,9 @@ export default defineConfig(async () => ({
   // Use relative paths so assets resolve under tauri:// protocol in production
   base: "./",
   plugins: [
+    // DevInspector source-location stamping. Self-gated (serve + env flag) and
+    // enforce:'pre', so it runs before oxc lowers JSX and is a no-op otherwise.
+    devSourceLocPlugin(),
     // Codegen (template checksums, connector seed, agent icon sprites,
     // i18n locale split, command names, ts-rs binding regen, n8n limits,
     // host-triple cache check) is owned by `scripts/run-codegen.mjs` via

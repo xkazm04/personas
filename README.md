@@ -326,6 +326,8 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Vite dev server only (port 1420) — frontend without Tauri |
+| `npm run dev:inspect` | `npm run dev` with the DevInspector source-mapping flag (see below) |
+| `npm run tauri:dev:inspect` | `tauri:dev:lite` with the DevInspector flag — click a component to copy its source path |
 | `npm run build` | TypeScript check + Vite production build (builder tier) |
 | `npm run build:{starter,team,builder}` | Tier-specific frontend bundle |
 | `npm run lint` | ESLint on `src/` |
@@ -347,6 +349,23 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 For end-to-end build documentation (architecture differences, ARM64 vs x64
 on Windows, codegen pipeline, profiles, ONNX Runtime bundling, Android setup),
 see **[docs/development/build.md](./docs/development/build.md)**.
+
+### DevInspector — click a component, copy its source path
+
+A dev-only overlay for grabbing a component's `src/.../File.tsx:line` and pasting
+it straight into an AI coding CLI (Claude Code, etc.). Off by default and never
+present in production builds.
+
+```bash
+npm run tauri:dev:inspect     # full app with source mapping on
+npm run dev:inspect           # frontend-only / faster iteration
+```
+
+Then in the app, press **`;`** (enters keyboard nav mode) then **`i`** (Inspect)
+to arm it. Hover highlights the element and pins a `File.tsx:line` chip at the
+cursor; **click** copies the call-site path, **Alt+click** copies the literal
+element, and **Esc** exits. Full design + tuning notes live in
+**[docs/development/dev-inspector.md](./docs/development/dev-inspector.md)**.
 
 ## Project Structure
 
