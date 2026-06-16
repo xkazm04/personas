@@ -468,6 +468,8 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
 
     let mut delivered = 0usize;
     let mut newest_at: Option<String> = None;
+    // Earliest event (by created_at) that had ANY failed delivery this tick.
+    let mut earliest_failed: Option<String> = None;
 
     for event in &events {
         let event_ctx = event_to_json(event);
@@ -481,6 +483,11 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
             let outcome = processor.process(pool, sub, event, &event_ctx).await;
             if outcome.ok {
                 delivered += 1;
+            } else if earliest_failed
+                .as_deref()
+                .map_or(true, |c| event.created_at.as_str() < c)
+            {
+                earliest_failed = Some(event.created_at.clone());
             }
         }
 
@@ -493,7 +500,27 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
         }
     }
 
-    if let Some(at) = newest_at {
+    // Advance the watermark, but NEVER past the earliest event that failed
+    // delivery this tick. Previously the watermark jumped to the newest event
+    // regardless of success, so a transient endpoint outage (5xx/timeout/DNS
+    // blip / not-yet-decryptable credential) permanently dropped every event
+    // due during it — `get_recent_after` only returns `created_at > watermark`.
+    // Holding the watermark below the first failure makes a later tick re-fetch
+    // and re-deliver those events once the endpoint recovers. Re-delivering
+    // already-succeeded events at/after that timestamp is the accepted cost of a
+    // time-based watermark; a per-(event,subscription) retry cursor is the
+    // deeper fix.
+    let new_watermark: Option<String> = match &earliest_failed {
+        None => newest_at,
+        Some(failed_at) => events
+            .iter()
+            .map(|e| e.created_at.as_str())
+            .filter(|c| *c < failed_at.as_str())
+            .max()
+            .map(str::to_string),
+    };
+
+    if let Some(at) = new_watermark {
         sub_repo::set_watermark(pool, &at)?;
     }
 
