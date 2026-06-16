@@ -470,7 +470,14 @@ async fn run_persona_node(
         }
     }
 
-    // Timed out
+    // Timed out — cancel the still-running execution so its CLI process doesn't
+    // linger as a zombie spawn (and keep burning budget) after the poll loop
+    // gives up. Previously the node was just marked failed while the underlying
+    // process ran on untracked.
+    let persona_id = Some(member.persona_id.clone());
+    let _ = engine
+        .cancel_execution(&exec.id, db, persona_id.as_deref())
+        .await;
     update_node_status(
         statuses,
         &member.id,
@@ -650,13 +657,12 @@ enum ApprovalOutcome {
 /// race between the poll loop exit and the reason check.
 async fn poll_for_approval(
     registry: &ActiveProcessRegistry,
-    run_id: &str,
-    member_id: &str,
+    approval_key: &str,
+    flag: Arc<AtomicBool>,
     cancelled: &Arc<AtomicBool>,
 ) -> ApprovalOutcome {
-    let approval_key = format!("{}:{}", run_id, member_id);
-    let flag = registry.register_run("pipeline_approval", &approval_key);
-
+    // The flag was armed by the caller BEFORE the approval UI was exposed, so an
+    // approval that lands before this loop starts is already reflected in it.
     // Wait indefinitely for a human decision. A human-in-the-loop gate is not a
     // failure mode — the previous 1-hour cap force-rejected legitimate overnight /
     // out-of-hours approvals and broke the whole run. The only exits are an
@@ -784,6 +790,18 @@ pub async fn run_pipeline(ctx: PipelineContext) {
                     .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
             });
 
+            // Arm the approval gate BEFORE announcing that approval is needed.
+            // approve_pipeline_node's cancel_run only sets the flag if the key
+            // is already registered, and register_run installs a fresh flag=false
+            // — so a human who approves in the window between this emit and
+            // poll_for_approval's old internal register_run would hit an
+            // unregistered key (no-op) and then have their approval reset to
+            // false, hanging the run forever. Arming here closes that window.
+            let approval_key = format!("{}:{}", ctx.run_id, member_id);
+            let approval_flag = ctx
+                .process_registry
+                .register_run("pipeline_approval", &approval_key);
+
             // Emit approval-needed event
             let _ = ctx.app.emit(
                 event_name::PIPELINE_APPROVAL_NEEDED,
@@ -805,8 +823,8 @@ pub async fn run_pipeline(ctx: PipelineContext) {
 
             let outcome = poll_for_approval(
                 &ctx.process_registry,
-                &ctx.run_id,
-                member_id,
+                &approval_key,
+                approval_flag,
                 &ctx.cancelled,
             )
             .await;
