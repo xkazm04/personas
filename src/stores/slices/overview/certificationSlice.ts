@@ -28,6 +28,11 @@ export interface CertificationSlice {
   clearEvalRunDetail: () => void;
 }
 
+// Monotonic guard for loadEvalRunDetail: clicking two runs issues two
+// un-deduped fetches; without this the slower one resolving last overwrites the
+// newer run's detail, so the panel shows the wrong run.
+let certDetailSeq = 0;
+
 export const createCertificationSlice: StateCreator<
   OverviewStore,
   [],
@@ -82,11 +87,14 @@ export const createCertificationSlice: StateCreator<
   },
 
   loadEvalRunDetail: async (runId: string) => {
+    const seq = ++certDetailSeq;
     set({ certDetailLoading: true, certError: null });
     try {
       const detail = await fetchEvalRun(runId);
+      if (seq !== certDetailSeq) return; // a newer run was selected — drop stale result
       set({ evalRunDetail: detail, certDetailLoading: false });
     } catch (err) {
+      if (seq !== certDetailSeq) return;
       const msg = err instanceof Error ? err.message : String(err);
       log.warn("certificationSlice", "loadEvalRunDetail failed", { runId, error: msg });
       set({ certError: msg, certDetailLoading: false });
