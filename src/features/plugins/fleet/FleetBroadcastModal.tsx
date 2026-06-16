@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback, useEffect, type ReactNode } from 'react
 import { Send, X, Hourglass, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { toastCatch } from '@/lib/silentCatch';
+import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { writeInput } from '@/api/fleet/fleet';
 import { FleetStatusDots } from './FleetStatusDots';
@@ -84,11 +84,20 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
         failed += 1;
       }
     }
-    if (failed > 0) {
-      toastCatch(
-        'FleetBroadcastModal:send',
-        `Broadcast delivered to ${selected.size - failed} of ${selected.size} sessions`,
-      )(new Error('partial delivery'));
+    // Always surface the real outcome — the single most important feedback in
+    // the feature is "did my fleet-wide command land?". Previously a full
+    // success showed NO toast at all, and a total failure rendered "delivered to
+    // 0 of N" through an error toast (read as partial success). Three explicit
+    // outcomes now: all-sent (green), partial (amber), none (red).
+    const total = selected.size;
+    const sent = total - failed;
+    const addToast = useToastStore.getState().addToast;
+    if (sent === total) {
+      addToast(sent === 1 ? 'Sent to 1 session' : `Sent to ${sent} sessions`, 'success');
+    } else if (sent > 0) {
+      addToast(`Sent to ${sent} of ${total} sessions — ${failed} failed`, 'warning');
+    } else {
+      addToast(`Broadcast failed — 0 of ${total} delivered`, 'error');
     }
     setSending(false);
     setText('');
