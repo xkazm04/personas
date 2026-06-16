@@ -313,7 +313,7 @@ async fn spawn_stdio_session(
     session.next_id += 1;
 
     write_session_jsonrpc(&mut session.stdin, &init_req).await?;
-    let _init_resp = read_session_jsonrpc(&mut session.reader).await?;
+    let _init_resp = read_session_message(&mut session.reader).await?;
 
     // notifications/initialized
     let initialized = serde_json::json!({
@@ -918,11 +918,12 @@ async fn fetch_tools_paginated_stdio(
             Some(c) => serde_json::json!({ "cursor": c }),
             None => serde_json::json!({}),
         };
-        let list_req = jsonrpc_request(session.next_id, "tools/list", params);
+        let req_id = session.next_id;
+        let list_req = jsonrpc_request(req_id, "tools/list", params);
         session.next_id += 1;
 
         write_session_jsonrpc(&mut session.stdin, &list_req).await?;
-        let list_resp = read_session_jsonrpc(&mut session.reader).await?;
+        let list_resp = read_session_response(&mut session.reader, req_id).await?;
 
         let result = list_resp
             .get("result")
@@ -977,8 +978,9 @@ async fn execute_tool_on_session(
     }
 
     // Call tool
+    let req_id = session.next_id;
     let call_req = jsonrpc_request(
-        session.next_id,
+        req_id,
         "tools/call",
         serde_json::json!({
             "name": tool_name,
@@ -988,7 +990,7 @@ async fn execute_tool_on_session(
     session.next_id += 1;
 
     write_session_jsonrpc(&mut session.stdin, &call_req).await?;
-    let call_resp = read_session_jsonrpc(&mut session.reader).await?;
+    let call_resp = read_session_response(&mut session.reader, req_id).await?;
 
     parse_tool_result(&call_resp)
 }
@@ -1636,7 +1638,10 @@ async fn write_session_jsonrpc(
 }
 
 /// Read a JSON-RPC response from a session's buffered stdout reader.
-async fn read_session_jsonrpc(
+/// Read exactly ONE Content-Length-framed JSON-RPC message. Used directly only
+/// for the init handshake (fresh session, reliable FIFO); pooled reuse paths go
+/// through `read_session_response` which correlates by request id.
+async fn read_session_message(
     reader: &mut tokio::io::BufReader<tokio::process::ChildStdout>,
 ) -> Result<serde_json::Value, AppError> {
     use tokio::io::AsyncBufReadExt;
@@ -1702,6 +1707,46 @@ async fn read_session_jsonrpc(
 
     serde_json::from_str(&json_str)
         .map_err(|e| AppError::Internal(format!("Invalid JSON from MCP server: {e}")))
+}
+
+/// Max messages to drain while awaiting a specific response id before declaring
+/// the session desynced.
+const MAX_MCP_DRAIN: usize = 16;
+
+/// Read JSON-RPC messages until one whose `id` matches `expected_id`. MCP
+/// servers may interleave notifications (no `id`), and on a desynced/stale warm
+/// pooled session a late response for a PRIOR request can be sitting in the
+/// pipe — without correlation, request N+1 would parse request N's payload and
+/// return the wrong tool's result to the wrong caller (cross-credential/persona
+/// data leak), logged as success. Skip notifications and stale/mismatched
+/// responses; error (the caller kills the session and retries fresh) if we drain
+/// too many or hit EOF.
+async fn read_session_response(
+    reader: &mut tokio::io::BufReader<tokio::process::ChildStdout>,
+    expected_id: u64,
+) -> Result<serde_json::Value, AppError> {
+    for _ in 0..MAX_MCP_DRAIN {
+        let msg = read_session_message(reader).await?;
+        match msg.get("id").and_then(|v| v.as_u64()) {
+            Some(id) if id == expected_id => return Ok(msg),
+            None => {
+                tracing::debug!(
+                    expected_id,
+                    "MCP: skipping notification while awaiting response"
+                );
+            }
+            Some(other) => {
+                tracing::warn!(
+                    expected_id,
+                    got_id = other,
+                    "MCP: discarding stale/out-of-order response (session desync)"
+                );
+            }
+        }
+    }
+    Err(AppError::Internal(format!(
+        "MCP server did not return a response for request id {expected_id} within {MAX_MCP_DRAIN} messages (session desynced)"
+    )))
 }
 
 fn parse_tool_result(resp: &serde_json::Value) -> Result<McpToolResult, AppError> {
