@@ -112,6 +112,13 @@ pub async fn shared_event_relay_tick(
                 let _ = repo::set_error(pool, &sub.id, None);
 
                 let mut sub_published = 0u32;
+                // Track the fired_at of the last CONTIGUOUSLY-published firing.
+                // The cursor may only advance through that prefix: if a publish
+                // fails, advancing past it (as the old code did, unconditionally
+                // to firings.last()) would skip the failed firing forever. On
+                // failure we stop the batch so ordering is preserved and the
+                // remainder re-polls next tick.
+                let mut last_published_at: Option<&str> = None;
                 for firing in &firings {
                     // 3. Publish to local event bus
                     let event_type = format!("shared:{}", sub.slug);
@@ -130,20 +137,21 @@ pub async fn shared_event_relay_tick(
                             emit_event_bus(app, &event);
                             total_new += 1;
                             sub_published += 1;
+                            last_published_at = Some(firing.fired_at.as_str());
                         }
                         Err(e) => {
                             tracing::warn!(
                                 sub_id = %sub.id,
-                                "SharedEventRelay: failed to publish event: {e}"
+                                "SharedEventRelay: failed to publish event, holding cursor: {e}"
                             );
+                            break;
                         }
                     }
                 }
 
-                // 4. Advance cursor with actual batch count
-                if let Some(last) = firings.last() {
-                    let count = if sub_published > 0 { sub_published } else { 1 };
-                    let _ = repo::update_cursor(pool, &sub.id, &last.fired_at, count);
+                // 4. Advance the cursor only through the published prefix.
+                if let Some(fired_at) = last_published_at {
+                    let _ = repo::update_cursor(pool, &sub.id, fired_at, sub_published);
                 }
             }
             Err(e) => {
