@@ -170,7 +170,7 @@ export function SharedEventsTab() {
                     onSubscribe={() => handleSubscribe(entry.id)}
                     onUnsubscribe={() => {
                       const sub = subscriptions.find(s => s.catalogEntryId === entry.id);
-                      if (sub) handleUnsubscribe(sub.id);
+                      return sub ? handleUnsubscribe(sub.id) : undefined;
                     }}
                   />
                 ))}

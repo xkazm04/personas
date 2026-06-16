@@ -1,14 +1,31 @@
+import { useState } from 'react';
 import { Check, Plus, Star, Users } from 'lucide-react';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 
 interface Props {
   entry: SharedEventCatalogEntry;
   isSubscribed: boolean;
-  onSubscribe: () => void;
-  onUnsubscribe: () => void;
+  onSubscribe: () => void | Promise<void>;
+  onUnsubscribe: () => void | Promise<void>;
 }
 
 export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }: Props) {
+  // In-flight guard: subscribe/unsubscribe are async, but the button stays
+  // clickable while the request is outstanding. Without this, rapid double-
+  // clicks fire two subscribe (or subscribe+unsubscribe) calls that race —
+  // leaving a duplicate subscription or a wrong final state. We await the
+  // handler (which may be sync or async) and disable the button meanwhile.
+  const [busy, setBusy] = useState(false);
+  const handleToggle = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await (isSubscribed ? onUnsubscribe() : onSubscribe());
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-2 p-3 rounded-modal bg-card/60 border border-primary/10 hover:border-primary/20 transition-colors">
       {/* Header */}
@@ -48,8 +65,9 @@ export function CatalogCard({ entry, isSubscribed, onSubscribe, onUnsubscribe }:
         </div>
 
         <button
-          onClick={isSubscribed ? onUnsubscribe : onSubscribe}
-          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-input transition-colors ${
+          onClick={handleToggle}
+          disabled={busy}
+          className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium rounded-input transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
             isSubscribed
               ? 'bg-emerald-500/10 text-emerald-400 hover:bg-red-500/10 hover:text-red-400'
               : 'bg-primary/10 text-primary hover:bg-primary/20'
