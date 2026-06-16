@@ -32,6 +32,7 @@ describe('analytics sink registry', () => {
     expect(() => {
       noopSink.feature({ section: 'overview', action: 'view' });
       noopSink.interaction({ category: 'persona', action: 'create' });
+      noopSink.conversion({ step: 'persona_created', ordinal: 2, installId: 'x' });
       noopSink.session({
         counts: {},
         totalVisits: 0,

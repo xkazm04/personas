@@ -174,3 +174,13 @@ export {
 } from './sink';
 export { buildSessionSummary } from './summary';
 export { SECTIONS, TAB_DIMENSIONS } from './navCatalog';
+export {
+  ACTIVATION_FUNNEL,
+  type ActivationStep,
+  getInstallId,
+  markActivation,
+  getReachedActivations,
+  hasReachedActivation,
+  captureReferrerOnce,
+  getReferrer,
+} from './activation';

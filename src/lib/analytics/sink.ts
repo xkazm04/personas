@@ -15,7 +15,7 @@
  * user IDs, persona content, or credentials. The Sentry adapter additionally
  * runs every event through Sentry's `beforeSend` PII scrubber (see sentry.ts).
  */
-import { trackFeature, trackInteraction, trackSessionSummary } from '../sentry';
+import { trackFeature, trackInteraction, trackSessionSummary, trackConversion } from '../sentry';
 
 /** A section or tab visit. */
 export interface FeatureVisitEvent {
@@ -32,6 +32,21 @@ export interface InteractionEvent {
   category: string;
   action: string;
   label?: string;
+}
+
+/**
+ * An activation-funnel conversion — a milestone reached for the FIRST time on
+ * this install (`activation.ts` dedupes so each fires at most once). These are
+ * the events a growth funnel (activation rate, time-to-value, K-factor) is
+ * built from; nav/interaction events are too noisy for that.
+ */
+export interface ConversionEvent {
+  /** Funnel step id, e.g. "persona_created" | "execution_completed" | "shared" | "imported". */
+  step: string;
+  /** 1-based position of this step in the activation funnel. */
+  ordinal: number;
+  /** Pseudonymous, opaque install id (random; not derived from anything personal). */
+  installId: string;
 }
 
 /**
@@ -56,6 +71,7 @@ export interface AnalyticsSink {
   feature(event: FeatureVisitEvent): void;
   interaction(event: InteractionEvent): void;
   session(summary: SessionSummary): void;
+  conversion(event: ConversionEvent): void;
 }
 
 /** Default sink: forwards usage events to the existing Sentry pipeline. */
@@ -63,6 +79,7 @@ export const sentrySink: AnalyticsSink = {
   feature: (e) => trackFeature(e.section, e.tab, e.action),
   interaction: (e) => trackInteraction(e.category, e.action, e.label),
   session: (s) => trackSessionSummary(s),
+  conversion: (e) => trackConversion(e.step, e.ordinal, e.installId),
 };
 
 /** Sink that discards everything — used when telemetry is off or in tests. */
@@ -70,6 +87,7 @@ export const noopSink: AnalyticsSink = {
   feature: () => {},
   interaction: () => {},
   session: () => {},
+  conversion: () => {},
 };
 
 let current: AnalyticsSink = sentrySink;

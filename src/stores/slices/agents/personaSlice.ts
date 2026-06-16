@@ -337,6 +337,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         notification_channels: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
+      void import("@/lib/analytics").then((a) => a.markActivation("persona_created"));
       return persona;
     } catch (err) {
       reportError(err, "Failed to create persona", set);

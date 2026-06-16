@@ -104,6 +104,31 @@ export function trackInteraction(
 }
 
 /**
+ * Track an activation-funnel conversion (first persona created, first execution
+ * completed, first share, first import, …).
+ *
+ * Unlike feature/interaction events these are fired AT MOST ONCE per install
+ * (the caller dedupes), so they're the events a growth funnel is built from.
+ * Carries a pseudonymous, opaque `install_id` (random; not derived from
+ * anything personal) so conversions can be sequenced into a funnel without
+ * identifying the user. No persona content, no credentials.
+ */
+export function trackConversion(
+  step: string,
+  ordinal: number,
+  installId: string,
+): void {
+  Sentry.withScope((scope) => {
+    scope.setTag("event_type", "conversion");
+    scope.setTag("conv.step", step);
+    scope.setTag("conv.ordinal", String(ordinal));
+    scope.setTag("conv.install_id", installId);
+    scope.setLevel("info");
+    Sentry.captureMessage(`conversion: ${step}`, "info");
+  });
+}
+
+/**
  * Emit the end-of-session usage rollup as a single Sentry event.
  *
  * One info-level `session_summary` per session keeps quota predictable while

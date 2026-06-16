@@ -54,9 +54,10 @@ export function initStoreBus(): void {
     useToastStore.getState().addToast(message, type, duration);
   });
 
-  // Execution completed — systemStore emits tour event
+  // Execution completed — systemStore emits tour event + activation milestone
   storeBus.on('execution:completed', () => {
     useSystemStore.getState().emitTourEvent('tour:execution-complete');
+    void import('@/lib/analytics').then((a) => a.markActivation('execution_completed'));
   });
 
   // Persona selected — systemStore updates navigation chrome + records the
@@ -82,9 +83,11 @@ export function initStoreBus(): void {
     useAgentStore.getState().selectPersona(personaId);
   });
 
-  // Network change (bundle import / share link import) — agentStore refreshes personas
+  // Network change (bundle import / share link import) — agentStore refreshes
+  // personas; the receiving end of virality is an `imported` activation.
   storeBus.on('network:personas-changed', () => {
     void useAgentStore.getState().fetchPersonas();
+    void import('@/lib/analytics').then((a) => a.markActivation('imported'));
   });
 
   // Trigger CRUD — agentStore refreshes persona detail
