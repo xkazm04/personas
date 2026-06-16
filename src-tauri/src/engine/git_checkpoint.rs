@@ -89,6 +89,30 @@ pub async fn checkpoint_stage(
     Ok(Some(sha))
 }
 
+/// Non-disruptive checkpoint for a **live** repo the user is actively working in.
+/// Captures the working tree as a dangling commit via `git stash create` — which
+/// does NOT touch HEAD, the index, or the working tree — and keeps it reachable
+/// under `refs/personas/checkpoints/<run_id>/<checkpoint_id>` (invisible to
+/// `git branch`/`status`). Returns the snapshot SHA, or `None` when the tree is
+/// clean. Use this (not [`checkpoint_stage`], which switches branches) for
+/// auto-checkpointing inside a repo the user owns.
+///
+/// Limitation: `git stash create` captures tracked changes only, not untracked
+/// files — acceptable for a non-disruptive snapshot; noted for future work.
+pub async fn snapshot_stage(
+    dir: &Path,
+    run_id: &str,
+    checkpoint_id: &str,
+) -> Result<Option<String>, String> {
+    let sha = git(dir, &["stash", "create", &format!("personas checkpoint {run_id}")]).await?;
+    if sha.is_empty() {
+        return Ok(None); // clean tree — nothing to snapshot
+    }
+    let refname = format!("refs/personas/checkpoints/{run_id}/{checkpoint_id}");
+    git(dir, &["update-ref", &refname, &sha]).await?;
+    Ok(Some(sha))
+}
+
 /// Create a fresh run branch from a checkpoint SHA (fork-a-new-attempt). Verifies
 /// the SHA is an ancestor of the current branch tip before forking.
 pub async fn fork_from_checkpoint(
@@ -167,5 +191,33 @@ mod tests {
         // A bogus all-zero SHA is not an ancestor.
         let err = fork_from_checkpoint(&dir, "0000000000000000000000000000000000000000", "run3").await;
         assert!(err.is_err(), "fork from non-ancestor should fail");
+    }
+
+    #[tokio::test]
+    async fn snapshot_is_non_disruptive() {
+        let dir = temp_dir("snap");
+        init_repo(&dir).await;
+        let branch_before = git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"]).await.unwrap();
+        let head_before = git(&dir, &["rev-parse", "HEAD"]).await.unwrap();
+
+        tokio::fs::write(dir.join("seed.txt"), "modified").await.unwrap();
+        let sha = snapshot_stage(&dir, "run9", "ckpt9").await.unwrap().expect("snapshot of dirty tree");
+        assert_eq!(sha.len(), 40);
+
+        // HEAD, branch, and working tree must all be untouched.
+        assert_eq!(git(&dir, &["rev-parse", "--abbrev-ref", "HEAD"]).await.unwrap(), branch_before);
+        assert_eq!(git(&dir, &["rev-parse", "HEAD"]).await.unwrap(), head_before);
+        assert_eq!(tokio::fs::read_to_string(dir.join("seed.txt")).await.unwrap(), "modified");
+
+        // The hidden ref keeps the snapshot reachable.
+        let refsha = git(&dir, &["rev-parse", "refs/personas/checkpoints/run9/ckpt9"]).await.unwrap();
+        assert_eq!(refsha, sha);
+    }
+
+    #[tokio::test]
+    async fn snapshot_clean_tree_is_none() {
+        let dir = temp_dir("snapclean");
+        init_repo(&dir).await;
+        assert!(snapshot_stage(&dir, "run10", "c10").await.unwrap().is_none());
     }
 }
