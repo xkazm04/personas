@@ -28,6 +28,21 @@ use crate::engine::cron;
 use crate::engine::persona_jobs::{self, KIND_MEMORY_CURATION};
 use crate::error::AppError;
 
+/// Parse a DB timestamp tolerantly. `curation_schedule::upsert`/`mark_run_now`
+/// persist via SQLite `datetime('now')`, which yields `2026-06-16 14:30:00`
+/// (space separator, no offset) — and `DateTime::<Utc>::from_str` is RFC3339-only,
+/// so it rejected every such value. Both reference arms then fell through to
+/// `now`, making `next_fire` always `> now` → the scheduler never enqueued a
+/// curation run for any persona. Accept the space-separated form as well as
+/// RFC3339 so existing rows parse without a migration.
+fn parse_db_timestamp(s: &str) -> Option<DateTime<Utc>> {
+    s.parse::<DateTime<Utc>>().ok().or_else(|| {
+        chrono::NaiveDateTime::parse_from_str(s.trim(), "%Y-%m-%d %H:%M:%S")
+            .ok()
+            .map(|n| n.and_utc())
+    })
+}
+
 /// Tick interval for the scheduler worker. Set to 60s because cron's
 /// finest granularity is 1 minute — checking more frequently would
 /// burn CPU without finding any due-fire transitions.
@@ -78,9 +93,9 @@ pub fn tick(pool: &DbPool) -> Result<usize, AppError> {
         //   - otherwise use created_at (first-fire path: persona was
         //     just scheduled; fire on the first matching minute)
         let reference: DateTime<Utc> = match schedule.last_curation_at.as_deref() {
-            Some(s) => match s.parse() {
-                Ok(dt) => dt,
-                Err(_) => {
+            Some(s) => match parse_db_timestamp(s) {
+                Some(dt) => dt,
+                None => {
                     tracing::warn!(
                         persona_id = %schedule.persona_id,
                         last_curation_at = %s,
@@ -89,10 +104,7 @@ pub fn tick(pool: &DbPool) -> Result<usize, AppError> {
                     now
                 }
             },
-            None => match schedule.created_at.parse() {
-                Ok(dt) => dt,
-                Err(_) => now,
-            },
+            None => parse_db_timestamp(&schedule.created_at).unwrap_or(now),
         };
 
         let next_fire = match cron::next_fire_time(&parsed, reference) {
