@@ -629,11 +629,22 @@ pub fn set_cache_tokens(
     )
 }
 
+/// Scrub credential-shaped secrets from the free-text execution fields before
+/// they are persisted (and thereby forwarded to the inspector / exports / Sentry
+/// / companion memory). No-op when redaction is disabled. See `engine::redact`.
+fn redact_execution_fields(input: &mut UpdateExecutionStatus) {
+    use crate::engine::redact;
+    redact::redact_opt(&mut input.output_data);
+    redact::redact_opt(&mut input.error_message);
+    redact::redact_opt(&mut input.business_outcome);
+}
+
 pub fn update_status(
     pool: &DbPool,
     id: &str,
-    input: UpdateExecutionStatus,
+    mut input: UpdateExecutionStatus,
 ) -> Result<(), AppError> {
+    redact_execution_fields(&mut input);
     timed_query!("persona_executions", "persona_executions::update_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
@@ -706,8 +717,9 @@ pub fn update_status(
 pub fn update_status_if_running(
     pool: &DbPool,
     id: &str,
-    input: UpdateExecutionStatus,
+    mut input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
+    redact_execution_fields(&mut input);
     timed_query!(
         "persona_executions",
         "persona_executions::update_status_if_running",
@@ -831,8 +843,9 @@ pub fn claim_for_instance(
 pub fn update_status_if_not_final(
     pool: &DbPool,
     id: &str,
-    input: UpdateExecutionStatus,
+    mut input: UpdateExecutionStatus,
 ) -> Result<bool, AppError> {
+    redact_execution_fields(&mut input);
     timed_query!(
         "persona_executions",
         "persona_executions::update_status_if_not_final",

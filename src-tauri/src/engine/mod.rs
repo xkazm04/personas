@@ -159,6 +159,7 @@ pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
 pub mod recipe_seed;
+pub mod redact;
 pub mod render_plan;
 pub mod resource_listing;
 pub mod rotation;

@@ -1102,6 +1102,22 @@ pub fn run() {
                 });
             }
 
+            // Trace redaction: secrets are scrubbed from persisted execution
+            // output by default (engine::redact). Honor an explicit user opt-out
+            // persisted in a prior session; absent/any-other value keeps it ON.
+            #[cfg(feature = "desktop")]
+            {
+                let pool = state_arc.db.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(Some(value)) = db::repos::core::settings::get(
+                        &pool,
+                        crate::engine::redact::REDACT_TRACES_ENABLED_KEY,
+                    ) {
+                        crate::engine::redact::set_enabled(value != "false");
+                    }
+                });
+            }
+
             // Radio: footer-anchored dual-engine player (YouTube IFrame for
             // curated tracklists, HTML5 audio for internet-radio streams).
             // Stations are baked into the binary; runtime state (current
