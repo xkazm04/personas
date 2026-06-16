@@ -1897,8 +1897,41 @@ fn drain_and_start_next(
 
                 tasks.lock().await.insert(exec_id_for_tasks, handle);
             } else {
-                // Context was missing (e.g., cancelled while queued) -- release the slot
+                // Context was missing — the queue and the context map diverged
+                // (e.g. a cancel removed the saved context after drain_next_global
+                // had already popped the queue entry). Release the running slot we
+                // just claimed, mark the orphaned row failed so it can't linger in
+                // `queued` forever (the zombie reaper only sweeps `running`), and
+                // then RE-DRAIN so the freed slot is offered to the next
+                // candidate. Every other terminal path re-drains; this branch used
+                // to dead-end, permanently stranding the rest of the persona's
+                // queue on a single divergence.
                 tracker.lock().await.remove_running(&persona_id, &exec_id);
+                persist_status_if_not_final(
+                    &pool,
+                    Some(&app),
+                    &exec_id,
+                    UpdateExecutionStatus {
+                        status: ExecutionState::Failed,
+                        error_message: Some(
+                            "Queued execution context was lost before it could start".into(),
+                        ),
+                        ..Default::default()
+                    },
+                )
+                .await;
+                drain_and_start_next(
+                    tracker,
+                    tasks,
+                    queued_contexts,
+                    cancelled_flags,
+                    child_pids,
+                    app,
+                    pool,
+                    circuit_breaker,
+                    healing_personas,
+                )
+                .await;
             }
         }
     }) // close Box::pin(async move { ... })
@@ -3313,7 +3346,35 @@ fn spawn_healing_chain(
                 }),
             );
 
-            // 11. Process healing output: parse fixes and apply to DB
+            // 11. Process healing output — ONLY if the healing run itself
+            // succeeded (and wasn't cancelled). A healing session that timed out,
+            // was rate-limited, or crashed mid-stream can still have emitted a
+            // `{"healing_complete":{"should_retry":true}}` line earlier in its
+            // stdout. Applying those fixes to the DB and retrying the ORIGINAL
+            // task off that half-finished / possibly-wrong diagnosis is the
+            // worst-case "recovery code that fails silently": it presents a
+            // failed heal as a successful repair and burns budget (or worsens the
+            // persona) on a misdiagnosis. `should_retry` is LLM-reported and must
+            // be gated on the heal actually succeeding.
+            if !result.success || cancelled.load(Ordering::Acquire) {
+                tracing::warn!(
+                    execution_id = %original_exec_id,
+                    persona_id = %persona_id,
+                    "AI healing run did not succeed; not applying fixes or scheduling a retry"
+                );
+                let _ = app.emit(
+                    event_name::AI_HEALING_STATUS,
+                    serde_json::json!({
+                        "execution_id": original_exec_id,
+                        "persona_id": persona_id,
+                        "phase": "failed",
+                        "healing_execution_id": exec_id,
+                    }),
+                );
+                return;
+            }
+
+            // Parse fixes and apply to DB.
             let _ = app.emit(
                 event_name::AI_HEALING_STATUS,
                 serde_json::json!({
