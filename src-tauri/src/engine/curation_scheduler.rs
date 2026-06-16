@@ -132,6 +132,24 @@ pub fn tick(pool: &DbPool) -> Result<usize, AppError> {
         params.insert("threshold".to_string(), serde_json::Value::Number(7.into()));
         let params_value = serde_json::Value::Object(params);
 
+        // Advance the schedule watermark BEFORE enqueuing. The previous order
+        // (enqueue, then mark) double-enqueued whenever mark_run_now failed:
+        // the watermark stayed put, so the next tick saw the schedule still due
+        // and enqueued a second job. Two queued rows are two DISTINCT jobs that
+        // both run — pop_next_queued's atomic UPDATE only dedups a single row,
+        // it does not collapse two. A scheduled curation pass is an expensive
+        // paid CLI run, so we fail closed: if the watermark can't advance we
+        // skip this tick (at worst a missed run, recovered next tick) rather
+        // than risk a double-run.
+        if let Err(e) = curation_schedule::mark_run_now(pool, &schedule.persona_id) {
+            tracing::warn!(
+                persona_id = %schedule.persona_id,
+                error = %e,
+                "curation_scheduler: mark_run_now failed; skipping enqueue this tick to avoid a double-run"
+            );
+            continue;
+        }
+
         match persona_jobs::enqueue(
             pool,
             KIND_MEMORY_CURATION,
@@ -145,24 +163,15 @@ pub fn tick(pool: &DbPool) -> Result<usize, AppError> {
                     job_id = %job_id,
                     "curation_scheduler: enqueued scheduled memory_curation_run"
                 );
-                if let Err(e) = curation_schedule::mark_run_now(pool, &schedule.persona_id) {
-                    tracing::warn!(
-                        persona_id = %schedule.persona_id,
-                        error = %e,
-                        "curation_scheduler: mark_run_now failed (will re-fire next tick)"
-                    );
-                    // Don't increment enqueued in this case — the row will be
-                    // tried again next tick and may produce a duplicate. The
-                    // worker_tick's pop_next_queued atomic UPDATE prevents
-                    // double-execution at the job level even if we double-enqueue.
-                }
                 enqueued += 1;
             }
             Err(e) => {
+                // Watermark already advanced, so this missed run is recovered
+                // at the next cron fire rather than retried immediately.
                 tracing::warn!(
                     persona_id = %schedule.persona_id,
                     error = %e,
-                    "curation_scheduler: enqueue failed, skipping this tick"
+                    "curation_scheduler: enqueue failed after watermark advance; will fire next cron tick"
                 );
             }
         }
