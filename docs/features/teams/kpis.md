@@ -1,6 +1,6 @@
 # KPIs — the outcome layer above Goals
 
-> Design + roadmap: [`docs/plans/kpi-driven-orchestration.md`](../plans/kpi-driven-orchestration.md).
+> Design + roadmap: [`docs/plans/kpi-driven-orchestration.md`](../../plans/kpi-driven-orchestration.md).
 > Status: P0–P2 shipped (schema, proposal scan, Teams UI). P3 evaluation runner,
 > P4 autonomous goal derivation, P5 certification §10 — upcoming.
 
@@ -152,7 +152,7 @@ layer on the user's behalf — all **approval-gated**: `calibrate_kpi` (adjust
 target / date / tier / cadence / status, or draw the warn/critical lines),
 `evaluate_kpi` (measure now), and `scan_kpis` (propose new KPIs). Recalibrating
 `crit_at` is how she changes *when* a KPI derives a goal. Full reference:
-[companion → Project KPIs](companion/README.md).
+[companion → Project KPIs](../companion/README.md).
 
 ## Data model
 

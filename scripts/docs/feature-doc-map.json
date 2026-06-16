@@ -17,6 +17,31 @@
       "tourEvent": "tour:persona-promoted",
       "description": "Coaches user from prompt → draft → adopted persona via the build session"
     },
+    "pipeline-project": {
+      "stepFile": null,
+      "tourEvent": "tour:pipeline-project-explored",
+      "description": "Teams tour — stage 1: register a Dev Tools project + connect source control"
+    },
+    "pipeline-context": {
+      "stepFile": null,
+      "tourEvent": "tour:pipeline-context-explored",
+      "description": "Teams tour — stage 2: context-map scan (groups + contexts)"
+    },
+    "pipeline-kpi": {
+      "stepFile": null,
+      "tourEvent": "tour:pipeline-kpis-explored",
+      "description": "Teams tour — stage 3: scan for KPIs (the outcome layer)"
+    },
+    "pipeline-team": {
+      "stepFile": null,
+      "tourEvent": "tour:pipeline-team-explored",
+      "description": "Teams tour — stage 4: assemble a team from a preset"
+    },
+    "pipeline-orchestrate": {
+      "stepFile": null,
+      "tourEvent": "tour:pipeline-orchestrate-explored",
+      "description": "Teams tour — stage 5: give the team a goal + Assign & Run (orchestration)"
+    },
     "team-canvas-intro": {
       "stepFile": null,
       "tourEvent": "tour:team-canvas-explored",
@@ -372,7 +397,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/dev-tools.md",
+      "doc": "docs/features/teams/dev-tools.md",
       "sourceGlobs": [
         "src/features/plugins/dev-tools/**",
         "src-tauri/src/commands/infrastructure/dev_tools.rs"
@@ -383,7 +408,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/goals/README.md",
+      "doc": "docs/features/teams/goals.md",
       "sourceGlobs": [
         "src/features/teams/sub_goals/**"
       ]
@@ -479,7 +504,7 @@
       "marketingModule": "schedules"
     },
     {
-      "doc": "docs/features/pipeline/README.md",
+      "doc": "docs/features/teams/pipeline.md",
       "sourceGlobs": [
         "src/features/teams/**",
         "src-tauri/src/commands/teams/**",
@@ -490,6 +515,11 @@
         "src-tauri/src/engine/team_assignment_matching.rs"
       ],
       "onboardingFlows": [
+        "pipeline-project",
+        "pipeline-context",
+        "pipeline-kpi",
+        "pipeline-team",
+        "pipeline-orchestrate",
         "team-canvas-intro",
         "team-chaining",
         "team-assignments",
@@ -527,7 +557,7 @@
       ]
     },
     {
-      "doc": "docs/features/kpis.md",
+      "doc": "docs/features/teams/kpis.md",
       "sourceGlobs": [
         "src/features/teams/sub_kpis/**",
         "src/api/devTools/kpis.ts",
