@@ -6,7 +6,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use ts_rs::TS;
 
+use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
+
+/// Single-flight per `owner/repo` for patch-release cuts. Concurrent CICD runs
+/// would otherwise both read the same latest release, compute the same next
+/// tag, and race two create calls — the loser hits GitHub's 422 "tag already
+/// exists". Serializing makes the second run observe the first's new release as
+/// latest and correctly no-op (commits_since == 0).
+static PATCH_RELEASE_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 /// Module-scoped HTTP client shared across all `GitHubClient` instances.
 ///
@@ -477,6 +485,23 @@ impl GitHubClient {
         base_branch: &str,
         dry_run: bool,
     ) -> Result<PatchReleaseOutcome, AppError> {
+        // Serialize real (non-dry) runs per repo so two concurrent CICD cuts
+        // can't both create the same next tag. Dry runs create nothing, so they
+        // skip the guard (and never block a real run). Released on return.
+        let _inflight = if dry_run {
+            None
+        } else {
+            Some(
+                PATCH_RELEASE_INFLIGHT
+                    .guard(&format!("{owner}/{repo}"))
+                    .ok_or_else(|| {
+                        AppError::RateLimited(format!(
+                            "A patch release for {owner}/{repo} is already in progress"
+                        ))
+                    })?,
+            )
+        };
+
         let latest = self.get_latest_release(owner, repo).await?;
         let previous_tag = latest.as_ref().map(|r| r.tag_name.clone());
 
