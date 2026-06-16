@@ -70,7 +70,10 @@ function AgentRow({ agent }: { agent: CronAgent }) {
           <Clock className="w-3 h-3 shrink-0" />
           <span className="font-mono">{schedule}</span>
           {agent.cron_expression && (
-            <span className="text-amber-400/50 text-[10px] font-medium">UTC</span>
+            // The backend evaluates the cron in agent.timezone when set, else in
+            // system-local time — NOT UTC. Hard-coding "UTC" here mislabelled the
+            // common (no-timezone) case. Show the real zone, or "local".
+            <span className="text-amber-400/50 text-[10px] font-medium">{agent.timezone ?? 'local'}</span>
           )}
           {agent.description && (
             <>
