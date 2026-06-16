@@ -1384,7 +1384,18 @@ export const createTourSlice: StateCreator<
       const steps = getActiveTourSteps(s.tourActiveTourId);
       const nextIndex = s.tourCurrentStepIndex + 1;
       if (nextIndex >= steps.length) {
-        get().finishTour();
+        // End of the step list. finishTour() force-marks EVERY step complete and
+        // sets the per-tour completion badge — so only call it when the steps are
+        // genuinely all done. A "Skip" on the last incomplete step also lands
+        // here; it must NOT silently record the whole tour as 100% complete.
+        // In that case just close the tour, leaving completion honest.
+        const allDone = steps.every((st) => s.tourStepCompleted[st.id]);
+        if (allDone) {
+          get().finishTour();
+        } else {
+          set({ tourActive: false, tourResumePending: false, tourHighlightTestId: null });
+          persistCurrentTour();
+        }
         return;
       }
       set({
