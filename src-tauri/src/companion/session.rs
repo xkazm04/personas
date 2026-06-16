@@ -551,7 +551,13 @@ pub async fn send_turn(
                     &session_id,
                     None,
                     &system_prompt,
-                    &user_message,
+                    // Must be effective_user_message, NOT user_message — the
+                    // first call (above) uses it. For Autonomous/External/
+                    // Proactive turns user_message is the raw sentinel /
+                    // unframed body; sending it on the stale-session retry feeds
+                    // the model `<<athena-autonomous-continuation>>` verbatim or
+                    // drops the "not the user" provenance framing.
+                    &effective_user_message,
                     &user_db,
                     browser_tools,
                 ),
