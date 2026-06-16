@@ -24,7 +24,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use tauri::AppHandle;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::{AllowOrigin, CorsLayer};
 
 use crate::db::models::*;
 use crate::db::repos::core::personas as persona_repo;
@@ -120,10 +120,40 @@ pub fn management_router(state: ManagementState) -> Router {
         .layer(middleware::from_fn_with_state(state_arc, require_api_key))
         .layer(
             CorsLayer::new()
-                .allow_origin(Any)
+                // NOT allow_origin(Any): this loopback server hosts state-changing,
+                // credential-bearing routes (/api/execute, /api/proxy, /api/build,
+                // version rollback). With Any, any website the user visits could
+                // fetch() these cross-origin and read the response, so a single
+                // Bearer-token leak (renderer XSS, a logged token) would be
+                // weaponizable from a random browser tab. Restrict to the app's own
+                // webview / loopback dev origins; non-browser clients (MCP/CLI) send
+                // no Origin and are unaffected by CORS.
+                .allow_origin(AllowOrigin::predicate(|origin, _parts| {
+                    origin
+                        .to_str()
+                        .map(is_trusted_management_origin)
+                        .unwrap_or(false)
+                }))
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
         )
+}
+
+/// Browser origins permitted to call the loopback management API. Only the app's
+/// own webview (Tauri v2 production custom scheme — platform-dependent) and
+/// loopback dev origins (devUrl is `http://localhost:1420`) are trusted; an
+/// arbitrary website's `Origin` is rejected at the CORS layer. Non-browser
+/// clients (MCP/CLI) do not send an `Origin` header and are unaffected.
+fn is_trusted_management_origin(origin: &str) -> bool {
+    matches!(
+        origin,
+        // Tauri v2 production webview origins (macOS/Linux/iOS use the custom
+        // scheme; Windows/Android use the http scheme).
+        "tauri://localhost" | "http://tauri.localhost" | "https://tauri.localhost"
+    ) || origin == "http://localhost"
+        || origin == "http://127.0.0.1"
+        || origin.starts_with("http://localhost:")
+        || origin.starts_with("http://127.0.0.1:")
 }
 
 // =============================================================================
