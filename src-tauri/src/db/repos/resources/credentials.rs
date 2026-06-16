@@ -604,6 +604,27 @@ pub fn set_scoped_resources(pool: &DbPool, id: &str, blob: Option<&str>) -> Resu
     )
 }
 
+/// Sanitize credential metadata for storage WITHOUT ever corrupting it.
+///
+/// `sanitize_secrets` is a log/error-string redactor (a regex that rewrites
+/// `key: value` → `key: [secret]`), not JSON-aware. Applied to the structured
+/// ledger metadata — which holds keys/values like `session_id`, `auth_type`,
+/// `healthcheck_config` that contain the substrings it matches — it can turn
+/// valid JSON (`"session_id":"abc"`) into invalid JSON, and the next
+/// `CredentialLedger::parse` silently falls back to `Default`, wiping the entire
+/// ledger (OAuth expiry/backoff, healthcheck history, usage counters). Real
+/// secrets never live in this column (they're in `credential_fields`), so the
+/// redaction is redundant here — keep it only when it leaves the JSON intact,
+/// otherwise persist the original so a write can never destroy the ledger.
+fn sanitize_ledger_json(meta: &str) -> String {
+    let sanitized = sanitize_secrets(meta);
+    if serde_json::from_str::<serde_json::Value>(&sanitized).is_ok() {
+        sanitized
+    } else {
+        meta.to_string()
+    }
+}
+
 pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Result<(), AppError> {
     timed_query!(
         "persona_credentials",
@@ -613,7 +634,7 @@ pub fn update_metadata(pool: &DbPool, id: &str, metadata: Option<&str>) -> Resul
             let conn = pool.get()?;
 
             // Sanitize metadata to prevent leaking secrets in plaintext column
-            let sanitized_metadata = metadata.map(sanitize_secrets);
+            let sanitized_metadata = metadata.map(sanitize_ledger_json);
 
             let rows = conn.execute(
                 "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
@@ -682,7 +703,7 @@ pub fn patch_metadata_on_conn(
 
     let next_meta_json = serde_json::Value::Object(base_obj);
     let next_meta_str = serde_json::to_string(&next_meta_json)?;
-    let sanitized_meta = sanitize_secrets(&next_meta_str);
+    let sanitized_meta = sanitize_ledger_json(&next_meta_str);
     let now = chrono::Utc::now().to_rfc3339();
 
     let updated_rows = conn.execute(
@@ -755,7 +776,7 @@ pub fn increment_refresh_backoff_atomic(
             let (new_fail_count, backoff_secs) = ledger.increment_refresh_backoff(backoff_steps);
 
             let next_meta_str = ledger.to_json_string()?;
-            let sanitized_meta = sanitize_secrets(&next_meta_str);
+            let sanitized_meta = sanitize_ledger_json(&next_meta_str);
             let now = chrono::Utc::now().to_rfc3339();
 
             tx.execute(
@@ -827,7 +848,7 @@ pub fn append_healthcheck_metadata(
             );
 
             let next_meta = ledger.to_json_string()?;
-            let sanitized = sanitize_secrets(&next_meta);
+            let sanitized = sanitize_ledger_json(&next_meta);
 
             tx.execute(
                 "UPDATE persona_credentials SET metadata = ?1, updated_at = ?2 WHERE id = ?3",
@@ -955,7 +976,7 @@ where
             mutator(&mut ledger);
 
             let next_meta_str = ledger.to_json_string()?;
-            let sanitized_meta = sanitize_secrets(&next_meta_str);
+            let sanitized_meta = sanitize_ledger_json(&next_meta_str);
             let now = chrono::Utc::now().to_rfc3339();
 
             tx.execute(
