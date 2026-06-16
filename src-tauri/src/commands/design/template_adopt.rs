@@ -27,17 +27,22 @@ use super::n8n_transform::{
 /// expected hash (possible tampering).
 fn check_template_integrity(template_name: &str, content_json: &str) -> Result<(), AppError> {
     let integrity = crate::engine::template_checksums::verify_template(template_name, content_json);
+    // NOTE: the checksum manifest is keyed by full file path and hashes the
+    // entire template file, but every real caller passes a bare name/label plus
+    // payload-only JSON — so verify_template returns is_known_template=false for
+    // 100% of adoptions. The previous release-build hard reject therefore bricked
+    // the ENTIRE Presets feature + Dev Clone on shipped binaries (while passing
+    // in dev, where this branch is compiled out). Until the manifest key/content
+    // contract is reconciled with the call contract (follow-up), do NOT block
+    // adoption on "unknown" — log it. The known-but-tampered branch below still
+    // rejects once a template genuinely resolves in the manifest.
     #[cfg(not(debug_assertions))]
     if !integrity.is_known_template {
         tracing::warn!(
             template = %template_name,
             actual = %integrity.actual_hash,
-            "SECURITY: Unknown template rejected during adoption"
+            "template integrity: unknown template (manifest key/content contract mismatch) — allowing adoption; integrity check is inert pending manifest reconciliation"
         );
-        return Err(AppError::Validation(
-            "Template integrity verification failed: template is not in the trusted checksum manifest."
-                .into(),
-        ));
     }
 
     if integrity.is_known_template && !integrity.valid {
