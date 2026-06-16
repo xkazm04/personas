@@ -31,22 +31,63 @@ export function AriaLiveProvider({ children }: { children: ReactNode }) {
   const [politeKey, setPoliteKey] = useState(0);
   const [assertiveKey, setAssertiveKey] = useState(0);
 
-  const announce = useCallback((message: string, politeness: Politeness = 'polite') => {
+  // A burst of announce() calls in one tick would otherwise collapse: React
+  // coalesces the setState calls so only the LAST message reaches the live
+  // region — intermediate messages are dropped and never spoken. Queue messages
+  // and flush one per interval so each gets its own render commit + key remount,
+  // i.e. its own screen-reader utterance.
+  const queueRef = useRef<Array<{ message: string; politeness: Politeness }>>([]);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const drain = useCallback(() => {
+    const next = queueRef.current.shift();
+    if (!next) {
+      timerRef.current = null;
+      return;
+    }
     const key = ++keyRef.current;
-    if (politeness === 'assertive') {
-      setAssertiveMessage(message);
+    if (next.politeness === 'assertive') {
+      setAssertiveMessage(next.message);
       setAssertiveKey(key);
     } else {
-      setPoliteMessage(message);
+      setPoliteMessage(next.message);
       setPoliteKey(key);
     }
+    // Space consecutive messages so the screen reader finishes one before the
+    // next replaces the region's text.
+    timerRef.current = setTimeout(drain, 150);
   }, []);
+
+  const announce = useCallback(
+    (message: string, politeness: Politeness = 'polite') => {
+      queueRef.current.push({ message, politeness });
+      if (timerRef.current === null) {
+        timerRef.current = setTimeout(drain, 0);
+      }
+    },
+    [drain],
+  );
 
   // Register imperative handle so non-component code (store subscribers) can announce.
   useEffect(() => {
     _registerAnnounce(announce);
-    return () => { _announce = null; };
+    return () => {
+      // Only clear if WE are still the registered handle. A remount or a second
+      // provider may have replaced it; blindly nulling would silence the live
+      // one (announceImperative would no-op for the rest of the session).
+      if (_announce === announce) _announce = null;
+    };
   }, [announce]);
+
+  // Drop any pending drain timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <AriaLiveContext.Provider value={{ announce }}>
