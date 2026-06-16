@@ -36,6 +36,7 @@ use std::time::Duration;
 
 use super::baselines;
 use crate::db::DbPool;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
 /// Event-driven leg: the engine pings this every time a persona execution
@@ -645,6 +646,22 @@ pub async fn review_recent_executions(
     app: &tauri::AppHandle,
     #[cfg(feature = "ml")] embedder: Option<&std::sync::Arc<crate::engine::embedder::EmbeddingManager>>,
 ) -> Result<usize, AppError> {
+    // In-flight guard. A triage CLI turn can run longer than the 5-min tick
+    // interval, and log_wake is written only AFTER it finishes — so the wake
+    // gate (which decides `due` from MAX(created_at) of athena_wake_log) would
+    // re-pass on the next tick and spawn a SECOND concurrent triage over an
+    // overlapping window: double token/$ spend and racing cursor advances (one
+    // pass advances mid-flight of the other → re-triage or a silently skipped
+    // window). The "evaluate now" button + debouncer add more entrypoints. Hold
+    // a per-surface lease for the whole pass so an overlapping call early-returns
+    // instead of starting a second CLI turn. (The budget path hardened this same
+    // class with an atomic try_consume; the wake gate did not.)
+    static TRIAGE_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
+    let _inflight = match TRIAGE_INFLIGHT.guard("exec_triage") {
+        Some(handle) => handle,
+        None => return Ok(0),
+    };
+
     // Seed the cursor on first run so we don't backfill history.
     let cursor = read_cursor(sys_db);
     if crate::db::repos::core::settings::get(sys_db, CURSOR_KEY)
