@@ -1656,12 +1656,9 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         // Active window gate: skip triggers outside their configured active hours.
         // The schedule still advances so triggers don't pile up as overdue.
         if !trigger.is_within_active_window(now) {
-            let cfg = trigger.parse_config();
-            let next = sched_logic::compute_next_from_config(
-                &cfg,
-                now,
-                crate::engine::cron::seed_hash(&trigger.id),
-            );
+            // Anchored on the trigger's prior scheduled fire so intervals keep
+            // their cadence even when this slot is skipped (drift fix).
+            let next = sched_logic::compute_next_trigger_at(&trigger, now);
             let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
             tracing::debug!(trigger_id = %trigger.id, "Trigger outside active window, skipping");
             continue;
@@ -1713,11 +1710,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
 
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
-                let next = sched_logic::compute_next_from_config(
-                    &cfg,
-                    now,
-                    crate::engine::cron::seed_hash(&trigger.id),
-                );
+                let next = sched_logic::compute_next_trigger_at(&trigger, now);
                 let _ =
                     trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
                 continue;
@@ -1849,12 +1842,9 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             }
         }
 
-        // 3. Compute next trigger time first
-        let next = sched_logic::compute_next_from_config(
-            &cfg,
-            now,
-            crate::engine::cron::seed_hash(&trigger.id),
-        );
+        // 3. Compute next trigger time first (anchored on the prior scheduled
+        // fire so interval cadences don't drift later each cycle).
+        let next = sched_logic::compute_next_trigger_at(&trigger, now);
 
         if trigger.trigger_type == "schedule"
             && schedule_hourly_cap_exceeded(

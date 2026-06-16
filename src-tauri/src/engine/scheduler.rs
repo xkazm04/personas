@@ -32,6 +32,44 @@ pub(crate) fn compute_next_from_config(
     now: DateTime<Utc>,
     seed: u64,
 ) -> Option<String> {
+    compute_next_from_config_anchored(cfg, now, seed, None)
+}
+
+/// Next interval fire time. With an `anchor` (the prior scheduled fire), advance
+/// by whole intervals from it and catch up past any missed slots so the result
+/// is the next cadence slot strictly after `now` — this eliminates the drift of
+/// `now + interval`, which re-anchored on the scheduler's (always-later)
+/// processing time every cycle and pushed the schedule progressively later.
+/// Without an anchor (first schedule) it falls back to `now + interval`. `secs`
+/// is clamped to >= 1 so the catch-up can never divide by zero.
+fn next_interval_at(now: DateTime<Utc>, anchor: Option<DateTime<Utc>>, secs: u64) -> String {
+    let interval_secs = (secs as i64).max(1);
+    let interval = Duration::seconds(interval_secs);
+    match anchor {
+        Some(a) => {
+            let mut next = a + interval;
+            if next <= now {
+                // Jump ahead by whole intervals in one O(1) step rather than
+                // looping (the anchor can be days stale after downtime).
+                let behind = (now - next).num_seconds();
+                next += Duration::seconds((behind / interval_secs + 1) * interval_secs);
+            }
+            next.to_rfc3339()
+        }
+        None => (now + interval).to_rfc3339(),
+    }
+}
+
+/// Like [`compute_next_from_config`] but anchors interval/polling triggers on a
+/// known prior fire time instead of `now`. Re-schedule paths pass the trigger's
+/// previous `next_trigger_at` so the cadence holds steady. Cron triggers are
+/// wall-clock and ignore the anchor.
+pub(crate) fn compute_next_from_config_anchored(
+    cfg: &TriggerConfig,
+    now: DateTime<Utc>,
+    seed: u64,
+    anchor: Option<DateTime<Utc>>,
+) -> Option<String> {
     match cfg {
         TriggerConfig::Schedule {
             cron: Some(cron_expr),
@@ -77,17 +115,11 @@ pub(crate) fn compute_next_from_config(
         TriggerConfig::Schedule {
             interval_seconds: Some(secs),
             ..
-        } => {
-            let next = now + Duration::seconds(*secs as i64);
-            Some(next.to_rfc3339())
-        }
+        } => Some(next_interval_at(now, anchor, *secs)),
         TriggerConfig::Polling {
             interval_seconds: Some(secs),
             ..
-        } => {
-            let next = now + Duration::seconds(*secs as i64);
-            Some(next.to_rfc3339())
-        }
+        } => Some(next_interval_at(now, anchor, *secs)),
         _ => None, // "manual", "webhook", "chain", and unknown have no scheduled next time
     }
 }
@@ -97,7 +129,19 @@ pub(crate) fn compute_next_from_config(
 /// Jenkins-style `H` token expansion in the cron expression so concurrent
 /// triggers spread instead of all firing at `:00`.
 pub fn compute_next_trigger_at(trigger: &PersonaTrigger, now: DateTime<Utc>) -> Option<String> {
-    compute_next_from_config(&trigger.parse_config(), now, cron::seed_hash(&trigger.id))
+    // Anchor interval re-schedules on the trigger's prior scheduled fire so the
+    // cadence doesn't drift later each cycle. Cron arms ignore the anchor.
+    let anchor = trigger
+        .next_trigger_at
+        .as_deref()
+        .and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|d| d.with_timezone(&Utc));
+    compute_next_from_config_anchored(
+        &trigger.parse_config(),
+        now,
+        cron::seed_hash(&trigger.id),
+        anchor,
+    )
 }
 
 /// Enumerate every cron or interval fire time that falls in the half-open
