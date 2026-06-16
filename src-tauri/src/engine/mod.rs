@@ -193,6 +193,9 @@ pub mod types;
 pub mod url_safety;
 #[cfg(feature = "ml")]
 pub mod vector_store;
+// F8 deterministic-verification primitive; consumed by the F7 fix-loop.
+#[allow(dead_code)]
+pub mod verification_command;
 pub mod webhook;
 pub mod webhook_notifier;
 pub mod workflow_compiler;
