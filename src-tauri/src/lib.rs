@@ -1364,6 +1364,15 @@ pub fn run() {
                                 event_name::SHARE_LINK_RECEIVED,
                                 serde_json::json!({ "url": url_str }),
                             );
+                        } else if let Some(slug) = url_str.strip_prefix("personas://import/") {
+                            // Gallery import deep link: hand the slug to the frontend,
+                            // which calls gallery_import_persona + refreshes the list.
+                            let slug = slug.trim_end_matches('/').to_string();
+                            tracing::info!("Gallery import deep link received: slug={}", slug);
+                            let _ = dl_handle.emit(
+                                event_name::GALLERY_IMPORT_REQUESTED,
+                                serde_json::json!({ "slug": slug }),
+                            );
                         }
                     }
                 });
@@ -1573,6 +1582,7 @@ pub fn run() {
             commands::core::import_export::import_persona,
             // Core -- Gallery (public share loop)
             commands::core::gallery::gallery_publish_persona,
+            commands::core::gallery::gallery_import_persona,
             // Core -- Data Portability
             commands::core::data_portability::get_export_stats,
             commands::core::data_portability::export_full,

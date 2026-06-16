@@ -16,6 +16,22 @@ use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
 
+use super::import_export::ImportResult;
+
+/// A gallery slug is `name-suffix` — restrict to URL-safe characters so a
+/// deep-link-sourced value can't traverse paths or inject into the request URL.
+fn validate_slug(slug: &str) -> Result<(), AppError> {
+    if slug.is_empty()
+        || slug.len() > 128
+        || !slug
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+    {
+        return Err(AppError::Validation("invalid gallery slug".into()));
+    }
+    Ok(())
+}
+
 /// Base URL of the personas-web gallery API. Overridable for staging/dev via
 /// `PERSONAS_WEB_URL`; defaults to production.
 fn gallery_base_url() -> String {
@@ -100,4 +116,47 @@ pub async fn gallery_publish_persona(
     resp.json::<GalleryPublishResult>()
         .await
         .map_err(|e| AppError::Cloud(format!("invalid publish response: {e}")))
+}
+
+/// Import a persona from the gallery by share slug (the receiving end of the
+/// loop, driven by the `personas://import/<slug>` deep link or a paste-a-link
+/// UI). Fetches the shared bundle, imports it (migrate + validate + write via
+/// the shared `import_persona_from_value`), and best-effort bumps the install
+/// counter (social proof / K-factor).
+#[tauri::command]
+pub async fn gallery_import_persona(
+    state: State<'_, Arc<AppState>>,
+    slug: String,
+) -> Result<ImportResult, AppError> {
+    require_auth_sync(&state)?;
+    validate_slug(&slug)?;
+
+    let base = gallery_base_url();
+    let client = gallery_http_client()?;
+
+    let resp = client
+        .get(format!("{base}/api/personas/{slug}"))
+        .send()
+        .await
+        .map_err(|e| AppError::Cloud(format!("gallery fetch failed: {e}")))?;
+    if !resp.status().is_success() {
+        let status = resp.status();
+        return Err(AppError::Cloud(format!("gallery fetch failed ({status})")));
+    }
+    let detail: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| AppError::Cloud(format!("invalid gallery response: {e}")))?;
+    let bundle = detail
+        .get("bundle")
+        .cloned()
+        .ok_or_else(|| AppError::Cloud("gallery response missing bundle".into()))?;
+
+    let result = super::import_export::import_persona_from_value(&state.db, bundle)?;
+
+    // Record the install — best-effort; a failed counter bump must never fail
+    // the import the user actually got value from.
+    let _ = client.post(format!("{base}/api/personas/{slug}")).send().await;
+
+    Ok(result)
 }

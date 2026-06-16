@@ -119,6 +119,11 @@ export const publishPersonaToGallery = (
     installId: installId ?? null,
   });
 
+/** Imports a persona from the public gallery by share slug (the receiving end
+ *  of the share loop — driven by the `personas://import/<slug>` deep link). */
+export const importPersonaFromGallery = (slug: string) =>
+  invoke<ImportResult>("gallery_import_persona", { slug });
+
 // ============================================================================
 // Typed partial update helper
 // ============================================================================

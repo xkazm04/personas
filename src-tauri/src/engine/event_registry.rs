@@ -235,6 +235,9 @@ event_names! {
     // Share link (deep link received from OS)
     SHARE_LINK_RECEIVED        => "share-link-received",
 
+    // Gallery import (personas://import/<slug> deep link received from OS)
+    GALLERY_IMPORT_REQUESTED   => "gallery-import-requested",
+
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
 

@@ -763,6 +763,8 @@ export type Translations = {
       published: string;
       hint: string;
       failed: string;
+      imported: string;
+      import_failed: string;
     };
     design_subtabs: {
       use_cases: string;

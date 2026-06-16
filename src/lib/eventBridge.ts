@@ -689,6 +689,34 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Gallery import (personas://import/<slug> deep link) ------------------
+  {
+    event: EventName.GALLERY_IMPORT_REQUESTED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.GALLERY_IMPORT_REQUESTED,
+        async (payload) => {
+          const slug = payload?.slug;
+          if (!slug || typeof slug !== "string") return;
+          const t = getActiveTranslations();
+          try {
+            const { importPersonaFromGallery } = await import("@/api/agents/personas");
+            const result = await importPersonaFromGallery(slug);
+            await useAgentStore.getState().fetchPersonas();
+            const { markActivation } = await import("@/lib/analytics");
+            markActivation("imported");
+            useToastStore.getState().addToast(t.agents.share.imported, "success");
+            if (result.warnings.length) logger.warn("gallery import warnings", { warnings: result.warnings });
+          } catch (err) {
+            silentCatch("eventBridge:gallery-import")(err);
+            useToastStore.getState().addToast(t.agents.share.import_failed, "error");
+          }
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- TitleBar notification (persona message delivery — v3.2 DELIV-04) ------
   {
     event: EventName.TITLEBAR_NOTIFICATION,

@@ -296,6 +296,19 @@ pub async fn import_persona(
 
     let bundle_json: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| AppError::Validation(format!("Invalid persona file: {e}")))?;
+    let result = import_persona_from_value(&state.db, bundle_json)?;
+    Ok(Some(result))
+}
+
+/// Import a persona from an already-parsed `.persona.json` bundle value.
+/// Shared by the file-picker importer (`import_persona`) and the gallery
+/// deep-link importer (`gallery_import_persona`): migrates to the current
+/// schema, validates every field, and writes the persona plus its
+/// triggers / subscriptions / memories. Returns per-sub-resource `warnings`.
+pub(crate) fn import_persona_from_value(
+    pool: &crate::db::DbPool,
+    bundle_json: serde_json::Value,
+) -> Result<ImportResult, AppError> {
     let bundle = migrate_export_bundle(bundle_json)?;
 
     // Validate array sizes
@@ -409,8 +422,6 @@ pub async fn import_persona(
         )?;
     }
 
-    let pool = &state.db;
-
     // Create the persona (disabled by default, with "(imported)" suffix)
     let new_persona = persona_repo::create(
         pool,
@@ -519,10 +530,10 @@ pub async fn import_persona(
         }
     }
 
-    Ok(Some(ImportResult {
+    Ok(ImportResult {
         persona_id: new_id,
         warnings,
-    }))
+    })
 }
 
 #[cfg(test)]

@@ -155,11 +155,19 @@ web gallery via the `gallery_publish_persona` command — it builds the same
 versioned `.persona.json` bundle the file-export uses (shared
 `import_export::build_persona_bundle`) and POSTs it to personas-web
 (`/api/personas/publish`, base overridable with `PERSONAS_WEB_URL`), returning a
-`personas.ai/p/<slug>` link the user copies to share. The recipient opens it in
-one click (`Open in Personas`) or downloads the bundle. This is the share half of
-the growth loop; it records the `shared` activation milestone (see
-`lib/analytics/activation.ts`). Custom icons are downgraded to a built-in at the
-publish boundary, same as every other export path.
+`personas.ai/p/<slug>` link the user copies to share. Custom icons are
+downgraded to a built-in at the publish boundary, same as every other export
+path.
+
+**One-click import (the receiving end).** Clicking **Open in Personas** on a
+`/p/<slug>` page fires a `personas://import/<slug>` OS deep link; `lib.rs`'s
+`on_open_url` handler emits `gallery-import-requested` to the frontend
+(`eventBridge.ts`), which calls the `gallery_import_persona` command — it fetches
+the shared bundle, imports it through the shared `import_persona_from_value` (the
+same migrate → validate → write path the file importer uses), and best-effort
+bumps the gallery install counter. Publish + import together close the viral
+loop and record the `shared` / `imported` activation milestones (growth F5, see
+`lib/analytics/activation.ts`).
 
 The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
 

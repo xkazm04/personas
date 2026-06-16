@@ -756,7 +756,9 @@
       "button": "Share",
       "published": "Shared — copy the link to send it",
       "hint": "Anyone with the link can open this agent in Personas in one click.",
-      "failed": "Couldn't publish this agent to the gallery"
+      "failed": "Couldn't publish this agent to the gallery",
+      "imported": "Agent imported from a share link",
+      "import_failed": "Couldn't import that shared agent"
     },
     "design_subtabs": {
       "use_cases": "Use Cases",
