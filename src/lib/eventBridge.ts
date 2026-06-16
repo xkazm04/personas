@@ -717,6 +717,26 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Referral (personas://ref/<code> deep link) ---------------------------
+  {
+    event: EventName.REFERRAL_RECEIVED,
+    setup: async () => {
+      const unlisten = await typedListen(
+        EventName.REFERRAL_RECEIVED,
+        async (payload) => {
+          const code = payload?.code;
+          if (!code || typeof code !== "string") return;
+          // Capture once for attribution; record now if this install already
+          // activated, else the next activation milestone records it.
+          const { captureReferrerOnce, recordReferralOnce } = await import("@/lib/analytics");
+          captureReferrerOnce(code);
+          recordReferralOnce();
+        },
+      );
+      return [unlisten];
+    },
+  },
+
   // -- TitleBar notification (persona message delivery — v3.2 DELIV-04) ------
   {
     event: EventName.TITLEBAR_NOTIFICATION,

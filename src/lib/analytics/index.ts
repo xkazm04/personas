@@ -183,4 +183,5 @@ export {
   hasReachedActivation,
   captureReferrerOnce,
   getReferrer,
+  recordReferralOnce,
 } from './activation';

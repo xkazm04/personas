@@ -238,6 +238,9 @@ event_names! {
     // Gallery import (personas://import/<slug> deep link received from OS)
     GALLERY_IMPORT_REQUESTED   => "gallery-import-requested",
 
+    // Referral (personas://ref/<code> deep link received from OS)
+    REFERRAL_RECEIVED          => "referral-received",
+
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
 

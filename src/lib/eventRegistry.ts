@@ -221,6 +221,9 @@ export const EventName = {
   // Gallery import (personas://import/<slug> deep link received from OS)
   GALLERY_IMPORT_REQUESTED: 'gallery-import-requested',
 
+  // Referral (personas://ref/<code> deep link received from OS)
+  REFERRAL_RECEIVED: 'referral-received',
+
   // Engine fallback (unrecognized engine setting)
   ENGINE_FALLBACK: 'engine-fallback',
 
@@ -911,6 +914,11 @@ export interface EventPayloadMap {
   // Gallery import (deep link slug)
   [EventName.GALLERY_IMPORT_REQUESTED]: {
     slug: string;
+  };
+
+  // Referral (deep link referrer code)
+  [EventName.REFERRAL_RECEIVED]: {
+    code: string;
   };
 
   // Engine fallback

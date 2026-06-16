@@ -169,6 +169,14 @@ bumps the gallery install counter. Publish + import together close the viral
 loop and record the `shared` / `imported` activation milestones (growth F5, see
 `lib/analytics/activation.ts`).
 
+**Invite a friend (referral).** The Share popover also offers a referral link
+(`https://personas.ai/?ref=<installId>`). A `personas://ref/<code>` deep link
+captures the referrer (`eventBridge.ts` → `captureReferrerOnce`); the credit is
+recorded once the referred install reaches an activation milestone
+(`recordReferralOnce` → `record_referral` → personas-web `/api/referrals`). The
+desktop also surfaces the public **agent directory** at `personas.ai/gallery`
+(growth F4).
+
 The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
 
 **Design is a hub, not a single view.** It absorbs three former tabs

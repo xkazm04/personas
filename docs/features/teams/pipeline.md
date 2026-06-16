@@ -221,6 +221,15 @@ to the Teams table. This mirrors the per-row Disband action in `TeamList`; the
 backend `delete_team` refuses while a pipeline is running or when the team is a
 dev project's canonical team.
 
+**Share with the community (UGC preset).** The workspace pane also carries a
+**Publish to community** action (`PublishPresetButton` → `gallery_publish_preset`)
+that serializes the team into a self-contained, sanitized blueprint — team meta +
+each member's `.persona.json` bundle (no credentials) + the connection graph by
+member index (`commands::core::gallery::build_team_blueprint`) — and POSTs it to
+personas-web (`/api/presets/publish`, backed by the `shared_presets` table). This
+is the UGC half of the preset flywheel: any user's good team becomes an adoptable
+community preset. It records the `shared` activation milestone (growth F3).
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.

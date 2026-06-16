@@ -127,7 +127,33 @@ export function markActivation(step: ActivationStep): boolean {
   } catch {
     /* sink failures must never break the calling flow */
   }
+  // A referred install is only credited once it reaches a real milestone.
+  recordReferralOnce();
   return true;
+}
+
+let referralRecorded = false;
+
+/**
+ * If this install was referred (a code was captured from a `personas://ref/…`
+ * deep link), credit the referrer — once. Best-effort and idempotent: the cloud
+ * dedupes on install id, and we only latch `referralRecorded` on success so a
+ * transient failure (e.g. not yet authenticated) retries on a later milestone.
+ * Safe to call from multiple places (activation + the moment a code is captured).
+ */
+export function recordReferralOnce(): void {
+  if (referralRecorded) return;
+  const referrer = getReferrer();
+  if (!referrer) return;
+  void (async () => {
+    try {
+      const { recordReferral } = await import('@/api/agents/personas');
+      await recordReferral(referrer, getInstallId());
+      referralRecorded = true;
+    } catch {
+      /* best-effort — retried on the next activation */
+    }
+  })();
 }
 
 /**

@@ -95,6 +95,8 @@ export const resolveEffectiveConfigBulk = (personaIds: string[]) =>
 import type { ImportResult } from "@/lib/bindings/ImportResult";
 export type { ImportResult } from "@/lib/bindings/ImportResult";
 import type { GalleryPublishResult } from "@/lib/bindings/GalleryPublishResult";
+import type { PresetPublishResult } from "@/lib/bindings/PresetPublishResult";
+import type { ReferralStats } from "@/lib/bindings/ReferralStats";
 
 /** Opens a save dialog and writes the persona bundle to disk. Returns false if cancelled. */
 export const exportPersona = (personaId: string) =>
@@ -123,6 +125,26 @@ export const publishPersonaToGallery = (
  *  of the share loop — driven by the `personas://import/<slug>` deep link). */
 export const importPersonaFromGallery = (slug: string) =>
   invoke<ImportResult>("gallery_import_persona", { slug });
+
+/** Publishes a team to the public community-preset catalog; returns its slug. */
+export const publishTeamAsPreset = (
+  teamId: string,
+  publisher?: string | null,
+  installId?: string | null,
+) =>
+  invoke<PresetPublishResult>("gallery_publish_preset", {
+    teamId,
+    publisher: publisher ?? null,
+    installId: installId ?? null,
+  });
+
+/** Records that this install arrived via `referrerCode` (attribution). */
+export const recordReferral = (referrerCode: string, installId: string) =>
+  invoke<void>("record_referral", { referrerCode, installId });
+
+/** How many installs `referrerCode` has been credited with. */
+export const getReferralCount = (referrerCode: string) =>
+  invoke<ReferralStats>("get_referral_count", { referrerCode });
 
 // ============================================================================
 // Typed partial update helper

@@ -12,6 +12,7 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::repos::core::personas as persona_repo;
+use crate::db::repos::resources::teams as team_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -159,4 +160,213 @@ pub async fn gallery_import_persona(
     let _ = client.post(format!("{base}/api/personas/{slug}")).send().await;
 
     Ok(result)
+}
+
+// ============================================================================
+// F3 — publish a team as a community preset
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PresetPublishResult {
+    /// The catalog slug the preset was published under.
+    pub slug: String,
+}
+
+/// Serialize a live team into a self-contained, shareable blueprint: team meta +
+/// each member's `.persona.json` bundle + the connection graph (referencing
+/// stable member indices). No credentials are included — the persona bundles
+/// already exclude them. This is the "community preset" the catalog stores.
+fn build_team_blueprint(
+    pool: &crate::db::DbPool,
+    team_id: &str,
+) -> Result<serde_json::Value, AppError> {
+    let team = team_repo::get_by_id(pool, team_id)?;
+    let members = team_repo::get_members(pool, team_id)?;
+    let connections = team_repo::get_connections(pool, team_id)?;
+
+    if members.is_empty() {
+        return Err(AppError::Validation(
+            "a team needs at least one member to publish as a preset".into(),
+        ));
+    }
+
+    // member row id -> array index, so connections reference stable indices
+    // rather than ephemeral row ids.
+    let index_by_member_id: std::collections::HashMap<&str, usize> = members
+        .iter()
+        .enumerate()
+        .map(|(i, m)| (m.id.as_str(), i))
+        .collect();
+
+    let mut member_bps = Vec::with_capacity(members.len());
+    for m in &members {
+        let bundle = super::import_export::build_persona_bundle(pool, &m.persona_id)?;
+        member_bps.push(serde_json::json!({
+            "role": m.role,
+            "x": m.position_x,
+            "y": m.position_y,
+            "persona": bundle,
+        }));
+    }
+
+    let conn_bps: Vec<serde_json::Value> = connections
+        .iter()
+        .filter_map(|c| {
+            let from = index_by_member_id.get(c.source_member_id.as_str())?;
+            let to = index_by_member_id.get(c.target_member_id.as_str())?;
+            Some(serde_json::json!({
+                "from": from,
+                "to": to,
+                "connectionType": c.connection_type,
+                "condition": c.condition,
+                "label": c.label,
+            }))
+        })
+        .collect();
+
+    Ok(serde_json::json!({
+        "schemaVersion": 1,
+        "team": {
+            "name": team.name,
+            "description": team.description,
+            "color": team.color,
+            "sharedInstructions": team.shared_instructions,
+        },
+        "members": member_bps,
+        "connections": conn_bps,
+    }))
+}
+
+/// Publish a team to the public community-preset catalog; returns the slug.
+#[tauri::command]
+pub async fn gallery_publish_preset(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    publisher: Option<String>,
+    install_id: Option<String>,
+) -> Result<PresetPublishResult, AppError> {
+    require_auth_sync(&state)?;
+
+    let team = team_repo::get_by_id(&state.db, &team_id)?;
+    let member_count = team_repo::get_members(&state.db, &team_id)?.len();
+    let blueprint = build_team_blueprint(&state.db, &team_id)?;
+
+    let body = serde_json::json!({
+        "name": team.name,
+        "description": team.description,
+        "icon": team.icon,
+        "color": team.color,
+        "memberCount": member_count,
+        "blueprint": blueprint,
+        "publisher": publisher,
+        "installId": install_id,
+    });
+
+    let client = gallery_http_client()?;
+    let resp = client
+        .post(format!("{}/api/presets/publish", gallery_base_url()))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| AppError::Cloud(format!("preset publish request failed: {e}")))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let detail = resp.text().await.unwrap_or_default();
+        return Err(AppError::Cloud(format!(
+            "catalog rejected preset publish ({status}): {}",
+            detail.chars().take(300).collect::<String>()
+        )));
+    }
+
+    resp.json::<PresetPublishResult>()
+        .await
+        .map_err(|e| AppError::Cloud(format!("invalid preset publish response: {e}")))
+}
+
+// ============================================================================
+// F4 — referral attribution (the invite loop)
+// ============================================================================
+
+/// Referral codes are pseudonymous install ids — restrict to URL-safe chars so
+/// a deep-link-sourced value can't break the request URL.
+fn validate_referral_code(code: &str) -> Result<(), AppError> {
+    if code.is_empty()
+        || code.len() > 128
+        || !code
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.'))
+    {
+        return Err(AppError::Validation("invalid referral code".into()));
+    }
+    Ok(())
+}
+
+/// Record that this install arrived via `referrer_code` (attribution). Called
+/// once, after a referred install reaches a real activation milestone.
+#[tauri::command]
+pub async fn record_referral(
+    state: State<'_, Arc<AppState>>,
+    referrer_code: String,
+    install_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    validate_referral_code(&referrer_code)?;
+    validate_referral_code(&install_id)?;
+
+    let client = gallery_http_client()?;
+    let resp = client
+        .post(format!("{}/api/referrals", gallery_base_url()))
+        .json(&serde_json::json!({ "referrerCode": referrer_code, "installId": install_id }))
+        .send()
+        .await
+        .map_err(|e| AppError::Cloud(format!("referral request failed: {e}")))?;
+    if !resp.status().is_success() {
+        return Err(AppError::Cloud(format!(
+            "referral rejected ({})",
+            resp.status()
+        )));
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralStats {
+    /// How many installs this referrer has been credited with.
+    pub count: u64,
+}
+
+/// How many installs `referrer_code` has been credited with (powers the
+/// "you've invited N" line in the invite UI).
+#[tauri::command]
+pub async fn get_referral_count(
+    state: State<'_, Arc<AppState>>,
+    referrer_code: String,
+) -> Result<ReferralStats, AppError> {
+    require_auth_sync(&state)?;
+    validate_referral_code(&referrer_code)?;
+
+    let client = gallery_http_client()?;
+    let resp = client
+        .get(format!(
+            "{}/api/referrals?referrer={}",
+            gallery_base_url(),
+            referrer_code
+        ))
+        .send()
+        .await
+        .map_err(|e| AppError::Cloud(format!("referral count request failed: {e}")))?;
+    if !resp.status().is_success() {
+        return Err(AppError::Cloud(format!(
+            "referral count failed ({})",
+            resp.status()
+        )));
+    }
+    resp.json::<ReferralStats>()
+        .await
+        .map_err(|e| AppError::Cloud(format!("invalid referral response: {e}")))
 }

@@ -765,6 +765,7 @@ export type Translations = {
       failed: string;
       imported: string;
       import_failed: string;
+      invite_hint: string;
     };
     design_subtabs: {
       use_cases: string;
@@ -14621,6 +14622,14 @@ export type Translations = {
     notification_athena_prompt: string;
   };
   pipeline: {
+    preset: {
+      heading: string;
+      hint: string;
+      button: string;
+      published: string;
+      published_short: string;
+      failed: string;
+    };
     assignments: {
       title: string;
       close: string;

@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { silentCatch } from '@/lib/silentCatch';
+import { PublishPresetButton } from './PublishPresetButton';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
 /**
@@ -298,6 +299,9 @@ export function TeamWorkspacePane({ teamId, onDirtyChange }: {
           <span className="typo-caption text-emerald-300">{ts.workspace_saved}</span>
         )}
       </div>
+
+      {/* Share this team with the community (UGC preset). */}
+      <PublishPresetButton teamId={team.id} />
 
       {/* Danger zone — disband the team (keeps personas). */}
       <div className="mt-2 pt-4 border-t border-red-500/15 flex flex-col gap-2 flex-shrink-0">

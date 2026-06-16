@@ -23,6 +23,9 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
   const [publishing, setPublishing] = useState(false);
   const [result, setResult] = useState<GalleryPublishResult | null>(null);
   const [open, setOpen] = useState(false);
+  // The referral code is this install's pseudonymous id; whoever installs from
+  // this link gets the referrer credited on their first activation.
+  const inviteUrl = `https://personas.ai/?ref=${getInstallId()}`;
 
   const handleShare = async () => {
     if (publishing) return;
@@ -85,6 +88,21 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
               <CopyButton text={result.url} label={t.common.copy} />
             </div>
             <p className="mt-2 typo-caption text-foreground">{s.hint}</p>
+
+            {/* Invite a friend to Personas (referral) — credited when they install. */}
+            <div className="mt-3 pt-3 border-t border-primary/10">
+              <p className="mb-1.5 typo-caption text-foreground">{s.invite_hint}</p>
+              <div className="flex items-center gap-2">
+                <input
+                  readOnly
+                  value={inviteUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                  className="flex-1 min-w-0 bg-secondary/40 border border-primary/10 rounded-input px-2 py-1.5 typo-body text-foreground"
+                  data-testid="invite-url"
+                />
+                <CopyButton text={inviteUrl} label={t.common.copy} />
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

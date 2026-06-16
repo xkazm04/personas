@@ -758,7 +758,8 @@
       "hint": "Anyone with the link can open this agent in Personas in one click.",
       "failed": "Couldn't publish this agent to the gallery",
       "imported": "Agent imported from a share link",
-      "import_failed": "Couldn't import that shared agent"
+      "import_failed": "Couldn't import that shared agent",
+      "invite_hint": "Invite a friend to Personas — you're credited when they join"
     },
     "design_subtabs": {
       "use_cases": "Use Cases",
@@ -14615,6 +14616,14 @@
     "notification_athena_prompt": "Please analyze this notification I received and the underlying issue: \"{title}\" — {body} (status: {status}). Investigate what happened, the likely root cause, and tell me clearly whether anything needs my action."
   },
   "pipeline": {
+    "preset": {
+      "heading": "Share with the community",
+      "hint": "Publish this team as a community preset others can adopt. Member agents are shared without any credentials.",
+      "button": "Publish to community",
+      "published": "Team published to the community catalog",
+      "published_short": "Published",
+      "failed": "Couldn't publish this team as a preset"
+    },
     "assignments": {
       "title": "Assignments",
       "close": "Close assignments panel",

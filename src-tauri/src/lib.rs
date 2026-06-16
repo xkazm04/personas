@@ -1373,6 +1373,15 @@ pub fn run() {
                                 event_name::GALLERY_IMPORT_REQUESTED,
                                 serde_json::json!({ "slug": slug }),
                             );
+                        } else if let Some(code) = url_str.strip_prefix("personas://ref/") {
+                            // Referral deep link: hand the referrer code to the frontend,
+                            // which captures it once for attribution on activation.
+                            let code = code.trim_end_matches('/').to_string();
+                            tracing::info!("Referral deep link received: code={}", code);
+                            let _ = dl_handle.emit(
+                                event_name::REFERRAL_RECEIVED,
+                                serde_json::json!({ "code": code }),
+                            );
                         }
                     }
                 });
@@ -1583,6 +1592,9 @@ pub fn run() {
             // Core -- Gallery (public share loop)
             commands::core::gallery::gallery_publish_persona,
             commands::core::gallery::gallery_import_persona,
+            commands::core::gallery::gallery_publish_preset,
+            commands::core::gallery::record_referral,
+            commands::core::gallery::get_referral_count,
             // Core -- Data Portability
             commands::core::data_portability::get_export_stats,
             commands::core::data_portability::export_full,
