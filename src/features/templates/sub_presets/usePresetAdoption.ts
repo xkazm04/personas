@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -66,6 +66,11 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   const [overrides, setOverrides] = useState<PresetParameterOverrides>({});
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
+  // Synchronous re-entrancy guard: `stage` lags a render behind setStage,
+  // so a double-click could fire two adopt() calls before the button reflects
+  // the 'adopting' stage. The backend also single-flights per preset, but this
+  // avoids the doomed second request (and its error toast) entirely.
+  const adoptingRef = useRef(false);
 
   // Reset whenever the preset changes (gallery switches presets without
   // unmounting). Kick the schema fetch in the background so the customize
@@ -111,6 +116,8 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   );
 
   const adopt = useCallback(async () => {
+    if (adoptingRef.current) return;
+    adoptingRef.current = true;
     setRows(
       preset.members
         .filter((m) => selectedRoles.has(m.role))
@@ -147,6 +154,8 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       silentCatch('usePresetAdoption:adopt')(err);
       addToast(t.templates.presets.toast_failure, 'error');
       setStage('preview'); // allow retry
+    } finally {
+      adoptingRef.current = false;
     }
   }, [preset, overrides, selectedRoles, fetchPersonas, fetchTeams, addToast, t, tx]);
 

@@ -52,9 +52,18 @@ use crate::db::models::{
 };
 use crate::db::repos::resources::teams as team_repo;
 use crate::engine::event_registry::event_name;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::engine::team_preset_loader;
 use crate::error::AppError;
 use crate::AppState;
+use std::sync::LazyLock;
+
+/// Single-flight per preset id. `adopt_preset` creates the team shell
+/// unconditionally and then adopts N personas; a double-click (or a retry
+/// fired before the first call returned) would create two teams and duplicate
+/// every persona, since nothing in the path is idempotent. Refuse the
+/// concurrent duplicate instead.
+static ADOPT_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 const PROGRESS_QUEUED: &str = "queued";
 const PROGRESS_ADOPTING: &str = "adopting";
@@ -213,6 +222,14 @@ pub fn adopt_preset(
     // endpoint silently drops its edges (existing endpoint-missing skip).
     roles_filter: Option<&[String]>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
+    // Refuse a concurrent/double adoption of the same preset. The RAII handle
+    // releases the key on every return path below (including `?` early-returns).
+    let _inflight = ADOPT_INFLIGHT.guard(preset_id).ok_or_else(|| {
+        AppError::RateLimited(format!(
+            "Preset '{preset_id}' is already being adopted — wait for it to finish"
+        ))
+    })?;
+
     let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
     // A member is in-scope when there's no filter, or its role is listed.
