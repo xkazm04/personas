@@ -20,23 +20,31 @@
  */
 import { silentCatch } from '@/lib/silentCatch';
 import { companionSendMessage, companionRecordUxSignal } from '@/api/companion';
+import { useToastStore } from '@/stores/toastStore';
 import { useCompanionStore } from '../companionStore';
 import type { DecisionOption, PendingDecision } from './types';
 
 /**
- * Run one option's action then clear the pending decision. Mirrors the
- * `OrbDecisionBubble` click handler exactly (sync + async errors are caught and
- * reported, never thrown), so every input method behaves the same.
+ * Run one option's action, AWAIT it, and only on success clear the pending
+ * decision + record the hands-free UX signal. This is a consent surface, so the
+ * previous fire-and-forget (clear + "resolved" analytics fired synchronously,
+ * errors swallowed by silentCatch) was the worst class of bug: a rejected
+ * approve/reject (concurrent resolution, pool error, executor failure) left the
+ * user believing they approved/denied while the system did neither — and the
+ * decision vanished from the queue so it never re-surfaced. On failure we now
+ * keep the decision pending and surface an error so the user can retry.
  */
-export function runDecisionOption(option: DecisionOption): void {
+export async function runDecisionOption(option: DecisionOption): Promise<void> {
   const source = useCompanionStore.getState().pendingDecision?.source ?? 'unknown';
   try {
-    const r = option.run();
-    if (r && typeof (r as Promise<void>).then === 'function') {
-      (r as Promise<void>).catch(silentCatch('companion/resolveDecision:run'));
-    }
+    await option.run();
   } catch (err) {
     silentCatch('companion/resolveDecision:run')(err);
+    useToastStore.getState().addToast(
+      'Could not complete that decision — please try again',
+      'error',
+    );
+    return; // keep the decision pending; do NOT record it as resolved
   }
   // F3 — he resolved a decision hands-free via the orb (vs falling through to chat).
   companionRecordUxSignal(
