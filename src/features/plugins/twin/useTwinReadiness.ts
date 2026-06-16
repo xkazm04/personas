@@ -131,7 +131,10 @@ export function useTwinReadiness(): TwinReadiness {
   const twinTones = useSystemStore((s) => s.twinTones);
   const twinChannels = useSystemStore((s) => s.twinChannels);
   const twinVoiceProfile = useSystemStore((s) => s.twinVoiceProfile);
-  const twinPendingMemories = useSystemStore((s) => s.twinPendingMemories);
+  // Readiness reads the DEDICATED approved source, not twinPendingMemories —
+  // the latter is overwritten with rejected/pending rows by the Brain/Knowledge
+  // panels, which silently collapsed the memories milestone and dropped the score.
+  const twinReadinessApproved = useSystemStore((s) => s.twinReadinessApproved);
 
   // Subscribers like TwinSelector re-render on every store touch; without
   // memoization, every render synthesizes a fresh readiness object whose
@@ -143,10 +146,10 @@ export function useTwinReadiness(): TwinReadiness {
     // is in flight.
     const scopedTones = profile ? twinTones.filter((t) => t.twin_id === profile.id) : [];
     const scopedChannels = profile ? twinChannels.filter((c) => c.twin_id === profile.id) : [];
-    const scopedMemories = profile ? twinPendingMemories.filter((m) => m.twin_id === profile.id) : [];
+    const scopedMemories = profile ? twinReadinessApproved.filter((m) => m.twin_id === profile.id) : [];
     const scopedVoice = twinVoiceProfile && profile && twinVoiceProfile.twin_id === profile.id ? twinVoiceProfile : null;
     return deriveReadiness(profile, scopedTones, scopedChannels, scopedVoice, scopedMemories);
-  }, [activeTwinId, twinProfiles, twinTones, twinChannels, twinVoiceProfile, twinPendingMemories]);
+  }, [activeTwinId, twinProfiles, twinTones, twinChannels, twinVoiceProfile, twinReadinessApproved]);
 }
 
 /**
@@ -160,7 +163,7 @@ export function useHydrateActiveTwin() {
   const fetchTones = useSystemStore((s) => s.fetchTwinTones);
   const fetchChannels = useSystemStore((s) => s.fetchTwinChannels);
   const fetchVoice = useSystemStore((s) => s.fetchTwinVoiceProfile);
-  const fetchPending = useSystemStore((s) => s.fetchTwinPendingMemories);
+  const fetchReadinessApproved = useSystemStore((s) => s.fetchTwinReadinessApproved);
 
   const lastHydratedRef = useRef<string | null>(null);
 
@@ -172,6 +175,7 @@ export function useHydrateActiveTwin() {
     void fetchTones(activeTwinId);
     void fetchChannels(activeTwinId);
     void fetchVoice(activeTwinId);
-    void fetchPending(activeTwinId, 'approved');
-  }, [activeTwinId, fetchTones, fetchChannels, fetchVoice, fetchPending]);
+    // Populates the dedicated readiness source (not the panel-shared slice).
+    void fetchReadinessApproved(activeTwinId);
+  }, [activeTwinId, fetchTones, fetchChannels, fetchVoice, fetchReadinessApproved]);
 }

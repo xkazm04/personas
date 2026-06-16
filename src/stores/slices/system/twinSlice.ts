@@ -48,6 +48,11 @@ export interface TwinSlice {
   // -- Memory state (P2) -----------------------------------------------
   twinPendingMemories: TwinPendingMemory[];
   twinPendingLoading: boolean;
+  /** Approved memories for the active twin, fetched ONLY with status='approved'
+   *  for the readiness score. Kept separate from twinPendingMemories (which
+   *  panels overwrite with rejected/pending filters) so a panel visit can't
+   *  silently collapse the readiness memories milestone. */
+  twinReadinessApproved: TwinPendingMemory[];
   twinCommunications: TwinCommunication[];
   twinCommsLoading: boolean;
 
@@ -145,6 +150,7 @@ export interface TwinSlice {
 
   // -- Pending memory actions (P2) -------------------------------------
   fetchTwinPendingMemories: (twinId: string, status?: TwinPendingMemoryStatus) => Promise<void>;
+  fetchTwinReadinessApproved: (twinId: string) => Promise<void>;
   reviewTwinMemory: (id: string, approved: boolean, reviewerNotes?: string) => Promise<void>;
 
   // -- Communication actions (P2) --------------------------------------
@@ -214,6 +220,7 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinTonesLoading: false,
   twinPendingMemories: [],
   twinPendingLoading: false,
+  twinReadinessApproved: [],
   twinCommunications: [],
   twinCommsLoading: false,
   twinVoiceProfile: null,
@@ -475,6 +482,18 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
       reportError(err, "Failed to fetch pending memories", set, {
         stateUpdates: { twinPendingLoading: false },
       });
+    }
+  },
+
+  // Dedicated 'approved' fetch for the readiness score. Writes ONLY
+  // twinReadinessApproved, so panels filtering twinPendingMemories by
+  // rejected/pending can't clobber the corpus the score depends on.
+  fetchTwinReadinessApproved: async (twinId) => {
+    try {
+      const approved = await twinApi.listPendingMemories(twinId, 'approved');
+      set({ twinReadinessApproved: approved });
+    } catch (err) {
+      reportError(err, "Failed to fetch approved memories", set);
     }
   },
 
