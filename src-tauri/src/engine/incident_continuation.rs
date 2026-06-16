@@ -186,11 +186,48 @@ pub async fn continue_resolved_incidents(
             }
         };
 
+        // Refuse to continue a simulation/lab/eval origin: a dry-run must never
+        // spawn a real follow-up that could take irreversible actions. The
+        // promote site already guards is_simulation; re-check it here.
+        if blocked.is_simulation {
+            tracing::warn!(
+                incident_id = %incident.id,
+                blocked_execution_id = %blocked_id,
+                "incident_continuation: blocked run was a simulation; refusing continuation"
+            );
+            continue;
+        }
+
         let tools = tool_repo::get_tools_for_persona(&pool, &blocked.persona_id).unwrap_or_default();
-        let input_data = blocked
-            .input_data
-            .as_deref()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+
+        // Require the original task context. Previously NULL and unparseable
+        // input_data both silently collapsed to None, starting a contextless
+        // re-run that fabricates work (or runs against empty input) while logging
+        // a "successful continuation" — and could take real, irreversible actions
+        // off a hallucinated reconstruction. Abort instead, leaving the incident
+        // claimed-but-not-continued for human attention.
+        let input_data = match blocked.input_data.as_deref() {
+            Some(s) if !s.trim().is_empty() => match serde_json::from_str::<serde_json::Value>(s) {
+                Ok(v) => Some(v),
+                Err(e) => {
+                    tracing::warn!(
+                        incident_id = %incident.id,
+                        blocked_execution_id = %blocked_id,
+                        error = %e,
+                        "incident_continuation: blocked run input_data is unparseable; refusing contextless continuation"
+                    );
+                    continue;
+                }
+            },
+            _ => {
+                tracing::warn!(
+                    incident_id = %incident.id,
+                    blocked_execution_id = %blocked_id,
+                    "incident_continuation: blocked run has no input_data; refusing contextless continuation"
+                );
+                continue;
+            }
+        };
 
         // NEW execution row (healing-retry style): the original blocked run stays
         // terminal; this is a distinct, linked continuation. create_retry copies
