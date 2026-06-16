@@ -54,6 +54,11 @@ export function useAutoTeam(): AutoTeamState {
   const [error, setError] = useState<string | null>(null);
 
   const cancelledRef = useRef(false);
+  // Re-entry guard for apply(): phase is read from the render snapshot, so two
+  // Enter keydowns (or Enter + click) dispatched in the same tick both observe
+  // 'previewing' and would otherwise both run a full team-creation flow,
+  // orphaning the first team. A ref flips synchronously, before any re-render.
+  const applyingRef = useRef(false);
 
   const suggest = useCallback(async () => {
     if (!query.trim()) return;
@@ -88,6 +93,8 @@ export function useAutoTeam(): AutoTeamState {
 
   const apply = useCallback(async () => {
     if (!blueprint) return;
+    if (applyingRef.current) return; // drop re-entrant invocation (double-submit)
+    applyingRef.current = true;
     cancelledRef.current = false;
     setPhase('applying');
     setError(null);
@@ -214,6 +221,8 @@ export function useAutoTeam(): AutoTeamState {
       if (cancelledRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to create team');
       setPhase('error');
+    } finally {
+      applyingRef.current = false;
     }
   }, [blueprint, query, createTeam, fetchTeams, selectTeam]);
 
@@ -244,6 +253,7 @@ export function useAutoTeam(): AutoTeamState {
 
   const reset = useCallback(() => {
     cancelledRef.current = true;
+    applyingRef.current = false;
     setPhase('idle');
     setQuery('');
     setBlueprint(null);
