@@ -19,11 +19,20 @@ use crate::db::repos::resources::{connectors as connector_repo, tools as tool_re
 use crate::engine::design;
 use crate::engine::event_registry::{emit_event_bus, event_name};
 use crate::engine::prompt;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
 use crate::AppState;
+use std::sync::LazyLock;
 
 use super::analysis::extract_display_text;
+
+/// Single-flight per design review for rebuilds. The tracking job id is unique
+/// per invocation (so each rebuild's snapshot/status stream is independent),
+/// which means it can no longer double as the dedup key — this guard keyed by
+/// review id is what actually prevents a concurrent rebuild from spawning a
+/// second paid CLI run that races the first on the same review row.
+static REBUILD_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 // -- Event payloads ----------------------------------------------
 
@@ -653,11 +662,21 @@ pub async fn rebuild_design_review(
     use crate::commands::design::n8n_transform::run_claude_prompt_text;
     use tokio_util::sync::CancellationToken;
 
+    // Refuse a concurrent rebuild of the same review (single-flight). The RAII
+    // handle is moved into the spawned task below so the lock is held for the
+    // whole rebuild and released when the task finishes.
+    let rebuild_guard = REBUILD_INFLIGHT.guard(&id).ok_or_else(|| {
+        AppError::Validation("A rebuild for this design review is already in progress".into())
+    })?;
+
     let review = repo::get_review_by_id(&state.db, &id)?;
     let tools = tool_repo::get_all_definitions(&state.db)?;
     let connectors = connector_repo::get_all(&state.db)?;
 
-    let rebuild_id = format!("rebuild-{id}");
+    // Unique per invocation so each rebuild's job-state snapshot + status event
+    // stream is independent; a deterministic `rebuild-{id}` let a fresh rebuild
+    // collide with a prior one's lingering (completed/failed) entry.
+    let rebuild_id = format!("rebuild-{id}-{}", &uuid::Uuid::new_v4().to_string()[..8]);
     let pool = state.db.clone();
     let tool_names: Vec<String> = tools.iter().map(|t| t.name.clone()).collect();
     let connector_names: Vec<String> = connectors.iter().map(|c| c.name.clone()).collect();
@@ -674,6 +693,9 @@ pub async fn rebuild_design_review(
     let rebuild_id_ret = rebuild_id.clone();
 
     tokio::spawn(async move {
+        // Hold the single-flight lock for the lifetime of the rebuild; dropping
+        // it here (task completion) frees the review for a subsequent rebuild.
+        let _rebuild_guard = rebuild_guard;
         n8n_job_state::emit_n8n_transform_line(
             &app,
             &rebuild_id,
