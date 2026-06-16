@@ -510,6 +510,12 @@ fn detect_authorization_required(result: &McpToolResult) -> Option<String> {
 /// typically snake_case and rarely contain `::`, keeping the parse unambiguous.
 const GATEWAY_TOOL_SEPARATOR: &str = "::";
 
+/// Hard cap on MCP gateway nesting. `add_member` only blocks direct
+/// self-reference, so a cyclic (A→B→A) or deeply-nested gateway graph would
+/// otherwise recurse until the stack overflows on tools/list and tools/call.
+/// Combined with per-path cycle detection, this bounds the recursion.
+const MAX_GATEWAY_DEPTH: usize = 8;
+
 /// Split a possibly-prefixed gateway tool name into (member_display_name,
 /// real_tool_name). Returns `(None, full_name)` if the name is not prefixed.
 fn parse_gateway_tool_name(tool_name: &str) -> (Option<&str>, &str) {
@@ -528,6 +534,21 @@ fn parse_gateway_tool_name(tool_name: &str) -> (Option<&str>, &str) {
 /// `<member_display_name>::`, and merges the results. Members that fail are
 /// logged and skipped -- the gateway returns whatever succeeded.
 pub async fn list_tools(pool: &DbPool, credential_id: &str) -> Result<Vec<McpTool>, AppError> {
+    let mut visited = std::collections::HashSet::new();
+    list_tools_guarded(pool, credential_id, &mut visited, 0).await
+}
+
+/// Recursion-guarded core of [`list_tools`]. `visited` holds the gateway ids on
+/// the current expansion path (cycle detection — backtracked on unwind so a
+/// diamond A→{B,C}→D still lists D under both branches); `depth` is a hard
+/// backstop. Both prevent a cyclic/nested gateway graph from overflowing the
+/// stack.
+async fn list_tools_guarded(
+    pool: &DbPool,
+    credential_id: &str,
+    visited: &mut std::collections::HashSet<String>,
+    depth: usize,
+) -> Result<Vec<McpTool>, AppError> {
     // Return cached result if fresh (cache is keyed by the incoming credential_id,
     // which is the gateway id for gateway credentials -- so gateway merges are
     // cached as a single entry, invalidated when members change).
@@ -539,10 +560,35 @@ pub async fn list_tools(pool: &DbPool, credential_id: &str) -> Result<Vec<McpToo
 
     // Gateway path: fan out to members, prefix tool names, merge.
     if credential.service_type == MCP_GATEWAY_CONNECTOR {
+        if depth >= MAX_GATEWAY_DEPTH {
+            tracing::warn!(
+                gateway_id = %credential_id,
+                depth,
+                "MCP gateway nesting exceeds max depth — refusing to recurse further"
+            );
+            return Ok(Vec::new());
+        }
+        // insert() returns false when the id is already on the current path —
+        // i.e. a cycle. Skip without recursing (and without removing it: the
+        // ancestor that first inserted it owns the removal on its unwind).
+        if !visited.insert(credential_id.to_string()) {
+            tracing::warn!(
+                gateway_id = %credential_id,
+                "MCP gateway cycle detected — skipping recursive member"
+            );
+            return Ok(Vec::new());
+        }
         let members = crate::db::repos::resources::mcp_gateways::list_members(pool, credential_id)?;
         let mut merged: Vec<McpTool> = Vec::new();
         for member in members.into_iter().filter(|m| m.enabled) {
-            match Box::pin(list_tools(pool, &member.member_credential_id)).await {
+            match Box::pin(list_tools_guarded(
+                pool,
+                &member.member_credential_id,
+                visited,
+                depth + 1,
+            ))
+            .await
+            {
                 Ok(tools) => {
                     for mut tool in tools {
                         tool.name = format!(
@@ -565,6 +611,9 @@ pub async fn list_tools(pool: &DbPool, credential_id: &str) -> Result<Vec<McpToo
                 }
             }
         }
+        // Done expanding this gateway — pop it off the current path so sibling
+        // branches (and the cache) treat it as reachable again.
+        visited.remove(credential_id);
         set_cached_tools(credential_id, merged.clone());
         return Ok(merged);
     }
@@ -612,6 +661,34 @@ pub async fn execute_tool(
     persona_id: Option<&str>,
     persona_name: Option<&str>,
 ) -> Result<McpToolResult, AppError> {
+    execute_tool_guarded(
+        pool,
+        credential_id,
+        tool_name,
+        arguments,
+        rate_limiter,
+        persona_id,
+        persona_name,
+        0,
+    )
+    .await
+}
+
+/// Recursion-guarded core of [`execute_tool`]. Each gateway hop peels one
+/// `<member>::` prefix and recurses; `depth` caps the chain so a cyclic gateway
+/// graph (or a crafted deeply-prefixed tool name) can't recurse until the stack
+/// overflows.
+#[allow(clippy::too_many_arguments)]
+async fn execute_tool_guarded(
+    pool: &DbPool,
+    credential_id: &str,
+    tool_name: &str,
+    arguments: serde_json::Value,
+    rate_limiter: Option<&RateLimiter>,
+    persona_id: Option<&str>,
+    persona_name: Option<&str>,
+    depth: usize,
+) -> Result<McpToolResult, AppError> {
     // Per-tool rate limiting
     if let Some(rl) = rate_limiter {
         let rate_key = format!("mcp_tool:{tool_name}");
@@ -642,6 +719,12 @@ pub async fn execute_tool(
     // the `via_gateway` hint embedded in the tracing span so operators can
     // trace back which bundle a call came through.
     if credential.service_type == MCP_GATEWAY_CONNECTOR {
+        if depth >= MAX_GATEWAY_DEPTH {
+            return Err(AppError::Validation(format!(
+                "Gateway tool routing exceeded max nesting depth ({MAX_GATEWAY_DEPTH}) for \
+                 '{tool_name}' — possible gateway cycle"
+            )));
+        }
         let (member_prefix, real_tool) = parse_gateway_tool_name(tool_name);
         let Some(member_prefix) = member_prefix else {
             return Err(AppError::Validation(format!(
@@ -665,7 +748,7 @@ pub async fn execute_tool(
             real_tool = %real_tool,
             "Routing tool call through MCP gateway to underlying member"
         );
-        return Box::pin(execute_tool(
+        return Box::pin(execute_tool_guarded(
             pool,
             &member.member_credential_id,
             real_tool,
@@ -673,6 +756,7 @@ pub async fn execute_tool(
             rate_limiter,
             persona_id,
             persona_name,
+            depth + 1,
         ))
         .await;
     }
