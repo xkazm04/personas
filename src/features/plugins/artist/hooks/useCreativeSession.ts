@@ -31,6 +31,17 @@ export function useCreativeSession() {
   const finalizeCreativeSession = useSystemStore((s) => s.finalizeCreativeSession);
 
   const sendPrompt = useCallback(async (userPrompt: string, tools: string[]) => {
+    // Guard against a second concurrent generation. The input is disabled while
+    // running, but `running` is a single global flag that can be briefly out of
+    // sync (a remounted panel, status-event lag). Starting again would call
+    // setSessionId() with a fresh UUID and overwrite the shared session id,
+    // orphaning the in-flight backend job as a runaway CLI subprocess whose
+    // output silently vanishes and which cancel() can no longer reach. Read the
+    // flag freshly from the store (not the render snapshot) and refuse re-entry.
+    if (useSystemStore.getState().creativeSessionRunning) {
+      announce('A generation is already running', 'polite');
+      return;
+    }
     const newId = `creative-${crypto.randomUUID()}`;
     setSessionId(newId);
     setRunning(true);
