@@ -376,38 +376,62 @@ pub fn get_in_range(
     })
 }
 
-/// Fetch events newer than `after_created_at` (ascending, with `id`
-/// tiebreaker), bounded by `limit`. When `after_created_at` is `None`,
-/// returns the oldest events first up to the limit — this only happens
-/// once per install, at which point the outbound webhook notifier seeds
-/// its watermark.
+/// Fetch events after the `(after_created_at, after_id)` composite cursor
+/// (ascending by `created_at`, then `id`), bounded by `limit`. When
+/// `after_created_at` is `None`, returns the oldest events first up to the
+/// limit — this only happens once per install, at which point the outbound
+/// webhook notifier seeds its watermark.
+///
+/// The composite cursor is required for correctness: many events can share a
+/// single `created_at` (same millisecond). A bare `created_at > cursor` drops
+/// every boundary event that shares the watermark's timestamp but wasn't in the
+/// last processed batch. Passing the last-seen `id` as a tiebreaker
+/// (`created_at = cursor AND id > cursor_id`) admits those siblings exactly
+/// once. `after_id = None` falls back to the legacy timestamp-only predicate so
+/// a pre-existing bare-timestamp watermark still works until the next tick
+/// rewrites it as a composite.
 ///
 /// Used by `engine::webhook_notifier::tick` to drain unseen events into
 /// outbound subscriptions.
 pub fn get_recent_after(
     pool: &DbPool,
     after_created_at: Option<&str>,
+    after_id: Option<&str>,
     limit: i64,
 ) -> Result<Vec<PersonaEvent>, AppError> {
     timed_query!("persona_events", "persona_events::get_recent_after", {
         let conn = pool.get()?;
-        if let Some(cursor) = after_created_at {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
-                 WHERE created_at > ?1
-                 ORDER BY created_at ASC, id ASC
-                 LIMIT ?2",
-            )?;
-            let rows = stmt.query_map(params![cursor, limit], row_to_event)?;
-            Ok(collect_rows(rows, "get_recent_after"))
-        } else {
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_events
-                 ORDER BY created_at ASC, id ASC
-                 LIMIT ?1",
-            )?;
-            let rows = stmt.query_map(params![limit], row_to_event)?;
-            Ok(collect_rows(rows, "get_recent_after"))
+        match (after_created_at, after_id) {
+            (Some(cursor_at), Some(cursor_id)) => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT * FROM persona_events
+                     WHERE created_at > ?1 OR (created_at = ?1 AND id > ?2)
+                     ORDER BY created_at ASC, id ASC
+                     LIMIT ?3",
+                )?;
+                let rows = stmt.query_map(params![cursor_at, cursor_id, limit], row_to_event)?;
+                Ok(collect_rows(rows, "get_recent_after"))
+            }
+            (Some(cursor_at), None) => {
+                // Legacy bare-timestamp watermark — no id tiebreaker available yet.
+                let mut stmt = conn.prepare_cached(
+                    "SELECT * FROM persona_events
+                     WHERE created_at > ?1
+                     ORDER BY created_at ASC, id ASC
+                     LIMIT ?2",
+                )?;
+                let rows = stmt.query_map(params![cursor_at, limit], row_to_event)?;
+                Ok(collect_rows(rows, "get_recent_after"))
+            }
+            _ => {
+                let mut stmt = conn.prepare_cached(
+                    "SELECT * FROM persona_events
+                     ORDER BY created_at ASC, id ASC
+                     LIMIT ?1",
+                )?;
+                let rows = stmt.query_map(params![limit], row_to_event)?;
+                Ok(collect_rows(rows, "get_recent_after"))
+            }
         }
     })
 }

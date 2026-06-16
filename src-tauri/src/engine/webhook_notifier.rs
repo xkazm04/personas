@@ -453,8 +453,18 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
         return Ok(0);
     }
 
+    // The watermark is a composite "created_at|id" (legacy rows are a bare
+    // timestamp). Split it so get_recent_after can use the id as a tiebreaker
+    // and not drop events that share the boundary timestamp.
     let watermark = sub_repo::get_watermark(pool)?;
-    let events = event_repo::get_recent_after(pool, watermark.as_deref(), MAX_EVENTS_PER_TICK)?;
+    let (wm_at, wm_id): (Option<&str>, Option<&str>) = match watermark.as_deref() {
+        Some(w) => match w.split_once('|') {
+            Some((at, id)) => (Some(at), Some(id)),
+            None => (Some(w), None), // legacy bare-timestamp watermark
+        },
+        None => (None, None),
+    };
+    let events = event_repo::get_recent_after(pool, wm_at, wm_id, MAX_EVENTS_PER_TICK)?;
     if events.is_empty() {
         return Ok(0);
     }
@@ -467,7 +477,6 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
         .collect();
 
     let mut delivered = 0usize;
-    let mut newest_at: Option<String> = None;
     // Earliest event (by created_at) that had ANY failed delivery this tick.
     let mut earliest_failed: Option<String> = None;
 
@@ -490,14 +499,6 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
                 earliest_failed = Some(event.created_at.clone());
             }
         }
-
-        match &newest_at {
-            None => newest_at = Some(event.created_at.clone()),
-            Some(cur) if event.created_at.as_str() > cur.as_str() => {
-                newest_at = Some(event.created_at.clone())
-            }
-            _ => {}
-        }
     }
 
     // Advance the watermark, but NEVER past the earliest event that failed
@@ -510,18 +511,24 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
     // already-succeeded events at/after that timestamp is the accepted cost of a
     // time-based watermark; a per-(event,subscription) retry cursor is the
     // deeper fix.
-    let new_watermark: Option<String> = match &earliest_failed {
-        None => newest_at,
-        Some(failed_at) => events
-            .iter()
-            .map(|e| e.created_at.as_str())
-            .filter(|c| *c < failed_at.as_str())
-            .max()
-            .map(str::to_string),
-    };
+    // Advance to the (created_at, id) of the newest event we can safely pass:
+    // the max by (created_at, id) among events strictly before the earliest
+    // failed event's timestamp (or all events if none failed). Tuple max
+    // matches the query's `ORDER BY created_at ASC, id ASC`, and storing the id
+    // makes the next tick resume exactly after this event instead of dropping
+    // its same-timestamp siblings.
+    let new_watermark: Option<(String, String)> = events
+        .iter()
+        .filter(|e| {
+            earliest_failed
+                .as_deref()
+                .map_or(true, |f| e.created_at.as_str() < f)
+        })
+        .map(|e| (e.created_at.clone(), e.id.clone()))
+        .max();
 
-    if let Some(at) = new_watermark {
-        sub_repo::set_watermark(pool, &at)?;
+    if let Some((at, id)) = new_watermark {
+        sub_repo::set_watermark(pool, &format!("{at}|{id}"))?;
     }
 
     Ok(delivered)
