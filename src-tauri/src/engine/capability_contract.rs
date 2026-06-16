@@ -52,6 +52,15 @@ pub enum Requirement {
         /// Human-readable label of the subsystem that needs it (e.g. tool name).
         needed_by: String,
     },
+    /// A specific credential identified by primary-key id must exist. Automations
+    /// carry the resolved credential's `id` (a FK into `persona_credentials(id)`),
+    /// NOT a `service_type` — matching that id against `service_type` always
+    /// fails, so this references it the way the data actually stores it.
+    CredentialById {
+        /// The `persona_credentials(id)` primary key.
+        credential_id: String,
+        needed_by: String,
+    },
     /// A connector definition must exist (tools resolve creds via connectors).
     Connector {
         /// The connector `name` in `connector_definitions`.
@@ -80,6 +89,12 @@ impl Requirement {
                 needed_by,
             } => {
                 format!("Credential '{service_type}' required by {needed_by}")
+            }
+            Self::CredentialById {
+                credential_id,
+                needed_by,
+            } => {
+                format!("Credential #{credential_id} required by {needed_by}")
             }
             Self::Connector {
                 connector_name,
@@ -207,8 +222,8 @@ fn collect_automation_requirements(automations: &[PersonaAutomation]) -> Vec<Req
         // Automations with a platform_credential_id need that credential to exist
         if let Some(ref cred_id) = auto.platform_credential_id {
             if !cred_id.trim().is_empty() {
-                reqs.push(Requirement::Credential {
-                    service_type: cred_id.clone(),
+                reqs.push(Requirement::CredentialById {
+                    credential_id: cred_id.clone(),
                     needed_by: format!("automation '{}'", auto.name),
                 });
             }
@@ -267,6 +282,17 @@ fn check_requirement(pool: &DbPool, req: &Requirement) -> Result<(), String> {
                     service_type
                 )),
                 Err(e) => Err(format!("Failed to query credentials: {e}")),
+            }
+        }
+        Requirement::CredentialById { credential_id, .. } => {
+            // Resolve by primary-key id (automations store the FK, not a
+            // service_type). Missing → the bound credential was deleted.
+            match cred_repo::get_by_id(pool, credential_id) {
+                Ok(_) => Ok(()),
+                Err(AppError::NotFound(_)) => Err(format!(
+                    "The credential bound to this automation (#{credential_id}) no longer exists in the Vault."
+                )),
+                Err(e) => Err(format!("Failed to query credential: {e}")),
             }
         }
         Requirement::Connector { connector_name, .. } => {
