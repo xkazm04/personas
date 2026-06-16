@@ -16,6 +16,15 @@ use crate::db::DbPool;
 use crate::engine::genome::{
     self, breed_generation, compute_fitness, parse_fitness_objective, PersonaGenome,
 };
+use crate::engine::inflight_guard::InflightGuard;
+use std::sync::LazyLock;
+
+/// Single-flight guard keyed by persona_id. Both the manual
+/// `evolution_start_cycle` command and the post-execution auto-trigger can
+/// spawn a cycle for the same persona; without this they run concurrently —
+/// doubling breeding/eval CLI spend and racing two promotions onto one
+/// incumbent.
+static EVOLUTION_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
 
 // =============================================================================
 // Types
@@ -132,6 +141,29 @@ fn try_status_update(
 /// 4. If best variant beats incumbent by the improvement threshold, promote it
 pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id: String) {
     let persona_id = policy.persona_id.clone();
+
+    // Refuse a second concurrent cycle for the same persona. The caller has
+    // already created the cycle row, so on refusal we mark it failed rather
+    // than leave it stuck in a non-terminal "breeding" state forever. The RAII
+    // handle releases the key on every return path below.
+    let _inflight = match EVOLUTION_INFLIGHT.guard(&persona_id) {
+        Some(handle) => handle,
+        None => {
+            try_status_update(
+                &pool,
+                &cycle_id,
+                EvolutionCycleStatus::Failed,
+                Some("another evolution cycle for this persona is already in flight"),
+            );
+            tracing::warn!(
+                persona_id = %persona_id,
+                cycle_id = %cycle_id,
+                "Refused concurrent evolution cycle (single-flight guard)"
+            );
+            return;
+        }
+    };
+
     let mut status_reliable = true;
 
     // P2: track aggregate cost across this cycle's many CLI spawns (variants ×
