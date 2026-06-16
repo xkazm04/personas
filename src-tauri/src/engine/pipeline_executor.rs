@@ -958,20 +958,39 @@ pub async fn run_pipeline(ctx: PipelineContext) {
 // ============================================================================
 
 /// Resolve input for a node: use predecessor output if available, else pipeline input.
+///
+/// Fan-in (a node with multiple predecessors that each produced output) merges
+/// every present output into a structured `{ "inputs": { member_id: output } }`
+/// payload. Previously this `find_map`'d a single predecessor's output and
+/// silently discarded the rest, so an aggregator/synthesizer/reviewer node — the
+/// whole point of a multi-input topology — ran on one arbitrary branch while the
+/// pipeline still reported success. Single-predecessor and no-predecessor cases
+/// keep the exact prior behavior (raw output string / pipeline input), so linear
+/// chains are unchanged.
 fn resolve_node_input(
     predecessor_map: &HashMap<String, Vec<String>>,
     member_id: &str,
     node_outputs: &HashMap<String, Option<String>>,
     pipeline_input: &Option<String>,
 ) -> Option<String> {
-    if let Some(preds) = predecessor_map.get(member_id) {
-        preds
-            .iter()
-            .rev()
-            .find_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()))
-            .or_else(|| pipeline_input.clone())
-    } else {
-        pipeline_input.clone()
+    let Some(preds) = predecessor_map.get(member_id) else {
+        return pipeline_input.clone();
+    };
+    // Collect every predecessor that produced output, preserving wiring order.
+    let present: Vec<(&String, String)> = preds
+        .iter()
+        .filter_map(|pid| node_outputs.get(pid).and_then(|o| o.clone()).map(|out| (pid, out)))
+        .collect();
+    match present.len() {
+        0 => pipeline_input.clone(),
+        1 => Some(present.into_iter().next().map(|(_, out)| out).unwrap()),
+        _ => {
+            let inputs: serde_json::Map<String, serde_json::Value> = present
+                .into_iter()
+                .map(|(pid, out)| (pid.clone(), serde_json::Value::String(out)))
+                .collect();
+            Some(serde_json::json!({ "inputs": inputs }).to_string())
+        }
     }
 }
 
