@@ -534,7 +534,14 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         //    (base_url / auth_token / cache policy) the persona already carries —
         //    only the model + provider change. Reuses the encrypted-profile
         //    write path via updatePersona (model_profile = JSON string).
-        const current = get().selectedPersona?.model_profile;
+        //    Source the existing profile from the EXPLICIT target persona (by
+        //    id), NOT the ambient `selectedPersona`: they can differ (deep-link,
+        //    multi-tab, a concurrent selectPersona, or a ratings row whose
+        //    persona != the sidebar selection), and merging another persona's
+        //    profile would cross-contaminate its base_url/auth_token onto this
+        //    one. If the target isn't in the loaded list, start clean rather than
+        //    inherit the wrong profile.
+        const current = get().personas.find((p) => p.id === personaId)?.model_profile;
         let profile: Record<string, unknown> = {};
         if (current) {
           try {
