@@ -40,6 +40,23 @@ export default function UpcomingRoutinesCard() {
   const personas = useAgentStore((s) => s.personas);
   const [triggers, setTriggers] = useState<PersonaTrigger[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // Ticking clock: the card stays mounted for the whole session, so a `now`
+  // captured once at render froze every relative time and never re-ran the
+  // "drop past runs" filter — a routine 2m out read "2m" ten minutes later and
+  // fired routines lingered as upcoming. Bump on an interval (and on tab
+  // re-show) so the memo recomputes against the current time.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const bump = () => {
+      if (!document.hidden) setNowTick(Date.now());
+    };
+    const id = window.setInterval(bump, 30_000);
+    document.addEventListener('visibilitychange', bump);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', bump);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +72,7 @@ export default function UpcomingRoutinesCard() {
   }, []);
 
   const rows = useMemo<UpcomingRow[]>(() => {
-    const now = Date.now();
+    const now = nowTick;
     const nameById = new Map(personas.map((p) => [p.id, p.name]));
     const scheduled = triggers
       .filter((tr) => tr.enabled && SCHEDULE_TRIGGER_TYPES.has(tr.trigger_type))
@@ -77,7 +94,7 @@ export default function UpcomingRoutinesCard() {
         return at - bt;
       });
     return scheduled.slice(0, MAX_ROWS);
-  }, [triggers, personas]);
+  }, [triggers, personas, nowTick]);
 
   if (!loaded) return null;
   if (rows.length === 0) {
