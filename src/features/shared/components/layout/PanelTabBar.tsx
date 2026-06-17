@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import { motion } from 'framer-motion';
 
 interface PanelTab<T extends string> {
@@ -23,6 +24,10 @@ export function PanelTabBar<T extends string>({
   idPrefix,
   layoutIdPrefix = 'panel-tab',
 }: PanelTabBarProps<T>) {
+  // Per-instance suffix so two tab bars never share a framer-motion layoutId —
+  // a shared id makes the underline teleport/animate between the two bars.
+  const instanceId = useId();
+  const underlineLayoutId = `${layoutIdPrefix}-${instanceId}-underline`;
   return (
     <div role="tablist" className="flex gap-0 mt-4 -mb-4 -mx-4 md:-mx-6 border-t border-primary/10">
       {tabs.map((tab) => {
@@ -47,7 +52,7 @@ export function PanelTabBar<T extends string>({
             {tab.label}
             {active && (
               <motion.div
-                layoutId={`${layoutIdPrefix}-underline`}
+                layoutId={underlineLayoutId}
                 className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-full ${underlineClass}`}
                 transition={{ type: 'spring', stiffness: 500, damping: 30 }}
               />
