@@ -22,7 +22,7 @@ function logPassiveFetchFailure(action: string, err: unknown): void {
 }
 import type {
   ResearchProject, CreateResearchProject, UpdateResearchProject,
-  ResearchSource, CreateResearchSource,
+  ResearchSource, CreateResearchSource, CreateSourceResult,
   ResearchHypothesis, CreateResearchHypothesis,
   ResearchExperiment, CreateResearchExperiment,
   ResearchFinding, CreateResearchFinding,
@@ -46,7 +46,7 @@ export interface ResearchLabSlice {
   researchSources: ResearchSource[];
   researchSourcesLoading: boolean;
   fetchResearchSources: (projectId: string) => Promise<void>;
-  createResearchSource: (input: CreateResearchSource) => Promise<ResearchSource>;
+  createResearchSource: (input: CreateResearchSource) => Promise<CreateSourceResult>;
   deleteResearchSource: (id: string) => Promise<void>;
 
   // Hypotheses
@@ -143,9 +143,18 @@ export const createResearchLabSlice: StateCreator<SystemStore, [], [], ResearchL
   },
 
   createResearchSource: async (input) => {
-    const source = await api.createSource(input);
-    set((s) => ({ researchSources: [source, ...s.researchSources] }));
-    return source;
+    const result = await api.createSource(input);
+    // Only prepend genuinely-new sources. On a dedup hit the backend returns an
+    // existing row — adding it again would duplicate it in the list (and a
+    // re-fetch already has it), so insert it only if it's not already present.
+    set((s) => {
+      const present = s.researchSources.some((x) => x.id === result.source.id);
+      if (result.created || !present) {
+        return { researchSources: [result.source, ...s.researchSources.filter((x) => x.id !== result.source.id)] };
+      }
+      return s;
+    });
+    return result;
   },
 
   deleteResearchSource: async (id) => {

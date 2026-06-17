@@ -14194,6 +14194,7 @@
     "running_status": "running",
     "no_results": "No results",
     "added_sources_count": "Added {count} sources",
+    "added_with_dedup": "Added {added} sources ({duplicates} already in your library)",
     "arxiv_search_title": "arXiv search",
     "add_count": "Add {count}",
     "arxiv_query_placeholder": "e.g. transformer reasoning chain-of-thought",

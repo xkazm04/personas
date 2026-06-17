@@ -14200,6 +14200,7 @@ export type Translations = {
     running_status: string;
     no_results: string;
     added_sources_count: string;
+    added_with_dedup: string;
     arxiv_search_title: string;
     add_count: string;
     arxiv_query_placeholder: string;

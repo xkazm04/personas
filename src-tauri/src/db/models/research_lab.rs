@@ -80,6 +80,19 @@ pub struct ResearchSource {
     pub updated_at: String,
 }
 
+/// Result of `create_source`: the source row plus whether it was *newly*
+/// inserted (`created = true`) or resolved to a pre-existing row via the
+/// DOI/URL dedup guard (`created = false`). Callers need this to report
+/// honest counts — e.g. the arXiv import toast must not count deduped papers
+/// as freshly added.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateSourceResult {
+    pub source: ResearchSource,
+    pub created: bool,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]

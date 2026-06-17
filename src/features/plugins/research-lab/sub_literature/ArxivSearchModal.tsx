@@ -88,10 +88,11 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
 
     setAdding(true);
     let added = 0;
+    let duplicates = 0;
     try {
       for (const r of picks) {
         try {
-          const created = await createSource({
+          const { source, created } = await createSource({
             projectId,
             sourceType: 'arxiv',
             title: r.title,
@@ -101,16 +102,28 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
             url: r.url || undefined,
             doi: r.doi || undefined,
           });
-          // Auto-mark as indexed — we have the full abstract + metadata from arXiv.
-          if (r.summary) {
-            await updateSourceStatus(created.id, 'indexed').catch(() => {});
+          if (created) {
+            added += 1;
+            // Auto-mark NEW sources as indexed — we have the full abstract +
+            // metadata from arXiv. Skip deduped rows so we never clobber an
+            // existing source's status.
+            if (r.summary) {
+              await updateSourceStatus(source.id, 'indexed').catch(() => {});
+            }
+          } else {
+            duplicates += 1;
           }
-          added += 1;
         } catch (err) {
           toastCatch("ArxivSearchModal:addOne")(err);
         }
       }
-      addToast(tx(t.research_lab.added_sources_count, { count: added }), 'success');
+      // Report the true added count. Counting deduped papers as "added" was a
+      // success-theater lie; when some were already in the library, say so.
+      if (duplicates > 0) {
+        addToast(tx(t.research_lab.added_with_dedup, { added, duplicates }), 'success');
+      } else {
+        addToast(tx(t.research_lab.added_sources_count, { count: added }), 'success');
+      }
       onClose();
     } finally {
       setAdding(false);

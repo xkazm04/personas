@@ -172,7 +172,7 @@ const SOURCE_COLUMNS: &str = "id, project_id, source_type, title, authors, year,
 pub fn create_source(
     pool: &DbPool,
     input: &CreateResearchSource,
-) -> Result<ResearchSource, AppError> {
+) -> Result<(ResearchSource, bool), AppError> {
     let conn = pool.get()?;
 
     // Dedup guard: a paper added twice (e.g. via DOI lookup then arXiv search)
@@ -219,7 +219,7 @@ pub fn create_source(
     };
 
     if let Some(found) = existing {
-        return Ok(found);
+        return Ok((found, false));
     }
 
     let id = Uuid::new_v4().to_string();
@@ -235,6 +235,7 @@ pub fn create_source(
             params![id],
             row_to_source,
         )
+        .map(|s| (s, true))
         .map_err(AppError::from)
 }
 

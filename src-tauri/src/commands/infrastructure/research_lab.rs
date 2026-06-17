@@ -5,7 +5,8 @@ use tauri::State;
 
 use crate::db::models::{
     CreateResearchExperiment, CreateResearchFinding, CreateResearchHypothesis,
-    CreateResearchProject, CreateResearchReport, CreateResearchSource, ResearchDashboardStats,
+    CreateResearchProject, CreateResearchReport, CreateResearchSource, CreateSourceResult,
+    ResearchDashboardStats,
     ResearchExperiment, ResearchExperimentRun, ResearchFinding, ResearchHypothesis,
     ResearchProject, ResearchReport, ResearchSource, UpdateResearchProject,
 };
@@ -73,8 +74,9 @@ pub fn research_lab_list_sources(
 pub fn research_lab_create_source(
     state: State<'_, Arc<AppState>>,
     input: CreateResearchSource,
-) -> Result<ResearchSource, AppError> {
-    repo::create_source(&state.db, &input)
+) -> Result<CreateSourceResult, AppError> {
+    let (source, created) = repo::create_source(&state.db, &input)?;
+    Ok(CreateSourceResult { source, created })
 }
 
 #[tauri::command]

@@ -74,6 +74,14 @@ export interface CreateResearchSource {
   metadata?: string | null;
 }
 
+// Mirrors the Rust `CreateSourceResult`. `created` distinguishes a freshly
+// inserted source from one the backend deduped onto an existing row — callers
+// need it to report honest add counts.
+export interface CreateSourceResult {
+  source: ResearchSource;
+  created: boolean;
+}
+
 export interface ResearchHypothesis {
   id: string;
   projectId: string;
@@ -208,7 +216,7 @@ export const listSources = (projectId: string) =>
   safeInvoke<ResearchSource[]>([], "research_lab_list_sources", { projectId });
 
 export const createSource = (input: CreateResearchSource) =>
-  invoke<ResearchSource>("research_lab_create_source", { input });
+  invoke<CreateSourceResult>("research_lab_create_source", { input });
 
 export const deleteSource = (id: string) =>
   invoke<void>("research_lab_delete_source", { id });
