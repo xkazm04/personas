@@ -231,14 +231,24 @@ pub fn get_dependents(
             )
             .map_err(|_| AppError::NotFound(format!("Credential {credential_id}")))?;
 
-        // Find structural dependents: personas whose tools use connectors matching this service_type
+        // Find structural dependents: personas whose tools use connectors matching this service_type.
+        // Match the tool name against the connector's `services` JSON array as an
+        // EXACT element (via json_each), not a substring. The old
+        // `services LIKE '%' || ptd.name || '%'` reported false-positive
+        // dependents — e.g. a tool named "git" matched services "github"/"gitlab"
+        // — inflating the revocation blast radius. `json_valid` guards legacy
+        // rows with malformed `services` (SQLite short-circuits the AND so
+        // json_each is never run on invalid JSON).
         let mut stmt = conn.prepare(
             "SELECT DISTINCT p.id, p.name, cd.label
              FROM personas p
              INNER JOIN persona_tools pt ON pt.persona_id = p.id
              INNER JOIN persona_tool_definitions ptd ON ptd.id = pt.tool_id
              INNER JOIN connector_definitions cd ON cd.name = ?1
-             WHERE cd.services LIKE '%' || ptd.name || '%'",
+             WHERE json_valid(cd.services)
+               AND EXISTS (
+                 SELECT 1 FROM json_each(cd.services) je WHERE je.value = ptd.name
+               )",
         )?;
         let structural = stmt.query_map(params![service_type], |row| {
             Ok(CredentialDependent {
