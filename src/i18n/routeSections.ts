@@ -39,8 +39,18 @@ const ROUTE_SECTIONS_CACHE = new Map<SidebarSection, readonly TranslationSection
 export function sectionsForRoute(section: SidebarSection): readonly TranslationSection[] {
   const cached = ROUTE_SECTIONS_CACHE.get(section);
   if (cached) return cached;
+  const routeSections = ROUTE_SECTIONS[section];
+  // Surface route-section drift instead of silently denying a route its
+  // translations. The Record is exhaustive at compile time, but a stale/renamed
+  // persisted `sidebarSection` value can miss the map at runtime — then only
+  // BASE_SECTIONS load and the route renders untranslated. Warn loudly in dev.
+  if (!routeSections && import.meta.env.DEV) {
+    console.warn(
+      `[i18n] No ROUTE_SECTIONS mapping for sidebar section "${section}" — only base translations will load. Add it to ROUTE_SECTIONS.`,
+    );
+  }
   const computed = Object.freeze([
-    ...new Set([...BASE_SECTIONS, ...(ROUTE_SECTIONS[section] ?? [])]),
+    ...new Set([...BASE_SECTIONS, ...(routeSections ?? [])]),
   ]);
   ROUTE_SECTIONS_CACHE.set(section, computed);
   return computed;
