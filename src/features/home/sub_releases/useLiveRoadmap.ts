@@ -65,6 +65,11 @@ export function useLiveRoadmap(): UseLiveRoadmap {
 
   useEffect(() => {
     void run(false);
+    // Poll on the disk-cache cadence so a long-lived home view picks up roadmap
+    // updates without a manual refresh. run(false) only hits the network once
+    // the Rust disk cache (1h TTL) has expired, so this is cheap.
+    const id = setInterval(() => void run(false), 60 * 60 * 1000);
+    return () => clearInterval(id);
   }, [run]);
 
   const refresh = useCallback(async () => {
