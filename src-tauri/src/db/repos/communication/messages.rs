@@ -506,6 +506,24 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     })
 }
 
+/// Prune READ messages older than the retention window. `persona_messages` had
+/// no retention at all, so read notifications accumulated unbounded. Unread
+/// messages are always kept (they may still need the user's attention). FK
+/// child `persona_message_deliveries` cascades. Single statement → atomic.
+/// Returns the number of rows deleted.
+pub fn cleanup_old_messages(pool: &DbPool, retention_days: i64) -> Result<usize, AppError> {
+    timed_query!("persona_messages", "persona_messages::cleanup_old_messages", {
+        let conn = pool.get()?;
+        let cutoff = format!("-{retention_days} days");
+        let n = conn.execute(
+            "DELETE FROM persona_messages
+             WHERE is_read = 1 AND created_at < datetime('now', ?1)",
+            params![cutoff],
+        )?;
+        Ok(n)
+    })
+}
+
 // ============================================================================
 // Message Deliveries
 // ============================================================================

@@ -15,6 +15,7 @@ use crate::db::models::{
 };
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::{personas as persona_repo, settings};
+use crate::db::repos::communication::messages as messages_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
 use crate::db::repos::resources::audit_log;
@@ -2059,6 +2060,17 @@ pub(crate) fn cleanup_tick(pool: &DbPool) {
         ),
         Ok(_) => {}
         Err(e) => tracing::error!("Execution log cleanup error: {}", e),
+    }
+
+    // Message log: prune READ messages older than 90 days (unread are always
+    // kept). persona_messages previously had no retention, so read
+    // notifications grew unbounded.
+    match messages_repo::cleanup_old_messages(pool, 90) {
+        Ok(n) if n > 0 => {
+            tracing::info!("Cleaned up {} old read messages (retention=90d)", n)
+        }
+        Ok(_) => {}
+        Err(e) => tracing::error!("Message log cleanup error: {}", e),
     }
 
     // Fix 2: orphan trigger sweep — delete triggers whose owning persona no
