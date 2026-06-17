@@ -80,33 +80,61 @@ pub fn make_dedup_key(source_table: &str, source_id: &str) -> String {
 /// Normalize an incident title into a duplicate-detection key: lowercase,
 /// every digit run collapsed to `#` (so "PR #4 stuck (cycle 4)" and
 /// "(cycle 5)" compare equal), whitespace collapsed, first 64 chars.
+/// Strip one trailing volatile-counter parenthetical — `(cycle 4)`,
+/// `(attempt 2)`, `(retry 3)`, `(run 5)`, `(iteration 1)`, … — so the SAME
+/// blocker re-raised each cycle dedups, without touching digits elsewhere. The
+/// label is matched case-insensitively; anything that isn't a `(<label> <int>)`
+/// pair is left intact.
+fn strip_counter_suffix(s: &str) -> &str {
+    const LABELS: &[&str] = &[
+        "cycle", "attempt", "retry", "run", "iteration", "try", "pass", "round",
+    ];
+    let trimmed = s.trim_end();
+    if !trimmed.ends_with(')') {
+        return trimmed;
+    }
+    let Some(open) = trimmed.rfind('(') else {
+        return trimmed;
+    };
+    let inner = &trimmed[open + 1..trimmed.len() - 1];
+    let mut parts = inner.split_whitespace();
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some(label), Some(num), None)
+            if LABELS.contains(&label.to_lowercase().as_str())
+                && !num.is_empty()
+                && num.chars().all(|c| c.is_ascii_digit()) =>
+        {
+            trimmed[..open].trim_end()
+        }
+        _ => trimmed,
+    }
+}
+
+/// Normalized open-incident dedup key. Lowercases + collapses whitespace and
+/// drops a trailing volatile counter suffix (see [`strip_counter_suffix`]) so
+/// per-cycle re-raises of one blocker collapse together — but KEEPS meaningful
+/// digits so distinct blockers like "PR #4 stuck" and "PR #7 stuck" stay
+/// separate (the old version collapsed every digit run to `#` and silenced the
+/// second as a false duplicate).
 pub fn normalize_title_key(title: &str) -> String {
+    let base = strip_counter_suffix(title.trim());
     let mut out = String::with_capacity(64);
-    let mut last_was_digit = false;
     let mut last_was_space = false;
-    for c in title.trim().chars() {
+    for c in base.chars() {
         if out.len() >= 64 {
             break;
         }
-        if c.is_ascii_digit() {
-            if !last_was_digit {
-                out.push('#');
-            }
-            last_was_digit = true;
-            last_was_space = false;
-        } else if c.is_whitespace() {
+        if c.is_whitespace() {
             if !last_was_space {
                 out.push(' ');
             }
             last_was_space = true;
-            last_was_digit = false;
         } else {
             out.extend(c.to_lowercase());
-            last_was_digit = false;
             last_was_space = false;
         }
     }
-    out
+    out.trim_end().to_string()
 }
 
 pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<String>, AppError> {
