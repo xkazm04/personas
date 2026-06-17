@@ -49,6 +49,12 @@ pub async fn ingest_files(
     let max_chars = (kb.chunk_size as usize) * 4; // ~4 chars per token
     let overlap_chars = (kb.chunk_overlap as usize) * 4;
 
+    // Track per-file failures so the final status reflects reality. Without
+    // this the job reports "completed" even when every document failed —
+    // success theater that hides a fully-broken ingest behind a green check.
+    let mut failed_count = 0usize;
+    let mut last_error: Option<String> = None;
+
     for (i, file_path) in file_paths.iter().enumerate() {
         if cancel.is_cancelled() {
             progress.status = "cancelled".into();
@@ -82,7 +88,9 @@ pub async fn ingest_files(
             }
             Err(e) => {
                 tracing::warn!(file = %file_path, error = %e, "Failed to ingest file");
-                // Continue with next file
+                failed_count += 1;
+                last_error = Some(e.to_string());
+                // Continue with the next file
             }
         }
 
@@ -93,8 +101,26 @@ pub async fn ingest_files(
     // Update KB counters
     update_kb_counters(&user_db, &kb.id)?;
 
-    progress.status = "completed".into();
     progress.current_file = None;
+    // Don't report success when ingestion didn't actually succeed. If *every*
+    // document failed this is a failure, not a "completed" job. A partial
+    // failure stays "completed" (some chunks did land) but populates `error`
+    // with the failed count so the UI shows an error state instead of a silent
+    // green check.
+    if total > 0 && failed_count == total {
+        progress.status = "failed".into();
+        progress.error = Some(match &last_error {
+            Some(e) => format!("All {total} document(s) failed to ingest: {e}"),
+            None => format!("All {total} document(s) failed to ingest"),
+        });
+    } else if failed_count > 0 {
+        progress.status = "completed".into();
+        progress.error = Some(format!(
+            "{failed_count} of {total} document(s) failed to ingest"
+        ));
+    } else {
+        progress.status = "completed".into();
+    }
     let _ = app.emit(event_name::KB_INGEST_COMPLETE, &progress);
 
     Ok(progress)
