@@ -131,6 +131,10 @@ struct RawPersona {
     failed: i64,
     cancelled: i64,
     avg_dur: f64,
+    /// Count of executions that actually have a duration (the n behind avg_dur).
+    /// The global avg-latency rollup must weight by THIS, not total_executions —
+    /// otherwise personas with many untimed (cancelled/no-duration) runs skew it.
+    timed: i64,
     total_cost: f64,
 }
 
@@ -185,6 +189,7 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                 SUM(CASE WHEN e.status = 'failed' THEN 1 ELSE 0 END) AS failed,
                 SUM(CASE WHEN e.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled,
                 AVG(CASE WHEN e.duration_ms IS NOT NULL THEN e.duration_ms ELSE NULL END) AS avg_dur,
+                SUM(CASE WHEN e.duration_ms IS NOT NULL THEN 1 ELSE 0 END) AS timed,
                 COALESCE(SUM(e.cost_usd), 0.0) AS total_cost
              FROM persona_executions e
              LEFT JOIN personas p ON p.id = e.persona_id
@@ -204,7 +209,8 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
                     failed: row.get(4)?,
                     cancelled: row.get(5)?,
                     avg_dur: row.get::<_, Option<f64>>(6)?.unwrap_or(0.0),
-                    total_cost: row.get(7)?,
+                    timed: row.get(7)?,
+                    total_cost: row.get(8)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -331,12 +337,17 @@ pub fn get_sla_dashboard(pool: &DbPool, days: i64) -> Result<SlaDashboardData, A
         let g_failed: i64 = persona_stats.iter().map(|p| p.failed).sum();
         let g_cancelled: i64 = persona_stats.iter().map(|p| p.cancelled).sum();
         let g_cost: f64 = persona_stats.iter().map(|p| p.total_cost_usd).sum();
-        let g_avg_dur = if g_total > 0 {
-            persona_stats
+        // Weight each persona's avg latency by its TIMED execution count (the n
+        // behind avg_dur), not total_executions — otherwise personas with many
+        // untimed (cancelled / no-duration) runs are over-weighted and the
+        // global average is wrong.
+        let g_timed: i64 = raw_personas.iter().map(|p| p.timed).sum();
+        let g_avg_dur = if g_timed > 0 {
+            raw_personas
                 .iter()
-                .map(|p| p.avg_duration_ms * p.total_executions as f64)
+                .map(|p| p.avg_dur * p.timed as f64)
                 .sum::<f64>()
-                / g_total as f64
+                / g_timed as f64
         } else {
             0.0
         };
