@@ -113,7 +113,19 @@ pub async fn evaluate_due_kpis(
             (_, None) => true,
             ("daily", Some(last)) => hours_since(last) >= 24.0,
             ("weekly", Some(last)) => hours_since(last) >= 24.0 * 7.0,
-            _ => false, // manual cadence — only explicit Measure-now
+            ("manual", _) => false, // manual cadence — only explicit Measure-now
+            (other, _) => {
+                // Unknown cadence (a catalog value not wired here). Behaviour is
+                // unchanged — not auto-measured — but don't leave it silent: a
+                // future cadence added to the catalog without a branch here
+                // would otherwise never auto-measure with no signal.
+                tracing::warn!(
+                    kpi = %kpi.name,
+                    cadence = %other,
+                    "KPI has an unrecognized cadence — not auto-measuring; add a branch in evaluate_due_kpis"
+                );
+                false
+            }
         };
         if !due {
             continue;
