@@ -14,6 +14,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
+import { invalidateLocalImage } from './useLocalImage';
 
 export function useArtistAssets() {
   const { t, tx } = useTranslation();
@@ -64,7 +65,15 @@ export function useArtistAssets() {
 
   const deleteAsset = useCallback(async (id: string) => {
     await artistDeleteAsset(id)
-      .then(() => setAssets((prev) => prev.filter((a) => a.id !== id)))
+      .then(() =>
+        setAssets((prev) => {
+          // Evict the deleted asset's cached thumbnail so a later asset reusing
+          // its path can't be served the old image from the module cache.
+          const gone = prev.find((a) => a.id === id);
+          if (gone) invalidateLocalImage(gone.filePath);
+          return prev.filter((a) => a.id !== id);
+        }),
+      )
       .catch(toastCatch('useArtistAssets:deleteAsset'));
   }, []);
 
@@ -76,7 +85,15 @@ export function useArtistAssets() {
 
   const renameAsset = useCallback(async (id: string, newBasename: string) => {
     await artistRenameAsset(id, newBasename)
-      .then((updated) => setAssets((prev) => prev.map((a) => (a.id === id ? updated : a))))
+      .then((updated) =>
+        setAssets((prev) => {
+          // Rename changes the file path; evict the OLD path's cached thumbnail
+          // so it doesn't linger as stale data for a future path reuse.
+          const old = prev.find((a) => a.id === id);
+          if (old && old.filePath !== updated.filePath) invalidateLocalImage(old.filePath);
+          return prev.map((a) => (a.id === id ? updated : a));
+        }),
+      )
       .catch(toastCatch('useArtistAssets:renameAsset'));
   }, []);
 

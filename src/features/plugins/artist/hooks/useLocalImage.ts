@@ -22,6 +22,17 @@ function putInCache(filePath: string, dataUrl: string) {
 }
 
 /**
+ * Evict a cached data-URL (and any in-flight load) for a path. Call this when
+ * an asset is deleted or renamed — otherwise the stale base64 lingers in the
+ * cache and would be served if the path is later reused, showing the wrong
+ * (old) image.
+ */
+export function invalidateLocalImage(filePath: string) {
+  cache.delete(filePath);
+  inflight.delete(filePath);
+}
+
+/**
  * Load a local image file as a base64 data URL via Tauri IPC.
  * Returns the data URL once loaded, or null while loading/on error.
  *
