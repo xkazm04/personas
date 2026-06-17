@@ -5,6 +5,7 @@ import type { AlertRule } from "@/lib/bindings/AlertRule";
 import type { FiredAlert } from "@/lib/bindings/FiredAlert";
 import type { AlertMetric } from "@/lib/bindings/AlertMetric";
 import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
+import type { ObservabilityMetrics } from "@/lib/bindings/ObservabilityMetrics";
 import * as api from "@/api/overview/observability";
 import { useToastStore } from "@/stores/toastStore";
 import { toastCatch } from "@/lib/silentCatch";
@@ -160,8 +161,11 @@ export interface AlertSlice {
   clearAlertHistory: () => Promise<void>;
   dismissToast: (alertId: string) => void;
 
-  // Evaluation
-  evaluateAlertRules: () => void;
+  // Evaluation. `metricsOverride` lets the app-level global evaluator evaluate
+  // against its own snapshot without clobbering the user-facing
+  // observabilityMetrics (which the Observability tab owns). Omitted → uses the
+  // store's current observabilityMetrics (the tab's behavior).
+  evaluateAlertRules: (metricsOverride?: ObservabilityMetrics) => void;
 }
 
 /** Cooldown window to avoid repeat alerts for the same rule. */
@@ -331,7 +335,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
     set((state) => ({ activeToasts: state.activeToasts.filter(t => t.id !== alertId) }));
   },
 
-  evaluateAlertRules: () => {
+  evaluateAlertRules: (metricsOverride?: ObservabilityMetrics) => {
     const startMs = performance.now();
     let rulesEvaluated = 0;
     let rulesTriggered = 0;
@@ -357,7 +361,7 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
 
     try {
       const state = get();
-      const metrics = state.observabilityMetrics;
+      const metrics = metricsOverride ?? state.observabilityMetrics;
       if (!metrics) return;
 
       const summary = metrics.summary;
@@ -384,7 +388,18 @@ export const createAlertSlice: StateCreator<OverviewStore, [], [], AlertSlice> =
       for (const rule of state.alertRules) {
         if (!rule.enabled) continue;
 
-        const firedTs = cooldowns[rule.id];
+        // Cooldown: prefer the in-memory timestamp, but fall back to the most
+        // recent PERSISTED fired alert for this rule. The in-memory map resets
+        // on reload, so without this every still-triggering rule re-fired
+        // immediately after a restart even if it fired minutes ago.
+        let firedTs = cooldowns[rule.id];
+        if (firedTs == null) {
+          const lastFired = state.alertHistory.find((a) => a.rule_id === rule.id);
+          if (lastFired) {
+            const parsed = Date.parse(lastFired.fired_at);
+            if (!Number.isNaN(parsed)) firedTs = parsed;
+          }
+        }
         if (firedTs != null) {
           if (now - firedTs < FIRED_COOLDOWN_MS) continue;
           delete cooldowns[rule.id];

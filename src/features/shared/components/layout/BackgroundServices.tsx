@@ -14,6 +14,7 @@ import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/us
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
 import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
 import { useObsidianVaultRehydration } from "@/features/plugins/obsidian-brain/useObsidianVaultRehydration";
+import { useGlobalAlertEvaluator } from "@/features/overview/sub_observability/libs/useGlobalAlertEvaluator";
 
 
 export default function BackgroundServices() {
@@ -42,5 +43,8 @@ export default function BackgroundServices() {
   // Restore the active Obsidian vault from the persisted config so the Brain
   // plugin and the obsidian_memory connector survive app restarts.
   useObsidianVaultRehydration();
+  // Evaluate alert rules app-wide on an interval — alerts previously only fired
+  // while the Observability tab was open.
+  useGlobalAlertEvaluator();
   return null;
 }
