@@ -3423,7 +3423,12 @@ fn spawn_healing_chain(
                             app.clone(),
                             persona_id.clone(),
                             original_exec_id.clone(),
-                            retry_count + 1,
+                            // The healing execution itself was created at
+                            // retry_count + 1 (see create_retry above). The actual
+                            // re-attempt is the NEXT slot, retry_count + 2 —
+                            // sharing + 1 with the heal collided their attempt
+                            // numbers and miscounted the retry budget by one.
+                            retry_count + 2,
                             tracker.clone(),
                             child_pids.clone(),
                             cancelled_flags.clone(),
