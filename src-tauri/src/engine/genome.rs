@@ -244,7 +244,10 @@ pub fn crossover(
     let crossover_point = if max_seg > 1 {
         rng.gen_range(1..max_seg)
     } else {
-        1
+        // 0 or 1 segments: no random point. Use min(max_seg, 1) so a 0-segment
+        // parent yields 0 (a meaningless point-1 crossover on empty segments)
+        // rather than a hardcoded 1.
+        max_seg.min(1)
     };
 
     let (segs_a, segs_b) = crossover_segments(
