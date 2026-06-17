@@ -1697,7 +1697,10 @@ fn spawn_mcp_process(
 
     cmd.stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
+        // Capture (not discard) the child's stderr — a drain task below logs it
+        // so MCP server startup/runtime failures (module-not-found, auth error,
+        // crash) are diagnosable instead of silently dropped.
+        .stderr(std::process::Stdio::piped())
         .kill_on_drop(true);
 
     // Prevent a visible console window flash on Windows.
@@ -1708,8 +1711,26 @@ fn spawn_mcp_process(
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
     }
 
-    cmd.spawn()
-        .map_err(|e| AppError::Internal(format!("Failed to spawn MCP process: {e}")))
+    let mut child = cmd
+        .spawn()
+        .map_err(|e| AppError::Internal(format!("Failed to spawn MCP process: {e}")))?;
+
+    // Drain + log the child's stderr. A reader is required regardless of
+    // logging — without one the OS pipe buffer fills and blocks the child.
+    // Logging each line surfaces errors that Stdio::null() previously dropped.
+    // The task ends when the child closes stderr (exit / kill_on_drop).
+    if let Some(stderr) = child.stderr.take() {
+        tokio::spawn(async move {
+            use tokio::io::{AsyncBufReadExt, BufReader};
+            let mut lines = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = lines.next_line().await {
+                if !line.trim().is_empty() {
+                    tracing::warn!(target: "mcp_stderr", "{}", line);
+                }
+            }
+        });
+    }
+    Ok(child)
 }
 
 /// Write a JSON-RPC message to a session's stdin with Content-Length framing.
