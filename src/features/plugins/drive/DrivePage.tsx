@@ -180,7 +180,12 @@ export default function DrivePage() {
       if (entry.kind === "folder") {
         drive.navigate(entry.path);
       } else {
-        driveOpenInOs(entry.path).catch(toastCatch("drive:open"));
+        driveOpenInOs(entry.path).catch((err) => {
+          toastCatch("drive:open")(err);
+          // The file may have been deleted out-from-under us — reconcile the
+          // listing so a stale row doesn't linger after a failed open.
+          drive.refresh();
+        });
       }
     },
     [drive],
@@ -339,7 +344,11 @@ export default function DrivePage() {
   );
 
   const handleReveal = useCallback((entry: DriveEntry) => {
-    driveRevealInOs(entry.path).catch(toastCatch("drive:reveal"));
+    driveRevealInOs(entry.path).catch((err) => {
+      toastCatch("drive:reveal")(err);
+      // Reconcile in case the file was removed since the listing was built.
+      driveRef.current.refresh();
+    });
   }, []);
 
   const confirmDelete = useCallback(async () => {

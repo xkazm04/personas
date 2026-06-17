@@ -426,7 +426,7 @@ function FilePreview({
   const { t } = useTranslation();
   const [text, setText] = useState<string | null>(null);
   const [state, setState] = useState<
-    "loading" | "ready" | "unsupported" | "too_large" | "video" | "pdf"
+    "loading" | "ready" | "unsupported" | "too_large" | "video" | "pdf" | "error"
   >("loading");
 
   useEffect(() => {
@@ -478,7 +478,12 @@ function FilePreview({
           setState("ready");
         }
       })
-      .catch(silentCatch("drive:preview"));
+      .catch((err) => {
+        // Don't hang on the loading view when the read fails (e.g. the file was
+        // deleted out-from-under us) — surface an error state instead.
+        silentCatch("drive:preview")(err);
+        if (!cancelled) setState("error");
+      });
 
     return () => {
       cancelled = true;
@@ -489,6 +494,13 @@ function FilePreview({
     return (
       <div className="rounded-card border border-primary/10 bg-secondary/25 px-3 py-4 text-center typo-body text-foreground">
         {t.plugins.drive.loading}
+      </div>
+    );
+  }
+  if (state === "error") {
+    return (
+      <div className="rounded-card border border-red-500/35 bg-red-500/10 px-3 py-3 typo-body text-red-100">
+        {t.plugins.drive.preview_unavailable}
       </div>
     );
   }
