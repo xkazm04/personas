@@ -173,14 +173,23 @@ pub fn create(pool: &DbPool, input: CreateMessageInput) -> Result<PersonaMessage
         // instead so callers (dispatch.rs) get a normal Ok and continue.
         if let Some(ref title) = input.title {
             if !title.trim().is_empty() {
+                // Dedup on title AND content, not title alone. A title-only key
+                // is content-blind: two genuinely distinct messages that happen
+                // to share a title on the same day (e.g. a recurring digest
+                // header with different bodies) had the second silently
+                // swallowed. Keying on content too still collapses the true
+                // duplicates this guard targets (identical cascade-fired
+                // notifications) while letting distinct content through.
                 let mut dup_stmt = conn.prepare_cached(
                     "SELECT id FROM persona_messages
-                     WHERE persona_id = ?1 AND title = ?2
-                       AND date(created_at) = date(?3)
+                     WHERE persona_id = ?1 AND title = ?2 AND content = ?3
+                       AND date(created_at) = date(?4)
                      ORDER BY created_at DESC LIMIT 1",
                 )?;
-                let dup: Result<String, _> =
-                    dup_stmt.query_row(params![input.persona_id, title, now], |row| row.get(0));
+                let dup: Result<String, _> = dup_stmt
+                    .query_row(params![input.persona_id, title, input.content, now], |row| {
+                        row.get(0)
+                    });
                 if let Ok(existing_id) = dup {
                     tracing::info!(
                         persona_id = %input.persona_id,
