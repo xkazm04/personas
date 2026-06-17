@@ -365,7 +365,10 @@ function TestConnectionButton({
       </AsyncButton>
 
       {state === 'pass' && (
-        <span className="typo-caption text-emerald-400 flex items-center gap-1">
+        // The check only probes the local CLI binary (presence + --version), not
+        // the external model endpoint or API key — surface that scope via the
+        // tooltip so a green check doesn't overclaim end-to-end connectivity.
+        <span className="typo-caption text-emerald-400 flex items-center gap-1" title={s.test_cli_scope_note}>
           <svg className="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor">
             <path d="M8 0a8 8 0 110 16A8 8 0 018 0zm3.78 4.97a.75.75 0 00-1.06 0L7 8.69 5.28 6.97a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.06 0l4.25-4.25a.75.75 0 000-1.06z" />
           </svg>

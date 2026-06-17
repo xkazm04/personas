@@ -9728,6 +9728,7 @@
       "test_ipc_failed": "IPC call failed",
       "reachable": "Reachable",
       "unreachable": "Unreachable",
+      "test_cli_scope_note": "Verifies the provider CLI is installed and responding. The model endpoint and API key are validated on first real use, not by this check.",
       "health_pending": "Not yet tested",
       "health_testing": "Testing connection…",
       "health_pass": "Provider is reachable",

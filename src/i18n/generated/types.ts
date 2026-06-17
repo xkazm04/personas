@@ -9734,6 +9734,7 @@ export type Translations = {
       test_ipc_failed: string;
       reachable: string;
       unreachable: string;
+      test_cli_scope_note: string;
       health_pending: string;
       health_testing: string;
       health_pass: string;
