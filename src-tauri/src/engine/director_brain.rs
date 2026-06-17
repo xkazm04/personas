@@ -52,17 +52,25 @@ pub(crate) fn brain_enabled(pool: &DbPool) -> bool {
 pub(crate) fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
     let cfg = crate::commands::obsidian_brain::mirror_vault_root(pool)?;
     let dir = std::path::Path::new(&cfg.vault_path).join(director_vault_folder(persona_name));
-    let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)
+    // Sort by actual modification time, not filename. Director notes are
+    // timestamp-named today (so a lexicographic sort happens to be chronological),
+    // but a manually-added or differently-named note in this folder would make
+    // the "most recent 3" wrong. mtime is correct regardless of naming.
+    let mut files: Vec<(std::time::SystemTime, std::path::PathBuf)> = std::fs::read_dir(&dir)
         .ok()?
         .filter_map(|e| e.ok().map(|e| e.path()))
         .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("md"))
+        .filter_map(|p| {
+            let mtime = std::fs::metadata(&p).and_then(|m| m.modified()).ok()?;
+            Some((mtime, p))
+        })
         .collect();
-    files.sort();
+    files.sort_by(|a, b| a.0.cmp(&b.0));
     let recent: Vec<String> = files
         .iter()
         .rev()
         .take(3)
-        .filter_map(|p| std::fs::read_to_string(p).ok())
+        .filter_map(|(_, p)| std::fs::read_to_string(p).ok())
         .collect();
     (!recent.is_empty()).then(|| recent.join("\n\n---\n\n"))
 }
