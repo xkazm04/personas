@@ -516,25 +516,27 @@ fn apply_db_fixes(
                         }
                     }
                     "enabled" => {
-                        // AI healing must never disable a persona -- that requires human approval.
-                        // Only allow setting enabled=true (re-enabling).
-                        if let Ok(enabled) = fix.payload.parse::<bool>() {
-                            if !enabled {
-                                tracing::warn!(
-                                    "AI healing: blocked attempt to disable persona {}",
-                                    persona_id,
-                                );
-                                tx_audit(&tx, "ai_heal_disable_blocked",
-                                "Blocked AI healing from setting enabled=false (requires human approval)",
-                                Some(&fix.description));
-                            } else {
-                                let enabled_int = 1;
-                                tx.execute(
-                                "UPDATE personas SET enabled = ?1, updated_at = ?2 WHERE id = ?3",
-                                params![enabled_int, now, persona_id],
-                            ).map_err(AppError::Database)?;
-                                applied.push(format!("Set enabled=true: {}", fix.description));
-                            }
+                        // AI healing must NEVER flip the enabled flag in either
+                        // direction. Disabling needs human approval; RE-enabling
+                        // would defeat the circuit breaker's safety valve — it
+                        // disables a persona after repeated non-value-delivering
+                        // runs expecting a human to fix the root cause and
+                        // re-enable manually, so auto-re-enabling just loops
+                        // disable→heal→fail→disable. Config fixes (prompt,
+                        // max_turns, model) are still applied above; only the
+                        // enabled flag is gated behind a human.
+                        if let Ok(requested) = fix.payload.parse::<bool>() {
+                            tracing::warn!(
+                                persona_id = %persona_id,
+                                requested_enabled = requested,
+                                "AI healing: blocked attempt to change persona enabled flag (requires human action)",
+                            );
+                            tx_audit(
+                                &tx,
+                                "ai_heal_enabled_change_blocked",
+                                "Blocked AI healing from changing the enabled flag (disable needs approval; re-enable would defeat the circuit breaker)",
+                                Some(&fix.description),
+                            );
                         }
                     }
                     other => {
