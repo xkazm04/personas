@@ -1438,8 +1438,15 @@ pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppErro
     )
 }
 
-/// Default zombie threshold: 30 minutes.
+/// Default zombie threshold for RUNNING executions: 30 minutes.
 const DEFAULT_ZOMBIE_THRESHOLD_SECS: i64 = 30 * 60;
+
+/// Zombie threshold for QUEUED executions, judged by `created_at`. More generous
+/// than the running threshold because a queue legitimately backs up while it
+/// drains — but an execution still queued after this long is stuck (e.g. an
+/// indefinite/aligned quota cooldown holding the drain) and must be reaped, or
+/// it hangs forever (the sweep previously only handled 'running').
+const QUEUED_ZOMBIE_THRESHOLD_SECS: i64 = 60 * 60;
 
 /// Find executions stuck in 'running' state for longer than the zombie threshold
 /// and transition them to 'incomplete'. Returns the IDs of transitioned executions
@@ -1463,55 +1470,68 @@ pub fn sweep_zombie_executions(pool: &DbPool) -> Result<Vec<String>, AppError> {
             // completed run for the same persona?" before deciding whether to
             // surface this zombie to the user.
             let mut stmt = conn.prepare_cached(
-                "SELECT id, persona_id, started_at, created_at FROM persona_executions WHERE status = 'running'",
+                "SELECT id, persona_id, status, started_at, created_at FROM persona_executions WHERE status IN ('running', 'queued')",
             )?;
-            let candidates: Vec<(String, String, Option<String>, String)> = stmt
+            let candidates: Vec<(String, String, String, Option<String>, String)> = stmt
                 .query_map([], |row| {
                     Ok((
                         row.get::<_, String>(0)?,
                         row.get::<_, String>(1)?,
-                        row.get::<_, Option<String>>(2)?,
-                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, Option<String>>(3)?,
+                        row.get::<_, String>(4)?,
                     ))
                 })?
                 .filter_map(|r| r.ok())
                 .collect();
 
             let mut surface_ids = Vec::new();
-            for (id, persona_id, started_at, created_at) in candidates {
-                let is_zombie = match &started_at {
-                    Some(ts) => {
-                        if let Ok(started) = chrono::DateTime::parse_from_rfc3339(ts) {
-                            (now - started.with_timezone(&chrono::Utc)).num_seconds()
-                                > threshold_secs
-                        } else {
-                            // Unparseable timestamp — treat as zombie
-                            true
-                        }
-                    }
-                    None => {
-                        // No started_at — check created_at instead (shouldn't happen, but defensive)
-                        true
-                    }
+            for (id, persona_id, status, started_at, created_at) in candidates {
+                let is_queued = status == "queued";
+                // Running zombies are judged by started_at; queued ones never
+                // started, so judge by created_at against the more generous
+                // queued threshold.
+                let limit_secs = if is_queued {
+                    QUEUED_ZOMBIE_THRESHOLD_SECS
+                } else {
+                    threshold_secs
+                };
+                let reference_ts: Option<&str> = if is_queued {
+                    Some(created_at.as_str())
+                } else {
+                    started_at.as_deref()
+                };
+                let is_zombie = match reference_ts {
+                    Some(ts) => match chrono::DateTime::parse_from_rfc3339(ts) {
+                        Ok(t) => (now - t.with_timezone(&chrono::Utc)).num_seconds() > limit_secs,
+                        Err(_) => true, // unparseable timestamp — treat as zombie
+                    },
+                    // Running with no started_at — shouldn't happen; treat as zombie.
+                    None => true,
                 };
 
                 if is_zombie {
-                    let elapsed_str = started_at.as_deref().unwrap_or("unknown");
+                    let elapsed_str = reference_ts.unwrap_or("unknown");
+                    // CAS on the row's CURRENT status: a queued execution that
+                    // started running (or a running one that completed) between
+                    // the read and here must not be clobbered.
                     let mut update_stmt = conn.prepare_cached(
                         "UPDATE persona_executions SET
                     status = 'incomplete',
                     error_message = ?1,
                     completed_at = ?2
-                 WHERE id = ?3 AND status = 'running'",
+                 WHERE id = ?3 AND status = ?4",
                     )?;
                     update_stmt.execute(params![
                         format!(
-                            "Execution stalled: running since {} (>{} min) — marked as zombie",
+                            "Execution stalled: {} since {} (>{} min) — marked as zombie",
+                            if is_queued { "queued" } else { "running" },
                             elapsed_str,
-                            threshold_secs / 60,
+                            limit_secs / 60,
                         ),
                         now.to_rfc3339(),
                         id,
+                        status,
                     ])?;
 
                     // Surface to user only if there's no newer completed run for
