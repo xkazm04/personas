@@ -566,6 +566,11 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
       }
     });
     if (mode === "cut") setClipboard(null);
+    // A mutation can change paths beyond currentPath (move/paste src+dst,
+    // subfolders, renamed folders); refresh() only repopulates currentPath, so
+    // the columns view kept serving stale/deleted entries from pathCacheRef.
+    // Clear the whole path cache — other paths re-fetch on next visit.
+    pathCacheRef.current.clear();
     refresh();
     refreshTree();
     refreshStorage();
@@ -583,6 +588,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         toastCatch("drive:mkdir")(e);
         return;
       }
+      pathCacheRef.current.clear();
       refresh();
       refreshTree();
     },
@@ -599,6 +605,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         toastCatch("drive:createFile")(e);
         return;
       }
+      pathCacheRef.current.clear();
       refresh();
       refreshStorage();
       refreshRecent();
@@ -615,6 +622,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         toastCatch("drive:rename")(e);
         return;
       }
+      pathCacheRef.current.clear();
       refresh();
       refreshTree();
       // Rename changes the file's mtime AND its name — the rail's previous
@@ -635,6 +643,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         }
       });
       clearSelection();
+      pathCacheRef.current.clear();
       refresh();
       refreshTree();
       refreshStorage();
@@ -654,6 +663,7 @@ export function useDrive(initialPath: string = ""): UseDriveResult {
         toastCatch("drive:move")(e);
         return;
       }
+      pathCacheRef.current.clear();
       refresh();
       refreshTree();
       refreshRecent();
