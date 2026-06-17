@@ -1684,10 +1684,17 @@ function Body(props: BodyProps) {
         // an explicit reset here is the safety net.
         useCompanionStore.getState().setStreamingPhase(null);
         useCompanionStore.getState().setStreamingBeat(null);
+        // Same safety net for in-turn tool tasks/timers: an IPC rejection skips
+        // the stream-event channel, so the `finished`/`error` handlers that
+        // normally clear these never run — leaving ghost "running" tasks
+        // stranded in the ActivityTray forever. No-op on the normal paths
+        // (already cleared on `finished`/`error`).
+        clearToolTimers();
+        useCompanionStore.getState().clearInTurnToolJobs();
         sendingRef.current = false;
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode, clearToolTimers],
   );
 
   // Async-UX phase 4 — non-blocking send. The composer is never disabled;
