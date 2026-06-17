@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { HealthCheckItem, HealthCheckSection } from "@/api/system/system";
-import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckLocal, healthCheckSubscriptions } from "@/api/system/system";
+import { healthCheckAccount, healthCheckAgents, healthCheckCloud, healthCheckEnvironment, healthCheckLocal, healthCheckSubscriptions } from "@/api/system/system";
 
-const SECTION_ORDER = ['local', 'agents', 'cloud', 'account', 'subscriptions'];
+const SECTION_ORDER = ['local', 'environment', 'agents', 'cloud', 'account', 'subscriptions'];
 
 function makeFallback(id: string, label: string, items: HealthCheckItem[]): HealthCheckSection {
   return { id, label, items };
@@ -29,6 +29,7 @@ const IPC_FALLBACKS: Record<string, HealthCheckSection> = {
 
 const CHECKS: Array<{ id: string; fn: () => Promise<HealthCheckSection> }> = [
   { id: 'local', fn: healthCheckLocal },
+  { id: 'environment', fn: healthCheckEnvironment },
   { id: 'agents', fn: healthCheckAgents },
   { id: 'cloud', fn: healthCheckCloud },
   { id: 'account', fn: healthCheckAccount },

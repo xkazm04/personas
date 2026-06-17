@@ -1227,6 +1227,17 @@ pub fn lab_get_version_ratings(
     ratings_repo::get_version_ratings(&state.db, &persona_id)
 }
 
+/// F21: per (version × model) eval economics — attempted-vs-resolved + cost-per-
+/// success, for the model-tiering economics view.
+#[tauri::command]
+pub fn lab_get_version_economics(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Vec<crate::db::models::LabVersionEconomics>, AppError> {
+    require_auth_sync(&state)?;
+    ratings_repo::get_version_economics(&state.db, &persona_id)
+}
+
 // ============================================================================
 // Per-result Event Stream — typed conversation captured during the CLI run
 // ============================================================================

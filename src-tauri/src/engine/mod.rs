@@ -44,6 +44,7 @@ pub mod compiler;
 pub mod composite;
 pub mod config_merge;
 pub mod connector_strategy;
+pub mod context_fidelity;
 #[cfg(feature = "desktop")]
 pub mod context_rules;
 pub mod cost;
@@ -88,8 +89,11 @@ pub mod events;
 pub mod evolution;
 mod execution_engine;
 pub mod failover;
+pub mod failure_signature;
 #[cfg(feature = "desktop")]
 pub mod file_watcher;
+pub mod fix_loop;
+pub mod git_checkpoint;
 pub mod genome;
 pub mod genome_critique;
 pub mod google_oauth;
@@ -115,6 +119,7 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
+pub mod model_routing;
 pub mod oauth_refresh;
 pub mod oauth_refresh_lock;
 // Ollama-as-CLI-engine is deferred (decision recorded 2026-05-05). The native
@@ -159,6 +164,7 @@ pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
 pub mod recipe_seed;
+pub mod redact;
 pub mod render_plan;
 pub mod resource_listing;
 pub mod rotation;
@@ -190,6 +196,9 @@ pub mod types;
 pub mod url_safety;
 #[cfg(feature = "ml")]
 pub mod vector_store;
+// F8 deterministic-verification primitive; consumed by the F7 fix-loop.
+#[allow(dead_code)]
+pub mod verification_command;
 pub mod webhook;
 pub mod webhook_notifier;
 pub mod workflow_compiler;
@@ -1950,6 +1959,131 @@ fn drain_and_start_next(
 const QUOTA_COOLDOWN_RATE_SECS: i64 = 120;
 const QUOTA_COOLDOWN_SESSION_SECS: i64 = 900;
 
+/// A queued fix-loop re-entry — plain data, so the producer side (inside the
+/// execution pipeline) never names `execute_persona_inner`'s future type.
+struct FixReentryRequest {
+    persona_id: String,
+    input: String,
+}
+
+/// Sender to the fix-loop worker, installed once at startup by
+/// [`init_fix_loop_worker`].
+static FIX_REENTRY_TX: std::sync::OnceLock<
+    tokio::sync::mpsc::UnboundedSender<FixReentryRequest>,
+> = std::sync::OnceLock::new();
+
+/// Spawn the fix-loop re-entry worker. Called once at app startup with an
+/// `AppHandle`. The worker lives OUTSIDE the execution pipeline's async-type
+/// graph, so it can drive `execute_persona_inner` without forming the recursive
+/// opaque-type cycle that a direct call from the completion handler would.
+pub fn init_fix_loop_worker(app: AppHandle) {
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<FixReentryRequest>();
+    if FIX_REENTRY_TX.set(tx).is_err() {
+        return; // already initialized
+    }
+    tauri::async_runtime::spawn(async move {
+        use tauri::Manager;
+        while let Some(req) = rx.recv().await {
+            let state = app.state::<Arc<crate::AppState>>().inner().clone();
+            if let Err(e) = crate::commands::execution::executions::execute_persona_inner(
+                &state,
+                app.clone(),
+                req.persona_id,
+                None,
+                Some(req.input),
+                None,
+                None,
+                None,
+                false,
+            )
+            .await
+            {
+                tracing::warn!("fix-loop re-entry failed: {e}");
+            }
+        }
+    });
+}
+
+/// Process-level failure-signature breaker shared across fix-loop re-entries so a
+/// persona that keeps producing the *same* quality failure stops looping instead
+/// of burning budget on a deterministic error.
+static FIX_LOOP_BREAKER: std::sync::LazyLock<
+    tokio::sync::Mutex<failure_signature::FailureBreaker>,
+> = std::sync::LazyLock::new(|| {
+    tokio::sync::Mutex::new(failure_signature::FailureBreaker::new(3))
+});
+
+/// F7: re-enter a persona with a corrective instruction after a run COMPLETED but
+/// failed a critical quality assertion. Opt-in per persona (`fix_loop_enabled`
+/// parameter, default off), bounded by `max_fix_attempts` + the failure-signature
+/// breaker. Fire-and-forget — the re-entry is a fresh execution carrying the
+/// incremented attempt count and the fix prompt in its `input_data`.
+async fn maybe_run_fix_loop(
+    pool: &DbPool,
+    exec_id: &str,
+    persona_id: &str,
+    first_critical_failure: Option<&str>,
+) {
+    use crate::engine::fix_loop::{self, FixDecision};
+
+    // Load persona + config; bail fast when the loop isn't enabled.
+    let Ok(persona) = crate::db::repos::core::personas::get_by_id(pool, persona_id) else {
+        return;
+    };
+    let config = fix_loop::FixLoopConfig::from_persona_parameters(persona.parameters.as_deref());
+    if !config.enabled || persona.headless {
+        return;
+    }
+
+    // The current attempt rides in the prior execution's input_data.
+    let attempt = crate::db::repos::execution::executions::get_by_id(pool, exec_id)
+        .ok()
+        .and_then(|e| e.input_data)
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .and_then(|v| v.get("_fix_attempt").and_then(serde_json::Value::as_u64))
+        .unwrap_or(0) as u32;
+
+    let failures = vec![first_critical_failure
+        .map(str::to_string)
+        .unwrap_or_else(|| "a critical output assertion failed".to_string())];
+
+    // Circuit breaker on the normalized failure.
+    let reason = failures.join("; ");
+    let tripped = {
+        let mut breaker = FIX_LOOP_BREAKER.lock().await;
+        breaker.record(persona_id, "quality_gate", &reason);
+        breaker.tripped(persona_id, "quality_gate", &reason)
+    };
+
+    match fix_loop::decide(&config, &failures, attempt, tripped) {
+        FixDecision::ReEnter { fix_prompt, attempt } => {
+            let input = serde_json::json!({
+                "_fix_attempt": attempt,
+                "_fix_instruction": fix_prompt,
+            })
+            .to_string();
+            tracing::info!(
+                execution_id = %exec_id,
+                persona_id,
+                attempt,
+                "fix-loop: re-entering persona with correction"
+            );
+            // Hand off plain data to the startup-spawned worker. Calling
+            // execute_persona_inner here would close a mutual-async type cycle
+            // (spawn_execution_task → handle_execution_result → here → …); the
+            // channel decouples it.
+            if let Some(tx) = FIX_REENTRY_TX.get() {
+                let _ = tx.send(FixReentryRequest { persona_id: persona_id.to_string(), input });
+            } else {
+                tracing::warn!("fix-loop worker not initialized; skipping re-entry");
+            }
+        }
+        FixDecision::Stop { reason } => {
+            tracing::debug!(execution_id = %exec_id, persona_id, "fix-loop stop: {reason}");
+        }
+    }
+}
+
 /// Handle the result of a completed execution: write status, notify, enforce
 /// budget, evaluate chain triggers, and run healing/retry if needed.
 #[allow(clippy::too_many_arguments)]
@@ -2030,6 +2164,25 @@ async fn handle_execution_result(
         },
     )
     .await;
+
+    // F7 quality-gate fix-loop. A run that COMPLETED but failed a critical
+    // assertion (status downgraded to Incomplete) can be auto-re-entered with a
+    // corrective instruction — IF the persona explicitly opted in (default off).
+    // Hard failures (`!result.success`) go to healing below, not here. Opt-in +
+    // bounded attempts + the failure-signature breaker keep it safe; it never
+    // fires for personas that didn't enable it, so existing execution/eval paths
+    // are untouched.
+    if result.success {
+        if let Some(summary) = assertion_downgrade {
+            maybe_run_fix_loop(
+                pool,
+                exec_id,
+                persona_id,
+                summary.first_critical_failure.as_deref(),
+            )
+            .await;
+        }
+    }
 
     // Quota-aware admission: if this execution failed against the AI provider's
     // session/usage/rate limit, arm the engine's admission cooldown so the rest

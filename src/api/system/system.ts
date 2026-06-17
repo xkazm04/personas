@@ -27,6 +27,8 @@ export const healthCheckCircuitBreaker = () =>
   invoke<HealthCheckSection>("health_check_circuit_breaker");
 export const healthCheckSubscriptions = () =>
   invoke<HealthCheckSection>("health_check_subscriptions");
+export const healthCheckEnvironment = () =>
+  invoke<HealthCheckSection>("health_check_environment");
 
 export const openExternalUrl = (url: string) =>
   invoke<void>("open_external_url", { url });
@@ -113,3 +115,15 @@ export const sendAppNotification = (title: string, body: string) =>
 
 export const getNotificationDeliveryStats = () =>
   invoke<import('@/lib/bindings/NotificationDeliveryStats').NotificationDeliveryStats>("get_notification_delivery_stats");
+
+// F18: storage usage + prune
+export const storageUsage = () =>
+  invoke<import('@/lib/bindings/StorageReport').StorageReport>("storage_usage");
+export const pruneStorage = (olderThanHours?: number, dryRun?: boolean) =>
+  invoke<import('@/lib/bindings/PruneResult').PruneResult>("prune_storage", { olderThanHours, dryRun });
+
+// F10: model-routing rules
+export const getModelRoutingRules = () =>
+  invoke<import('@/lib/bindings/ModelRoutingRule').ModelRoutingRule[]>("get_model_routing_rules");
+export const setModelRoutingRules = (rules: import('@/lib/bindings/ModelRoutingRule').ModelRoutingRule[]) =>
+  invoke<void>("set_model_routing_rules", { rules });

@@ -753,6 +753,21 @@ pub async fn run_pipeline(ctx: PipelineContext) {
     let mut has_failure = false;
     let mut memories_created: u32 = 0;
 
+    // F3: graded upstream-context injection. Resolve the pipeline-wide fidelity
+    // once and cache member display names so each node can be handed a compact
+    // summary of ALL its predecessors (not just the latest one).
+    let fidelity = crate::engine::context_fidelity::resolve_pipeline_fidelity(&ctx.db);
+    let member_names: HashMap<String, String> = ctx
+        .members
+        .iter()
+        .map(|m| {
+            let name = persona_repo::get_by_id(&ctx.db, &m.persona_id)
+                .map(|p| p.name)
+                .unwrap_or_else(|_| m.id.clone());
+            (m.id.clone(), name)
+        })
+        .collect();
+
     // P2: track aggregate cost across this pipeline's per-node CLI spawns.
     crate::engine::run_budget::ledger().register(
         &ctx.run_id,
@@ -897,6 +912,18 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         // Load team memories for context injection
         let memory_context = load_memory_context(&ctx.db, &ctx.team_id);
 
+        // F3: graded summary of ALL predecessors' outputs (the latest one is also
+        // passed verbatim as pipeline_input above; fan-in nodes would otherwise lose
+        // every predecessor but one).
+        let upstream = collect_upstream_outputs(
+            &predecessor_map,
+            member_id,
+            &node_outputs,
+            &member_names,
+        );
+        let upstream_context =
+            crate::engine::context_fidelity::build_upstream_preamble(&upstream, fidelity);
+
         // Build the JSON input payload
         let node_input = build_node_input(
             resolved_input.as_deref(),
@@ -904,6 +931,7 @@ pub async fn run_pipeline(ctx: PipelineContext) {
             member_id,
             &member.role,
             memory_context.as_deref(),
+            upstream_context.as_deref(),
         );
 
         // Execute the node
@@ -1063,6 +1091,33 @@ fn load_memory_context(db: &DbPool, team_id: &str) -> Option<String> {
     ))
 }
 
+/// Collect every predecessor's output for the current node, labelled and
+/// status-tagged, for the F3 graded upstream-context preamble. A predecessor
+/// present in `node_outputs` completed (with or without text); one that is
+/// absent did not run (skipped/failed).
+fn collect_upstream_outputs(
+    predecessor_map: &HashMap<String, Vec<String>>,
+    member_id: &str,
+    node_outputs: &HashMap<String, Option<String>>,
+    member_names: &HashMap<String, String>,
+) -> Vec<crate::engine::context_fidelity::UpstreamOutput> {
+    let Some(preds) = predecessor_map.get(member_id) else {
+        return Vec::new();
+    };
+    preds
+        .iter()
+        .map(|pid| {
+            let label = member_names.get(pid).cloned().unwrap_or_else(|| pid.clone());
+            let (status, output) = match node_outputs.get(pid) {
+                Some(Some(o)) => ("succeeded".to_string(), Some(o.clone())),
+                Some(None) => ("succeeded".to_string(), None),
+                None => ("did not run".to_string(), None),
+            };
+            crate::engine::context_fidelity::UpstreamOutput { label, status, output }
+        })
+        .collect()
+}
+
 /// Build the JSON input payload for a pipeline node.
 fn build_node_input(
     resolved_input: Option<&str>,
@@ -1070,21 +1125,27 @@ fn build_node_input(
     member_id: &str,
     role: &str,
     memory_context: Option<&str>,
+    upstream_context: Option<&str>,
 ) -> Option<serde_json::Value> {
-    resolved_input.map(|output| {
-        let mut obj = serde_json::json!({
-            "pipeline_input": output,
-            "pipeline_context": {
-                "run_id": run_id,
-                "member_id": member_id,
-                "role": role,
-            }
-        });
-        if let Some(ctx) = memory_context {
-            obj["team_memory_context"] = serde_json::json!(ctx);
+    // Build a payload when there is a direct handoff OR a graded upstream summary.
+    if resolved_input.is_none() && upstream_context.is_none() {
+        return None;
+    }
+    let mut obj = serde_json::json!({
+        "pipeline_input": resolved_input.unwrap_or_default(),
+        "pipeline_context": {
+            "run_id": run_id,
+            "member_id": member_id,
+            "role": role,
         }
-        obj
-    })
+    });
+    if let Some(ctx) = memory_context {
+        obj["team_memory_context"] = serde_json::json!(ctx);
+    }
+    if let Some(uc) = upstream_context {
+        obj["upstream_context"] = serde_json::json!(uc);
+    }
+    Some(obj)
 }
 
 // ============================================================================

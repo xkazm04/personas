@@ -4489,6 +4489,30 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     run_step(
         conn,
         IncrementalMigration {
+            id: "dev_run_checkpoints",
+            description: "F5: git checkpoint stage->SHA index for dev-tools runs",
+            already_applied: |conn| has_table(conn, "dev_run_checkpoints"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_run_checkpoints (
+                        id          TEXT PRIMARY KEY,
+                        run_id      TEXT NOT NULL,
+                        stage       TEXT NOT NULL,
+                        sha         TEXT NOT NULL,
+                        status      TEXT NOT NULL,
+                        created_at  TEXT NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_run_checkpoints_run
+                        ON dev_run_checkpoints(run_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+    run_step(
+        conn,
+        IncrementalMigration {
             id: "athena_wake_log",
             description: "Athena autonomy wake/impact ledger (wake-window design)",
             already_applied: |conn| has_table(conn, "athena_wake_log"),

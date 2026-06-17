@@ -1102,6 +1102,27 @@ pub fn run() {
                 });
             }
 
+            // Trace redaction: secrets are scrubbed from persisted execution
+            // output by default (engine::redact). Honor an explicit user opt-out
+            // persisted in a prior session; absent/any-other value keeps it ON.
+            #[cfg(feature = "desktop")]
+            {
+                let pool = state_arc.db.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Ok(Some(value)) = db::repos::core::settings::get(
+                        &pool,
+                        crate::engine::redact::REDACT_TRACES_ENABLED_KEY,
+                    ) {
+                        crate::engine::redact::set_enabled(value != "false");
+                    }
+                });
+            }
+
+            // F7 quality-gate fix-loop worker: drives opt-in persona re-entries
+            // after a completed-but-quality-failed run, decoupled from the
+            // execution pipeline to avoid a recursive async type cycle.
+            crate::engine::init_fix_loop_worker(app.handle().clone());
+
             // Radio: footer-anchored dual-engine player (YouTube IFrame for
             // curated tracklists, HTML5 audio for internet-radio streams).
             // Stations are baked into the binary; runtime state (current
@@ -1717,6 +1738,7 @@ pub fn run() {
             commands::execution::lab::lab_rate_result,
             commands::execution::lab::lab_get_ratings,
             commands::execution::lab::lab_get_version_ratings,
+            commands::execution::lab::lab_get_version_economics,
             commands::execution::lab::lab_get_result_events,
             commands::execution::lab::lab_get_tool_calls,
             commands::execution::lab::lab_get_score_weights,
@@ -2597,6 +2619,9 @@ pub fn run() {
             commands::infrastructure::system::health_check_account,
             commands::infrastructure::system::health_check_circuit_breaker,
             commands::infrastructure::system::health_check_subscriptions,
+            commands::infrastructure::system::health_check_environment,
+            commands::infrastructure::system::storage_usage,
+            commands::infrastructure::system::prune_storage,
             commands::infrastructure::system::open_external_url,
             commands::infrastructure::system::open_local_path,
             commands::infrastructure::system::register_claude_desktop_mcp,
@@ -2617,6 +2642,12 @@ pub fn run() {
             commands::infrastructure::settings::get_app_setting,
             commands::infrastructure::settings::get_app_settings_bulk,
             commands::infrastructure::settings::set_app_setting,
+            commands::infrastructure::settings::get_model_routing_rules,
+            commands::infrastructure::settings::set_model_routing_rules,
+            commands::infrastructure::git_checkpoint::dev_checkpoint_stage,
+            commands::infrastructure::git_checkpoint::dev_fork_from_checkpoint,
+            commands::infrastructure::git_checkpoint::dev_rollback_to_checkpoint,
+            commands::infrastructure::git_checkpoint::dev_list_run_checkpoints,
             commands::infrastructure::settings::delete_app_setting,
             commands::infrastructure::settings::get_quality_gate_config,
             commands::infrastructure::settings::set_quality_gate_config,

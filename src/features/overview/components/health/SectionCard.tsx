@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { errMsg } from '@/stores/storeTypes';
-import { Globe, Key, Loader2, Unplug, type LucideIcon } from 'lucide-react';
+import { Globe, Key, Loader2, Unplug, Wrench, type LucideIcon } from 'lucide-react';
 import type { HealthCheckSection } from "@/api/system/system";
 import { registerClaudeDesktopMcp, unregisterClaudeDesktopMcp } from "@/api/system/system";
 import type { InstallState } from '@/hooks/utility/data/useAutoInstaller';
@@ -78,6 +78,12 @@ export function SectionCard({
                 <p className="typo-body text-foreground">{check.label}</p>
                 {check.detail && (
                   <p className="typo-body text-foreground break-words line-clamp-2">{check.detail}</p>
+                )}
+                {check.remediation && (
+                  <p className="typo-caption text-foreground break-words mt-1 flex items-start gap-1.5">
+                    <Wrench className="w-3.5 h-3.5 mt-0.5 shrink-0 text-primary" />
+                    <span>{check.remediation}</span>
+                  </p>
                 )}
 
                 {check.id === 'node' && check.installable && !ipcError && (

@@ -1581,7 +1581,7 @@ pub fn dev_tools_get_pipeline(
 }
 
 #[tauri::command]
-pub fn dev_tools_advance_pipeline(
+pub async fn dev_tools_advance_pipeline(
     state: State<'_, Arc<AppState>>,
     id: String,
     new_stage: String,
@@ -1589,13 +1589,45 @@ pub fn dev_tools_advance_pipeline(
     error: Option<String>,
 ) -> Result<DevPipeline, AppError> {
     require_auth_sync(&state)?;
-    repo::advance_pipeline_stage(
+    let pipeline = repo::advance_pipeline_stage(
         &state.db,
         &id,
         &new_stage,
         task_id.as_deref(),
         error.as_deref(),
-    )
+    )?;
+
+    // F5: non-disruptive auto-checkpoint of the project repo at each stage
+    // transition (git stash create + a hidden ref — never touches the user's
+    // branch/working tree). Best-effort: a snapshot failure never blocks the
+    // advance, and a clean tree records nothing.
+    if let Ok(project) = repo::get_project_by_id(&state.db, &pipeline.project_id) {
+        if !project.root_path.is_empty() {
+            let checkpoint_id = uuid::Uuid::new_v4().to_string();
+            let status = if error.is_some() { "failed" } else { "advanced" };
+            match crate::engine::git_checkpoint::snapshot_stage(
+                std::path::Path::new(&project.root_path),
+                &id,
+                &checkpoint_id,
+            )
+            .await
+            {
+                Ok(Some(sha)) => {
+                    let _ = crate::db::repos::dev_run_checkpoints::insert(
+                        &state.db,
+                        &id,
+                        &new_stage,
+                        &sha,
+                        status,
+                    );
+                }
+                Ok(None) => {}
+                Err(e) => tracing::debug!("dev checkpoint snapshot skipped: {e}"),
+            }
+        }
+    }
+
+    Ok(pipeline)
 }
 
 #[tauri::command]

@@ -171,6 +171,22 @@ pub fn assemble_prompt(
         prompt.push_str(FANOUT_DIRECTIVE);
     }
 
+    // Correction Required — F7 fix-loop. When a prior run failed its quality gate
+    // and the persona has the fix-loop enabled, the runtime re-enters with a
+    // `_fix_instruction` metadata field. Surface it prominently at the top so the
+    // agent corrects the specific failures. Normal runs lack this field and behave
+    // exactly as before.
+    if let Some(fix) = input_data
+        .and_then(|d| d.get("_fix_instruction"))
+        .and_then(|v| v.as_str())
+    {
+        if !fix.trim().is_empty() {
+            prompt.push_str("## Correction Required\n");
+            prompt.push_str(fix.trim());
+            prompt.push_str("\n\n");
+        }
+    }
+
     // Triggering Event — when the runtime wraps input_data with `_event` metadata
     // (see engine/background.rs), surface which event fired this execution so the
     // persona can route its behavior on event_type + source. Legacy raw payloads

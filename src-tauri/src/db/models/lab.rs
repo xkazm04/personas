@@ -451,6 +451,31 @@ pub struct LabVersionRating {
     pub last_measured_at: Option<String>,
 }
 
+/// Per (version × model) eval economics (fabro F21 lesson): attempted-vs-resolved
+/// + cost-per-success. Distinct from [`LabVersionRating`], which only aggregates
+/// *completed* results — this counts ALL eval attempts so the resolve rate and
+/// cost efficiency are visible (the model-tiering economics signal).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabVersionEconomics {
+    pub version_id: String,
+    pub model_id: String,
+    pub provider: String,
+    /// Total eval results produced for this pair (= attempts).
+    #[ts(type = "number")]
+    pub attempted: i64,
+    /// Results that completed without error (= resolved).
+    #[ts(type = "number")]
+    pub resolved: i64,
+    /// `resolved / attempted` in 0..=1, or `None` when nothing was attempted.
+    pub resolve_rate: Option<f64>,
+    /// Total USD across all attempts.
+    pub total_cost_usd: f64,
+    /// `total_cost_usd / resolved`, or `None` when nothing resolved.
+    pub cost_per_success: Option<f64>,
+}
+
 // ============================================================================
 // Lab: Per-result event stream (typed conversation captured during execution)
 // ============================================================================

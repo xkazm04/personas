@@ -28,6 +28,35 @@ pub fn get_app_setting(
     repo::get(&state.db, &key)
 }
 
+/// F10: return the persisted model-routing rules (parsed, empty when unset).
+#[tauri::command]
+pub fn get_model_routing_rules(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<crate::engine::model_routing::ModelRoutingRule>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::engine::model_routing::load_rules(&state.db))
+}
+
+/// F10: validate + persist the model-routing rules. Rejects blank models or
+/// unknown effort tiers before they can reach an execution.
+#[tauri::command]
+pub fn set_model_routing_rules(
+    state: State<'_, Arc<AppState>>,
+    rules: Vec<crate::engine::model_routing::ModelRoutingRule>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let diags = crate::engine::model_routing::validate(&rules);
+    if !diags.is_empty() {
+        return Err(AppError::Validation(diags.join("; ")));
+    }
+    let json = serde_json::to_string(&rules).map_err(|e| AppError::Internal(e.to_string()))?;
+    repo::set(
+        &state.db,
+        crate::engine::model_routing::MODEL_ROUTING_RULES_KEY,
+        &json,
+    )
+}
+
 /// Bulk-read variant of [`get_app_setting`]. Issues a single
 /// `SELECT key, value FROM app_settings WHERE key IN (...)` and returns a map
 /// of `{ key: value | null }`.

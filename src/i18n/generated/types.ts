@@ -1376,6 +1376,14 @@ export type Translations = {
     lab: {
       vr_title: string;
       vr_subtitle: string;
+      eco_title: string;
+      eco_subtitle: string;
+      eco_col_model: string;
+      eco_col_attempted: string;
+      eco_col_resolved: string;
+      eco_col_rate: string;
+      eco_col_cost_success: string;
+      eco_empty: string;
       vr_col_version: string;
       vr_col_model: string;
       vr_col_rating: string;
@@ -9616,6 +9624,15 @@ export type Translations = {
     engine: {
       title: string;
       loading_capabilities: string;
+      routing_title: string;
+      routing_subtitle: string;
+      routing_empty: string;
+      routing_category_ph: string;
+      routing_model_ph: string;
+      routing_effort_inherit: string;
+      routing_add: string;
+      routing_save: string;
+      routing_remove: string;
       detecting_providers: string;
       subtitle: string;
       capability_map: string;
@@ -9813,6 +9830,15 @@ export type Translations = {
     portability: {
       title: string;
       subtitle: string;
+      storage_title: string;
+      storage_subtitle: string;
+      storage_db_size: string;
+      storage_total: string;
+      storage_removable: string;
+      storage_prune: string;
+      storage_confirm: string;
+      storage_confirm_yes: string;
+      storage_pruned: string;
       workspace_overview: string;
       loading_stats: string;
       stats_error: string;

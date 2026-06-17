@@ -2,6 +2,7 @@ pub mod binary_probe;
 pub mod crash_telemetry;
 pub mod health;
 pub mod mcp_integration;
+pub mod storage;
 
 // Re-export everything (including Tauri-generated `__cmd__*` items) so that
 // `commands::infrastructure::system::*` paths in lib.rs continue to work.
@@ -9,6 +10,7 @@ pub use binary_probe::*;
 pub use crash_telemetry::*;
 pub use health::*;
 pub use mcp_integration::*;
+pub use storage::*;
 
 use crate::error::AppError;
 

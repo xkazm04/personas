@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { LabVersionsTable } from '../versions_table/LabVersionsTable';
+import { LabEconomicsPanel } from '../versions_table/LabEconomicsPanel';
 
 /**
  * Lab tab — the consolidated "Versions & Ratings" table. The former 7-mode
@@ -27,5 +28,10 @@ export function LabTab() {
     if (personaId) hydrateActiveProgress(personaId);
   }, [personaId, hydrateActiveProgress]);
 
-  return <LabVersionsTable />;
+  return (
+    <div className="flex flex-col gap-4">
+      <LabVersionsTable />
+      {personaId && <LabEconomicsPanel personaId={personaId} />}
+    </div>
+  );
 }
