@@ -897,12 +897,17 @@ pub(crate) async fn event_bus_tick(
             tracing::info!(
                 event_id = %event.id,
                 event_type = %event.event_type,
-                "Event bus: no subscriber matches -- marking as delivered (no consumers)"
+                "Event bus: no subscriber matches -- marking as skipped (no consumers)"
             );
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
+            // No consumers → Skipped, not Delivered. Recording a no-subscriber
+            // event as "Delivered" (and counting it toward events_delivered)
+            // was success theater: it inflated the delivery stat and made a
+            // dead / misrouted trigger look like it was successfully handled.
+            // It's still counted in events_processed (it was processed), just
+            // not as a delivery.
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Skipped, None);
             scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
-            scheduler.events_delivered.fetch_add(1, Ordering::Relaxed);
-            emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
+            emit_event_to_frontend(app, event, PersonaEventStatus::Skipped);
         } else {
             event_matches.push((idx, matches));
         }
