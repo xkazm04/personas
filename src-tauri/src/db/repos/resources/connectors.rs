@@ -88,8 +88,30 @@ pub fn create(
         let events = input.events.unwrap_or_else(|| "[]".into());
         let is_builtin = input.is_builtin.unwrap_or(false) as i32;
 
-        let conn = pool.get()?;
-        conn.execute(
+        let mut conn = pool.get()?;
+        // IMMEDIATE so the name-existence check and the INSERT are one atomic
+        // unit (the `name` column has no UNIQUE constraint — adding one would
+        // need a de-dup migration over existing data). Reject a name already in
+        // use so a custom connector can't shadow a builtin and flip its
+        // classification/readiness, and two concurrent creates can't both win.
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+        let name_taken: bool = tx
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM connector_definitions WHERE name = ?1)",
+                params![input.name],
+                |row| row.get::<_, i64>(0),
+            )
+            .map_err(AppError::Database)?
+            != 0;
+        if name_taken {
+            return Err(AppError::Validation(format!(
+                "A connector named '{}' already exists",
+                input.name
+            )));
+        }
+        tx.execute(
             "INSERT INTO connector_definitions
              (id, name, label, icon_url, color, category, fields,
               healthcheck_config, services, events, metadata, is_builtin,
@@ -111,6 +133,7 @@ pub fn create(
                 now,
             ],
         )?;
+        tx.commit().map_err(AppError::Database)?;
 
         get_by_id(pool, &id)
     })
