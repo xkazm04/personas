@@ -191,6 +191,11 @@ pub async fn start_design_review_run(
 
     tokio::spawn(async move {
         let _guard = run_guard;
+        // Track per-item failures (CLI error, JSON-extraction miss, or DB-write
+        // failure) so the run-completion event reflects reality. Without this
+        // the run always emitted "completed" with no error even when every
+        // item failed — run-level success theater that hid a fully-broken run.
+        let mut failed_count: usize = 0;
         for (i, test_case) in test_cases.iter().enumerate() {
             // Check cancellation
             if cancel_flag.load(Ordering::Relaxed) {
@@ -397,6 +402,7 @@ pub async fn start_design_review_run(
                                 ));
                             }
                             if let Err(e) = repo::create_review(&pool, &input) {
+                                failed_count += 1;
                                 tracing::error!(
                                     test_case = %test_case_name,
                                     error = %e,
@@ -434,6 +440,7 @@ pub async fn start_design_review_run(
                             input.semantic_score = Some(0);
                             input.suggested_adjustment =
                                 Some("Failed to extract valid JSON from Claude output".into());
+                            failed_count += 1;
                             if let Err(e) = repo::create_review(&pool, &input) {
                                 tracing::error!(
                                     test_case = %test_case_name,
@@ -463,6 +470,7 @@ pub async fn start_design_review_run(
                     input.structural_score = Some(0);
                     input.semantic_score = Some(0);
                     input.semantic_evaluation = Some(error_msg.clone());
+                    failed_count += 1;
                     if let Err(e) = repo::create_review(&pool, &input) {
                         tracing::error!(
                             test_case = %test_case_name,
@@ -486,16 +494,27 @@ pub async fn start_design_review_run(
 
         // Guard handles unregister_run on drop.
 
-        // Emit completion
+        // Emit completion — reflect per-item failures so a fully- or
+        // partially-broken run isn't reported as a clean success.
+        let (final_status, error_message) = if total > 0 && failed_count == total {
+            ("error".to_string(), Some(format!("All {total} review(s) failed")))
+        } else if failed_count > 0 {
+            (
+                "completed".to_string(),
+                Some(format!("{failed_count} of {total} review(s) failed")),
+            )
+        } else {
+            ("completed".to_string(), None)
+        };
         let _ = app.emit(
             event_name::DESIGN_REVIEW_STATUS,
             DesignReviewStatusEvent {
                 run_id: run_id_clone,
                 test_case_index: total,
                 total,
-                status: "completed".into(),
+                status: final_status,
                 test_case_name: String::new(),
-                error_message: None,
+                error_message,
                 elapsed_ms: None,
             },
         );
