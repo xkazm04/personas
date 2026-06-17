@@ -61,6 +61,14 @@ const HIGH_HEALING_ISSUE_COUNT = 3;
 /** Cost anomaly sigma threshold */
 const ANOMALY_SIGMA_THRESHOLD = 2.0;
 
+/**
+ * How recent a cost anomaly must be to surface as a *live* "Cost Spike
+ * Detected" recommendation. The dashboard retains anomalies across its whole
+ * window, so without a recency bound a weeks-old spike renders as a current
+ * critical. A live, actionable spike is one from the last few days.
+ */
+const ANOMALY_RECENCY_DAYS = 3;
+
 /** Minimum overall success rate (%) to declare the fleet "running smoothly". */
 const HEALTHY_FLEET_SUCCESS_PCT = 80;
 
@@ -156,10 +164,16 @@ export function generateFleetRecommendation(
 
   const performances = derivePerPersonaPerformance(dashboard, healingIssues);
 
-  // 1. Check for cost anomalies (most urgent)
-  const recentAnomalies = dashboard.cost_anomalies.filter(
-    (a) => a.deviation_sigma >= ANOMALY_SIGMA_THRESHOLD,
-  );
+  // 1. Check for cost anomalies (most urgent). Time-bound them: a spike is only
+  // a *live* critical if it happened recently — an old anomaly still sitting in
+  // the dashboard window must not masquerade as a current cost spike.
+  const recencyCutoff = new Date();
+  recencyCutoff.setDate(recencyCutoff.getDate() - ANOMALY_RECENCY_DAYS);
+  const recentAnomalies = dashboard.cost_anomalies.filter((a) => {
+    if (a.deviation_sigma < ANOMALY_SIGMA_THRESHOLD) return false;
+    const when = new Date(a.date);
+    return !Number.isNaN(when.getTime()) && when >= recencyCutoff;
+  });
   if (recentAnomalies.length > 0) {
     const worst = recentAnomalies.reduce((a, b) =>
       a.deviation_sigma > b.deviation_sigma ? a : b,
