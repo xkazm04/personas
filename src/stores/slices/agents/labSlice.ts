@@ -129,6 +129,12 @@ interface LabCrudActions<TRun> {
 
 const TERMINAL_STATUSES: Set<LabRunStatus> = new Set(["completed", "failed", "cancelled"]);
 
+// Run ids (keyed `${label}:${runId}`) whose results were fetched while the run
+// was ALREADY terminal — i.e. genuinely final. Only these may be served from
+// cache without a re-fetch; caching mid-run partial results and short-circuiting
+// the moment the status flipped served stale/incomplete results forever.
+const finalizedResultIds = new Set<string>();
+
 function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResult>(
   runsKey: keyof AgentStore,
   resultsMapKey: keyof AgentStore,
@@ -166,15 +172,23 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
     },
     fetchResults: async (runId) => {
       try {
-        // Skip fetch if results are already cached and the run is in a terminal state
+        const finalKey = `${label}:${runId}`;
+        // Short-circuit ONLY when we have results that were fetched in a terminal
+        // state (recorded below). A plain cache+terminal check would serve the
+        // mid-run partial cache as if it were final the instant the status flipped.
         const state = getState();
         const cachedResults = (state[resultsMapKey] as unknown as Record<string, unknown[]>)[runId];
-        if (cachedResults) {
-          const runs = state[runsKey] as unknown as TRun[];
-          const run = runs.find((r) => r.id === runId);
-          if (run && TERMINAL_STATUSES.has(run.status)) return;
-        }
+        if (cachedResults && finalizedResultIds.has(finalKey)) return;
+
         const results = await calls.results(runId);
+        // If the run is terminal now, this fetch IS the final one — record it so
+        // subsequent fetches can safely skip.
+        const runNow = (getState()[runsKey] as unknown as TRun[]).find((r) => r.id === runId);
+        if (runNow && TERMINAL_STATUSES.has(runNow.status)) {
+          finalizedResultIds.add(finalKey);
+        } else {
+          finalizedResultIds.delete(finalKey);
+        }
         set((state) => {
           const existing = state[resultsMapKey] as unknown as Record<string, unknown[]>;
           const updated = { ...existing, [runId]: results };
@@ -183,7 +197,10 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
           if (keys.length > MAX_CACHED_RUN_RESULTS) {
             const toEvict = keys.slice(0, keys.length - MAX_CACHED_RUN_RESULTS);
             for (const k of toEvict) {
-              if (k !== runId) delete updated[k];
+              if (k !== runId) {
+                delete updated[k];
+                finalizedResultIds.delete(`${label}:${k}`);
+              }
             }
           }
           return { [resultsMapKey]: updated } as Partial<AgentStore>;
@@ -195,6 +212,7 @@ function createLabCrud<TRun extends { id: string; status: LabRunStatus }, TResul
     deleteRun: async (runId) => {
       try {
         await calls.remove(runId);
+        finalizedResultIds.delete(`${label}:${runId}`);
         set((state) => {
           const resultsMap = state[resultsMapKey] as unknown as Record<string, unknown[]>;
           const { [runId]: _, ...rest } = resultsMap;
