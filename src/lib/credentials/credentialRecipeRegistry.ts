@@ -78,11 +78,18 @@ export async function saveRecipeFromDesign(
   const conn = result.connector;
   if (!conn?.name) return null;
 
-  // Extract docs URL from setup instructions
+  // Extract docs URL from setup instructions. Prefer a URL that looks like
+  // documentation over the first URL found — instructions often mention an
+  // app/login/API endpoint before the actual docs link, and grabbing the first
+  // match captured the wrong one. Fall back to the first URL when none look
+  // docs-like.
   let docsUrl: string | null = null;
   if (result.setup_instructions) {
-    const match = result.setup_instructions.match(/https?:\/\/[^\s)]+/);
-    if (match) docsUrl = match[0]!;
+    const urls = result.setup_instructions.match(/https?:\/\/[^\s)]+/g) ?? [];
+    const docsLike = urls.find((u) =>
+      /docs|documentation|developer|\/guide|\/reference|help|support/i.test(u),
+    );
+    docsUrl = docsLike ?? urls[0] ?? null;
   }
 
   try {
