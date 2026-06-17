@@ -79,10 +79,34 @@ pub fn write_ritual(pool: &UserDbPool, input: &RitualInput<'_>) -> Result<String
     }
     // Validate schedule JSON parses, even though we don't enforce a
     // shape here — proactive engine (Phase E) owns the DSL semantics.
-    if let Err(e) = serde_json::from_str::<serde_json::Value>(input.schedule_json) {
-        return Err(AppError::Internal(format!(
-            "ritual schedule_json is not valid JSON: {e}"
-        )));
+    let schedule: serde_json::Value = match serde_json::from_str(input.schedule_json) {
+        Ok(v) => v,
+        Err(e) => {
+            return Err(AppError::Internal(format!(
+                "ritual schedule_json is not valid JSON: {e}"
+            )))
+        }
+    };
+    // Quiet-hours / focus windows are interpreted by the proactive engine as
+    // [from, to) local-time windows. A partially-edited window (missing or
+    // unparseable from/to) silently resolves to "no window" at runtime — the
+    // user's quiet hours quietly stop applying and Athena reaches them when
+    // they expected silence. Reject the incomplete window at save time so the
+    // misconfiguration surfaces instead of being swallowed.
+    if matches!(input.kind.as_str(), "quiet_hours" | "focus_window") {
+        for field in ["from", "to"] {
+            let valid = schedule
+                .get(field)
+                .and_then(|v| v.as_str())
+                .map(|s| chrono::NaiveTime::parse_from_str(s, "%H:%M").is_ok())
+                .unwrap_or(false);
+            if !valid {
+                return Err(AppError::Validation(format!(
+                    "{} ritual requires a valid \"{field}\" time in HH:MM format",
+                    input.kind.as_str()
+                )));
+            }
+        }
     }
 
     let id = format!("ritual_{}", short_uuid());
