@@ -99,21 +99,17 @@ pub fn upsert(
             pattern_data = ?6,
             success_count = success_count + ?7,
             failure_count = failure_count + ?8,
-            avg_cost_usd = CASE
-                WHEN (success_count + failure_count + 1) > 0
-                THEN (avg_cost_usd * (success_count + failure_count) + ?9) / (success_count + failure_count + 1)
-                ELSE ?9
-            END,
-            avg_duration_ms = CASE
-                WHEN (success_count + failure_count + 1) > 0
-                THEN (avg_duration_ms * (success_count + failure_count) + ?10) / (success_count + failure_count + 1)
-                ELSE ?10
-            END,
-            confidence = CASE
-                WHEN (success_count + failure_count + 1) > 0
-                THEN CAST(success_count + ?7 AS REAL) / (success_count + failure_count + 1)
-                ELSE ?11
-            END,
+            -- Exponential moving average (alpha = 0.2) instead of a cumulative
+            -- running average. The old (avg*N + new)/(N+1) form shrank each new
+            -- sample's weight to 1/(N+1), so after many executions early outcomes
+            -- dominated forever and the figures never tracked recent reality.
+            -- EMA gives recent outcomes constant weight; seeded by the INSERT's
+            -- first value above.
+            avg_cost_usd = avg_cost_usd * 0.8 + ?9 * 0.2,
+            avg_duration_ms = avg_duration_ms * 0.8 + ?10 * 0.2,
+            -- ?7 is the success indicator (1 on success, 0 on failure), so this
+            -- is a recency-weighted success rate in [0,1].
+            confidence = confidence * 0.8 + CAST(?7 AS REAL) * 0.2,
             last_execution_id = ?12,
             updated_at = ?13",
         params![
