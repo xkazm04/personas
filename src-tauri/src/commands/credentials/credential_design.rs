@@ -208,10 +208,26 @@ pub async fn test_credential_design_healthcheck(
 
     if let Some(headers_obj) = config.get("headers").and_then(|v| v.as_object()) {
         for (key, val) in headers_obj {
-            if let Some(raw) = val.as_str() {
-                let resolved = resolve_template(raw, &values_map);
-                request = request.header(key, resolved);
-            }
+            // Accept scalar header values, not just strings. The previous
+            // `val.as_str()`-only path silently dropped a header whose value
+            // was a number/bool (e.g. an auth header serialized as a non-string)
+            // — the healthcheck then ran *without* that header and mis-reported.
+            // Coerce scalars to their string form; skip genuinely non-scalar
+            // (object/array/null) values loudly instead of silently.
+            let raw = match val {
+                serde_json::Value::String(s) => s.clone(),
+                serde_json::Value::Number(n) => n.to_string(),
+                serde_json::Value::Bool(b) => b.to_string(),
+                _ => {
+                    tracing::warn!(
+                        header = %key,
+                        "healthcheck: skipping non-scalar header value (cannot be sent as a header)"
+                    );
+                    continue;
+                }
+            };
+            let resolved = resolve_template(&raw, &values_map);
+            request = request.header(key, resolved);
         }
     }
 
