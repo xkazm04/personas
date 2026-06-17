@@ -434,6 +434,19 @@ async fn fetch_new_messages(
             timestamp,
         });
     }
+    // Burst detection: a full batch means more than FETCH_LIMIT messages landed
+    // after the cursor between ticks. This used to pass silently; surface it so
+    // the overflow (delayed, or skipped if the cursor outruns it) is
+    // diagnosable. A realtime gateway consumer is the durable fix.
+    if out.len() as u32 >= FETCH_LIMIT {
+        tracing::warn!(
+            channel_id = channel_id,
+            fetch_limit = FETCH_LIMIT,
+            "discord_poller: fetched a full batch (>= per-tick limit) — a burst exceeded the \
+             fetch limit; remaining messages depend on the cursor draining across subsequent \
+             ticks. A realtime gateway consumer is the durable fix."
+        );
+    }
     Ok(out)
 }
 

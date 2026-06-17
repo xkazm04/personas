@@ -406,6 +406,26 @@ async fn fetch_new_messages(
         )));
     }
 
+    // Burst detection: Slack returns the *newest* page within [oldest, now],
+    // so when `has_more` is true a burst exceeded FETCH_LIMIT between ticks and
+    // the messages older than this page are skipped once the cursor jumps to the
+    // newest ts. That used to happen silently. Surface it loudly so the data
+    // loss is diagnosable; the durable fix is the Socket Mode / Events realtime
+    // consumer noted in the module docs.
+    if payload
+        .get("has_more")
+        .and_then(JsonValue::as_bool)
+        .unwrap_or(false)
+    {
+        tracing::warn!(
+            channel_id = channel_id,
+            fetch_limit = FETCH_LIMIT,
+            "slack_poller: conversations.history has_more=true — a burst exceeded the per-tick \
+             fetch limit; messages older than this page will be skipped as the cursor advances. \
+             A realtime (Socket Mode / Events) consumer is the durable fix."
+        );
+    }
+
     let raw = payload
         .get("messages")
         .and_then(JsonValue::as_array)
