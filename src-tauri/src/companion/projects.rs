@@ -92,6 +92,16 @@ pub fn register(
     if path.trim().is_empty() {
         return Err(AppError::Internal("project path must not be empty".into()));
     }
+    // Normalize the path so ON CONFLICT(path) treats the same directory as one
+    // project regardless of case (Windows is case-insensitive), trailing
+    // separators, or `..`/symlinks — otherwise `C:\Foo` and `c:\foo\` register
+    // as two entries and tracking drifts. canonicalize resolves to the real
+    // on-disk entry; fall back to a lexical normalization when the path isn't
+    // on disk yet.
+    let path: String = std::fs::canonicalize(path)
+        .map(|c| c.to_string_lossy().to_string())
+        .unwrap_or_else(|_| path.trim().trim_end_matches(['/', '\\']).to_string());
+    let path = path.as_str();
     let id = format!("proj_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
     let conn = pool.get()?;
