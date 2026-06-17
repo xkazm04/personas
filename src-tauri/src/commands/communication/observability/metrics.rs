@@ -245,10 +245,11 @@ pub fn get_execution_heatmap(
     state: State<'_, Arc<AppState>>,
     days: Option<i64>,
     persona_id: Option<String>,
+    tz_offset_minutes: Option<i64>,
 ) -> Result<ExecutionHeatmapData, AppError> {
     require_auth_sync(&state)?;
     let days = days.map(|d| d.clamp(1, 365));
-    repo::get_execution_heatmap(&state.db, days, persona_id.as_deref())
+    repo::get_execution_heatmap(&state.db, days, persona_id.as_deref(), tz_offset_minutes)
 }
 
 /// Returns correlated events and root-cause suggestions for a specific anomaly.

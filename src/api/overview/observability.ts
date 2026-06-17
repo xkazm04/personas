@@ -115,6 +115,10 @@ export const getExecutionHeatmap = (days?: number, personaId?: string) =>
   invoke<ExecutionHeatmapData>("get_execution_heatmap", {
     days: days,
     personaId: personaId,
+    // Local-minus-UTC minutes (UTC+2 → +120). getTimezoneOffset() is the
+    // inverse sign. Lets the server bucket executions by the user's LOCAL day
+    // so the heatmap matches the locally-rendered grid (no wrong-day cells).
+    tzOffsetMinutes: -new Date().getTimezoneOffset(),
   });
 
 // ============================================================================

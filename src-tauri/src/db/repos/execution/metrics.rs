@@ -1898,10 +1898,28 @@ fn heatmap_cache() -> &'static Mutex<HashMap<String, HeatmapCacheEntry>> {
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-fn heatmap_cache_key(days: i64, persona_id: Option<&str>) -> String {
+fn heatmap_cache_key(days: i64, persona_id: Option<&str>, tz_offset_minutes: Option<i64>) -> String {
+    let tz = tz_offset_minutes.unwrap_or(0);
     match persona_id {
-        Some(id) => format!("{days}|{id}"),
-        None => format!("{days}|"),
+        Some(id) => format!("{days}|{id}|{tz}"),
+        None => format!("{days}||{tz}"),
+    }
+}
+
+/// Build a SQLite `DATE()` modifier argument that shifts the stored-UTC
+/// `created_at` into the client's local day, so day buckets attribute to the
+/// user's local calendar day instead of the UTC day. `tz_offset_minutes` is
+/// local-minus-UTC (e.g. +120 for UTC+2); `None`/0 leaves UTC bucketing.
+/// Returns e.g. `", '+120 minutes'"` to splice after `created_at`, or empty.
+fn heatmap_tz_modifier(tz_offset_minutes: Option<i64>) -> String {
+    match tz_offset_minutes {
+        Some(m) if m != 0 => {
+            // Clamp to the real TZ range so a bad client value can't produce a
+            // nonsense shift.
+            let m = m.clamp(-14 * 60, 14 * 60);
+            format!(", '{m:+} minutes'")
+        }
+        _ => String::new(),
     }
 }
 
@@ -1922,9 +1940,10 @@ pub fn get_execution_heatmap(
     pool: &DbPool,
     days: Option<i64>,
     persona_id: Option<&str>,
+    tz_offset_minutes: Option<i64>,
 ) -> Result<ExecutionHeatmapData, AppError> {
     let window_days = days.unwrap_or(365).clamp(1, 365);
-    let key = heatmap_cache_key(window_days, persona_id);
+    let key = heatmap_cache_key(window_days, persona_id, tz_offset_minutes);
 
     // Cache hit fast path
     if let Ok(map) = heatmap_cache().lock() {
@@ -1935,7 +1954,7 @@ pub fn get_execution_heatmap(
         }
     }
 
-    let data = compute_execution_heatmap(pool, window_days, persona_id)?;
+    let data = compute_execution_heatmap(pool, window_days, persona_id, tz_offset_minutes)?;
 
     if let Ok(mut map) = heatmap_cache().lock() {
         // Bound the cache so a buggy frontend can't grow it without bound.
@@ -1958,6 +1977,7 @@ fn compute_execution_heatmap(
     pool: &DbPool,
     window_days: i64,
     persona_id: Option<&str>,
+    tz_offset_minutes: Option<i64>,
 ) -> Result<ExecutionHeatmapData, AppError> {
     timed_query!("execution_metrics", "execution_metrics::get_heatmap", {
         let conn = pool.get()?;
@@ -1967,15 +1987,20 @@ fn compute_execution_heatmap(
         } else {
             String::new()
         };
+        // Bucket by the client's LOCAL day, not UTC — otherwise a non-UTC user's
+        // executions land on the wrong day-cell. Same modifier in SELECT and
+        // GROUP BY so the grouping matches the projected date. tz_arg is derived
+        // from a clamped integer, so inlining it is injection-safe.
+        let tz_arg = heatmap_tz_modifier(tz_offset_minutes);
 
         let sql = format!(
             "SELECT
-                DATE(created_at) as date,
+                DATE(created_at{tz_arg}) as date,
                 COUNT(*) as count,
                 COALESCE(SUM(cost_usd), 0.0) as cost
              FROM persona_executions
              WHERE created_at >= datetime('now', ?1){pid_clause}
-             GROUP BY DATE(created_at)
+             GROUP BY DATE(created_at{tz_arg})
              ORDER BY date ASC"
         );
 
