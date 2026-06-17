@@ -65,7 +65,10 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
         getUnreadMessageCount(),
       ]);
       if (reset) {
-        set({ messages: rawMessages, messagesTotal: totalCount, unreadMessageCount: unreadCount });
+        // Reset replaces the whole list, so the in-flight-read guard must be
+        // cleared too — a leftover id (in-flight mark that never settled, or a
+        // recycled id) would otherwise permanently no-op markMessageAsRead for it.
+        set({ messages: rawMessages, messagesTotal: totalCount, unreadMessageCount: unreadCount, _pendingReadIds: new Set() });
       } else {
         set((state) => ({
           messages: [...state.messages, ...rawMessages],
