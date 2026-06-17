@@ -465,6 +465,33 @@ pub fn adopt_preset(
         );
     }
 
+    // 3b. If EVERY selected member failed, the team is an empty shell — that's
+    //     a failed adoption, not a partial success. The unconditional shell
+    //     (step 1) exists so the user keeps a *partially* populated team; a
+    //     zero-member team is useless and would otherwise be returned as a
+    //     hollow Ok the UI renders as success with the errors buried in a list.
+    //     Roll back the shell and surface the failures loudly instead. (An
+    //     empty `failures` with empty `members` means nothing was selected —
+    //     not a failure — so guard on `!failures.is_empty()`.)
+    if members.is_empty() && !failures.is_empty() {
+        if let Err(e) = team_repo::delete(&state.db, &team.id) {
+            tracing::warn!(
+                team_id = %team.id,
+                error = %e,
+                "adopt_team_preset: failed to roll back empty team shell after all members failed"
+            );
+        }
+        let summary = failures
+            .iter()
+            .map(|f| format!("{} ({}): {}", f.role, f.template_id, f.reason))
+            .collect::<Vec<_>>()
+            .join("; ");
+        return Err(AppError::Internal(format!(
+            "Team preset adoption failed: all {} member(s) failed to adopt — {summary}",
+            failures.len()
+        )));
+    }
+
     // 4. Connections — skip silently when either endpoint role failed.
     let mut created_connections: i32 = 0;
     for c in &preset.connections {
