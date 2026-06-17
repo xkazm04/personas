@@ -21,6 +21,16 @@ import { silentCatch } from '@/lib/silentCatch';
 /** Active chat execution listener cleanup functions */
 let chatExecCleanup: (() => void) | null = null;
 
+/**
+ * Safety-net window after which a streaming chat turn that has received NO
+ * terminal status event is force-finalized. Covers backend stream death
+ * (process crash / IPC drop) that would otherwise leave the chat wedged
+ * (streaming/executing stuck true) with no recovery. Generously longer than the
+ * default 10-min persona timeout so it never pre-empts a legitimately long turn
+ * — those finalize via the terminal event well before this fires.
+ */
+const CHAT_STREAM_WATCHDOG_MS = 20 * 60_000;
+
 export type ChatMode = 'advisory' | 'agent';
 
 export interface ChatSlice {
@@ -415,11 +425,16 @@ function setupChatExecListeners(
 
   let unlistenOutput: (() => void) | null = null;
   let unlistenStatus: (() => void) | null = null;
+  let watchdog: ReturnType<typeof setTimeout> | null = null;
   let finalized = false;
   let aborted = false;
 
   const cleanup = () => {
     aborted = true;
+    if (watchdog) {
+      clearTimeout(watchdog);
+      watchdog = null;
+    }
     unlistenOutput?.();
     unlistenStatus?.();
     unlistenOutput = null;
@@ -462,6 +477,22 @@ function setupChatExecListeners(
     );
     if (aborted) { status(); return; }
     unlistenStatus = status;
+
+    // Watchdog: if the backend dies mid-flight without ever emitting a terminal
+    // status (process crash / IPC drop), neither listener above fires and the
+    // chat stays wedged forever. Recover after a generous window by finalizing
+    // with whatever output landed so the turn isn't lost and the composer frees.
+    watchdog = setTimeout(() => {
+      if (finalized || aborted) return;
+      finalized = true;
+      const output = get().executionOutput;
+      const textLines = output.filter((l) => classifyLine(l) === 'text');
+      const fullResponse = textLines.join('\n').trim();
+      void get().finishChatStream(fullResponse, personaId, sessionId, executionId);
+      set({ isExecuting: false, activeExecutionId: null, executionPersonaId: null });
+      cleanup();
+      chatExecCleanup = null;
+    }, CHAT_STREAM_WATCHDOG_MS);
    } catch (err) {
     // listener-setup failed (Tauri plugin missing, dynamic import error). Without
     // this, chatStreaming/isExecuting stay true and the chat looks stuck.
