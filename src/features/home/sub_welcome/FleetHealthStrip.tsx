@@ -125,7 +125,9 @@ export default function FleetHealthStrip() {
       <MetricPill
         icon={CheckCircle2}
         label={fleet.success_rate}
-        value={`${metrics.successRate}%`}
+        // With zero executions the rate defaults to 100 — show "—" instead of a
+        // misleading confident green "100%" for a fleet that hasn't run anything.
+        value={metrics.executionsToday > 0 ? `${metrics.successRate}%` : '—'}
         onClick={nav('overview')}
         pulse={metrics.hasFailureSpike}
         accentColor={metrics.hasFailureSpike ? 'bg-red-500/15' : 'bg-emerald-500/15'}
