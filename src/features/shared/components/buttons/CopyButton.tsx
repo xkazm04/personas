@@ -59,7 +59,10 @@ export function CopyButton({
     if (disabled) return;
     if (isManaged && externalOnCopy) {
       externalOnCopy();
-    } else if (text !== undefined) {
+    } else if (text !== undefined && text.length > 0) {
+      // Don't flash "Copied" for an empty string — there's nothing to copy, so
+      // claiming success is theater. (useCopyToClipboard already suppresses the
+      // flash when the clipboard write itself fails.)
       internal.copy(text);
     }
   };
