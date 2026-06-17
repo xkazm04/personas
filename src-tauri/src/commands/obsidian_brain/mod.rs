@@ -124,6 +124,39 @@ pub fn obsidian_brain_detect_vaults(
     Ok(vaults)
 }
 
+/// Recursively count `.md` files under a vault, skipping dot-directories
+/// (`.obsidian`, `.trash`, `.git`, …). Uses `entry.file_type()` so symlinks are
+/// NOT followed (avoids symlink-loop recursion) and is depth-capped as a
+/// backstop. test_connection is a one-shot user action, so a full walk here is
+/// fine (unlike the on-critical-path graph walks).
+fn count_vault_md_files(dir: &std::path::Path, depth: usize) -> i64 {
+    if depth == 0 {
+        return 0;
+    }
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return 0;
+    };
+    let mut count = 0i64;
+    for entry in entries.flatten() {
+        let Ok(ft) = entry.file_type() else { continue };
+        if ft.is_dir() {
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .starts_with('.')
+            {
+                continue;
+            }
+            count += count_vault_md_files(&entry.path(), depth - 1);
+        } else if ft.is_file()
+            && entry.path().extension().map(|e| e == "md").unwrap_or(false)
+        {
+            count += 1;
+        }
+    }
+    count
+}
+
 #[tauri::command]
 pub fn obsidian_brain_test_connection(
     state: State<'_, Arc<AppState>>,
@@ -152,28 +185,9 @@ pub fn obsidian_brain_test_connection(
         });
     }
 
-    // Count .md files (non-recursive for speed, just top-level + 1 deep)
-    let mut note_count: i64 = 0;
-    if let Ok(entries) = std::fs::read_dir(path) {
-        for entry in entries.flatten() {
-            let ep = entry.path();
-            if ep.extension().map(|e| e == "md").unwrap_or(false) {
-                note_count += 1;
-            } else if ep.is_dir()
-                && ep
-                    .file_name()
-                    .map(|n| !n.to_string_lossy().starts_with('.'))
-                    .unwrap_or(false)
-            {
-                if let Ok(sub) = std::fs::read_dir(&ep) {
-                    note_count += sub
-                        .flatten()
-                        .filter(|e| e.path().extension().map(|ext| ext == "md").unwrap_or(false))
-                        .count() as i64;
-                }
-            }
-        }
-    }
+    // Count .md files recursively (the old top-level + 1-deep count undercounted
+    // any vault with deeper folders — success theater on the connection result).
+    let note_count: i64 = count_vault_md_files(path, 16);
 
     let vault_name = path
         .file_name()
