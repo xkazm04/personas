@@ -19,7 +19,20 @@ import { useToastStore } from "@/stores/toastStore";
 export function extractMessage(err: unknown): string {
   if (err == null) return "";
   if (typeof err === "string") return err;
-  if (err instanceof Error) return err.message;
+  if (err instanceof Error) {
+    // Preserve the cause chain in the message — dropping it loses the actual
+    // root failure (e.g. "Save failed" with no hint that the cause was a
+    // network timeout). One level deep keeps it readable; deeper causes are
+    // captured in the stack on the logging path below.
+    const cause = (err as { cause?: unknown }).cause;
+    if (cause != null && cause !== err) {
+      const causeMsg = extractMessage(cause);
+      if (causeMsg && causeMsg !== err.message) {
+        return `${err.message} (caused by: ${causeMsg})`;
+      }
+    }
+    return err.message;
+  }
   if (typeof err === "object") {
     const obj = err as Record<string, unknown>;
     // Common Tauri / API envelope shapes — prefer named text fields
@@ -40,19 +53,31 @@ export function extractMessage(err: unknown): string {
 }
 
 /**
+ * The stack trace of an Error, if present — the single most useful piece of
+ * post-mortem data, and the thing a bare `err.message` log throws away.
+ */
+function stackOf(err: unknown): string | undefined {
+  return err instanceof Error ? err.stack : undefined;
+}
+
+/**
  * Returns a `.catch()` handler that logs the error instead of silently
- * swallowing it. Adds a Sentry breadcrumb for post-mortem diagnosis.
+ * swallowing it. Adds a Sentry breadcrumb for post-mortem diagnosis. Preserves
+ * the stack trace (in the log payload and the breadcrumb data) so a swallowed
+ * failure keeps its post-mortem trail instead of collapsing to one line.
  *
  * Usage:  somePromise.catch(silentCatch("gallery:backfillCategories"))
  */
 export function silentCatch(context: string): (err: unknown) => void {
   return (err: unknown) => {
     const msg = extractMessage(err);
-    log.warn("silentCatch", `${context} failed`, { error: msg });
+    const stack = stackOf(err);
+    log.warn("silentCatch", `${context} failed`, { error: msg, stack });
     Sentry.addBreadcrumb({
       category: "silentCatch",
       message: `${context} failed: ${msg}`,
       level: "warning",
+      data: stack ? { stack } : undefined,
     });
   };
 }
@@ -72,11 +97,13 @@ export function silentCatch(context: string): (err: unknown) => void {
 export function toastCatch(context: string, customMessage?: string): (err: unknown) => void {
   return (err: unknown) => {
     const msg = extractMessage(err);
-    log.warn("toastCatch", `${context} failed`, { error: msg });
+    const stack = stackOf(err);
+    log.warn("toastCatch", `${context} failed`, { error: msg, stack });
     Sentry.addBreadcrumb({
       category: "toastCatch",
       message: `${context} failed: ${msg}`,
       level: "warning",
+      data: stack ? { stack } : undefined,
     });
     useToastStore.getState().addToast(
       customMessage || `Failed to load data. ${msg}`,
@@ -89,11 +116,13 @@ export function toastCatch(context: string, customMessage?: string): (err: unkno
 export function silentCatchNull(context: string): (err: unknown) => null {
   return (err: unknown) => {
     const msg = extractMessage(err);
-    log.warn("silentCatch", `${context} failed`, { error: msg });
+    const stack = stackOf(err);
+    log.warn("silentCatch", `${context} failed`, { error: msg, stack });
     Sentry.addBreadcrumb({
       category: "silentCatch",
       message: `${context} failed: ${msg}`,
       level: "warning",
+      data: stack ? { stack } : undefined,
     });
     return null;
   };
