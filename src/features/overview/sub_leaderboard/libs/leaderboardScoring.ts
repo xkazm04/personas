@@ -127,12 +127,24 @@ export function computeLeaderboard(signals: PersonaHealthSignal[]): LeaderboardE
     const costScore = scoreCostEfficiency(signal.dailyBurnRate, fleetAvgCost);
     const activityScore = scoreActivity(signal.recentExecutions, maxRecentExecs);
 
+    // Speed & cost only contribute to the composite when there's a real baseline
+    // AND the agent has data — scoreSpeed/scoreCostEfficiency return a neutral 50
+    // otherwise (fine for the dimension display, which shows '—'), but folding a
+    // flat 50 into the weighted score across the fleet flattens the ranking and
+    // masks real performance. Drop the dimension and renormalize the remaining
+    // weights so the composite reflects only the dimensions with real data.
+    const hasSpeed = fleetAvgLatency > 0 && signal.avgLatencyMs > 0;
+    const hasCost = fleetAvgCost > 0 && signal.dailyBurnRate > 0;
+    const parts: Array<[number, number]> = [
+      [successScore, WEIGHTS.success],
+      [healthScore, WEIGHTS.health],
+      [activityScore, WEIGHTS.activity],
+    ];
+    if (hasSpeed) parts.push([speedScore, WEIGHTS.speed]);
+    if (hasCost) parts.push([costScore, WEIGHTS.cost]);
+    const totalWeight = parts.reduce((sum, [, w]) => sum + w, 0);
     const composite = Math.round(
-      successScore * WEIGHTS.success +
-      healthScore * WEIGHTS.health +
-      speedScore * WEIGHTS.speed +
-      costScore * WEIGHTS.cost +
-      activityScore * WEIGHTS.activity,
+      parts.reduce((sum, [v, w]) => sum + v * w, 0) / totalWeight,
     );
 
     const costPerExec = signal.totalExecutions > 0
