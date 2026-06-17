@@ -200,8 +200,13 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       summary: buildSummary(allMessages),
     }).then((ctx) => set({ chatSessionContext: ctx })).catch(() => {/* best-effort */});
 
-    // 3. Determine if we can --resume an existing Claude session
-    const claudeSessionId = get().chatSessionContext?.claudeSessionId;
+    // 3. Determine if we can --resume an existing Claude session. Only trust the
+    // context's claudeSessionId when the context actually belongs to the session
+    // we're sending to — chatSessionContext can lag a thread switch, and resuming
+    // a foreign/deleted Claude session would cross-contaminate (or fail). On a
+    // mismatch, fall through to a fresh send with full conversation context.
+    const ctx = get().chatSessionContext;
+    const claudeSessionId = ctx?.sessionId === sessionId ? ctx.claudeSessionId : null;
     const isAdvisory = get().chatMode === 'advisory';
 
     let conversationInput: string;
