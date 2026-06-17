@@ -110,19 +110,36 @@ impl CompilationPipeline for WorkflowCompiler {
 
     fn validate(&self, output: &mut TopologyBlueprint) -> Result<(), String> {
         let member_count = output.members.len();
-        for (i, bc) in output.connections.iter().enumerate() {
-            if bc.source_index >= member_count || bc.target_index >= member_count {
-                return Err(format!(
-                    "Connection[{}] has out-of-bounds indices: source={}, target={}, members={}",
-                    i, bc.source_index, bc.target_index, member_count,
-                ));
+        // A team with no members is genuinely unrecoverable.
+        if member_count == 0 {
+            return Err("Workflow blueprint has no members".into());
+        }
+        // DROP invalid connections (out-of-bounds index or self-loop) instead of
+        // aborting the whole team on a single bad LLM-emitted index. The valid
+        // topology still compiles; dropped edges are logged. This revives the
+        // intended warnings/dropped_connections recovery path that was dead
+        // (validate used to early-return Err on the first bad edge).
+        let before = output.connections.len();
+        output.connections.retain(|bc| {
+            let valid = bc.source_index < member_count
+                && bc.target_index < member_count
+                && bc.source_index != bc.target_index;
+            if !valid {
+                tracing::warn!(
+                    source = bc.source_index,
+                    target = bc.target_index,
+                    members = member_count,
+                    "workflow_compiler: dropping invalid connection (out-of-bounds or self-loop)"
+                );
             }
-            if bc.source_index == bc.target_index {
-                return Err(format!(
-                    "Connection[{}] is a self-loop (index {})",
-                    i, bc.source_index,
-                ));
-            }
+            valid
+        });
+        let dropped = before - output.connections.len();
+        if dropped > 0 {
+            tracing::warn!(
+                dropped,
+                "workflow_compiler: compiled team with {dropped} invalid connection(s) dropped"
+            );
         }
         Ok(())
     }
