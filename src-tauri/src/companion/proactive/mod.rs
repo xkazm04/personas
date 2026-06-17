@@ -160,6 +160,11 @@ pub fn enqueue_external(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<Proac
     enqueue_if_new(pool, nudge)
 }
 
+/// How long resolved (terminal-status) proactive messages are retained before
+/// the opportunistic prune in [`enqueue_if_new`] removes them. The table had no
+/// retention, so it grew unbounded — slowing queries and the dedupe scan.
+const PROACTIVE_RETENTION_WINDOW: &str = "-30 days";
+
 /// Insert a new proactive message *unless* an unresolved one with
 /// matching `(trigger_kind, trigger_ref)` already exists. Returns
 /// `Some` for new inserts, `None` when deduped.
@@ -197,6 +202,15 @@ fn enqueue_if_new(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<ProactiveMe
             now
         ],
     )?;
+    // Opportunistic retention: prune long-resolved messages so the table
+    // doesn't grow unbounded. Only terminal-status rows (engaged/dismissed/
+    // expired) past the window are removed — queued/delivered stay. Best-effort.
+    let _ = conn.execute(
+        "DELETE FROM companion_proactive_message
+         WHERE status NOT IN ('queued', 'delivered')
+           AND created_at < datetime('now', ?1)",
+        params![PROACTIVE_RETENTION_WINDOW],
+    );
     Ok(Some(ProactiveMessage {
         id,
         trigger_kind: nudge.trigger_kind.clone(),
