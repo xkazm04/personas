@@ -2381,12 +2381,42 @@ pub fn move_context_to_group(
     group_id: Option<&str>,
 ) -> Result<DevContext, AppError> {
     timed_query!("dev_contexts", "dev_contexts::move_context_to_group", {
-        let now = chrono::Utc::now().to_rfc3339();
+        // Fetch the context first so a non-existent id fails loudly (NotFound)
+        // rather than the UPDATE silently affecting 0 rows and reporting success.
+        let ctx = get_context_by_id(pool, id)?;
+
         let conn = pool.get()?;
-        conn.execute(
+        // Validate the target group exists AND belongs to the same project. The
+        // group_id FK (ON DELETE SET NULL) doesn't guarantee per-connection FK
+        // enforcement is enabled, and never enforces same-project — so without
+        // this a context could be silently moved into a non-existent group or a
+        // group from another project, orphaning its grouping.
+        if let Some(gid) = group_id {
+            let ok: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dev_context_groups WHERE id = ?1 AND project_id = ?2",
+                    params![gid, ctx.project_id],
+                    |r| r.get::<_, i64>(0),
+                )
+                .map(|c| c > 0)
+                .unwrap_or(false);
+            if !ok {
+                return Err(AppError::Validation(format!(
+                    "Group {gid} does not exist in project {}",
+                    ctx.project_id
+                )));
+            }
+        }
+
+        let now = chrono::Utc::now().to_rfc3339();
+        let rows = conn.execute(
             "UPDATE dev_contexts SET group_id = ?1, updated_at = ?2 WHERE id = ?3",
             params![group_id, now, id],
         )?;
+        if rows == 0 {
+            // Context vanished between the fetch and the UPDATE (concurrent delete).
+            return Err(AppError::NotFound(format!("Dev context {id}")));
+        }
         get_context_by_id(pool, id)
     })
 }
