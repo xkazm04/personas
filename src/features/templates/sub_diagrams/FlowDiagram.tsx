@@ -17,7 +17,31 @@ export default function FlowDiagram({
   // asserts nodes/edges are arrays the LLM may actually omit. Normalize on read
   // so a single malformed flow (missing `nodes` or `edges`) can't throw
   // "x is not iterable" inside a useMemo and blank the whole diagram modal.
-  const safeNodes = useMemo(() => flow.nodes ?? [], [flow.nodes]);
+  // Dedupe nodes by id. LLM output can repeat a node id; downstream that's
+  // corrosive — `nodeMap` (a Map keyed by id) would silently keep only the
+  // last node per id and drop the rest from the diagram, and two same-id nodes
+  // landing in one layer collide on React's `key={node.id}`. Dedupe up front,
+  // keeping the first occurrence, so every derived structure (adjacency,
+  // inDegree, layers, nodeMap, keys) is 1:1 and stable. Warn in dev so a
+  // malformed flow surfaces instead of rendering a silently-truncated graph.
+  const safeNodes = useMemo(() => {
+    const raw = flow.nodes ?? [];
+    const seen = new Set<string>();
+    const deduped: FlowNode[] = [];
+    for (const node of raw) {
+      if (seen.has(node.id)) {
+        if (import.meta.env.DEV) {
+          console.warn(
+            `[FlowDiagram] duplicate node id "${node.id}" — keeping the first occurrence, dropping the duplicate.`,
+          );
+        }
+        continue;
+      }
+      seen.add(node.id);
+      deduped.push(node);
+    }
+    return deduped;
+  }, [flow.nodes]);
   const safeEdges = useMemo(() => flow.edges ?? [], [flow.edges]);
 
   // Build adjacency from edges
