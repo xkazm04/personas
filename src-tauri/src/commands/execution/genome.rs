@@ -177,7 +177,15 @@ async fn run_breeding_pipeline(
             (i, score.overall)
         })
         .collect();
-    parent_fitness.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    // Descending by fitness, but treat NaN as the WORST (sinks to the bottom).
+    // The old unwrap_or(Equal) made a NaN score compare equal to everything, so
+    // a genome whose fitness couldn't be computed could displace the real best.
+    parent_fitness.sort_by(|a, b| match (a.1.is_nan(), b.1.is_nan()) {
+        (true, true) => std::cmp::Ordering::Equal,
+        (true, false) => std::cmp::Ordering::Greater,
+        (false, true) => std::cmp::Ordering::Less,
+        (false, false) => b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal),
+    });
 
     let mut all_offspring: Vec<BreedingOffspring> = Vec::new();
     let mut current_genomes = parent_genomes;
