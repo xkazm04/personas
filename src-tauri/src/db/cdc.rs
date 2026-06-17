@@ -248,8 +248,19 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 crate::cloud::sync::notify_dirty();
             }
 
-            // Special handling for persona_events: fetch full row for event bus
-            if event.table == "persona_events" && event.action == CdcAction::Insert {
+            // Special handling for persona_events: fetch the full row for the
+            // event bus on INSERT *and* UPDATE. Previously only INSERT fetched
+            // the full payload; a status change (UPDATE) fell through to the
+            // lightweight {action,table,rowid} notification below, which the
+            // live-stream UI rejects (it has no event_type) — so the row froze
+            // on its first-seen status and later transitions were silently
+            // dropped. UPDATE re-fetches the now-current row and re-emits it
+            // under the same EVENT_BUS name, which the UI replaces in place.
+            // DELETE stays lightweight: the row is gone, so there's nothing to
+            // fetch.
+            if event.table == "persona_events"
+                && matches!(event.action, CdcAction::Insert | CdcAction::Update)
+            {
                 match fetch_persona_event_by_rowid(&db, event.rowid) {
                     Ok(Some(persona_event)) => {
                         if let Err(e) = app_handle.emit(event_name, &persona_event) {
