@@ -290,11 +290,16 @@ export function simulateRevocation(
     0,
   );
   const estimatedDailyRevenueLost = affectedPersonas.reduce(
-    (sum, p) => sum + p.dailyBurnRate,
+    // Ignore non-finite / negative burn rates — a single garbage value (NaN
+    // slips past `?? 0`, or a corrupt huge number) would otherwise dominate the
+    // estimate and present a misleading revenue-at-risk total.
+    (sum, p) => sum + (Number.isFinite(p.dailyBurnRate) && p.dailyBurnRate > 0 ? p.dailyBurnRate : 0),
     0,
   );
 
-  // 3. Failover suggestions — same service_type credentials that aren't this one
+  // 3. Failover suggestions — same service_type credentials that aren't this
+  // one, healthy ones first so a known-unhealthy credential isn't presented as
+  // an equally-viable failover (it carries healthOk, but order signals intent).
   const failoverSuggestions: FailoverSuggestion[] = allCredentials
     .filter((c) => c.id !== credentialId && c.service_type === serviceType)
     .map((c) => ({
@@ -302,7 +307,8 @@ export function simulateRevocation(
       credentialName: c.name,
       serviceType: c.service_type,
       healthOk: c.healthcheck_last_success,
-    }));
+    }))
+    .sort((a, b) => Number(!!b.healthOk) - Number(!!a.healthOk));
 
   return {
     credentialId,
