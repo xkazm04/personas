@@ -67,5 +67,24 @@ export function useDebouncedSave(
     };
   }, [isDirty, cancel, delay, deps]);
 
+  // Flush (not just cancel) a pending save on UNMOUNT. A discrete edit made in
+  // the final debounce window before the editor closes — e.g. picking a persona
+  // icon — was otherwise silently lost: the timer-effect's cleanup cleared the
+  // timer without firing. This is a mount-once effect (empty deps) so it runs
+  // ONLY on real unmount, not on every dep change. The navigation/close guard
+  // calls cancel() first (nulling the timer), so this never double-saves that
+  // path; it only catches an unguarded unmount.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+        // Fire-and-forget: the component is gone so isSaving/lastError can't be
+        // tracked, but the persist (which reads the latest draft via refs) runs.
+        void saveFnRef.current();
+      }
+    };
+  }, []);
+
   return { isSaving, lastError, cancel };
 }
