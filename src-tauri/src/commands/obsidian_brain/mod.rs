@@ -1288,41 +1288,53 @@ pub fn obsidian_brain_resolve_conflict(
             );
         }
         "use_vault" => {
-            // Update app memory with vault content
+            // Update app memory with vault content. Fail closed when the update
+            // can't actually be applied — previously a frontmatter parse miss or
+            // a zero-row UPDATE was skipped silently, yet the code below still
+            // upserted sync_state and logged "resolved" success, so a conflict
+            // looked resolved while the app side was never touched.
             if conflict.entity_type == "memory" {
-                if let Some((yaml, body)) = parse_frontmatter(&conflict.vault_content) {
-                    let new_title = body
-                        .lines()
-                        .find(|l| l.starts_with("# "))
-                        .map(|l| l[2..].trim().to_string());
-                    let new_content = body
-                        .lines()
-                        .skip_while(|l| l.starts_with("# ") || l.is_empty())
-                        .collect::<Vec<_>>()
-                        .join("\n")
-                        .trim()
-                        .to_string();
-                    let new_category = extract_yaml_field(&yaml, "category");
-                    let new_importance =
-                        extract_yaml_field(&yaml, "importance").and_then(|v| v.parse::<i32>().ok());
-                    let new_tags = extract_yaml_tags(&yaml);
-                    let tags_json =
-                        serde_json::to_string(&new_tags).unwrap_or_else(|_| "[]".into());
-                    let now = Utc::now().to_rfc3339();
+                let Some((yaml, body)) = parse_frontmatter(&conflict.vault_content) else {
+                    return Err(AppError::Validation(
+                        "use_vault resolution: vault content has no parseable frontmatter — cannot apply to the memory".into(),
+                    ));
+                };
+                let new_title = body
+                    .lines()
+                    .find(|l| l.starts_with("# "))
+                    .map(|l| l[2..].trim().to_string());
+                let new_content = body
+                    .lines()
+                    .skip_while(|l| l.starts_with("# ") || l.is_empty())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+                    .trim()
+                    .to_string();
+                let new_category = extract_yaml_field(&yaml, "category");
+                let new_importance =
+                    extract_yaml_field(&yaml, "importance").and_then(|v| v.parse::<i32>().ok());
+                let new_tags = extract_yaml_tags(&yaml);
+                let tags_json = serde_json::to_string(&new_tags).unwrap_or_else(|_| "[]".into());
+                let now = Utc::now().to_rfc3339();
 
-                    let conn = state.db.get()?;
-                    conn.execute(
-                        "UPDATE persona_memories SET title = COALESCE(?1, title), content = CASE WHEN ?2 = '' THEN content ELSE ?2 END, category = COALESCE(?3, category), importance = COALESCE(?4, importance), tags = ?5, updated_at = ?6 WHERE id = ?7",
-                        rusqlite::params![
-                            new_title,
-                            new_content,
-                            new_category,
-                            new_importance.map(|i| i.clamp(1, 5)),
-                            tags_json,
-                            now,
-                            conflict.entity_id,
-                        ],
-                    )?;
+                let conn = state.db.get()?;
+                let rows = conn.execute(
+                    "UPDATE persona_memories SET title = COALESCE(?1, title), content = CASE WHEN ?2 = '' THEN content ELSE ?2 END, category = COALESCE(?3, category), importance = COALESCE(?4, importance), tags = ?5, updated_at = ?6 WHERE id = ?7",
+                    rusqlite::params![
+                        new_title,
+                        new_content,
+                        new_category,
+                        new_importance.map(|i| i.clamp(1, 5)),
+                        tags_json,
+                        now,
+                        conflict.entity_id,
+                    ],
+                )?;
+                if rows == 0 {
+                    return Err(AppError::NotFound(format!(
+                        "use_vault resolution: memory {} not found — nothing was updated",
+                        conflict.entity_id
+                    )));
                 }
             }
             let new_hash = compute_content_hash(&conflict.vault_content);
