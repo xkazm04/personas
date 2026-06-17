@@ -317,7 +317,15 @@ fn measure_derived(
                    AND LOWER(s.title) LIKE '%merge%'
                    AND datetime(s.completed_at) > datetime('now','-7 days')",
                 rusqlite::params![team_id], |r| r.get(0))?;
-            let rate = if bounces + merges > 0.0 { bounces / (bounces + merges) * 100.0 } else { 0.0 };
+            // No QA activity in the window is NOT a healthy 0% bounce rate —
+            // it's no data. Returning 0.0 recorded a falsely-perfect KPI; error
+            // instead so the evaluator skips recording until there's real data.
+            if bounces + merges <= 0.0 {
+                return Err(AppError::Validation(
+                    "qa_bounce_rate: no QA bounces or clean merges in the last 7 days — insufficient data".into(),
+                ));
+            }
+            let rate = bounces / (bounces + merges) * 100.0;
             (rate, format!("bounces={bounces} cleanMerges={merges} window=7d"))
         }
         // Failed / total executions of the team's members, last 7 days, %.
@@ -329,7 +337,13 @@ fn measure_derived(
                  JOIN persona_team_members m ON m.persona_id = e.persona_id AND m.team_id = ?1
                  WHERE datetime(e.created_at) > datetime('now','-7 days')",
                 rusqlite::params![team_id], |r| Ok((r.get::<_, Option<f64>>(0)?.unwrap_or(0.0), r.get(1)?)))?;
-            let rate = if total > 0.0 { failed / total * 100.0 } else { 0.0 };
+            // Zero executions is no data, not a healthy 0% failure rate.
+            if total <= 0.0 {
+                return Err(AppError::Validation(
+                    "exec_failure_rate: no team executions in the last 7 days — insufficient data".into(),
+                ));
+            }
+            let rate = failed / total * 100.0;
             (rate, format!("failed={failed} total={total} window=7d"))
         }
         // Open incidents attributed to the team's personas (a level, not a rate).
