@@ -500,6 +500,23 @@ pub fn twin_record_interaction(
     create_memory: Option<bool>,
 ) -> Result<TwinCommunication, AppError> {
     require_auth_sync(&state)?;
+    // Validate the enum-like fields at the trust boundary. `direction` has a DB
+    // CHECK as a backstop, but `channel` has none — without this, any string
+    // (typo, garbage) is silently persisted, polluting per-channel tone/memory
+    // resolution. Reject unknown values with a clear message here.
+    const VALID_DIRECTIONS: &[&str] = &["in", "out"];
+    const VALID_CHANNELS: &[&str] = &["discord", "slack", "email", "sms", "voice", "generic"];
+    if !VALID_DIRECTIONS.contains(&direction.as_str()) {
+        return Err(AppError::Validation(format!(
+            "Invalid direction '{direction}' (expected 'in' or 'out')"
+        )));
+    }
+    if !VALID_CHANNELS.contains(&channel.as_str()) {
+        return Err(AppError::Validation(format!(
+            "Invalid channel '{channel}' (expected one of: {})",
+            VALID_CHANNELS.join(", ")
+        )));
+    }
     repo::record_interaction(
         &state.db,
         &twin_id,
