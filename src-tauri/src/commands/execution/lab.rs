@@ -554,26 +554,18 @@ pub fn lab_accept_matrix_draft(
         return persona_repo::get_by_id(&state.db, &run.persona_id);
     }
 
-    let draft_json = run
-        .draft_prompt_json
-        .ok_or_else(|| AppError::Validation("No draft prompt available for this run".into()))?;
-
-    // Validate the LLM-generated draft against the structured prompt schema
-    // before writing it to the persona. This prevents silent corruption from
-    // malformed LLM output.
-    let draft_errors = validation::persona::validate_structured_prompt(&draft_json);
-    validation::contract::check(draft_errors)?;
-
-    // Wrap persona update + draft acceptance + version creation in a single
-    // transaction to prevent inconsistent state on partial failure.
+    // Wrap claim + draft read + persona update + version creation in one
+    // IMMEDIATE transaction. IMMEDIATE takes the write lock up front so the CAS
+    // claim and everything that follows form a single serialized unit.
     let mut conn = state.db.get()?;
-    let tx = conn.transaction().map_err(AppError::Database)?;
+    let tx = conn
+        .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+        .map_err(AppError::Database)?;
     let now = chrono::Utc::now().to_rfc3339();
 
-    // Authoritative idempotency guard: conditionally claim the accept within
-    // the transaction. If another concurrent call already flipped the flag,
-    // rows_affected will be 0 and we roll back without creating a duplicate
-    // version row.
+    // Authoritative idempotency guard: conditionally claim the accept. If
+    // another concurrent call already flipped the flag, rows_affected is 0 and
+    // we roll back without applying or versioning anything.
     let claimed = tx.execute(
         "UPDATE lab_matrix_runs SET draft_accepted = 1 WHERE id = ?1 AND draft_accepted = 0",
         rusqlite::params![run_id],
@@ -582,6 +574,24 @@ pub fn lab_accept_matrix_draft(
         drop(tx);
         return persona_repo::get_by_id(&state.db, &run.persona_id);
     }
+
+    // Read the draft INSIDE the transaction so the prompt we apply is the one
+    // attached to the row we just claimed — closing the TOCTOU where a
+    // concurrent regenerate could swap draft_prompt_json between the earlier
+    // pre-transaction read and this write.
+    let draft_json: String = tx
+        .query_row(
+            "SELECT draft_prompt_json FROM lab_matrix_runs WHERE id = ?1",
+            rusqlite::params![run_id],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .map_err(AppError::Database)?
+        .ok_or_else(|| AppError::Validation("No draft prompt available for this run".into()))?;
+
+    // Validate before writing — on failure `?` rolls the tx back, undoing the
+    // claim so the user can fix and retry.
+    let draft_errors = validation::persona::validate_structured_prompt(&draft_json);
+    validation::contract::check(draft_errors)?;
 
     // Apply draft prompt to the persona
     tx.execute(
