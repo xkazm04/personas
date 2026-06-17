@@ -394,7 +394,11 @@ export default function GuidedTour() {
     });
     return (
       <button
-        onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
+        // Just expand — don't re-run navigateToStep. Minimizing only collapses
+        // the panel (the user stays on the step's screen), so re-navigating on
+        // restore needlessly re-fired every step side effect (route changes,
+        // modal opens, appearance-baseline capture, etc.).
+        onClick={() => setIsMinimized(false)}
         data-testid="tour-panel-minimized"
         title={minimizedHint}
         aria-label={minimizedHint}
