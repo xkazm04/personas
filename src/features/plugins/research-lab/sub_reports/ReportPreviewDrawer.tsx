@@ -91,6 +91,21 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
     };
   }, [report.projectId]);
 
+  // Restore any previously-synthesized Abstract & Discussion for THIS report.
+  // The synthesis is produced by a full persona run (time + tokens), yet lived
+  // only in component state — so closing the drawer discarded it silently and
+  // the user had to re-run it on every reopen. Persist it per-report id and
+  // rehydrate on open; switching to a report with no cached synthesis resets to
+  // null so we never bleed one report's synthesis into another.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`research-lab:synthesis:${report.id}`);
+      setSynthesis(raw ? (JSON.parse(raw) as ReportSynthesis) : null);
+    } catch {
+      setSynthesis(null);
+    }
+  }, [report.id]);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -170,6 +185,13 @@ export default function ReportPreviewDrawer({ report, onClose }: Props) {
         return;
       }
       setSynthesis(parsed);
+      // Persist so the synthesis survives drawer close/reopen instead of being
+      // silently lost the moment the drawer unmounts.
+      try {
+        localStorage.setItem(`research-lab:synthesis:${report.id}`, JSON.stringify(parsed));
+      } catch {
+        /* storage unavailable/full — synthesis still lives in state this session */
+      }
       addToast('Abstract & Discussion synthesized', 'success');
     } catch (err) {
       toastCatch('ReportPreviewDrawer:synthesize')(err);
