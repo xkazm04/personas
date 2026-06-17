@@ -56,11 +56,25 @@ function rotationBadge(item: RotationOverviewItem, t: Translations) {
  * pre-formatted string) means the "due now" decision is data-driven and never
  * relies on comparing a localized string — so localization can't break logic.
  */
+/**
+ * Parse a server timestamp to epoch ms, tolerating both RFC3339 and legacy
+ * SQLite-naive ("YYYY-MM-DD HH:MM:SS") shapes. Returns null (not NaN) on an
+ * unparseable value — `new Date(naive).getTime()` silently yielded NaN, which
+ * flowed into "NaN days" countdowns and undercounted "expiring soon".
+ */
+function parseServerMs(ts: string): number | null {
+  let ms = Date.parse(ts);
+  if (Number.isNaN(ms)) ms = Date.parse(ts.replace(' ', 'T'));
+  return Number.isNaN(ms) ? null : ms;
+}
+
 function countdownParts(
   nextRotation: string | null,
 ): { isDue: boolean; days: number; hours: number } | null {
   if (!nextRotation) return null;
-  const diff = new Date(nextRotation).getTime() - Date.now();
+  const ms = parseServerMs(nextRotation);
+  if (ms == null) return null;
+  const diff = ms - Date.now();
   if (diff <= 0) return { isDue: true, days: 0, hours: 0 };
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -75,8 +89,11 @@ function summaryStats(items: RotationOverviewItem[]) {
     if (item.status.has_policy && item.status.policy_enabled) active++;
     if (item.status.anomaly_detected) anomalies++;
     if (item.status.next_rotation_at) {
-      const diff = new Date(item.status.next_rotation_at).getTime() - Date.now();
-      if (diff > 0 && diff < 7 * 24 * 60 * 60 * 1000) expiringSoon++;
+      const ms = parseServerMs(item.status.next_rotation_at);
+      if (ms != null) {
+        const diff = ms - Date.now();
+        if (diff > 0 && diff < 7 * 24 * 60 * 60 * 1000) expiringSoon++;
+      }
     }
   }
   return { active, expiringSoon, anomalies, total: items.length };
