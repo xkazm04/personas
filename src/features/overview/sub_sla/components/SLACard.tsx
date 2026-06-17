@@ -131,6 +131,10 @@ export function DailyTrendChart({ points }: { points: { date: string; success_ra
           <div key={i} className="flex flex-col items-center justify-end flex-shrink-0" style={{ width: barWidth }} title={`${p.date}: ${formatPercent(p.success_rate)} (${p.total} runs)`}>
             <div
               className={`animate-fade-in w-full rounded-t-interactive ${color}`}
+              // Bar height encodes the success rate (0–1). Without an explicit
+              // height every bar rendered at 0px and the trend chart was blank.
+              // 2% floor keeps a low/zero-rate day visible as a sliver.
+              style={{ height: `${Math.max(2, p.success_rate * 100)}%` }}
             />
           </div>
         );
