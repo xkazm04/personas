@@ -213,10 +213,14 @@ impl PersonaGenome {
     }
 
     /// Reassemble the genome's prompt segments back into a full system prompt.
+    /// Empty / whitespace-only segments are skipped so a dropped or blanked
+    /// segment contributes no stray "\n\n" padding — and an all-empty genome
+    /// reassembles to a genuinely empty string the adoption path can reject.
     pub fn reassemble_prompt(&self) -> String {
         self.prompt_segments
             .iter()
             .map(|s| s.text.as_str())
+            .filter(|t| !t.trim().is_empty())
             .collect::<Vec<_>>()
             .join("\n\n")
     }

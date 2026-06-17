@@ -321,6 +321,18 @@ pub fn genome_adopt_offspring(
     let genome: PersonaGenome = serde_json::from_str(&genome_json)
         .map_err(|e| AppError::Internal(format!("Failed to parse offspring genome: {e}")))?;
 
+    // Fail closed on a blank prompt. Mutation/crossover (or a source persona
+    // with no prompt) can leave a genome whose segments all reassemble to
+    // nothing; adopting it would mint a persona with an empty system prompt —
+    // a silently broken agent. Reject it instead of promoting the blank.
+    let system_prompt = genome.reassemble_prompt();
+    if system_prompt.trim().is_empty() {
+        return Err(AppError::Validation(
+            "Cannot adopt this genome: its prompt segments reassemble to an empty system prompt"
+                .into(),
+        ));
+    }
+
     // Determine project_id from first parent
     let first_parent_id = genome
         .source_persona_id
@@ -355,7 +367,7 @@ pub fn genome_adopt_offspring(
             project_id,
             persona_name,
             genome.description,
-            genome.reassemble_prompt(),
+            system_prompt,
             genome.structured_prompt,
             Option::<String>::None, // icon
             Option::<String>::None, // color
