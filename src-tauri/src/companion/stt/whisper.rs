@@ -194,7 +194,18 @@ pub async fn transcribe(
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(clean_transcript(&stdout))
+    let transcript = clean_transcript(&stdout);
+    // A zero-exit run with empty stdout (no speech detected, or unintelligible
+    // audio) used to return an empty string as a "successful" transcript — the
+    // caller then silently inserted nothing. Surface it as an error so the UI
+    // can tell the user "didn't catch that" instead of a silent no-op.
+    if transcript.is_empty() {
+        return Err(AppError::Internal(
+            "whisper produced an empty transcript (no speech detected or unintelligible audio)"
+                .into(),
+        ));
+    }
+    Ok(transcript)
 }
 
 /// Join the engine's stdout lines into one trimmed transcript. whisper-cli
