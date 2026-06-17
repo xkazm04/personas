@@ -17,13 +17,20 @@
 
 use std::io::Cursor;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 use image::{imageops::FilterType, ImageFormat, ImageReader, Limits};
 use sha2::{Digest, Sha256};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Manager, State};
 use tokio::fs;
 
 use crate::error::AppError;
+use crate::AppState;
+
+/// Stored-icon value prefix. Mirrors the frontend `CUSTOM_ICON_PREFIX`
+/// (`src/lib/icons/customIconStore.ts`): a persona's `icon` column holds
+/// `custom-icon:<asset_id>` when it points at a custom-uploaded/generated icon.
+const CUSTOM_ICON_PREFIX: &str = "custom-icon:";
 
 /// Hard cap on the source file we'll even read (10 MB). A persona icon is a
 /// small image; anything larger is a mistake or an attack.
@@ -194,9 +201,26 @@ pub async fn list_persona_icons(app: AppHandle) -> Result<Vec<String>, AppError>
 /// not an error. Personas still referencing the deleted asset fall back to the
 /// default icon at render time.
 #[tauri::command]
-pub async fn delete_persona_icon(app: AppHandle, asset_id: String) -> Result<(), AppError> {
+pub async fn delete_persona_icon(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    asset_id: String,
+) -> Result<(), AppError> {
     if !is_valid_asset_id(&asset_id) {
         return Err(AppError::Validation("Invalid icon asset ID".into()));
+    }
+    // Clear the icon reference on EVERY persona using this custom icon before
+    // removing the file. A custom icon can be shared across personas; deleting
+    // the asset without scrubbing references left those other personas pointing
+    // at a now-missing file (a silently broken icon). Clearing them reverts
+    // those personas to the default icon instead.
+    {
+        let conn = state.db.get()?;
+        let icon_value = format!("{CUSTOM_ICON_PREFIX}{asset_id}");
+        conn.execute(
+            "UPDATE personas SET icon = '' WHERE icon = ?1",
+            rusqlite::params![icon_value],
+        )?;
     }
     let target = persona_icons_dir(&app)?.join(format!("{asset_id}.png"));
     if target.exists() {
