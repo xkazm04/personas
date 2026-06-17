@@ -1041,15 +1041,35 @@ async fn fetch_tools_paginated_stdio(
 }
 
 /// Execute `tools/list` on an already-initialized session.
+/// Deserialize tool definitions, LOGGING any that fail rather than silently
+/// dropping them — a malformed tool def vanishing from the list reads as a
+/// healthy capability set that is quietly missing tools.
+fn parse_tool_defs(raw: &[serde_json::Value], transport: &str) -> Vec<McpTool> {
+    let mut tools = Vec::with_capacity(raw.len());
+    let mut dropped = 0usize;
+    for t in raw {
+        match serde_json::from_value::<McpTool>(t.clone()) {
+            Ok(tool) => tools.push(tool),
+            Err(e) => {
+                dropped += 1;
+                tracing::warn!(transport, error = %e, "MCP: dropping unparseable tool definition from tools/list");
+            }
+        }
+    }
+    if dropped > 0 {
+        tracing::warn!(
+            transport,
+            dropped,
+            kept = tools.len(),
+            "MCP tools/list contained unparseable tool definition(s)"
+        );
+    }
+    tools
+}
+
 async fn list_tools_on_session(session: &mut PooledStdioSession) -> Result<Vec<McpTool>, AppError> {
     let tools_val = fetch_tools_paginated_stdio(session).await?;
-
-    let tools: Vec<McpTool> = tools_val
-        .iter()
-        .filter_map(|t| serde_json::from_value(t.clone()).ok())
-        .collect();
-
-    Ok(tools)
+    Ok(parse_tool_defs(&tools_val, "stdio"))
 }
 
 /// Execute `tools/call` on an already-initialized session, with schema validation.
@@ -1184,13 +1204,7 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
 
     // List tools — follow `nextCursor` so tools past page 1 are not dropped.
     let tools_val = fetch_tools_paginated_sse(&client, url, auth_token, 2).await?;
-
-    let tools: Vec<McpTool> = tools_val
-        .iter()
-        .filter_map(|t| serde_json::from_value(t.clone()).ok())
-        .collect();
-
-    Ok(tools)
+    Ok(parse_tool_defs(&tools_val, "sse"))
 }
 
 async fn execute_tool_sse(
@@ -1866,15 +1880,33 @@ fn parse_tool_result(resp: &serde_json::Value) -> Result<McpToolResult, AppError
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
 
-    let content: Vec<McpToolContent> = result
-        .get("content")
-        .and_then(|c| c.as_array())
-        .map(|arr| {
-            arr.iter()
-                .filter_map(|item| serde_json::from_value(item.clone()).ok())
-                .collect()
-        })
-        .unwrap_or_default();
+    let mut content: Vec<McpToolContent> = Vec::new();
+    let mut dropped = 0usize;
+    if let Some(arr) = result.get("content").and_then(|c| c.as_array()) {
+        for item in arr {
+            match serde_json::from_value::<McpToolContent>(item.clone()) {
+                Ok(block) => content.push(block),
+                Err(_) => dropped += 1,
+            }
+        }
+    }
+    if dropped > 0 {
+        // Don't silently swallow malformed content blocks — that reads as a
+        // clean success on a garbage response. Log it and surface a marker so
+        // the caller sees the result was incomplete rather than wrongly trusting
+        // empty/partial content.
+        tracing::warn!(
+            dropped,
+            kept = content.len(),
+            "MCP tool result had unparseable content block(s)"
+        );
+        content.push(McpToolContent {
+            content_type: "text".into(),
+            text: Some(format!(
+                "[{dropped} content block(s) returned by the tool could not be parsed and were omitted]"
+            )),
+        });
+    }
 
     Ok(McpToolResult {
         content,
