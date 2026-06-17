@@ -1251,6 +1251,16 @@ export const createTourSlice: StateCreator<
   const defaultTourId: TourId = "getting-started";
   const ps = persisted?.tours?.[defaultTourId];
 
+  // Clamp the persisted step index to the tour's current step range. A tour
+  // definition that shrank between releases (or a corrupt persisted value)
+  // would otherwise hydrate an out-of-range index, and rendering a
+  // non-existent step makes the tour silently vanish.
+  const defaultTourStepCount = getTourById(defaultTourId)?.steps.length ?? 0;
+  const hydratedStepIndex = Math.min(
+    Math.max(0, ps?.currentStepIndex ?? 0),
+    Math.max(0, defaultTourStepCount - 1),
+  );
+
   // Build completion map from persisted state
   const completionMap: Record<TourId, boolean> = {
     "getting-started": persisted?.tours?.["getting-started"]?.completed ?? false,
@@ -1290,7 +1300,7 @@ export const createTourSlice: StateCreator<
     tourActive: false,
     tourResumePending: false,
     tourActiveTourId: defaultTourId,
-    tourCurrentStepIndex: ps?.currentStepIndex ?? 0,
+    tourCurrentStepIndex: hydratedStepIndex,
     tourCompleted: ps?.completed ?? false,
     tourDismissed: ps?.dismissed ?? false,
     tourStepCompleted: ps?.completedSteps ?? {},
