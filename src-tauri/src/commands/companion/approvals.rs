@@ -34,6 +34,13 @@ const APPROVAL_STATUS_APPROVED_FAILED: &str = "approved_failed";
 const APPROVAL_STATUS_RUNNING: &str = "running";
 const APPROVAL_STATUS_REJECTED: &str = "rejected";
 
+/// Consent-freshness window for pending approvals, as a SQLite `datetime`
+/// modifier. A pending approval has no expiry of its own, so without this an
+/// approval could be listed and acted on long after its target is gone (a stale
+/// consent surface). Approvals older than this are hidden from the list and
+/// refused at act-time.
+const APPROVAL_FRESHNESS_WINDOW: &str = "-24 hours";
+
 // ── Tauri-facing types ──────────────────────────────────────────────────
 
 #[derive(Debug, Clone, Serialize)]
@@ -126,15 +133,17 @@ pub fn companion_list_pending_approvals(
 ) -> Result<Vec<PendingApproval>, AppError> {
     ipc_auth::require_auth_sync(&state)?;
     let conn = state.user_db.get()?;
+    // Only surface approvals within the consent-freshness window — a pending
+    // approval older than this is stale and must not be presented as actionable.
     let mut stmt = conn.prepare(
         "SELECT id, payload, human_review_id, created_at
          FROM companion_approval
-         WHERE status = 'pending'
+         WHERE status = 'pending' AND created_at >= datetime('now', ?1)
          ORDER BY created_at DESC
          LIMIT 50",
     )?;
     let rows = stmt
-        .query_map([], |row| {
+        .query_map(params![APPROVAL_FRESHNESS_WINDOW], |row| {
             Ok((
                 row.get::<_, String>(0)?,
                 row.get::<_, String>(1)?,
@@ -501,18 +510,26 @@ fn load_pending(
     approval_id: &str,
 ) -> Result<(String, serde_json::Value), AppError> {
     let conn = state.user_db.get()?;
-    let row: Option<(String, String)> = conn
+    let row: Option<(String, String, bool)> = conn
         .query_row(
-            "SELECT status, payload FROM companion_approval WHERE id = ?1",
-            params![approval_id],
-            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            "SELECT status, payload, created_at >= datetime('now', ?2)
+             FROM companion_approval WHERE id = ?1",
+            params![approval_id, APPROVAL_FRESHNESS_WINDOW],
+            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, i64>(2)? != 0)),
         )
         .optional()?;
-    let (status, payload) =
+    let (status, payload, fresh) =
         row.ok_or_else(|| AppError::Internal(format!("approval `{approval_id}` not found")))?;
     if status != "pending" {
         return Err(AppError::Internal(format!(
             "approval `{approval_id}` is `{status}`, not pending"
+        )));
+    }
+    // Consent freshness: refuse to act on a stale approval whose target may no
+    // longer exist. The user must re-issue the request.
+    if !fresh {
+        return Err(AppError::Validation(format!(
+            "Approval `{approval_id}` has expired (pending beyond the consent-freshness window). Dismiss it and re-issue the request."
         )));
     }
     let v: serde_json::Value = serde_json::from_str(&payload)
