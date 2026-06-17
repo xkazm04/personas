@@ -210,6 +210,14 @@ pub async fn create_adoption_session(
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
+    // Reject a malformed / oversized agent_ir at the trust boundary — mirrors
+    // save_adoption_answers and instant_adopt_template. Without it a truncated
+    // IPC payload or a frontend serialization bug is persisted as the session's
+    // agent_ir (the `Err(_) => agent_ir_json` fallback below would store the raw
+    // invalid string) and only detonates later at test/promote, stranding the
+    // adoption with no integrity signal at creation time.
+    super::template_adopt::validate_json_field("agent_ir_json", &agent_ir_json)?;
+
     let session_id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
     let cells = resolved_cells_json.unwrap_or_else(|| "{}".to_string());
