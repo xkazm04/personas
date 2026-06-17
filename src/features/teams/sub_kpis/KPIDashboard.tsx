@@ -36,11 +36,16 @@ function distancePct(kpi: DevKpi): number | null {
 function normValue(kpi: DevKpi, v: number): number | null {
   const { target_value: target, baseline_value: baseline } = kpi;
   if (target == null) return null;
+  // Clamp to the same [-15, 115] band as distancePct. Without this, a near-zero
+  // measurement on a 'down' KPI made `target / Math.max(v, 1e-9)` astronomically
+  // large, producing an off-axis spike that flattened every other point on the
+  // trend chart.
+  const clamp = (n: number) => Math.max(-15, Math.min(115, Math.round(n)));
   if (baseline != null && baseline !== target) {
-    return Math.round(((v - baseline) / (target - baseline)) * 100);
+    return clamp(((v - baseline) / (target - baseline)) * 100);
   }
   if (target === 0) return null;
-  return Math.round((kpi.direction === 'down' ? target / Math.max(v, 1e-9) : v / target) * 100);
+  return clamp((kpi.direction === 'down' ? target / Math.max(v, 1e-9) : v / target) * 100);
 }
 
 export function KPIDashboard({
