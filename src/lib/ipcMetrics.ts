@@ -33,6 +33,13 @@ export interface IpcCommandStats {
 const ring: IpcCallRecord[] = [];
 let writeIndex = 0;
 let totalRecords = 0;
+// Cumulative counters for LIFETIME rates. The ring only holds the last
+// RING_SIZE calls, so deriving a global timeout/error rate from it is wrong once
+// more than RING_SIZE calls have happened (the rate then reflects only the
+// recent window while totalCalls is lifetime). These never-evicted counters keep
+// the global rates accurate over the whole session.
+let totalTimeouts = 0;
+let totalErrors = 0;
 
 export function recordIpcCall(record: IpcCallRecord): void {
   if (ring.length < RING_SIZE) {
@@ -42,6 +49,8 @@ export function recordIpcCall(record: IpcCallRecord): void {
   }
   writeIndex = (writeIndex + 1) % RING_SIZE;
   totalRecords++;
+  if (!record.ok) totalErrors++;
+  if (record.timedOut) totalTimeouts++;
   // Notify subscribers
   for (const fn of listeners) fn();
 }
@@ -128,8 +137,6 @@ export function getGlobalSummary(): IpcGlobalSummary {
   }
   const durations = records.map(r => r.durationMs).sort((a, b) => a - b);
   const sum = durations.reduce((a, b) => a + b, 0);
-  const timeouts = records.filter(r => !r.ok && r.timedOut === true).length;
-  const errors = records.filter(r => !r.ok).length;
 
   return {
     totalCalls: totalRecords,
@@ -137,8 +144,11 @@ export function getGlobalSummary(): IpcGlobalSummary {
     p50: percentile(durations, 50),
     p95: percentile(durations, 95),
     p99: percentile(durations, 99),
-    timeoutRate: timeouts / records.length,
-    errorRate: errors / records.length,
+    // Lifetime rates from cumulative counters — consistent with totalCalls and
+    // accurate past RING_SIZE calls (percentiles stay windowed by necessity:
+    // they need the retained duration samples). Guard the divide for safety.
+    timeoutRate: totalRecords > 0 ? totalTimeouts / totalRecords : 0,
+    errorRate: totalRecords > 0 ? totalErrors / totalRecords : 0,
   };
 }
 
