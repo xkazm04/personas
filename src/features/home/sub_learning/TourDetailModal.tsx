@@ -3,6 +3,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TourDef } from '@/stores/slices/system/tourSlice';
 import { TOUR_ICONS, getColors } from './data';
+import { getTourIllustration } from './illustrations';
 
 interface TourDetailModalProps {
   tour: TourDef;
@@ -16,22 +17,41 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
   const ht = t.home.learning;
   const Icon = TOUR_ICONS[tour.icon] ?? Compass;
   const colors = getColors(tour.color);
+  const illustration = getTourIllustration(tour.id);
 
   return (
     <BaseModal isOpen onClose={onClose} titleId={`tour-modal-${tour.id}`} maxWidthClass="max-w-2xl" portal>
       <div
         data-testid={`tour-modal-${tour.id}`}
-        className="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
+        className="relative isolate bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
       >
+        {/* Tour-specific decorative background illustration (Leonardo). A faint
+            themed wash behind the content — mix-blend-screen drops the
+            near-black source background out on any theme, and the mask fades it
+            before it reaches the step list so dense text stays legible. */}
+        {illustration && (
+          <img
+            src={illustration}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none select-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.32] mix-blend-screen"
+            style={{
+              maskImage: 'linear-gradient(to bottom, #000 0%, #000 26%, rgba(0,0,0,0.3) 62%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, #000 0%, #000 26%, rgba(0,0,0,0.3) 62%, transparent 100%)',
+            }}
+          />
+        )}
+
         {/* Header */}
-        <div className="flex items-start justify-between px-6 py-4 border-b border-primary/10 flex-shrink-0">
+        <div className="relative z-10 flex items-start justify-between px-6 py-5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-modal ${colors.bg} border ${colors.border} flex items-center justify-center`}>
+            <div className={`w-11 h-11 rounded-modal ${colors.bg} border ${colors.border} flex items-center justify-center shadow-elevation-1`}>
               <Icon className={`w-5 h-5 ${colors.text}`} />
             </div>
-            <div>
+            <div className="space-y-0.5">
               <h3 className="typo-heading text-foreground">{tour.title}</h3>
-              <span className="text-[11px] text-foreground">{tx(ht.steps_count, { count: tour.steps.length })}</span>
+              <span className={`text-[11px] font-medium ${colors.text}`}>{tx(ht.steps_count, { count: tour.steps.length })}</span>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -43,6 +63,7 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
             )}
             <button
               onClick={onClose}
+              aria-label={t.common.close}
               className="p-1.5 rounded-card hover:bg-secondary/50 transition-colors text-foreground hover:text-foreground/80"
             >
               <X className="w-4 h-4" />
@@ -51,29 +72,32 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+        <div className="relative z-10 flex-1 overflow-y-auto p-6 space-y-5">
           <p className="typo-body text-foreground leading-relaxed">{tour.description}</p>
 
-          <div className="space-y-2">
-            <span className="text-[11px] font-semibold text-foreground uppercase tracking-wider">{ht.tour_steps_label}</span>
-            <div className="space-y-2.5 pl-0.5">
+          <div className="space-y-3">
+            <span className={`typo-label ${colors.text}`}>{ht.tour_steps_label}</span>
+            <ol className="space-y-1">
               {tour.steps.map((step, i) => (
-                <div key={step.id} className="flex items-start gap-3">
-                  <span className={`flex-shrink-0 w-5 h-5 rounded-full ${colors.bg} border ${colors.border} ${colors.text} flex items-center justify-center text-[10px] font-mono font-semibold mt-0.5`}>
+                <li
+                  key={step.id}
+                  className="flex items-start gap-3 rounded-card px-2.5 py-2 -mx-2.5 transition-colors hover:bg-secondary/40"
+                >
+                  <span className={`flex-shrink-0 w-6 h-6 rounded-full ${colors.bg} border ${colors.border} ${colors.text} flex items-center justify-center text-[11px] font-mono font-semibold mt-0.5`}>
                     {i + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="typo-body font-medium text-foreground">{step.title}</p>
-                    <p className="text-[11px] text-foreground leading-relaxed">{step.description}</p>
+                    <p className={`typo-body font-semibold ${colors.text}`}>{step.title}</p>
+                    <p className="text-[13px] text-foreground leading-relaxed">{step.description}</p>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end px-6 py-4 border-t border-primary/10 flex-shrink-0">
+        <div className="relative z-10 flex items-center justify-end px-6 py-4 border-t border-primary/10 flex-shrink-0">
           <button
             onClick={onStart}
             data-testid={`tour-modal-start-${tour.id}`}

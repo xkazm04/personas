@@ -1,5 +1,4 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
 import { AlertCircle, CheckCircle2, AlertTriangle, Activity } from 'lucide-react';
 import type { AuditIncidentSummary } from '@/lib/bindings/AuditIncidentSummary';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
@@ -28,21 +27,6 @@ const RESOLVED_FILTERS: IncidentFilters = {
   statuses: ['resolved'], severities: null, source_tables: null, persona_id: null, since: null,
 };
 
-// Severity order + bar fill for the open-by-severity distribution. Raw colour
-// utilities here match the feature's existing severity accents (IncidentRow).
-const SEVERITY_BAR_ORDER = ['critical', 'high', 'medium', 'low'] as const;
-const SEVERITY_BAR_COLOR: Record<string, string> = {
-  critical: 'bg-red-500',
-  high: 'bg-orange-400',
-  medium: 'bg-amber-400',
-  low: 'bg-slate-500',
-};
-
-/** Filter slice a distribution segment jumps to (open incidents of one severity). */
-function severitySlice(severity: string): IncidentFilters {
-  return { statuses: ['open'], severities: [severity], source_tables: null, persona_id: null, since: null };
-}
-
 function arrEq(a: readonly string[] | null | undefined, b: readonly string[] | null | undefined): boolean {
   const xs = a ?? [];
   const ys = b ?? [];
@@ -70,24 +54,9 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters }: Pr
     (summary?.openBySeverity ?? []).map(([sev, count]) => [sev, Number(count)]),
   );
   const critical = bySeverity.get('critical') ?? 0;
-  const totalOpen = SEVERITY_BAR_ORDER.reduce((sum, sev) => sum + (bySeverity.get(sev) ?? 0), 0);
-  const segments = SEVERITY_BAR_ORDER
-    .map((sev) => ({ severity: sev as string, count: bySeverity.get(sev) ?? 0 }))
-    .filter((s) => s.count > 0);
-  // The severity slice the inbox is currently showing (open + exactly one severity,
-  // nothing else narrowed) — that segment reads as active, the rest dim.
-  const activeSeverity =
-    arrEq(filters.statuses, ['open']) &&
-    (filters.severities?.length ?? 0) === 1 &&
-    !filters.source_tables &&
-    !filters.persona_id &&
-    !filters.since
-      ? filters.severities![0]!
-      : null;
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <Tile
         label={t.overview.incidents.kpi_open}
         value={open}
@@ -121,47 +90,6 @@ export function IncidentsInboxKpiHeader({ summary, filters, onApplyFilters }: Pr
         active={filtersMatch(filters, RESOLVED_FILTERS)}
         onClick={() => onApplyFilters(RESOLVED_FILTERS)}
       />
-      </div>
-
-      {totalOpen > 0 && segments.length > 0 && (
-        <div>
-          <div
-            className="flex h-2 w-full overflow-hidden rounded-card bg-secondary/30"
-            role="group"
-            aria-label={t.overview.incidents.distribution_aria}
-          >
-            {segments.map((seg) => {
-              const pct = (seg.count / totalOpen) * 100;
-              const dimmed = activeSeverity !== null && activeSeverity !== seg.severity;
-              return (
-                <button
-                  key={seg.severity}
-                  type="button"
-                  onClick={() => onApplyFilters(severitySlice(seg.severity))}
-                  aria-pressed={activeSeverity === seg.severity}
-                  aria-label={`${tokenLabel(t, 'severity', seg.severity)}: ${seg.count}`}
-                  className={`h-full transition-opacity hover:opacity-80 focus-ring ${SEVERITY_BAR_COLOR[seg.severity] ?? 'bg-slate-500'} ${dimmed ? 'opacity-40' : ''}`}
-                  style={{ width: `${pct}%` }}
-                />
-              );
-            })}
-          </div>
-          <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1">
-            {segments.map((seg) => (
-              <span
-                key={seg.severity}
-                className="inline-flex items-center gap-1 typo-caption text-foreground"
-              >
-                <span
-                  className={`h-2 w-2 rounded-full ${SEVERITY_BAR_COLOR[seg.severity] ?? 'bg-slate-500'}`}
-                  aria-hidden="true"
-                />
-                {tokenLabel(t, 'severity', seg.severity)} {seg.count}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

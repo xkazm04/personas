@@ -1,11 +1,11 @@
 import {
-  Compass, Activity, Radio, Sparkles, FlaskConical, Brain, Puzzle, CalendarClock,
+  Compass, Activity, Radio, Sparkles, FlaskConical, Brain, Puzzle, CalendarClock, GitBranch,
 } from 'lucide-react';
 
 // -- Tour icons & colors -----------------------------------------------
 
 export const TOUR_ICONS: Record<string, typeof Compass> = {
-  Compass, Activity, Radio, Sparkles, Puzzle, CalendarClock, FlaskConical, Brain,
+  Compass, Activity, Radio, Sparkles, Puzzle, CalendarClock, FlaskConical, Brain, GitBranch,
 };
 
 export interface TourColorSet {

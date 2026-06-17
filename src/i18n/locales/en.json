@@ -5693,6 +5693,8 @@
       "filter_source_all": "All sources",
       "filter_persona_label": "Agent",
       "filter_persona_any": "any",
+      "col_incident": "Incident",
+      "col_days": "Days",
       "filters_active_aria": "{count} active filters",
       "filters_clear_all": "Clear filters",
       "action_acknowledge": "Ack",

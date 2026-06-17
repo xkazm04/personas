@@ -13,10 +13,13 @@ import { useIncidentsData } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
-import { IncidentSeverityLegend } from './IncidentSeverityLegend';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
+import { IncidentTableHeader } from './IncidentTableHeader';
 import { IncidentAgentGroup } from './IncidentAgentGroup';
+import { useAgentStore } from '@/stores/agentStore';
+import { useColumnWidths } from '@/features/shared/components/display/ColumnResize';
+import { INCIDENT_COLUMNS, INCIDENT_TABLE_ID } from '../libs/incidentColumns';
 import { IncidentDetailModal } from './IncidentDetailModal';
 import { groupIncidents, type IncidentGroupMode } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
@@ -119,6 +122,10 @@ export default function IncidentsInbox() {
   // change that yields zero never triggers the celebration — only clearing the
   // open inbox does.
   const clearedByActionRef = useRef(false);
+
+  const personas = useAgentStore((s) => s.personas);
+  const colWidths = useColumnWidths(INCIDENT_TABLE_ID);
+  const gridTemplate = colWidths.template(INCIDENT_COLUMNS);
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
@@ -360,6 +367,7 @@ export default function IncidentsInbox() {
       <IncidentRow
         key={incident.id}
         incident={incident}
+        gridTemplate={gridTemplate}
         focused={focusedId === incident.id}
         onAcknowledge={() => void actions.acknowledge(incident.id)}
         onResolve={() => void actions.resolve(incident.id)}
@@ -368,7 +376,7 @@ export default function IncidentsInbox() {
         onOpenDetail={() => setDetailIncident(incident)}
       />
     ),
-    [focusedId, actions],
+    [focusedId, actions, gridTemplate],
   );
 
   // "Narrowed" = the user moved beyond the default open-only inbox view. The
@@ -425,8 +433,6 @@ export default function IncidentsInbox() {
           <IncidentsInboxKpiHeader summary={summary} filters={filters} onApplyFilters={setFilters} />
         </div>
 
-        <IncidentSeverityLegend />
-
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
 
         {error && (
@@ -459,7 +465,7 @@ export default function IncidentsInbox() {
             )}
           </div>
         ) : (
-          <div>
+          <div className={colWidths.isResizing ? 'select-none cursor-col-resize' : undefined}>
             {newCount > 0 && (
               <div className="flex items-center gap-2 px-4 py-2 border-b border-primary/10 bg-primary/5">
                 <Sparkles className="h-3.5 w-3.5 shrink-0 text-primary" aria-hidden="true" />
@@ -495,29 +501,6 @@ export default function IncidentsInbox() {
                     {groupModeLabel(t, mode)}
                   </button>
                 ))}
-                <span className="mx-1 h-4 w-px bg-primary/10" />
-                <button
-                  type="button"
-                  onClick={() => setOldestFirst(false)}
-                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
-                    !oldestFirst
-                      ? 'bg-primary/15 text-primary border-primary/25'
-                      : 'text-foreground border-transparent hover:bg-secondary/40'
-                  }`}
-                >
-                  {t.overview.incidents.sort_newest}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOldestFirst(true)}
-                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
-                    oldestFirst
-                      ? 'bg-primary/15 text-primary border-primary/25'
-                      : 'text-foreground border-transparent hover:bg-secondary/40'
-                  }`}
-                >
-                  {t.overview.incidents.sort_oldest}
-                </button>
               </div>
               {groups.length > 1 && (
                 <button
@@ -531,6 +514,15 @@ export default function IncidentsInbox() {
                 </button>
               )}
             </div>
+            <IncidentTableHeader
+              filters={filters}
+              onChange={setFilters}
+              personas={personas}
+              oldestFirst={oldestFirst}
+              onToggleSort={() => setOldestFirst((v) => !v)}
+              gridTemplate={gridTemplate}
+              colWidths={colWidths}
+            />
             {groups.map((group) => (
               <IncidentAgentGroup
                 key={group.key}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -86,22 +86,6 @@ export default function EventLogList() {
     // Saved views
     savedViews, activeViewId, saveCurrentView, applySavedView, removeSavedView, clearFilters,
   } = useEventLog();
-
-  // Auto-load older events when the sentinel scrolls into view
-  const loadMoreSentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!hasMoreOlder || isLoadingOlder) return;
-    const node = loadMoreSentinelRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) loadOlder();
-      },
-      { rootMargin: '200px' },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [hasMoreOlder, isLoadingOlder, loadOlder, filteredEvents.length]);
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [viewName, setViewName] = useState('');
@@ -218,9 +202,11 @@ export default function EventLogList() {
           return <span className="typo-body text-foreground break-words">{persona.name}</span>;
         }
         if (personaId) {
+          // Show the full id — the column is wide (minmax(320px, 2fr)), so long
+          // ids wrap rather than truncate, matching the resolved-name case above.
           return (
-            <span className="typo-body text-foreground truncate font-mono" title={personaId}>
-              {personaId.length > 8 ? `${personaId.slice(0, 8)}…` : personaId}
+            <span className="typo-body text-foreground font-mono break-all" title={personaId}>
+              {personaId}
             </span>
           );
         }
@@ -429,21 +415,15 @@ export default function EventLogList() {
               tableId="overview-events"
               scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
               groupBy={groupOf}
+              onEndReached={hasMoreOlder && !isLoadingOlder ? loadOlder : undefined}
             />
-            {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
-              <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
-                {isLoadingOlder ? (
-                  <span className="flex items-center gap-2 typo-caption text-foreground">
-                    <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
-                  </span>
-                ) : (
-                  <button
-                    onClick={loadOlder}
-                    className="typo-caption text-foreground hover:text-foreground transition-colors"
-                  >
-                    {t.overview.events.load_older}
-                  </button>
-                )}
+            {/* Infinite scroll drives loadOlder from the table's own scroll
+                container; this strip just reflects the in-flight fetch. */}
+            {isLoadingOlder && displayedEvents.length > 0 && (
+              <div className="flex items-center justify-center py-2 border-t border-primary/5">
+                <span className="flex items-center gap-2 typo-caption text-foreground">
+                  <Loader2 className="w-3 h-3 animate-spin" /> {t.overview.events.loading_older}
+                </span>
               </div>
             )}
           </div>

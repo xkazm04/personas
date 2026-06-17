@@ -9,6 +9,7 @@ import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } fro
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
+import { useEndReached } from '@/hooks/utility/interaction/useEndReached';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { buildGroupRows, type GroupSpec } from './grouping';
@@ -130,6 +131,19 @@ export interface UnifiedTableProps<T> {
    * Omit for an ungrouped table (the default path is unchanged).
    */
   groupBy?: (row: T) => GroupSpec;
+  /**
+   * Infinite scroll. Called when the table's internal scroll container nears
+   * the bottom — wire it to a "load older / next page" fetch. Only meaningful
+   * when the table is virtualized (`rowHeight > 0`); ignored otherwise.
+   *
+   * Pass `undefined` to detach (e.g. while a page is already loading or when
+   * there's nothing more to load); the caller's loader should also guard
+   * against overlapping fetches. It also fires once when the loaded rows don't
+   * fill the viewport, so a short list keeps fetching until it can scroll.
+   */
+  onEndReached?: () => void;
+  /** Distance from the bottom (px) at which `onEndReached` fires. Default 240. */
+  endReachedThreshold?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +298,8 @@ export function UnifiedTable<T>({
   defaultSortDir = 'desc',
   scrollRestoreKey,
   groupBy,
+  onEndReached,
+  endReachedThreshold = 240,
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
@@ -348,6 +364,11 @@ export function UnifiedTable<T>({
   // parentRef). No-op when scrollRestoreKey is undefined or the table isn't
   // virtualized, so every existing caller is byte-for-byte unchanged.
   const setScrollRef = useScrollRestoration(scrollRestoreKey, parentRef);
+
+  // Infinite scroll. The non-grouped virtual path scrolls through `parentRef`;
+  // the grouped path owns its own scroll container (handled inside
+  // GroupedTableBody), so route end-reached detection to whichever is live.
+  useEndReached(parentRef, grouped ? undefined : onEndReached, { threshold: endReachedThreshold });
 
   // Keyboard row navigation — only when rows are interactive (onRowClick set).
   // Arrow keys move a focus ring; Enter/Space activates the focused row. The
@@ -431,6 +452,8 @@ export function UnifiedTable<T>({
           rowAccent={rowAccent}
           groupBy={groupBy!}
           scrollRestoreKey={scrollRestoreKey}
+          onEndReached={onEndReached}
+          endReachedThreshold={endReachedThreshold}
         />
       ) : sortedData.length > 0 && (useVirtual ? (
         <div
@@ -509,6 +532,8 @@ function GroupedTableBody<T>({
   rowAccent,
   groupBy,
   scrollRestoreKey,
+  onEndReached,
+  endReachedThreshold,
 }: {
   sortedData: T[];
   columns: TableColumn<T>[];
@@ -519,9 +544,12 @@ function GroupedTableBody<T>({
   rowAccent?: (row: T, index: number) => string | undefined;
   groupBy: (row: T) => GroupSpec;
   scrollRestoreKey?: string;
+  onEndReached?: () => void;
+  endReachedThreshold?: number;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
   const setScrollRef = useScrollRestoration(scrollRestoreKey, parentRef);
+  useEndReached(parentRef, onEndReached, { threshold: endReachedThreshold });
 
   const { rows, headerIndexes } = useMemo(() => buildGroupRows(sortedData, groupBy), [sortedData, groupBy]);
   const { virtualizer, activeStickyRef } = useGroupedVirtualizer({

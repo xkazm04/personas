@@ -139,6 +139,13 @@ export function isStaleIncident(incident: { status: string; createdAt: string })
   return Date.now() - ts >= STALE_THRESHOLD_MS;
 }
 
+/** Whole days an incident has been open (floored, never negative). */
+export function incidentDaysOpen(createdAt: string): number {
+  const ts = new Date(createdAt).getTime();
+  if (Number.isNaN(ts)) return 0;
+  return Math.max(0, Math.floor((Date.now() - ts) / 86_400_000));
+}
+
 export function relativeTime(t: Translations, isoTimestamp: string): string {
   const ts = new Date(isoTimestamp).getTime();
   if (Number.isNaN(ts)) return isoTimestamp;

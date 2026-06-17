@@ -47,7 +47,7 @@ export function IncidentAgentGroup({ group, collapsed, onToggle, renderRow }: Pr
         type="button"
         onClick={onToggle}
         aria-expanded={!collapsed}
-        className="sticky top-0 z-20 flex w-full items-center gap-2 border-b border-primary/10 bg-secondary px-4 py-2 text-left focus-ring"
+        className="sticky top-9 z-20 flex w-full items-center gap-2 border-b border-primary/10 bg-secondary px-4 py-2 text-left focus-ring"
       >
         <ChevronRight
           className={`h-4 w-4 shrink-0 transition-transform ${collapsed ? '' : 'rotate-90'}`}

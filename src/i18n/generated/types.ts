@@ -5699,6 +5699,8 @@ export type Translations = {
       filter_source_all: string;
       filter_persona_label: string;
       filter_persona_any: string;
+      col_incident: string;
+      col_days: string;
       filters_active_aria: string;
       filters_clear_all: string;
       action_acknowledge: string;

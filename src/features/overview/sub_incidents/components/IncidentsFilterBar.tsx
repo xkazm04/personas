@@ -10,7 +10,6 @@ interface Props {
   onChange: (next: IncidentFilters) => void;
 }
 
-const STATUS_VALUES = ['open', 'acknowledged', 'in_progress', 'resolved', 'dismissed'] as const;
 const SEVERITY_VALUES = ['critical', 'high', 'medium', 'low'] as const;
 const SOURCE_VALUES = [
   'fired_alerts',
@@ -51,37 +50,21 @@ function activeRange(since: string | null | undefined): string {
   return 'all';
 }
 
-function statusLabel(t: ReturnType<typeof useTranslation>['t'], status: string): string {
-  switch (status) {
-    case 'open': return t.overview.incidents.filter_status_open;
-    case 'acknowledged': return t.overview.incidents.filter_status_acknowledged;
-    case 'in_progress': return t.overview.incidents.filter_status_in_progress;
-    case 'resolved': return t.overview.incidents.filter_status_resolved;
-    case 'dismissed': return t.overview.incidents.filter_status_dismissed;
-    default: return status;
-  }
-}
-
 /**
- * Compact filter bar for the incidents inbox: four single-select dropdowns
- * (status / severity / source / time) built on the shared themed
- * `ColumnDropdownFilter`, replacing the earlier wall of chips so the controls
- * read at a glance. Each dropdown carries its own clear (×); a single "Clear
- * filters" appears only once the view is narrowed past the resting open-only
- * state (which also covers a persona_id set from the detail-modal flow).
+ * Compact filter bar for the incidents inbox: three single-select dropdowns
+ * (severity / source / time) built on the shared themed `ColumnDropdownFilter`.
+ * Status moved to the table's State column header, so it isn't duplicated here.
+ * Each dropdown carries its own clear (×); a single "Clear filters" appears only
+ * once the view is narrowed past the resting open-only state (which also covers
+ * a status set from the State column or a persona_id from the detail-modal flow).
  */
 export function IncidentsFilterBar({ filters, onChange }: Props) {
   const { t } = useTranslation();
 
-  const statusValue = filters.statuses?.[0] ?? 'all';
   const severityValue = filters.severities?.[0] ?? 'all';
   const sourceValue = filters.source_tables?.[0] ?? 'all';
   const rangeValue = activeRange(filters.since);
 
-  const statusOptions = [
-    { value: 'all', label: t.overview.incidents.filter_status_all },
-    ...STATUS_VALUES.map((s) => ({ value: s, label: statusLabel(t, s) })),
-  ];
   const severityOptions = [
     { value: 'all', label: t.overview.incidents.filter_severity_all },
     ...SEVERITY_VALUES.map((s) => ({ value: s, label: tokenLabel(t, 'severity', s) })),
@@ -96,15 +79,15 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
     { value: '7d', label: t.overview.incidents.range_7d },
   ];
 
-  const setStatus = (v: string) => onChange({ ...filters, statuses: v === 'all' ? null : [v] });
   const setSeverity = (v: string) => onChange({ ...filters, severities: v === 'all' ? null : [v] });
   const setSource = (v: string) => onChange({ ...filters, source_tables: v === 'all' ? null : [v] });
   const setRange = (v: string) => onChange({ ...filters, since: sinceFromRange(v) });
 
   // Narrowed = moved past the resting open-only view (any dropdown off its
-  // default, or a persona drill-in from the detail modal).
+  // default, a status set in the State column, or a persona drill-in).
+  const statusNarrowed = !(filters.statuses?.length === 1 && filters.statuses[0] === 'open');
   const isNarrowed =
-    statusValue !== 'open' ||
+    statusNarrowed ||
     severityValue !== 'all' ||
     sourceValue !== 'all' ||
     rangeValue !== 'all' ||
@@ -112,12 +95,6 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-4 py-2 border-b border-primary/10 bg-secondary/10">
-      <ColumnDropdownFilter
-        label={t.overview.incidents.filter_status_label}
-        value={statusValue}
-        options={statusOptions}
-        onChange={setStatus}
-      />
       <ColumnDropdownFilter
         label={t.overview.incidents.filter_severity_label}
         value={severityValue}

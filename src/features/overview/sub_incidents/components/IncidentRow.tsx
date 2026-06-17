@@ -1,7 +1,7 @@
+import type { LucideIcon } from 'lucide-react';
+import { Check, CheckCheck, X, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
-import { STATUS_PALETTE } from '@/lib/design/statusTokens';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
   isStaleIncident,
@@ -10,14 +10,14 @@ import {
   severityUrgencyLabel,
   sourceTableIcon,
   sourceTableLabel,
-  relativeTime,
   statusLabel,
+  incidentDaysOpen,
 } from '../libs/incidentTaxonomy';
-
-const WARNING = STATUS_PALETTE.warning;
 
 interface Props {
   incident: AuditIncident;
+  /** Shared grid-template so the row's columns line up with the header. */
+  gridTemplate: string;
   /** Keyboard-triage focus — renders a focus ring and is the j/k cursor. */
   focused?: boolean;
   onAcknowledge: () => void;
@@ -27,8 +27,25 @@ interface Props {
   onOpenDetail: () => void;
 }
 
+// Colour-blind users still get the StatusShape + gutter accent for severity;
+// the State dot is a secondary, status-only cue.
+const STATE_DOT: Record<string, string> = {
+  open: 'bg-amber-400',
+  acknowledged: 'bg-blue-400',
+  in_progress: 'bg-blue-400',
+  resolved: 'bg-emerald-400',
+  dismissed: 'bg-slate-500',
+};
+
+/**
+ * One incident as a single, scannable table row. Severity is shown by the left
+ * gutter accent + the shape/colored source glyph in the Incident cell (no text
+ * priority tag); Persona / State / Days / Actions each get their own column so
+ * they align and can be filtered/sorted from the header.
+ */
 export function IncidentRow({
   incident,
+  gridTemplate,
   focused = false,
   onAcknowledge,
   onResolve,
@@ -42,10 +59,6 @@ export function IncidentRow({
   const isAcknowledged = incident.status === 'acknowledged';
   const isClosed = incident.status === 'resolved' || incident.status === 'dismissed';
 
-  // Severity gutter-accent, derived from the SAME severity→status mapping that
-  // drives the StatusShape glyph (severityShapeStatus), so the stripe and the
-  // glyph can never disagree: error → red, warning → amber, else neutral. Closed
-  // incidents are muted to neutral so the open work stands out.
   const shape = severityShapeStatus(incident.severity);
   const stale = isStaleIncident(incident);
   const accent = isClosed || shape === 'neutral'
@@ -53,96 +66,79 @@ export function IncidentRow({
     : shape === 'error'
       ? 'border-l-red-400/70'
       : 'border-l-amber-400/70';
+  const urgency = severityUrgencyLabel(t, incident.severity);
+  const days = incidentDaysOpen(incident.createdAt);
 
   return (
     <div
       id={`incident-row-${incident.id}`}
       data-testid="incident-row"
-      className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 transition-colors ${
+      role="row"
+      onClick={onOpenDetail}
+      style={{ gridTemplateColumns: gridTemplate }}
+      className={`grid items-center border-l-2 ${accent} cursor-pointer transition-colors ${
         focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
       }`}
     >
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-card border ${severityBadgeClass(incident.severity)}`}>
-        <SourceIcon className="h-4 w-4" />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="inline-flex items-center gap-1">
-            <StatusShape
-              status={severityShapeStatus(incident.severity)}
-              size="sm"
-              title={severityUrgencyLabel(t, incident.severity)}
-              aria-label={severityUrgencyLabel(t, incident.severity)}
-            />
-            <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
-              {tokenLabel(t, 'severity', incident.severity)}
-            </span>
+      {/* Incident — severity shape + source glyph + title */}
+      <div className="flex items-center gap-2 px-4 py-2.5 min-w-0">
+        <StatusShape status={shape} size="sm" title={urgency} aria-label={urgency} />
+        <span
+          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-card border ${severityBadgeClass(incident.severity)}`}
+          title={sourceTableLabel(t, incident.sourceTable)}
+          aria-label={sourceTableLabel(t, incident.sourceTable)}
+        >
+          <SourceIcon className="h-3.5 w-3.5" />
+        </span>
+        <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
+        {stale && (
+          <span className="shrink-0 typo-caption px-1.5 py-0.5 rounded-card border border-amber-500/30 text-amber-400">
+            {t.overview.incidents.stale_label}
           </span>
-          <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
-          {!isOpen && (
-            <span className="typo-caption text-foreground">· {statusLabel(t, incident.status)}</span>
-          )}
-          {stale && (
-            <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${WARNING.border} ${WARNING.text}`}>
-              {t.overview.incidents.stale_label}
-            </span>
-          )}
-        </div>
-
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground">
-          {incident.personaName && <span>{incident.personaName}</span>}
-          <span>·</span>
-          <span>{sourceTableLabel(t, incident.sourceTable)}</span>
-          <span>·</span>
-          <span className={stale ? WARNING.text : undefined}>{relativeTime(t, incident.createdAt)}</span>
-          {incident.resolvedAt && (
-            <>
-              <span>·</span>
-              <span>
-                {t.overview.incidents.resolved_at_label} {relativeTime(t, incident.resolvedAt)}
-              </span>
-            </>
-          )}
-        </div>
-
-        {isClosed && incident.resolutionNote && (
-          <p className="mt-1 typo-caption text-foreground line-clamp-1">
-            {t.overview.incidents.detail_label_resolution_note}: {incident.resolutionNote}
-          </p>
         )}
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <ActionButton onClick={onOpenDetail}>{t.overview.incidents.action_open_detail}</ActionButton>
-        {isOpen && (
-          <>
-            <ActionButton onClick={onAcknowledge}>{t.overview.incidents.action_acknowledge}</ActionButton>
-            <ActionButton onClick={onResolve}>{t.overview.incidents.action_resolve}</ActionButton>
-            <ActionButton onClick={onDismiss}>{t.overview.incidents.action_dismiss}</ActionButton>
-          </>
-        )}
-        {isAcknowledged && (
-          <>
-            <ActionButton onClick={onResolve}>{t.overview.incidents.action_resolve}</ActionButton>
-            <ActionButton onClick={onDismiss}>{t.overview.incidents.action_dismiss}</ActionButton>
-          </>
-        )}
-        {isClosed && (
-          <ActionButton onClick={onReopen}>{t.overview.incidents.action_reopen}</ActionButton>
-        )}
+      {/* Persona */}
+      <div className="px-4 min-w-0">
+        <span className="typo-body text-foreground truncate block">{incident.personaName ?? '—'}</span>
+      </div>
+
+      {/* State */}
+      <div className="px-4 min-w-0">
+        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${STATE_DOT[incident.status] ?? 'bg-slate-500'}`} aria-hidden="true" />
+          <span className="truncate">{statusLabel(t, incident.status)}</span>
+        </span>
+      </div>
+
+      {/* Days open */}
+      <div className="px-4 text-right">
+        <span className={`typo-code ${stale ? 'text-amber-400' : 'text-foreground'}`}>
+          {days < 1 ? '<1d' : `${days}d`}
+        </span>
+      </div>
+
+      {/* Actions — clicks here must not open the detail modal */}
+      <div className="flex shrink-0 items-center justify-end gap-1 px-4" onClick={(e) => e.stopPropagation()}>
+        {isOpen && <IconAction icon={Check} label={t.overview.incidents.action_acknowledge} onClick={onAcknowledge} />}
+        {(isOpen || isAcknowledged) && <IconAction icon={CheckCheck} label={t.overview.incidents.action_resolve} onClick={onResolve} />}
+        {(isOpen || isAcknowledged) && <IconAction icon={X} label={t.overview.incidents.action_dismiss} onClick={onDismiss} />}
+        {isClosed && <IconAction icon={RotateCcw} label={t.overview.incidents.action_reopen} onClick={onReopen} />}
       </div>
     </div>
   );
 }
 
-function ActionButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+function IconAction({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className="px-2 py-1 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+      title={label}
+      aria-label={label}
+      className="p-1.5 rounded-card border border-primary/15 text-foreground hover:bg-secondary/50 transition-colors focus-ring"
     >
-      {children}
+      <Icon className="h-3.5 w-3.5" />
     </button>
   );
 }
