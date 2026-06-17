@@ -64,6 +64,25 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
     () => sessions.filter((s) => s.state !== 'exited'),
     [sessions],
   );
+
+  // Prune selections for sessions that are no longer targetable (exited /
+  // removed). Without this the Set retains dead ids: the "N targets" counter
+  // overstates the real audience and the send loop iterates ids that can only
+  // fail. Returning the previous Set unchanged when nothing was pruned avoids a
+  // render loop.
+  useEffect(() => {
+    setSelected((prev) => {
+      if (prev.size === 0) return prev;
+      const live = new Set(targetable.map((s) => s.id));
+      let pruned = false;
+      const next = new Set<string>();
+      for (const id of prev) {
+        if (live.has(id)) next.add(id);
+        else pruned = true;
+      }
+      return pruned ? next : prev;
+    });
+  }, [targetable]);
   const waiting = useMemo(
     () => targetable.filter((s) => s.state === 'awaiting_input'),
     [targetable],
