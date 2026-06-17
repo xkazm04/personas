@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Activity, CheckCircle2, Bot, Key, type LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -13,7 +14,6 @@ import { silentCatch } from '@/lib/silentCatch';
 interface FleetMetrics {
   executionsToday: number;
   successRate: number;
-  activePersonas: number;
   credentialCount: number;
   hasFailureSpike: boolean;
 }
@@ -43,7 +43,6 @@ function useFleetMetrics() {
         setMetrics({
           executionsToday: summary.totalExecutions,
           successRate: rate,
-          activePersonas: summary.activePersonas,
           credentialCount: credentials.length,
           hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
         });
@@ -97,6 +96,13 @@ function MetricPill({ icon: Icon, label, value, onClick, pulse, accentColor, ico
 export default function FleetHealthStrip() {
   const metrics = useFleetMetrics();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // "Active agents" = ENABLED personas (the configured fleet), NOT personas that
+  // happened to execute in the metrics window. summary.activePersonas counts the
+  // latter (correct for the observability KPI, wrong for this pill). Mirror the
+  // cockpit-summary convention: enabled !== false.
+  const activeAgents = useAgentStore(
+    (s) => s.personas.filter((p) => p.enabled !== false).length,
+  );
   const { t: globalT } = useTranslation();
   const t = globalT.home;
 
@@ -128,7 +134,7 @@ export default function FleetHealthStrip() {
       <MetricPill
         icon={Bot}
         label={fleet.active_agents}
-        value={metrics.activePersonas}
+        value={activeAgents}
         onClick={nav('personas')}
         accentColor="bg-cyan-500/15"
         iconColor="text-cyan-400"
