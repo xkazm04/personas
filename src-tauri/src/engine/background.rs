@@ -1362,6 +1362,15 @@ pub(crate) fn synthesize_trigger_fired_payload(
 /// re-exported here so the existing local references compile unchanged.
 const BACKFILL_HARD_CAP: usize = crate::engine::limits::BACKFILL_HARD_CAP;
 
+/// Global ceiling on backfill events emitted across ALL triggers in a single
+/// tick. BACKFILL_HARD_CAP bounds each trigger individually, but a mass restart
+/// after long downtime with many backfill-enabled triggers could still emit
+/// (triggers × cap) catch-up events in one tick — a thundering herd. This caps
+/// the aggregate; triggers whose backfill is skipped this tick still get their
+/// live fire + watermark advance, so their best-effort catch-up extras are just
+/// dropped (the same semantics as the per-trigger drop-oldest).
+const GLOBAL_BACKFILL_PER_TICK: usize = 50;
+
 fn schedule_executions_per_persona_hour(pool: &DbPool) -> i64 {
     match settings::get(pool, settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR)
         .ok()
@@ -1617,6 +1626,9 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
     let mut fired: u32 = 0;
     let hourly_ceiling = schedule_executions_per_persona_hour(pool);
     let mut scheduled_publishes_by_persona: HashMap<String, i64> = HashMap::new();
+    // Tick-wide backfill budget shared across all triggers — caps the aggregate
+    // catch-up herd after a long downtime (see GLOBAL_BACKFILL_PER_TICK).
+    let mut backfill_emitted_this_tick: usize = 0;
 
     // 1. Get due triggers
     let triggers = match trigger_repo::get_due(pool, &now_str) {
@@ -1733,7 +1745,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             ),
             _ => 1,
         };
-        if backfill_cap > 1 {
+        if backfill_cap > 1 && backfill_emitted_this_tick < GLOBAL_BACKFILL_PER_TICK {
             if let Some(last_iso) = trigger.last_triggered_at.as_deref() {
                 if let Ok(last_dt) = chrono::DateTime::parse_from_rfc3339(last_iso) {
                     let last_utc = last_dt.with_timezone(&chrono::Utc);
@@ -1750,6 +1762,11 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                         missed.drain(..(missed.len() - extras_wanted));
                     }
                     for slot in &missed {
+                        // Stop if this tick's global backfill budget is spent —
+                        // remaining slots (and triggers) defer their catch-up.
+                        if backfill_emitted_this_tick >= GLOBAL_BACKFILL_PER_TICK {
+                            break;
+                        }
                         // Per-slot budget re-check so catch-up runs respect
                         // the persona's monthly cap mid-loop.
                         let exhausted: bool = pool.get().map_err(|e| e.to_string()).and_then(|conn| {
@@ -1829,6 +1846,7 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                                     .entry(trigger.persona_id.clone())
                                     .or_default() += 1;
                                 fired += 1;
+                                backfill_emitted_this_tick += 1;
                             }
                             Err(e) => {
                                 tracing::error!(
