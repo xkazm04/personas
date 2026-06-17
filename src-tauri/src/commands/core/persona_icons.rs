@@ -230,3 +230,46 @@ pub async fn delete_persona_icon(
     }
     Ok(())
 }
+
+/// Best-effort reclaim of a custom icon file once nothing references it. Called
+/// when a persona that used a custom icon is deleted — without this the PNG is
+/// orphaned on disk forever (the persona row is gone, but the file is never
+/// reclaimed). Checks the personas table first so a still-shared icon is never
+/// removed. Never errors the caller: a failed cleanup just leaves the file.
+pub(crate) fn delete_icon_file_if_orphaned(state: &Arc<AppState>, app: &AppHandle, asset_id: &str) {
+    if !is_valid_asset_id(asset_id) {
+        return;
+    }
+    let icon_value = format!("{CUSTOM_ICON_PREFIX}{asset_id}");
+    let in_use: i64 = state
+        .db
+        .get()
+        .ok()
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT COUNT(*) FROM personas WHERE icon = ?1",
+                rusqlite::params![icon_value],
+                |r| r.get(0),
+            )
+            .ok()
+        })
+        // On a query failure, assume the icon is still in use — never delete on
+        // uncertainty.
+        .unwrap_or(1);
+    if in_use > 0 {
+        return;
+    }
+    match persona_icons_dir(app) {
+        Ok(dir) => {
+            let target = dir.join(format!("{asset_id}.png"));
+            if target.exists() {
+                if let Err(e) = std::fs::remove_file(&target) {
+                    tracing::warn!(asset_id = %asset_id, error = %e, "Failed to delete orphaned persona icon file");
+                }
+            }
+        }
+        Err(e) => {
+            tracing::warn!(asset_id = %asset_id, error = %e, "Could not resolve icon dir to reclaim orphaned file");
+        }
+    }
+}

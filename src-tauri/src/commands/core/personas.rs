@@ -1,6 +1,6 @@
 use serde::Serialize;
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, State};
 use ts_rs::TS;
 
 use crate::db::models::{
@@ -470,6 +470,7 @@ const DELETION_DRAIN_POLL: std::time::Duration = std::time::Duration::from_milli
 #[requires(auth)]
 pub async fn delete_persona(
     state: State<'_, Arc<AppState>>,
+    app: AppHandle,
     id: String,
 ) -> Result<DeletePersonaResult, AppError> {
 
@@ -478,7 +479,7 @@ pub async fn delete_persona(
 
     // Ensure we always unmark on early return / error
     let state_ref: &Arc<AppState> = &state;
-    let result = delete_persona_inner(state_ref, &id).await;
+    let result = delete_persona_inner(state_ref, &app, &id).await;
 
     // Clean up the deleting marker regardless of outcome
     state.engine.unmark_deleting(&id).await;
@@ -490,9 +491,13 @@ pub async fn delete_persona(
 /// cleanup of the `deleting_personas` marker via `unmark_deleting`.
 async fn delete_persona_inner(
     state: &Arc<AppState>,
+    app: &AppHandle,
     id: &str,
 ) -> Result<DeletePersonaResult, AppError> {
     // ── Phase 1a: Protect system-owned personas (the Director) from deletion ──
+    // Capture the persona's custom-icon asset id (if any) so we can reclaim the
+    // orphaned icon file after the row is gone.
+    let mut custom_icon_asset: Option<String> = None;
     if let Ok(persona) = repo::get_by_id(&state.db, id) {
         if persona.trust_origin == crate::db::models::PersonaTrustOrigin::System {
             return Err(AppError::Forbidden(format!(
@@ -500,6 +505,11 @@ async fn delete_persona_inner(
                 persona.name
             )));
         }
+        custom_icon_asset = persona
+            .icon
+            .as_deref()
+            .and_then(|i| i.strip_prefix("custom-icon:"))
+            .map(|s| s.to_string());
     }
 
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
@@ -612,6 +622,17 @@ async fn delete_persona_inner(
 
     // ── Phase 2c: Finalize the delete ──
     let deleted = repo::delete(&state.db, id)?;
+
+    // ── Phase 2d: Reclaim the persona's custom icon file if nothing else uses
+    // it. Without this, deleting a persona orphans its uploaded/AI-generated
+    // icon PNG on disk forever. Best-effort — never fails the deletion.
+    if deleted {
+        if let Some(asset_id) = custom_icon_asset {
+            crate::commands::core::persona_icons::delete_icon_file_if_orphaned(
+                state, app, &asset_id,
+            );
+        }
+    }
 
     Ok(DeletePersonaResult {
         deleted,
