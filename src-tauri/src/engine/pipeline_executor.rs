@@ -408,9 +408,20 @@ async fn run_persona_node(
         return NodeOutcome::Failed { cancelled: false };
     }
 
-    // Poll for completion (up to 600s)
-    for _ in 0..600 {
+    // Poll for completion. The timeout budget counts only RUNNING time: an
+    // execution can legitimately sit `queued` for a long time (waiting for a
+    // concurrency slot or a quota cooldown) and that is NOT a node failure — the
+    // old flat 600-tick loop failed such nodes even though they never ran. A
+    // hard total ceiling still bounds the node so a permanently-stuck queue
+    // can't hold it forever; the queued-zombie sweep reaps the execution
+    // (→ 'incomplete'), which the match below now detects promptly.
+    const NODE_RUNNING_TIMEOUT_SECS: u32 = 600;
+    const NODE_TOTAL_TIMEOUT_SECS: u32 = 3600;
+    let mut running_secs: u32 = 0;
+    let mut total_secs: u32 = 0;
+    loop {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+        total_secs += 1;
 
         // Check cancellation
         if cancelled.load(Ordering::Relaxed) {
@@ -454,7 +465,7 @@ async fn run_persona_node(
                     );
                     return NodeOutcome::Completed(execution.output_data.clone());
                 }
-                "failed" | "cancelled" => {
+                "failed" | "cancelled" | "incomplete" => {
                     update_node_status(
                         statuses,
                         &member.id,
@@ -465,8 +476,18 @@ async fn run_persona_node(
                     );
                     return NodeOutcome::Failed { cancelled: false };
                 }
+                "running" => {
+                    // Only running time counts toward the node timeout.
+                    running_secs += 1;
+                }
+                // queued / pending: waiting for a slot or cooldown — does not
+                // consume the running-timeout budget.
                 _ => {}
             }
+        }
+
+        if running_secs >= NODE_RUNNING_TIMEOUT_SECS || total_secs >= NODE_TOTAL_TIMEOUT_SECS {
+            break;
         }
     }
 
