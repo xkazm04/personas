@@ -32,8 +32,15 @@ export function PersonaOverviewBatchBar({
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    // Load teams once when the move-to-group action is available. `onMoveToGroup`
+    // is a capability gate, but its *identity* changes as selection/teams change
+    // (the page rebuilds it from `teams`, which fetchTeams itself updates).
+    // Including it in the deps caused an infinite render loop:
+    //   fetchTeams → set({teams}) → page rebuilds onMoveToGroup → this effect
+    //   re-ran → fetchTeams → … Depend only on the stable store action.
     if (onMoveToGroup) void fetchTeams();
-  }, [fetchTeams, onMoveToGroup]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetchTeams]);
 
   // Close menu on outside click + Escape.
   useEffect(() => {
