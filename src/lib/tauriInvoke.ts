@@ -421,7 +421,7 @@ function _invokeCore<T>(
       return result;
     },
     (err) => {
-      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: false, timestamp: Date.now() });
+      recordIpcCall({ command: cmd, durationMs: performance.now() - start, ok: false, timestamp: Date.now(), timedOut: err instanceof InvokeTimeoutError });
       // One-shot recovery for the WebView2 race where the IPC session token
       // monkey-patch hasn't propagated by the time the first privileged call
       // fires. The wrapper already injects `x-ipc-token` from window.__IPC_TOKEN,

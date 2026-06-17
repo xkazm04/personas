@@ -8,6 +8,13 @@ export interface IpcCallRecord {
   durationMs: number;
   ok: boolean;
   timestamp: number;
+  /**
+   * True when the failure was an actual IPC timeout (InvokeTimeoutError), set by
+   * the invoke wrapper. Timeout metrics key on THIS, not a duration threshold —
+   * a duration heuristic missed short-timeout commands and miscounted slow
+   * successes as timeouts.
+   */
+  timedOut?: boolean;
 }
 
 export interface IpcCommandStats {
@@ -72,7 +79,7 @@ export function computeCommandStats(): IpcCommandStats[] {
   const stats: IpcCommandStats[] = [];
   for (const [command, calls] of byCmd) {
     const durations = calls.map(c => c.durationMs).sort((a, b) => a - b);
-    const timeoutCount = calls.filter(c => !c.ok && c.durationMs >= 29_000).length;
+    const timeoutCount = calls.filter(c => !c.ok && c.timedOut === true).length;
     const errorCount = calls.filter(c => !c.ok).length;
 
     stats.push({
@@ -121,7 +128,7 @@ export function getGlobalSummary(): IpcGlobalSummary {
   }
   const durations = records.map(r => r.durationMs).sort((a, b) => a - b);
   const sum = durations.reduce((a, b) => a + b, 0);
-  const timeouts = records.filter(r => !r.ok && r.durationMs >= 29_000).length;
+  const timeouts = records.filter(r => !r.ok && r.timedOut === true).length;
   const errors = records.filter(r => !r.ok).length;
 
   return {
