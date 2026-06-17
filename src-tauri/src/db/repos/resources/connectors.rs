@@ -68,6 +68,19 @@ pub fn get_by_category(
     )
 }
 
+/// Validate that a connector `services` / `events` payload is a JSON array.
+/// These columns are consumed as arrays downstream; a non-array value (empty
+/// string, object, or garbage) would silently mis-shape the catalog and was
+/// never checked on create/update.
+fn validate_json_array(field: &str, raw: &str) -> Result<(), AppError> {
+    match serde_json::from_str::<serde_json::Value>(raw) {
+        Ok(serde_json::Value::Array(_)) => Ok(()),
+        _ => Err(AppError::Validation(format!(
+            "Connector `{field}` must be a JSON array"
+        ))),
+    }
+}
+
 pub fn create(
     pool: &DbPool,
     input: CreateConnectorDefinitionInput,
@@ -86,6 +99,8 @@ pub fn create(
         let category = input.category.unwrap_or_else(|| "general".into());
         let services = input.services.unwrap_or_else(|| "[]".into());
         let events = input.events.unwrap_or_else(|| "[]".into());
+        validate_json_array("services", &services)?;
+        validate_json_array("events", &events)?;
         let is_builtin = input.is_builtin.unwrap_or(false) as i32;
 
         let mut conn = pool.get()?;
@@ -154,6 +169,12 @@ pub fn update(
             if label.trim().is_empty() {
                 return Err(AppError::Validation("Label cannot be empty".into()));
             }
+        }
+        if let Some(ref services) = input.services {
+            validate_json_array("services", services)?;
+        }
+        if let Some(ref events) = input.events {
+            validate_json_array("events", events)?;
         }
 
         get_by_id(pool, id)?;
