@@ -286,6 +286,17 @@ function getSnapshot(): number {
  *   // => "You have 3 agents"
  */
 export function interpolate(template: string, vars: Record<string, string | number>): string {
+  // A missing/renamed translation leaf resolves to `undefined` (or a nested
+  // object) at runtime even though the type says `string`. Calling `.replace`
+  // on that throws and blanks the whole subtree. Degrade gracefully: return an
+  // empty string for nullish, stringify anything else, and warn in dev so the
+  // missing key is visible instead of crashing the render.
+  if (typeof template !== "string") {
+    if (import.meta.env.DEV) {
+      console.warn("[i18n] interpolate received a non-string template (missing translation leaf?):", template);
+    }
+    return template == null ? "" : String(template);
+  }
   return template.replace(/\{(\w+)\}/g, (_, key: string) =>
     vars[key] !== undefined ? String(vars[key]) : `{${key}}`,
   );
