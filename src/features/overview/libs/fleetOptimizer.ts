@@ -61,6 +61,9 @@ const HIGH_HEALING_ISSUE_COUNT = 3;
 /** Cost anomaly sigma threshold */
 const ANOMALY_SIGMA_THRESHOLD = 2.0;
 
+/** Minimum overall success rate (%) to declare the fleet "running smoothly". */
+const HEALTHY_FLEET_SUCCESS_PCT = 80;
+
 // -- Per-Persona Success Rate Derivation -----------------------------
 
 interface PersonaPerformance {
@@ -103,7 +106,12 @@ function derivePerPersonaPerformance(
     // Derive success rate: if we have daily points, use overall daily aggregation
     // For a per-persona success rate, use available execution count + healing failure signal
     const totalExecs = tp.total_executions;
-    const failedEstimate = healing.total; // Each healing issue ~= 1 failed execution
+    // healing.total is a LIFETIME issue count while totalExecs is windowed —
+    // subtracting the former from the latter drove the rate sharply negative
+    // (then clamped to 0) for agents with many old healing issues but few recent
+    // runs, producing a false "High Cost, Low Success". Cap the failure estimate
+    // at the windowed execution count so it stays a sane [0,100] approximation.
+    const failedEstimate = Math.min(healing.total, totalExecs);
     const successRate = totalExecs > 0
       ? Math.max(0, Math.min(100, ((totalExecs - failedEstimate) / totalExecs) * 100))
       : 100;
@@ -241,7 +249,15 @@ export function generateFleetRecommendation(
     };
   }
 
-  // 5. Fleet is healthy
+  // 5. Fleet is healthy — but only claim so when the overall success rate is
+  // actually healthy. A struggling fleet (low/zero overall success) that didn't
+  // trip a specific rec above must NOT get a falsely-reassuring "smooth / no
+  // optimization needed" green status; suppress the rec instead.
+  if (!Number.isFinite(dashboard.overall_success_rate)
+      || dashboard.overall_success_rate < HEALTHY_FLEET_SUCCESS_PCT) {
+    return null;
+  }
+
   return {
     id: 'healthy-fleet',
     type: 'healthy_fleet',
