@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Lightbulb, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -8,6 +8,14 @@ const STORAGE_PREFIX = 'twin.coachmarks.';
 
 function storageKey(id: string): string {
   return `${STORAGE_PREFIX}${id}`;
+}
+
+function readDismissed(id: string): boolean {
+  try {
+    return window.localStorage.getItem(storageKey(id)) === '1';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -21,16 +29,16 @@ function storageKey(id: string): string {
  */
 export function CoachMark({ id, title, body }: { id: string; title: string; body: string }) {
   const t = useTranslation().t.twin;
-  const [dismissed, setDismissed] = useState(true); // start dismissed; hydrate from storage in effect
-
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey(id));
-      setDismissed(raw === '1');
-    } catch {
-      setDismissed(false);
-    }
-  }, [id]);
+  // Read storage synchronously so an already-dismissed mark never flashes in and
+  // a never-dismissed one shows immediately (no one-frame hydration delay).
+  const [dismissed, setDismissed] = useState(() => readDismissed(id));
+  // On id change (switching subtabs) re-derive during render — an effect lags a
+  // frame and would briefly re-show the previous tab's (possibly dismissed) mark.
+  const prevIdRef = useRef(id);
+  if (prevIdRef.current !== id) {
+    prevIdRef.current = id;
+    setDismissed(readDismissed(id));
+  }
 
   const handleDismiss = () => {
     setDismissed(true);
