@@ -151,19 +151,30 @@ export function useAutoTeam(): AutoTeamState {
       if (cancelledRef.current) return;
       setMemberCount(newMemberIds.length);
 
-      // 3. Create connections
+      // 3. Create connections. The LLM blueprint routinely contains edges the
+      // backend legitimately rejects — duplicate pairs, self-loops, or
+      // cycle-forming non-feedback edges (create_connection validates all
+      // three). Previously any one of those threw straight to the outer catch,
+      // surfaced a generic "Failed to create team", and left the already-valid
+      // team + members orphaned. Isolate each insert and count only the
+      // connections that actually persisted, so connectionCount reflects the
+      // real result instead of overstating it (and one bad edge can't abort
+      // the whole build).
       let connCount = 0;
       for (const conn of blueprint.connections) {
         const sourceId = newMemberIds[conn.source_index];
         const targetId = newMemberIds[conn.target_index];
-        if (sourceId && targetId) {
-          await createTeamConnection(
+        if (!sourceId || !targetId) continue;
+        try {
+          const created = await createTeamConnection(
             team.id,
             sourceId,
             targetId,
             conn.connection_type,
           );
-          connCount++;
+          if (created) connCount++;
+        } catch (err) {
+          silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:connection")(err);
         }
       }
       if (cancelledRef.current) return;
