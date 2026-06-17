@@ -70,7 +70,21 @@ impl<'a> StatusEmitter<'a> {
     ) {
         match serde_json::to_string(node_statuses) {
             Ok(json) => {
-                let _ = team_repo::update_pipeline_run(self.db, self.run_id, status, &json, None);
+                if let Err(e) =
+                    team_repo::update_pipeline_run(self.db, self.run_id, status, &json, None)
+                {
+                    // Don't swallow a failed status write: the frontend gets the
+                    // live PIPELINE_STATUS emit below, so the UI would show this
+                    // status while the DB still holds the previous one — a
+                    // divergence that surfaces as a stale status on reload. Log
+                    // it so the dropped persistence is diagnosable.
+                    tracing::warn!(
+                        run_id = %self.run_id,
+                        status = %status,
+                        error = %e,
+                        "pipeline status DB write failed — UI shows the live status but it did not persist"
+                    );
+                }
             }
             Err(e) => {
                 tracing::error!(
