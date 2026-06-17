@@ -1,4 +1,4 @@
-use chrono::{DateTime, Datelike, Duration, Local, TimeZone, Timelike, Utc};
+use chrono::{DateTime, Datelike, Duration, Local, NaiveDateTime, TimeZone, Timelike, Utc};
 use chrono_tz::Tz;
 
 /// Minimum allowed interval between two fires for a cron expression.
@@ -386,6 +386,10 @@ fn matches(schedule: &CronSchedule, dt: &DateTime<Utc>) -> bool {
 /// Check if a UTC datetime matches the schedule when interpreted in `tz`.
 /// Generic over any `TimeZone` so callers can pass `chrono::Local` (system
 /// timezone) or `chrono_tz::Tz` (an explicit IANA zone).
+///
+/// Retained as a reference matcher; the live path uses [`matches_naive`], which
+/// iterates local wall-clock time so DST gaps/overlaps can be resolved.
+#[allow(dead_code)]
 fn matches_in_zone<Z: TimeZone>(schedule: &CronSchedule, dt: &DateTime<Utc>, tz: &Z) -> bool {
     let local = dt.with_timezone(tz);
     schedule.has_minute(local.minute())
@@ -470,66 +474,108 @@ fn next_fire_time_in_zone<Z: TimeZone>(
     from: DateTime<Utc>,
     tz: &Z,
 ) -> Option<DateTime<Utc>> {
-    let start = from.with_second(0).unwrap().with_nanosecond(0).unwrap() + Duration::minutes(1);
+    // Iterate LOCAL wall-clock minutes (not UTC) so DST transitions are handled
+    // explicitly when we map a matching local time back to a UTC instant:
+    //   - normal local time  → exactly one instant (`earliest()` = that instant);
+    //   - fall-back (autumn)  → the local time occurs twice; `earliest()` picks
+    //     the FIRST occurrence, so the job fires once (the old UTC scan matched
+    //     both instants → double-fire across ticks);
+    //   - spring-forward gap  → the local time never occurs; `earliest()` is
+    //     None, so we fire at the gap boundary instead of silently slipping the
+    //     job to the next day (the old scan skipped the missing minutes).
+    let mut naive = from
+        .with_timezone(tz)
+        .naive_local()
+        .with_second(0)?
+        .with_nanosecond(0)?
+        + Duration::minutes(1);
 
     let max_iterations = 4 * 366 * 24 * 60; // ~4 years of minutes
-    let mut current = start;
 
     for _ in 0..max_iterations {
-        if matches_in_zone(schedule, &current, tz) {
-            return Some(current);
+        if matches_naive(schedule, &naive) {
+            let resolved = match tz.from_local_datetime(&naive).earliest() {
+                Some(dt) => Some(dt.with_timezone(&Utc)),
+                None => gap_end_utc(tz, naive),
+            };
+            if let Some(utc) = resolved {
+                // Strictly after `from`. For a fall-back duplicate whose first
+                // occurrence is already <= from, this correctly skips it (no
+                // re-fire) and the scan continues to the next match.
+                if utc > from {
+                    return Some(utc);
+                }
+            }
+            naive += Duration::minutes(1);
+            continue;
         }
 
-        let local = current.with_timezone(tz);
-
-        if !schedule.has_month(local.month()) {
-            let next_month = if local.month() == 12 {
-                local
-                    .with_year(local.year() + 1)
+        // Skip-ahead: jump over whole non-matching months/days/hours rather than
+        // crawling minute by minute. Operates on naive local time.
+        if !schedule.has_month(naive.month()) {
+            let next_month = if naive.month() == 12 {
+                naive
+                    .with_year(naive.year() + 1)
                     .and_then(|d| d.with_month(1))
                     .and_then(|d| d.with_day(1))
             } else {
-                local
-                    .with_month(local.month() + 1)
+                naive
+                    .with_month(naive.month() + 1)
                     .and_then(|d| d.with_day(1))
             };
-            current = match next_month
+            naive = next_month
                 .and_then(|d| d.with_hour(0))
                 .and_then(|d| d.with_minute(0))
-            {
-                Some(t) => t.with_timezone(&Utc),
-                None => current + Duration::minutes(1),
-            };
+                .unwrap_or_else(|| naive + Duration::minutes(1));
             continue;
         }
 
-        if !day_matches(
-            schedule,
-            local.day(),
-            local.weekday().num_days_from_sunday(),
-        ) {
-            let next_day = (local + Duration::days(1))
+        if !day_matches(schedule, naive.day(), naive.weekday().num_days_from_sunday()) {
+            naive = (naive + Duration::days(1))
                 .with_hour(0)
-                .and_then(|d| d.with_minute(0));
-            current = match next_day {
-                Some(t) => t.with_timezone(&Utc),
-                None => current + Duration::minutes(1),
-            };
+                .and_then(|d| d.with_minute(0))
+                .unwrap_or_else(|| naive + Duration::minutes(1));
             continue;
         }
 
-        if !schedule.has_hour(local.hour()) {
-            let next_hour = (local + Duration::hours(1)).with_minute(0);
-            current = match next_hour {
-                Some(t) => t.with_timezone(&Utc),
-                None => current + Duration::minutes(1),
-            };
+        if !schedule.has_hour(naive.hour()) {
+            naive = (naive + Duration::hours(1))
+                .with_minute(0)
+                .unwrap_or_else(|| naive + Duration::minutes(1));
             continue;
         }
 
-        current += Duration::minutes(1);
+        naive += Duration::minutes(1);
     }
 
+    None
+}
+
+/// Field-match a cron schedule against a naive LOCAL datetime — same fields as
+/// [`matches_in_zone`], but the caller iterates local wall-clock time directly
+/// so no UTC→local conversion is needed here.
+fn matches_naive(schedule: &CronSchedule, naive: &NaiveDateTime) -> bool {
+    schedule.has_minute(naive.minute())
+        && schedule.has_hour(naive.hour())
+        && schedule.has_month(naive.month())
+        && day_matches(
+            schedule,
+            naive.day(),
+            naive.weekday().num_days_from_sunday(),
+        )
+}
+
+/// For a local time inside a DST spring-forward gap (it does not exist), return
+/// the UTC instant at the gap's end — the first existing local minute at or
+/// after `naive`. Bounded probe (real gaps are at most a couple of hours).
+fn gap_end_utc<Z: TimeZone>(tz: &Z, naive: NaiveDateTime) -> Option<DateTime<Utc>> {
+    let mut probe = naive;
+    for _ in 0..(6 * 60) {
+        if let Some(dt) = tz.from_local_datetime(&probe).earliest() {
+            return Some(dt.with_timezone(&Utc));
+        }
+        probe += Duration::minutes(1);
+    }
     None
 }
 
@@ -1020,5 +1066,48 @@ mod tests {
             next.minute(),
             allowed
         );
+    }
+
+    // ── DST correctness (America/New_York, 2026) ────────────────────────────
+    // Spring-forward: 2026-03-08, 02:00 EST → 03:00 EDT (02:00–02:59 do not
+    // exist). Fall-back: 2026-11-01, 02:00 EDT → 01:00 EST (01:00–01:59 occur
+    // twice). EST = UTC-5, EDT = UTC-4.
+
+    #[test]
+    fn dst_spring_forward_fires_at_gap_boundary() {
+        // A daily 2:30 cron whose local time falls in the spring-forward gap must
+        // fire at the gap boundary (03:00 EDT = 07:00 UTC) that SAME day, not
+        // silently slip to the next day.
+        let s = parse_cron("30 2 * * *").unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 3, 8, 5, 0, 0).unwrap(); // 00:00 EST
+        let next = next_fire_time_in_tz(&s, from, chrono_tz::America::New_York).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 3, 8, 7, 0, 0).unwrap());
+    }
+
+    #[test]
+    fn dst_fall_back_fires_once_no_double() {
+        // A daily 1:30 cron must fire ONCE on fall-back day — at the first
+        // occurrence (1:30 EDT = 05:30 UTC) — and the next fire must be the
+        // following day (1:30 EST = Nov 2 06:30 UTC), NOT the duplicate second
+        // 1:30 (Nov 1 06:30 UTC).
+        let s = parse_cron("30 1 * * *").unwrap();
+        let tz = chrono_tz::America::New_York;
+
+        let from = Utc.with_ymd_and_hms(2026, 11, 1, 4, 0, 0).unwrap(); // 00:00 EDT
+        let first = next_fire_time_in_tz(&s, from, tz).unwrap();
+        assert_eq!(first, Utc.with_ymd_and_hms(2026, 11, 1, 5, 30, 0).unwrap());
+
+        let next = next_fire_time_in_tz(&s, first, tz).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 11, 2, 6, 30, 0).unwrap());
+        assert_ne!(next, Utc.with_ymd_and_hms(2026, 11, 1, 6, 30, 0).unwrap());
+    }
+
+    #[test]
+    fn dst_normal_day_fires_at_local_time() {
+        // A non-transition day: 2:30 cron fires at 2:30 EST = 07:30 UTC.
+        let s = parse_cron("30 2 * * *").unwrap();
+        let from = Utc.with_ymd_and_hms(2026, 1, 15, 5, 0, 0).unwrap(); // 00:00 EST
+        let next = next_fire_time_in_tz(&s, from, chrono_tz::America::New_York).unwrap();
+        assert_eq!(next, Utc.with_ymd_and_hms(2026, 1, 15, 7, 30, 0).unwrap());
     }
 }
