@@ -234,11 +234,17 @@ pub async fn create_adoption_session(
                 crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
             };
             if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut payload, lookup) {
-                tracing::warn!(
+                // Don't seed an adoption-test session with an un-hydrated payload
+                // — it would test (and later promote) a structurally broken
+                // persona. Fail closed.
+                tracing::error!(
                     session_id = %session_id,
                     error = %e,
-                    "create_adoption_session: recipe_ref hydration failed; proceeding with un-hydrated payload"
+                    "create_adoption_session: recipe_ref hydration failed — aborting"
                 );
+                return Err(AppError::Validation(format!(
+                    "Recipe hydration failed during adoption setup: {e}"
+                )));
             }
 
             if crate::engine::template_v3::is_v3_shape(&payload) {
@@ -2521,11 +2527,18 @@ pub async fn promote_build_draft_inner(
                 crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
             };
             if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut payload, lookup) {
-                tracing::warn!(
+                // Proceeding with an un-hydrated payload produces a structurally
+                // broken persona (recipe_refs left as unexpanded placeholders
+                // instead of real tool/config). Fail closed instead of silently
+                // promoting a broken persona.
+                tracing::error!(
                     session_id = %session_id,
                     error = %e,
-                    "promote_build_draft: recipe_ref hydration failed; proceeding with un-hydrated payload"
+                    "promote_build_draft: recipe_ref hydration failed — aborting promotion"
                 );
+                return Err(AppError::Validation(format!(
+                    "Recipe hydration failed during promotion: {e}"
+                )));
             }
             if crate::engine::template_v3::is_v3_shape(&payload) {
                 crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
