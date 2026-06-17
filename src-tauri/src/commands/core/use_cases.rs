@@ -445,13 +445,24 @@ pub async fn count_event_listeners(
     // and we additionally match LIKE on the config JSON for older rows where
     // the column may be empty. The LIKE bound is anchored to '"event_type":"..."'
     // to avoid substring false-positives.
-    let needle = format!("%\"event_type\":\"{}\"%", event_type.replace('"', "\\\""));
+    //
+    // Escape LIKE wildcards in the event name with an explicit ESCAPE char.
+    // SQLite LIKE treats `_` and `%` as wildcards and ignores backslashes
+    // unless ESCAPE is declared — so the previous `.replace('"', "\\\"")` both
+    // failed to match (it inserted literal backslashes the stored JSON doesn't
+    // have) and left `_`/`%` unescaped, letting e.g. `task_complete` count
+    // `taskXcomplete`. Escape `\`, `%`, `_` and declare `ESCAPE '\'`.
+    let escaped_event = event_type
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
+    let needle = format!("%\"event_type\":\"{escaped_event}\"%");
     let triggers: i64 = conn
         .prepare(
             "SELECT COUNT(*) FROM persona_triggers
              WHERE trigger_type = 'event_listener'
                AND (?1 = '' OR persona_id <> ?1)
-               AND config LIKE ?2",
+               AND config LIKE ?2 ESCAPE '\\'",
         )?
         .query_row(rusqlite::params![exclude, needle], |r| r.get(0))?;
 
