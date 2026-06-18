@@ -90,3 +90,11 @@ export function useBlastRadius(
 
   return { items, loading };
 }
+
+/** Self-fetching variant — pass a `fetcher` where the host can't call the
+ *  `useBlastRadius` hook itself (e.g. an imperative `confirm()` config that
+ *  builds a ReactNode at click time). */
+export function BlastRadiusPanelLazy({ fetcher }: { fetcher: () => Promise<BlastRadiusItem[]> }) {
+  const { items, loading } = useBlastRadius(fetcher, true);
+  return <BlastRadiusPanel items={items} loading={loading} />;
+}

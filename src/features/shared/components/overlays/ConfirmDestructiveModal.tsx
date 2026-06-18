@@ -1,8 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, type ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
-import type { BlastRadiusItem } from '@/api/agents/personas';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /* ------------------------------------------------------------------ */
@@ -18,12 +16,10 @@ export interface ConfirmDestructiveConfig {
   confirmLabel?: string;
   /** Optional key-value detail rows shown in the info card */
   details?: { label: string; value: string }[];
-  /** Pre-fetched blast-radius items */
-  blastRadiusItems?: BlastRadiusItem[];
-  /** Whether blast-radius data is still loading (use with blastRadiusItems) */
-  blastRadiusLoading?: boolean;
-  /** Fetcher for blast-radius items (fetched when modal opens) */
-  blastRadiusFetcher?: () => Promise<BlastRadiusItem[]>;
+  /** Optional blast-radius (impact) UI rendered above the confirm actions. The
+   *  host owns fetching + rendering so this modal stays a domain-free primitive
+   *  (e.g. `<BlastRadiusPanelLazy fetcher={…} />` from features/overview). */
+  blastRadius?: ReactNode;
   /**
    * When set, the user must type this exact string to enable the confirm button.
    * Use for high-impact deletions (e.g. persona name, credential name).
@@ -54,19 +50,6 @@ function ModalContent({ config, onClose, onConfirm }: {
   const { t } = useTranslation();
   const [typedValue, setTypedValue] = useState('');
 
-  // Fetch blast radius dynamically if a fetcher is provided
-  const noop = useCallback(async () => [] as BlastRadiusItem[], []);
-  const { items: fetchedItems, loading: fetchLoading } = useBlastRadius(
-    config.blastRadiusFetcher ?? noop,
-    !!config.blastRadiusFetcher,
-  );
-
-  // Prefer pre-supplied items, fall back to fetched
-  const hasFetcher = !!config.blastRadiusFetcher;
-  const hasPreSupplied = config.blastRadiusItems !== undefined || config.blastRadiusLoading !== undefined;
-  const showBlastRadius = hasFetcher || hasPreSupplied;
-  const blastItems = hasPreSupplied ? (config.blastRadiusItems ?? []) : fetchedItems;
-  const blastLoading = hasPreSupplied ? config.blastRadiusLoading : fetchLoading;
 
   const confirmLabel = config.confirmLabel ?? t.common.delete;
   const needsTyping = !!config.requireTypedConfirmation;
@@ -117,10 +100,8 @@ function ModalContent({ config, onClose, onConfirm }: {
         </div>
       )}
 
-      {/* Blast radius */}
-      {showBlastRadius && (
-        <BlastRadiusPanel items={blastItems} loading={blastLoading} />
-      )}
+      {/* Blast radius (host-provided) */}
+      {config.blastRadius}
 
       {/* Type-to-confirm */}
       {needsTyping && (
