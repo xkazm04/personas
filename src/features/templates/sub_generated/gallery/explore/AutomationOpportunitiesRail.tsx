@@ -1,5 +1,5 @@
 import { Lightbulb, Plus, Zap, ChevronRight, Download } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import type { AutomationOpportunity } from './useAutomationDiscovery';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

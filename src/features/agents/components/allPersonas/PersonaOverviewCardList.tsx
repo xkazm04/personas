@@ -3,7 +3,7 @@ import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Calendar, Clock, Inbox, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';

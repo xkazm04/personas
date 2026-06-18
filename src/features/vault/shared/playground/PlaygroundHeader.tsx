@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useRef, useCallback } from 'react';
 import { X, Plug, Key, Plus, Pencil, Check } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { getCredentialTags, getTagStyle, buildMetadataWithTags, SUGGESTED_TAGS } from '@/features/vault/shared/utils/credentialTags';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from '@/stores/vaultStore';

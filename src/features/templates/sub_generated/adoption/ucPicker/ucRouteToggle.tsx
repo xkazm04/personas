@@ -4,7 +4,7 @@
 
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { Destination } from './ucPickerTypes';
 
 export function RouteToggle({

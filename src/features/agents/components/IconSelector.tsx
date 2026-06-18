@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import type { ConnectorDefinition } from '@/lib/types/types';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { AGENT_ICONS, toAgentIconValue, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';

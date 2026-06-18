@@ -16,7 +16,7 @@ import {
   ConnectorIcon as _ConnectorIcon,
   getConnectorMeta,
   type ConnectorMeta,
-} from '@/features/shared/components/display/ConnectorMeta';
+} from '@/lib/connectors/connectorMeta';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { useVaultStore } from '@/stores/vaultStore';
 import {

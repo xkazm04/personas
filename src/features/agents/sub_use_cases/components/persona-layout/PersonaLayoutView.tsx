@@ -13,7 +13,7 @@ import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/s
 import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
 import { SigilEditModal } from '@/features/shared/glyph/persona-layout/SigilEditModal';
 import { resolveSigilEditBody } from '@/features/shared/glyph/persona-layout/sigilEditBodies';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';

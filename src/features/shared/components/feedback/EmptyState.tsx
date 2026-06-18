@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { Key, Zap, Bot, Play, Radio, Link, ListChecks, SearchX, RotateCcw, CheckCircle2, type LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { useThemeStore } from '@/stores/themeStore';
 
 // -- Scenario Variants --------------------------------------------
 
@@ -226,7 +225,7 @@ interface InboxZeroProps {
 
 export function InboxZero({ title, subtitle, celebrate = false, className }: InboxZeroProps) {
   const prefersReducedMotion = useReducedMotion();
-  const appReduceMotion = useThemeStore((s) => s.reduceMotion);
+  const appReduceMotion = useReducedMotion();
   const animate = celebrate && !prefersReducedMotion && !appReduceMotion;
   return (
     <EmptyState

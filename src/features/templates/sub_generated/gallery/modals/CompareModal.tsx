@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { X, Download, Play } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { getCategoryMeta } from '../search/filters/searchConstants';
 import { DIFFICULTY_META } from '../../shared/templateComplexity';
 import { useTranslation } from '@/i18n/useTranslation';

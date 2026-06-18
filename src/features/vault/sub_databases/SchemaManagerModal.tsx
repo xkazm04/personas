@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { X, Table2, Code2, Terminal, MessageSquare, Pencil, Check } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { toCredentialMetadata } from '@/lib/types/types';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';

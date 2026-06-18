@@ -1,5 +1,5 @@
 import { Plug, SlidersHorizontal } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 import type { Recipe } from '../../types';

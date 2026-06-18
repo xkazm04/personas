@@ -1,6 +1,6 @@
 import React from 'react';
-import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
-import type { ConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
+import type { ConnectorMeta } from '@/lib/connectors/connectorMeta';
 
 interface ConnectorIconButtonProps {
   connectorName: string;

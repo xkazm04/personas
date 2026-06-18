@@ -11,7 +11,7 @@ import { useConnectorStatuses } from '../../libs/useConnectorStatuses';
 import { silentCatch } from "@/lib/silentCatch";
 import { ReadinessWarnings } from './ConnectorsTabSections';
 import { extractConnectorNames } from '@/lib/personas/utils';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 
 interface PersonaConnectorsTabProps {
   onMissingCountChange?: (count: number) => void;

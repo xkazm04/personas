@@ -13,7 +13,7 @@ import { DIM_META, GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
 import { useAdoptionDimensionModel } from './useAdoptionDimensionModel';

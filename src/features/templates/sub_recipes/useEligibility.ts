@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { CONNECTOR_META } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { useAgentStore } from '@/stores/agentStore';
 import { resolveEligibility } from './eligibility';

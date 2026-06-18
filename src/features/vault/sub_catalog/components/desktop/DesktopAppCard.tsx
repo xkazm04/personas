@@ -1,5 +1,5 @@
 import { CheckCircle2, ChevronRight, CircleDot } from 'lucide-react';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { DiscoveredApp } from '@/api/system/desktop';
 import { useTranslation } from '@/i18n/useTranslation';
 

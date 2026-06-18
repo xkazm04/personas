@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { CheckCircle2, Plug, AlertCircle, ExternalLink, Wrench, Sparkles } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { resolveConnectorRunnability } from '@/features/shared/components/display/connectorRunnability';
 import { DesignCheckbox } from './DesignCheckbox';
 import { SECTION_LABEL } from './helpers';

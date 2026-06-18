@@ -1,6 +1,6 @@
 import { Plug, Monitor, BadgeCheck, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';

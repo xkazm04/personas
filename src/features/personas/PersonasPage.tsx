@@ -93,6 +93,9 @@ export default function PersonasPage() {
     }))
   );
   const setError = useSystemStore((s) => s.setError);
+  // Host-provided "Go to dashboard" recovery for section ErrorBoundaries (the
+  // boundary itself is store-free; the shell wires navigation).
+  const goHome = () => useSystemStore.getState().setSidebarSection('home');
   const { selectedPersonaId, personas } = useAgentStore(
     useShallow((s) => ({ selectedPersonaId: s.selectedPersonaId, personas: s.personas }))
   );
@@ -193,7 +196,7 @@ export default function PersonasPage() {
       // Cloud sub-view (dev-only, gated in sidebar)
       if (agentTab === 'cloud') {
         return (
-          <ErrorBoundary name="Cloud">
+          <ErrorBoundary onGoHome={goHome} name="Cloud">
             <Suspense fallback={SectionFallback}>
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -221,66 +224,66 @@ export default function PersonasPage() {
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
       }
     }
 
-    if (sidebarSection === 'home') return <ErrorBoundary name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'home') return <ErrorBoundary onGoHome={goHome} name="Home"><Suspense fallback={SectionFallback}><HomePage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'overview') {
-      return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'teams') {
       // Teams 1st-level section: Workspace (canvas/Studio), Goals, KPIs, or Factory.
       if (teamsTab === 'factory') {
-        return <ErrorBoundary name="Factory"><Suspense fallback={SectionFallback}><FactoryPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Factory"><Suspense fallback={SectionFallback}><FactoryPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'kpis') {
-        return <ErrorBoundary name="KPIs"><Suspense fallback={SectionFallback}><KPIsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="KPIs"><Suspense fallback={SectionFallback}><KPIsPage /></Suspense></ErrorBoundary>;
       }
       if (teamsTab === 'goals') {
-        return <ErrorBoundary name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
       }
-      return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'credentials') return <ErrorBoundary onGoHome={goHome} name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'events') return <ErrorBoundary onGoHome={goHome} name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'design-reviews') return <ErrorBoundary onGoHome={goHome} name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'plugins') {
       if (pluginTab === 'dev-tools') {
-        return <ErrorBoundary name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="DevTools"><Suspense fallback={SectionFallback}><DevToolsPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'artist' && import.meta.env.DEV) {
-        return <ErrorBoundary name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Artist"><Suspense fallback={SectionFallback}><ArtistPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'obsidian-brain') {
-        return <ErrorBoundary name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="ObsidianBrain"><Suspense fallback={SectionFallback}><ObsidianBrainPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'research-lab' && import.meta.env.DEV) {
-        return <ErrorBoundary name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="ResearchLab"><Suspense fallback={SectionFallback}><ResearchLabPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'drive') {
-        return <ErrorBoundary name="Drive"><Suspense fallback={SectionFallback}><DrivePage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Drive"><Suspense fallback={SectionFallback}><DrivePage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'twin') {
-        return <ErrorBoundary name="Twin"><Suspense fallback={SectionFallback}><TwinPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Twin"><Suspense fallback={SectionFallback}><TwinPage /></Suspense></ErrorBoundary>;
       }
       if (pluginTab === 'companion') {
-        return <ErrorBoundary name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
       }
       // Browse view — plugin cards with enable/disable toggles
-      return <ErrorBoundary name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'schedules') return <ErrorBoundary name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'settings') return <ErrorBoundary name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'schedules') return <ErrorBoundary onGoHome={goHome} name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'settings') return <ErrorBoundary onGoHome={goHome} name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
-      return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+      return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
     }
-    if (selectedPersonaId) return <ErrorBoundary name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
+    if (selectedPersonaId) return <ErrorBoundary onGoHome={goHome} name="Agent Editor"><Suspense fallback={SectionFallback}><PersonaEditor /></Suspense></ErrorBoundary>;
     // Default: All Agents table view
-    return <ErrorBoundary name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;
+    return <ErrorBoundary onGoHome={goHome} name="Agent Overview"><Suspense fallback={SectionFallback}><PersonaOverviewPage /></Suspense></ErrorBoundary>;
   };
 
   return (

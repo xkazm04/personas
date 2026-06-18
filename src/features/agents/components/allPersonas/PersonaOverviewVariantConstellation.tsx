@@ -23,7 +23,7 @@ import { memo, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, ArrowRight, Clock, ExternalLink, Zap } from 'lucide-react';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { getTrustTier } from '@/lib/personas/personaThresholds';

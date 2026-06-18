@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime, timeAgo } from '@/lib/utils/formatters';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';

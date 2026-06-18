@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { X, Plug, ExternalLink, Check } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { CredentialEditForm } from '@/features/vault/sub_credentials/components/forms/CredentialEditForm';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import type { SuggestedConnector } from '@/lib/types/designTypes';

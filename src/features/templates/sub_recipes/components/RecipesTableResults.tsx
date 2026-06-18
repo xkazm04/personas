@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, ChevronDown, ChevronUp, ChevronsUpDown, Sparkles } from 'lucide-react';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { categoryLabel } from '../libs/categoryLabels';

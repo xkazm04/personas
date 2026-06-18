@@ -1,5 +1,5 @@
 import { Calendar, Bell, Cpu, Mail, Activity, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../../types';

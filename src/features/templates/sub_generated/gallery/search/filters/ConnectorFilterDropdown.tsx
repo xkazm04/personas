@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Search, Filter, ChevronDown, CheckCircle2 } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';

@@ -10,7 +10,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
-import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
 import CreativeSessionHistory from './CreativeSessionHistory';

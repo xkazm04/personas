@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { CircleDot, CheckCircle2, XCircle, FileText } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { TRANSITION_NORMAL } from '@/lib/utils/animation/animationPresets';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';

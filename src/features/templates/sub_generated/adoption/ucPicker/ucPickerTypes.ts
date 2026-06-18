@@ -5,7 +5,7 @@
 // the codebase.
 
 import type { LucideIcon } from 'lucide-react';
-import type { ConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import type { ConnectorMeta } from '@/lib/connectors/connectorMeta';
 
 // ─── Destinations ──────────────────────────────────────────────────────
 

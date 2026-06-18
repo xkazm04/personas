@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { X, Sparkles, AlertTriangle, ExternalLink } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';

@@ -1,6 +1,6 @@
 import { Plug, MessageSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {
   PersonaSigilSummary,
