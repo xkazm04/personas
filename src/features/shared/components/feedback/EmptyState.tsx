@@ -209,9 +209,8 @@ export function NoResults({ onReset, title, subtitle, resetLabel, className }: N
 // manual-review triage queue and the incidents inbox. Renders an EmptyState
 // with a calm emerald check badge. When `celebrate` is set — the caller just
 // actioned the LAST item — it plays a one-shot scale+fade pop on the badge
-// (~400ms), gated behind prefers-reduced-motion (OS preference AND the app-level
-// reduceMotion toggle), so clearing the queue feels earned without ever
-// imposing motion on users who opted out.
+// (~400ms), gated behind prefers-reduced-motion (OS preference), so clearing the
+// queue feels earned without ever imposing motion on users who opted out.
 
 interface InboxZeroProps {
   /** Headline, e.g. "All caught up". */
@@ -224,9 +223,8 @@ interface InboxZeroProps {
 }
 
 export function InboxZero({ title, subtitle, celebrate = false, className }: InboxZeroProps) {
-  const prefersReducedMotion = useReducedMotion();
-  const appReduceMotion = useReducedMotion();
-  const animate = celebrate && !prefersReducedMotion && !appReduceMotion;
+  const reduceMotion = useReducedMotion();
+  const animate = celebrate && !reduceMotion;
   return (
     <EmptyState
       icon={CheckCircle2}

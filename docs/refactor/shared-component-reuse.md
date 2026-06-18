@@ -106,3 +106,44 @@ Built 2026-05-24 to close the "new code doesn't know shared components exist" ga
 
 To improve a component's catalog row, add a `@catalog <one-line>` JSDoc tag to it
 (or extend the curated map in the generator for the core primitives).
+
+---
+
+## 5. Component families — pick the right one (keep-distinct guide)
+
+> Added 2026-06-18 by the catalog curation (see
+> [`catalog-curation.md`](./catalog-curation.md)). Several clusters were reviewed
+> for **merging** and deliberately kept **distinct** — they're different
+> *treatments*, not copy-paste duplicates, so folding them into one mode-switch
+> component would just create a god-component. The real problem they cause is
+> "which do I use?", which this table answers. **This supersedes backlog item #1**
+> (the EmptyState consolidation): the three empty-state components are distinct and
+> stay separate.
+
+| Family | Use… | …for |
+|---|---|---|
+| **Empty states** | `feedback/EmptyState` | first-run / scenario empties (preset `variant`s + generic icon/title/action; convenience `NoResults`, `InboxZero`) |
+| | `display/EmptyIllustration` | a compact, generic "nothing here" block (double-ring icon + heading + CTA) |
+| | `display/ChartEmptyState` | an empty **chart panel** (inline area/bar/trace/healing SVGs + glow title) |
+| **Status / badge** | `display/StatusBadge` | a semantic status pill (resolve token via `tokenLabel()`) |
+| | `display/StatusDot` | an accessibility-first state dot (shape-coded for colorblind safety) |
+| | `display/Badge` | a generic tag / count pill (not status) |
+| | `display/LiveStatusDot` · `ActivityDot` | decorative, aria-hidden liveness dots in dense rows |
+| **Error / recovery** | `feedback/ErrorBanner` | the layout shell (inline / banner / panel) |
+| | `feedback/InlineErrorBanner` | a severity-gated (info/warn/error) inline message |
+| | `feedback/ErrorRecoveryBanner` | a named recovery action (retry / check-connection / open-settings) |
+| | `feedback/InlineErrorRecovery` | when you have a **raw error** to resolve + a success path |
+| **Count / number** | `display/Numeric` | format + tabular figures — **wrap** the animators with it |
+| | `display/AnimatedCounter` | fade/roll digit animation |
+| | `display/SpringCount` | physics-based count-up (cloud feel) |
+| **Section headers** | `layout/SectionCard` | a grouped content card (it renders its own header) |
+| | `layout/SectionHeader` | a standalone panel header (icon + title + badge + actions) |
+| | `display/SectionLabel` | a small uppercase form-group label |
+| **Time** | `display/RelativeTime` | a live-updating "2h ago" |
+| | `display/AbsoluteTime` | a fixed timestamp (relative time on hover) |
+| **Pickers** | `forms/ColorPicker` · `forms/IconSelector` | the **inline** layout (in a form/step) |
+| | `forms/PopupColorPicker` · `agents/…/PopupIconSelector` | the **popover** layout (compact trigger) — both already share `useClickOutside` |
+
+If two of these ever genuinely converge (one becomes a strict subset of another
+with no visual difference), *then* merge — but verify call sites and visual parity
+first. The 2026-06-18 review found none that qualified.
