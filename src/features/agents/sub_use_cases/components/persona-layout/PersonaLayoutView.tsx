@@ -9,8 +9,9 @@ import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import { useSelectedCredentialLinks } from '@/stores/selectors/personaSelectors';
 import { AddCapabilityRow, PersonaLayout } from '@/features/shared/glyph/persona-layout';
-import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
-import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
+import { type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
+import { CapabilityTagBar } from './CapabilityTagBar';
+import { UseCaseLeftPanel } from './UseCaseLeftPanel';
 import { SigilEditModal } from '@/features/shared/glyph/persona-layout/SigilEditModal';
 import { resolveSigilEditBody } from '@/features/shared/glyph/persona-layout/sigilEditBodies';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
@@ -253,47 +254,35 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     const dimLabels = getDimLabels(t);
     const u = activeCapability;
     const out: Partial<Record<GlyphDimension, PersonaSigilSummaryEntry>> = {};
-    const connectorKeys = new Set<string>();
-    const connectorFallbackNames = new Set<string>();
-    if (u.connectorKey) connectorKeys.add(u.connectorKey);
-    else if (u.connector) connectorFallbackNames.add(u.connector);
-    const channels = new Set(u.notificationChannels);
     const triggers = u.triggerLabel ? [u.triggerLabel] : [];
     const touches = new Set(u.dimensions);
     if (triggers.length > 0) out.trigger = { label: dimLabels.trigger, value: triggers.join(' · ') };
     out.task = { label: dimLabels.task, value: u.title };
 
-    // Apps row: render brand icons for each unique connector (matched
-    // through getConnectorMeta) so the row visually reads "Gmail, Slack,
-    // GitHub" without the text labels. Unknown connectors (no
-    // CONNECTOR_META entry) fall through to a name list so the user
-    // still sees *something*.
-    if (connectorKeys.size > 0 || connectorFallbackNames.size > 0) {
+    // Apps (connector) — compact brand icons for the active capability's
+    // connector(s); rendered inline in the Petals rail's Apps row.
+    const connectorKeys: string[] = [];
+    const connectorFallback: string[] = [];
+    if (u.connectorKey) connectorKeys.push(u.connectorKey);
+    else if (u.connector) connectorFallback.push(u.connector);
+    if (connectorKeys.length > 0 || connectorFallback.length > 0) {
       out.connector = {
         label: dimLabels.connector,
         value: (
-          <span className="inline-flex items-center gap-2 flex-wrap align-middle">
-            {[...connectorKeys].map((key) => {
-              const meta = getConnectorMeta(key);
-              return (
-                <span
-                  key={key}
-                  title={meta.label}
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-input bg-foreground/5 border border-card-border/40"
-                >
-                  <ConnectorIcon meta={meta} size="w-4 h-4" />
-                </span>
-              );
-            })}
-            {connectorFallbackNames.size > 0 && (
-              <span className="typo-body text-foreground">{[...connectorFallbackNames].join(' · ')}</span>
+          <span className="inline-flex items-center gap-1 overflow-hidden">
+            {connectorKeys.slice(0, 4).map((key) => (
+              <ConnectorIcon key={key} meta={getConnectorMeta(key)} size="w-4 h-4" />
+            ))}
+            {connectorFallback.length > 0 && (
+              <span className="typo-caption truncate text-foreground">{connectorFallback.join(' · ')}</span>
             )}
           </span>
         ),
       };
     }
+    const channels = [...new Set(u.notificationChannels)];
+    if (channels.length > 0) out.message = { label: dimLabels.message, value: channels.join(' · ') };
 
-    if (channels.size > 0) out.message = { label: dimLabels.message, value: [...channels].join(' · ') };
     // Boolean-shaped dims: render "Activated" when the active capability
     // touches the dim (i.e. memory/review/event/error_handling is on for
     // this capability). The dim sigil's lit state already conveys the
@@ -345,21 +334,26 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
   // right-side compact list — capabilities live in the header now so
   // the hero column owns the full content width.
   const capabilityTabs = items.length > 0 ? (
-    <div className="flex items-end gap-3">
+    <div className="flex items-center gap-3">
       <div className="flex-1 min-w-0">
-        <CapabilityTabBar
+        <CapabilityTagBar
           items={items}
           activeId={activeCapabilityId}
           onActiveChange={setActiveCapabilityId}
+          onToggleEnabled={(id) => {
+            if (!personaId) return;
+            const uc = items.find((u) => u.id === id);
+            if (uc) requestToggle(personaId, uc.id, uc.title, uc.health === 'disabled');
+          }}
         />
       </div>
-      <div className="shrink-0 pb-1 flex items-center gap-2">
+      <div className="shrink-0 flex items-center gap-2">
         <button
           type="button"
           data-testid="capability-run-now"
           onClick={handleRunActiveCapability}
           disabled={!personaId || !activeCapability || isManualRunning || isExecuting}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Rocket className="w-3.5 h-3.5" /> {t.agents.use_cases.run_now}
         </button>
@@ -448,11 +442,12 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
         }
         leftSlot={
           Object.keys(summaryEntries).length > 0 ? (
-            <PersonaSigilSummary
-              entries={summaryEntries}
-              heading={null}
+            <UseCaseLeftPanel
+              petalStates={heroPetalStates}
+              activeDim={editingPetal}
+              summaryEntries={summaryEntries}
               onSelectDim={(dim) => {
-                // Mirrors onHeroPetalClick — a summary row is just an
+                // Mirrors onHeroPetalClick — a petal row is just an
                 // easier-to-hit handle for the same dim editor.
                 if (!activeCapability) return;
                 setEditingPetal((prev) => (prev === dim ? null : dim));

@@ -28,7 +28,7 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
   const cls = colorMap[color] || colorMap['emerald'];
 
   return (
-    <div className={`rounded-modal border p-4 relative ${cls}`} title={tooltip}>
+    <div className={`rounded-modal border p-4 relative shadow-elevation-1 ${cls}`} title={tooltip}>
       {scope && (
         <span className="absolute top-2 right-2 typo-caption font-mono uppercase tracking-wider opacity-60 px-1.5 py-0.5 rounded-full border border-current/20 bg-current/5">
           {scope}
@@ -38,7 +38,7 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
         {icon}
         <span className="typo-label font-mono opacity-80">{label}</span>
       </div>
-      <div className="typo-data-lg">{value}</div>
+      <div className="typo-data-lg tabular-nums">{value}</div>
       <div className="typo-caption opacity-60 mt-1">{sub}</div>
     </div>
   );
@@ -65,9 +65,9 @@ export function PersonaRow({ stats, expanded, onToggle }: {
       <button onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
         <div className="flex-1 min-w-0">
           <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
-          <span className="typo-caption text-foreground">{stats.total_executions} executions</span>
+          <span className="typo-caption text-foreground tabular-nums">{stats.total_executions} executions</span>
         </div>
-        <span className={`typo-heading px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
+        <span className={`typo-data tabular-nums font-semibold px-2.5 py-0.5 rounded-full border ${rateColor} ${rateBg}`}>{formatPercent(stats.success_rate)}</span>
         {stats.consecutive_failures > 0 && (() => {
           // Cap the displayed streak at the lookback window: the SLA
           // query only inspects the most recent N executions per persona
@@ -114,7 +114,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
         {icon}
         <span className="typo-caption">{label}</span>
       </div>
-      <div className="typo-heading text-foreground/90">{value}</div>
+      <div className="typo-data tabular-nums text-foreground/90">{value}</div>
     </div>
   );
 }

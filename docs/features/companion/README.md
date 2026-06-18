@@ -11,7 +11,7 @@ Companion is the Athena assistant plugin. It has two UI surfaces: a plugin setti
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
 | Voice | ElevenLabs credential picker and voice-id binding | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `CompanionPanel.tsx`, `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
-| Avatar/footer | Athena's live video avatar **is** the footer button (right cluster) — tap opens/collapses the panel, **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`FooterNotice`, `voiceTurnRequest`) |
+| Avatar/footer | Athena's live video avatar **is** the footer button (left cluster, immediately right of the Network Settings icon) — tap opens/collapses the panel, **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`FooterNotice`, `voiceTurnRequest`) |
 
 ## Footer avatar & hold-to-talk
 

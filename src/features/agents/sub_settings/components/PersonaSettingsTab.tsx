@@ -21,6 +21,7 @@ import { SettingsStatusBar } from './SettingsStatusBar';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTier } from '@/hooks/utility/interaction/useTier';
+import { DeepFanoutToggle } from '@/features/agents/sub_editor/components/DeepFanoutToggle';
 
 interface PersonaSettingsTabProps {
   draft: PersonaDraft;
@@ -45,6 +46,7 @@ export function PersonaSettingsTab({
 }: PersonaSettingsTabProps) {
   const { t } = useTranslation();
   const personaId = useAgentStore((s) => s.selectedPersonaId);
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const { isStarter: isSimple } = useTier();
   const [retentionMonths, setRetentionMonths] = useState<number>(2);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
@@ -276,6 +278,11 @@ export function PersonaSettingsTab({
                 className="flex-shrink-0"
               />
             </div>
+          )}
+
+          {/* Deep fan-out — relocated here from the editor header. */}
+          {!isSimple && personaId && (
+            <DeepFanoutToggle personaId={personaId} parameters={selectedPersona?.parameters ?? null} />
           )}
 
         </div>

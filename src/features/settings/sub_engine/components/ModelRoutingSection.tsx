@@ -4,7 +4,6 @@ import { Plus, Trash2, Save } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getModelRoutingRules, setModelRoutingRules } from '@/api/system/system';
 import { Button, AsyncButton } from '@/features/shared/components/buttons';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { toastCatch } from '@/lib/silentCatch';
 import type { ModelRoutingRule } from '@/lib/bindings/ModelRoutingRule';
 
@@ -50,8 +49,7 @@ export function ModelRoutingSection() {
   };
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title={s.routing_title} />
+    <div className="space-y-4">
       <p className="typo-caption text-foreground">{s.routing_subtitle}</p>
 
       {rules.length === 0 && <p className="typo-body text-foreground">{s.routing_empty}</p>}

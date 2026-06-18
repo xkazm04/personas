@@ -338,7 +338,7 @@ export default function CompanionFooterIcon() {
             transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
             data-testid="footer-companion-notice"
             data-companion-notice-kind={footerNotice.kind}
-            className="absolute bottom-full right-0 mb-2 inline-flex items-center gap-2 max-w-[320px] px-3 py-1.5 rounded-card border border-primary/30 bg-background shadow-elevation-3 text-left focus-ring hover:bg-secondary/60 transition-colors z-50"
+            className="absolute bottom-full left-0 mb-2 inline-flex items-center gap-2 max-w-[320px] px-3 py-1.5 rounded-card border border-primary/30 bg-background shadow-elevation-3 text-left focus-ring hover:bg-secondary/60 transition-colors z-50"
             title={t.plugins.companion.footer_notice_dismiss}
             aria-label={`${footerNotice.subject} — ${t.plugins.companion.footer_notice_dismiss}`}
           >

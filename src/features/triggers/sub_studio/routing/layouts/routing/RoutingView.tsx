@@ -1,0 +1,185 @@
+/**
+ * RoutingView — the consolidated Dispatch console (now the only view).
+ *
+ * Event-centric layout: events grouped into category panels (GroupPanel),
+ * each row rendered with the SOURCE → EVENT → LISTENERS spine (EventRow).
+ * Pulse dots on rows carry "live" signal; no top ticker, no live counter.
+ *
+ * This file is a pure orchestrator — it wires data (useRoutingState),
+ * filters (useRoutingFilters), UI chrome (Toolbar + GroupPanel), and the
+ * three shared modals. All row / panel / stack details live in siblings.
+ */
+import { useEffect, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Radio } from 'lucide-react';
+import type { Persona } from '@/lib/bindings/Persona';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
+import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
+import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
+import { AddPersonaModal } from '../AddPersonaModal';
+import { DisconnectDialog } from '../DisconnectDialog';
+import { RenameEventDialog } from '../RenameEventDialog';
+import { useRoutingState } from '../useRoutingState';
+import { buildActivityMap } from './activity';
+import { ClassPillsBar } from './ClassPillsBar';
+import { GroupPanel } from './GroupPanel';
+import { RoutingTableHeader } from './RoutingTableHeader';
+import { Toolbar } from './Toolbar';
+import { useRoutingFilters } from './useRoutingFilters';
+import { DebtText } from '@/i18n/DebtText';
+
+
+interface Props {
+  initialTriggers: PersonaTrigger[];
+  initialEvents: PersonaEvent[];
+  personas: Persona[];
+  teams: PersonaTeam[];
+  /** Page-level slot. RoutingView publishes the class-pill bar into the page header. */
+  setHeaderExtra?: (node: ReactNode) => void;
+  /** Reports the live route count (total listener connections) to the host. */
+  onRowCount?: (n: number) => void;
+}
+
+export function RoutingView(props: Props) {
+  const state = useRoutingState(props);
+  const {
+    personas, teams, rows, recentEvents, personaMap,
+    reload,
+    addPersonaForEvent, setAddPersonaForEvent,
+    disconnectTarget, setDisconnectTarget,
+    renameTarget, setRenameTarget,
+    handleAddPersona, handleRename, handleDisconnect,
+    connectedPersonaIdsForRow,
+  } = state;
+
+  const filters = useRoutingFilters({ rows, recentEvents, personaMap });
+  const activity = buildActivityMap(recentEvents);
+
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(() => new Set());
+
+  // Publish the class-pill bar into the page header. Cleared on unmount so
+  // the slot doesn't leak into other tabs.
+  const { setHeaderExtra } = props;
+  useEffect(() => {
+    if (!setHeaderExtra) return;
+    setHeaderExtra(
+      <ClassPillsBar
+        visibleClasses={filters.visibleClasses}
+        classCounts={filters.classCounts}
+        onToggle={filters.toggleClass}
+      />,
+    );
+    return () => setHeaderExtra(null);
+  }, [setHeaderExtra, filters.visibleClasses, filters.classCounts, filters.toggleClass]);
+
+  // Report the live route count (total listener connections across all rows).
+  const { onRowCount } = props;
+  useEffect(() => {
+    onRowCount?.(rows.reduce((n, r) => n + r.connections.length, 0));
+  }, [onRowCount, rows]);
+
+  const toggleGroup = (id: string) => setCollapsed(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const toggleRow = (id: string) => setExpandedRows(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden" data-testid="routing-canvas">
+      <Toolbar
+        activeOnly={filters.activeOnly} onActiveOnlyChange={filters.setActiveOnly}
+        showUnconnected={filters.showUnconnected} onShowUnconnectedChange={filters.setShowUnconnected}
+        unconnectedCount={filters.unconnectedCount}
+        sortMode={filters.sortMode} onSortModeChange={filters.setSortMode}
+        visibleCount={filters.visibleRows.length}
+        totalConnections={filters.totalConnections}
+        onReload={() => void reload()}
+      />
+
+      <RoutingTableHeader
+        search={filters.search} onSearchChange={filters.setSearch}
+        sourceFilter={filters.sourceFilter} onSourceFilterChange={filters.setSourceFilter}
+        sourceOptions={filters.sourceOptions}
+        listenerFilter={filters.listenerFilter} onListenerFilterChange={filters.setListenerFilter}
+        listenerOptions={filters.listenerOptions}
+      />
+
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={filters.filterKey}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.16 }}
+            className="space-y-3"
+          >
+            {filters.groupsList.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Radio className="w-8 h-8 text-foreground mx-auto mb-3" />
+                <p className="typo-body text-foreground"><DebtText k="auto_no_events_match_this_filter_d0a806c3" /></p>
+              </div>
+            ) : filters.groupsList.map(group => (
+              <GroupPanel
+                key={group.id}
+                group={group}
+                activity={activity}
+                collapsed={collapsed.has(group.id)}
+                onToggleCollapse={() => toggleGroup(group.id)}
+                expandedRows={expandedRows}
+                onToggleRow={toggleRow}
+                onAdd={(row) => setAddPersonaForEvent({ eventType: row.eventType })}
+                onRename={(row) => setRenameTarget({
+                  eventType: row.eventType,
+                  reserved: row.sourceClass === 'common',
+                  sources: row.sourcePersonas.length,
+                  connections: row.connections.length,
+                })}
+                onDisconnect={(conn, row) => setDisconnectTarget({
+                  connection: conn,
+                  personaName: conn.persona?.name ?? conn.personaId.slice(0, 8),
+                  eventLabel: row.template?.label ?? row.eventType,
+                })}
+              />
+            ))}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <AddPersonaModal
+        open={!!addPersonaForEvent}
+        personas={personas}
+        teams={teams}
+        alreadyActiveIds={connectedPersonaIdsForRow}
+        eventLabel={addPersonaForEvent ? (findTemplateByEventType(addPersonaForEvent.eventType)?.label ?? addPersonaForEvent.eventType) : ''}
+        onAdd={handleAddPersona}
+        onClose={() => setAddPersonaForEvent(null)}
+      />
+      <DisconnectDialog
+        open={!!disconnectTarget}
+        personaName={disconnectTarget?.personaName ?? ''}
+        eventLabel={disconnectTarget?.eventLabel ?? ''}
+        onConfirm={handleDisconnect}
+        onCancel={() => setDisconnectTarget(null)}
+      />
+      <RenameEventDialog
+        open={!!renameTarget}
+        oldEventType={renameTarget?.eventType ?? ''}
+        reserved={renameTarget?.reserved ?? false}
+        affectedCounts={{
+          sources: renameTarget?.sources ?? 0,
+          connections: renameTarget?.connections ?? 0,
+        }}
+        onConfirm={handleRename}
+        onCancel={() => setRenameTarget(null)}
+      />
+    </div>
+  );
+}

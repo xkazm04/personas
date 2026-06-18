@@ -1,18 +1,14 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useEffect, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, RefreshCw } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import Button from '@/features/shared/components/buttons/Button';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useLeaderboardData } from '../libs/useLeaderboardData';
-import { rankBy, RANK_OPTIONS, type RankKey } from '../libs/leaderboardRanking';
-import { LeaderboardCard } from './LeaderboardCard';
-import { Podium } from './Podium';
-import { DetailPanel } from './DetailPanel';
+import { LeaderboardMatrixView } from './LeaderboardMatrixView';
 import { EmptyState, SingleAgentView } from './EmptyStates';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
@@ -20,17 +16,6 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 export default function LeaderboardPage() {
   const { t } = useTranslation();
   const { leaderboard, loading, isEmpty, fleetAvgScore, fleetBenchmark, refresh } = useLeaderboardData();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [rankKey, setRankKey] = useState<RankKey>('overall');
-
-  const ranked = useMemo(() => rankBy(leaderboard, rankKey), [leaderboard, rankKey]);
-  const rankTabs = useMemo(
-    () => RANK_OPTIONS.map((opt) => ({ id: opt.key, label: t.overview.leaderboard[opt.labelKey] })),
-    [t],
-  );
-  const activeDimLabel = rankKey === 'overall'
-    ? null
-    : t.overview.leaderboard[RANK_OPTIONS.find((o) => o.key === rankKey)!.labelKey];
 
   // Auto-load health data on first visit if empty
   useEffect(() => {
@@ -46,29 +31,10 @@ export default function LeaderboardPage() {
     return () => clearTimeout(handle);
   }, [isEmpty, loading, refresh]);
 
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId((prev) => (prev === id ? null : id));
-  }, []);
-
   const handleNavigateToAgent = useCallback((personaId: string) => {
     useSystemStore.getState().setSidebarSection('personas');
     useAgentStore.getState().selectPersona(personaId);
   }, []);
-
-  // Jump straight to the agent's Lab tab — where the Improve / Athena flow
-  // lives — so the surfaced opportunity leads directly to acting on it.
-  const handleImproveAgent = useCallback((personaId: string) => {
-    useSystemStore.getState().setSidebarSection('personas');
-    useAgentStore.getState().selectPersona(personaId);
-    useSystemStore.getState().setEditorTab('lab');
-  }, []);
-
-  const topEntry = ranked[0] ?? null;
-  const selectedEntry = selectedId
-    ? ranked.find((e) => e.personaId === selectedId) ?? null
-    : topEntry;
-  const podiumEntries = ranked.slice(0, 3);
-  const listEntries = ranked.slice(3);
 
   return (
     <ContentBox>
@@ -110,46 +76,12 @@ export default function LeaderboardPage() {
         ) : leaderboard.length === 1 ? (
           <SingleAgentView entry={leaderboard[0]!} />
         ) : (
-          <div className="flex flex-col gap-8 max-w-5xl mx-auto">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <span className="typo-caption text-foreground">{t.overview.leaderboard.rank_by}</span>
-              <SegmentedTabs
-                tabs={rankTabs}
-                activeTab={rankKey}
-                onTabChange={setRankKey}
-                variant="pill"
-                fullWidth={false}
-                ariaLabel={t.overview.leaderboard.rank_by}
-              />
-            </div>
-
-            <Podium entries={podiumEntries} selectedId={selectedId} onSelect={handleSelect} rankKey={rankKey} activeDimLabel={activeDimLabel} />
-
-            {listEntries.length > 0 ? (
-              <div className="flex gap-6">
-                <div className="flex-1 space-y-2 min-w-0">
-                  {listEntries.map((entry, idx) => (
-                    <LeaderboardCard
-                      key={entry.personaId}
-                      entry={entry}
-                      selected={selectedId === entry.personaId}
-                      onClick={() => handleSelect(entry.personaId)}
-                      onNavigateToAgent={handleNavigateToAgent}
-                      index={idx}
-                      rankKey={rankKey}
-                    />
-                  ))}
-                </div>
-                <div className="w-64 flex-shrink-0">
-                  <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} onImproveAgent={handleImproveAgent} fleetBenchmark={fleetBenchmark} highlighted={!!selectedId} />
-                </div>
-              </div>
-            ) : (
-              <div className="max-w-sm mx-auto w-full">
-                <DetailPanel entry={selectedEntry} onNavigateToAgent={handleNavigateToAgent} onImproveAgent={handleImproveAgent} fleetBenchmark={fleetBenchmark} highlighted={!!selectedId} />
-              </div>
-            )}
-          </div>
+          <LeaderboardMatrixView
+            leaderboard={leaderboard}
+            fleetBenchmark={fleetBenchmark}
+            fleetAvgScore={fleetAvgScore}
+            onNavigateToAgent={handleNavigateToAgent}
+          />
         )}
       </ContentBody>
     </ContentBox>

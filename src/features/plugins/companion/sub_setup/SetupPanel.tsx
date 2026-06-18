@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
-import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Puzzle, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
+import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,16 +23,15 @@ import { SensorySignalsModal } from './SensorySignalsModal';
 /**
  * Companion plugin — Setup tab.
  *
- * Three settings:
- *   1. Footer icon — show/hide the bot button in DesktopFooter
- *   2. Sound chime — play subtle Web Audio chime when a reply finishes
- *   3. Self-improve loop — read-only display of the backend beta flag
- *      (toggle would require a build flip; surfacing it here lets the user
- *      know whether the feature is currently active without them having
- *      to dig through dev logs).
+ * Settings are grouped into SectionCards laid out by the shared
+ * SettingsScaffold (left quick-nav rail + scroll-spy). Groups: chrome
+ * (footer / orb / sound), memory, desktop awareness (sensory sources),
+ * self-improve loop (read-only beta flag), project tracking, and the
+ * browser-bridge pairing surface.
  */
 export default function SetupPanel() {
   const { t } = useTranslation();
+  const c = t.plugins.companion;
   const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
   const setFooterEnabled = useSystemStore((s) => s.setCompanionFooterEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
@@ -143,167 +142,140 @@ export default function SetupPanel() {
   // the Setup card.
   const [signalsModalOpen, setSignalsModalOpen] = useState(false);
 
-  return (
-    <div className="space-y-4 max-w-2xl">
-      <SectionCard
-        title={t.plugins.companion.setup_chrome_title}
-        subtitle={t.plugins.companion.setup_chrome_desc}
-        titleClassName="text-primary"
-      >
-        <SettingRow
-          icon={<Bot className="w-4 h-4 text-cyan-400" />}
-          label={t.plugins.companion.setup_footer_label}
-          description={t.plugins.companion.setup_footer_desc}
-          checked={footerEnabled}
-          onChange={() => setFooterEnabled(!footerEnabled)}
-        />
-        <SettingRow
-          icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
-          label={t.plugins.companion.setup_orb_label}
-          description={t.plugins.companion.setup_orb_desc}
-          checked={orbEnabled}
-          onChange={() => setOrbEnabled(!orbEnabled)}
-        />
-        <SettingRow
-          icon={<Volume2 className="w-4 h-4 text-cyan-400" />}
-          label={t.plugins.companion.setup_sound_label}
-          description={t.plugins.companion.setup_sound_desc}
-          checked={soundEnabled}
-          onChange={() => setSoundEnabled(!soundEnabled)}
-        />
-      </SectionCard>
-
-      <SectionCard
-        title={t.plugins.companion.setup_memory_title}
-        subtitle={t.plugins.companion.setup_memory_desc}
-        titleClassName="text-primary"
-      >
-        <SettingRow
-          icon={<Brain className="w-4 h-4 text-cyan-400" />}
-          label={t.plugins.companion.setup_recall_synthesis_label}
-          description={t.plugins.companion.setup_recall_synthesis_desc}
-          checked={recallSynthesisEnabled}
-          onChange={() => setRecallSynthesisEnabled(!recallSynthesisEnabled)}
-        />
-        <SettingRow
-          icon={<Eye className="w-4 h-4 text-cyan-400" />}
-          label={t.plugins.companion.setup_hands_free_decisions_label}
-          description={t.plugins.companion.setup_hands_free_decisions_desc}
-          checked={handsFreeDecisions}
-          onChange={() => setHandsFreeDecisions(!handsFreeDecisions)}
-        />
-      </SectionCard>
-
-      <SectionCard
-        title={t.plugins.companion.setup_desktop_title}
-        subtitle={t.plugins.companion.setup_desktop_desc}
-        titleClassName="text-primary"
-      >
-        {sensoryLoadError ? (
-          <div className="px-1 py-2 typo-caption text-rose-400">
-            {t.plugins.companion.setup_desktop_load_failed}
-          </div>
-        ) : (
-          <>
-            <SettingRow
-              icon={<Clipboard className="w-4 h-4 text-cyan-400" />}
-              label={t.plugins.companion.setup_desktop_clipboard_label}
-              description={t.plugins.companion.setup_desktop_clipboard_desc}
-              countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
-              statusDot={sensoryDot(sensory?.clipboardEnabled, sensory?.clipboardSignalsInWindow)}
-              checked={sensory?.clipboardEnabled ?? false}
-              disabled={sensory === null}
-              onChange={() =>
-                void toggleSensory(
-                  'clipboard',
-                  !(sensory?.clipboardEnabled ?? false),
-                )
-              }
-            />
-            <SettingRow
-              icon={<FileText className="w-4 h-4 text-cyan-400" />}
-              label={t.plugins.companion.setup_desktop_file_changes_label}
-              description={t.plugins.companion.setup_desktop_file_changes_desc}
-              countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
-              statusDot={sensoryDot(sensory?.fileChangesEnabled, sensory?.fileChangesSignalsInWindow)}
-              checked={sensory?.fileChangesEnabled ?? false}
-              disabled={sensory === null}
-              onChange={() =>
-                void toggleSensory(
-                  'file_watcher',
-                  !(sensory?.fileChangesEnabled ?? false),
-                )
-              }
-            />
-            <SettingRow
-              icon={<AppWindow className="w-4 h-4 text-cyan-400" />}
-              label={t.plugins.companion.setup_desktop_app_focus_label}
-              description={t.plugins.companion.setup_desktop_app_focus_desc}
-              countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
-              statusDot={sensoryDot(sensory?.appFocusEnabled, sensory?.appFocusSignalsInWindow)}
-              checked={sensory?.appFocusEnabled ?? false}
-              disabled={sensory === null}
-              onChange={() =>
-                void toggleSensory(
-                  'app_focus',
-                  !(sensory?.appFocusEnabled ?? false),
-                )
-              }
-            />
-            <SettingRow
-              icon={<Terminal className="w-4 h-4 text-cyan-400" />}
-              label={t.plugins.companion.setup_desktop_cli_session_label}
-              description={t.plugins.companion.setup_desktop_cli_session_desc}
-              statusDot={sensoryDot(sensory?.cliSessionEnabled, undefined)}
-              checked={sensory?.cliSessionEnabled ?? false}
-              disabled={sensory === null}
-              onChange={() =>
-                void toggleSensory(
-                  'cli_session',
-                  !(sensory?.cliSessionEnabled ?? false),
-                )
-              }
-            />
-            <div className="px-1 pt-3">
-              <button
-                onClick={() => setSignalsModalOpen(true)}
-                className="inline-flex items-center gap-2 typo-caption font-medium text-primary hover:underline focus-ring rounded"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                {t.plugins.companion.setup_desktop_view_signals}
-              </button>
-            </div>
-          </>
-        )}
-      </SectionCard>
-
-      <SensorySignalsModal
-        open={signalsModalOpen}
-        onClose={() => {
-          setSignalsModalOpen(false);
-          void refreshSensory();
-        }}
-      />
-
-      <SectionCard
-        title={t.plugins.companion.setup_beta_title}
-        subtitle={t.plugins.companion.setup_beta_desc}
-        titleClassName="text-primary"
-      >
-        <div className="flex items-start gap-3 px-1 py-2">
-          <Wrench
-            className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`}
+  const sections: SettingsSection[] = [
+    {
+      id: 'chrome',
+      label: c.setup_chrome_title,
+      subtitle: c.setup_chrome_desc,
+      icon: <AppWindow className="w-4 h-4 text-cyan-400" />,
+      content: (
+        <>
+          <SettingRow
+            icon={<Bot className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_footer_label}
+            description={c.setup_footer_desc}
+            checked={footerEnabled}
+            onChange={() => setFooterEnabled(!footerEnabled)}
           />
+          <SettingRow
+            icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_orb_label}
+            description={c.setup_orb_desc}
+            checked={orbEnabled}
+            onChange={() => setOrbEnabled(!orbEnabled)}
+          />
+          <SettingRow
+            icon={<Volume2 className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_sound_label}
+            description={c.setup_sound_desc}
+            checked={soundEnabled}
+            onChange={() => setSoundEnabled(!soundEnabled)}
+          />
+        </>
+      ),
+    },
+    {
+      id: 'memory',
+      label: c.setup_memory_title,
+      subtitle: c.setup_memory_desc,
+      icon: <Brain className="w-4 h-4 text-cyan-400" />,
+      content: (
+        <>
+          <SettingRow
+            icon={<Brain className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_recall_synthesis_label}
+            description={c.setup_recall_synthesis_desc}
+            checked={recallSynthesisEnabled}
+            onChange={() => setRecallSynthesisEnabled(!recallSynthesisEnabled)}
+          />
+          <SettingRow
+            icon={<Eye className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_hands_free_decisions_label}
+            description={c.setup_hands_free_decisions_desc}
+            checked={handsFreeDecisions}
+            onChange={() => setHandsFreeDecisions(!handsFreeDecisions)}
+          />
+        </>
+      ),
+    },
+    {
+      id: 'desktop',
+      label: c.setup_desktop_title,
+      subtitle: c.setup_desktop_desc,
+      icon: <Eye className="w-4 h-4 text-cyan-400" />,
+      content: sensoryLoadError ? (
+        <div className="px-1 py-2 typo-caption text-rose-400">
+          {c.setup_desktop_load_failed}
+        </div>
+      ) : (
+        <>
+          <SettingRow
+            icon={<Clipboard className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_desktop_clipboard_label}
+            description={c.setup_desktop_clipboard_desc}
+            countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
+            statusDot={sensoryDot(sensory?.clipboardEnabled, sensory?.clipboardSignalsInWindow)}
+            checked={sensory?.clipboardEnabled ?? false}
+            disabled={sensory === null}
+            onChange={() => void toggleSensory('clipboard', !(sensory?.clipboardEnabled ?? false))}
+          />
+          <SettingRow
+            icon={<FileText className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_desktop_file_changes_label}
+            description={c.setup_desktop_file_changes_desc}
+            countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
+            statusDot={sensoryDot(sensory?.fileChangesEnabled, sensory?.fileChangesSignalsInWindow)}
+            checked={sensory?.fileChangesEnabled ?? false}
+            disabled={sensory === null}
+            onChange={() => void toggleSensory('file_watcher', !(sensory?.fileChangesEnabled ?? false))}
+          />
+          <SettingRow
+            icon={<AppWindow className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_desktop_app_focus_label}
+            description={c.setup_desktop_app_focus_desc}
+            countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
+            statusDot={sensoryDot(sensory?.appFocusEnabled, sensory?.appFocusSignalsInWindow)}
+            checked={sensory?.appFocusEnabled ?? false}
+            disabled={sensory === null}
+            onChange={() => void toggleSensory('app_focus', !(sensory?.appFocusEnabled ?? false))}
+          />
+          <SettingRow
+            icon={<Terminal className="w-4 h-4 text-cyan-400" />}
+            label={c.setup_desktop_cli_session_label}
+            description={c.setup_desktop_cli_session_desc}
+            statusDot={sensoryDot(sensory?.cliSessionEnabled, undefined)}
+            checked={sensory?.cliSessionEnabled ?? false}
+            disabled={sensory === null}
+            onChange={() => void toggleSensory('cli_session', !(sensory?.cliSessionEnabled ?? false))}
+          />
+          <div className="px-1 pt-3">
+            <button
+              onClick={() => setSignalsModalOpen(true)}
+              className="inline-flex items-center gap-2 typo-caption font-medium text-primary hover:underline focus-ring rounded"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              {c.setup_desktop_view_signals}
+            </button>
+          </div>
+        </>
+      ),
+    },
+    {
+      id: 'beta',
+      label: c.setup_beta_title,
+      subtitle: c.setup_beta_desc,
+      icon: <Wrench className="w-4 h-4 text-cyan-400" />,
+      content: (
+        <div className="flex items-start gap-3 px-1 py-2">
+          <Wrench className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`} />
           <div className="flex-1 min-w-0">
-            <div className="typo-title">
-              {t.plugins.companion.setup_self_improve_label}
-            </div>
+            <div className="typo-title">{c.setup_self_improve_label}</div>
             <div className="typo-caption mt-1">
               {selfImprove === null
-                ? t.plugins.companion.loading
+                ? c.loading
                 : selfImprove
-                  ? t.plugins.companion.setup_self_improve_on
-                  : t.plugins.companion.setup_self_improve_off}
+                  ? c.setup_self_improve_on
+                  : c.setup_self_improve_off}
             </div>
           </div>
           <span
@@ -316,39 +288,54 @@ export default function SetupPanel() {
             {selfImprove === null
               ? '…'
               : selfImprove
-                ? t.plugins.companion.setup_self_improve_active
-                : t.plugins.companion.setup_self_improve_inactive}
+                ? c.setup_self_improve_active
+                : c.setup_self_improve_inactive}
           </span>
         </div>
-      </SectionCard>
-
-      <SectionCard
-        title={t.plugins.companion.tracking_title}
-        subtitle={t.plugins.companion.tracking_subtitle}
-        titleClassName="text-primary"
-      >
+      ),
+    },
+    {
+      id: 'tracking',
+      label: c.tracking_title,
+      subtitle: c.tracking_subtitle,
+      icon: <Activity className="w-4 h-4 text-cyan-400" />,
+      content: (
         <SettingRow
-          icon={
-            <Activity
-              className={`w-4 h-4 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`}
-            />
-          }
-          label={t.plugins.companion.tracking_master_label}
+          icon={<Activity className={`w-4 h-4 ${trackingEnabled ? 'text-emerald-400' : 'text-foreground'}`} />}
+          label={c.tracking_master_label}
           description={
             trackingEnabled === null
-              ? t.plugins.companion.loading
+              ? c.loading
               : trackingEnabled
-                ? t.plugins.companion.tracking_master_on
-                : t.plugins.companion.tracking_master_off
+                ? c.tracking_master_on
+                : c.tracking_master_off
           }
           checked={trackingEnabled === true}
           disabled={trackingBusy || trackingEnabled === null}
           onChange={() => void onToggleTracking(!(trackingEnabled === true))}
         />
-      </SectionCard>
+      ),
+    },
+    {
+      id: 'browser',
+      label: c.browser_bridge_title,
+      icon: <Puzzle className="w-4 h-4 text-cyan-400" />,
+      card: false,
+      content: <BrowserBridgePanel />,
+    },
+  ];
 
-      <BrowserBridgePanel />
-    </div>
+  return (
+    <>
+      <SettingsScaffold sections={sections} navAriaLabel={c.page_title} />
+      <SensorySignalsModal
+        open={signalsModalOpen}
+        onClose={() => {
+          setSignalsModalOpen(false);
+          void refreshSensory();
+        }}
+      />
+    </>
   );
 }
 

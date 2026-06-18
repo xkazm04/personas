@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
-import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Loader2, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck, Mail, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
@@ -72,12 +72,16 @@ export function OrbDecisionBubble() {
   const navigateRoute = decision?.navigateRoute;
   const highlightTestId = decision?.highlightTestId;
 
-  // The bubble can be collapsed down to a small symbol above the orb (the
-  // arrow/handle toggles it). A fresh decision always opens expanded so the
-  // user sees it; toggling is per-decision local state.
+  // The bubble has three visibility levels: expanded (full), compact (small
+  // chip) — toggled by the bottom chevron handle — and fully hidden (just a
+  // tiny restore peek dotted at the orb) — toggled by the top-corner X. A
+  // fresh decision always opens expanded + visible; both are per-decision
+  // local state.
   const [collapsed, setCollapsed] = useState(false);
+  const [hidden, setHidden] = useState(false);
   useEffect(() => {
     setCollapsed(false);
+    setHidden(false);
   }, [decisionId]);
 
   // On a fresh decision: promote Athena out of dormancy so the orb is visible,
@@ -161,19 +165,39 @@ export function OrbDecisionBubble() {
       data-companion-decision-id={decision.id}
       data-companion-decision-source={decision.source}
       data-companion-decision-collapsed={collapsed}
+      data-companion-decision-hidden={hidden}
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} max-w-[80vw] ${collapsed ? 'w-auto' : 'w-[336px]'}`}
+      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} max-w-[80vw] ${hidden || collapsed ? 'w-auto' : 'w-[336px]'}`}
       style={pos}
     >
+      {hidden ? (
+        /* Fully hidden — a tiny restore peek dotted at the orb. Click to bring
+           the decision back to its previous (compact or full) size. */
+        <button
+          type="button"
+          onClick={() => setHidden(false)}
+          data-testid="athena-decision-restore"
+          aria-label={t.plugins.companion.decision_show}
+          title={t.plugins.companion.decision_show}
+          className="pointer-events-auto relative flex items-center justify-center w-9 h-9 rounded-full bg-background/95 border border-primary/30 shadow-elevation-3 hover:border-primary/50 transition-colors"
+        >
+          <span className="absolute -top-0.5 -right-0.5 flex w-2 h-2">
+            {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
+          </span>
+          <SourceIcon className="w-4 h-4 text-primary" aria-hidden />
+        </button>
+      ) : (
+        <>
       {collapsed ? (
-        /* Hidden — a small symbol/icon above the arrow. Click to re-open. */
+        /* Compact chip — a small symbol/label above the arrow. Click to expand. */
         <button
           type="button"
           onClick={() => setCollapsed(false)}
           data-testid="athena-decision-expand"
-          aria-label={t.plugins.companion.decision_show}
+          aria-label={t.plugins.companion.decision_expand}
           className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors max-w-[420px]"
         >
           <span className="relative flex w-2 h-2 flex-shrink-0">
@@ -262,43 +286,51 @@ export function OrbDecisionBubble() {
             ))}
 
             {/* `0` — explain + recommend (slice 4), escalating into the
-                Explain-in-Cockpit turn. Does not clear the decision;
-                disabled while a composition is already in flight. */}
+                Explain-in-Cockpit turn. Icon-only (lightbulb); the `0` leader
+                key still triggers it. Does not clear the decision; disabled
+                while a composition is already in flight. */}
             <button
               type="button"
               data-testid="athena-decision-option-0"
               onClick={() => explainDecision()}
               disabled={composing}
+              aria-label={t.plugins.companion.decision_explain}
               title={t.plugins.companion.decision_explain_hint}
-              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center w-8 h-8 shrink-0 rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span
-                className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-foreground/10"
-                aria-hidden
-              >
-                0
-              </span>
-              <Lightbulb className="w-3.5 h-3.5" aria-hidden />
-              <span className="text-left whitespace-normal break-words min-w-0">
-                {t.plugins.companion.decision_explain}
-              </span>
+              <Lightbulb className="w-4 h-4" aria-hidden />
             </button>
           </div>
         </div>
       )}
 
-      {/* The arrow/handle — toggles show/hide; points at the orb. */}
-      <button
-        type="button"
-        onClick={() => setCollapsed((c) => !c)}
-        data-testid="athena-decision-toggle"
-        aria-label={collapsed ? t.plugins.companion.decision_show : t.plugins.companion.decision_hide}
-        title={collapsed ? t.plugins.companion.decision_show : t.plugins.companion.decision_hide}
-        className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
-        style={handleSide}
-      >
-        {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-      </button>
+          {/* Fully-hide X — top-upper corner. Collapses the bubble to the
+              restore peek (distinct from the bottom minimize/expand handle). */}
+          <button
+            type="button"
+            onClick={() => setHidden(true)}
+            data-testid="athena-decision-dismiss"
+            aria-label={t.plugins.companion.decision_dismiss}
+            title={t.plugins.companion.decision_dismiss}
+            className="absolute -top-2.5 -right-2.5 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-background/95 border border-primary/25 text-foreground shadow-elevation-2 ring-2 ring-background hover:border-primary/50 transition"
+          >
+            <X className="w-3 h-3" />
+          </button>
+
+          {/* The arrow/handle — minimize ⇄ expand; points at the orb. */}
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            data-testid="athena-decision-toggle"
+            aria-label={collapsed ? t.plugins.companion.decision_expand : t.plugins.companion.decision_minimize}
+            title={collapsed ? t.plugins.companion.decision_expand : t.plugins.companion.decision_minimize}
+            className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
+            style={handleSide}
+          >
+            {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          </button>
+        </>
+      )}
     </motion.div>
   );
 }

@@ -15,7 +15,6 @@ import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import type { PersonaDraft } from '../libs/PersonaDraft';
 import { useEffectivePersona } from '../libs/useEffectivePersona';
 import { QuickStatsBar } from './QuickStatsBar';
-import { DeepFanoutToggle } from './DeepFanoutToggle';
 import { ShareAgentButton } from './ShareAgentButton';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -121,11 +120,14 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       icon={personaIcon}
       title={effective.name}
       style={accentStyle}
+      // Header shows the persona name only — the description lives in the
+      // Settings tab. The Lab quality badge stays as dev-only chrome.
       subtitle={
-        <span className="flex items-center gap-2">
-          {effective.description && <span>{effective.description}</span>}
-          {import.meta.env.DEV && <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />}
-        </span>
+        import.meta.env.DEV ? (
+          <span className="flex items-center gap-2">
+            <LabQualityBadge testMetadata={designContext.labTestMetadata} compact />
+          </span>
+        ) : undefined
       }
       actions={
         <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -182,9 +184,6 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       }
     >
       {selectedPersona?.id && <QuickStatsBar personaId={selectedPersona.id} />}
-      {selectedPersona?.id && (
-        <DeepFanoutToggle personaId={selectedPersona.id} parameters={selectedPersona.parameters} />
-      )}
     </ContentHeader>
   );
 }

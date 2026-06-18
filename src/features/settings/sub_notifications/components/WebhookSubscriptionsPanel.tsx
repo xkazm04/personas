@@ -184,11 +184,11 @@ export function WebhookSubscriptionsPanel() {
   if (loading) return null;
 
   return (
-    <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
+    <div className="rounded-modal border border-primary/12 bg-secondary/30 shadow-elevation-1 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Webhook className="w-4 h-4 text-primary/60" />
-          <span className="typo-body font-medium text-foreground">
+          <span className="typo-heading text-primary">
             {s.webhook_subscriptions_title}
           </span>
         </div>

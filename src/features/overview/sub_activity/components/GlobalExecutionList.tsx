@@ -14,6 +14,7 @@ import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
 import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
@@ -37,11 +38,12 @@ const FILTER_LABELS: Record<FilterStatus, string> = {
 // Ordered columns for the desktop grid. Widths are defaults — users can
 // drag-resize them; overrides persist via useColumnWidths('overview-activity').
 const EXEC_COLUMNS: { key: string; width: string }[] = [
-  { key: 'persona', width: 'minmax(280px,2fr)' },
+  { key: 'persona', width: 'minmax(240px,2fr)' },
   { key: 'status', width: 'minmax(0,1fr)' },
   { key: 'model', width: '130px' },
-  { key: 'duration', width: '120px' },
-  { key: 'started', width: '160px' },
+  { key: 'cost', width: '96px' },
+  { key: 'duration', width: '110px' },
+  { key: 'started', width: '150px' },
 ];
 const EXEC_ROW_HEIGHT = 56;
 
@@ -58,7 +60,7 @@ interface GlobalExecutionListProps {
 }
 
 export default function GlobalExecutionList({ headerActions }: GlobalExecutionListProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const {
     globalExecutions, globalExecutionsHasMore,
     globalExecutionsWarning, fetchGlobalExecutions,
@@ -75,6 +77,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
     setPendingExecutionFocus: s.setPendingExecutionFocus,
   })));
   const personas = useAgentStore((s) => s.personas);
+
+  // Persona executions don't always record the model the CLI actually ran with
+  // (`model_used` is null when the run's model wasn't captured). Fall back to
+  // the persona's configured model so the Model column isn't perpetually blank.
+  const personaModelById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of personas) if (p.model_profile) m.set(p.id, p.model_profile);
+    return m;
+  }, [personas]);
 
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [modelFilter, setModelFilter] = useState<string>('all');
@@ -345,6 +356,14 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       />
                     </div>
                     <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
+                      {t.overview.activity.col_cost}
+                      <ColumnResizeHandle
+                        label={t.shared.resize_column}
+                        onBeginResize={(w, x) => colWidths.beginResize('cost', w, x)}
+                        onReset={() => colWidths.clearColumn('cost')}
+                      />
+                    </div>
+                    <div role="columnheader" className="relative flex items-center justify-end px-4 py-1.5 typo-label text-foreground">
                       {t.overview.activity.col_duration}
                       <ColumnResizeHandle
                         label={t.shared.resize_column}
@@ -367,7 +386,8 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   scrollRestoreKey={scrollRestoreKey}
                   renderItem={(exec, index) => {
                     const status = getStatusEntry(exec.status);
-                    const modelShort = formatModelShort(exec.model_used);
+                    const fallbackModel = personaModelById.get(exec.persona_id);
+                    const modelShort = formatModelShort(exec.model_used) ?? formatModelShort(fallbackModel);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
                         : exec.status === 'completed' ? 'border-l-emerald-400'
@@ -381,7 +401,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
+                            <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} name={exec.persona_name} display="framed" frameSize={"lg"} />
                             <span className="typo-heading text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
                           </div>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-card typo-caption flex-shrink-0 ${badgeClass(status)}`}>
@@ -391,6 +411,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="flex items-center gap-3 mt-1 typo-caption text-foreground">
                           <span className="font-mono">{formatDuration(exec.duration_ms)}</span>
+                          {exec.cost_usd > 0 && <Numeric value={exec.cost_usd} unit="usd" language={language} className="font-mono" />}
                           {modelShort && <span className="font-mono truncate">{modelShort}</span>}
                           <span>{formatRelativeTime(exec.started_at || exec.created_at)}</span>
                         </div>
@@ -404,7 +425,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         className={`grid items-center h-full cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
-                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
+                          <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} name={exec.persona_name} display="framed" frameSize={"lg"} />
                           <span className="typo-body text-foreground truncate">{exec.persona_name || 'Unknown'}</span>
                         </div>
                         <div className="px-4">
@@ -415,9 +436,16 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         </div>
                         <div className="px-4 min-w-0">
                           {modelShort ? (
-                            <Tooltip content={exec.model_used ?? ''}>
+                            <Tooltip content={exec.model_used ?? fallbackModel ?? ''}>
                               <span className="block typo-code text-foreground font-mono truncate">{modelShort}</span>
                             </Tooltip>
+                          ) : (
+                            <span className="typo-code text-foreground font-mono">{'—'}</span>
+                          )}
+                        </div>
+                        <div className="px-4 text-right">
+                          {exec.cost_usd > 0 ? (
+                            <Numeric value={exec.cost_usd} unit="usd" language={language} align="right" className="typo-code text-foreground" />
                           ) : (
                             <span className="typo-code text-foreground font-mono">{'—'}</span>
                           )}

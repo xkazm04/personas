@@ -69,16 +69,16 @@ export const SECTIONS = [
 const HOME_TABS = ['welcome', 'cockpit', 'roadmap', 'system-check', 'learning'] as const satisfies readonly HomeTab[];
 const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'observability', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
 const TEAMS_TABS = ['workspace', 'goals'] as const satisfies readonly TeamsTab[];
-const GOALS_TABS = ['board', 'accept', 'timeline'] as const satisfies readonly GoalsTab[];
+const GOALS_TABS = ['board', 'timeline'] as const satisfies readonly GoalsTab[];
 const TEMPLATE_TABS = ['n8n', 'generated', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
 const AGENT_TABS = ['all', 'create', 'groups', 'cloud'] as const satisfies readonly AgentTab[];
 const EDITOR_TABS = ['activity', 'matrix', 'use-cases', 'lab', 'settings', 'chat', 'design', 'assertions'] as const satisfies readonly EditorTab[];
 const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messaging', 'automations'] as const satisfies readonly DesignSubTab[];
 const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
-const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'engine', 'byom', 'portability', 'network', 'admin', 'config', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
+const SETTINGS_TABS = ['account', 'appearance', 'notifications', 'engine', 'byom', 'portability', 'network', 'admin', 'api-keys', 'history', 'limits'] as const satisfies readonly SettingsTab[];
 const PLUGIN_TABS = ['browse', 'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion'] as const satisfies readonly PluginTab[];
 const DEV_TOOLS_TABS = ['overview', 'projects', 'goals', 'context-map', 'idea-scanner', 'idea-triage', 'task-runner', 'lifecycle', 'skills', 'fleet'] as const satisfies readonly DevToolsTab[];
-const EVENT_BUS_TABS = ['builder', 'studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
+const EVENT_BUS_TABS = ['studio', 'shared', 'live-stream', 'rate-limits', 'test', 'smee-relay', 'cloud-webhooks', 'dead-letter'] as const satisfies readonly EventBusTab[];
 const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 'experiments', 'findings', 'reports', 'graph'] as const satisfies readonly ResearchLabTab[];
 
 /**

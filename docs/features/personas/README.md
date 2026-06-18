@@ -179,19 +179,26 @@ desktop also surfaces the public **agent directory** at `personas.ai/gallery`
 
 The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
 
-**Design is a hub, not a single view.** It absorbs three former tabs
-via horizontal sub-tabs + an inline health badge:
+**Design is a hub, not a single view.** It exposes horizontal sub-tabs (plus
+the inline health badge in `EditorTabBar`):
 
-| Sub-tab | Component | Absorbed from |
+| Sub-tab | Component | Notes |
 |---|---|---|
-| Design | `DesignTab` (wizard / intent / phases / apply) | existing Design tab |
-| Prompt | `PersonaPromptEditor` (structured sections + custom) | former standalone Prompt tab |
-| Connectors & Tools | `PersonaConnectorsTab` (connectors, tools, automations) | former standalone Connectors tab |
+| Use Cases | `PersonaUseCasesTab` | the per-capability surface |
+| Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
+| Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
+| Connectors | `ConnectorsSection` (via `DesignConnectorsPanel`) | read-only view of the saved design's connectors + tools |
+| Events & Triggers | `EventsSection` (via `DesignEventsPanel`) | read-only triggers + event subscriptions |
+| Notifications | `MessagesSection` (via `DesignNotificationsPanel`) | read-only notification channels (was "Messaging") |
 
-The former **Health tab** is collapsed into the badge in the Design
-hub header (`DesignHubHeader`). Clicking the badge re-runs
-`runHealthCheck()` in-place; `HealthCheckPanel` is still available
-and can be reopened if needed.
+Parameters / Connectors / Events & Triggers / Notifications were split out of
+the former monolithic Prompt sub-tab (they used to stack inside its saved
+view); each section sub-tab renders the same read-only design-result section
+(`useSavedDesignResult`-driven, `DesignSubtabPanels.tsx`) with a quiet empty
+state when its dimension is empty. The Properties sub-tab passes
+`hideConnectors`/`hideEvents`/`hideMessages` to `DesignResultPreview` so those
+bodies aren't duplicated. The health badge lives in `EditorTabBar`; clicking it
+re-runs `runHealthCheck()` in-place.
 
 Wiring:
 
@@ -399,3 +406,15 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    shows all sizes; users with 200+ personas should use it or filter. True
    windowing for the visual layouts (a responsive grid virtualizer) is a tracked
    follow-up — see the architect perf scan (Phase E render-cap guardrail).
+9. **The All-Personas page has a top-level view switcher: _Personas_ vs _Configuration_.**
+   _Personas_ is the list (the Table / Grid / Constellation layouts above).
+   _Configuration_ (`allPersonas/PersonaConfigPanel.tsx`, migrated out of the old
+   Settings → Config Resolution tab) is the per-persona **effective model-config**
+   table: for every persona it resolves model / provider / budget / turns / cache
+   through the agent → workspace → global → default cascade
+   (`resolve_effective_config_bulk`, `engine/config_merge.rs`) and tags each cell
+   with the tier that supplied it. A cell reads `--` with a `DEFAULT` badge when no
+   tier sets that field — the accurate state for personas that inherit the CLI
+   default (per-capability model tiering lives on use-cases, not persona-level
+   `model_profile`). A name filter and an "Overrides only" toggle isolate personas
+   that have escaped workspace/global defaults.

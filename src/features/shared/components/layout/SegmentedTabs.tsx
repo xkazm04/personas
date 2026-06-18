@@ -20,6 +20,8 @@ interface SegmentedTabsProps<T extends string> {
   className?: string;
   idPrefix?: string;
   fullWidth?: boolean;
+  /** `'sm'` tightens per-tab padding for dense rails. Default `'md'`. */
+  size?: 'sm' | 'md';
 }
 
 export function SegmentedTabs<T extends string>({
@@ -32,6 +34,7 @@ export function SegmentedTabs<T extends string>({
   className,
   idPrefix,
   fullWidth = true,
+  size = 'md',
 }: SegmentedTabsProps<T>) {
   const autoId = useId();
   const indicatorId = layoutId ?? `segmented-tabs-${autoId}`;
@@ -97,7 +100,7 @@ export function SegmentedTabs<T extends string>({
 
   const containerClass =
     variant === 'pill'
-      ? `flex gap-1 p-1 rounded-card bg-secondary/30 border border-primary/10 ${className ?? ''}`
+      ? `flex gap-1 ${size === 'sm' ? 'p-0.5' : 'p-1'} rounded-card bg-secondary/30 border border-primary/10 ${className ?? ''}`
       : `flex rounded-card border border-primary/15 overflow-hidden ${className ?? ''}`;
 
   return (
@@ -124,7 +127,7 @@ export function SegmentedTabs<T extends string>({
               disabled={tab.disabled}
               onClick={() => !tab.disabled && onTabChange(tab.id)}
               onKeyDown={(e) => handleKeyDown(e, index)}
-              className={`relative ${fullWidth ? 'flex-1' : ''} flex items-center justify-center gap-1.5 px-3 py-2 typo-body rounded-modal transition-colors focus-ring ${
+              className={`relative ${fullWidth ? 'flex-1' : ''} flex items-center justify-center gap-1.5 ${size === 'sm' ? 'px-2.5 py-1' : 'px-3 py-2'} typo-body rounded-modal transition-colors focus-ring ${
                 active ? 'text-foreground font-semibold' : 'text-foreground hover:text-foreground/80 hover:bg-primary/5'
               } ${tab.disabled ? 'text-foreground cursor-not-allowed' : ''}`}
             >
@@ -156,7 +159,7 @@ export function SegmentedTabs<T extends string>({
             disabled={tab.disabled}
             onClick={() => !tab.disabled && onTabChange(tab.id)}
             onKeyDown={(e) => handleKeyDown(e, index)}
-            className={`px-3 py-1.5 typo-body font-medium transition-colors focus-ring ${
+            className={`${size === 'sm' ? 'px-2.5 py-1' : 'px-3 py-1.5'} typo-body font-medium transition-colors focus-ring ${
               index > 0 ? 'border-l border-primary/15' : ''
             } ${
               active ? 'bg-primary/10 text-foreground font-semibold' : 'text-foreground hover:text-foreground/80'

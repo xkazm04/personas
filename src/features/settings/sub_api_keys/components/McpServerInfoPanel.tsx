@@ -10,6 +10,7 @@
 import { useCallback, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, Check, ExternalLink, Server } from 'lucide-react';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -51,15 +52,17 @@ export function McpServerInfoPanel() {
   }, []);
 
   return (
-    <div className="rounded-card border border-border/30 bg-secondary/20 p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <Server className="w-4 h-4 text-fuchsia-400" />
-        <h3 className="typo-body font-medium text-foreground">{s.server_panel_title}</h3>
-        <span className="typo-caption text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded ml-auto">
+    <SectionCard
+      title={s.server_panel_title}
+      icon={<Server className="w-4 h-4 text-fuchsia-400" />}
+      titleClassName="text-primary"
+      action={
+        <span className="typo-caption text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded">
           {s.server_status_running}
         </span>
-      </div>
-
+      }
+    >
+      <div className="space-y-3">
       <p className="typo-caption text-foreground leading-relaxed">{s.server_panel_description}</p>
 
       <div className="flex items-center gap-2">
@@ -118,6 +121,7 @@ export function McpServerInfoPanel() {
         <span className="font-medium text-foreground">{s.server_auth_label}:</span>{' '}
         {s.server_auth_description}
       </p>
-    </div>
+      </div>
+    </SectionCard>
   );
 }

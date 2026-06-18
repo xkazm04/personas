@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen, Eye, EyeOff } from 'lucide-react';
+import { AnimatePresence } from 'framer-motion';
+import { MessageSquare, CheckCheck, RefreshCw, Plus, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -9,7 +9,6 @@ import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
@@ -41,7 +40,7 @@ type ReadFilter = 'all' | 'unread' | 'read';
 
 // Filter options are now built inside the component to use translations
 
-import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
+import { ROW_SEPARATOR } from '@/lib/design/listTokens';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
@@ -69,9 +68,6 @@ export default function MessageList() {
     messages, messagesTotal,
     fetchMessages, fetchUnreadMessageCount,
     markMessageAsRead, markAllMessagesAsRead, deleteMessage,
-    viewMode, setViewMode,
-    threadSummaries, threadCount, expandedThreadId, threadReplies,
-    fetchThreadSummaries, expandThread, collapseThread,
   } = useOverviewStore(useShallow((s) => ({
     messages: s.messages,
     messagesTotal: s.messagesTotal,
@@ -80,31 +76,10 @@ export default function MessageList() {
     markMessageAsRead: s.markMessageAsRead,
     markAllMessagesAsRead: s.markAllMessagesAsRead,
     deleteMessage: s.deleteMessage,
-    viewMode: s.viewMode,
-    setViewMode: s.setViewMode,
-    threadSummaries: s.threadSummaries,
-    threadCount: s.threadCount,
-    expandedThreadId: s.expandedThreadId,
-    threadReplies: s.threadReplies,
-    fetchThreadSummaries: s.fetchThreadSummaries,
-    expandThread: s.expandThread,
-    collapseThread: s.collapseThread,
   })));
   const personas = useAgentStore((s) => s.personas);
   const personaMap = usePersonaMap();
   const enrichedMessages = useEnrichedRecords(messages, personaMap);
-
-  // Enrich thread replies at render time (avoids baking stale persona info)
-  const enrichedThreadReplies = useMemo(() => {
-    const result = new Map<string, PersonaMessage[]>();
-    for (const [threadId, replies] of threadReplies) {
-      result.set(threadId, replies.map((r) => {
-        const p = personaMap.get(r.persona_id);
-        return { ...r, persona_name: p?.name, persona_icon: p?.icon ?? undefined, persona_color: p?.color ?? undefined };
-      }));
-    }
-    return result;
-  }, [threadReplies, personaMap]);
 
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   // Hide read messages by default — they're typically resolved noise. The
@@ -123,17 +98,13 @@ export default function MessageList() {
     const loadInitial = async () => {
       setIsLoading(true);
       try {
-        if (viewMode === 'threaded') {
-          await fetchThreadSummaries(true, selectedPersonaId || undefined);
-        } else {
-          await fetchMessages(true);
-        }
+        await fetchMessages(true);
       }
       finally { if (active) setIsLoading(false); }
     };
     loadInitial();
     return () => { active = false; };
-  }, [fetchMessages, fetchThreadSummaries, viewMode, selectedPersonaId]);
+  }, [fetchMessages]);
 
   const handleMessageCreated = useCallback((raw: RawPersonaMessage) => {
     // The 'message-created' event fires from BOTH the protocol dispatcher (full
@@ -148,10 +119,6 @@ export default function MessageList() {
       return { messages: [raw, ...state.messages], messagesTotal: state.messagesTotal + 1 };
     });
     fetchUnreadMessageCountRef.current();
-    // Refresh threads if in threaded mode
-    if (useOverviewStore.getState().viewMode === 'threaded') {
-      void useOverviewStore.getState().fetchThreadSummaries(true);
-    }
   }, []);
 
   useMessageCreatedListener(handleMessageCreated);
@@ -170,11 +137,7 @@ export default function MessageList() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      if (viewMode === 'threaded') {
-        await fetchThreadSummaries(true, selectedPersonaId || undefined);
-      } else {
-        await fetchMessages(true);
-      }
+      await fetchMessages(true);
     }
     finally { setIsRefreshing(false); }
   };
@@ -197,22 +160,18 @@ export default function MessageList() {
   // more" pages. The flat list is already virtualized, so this mainly drives
   // the gradual-fill feel + the live counter; the threaded view (which is not
   // virtualized) gets a real mount-cost saving.
-  const activeRevealTotal = viewMode === 'threaded' ? threadSummaries.length : filteredMessages.length;
+  const activeRevealTotal = filteredMessages.length;
   const reveal = useProgressiveReveal(activeRevealTotal, {
-    resetKey: `${viewMode}|${priorityFilter}|${readFilter}|${selectedPersonaId}`,
+    resetKey: `${priorityFilter}|${readFilter}|${selectedPersonaId}`,
     initialCount: 24,
   });
   const revealedMessages = useMemo(
     () => filteredMessages.slice(0, reveal.count),
     [filteredMessages, reveal.count],
   );
-  const revealedThreads = useMemo(
-    () => threadSummaries.slice(0, reveal.count),
-    [threadSummaries, reveal.count],
-  );
-  // Per-item entrance guard — keyed to the active view + filters so a switch
-  // replays the cascade; survives virtualized row remount so scrolling doesn't.
-  const msgEnter = useRevealTracker(`${viewMode}|${priorityFilter}|${readFilter}|${selectedPersonaId}`);
+  // Per-item entrance guard — keyed to the active filters so a change replays
+  // the cascade; survives virtualized row remount so scrolling doesn't.
+  const msgEnter = useRevealTracker(`${priorityFilter}|${readFilter}|${selectedPersonaId}`);
 
   const { parentRef, virtualizer } = useVirtualList(revealedMessages, MESSAGE_ROW_HEIGHT);
   const colWidths = useColumnWidths('overview-messages');
@@ -239,26 +198,13 @@ export default function MessageList() {
   // the non-optional PriorityChip prop under noUncheckedIndexedAccess.
   const defaultPriority: PriorityStyle = { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' };
 
-  const handleToggleThread = useCallback((threadId: string) => {
-    if (expandedThreadId === threadId) {
-      collapseThread();
-    } else {
-      void expandThread(threadId);
-    }
-  }, [expandedThreadId, expandThread, collapseThread]);
-
-  const threadedRemaining = threadCount - threadSummaries.length;
-
   return (
     <ContentBox>
       <ContentHeader
         icon={<MessageSquare className="w-5 h-5 text-indigo-400" />}
         iconColor="indigo"
         title={t.overview.messages_view.title}
-        subtitle={viewMode === 'threaded'
-          ? tx(threadCount === 1 ? t.overview.messages_view.threads_subtitle_one : t.overview.messages_view.threads_subtitle, { count: threadCount })
-          : tx(messagesTotal === 1 ? t.overview.messages_view.messages_subtitle_one : t.overview.messages_view.messages_subtitle, { count: messagesTotal })
-        }
+        subtitle={tx(messagesTotal === 1 ? t.overview.messages_view.messages_subtitle_one : t.overview.messages_view.messages_subtitle, { count: messagesTotal })}
         actions={
           <>
             {reveal.isRevealing && (
@@ -281,22 +227,6 @@ export default function MessageList() {
               {readFilter === 'unread' ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
               {readFilter === 'unread' ? t.overview.messages_view.show_read_messages : t.overview.messages_view.show_only_unread}
             </button>
-            <div className="flex items-center rounded-card border border-primary/15 overflow-hidden">
-              <button
-                onClick={() => setViewMode('flat')}
-                className={`p-1.5 transition-colors ${viewMode === 'flat' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-muted-foreground'}`}
-                title={t.overview.messages_view.flat_view}
-              >
-                <List className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode('threaded')}
-                className={`p-1.5 transition-colors ${viewMode === 'threaded' ? 'bg-primary/10 text-primary' : 'text-foreground hover:text-muted-foreground'}`}
-                title={t.overview.messages_view.threaded_view}
-              >
-                <GitBranch className="w-3.5 h-3.5" />
-              </button>
-            </div>
             <button onClick={handleRefresh} disabled={isRefreshing} className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 disabled:opacity-60 transition-colors" title={t.common.refresh}>
               <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -316,144 +246,11 @@ export default function MessageList() {
         }
       />
 
-      {viewMode === 'threaded' && (
-        <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
-          <span className="typo-body text-foreground">
-            {tx(t.overview.messages_view.threads_of, { count: threadSummaries.length, total: threadCount })}
-          </span>
-          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
-        </div>
-      )}
-
       <ContentBody flex>
         {isLoading ? (
           <ListSkeleton rows={8} rowHeight={MESSAGE_ROW_HEIGHT} />
-        ) : viewMode === 'threaded' ? (
-          /* ==================== THREADED VIEW ==================== */
-          threadSummaries.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <IllustrationEmptyState
-                motif="messages"
-                content={{
-                  icon: GitBranch,
-                  title: t.overview.messages_view.no_threads,
-                  subtitle: t.overview.messages_view.no_threads_hint,
-                  action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
-                  secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
-                }}
-              />
-            </div>
-          ) : (
-            <div className="flex-1 overflow-y-auto">
-              {revealedThreads.map((thread, threadIndex) => {
-                const isExpanded = expandedThreadId === thread.threadId;
-                const replies = enrichedThreadReplies.get(thread.threadId);
-                const rawParent = thread.parent;
-                const pp = personaMap.get(rawParent.persona_id);
-                const parent = { ...rawParent, persona_name: pp?.name, persona_icon: pp?.icon ?? undefined, persona_color: pp?.color ?? undefined } as PersonaMessage;
-                const parentPriority = priorityConfig[parent.priority] ?? defaultPriority;
-
-                return (
-                  <RevealItem
-                    key={thread.threadId}
-                    revealId={thread.threadId}
-                    order={threadIndex - reveal.newSince}
-                    hasEntered={msgEnter.hasEntered}
-                    markEntered={msgEnter.markEntered}
-                    className={`border-b ${ROW_SEPARATOR}`}
-                  >
-                    {/* Thread header row */}
-                    <div
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-primary/[0.05] cursor-pointer transition-colors"
-                      onClick={() => handleToggleThread(thread.threadId)}
-                      role="button"
-                      tabIndex={0}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleToggleThread(thread.threadId); } }}
-                    >
-                      <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center text-foreground">
-                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      </div>
-                      <PersonaIcon icon={(parent as PersonaMessage).persona_icon ?? null} color={(parent as PersonaMessage).persona_color ?? null} display="framed" frameSize={"lg"} />
-                      <div className="flex-1 min-w-0">
-                        <span className={`typo-body truncate block ${parent.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>
-                          {parent.title || (parent.content ?? '').slice(0, 80)}
-                        </span>
-                      </div>
-                      <PriorityChip priority={parentPriority} />
-                      {thread.replyCount > 0 && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                          <MessageCircle className="w-3 h-3" />
-                          {thread.replyCount}
-                        </span>
-                      )}
-                      <RelativeTime
-                        timestamp={thread.latestReplyAt ?? parent.created_at}
-                        className="typo-body text-foreground flex-shrink-0 w-24 text-right"
-                      />
-                    </div>
-
-                    {/* Expanded replies */}
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className={`bg-secondary/10 ${ROW_SEPARATOR_T}`}>
-                            {replies ? replies.map((msg) => {
-                              const mp = priorityConfig[msg.priority] ?? defaultPriority;
-                              return (
-                                <div
-                                  key={msg.id}
-                                  className={`flex items-center gap-3 px-4 py-2 pl-12 hover:bg-primary/[0.05] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} last:border-b-0`}
-                                  onClick={() => handleRowClick(msg)}
-                                  role="button"
-                                  tabIndex={0}
-                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRowClick(msg); } }}
-                                >
-                                  <PersonaIcon icon={msg.persona_icon ?? null} color={msg.persona_color ?? null} display="framed" />
-                                  <div className="flex-1 min-w-0">
-                                    <span className={`typo-body truncate block ${msg.is_read ? 'text-foreground' : 'text-foreground/85 font-medium'}`}>
-                                      {msg.title || (msg.content ?? '').slice(0, 80)}
-                                    </span>
-                                  </div>
-                                  <PriorityChip priority={mp} size="sm" />
-                                  {!msg.is_read && (
-                                    <span className="inline-flex items-center gap-1 flex-shrink-0">
-                                      <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true" />
-                                      <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">{t.overview.messages_view.new_badge}</span>
-                                    </span>
-                                  )}
-                                  <RelativeTime
-                                    timestamp={msg.created_at}
-                                    className="typo-caption text-foreground flex-shrink-0 w-20 text-right"
-                                  />
-                                </div>
-                              );
-                            }) : (
-                              <div className="px-4 py-3 pl-12 typo-body text-foreground">{t.overview.messages_view.loading_replies}</div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </RevealItem>
-                );
-              })}
-              {threadedRemaining > 0 && (
-                <div className="p-4">
-                  <button onClick={() => fetchThreadSummaries(false, selectedPersonaId || undefined)} className="w-full py-2.5 typo-body text-foreground hover:text-muted-foreground bg-secondary/20 hover:bg-secondary/40 rounded-modal border border-primary/15 transition-all">
-                    {tx(t.overview.messages_view.load_more, { count: threadedRemaining })}
-                  </button>
-                </div>
-              )}
-            </div>
-          )
         ) : (
-          /* ==================== FLAT VIEW (original) ==================== */
+          /* ==================== FLAT VIEW ==================== */
           filteredMessages.length === 0 && !hasActiveFilters ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
               <IllustrationEmptyState
@@ -543,7 +340,7 @@ export default function MessageList() {
                           className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                         >
                           <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
-                            <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" frameSize="lg" />
+                            <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} name={message.persona_name} display="framed" frameSize="lg" />
                             <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
                           </div>
                           <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>

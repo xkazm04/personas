@@ -7,7 +7,7 @@ import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscr
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelector';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
-import { findTemplateByEventType } from '../sub_builder/libs/eventCanvasConstants';
+import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { silentCatch } from '@/lib/silentCatch';
 

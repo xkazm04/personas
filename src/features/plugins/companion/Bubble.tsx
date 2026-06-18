@@ -165,8 +165,8 @@ export function Bubble({
         <div
           className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
             isUser
-              ? 'bg-primary/15 border border-primary/20 text-foreground whitespace-pre-wrap'
-              : 'bg-foreground/[0.06] border border-foreground/10 text-foreground shadow-elevation-1'
+              ? 'bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap'
+              : 'bg-background/80 border border-foreground/12 text-foreground shadow-elevation-1'
           } ${streaming ? 'opacity-90' : ''}`}
         >
           {isUser || !displayIsString ? (

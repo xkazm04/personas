@@ -145,11 +145,8 @@ export default function DirectorCoachingTab() {
           <div className="flex items-center justify-center py-16"><LoadingSpinner /></div>
         ) : !p || inScope === 0 ? (
           <EmptyState
-            icon={Clapperboard}
             title={t.director.empty_title}
             subtitle={t.director.empty_subtitle}
-            iconColor="text-violet-300"
-            iconContainerClassName="bg-violet-500/10 border-violet-500/25"
             action={{ label: t.director.add_to_scope, onClick: () => setAddOpen(true), icon: UserPlus }}
           />
         ) : (

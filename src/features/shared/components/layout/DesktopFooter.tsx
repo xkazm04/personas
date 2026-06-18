@@ -297,18 +297,28 @@ function CollapseFooterIcon() {
 
 function ShortcutsFooterIcon() {
   const { t } = useTranslation();
+  const navActive = useSystemStore((s) => s.keyboardNavActive);
+  const setNavActive = useSystemStore((s) => s.setKeyboardNavActive);
 
-  const handleClick = useCallback(() => {
-    window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT));
-  }, []);
-
+  // Left click toggles the keyboard "shortcut mode" (the `;` nav mode) like a
+  // switch — it stays armed until toggled off, not just for one shortcut. Right
+  // click opens the cheat-sheet modal with the shortcut hints.
   return (
     <button
-      onClick={handleClick}
+      onClick={() => setNavActive(!navActive)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT));
+      }}
       data-testid="footer-shortcuts"
-      className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-      title={`${t.chrome.shortcuts.open_title} (?)`}
-      aria-label={t.chrome.shortcuts.open_title}
+      aria-pressed={navActive}
+      className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${
+        navActive
+          ? 'text-primary bg-primary/15 border border-primary/25'
+          : 'text-foreground hover:text-foreground hover:bg-secondary/50'
+      }`}
+      title={t.chrome.shortcuts.mode_toggle_title}
+      aria-label={t.chrome.shortcuts.mode_toggle_aria}
     >
       <Keyboard className="w-5 h-5" />
     </button>
@@ -550,6 +560,12 @@ export default function DesktopFooter() {
             <NetworkFooterIcon />
           </>
         )}
+        {/* Athena companion — docked on the left, immediately right of the
+            Network Settings icon. */}
+        <div className="w-px h-4 bg-primary/10" />
+        <Suspense fallback={null}>
+          <CompanionFooterIcon />
+        </Suspense>
       </div>
 
       {/* Center cluster: radio controls. Absolute-centered so left/right
@@ -563,9 +579,7 @@ export default function DesktopFooter() {
         </div>
       )}
 
-      {/* Right cluster: project picker + Athena companion. Companion sits
-          rightmost so the notice popover anchors against the window edge
-          and never collides with sibling footer popovers. */}
+      {/* Right cluster: fleet toggle + system load + tour + project picker. */}
       <div className="flex items-center gap-1.5">
         {import.meta.env.DEV && (
           <>
@@ -577,10 +591,6 @@ export default function DesktopFooter() {
         <div className="w-px h-4 bg-primary/10" />
         <TourResumeFooterIcon />
         <ProjectPickerFooterIcon />
-        <div className="w-px h-4 bg-primary/10" />
-        <Suspense fallback={null}>
-          <CompanionFooterIcon />
-        </Suspense>
       </div>
     </div>
   );

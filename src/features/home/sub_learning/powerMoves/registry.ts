@@ -128,7 +128,7 @@ export const POWER_MOVES: PowerMove[] = [
     color: 'text-purple-400',
     group: 'orchestrate',
     titleKey: 'pm_event_chain_title',
-    nav: { section: 'events', eventBusTab: 'builder' },
+    nav: { section: 'events', eventBusTab: 'studio' },
     spotlightTestId: 'triggers-page',
     detect: async () => {
       const triggers = await listAllTriggers();

@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2 } from 'lucide-react';
+import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2, Shield } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -21,6 +21,8 @@ import { CategoryChip } from '@/features/shared/components/display/CategoryChip'
 import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
+import { MemoryConflictReview } from './MemoryConflictReview';
+import ReviewResultsModal from './ReviewResultsModal';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
@@ -53,7 +55,7 @@ export default function MemoriesPageDense() {
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
-    memoryReviewRunning,
+    memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
@@ -62,6 +64,9 @@ export default function MemoriesPageDense() {
     deleteMemory: s.deleteMemory,
     reviewMemories: s.reviewMemories,
     memoryReviewRunning: s.memoryReviewRunning,
+    memoryReviewResult: s.memoryReviewResult,
+    memoryReviewError: s.memoryReviewError,
+    clearMemoryReviewResult: s.clearMemoryReviewResult,
   })));
 
   const [search, setSearch] = useState('');
@@ -70,6 +75,7 @@ export default function MemoriesPageDense() {
   const [categoryFilters, setCategoryFilters] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<PersonaMemory | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewTab, setViewTab] = useState<'memories' | 'conflicts'>('memories');
   const latestRef = useRef(0);
 
   useEffect(() => {
@@ -151,6 +157,21 @@ export default function MemoriesPageDense() {
         subtitle={`${memoriesTotal} memor${memoriesTotal !== 1 ? 'ies' : 'y'} stored by agents`}
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewTab('memories')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'memories' ? 'bg-primary/10 text-foreground border border-primary/20' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+            >
+              <Brain className="w-4 h-4" />
+              <span className="typo-body font-medium">Memories</span>
+            </button>
+            <button
+              onClick={() => setViewTab('conflicts')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${viewTab === 'conflicts' ? 'bg-amber-500/15 text-amber-300 border border-amber-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+            >
+              <Shield className="w-4 h-4" />
+              <span className="typo-body font-medium">Conflicts</span>
+            </button>
+            <div className="w-px h-6 bg-primary/10" />
             <button onClick={handleReview} disabled={memoryReviewRunning || memoriesTotal === 0} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal border transition-all bg-cyan-500/15 text-cyan-300 border-cyan-500/25 hover:bg-cyan-500/25 disabled:opacity-40">
               {memoryReviewRunning ? <LoadingSpinner size="sm" /> : <Sparkles className="w-3.5 h-3.5" />}
               {memoryReviewRunning ? 'Reviewing...' : 'Review'}
@@ -170,6 +191,13 @@ export default function MemoriesPageDense() {
 
       {showAddForm && <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />}
 
+      {viewTab === 'conflicts' ? (
+        <ContentBody flex>
+          <div className="flex-1 overflow-y-auto p-4">
+            <MemoryConflictReview />
+          </div>
+        </ContentBody>
+      ) : (
       <ContentBody flex>
         {/* Numeric KPI strip — borrows the personas-web "TopMetric | Divider" pattern */}
         <div className="flex items-center gap-3 flex-wrap px-4 md:px-6 py-2 border-b border-primary/10 bg-secondary/5 flex-shrink-0">
@@ -267,6 +295,7 @@ export default function MemoriesPageDense() {
           </div>
         </div>
       </ContentBody>
+      )}
 
       {selected && (
         <MemoryDetailModal
@@ -297,6 +326,8 @@ export default function MemoriesPageDense() {
           onCancel={() => setConfirmingDeleteAll(false)}
         />
       )}
+
+      <ReviewResultsModal reviewResult={memoryReviewResult} reviewError={memoryReviewError} onClose={clearMemoryReviewResult} />
     </ContentBox>
   );
 }

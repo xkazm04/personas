@@ -5,7 +5,7 @@
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import { personaInitials } from './triageModel';
+import { personaInitials } from '@/lib/icons/personaInitials';
 
 const SIZE = {
   sm: { box: 'w-7 h-7', text: 'typo-caption' },

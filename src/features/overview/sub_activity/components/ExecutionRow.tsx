@@ -33,7 +33,7 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         </div>
 
         <div className="flex items-center gap-2 w-[140px] sm:w-auto sm:min-w-[140px] flex-shrink-0">
-          <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} display="framed" frameSize={"lg"} />
+          <PersonaIcon icon={execution.persona_icon ?? null} color={execution.persona_color ?? null} name={execution.persona_name} display="framed" frameSize={"lg"} />
           <span className="typo-heading text-foreground truncate max-w-[100px]">
             {execution.persona_name || 'Unknown'}
           </span>

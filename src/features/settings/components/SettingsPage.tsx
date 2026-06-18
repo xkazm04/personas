@@ -14,7 +14,6 @@ const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.Compone
   portability: lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),
   network: lazy(() => import('@/features/settings/sub_network/components/ExposureManager')),
   admin: lazy(() => import('@/features/settings/sub_admin/components/AdminSettings')),
-  config: lazy(() => import('@/features/settings/sub_config/components/ConfigResolutionPanel')),
   'api-keys': lazy(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),
   history: lazy(() => import('@/features/settings/sub_history/components/SettingsHistoryTab')),
   limits: lazy(() => import('@/features/settings/sub_limits/components/LimitsSettings')),

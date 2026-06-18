@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { Network, Shield, Route, ScrollText, KeyRound, AlertTriangle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs, type SegmentedTab } from '@/features/shared/components/layout/SegmentedTabs';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useByomSettings } from '../libs/useByomSettings';
 import type { ByomSection } from '../libs/useByomSettings';
 import { ByomProviderList } from './ByomProviderList';
@@ -145,21 +146,14 @@ export default function ByomSettings() {
           )}
 
           {/* Enable toggle */}
-          <div className="rounded-modal border border-primary/10 bg-card-bg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="typo-body font-medium text-foreground">{s.policy_enforcement}</h3>
-                <p className="typo-body text-foreground mt-0.5">
-                  {s.policy_enforcement_desc}
-                </p>
-              </div>
-              <AccessibleToggle
-                checked={bm.policy.enabled}
-                onChange={bm.toggleEnabled}
-                label="BYOM policy enforcement"
-              />
-            </div>
-          </div>
+          <SectionCard>
+            <SettingRow
+              label={s.policy_enforcement}
+              description={s.policy_enforcement_desc}
+              checked={bm.policy.enabled}
+              onChange={bm.toggleEnabled}
+            />
+          </SectionCard>
 
           {/* Section tabs */}
           <SegmentedTabs<ByomSection>

@@ -6,6 +6,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from '@/stores/toastStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import type { ExposedResource, CreateExposedResourceInput, AccessLevel, ResourceType } from '@/api/network/exposure';
 import { IdentitySettings } from './IdentitySettings';
 import { InlineConfirm } from './InlineConfirm';
@@ -295,12 +296,11 @@ export default function ExposureManager() {
           <IdentitySettings />
 
           {/* Exposed Resources section */}
-          <section>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="typo-heading font-semibold text-foreground flex items-center gap-2">
-                <Package className="w-4 h-4" />
-                {st.exposed_resources}
-              </h3>
+          <SectionCard
+            title={st.exposed_resources}
+            icon={<Package className="w-4 h-4 text-cyan-400" />}
+            titleClassName="text-primary"
+            action={
               <button
                 onClick={() => setShowAddForm(!showAddForm)}
                 className="px-2.5 py-1 typo-caption rounded-card border border-border hover:bg-secondary/50 transition-colors flex items-center gap-1.5"
@@ -308,8 +308,8 @@ export default function ExposureManager() {
                 <Plus className="w-3.5 h-3.5" />
                 {st.expose_resource}
               </button>
-            </div>
-
+            }
+          >
             <div
               className={`grid transition-all duration-200 ease-in-out ${
                 showAddForm ? 'grid-rows-[1fr] opacity-100 mb-3' : 'grid-rows-[0fr] opacity-0'
@@ -340,7 +340,7 @@ export default function ExposureManager() {
                 ))}
               </div>
             )}
-          </section>
+          </SectionCard>
 
           {/* Discovered Peers section */}
           <PeerList />

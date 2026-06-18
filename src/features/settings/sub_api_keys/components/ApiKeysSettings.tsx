@@ -24,6 +24,7 @@ import {
   ContentHeader,
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import {
   createExternalApiKey,
   listExternalApiKeys,
@@ -171,32 +172,32 @@ export default function ApiKeysSettings() {
 
         <McpServerInfoPanel />
 
-        <div className="mt-6 space-y-2">
-          <div className="flex items-center justify-between">
-            <h3 className="typo-body font-medium text-foreground">{s.your_keys}</h3>
-          </div>
+        <div className="mt-6">
+          <SectionCard title={s.your_keys} icon={<Key className="w-4 h-4 text-fuchsia-400" />} titleClassName="text-primary">
+            <div className="space-y-2">
+              {loading && !keys && (
+                <div className="typo-caption text-foreground py-6 text-center">
+                  {s.loading_keys}
+                </div>
+              )}
 
-          {loading && !keys && (
-            <div className="typo-caption text-foreground py-6 text-center">
-              {s.loading_keys}
+              {!loading && visibleKeys.length === 0 && (
+                <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
+                  {s.empty}
+                </div>
+              )}
+
+              {visibleKeys.map((key) => (
+                <ApiKeyRow
+                  key={key.id}
+                  apiKey={key}
+                  actioning={actioning === key.id}
+                  onRevoke={() => handleRevoke(key.id)}
+                  onDelete={() => handleDelete(key.id)}
+                />
+              ))}
             </div>
-          )}
-
-          {!loading && visibleKeys.length === 0 && (
-            <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
-              {s.empty}
-            </div>
-          )}
-
-          {visibleKeys.map((key) => (
-            <ApiKeyRow
-              key={key.id}
-              apiKey={key}
-              actioning={actioning === key.id}
-              onRevoke={() => handleRevoke(key.id)}
-              onDelete={() => handleDelete(key.id)}
-            />
-          ))}
+          </SectionCard>
         </div>
       </ContentBody>
 

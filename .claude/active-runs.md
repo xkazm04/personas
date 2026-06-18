@@ -66,6 +66,42 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### feature — Shared SettingsScaffold (quick-nav scroll-spy rail) + polish AccountSettings/SetupPanel (session opus-4-8)
+- Started: 2026-06-18 ~now
+- Status: settings-wide consistency sweep DONE (all 9 actionable tabs migrated). UNCOMMITTED, awaiting review. tsc 0 + eslint 0 across features/settings (overall tsc exit2 is a PRE-EXISTING concurrent-session break in features/triggers/EventCanvas — not ours).
+- Branch: master (main checkout — UI must render live; data-dir-singleton blocks a 2nd app instance, same precedent as concurrent UI sessions). No overlap with other Active entries.
+- Scope after audit (3 parallel agents) + user pick "Hybrid": FULL SettingsScaffold (quick-nav) on Appearance/Data/Limits/Admin/Engine; SectionCard/SettingRow-only on BYOM/Notifications/API-keys/Network; LEAVE Config + History (diagnostic data surfaces). SectionCard gained additive `icon` + `action` props; SettingsScaffold gained `action` passthrough.
+- Paths: NEW shared/components/layout/settings/{SettingsScaffold,useSectionScrollSpy}; EDIT shared SectionCard (icon+action), companion sub_setup/SetupPanel, AccountSettings(+CloudSyncCard, shared radio RadioSettingsCard); sub_portability/{DataPortabilitySettings,ExportSection,CredentialPortability,StorageUsageSection}; sub_limits/LimitsSettings; sub_admin/AdminSettings; sub_appearance/{AppearanceSettings,TextSize,Density,Timezone,Brightness,ThemingSection}; sub_engine/{EngineSettings,ModelRoutingSection} (+ wrap settings/components/AmbientContextPanel untouched in a title-less SectionCard); sub_byom/ByomSettings; sub_api_keys/{ApiKeysSettings,McpServerInfoPanel}; sub_notifications/{NotificationSettings,WebhookSubscriptionsPanel}; sub_network/ExposureManager. CATALOG.md, docs/features/{settings,companion}, .claude/active-runs.md
+- INCIDENT: a disk ENOSPC (C: 100% full — node-proc/target glut) truncated StorageUsageSection.tsx to 0 bytes mid-Edit; restored from in-context read + re-applied the migration; user freed disk. No other file affected (prior edits in that batch succeeded before the ENOSPC; portability tsc/eslint green confirm).
+- Note: extract a 2-col settings layout (sticky left quick-nav rail with scroll-spy + smooth-scroll + framer active pill) wrapping a stack of SectionCard sections; apply to both companion Setup + Account for cross-panel consistency (SetupPanel = reference: SectionCard + SettingRow). AccountSettings inline telemetry/updates/account cards → SectionCard + telemetry toggle → SettingRow; Radio/CloudSync/BrowserBridge kept as bring-your-own-card sections (card:false). No new i18n (nav labels reuse existing section-title keys; nav aria-label = existing page title). NOT committing during the pass (concurrent uncommitted work on master). active-runs.md NOT staged (concurrent-write hazard).
+
+### /prototype — Leaderboard alternative views (Matrix scorecard + Trade-off Map) — 2 directional variants (session opus-4-8)
+- Started: 2026-06-17 ~now
+- Status: CONSOLIDATED — Matrix won (user pick). UNCOMMITTED, awaiting review. tsc 0 + eslint 0 on touched files.
+- Branch: master (main checkout — variants rendered live for A/B; data-dir-singleton blocks a 2nd app instance — same precedent as prior /prototype monitor + kpi-card + heartbeats sessions). sub_leaderboard/ is exclusively this session's surface; NO overlap with the concurrent heartbeats /prototype (owns sub_health/components/heartbeats/).
+- Paths: src/features/overview/sub_leaderboard/components/ (NEW kept: LeaderboardMatrixView + leaderboardViewTypes + leaderboardViewHelpers; rewrote LeaderboardPage.tsx to render Matrix directly), libs/leaderboardRanking.ts (removed now-dead headlineScore/biggestOpportunity), docs/features/overview/README.md (Leaderboard row → matrix), .claude/active-runs.md. DELETED (committed Podium variant + my non-winner): LeaderboardCard, Podium, PodiumStep, DetailPanel, LeaderboardPodiumView, LeaderboardTradeoffView.
+- Note: Matrix = sortable scorecard (row/persona × col/metric), heatmap cells (score+≤1-decimal raw / qualitative grade), per-cell magnitude bar, medal ranks, emphasized Overall headline col, dashed fleet-avg row, legend; Speed column self-flags `tied` (surfaces the fleet-wide-latency bug). ScoreRadar + EmptyStates kept (single/empty states). REMAINING before commit: (1) extract local COPY strings → en.json + split-locales regen; (2) onboarding/marketing N/A for leaderboard (no tour step; presentation-only). LOST with Podium: radar detail panel + Biggest-opportunity + Improve-this-agent deep-link — offered to port into a Matrix row-drilldown if user wants. Speed-mapping bug (personaHealthSlice L391) still reported, fix is separate backend work.
+
+### /prototype — Heartbeats page recompose → "Vitals Ledger" (session opus-4-8)
+- Started: 2026-06-17. Status: completed (UNCOMMITTED — awaiting user review; tsc 0 errors, eslint 0 problems, i18n coverage green, codegen regenerated).
+- Branch: master (main checkout — variants rendered live for A/B; data-dir-singleton blocks a 2nd app instance; precedent of prior /prototype monitor + kpi-card sessions).
+- WON: Vitals Ledger (flat full-width instrument table, one persona/row, thin composite heartbeat bar, healthy hidden by default, worst-first, expand-row→segmented success/healing/stability/budget breakdown) + recomposed premium insight band (shared InsightPanel shell over Alerts/Burn/Cascade). Triage Board + card-grid baseline pruned.
+- Files: NEW src/features/overview/sub_health/components/heartbeats/** (model.ts, primitives.tsx, RowDetail.tsx, VitalsLedger.tsx, HeartbeatsView.tsx, index.ts, insights/{data.ts,InsightPanel,AlertsPanel,BurnPanel,CascadePanel,InsightBand,index}). EDITED PersonaHealthDashboard.tsx (heartbeats branch → <HeartbeatsView/>), tourSlice.ts (health-monitoring tour copy cards→rows), docs/features/overview/README.md (Health row), en.json (overview.heartbeats keys) + regenerated generated/types.ts + section-locales. DELETED HeartbeatsBaseline + PersonaHealthCard + PredictiveAlerts + BurnRateProjection + CascadeVisualization + TriageBoard.
+- ⚠️ Whoever commits: en.json + generated/types.ts were CONCURRENTLY THRASHED mid-session (overview.knowledge.graph_tab vanished/returned, surfacing a KnowledgeHub tsc error that resolved on re-regen). Re-run gen-types + split-locales against current en.json before staging; expect generated-file merge churn. active-runs.md NOT staged (concurrent-write hazard).
+
+### tour-modal-restyle — TourDetailModal restyle + per-tour Leonardo background illustrations (session opus-4-8)
+- Started: 2026-06-17 ~now
+- Status: completed (UNCOMMITTED — awaiting user review; tsc + eslint green)
+- Branch: master (main checkout — single-file component + new sibling assets dir; no overlap with other Active entries)
+- Paths: src/features/home/sub_learning/TourDetailModal.tsx, src/features/home/sub_learning/data.ts (add missing GitBranch icon + tour→illustration map), src/features/home/sub_learning/illustrations/ (NEW: index.ts + assets/*.png — 9 Leonardo backgrounds), .claude/active-runs.md
+- Note: color step titles with tour theme color, +2px step description, semitransparent per-tour decorative bg illustration. Leonardo Lucid Origin, dark glowing-geometric style mirroring overview/shared/emptyStatePrototype/illustrations.
+
+### /research — fabro-codebase-comparison (compare cloned fabro repo vs personas, all lenses, scope=code)
+- Started: 2026-06-16 ~13:00
+- Source: cloned repo C:\Users\kazda\kiro\fabro (open-source AI workflow-orchestration platform)
+- Paths: Obsidian/personas/Research/ + Lessons/ (outside repo), .claude/codebase-stack.md (cache-token staleness fix), docs/concepts/ (possible finding note), .claude/active-runs.md. No src/ writes planned unless a finding is accepted for in-session execution.
+- Status: started
+
 ### /prototype — PersonaMonitor live mode (bottom-right channel-message overlay) — 3 directional variants
 - Started: 2026-06-15
 - Status: completed (commit: 61cf4b0f7, pushed to origin) — Comms Stack (A) won; B/C + demo deleted; wired to real useTeamChannel feed + persisted monitorLiveMode toggle (Channels->Timeline) + Timeline deep-link redirect; tsc/eslint/i18n/catalog green; commit bundled the concurrent sub_goals acceptance stream per user request
@@ -747,6 +783,10 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### /research — claude-code-2-1-177-to-181 (CLI release-log run, scope=code) — completed (commit: 8cde09706)
+- 2026-06-18. Advanced `minimum_version()` floor 2.1.170 → 2.1.181 in src-tauri/src/engine/provider/claude.rs (single file: return value + 2.1.177–2.1.181 narrative block + test assertion). `cargo check --features desktop --tests` clean. Committed via `git commit --only` (heavy concurrent uncommitted drift on master; ledger NOT staged, concurrent-write hazard).
+- Findings: 1 accepted (floor advance), 0 declined. 2.1.177 (no published CLI changes) + 2.1.180 (no entry) non-user-facing; 2.1.178 entirely interactive/daemon/permission-rules. Wrapping-relevant fixes drove the advance: 2.1.181 ~120ms `-p` startup regression (from 2.1.169, which 2.1.170 sat on top of) + mid-thinking auto-retry (Opus 4.8) + 15s slow-network startup unblock; 2.1.179 mid-stream partial-preservation. Vault: Research/Lessons 2026-06-18. NOT pushed to origin.
 
 ### feature — Athena interactive in-turn replies (conversational beats + progressive segments) — completed (merged to master 473b8eed1)
 - 2026-06-16. Worktree athena-interactive (2 feature commits 19b19aebf + 0d05a032d + merge), fast-forwarded to master, worktree/branch removed (junction-first, main node_modules safe). NOT pushed to origin (user ran the local app to check).

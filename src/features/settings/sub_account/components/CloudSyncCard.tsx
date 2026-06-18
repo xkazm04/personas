@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CloudUpload, RefreshCw, ChevronDown, AlertCircle, MonitorSmartphone } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -113,20 +113,23 @@ export default function CloudSyncCard() {
   const tables: TableSyncStatus[] = status?.tables ?? [];
   const hasError = !!status?.lastError;
 
-  return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <div className="flex items-start justify-between gap-3">
-        <SectionHeading title={s.cloud_sync_title} icon={<CloudUpload className="text-sky-400" />} />
-        {loading ? (
-          <span className="h-[26px] w-24 rounded-full bg-secondary/30 animate-pulse" aria-hidden />
-        ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground">
-            <LiveStatusDot tone={state} />
-            {stateLabel}
-          </span>
-        )}
-      </div>
+  const statusBadge = loading ? (
+    <span className="h-[26px] w-24 rounded-full bg-secondary/30 animate-pulse" aria-hidden />
+  ) : (
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground">
+      <LiveStatusDot tone={state} />
+      {stateLabel}
+    </span>
+  );
 
+  return (
+    <SectionCard
+      title={s.cloud_sync_title}
+      icon={<CloudUpload className="w-4 h-4 text-sky-400" />}
+      titleClassName="text-primary"
+      action={statusBadge}
+    >
+      <div className="space-y-4">
       <p className="typo-body text-foreground leading-relaxed">{s.cloud_sync_description}</p>
 
       {/* Toggle */}
@@ -293,6 +296,7 @@ export default function CloudSyncCard() {
           )}
         </>
       )}
-    </div>
+      </div>
+    </SectionCard>
   );
 }

@@ -2,12 +2,14 @@ import { toastCatch } from "@/lib/silentCatch";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useEffect } from 'react';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
-import { Shield, AlertTriangle, Clock, Wrench } from 'lucide-react';
+import { Shield, AlertTriangle, Clock, Wrench, TrendingUp, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { getSlaDashboard } from '@/api/overview/sla';
 import type { SlaDashboardData } from '@/api/overview/sla';
 import { DAY_OPTIONS, formatPercent, formatDuration, slaColor } from '../libs/slaHelpers';
+import { rateToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 import { SlaCard, PersonaRow, DailyTrendChart } from './SLACard';
 
 interface SLADashboardProps {
@@ -54,7 +56,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
       <div className="space-y-6">
         {embedded ? (
           // Compact row: day filter + 2 primary metrics (success rate, avg latency)
-          <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-card-bg p-3">
+          <div className="flex items-center gap-3 flex-wrap rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 p-3">
             {dayPicker}
             <div className="h-8 w-px bg-primary/10 mx-1" />
             <CompactMetric
@@ -98,16 +100,17 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         )}
 
         {data.daily_trend.length > 0 && (
-          <div className="rounded-modal border border-primary/10 bg-card-bg p-5 space-y-3">
-            <h2 className="typo-code font-mono text-foreground uppercase tracking-wider">{tx(t.overview.sla.daily_success_rate, { days })}</h2>
-            <DailyTrendChart points={data.daily_trend.map((p) => ({ date: p.date, success_rate: p.success_rate, total: Number(p.total) }))} />
+          <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-1 overflow-hidden">
+            <SectionHeader icon={TrendingUp} title={tx(t.overview.sla.daily_success_rate, { days })} accent="text-status-info" />
+            <div className="p-5">
+              <DailyTrendChart points={data.daily_trend.map((p) => ({ date: p.date, success_rate: p.success_rate, total: Number(p.total) }))} />
+            </div>
           </div>
         )}
 
-        <div className="rounded-modal border border-primary/10 bg-card-bg overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-primary/10">
-            <h2 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.overview.sla.per_agent}</h2>
-          </div>
+        <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden">
+          <div className={`h-0.5 ${HEALTH_STATUS_TOKEN[rateToHealth(data.global.success_rate)].icon} opacity-60`} />
+          <SectionHeader icon={Users} title={t.overview.sla.per_agent} accent="text-primary" />
           {data.persona_stats.length === 0 ? (
             <div className="px-5 py-8 text-center typo-body text-foreground">{t.overview.sla.no_agent_data}</div>
           ) : (
@@ -139,6 +142,17 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         {body}
       </ContentBody>
     </ContentBox>
+  );
+}
+
+function SectionHeader({ icon: Icon, title, accent }: { icon: LucideIcon; title: string; accent: string }) {
+  return (
+    <div className="flex items-center gap-2.5 px-5 py-3 border-b border-primary/10">
+      <div className="w-8 h-8 rounded-card border border-primary/10 bg-secondary/30 flex items-center justify-center shrink-0">
+        <Icon className={`w-4 h-4 ${accent}`} />
+      </div>
+      <h2 className="typo-heading text-foreground/90">{title}</h2>
+    </div>
   );
 }
 

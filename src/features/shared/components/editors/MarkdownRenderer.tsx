@@ -216,19 +216,19 @@ function buildComponents(codeBlockActions: boolean): Components {
     <h3 className="typo-heading text-accent mb-2 mt-6 first:mt-0 tracking-wide">{children}</h3>
   ),
   p: ({ children }) => (
-    <p className="typo-body text-foreground/90 mb-3 leading-relaxed">{children}</p>
+    <p className="typo-body text-foreground mb-3 leading-relaxed">{children}</p>
   ),
   // Forward the node's own className so remark-gfm's `contains-task-list` /
   // `task-list-item` markers survive (the chat scopes task-list styling off
   // them; the classes are inert on every other call site).
   ul: ({ className, children }) => (
-    <ul className={`list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90${className ? ` ${className}` : ''}`}>{children}</ul>
+    <ul className={`list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground${className ? ` ${className}` : ''}`}>{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ol>
+    <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground">{children}</ol>
   ),
   li: ({ className, children }) => (
-    <li className={`text-foreground/90${className ? ` ${className}` : ''}`}>{children}</li>
+    <li className={`text-foreground${className ? ` ${className}` : ''}`}>{children}</li>
   ),
   code: ({ className, children, ...props }) => {
     const isChart = className?.includes('language-chart');

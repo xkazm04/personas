@@ -11,8 +11,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { DIM_META, GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
-import type { PetalState } from '@/features/shared/glyph/persona-sigil';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { PetalRow } from '@/features/shared/glyph/persona-layout/PetalRow';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
@@ -25,78 +24,6 @@ const VAL: Record<ImpactTone, string> = {
   muted: 'text-foreground/50',
   warn: 'text-status-warning',
 };
-
-const STATE_PIP: Record<PetalState, string> = {
-  resolved: 'bg-status-success',
-  filling: 'bg-primary',
-  pending: 'bg-status-warning',
-  error: 'bg-status-error',
-  idle: 'bg-foreground/25',
-};
-
-/**
- * One row in the left quick-action rail: the symbolic petal icon (state by
- * colour/fill + status pip) plus a fixed-width info box that surfaces the
- * petal's *resolved value at a glance* — connector brand icons for Apps, the
- * schedule shortcut for When, "Activated" for Memory/Review, etc. The whole
- * row is clickable and routes to the petal's action.
- */
-function PetalRow({
-  dim, state, active, impact, info, onSelect,
-}: {
-  dim: GlyphDimension;
-  state: PetalState;
-  active: boolean;
-  impact: DimImpact | undefined;
-  info: React.ReactNode;
-  onSelect: (d: GlyphDimension) => void;
-}) {
-  const meta = DIM_META[dim];
-  const Icon = meta.icon;
-  const lit = state === 'resolved' || state === 'filling';
-  const tip = impact ? `${impact.label} — ${impact.value}${impact.detail ? `\n${impact.detail}` : ''}` : impact;
-
-  return (
-    <Tooltip content={tip ?? meta.labelKey} placement="right">
-      <button
-        type="button"
-        onClick={() => onSelect(dim)}
-        aria-label={impact?.label ?? dim}
-        className={`group flex w-full items-center gap-2 rounded-card transition-all cursor-pointer ${
-          active ? 'ring-2 ring-primary/40' : ''
-        }`}
-      >
-        <span
-          className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-card border transition-all ${
-            active
-              ? 'border-primary/70'
-              : state === 'pending'
-                ? 'border-status-warning/55'
-                : lit
-                  ? 'border-card-border/40'
-                  : 'border-card-border/25'
-          }`}
-          style={lit ? { backgroundColor: `${meta.color}1c` } : undefined}
-        >
-          <Icon
-            className={`h-5 w-5 transition-opacity ${lit ? '' : 'opacity-40'}`}
-            style={lit ? { color: meta.color } : undefined}
-          />
-          <span className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full ring-2 ring-card-bg ${STATE_PIP[state]}`} />
-        </span>
-        {/* Fixed-width info box — flex-1 fills the fixed-width rail so every
-            row's box aligns. Bordered only when it carries content. */}
-        <span
-          className={`flex h-11 min-w-0 flex-1 items-center gap-1 overflow-hidden rounded-card px-2 ${
-            info ? 'border border-card-border/30 bg-secondary/20' : 'border border-transparent'
-          }`}
-        >
-          {info}
-        </span>
-      </button>
-    </Tooltip>
-  );
-}
 
 function HeaderChip({ impact }: { impact: DimImpact | undefined }) {
   if (!impact) return null;
@@ -160,17 +87,24 @@ export function PersonaLayoutAdoption(props: PersonaLayoutAdoptionProps) {
         <span className="typo-caption tabular-nums text-foreground/45">{model.answeredCount}/{model.totalCount}</span>
       </div>
       <div className="flex flex-col gap-2">
-        {GLYPH_DIMENSIONS.map((dim) => (
-          <PetalRow
-            key={dim}
-            dim={dim}
-            state={model.petalStates[dim]}
-            active={model.activeDim === dim}
-            impact={impactByDim(dim)}
-            info={infoForDim(dim)}
-            onSelect={model.handlePetalClick}
-          />
-        ))}
+        {GLYPH_DIMENSIONS.map((dim) => {
+          const imp = impactByDim(dim);
+          const tip = imp
+            ? `${imp.label} — ${imp.value}${imp.detail ? `\n${imp.detail}` : ''}`
+            : undefined;
+          return (
+            <PetalRow
+              key={dim}
+              dim={dim}
+              state={model.petalStates[dim]}
+              active={model.activeDim === dim}
+              tooltip={tip}
+              ariaLabel={imp?.label ?? dim}
+              info={infoForDim(dim)}
+              onSelect={model.handlePetalClick}
+            />
+          );
+        })}
       </div>
     </div>
   );

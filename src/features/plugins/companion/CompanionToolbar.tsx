@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Brain,
+  ChevronLeft,
+  ChevronRight,
   HelpCircle,
   Plus,
   Radar,
@@ -53,6 +55,8 @@ export function CompanionToolbar({
   onOpenBrain,
   brainOpen,
   disabled,
+  compact,
+  onToggleCompact,
 }: {
   onAskCapabilities: () => void;
   onAnalyzeFleet: () => void;
@@ -60,6 +64,10 @@ export function CompanionToolbar({
   onOpenBrain: () => void;
   brainOpen: boolean;
   disabled: boolean;
+  /** Panel minimize (compact) state, driven from CompanionPanel. */
+  compact: boolean;
+  /** Toggle the panel between full and compact width. */
+  onToggleCompact: () => void;
 }) {
   const { t } = useTranslation();
   const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
@@ -126,10 +134,24 @@ export function CompanionToolbar({
 
   return (
     <aside
-      className="shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]"
+      className="relative shrink-0 w-11 border-l border-foreground/10 flex flex-col items-center py-3 gap-1.5 bg-foreground/[0.02]"
       aria-label={t.plugins.companion.toolbar_label}
       data-testid="companion-toolbar"
     >
+      {/* Minimize / expand handle — a vertically-centered arrow tab straddling
+          the toolbar's inner edge. Replaces the old header compact button.
+          ◀ collapses the panel to compact width; ▶ expands it back. */}
+      <button
+        onClick={onToggleCompact}
+        data-testid="companion-toggle-compact"
+        aria-pressed={compact}
+        aria-label={compact ? t.plugins.companion.compact_toggle_expand : t.plugins.companion.compact_toggle_collapse}
+        title={compact ? t.plugins.companion.compact_toggle_expand : t.plugins.companion.compact_toggle_collapse}
+        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-10 inline-flex items-center justify-center w-5 h-14 rounded-full bg-secondary border border-foreground/15 text-foreground hover:bg-foreground/10 hover:border-foreground/25 shadow-elevation-2 transition-colors focus-ring"
+      >
+        {compact ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+      </button>
+
       {/* Plugins group — single Dev Tools toggle */}
       <PluginToggleButton
         icon={<Wrench className="w-4 h-4" />}
@@ -376,17 +398,14 @@ function ConnectorIconButton({
     return () => window.removeEventListener('mousedown', handler);
   }, [menuOpen]);
 
-  // Contrast strategy: every connector renders on top of an *always-
-  // visible* light disc (`bg-foreground/10` baseline, brighter when
-  // enabled). This is critical for dark-brand connectors — Sentry's
-  // ~#362D59 purple was nearly invisible against the dark sidebar bg
-  // before. The disc is the contrast surface; the brand color provides
-  // identity on top. Enabled state adds a brand-tinted ring + soft
-  // glow so the user can tell at a glance which tools are live.
-  //
-  // Using inline `boxShadow`/`borderColor` with the brand color keeps
-  // each connector's accent visually identifiable even when several
-  // are pinned side by side.
+  // Contrast strategy: the disc is a *translucent* foreground tint
+  // (`bg-foreground/8` idle, `/20` enabled) rather than a solid bright
+  // fill. A solid white disc made bright-brand icon strokes wash out on
+  // dark themes; the low-opacity tint lets the brand-colored icon stroke
+  // dominate while still lifting the icon off the sidebar bg. The enabled
+  // state is signalled by the brand-tinted ring + soft glow (inline
+  // `boxShadow`/`borderColor` with the brand color), not by a brighter
+  // fill — so several pinned connectors stay individually identifiable.
   const enabledStyle = enabled
     ? {
         boxShadow: `0 0 10px ${meta.color}66`,
@@ -408,8 +427,8 @@ function ConnectorIconButton({
         data-companion-connector-enabled={enabled ? 'true' : 'false'}
         className={`w-9 h-9 rounded-full inline-flex items-center justify-center border-2 transition-all focus-ring overflow-hidden ${
           enabled
-            ? 'bg-foreground text-background'
-            : 'bg-foreground/20 hover:bg-foreground/35'
+            ? 'bg-foreground/20 text-foreground'
+            : 'bg-foreground/8 hover:bg-foreground/15'
         }`}
         style={{ ...enabledStyle, ...ringStyle }}
         aria-label={`${meta.label} (${

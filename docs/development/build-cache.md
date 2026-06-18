@@ -36,6 +36,7 @@ The **budget** is `CACHE_BUDGET_GB` (default `80`). Set it in your shell or
 | --- | --- |
 | `node scripts/cache-budget.mjs --report` | Print a per-target breakdown. Never deletes. |
 | `node scripts/cache-budget.mjs --enforce` | Prune until under budget (asks to confirm on a TTY). |
+| `node scripts/cache-budget.mjs --prune-incremental` | Delete the main target's `incremental/` caches now (the lever behind `npm run clean:incremental`). Keeps deps → next build stays fast. |
 | `node scripts/cache-budget.mjs --guard` | Hook mode (the default with no flag). |
 | `--json` | Machine-readable output (with `--report`). |
 | `--yes` | Skip the `--enforce` confirmation prompt. |
@@ -59,10 +60,29 @@ and `prebuild`. The guard:
 
 - reads a cached measurement (`.claude/.cache-budget.json`, gitignored),
 - prints a one-line warning when the cache is above **80 % of budget**,
-- refreshes the measurement in a detached background process if it is stale.
+- refreshes the measurement in a detached background process if it is stale,
+- **self-heals** when the cache is past the **hard ceiling** (default 150 GB,
+  `CACHE_HARD_CEILING_GB`): it prunes the `incremental/` caches *before* the
+  build's cargo starts. Only the incremental category is touched — deps stay
+  cached, so the next build is still fast.
 
-It **always exits 0** — a slow disk scan or a full cache can never block or
-fail `npm run dev`. The warning is advisory; you decide when to clean.
+The self-heal is the piece a warning-only guard lacked: the advisory message
+warned all the way to **293 GB** once before anyone ran `--enforce`. It is
+gated so it never disrupts a build:
+
+- It only fires above the hard ceiling — a true runaway, not routine heavy use
+  (which floats between the 80 GB budget and the ceiling, warned but untouched).
+- It skips when the incremental caches were written in the last 90 s (a build is
+  mid-compile). "Idle" is judged by **mtime**, not process enumeration —
+  `tasklist`/`Get-Process` crawl or hang under this repo's thousands of node
+  processes, so they're avoided entirely.
+- `incremental/` is a pure rebuild-accelerator: deleting it never loses work.
+- Set `CACHE_AUTO_PRUNE=0` to disable self-heal and keep the guard advisory-only.
+
+Outside a runaway it **always exits 0 instantly** — a slow disk scan or a full
+cache can never block or fail `npm run dev`. In the rare over-ceiling case it
+spends a few seconds pruning incremental before the build starts; that one-off
+is the whole point.
 
 ### 3. `worktree-gc.mjs` — worktree lifecycle
 

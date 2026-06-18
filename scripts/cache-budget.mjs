@@ -16,8 +16,19 @@
 //                   first (see PRUNE ORDER). Asks for confirmation on a TTY.
 //   --guard         hook mode: read the cached measurement, print a one-line
 //                   warning above 80% of budget, refresh the cache in the
-//                   background. Fast and NON-BLOCKING — it never fails a build
-//                   and never deletes anything.
+//                   background. Fast and NON-BLOCKING for the common case — it
+//                   never fails a build. SELF-HEALING backstop: if the cache is
+//                   past the hard ceiling (CACHE_HARD_CEILING_GB, default 150)
+//                   AND no compiler is running, it prunes the incremental/
+//                   caches synchronously before the build starts. Deps are
+//                   never auto-pruned, so the next build stays fast. This is
+//                   the piece that stops the unbounded creep an advisory-only
+//                   warning never could (it warned all the way to 293 GB once).
+//                   "Idle" is judged by the incremental caches' mtime, not by
+//                   process enumeration (tasklist crawls under this repo's
+//                   thousands of node procs). Opt out with CACHE_AUTO_PRUNE=0.
+//   --prune-incremental  delete the main target's incremental/ caches now and
+//                   exit (the manual lever behind `npm run clean:incremental`).
 //   --json          emit machine-readable JSON (combine with --report)
 //   --yes           skip the confirmation prompt in --enforce
 //   --measure-only  internal: refresh the cache file silently, then exit
@@ -52,6 +63,17 @@ const BUDGET = BUDGET_GB * GIB;
 const WARN_RATIO = 0.8;
 // How long a cached measurement stays good enough for the --guard warning.
 const GUARD_TTL_MS = 12 * 60 * 60 * 1000;
+
+// Self-healing backstop for the --guard hook. Above this ceiling the guard
+// auto-prunes the incremental/ caches — the one category that grows without
+// bound (Cargo never GCs it) and is always safe to delete (it only accelerates
+// rebuilds; deps stay cached so the next build is still fast). The default of
+// 150 GB sits comfortably above the deps floor (~90-100 GB for this crate) yet
+// well under the 280 GB runaway that prompted this. Tune with
+// CACHE_HARD_CEILING_GB; disable the whole behavior with CACHE_AUTO_PRUNE=0.
+const HARD_CEILING_GB = Number(process.env.CACHE_HARD_CEILING_GB) || 150;
+const HARD_CEILING = HARD_CEILING_GB * GIB;
+const AUTO_PRUNE = process.env.CACHE_AUTO_PRUNE !== "0";
 
 const C = {
   reset: "\x1b[0m", yellow: "\x1b[33m", red: "\x1b[31m",
@@ -308,8 +330,87 @@ async function enforce(root) {
   return 0;
 }
 
+// Is a build actively writing the incremental caches right now? This is the
+// precise signal for "a compile is in flight and a prune would corrupt it" —
+// and it deliberately sidesteps process enumeration, which is unreliable in
+// this environment: the repo routinely runs thousands of node processes, and
+// `tasklist`/`Get-Process` crawl (or outright hang) walking that table. We only
+// stat the top-level session dirs inside each incremental/ cache, so the check
+// stays O(sessions), never O(files). A fresh mtime resolves to "active" → skip
+// the prune, because skipping is always safe and pruning mid-compile is not.
+const ACTIVE_BUILD_WINDOW_MS = 90 * 1000;
+function incrementalRecentlyActive(root) {
+  const mainTarget = join(root, "src-tauri", "target");
+  const now = Date.now();
+  for (const inc of findIncrementalDirs(mainTarget)) {
+    let entries;
+    try {
+      entries = readdirSync(inc, { withFileTypes: true });
+    } catch {
+      continue; // unreadable single dir; rmDir handles locks, other dirs still gate
+    }
+    for (const d of [inc, ...entries.map((e) => join(inc, e.name))]) {
+      try {
+        if (now - statSync(d).mtimeMs < ACTIVE_BUILD_WINDOW_MS) return true;
+      } catch {
+        /* removed mid-scan; ignore */
+      }
+    }
+  }
+  return false;
+}
+
+// Delete every incremental/ cache under the main target. Pure rebuild
+// accelerator — safe to remove whenever nothing is compiling. Returns freed bytes.
+function pruneIncremental(root) {
+  const mainTarget = join(root, "src-tauri", "target");
+  let freed = 0;
+  for (const inc of findIncrementalDirs(mainTarget)) {
+    let bytes = 0;
+    try {
+      bytes = measureDir(inc);
+    } catch {
+      /* size unknown; still delete below */
+    }
+    try {
+      rmDir(inc);
+      freed += bytes;
+    } catch (e) {
+      process.stderr.write(`  skip ${inc}: ${e.message}\n`);
+    }
+  }
+  return freed;
+}
+
 function guard(root) {
   const cache = readCache(root);
+
+  // Self-healing backstop — see HARD_CEILING comment. Only the incremental
+  // category is touched, and only when the toolchain is idle, so a live build
+  // is never disrupted and deps are never lost. Runs synchronously (before the
+  // build's cargo starts) but ONLY in the rare over-ceiling case, so the common
+  // guard path stays instant.
+  if (AUTO_PRUNE && cache && cache.totalBytes >= HARD_CEILING && !incrementalRecentlyActive(root)) {
+    const freed = pruneIncremental(root);
+    if (freed > 0) {
+      process.stderr.write(
+        `${C.yellow}[cache-budget] Auto-pruned ${gb(freed)} of incremental cache — ` +
+        `was ${gb(cache.totalBytes)}, over the ${HARD_CEILING_GB} GB hard ceiling. ` +
+        `Deps kept; next build stays fast.${C.reset}\n`,
+      );
+      // Refresh the snapshot out of band so we don't add a full rescan here.
+      try {
+        const child = spawn(process.execPath, [SELF, "--measure-only"], {
+          detached: true, stdio: "ignore",
+        });
+        child.unref();
+      } catch {
+        /* ignore */
+      }
+      process.exit(0);
+    }
+  }
+
   const stale = !cache || Date.now() - cache.measuredAt > GUARD_TTL_MS;
 
   if (stale) {
@@ -344,6 +445,11 @@ const args = new Set(process.argv.slice(2));
 const root = mainRepoRoot();
 
 if (args.has("--measure-only")) {
+  measureAll(root);
+  process.exit(0);
+} else if (args.has("--prune-incremental")) {
+  const freed = pruneIncremental(root);
+  process.stdout.write(`${C.green}Pruned ${gb(freed)} of incremental cache.${C.reset}\n`);
   measureAll(root);
   process.exit(0);
 } else if (args.has("--enforce")) {

@@ -325,12 +325,12 @@ const EXECUTION_OBSERVABILITY_STEPS: TourStepDef[] = [
     id: "health-monitoring",
     title: "Agent Health & Reliability",
     description: "Monitor your agent fleet's health with real-time scoring. Each agent gets a heartbeat score (0-100) with grades: Healthy (80+), Degraded (50-79), Critical (<50).",
-    hint: "Check your agents' health grades and expand a card for details.",
+    hint: "Scan the Vitals Ledger table and expand a row for details.",
     nav: { sidebarSection: "overview", subTab: "health", subTabSetter: "setOverviewTab" },
     completeOn: "tour:health-explored",
     subSteps: [
-      { id: "health-cards", label: "Health cards", hint: "Each card shows a heartbeat score with color-coded health grades." },
-      { id: "health-details", label: "Expand details", hint: "Click a card to see success rate, failure rate, cost projection, and latency." },
+      { id: "health-cards", label: "Vitals Ledger", hint: "One row per agent with a thin heartbeat bar; healthy agents are hidden by default so issues stay in focus — toggle Show all to reveal them." },
+      { id: "health-details", label: "Expand a row", hint: "Click a row for the success / healing / stability / budget breakdown, cost projection, and failure predictions." },
     ],
   },
   {
@@ -384,9 +384,9 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
   {
     id: "event-chaining",
     title: "Chaining Agents Together",
-    description: "The chain trigger is the key to multi-agent workflows. Agent A completes → emits execution_completed → Agent B's event_listener fires → Agent B runs. The Event Canvas visualises this graph and lets you wire new chains by dragging.",
-    hint: "Look at the canvas — sources on the left, consumers on the right.",
-    nav: { sidebarSection: "events", subTab: "builder", subTabSetter: "setEventBusTab" },
+    description: "The chain trigger is the key to multi-agent workflows. Agent A completes → emits execution_completed → Agent B's event_listener fires → Agent B runs. Chain Studio's Compose tab lets you wire new chains: arm a source, pick a target persona.",
+    hint: "In Chain Studio, sources are on the left, target personas on the right.",
+    nav: { sidebarSection: "events", subTab: "studio", subTabSetter: "setEventBusTab" },
     completeOn: "tour:chaining-understood",
     highlightTestId: "triggers-page",
     subSteps: [

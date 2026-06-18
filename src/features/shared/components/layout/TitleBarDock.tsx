@@ -22,15 +22,14 @@ import { useTitleBarTray, TrayOverlays } from './useTitleBarTray';
  *
  * Keyboard: while `;` keyboard-nav mode is active (see `KeyboardNavMode`),
  * each capsule shows its key on a hint chip below the bar and S / C / R / M /
- * N toggle the matching surface. Search exits the mode after opening — the
- * command palette captures typing. The keys do nothing outside nav mode.
+ * N toggle the matching surface. Surface keys keep the mode armed — it stays
+ * on until `;` / Esc / the footer switch. The keys do nothing outside nav mode.
  */
 export default function TitleBarDock() {
   const { t, tx } = useTranslation();
   const tray = useTitleBarTray();
   const prefersReducedMotion = useReducedMotion();
   const keyboardNavActive = useSystemStore((s) => s.keyboardNavActive);
-  const setKeyboardNavActive = useSystemStore((s) => s.setKeyboardNavActive);
 
   useAppKeyboard(
     (e) => {
@@ -41,9 +40,8 @@ export default function TitleBarDock() {
         case 's':
           e.preventDefault();
           tray.openSearch();
-          // The palette opens with its input focused — leaving the mode armed
-          // would just paint the glow behind a typing surface.
-          setKeyboardNavActive(false);
+          // Stay armed after opening search: the mode now persists until the
+          // user switches it off (`;` / Esc / footer switch), not per-shortcut.
           return true;
         case 'c':
           e.preventDefault();
@@ -119,6 +117,7 @@ export default function TitleBarDock() {
 
         <DockAction
           onClick={tray.openAcceptance}
+          active={tray.acceptanceOpen}
           count={tray.pendingAcceptance}
           countClass="text-status-warning"
           label={tray.pendingAcceptance > 0 ? tx(t.chrome.tray_acceptance_pending, { count: tray.pendingAcceptance }) : t.chrome.tray_acceptance}

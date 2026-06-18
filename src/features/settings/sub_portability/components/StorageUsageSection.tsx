@@ -18,7 +18,8 @@ function formatBytes(bytes: number): string {
  * F18: local storage usage + safe prune. Shows the operational DB size and how
  * many finished runs are removable, with a two-step confirm before deleting
  * (the backend additionally enforces dry-run default, a 24h floor, and a
- * terminal-only allow-list).
+ * terminal-only allow-list). Header is provided by the surrounding
+ * SettingsScaffold section; this renders content only.
  */
 export function StorageUsageSection() {
   const { t, tx } = useTranslation();
@@ -44,12 +45,7 @@ export function StorageUsageSection() {
   };
 
   return (
-    <section className="rounded-card border border-border/40 bg-secondary/30 p-4 flex flex-col gap-3">
-      <header>
-        <h3 className="typo-title text-primary">{tp.storage_title}</h3>
-        <p className="typo-caption text-foreground">{tp.storage_subtitle}</p>
-      </header>
-
+    <div className="flex flex-col gap-3">
       {report && (
         <dl className="grid grid-cols-3 gap-3">
           <div className="flex flex-col">
@@ -96,6 +92,6 @@ export function StorageUsageSection() {
       {pruned != null && (
         <p className="typo-caption text-foreground">{tx(tp.storage_pruned, { count: pruned })}</p>
       )}
-    </section>
+    </div>
   );
 }

@@ -30,14 +30,6 @@ export function isActionable(card: PersonaCardModel): boolean {
   );
 }
 
-/** First letters of the first two words, uppercased — the icon fallback (goal 2). */
-export function personaInitials(name: string): string {
-  const words = name.replace(/^T:\s*/, '').trim().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return '?';
-  if (words.length === 1) return words[0]!.slice(0, 1).toUpperCase();
-  return (words[0]![0]! + words[1]![0]!).toUpperCase();
-}
-
 /** One actionable signal on a card, with its compact-pill styling. */
 export interface ActionBadge {
   key: 'failed' | 'review' | 'message' | 'input' | 'draft';

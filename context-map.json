@@ -1,45 +1,47 @@
 {
   "contexts": [
     {
-      "api_surface": "invoke('deploy_persona'), invoke('redeploy_persona'), invoke('get_deploy_status')",
-      "business_feature": "Agent Deployment",
+      "api_surface": "invoke('get_connectors'), invoke('bind_credential'), invoke('check_connector_readiness')",
+      "business_feature": "Agent Connectors",
       "category": "ui",
       "cross_refs": [
-        "persona-management",
-        "execution-runner",
-        "cloud-sync"
+        "credential-vault",
+        "mcp-protocol",
+        "agent-editor"
       ],
       "db_tables": [
-        "deploy_targets",
-        "deployment_sessions"
+        "connectors",
+        "credential_bindings"
       ],
-      "description": "Manages deployment targets and configurations for agents — currently supporting local CLI execution and Claude Managed Agents cloud target. Includes deploy/redeploy flows, per-run environment setup, and tier-gated target availability.",
+      "description": "Manages the connections between personas and external services (MCP tools, APIs, database connectors). Handles connector discovery, credential binding, readiness validation, and the three-class connector model (builtin-local, builtin-remote, custom).",
       "entry_points": [
-        "src/features/agents/sub_deployment/DeploymentTab.tsx",
-        "src-tauri/src/engine/platforms/deploy.rs"
+        "src/features/agents/sub_connectors/ConnectorsTab.tsx",
+        "src-tauri/src/engine/connector_readiness.rs"
       ],
       "file_paths": [
-        "src/features/agents/sub_deployment/DeploymentTab.tsx",
-        "src/features/agents/sub_deployment/components/DeployTargetSelector.tsx",
-        "src/features/agents/sub_deployment/components/DeploymentStatus.tsx",
-        "src-tauri/src/engine/platforms/deploy.rs",
-        "src/stores/slices/system/deployTarget.ts",
-        "src/api/agents/buildSession.ts"
+        "src/features/agents/sub_connectors/ConnectorsTab.tsx",
+        "src/features/agents/sub_connectors/components/ConnectorCard.tsx",
+        "src/features/agents/sub_connectors/hooks/useConnectorReadiness.ts",
+        "src/api/agents/mcpTools.ts",
+        "src/api/auth/connectors.ts",
+        "src-tauri/src/commands/companion/connector.rs",
+        "src-tauri/src/engine/connector_readiness.rs",
+        "src-tauri/src/db/models/connector.rs"
       ],
       "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "48e39a83-5900-45eb-b389-9546b47f3c99",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "77082495-ef2c-449b-b711-d8007ebe1ed8",
       "keywords": [
-        "deployment",
-        "deploy",
-        "target",
-        "cloud",
-        "CLI",
-        "environment",
-        "managed-agents",
-        "redeploy"
+        "connector",
+        "mcp",
+        "binding",
+        "credential",
+        "readiness",
+        "integration",
+        "tool",
+        "api-connection"
       ],
-      "name": "agent-deployment",
+      "name": "agent-connectors",
       "tech_stack": [
         "React",
         "TypeScript",
@@ -47,242 +49,159 @@
       ]
     },
     {
-      "api_surface": "invoke('update_persona_system_prompt'), invoke('set_persona_tools'), invoke('update_persona_model')",
+      "api_surface": "invoke('start_design_conversation'), invoke('apply_design_draft')",
+      "business_feature": "Agent Design Wizard",
+      "category": "ui",
+      "cross_refs": [
+        "agent-editor",
+        "template-system"
+      ],
+      "db_tables": [
+        "design_conversations",
+        "design_messages"
+      ],
+      "description": "Conversational design wizard that guides users through building a persona via structured phases (analyzing, refining, preview, applying). Uses LLM-driven suggestions and a wizard compiler to generate persona configurations from natural-language answers.",
+      "entry_points": [
+        "src/features/agents/sub_design/DesignTab.tsx",
+        "src/features/agents/sub_design/wizard/wizardCompiler.ts"
+      ],
+      "file_paths": [
+        "src/features/agents/sub_design/DesignTab.tsx",
+        "src/features/agents/sub_design/DesignQuestionPanel.tsx",
+        "src/features/agents/sub_design/DesignTabHelpers.ts",
+        "src/features/agents/sub_design/components/DesignTabPhaseContent.tsx",
+        "src/features/agents/sub_design/components/DesignConversationHistory.tsx",
+        "src/features/agents/sub_design/components/PairItem.tsx",
+        "src/features/agents/sub_design/phases/DesignPhaseAnalyzing.tsx",
+        "src/features/agents/sub_design/phases/DesignPhaseApplied.tsx",
+        "src/features/agents/sub_design/phases/DesignPhaseApplying.tsx",
+        "src/features/agents/sub_design/phases/DesignPhaseError.tsx",
+        "src/features/agents/sub_design/phases/DesignPhasePreview.tsx",
+        "src/features/agents/sub_design/phases/DesignPhaseRefining.tsx",
+        "src/features/agents/sub_design/wizard/wizardCompiler.ts",
+        "src-tauri/src/commands/design/conversation.rs"
+      ],
+      "group": "Agent Platform",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "a8f6f78f-c6c2-44c7-af5b-71bedeacf552",
+      "keywords": [
+        "wizard",
+        "design",
+        "phase",
+        "analyzing",
+        "refining",
+        "preview",
+        "applying",
+        "conversation",
+        "llm-driven"
+      ],
+      "name": "agent-design-wizard",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "invoke('update_persona'), invoke('get_persona_use_cases')",
       "business_feature": "Agent Editor",
       "category": "ui",
       "cross_refs": [
         "persona-management",
-        "agent-use-cases",
-        "credential-vault",
-        "llm-provider"
+        "agent-design-wizard",
+        "credential-connectors",
+        "agent-lab"
       ],
       "db_tables": [
         "personas",
-        "persona_parameters",
-        "persona_tools"
+        "use_cases",
+        "output_assertions"
       ],
-      "description": "Multi-tab agent configuration editor covering system prompt, model selection, tool bindings, connector assignments, and parameters. Users compose an agent's identity and capabilities here before deployment. Reads persona state from the Zustand agent store and persists changes via Tauri IPC.",
+      "description": "Multi-tab editor for configuring an agent persona — identity, system prompt, model selection, connectors, use cases, and output assertions. Orchestrates the sub-design wizard and tab routing for the full persona authoring experience.",
       "entry_points": [
-        "src/features/agents/sub_editor/AgentEditorPage.tsx"
+        "src/features/agents/sub_editor/components/PersonaEditor.tsx"
       ],
       "file_paths": [
-        "src/features/agents/sub_editor/AgentEditorPage.tsx",
-        "src/features/agents/sub_editor/components/EditorToolbar.tsx",
-        "src/features/agents/sub_editor/components/SystemPromptEditor.tsx",
-        "src/features/agents/sub_design/DesignTab.tsx",
+        "src/features/agents/sub_editor/components/EditorTabContent.tsx",
+        "src/features/agents/sub_editor/components/PersonaEditor.tsx",
+        "src/features/agents/sub_editor/components/EditorBanners.tsx",
+        "src/features/agents/sub_editor/components/QuickStatsBar.tsx",
+        "src/features/agents/sub_editor/hooks/usePersonaSwitchGuard.ts",
+        "src/features/agents/sub_editor/libs/useEffectivePersona.ts",
+        "src/features/agents/sub_editor/libs/useTabSection.ts",
         "src/features/agents/sub_model_config/ModelConfigTab.tsx",
         "src/features/agents/sub_settings/AgentSettingsTab.tsx",
-        "src/api/agents/personaParameters.ts",
-        "src/api/agents/tools.ts",
-        "src/api/agents/channelDelivery.ts"
+        "src/features/agents/sub_use_cases/UseCasesTab.tsx"
       ],
       "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "150ac9e9-11a3-41f6-93a2-1748ef9dc46f",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "d3ecc695-b423-4c35-b2ff-33af5144cc93",
       "keywords": [
         "editor",
         "system-prompt",
         "model",
-        "tool",
-        "parameter",
-        "connector",
-        "capability",
-        "configuration"
+        "use-case",
+        "tab",
+        "persona-config",
+        "identity",
+        "output-assertion"
       ],
       "name": "agent-editor",
       "tech_stack": [
         "React",
         "TypeScript",
-        "Zustand",
-        "Tauri"
+        "Zustand"
       ]
     },
     {
-      "api_surface": "invoke('generate_persona_icon'), invoke('upload_persona_icon'), invoke('get_persona_icon')",
-      "business_feature": "Agent Visual Identity",
-      "category": "ui",
-      "cross_refs": [
-        "persona-management",
-        "artist-generation"
-      ],
-      "db_tables": [
-        "persona_icons"
-      ],
-      "description": "Visual identity system for agents — supports uploading custom icons, AI-generating icons via Leonardo/Higgsfield, and resolving the correct icon for display throughout the app. The frontend glyph tab wraps Rust icon-generation commands and stores assets locally.",
-      "entry_points": [
-        "src/features/agents/sub_glyph/GlyphTab.tsx",
-        "src-tauri/src/commands/core/persona_icons.rs"
-      ],
-      "file_paths": [
-        "src/features/agents/sub_glyph/GlyphTab.tsx",
-        "src/features/agents/sub_glyph/components/GlyphUploader.tsx",
-        "src/features/agents/sub_glyph/components/GlyphGenerator.tsx",
-        "src-tauri/src/commands/core/persona_icons.rs",
-        "src-tauri/src/commands/core/persona_icon_gen.rs",
-        "src-tauri/src/engine/persona_icon.rs",
-        "src/api/agents/personaIcons.ts",
-        "src/lib/personas/resolvePersonaIcon.ts"
-      ],
-      "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "1bce2c25-41e9-4667-bcf4-e01c8d11993b",
-      "keywords": [
-        "icon",
-        "glyph",
-        "avatar",
-        "image-generation",
-        "leonardo",
-        "higgsfield",
-        "upload",
-        "visual-identity"
-      ],
-      "name": "agent-glyph",
-      "tech_stack": [
-        "React",
-        "TypeScript",
-        "Rust",
-        "Leonardo AI"
-      ]
-    },
-    {
-      "api_surface": "invoke('run_health_check'), invoke('get_health_history')",
-      "business_feature": "Agent Health Dashboard",
-      "category": "ui",
-      "cross_refs": [
-        "execution-runner",
-        "ai-healing",
-        "health-monitoring"
-      ],
-      "db_tables": [
-        "health_checks",
-        "healing_events"
-      ],
-      "description": "Per-agent health dashboard showing uptime, error rates, last-run outcomes, and healing event history. Surfaces health signals from the observability backend and lets users trigger manual health checks. Sits inside the agent editor as a dedicated tab.",
-      "entry_points": [
-        "src/features/agents/sub_health/HealthTab.tsx"
-      ],
-      "file_paths": [
-        "src/features/agents/sub_health/HealthTab.tsx",
-        "src/features/agents/sub_health/components/HealthScoreCard.tsx",
-        "src/features/agents/sub_health/components/HealingTimeline.tsx",
-        "src/stores/slices/agents/healthCheckSlice.ts",
-        "src/api/overview/healthcheckApi.ts"
-      ],
-      "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "490bd6d0-5108-4230-b9a7-4a46c0b6f5fd",
-      "keywords": [
-        "health",
-        "uptime",
-        "error-rate",
-        "healing",
-        "score",
-        "check",
-        "monitor",
-        "per-agent"
-      ],
-      "name": "agent-health-ui",
-      "tech_stack": [
-        "React",
-        "TypeScript",
-        "Recharts"
-      ]
-    },
-    {
-      "api_surface": "invoke('run_test'), invoke('create_test_suite'), invoke('list_test_results')",
-      "business_feature": "Agent Testing & Lab",
-      "category": "api",
-      "cross_refs": [
-        "execution-runner",
-        "agent-use-cases",
-        "llm-provider",
-        "analytics-dashboard"
-      ],
-      "db_tables": [
-        "test_runs",
-        "test_suites",
-        "output_assertions"
-      ],
-      "description": "Test suite framework for validating agent behavior against defined use-cases and output assertions. Supports single-run tests, parameterized suites, and a Lab mode for comparing multiple model configurations side-by-side. Results feed into the health score pipeline.",
-      "entry_points": [
-        "src/features/agents/sub_lab/LabPage.tsx",
-        "src-tauri/src/commands/execution/tests.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/commands/execution/tests.rs",
-        "src-tauri/src/commands/execution/test_suites.rs",
-        "src-tauri/src/commands/execution/assertions.rs",
-        "src-tauri/src/engine/test_runner.rs",
-        "src-tauri/src/engine/output_assertions.rs",
-        "src/features/agents/sub_lab/LabPage.tsx",
-        "src/features/agents/sub_lab/components/ModelMatrix.tsx",
-        "src/api/agents/tests.ts",
-        "src/api/agents/testSuites.ts",
-        "src/api/agents/outputAssertions.ts",
-        "src/stores/slices/agents/testSlice.ts",
-        "src/stores/slices/agents/labSlice.ts",
-        "src/stores/slices/agents/matrixBuildSlice.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "e0c5f889-afa4-4f2a-bc02-0d1f25cadd04",
-      "keywords": [
-        "test",
-        "assertion",
-        "lab",
-        "matrix",
-        "model-comparison",
-        "suite",
-        "validation",
-        "output",
-        "score"
-      ],
-      "name": "agent-testing",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('create_use_case'), invoke('list_use_cases'), invoke('update_use_case'), invoke('delete_use_case')",
-      "business_feature": "Agent Use Cases",
+      "api_surface": "invoke('get_lab_versions'), invoke('activate_evolution'), invoke('run_lab_test')",
+      "business_feature": "Agent Lab & Evolution",
       "category": "ui",
       "cross_refs": [
         "agent-editor",
-        "agent-testing",
-        "execution-runner"
+        "execution-runner",
+        "companion-brain"
       ],
       "db_tables": [
-        "use_cases",
-        "use_case_inputs"
+        "evolutions",
+        "test_runs",
+        "test_suites",
+        "lab_ratings"
       ],
-      "description": "Manages discrete use-case scenarios attached to a persona — each defining expected inputs, outputs, and success criteria. Used both as documentation and as the basis for automated test suite generation. Backed by a Rust command module and linked to the test runner.",
+      "description": "Experimental sandbox for testing and evolving personas. Provides version-aware model-versus-model arena comparisons, rating tables, activation/rollback controls, and headless evolution via Improve/Breed/Evolve flows that delegate to the companion.",
       "entry_points": [
-        "src/features/agents/sub_use_cases/UseCasesTab.tsx",
-        "src-tauri/src/commands/core/use_cases.rs"
+        "src/features/agents/sub_lab/LabTab.tsx",
+        "src/api/agents/evolution.ts"
       ],
       "file_paths": [
-        "src/features/agents/sub_use_cases/UseCasesTab.tsx",
-        "src/features/agents/sub_use_cases/components/UseCaseCard.tsx",
-        "src/features/agents/sub_use_cases/components/UseCaseEditor.tsx",
-        "src-tauri/src/commands/core/use_cases.rs",
-        "src/api/agents/useCases.ts",
-        "src/stores/slices/agents/personaSlice.ts"
+        "src/features/agents/sub_lab/LabTab.tsx",
+        "src/features/agents/sub_lab/components/LabVersionRatingTable.tsx",
+        "src/features/agents/sub_lab/components/LabArenaView.tsx",
+        "src/features/agents/sub_lab/hooks/useLabVersions.ts",
+        "src/api/agents/evolution.ts",
+        "src/api/agents/tests.ts",
+        "src/api/agents/testSuites.ts",
+        "src/api/agents/outputAssertions.ts",
+        "src-tauri/src/commands/core/lab.rs",
+        "src-tauri/src/db/models/evolution.rs",
+        "src-tauri/src/db/models/test_run.rs"
       ],
       "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "a9f69b0e-bcdd-40ee-a08f-65bf13a3301f",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "35e69ee8-6acc-46b8-8063-51aadf49f790",
       "keywords": [
-        "use-case",
-        "scenario",
-        "input",
-        "output",
-        "assertion",
-        "test-case",
-        "acceptance-criteria"
+        "lab",
+        "arena",
+        "evolution",
+        "version",
+        "rating",
+        "test",
+        "activate",
+        "rollback",
+        "breed",
+        "improve"
       ],
-      "name": "agent-use-cases",
+      "name": "agent-lab",
       "tech_stack": [
         "React",
         "TypeScript",
@@ -290,306 +209,258 @@
       ]
     },
     {
-      "api_surface": "invoke('get_healing_events'), invoke('trigger_manual_heal')",
-      "business_feature": "AI Self-Healing",
-      "category": "api",
-      "cross_refs": [
-        "execution-runner",
-        "incident-management",
-        "event-tracking",
-        "llm-provider"
-      ],
-      "db_tables": [
-        "healing_events",
-        "healing_strategies"
-      ],
-      "description": "Automated error recovery system that detects execution failures, analyzes root causes via LLM, generates fix strategies, and optionally retries. Tracks healing attempts on a timeline and escalates to incidents when healing fails repeatedly. Integrates with the alert system for notifications.",
-      "entry_points": [
-        "src-tauri/src/engine/ai_healing.rs",
-        "src-tauri/src/commands/execution/healing.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/healing.rs",
-        "src-tauri/src/engine/ai_healing.rs",
-        "src-tauri/src/engine/healing_orchestrator.rs",
-        "src-tauri/src/engine/healing_timeline.rs",
-        "src-tauri/src/engine/auto_rollback.rs",
-        "src-tauri/src/commands/execution/healing.rs",
-        "src/api/overview/healing.ts",
-        "src/stores/slices/overview/healingSlice.ts",
-        "src/features/overview/sub_health/HealingView.tsx"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "c34a2a89-5b98-4e45-b4c1-c469f0bf24c3",
-      "keywords": [
-        "healing",
-        "recovery",
-        "rollback",
-        "auto-fix",
-        "error-analysis",
-        "retry",
-        "resilience",
-        "timeline"
-      ],
-      "name": "ai-healing",
-      "tech_stack": [
-        "Rust",
-        "Tokio"
-      ]
-    },
-    {
-      "api_surface": "invoke('get_analytics_summary'), invoke('get_leaderboard')",
-      "business_feature": "Analytics & Leaderboard",
+      "api_surface": "React Router routes, SidebarSection enum",
+      "business_feature": "App Layout & Navigation",
       "category": "ui",
       "cross_refs": [
-        "event-tracking",
-        "execution-runner",
-        "team-kpis",
-        "director-orchestration"
+        "state-management",
+        "i18n-system",
+        "companion-brain",
+        "onboarding-tours"
       ],
-      "db_tables": [
-        "executions",
-        "events",
-        "certifications"
-      ],
-      "description": "Metrics aggregation and visualization layer providing usage analytics, execution statistics, cost breakdowns, and leaderboard rankings across personas. Uses Recharts for charting and connects to both the event store and execution history to derive insights.",
+      "db_tables": [],
+      "description": "Top-level app shell, sidebar navigation, title bar dock (Athena tray), and layout orchestration. Routes between feature pages, manages sidebar section preloading, and hosts the TitleBarDock for companion interactions and fullscreen overlays. Nav analytics (navCatalog, analytics index) track which screens receive usage.",
       "entry_points": [
-        "src/features/overview/sub_analytics/AnalyticsPage.tsx"
+        "src/App.tsx",
+        "src/features/shared/components/layout/AppShell.tsx"
       ],
       "file_paths": [
-        "src/features/overview/sub_analytics/AnalyticsPage.tsx",
-        "src/features/overview/sub_analytics/components/UsageChart.tsx",
-        "src/features/overview/sub_analytics/components/CostBreakdown.tsx",
-        "src/features/overview/sub_leaderboard/LeaderboardPage.tsx",
-        "src/features/overview/sub_certification/CertificationPage.tsx",
-        "src/api/overview/certification.ts",
-        "src/stores/slices/overview/certificationSlice.ts"
+        "src/App.tsx",
+        "src/main.tsx",
+        "src/features/shared/components/layout/AppShell.tsx",
+        "src/features/shared/components/layout/Sidebar.tsx",
+        "src/features/shared/components/layout/TitleBarDock.tsx",
+        "src/features/shared/components/layout/useTitleBarTray.tsx",
+        "src/features/shared/components/layout/FullScreenOverlay.tsx",
+        "src/features/shared/components/layout/sidebar/sections/TeamsSidebarNav.tsx",
+        "src/lib/analytics/navCatalog.ts"
       ],
-      "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "2e1ccbb9-07b9-413a-8f23-d3337d1a8746",
+      "group": "Platform Infrastructure",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "afb4769d-fd01-4925-ae32-dccd71b0cae1",
       "keywords": [
-        "analytics",
-        "metrics",
-        "chart",
-        "leaderboard",
-        "cost",
-        "usage",
-        "ranking",
-        "certification",
-        "statistics"
+        "layout",
+        "sidebar",
+        "navigation",
+        "title-bar",
+        "dock",
+        "routing",
+        "shell",
+        "section-preload",
+        "nav-catalog"
       ],
-      "name": "analytics-dashboard",
+      "name": "app-layout-navigation",
       "tech_stack": [
         "React",
         "TypeScript",
-        "Recharts"
+        "React Router",
+        "Tailwind CSS"
       ]
     },
     {
-      "api_surface": "invoke('generate_image'), invoke('process_video'), invoke('transcribe_audio')",
-      "business_feature": "AI Media Generation",
+      "api_surface": "invoke('create_render_plan'), invoke('execute_render'), invoke('get_artifacts')",
+      "business_feature": "Artist Media Plugin",
       "category": "ui",
       "cross_refs": [
-        "agent-glyph",
-        "research-lab"
+        "execution-runner",
+        "credential-vault"
       ],
       "db_tables": [
-        "artist_assets"
+        "render_plans",
+        "artifacts"
       ],
-      "description": "Image and media generation plugin integrating Leonardo AI and Higgsfield for visual asset creation. Supports background removal, Gemini-powered image analysis, SVG generation, and video/audio processing via ffmpeg and transcription. Generated assets are stored locally and linked to personas or knowledge entries.",
+      "description": "Media generation plugin (Artist) that lets agents produce images, audio, and video using external AI APIs (Leonardo, Higgsfield). Covers the render-plan pipeline, artifact storage, and the in-app media studio UI.",
       "entry_points": [
         "src/features/plugins/artist/ArtistPage.tsx",
-        "src-tauri/src/commands/artist/persistence.rs"
+        "src-tauri/src/commands/artist/render.rs"
       ],
       "file_paths": [
         "src/features/plugins/artist/ArtistPage.tsx",
-        "src/features/plugins/artist/components/ImageGenerator.tsx",
-        "src/features/plugins/artist/components/VideoProcessor.tsx",
-        "src-tauri/src/commands/artist/ffmpeg.rs",
-        "src-tauri/src/commands/artist/transcribe.rs",
-        "src-tauri/src/commands/artist/persistence.rs",
-        "src/api/artist/index.ts",
-        "src/stores/slices/system/artistSlice.ts"
+        "src/features/plugins/artist/components/MediaStudio.tsx",
+        "src/features/plugins/artist/components/RenderPlanViewer.tsx",
+        "src/features/plugins/artist/hooks/useArtistRender.ts",
+        "src-tauri/src/commands/artist/render.rs",
+        "src-tauri/src/commands/artist/artifacts.rs",
+        "src-tauri/src/db/models/render_plan.rs",
+        "docs/features/plugins/artist/README.md"
       ],
       "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "e3134a5c-de6d-4212-b721-5ea4ec74923a",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "f57cb744-a770-4658-b129-eb7e71358753",
       "keywords": [
         "artist",
-        "image-generation",
-        "leonardo",
-        "ffmpeg",
-        "transcription",
-        "SVG",
-        "video",
         "media",
-        "visual"
+        "image",
+        "audio",
+        "video",
+        "render-plan",
+        "leonardo",
+        "higgsfield",
+        "artifact"
       ],
-      "name": "artist-generation",
+      "name": "artist-plugin",
       "tech_stack": [
         "Rust",
-        "Leonardo AI",
-        "ffmpeg",
-        "React"
+        "React",
+        "TypeScript",
+        "Leonardo AI"
       ]
     },
     {
-      "api_surface": "invoke('start_build_session'), invoke('send_build_message'), invoke('promote_build_draft'), invoke('trigger_build_test')",
-      "business_feature": "Interactive Agent Builder",
-      "category": "api",
+      "api_surface": "HTTP :17320 /eval, /click-testid, /bridge-exec, /screenshot, /query, /state, /find-text",
+      "business_feature": "Build & Test Tooling",
+      "category": "config",
       "cross_refs": [
-        "template-system",
-        "agent-editor",
-        "execution-runner",
-        "agent-testing"
-      ],
-      "db_tables": [
-        "build_sessions",
-        "build_session_events"
-      ],
-      "description": "Interactive LLM-driven design sessions where a user converses with an AI to build or refine an agent template step-by-step. The engine parses AI responses into structured build actions, applies quality gates, and supports fix-pass loops for failing validations. Distinct from runtime execution — this is design-time.",
-      "entry_points": [
-        "src-tauri/src/engine/build_session/mod.rs",
-        "src-tauri/src/commands/design/build_sessions.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/build_session/mod.rs",
-        "src-tauri/src/engine/build_session/runner.rs",
-        "src-tauri/src/engine/build_session/parser.rs",
-        "src-tauri/src/engine/build_session/session_prompt.rs",
-        "src-tauri/src/engine/build_session/fix_pass.rs",
-        "src-tauri/src/engine/build_session/gates.rs",
-        "src-tauri/src/engine/build_session/templates.rs",
-        "src-tauri/src/engine/build_session/events.rs",
-        "src-tauri/src/engine/build_session/oneshot.rs",
-        "src-tauri/src/commands/design/build_sessions.rs",
-        "src-tauri/src/commands/design/build_simulate.rs",
-        "src/api/agents/buildSession.ts",
-        "src/lib/buildSessionBootstrap.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "491dd71d-af40-43b9-aae0-b297ca3468e5",
-      "keywords": [
-        "build-session",
-        "design-time",
-        "glyph",
-        "template",
-        "interactive",
-        "parser",
-        "quality-gate",
-        "fix-pass",
-        "draft"
-      ],
-      "name": "build-sessions",
-      "tech_stack": [
-        "Rust",
-        "Tokio"
-      ]
-    },
-    {
-      "api_surface": "invoke('sync_workspace'), invoke('create_snapshot'), invoke('restore_snapshot'), invoke('list_remote_commands')",
-      "business_feature": "Cloud Sync & Backup",
-      "category": "api",
-      "cross_refs": [
-        "p2p-network",
-        "credential-vault",
-        "settings-system",
-        "manual-review-queue"
+        "tauri-ipc-bridge",
+        "i18n-system",
+        "onboarding-tours"
       ],
       "db_tables": [],
-      "description": "Cloud backup, workspace synchronization, and remote command infrastructure. Supports encrypted workspace snapshots, conflict-merge resolution, Supabase-backed cloud storage, and remote approval workflows. Enables cross-device persona access and out-of-app management.",
+      "description": "Build pipeline, code-generation scripts, tier-validation, test harness, and CI gates. Covers Vite config, Tauri build variants, codegen orchestration, the guide/tour UI test harness at port 17320, custom ESLint rules, and the bug-hunt harness documentation under docs/harness/.",
       "entry_points": [
-        "src-tauri/src/engine/workspace_sync/mod.rs",
-        "src-tauri/src/commands/infrastructure/cloud.rs"
+        "vite.config.ts",
+        "scripts/run-codegen.mjs",
+        "src-tauri/src/local_http/test_server.rs"
       ],
       "file_paths": [
-        "src-tauri/src/commands/infrastructure/cloud.rs",
-        "src-tauri/src/commands/infrastructure/cloud_sync.rs",
-        "src-tauri/src/engine/workspace_sync/mod.rs",
-        "src-tauri/src/engine/workspace_sync/snapshot.rs",
-        "src-tauri/src/engine/workspace_sync/crypto.rs",
-        "src-tauri/src/engine/workspace_sync/merge.rs",
-        "src-tauri/src/commands/infrastructure/bridge_manifest.rs",
-        "src/api/system/cloud.ts",
-        "src/api/cloudSync.ts",
-        "src/api/remoteCommands.ts",
-        "src/stores/slices/system/cloudSlice.ts"
+        "vite.config.ts",
+        "scripts/run-codegen.mjs",
+        "scripts/check-build-cache.mjs",
+        "scripts/ensure-ort-cache.mjs",
+        "scripts/generate-command-names.mjs",
+        "scripts/check-tiers.mjs",
+        "scripts/docs/check-doc-sync.mjs",
+        "eslint-rules/",
+        "src-tauri/src/local_http/test_server.rs",
+        "docs/development/build.md",
+        "tests/",
+        ".lefthook/",
+        "docs/harness/bug-hunt-2026-06-16/INDEX.md",
+        "docs/harness/bug-hunt-2026-06-16/manifest.json",
+        "docs/harness/bug-hunt-2026-06-16/findings.json"
       ],
       "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "6ff2fff5-92ab-40c5-943e-fba490b8291b",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "9ccf4676-0c8c-461c-b0d2-2e5bde2a0dc0",
       "keywords": [
-        "cloud",
-        "sync",
-        "snapshot",
-        "backup",
-        "Supabase",
-        "workspace",
-        "encrypted",
-        "remote-command",
-        "merge"
+        "build",
+        "codegen",
+        "vite",
+        "tauri",
+        "ci",
+        "test-harness",
+        "eslint-rules",
+        "tier-validation",
+        "17320",
+        "guide-test"
       ],
-      "name": "cloud-sync",
+      "name": "build-test-tooling",
       "tech_stack": [
+        "Vite",
         "Rust",
-        "Supabase",
-        "AES-256-GCM"
+        "Axum",
+        "Node.js",
+        "Vitest",
+        "Playwright"
       ]
     },
     {
-      "api_surface": "invoke('companion_chat'), invoke('get_companion_brain'), invoke('send_proactive_nudge')",
-      "business_feature": "AI Companion (Athena)",
+      "api_surface": "invoke('deploy_persona'), invoke('get_cloud_instances'), invoke('teardown_instance')",
+      "business_feature": "Cloud Deployment",
       "category": "ui",
       "cross_refs": [
-        "fleet-terminal",
-        "mcp-gateway",
-        "team-knowledge",
-        "director-orchestration"
+        "persona-management",
+        "credential-vault",
+        "execution-runner"
       ],
       "db_tables": [
-        "companion_conversations",
-        "companion_memory",
-        "companion_decisions"
+        "cloud_deployments",
+        "deployment_logs"
       ],
-      "description": "AI companion assistant (Athena) embedded in the app — supports conversational interaction, proactive suggestions, decision support, project tracking, fleet bridge integration, browser testing, and voice input. Maintains a long-term brain memory and can be triggered by observability events.",
+      "description": "Cloud platform integration for deploying personas to managed cloud infrastructure. Handles cloud authentication, instance lifecycle (deploy, redeploy, teardown), tier-based quota enforcement, and the cloud management UI.",
       "entry_points": [
-        "src/features/plugins/companion/CompanionPanel.tsx",
-        "src-tauri/src/commands/companion/chat.rs"
+        "src/features/cloud/CloudPage.tsx",
+        "src-tauri/src/cloud/client.rs"
       ],
       "file_paths": [
-        "src/features/plugins/companion/CompanionPanel.tsx",
-        "src/features/plugins/companion/components/CompanionChat.tsx",
-        "src/features/plugins/companion/components/CompanionBrain.tsx",
-        "src-tauri/src/commands/companion/chat.rs",
-        "src-tauri/src/commands/companion/brain.rs",
-        "src-tauri/src/commands/companion/decisions.rs",
-        "src-tauri/src/commands/companion/proactive.rs",
-        "src-tauri/src/commands/companion/project_tracking.rs",
-        "src-tauri/src/commands/companion/fleet_bridge.rs",
-        "src-tauri/src/commands/companion/mcp_bridge.rs",
-        "src/api/companion.ts",
-        "src/api/companion/projectTracking.ts",
-        "src/stores/slices/system/companionPluginSlice.ts",
-        "src/stores/slices/agents/backgroundChatSlice.ts"
+        "src/features/cloud/CloudPage.tsx",
+        "src/features/cloud/components/DeploymentCard.tsx",
+        "src/features/cloud/hooks/useCloudDeployment.ts",
+        "src/api/system/cloud.ts",
+        "src-tauri/src/cloud/client.rs",
+        "src-tauri/src/cloud/config.rs",
+        "src-tauri/src/commands/infrastructure/cloud.rs",
+        "docs/features/deployment.md"
       ],
       "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "b137102b-e137-4339-99a5-f5aadb1887ef",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "5550bf2c-9f84-4c8d-9482-a27e40fb6cfe",
       "keywords": [
+        "cloud",
+        "deploy",
+        "instance",
+        "redeploy",
+        "teardown",
+        "tier",
+        "quota",
+        "managed-cloud"
+      ],
+      "name": "cloud-deployment",
+      "tech_stack": [
+        "Rust",
+        "Reqwest",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('queue_companion_job'), invoke('get_companion_replies'), Tauri event 'companion_reply'",
+      "business_feature": "Athena Companion Brain",
+      "category": "api",
+      "cross_refs": [
+        "goals-kpi",
+        "director-meta-persona",
+        "knowledge-base",
+        "memory-messages"
+      ],
+      "db_tables": [
+        "companion_jobs",
+        "companion_notes",
+        "brain_memories"
+      ],
+      "description": "Athena — the AI companion that lives across the app. Handles proactive nudges, interactive replies, explain-in-cockpit, autonomous goal creation, and long-term brain memory. Runs as the Director's evaluator and surfaces insights through the CompanionPanel. The brain module includes vector-based retrieval with a MAX_VECTOR_DISTANCE floor and a dedicated doctrine lane to prevent off-topic recall padding.",
+      "entry_points": [
+        "src/features/shared/components/layout/TitleBarDock.tsx",
+        "src-tauri/src/companion/brain/doctrine.rs"
+      ],
+      "file_paths": [
+        "src/features/shared/components/layout/TitleBarDock.tsx",
+        "src/features/shared/components/layout/useTitleBarTray.tsx",
+        "src/features/shared/components/layout/FullScreenOverlay.tsx",
+        "src-tauri/src/companion/brain/graph.rs",
+        "src-tauri/src/companion/brain/episodic.rs",
+        "src-tauri/src/companion/brain/embeddings.rs",
+        "src-tauri/src/companion/brain/doctrine.rs",
+        "src-tauri/src/companion/brain/retrieval.rs",
+        "src-tauri/src/commands/companion/job.rs",
+        "src-tauri/src/commands/companion/plugin.rs",
+        "docs/concepts/README.md"
+      ],
+      "group": "Team Collaboration",
+      "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+      "id": "8d9dbe2b-d9d3-4829-b241-c3ac78bbba89",
+      "keywords": [
+        "athena",
         "companion",
-        "Athena",
-        "chat",
         "brain",
         "proactive",
-        "decision",
-        "project-tracking",
-        "fleet-bridge",
-        "voice"
+        "nudge",
+        "doctrine",
+        "interactive-reply",
+        "cockpit",
+        "autopilot"
       ],
-      "name": "companion-ai",
+      "name": "companion-brain",
       "tech_stack": [
         "Rust",
         "React",
@@ -597,180 +468,1449 @@
       ]
     },
     {
-      "api_surface": "invoke('start_oauth'), invoke('check_connector_readiness'), invoke('capture_cli_credential')",
-      "business_feature": "Connector Authentication",
+      "api_surface": "invoke('forage_credentials'), invoke('get_credential_suggestions')",
+      "business_feature": "Credential Negotiator",
       "category": "api",
       "cross_refs": [
         "credential-vault",
-        "mcp-gateway",
-        "workflow-design"
+        "agent-connectors",
+        "oauth-gateway"
       ],
       "db_tables": [
-        "connectors",
-        "oauth_tokens",
-        "credential_bindings"
+        "credential_hints"
       ],
-      "description": "OAuth2 flows, connector readiness evaluation, auto-discovery of available desktop credentials, and desktop bridge integrations (Keychain/Windows Credential Store). Supports CLI credential capture, credential foraging, and schema-proposal-based inference of required credentials from a persona's tool usage.",
+      "description": "Auto-discovery and negotiation layer for credentials — scans the environment (browser profiles, OS credential stores, environment variables) to suggest matching credentials for a connector, reducing manual setup friction.",
       "entry_points": [
-        "src-tauri/src/commands/credentials/connectors.rs",
-        "src-tauri/src/engine/oauth_refresh.rs"
+        "src/api/vault/negotiator.ts",
+        "src-tauri/src/commands/credentials/foraging.rs"
       ],
       "file_paths": [
-        "src-tauri/src/commands/credentials/connectors.rs",
-        "src-tauri/src/commands/credentials/oauth.rs",
-        "src-tauri/src/engine/oauth_refresh.rs",
-        "src-tauri/src/commands/credentials/cli_capture.rs",
-        "src-tauri/src/commands/credentials/auto_cred_browser.rs",
+        "src/api/vault/negotiator.ts",
+        "src/api/vault/autoCredBrowser.ts",
+        "src/api/vault/foraging.ts",
         "src-tauri/src/commands/credentials/foraging.rs",
-        "src-tauri/src/commands/credentials/schema_proposal.rs",
-        "src-tauri/src/commands/credentials/credential_design.rs",
-        "src-tauri/src/commands/design/connector_readiness.rs",
-        "src/api/auth/connectors.ts",
-        "src/api/auth/cliCapture.ts",
-        "src/api/auth/authDetect.ts",
-        "src/stores/slices/vault/automationSlice.ts"
+        "src/features/vault/components/AutoDetectPanel.tsx"
       ],
       "group": "Security & Credentials",
-      "group_id": "2c7a6cfb-6bcb-4d6e-ad45-17201e668dbe",
-      "id": "a59a68c9-059f-4242-89fe-b1b2165afe83",
+      "group_id": "0240e2ac-2a14-49a8-8795-a80bbddae535",
+      "id": "68491496-7925-479d-8e2f-566964b6681f",
       "keywords": [
-        "OAuth",
-        "connector",
-        "auth",
-        "readiness",
-        "CLI-capture",
+        "negotiator",
+        "auto-discover",
         "foraging",
-        "desktop-bridge",
-        "schema-inference"
+        "credential-detect",
+        "browser-profile",
+        "env-var",
+        "suggestion"
       ],
-      "name": "connector-auth",
+      "name": "credential-negotiator",
       "tech_stack": [
         "Rust",
-        "OAuth2"
+        "React",
+        "TypeScript"
       ]
     },
     {
-      "api_surface": "invoke('create_credential'), invoke('get_credential'), invoke('rotate_credential'), invoke('list_catalog')",
+      "api_surface": "invoke('store_credential'), invoke('get_credential'), invoke('delete_credential')",
       "business_feature": "Credential Vault",
-      "category": "ui",
+      "category": "api",
       "cross_refs": [
-        "connector-auth",
-        "mcp-gateway",
-        "execution-runner"
+        "agent-connectors",
+        "oauth-gateway",
+        "credential-negotiator"
       ],
       "db_tables": [
         "credentials",
-        "credential_catalog",
-        "database_connections"
+        "credential_bindings",
+        "vault_audit_log"
       ],
-      "description": "AES-256-GCM encrypted credential vault for storing API keys, tokens, and secrets. Provides CRUD for credentials, catalog browsing, dependency tracking, and database connection management. The Rust layer handles encryption/decryption; the frontend vault section exposes a catalog-based discovery UI.",
+      "description": "Encrypted credential storage with AES-256-GCM. Manages secret creation, retrieval, OS keyring integration, and the vault catalog UI. All connector credentials flow through the vault; bindings are validated against connector requirements before execution.",
       "entry_points": [
-        "src/features/vault/sub_catalog/CatalogPage.tsx",
-        "src-tauri/src/commands/credentials/crud.rs"
+        "src/features/vault/VaultPage.tsx",
+        "src-tauri/src/commands/credentials/vault.rs",
+        "src-tauri/src/engine/crypto.rs"
       ],
       "file_paths": [
-        "src/features/vault/sub_credentials/CredentialsPage.tsx",
-        "src/features/vault/sub_catalog/CatalogPage.tsx",
-        "src/features/vault/sub_databases/DatabasesPage.tsx",
-        "src/features/vault/sub_dependencies/DependenciesView.tsx",
-        "src-tauri/src/commands/credentials/crud.rs",
-        "src-tauri/src/commands/credentials/shared.rs",
-        "src/api/auth/connectors.ts",
-        "src/api/auth/externalApiKeys.ts",
-        "src/stores/slices/vault/credentialSlice.ts",
-        "src/stores/slices/vault/catalogPrefsSlice.ts",
-        "src/stores/slices/vault/rotationSlice.ts",
-        "src/stores/slices/vault/databaseSlice.ts"
+        "src/features/vault/VaultPage.tsx",
+        "src/features/vault/components/CredentialCard.tsx",
+        "src/features/vault/components/AddCredentialModal.tsx",
+        "src/features/vault/hooks/useVault.ts",
+        "src-tauri/src/commands/credentials/vault.rs",
+        "src-tauri/src/engine/crypto.rs",
+        "src-tauri/src/db/models/credential.rs",
+        "src-tauri/src/db/repos/credentials.rs",
+        "src/api/vault/foraging.ts",
+        "docs/features/connections/README.md"
       ],
       "group": "Security & Credentials",
-      "group_id": "2c7a6cfb-6bcb-4d6e-ad45-17201e668dbe",
-      "id": "c305601e-2cca-4804-8fcb-7110c926cbeb",
+      "group_id": "0240e2ac-2a14-49a8-8795-a80bbddae535",
+      "id": "6d918431-a5b5-4356-9f3f-d575e32cd896",
       "keywords": [
         "vault",
         "credential",
         "secret",
+        "aes-gcm",
         "encryption",
-        "AES-256-GCM",
-        "catalog",
-        "API-key",
-        "rotation",
-        "database"
+        "keyring",
+        "binding",
+        "secure-storage"
       ],
       "name": "credential-vault",
       "tech_stack": [
         "Rust",
-        "AES-256-GCM",
-        "React"
+        "aes-gcm",
+        "keyring",
+        "React",
+        "TypeScript"
       ]
     },
     {
-      "api_surface": null,
-      "business_feature": "Database Persistence",
+      "api_surface": "invoke('run_nl_query'), invoke('propose_schema'), invoke('execute_sql')",
+      "business_feature": "Database Connector",
+      "category": "ui",
+      "cross_refs": [
+        "credential-vault",
+        "knowledge-base",
+        "agent-connectors"
+      ],
+      "db_tables": [
+        "database_connections",
+        "nl_query_history"
+      ],
+      "description": "Natural-language query interface for SQL databases attached as connectors. Translates plain-English questions into SQL via LLM, proposes schema modifications, and supports vector-augmented queries. Part of the vault's database sub-feature.",
+      "entry_points": [
+        "src/features/vault/sub_database/DatabaseQueryView.tsx",
+        "src/api/vault/database/nlQuery.ts"
+      ],
+      "file_paths": [
+        "src/api/vault/database/nlQuery.ts",
+        "src/api/vault/database/schemaProposal.ts",
+        "src/api/vault/database/vectorKb.ts",
+        "src/features/vault/sub_database/DatabaseQueryView.tsx",
+        "src/features/vault/sub_database/components/SchemaProposalPanel.tsx",
+        "src-tauri/src/commands/credentials/database.rs"
+      ],
+      "group": "Plugin Ecosystem",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "91ff5d31-19da-44a8-8b86-50fedde71eed",
+      "keywords": [
+        "database",
+        "nl-query",
+        "sql",
+        "schema-proposal",
+        "vector",
+        "natural-language",
+        "connector"
+      ],
+      "name": "database-connector",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript",
+        "SQLite"
+      ]
+    },
+    {
+      "api_surface": "Internal Rust repository trait pattern",
+      "business_feature": "Database Layer",
       "category": "data",
       "cross_refs": [
         "execution-runner",
         "credential-vault",
-        "event-tracking",
         "persona-management"
       ],
       "db_tables": [
-        "personas",
-        "executions",
-        "credentials",
-        "events",
-        "teams",
-        "recipes",
-        "templates",
-        "schedules"
+        "*"
       ],
-      "description": "SQLite database schema, migration pipeline, and repository pattern for all persistent data. Uses R2D2 connection pooling and Rusqlite. All schema changes go through versioned migrations; the repository modules expose typed query functions consumed by command handlers.",
+      "description": "SQLite data persistence layer with r2d2 connection pooling, repository pattern, and versioned migrations. All app data (personas, executions, credentials, events) flows through this layer. Includes schema migration runner and query builders.",
       "entry_points": [
-        "src-tauri/src/db/mod.rs",
+        "src-tauri/src/db/connection.rs",
         "src-tauri/src/db/migrations.rs"
       ],
       "file_paths": [
-        "src-tauri/src/db/mod.rs",
+        "src-tauri/src/db/connection.rs",
         "src-tauri/src/db/migrations.rs",
         "src-tauri/src/db/schema.rs",
-        "src-tauri/src/db/repositories/personas.rs",
-        "src-tauri/src/db/repositories/executions.rs",
-        "src-tauri/src/db/repositories/credentials.rs",
-        "src-tauri/src/db/repositories/events.rs",
-        "src-tauri/src/engine/db_query.rs"
+        "src-tauri/src/db/repos/personas.rs",
+        "src-tauri/src/db/repos/executions.rs",
+        "src-tauri/src/db/repos/credentials.rs",
+        "src-tauri/src/db/repos/triggers.rs",
+        "src-tauri/src/db/repos/schedules.rs",
+        "src-tauri/src/db/repos/resources.rs"
       ],
       "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "b1d85f3a-52ec-4af2-922b-b8e9fb812669",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "e52f1eec-2182-4a6e-b9b0-1dbf7e3822c7",
       "keywords": [
-        "SQLite",
-        "migration",
-        "schema",
+        "sqlite",
+        "migrations",
         "repository",
-        "R2D2",
-        "rusqlite",
-        "database",
-        "persistence"
+        "r2d2",
+        "schema",
+        "persistence",
+        "connection-pool",
+        "data-layer"
       ],
       "name": "database-layer",
       "tech_stack": [
         "Rust",
-        "SQLite",
-        "R2D2",
-        "Rusqlite"
+        "rusqlite",
+        "r2d2",
+        "SQLite"
       ]
     },
     {
       "api_surface": null,
-      "business_feature": "Shared Design System",
-      "category": "ui",
+      "business_feature": "Dev Inspector",
+      "category": "lib",
       "cross_refs": [
-        "i18n-system"
+        "build-test-tooling",
+        "app-layout-navigation"
       ],
       "db_tables": [],
-      "description": "Shared component library of 173+ reusable UI primitives organized by category (buttons, forms, modals, display, feedback, layout). Maintains a machine-generated CATALOG.md. Components enforce design tokens (typo-*, rounded-*, shadow-elevation-*) and semantic color via ESLint rules.",
+      "description": "Developer-only click-to-inspect overlay (arm with semicolon then 'i', or Ctrl+Shift+L) that resolves the clicked DOM element to its React source file and line number, then copies a Claude-Code-clickable `src/…:LINE` path to the clipboard. Works by having a Babel AST transform stamp every JSX host element with a `data-loc` attribute at build time; devLocate.ts walks the ancestor chain at click time and picks the call-site file over shared-library internals. Only active in `tauri:dev:inspect` mode.",
+      "entry_points": [
+        "src/lib/dev/DevInspector.tsx",
+        "scripts/babel/dev-source-loc-vite-plugin.mjs"
+      ],
+      "file_paths": [
+        "src/lib/dev/DevInspector.tsx",
+        "src/lib/dev/devInspectorUi.tsx",
+        "src/lib/dev/devLocate.ts",
+        "src/lib/dev/__tests__/devLocate.test.ts",
+        "scripts/babel/dev-source-loc-vite-plugin.mjs",
+        "scripts/babel/inject-source-loc.mjs",
+        "docs/development/dev-inspector.md"
+      ],
+      "group": null,
+      "group_id": null,
+      "id": "a36689ac-449f-41e3-8681-cc5651d4ba0e",
+      "keywords": [
+        "dev-inspector",
+        "source-location",
+        "data-loc",
+        "babel",
+        "click-to-copy",
+        "inspect",
+        "devtools",
+        "tauri-dev"
+      ],
+      "name": "dev-inspector",
+      "tech_stack": [
+        "TypeScript",
+        "React",
+        "Babel",
+        "Vite"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_director_verdicts'), invoke('get_director_brain')",
+      "business_feature": "Director Meta-Persona",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "companion-brain",
+        "overview-analytics"
+      ],
+      "db_tables": [
+        "director_verdicts",
+        "director_brain_notes"
+      ],
+      "description": "The Director is a special meta-persona that evaluates other agents' runs and produces structured verdicts (DIRECTOR_VERDICT, DIRECTOR_SCORE 0-5). Runs via the standard runner; its Brain long-term memory, business-value rollup, and management UI are director-specific.",
+      "entry_points": [
+        "src-tauri/src/engine/director.rs",
+        "src/features/overview/sub_observability/DirectorPanel.tsx"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/director.rs",
+        "src-tauri/src/db/models/director_verdict.rs",
+        "src/features/overview/sub_observability/DirectorPanel.tsx",
+        "src/features/overview/sub_observability/DirectorModal.tsx",
+        "src/features/agents/sub_editor/components/DirectorBadge.tsx"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "6bbef197-e9ba-4642-9aba-1f3588820969",
+      "keywords": [
+        "director",
+        "meta-persona",
+        "verdict",
+        "score",
+        "brain",
+        "value-rollup",
+        "evaluator",
+        "starred"
+      ],
+      "name": "director-meta-persona",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "toastCatch(promise), silentCatch(fn), resolveError(rawError)",
+      "business_feature": "Error Analytics",
+      "category": "lib",
+      "cross_refs": [
+        "i18n-system",
+        "state-management"
+      ],
+      "db_tables": [
+        "frontend_crashes"
+      ],
+      "description": "Error handling infrastructure: Sentry integration, the error registry that maps raw errors to i18n-friendly messages, toastCatch/silentCatch helpers, and frontend crash reporting to the Rust backend.",
+      "entry_points": [
+        "src/lib/silentCatch.ts",
+        "src/lib/errors/errorRegistry.ts"
+      ],
+      "file_paths": [
+        "src/lib/silentCatch.ts",
+        "src/lib/errors/errorRegistry.ts",
+        "src/i18n/useTranslatedError.ts",
+        "src-tauri/src/commands/core/crash_report.rs",
+        "src-tauri/src/db/repos/core/frontend_crashes.rs"
+      ],
+      "group": "Platform Infrastructure",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "2c75fc87-53f3-47bb-a9e8-25e77f222a81",
+      "keywords": [
+        "sentry",
+        "error-registry",
+        "toast",
+        "crash",
+        "silent-catch",
+        "error-handling",
+        "i18n-error",
+        "breadcrumb"
+      ],
+      "name": "error-analytics",
+      "tech_stack": [
+        "TypeScript",
+        "Sentry",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "invoke('create_chain'), invoke('execute_chain'), invoke('get_chain_status')",
+      "business_feature": "Execution Chaining",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "recipe-engine",
+        "workflow-automation"
+      ],
+      "db_tables": [
+        "chains",
+        "chain_steps",
+        "chain_runs"
+      ],
+      "description": "Enables sequential and parallel chaining of persona executions — one execution's output feeds the next. Manages chain definitions, runtime state, failure policies, and the visual chain builder in the UI.",
+      "entry_points": [
+        "src-tauri/src/engine/chain.rs",
+        "src/features/agents/sub_executions/ChainBuilder.tsx"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/chain.rs",
+        "src-tauri/src/engine/chain_types.rs",
+        "src-tauri/src/commands/execution/chain.rs",
+        "src-tauri/src/db/models/chain.rs",
+        "src/features/agents/sub_executions/ChainBuilder.tsx",
+        "src/features/agents/sub_executions/hooks/useChainExecution.ts"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "803fabbc-a088-403d-948f-2f71531e1086",
+      "keywords": [
+        "chain",
+        "sequential",
+        "parallel",
+        "pipeline",
+        "output-feed",
+        "composition",
+        "chaining"
+      ],
+      "name": "execution-chaining",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "Tauri event 'execution_update', invoke('get_execution_history')",
+      "business_feature": "Execution Monitoring",
+      "category": "ui",
+      "cross_refs": [
+        "execution-runner",
+        "overview-analytics",
+        "sla-tracking"
+      ],
+      "db_tables": [
+        "executions",
+        "execution_stages"
+      ],
+      "description": "Frontend observability for live and historical execution runs — real-time status updates via WebSocket/Tauri events, execution timeline, stage drill-down, and replay of past runs. Powers the executions tab inside the agent editor.",
+      "entry_points": [
+        "src/features/agents/sub_executions/ExecutionsTab.tsx",
+        "src/features/overview/sub_realtime/RealtimeView.tsx"
+      ],
+      "file_paths": [
+        "src/features/agents/sub_executions/ExecutionsTab.tsx",
+        "src/features/agents/sub_executions/ExecutionDetailView.tsx",
+        "src/features/agents/sub_executions/components/ExecutionRow.tsx",
+        "src/features/agents/sub_executions/components/StageTimeline.tsx",
+        "src/features/agents/sub_executions/hooks/useExecutionStream.ts",
+        "src/features/overview/sub_observability/ObservabilityPage.tsx",
+        "src/features/overview/sub_realtime/RealtimeView.tsx"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "c6f6c5b1-64c7-41fd-9bda-b0aea9e4135e",
+      "keywords": [
+        "execution",
+        "monitoring",
+        "realtime",
+        "stream",
+        "stage",
+        "timeline",
+        "replay",
+        "observability"
+      ],
+      "name": "execution-monitoring",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Tauri Events"
+      ]
+    },
+    {
+      "api_surface": "invoke('execute_persona'), invoke('get_execution'), invoke('cancel_execution')",
+      "business_feature": "Execution Runner",
+      "category": "api",
+      "cross_refs": [
+        "persona-management",
+        "execution-monitoring",
+        "agent-connectors",
+        "execution-chaining"
+      ],
+      "db_tables": [
+        "executions",
+        "execution_stages",
+        "execution_outputs"
+      ],
+      "description": "Core engine that runs a persona against an input: spawns the execution task, manages the stage-by-stage pipeline (prompt → LLM → output → post-processing), and emits real-time progress events. Non-blocking — returns after spawn; callers poll for terminal state.",
+      "entry_points": [
+        "src-tauri/src/engine/execution_engine/engine.rs",
+        "src-tauri/src/commands/execution/execute.rs"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/runner/stage_runner.rs",
+        "src-tauri/src/engine/runner/execution_dispatcher.rs",
+        "src-tauri/src/engine/runner/output_collector.rs",
+        "src-tauri/src/engine/execution_engine/engine.rs",
+        "src-tauri/src/engine/execution_engine/spawn.rs",
+        "src-tauri/src/engine/prompt/prompt_builder.rs",
+        "src-tauri/src/engine/prompt/context_injector.rs",
+        "src-tauri/src/commands/execution/execute.rs",
+        "src-tauri/src/commands/execution/policies.rs",
+        "src-tauri/src/db/models/execution.rs",
+        "src-tauri/src/db/repos/executions.rs",
+        "src/api/agents/genome.ts",
+        "docs/features/execution/README.md"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "412b4036-a68f-4968-b467-ce0fcdc1d5ac",
+      "keywords": [
+        "execution",
+        "runner",
+        "stage",
+        "spawn",
+        "pipeline",
+        "prompt",
+        "output",
+        "terminal-state",
+        "dispatch"
+      ],
+      "name": "execution-runner",
+      "tech_stack": [
+        "Rust",
+        "Tokio",
+        "SQLite"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_fleet_state'), invoke('hibernate_agent'), invoke('bulk_execute')",
+      "business_feature": "Fleet Management",
+      "category": "ui",
+      "cross_refs": [
+        "execution-runner",
+        "execution-monitoring",
+        "persona-management"
+      ],
+      "db_tables": [
+        "executions",
+        "personas"
+      ],
+      "description": "Fleet view for managing multiple agents as a group — bulk operations, per-tile insights, skill drawer, transcript intelligence, hibernate, and remote execution. Surfaces agent skills and cross-run patterns without requiring individual agent navigation.",
+      "entry_points": [
+        "src/features/overview/sub_realtime/FleetView.tsx",
+        "src-tauri/src/commands/execution/fleet.rs"
+      ],
+      "file_paths": [
+        "src/features/overview/sub_realtime/FleetView.tsx",
+        "src/features/overview/sub_realtime/components/FleetTile.tsx",
+        "src/features/overview/sub_realtime/components/SkillDrawer.tsx",
+        "src/features/overview/sub_realtime/hooks/useFleetState.ts",
+        "src-tauri/src/commands/execution/fleet.rs",
+        "docs/features/fleet.md"
+      ],
+      "group": "Automation & Pipelines",
+      "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
+      "id": "93121755-ecec-4feb-86b4-f51adcd2f326",
+      "keywords": [
+        "fleet",
+        "bulk",
+        "group",
+        "skills",
+        "transcript",
+        "hibernate",
+        "remote",
+        "tile",
+        "multi-agent"
+      ],
+      "name": "fleet-management",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "POST personas.ai/api/personas/publish, GET personas.ai/api/personas/<slug>, POST personas.ai/api/presets/publish, POST personas.ai/api/referrals, GET personas.ai/api/referrals?referrer=<code>",
+      "business_feature": "Gallery Sharing & Growth",
+      "category": "api",
+      "cross_refs": [
+        "persona-management",
+        "teams-management",
+        "tauri-ipc-bridge"
+      ],
+      "db_tables": [],
+      "description": "Viral growth loop that lets users publish individual personas to a public web gallery and teams as community presets, then share the resulting link or invite URL. Implements a four-step activation funnel (imported → persona_created → execution_completed → shared) with per-install pseudonymous deduplication, referral attribution via deep-link codes, and a pluggable analytics sink so all conversion events flow through the same telemetry toggle. Backend commands in gallery.rs hit the personas.ai/api REST surface; bindings are ts-rs exported.",
+      "entry_points": [
+        "src-tauri/src/commands/core/gallery.rs",
+        "src/lib/analytics/activation.ts",
+        "src/features/agents/sub_editor/components/ShareAgentButton.tsx"
+      ],
+      "file_paths": [
+        "src-tauri/src/commands/core/gallery.rs",
+        "src/features/agents/sub_editor/components/ShareAgentButton.tsx",
+        "src/features/teams/sub_teamWorkspace/teamStudio/PublishPresetButton.tsx",
+        "src/lib/analytics/activation.ts",
+        "src/lib/analytics/activation.test.ts",
+        "src/lib/analytics/index.ts",
+        "src/lib/bindings/GalleryPublishResult.ts",
+        "src/lib/bindings/PresetPublishResult.ts",
+        "src/lib/bindings/ReferralStats.ts"
+      ],
+      "group": null,
+      "group_id": null,
+      "id": "f189173f-06f6-4725-a559-ee4e7a0f1198",
+      "keywords": [
+        "gallery",
+        "share",
+        "publish",
+        "referral",
+        "activation",
+        "funnel",
+        "virality",
+        "install-id",
+        "deep-link",
+        "k-factor"
+      ],
+      "name": "gallery-sharing-growth",
+      "tech_stack": [
+        "Rust",
+        "TypeScript",
+        "React",
+        "reqwest",
+        "ts-rs"
+      ]
+    },
+    {
+      "api_surface": "invoke('connect_gitlab'), invoke('get_gitlab_events'), invoke('create_gitlab_issue')",
+      "business_feature": "GitLab Integration",
+      "category": "api",
+      "cross_refs": [
+        "trigger-system",
+        "credential-vault",
+        "execution-runner"
+      ],
+      "db_tables": [
+        "gitlab_configs",
+        "gitlab_webhook_events"
+      ],
+      "description": "GitLab integration plugin for triggering persona executions on GitLab events (MRs, pipelines, issues). Manages GitLab credential binding, webhook registration, event parsing, and issue/MR creation from agent outputs.",
+      "entry_points": [
+        "src/features/plugins/gitlab/GitLabPage.tsx",
+        "src-tauri/src/gitlab/client.rs"
+      ],
+      "file_paths": [
+        "src/features/plugins/gitlab/GitLabPage.tsx",
+        "src/features/plugins/gitlab/components/GitLabEventList.tsx",
+        "src/features/plugins/gitlab/hooks/useGitLabConnection.ts",
+        "src/api/system/gitlab.ts",
+        "src-tauri/src/gitlab/client.rs",
+        "src-tauri/src/gitlab/config.rs",
+        "src-tauri/src/gitlab/types.rs",
+        "src-tauri/src/commands/infrastructure/gitlab.rs",
+        "docs/architecture/gitlab-integration.md"
+      ],
+      "group": "Plugin Ecosystem",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "2ec5dd6e-fade-4a13-8c9b-6c74b7019acb",
+      "keywords": [
+        "gitlab",
+        "merge-request",
+        "pipeline",
+        "webhook",
+        "issue",
+        "event",
+        "ci-cd",
+        "integration"
+      ],
+      "name": "gitlab-integration",
+      "tech_stack": [
+        "Rust",
+        "Reqwest",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_goals'), invoke('create_goal'), invoke('evaluate_goal')",
+      "business_feature": "Goals & KPI",
+      "category": "ui",
+      "cross_refs": [
+        "teams-management",
+        "companion-brain",
+        "overview-analytics"
+      ],
+      "db_tables": [
+        "goals",
+        "goal_evaluations"
+      ],
+      "description": "Goal-setting and KPI tracking within teams. Users define goals linked to personas and track acceptance/completion via the GoalAcceptanceOverlay. Athena can create and evaluate goals autonomously; cross-references are visible in the cockpit.",
+      "entry_points": [
+        "src/features/teams/sub_goals/GoalsPage.tsx",
+        "src-tauri/src/commands/core/goals.rs"
+      ],
+      "file_paths": [
+        "src/features/teams/sub_goals/GoalsPage.tsx",
+        "src/features/teams/sub_goals/GoalAcceptanceOverlay.tsx",
+        "src/features/teams/sub_goals/components/GoalCard.tsx",
+        "src/features/teams/sub_goals/hooks/useGoals.ts",
+        "src-tauri/src/commands/core/goals.rs",
+        "src-tauri/src/db/models/goal.rs"
+      ],
+      "group": "Team Collaboration",
+      "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+      "id": "a1489011-1762-4a54-80a3-b233c5dac471",
+      "keywords": [
+        "goal",
+        "kpi",
+        "acceptance",
+        "tracking",
+        "athena",
+        "autopilot",
+        "cross-ref",
+        "cockpit"
+      ],
+      "name": "goals-kpi",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_healing_history'), invoke('trigger_manual_healing')",
+      "business_feature": "Healing Engine",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "overview-analytics",
+        "sla-tracking"
+      ],
+      "db_tables": [
+        "healings",
+        "healing_events"
+      ],
+      "description": "Automatic failure detection and recovery for stalled or failed executions. Classifies failures (transient vs. permanent), applies recovery strategies (retry, skip, escalate), and surfaces healing events to the observability layer.",
+      "entry_points": [
+        "src-tauri/src/engine/healing.rs",
+        "src/api/overview/healing.ts"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/healing.rs",
+        "src-tauri/src/engine/healing_types.rs",
+        "src-tauri/src/commands/communication/healing.rs",
+        "src-tauri/src/db/models/healing.rs",
+        "src/api/overview/healing.ts",
+        "src/features/overview/sub_observability/HealingPanel.tsx"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "b16b09da-91f1-4b6f-93ad-0a9b1c6ccc04",
+      "keywords": [
+        "healing",
+        "recovery",
+        "failure",
+        "retry",
+        "escalate",
+        "circuit-breaker",
+        "resilience",
+        "auto-repair"
+      ],
+      "name": "healing-engine",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('run_healthchecks'), invoke('get_connector_health')",
+      "business_feature": "Health Checks",
+      "category": "api",
+      "cross_refs": [
+        "agent-connectors",
+        "overview-analytics",
+        "healing-engine"
+      ],
+      "db_tables": [
+        "health_check_results"
+      ],
+      "description": "Periodic health-check probes for external service endpoints attached to personas. Detects degraded connectors before they affect live executions; surfaces connector status badges across the UI.",
+      "entry_points": [
+        "src-tauri/src/engine/healthcheck_runner.rs",
+        "src/api/overview/healthcheckApi.ts"
+      ],
+      "file_paths": [
+        "src/api/overview/healthcheckApi.ts",
+        "src-tauri/src/commands/infrastructure/health_checks.rs",
+        "src-tauri/src/engine/healthcheck_runner.rs",
+        "src/features/overview/sub_observability/HealthStatusPanel.tsx"
+      ],
+      "group": "Observability",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "5a2548ad-e0ff-419f-8d54-ecdb6284ff45",
+      "keywords": [
+        "health-check",
+        "probe",
+        "connector-status",
+        "degraded",
+        "endpoint",
+        "monitoring",
+        "availability"
+      ],
+      "name": "health-checks",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_roadmap'), invoke('get_recent_activity')",
+      "business_feature": "Home Dashboard",
+      "category": "ui",
+      "cross_refs": [
+        "persona-management",
+        "onboarding-tours",
+        "overview-analytics"
+      ],
+      "db_tables": [],
+      "description": "Home screen and simple-mode experience — shows a quick-start dashboard, release roadmap, and simplified agent creation for non-power users. Includes the roadmap viewer and release changelog components.",
+      "entry_points": [
+        "src/features/home/HomePage.tsx",
+        "src/features/simple-mode/SimpleModeView.tsx"
+      ],
+      "file_paths": [
+        "src/features/home/HomePage.tsx",
+        "src/features/home/components/QuickStartSection.tsx",
+        "src/features/home/components/releases/HomeRoadmapView.tsx",
+        "src/features/home/components/releases/ReleaseDetailView.tsx",
+        "src/features/home/components/releases/i18n/useReleasesTranslation.ts",
+        "src/features/simple-mode/SimpleModeView.tsx",
+        "docs/features/home.md"
+      ],
+      "group": "Team Collaboration",
+      "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+      "id": "a341a21d-b5ba-4eec-ab03-8d18d29cbbbf",
+      "keywords": [
+        "home",
+        "dashboard",
+        "simple-mode",
+        "roadmap",
+        "quickstart",
+        "releases",
+        "changelog"
+      ],
+      "name": "home-dashboard",
+      "tech_stack": [
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "useTranslation() → { t, tx }; tokenLabel(t, category, key)",
+      "business_feature": "Internationalization",
+      "category": "lib",
+      "cross_refs": [
+        "state-management",
+        "settings-preferences"
+      ],
+      "db_tables": [],
+      "description": "14-language internationalization with lazy per-section loading. English source in locales/en.json (~11,500 keys); codegen produces typed Translations, enSectionStrings, and per-language section chunks. Runtime uses a Proxy that loads chunks on first access.",
+      "entry_points": [
+        "src/i18n/useTranslation.ts",
+        "src/i18n/locales/en.json"
+      ],
+      "file_paths": [
+        "src/i18n/useTranslation.ts",
+        "src/i18n/en.ts",
+        "src/i18n/routeSections.ts",
+        "src/i18n/tokenMaps.ts",
+        "src/i18n/useTranslatedError.ts",
+        "src/i18n/locales/en.json",
+        "src/i18n/generated/types.ts",
+        "src/i18n/generated/enSectionStrings.ts",
+        "scripts/i18n/gen-types.mjs",
+        "scripts/i18n/split-locales.mjs",
+        "scripts/i18n/check-coverage.mjs"
+      ],
+      "group": "Platform Infrastructure",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "fcec1e4e-1ab2-4459-b9c6-ee576c9481ae",
+      "keywords": [
+        "i18n",
+        "localization",
+        "translation",
+        "14-languages",
+        "lazy-loading",
+        "section-locale",
+        "proxy",
+        "codegen",
+        "token"
+      ],
+      "name": "i18n-system",
+      "tech_stack": [
+        "TypeScript",
+        "Vite",
+        "React"
+      ]
+    },
+    {
+      "api_surface": "invoke('index_document'), invoke('semantic_search'), invoke('get_kb_documents')",
+      "business_feature": "Knowledge Base",
+      "category": "api",
+      "cross_refs": [
+        "companion-brain",
+        "overview-analytics"
+      ],
+      "db_tables": [
+        "kb_documents",
+        "kb_chunks",
+        "kb_embeddings"
+      ],
+      "description": "Local vector knowledge base backed by SQLite-vec and ONNX fastembed embeddings. Lets users upload documents, chunk and embed them, and run semantic search. The companion brain uses this for RAG-style context injection.",
+      "entry_points": [
+        "src/features/overview/sub_knowledge/KnowledgeView.tsx",
+        "src-tauri/src/companion/brain/embeddings.rs"
+      ],
+      "file_paths": [
+        "src/features/overview/sub_knowledge/KnowledgeView.tsx",
+        "src/features/overview/sub_knowledge/components/DocumentCard.tsx",
+        "src/features/overview/sub_knowledge/hooks/useKnowledgeSearch.ts",
+        "src/api/vault/database/vectorKb.ts",
+        "src/api/vault/database/nlQuery.ts",
+        "src-tauri/src/companion/brain/embeddings.rs",
+        "src-tauri/src/companion/brain/graph.rs"
+      ],
+      "group": "Observability",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "02f92264-88ef-4c56-a5cb-f48654e008ee",
+      "keywords": [
+        "knowledge-base",
+        "vector",
+        "embeddings",
+        "semantic-search",
+        "rag",
+        "fastembed",
+        "onnx",
+        "sqlite-vec",
+        "documents"
+      ],
+      "name": "knowledge-base",
+      "tech_stack": [
+        "Rust",
+        "fastembed",
+        "ONNX",
+        "sqlite-vec",
+        "React"
+      ]
+    },
+    {
+      "api_surface": "MCP stdio protocol; invoke('get_mcp_tools'), invoke('register_mcp_server')",
+      "business_feature": "MCP Protocol",
+      "category": "api",
+      "cross_refs": [
+        "tool-runner",
+        "agent-connectors",
+        "companion-brain",
+        "execution-runner"
+      ],
+      "db_tables": [
+        "mcp_tool_registrations",
+        "mcp_sessions"
+      ],
+      "description": "Model Context Protocol (MCP) server and client implementation. Exposes persona tools as MCP-compatible endpoints for external LLM hosts, handles tool discovery, and routes MCP tool calls into the execution engine. The companion connects via MCP for Claude-Managed Agents.",
+      "entry_points": [
+        "src-tauri/src/mcp_server/server.rs",
+        "docs/architecture/mcp-desktop-integration.md"
+      ],
+      "file_paths": [
+        "src-tauri/src/mcp_server/server.rs",
+        "src-tauri/src/mcp_server/tool_adapter.rs",
+        "src-tauri/src/mcp_server/protocol.rs",
+        "src-tauri/src/commands/companion/plugin.rs",
+        "src/api/agents/mcpTools.ts",
+        "src-tauri/src/commands/infrastructure/binary_probes.rs",
+        "docs/architecture/mcp-desktop-integration.md"
+      ],
+      "group": "Plugin Ecosystem",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "e2e6ab50-2186-485b-b188-f21cdfa5aff4",
+      "keywords": [
+        "mcp",
+        "model-context-protocol",
+        "tool-exposure",
+        "claude-managed-agents",
+        "external-host",
+        "tool-discovery"
+      ],
+      "name": "mcp-protocol",
+      "tech_stack": [
+        "Rust",
+        "Axum",
+        "MCP SDK"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_memories'), invoke('get_messages'), invoke('delete_memory')",
+      "business_feature": "Memories & Messages",
+      "category": "ui",
+      "cross_refs": [
+        "companion-brain",
+        "execution-runner",
+        "knowledge-base"
+      ],
+      "db_tables": [
+        "memories",
+        "messages",
+        "message_threads"
+      ],
+      "description": "Persists and surfaces agent-produced memories (episodic facts the agent writes to recall later) and the full message history of agent conversations. Used for continuity across executions and human review of what agents learned.",
+      "entry_points": [
+        "src/features/overview/sub_memories/MemoriesView.tsx",
+        "src-tauri/src/companion/brain/episodic.rs"
+      ],
+      "file_paths": [
+        "src/features/overview/sub_memories/MemoriesView.tsx",
+        "src/features/overview/sub_memories/components/MemoryCard.tsx",
+        "src/features/overview/sub_messages/MessagesView.tsx",
+        "src/features/overview/sub_messages/components/MessageThread.tsx",
+        "src-tauri/src/companion/brain/episodic.rs",
+        "src-tauri/src/db/models/memory.rs",
+        "src-tauri/src/db/models/message.rs"
+      ],
+      "group": "Observability",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "79609350-1f6f-4f52-a0b6-0929a0d070a2",
+      "keywords": [
+        "memory",
+        "episodic",
+        "messages",
+        "conversation",
+        "recall",
+        "history",
+        "continuity"
+      ],
+      "name": "memory-messages",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript",
+        "SQLite"
+      ]
+    },
+    {
+      "api_surface": "invoke('start_oauth_flow'), invoke('handle_oauth_callback'), invoke('refresh_oauth_token')",
+      "business_feature": "OAuth Gateway",
+      "category": "api",
+      "cross_refs": [
+        "credential-vault",
+        "agent-connectors"
+      ],
+      "db_tables": [
+        "oauth_tokens",
+        "oauth_states"
+      ],
+      "description": "OAuth 2.0 PKCE flow implementation for connecting third-party services. Manages authorization initiation, callback handling, token refresh with distributed locking, and the browser-side credential capture bridge.",
+      "entry_points": [
+        "src-tauri/src/commands/credentials/oauth.rs",
+        "src-tauri/src/engine/oauth_refresh_lock.rs"
+      ],
+      "file_paths": [
+        "src/api/vault/oauthGatewayApi.ts",
+        "src-tauri/src/commands/credentials/oauth.rs",
+        "src-tauri/src/commands/credentials/desktop_bridge.rs",
+        "src-tauri/src/engine/oauth_refresh_lock.rs",
+        "src/api/auth/authDetect.ts",
+        "src/features/vault/components/OAuthConnectButton.tsx"
+      ],
+      "group": "Security & Credentials",
+      "group_id": "0240e2ac-2a14-49a8-8795-a80bbddae535",
+      "id": "3b4478c8-111a-447c-8a26-8e08b5e444d8",
+      "keywords": [
+        "oauth",
+        "pkce",
+        "token",
+        "refresh",
+        "authorization",
+        "callback",
+        "desktop-bridge",
+        "lock"
+      ],
+      "name": "oauth-gateway",
+      "tech_stack": [
+        "Rust",
+        "Axum",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_tour_state'), invoke('advance_tour')",
+      "business_feature": "Onboarding Tours",
+      "category": "ui",
+      "cross_refs": [
+        "persona-management",
+        "template-system",
+        "credential-vault"
+      ],
+      "db_tables": [
+        "tour_progress"
+      ],
+      "description": "First-run guided-tour steps that walk new users through core features (persona creation, first execution, connecting credentials). Backed by a step registry, tour orchestrator, and spotlight component.",
+      "entry_points": [
+        "src/features/onboarding/OnboardingOrchestrator.tsx",
+        "src/features/onboarding/tourRegistry.ts"
+      ],
+      "file_paths": [
+        "src/features/onboarding/OnboardingOrchestrator.tsx",
+        "src/features/onboarding/TourStep.tsx",
+        "src/features/onboarding/SpotlightOverlay.tsx",
+        "src/features/onboarding/hooks/useTourProgress.ts",
+        "src/features/onboarding/tourRegistry.ts",
+        "src/stores/slices/ui/tourSlice.ts",
+        "docs/features/onboarding.md"
+      ],
+      "group": "Team Collaboration",
+      "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+      "id": "3c7b4fbf-bb69-49fa-8cde-f1fe8f1a16d6",
+      "keywords": [
+        "onboarding",
+        "tour",
+        "spotlight",
+        "first-run",
+        "guide",
+        "step",
+        "progress",
+        "walkthroughs"
+      ],
+      "name": "onboarding-tours",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Framer Motion"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_analytics_summary'), invoke('get_usage_by_period')",
+      "business_feature": "Analytics Dashboard",
+      "category": "ui",
+      "cross_refs": [
+        "execution-monitoring",
+        "sla-tracking",
+        "overview-events"
+      ],
+      "db_tables": [
+        "executions",
+        "usage_records",
+        "saved_views"
+      ],
+      "description": "Dashboard analytics layer — aggregates execution metrics, cost, throughput, model efficiency, and business-value rates into charts and KPI summaries. Provides the main Overview page with usage trends and cross-persona comparisons.",
+      "entry_points": [
+        "src/features/overview/OverviewPage.tsx",
+        "src/features/overview/sub_analytics/AnalyticsView.tsx"
+      ],
+      "file_paths": [
+        "src/features/overview/OverviewPage.tsx",
+        "src/features/overview/sub_analytics/AnalyticsView.tsx",
+        "src/features/overview/sub_analytics/charts/ExecutionTrendChart.tsx",
+        "src/features/overview/sub_analytics/charts/CostChart.tsx",
+        "src/features/overview/sub_usage/UsageView.tsx",
+        "src/features/overview/sub_usage/hooks/useTierUsage.ts",
+        "src/api/system/tierUsage.ts",
+        "src/api/overview/savedViews.ts",
+        "src-tauri/src/commands/communication/analytics.rs"
+      ],
+      "group": "Observability",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "c7ecbcc1-88bb-407f-b264-4243ef64b39e",
+      "keywords": [
+        "analytics",
+        "dashboard",
+        "kpi",
+        "metrics",
+        "cost",
+        "throughput",
+        "trend",
+        "usage",
+        "business-value"
+      ],
+      "name": "overview-analytics",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Recharts"
+      ]
+    },
+    {
+      "api_surface": "Tauri event 'new_system_event', invoke('get_events'), invoke('save_event_filter')",
+      "business_feature": "Event Feed",
+      "category": "ui",
+      "cross_refs": [
+        "overview-analytics",
+        "trigger-system",
+        "execution-monitoring"
+      ],
+      "db_tables": [
+        "events",
+        "event_filters"
+      ],
+      "description": "Event feed and filtering UI that surfaces system-wide events from executions, triggers, healings, and integrations. Supports saved filter views and real-time streaming of new events as they arrive.",
+      "entry_points": [
+        "src/features/overview/sub_events/EventsView.tsx",
+        "src-tauri/src/engine/shared_event_relay.rs"
+      ],
+      "file_paths": [
+        "src/features/overview/sub_events/EventsView.tsx",
+        "src/features/overview/sub_events/components/EventFeed.tsx",
+        "src/features/overview/sub_events/components/EventFilterBar.tsx",
+        "src/features/overview/sub_events/hooks/useEventStream.ts",
+        "src/api/events/sharedEvents.ts",
+        "src-tauri/src/commands/communication/events.rs",
+        "src-tauri/src/engine/shared_event_relay.rs",
+        "src-tauri/src/db/models/event.rs"
+      ],
+      "group": "Observability",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "f84994fd-8d7a-4c59-93b7-d52506f6ac00",
+      "keywords": [
+        "events",
+        "feed",
+        "filter",
+        "stream",
+        "realtime",
+        "system-events",
+        "saved-view",
+        "relay"
+      ],
+      "name": "overview-events",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust",
+        "Tauri Events"
+      ]
+    },
+    {
+      "api_surface": "invoke('start_p2p_discovery'), invoke('get_peers'), invoke('connect_peer')",
+      "business_feature": "P2P Networking",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "fleet-management"
+      ],
+      "db_tables": [
+        "peers",
+        "p2p_sessions"
+      ],
+      "description": "LAN discovery and P2P execution via QUIC transport (Quinn) and mDNS-SD. Enables agents on different machines to discover each other and coordinate executions without a central server. Gated behind the 'p2p' Cargo feature.",
+      "entry_points": [
+        "src-tauri/src/engine/p2p/discovery.rs",
+        "src-tauri/src/engine/p2p/transport.rs"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/p2p/discovery.rs",
+        "src-tauri/src/engine/p2p/transport.rs",
+        "src-tauri/src/engine/p2p/peer_registry.rs",
+        "src-tauri/src/engine/topology_types.rs",
+        "src-tauri/src/commands/infrastructure/p2p.rs"
+      ],
+      "group": "Plugin Ecosystem",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "59100983-d2ab-49e5-a0a7-487a1464b1e8",
+      "keywords": [
+        "p2p",
+        "quic",
+        "mdns",
+        "lan",
+        "discovery",
+        "peer",
+        "distributed",
+        "transport",
+        "networking"
+      ],
+      "name": "p2p-networking",
+      "tech_stack": [
+        "Rust",
+        "Quinn",
+        "mdns-sd",
+        "ed25519"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_personas'), invoke('create_persona'), invoke('delete_persona'), invoke('duplicate_persona')",
+      "business_feature": "Persona Management",
+      "category": "ui",
+      "cross_refs": [
+        "agent-editor",
+        "agent-lab",
+        "execution-runner",
+        "credential-vault"
+      ],
+      "db_tables": [
+        "personas",
+        "persona_events"
+      ],
+      "description": "Core CRUD and lifecycle management for AI personas (agents). Handles creation, editing, deletion, duplication, and the grid/list views that surface all personas to the user. Persona records are the central entity — everything else in the app attaches to them.",
+      "entry_points": [
+        "src/features/personas/PersonasPage.tsx",
+        "src-tauri/src/commands/core/personas.rs"
+      ],
+      "file_paths": [
+        "src/features/agents/components/allPersonas/CompletenessRing.tsx",
+        "src/features/agents/components/allPersonas/PersonaHealthIndicator.tsx",
+        "src/features/agents/components/allPersonas/PersonaOverviewEmptyState.tsx",
+        "src/features/agents/components/allPersonas/PersonaOverviewFilterHeader.tsx",
+        "src/features/personas/PersonasPage.tsx",
+        "src/features/personas/PersonasGrid.tsx",
+        "src/features/personas/PersonaCard.tsx",
+        "src/api/agents/genome.ts",
+        "src-tauri/src/commands/core/personas.rs",
+        "src-tauri/src/db/models/persona.rs",
+        "src-tauri/src/db/repos/personas.rs"
+      ],
+      "group": "Agent Platform",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "48e25151-9b6e-4c7e-b773-ecbb769816f5",
+      "keywords": [
+        "persona",
+        "agent",
+        "crud",
+        "grid",
+        "list",
+        "create",
+        "delete",
+        "duplicate",
+        "health",
+        "completeness"
+      ],
+      "name": "persona-management",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust",
+        "SQLite"
+      ]
+    },
+    {
+      "api_surface": "invoke('create_recipe'), invoke('execute_recipe'), invoke('get_recipe_versions')",
+      "business_feature": "Recipe Engine",
+      "category": "ui",
+      "cross_refs": [
+        "execution-runner",
+        "execution-chaining",
+        "template-system"
+      ],
+      "db_tables": [
+        "recipes",
+        "recipe_versions",
+        "recipe_runs"
+      ],
+      "description": "Recipe system for parameterized, reusable execution blueprints. A recipe wraps a persona + configuration into a shareable unit that can be played back with different inputs. Covers recipe editor, versioning, playground for testing, and the generation pipeline.",
+      "entry_points": [
+        "src/features/recipes/sub_list/RecipesListPage.tsx",
+        "src-tauri/src/commands/recipes/execute.rs"
+      ],
+      "file_paths": [
+        "src/features/recipes/sub_list/RecipesListPage.tsx",
+        "src/features/recipes/sub_editor/RecipeEditor.tsx",
+        "src/features/recipes/sub_playground/RecipePlayground.tsx",
+        "src/features/recipes/sub_manager/RecipeManager.tsx",
+        "src/features/recipes/sub_editor/components/RecipeStepBuilder.tsx",
+        "src-tauri/src/commands/recipes/execute.rs",
+        "src-tauri/src/commands/recipes/generation.rs",
+        "src-tauri/src/commands/recipes/versioning.rs",
+        "src-tauri/src/db/models/recipe.rs",
+        "docs/features/recipes/README.md"
+      ],
+      "group": "Automation & Pipelines",
+      "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
+      "id": "f7a90442-1860-4785-872d-2e55de53bcb2",
+      "keywords": [
+        "recipe",
+        "blueprint",
+        "parameterized",
+        "versioning",
+        "playground",
+        "reusable",
+        "generation",
+        "execution-template"
+      ],
+      "name": "recipe-engine",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "invoke('create_schedule'), invoke('delete_schedule'), invoke('get_schedules')",
+      "business_feature": "Agent Scheduler",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "trigger-system",
+        "overview-analytics"
+      ],
+      "db_tables": [
+        "schedules",
+        "scheduled_runs"
+      ],
+      "description": "Cron-based scheduler that fires persona executions on a time schedule. Manages schedule CRUD, the tick loop, missed-run recovery, and the UI for browsing scheduled runs and their histories.",
+      "entry_points": [
+        "src-tauri/src/engine/scheduler.rs",
+        "src/features/schedules/SchedulesPage.tsx"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/scheduler.rs",
+        "src-tauri/src/commands/communication/schedules.rs",
+        "src-tauri/src/db/models/schedule.rs",
+        "src-tauri/src/db/repos/schedules.rs",
+        "src/features/schedules/SchedulesPage.tsx",
+        "src/features/schedules/ScheduleCard.tsx",
+        "src/features/schedules/hooks/useSchedules.ts",
+        "src/features/overview/sub_cron_agents/CronAgentsView.tsx"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "c2befb13-09f5-430c-9d96-df05ae7cabe5",
+      "keywords": [
+        "scheduler",
+        "cron",
+        "schedule",
+        "tick",
+        "recurring",
+        "time-based",
+        "missed-run",
+        "recovery"
+      ],
+      "name": "scheduler",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript",
+        "cron"
+      ]
+    },
+    {
+      "api_surface": "invoke('get_settings'), invoke('update_settings')",
+      "business_feature": "Settings & Preferences",
+      "category": "ui",
+      "cross_refs": [
+        "i18n-system",
+        "state-management",
+        "credential-vault"
+      ],
+      "db_tables": [
+        "app_settings",
+        "user_preferences"
+      ],
+      "description": "Application settings and user preferences — appearance (themes, density), language selection, model API keys, notification config, tier display, and the bring-your-own-model (BYOM) setup. Persisted in SQLite and surfaced through the Settings page.",
+      "entry_points": [
+        "src/features/settings/SettingsPage.tsx",
+        "src-tauri/src/commands/core/settings.rs"
+      ],
+      "file_paths": [
+        "src/features/settings/SettingsPage.tsx",
+        "src/features/settings/tabs/AppearanceSettings.tsx",
+        "src/features/settings/tabs/AccountSettings.tsx",
+        "src/features/settings/sub_byom/ByomSettings.tsx",
+        "src/features/settings/tabs/NotificationsSettings.tsx",
+        "src-tauri/src/commands/core/settings.rs",
+        "src-tauri/src/db/models/settings.rs",
+        "docs/features/settings/README.md"
+      ],
+      "group": "Platform Infrastructure",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "f23eccab-8128-4ffb-9363-3ce20eb56dd8",
+      "keywords": [
+        "settings",
+        "preferences",
+        "theme",
+        "language",
+        "byom",
+        "model-key",
+        "notifications",
+        "appearance"
+      ],
+      "name": "settings-preferences",
+      "tech_stack": [
+        "React",
+        "TypeScript",
+        "Rust"
+      ]
+    },
+    {
+      "api_surface": "import from '@/features/shared/components/<category>/<Name>'",
+      "business_feature": "Shared UI Components",
+      "category": "ui",
+      "cross_refs": [
+        "persona-management",
+        "agent-editor",
+        "credential-vault"
+      ],
+      "db_tables": [],
+      "description": "173-component shared component library covering buttons, modals, feedback states, forms, display primitives, and layout shells. Auto-catalogued via gen:catalog; ESLint enforces reuse over hand-rolling. The canonical CATALOG.md lists every component with import paths.",
       "entry_points": [
         "src/features/shared/components/CATALOG.md",
-        "src/features/shared/components/buttons/Button.tsx"
+        "src/features/shared/components/modals/BaseModal.tsx"
       ],
       "file_paths": [
         "src/features/shared/components/CATALOG.md",
@@ -788,1011 +1928,114 @@
         "src/features/shared/components/forms/AccessibleToggle.tsx",
         "src/features/shared/components/forms/Listbox.tsx",
         "src/features/shared/components/layout/PanelTabBar.tsx",
-        "src/features/shared/components/layout/SegmentedTabs.tsx",
-        "src/styles/typography.css"
+        "src/features/shared/components/layout/SegmentedTabs.tsx"
       ],
       "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "760d4937-0a77-4835-be79-980d8512e3dc",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "13e29cfd-f606-4e1d-b376-2645258b4ea5",
       "keywords": [
-        "design-system",
-        "component-library",
-        "tokens",
-        "typography",
+        "shared-components",
+        "ui-library",
         "button",
         "modal",
         "form",
         "tooltip",
-        "badge"
+        "spinner",
+        "empty-state",
+        "catalog",
+        "reusable"
       ],
-      "name": "design-system",
+      "name": "shared-ui-components",
       "tech_stack": [
         "React",
         "TypeScript",
-        "TailwindCSS 4"
+        "Tailwind CSS"
       ]
     },
     {
-      "api_surface": "invoke('run_kpi_scan'), invoke('generate_context_map'), invoke('run_standards_scan'), HTTP :17320/scan",
-      "business_feature": "Developer Tools",
-      "category": "ui",
-      "cross_refs": [
-        "team-kpis",
-        "analytics-dashboard",
-        "fleet-terminal"
-      ],
-      "db_tables": [],
-      "description": "Developer productivity plugin offering codebase scanning (KPI scan, standards scan, idea scanner, context generation), incremental analysis, and an HTTP debug server. Surfaces structured scan results and lets developers drill into context-mapped findings. Powers the Vibeman context-map integration.",
-      "entry_points": [
-        "src/features/plugins/dev-tools/DevToolsPage.tsx",
-        "src-tauri/src/commands/infrastructure/context_generation.rs"
-      ],
-      "file_paths": [
-        "src/features/plugins/dev-tools/DevToolsPage.tsx",
-        "src/features/plugins/dev-tools/components/ScanResults.tsx",
-        "src-tauri/src/commands/infrastructure/dev_tools.rs",
-        "src-tauri/src/commands/infrastructure/dev_tools_http.rs",
-        "src-tauri/src/commands/infrastructure/kpi_scan.rs",
-        "src-tauri/src/commands/infrastructure/standards_scan.rs",
-        "src-tauri/src/commands/infrastructure/static_scan.rs",
-        "src-tauri/src/commands/infrastructure/idea_scanner.rs",
-        "src-tauri/src/commands/infrastructure/incremental_scan.rs",
-        "src-tauri/src/commands/infrastructure/context_generation.rs",
-        "src-tauri/src/commands/infrastructure/context_audit.rs",
-        "src-tauri/src/commands/infrastructure/context_map_export.rs",
-        "src/stores/slices/system/devToolsSlice.ts",
-        "src/stores/slices/system/devToolsTaskSlice.ts",
-        "src/stores/slices/system/devToolsContextSlice.ts"
-      ],
-      "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "c8cfd759-4ff1-4d01-98cb-58f45b9d1a5a",
-      "keywords": [
-        "dev-tools",
-        "scan",
-        "KPI",
-        "standards",
-        "context-map",
-        "static-analysis",
-        "idea-scanner",
-        "incremental"
-      ],
-      "name": "dev-tools-plugin",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "Axum"
-      ]
-    },
-    {
-      "api_surface": "invoke('run_director'), invoke('get_director_verdicts'), invoke('get_director_brain')",
-      "business_feature": "Director AI Orchestration",
+      "api_surface": "invoke('get_skills'), invoke('invoke_skill'), invoke('register_skill')",
+      "business_feature": "Skills System",
       "category": "api",
       "cross_refs": [
-        "execution-runner",
-        "analytics-dashboard",
-        "ai-healing",
-        "llm-provider"
+        "mcp-protocol",
+        "recipe-engine",
+        "agent-connectors"
       ],
       "db_tables": [
-        "director_verdicts",
-        "director_memory"
-      ],
-      "description": "AI meta-persona (the Director) that periodically reviews all persona executions, issues DIRECTOR_VERDICT assessments, writes long-term strategic notes to its Brain memory, and surfaces a business-value rollup. Acts as an autonomous quality overseer distinct from individual persona runs.",
-      "entry_points": [
-        "src-tauri/src/engine/director.rs",
-        "src/features/overview/sub_director/DirectorPage.tsx"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/director.rs",
-        "src-tauri/src/engine/director_brain.rs",
-        "src-tauri/src/engine/director_memory.rs",
-        "src-tauri/src/commands/infrastructure/director.rs",
-        "src/features/overview/sub_director/DirectorPage.tsx",
-        "src/features/overview/sub_director/components/VerdictPanel.tsx",
-        "src/features/overview/sub_director/components/BrainModal.tsx",
-        "src/api/director.ts"
-      ],
-      "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "f7a7d73b-44e1-49d8-8a6e-36f9b5a7ef90",
-      "keywords": [
-        "director",
-        "verdict",
-        "meta-persona",
-        "brain",
-        "memory",
-        "business-value",
-        "orchestration",
-        "review",
-        "score"
-      ],
-      "name": "director-orchestration",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_events'), invoke('get_event_detail'), Tauri event: 'persona_event'",
-      "business_feature": "Event Tracking",
-      "category": "api",
-      "cross_refs": [
-        "execution-runner",
-        "trigger-system",
-        "incident-management",
-        "analytics-dashboard"
-      ],
-      "db_tables": [
-        "events",
-        "shared_events"
-      ],
-      "description": "Central event bus that collects, stores, and distributes typed events generated by persona executions, triggers, and system processes. The frontend overview events tab visualizes these in a filterable timeline. Includes shared event relay for cross-persona event propagation.",
-      "entry_points": [
-        "src-tauri/src/engine/event_registry.rs",
-        "src/features/overview/sub_events/EventsPage.tsx"
-      ],
-      "file_paths": [
-        "src-tauri/src/commands/communication/events.rs",
-        "src-tauri/src/commands/communication/shared_events.rs",
-        "src-tauri/src/engine/event_registry.rs",
-        "src-tauri/src/engine/events.rs",
-        "src-tauri/src/engine/shared_event_relay.rs",
-        "src/features/overview/sub_events/EventsPage.tsx",
-        "src/features/overview/sub_events/components/EventTimeline.tsx",
-        "src/api/overview/events.ts",
-        "src/api/events/sharedEvents.ts",
-        "src/stores/slices/overview/eventSlice.ts",
-        "src/lib/eventBridge.ts",
-        "src/lib/eventRegistry.ts"
-      ],
-      "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "53ede9d2-6d72-4771-947a-aaed4fd7af72",
-      "keywords": [
-        "event",
-        "timeline",
-        "bus",
-        "stream",
-        "typed-event",
-        "observability",
-        "audit",
-        "broadcast"
-      ],
-      "name": "event-tracking",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('execute_persona'), invoke('stop_execution'), invoke('get_execution'), invoke('list_executions')",
-      "business_feature": "Agent Execution Runtime",
-      "category": "api",
-      "cross_refs": [
-        "persona-management",
-        "llm-provider",
-        "credential-vault",
-        "execution-ui",
-        "ai-healing"
-      ],
-      "db_tables": [
-        "executions",
-        "execution_events",
-        "execution_outputs"
-      ],
-      "description": "Core Rust runtime that spawns and manages agent execution processes — setting up credentials, environment variables, team context, and dispatching to the LLM provider via structured prompt stages. Returns a stream of typed events consumed by the frontend execution inspector.",
-      "entry_points": [
-        "src-tauri/src/engine/runner/mod.rs",
-        "src-tauri/src/commands/execution/executions.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/runner/mod.rs",
-        "src-tauri/src/engine/runner/stages.rs",
-        "src-tauri/src/engine/runner/credentials.rs",
-        "src-tauri/src/engine/runner/env.rs",
-        "src-tauri/src/engine/runner/globals.rs",
-        "src-tauri/src/engine/runner/team_context.rs",
-        "src-tauri/src/engine/execution_engine/mod.rs",
-        "src-tauri/src/engine/execution_engine/persist.rs",
-        "src-tauri/src/engine/dispatch.rs",
-        "src-tauri/src/engine/queue.rs",
-        "src-tauri/src/engine/lifecycle.rs",
-        "src-tauri/src/commands/execution/executions.rs",
-        "src/api/agents/executions.ts",
-        "src/stores/slices/agents/executionSlice.ts",
-        "src/stores/slices/agents/runLifecycle.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "3ed40f65-d0d9-447e-ab99-a9df34b3a204",
-      "keywords": [
-        "runner",
-        "execution",
-        "spawn",
-        "process",
-        "stream",
-        "dispatch",
-        "lifecycle",
-        "queue",
-        "tokio"
-      ],
-      "name": "execution-runner",
-      "tech_stack": [
-        "Rust",
-        "Tokio",
-        "SQLite"
-      ]
-    },
-    {
-      "api_surface": "invoke('create_schedule'), invoke('update_schedule'), invoke('delete_schedule'), invoke('list_schedules')",
-      "business_feature": "Execution Scheduling",
-      "category": "api",
-      "cross_refs": [
-        "execution-runner",
-        "trigger-system",
-        "analytics-dashboard"
-      ],
-      "db_tables": [
-        "schedules",
-        "scheduled_executions"
-      ],
-      "description": "Cron-based and on-demand scheduling of agent executions. The Rust scheduler evaluates cron expressions, manages next-run times, and fires executions into the runner queue. The frontend surfaces scheduled runs in the Cron Agents overview and allows users to define per-persona schedules.",
-      "entry_points": [
-        "src-tauri/src/engine/scheduler.rs",
-        "src/features/schedules/index.ts"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/scheduler.rs",
-        "src-tauri/src/engine/cron.rs",
-        "src-tauri/src/commands/execution/scheduler.rs",
-        "src/api/pipeline/scheduler.ts",
-        "src/features/schedules/components/ScheduleCard.tsx",
-        "src/features/schedules/index.ts",
-        "src/stores/slices/overview/cronAgentsSlice.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "6c59bc22-619b-4098-95b4-203aa97bd48b",
-      "keywords": [
-        "cron",
-        "scheduler",
-        "schedule",
-        "next-run",
-        "interval",
-        "recurring",
-        "periodic",
-        "automation"
-      ],
-      "name": "execution-scheduling",
-      "tech_stack": [
-        "Rust",
-        "Tokio",
-        "React"
-      ]
-    },
-    {
-      "api_surface": null,
-      "business_feature": "Execution Inspector",
-      "category": "ui",
-      "cross_refs": [
-        "execution-runner",
-        "event-tracking",
-        "agent-health-ui"
-      ],
-      "db_tables": [],
-      "description": "Frontend execution inspector showing real-time logs, subagent fan-out trees, event streams, and final outputs for each persona run. Subscribes to the Tauri event bridge for live updates during an active execution. Includes a mini-player for compact background-run monitoring.",
-      "entry_points": [
-        "src/features/agents/sub_executions/ExecutionsTab.tsx"
-      ],
-      "file_paths": [
-        "src/features/agents/sub_executions/ExecutionsTab.tsx",
-        "src/features/agents/sub_executions/components/ExecutionInspector.tsx",
-        "src/features/agents/sub_executions/components/SubagentTree.tsx",
-        "src/features/agents/sub_executions/components/EventStream.tsx",
-        "src/stores/slices/agents/executionSlice.ts",
-        "src/stores/slices/agents/miniPlayerSlice.ts",
-        "src/stores/slices/agents/budgetEnforcementSlice.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "c4553ce1-fa40-40cb-b72f-58508b133787",
-      "keywords": [
-        "execution-log",
-        "inspector",
-        "event-stream",
-        "subagent",
-        "fan-out",
-        "mini-player",
-        "live",
-        "output"
-      ],
-      "name": "execution-ui",
-      "tech_stack": [
-        "React",
-        "TypeScript",
-        "Zustand"
-      ]
-    },
-    {
-      "api_surface": "invoke('spawn_pty'), invoke('scan_processes'), invoke('get_fleet_sessions'), invoke('install_hook')",
-      "business_feature": "Fleet Terminal Manager",
-      "category": "ui",
-      "cross_refs": [
-        "companion-ai",
-        "dev-tools-plugin",
-        "execution-runner"
-      ],
-      "db_tables": [
-        "fleet_sessions",
-        "fleet_transcripts"
-      ],
-      "description": "Process and terminal management plugin — provides a pseudo-terminal (PTY) for running CLI sessions, transcribes sessions for replay, discovers running processes, manages git hooks sidecars, and integrates with the skills pipeline. The Fleet view surfaces running CLI agents as tiles.",
-      "entry_points": [
-        "src/features/plugins/fleet/FleetPage.tsx",
-        "src-tauri/src/commands/fleet/pty.rs"
-      ],
-      "file_paths": [
-        "src/features/plugins/fleet/FleetPage.tsx",
-        "src/features/plugins/fleet/components/FleetTile.tsx",
-        "src/features/plugins/fleet/components/SkillDrawer.tsx",
-        "src-tauri/src/commands/fleet/pty.rs",
-        "src-tauri/src/commands/fleet/transcript.rs",
-        "src-tauri/src/commands/fleet/hooks.rs",
-        "src-tauri/src/commands/fleet/process_scan.rs",
-        "src-tauri/src/commands/fleet/registry.rs",
-        "src-tauri/src/engine/cli_session_awareness/mod.rs",
-        "src-tauri/src/engine/cli_capabilities.rs",
-        "src/api/fleet/fleet.ts",
-        "src/stores/slices/system/fleetSlice.ts"
-      ],
-      "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "ae662204-02c6-4939-bd9f-38017e7bb243",
-      "keywords": [
-        "fleet",
-        "PTY",
-        "terminal",
-        "process",
-        "CLI",
-        "transcript",
-        "hooks",
         "skills",
-        "sidecar"
+        "skill_invocations"
       ],
-      "name": "fleet-terminal",
-      "tech_stack": [
-        "Rust",
-        "XTerm",
-        "React",
-        "Portable PTY"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_gitlab_repos'), invoke('get_merge_requests'), invoke('get_pipeline_status')",
-      "business_feature": "GitLab Integration",
-      "category": "ui",
-      "cross_refs": [
-        "trigger-system",
-        "event-tracking",
-        "credential-vault"
-      ],
-      "db_tables": [],
-      "description": "GitLab SCM integration — provides repository listing, merge request management, pipeline status, and issue tracking directly in Personas. Backed by a dedicated Rust GitLab module and frontend store slice. Allows personas to be triggered by or act on GitLab events.",
+      "description": "Reusable skill definitions that agents can invoke — discrete capabilities like 'summarise', 'translate', or 'search' packaged as callable units with defined inputs/outputs. Skills can be discovered, composed into recipes, and exposed via MCP.",
       "entry_points": [
-        "src/features/plugins/gitlab/GitLabPage.tsx",
-        "src-tauri/src/gitlab/mod.rs"
+        "src/api/skills/skills.ts",
+        "src-tauri/src/engine/skill_registry.rs"
       ],
       "file_paths": [
-        "src/features/plugins/gitlab/GitLabPage.tsx",
-        "src/features/plugins/gitlab/components/MergeRequestList.tsx",
-        "src-tauri/src/gitlab/mod.rs",
-        "src-tauri/src/commands/infrastructure/gitlab.rs",
-        "src/api/system/gitlab.ts",
-        "src/stores/slices/system/gitlabSlice.ts"
+        "src/api/skills/skills.ts",
+        "src-tauri/src/commands/companion/plugin.rs",
+        "src-tauri/src/engine/skill_registry.rs",
+        "src/features/agents/sub_editor/components/SkillsTab.tsx"
       ],
       "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "6a0ec573-899c-4eb4-9415-a5f6b50a2fa3",
+      "group_id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
+      "id": "964b531f-23e3-40e9-8670-cc95e81b3167",
       "keywords": [
-        "gitlab",
-        "merge-request",
-        "pipeline",
-        "repository",
-        "SCM",
-        "CI/CD",
-        "issue",
-        "integration"
+        "skill",
+        "capability",
+        "compose",
+        "registry",
+        "mcp-tool",
+        "invoke",
+        "reusable",
+        "discrete"
       ],
-      "name": "gitlab-integration",
+      "name": "skills-system",
       "tech_stack": [
         "Rust",
         "React",
-        "GitLab API"
+        "TypeScript"
       ]
     },
     {
-      "api_surface": "invoke('get_system_health'), invoke('list_sla_records')",
-      "business_feature": "System Health Monitoring",
+      "api_surface": "invoke('get_sla_configs'), invoke('get_sla_violations')",
+      "business_feature": "SLA Tracking",
       "category": "ui",
       "cross_refs": [
-        "ai-healing",
-        "incident-management",
-        "agent-health-ui",
-        "analytics-dashboard"
+        "overview-analytics",
+        "execution-monitoring",
+        "healing-engine"
       ],
       "db_tables": [
-        "health_checks",
-        "sla_records"
+        "sla_configs",
+        "sla_evaluations"
       ],
-      "description": "System-wide health dashboard aggregating per-agent health scores, uptime stats, and SLA compliance metrics. The Rust healthcheck module runs periodic probes and writes results consumed by the overview health page and the per-agent health tab.",
+      "description": "Service-level agreement monitoring for persona executions — defines SLA targets (latency, success rate, cost bounds), evaluates runs against them, and surfaces violations with severity badges in the overview.",
       "entry_points": [
-        "src/features/overview/sub_health/HealthPage.tsx",
-        "src-tauri/src/engine/healthcheck.rs"
+        "src/features/overview/sub_sla/SLAView.tsx",
+        "src/api/overview/sla.ts"
       ],
       "file_paths": [
-        "src-tauri/src/commands/infrastructure/system/health.rs",
-        "src-tauri/src/engine/healthcheck.rs",
-        "src-tauri/src/commands/communication/observability/sla.rs",
-        "src-tauri/src/commands/communication/observability/metrics.rs",
-        "src/features/overview/sub_health/HealthPage.tsx",
-        "src/features/overview/sub_health/components/SLACard.tsx",
+        "src/features/overview/sub_sla/SLAView.tsx",
+        "src/features/overview/sub_sla/components/SLATargetCard.tsx",
+        "src/features/overview/sub_sla/hooks/useSLAMetrics.ts",
         "src/api/overview/sla.ts",
-        "src/api/overview/observability.ts",
-        "src/stores/slices/overview/personaHealthSlice.ts",
-        "src/stores/slices/overview/overviewSlice.ts"
+        "src-tauri/src/commands/communication/sla.rs",
+        "src-tauri/src/db/models/sla.rs"
       ],
       "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "a4d0ed33-1122-4428-b959-54bfcac730d2",
+      "group_id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
+      "id": "e196a883-1ae5-44be-b66e-3b59b097f76f",
       "keywords": [
-        "health",
-        "SLA",
-        "uptime",
-        "score",
-        "probe",
-        "compliance",
-        "metrics",
-        "aggregate"
-      ],
-      "name": "health-monitoring",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "Recharts"
-      ]
-    },
-    {
-      "api_surface": null,
-      "business_feature": "Internationalization",
-      "category": "lib",
-      "cross_refs": [
-        "design-system",
-        "settings-system"
-      ],
-      "db_tables": [],
-      "description": "14-language internationalization system supporting per-section lazy-loaded locale bundles. The en.json source file is split into section chunks at build time via split-locales.mjs, generating TypeScript types for compile-time key safety. The t proxy loads sections on demand; route-based preloading prevents first-paint flashes.",
-      "entry_points": [
-        "src/i18n/useTranslation.ts",
-        "src/i18n/locales/en.json"
-      ],
-      "file_paths": [
-        "src/i18n/locales/en.json",
-        "src/i18n/useTranslation.ts",
-        "src/i18n/routeSections.ts",
-        "src/i18n/tokenMaps.ts",
-        "src/i18n/useTranslatedError.ts",
-        "src/i18n/en.ts",
-        "src/i18n/generated/types.ts",
-        "src/i18n/generated/enSectionStrings.ts",
-        "src/i18n/store.ts",
-        "scripts/i18n/split-locales.mjs",
-        "scripts/i18n/gen-types.mjs",
-        "scripts/i18n/check-coverage.mjs"
-      ],
-      "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "02856b00-de58-4793-bf4c-7265e38c8663",
-      "keywords": [
-        "i18n",
-        "localization",
-        "translation",
-        "locale",
-        "section-bundle",
-        "lazy-load",
-        "14-languages",
-        "proxy"
-      ],
-      "name": "i18n-system",
-      "tech_stack": [
-        "TypeScript",
-        "Vite",
-        "Node.js"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_incidents'), invoke('update_incident_status'), invoke('promote_to_audit')",
-      "business_feature": "Incident Management",
-      "category": "ui",
-      "cross_refs": [
-        "ai-healing",
-        "event-tracking",
-        "analytics-dashboard",
-        "director-orchestration"
-      ],
-      "db_tables": [
-        "audit_incidents",
-        "incident_events"
-      ],
-      "description": "Tracks execution failures and policy violations as incidents with severity classification, continuation logic, and promotion to formal audits. Incidents can be auto-created by the healing system when recovery fails, and manually reviewed through the overview incidents UI.",
-      "entry_points": [
-        "src/features/overview/sub_incidents/IncidentsPage.tsx",
-        "src-tauri/src/commands/execution/audit_incidents.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/commands/execution/audit_incidents.rs",
-        "src-tauri/src/engine/incident_continuation.rs",
-        "src-tauri/src/engine/audit_incidents_promoter.rs",
-        "src/features/overview/sub_incidents/IncidentsPage.tsx",
-        "src/features/overview/sub_incidents/components/IncidentCard.tsx",
-        "src/api/overview/incidents.ts",
-        "src/stores/slices/overview/alertSlice.ts"
-      ],
-      "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "af13346a-5938-4ff8-9ed0-d0fea090f81b",
-      "keywords": [
-        "incident",
-        "audit",
-        "severity",
+        "sla",
+        "latency",
+        "success-rate",
         "violation",
-        "escalation",
-        "alert",
-        "policy",
-        "manual-review"
+        "target",
+        "severity",
+        "compliance",
+        "threshold"
       ],
-      "name": "incident-management",
-      "tech_stack": [
-        "Rust",
-        "React"
-      ]
-    },
-    {
-      "api_surface": "invoke('get_byom_config'), invoke('set_byom_config')",
-      "business_feature": "LLM Provider Integration",
-      "category": "api",
-      "cross_refs": [
-        "execution-runner",
-        "agent-testing",
-        "agent-editor"
-      ],
-      "db_tables": [],
-      "description": "Abstraction layer over LLM providers (currently Claude/Anthropic). Manages API calls, streaming responses, model selection, cost calculation, and token budget enforcement. Supports Bring-Your-Own-Model (BYOM) configuration for alternative endpoints.",
-      "entry_points": [
-        "src-tauri/src/engine/provider/mod.rs",
-        "src-tauri/src/engine/chain.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/provider/mod.rs",
-        "src-tauri/src/engine/provider/claude.rs",
-        "src-tauri/src/engine/prompt/mod.rs",
-        "src-tauri/src/engine/prompt/templates.rs",
-        "src-tauri/src/engine/prompt/capabilities.rs",
-        "src-tauri/src/engine/prompt/cli_args.rs",
-        "src-tauri/src/engine/llm_topology.rs",
-        "src-tauri/src/engine/chain.rs",
-        "src-tauri/src/engine/cost.rs",
-        "src-tauri/src/engine/run_budget.rs",
-        "src-tauri/src/engine/byom.rs",
-        "src-tauri/src/commands/infrastructure/byom.rs",
-        "src/api/system/byom.ts"
-      ],
-      "group": "Execution Engine",
-      "group_id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "id": "243f1727-1298-4eeb-8299-91d83ae0ce83",
-      "keywords": [
-        "claude",
-        "LLM",
-        "provider",
-        "model",
-        "streaming",
-        "token",
-        "budget",
-        "cost",
-        "BYOM",
-        "prompt"
-      ],
-      "name": "llm-provider",
-      "tech_stack": [
-        "Rust",
-        "Tokio",
-        "Anthropic API"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_pending_reviews'), invoke('approve_review'), invoke('reject_review')",
-      "business_feature": "Manual Review Queue",
-      "category": "ui",
-      "cross_refs": [
-        "incident-management",
-        "companion-ai",
-        "cloud-sync"
-      ],
-      "db_tables": [
-        "review_queue",
-        "approvals"
-      ],
-      "description": "Queue for executions and decisions that require human approval before proceeding. Surfaces ambiguous outputs, policy-blocked actions, and remote approval requests from the Companion. Integrated with the cloud approval workflow for out-of-app review via remote commands.",
-      "entry_points": [
-        "src/features/overview/sub_manual-review/ManualReviewPage.tsx"
-      ],
-      "file_paths": [
-        "src/features/overview/sub_manual-review/ManualReviewPage.tsx",
-        "src/features/overview/sub_manual-review/components/ReviewCard.tsx",
-        "src/features/cloud/RemoteApprovalPrompt.tsx",
-        "src/api/overview/reviews.ts",
-        "src-tauri/src/commands/companion/approvals.rs"
-      ],
-      "group": "Observability",
-      "group_id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
-      "id": "297d3532-2470-48da-826e-10629d9fc864",
-      "keywords": [
-        "manual-review",
-        "approval",
-        "queue",
-        "human-in-the-loop",
-        "policy",
-        "remote",
-        "cloud-approval"
-      ],
-      "name": "manual-review-queue",
-      "tech_stack": [
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "MCP protocol endpoints, invoke('list_mcp_gateways'), invoke('get_mcp_tools')",
-      "business_feature": "MCP Gateway Integration",
-      "category": "api",
-      "cross_refs": [
-        "credential-vault",
-        "execution-runner",
-        "companion-ai"
-      ],
-      "db_tables": [
-        "mcp_gateways",
-        "mcp_tools"
-      ],
-      "description": "Model Context Protocol (MCP) gateway layer — manages MCP tool credentials, exposes a local MCP server (mcp_bin) for external AI clients to invoke Personas capabilities, and integrates MCP gateway credentials into the execution engine. Includes a dedicated MCP server binary.",
-      "entry_points": [
-        "src-tauri/src/mcp_server/mod.rs",
-        "src-tauri/src/commands/credentials/mcp_gateways.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/commands/credentials/mcp_gateways.rs",
-        "src-tauri/src/commands/credentials/mcp_tools.rs",
-        "src-tauri/src/engine/mcp_tools.rs",
-        "src-tauri/src/commands/infrastructure/system/mcp_integration.rs",
-        "src-tauri/src/mcp_server/mod.rs",
-        "src/api/credentials/mcpGateways.ts",
-        "src/api/agents/mcpTools.ts",
-        "src-tauri/src/mcp_bin.rs"
-      ],
-      "group": "Security & Credentials",
-      "group_id": "2c7a6cfb-6bcb-4d6e-ad45-17201e668dbe",
-      "id": "8d098a93-2ff5-4cfc-8f81-b136e3fc37f2",
-      "keywords": [
-        "MCP",
-        "model-context-protocol",
-        "gateway",
-        "tool",
-        "server",
-        "credential",
-        "external-client"
-      ],
-      "name": "mcp-gateway",
-      "tech_stack": [
-        "Rust",
-        "MCP Protocol",
-        "Axum"
-      ]
-    },
-    {
-      "api_surface": "invoke('sync_obsidian'), invoke('get_obsidian_graph'), invoke('lint_vault')",
-      "business_feature": "Obsidian Brain Sync",
-      "category": "ui",
-      "cross_refs": [
-        "team-knowledge",
-        "research-lab",
-        "companion-ai"
-      ],
-      "db_tables": [
-        "obsidian_notes",
-        "obsidian_graph"
-      ],
-      "description": "Obsidian vault synchronization plugin — mirrors Obsidian markdown notes into the app's knowledge graph, runs semantic and syntactic lint passes, resolves conflicts, and provides graph analysis for traversal and insight extraction. Used by personas for long-term memory and context injection.",
-      "entry_points": [
-        "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx",
-        "src-tauri/src/commands/obsidian_brain/graph.rs"
-      ],
-      "file_paths": [
-        "src/features/plugins/obsidian-brain/ObsidianBrainPage.tsx",
-        "src/features/plugins/obsidian-brain/components/GraphView.tsx",
-        "src-tauri/src/commands/obsidian_brain/markdown.rs",
-        "src-tauri/src/commands/obsidian_brain/graph.rs",
-        "src-tauri/src/commands/obsidian_brain/lint.rs",
-        "src-tauri/src/commands/obsidian_brain/semantic_lint.rs",
-        "src-tauri/src/commands/obsidian_brain/conflict.rs",
-        "src-tauri/src/commands/obsidian_brain/revitalize.rs",
-        "src/api/obsidianBrain/index.ts",
-        "src/stores/slices/system/obsidianBrainSlice.ts"
-      ],
-      "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "25f23c4a-72fb-4f36-a799-8c7a0a4cb418",
-      "keywords": [
-        "obsidian",
-        "markdown",
-        "graph",
-        "sync",
-        "lint",
-        "semantic",
-        "knowledge-base",
-        "conflict",
-        "vault"
-      ],
-      "name": "obsidian-brain",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "React Flow"
-      ]
-    },
-    {
-      "api_surface": "invoke('discover_peers'), invoke('join_enclave'), invoke('sync_manifest')",
-      "business_feature": "P2P LAN Networking",
-      "category": "api",
-      "cross_refs": [
-        "cloud-sync",
-        "credential-vault",
-        "tauri-ipc"
-      ],
-      "db_tables": [],
-      "description": "Peer-to-peer LAN networking layer using QUIC transport, mDNS discovery, and Ed25519 identity. Enables LAN enclaves for local multi-device persona sharing, device identity management, manifest synchronization, and bundle transfer. Gated behind the 'p2p' Cargo feature.",
-      "entry_points": [
-        "src-tauri/src/engine/p2p/mod.rs",
-        "src-tauri/src/commands/network/discovery.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/p2p/mod.rs",
-        "src-tauri/src/engine/p2p/protocol.rs",
-        "src-tauri/src/engine/p2p/transport.rs",
-        "src-tauri/src/engine/p2p/connection.rs",
-        "src-tauri/src/engine/p2p/mdns.rs",
-        "src-tauri/src/engine/p2p/manifest_sync.rs",
-        "src-tauri/src/commands/network/identity.rs",
-        "src-tauri/src/commands/network/discovery.rs",
-        "src-tauri/src/commands/network/enclave.rs",
-        "src-tauri/src/commands/network/bundle.rs",
-        "src/api/network/discovery.ts",
-        "src/api/network/enclave.ts",
-        "src/stores/slices/system/networkSlice.ts"
-      ],
-      "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "668644f5-098d-4717-8930-e018610da8d3",
-      "keywords": [
-        "P2P",
-        "QUIC",
-        "mDNS",
-        "LAN",
-        "enclave",
-        "identity",
-        "discovery",
-        "manifest-sync",
-        "bundle"
-      ],
-      "name": "p2p-network",
-      "tech_stack": [
-        "Rust",
-        "Quinn QUIC",
-        "Ed25519",
-        "mDNS"
-      ]
-    },
-    {
-      "api_surface": "invoke('create_persona'), invoke('list_personas'), invoke('update_persona'), invoke('delete_persona'), invoke('duplicate_persona')",
-      "business_feature": "Persona Management",
-      "category": "ui",
-      "cross_refs": [
-        "agent-editor",
-        "agent-use-cases",
-        "execution-runner",
-        "credential-vault"
-      ],
-      "db_tables": [
-        "personas"
-      ],
-      "description": "Core CRUD and lifecycle management for AI personas (agents). Handles creation, configuration, duplication, archival, and listing of persona profiles stored in SQLite. The Rust command layer exposes IPC commands consumed by the React personas page and sidebar navigation.",
-      "entry_points": [
-        "src/features/personas/PersonasPage.tsx",
-        "src-tauri/src/commands/core/personas.rs"
-      ],
-      "file_paths": [
-        "src/features/personas/PersonasPage.tsx",
-        "src-tauri/src/commands/core/personas.rs",
-        "src/api/agents/agents.ts",
-        "src/stores/slices/agents/personaSlice.ts",
-        "src/features/shared/components/layout/sidebar/sections/TeamsSidebarNav.tsx",
-        "src/lib/types/types.ts"
-      ],
-      "group": "Agent Platform",
-      "group_id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "id": "1356a379-806b-4184-9692-420218e4dd0f",
-      "keywords": [
-        "persona",
-        "agent",
-        "CRUD",
-        "profile",
-        "configuration",
-        "archive",
-        "duplicate",
-        "starred"
-      ],
-      "name": "persona-management",
-      "tech_stack": [
-        "React",
-        "TypeScript",
-        "Rust",
-        "Zustand",
-        "SQLite"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_recipes'), invoke('adopt_recipe'), invoke('generate_recipe'), invoke('execute_recipe')",
-      "business_feature": "Recipe Automation",
-      "category": "ui",
-      "cross_refs": [
-        "trigger-system",
-        "template-system",
-        "execution-runner",
-        "team-management"
-      ],
-      "db_tables": [
-        "recipes",
-        "recipe_adoptions",
-        "recipe_suggestions"
-      ],
-      "description": "Reusable automation recipe library — pre-packaged workflows that can be adopted, versioned, and adapted to a persona's context. Includes matching logic to suggest relevant recipes, eligibility checking, AI-powered generation, and an interactive playground for testing.",
-      "entry_points": [
-        "src/features/recipes/sub_list/RecipeListPage.tsx",
-        "src-tauri/src/commands/recipes/crud.rs"
-      ],
-      "file_paths": [
-        "src/features/recipes/sub_list/RecipeListPage.tsx",
-        "src/features/recipes/sub_editor/RecipeEditor.tsx",
-        "src/features/recipes/sub_playground/RecipePlayground.tsx",
-        "src/features/recipes/sub_manager/RecipeManager.tsx",
-        "src-tauri/src/commands/recipes/crud.rs",
-        "src-tauri/src/commands/recipes/recipe_adoption.rs",
-        "src-tauri/src/commands/recipes/recipe_generation.rs",
-        "src-tauri/src/commands/recipes/recipe_execution.rs",
-        "src-tauri/src/engine/recipe_matcher.rs",
-        "src-tauri/src/engine/recipe_eligibility.rs",
-        "src-tauri/src/engine/recipe_seed.rs",
-        "src/api/recipes/recipes.ts",
-        "src/stores/slices/pipeline/recipeSlice.ts"
-      ],
-      "group": "Automation & Pipelines",
-      "group_id": "af8ddd46-80f8-4ca0-85f1-f27e9055386e",
-      "id": "bb6d0bc0-6564-453e-a6ab-4211650bf58f",
-      "keywords": [
-        "recipe",
-        "automation",
-        "workflow",
-        "adoption",
-        "matching",
-        "generation",
-        "versioning",
-        "playground"
-      ],
-      "name": "recipe-system",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('run_research_query'), invoke('list_research_results')",
-      "business_feature": "Research Lab",
-      "category": "ui",
-      "cross_refs": [
-        "team-knowledge",
-        "companion-ai",
-        "obsidian-brain"
-      ],
-      "db_tables": [],
-      "description": "Research utilities plugin providing structured web research, source aggregation, and citation management. Backed by a Rust research_lab command module and a dedicated store slice. Designed to feed findings into the knowledge base and companion brain.",
-      "entry_points": [
-        "src/features/plugins/research-lab/ResearchLabPage.tsx",
-        "src-tauri/src/commands/infrastructure/research_lab.rs"
-      ],
-      "file_paths": [
-        "src/features/plugins/research-lab/ResearchLabPage.tsx",
-        "src/features/plugins/research-lab/components/ResearchQuery.tsx",
-        "src/features/plugins/research-lab/components/SourceCard.tsx",
-        "src-tauri/src/commands/infrastructure/research_lab.rs",
-        "src/api/researchLab/researchLab.ts",
-        "src/stores/slices/system/researchLabSlice.ts"
-      ],
-      "group": "Plugin Ecosystem",
-      "group_id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
-      "id": "7b9a56cb-9a03-4209-8b59-f4956b7f3472",
-      "keywords": [
-        "research",
-        "web-search",
-        "citation",
-        "source",
-        "aggregation",
-        "knowledge",
-        "query"
-      ],
-      "name": "research-lab",
-      "tech_stack": [
-        "Rust",
-        "React"
-      ]
-    },
-    {
-      "api_surface": "invoke('get_settings'), invoke('update_settings'), invoke('list_external_api_keys')",
-      "business_feature": "Application Settings",
-      "category": "ui",
-      "cross_refs": [
-        "i18n-system",
-        "credential-vault",
-        "state-management"
-      ],
-      "db_tables": [
-        "settings",
-        "api_keys"
-      ],
-      "description": "Application-wide settings management — appearance, notifications, API keys, network, engine capabilities, data portability, and tier limits. Settings are persisted in SQLite via Rust command handlers and cached in a Zustand system store slice.",
-      "entry_points": [
-        "src/features/settings/sub_appearance/AppearancePage.tsx",
-        "src-tauri/src/commands/infrastructure/settings.rs"
-      ],
-      "file_paths": [
-        "src/features/settings/sub_appearance/AppearancePage.tsx",
-        "src/features/settings/sub_api_keys/ApiKeysPage.tsx",
-        "src/features/settings/sub_notifications/NotificationsPage.tsx",
-        "src/features/settings/sub_network/NetworkPage.tsx",
-        "src/features/settings/sub_engine/EngineCapabilitiesPage.tsx",
-        "src/features/settings/sub_limits/LimitsPage.tsx",
-        "src/features/settings/sub_portability/PortabilityPage.tsx",
-        "src-tauri/src/commands/infrastructure/settings.rs",
-        "src-tauri/src/commands/credentials/external_api_keys.rs",
-        "src/api/system/settings.ts",
-        "src/stores/slices/system/setupSlice.ts"
-      ],
-      "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "6855ddfa-637d-4d38-895f-0bc787c1e748",
-      "keywords": [
-        "settings",
-        "appearance",
-        "theme",
-        "API-keys",
-        "notifications",
-        "portability",
-        "tier",
-        "limits",
-        "engine"
-      ],
-      "name": "settings-system",
+      "name": "sla-tracking",
       "tech_stack": [
         "React",
         "TypeScript",
@@ -1800,331 +2043,132 @@
       ]
     },
     {
-      "api_surface": null,
-      "business_feature": "Application State Management",
+      "api_surface": "usePersonaStore(), useShallow()",
+      "business_feature": "State Management",
       "category": "lib",
       "cross_refs": [
-        "tauri-ipc",
-        "i18n-system",
-        "execution-runner"
+        "persona-management",
+        "execution-monitoring",
+        "settings-preferences"
       ],
       "db_tables": [],
-      "description": "Zustand-based global state with 60+ domain slices organized under agents/, overview/, pipeline/, system/, and vault/. Uses useShallow for selective subscriptions and globalThis singletons for HMR-safe buffers. The store root files wire slices together into typed store instances.",
+      "description": "Zustand store with slice pattern for all frontend state — UI state, active personas, execution buffers, settings. Slices live in src/stores/slices/ and are composed in the root store. Uses useShallow for selective subscriptions.",
       "entry_points": [
-        "src/stores/agentStore.ts",
+        "src/stores/personaStore.ts",
         "src/stores/storeTypes.ts"
       ],
       "file_paths": [
-        "src/stores/agentStore.ts",
-        "src/stores/authStore.ts",
-        "src/stores/systemStore.ts",
-        "src/stores/themeStore.ts",
-        "src/stores/vaultStore.ts",
-        "src/stores/pipelineStore.ts",
-        "src/stores/overviewStore.ts",
+        "src/stores/personaStore.ts",
         "src/stores/storeTypes.ts",
-        "src/stores/notificationCenterStore.ts",
-        "src/stores/commandPaletteStore.ts",
         "src/stores/slices/system/uiSlice.ts",
-        "src/stores/slices/agents/runLifecycle.ts"
+        "src/stores/slices/system/settingsSlice.ts",
+        "src/stores/slices/agents/agentSlice.ts",
+        "src/stores/slices/execution/executionSlice.ts",
+        "src/stores/slices/ui/tourSlice.ts",
+        "src/stores/slices/ui/alertSlice.ts"
       ],
       "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "870b51cd-2ec9-4ed7-872f-3cf8bbd55ac5",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "7a959127-68c7-4dd2-9927-7472f378f577",
       "keywords": [
-        "Zustand",
-        "state",
-        "slice",
+        "zustand",
         "store",
+        "slice",
+        "state",
         "useShallow",
-        "HMR",
-        "subscription",
-        "global-state"
+        "global-state",
+        "ui-slice",
+        "execution-buffer"
       ],
       "name": "state-management",
       "tech_stack": [
-        "TypeScript",
         "Zustand 5",
+        "TypeScript",
         "React"
       ]
     },
     {
-      "api_surface": null,
+      "api_surface": "invokeWithTimeout('<command_name>', payload, timeoutMs)",
       "business_feature": "Tauri IPC Bridge",
       "category": "lib",
       "cross_refs": [
+        "persona-management",
         "execution-runner",
-        "credential-vault",
-        "persona-management"
+        "credential-vault"
       ],
       "db_tables": [],
-      "description": "Tauri IPC bridge layer — the tauriInvoke wrapper (enforced over raw invoke by ESLint), auto-generated command names, and the event bridge for reactive event subscriptions. All frontend-to-backend communication flows through this layer with timeout enforcement.",
+      "description": "Frontend-to-backend IPC bridge using Tauri's typed command system. All frontend calls go through invokeWithTimeout wrappers; ESLint enforces no raw invoke() calls. Includes generated command-name constants and ts-rs type bindings.",
       "entry_points": [
         "src/lib/tauriInvoke.ts",
         "src-tauri/src/lib.rs"
       ],
       "file_paths": [
         "src/lib/tauriInvoke.ts",
-        "src/lib/commandNames.generated.ts",
-        "src/lib/eventBridge.ts",
-        "src/lib/eventRegistry.ts",
-        "src/lib/storeBus.ts",
-        "src/lib/storeBusWiring.ts",
-        "src/lib/ipcMetrics.ts",
+        "src/lib/bindings/",
         "src-tauri/src/lib.rs",
-        "src-tauri/src/commands/infrastructure/mod.rs",
-        "scripts/generate-command-names.mjs"
+        "scripts/generate-command-names.mjs",
+        "src-tauri/src/commands/mod.rs"
       ],
       "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "952ad67c-df83-403a-97a9-65c410a17801",
+      "group_id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
+      "id": "543457ed-592e-4af8-8964-e14890884310",
       "keywords": [
-        "IPC",
+        "tauri",
+        "ipc",
         "invoke",
-        "Tauri",
-        "event-bridge",
-        "command-names",
+        "command",
+        "binding",
+        "ts-rs",
         "timeout",
-        "metrics",
-        "bridge"
+        "bridge",
+        "type-safe"
       ],
-      "name": "tauri-ipc",
+      "name": "tauri-ipc-bridge",
       "tech_stack": [
+        "Tauri 2",
         "TypeScript",
         "Rust",
-        "Tauri 2"
+        "ts-rs"
       ]
     },
     {
-      "api_surface": "invoke('create_assignment'), invoke('list_assignments'), invoke('get_assignment_match')",
-      "business_feature": "Task Assignments",
+      "api_surface": "invoke('get_teams'), invoke('create_team'), invoke('add_team_member')",
+      "business_feature": "Teams Management",
       "category": "ui",
       "cross_refs": [
-        "team-management",
-        "team-kpis",
-        "execution-runner"
-      ],
-      "db_tables": [
-        "assignments",
-        "team_assignments"
-      ],
-      "description": "Task assignment orchestration — matching tasks to the most capable team persona via heuristics and AI, tracking completion status, and surfacing assignments in the team workspace. The engine handles assignment matching and handoff logic between personas.",
-      "entry_points": [
-        "src/features/teams/sub_assignments/AssignmentsPage.tsx",
-        "src-tauri/src/engine/team_assignment_orchestrator.rs"
-      ],
-      "file_paths": [
-        "src/features/teams/sub_assignments/AssignmentsPage.tsx",
-        "src/features/teams/sub_assignments/components/AssignmentCard.tsx",
-        "src-tauri/src/commands/teams/assignments.rs",
-        "src-tauri/src/engine/team_assignment_matching.rs",
-        "src-tauri/src/engine/team_assignment_orchestrator.rs",
-        "src-tauri/src/engine/team_handoff.rs",
-        "src/api/pipeline/assignments.ts",
-        "src/stores/slices/pipeline/assignmentSlice.ts"
-      ],
-      "group": "Team Collaboration",
-      "group_id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
-      "id": "5232e6b5-3742-483f-a333-7af2682957bb",
-      "keywords": [
-        "assignment",
-        "task",
-        "matching",
-        "handoff",
-        "orchestration",
-        "routing",
-        "capability-match"
-      ],
-      "name": "team-assignments",
-      "tech_stack": [
-        "Rust",
-        "React"
-      ]
-    },
-    {
-      "api_surface": null,
-      "business_feature": "Team Canvas & Decision Room",
-      "category": "ui",
-      "cross_refs": [
-        "team-management",
-        "team-kpis",
-        "director-orchestration"
-      ],
-      "db_tables": [
-        "goals",
-        "canvas_nodes"
-      ],
-      "description": "Interactive visual canvas and red-room secure decision space for teams — supports whiteboard-style collaboration, goal visualization, and high-stakes decision framing in an isolated environment. Powered by React Flow for graph rendering.",
-      "entry_points": [
-        "src/features/teams/sub_canvas/CanvasPage.tsx",
-        "src/features/teams/sub_redRoom/RedRoomPage.tsx"
-      ],
-      "file_paths": [
-        "src/features/teams/sub_canvas/CanvasPage.tsx",
-        "src/features/teams/sub_canvas/components/CanvasBoard.tsx",
-        "src/features/teams/sub_redRoom/RedRoomPage.tsx",
-        "src/features/teams/sub_redRoom/components/DecisionPanel.tsx",
-        "src/features/teams/sub_goals/GoalsPage.tsx",
-        "src-tauri/src/engine/goal_advance.rs",
-        "src-tauri/src/engine/leadership.rs"
-      ],
-      "group": "Team Collaboration",
-      "group_id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
-      "id": "35b04e96-d7c4-41cc-a844-19586c1f7671",
-      "keywords": [
-        "canvas",
-        "whiteboard",
-        "red-room",
-        "decision",
-        "goal",
-        "leadership",
-        "visual",
-        "secure-space"
-      ],
-      "name": "team-canvas",
-      "tech_stack": [
-        "React",
-        "React Flow",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_team_memories'), invoke('add_team_memory'), invoke('synthesize_team_knowledge')",
-      "business_feature": "Team Knowledge Base",
-      "category": "ui",
-      "cross_refs": [
-        "team-management",
-        "companion-ai",
-        "obsidian-brain"
-      ],
-      "db_tables": [
-        "team_memories",
-        "memories"
-      ],
-      "description": "Team-scoped memory and knowledge base — stores synthesized insights, memories, and shared context that all personas on a team can reference. Backed by the team memories Rust module and surfaced in a dedicated workspace view. Supports AI-powered team synthesis.",
-      "entry_points": [
-        "src/features/teams/sub_teamMemory/TeamMemoryPage.tsx",
-        "src-tauri/src/commands/teams/team_memories.rs"
-      ],
-      "file_paths": [
-        "src/features/teams/sub_teamMemory/TeamMemoryPage.tsx",
-        "src/features/teams/sub_teamMemory/components/MemoryEntry.tsx",
-        "src-tauri/src/commands/teams/team_memories.rs",
-        "src/api/pipeline/teamMemories.ts",
-        "src/api/overview/intelligence/teamSynthesis.ts",
-        "src/api/overview/memories.ts",
-        "src/stores/slices/overview/memorySlice.ts"
-      ],
-      "group": "Team Collaboration",
-      "group_id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
-      "id": "1963268e-d6c2-41ee-9268-a3483db119df",
-      "keywords": [
-        "memory",
-        "knowledge",
-        "synthesis",
-        "shared-context",
-        "team-brain",
-        "recall",
-        "insight"
-      ],
-      "name": "team-knowledge",
-      "tech_stack": [
-        "Rust",
-        "React"
-      ]
-    },
-    {
-      "api_surface": "invoke('list_kpis'), invoke('evaluate_kpis'), invoke('scan_kpis')",
-      "business_feature": "Team KPIs",
-      "category": "ui",
-      "cross_refs": [
-        "team-management",
-        "analytics-dashboard",
-        "director-orchestration",
-        "team-assignments"
-      ],
-      "db_tables": [
-        "kpis",
-        "kpi_evaluations",
-        "goals"
-      ],
-      "description": "KPI definition, binding, derivation, and evaluation system for team performance measurement. KPIs are derived from execution outcomes and goal progress via Rust engine modules. The frontend KPIsPage and DevKpi bindings surface current metrics and allow teams to define targets.",
-      "entry_points": [
-        "src/features/teams/sub_kpis/KPIsPage.tsx",
-        "src-tauri/src/engine/kpi_eval.rs"
-      ],
-      "file_paths": [
-        "src/features/teams/sub_kpis/KPIsPage.tsx",
-        "src-tauri/src/engine/kpi_binding.rs",
-        "src-tauri/src/engine/kpi_derivation.rs",
-        "src-tauri/src/engine/kpi_eval.rs",
-        "src-tauri/src/commands/infrastructure/kpi_scan.rs",
-        "src/lib/bindings/DevKpi.ts"
-      ],
-      "group": "Team Collaboration",
-      "group_id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
-      "id": "9e8e1027-7fe6-4e2d-9e11-8c59e6b7cc69",
-      "keywords": [
-        "KPI",
-        "metric",
-        "goal",
-        "binding",
-        "derivation",
-        "evaluation",
-        "performance",
-        "target",
-        "score"
-      ],
-      "name": "team-kpis",
-      "tech_stack": [
-        "Rust",
-        "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('create_team'), invoke('list_teams'), invoke('get_team'), invoke('update_team_channel')",
-      "business_feature": "Team Management",
-      "category": "ui",
-      "cross_refs": [
-        "persona-management",
-        "team-kpis",
-        "team-assignments",
-        "team-knowledge"
+        "goals-kpi",
+        "persona-management"
       ],
       "db_tables": [
         "teams",
         "team_members",
-        "team_channels"
+        "team_personas"
       ],
-      "description": "Core team CRUD, channel management, and workspace coordination for multi-persona teams. Teams group personas under shared goals with dedicated communication channels. The Rust backend handles team state and channel delivery; the frontend provides a workspace shell with sub-views.",
+      "description": "Teams feature enabling multi-user grouping of personas, shared goals, and collaborative KPI tracking. Manages team CRUD, member assignment, and the Teams sidebar navigation.",
       "entry_points": [
-        "src/features/teams/sub_teamWorkspace/TeamWorkspacePage.tsx",
-        "src-tauri/src/commands/teams/teams.rs"
+        "src/features/teams/TeamsPage.tsx",
+        "src-tauri/src/commands/core/teams.rs"
       ],
       "file_paths": [
-        "src/features/teams/sub_teamWorkspace/TeamWorkspacePage.tsx",
-        "src/features/teams/sub_collab/CollabView.tsx",
-        "src-tauri/src/commands/teams/teams.rs",
-        "src-tauri/src/commands/teams/team_channel.rs",
-        "src/api/pipeline/teams.ts",
-        "src/api/pipeline/teamChannel.ts",
-        "src/stores/slices/pipeline/teamSlice.ts",
-        "src/features/shared/components/layout/sidebar/sections/TeamsSidebarNav.tsx"
+        "src/features/teams/TeamsPage.tsx",
+        "src/features/teams/TeamCard.tsx",
+        "src/features/teams/hooks/useTeams.ts",
+        "src/features/shared/components/layout/sidebar/sections/TeamsSidebarNav.tsx",
+        "src-tauri/src/commands/core/teams.rs",
+        "src-tauri/src/db/models/team.rs"
       ],
       "group": "Team Collaboration",
-      "group_id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
-      "id": "51cdc37f-9ecf-4752-b116-6977f568cb02",
+      "group_id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
+      "id": "19539f1f-5b08-4b6d-a56d-056f2e1eb058",
       "keywords": [
         "team",
-        "channel",
-        "workspace",
+        "group",
+        "member",
+        "shared",
         "collaboration",
-        "multi-persona",
-        "membership",
-        "coordination"
+        "sidebar-nav"
       ],
-      "name": "team-management",
+      "name": "teams-management",
       "tech_stack": [
         "React",
         "TypeScript",
@@ -2132,275 +2176,257 @@
       ]
     },
     {
-      "api_surface": "invoke('list_templates'), invoke('adopt_template'), invoke('get_template_diagram')",
-      "business_feature": "Agent Templates",
+      "api_surface": "invoke('get_templates'), invoke('adopt_template'), invoke('get_build_session_status')",
+      "business_feature": "Template System",
       "category": "ui",
       "cross_refs": [
-        "build-sessions",
-        "recipe-system",
-        "workflow-design",
-        "agent-editor"
+        "agent-editor",
+        "agent-design-wizard",
+        "execution-runner"
       ],
       "db_tables": [
         "templates",
-        "template_adoptions"
+        "build_sessions",
+        "adoption_answers"
       ],
-      "description": "Agent template library with preset configurations, team presets, and diagram-based visual representations. Templates can be adopted mid-build via AI-suggestion (Glyph mid-build flow), versioned through a build-session pipeline, and validated with template checksums. Includes n8n-compatible templates.",
+      "description": "Template library for bootstrapping new personas from pre-built seeds. Covers template discovery, adoption flow (structured setup_detail, typed blockers), mid-build suggestions, tier gating, and the Glyph build-session template suggestion system.",
       "entry_points": [
-        "src/features/templates/sub_presets/PresetsPage.tsx",
-        "src-tauri/src/engine/template_v3.rs"
+        "src/features/templates/TemplatesPage.tsx",
+        "src-tauri/src/engine/build_session/build_session.rs"
       ],
       "file_paths": [
-        "src/features/templates/components/TemplateCard.tsx",
-        "src/features/templates/sub_presets/PresetsPage.tsx",
-        "src/features/templates/sub_diagrams/DiagramsPage.tsx",
-        "src/features/templates/sub_n8n/N8nTemplatesPage.tsx",
-        "src/features/templates/sub_generated/GeneratedTemplates.tsx",
-        "src-tauri/src/engine/template_v3.rs",
-        "src-tauri/src/engine/template_checksums.rs",
-        "src-tauri/src/engine/team_preset_adopter.rs",
-        "src-tauri/src/engine/team_preset_loader.rs",
-        "src/api/templates/teamPresets.ts",
-        "src/api/design/design.ts"
+        "src/features/templates/TemplatesPage.tsx",
+        "src/features/templates/TemplateCard.tsx",
+        "src/features/templates/AdoptionModal.tsx",
+        "src/features/templates/hooks/useTemplateAdoption.ts",
+        "src-tauri/src/commands/design/templates.rs",
+        "src-tauri/src/db/models/template.rs",
+        "src-tauri/src/engine/build_session/adopter.rs",
+        "src-tauri/src/engine/build_session/build_phase.rs",
+        "src-tauri/src/engine/build_session/build_session.rs",
+        "docs/features/templates/README.md"
       ],
-      "group": "Automation & Pipelines",
-      "group_id": "af8ddd46-80f8-4ca0-85f1-f27e9055386e",
-      "id": "de677fc5-6bb0-4c6d-bb0f-29187ff3e845",
+      "group": "Agent Platform",
+      "group_id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "id": "09fc14b9-e80f-41b9-98ed-5578a5c276c2",
       "keywords": [
         "template",
-        "preset",
-        "diagram",
-        "n8n",
         "adoption",
-        "checksum",
-        "glyph-suggestion",
-        "versioned"
+        "seed",
+        "bootstrap",
+        "build-session",
+        "glyph",
+        "tier-gate",
+        "setup-detail"
       ],
       "name": "template-system",
       "tech_stack": [
-        "Rust",
         "React",
-        "React Flow"
+        "TypeScript",
+        "Rust"
       ]
     },
     {
-      "api_surface": "invoke('create_trigger'), invoke('list_triggers'), invoke('test_trigger'), POST /webhook/:id",
-      "business_feature": "Trigger Automation",
+      "api_surface": "invoke('get_tool_calls'), invoke('replay_tool_call')",
+      "business_feature": "Tool Runner",
       "category": "api",
       "cross_refs": [
         "execution-runner",
-        "execution-scheduling",
-        "event-tracking",
-        "recipe-system"
+        "mcp-protocol",
+        "agent-connectors"
+      ],
+      "db_tables": [
+        "tool_calls",
+        "tool_results"
+      ],
+      "description": "Executes tool calls emitted by LLM outputs — built-in tools (filesystem, web, code interpreter), MCP-routed tools, and custom function handlers. Manages tool call parsing, sandboxing, result injection back into the execution context.",
+      "entry_points": [
+        "src-tauri/src/engine/tool_runner.rs",
+        "src/features/agents/sub_tool_runner/ToolRunnerTab.tsx"
+      ],
+      "file_paths": [
+        "src-tauri/src/engine/tool_runner.rs",
+        "src-tauri/src/engine/tool_registry.rs",
+        "src/features/agents/sub_tool_runner/ToolRunnerTab.tsx",
+        "src/features/agents/sub_tool_runner/components/ToolCallCard.tsx",
+        "src/features/agents/sub_tool_runner/hooks/useToolResults.ts",
+        "src-tauri/src/commands/execution/tool_calls.rs"
+      ],
+      "group": "Execution Engine",
+      "group_id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "id": "c53bd9be-835a-4836-96ad-1f48ca4e1376",
+      "keywords": [
+        "tool",
+        "tool-call",
+        "mcp",
+        "function",
+        "sandbox",
+        "injection",
+        "result",
+        "built-in-tool"
+      ],
+      "name": "tool-runner",
+      "tech_stack": [
+        "Rust",
+        "React",
+        "TypeScript"
+      ]
+    },
+    {
+      "api_surface": "invoke('create_trigger'), invoke('test_trigger'), POST /webhook/:id",
+      "business_feature": "Trigger System",
+      "category": "api",
+      "cross_refs": [
+        "execution-runner",
+        "overview-events",
+        "scheduler"
       ],
       "db_tables": [
         "triggers",
-        "trigger_deliveries",
-        "dead_letters"
+        "trigger_events",
+        "trigger_logs"
       ],
-      "description": "Event-driven trigger engine that fires persona executions in response to webhooks, cron schedules, file events, and manual invocations. Includes a Studio UI for visual trigger construction, a dead-letter queue for failed deliveries, a Smee relay for local webhook testing, and cloud webhook relay.",
+      "description": "Event-driven trigger system that fires persona executions based on external events (webhooks, GitHub, Slack, scheduled events). Manages trigger definitions, routing rules, event matching, and the trigger configuration UI.",
       "entry_points": [
         "src/features/triggers/TriggersPage.tsx",
-        "src-tauri/src/engine/trigger_system.rs"
+        "src-tauri/src/engine/event_registry.rs"
       ],
       "file_paths": [
         "src/features/triggers/TriggersPage.tsx",
-        "src/features/triggers/sub_builder/TriggerBuilder.tsx",
-        "src/features/triggers/sub_studio/StudioPage.tsx",
-        "src/features/triggers/sub_dead_letter/DeadLetterPage.tsx",
-        "src/features/triggers/sub_smee_relay/SmeeRelayPanel.tsx",
-        "src/features/triggers/sub_cloud_webhooks/CloudWebhooksPage.tsx",
-        "src-tauri/src/commands/tools/triggers.rs",
-        "src-tauri/src/engine/trigger_system.rs",
-        "src-tauri/src/engine/webhook.rs",
-        "src-tauri/src/engine/smee_relay.rs",
-        "src-tauri/src/engine/cloud_webhook_relay.rs",
-        "src/api/pipeline/triggers.ts",
-        "src/stores/slices/pipeline/triggerSlice.ts"
+        "src/features/triggers/TriggerCard.tsx",
+        "src/features/triggers/TriggerEditor.tsx",
+        "src/features/triggers/hooks/useTriggers.ts",
+        "src-tauri/src/commands/communication/triggers.rs",
+        "src-tauri/src/engine/event_registry.rs",
+        "src-tauri/src/db/models/trigger.rs",
+        "src-tauri/src/db/repos/triggers.rs",
+        "docs/features/events/README.md"
       ],
       "group": "Automation & Pipelines",
-      "group_id": "af8ddd46-80f8-4ca0-85f1-f27e9055386e",
-      "id": "1d4a97c6-5180-4892-98f3-d24f0a3c15c1",
+      "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
+      "id": "d32e7ccb-0473-49c6-bab9-931610e4b6f3",
       "keywords": [
         "trigger",
         "webhook",
         "event-driven",
-        "smee",
-        "dead-letter",
-        "studio",
-        "cloud-relay",
-        "rate-limit"
+        "routing",
+        "github",
+        "slack",
+        "automation",
+        "event-matching"
       ],
       "name": "trigger-system",
       "tech_stack": [
-        "Rust",
         "React",
-        "TypeScript"
-      ]
-    },
-    {
-      "api_surface": "invoke('search_knowledge'), invoke('ingest_knowledge'), invoke('smart_search')",
-      "business_feature": "Vector Knowledge Base",
-      "category": "data",
-      "cross_refs": [
-        "team-knowledge",
-        "obsidian-brain",
-        "execution-runner",
-        "database-layer"
-      ],
-      "db_tables": [
-        "knowledge_chunks",
-        "vector_index"
-      ],
-      "description": "Semantic vector knowledge base using FastEmbed + ONNX Runtime for local embeddings. Stores chunked text with SQLite-Vec, powers semantic search across personas and team knowledge. Gated behind the 'ml' Cargo feature for builds that need ML inference.",
-      "entry_points": [
-        "src-tauri/src/engine/knowledge.rs",
-        "src-tauri/src/engine/embedder.rs"
-      ],
-      "file_paths": [
-        "src-tauri/src/engine/knowledge.rs",
-        "src-tauri/src/engine/kb_index.rs",
-        "src-tauri/src/engine/kb_ingest.rs",
-        "src-tauri/src/engine/vector_store.rs",
-        "src-tauri/src/engine/embedder.rs",
-        "src-tauri/src/engine/chunker.rs",
-        "src-tauri/src/commands/execution/knowledge.rs",
-        "src/api/overview/intelligence/knowledge.ts",
-        "src/api/overview/intelligence/smartSearch.ts"
-      ],
-      "group": "Platform Infrastructure",
-      "group_id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
-      "id": "5d3a3ad7-2e39-4dc9-ae04-7f06d671f81d",
-      "keywords": [
-        "vector",
-        "embeddings",
-        "semantic-search",
-        "FastEmbed",
-        "ONNX",
-        "knowledge-base",
-        "SQLite-Vec",
-        "chunking",
-        "ML"
-      ],
-      "name": "vector-knowledge-base",
-      "tech_stack": [
+        "TypeScript",
         "Rust",
-        "FastEmbed",
-        "ONNX Runtime",
-        "SQLite-Vec"
+        "Axum"
       ]
     },
     {
-      "api_surface": "invoke('compile_workflow'), invoke('validate_workflow'), invoke('list_connectors')",
-      "business_feature": "Workflow Designer",
-      "category": "api",
+      "api_surface": "invoke('get_workflows'), invoke('save_workflow'), invoke('execute_workflow')",
+      "business_feature": "Workflow Automation",
+      "category": "ui",
       "cross_refs": [
-        "template-system",
-        "trigger-system",
-        "execution-runner",
-        "connector-auth"
+        "recipe-engine",
+        "execution-chaining",
+        "trigger-system"
       ],
       "db_tables": [
         "workflows",
-        "workflow_steps"
+        "workflow_nodes",
+        "workflow_edges"
       ],
-      "description": "Visual workflow designer and compilation pipeline for composing multi-step agent pipelines with branching, looping, and conditional logic. The compiler transforms a visual workflow graph into an executable artifact. Includes n8n-format import/export and platform rule enforcement.",
+      "description": "Visual workflow / n8n-style pipeline builder for connecting multiple personas and tools into automated multi-step flows. Manages node-graph editing, flow execution, and the cross-platform n8n integration bridge.",
       "entry_points": [
-        "src-tauri/src/engine/workflow_compiler.rs",
-        "src-tauri/src/engine/compilation_pipeline.rs"
+        "src/api/pipeline/workflows.ts",
+        "src-tauri/src/commands/design/n8n_workflows.rs"
       ],
       "file_paths": [
-        "src-tauri/src/engine/workflow_compiler.rs",
-        "src-tauri/src/engine/compilation_pipeline.rs",
-        "src-tauri/src/engine/pipeline.rs",
-        "src-tauri/src/engine/pipeline_executor.rs",
-        "src-tauri/src/commands/design/analysis.rs",
-        "src-tauri/src/commands/design/n8n_sessions.rs",
-        "src-tauri/src/commands/design/connector_explorer.rs",
-        "src-tauri/src/engine/platform_rules.rs",
+        "src-tauri/src/commands/design/n8n_workflows.rs",
         "src/api/pipeline/workflows.ts",
-        "src/api/templates/n8nTransform.ts",
-        "src/lib/compiler/index.ts",
-        "src/lib/build/index.ts"
+        "src/features/recipes/sub_editor/components/WorkflowCanvas.tsx",
+        "src/features/recipes/sub_editor/hooks/useWorkflowNodes.ts"
       ],
       "group": "Automation & Pipelines",
-      "group_id": "af8ddd46-80f8-4ca0-85f1-f27e9055386e",
-      "id": "54a64999-b5d3-40bf-86ca-61c6c26e72b4",
+      "group_id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
+      "id": "939413b0-b6bc-4e7d-affc-49c18f5e045e",
       "keywords": [
         "workflow",
         "pipeline",
-        "compiler",
         "n8n",
-        "visual-design",
-        "graph",
-        "execution-plan",
-        "connector-explorer"
+        "visual",
+        "node-graph",
+        "automation",
+        "multi-step",
+        "canvas"
       ],
-      "name": "workflow-design",
+      "name": "workflow-automation",
       "tech_stack": [
-        "Rust",
+        "React",
+        "TypeScript",
         "React Flow",
-        "TypeScript"
+        "Rust"
       ]
     }
   ],
-  "generated_at": "2026-06-14T15:31:54.884224500+00:00",
+  "generated_at": "2026-06-16T21:59:05.259222+00:00",
   "generator": "personas-context-scan",
   "groups": [
+    {
+      "color": "violet",
+      "context_count": 6,
+      "domain": "feature",
+      "id": "0da5c7e5-080f-4307-88a9-5cf08c5b7ca2",
+      "name": "Agent Platform"
+    },
+    {
+      "color": "emerald",
+      "context_count": 7,
+      "domain": "feature",
+      "id": "dea80e5b-67d3-4de7-8e0d-c7d80a82ce33",
+      "name": "Execution Engine"
+    },
     {
       "color": "blue",
       "context_count": 6,
       "domain": "feature",
-      "id": "7306cd42-a6cf-4837-b3aa-60c97fa20959",
-      "name": "Agent Platform"
-    },
-    {
-      "color": "amber",
-      "context_count": 7,
-      "domain": "feature",
-      "id": "9cbfab6b-8b8c-43b7-b125-dbb92277552e",
-      "name": "Execution Engine"
-    },
-    {
-      "color": "emerald",
-      "context_count": 6,
-      "domain": "feature",
-      "id": "4a4e261c-626e-4797-9d8b-1303aeaceddd",
+      "id": "8ecc3f1c-c07b-441e-8eb7-f871ac8adc73",
       "name": "Observability"
     },
     {
-      "color": "orange",
+      "color": "amber",
       "context_count": 4,
       "domain": "feature",
-      "id": "af8ddd46-80f8-4ca0-85f1-f27e9055386e",
+      "id": "51f08310-27f9-4df5-831f-a7fd2034ae2d",
       "name": "Automation & Pipelines"
     },
     {
-      "color": "violet",
+      "color": "orange",
       "context_count": 5,
       "domain": "feature",
-      "id": "c1787915-617e-41eb-b17f-c9f9b76bd583",
+      "id": "acc3eceb-eec7-4954-b598-b69c827e7b43",
       "name": "Team Collaboration"
     },
     {
       "color": "red",
       "context_count": 3,
       "domain": "infrastructure",
-      "id": "2c7a6cfb-6bcb-4d6e-ad45-17201e668dbe",
+      "id": "0240e2ac-2a14-49a8-8795-a80bbddae535",
       "name": "Security & Credentials"
     },
     {
       "color": "pink",
       "context_count": 7,
       "domain": "integration",
-      "id": "f32f4913-280e-46e4-bbcc-8734dbb8c340",
+      "id": "c4bfec5e-ece0-4814-83f2-51a27e3159a6",
       "name": "Plugin Ecosystem"
     },
     {
       "color": "indigo",
       "context_count": 9,
       "domain": "infrastructure",
-      "id": "69a8a8a0-3a91-40ea-9d71-3af533575342",
+      "id": "086b2806-0aaf-4b13-98ee-fbde2eff4f4a",
       "name": "Platform Infrastructure"
     }
   ],
@@ -2410,8 +2436,8 @@
     "root": "C:\\Users\\kazda\\kiro\\personas"
   },
   "stats": {
-    "contexts": 47,
-    "files": 458,
+    "contexts": 49,
+    "files": 392,
     "groups": 8
   },
   "taxonomy": {

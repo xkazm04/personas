@@ -1,5 +1,5 @@
 import { Music, Radio } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
@@ -32,11 +32,12 @@ export default function RadioSettingsCard() {
   const disabledSet = new Set(disabledStationIds);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading
-        title={t.radio.settings_title}
-        icon={<Radio className="text-violet-400" />}
-      />
+    <SectionCard
+      title={t.radio.settings_title}
+      icon={<Radio className="w-4 h-4 text-violet-400" />}
+      titleClassName="text-primary"
+    >
+      <div className="space-y-4">
       <p className="typo-body text-foreground leading-relaxed">
         {t.radio.settings_description}
       </p>
@@ -106,6 +107,7 @@ export default function RadioSettingsCard() {
           );
         })}
       </ul>
-    </div>
+      </div>
+    </SectionCard>
   );
 }

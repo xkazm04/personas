@@ -1,16 +1,14 @@
 /**
  * StudioOptionCards — palette option cards for the Chain Studio
  * Switchboard. Cards answer "what am I working with?": trigger cards carry
- * the type description; persona cards carry model tier, trust, readiness,
- * and recency pulled from the live Persona binding.
+ * the type description; persona cards carry the name + a one-line description.
+ * Compact 2-row layout — the model-tier / trust / recency stat row was dropped
+ * 2026-06-17 to keep the rail dense.
  */
-import { ShieldCheck, ShieldAlert, EyeOff } from 'lucide-react';
+import { EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import {
-  modelTierLabel, modelTierAccent, attentionFor, relativeUpdated,
-} from '@/features/home/sub_cockpit/widgets/personaStats';
 import type { TriggerBlockTemplate } from './libs/triggerStudioConstants';
 
 export function TriggerOptionCard({
@@ -57,10 +55,6 @@ export function PersonaOptionCard({
   onPick: () => void;
 }) {
   const { t } = useTranslation();
-  const tier = modelTierAccent(persona.model_profile);
-  const tierLabel = modelTierLabel(persona.model_profile);
-  const attention = attentionFor(persona);
-  const trusted = persona.trust_score >= 0.75;
 
   return (
     <button
@@ -82,16 +76,6 @@ export function PersonaOptionCard({
         </div>
         <div className="typo-body opacity-80 text-foreground truncate">
           {hint ?? persona.description ?? t.triggers.studio.agent_fallback}
-        </div>
-        <div className="flex items-center gap-2 mt-1">
-          <span className={`typo-label px-1.5 py-0.5 rounded-input ${tier.bgSoftClass} ${tier.textClass}`}>{tierLabel}</span>
-          {trusted
-            ? <span className="flex items-center gap-1 typo-body opacity-80 text-status-success"><ShieldCheck className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>
-            : <span className="flex items-center gap-1 typo-body opacity-80 text-foreground"><ShieldAlert className="w-3 h-3" />{Math.round(persona.trust_score * 100)}</span>}
-          {attention && (
-            <span className={`typo-body opacity-80 ${attention.tone === 'bad' ? 'text-status-error' : 'text-status-warning'}`}>{attention.label}</span>
-          )}
-          {!dense && <span className="typo-body opacity-80 text-foreground ml-auto">{relativeUpdated(persona.updated_at)}</span>}
         </div>
       </div>
     </button>

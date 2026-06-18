@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  Archive, ExternalLink, Gauge, GitBranch, Network,
+  Archive, ExternalLink, Gauge, GitBranch,
   Radio, Store, Unplug, Webhook, Zap, type LucideIcon,
 } from "lucide-react";
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -20,7 +20,6 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
 
-const EventCanvas = lazy(() => import('./sub_builder/EventCanvas').then(m => ({ default: m.EventCanvas })));
 const TriggerStudioCanvas = lazy(() => import('./sub_studio/TriggerStudioCanvas').then(m => ({ default: m.TriggerStudioCanvas })));
 const SharedEventsTab = lazy(() => import('./sub_shared/SharedEventsTab').then(m => ({ default: m.SharedEventsTab })));
 
@@ -71,7 +70,6 @@ export function TriggersPage() {
         </button>
       ),
     },
-    builder: { icon: Network, iconColor: 'violet', title: t.triggers.tab_builder },
     'rate-limits': { icon: Gauge, iconColor: 'amber', title: t.triggers.tab_rate_limits, subtitle: t.triggers.tab_rate_limits_subtitle },
     test: { icon: Zap, iconColor: 'emerald', title: t.triggers.tab_test, subtitle: t.triggers.tab_test_subtitle },
     'smee-relay': { icon: Unplug, iconColor: 'indigo', title: t.triggers.tab_smee_relay, subtitle: t.triggers.tab_smee_relay_subtitle },
@@ -127,7 +125,6 @@ export function TriggersPage() {
       </ContentHeader>
 
       <div key={eventBusTab} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
-        {eventBusTab === "builder" && <LazyWrap><EventCanvas allTriggers={allTriggers} setHeaderExtra={setTabHeaderExtra} /></LazyWrap>}
         {eventBusTab === "studio" && <LazyWrap><TriggerStudioCanvas /></LazyWrap>}
         {eventBusTab === "shared" && <LazyWrap><SharedEventsTab /></LazyWrap>}
         {eventBusTab === "live-stream" && <LiveStreamTab />}

@@ -92,7 +92,7 @@ export function EventsSection({
       <div className={SECTION_LABEL}>
         <Zap className="w-4 h-4 text-amber-400" />
         {t.templates.design.events_and_triggers}
-        <span className="typo-body font-normal text-foreground ml-1">{t.templates.design.what_activates}</span>
+        <span className="typo-caption ml-1">{t.templates.design.what_activates}</span>
       </div>
 
       <div className={`bg-secondary/20 border border-primary/10 rounded-modal overflow-hidden ${
@@ -112,11 +112,11 @@ export function EventsSection({
                   <div key={trigger.id} className="flex items-start gap-2.5 py-1">
                     <div className="flex-shrink-0 mt-0.5">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type as SuggestedTrigger['trigger_type']); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
                     <div className="flex-1 min-w-0">
-                      <span className={`typo-body capitalize block ${trigger.enabled ? 'text-foreground/90' : 'text-foreground'}`}>
+                      <span className="typo-body font-semibold text-foreground capitalize block">
                         {trigger.trigger_type.replace(/_/g, ' ')}
                       </span>
                       {detail && (
-                        <span className="typo-caption text-foreground font-mono block leading-snug">
+                        <span className="typo-caption text-primary/80 font-mono block leading-snug">
                           {detail}
                         </span>
                       )}
@@ -152,8 +152,8 @@ export function EventsSection({
                     )}
                     <div className="flex-shrink-0 mt-0.5">{(() => { const { Icon, color } = triggerIconMeta(trigger.trigger_type); return <Icon className={`w-4 h-4 ${color}`} />; })()}</div>
                     <div className="flex-1 min-w-0">
-                      <span className="typo-body text-foreground/90 capitalize block">{trigger.trigger_type}</span>
-                      <span className="typo-body text-foreground leading-snug block">{trigger.description}</span>
+                      <span className="typo-body font-semibold text-foreground capitalize block">{trigger.trigger_type}</span>
+                      <span className="typo-caption leading-snug block">{trigger.description}</span>
                     </div>
                   </div>
                 );
@@ -184,8 +184,8 @@ export function EventsSection({
                   )}
                   <Zap className="w-3.5 h-3.5 text-purple-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
-                    <span className="typo-body text-foreground/90 block">{sub.event_type}</span>
-                    <span className="typo-body text-foreground leading-snug block">{sub.description}</span>
+                    <span className="typo-body font-semibold text-foreground block">{sub.event_type}</span>
+                    <span className="typo-caption leading-snug block">{sub.description}</span>
                   </div>
                 </div>
               );

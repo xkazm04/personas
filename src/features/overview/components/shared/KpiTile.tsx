@@ -1,4 +1,4 @@
-import { memo, useMemo, type ReactNode } from 'react';
+import { memo, useMemo, isValidElement, type ReactNode, type ComponentType } from 'react';
 import { TrendingUp, TrendingDown, type LucideIcon } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -116,9 +116,15 @@ function Sparkline({ data, hex }: { data: number[]; hex: string }) {
 }
 
 function renderIcon(icon: KpiTileProps['icon'], className?: string): ReactNode {
-  if (typeof icon === 'function') {
-    const I = icon as LucideIcon;
-    return <I className={className ?? 'w-4 h-4'} />;
+  // An already-built element (e.g. `icon={<Brain className="…" />}`) renders as-is.
+  if (isValidElement(icon)) return icon;
+  // A component *reference* — a plain function OR a forwardRef/memo object
+  // ({ $$typeof, render }), which is how lucide-react ships its icons — must be
+  // instantiated. Returning the bare component object throws "Objects are not
+  // valid as a React child" (the crash seen on the metrics + knowledge tiles).
+  if (typeof icon === 'function' || (typeof icon === 'object' && icon !== null && '$$typeof' in icon)) {
+    const Icon = icon as ComponentType<{ className?: string }>;
+    return <Icon className={className ?? 'w-4 h-4'} />;
   }
   return icon;
 }

@@ -1,5 +1,4 @@
 import { Check, Sun } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import {
   useThemeStore, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS,
   BRIGHTNESS_ICON_OPACITY_BY_INDEX, useIsDarkTheme,
@@ -30,8 +29,7 @@ export default function AppearanceBrightnessSettings() {
   const brightnessLevels = isDark ? DARK_BRIGHTNESS_LEVELS : LIGHT_BRIGHTNESS_LEVELS;
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title={s.brightness} icon={<Sun />} />
+    <div className="space-y-4">
       <p className="typo-body text-foreground">{s.brightness_hint}</p>
       <div className="grid grid-cols-3 gap-3">
         {brightnessLevels.map((level, i) => {

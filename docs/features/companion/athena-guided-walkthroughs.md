@@ -126,13 +126,13 @@ E2 grew the registry from two topics to six so Athena can teach-by-showing acros
 
 Because several targets live on **sub-tabs** (the Events route defaults to the live-stream tab; Goals/KPIs are L2 tabs under Teams) or inside a **modal** (incident detail), four facts shaped the design:
 
-- **Sub-tab switching is a `preAction`.** Four new closed-enum pre-actions in `guidance/appActions.ts` set both the L1 section *and* the L2 sub-tab in one idempotent call: `open_trigger_builder` (Events → Builder), `open_overview_incidents` (Overview → Incidents), `open_goals_board` (Teams → Goals → board), `open_kpi_dashboard` (Teams → KPIs). `navigateRoute` only sets the L1 section, so anything with a sub-tab uses a pre-action instead.
+- **Sub-tab switching is a `preAction`.** Four new closed-enum pre-actions in `guidance/appActions.ts` set both the L1 section *and* the L2 sub-tab in one idempotent call: `open_trigger_builder` (Events → Chain Studio), `open_overview_incidents` (Overview → Incidents), `open_goals_board` (Teams → Goals → board), `open_kpi_dashboard` (Teams → KPIs). `navigateRoute` only sets the L1 section, so anything with a sub-tab uses a pre-action instead.
 - **Modals are never ringed.** The incident *detail* opens in a `BaseModal` (z-10000, over the guide overlay), so `incident_triage` rings the inbox + a row and narrates "open one to resolve it" rather than driving into the modal.
 - **Data-dependent targets degrade gracefully.** A `template-adopt-button`, an `incident-row`, and a `goal-card` only exist when the user has data. `waitForTestId` is bounded, so a missing target falls back to narration-only — the tour never hangs. Every topic's first navigation step rings an **always-present route container** (`triggers-page`, `templates-page`, `incidents-inbox`, `goals-page`), so the deterministic Playwright assertions never depend on seeded data.
 
 | Topic | Steps (containers/elements ringed) | New testids | CTA |
 | --- | --- | --- | --- |
-| `trigger_creation` | intro → `triggers-page` (Events hub) → `routing-canvas` (Builder, via `open_trigger_builder`) → outro | `routing-canvas` | **Open the Builder** (`create_trigger`) |
+| `trigger_creation` | intro → `triggers-page` (Events hub) → `studio-switchboard` (Chain Studio, via `open_trigger_builder`) → outro | `studio-switchboard` | **Open Chain Studio** (`create_trigger`) |
 | `template_adoption` | intro → `templates-page` (gallery) → `template-adopt-button` (first card) → outro | `template-adopt-button` (card footer) | — |
 | `incident_triage` | intro → `incidents-inbox` (via `open_overview_incidents`) → `incident-row` → outro | `incidents-inbox`, `incident-row` | — |
 | `goal_kpi_setup` | intro → `goals-page` (via `open_goals_board`) → `goal-card` → `kpi-dashboard` (via `open_kpi_dashboard`) → outro | `goals-page`, `goal-card` | **Set up a goal** (`setup_goal`) |

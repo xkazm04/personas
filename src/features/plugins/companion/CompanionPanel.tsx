@@ -1,13 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowDown,
-  BookOpen,
   Bot,
   Infinity as InfinityIcon,
   Loader2,
-  PanelRightClose,
-  PanelRightOpen,
   RotateCcw,
   Search,
   Square,
@@ -16,7 +13,6 @@ import {
 import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
@@ -56,7 +52,6 @@ import {
   companionCancelAutonomy,
   companionSetAutonomousMode,
   companionInterruptTurn,
-  companionReingestDoctrine,
   companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
@@ -155,25 +150,6 @@ function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: stri
   });
 }
 
-/**
- * Serialize the visible conversation to role-labeled markdown for the "copy
- * conversation" header action. System markers are dropped; turns are separated
- * by a horizontal rule so the result pastes cleanly into notes or an issue.
- */
-function buildTranscriptMarkdown(
-  messages: ReturnType<typeof useCompanionStore.getState>['messages'],
-  youLabel: string,
-  athenaLabel: string,
-): string {
-  return messages
-    .filter((m) => m.role === 'user' || m.role === 'assistant')
-    .map((m) => {
-      const label = m.role === 'user' ? youLabel : athenaLabel;
-      return `**${label}:**\n\n${m.content.trim()}`;
-    })
-    .join('\n\n---\n\n');
-}
-
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
 // a dead-end. Each entry is the literal user message that will be sent
@@ -228,15 +204,6 @@ export default function CompanionPanel() {
   const initError = useCompanionStore((s) => s.initError);
 
   const messages = useCompanionStore((s) => s.messages);
-  const conversationMarkdown = useMemo(
-    () =>
-      buildTranscriptMarkdown(
-        messages,
-        t.plugins.companion.you_label,
-        t.plugins.companion.name,
-      ),
-    [messages, t.plugins.companion.you_label, t.plugins.companion.name],
-  );
   const streaming = useCompanionStore((s) => s.streaming);
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
@@ -443,7 +410,6 @@ export default function CompanionPanel() {
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header
-            transcript={conversationMarkdown}
             onClose={() => setState(orbEnabled ? 'minimized' : 'collapsed')}
             onReset={async () => {
               // Clear UI state immediately so the wipe feels instant.
@@ -477,30 +443,6 @@ export default function CompanionPanel() {
                 silentCatch('companion_reset_conversation')(err);
               }
             }}
-            onRefreshDoctrine={async () => {
-              const addToast = useToastStore.getState().addToast;
-              try {
-                const summary = await companionReingestDoctrine();
-                const changed =
-                  summary.chunksInserted +
-                  summary.chunksUpdated +
-                  summary.chunksDeleted;
-                addToast(
-                  changed === 0
-                    ? t.plugins.companion.doctrine_up_to_date
-                    : `${t.plugins.companion.doctrine_refreshed} (+${summary.chunksInserted} / ~${summary.chunksUpdated} / -${summary.chunksDeleted})`,
-                  'success',
-                );
-              } catch (err: unknown) {
-                addToast(
-                  `${t.plugins.companion.doctrine_refresh_failed}: ${err instanceof Error ? err.message : String(err)}`,
-                  'error',
-                );
-                silentCatch('companion_reingest_doctrine')(err);
-              }
-            }}
-            compact={panelCompact}
-            onToggleCompact={() => setPanelCompact(!panelCompact)}
             autonomousMode={autonomousMode}
             onToggleAutonomousMode={() => {
               const next = !autonomousMode;
@@ -562,6 +504,8 @@ export default function CompanionPanel() {
             setPendingPlayback={setPendingPlayback}
             setPlaybackAudioUrl={setPlaybackAudioUrl}
             markPlaybackPlayed={markPlaybackPlayed}
+            compact={panelCompact}
+            onToggleCompact={() => setPanelCompact(!panelCompact)}
           />
         </motion.div>
       )}
@@ -570,21 +514,13 @@ export default function CompanionPanel() {
 }
 
 function Header({
-  transcript,
   onClose,
   onReset,
-  onRefreshDoctrine,
-  compact,
-  onToggleCompact,
   autonomousMode,
   onToggleAutonomousMode,
 }: {
-  transcript: string;
   onClose: () => void;
   onReset: () => void;
-  onRefreshDoctrine: () => void;
-  compact: boolean;
-  onToggleCompact: () => void;
   autonomousMode: boolean;
   onToggleAutonomousMode: () => void;
 }) {
@@ -610,9 +546,6 @@ function Header({
         <div className="min-w-0">
           <div className="typo-body font-medium leading-tight truncate">
             {t.plugins.companion.name}
-          </div>
-          <div className="typo-caption text-foreground leading-tight truncate">
-            {t.plugins.companion.role}
           </div>
         </div>
       </div>
@@ -654,44 +587,7 @@ function Header({
         >
           <InfinityIcon className="w-4 h-4" />
         </button>
-        <button
-          onClick={onToggleCompact}
-          data-testid="companion-toggle-compact"
-          aria-pressed={compact}
-          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
-          aria-label={
-            compact
-              ? t.plugins.companion.compact_toggle_expand
-              : t.plugins.companion.compact_toggle_collapse
-          }
-          title={
-            compact
-              ? t.plugins.companion.compact_toggle_expand
-              : t.plugins.companion.compact_toggle_collapse
-          }
-        >
-          {compact ? (
-            <PanelRightOpen className="w-4 h-4" />
-          ) : (
-            <PanelRightClose className="w-4 h-4" />
-          )}
-        </button>
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
-        {transcript && (
-          <CopyButton
-            text={transcript}
-            tooltip={t.plugins.companion.copy_conversation}
-            iconSize="w-4 h-4"
-          />
-        )}
-        <button
-          onClick={onRefreshDoctrine}
-          className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
-          aria-label={t.plugins.companion.refresh_doctrine}
-          title={t.plugins.companion.refresh_doctrine}
-        >
-          <BookOpen className="w-4 h-4" />
-        </button>
         <button
           onClick={onReset}
           data-testid="companion-reset"
@@ -757,6 +653,9 @@ interface BodyProps {
   ) => void;
   setPlaybackAudioUrl: (audioUrl: string) => void;
   markPlaybackPlayed: () => void;
+  /** Panel minimize (compact) state + toggle — forwarded to CompanionToolbar's edge handle. */
+  compact: boolean;
+  onToggleCompact: () => void;
 }
 
 function Body(props: BodyProps) {
@@ -800,6 +699,8 @@ function Body(props: BodyProps) {
     setPendingPlayback,
     setPlaybackAudioUrl,
     markPlaybackPlayed,
+    compact,
+    onToggleCompact,
   } = props;
   const { t, tx } = useTranslation();
   // Recall preview state is read directly from the store (rather than
@@ -2359,6 +2260,8 @@ function Body(props: BodyProps) {
         }
         brainOpen={brainView.open}
         disabled={!initialized || streaming}
+        compact={compact}
+        onToggleCompact={onToggleCompact}
       />
     </div>
   );

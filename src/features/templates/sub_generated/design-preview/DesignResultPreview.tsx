@@ -34,6 +34,12 @@ interface DesignResultPreviewProps {
    *  stale "Credential ready" badges that didn't reflect actual link
    *  state and duplicated the section heading visible just below. */
   hideConnectors?: boolean;
+  /** Suppress the Events & Triggers section — used where it lives in its own
+   *  tab (the persona Design hub's Events sub-tab). */
+  hideEvents?: boolean;
+  /** Suppress the Messages & Notifications section — used where it lives in its
+   *  own tab (the persona Design hub's Notifications sub-tab). */
+  hideMessages?: boolean;
 }
 
 export function DesignResultPreview({
@@ -57,6 +63,8 @@ export function DesignResultPreview({
   onTriggerEnabledToggle,
   feasibility,
   hideConnectors = false,
+  hideEvents = false,
+  hideMessages = false,
 }: DesignResultPreviewProps) {
   const rawChannels = result.suggested_notification_channels;
   const suggestedChannels = Array.isArray(rawChannels) ? rawChannels : [];
@@ -92,26 +100,30 @@ export function DesignResultPreview({
         />
       )}
 
-      <EventsSection
-        result={result}
-        selectedTriggerIndices={selectedTriggerIndices}
-        onTriggerToggle={onTriggerToggle}
-        suggestedSubscriptions={suggestedSubscriptions}
-        selectedSubscriptionIndices={selectedSubscriptionIndices}
-        onSubscriptionToggle={onSubscriptionToggle}
-        readOnly={readOnly}
-        actualTriggers={actualTriggers}
-        onTriggerEnabledToggle={onTriggerEnabledToggle}
-        anchorId="design-section-events"
-      />
+      {!hideEvents && (
+        <EventsSection
+          result={result}
+          selectedTriggerIndices={selectedTriggerIndices}
+          onTriggerToggle={onTriggerToggle}
+          suggestedSubscriptions={suggestedSubscriptions}
+          selectedSubscriptionIndices={selectedSubscriptionIndices}
+          onSubscriptionToggle={onSubscriptionToggle}
+          readOnly={readOnly}
+          actualTriggers={actualTriggers}
+          onTriggerEnabledToggle={onTriggerEnabledToggle}
+          anchorId="design-section-events"
+        />
+      )}
 
-      <MessagesSection
-        channels={suggestedChannels}
-        selectedChannelIndices={selectedChannelIndices}
-        onChannelToggle={onChannelToggle}
-        readOnly={readOnly}
-        anchorId="design-section-messages"
-      />
+      {!hideMessages && (
+        <MessagesSection
+          channels={suggestedChannels}
+          selectedChannelIndices={selectedChannelIndices}
+          onChannelToggle={onChannelToggle}
+          readOnly={readOnly}
+          anchorId="design-section-messages"
+        />
+      )}
 
       {feasibility && <DesignTestResults result={feasibility} />}
     </div>

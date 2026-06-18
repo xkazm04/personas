@@ -13,7 +13,6 @@ import { silentCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import GoalConstellation from './GoalConstellation';
-import { GoalAcceptanceView } from './GoalAcceptanceView';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
 import { GoalViewExplainer } from './GoalViewExplainer';
@@ -197,9 +196,7 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {goalsTab === 'accept' ? (
-          <GoalAcceptanceView />
-        ) : goalsTab === 'timeline' ? (
+        {goalsTab === 'timeline' ? (
           <div className="space-y-3">
             <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
             <GoalsTimeline showProject={crossProject} />

@@ -1,6 +1,7 @@
 import { Bot } from 'lucide-react';
 import { resolveAgentIconSprite, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { resolvePersonaIcon, type ResolvedIcon } from '@/lib/icons/resolvePersonaIcon';
+import { personaInitials } from '@/lib/icons/personaInitials';
 import { useCustomIconSrc } from '@/lib/icons/customIconStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,9 +15,26 @@ const FRAME_SIZE_CLASS: Record<FrameSize, string> = {
   lg: 'icon-frame-lg',
 };
 
+// Font size for the initials fallback, tuned per frame tier (xs 20px → lg 44px)
+// so two uppercase letters fill the frame without clipping.
+const FRAME_INITIALS_CLASS: Record<FrameSize, string> = {
+  xs: 'text-[9px]',
+  sm: 'text-[11px]',
+  md: 'text-[15px]',
+  lg: 'text-[18px]',
+};
+
 interface PersonaIconProps {
   icon: string | null | undefined;
   color: string | null | undefined;
+
+  /**
+   * Persona display name. When provided and the persona has no assigned icon,
+   * the fallback renders the persona's initials (first letters of the first
+   * two words) tinted with `color` instead of the generic Bot — so unkeyed
+   * personas stay visually distinguishable. Omit it to keep the Bot fallback.
+   */
+  name?: string | null;
 
   /**
    * Render mode:
@@ -69,6 +87,7 @@ interface PersonaIconProps {
 export function PersonaIcon({
   icon,
   color,
+  name,
   display,
   frameSize = 'lg',
   frameClass = '',
@@ -164,6 +183,22 @@ export function PersonaIcon({
         aria-label={t.shared.agent_icon_label}
       >
         {char}
+      </span>
+    );
+  } else if (name && name.trim()) {
+    // No assigned icon, but the persona's name is known → render its initials
+    // (first letters of the first two words) tinted with `color`, so unkeyed
+    // personas stay distinguishable instead of all collapsing to one Bot.
+    inner = (
+      <span
+        aria-hidden="true"
+        className={isWrapped
+          ? `flex items-center justify-center leading-none font-semibold ${FRAME_INITIALS_CLASS[frameSize]}`
+          : `flex items-center justify-center flex-shrink-0 leading-none font-semibold text-[0.7em] ${size} ${className}`.trim()
+        }
+        style={style}
+      >
+        {personaInitials(name)}
       </span>
     );
   } else {

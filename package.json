@@ -66,6 +66,7 @@
     "clean:ort": "node scripts/clean-ort.mjs",
     "cache:report": "node scripts/cache-budget.mjs --report",
     "clean:cache": "node scripts/cache-budget.mjs --enforce",
+    "clean:incremental": "node scripts/cache-budget.mjs --prune-incremental",
     "clean:worktrees": "node scripts/worktree-gc.mjs",
     "build:starter": "cross-env VITE_APP_TIER=starter npm run build",
     "build:team": "cross-env VITE_APP_TIER=team npm run build",

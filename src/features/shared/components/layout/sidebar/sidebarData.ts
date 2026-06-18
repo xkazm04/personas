@@ -93,7 +93,6 @@ export const credentialItems: SubNavItem[] = [
 
 export const eventBusItems: SubNavItem[] = [
   { id: 'live-stream', label: 'Live Stream', icon: Activity },
-  { id: 'builder', label: 'Builder', icon: Network },
   { id: 'rate-limits', label: 'Speed Limits', icon: Gauge },
   { id: 'test', label: 'Test', icon: Zap },
   { id: 'smee-relay', label: 'Local Relay', icon: Unplug },
@@ -201,7 +200,6 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'limits', label: 'Limits', icon: Gauge, minTier: TIERS.TEAM },
     { id: 'api-keys', label: 'API Keys', icon: Key, minTier: TIERS.TEAM },
     { id: 'network', label: 'Network', icon: Share2, devOnly: true },
-    { id: 'config', label: 'Config Resolution', icon: Layers, devOnly: true },
     { id: 'history', label: 'History', icon: History, devOnly: true },
     { id: 'admin', label: 'Admin', icon: Shield, devOnly: true },
   ].filter((item) => {

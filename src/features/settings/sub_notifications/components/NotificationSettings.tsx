@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Bell, ShieldAlert, Activity, PlayCircle } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -68,25 +70,18 @@ function WeeklyDigestToggle() {
   if (!digestSetting.loaded) return null;
 
   return (
-    <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
-      <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
-        <Activity className="w-4 h-4 text-primary/60" />
-        <span className="typo-body font-medium text-foreground">{s.weekly_digest}</span>
-      </div>
-      <div className="px-4 py-3 flex items-center justify-between">
-        <div className="space-y-0.5">
-          <span className="typo-body font-medium text-foreground">{s.digest_title}</span>
-          <p className="typo-body text-foreground">
-            {s.digest_description}
-          </p>
-        </div>
-        <AccessibleToggle
-          checked={enabled}
-          onChange={handleToggle}
-          label={s.weekly_digest_aria}
-        />
-      </div>
-    </div>
+    <SectionCard
+      title={s.weekly_digest}
+      icon={<Activity className="w-4 h-4 text-primary/60" />}
+      titleClassName="text-primary"
+    >
+      <SettingRow
+        label={s.digest_title}
+        description={s.digest_description}
+        checked={enabled}
+        onChange={handleToggle}
+      />
+    </SectionCard>
   );
 }
 
@@ -169,18 +164,17 @@ export default function NotificationSettings() {
 
       <ContentBody centered>
         <div className="space-y-6">
-          <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden">
-            <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
-              <ShieldAlert className="w-4 h-4 text-primary/60" />
-              <span className="typo-body font-medium text-foreground">{s.healing_severity}</span>
-            </div>
-
-            <div className="divide-y divide-primary/10">
+          <SectionCard
+            title={s.healing_severity}
+            icon={<ShieldAlert className="w-4 h-4 text-primary/60" />}
+            titleClassName="text-primary"
+          >
+            <div className="divide-y divide-foreground/5">
               {SEVERITY_ROWS.map(({ key, severity, labelKey, descKey, color }) => (
-                <div key={key} className="flex items-center justify-between px-4 py-3 gap-3">
+                <div key={key} className="flex items-center justify-between py-2.5 gap-3 first:pt-0 last:pb-0">
                   <div className="space-y-0.5 min-w-0 flex-1">
                     <span className={`typo-body font-medium ${color}`}>{s[labelKey]}</span>
-                    <p className="typo-body text-foreground">{s[descKey]}</p>
+                    <p className="typo-caption text-foreground">{s[descKey]}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -201,7 +195,7 @@ export default function NotificationSettings() {
                 </div>
               ))}
             </div>
-          </div>
+          </SectionCard>
 
           {/* Weekly Health Digest */}
           <WeeklyDigestToggle />

@@ -3,10 +3,12 @@
  *
  * Armed from the `;` keyboard "special mode": press `;` to enter nav mode, then
  * `i` (Inspect) to arm/disarm. While armed, hover highlights the element under
- * the cursor; clicking copies a Claude-Code-friendly `src/.../File.tsx:LINE` to
- * the clipboard. Default copy = the call site (the feature/page file that used
- * the component); Alt+click copies the literal element (often a shared-component
- * internal); the breadcrumb HUD lets you copy any enclosing file directly.
+ * the cursor and RIGHT-clicking copies a Claude-Code-friendly
+ * `src/.../File.tsx:LINE` to the clipboard — left-click is left untouched so the
+ * developer can keep operating the app while armed. Default copy = the call site
+ * (the feature/page file that used the component); Alt+right-click copies the
+ * literal element (often a shared-component internal); the breadcrumb HUD lets
+ * you copy any enclosing file directly.
  *
  * Relies on the `inject-source-loc` Babel plugin (wired dev-only in
  * vite.config.ts) which stamps host elements with `data-loc`. Mounted only
@@ -98,8 +100,12 @@ export function DevInspector() {
       });
     };
 
-    const onClick = (e: MouseEvent) => {
-      if (insideHud(e.target)) return; // let breadcrumb rows handle their click
+    // Right-click copies the source path under the cursor (and suppresses the
+    // browser/app context menu). Left-click is deliberately NOT intercepted, so
+    // the developer can keep operating the app while the inspector is armed —
+    // hover still highlights what a right-click would copy.
+    const onContextMenu = (e: MouseEvent) => {
+      if (insideHud(e.target)) return; // let the HUD own its own context menu
       e.preventDefault();
       e.stopPropagation();
       const chain = buildChain(e.target as Element | null);
@@ -109,25 +115,12 @@ export function DevInspector() {
       void doCopy(pick.loc);
     };
 
-    // Swallow the rest of the pointer sequence so app handlers never fire.
-    const swallow = (e: Event) => {
-      if (insideHud(e.target)) return;
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
     document.addEventListener("mousemove", onMove, true);
-    document.addEventListener("click", onClick, true);
-    document.addEventListener("mousedown", swallow, true);
-    document.addEventListener("mouseup", swallow, true);
-    document.addEventListener("contextmenu", swallow, true);
+    document.addEventListener("contextmenu", onContextMenu, true);
     return () => {
       document.body.style.cursor = prevCursor;
       document.removeEventListener("mousemove", onMove, true);
-      document.removeEventListener("click", onClick, true);
-      document.removeEventListener("mousedown", swallow, true);
-      document.removeEventListener("mouseup", swallow, true);
-      document.removeEventListener("contextmenu", swallow, true);
+      document.removeEventListener("contextmenu", onContextMenu, true);
       setHover(null);
     };
   }, [armed, doCopy]);

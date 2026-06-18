@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**203 reusable components** live under `src/features/shared/components/`.
+**206 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -51,7 +51,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `LiveStatusDot` | Liveness dot with one shared vocabulary (off=muted, active=emerald, syncing=amber-pulse) plus an optional ping halo — used across  |
 | `Numeric` | Canonical number/percent/count display — locale + precision + unit. Use instead of raw toFixed/toLocaleString. |
 | `PersonaAvatar` | Persona avatar (icon/color) rendering. |
-| `PersonaIcon` | framed" → wrapped in . |
+| `PersonaIcon` | Persona display name. |
 | `RelativeTime` | Live-updating "2h ago" timestamp with absolute time on hover. Use for all timestamps. |
 | `RevealItem` | RevealItem — plays a one-shot staggered fade-in for a single list/table row as it is progressively revealed; tracks entry by id so |
 | `ScrollShadowContainer` | Classes applied to the inner scrollable div (e. |
@@ -172,6 +172,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DesktopFooter` | _(add a `@catalog` tag)_ |
 | `EqualizerBars` | the YT progress bar occupies). |
 | `FleetActivityStrip` | _(add a `@catalog` tag)_ |
+| `FullScreenOverlay` | _(add a `@catalog` tag)_ |
 | `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
 | `LiveChannelOverlay` | Live-mode corner pop-ups for incoming team-channel messages — app-wide bottom-right stack driven by the shared channel feed, gated |
 | `LiveCommsStack` | Bottom-right chat-style stack of live channel-message pop-ups (latest 3 + overflow chip) with click-to-dismiss, hover-paused auto- |
@@ -198,6 +199,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SectionHeader` | Section header (icon + title + badge + trailing actions). |
 | `SectionHeading` | _(add a `@catalog` tag)_ |
 | `SegmentedTabs` | Segmented control / pill tab switcher. |
+| `SettingsScaffold` | Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated active pill) beside a stack of Section |
 | `Sidebar` | _(add a `@catalog` tag)_ |
 | `SidebarLevel1` | _(add a `@catalog` tag)_ |
 | `SidebarLevel2` | _(add a `@catalog` tag)_ |
@@ -214,6 +216,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useMonitorData` | _(add a `@catalog` tag)_ |
 | `usePendingInteractions` | _(add a `@catalog` tag)_ |
 | `useRadioState` | know when to refetch nowPlaying. |
+| `useSectionScrollSpy` | auto/scroll/overlay), else null. |
 | `useSomafmMetadata` | Poll cadence for SomaFM metadata. |
 | `useTitleBarTray` | and the toggle actions. |
 | `useYouTubePlayer` | Thin wrapper around the YouTube IFrame Player API. |
@@ -287,4 +290,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_203 components, 99 without a `@catalog` description._
+_206 components, 100 without a `@catalog` description._

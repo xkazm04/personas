@@ -396,18 +396,18 @@ export type SidebarSection = "home" | "overview" | "teams" | "personas" | "event
 /** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
 export type TeamsTab = "workspace" | "goals" | "kpis" | "factory";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "accept" | "timeline";
+export type GoalsTab = "board" | "timeline";
 /** Sub-view within the KPIs hub — surfaced as sidebar sub-items (mirrors GoalsTab). */
 export type KpisTab = "dashboard" | "rollup" | "proposals";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
-export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | "messaging" | "automations";
+export type DesignSubTab = "use-cases" | "prompt" | "parameters" | "connectors" | "triggers" | "messaging" | "automations";
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
 export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard" | "director" | "certification";
 export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
-export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";
+export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "competition" | "skills" | "fleet";
 export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion";
@@ -415,7 +415,7 @@ export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypothes
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud" | "revitalize";
 export type TwinTab = "profiles" | "identity" | "tone" | "brain" | "knowledge" | "voice" | "channels" | "training";
 export type ArtistTab = "blender" | "gallery" | "media-studio";
-export type EventBusTab = "builder" | "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
+export type EventBusTab = "studio" | "shared" | "live-stream" | "rate-limits" | "test" | "smee-relay" | "cloud-webhooks" | "dead-letter";
 
 // Ollama-as-CLI-engine is deferred — see src/features/settings/sub_engine/libs/engineCapabilities.ts
 // and src-tauri/src/engine/ollama.rs (gated behind the `ollama` Cargo feature).

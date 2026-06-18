@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { lazy, Suspense, useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -7,6 +7,23 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
 import { PersonaMonitor } from '@/features/shared/components/layout/monitor';
 import { QuickAnswerPopover } from '@/features/shared/components/layout/quick-answer/QuickAnswerPopover';
+import { FullScreenOverlay } from '@/features/shared/components/layout/FullScreenOverlay';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+
+// Lazy so the always-mounted tray doesn't pull these full-size surfaces into the
+// main bundle — they load only when summoned.
+const GoalAcceptanceOverlay = lazy(() =>
+  import('@/features/teams/sub_goals/GoalAcceptanceOverlay').then((m) => ({ default: m.GoalAcceptanceOverlay })),
+);
+const ScheduleTimeline = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+
+function OverlayFallback() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <LoadingSpinner size="md" />
+    </div>
+  );
+}
 
 /**
  * State for the title-bar quick-action dock (`TitleBarDock`): every count the
@@ -34,12 +51,8 @@ export function useTitleBarTray() {
     }
     return n;
   });
-  const sidebarSection = useSystemStore((s) => s.sidebarSection);
-  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
-  const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
-  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const pendingAcceptance = useSystemStore((s) => s.pendingAcceptanceCount);
   const refreshPendingAcceptance = useSystemStore((s) => s.refreshPendingAcceptance);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
@@ -70,7 +83,8 @@ export function useTitleBarTray() {
   const notificationsOpen = headerOverlay === 'notifications';
   const reviewOpen = headerOverlay === 'quick-answer';
   const monitorOpen = headerOverlay === 'monitor';
-  const isScheduleActive = sidebarSection === 'schedules';
+  const isScheduleActive = headerOverlay === 'schedules';
+  const acceptanceOpen = headerOverlay === 'goal-acceptance';
 
   const toggleNotifications = () => {
     if (!notificationsOpen) {
@@ -80,17 +94,14 @@ export function useTitleBarTray() {
       setHeaderOverlay('none');
     }
   };
-  const toggleSchedules = () => setSidebarSection(isScheduleActive ? 'home' : 'schedules');
+  // Schedules now opens as a full-screen overlay (Persona-Monitor pattern), not a
+  // sidebar navigation — so summoning it doesn't lose your place in the app.
+  const toggleSchedules = () => setHeaderOverlay(isScheduleActive ? 'none' : 'schedules');
   const toggleReview = () => setHeaderOverlay(reviewOpen ? 'none' : 'quick-answer');
   const toggleMonitor = () => setHeaderOverlay(monitorOpen ? 'none' : 'monitor');
   const openSearch = () => openPalette('settings');
-  // Pending-acceptance badge → jump straight to Teams › Goals › Accept.
-  const openAcceptance = () => {
-    setHeaderOverlay('none');
-    setSidebarSection('teams');
-    setTeamsTab('goals');
-    setGoalsTab('accept');
-  };
+  // Pending-acceptance badge → full-screen acceptance overlay (same pattern).
+  const openAcceptance = () => setHeaderOverlay(acceptanceOpen ? 'none' : 'goal-acceptance');
 
   return {
     todayScheduleCount,
@@ -103,6 +114,7 @@ export function useTitleBarTray() {
     reviewOpen,
     monitorOpen,
     isScheduleActive,
+    acceptanceOpen,
     toggleNotifications,
     toggleSchedules,
     toggleReview,
@@ -130,6 +142,18 @@ export function TrayOverlays() {
           onClose={() => setHeaderOverlay('none')}
           onOpenMonitor={() => setHeaderOverlay('monitor')}
         />
+      )}
+      {headerOverlay === 'goal-acceptance' && (
+        <Suspense key="goal-acceptance" fallback={null}>
+          <GoalAcceptanceOverlay onClose={() => setHeaderOverlay('none')} />
+        </Suspense>
+      )}
+      {headerOverlay === 'schedules' && (
+        <FullScreenOverlay key="schedules" onClose={() => setHeaderOverlay('none')} testId="schedules-overlay">
+          <Suspense fallback={<OverlayFallback />}>
+            <ScheduleTimeline />
+          </Suspense>
+        </FullScreenOverlay>
       )}
     </AnimatePresence>
   );

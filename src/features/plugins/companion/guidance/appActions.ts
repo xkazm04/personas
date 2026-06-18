@@ -41,14 +41,14 @@ export function navigateToSection(section: SidebarSection) {
 }
 
 /**
- * Open the Events route on its visual Builder tab (the `trigger_creation`
- * walkthrough rings the routing canvas here). The Events route defaults to the
- * live-stream tab, so we switch the sub-tab too — both setters are idempotent.
+ * Open the Events route on Chain Studio (the `trigger_creation` walkthrough
+ * rings its switchboard here). Builder was retired and its routing view folded
+ * into Studio's Routes sub-tab; both setters are idempotent.
  */
 export function openTriggerBuilder() {
   const sys = useSystemStore.getState();
   sys.setSidebarSection('events');
-  sys.setEventBusTab('builder');
+  sys.setEventBusTab('studio');
 }
 
 /**

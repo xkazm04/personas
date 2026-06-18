@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
-import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2 } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2, Radio, CloudUpload } from 'lucide-react';
+import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoUpdater';
@@ -45,6 +45,16 @@ export default function AccountSettings() {
     return () => { if (outcomeTimer.current) clearTimeout(outcomeTimer.current); };
   }, []);
 
+  const handleTelemetryToggle = () => {
+    const next = !telemetryOn;
+    setTelemetryEnabled(next);
+    // Stop/resume usage tracking immediately (no restart). Error reporting
+    // still needs a restart — hence the note below stays.
+    applyTelemetrySink(next);
+    setTelemetryOn(next);
+    setTelemetryChanged(true);
+  };
+
   const handleCheckForUpdate = async () => {
     const outcome = await checkForUpdate();
     const addToast = useToastStore.getState().addToast;
@@ -60,63 +70,44 @@ export default function AccountSettings() {
     outcomeTimer.current = setTimeout(() => setLastOutcome(null), 6000);
   };
 
-  return (
-    <ContentBox>
-      <ContentHeader
-        icon={<User className="w-5 h-5 text-blue-400" />}
-        iconColor="blue"
-        title={s.title}
-        subtitle={s.subtitle}
-      />
-
-      <ContentBody centered>
-        <div className="space-y-6">
-        {/* Telemetry */}
-        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-          <SectionHeading title={s.telemetry_title} icon={<Activity className="text-rose-400" />} />
-          <p className="typo-body text-foreground leading-relaxed">
-            {s.telemetry_description}
-          </p>
-          <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
-            <div className="min-w-0">
-              <p className="typo-body font-medium text-foreground/85">{s.telemetry_toggle}</p>
-              <p className="typo-caption text-foreground mt-0.5">
-                {telemetryOn
-                  ? s.telemetry_on
-                  : s.telemetry_off}
-              </p>
-              {telemetryChanged && (
-                <p className="typo-caption text-amber-400/80 mt-1.5 flex items-center gap-1.5">
-                  <RefreshCw className="w-3 h-3" />
-                  {s.telemetry_restart}
-                </p>
-              )}
-            </div>
-            <AccessibleToggle
-              checked={telemetryOn}
-              onChange={() => {
-                const next = !telemetryOn;
-                setTelemetryEnabled(next);
-                // Stop/resume usage tracking immediately (no restart). Error
-                // reporting still needs a restart — hence the note below stays.
-                applyTelemetrySink(next);
-                setTelemetryOn(next);
-                setTelemetryChanged(true);
-              }}
-              label={s.telemetry_toggle_aria}
-            />
-          </div>
+  const sections: SettingsSection[] = [
+    {
+      id: 'telemetry',
+      label: s.telemetry_title,
+      icon: <Activity className="w-4 h-4 text-rose-400" />,
+      content: (
+        <div className="space-y-3">
+          <p className="typo-body text-foreground leading-relaxed">{s.telemetry_description}</p>
+          <SettingRow
+            variant="card"
+            label={s.telemetry_toggle}
+            description={telemetryOn ? s.telemetry_on : s.telemetry_off}
+            checked={telemetryOn}
+            onChange={handleTelemetryToggle}
+          />
+          {telemetryChanged && (
+            <p className="typo-caption text-amber-400/80 flex items-center gap-1.5 px-1">
+              <RefreshCw className="w-3 h-3" />
+              {s.telemetry_restart}
+            </p>
+          )}
         </div>
-
-        {/* Radio */}
-        <RadioSettingsCard />
-
-        {/* Updates */}
-        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-          <SectionHeading title={s.updates_title} icon={<Download className="text-blue-400" />} />
-          <p className="typo-body text-foreground leading-relaxed">
-            {s.updates_description}
-          </p>
+      ),
+    },
+    {
+      id: 'radio',
+      label: t.radio.settings_title,
+      icon: <Radio className="w-4 h-4 text-violet-400" />,
+      card: false,
+      content: <RadioSettingsCard />,
+    },
+    {
+      id: 'updates',
+      label: s.updates_title,
+      icon: <Download className="w-4 h-4 text-blue-400" />,
+      content: (
+        <div className="space-y-4">
+          <p className="typo-body text-foreground leading-relaxed">{s.updates_description}</p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             {appVersion && (
               <span className="inline-flex items-center px-2 py-0.5 typo-caption font-medium rounded-full bg-secondary/30 border border-primary/10 text-foreground">
@@ -183,8 +174,14 @@ export default function AccountSettings() {
             </div>
           )}
         </div>
-
-        <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-6">
+      ),
+    },
+    {
+      id: 'account',
+      label: s.title,
+      icon: <User className="w-4 h-4 text-blue-400" />,
+      content: (
+        <div className="space-y-6">
           {isAuthenticated && user ? (
             <>
               <div className="flex items-center gap-4">
@@ -260,9 +257,31 @@ export default function AccountSettings() {
             </div>
           )}
         </div>
+      ),
+    },
+  ];
 
-        {isAuthenticated && user && <CloudSyncCard />}
-        </div>
+  if (isAuthenticated && user) {
+    sections.push({
+      id: 'cloud',
+      label: s.cloud_sync_title,
+      icon: <CloudUpload className="w-4 h-4 text-sky-400" />,
+      card: false,
+      content: <CloudSyncCard />,
+    });
+  }
+
+  return (
+    <ContentBox>
+      <ContentHeader
+        icon={<User className="w-5 h-5 text-blue-400" />}
+        iconColor="blue"
+        title={s.title}
+        subtitle={s.subtitle}
+      />
+
+      <ContentBody centered>
+        <SettingsScaffold sections={sections} navAriaLabel={s.title} />
       </ContentBody>
     </ContentBox>
   );

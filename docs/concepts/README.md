@@ -25,6 +25,7 @@ or partially-built forward work.
 | [persona-design-best-practices.md](persona-design-best-practices.md) | Operationalized in Athena doctrine + chat ops; retained as the design-guidance doctrine source |
 | [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal — greenfield, unbuilt |
 | [requires-macro-migration.md](requires-macro-migration.md) | In-flight — ~983 commands left to migrate to `#[requires(level)]` |
+| [subscription-pty-execution.md](subscription-pty-execution.md) | **Contingency — unbuilt.** Standby execution path: drive interactive `claude` in a PTY + tail the transcript JSONL + use hooks, so executions stay on the monthly subscription if Anthropic ever moves `claude -p` off subscription rate limits. Spike-gated; activate only on trigger |
 
 ## Removed (2026-06-12 re-audit)
 

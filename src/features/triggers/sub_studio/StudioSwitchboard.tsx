@@ -7,7 +7,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowRight, Search, Trash2, X, Zap, Bot, Filter, Cog } from 'lucide-react';
+import { ArrowRight, Search, Trash2, X, Zap, Bot, Filter, Cog, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -20,7 +20,7 @@ import { TRIGGER_BLOCK_TEMPLATES } from './libs/triggerStudioConstants';
 import {
   loadDraft, saveDraft, newLinkId, findTrigger, personaName,
   LINK_CONDITION_PRESETS,
-  type ChainDraft, type DraftSource, type LinkCondition,
+  type ChainDraft, type DraftSource, type DraftLink, type LinkCondition,
 } from './libs/studioDraftModel';
 import { TriggerOptionCard, PersonaOptionCard } from './StudioOptionCards';
 import { useSystemOpStudio } from './system_ops/useSystemOpStudio';
@@ -28,6 +28,10 @@ import { SystemOpOptionCard } from './system_ops/SystemOpOptionCard';
 import { SystemEventCommitModal } from './system_ops/SystemEventCommitModal';
 import { SystemEventAutomationsPanel } from './system_ops/SystemEventAutomationsPanel';
 import type { SystemOpKindMeta } from '@/api/systemOps';
+import { createTrigger } from '@/api/pipeline/triggers';
+import { toastCatch } from '@/lib/silentCatch';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { commitBlocker, draftLinkToTriggerInput } from './libs/studioCommit';
 
 type T = ReturnType<typeof useTranslation>['t'];
 
@@ -43,7 +47,12 @@ function conditionLabel(t: T, condition: LinkCondition): string {
 type SourceRailKind = 'signals' | 'personas';
 type TargetRailKind = 'personas' | 'system';
 
-export function StudioSwitchboard() {
+interface StudioSwitchboardProps {
+  /** Called after a route commits, so the host can refresh the live inventory. */
+  onRouteCommitted?: () => void;
+}
+
+export function StudioSwitchboard({ onRouteCommitted }: StudioSwitchboardProps = {}) {
   const { t, tx } = useTranslation();
   const st = t.triggers.studio;
   const personas = useAgentStore((s) => s.personas);
@@ -126,11 +135,43 @@ export function StudioSwitchboard() {
       }),
     }));
 
+  // ── Commit: turn draft links into real backend triggers ──────────────────
+  // Persona→persona links commit as a `chain` trigger on the target (see
+  // libs/studioCommit). Signal sources + `output_match` aren't committable yet.
+  const [committing, setCommitting] = useState<Set<string>>(new Set());
+
+  const commitLink = async (link: DraftLink, opts?: { silent?: boolean }): Promise<boolean> => {
+    const input = draftLinkToTriggerInput(link);
+    if (!input) return false;
+    setCommitting((s) => new Set(s).add(link.id));
+    try {
+      await createTrigger(input);
+      setDraft((d) => ({ ...d, links: d.links.filter((l) => l.id !== link.id) }));
+      if (!opts?.silent) { addToast(st.route_committed, 'success'); onRouteCommitted?.(); }
+      return true;
+    } catch (e) {
+      toastCatch('StudioSwitchboard:commitLink', st.route_commit_failed)(e);
+      return false;
+    } finally {
+      setCommitting((s) => { const n = new Set(s); n.delete(link.id); return n; });
+    }
+  };
+
+  const committableLinks = draft.links.filter((l) => commitBlocker(l) === null);
+
+  const commitAll = async () => {
+    let n = 0;
+    for (const link of committableLinks) {
+      if (await commitLink(link, { silent: true })) n += 1;
+    }
+    if (n > 0) { addToast(tx(st.routes_committed, { count: n }), 'success'); onRouteCommitted?.(); }
+  };
+
   return (
     <div className="flex-1 flex min-h-0" data-testid="studio-switchboard">
       {/* ── Sources rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-r border-border flex flex-col min-h-0 bg-card/30">
-        <div className="px-3 pt-3 pb-2 space-y-2">
+        <div className="px-3 pt-2.5 pb-2 space-y-1.5">
           <SegmentedTabs<SourceRailKind>
             tabs={[
               { id: 'signals', label: <><Zap className="w-3.5 h-3.5 text-amber-400" />{t.triggers.studio.group_signals}</> },
@@ -139,6 +180,7 @@ export function StudioSwitchboard() {
             activeTab={sourceKind}
             onTabChange={setSourceKind}
             ariaLabel={t.triggers.studio.sources_title}
+            size="sm"
           />
           <p className="typo-body opacity-80 text-foreground px-1">
             {sourceKind === 'signals' ? t.triggers.studio.sources_subtitle : t.triggers.studio.group_after_persona}
@@ -180,6 +222,15 @@ export function StudioSwitchboard() {
           <h3 className="typo-heading text-foreground">{t.triggers.studio.routes_title}</h3>
           <span className="typo-data text-foreground">{draft.links.length}</span>
           <div className="ml-auto flex items-center gap-2">
+            {committableLinks.length > 0 && (
+              <button
+                type="button"
+                onClick={() => void commitAll()}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-body rounded-interactive text-status-success hover:bg-status-success/10 transition-colors"
+              >
+                <Check className="w-3.5 h-3.5" /> {st.commit_all}
+              </button>
+            )}
             {draft.links.length > 0 && (
               <button
                 type="button"
@@ -231,7 +282,10 @@ export function StudioSwitchboard() {
               description={t.triggers.studio.no_routes_desc}
             />
           )}
-          {draft.links.map((link, i) => (
+          {draft.links.map((link, i) => {
+            const blocker = commitBlocker(link);
+            const busy = committing.has(link.id);
+            return (
             <motion.div
               key={link.id}
               initial={{ opacity: 0, y: 4 }}
@@ -258,22 +312,39 @@ export function StudioSwitchboard() {
                 <ArrowRight className="w-3.5 h-3.5 text-foreground" />
               </div>
               <TargetChip targetId={link.targetPersonaId} personas={personas} />
-              <button
-                type="button"
-                onClick={() => removeLink(link.id)}
-                className="ml-auto p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all"
-                aria-label={t.triggers.studio.remove_route}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              <div className="ml-auto flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => { if (!blocker) void commitLink(link); }}
+                  disabled={!!blocker || busy}
+                  title={blocker === 'signal_source' ? st.commit_blocked_signal : blocker === 'output_match' ? st.commit_blocked_output_match : st.commit_route}
+                  aria-label={st.commit_route}
+                  className={`p-1.5 rounded-interactive transition-colors disabled:cursor-not-allowed ${
+                    blocker
+                      ? 'text-foreground opacity-40'
+                      : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10 disabled:opacity-50'
+                  }`}
+                >
+                  {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeLink(link.id)}
+                  className="p-1.5 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:text-status-error hover:bg-status-error/10 transition-all"
+                  aria-label={t.triggers.studio.remove_route}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
       {/* ── Targets rail ─────────────────────────────────────────────── */}
       <div className="w-80 border-l border-border flex flex-col min-h-0 bg-card/30">
-        <div className="px-3 pt-3 pb-2 space-y-2">
+        <div className="px-3 pt-2.5 pb-2 space-y-1.5">
           <SegmentedTabs<TargetRailKind>
             tabs={[
               { id: 'personas', label: <><Bot className="w-3.5 h-3.5 text-emerald-400" />{st.targets_title}</> },
@@ -282,6 +353,7 @@ export function StudioSwitchboard() {
             activeTab={targetKind}
             onTabChange={setTargetKind}
             ariaLabel={st.targets_title}
+            size="sm"
           />
           <p className="typo-body opacity-80 text-foreground px-1">
             {targetKind === 'personas' ? st.targets_subtitle : st.system_events_subtitle}
@@ -320,7 +392,7 @@ export function StudioSwitchboard() {
         onClose={() => setCommit(null)}
         opKind={commit?.opKind ?? ''}
         triggerType={commit?.triggerType ?? 'schedule'}
-        onCreated={() => { void refreshAutomations(); setTargetKind('system'); }}
+        onCreated={() => { void refreshAutomations(); setTargetKind('system'); onRouteCommitted?.(); }}
       />
     </div>
   );

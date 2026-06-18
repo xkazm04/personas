@@ -1,5 +1,7 @@
 # Reliable Event Routing in the Builder — Design Proposal
 
+> **Historical (2026-06-18).** The standalone "Builder" tab this proposal describes was retired; its routing view now lives in **Chain Studio → Routes** (`src/features/triggers/sub_studio/routing/`). The event-routing *mechanics* below (runtime `event_type` injection, `eventHandlers`, `link_persona_to_event`) remain accurate — only the hosting UI moved. See [`docs/plans/studio-supersedes-builder.md`](../../plans/studio-supersedes-builder.md).
+
 **Status:** Partially shipped — Change A (runtime injects `event_type` + source) landed; Change B (`eventHandlers` prompt section) and Change C (`link_persona_to_event` write path) still pending.
 **Author:** Triggers Builder iteration
 **Scope:** Persona build process, prompt assembly, event dispatch, Triggers Builder UI

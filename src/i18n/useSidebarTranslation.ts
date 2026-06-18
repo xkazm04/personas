@@ -72,7 +72,6 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     ['engine', sb.engine],
     ['byom', sb.byom],
     ['portability', sb.data],
-    ['config', sb.config_resolution],
     ['network', sb.network],
     ['admin', sb.admin],
 

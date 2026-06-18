@@ -470,6 +470,8 @@ export type Translations = {
       title: string;
       subtitle: string;
       open_title: string;
+      mode_toggle_title: string;
+      mode_toggle_aria: string;
       section_navigation: string;
       section_workspace: string;
       section_agents: string;
@@ -770,6 +772,7 @@ export type Translations = {
     design_subtabs: {
       use_cases: string;
       prompt: string;
+      parameters: string;
       connectors: string;
       triggers: string;
       messaging: string;
@@ -2244,6 +2247,10 @@ export type Translations = {
       run_title: string;
       _comment_adopt_a_recipe: string;
       adopt_a_recipe: string;
+      _comment_recipe: string;
+      recipe: string;
+      _comment_petals_label: string;
+      petals_label: string;
       _comment_from_curated_catalog: string;
       from_curated_catalog: string;
       _comment_open_slot: string;
@@ -4217,6 +4224,8 @@ export type Translations = {
       dep_count_other: string;
       connection_count_one: string;
       connection_count_other: string;
+      graph_connections: string;
+      graph_empty: string;
       personas_would_stop: string;
       failover_credentials: string;
       suggested_mitigations: string;
@@ -5923,6 +5932,7 @@ export type Translations = {
     knowledge: {
       title: string;
       patterns_tab: string;
+      graph_tab: string;
       search_placeholder: string;
       sort_aria: string;
       sort_default: string;
@@ -6604,6 +6614,7 @@ export type Translations = {
       load_more: string;
       col_status: string;
       col_model: string;
+      col_cost: string;
       col_duration: string;
       col_started: string;
       col_id: string;
@@ -7268,6 +7279,26 @@ export type Translations = {
       loading_reliability: string;
       heartbeats_btn: string;
       reliability_btn: string;
+    };
+    heartbeats: {
+      monitored: string;
+      show_all: string;
+      focus_issues: string;
+      hide_healthy: string;
+      healthy_hidden: string;
+      all_clear_title: string;
+      all_clear_detail: string;
+      heartbeat: string;
+      col_persona: string;
+      col_vitals: string;
+      col_score: string;
+      runs_suffix: string;
+      idle: string;
+      chains: string;
+      seg_success: string;
+      seg_healing: string;
+      seg_stability: string;
+      seg_budget: string;
     };
     crash_logs: {
       title: string;
@@ -8739,7 +8770,17 @@ export type Translations = {
       automation_enabled: string;
       automation_delete: string;
       routes_title: string;
+      existing_routes: string;
+      tab_compose: string;
+      tab_routes: string;
       clear_all: string;
+      commit_route: string;
+      commit_all: string;
+      route_committed: string;
+      routes_committed: string;
+      route_commit_failed: string;
+      commit_blocked_signal: string;
+      commit_blocked_output_match: string;
       pick_a_source: string;
       pick_a_target: string;
       cancel_pending_route: string;
@@ -13121,6 +13162,8 @@ export type Translations = {
       };
       decision_hide: string;
       decision_show: string;
+      decision_minimize: string;
+      decision_expand: string;
       wake_cadence_label: string;
       wake_cadence_hint: string;
       wake_reactive: string;

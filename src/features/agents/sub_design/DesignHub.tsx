@@ -1,21 +1,22 @@
 import { Suspense, lazy, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ListChecks, FileText, Cable, Zap, MessageSquare, Workflow } from 'lucide-react';
+import { ListChecks, FileText, Sliders, Plug, Zap, Bell } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { EditorTabContent } from '@/features/agents/sub_editor/components/EditorTabContent';
 import { DesignTab } from './DesignTab';
+import {
+  DesignParametersPanel,
+  DesignConnectorsPanel,
+  DesignEventsPanel,
+  DesignNotificationsPanel,
+} from './components/DesignSubtabPanels';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { DesignSubTab } from '@/lib/types/types';
 import { useTranslation } from '@/i18n/useTranslation';
 
 
-const PersonaConnectorsTab = lazy(() =>
-  import('@/features/agents/sub_connectors/components/connectors/PersonaConnectorsTab').then((m) => ({ default: m.PersonaConnectorsTab })),
-);
 const PersonaUseCasesTab = lazy(() =>
   import('@/features/agents/sub_use_cases/components/core/PersonaUseCasesTab').then((m) => ({ default: m.PersonaUseCasesTab })),
 );
@@ -24,6 +25,8 @@ interface DesignHubProps {
   draft: PersonaDraft;
   patch: (updates: Partial<PersonaDraft>) => void;
   modelDirty: boolean;
+  /** Retained for the EditorBody contract; no longer wired now that the
+   *  Connectors subtab was removed (connector readiness surfaces in Use Cases). */
   onConnectorsMissingChange?: (count: number) => void;
 }
 
@@ -34,16 +37,21 @@ interface SubTabDef {
   icon: typeof ListChecks;
 }
 
+// Rebuilt out of the former monolithic "Prompt" sub-tab: Properties keeps the
+// prompt/design wizard, and Parameters / Connectors / Events & Triggers /
+// Notifications each get their own sub-tab (the sections that used to stack
+// inside the saved Prompt view). `prompt` is relabelled "Properties" and
+// `messaging` "Notifications" via the design_subtabs i18n values.
 const SUB_TABS: SubTabDef[] = [
   { id: 'use-cases', labelKey: 'use_cases', icon: ListChecks },
   { id: 'prompt', labelKey: 'prompt', icon: FileText },
-  { id: 'connectors', labelKey: 'connectors', icon: Cable },
+  { id: 'parameters', labelKey: 'parameters', icon: Sliders },
+  { id: 'connectors', labelKey: 'connectors', icon: Plug },
   { id: 'triggers', labelKey: 'triggers', icon: Zap },
-  { id: 'messaging', labelKey: 'messaging', icon: MessageSquare },
-  { id: 'automations', labelKey: 'automations', icon: Workflow },
+  { id: 'messaging', labelKey: 'messaging', icon: Bell },
 ];
 
-export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange }: DesignHubProps) {
+export function DesignHub({ draft, patch, modelDirty }: DesignHubProps) {
   const { t } = useTranslation();
   const subtabLabels = t.agents.design_subtabs as Record<string, string>;
   const { designSubTab, setDesignSubTab } = useSystemStore(
@@ -100,38 +108,10 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
             <PersonaUseCasesTab draft={draft} patch={patch} modelDirty={modelDirty} credentials={credentials} />
           )}
           {activeSubTab === 'prompt' && <DesignTab />}
-          {activeSubTab === 'connectors' && (
-            <EditorTabContent>
-              <PersonaConnectorsTab onMissingCountChange={onConnectorsMissingChange} />
-            </EditorTabContent>
-          )}
-          {activeSubTab === 'triggers' && (
-            <div className="py-12">
-              <EmptyState
-                icon={Zap}
-                title={subtabLabels.triggers}
-                description={subtabLabels.triggers_desc}
-              />
-            </div>
-          )}
-          {activeSubTab === 'messaging' && (
-            <div className="py-12">
-              <EmptyState
-                icon={MessageSquare}
-                title={subtabLabels.messaging}
-                description={subtabLabels.messaging_desc}
-              />
-            </div>
-          )}
-          {activeSubTab === 'automations' && (
-            <div className="py-12">
-              <EmptyState
-                icon={Workflow}
-                title={subtabLabels.automations}
-                description={subtabLabels.automations_desc}
-              />
-            </div>
-          )}
+          {activeSubTab === 'parameters' && <DesignParametersPanel />}
+          {activeSubTab === 'connectors' && <DesignConnectorsPanel />}
+          {activeSubTab === 'triggers' && <DesignEventsPanel />}
+          {activeSubTab === 'messaging' && <DesignNotificationsPanel />}
         </Suspense>
       </div>
     </div>

@@ -122,9 +122,9 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       {
         id: 'builder',
         narration: (t) => t.plugins.companion.guide_trig_create,
-        // Switch to the visual Builder tab and ring its routing canvas.
+        // Switch to Chain Studio and ring its switchboard (where chains are composed).
         preAction: 'open_trigger_builder',
-        highlightTestId: 'routing-canvas',
+        highlightTestId: 'studio-switchboard',
         orbAnchor: 'auto',
       },
       {

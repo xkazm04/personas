@@ -5,7 +5,6 @@ import {
   PackageCheck,
   Check,
 } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { ExportSelectionModal } from './ExportSelectionModal';
@@ -47,8 +46,7 @@ export function ExportSection({
   };
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title={s.export_import_title} />
+    <div className="space-y-4">
       <p className="typo-body text-foreground">
         {s.export_import_hint}
       </p>

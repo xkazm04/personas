@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Bot, Grid3x3, Orbit, Rows3, Trash2 } from 'lucide-react';
+import { Bot, Grid3x3, Layers, Orbit, Rows3, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -18,6 +18,8 @@ import { DirectorPanel } from './DirectorPanel';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
 import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
 import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
+import { PersonaConfigPanel } from './PersonaConfigPanel';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { usePersonaColumns } from './PersonaOverviewColumns';
 import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
@@ -31,6 +33,10 @@ import { listDirectorScoreTrends } from '@/api/director';
 
 
 type LayoutVariant = 'baseline' | 'grid' | 'constellation';
+
+/** Top-level view of the All-Personas page: the persona list, or the
+ *  effective-config resolution table (migrated from Settings → Config). */
+type PageTab = 'personas' | 'config';
 
 const LAYOUT_TABS: { id: LayoutVariant; label: string; sub: string; Icon: typeof Rows3 }[] = [
   { id: 'baseline', label: 'Table', sub: 'data-dense rows with sortable columns', Icon: Rows3 },
@@ -67,6 +73,7 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
+  const [pageTab, setPageTab] = useState<PageTab>('personas');
   // Home-team filter from PersonaGroupDropRail (cycle 19; repointed to home
   // teams in the Groups→Teams consolidation). null = unfiltered; a team id
   // narrows to members; `'__ungrouped__'` narrows to personas with no home
@@ -241,7 +248,7 @@ export default function PersonaOverviewPage() {
         iconColor="violet"
         title={t.agents.persona_list.all_personas}
         subtitle={`${filteredData.length}${filteredData.length !== personas.length ? ` of ${personas.length}` : ''} persona${personas.length !== 1 ? 's' : ''}`}
-        actions={
+        actions={pageTab === 'personas' ? (
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <PersonaOverviewBatchBar
               count={selectedIds.size}
@@ -260,13 +267,32 @@ export default function PersonaOverviewPage() {
               </Button>
             )}
           </div>
-        }
+        ) : undefined}
       />
       <ContentBody>
         <div className="px-3 py-2 border-b border-primary/5 flex items-center justify-between gap-3 flex-wrap">
-          <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
-          {!isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
+          <div className="flex items-center gap-3 flex-wrap">
+            <SegmentedTabs<PageTab>
+              variant="segment"
+              ariaLabel={t.agents.persona_list.all_personas}
+              activeTab={pageTab}
+              onTabChange={setPageTab}
+              tabs={[
+                { id: 'personas', ariaLabel: t.agents.persona_list.all_personas, label: (<><Bot className="w-3.5 h-3.5" />{t.agents.persona_list.all_personas}</>) },
+                { id: 'config', ariaLabel: t.settings.config.title, label: (<><Layers className="w-3.5 h-3.5" />{t.settings.config.title}</>) },
+              ]}
+            />
+            {pageTab === 'personas' && (
+              <PersonaOverviewToolbar search={search} onSearchChange={setSearch} view={view} onViewChange={setView} />
+            )}
+          </div>
+          {pageTab === 'personas' && !isMobile && <LayoutModeTabs value={layout} onChange={setLayout} />}
         </div>
+
+        {pageTab === 'config' ? (
+          <PersonaConfigPanel />
+        ) : (
+          <>
         {/* Drop rail now renders in every layout (cycle 22 added
             pointer-event DnD to constellation). Chips serve three roles:
             click → filter, HTML5 drop (grid/baseline/card-list), and
@@ -344,6 +370,8 @@ export default function PersonaOverviewPage() {
             onSelectAll={handleSelectAll}
             density="compact"
           />
+        )}
+          </>
         )}
       </ContentBody>
 

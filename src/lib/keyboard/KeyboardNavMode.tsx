@@ -15,8 +15,8 @@ import { useSystemStore } from '@/stores/systemStore';
  *   - `;` again, or `Esc`, exits the mode.
  *
  * The active flag lives in the system store (`keyboardNavActive`) so hint
- * surfaces like the dock can render from it; this component remains the only
- * writer apart from the dock's exit-after-search.
+ * surfaces like the dock can render from it; this component and the footer
+ * shortcut switch are its writers, while the dock only reads it.
  *
  * A subtle non-linear edge glow (see `.kbd-nav-glow` in globals.css) frames the
  * viewport while active so the changed control mode is visible at a glance.

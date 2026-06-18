@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Palette } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { useThemeStore, THEMES, customThemeDef } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -29,9 +29,11 @@ export default function AppearanceThemingSection() {
   }, [customDef]);
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <SectionHeading title={labels.theming} icon={<Palette />} />
+    <SectionCard
+      title={labels.theming}
+      icon={<Palette className="w-4 h-4 text-violet-400" />}
+      titleClassName="text-primary"
+      action={
         <SegmentedTabs<'default' | 'custom'>
           variant="segment"
           ariaLabel={labels.theming}
@@ -42,7 +44,8 @@ export default function AppearanceThemingSection() {
             { id: 'custom', label: labels.custom_tab },
           ]}
         />
-      </div>
+      }
+    >
       {themeTab === 'default' ? (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -65,6 +68,6 @@ export default function AppearanceThemingSection() {
       ) : (
         <CustomThemeCreator />
       )}
-    </div>
+    </SectionCard>
   );
 }

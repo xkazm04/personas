@@ -20,6 +20,10 @@ interface SectionCardBaseProps {
   size?: SectionCardSize;
   blur?: boolean;
   className?: string;
+  /** Optional leading glyph rendered before the title in the header. */
+  icon?: ReactNode;
+  /** Optional right-aligned header control (e.g. a live status badge). */
+  action?: ReactNode;
   /** Optional status accent — adds a colored left border. */
   status?: SectionCardStatus;
   /**
@@ -86,7 +90,7 @@ function writeStorage(key: string | undefined, collapsed: boolean) {
 }
 
 export function SectionCard(props: SectionCardProps) {
-  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle, status, titleClassName } = props;
+  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle, status, titleClassName, icon, action } = props;
   const blurClass = blur ? 'backdrop-blur-sm' : '';
   const statusClass = status ? STATUS_BORDER[status] : '';
   const base = `bg-secondary/30 border border-primary/12 shadow-elevation-1 ${statusClass}`;
@@ -96,9 +100,15 @@ export function SectionCard(props: SectionCardProps) {
   if (!collapsible) {
     return (
       <div className={`${base} ${SIZE_CLASSES[size]} ${blurClass} ${className}`.trim()}>
-        {title && (
+        {(title || icon || action) && (
           <div className="mb-2">
-            <h3 className={`typo-heading ${titleClass}`}>{title}</h3>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                {icon ? <span className="flex shrink-0">{icon}</span> : null}
+                {title ? <h3 className={`typo-heading ${titleClass}`}>{title}</h3> : null}
+              </div>
+              {action ? <div className="flex-shrink-0">{action}</div> : null}
+            </div>
             {subtitle && <p className="typo-body text-foreground">{subtitle}</p>}
           </div>
         )}

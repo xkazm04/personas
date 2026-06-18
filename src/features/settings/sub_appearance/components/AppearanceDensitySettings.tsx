@@ -1,5 +1,4 @@
 import { AlignJustify, Check, Rows2, Rows3 } from 'lucide-react';
-import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore } from '@/stores/themeStore';
 import type { Density } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -18,8 +17,7 @@ export default function AppearanceDensitySettings() {
   ];
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title={s.density} icon={<Rows2 />} />
+    <div className="space-y-4">
       <p className="typo-caption text-foreground">{s.density_hint}</p>
       <div className="grid grid-cols-3 gap-3">
         {options.map(({ value, Icon, label, description }) => {

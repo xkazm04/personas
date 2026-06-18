@@ -1,10 +1,9 @@
-import { useMemo, Fragment } from 'react';
+import { useState } from 'react';
+import { Wrench, Clock } from 'lucide-react';
 import type { PersonaExecution } from '@/lib/types/types';
-import { Wrench, Clock, DollarSign, Zap, Database } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
-import { parseToolSteps, formatCost, formatTimeGap } from './inspectorTypes';
-import { ToolCallCard } from './ToolCallCard';
-import { CostBreakdownBar } from './CostBreakdownBar';
+import { parseToolSteps, durationColor } from './inspectorTypes';
+import { InspectorStatStrip, StepIO } from './inspectorShared';
 import { SubagentTree } from './SubagentTree';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -12,174 +11,25 @@ interface ExecutionInspectorProps {
   execution: PersonaExecution;
 }
 
+/**
+ * ExecutionInspector — the tool-call inspector for the execution detail
+ * "Inspector" tab. A debugger-style master/detail: a compact, selectable list
+ * of the run's tool calls on the left; the selected call's syntax-highlighted
+ * input/output (via {@link StepIO} → `HighlightedJsonBlock`) fills the right
+ * pane. Only one step's JSON is open at a time, so deep payloads get full
+ * width instead of an endless scroll of stacked cards. A slim stat strip
+ * (tokens · cost · cache · duration) sits on top.
+ */
 export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
   const { t, tx } = useTranslation();
   const e = t.agents.executions;
-  const steps = useMemo(() => parseToolSteps(execution.tool_steps ?? null), [execution.tool_steps]);
-  const model = execution.model_used || 'claude-sonnet-4';
+  const steps = parseToolSteps(execution.tool_steps ?? null);
+  const [selected, setSelected] = useState(0);
 
-  // Prompt-cache efficiency (P1 cache visibility). Hit ratio = tokens served
-  // from cache / total input tokens (uncached + cache-read + cache-write).
-  const cacheRead = execution.cache_read_tokens ?? 0;
-  const cacheCreation = execution.cache_creation_tokens ?? 0;
-  const hasCacheData = cacheRead > 0 || cacheCreation > 0;
-  const totalInputWithCache = execution.input_tokens + cacheRead + cacheCreation;
-  const cacheHitPct =
-    totalInputWithCache > 0 ? Math.round((cacheRead / totalInputWithCache) * 100) : 0;
-
-  // Timeline rail animation state
-  const isLive = execution.status === 'running' || execution.status === 'queued';
-  const hasErrors = execution.status === 'failed';
-  const completedCount = steps.filter((s) => s.ended_at_ms != null).length;
-  const railFillPct = steps.length > 0
-    ? isLive
-      ? Math.max((completedCount / steps.length) * 100, 10) // at least 10% when live
-      : 100 // terminal executions fill the rail fully
-    : 0;
-  const railGradient = hasErrors
-    ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(239 68 68 / 0.6))'
-    : isLive
-      ? 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(245 158 11 / 0.6))'
-      : 'linear-gradient(to bottom, rgb(59 130 246 / 0.6), rgb(16 185 129 / 0.6))';
-
-  return (
-    <div className="space-y-6">
-      {/* Metrics Summary Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <Zap className="w-3 h-3" />
-            {e.input_tokens}
-          </div>
-          <div className="typo-body-lg font-mono text-foreground/90">
-            {execution.input_tokens.toLocaleString()}
-          </div>
-        </div>
-
-        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <Zap className="w-3 h-3" />
-            {e.output_tokens}
-          </div>
-          <div className="typo-body-lg font-mono text-foreground/90">
-            {execution.output_tokens.toLocaleString()}
-          </div>
-        </div>
-
-        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
-            {e.cost}
-          </div>
-          <div className="typo-body-lg font-mono text-foreground/90">
-            {formatCost(execution.cost_usd)}
-          </div>
-        </div>
-
-        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <Database className="w-3 h-3" />
-            {e.cache_hit}
-          </div>
-          <div className="typo-body-lg font-mono text-foreground/90">
-            {hasCacheData ? `${cacheHitPct}%` : '–'}
-          </div>
-          {hasCacheData && (
-            <div className="typo-code text-foreground/90">
-              {cacheRead.toLocaleString()} {e.cached}
-            </div>
-          )}
-        </div>
-
-        <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4 space-y-1.5">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {e.duration}
-          </div>
-          <div className="typo-body-lg font-mono text-foreground/90">
-            {formatDuration(execution.duration_ms)}
-          </div>
-        </div>
-      </div>
-
-      {/* Cost Breakdown Bar */}
-      <div className="rounded-modal border border-primary/20 bg-secondary/40 p-4">
-        <CostBreakdownBar model={model} inputTokens={execution.input_tokens} outputTokens={execution.output_tokens} />
-      </div>
-
-      {/* Subagent fan-out (P4 observability) — live-only, renders when present */}
-      <SubagentTree executionId={execution.id} />
-
-      {/* Tool Call Timeline */}
-      {steps.length > 0 && (
-        <div className="space-y-3">
-          <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Wrench className="w-3 h-3" />
-            {tx(e.tool_call_timeline_steps, { count: steps.length })}
-          </div>
-
-          <div className="relative pl-7">
-            {/* Vertical timeline rail -- background track + animated fill */}
-            <div className="absolute left-[10px] top-5 bottom-5 w-[2px] rounded-full overflow-hidden">
-              {/* Static background track */}
-              <div className="absolute inset-0 bg-primary/15" />
-              {/* Animated gradient fill overlay */}
-              <div
-                className="absolute top-0 left-0 right-0 rounded-full"
-                style={{
-                  height: `${railFillPct}%`,
-                  background: railGradient,
-                  transition: 'height 300ms ease-out',
-                }}
-              />
-            </div>
-
-            {steps.map((step, i) => {
-              const prev = steps[i - 1];
-              const gapMs =
-                prev?.ended_at_ms != null
-                  ? step.started_at_ms - prev.ended_at_ms
-                  : null;
-              const isCompleted = step.ended_at_ms != null;
-              const isActive = !isCompleted && isLive;
-
-              return (
-                <Fragment key={step.step_index}>
-                  {/* Time gap label between steps */}
-                  {i > 0 && (
-                    <div className="relative h-6 flex items-center">
-                      {gapMs != null && gapMs >= 10 && (
-                        <span className="absolute left-[-16px] typo-code text-foreground leading-none bg-background z-10 px-0.5">
-                          {formatTimeGap(Number(gapMs))}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Step with circle node */}
-                  <div className="relative">
-                    {/* Node circle -- colored by status, pulsing when active */}
-                    <div
-                      className={`absolute left-[-22px] top-[16px] w-2.5 h-2.5 rounded-full border-2 z-10 transition-colors duration-300 ${
-                        isActive
-                          ? 'border-blue-400 bg-blue-400 animate-pulse'
-                          : isCompleted
-                            ? hasErrors
-                              ? 'border-red-400/60 bg-red-400/40'
-                              : 'border-emerald-400/60 bg-emerald-400/40'
-                            : 'border-primary/30 bg-background'
-                      }`}
-                    />
-                    <ToolCallCard step={step} />
-                  </div>
-                </Fragment>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {steps.length === 0 && (
+  if (steps.length === 0) {
+    return (
+      <div className="space-y-4">
+        <InspectorStatStrip execution={execution} />
         <div className="text-center py-8">
           <div className="w-12 h-12 mx-auto mb-3 rounded-modal bg-secondary/60 border border-primary/20 flex items-center justify-center">
             <Wrench className="w-6 h-6 text-foreground" />
@@ -187,7 +37,62 @@ export function ExecutionInspector({ execution }: ExecutionInspectorProps) {
           <p className="typo-body text-foreground">{e.no_tool_calls}</p>
           <p className="typo-body text-foreground mt-1">{e.tool_steps_appear}</p>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  const active = steps[Math.min(selected, steps.length - 1)]!;
+
+  return (
+    <div className="space-y-4">
+      <InspectorStatStrip execution={execution} />
+
+      <SubagentTree executionId={execution.id} />
+
+      <div className="typo-code text-foreground uppercase tracking-wider flex items-center gap-1.5">
+        <Wrench className="w-3 h-3" />
+        {tx(e.tool_call_timeline_steps, { count: steps.length })}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-[210px_1fr] gap-3 rounded-modal border border-primary/20 bg-secondary/40 overflow-hidden">
+        {/* Master — step list */}
+        <div className="md:border-r border-primary/15 bg-secondary/20 max-h-[60vh] overflow-y-auto">
+          {steps.map((step, i) => {
+            const durMs = step.duration_ms != null ? Number(step.duration_ms) : null;
+            const isActive = i === Math.min(selected, steps.length - 1);
+            return (
+              <button
+                key={step.step_index}
+                onClick={() => setSelected(i)}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-left border-b border-primary/10 last:border-b-0 transition-colors ${
+                  isActive ? 'bg-primary/10 border-l-2 border-l-primary' : 'hover:bg-secondary/40 border-l-2 border-l-transparent'
+                }`}
+              >
+                <span className="typo-code text-foreground w-4 text-right flex-shrink-0">{step.step_index + 1}</span>
+                <span className="typo-code font-medium text-foreground/90 truncate flex-1">{step.tool_name}</span>
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-code border flex-shrink-0 ${durationColor(durMs)}`}>
+                  <Clock className="w-2.5 h-2.5" />
+                  {durMs != null ? formatDuration(durMs) : e.pending}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Detail — selected step's input/output */}
+        <div className="min-w-0 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-6 h-6 rounded-card bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <Wrench className="w-3 h-3 text-primary/70" />
+            </div>
+            <span className="typo-code font-medium text-foreground/90 truncate">{active.tool_name}</span>
+            <span className="ml-auto typo-code text-foreground tabular-nums">
+              {active.duration_ms != null ? formatDuration(Number(active.duration_ms)) : e.pending}
+            </span>
+          </div>
+          <StepIO step={active} />
+        </div>
+      </div>
     </div>
   );
 }

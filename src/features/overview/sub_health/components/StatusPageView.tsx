@@ -1,47 +1,37 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
-  TrendingUp, TrendingDown, Minus, RefreshCw, AlertTriangle,
-  CheckCircle2, AlertCircle, XCircle, Circle,
+  RefreshCw, AlertTriangle, CheckCircle2, AlertCircle, XCircle, Circle, ChevronDown, ChevronRight,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useStatusPageData } from '../libs/useStatusPageData';
 import type { CompositeHealthEntry, DayStatus } from '../libs/compositeHealthScore';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 import { DebtText } from '@/i18n/DebtText';
-
+import { GRADE_THEME } from './heartbeats/model';
+import { GradeDot, TrendBadge } from './heartbeats/primitives';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Status Page — uptime-history table. Shares the Vitals Ledger quality bar:
+// status-token palette, elevated container with a grade-tinted top accent,
+// per-row grade gutter, tabular metrics.
 // ---------------------------------------------------------------------------
 
-const GRADE_BADGE: Record<HealthGrade, { bg: string; text: string; label: string; Icon: typeof CheckCircle2 }> = {
-  healthy: { bg: 'bg-emerald-500/15 border-emerald-500/25', text: 'text-emerald-400', label: 'Operational', Icon: CheckCircle2 },
-  degraded: { bg: 'bg-amber-500/15 border-amber-500/25', text: 'text-amber-400', label: 'Degraded', Icon: AlertCircle },
-  critical: { bg: 'bg-red-500/15 border-red-500/25', text: 'text-red-400', label: 'Outage', Icon: XCircle },
-  unknown: { bg: 'bg-zinc-500/15 border-zinc-500/25', text: 'text-zinc-400', label: 'Unknown', Icon: Circle },
+const GRADE_META: Record<HealthGrade, { label: string; Icon: LucideIcon }> = {
+  healthy: { label: 'Operational', Icon: CheckCircle2 },
+  degraded: { label: 'Degraded', Icon: AlertCircle },
+  critical: { label: 'Outage', Icon: XCircle },
+  unknown: { label: 'Unknown', Icon: Circle },
 };
 
-const TREND_ICON = { improving: TrendingUp, stable: Minus, degrading: TrendingDown };
-const TREND_COLOR = { improving: 'text-emerald-400', stable: 'text-zinc-400', degrading: 'text-red-400' };
-
-const STATUS_COLORS: Record<DayStatus, string> = {
-  operational: 'bg-emerald-400',
-  degraded: 'bg-amber-400',
-  outage: 'bg-red-400',
+const DAY_STATUS_BAR: Record<DayStatus, string> = {
+  operational: 'bg-status-success',
+  degraded: 'bg-status-warning',
+  outage: 'bg-status-error',
   'no-data': 'bg-zinc-700',
 };
-
-const STATUS_HOVER_COLORS: Record<DayStatus, string> = {
-  operational: 'bg-emerald-300',
-  degraded: 'bg-amber-300',
-  outage: 'bg-red-300',
-  'no-data': 'bg-zinc-600',
-};
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export function StatusPageView() {
   const { t } = useTranslation();
@@ -61,48 +51,47 @@ export function StatusPageView() {
     return 'unknown';
   }, [globalScore]);
 
-  const globalBadge = GRADE_BADGE[globalGrade];
+  const meta = GRADE_META[globalGrade];
+  const gth = GRADE_THEME[globalGrade];
 
   return (
     <div className="space-y-5">
-      {/* Error banner */}
       {error && (
-        <InlineErrorBanner
-          severity="error"
-          message={error}
-          onRetry={() => void refresh()}
-        />
+        <InlineErrorBanner severity="error" message={error} onRetry={() => void refresh()} />
       )}
 
       {/* Global status header */}
-      <div className="flex items-center justify-between p-4 rounded-modal border border-primary/10 bg-secondary/10">
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-card border ${globalBadge.bg}`}>
-            <globalBadge.Icon className={`w-4 h-4 ${globalBadge.text}`} />
-            <span className={`typo-heading ${globalBadge.text}`}>{globalBadge.label}</span>
+      <div className="rounded-modal border border-primary/10 bg-secondary/10 shadow-elevation-2 overflow-hidden">
+        <div className={`h-0.5 ${gth.bar} opacity-60`} />
+        <div className="flex items-center justify-between gap-4 p-4">
+          <div className="flex items-center gap-4 min-w-0 flex-wrap">
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-card border ${gth.chip}`}>
+              <meta.Icon className="w-4 h-4" />
+              <span className="typo-heading">{meta.label}</span>
+            </div>
+            <div className="flex items-baseline gap-3">
+              <span className="typo-body text-foreground">
+                {t.overview.health_extra.score_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{globalScore}</span>/100
+              </span>
+              <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
+              <span className="typo-body text-foreground">
+                {t.overview.health_extra.uptime_30d_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
+              </span>
+            </div>
           </div>
-          <div>
-            <span className="typo-body text-foreground">
-              {t.overview.health_extra.score_prefix} <span className="text-foreground/90 font-semibold">{globalScore}</span>/100
-            </span>
-            <span className="mx-3 text-foreground">|</span>
-            <span className="typo-body text-foreground">
-              {t.overview.health_extra.uptime_30d_prefix} <span className="text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
-            </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {lastRefreshLabel && (
+              <span className="typo-caption text-foreground">{t.overview.health_extra.updated_prefix} {lastRefreshLabel}</span>
+            )}
+            <button
+              onClick={() => void refresh()}
+              disabled={loading}
+              className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
+              title={t.common.refresh}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          {lastRefreshLabel && (
-            <span className="typo-caption text-foreground">{t.overview.health_extra.updated_prefix} {lastRefreshLabel}</span>
-          )}
-          <button
-            onClick={() => void refresh()}
-            disabled={loading}
-            className="p-1.5 rounded-card text-foreground hover:text-muted-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
-            title={t.common.refresh}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
@@ -116,7 +105,7 @@ export function StatusPageView() {
           {t.overview.health_extra.no_personas}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden divide-y divide-primary/5">
           {entries.map(entry => (
             <StatusRow key={entry.personaId} entry={entry} />
           ))}
@@ -124,65 +113,55 @@ export function StatusPageView() {
       )}
 
       {/* Legend */}
-      <div className="flex items-center gap-4 typo-caption text-foreground pt-2">
-        <span className="font-medium text-foreground">{t.overview.health_extra.legend}</span>
-        <LegendItem color="bg-emerald-400" label={t.overview.health_extra.operational} />
-        <LegendItem color="bg-amber-400" label={t.overview.health_extra.degraded} />
-        <LegendItem color="bg-red-400" label={t.overview.health_extra.outage} />
+      <div className="flex items-center gap-4 typo-caption text-foreground pt-1">
+        <span className="typo-label text-foreground">{t.overview.health_extra.legend}</span>
+        <LegendItem color="bg-status-success" label={t.overview.health_extra.operational} />
+        <LegendItem color="bg-status-warning" label={t.overview.health_extra.degraded} />
+        <LegendItem color="bg-status-error" label={t.overview.health_extra.outage} />
         <LegendItem color="bg-zinc-700" label={t.overview.health_extra.no_data} />
       </div>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Status Row — one persona
-// ---------------------------------------------------------------------------
-
 function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
   const [expanded, setExpanded] = useState(false);
-  const badge = GRADE_BADGE[entry.grade];
-  const TrendIcon = TREND_ICON[entry.trend];
+  const th = GRADE_THEME[entry.grade];
+  const meta = GRADE_META[entry.grade];
 
   return (
-    <div className="rounded-modal border border-primary/10 bg-secondary/5 overflow-hidden transition-colors hover:bg-secondary/10">
-      {/* Main row */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left"
-      >
-        {/* Persona identity */}
-        <div className="flex items-center gap-2 w-44 flex-shrink-0">
-          {entry.personaIcon && <span className="typo-body-lg">{entry.personaIcon}</span>}
-          <span className="typo-heading text-foreground/90 truncate">{entry.personaName}</span>
+    <div className={`relative ${expanded ? th.soft : ''}`}>
+      <span className={`absolute left-0 inset-y-0 w-0.5 ${th.bar} ${entry.grade === 'healthy' ? 'opacity-30' : 'opacity-70'}`} aria-hidden="true" />
+      <button onClick={() => setExpanded(!expanded)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-secondary/20 transition-colors">
+        <div className="flex items-center gap-2 w-44 sm:w-52 shrink-0 min-w-0">
+          <GradeDot grade={entry.grade} />
+          <PersonaIcon icon={entry.personaIcon} color={entry.personaColor} display="framed" frameSize="xs" />
+          <span className="typo-data text-foreground/90 truncate">{entry.personaName}</span>
         </div>
 
-        {/* Uptime bars */}
         <div className="flex-1 flex items-center gap-px min-w-0">
           {entry.dailyStatuses.map((status, i) => (
             <UptimeBar key={i} status={status} index={i} total={entry.dailyStatuses.length} />
           ))}
         </div>
 
-        {/* Uptime percent */}
-        <span className="typo-caption text-foreground w-16 text-right flex-shrink-0">
+        <span className="typo-data tabular-nums text-foreground w-16 text-right shrink-0">
           {(entry.uptimePercent * 100).toFixed(1)}%
         </span>
 
-        {/* Trend arrow */}
-        <TrendIcon className={`w-3.5 h-3.5 flex-shrink-0 ${TREND_COLOR[entry.trend]}`} />
+        <TrendBadge trend={entry.trend} />
 
-        {/* Health badge */}
-        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-input border ${badge.bg} flex-shrink-0`}>
-          <badge.Icon className={`w-3 h-3 ${badge.text}`} />
-          <span className={`typo-caption font-medium ${badge.text}`}>{entry.score}</span>
-        </div>
+        <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-input border shrink-0 ${th.chip}`}>
+          <meta.Icon className="w-3 h-3" />
+          <span className="typo-data tabular-nums font-semibold">{entry.score}</span>
+        </span>
+
+        {expanded ? <ChevronDown className="w-4 h-4 text-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-foreground shrink-0" />}
       </button>
 
-      {/* Expanded detail */}
       {expanded && (
-        <div className="px-4 pb-3 pt-1 border-t border-primary/5">
-          <div className="grid grid-cols-5 gap-3">
+        <div className="px-4 pb-3 pt-1">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             <ScoreBreakdown label="Success Rate" score={entry.successRateScore} detail={`${(entry.successRate * 100).toFixed(1)}%`} />
             <ScoreBreakdown label="Latency (p95)" score={entry.latencyScore} detail={formatLatency(entry.p95LatencyMs)} />
             <ScoreBreakdown label="Cost Anomalies" score={entry.costAnomalyScore} detail={`${entry.costAnomalyCount} detected`} />
@@ -190,7 +169,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
             <ScoreBreakdown label="SLA Compliance" score={entry.slaComplianceScore} detail={`${(entry.slaCompliance * 100).toFixed(1)}%`} />
           </div>
           {entry.consecutiveFailures > 0 && (
-            <div className="mt-2 flex items-center gap-1.5 typo-caption text-red-400/80">
+            <div className="mt-2.5 flex items-center gap-1.5 typo-caption text-status-error">
               <AlertTriangle className="w-3 h-3" />
               {entry.consecutiveFailures} <DebtText k="auto_consecutive_failure_4ac1baa6" />{entry.consecutiveFailures !== 1 ? 's' : ''}
             </div>
@@ -201,54 +180,34 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Uptime bar segment
-// ---------------------------------------------------------------------------
-
 function UptimeBar({ status, index, total }: { status: DayStatus; index: number; total: number }) {
-  const isFirst = index === 0;
-  const isLast = index === total - 1;
-  const roundedLeft = isFirst ? 'rounded-l-sm' : '';
-  const roundedRight = isLast ? 'rounded-r-sm' : '';
-
+  const roundedLeft = index === 0 ? 'rounded-l-sm' : '';
+  const roundedRight = index === total - 1 ? 'rounded-r-sm' : '';
   return (
     <div
-      className={`h-7 flex-1 ${STATUS_COLORS[status]} hover:${STATUS_HOVER_COLORS[status]} ${roundedLeft} ${roundedRight} transition-colors cursor-default`}
+      className={`h-7 flex-1 ${DAY_STATUS_BAR[status]} ${roundedLeft} ${roundedRight} hover:brightness-125 transition-[filter] cursor-default`}
       title={`Day ${index + 1}: ${status.replace('-', ' ')}`}
     />
   );
 }
 
-// ---------------------------------------------------------------------------
-// Score breakdown cell
-// ---------------------------------------------------------------------------
-
 function ScoreBreakdown({ label, score, detail }: { label: string; score: number; detail: string }) {
-  const color = score >= 80 ? 'text-emerald-400' : score >= 50 ? 'text-amber-400' : 'text-red-400';
-  const barWidth = `${Math.max(score, 2)}%`;
+  const tone = score >= 80 ? 'text-status-success' : score >= 50 ? 'text-status-warning' : 'text-status-error';
+  const barTone = score >= 80 ? 'bg-status-success' : score >= 50 ? 'bg-status-warning' : 'bg-status-error';
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-center justify-between">
-        <span className="typo-caption text-foreground">{label}</span>
-        <span className={`typo-caption font-semibold ${color}`}>{score}</span>
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between gap-1">
+        <span className="typo-caption text-foreground truncate">{label}</span>
+        <span className={`typo-data tabular-nums font-semibold ${tone}`}>{score}</span>
       </div>
       <div className="h-1 rounded-full bg-secondary/30 overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${
-            score >= 80 ? 'bg-emerald-400' : score >= 50 ? 'bg-amber-400' : 'bg-red-400'
-          }`}
-          style={{ width: barWidth }}
-        />
+        <div className={`h-full rounded-full transition-[width] duration-500 ${barTone}`} style={{ width: `${Math.max(score, 2)}%` }} />
       </div>
-      <span className="text-[10px] text-foreground">{detail}</span>
+      <span className="typo-caption text-foreground">{detail}</span>
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Legend
-// ---------------------------------------------------------------------------
 
 function LegendItem({ color, label }: { color: string; label: string }) {
   return (
@@ -258,10 +217,6 @@ function LegendItem({ color, label }: { color: string; label: string }) {
     </span>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatLatency(ms: number): string {
   if (ms < 1000) return `${Math.round(ms)}ms`;

@@ -16,9 +16,8 @@ import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
  * - **Goals** — the Goals hub, with its view submenu (Board / Timeline)
  *   nested underneath, mirroring the team-roster indent pattern.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_accept' | 'goal_view_timeline' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_timeline' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
-  { id: 'accept', icon: Inbox, labelKey: 'goal_view_accept' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
 ];
 

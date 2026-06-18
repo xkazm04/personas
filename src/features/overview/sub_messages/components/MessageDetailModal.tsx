@@ -82,6 +82,23 @@ const RATING_MEMORY_TAG = 'message_rating';
 const RATING_MEMORY_CATEGORY = 'learned';
 
 /**
+ * Markdown styling for the Pending-decisions section (IV) so review prose
+ * renders the same way as the Content section (I) — formatted, not raw — at
+ * card density (no editorial drop-cap). Overrides MarkdownRenderer's default
+ * text-foreground/90 to full contrast.
+ */
+const DECISION_MD_CLASS = [
+  'typo-body text-foreground leading-relaxed',
+  '[&_p]:text-foreground [&_li]:text-foreground',
+  '[&_p]:mb-2 [&_p:last-child]:mb-0',
+  '[&_ul]:my-2 [&_ol]:my-2',
+  '[&_h1]:typo-heading [&_h1]:mt-3 [&_h1]:mb-1 [&_h1]:border-0 [&_h1]:p-0 [&_h1]:text-foreground',
+  '[&_h2]:typo-heading [&_h2]:mt-3 [&_h2]:mb-1 [&_h2]:text-foreground',
+  '[&_h3]:typo-label [&_h3]:mt-2 [&_h3]:text-foreground/80',
+  '[&_pre]:my-2 [&_blockquote]:my-2',
+].join(' ');
+
+/**
  * Message detail modal — editorial reading layout with operational hooks.
  *
  * Sections:
@@ -574,6 +591,10 @@ export function MessageDetailModal({
                 content={msgContent}
                 className={[
                   'typo-body-lg leading-[1.8] text-foreground',
+                  // MarkdownRenderer renders <p>/<li> at text-foreground/90 — force
+                  // full contrast here so the reading surface isn't perceptibly muted
+                  // (the modal's parent layers carry no opacity; this was the cause).
+                  '[&_p]:text-foreground [&_li]:text-foreground',
                   '[&_p]:mb-5 [&_p:last-child]:mb-0',
                   '[&_p:first-of-type:first-letter]:float-left',
                   '[&_p:first-of-type:first-letter]:typo-heading-lg',
@@ -881,14 +902,10 @@ function PendingDecisionCard({
             )}
           </div>
           {review.description && (
-            <p className="typo-body text-foreground leading-relaxed mb-2">
-              {review.description}
-            </p>
+            <MarkdownRenderer content={review.description} className={`${DECISION_MD_CLASS} mb-2`} />
           )}
           {contextText && (
-            <p className="typo-body text-foreground leading-relaxed mb-2 whitespace-pre-wrap">
-              {contextText}
-            </p>
+            <MarkdownRenderer content={contextText} className={`${DECISION_MD_CLASS} mb-2`} />
           )}
           {!hasChildren && review.context_data && (
             <div className="mt-2 px-3 py-2 rounded-card bg-background/30 border border-primary/[0.06]">
