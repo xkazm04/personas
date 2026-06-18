@@ -124,11 +124,20 @@ src-tauri/
 ### Reusing shared components — MANDATORY before building UI
 
 > **Before you write any UI, check whether a shared component already exists.**
-> The project has **173 reusable components** under `src/features/shared/components/`,
+> The project has **~115 reusable, domain-agnostic primitives** under `src/features/shared/components/`,
 > catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
 > (auto-generated, always fresh). The #1 source of UI drift is new code re-implementing
 > a spinner / empty state / button / modal / tooltip / badge / copy-button / relative-time
 > / number-format that already exists.
+>
+> **The catalog is primitives-only and enforced.** `shared/components/**` may NOT import
+> from `@/stores`, `@/api`, `@/lib/bindings`, or any `@/features/<feature>` — the ESLint
+> rule in `eslint.config.js` (and `npm run check:catalog-boundary`) errors on it. App-shell
+> chrome (sidebar, titlebar, footer, toasts, command palette) lives in **`src/features/shared/chrome/`**
+> (shared but NOT catalogued); domain components live in their owning feature. If a component
+> needs app state, pass it via props or put the component in `chrome/` or a feature — don't
+> add the import here. The 2026-06-18 curation (206→115) and the rationale are in
+> [`docs/refactor/catalog-curation.md`](../docs/refactor/catalog-curation.md).
 
 **Do NOT hand-roll these — import the shared one** (full table + import paths in
 [`docs/refactor/shared-component-reuse.md`](../docs/refactor/shared-component-reuse.md)):
