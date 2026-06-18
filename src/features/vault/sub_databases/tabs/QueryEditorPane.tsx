@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useState, useCallback, useEffect } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { useVaultStore } from "@/stores/vaultStore";
@@ -116,7 +117,7 @@ export function QueryEditorPane({
               onToggle={() => setTerminalExpanded((v) => !v)}
               onClear={queryDebug.clear}
               expandedMaxHeight="max-h-52"
-              operation="query_debug"
+              capabilityBadge={<EngineCapabilityBadge operation="query_debug" compact />}
             />
           </div>
         )}

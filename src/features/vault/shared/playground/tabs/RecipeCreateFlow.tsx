@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Sparkles, X, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -88,7 +89,7 @@ export function RecipeCreateFlow({
                 isExpanded={terminalExpanded}
                 onToggle={() => setTerminalExpanded((p) => !p)}
                 expandedMaxHeight="max-h-48"
-                operation="recipe_execution"
+                capabilityBadge={<EngineCapabilityBadge operation="recipe_execution" compact />}
               />
             </div>
           )}

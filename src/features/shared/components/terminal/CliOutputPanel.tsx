@@ -1,13 +1,8 @@
-import { lazy, Suspense, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { TerminalHeader } from '@/features/shared/components/terminal/TerminalHeader';
 import { TerminalBody } from '@/features/shared/components/terminal/TerminalBody';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
-import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
-
-const EngineCapabilityBadge = lazy(() =>
-  import('@/features/settings/sub_engine/components/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
-);
 
 interface CliOutputPanelProps {
   title?: string;
@@ -19,8 +14,6 @@ interface CliOutputPanelProps {
   maxHeightClassName?: string;
   /** Optional TerminalStrip rendered below the header for healing/background processes */
   healingStrip?: ReactNode;
-  /** CLI operation type -- shows capability warning banner when engine is not verified */
-  operation?: CliOperation;
 }
 
 export default function CliOutputPanel({
@@ -31,7 +24,6 @@ export default function CliOutputPanel({
   waitingText = 'Waiting for Claude CLI output...',
   maxHeightClassName = 'max-h-64',
   healingStrip,
-  operation,
 }: CliOutputPanelProps) {
   const { copied, copy: copyToClipboard } = useCopyToClipboard();
 
@@ -48,12 +40,6 @@ export default function CliOutputPanel({
         copied={copied}
         label={runId ? runId.slice(0, 8) : undefined}
       />
-
-      {operation && (
-        <Suspense fallback={null}>
-          <EngineCapabilityBadge operation={operation} />
-        </Suspense>
-      )}
 
       {healingStrip}
 

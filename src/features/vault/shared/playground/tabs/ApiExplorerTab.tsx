@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Upload, FileText, Globe, Search, SearchX, X, PlayCircle, Square } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -92,7 +93,7 @@ export function ApiExplorerTab({ credentialId, catalogEndpoints }: ApiExplorerTa
           onToggle={() => state.setShowLogPanel(v => !v)}
           onClear={state.testRunner.clear}
           lineClassName={apiTestLineClassName}
-          operation="credential_healthcheck"
+          capabilityBadge={<EngineCapabilityBadge operation="credential_healthcheck" compact />}
           counters={state.testRunner.progress && <TestRunCounters progress={state.testRunner.progress} />}
         />
       )}
