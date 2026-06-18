@@ -16,7 +16,7 @@ import {
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { ChannelDetailModal } from './ChannelDetailModal';
-import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
+import { QuickAnswerReviewCard } from '@/features/agents/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
 import { createTeamMemory } from '@/api/pipeline/teamMemories';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';

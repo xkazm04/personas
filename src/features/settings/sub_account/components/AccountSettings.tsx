@@ -14,7 +14,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
-import RadioSettingsCard from '@/features/shared/components/layout/radio/components/RadioSettingsCard';
+import RadioSettingsCard from '@/features/plugins/radio/components/RadioSettingsCard';
 import CloudSyncCard from './CloudSyncCard';
 
 export default function AccountSettings() {

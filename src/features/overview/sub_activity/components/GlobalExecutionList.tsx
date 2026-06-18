@@ -12,7 +12,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
-import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
+import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';

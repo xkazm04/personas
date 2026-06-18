@@ -1,7 +1,7 @@
 import { silentCatch } from "@/lib/silentCatch";
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useVaultStore } from "@/stores/vaultStore";
-import { mergeCredentialLink } from '@/features/shared/components/use-cases/UseCasesList';
+import { mergeCredentialLink } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { matchCredentialToConnector } from './connectorMatching';
 import { buildConnectorRailItems } from './connectorHealth';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';

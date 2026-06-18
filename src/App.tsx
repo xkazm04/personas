@@ -3,7 +3,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
-import { LiveChannelOverlay } from "@/features/shared/components/layout/monitor/live/LiveChannelOverlay";
+import { LiveChannelOverlay } from "@/features/fleet/monitor/live/LiveChannelOverlay";
 import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
 import { FirstUseConsentModal, hasUserConsented, storedConsentVersion } from "@/features/shared/components/overlays/FirstUseConsentModal";
 import { useAuthStore } from "@/stores/authStore";

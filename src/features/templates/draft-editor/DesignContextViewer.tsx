@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Eye, Pencil, Link } from 'lucide-react';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
-import { UseCasesList } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
+import { UseCasesList } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { useVaultStore } from "@/stores/vaultStore";
 import { SectionEditor } from './SectionEditor';
 import { useTranslation } from '@/i18n/useTranslation';

@@ -27,7 +27,7 @@ import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { computeFleetPulse, layoutSlots, slotCountForCapacity } from './fleetStripModel';
-import { elapsedStr } from './monitor/monitorModel';
+import { elapsedStr } from '@/features/fleet/monitor/monitorModel';
 
 /** App-settings key for the global concurrency cap (mirrors the Rust const). */
 const MAX_PARALLEL_KEY = 'max_parallel_executions';

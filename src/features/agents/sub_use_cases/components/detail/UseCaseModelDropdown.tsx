@@ -1,6 +1,6 @@
 import { Cpu, ChevronDown, Check, Link2 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import type { UseCaseItem } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import {
   MODEL_OPTIONS,
   OVERRIDE_OPTIONS,

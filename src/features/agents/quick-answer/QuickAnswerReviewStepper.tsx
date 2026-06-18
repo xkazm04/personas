@@ -6,7 +6,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
-import { severityBucket, SEVERITY_META, severityLabel } from '@/features/shared/components/layout/monitor/monitorModel';
+import { severityBucket, SEVERITY_META, severityLabel } from '@/features/fleet/monitor/monitorModel';
 import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';

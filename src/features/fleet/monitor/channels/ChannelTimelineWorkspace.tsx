@@ -10,7 +10,7 @@ import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailMod
 import { postTeamDirective } from '@/api/pipeline/teamChannel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { QuickAnswerBody } from '@/features/shared/components/layout/quick-answer/QuickAnswerBody';
+import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody';
 import { GoalsTimeline } from '@/features/teams/sub_goals/GoalsTimeline';
 import { MergedChannels } from './mergedFeed';
 import { VirtualStream } from './VirtualStream';

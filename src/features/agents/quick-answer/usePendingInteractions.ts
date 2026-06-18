@@ -13,7 +13,7 @@
 
 import { useMemo, useCallback } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useMonitorData } from '@/features/shared/components/layout/monitor/useMonitorData';
+import { useMonitorData } from '@/features/fleet/monitor/useMonitorData';
 import { answerBuildQuestion } from '@/api/agents/buildSession';
 import { buildBatchedAnswerPayload } from '@/lib/build/answerPayload';
 import type { BuildQuestion } from '@/lib/types/buildTypes';

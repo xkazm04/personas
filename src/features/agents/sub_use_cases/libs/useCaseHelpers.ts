@@ -1,4 +1,4 @@
-import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { DesignContextData, DesignUseCase } from '@/lib/types/frontendTypes';
 
 // Re-export the shared mutation queue so existing imports continue to work

@@ -10,7 +10,7 @@
  */
 import { Plus, Pencil, X as XIcon } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { Connection, EventRow } from '../routingHelpers';
 import { DebtText } from '@/i18n/DebtText';
 

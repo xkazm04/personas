@@ -4,4 +4,3 @@
 export { BaseModal } from '@/lib/ui/BaseModal';
 export type { BaseModalSize } from '@/lib/ui/BaseModal';
 
-export { ExecutionDetailModal } from './ExecutionDetailModal';

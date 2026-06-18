@@ -1,6 +1,6 @@
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import { TransformProgress } from '@/features/shared/components/progress/TransformProgress';
-import { DraftEditStep } from '@/features/shared/components/editors/draft-editor/DraftEditStep';
+import { DraftEditStep } from '@/features/templates/draft-editor/DraftEditStep';
 import type { useCreateTemplateReducer } from '../useCreateTemplateReducer';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
 import { useTranslation } from '@/i18n/useTranslation';

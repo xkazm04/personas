@@ -3,7 +3,7 @@ import { Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import { buildTestMetadataForDesignContext } from '../../libs/labFeedbackLoop';
-import { parseDesignContext, serializeDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext, serializeDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';

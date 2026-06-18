@@ -5,8 +5,8 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
-import { PersonaMonitor } from '@/features/shared/components/layout/monitor';
-import { QuickAnswerPopover } from '@/features/shared/components/layout/quick-answer/QuickAnswerPopover';
+import { PersonaMonitor } from '@/features/fleet/monitor';
+import { QuickAnswerPopover } from '@/features/agents/quick-answer/QuickAnswerPopover';
 
 /**
  * State for the title-bar quick-action dock (`TitleBarDock`): every count the
