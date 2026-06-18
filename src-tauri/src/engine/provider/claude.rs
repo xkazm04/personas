@@ -54,8 +54,42 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.170 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.181 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.177–2.1.181: floor advanced to 2.1.181 — several fixes land on
+        //   personas's exact `-p` spawn surface. 2.1.181 fixes a ~120ms-per-
+        //   launch startup stall (the first prompt waited on the managed-
+        //   settings fetch even with no MCP servers configured), a regression
+        //   introduced in 2.1.169 — so the prior 2.1.170 floor sat ON TOP of it,
+        //   and personas fires dozens of `claude -p` spawns per session on
+        //   Windows, so every spawn paid the tax. 2.1.181 also adds auto-retry on
+        //   an API connection drop mid-thinking (was a hard
+        //   `"Connection closed while thinking"` error) — personas runs Opus 4.8
+        //   (default-thinking) on every spawn, same family as the 2.1.156 fix —
+        //   and unblocks an up-to-15s blank-terminal startup hang on a slow
+        //   account-settings fetch (startup hardening for the spawn-heavy loop).
+        //   2.1.179 preserves partial stream-json responses on a mid-stream
+        //   connection drop instead of emitting a raw error (fewer false
+        //   `timeout_ms`/`healing` aborts on flaky links). Passive (CLI-side, no
+        //   personas change): 2.1.181 restores prompt-cache reads on a custom
+        //   `ANTHROPIC_BASE_URL`/Foundry (BYOM `engine/byom.rs` — re-enables the
+        //   only mitigation for re-sent prompts across pipeline/chain hops),
+        //   fixes Write/Edit producing 0-byte/truncated files on network /
+        //   cloud-synced folders (tool-using personas on Windows/OneDrive), and
+        //   throttles AWS `awsCredentialExport` refreshes (Bedrock/3P). NOT
+        //   adopted: 2.1.181 `/config key=value` works in `-p` (incl.
+        //   `/config thinking=false`) — a per-execution settings path incl. a
+        //   thinking knob, but personas sets settings via flags + the
+        //   `hooks_sidecar` settings.json, and the thinking knob stays deferred
+        //   alongside the open companion-path `--effort` decision. Catch: the
+        //   2.1.181 `claude mcp get/list` false-`✓ Connected`-on-tools/list-fail
+        //   bug has no analog — personas's INBOUND MCP healthcheck ties Connected
+        //   to a successful `tools/list` (same call) and skips failed members
+        //   (`engine/mcp_tools.rs:397,416,609`). 2.1.177 (no published CLI
+        //   changes) and 2.1.180 (no changelog entry) are non-user-facing bumps.
+        //   Everything else in 2.1.178/179/181 is interactive-TUI / `claude
+        //   agents` daemon / subagent-panel / Remote Control / permission-rules /
+        //   IDE surface personas never reaches in `-p`. /research run 2026-06-18.
         // - 2.1.169–2.1.176: floor advanced to 2.1.170. 2.1.169 fixes `claude
         //   -p` being slow / appearing to hang on Windows while waiting for the
         //   bundled slash-command/skill scan (regression in 2.1.161 — the prior
@@ -214,7 +248,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.170")
+        Some("2.1.181")
     }
 }
 
@@ -301,6 +335,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.170");
+        assert_eq!(min.unwrap(), "2.1.181");
     }
 }
