@@ -3,7 +3,7 @@ import {
 } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '../libs/cronHelpers';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (

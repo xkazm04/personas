@@ -8,7 +8,7 @@
 // useTeamChannel feed into the same shape.
 
 import { Sparkles, Compass, User, AlertCircle, type LucideIcon } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { resolveCompact } from '../channels/MergedRow';
 import type { TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';

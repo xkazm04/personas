@@ -12,7 +12,7 @@ import {
 import Button from '@/features/shared/components/buttons/Button';
 import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
 import { parseSuggestedActions, stripPersonaPrefix } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';

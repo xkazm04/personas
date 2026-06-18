@@ -4,7 +4,7 @@ import type { ModelProfile, NotificationChannel } from '@/lib/types/frontendType
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { profileToDropdownValue, getOllamaPreset, OLLAMA_CLOUD_BASE_URL } from '@/features/agents/sub_model_config/libs/OllamaCloudPresets';
 import { ModelSelector } from '@/features/agents/sub_model_config';
-import { IconSelector } from '@/features/shared/components/forms/IconSelector';
+import { IconSelector } from '@/features/agents/components/IconSelector';
 import { ColorPicker } from '@/features/shared/components/forms/ColorPicker';
 import { NotificationChannelSettings } from '@/features/agents/sub_connectors/components/channels/NotificationChannelSettings';
 import { useTranslation } from '@/i18n/useTranslation';

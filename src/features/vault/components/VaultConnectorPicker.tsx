@@ -26,7 +26,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useVaultStore } from '@/stores/vaultStore';
 import { connectorCategoryTags } from '@/lib/credentials/builtinConnectors';
 import type { DiscoveredItem } from '@/api/discovery/discovery';
-import { CredentialPickerCards } from './CredentialPickerCards';
+import { CredentialPickerCards } from '@/features/vault/components/CredentialPickerCards';
 import { QuickAddCredentialModal } from '@/features/templates/sub_generated/adoption/QuickAddCredentialModal';
 import { DebtText } from '@/i18n/DebtText';
 

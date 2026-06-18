@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import type { BlastRadiusItem } from '@/api/agents/personas';
 import { useTranslation } from '@/i18n/useTranslation';
 

@@ -1,5 +1,5 @@
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
-import { summarizeSourceDefinition } from '@/features/shared/components/forms/SourceDefinitionInput';
+import { summarizeSourceDefinition } from '@/features/templates/components/SourceDefinitionInput';
 import type { useTranslation } from '@/i18n/useTranslation';
 import type { QuestionnaireNormalizedOption } from './types';
 

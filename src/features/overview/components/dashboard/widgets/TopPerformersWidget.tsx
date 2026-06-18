@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Trophy, TrendingUp, TrendingDown, Minus, ChevronRight } from 'lucide-react';
 import { useOverviewStore } from '@/stores/overviewStore';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { computeLeaderboard, type LeaderboardEntry, type Medal } from '@/features/overview/sub_leaderboard/libs/leaderboardScoring';
 
 const MEDAL_STYLES: Record<NonNullable<Medal>, { bg: string; border: string; text: string; label: string }> = {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 
 interface HeartbeatIndicatorProps {

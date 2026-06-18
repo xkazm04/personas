@@ -6,7 +6,7 @@ import {
   TextScalePicker,
   BrightnessPicker,
   SimpleThemePicker,
-} from '@/features/shared/components/picker/AppearancePickers';
+} from '@/features/settings/components/AppearancePickers';
 import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 
 const ONBOARDING_LANGUAGES: { code: Language; label: string; flag: string }[] = [

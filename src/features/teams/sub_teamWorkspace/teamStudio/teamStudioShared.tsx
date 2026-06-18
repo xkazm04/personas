@@ -4,7 +4,7 @@ import { Loader2, Sparkles, ArrowRight, Check, CircleDot, Plus } from 'lucide-re
 import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import type { DecomposedStep } from '@/lib/bindings/DecomposedStep';

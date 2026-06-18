@@ -9,7 +9,7 @@
  *
  * External sources (webhooks, smee) still render as amber uppercase tags.
  */
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EventRow } from '../routingHelpers';
 import { DebtText } from '@/i18n/DebtText';

@@ -1,7 +1,7 @@
 import { ChevronRight, Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
 

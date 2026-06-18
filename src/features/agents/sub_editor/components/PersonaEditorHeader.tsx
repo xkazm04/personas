@@ -2,7 +2,7 @@ import { useState, useRef, useMemo, useCallback, useEffect, type CSSProperties }
 import { AlertCircle, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
+import { PersonaAvatar } from '@/features/agents/components/PersonaAvatar';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
 import { toastCatch } from '@/lib/silentCatch';

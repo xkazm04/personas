@@ -13,8 +13,8 @@ import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import { ExecutionMetricsDashboard } from './ExecutionMetricsDashboard';
 
 import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader, type SortDirection } from '@/features/shared/components/forms/SortableColumnHeader';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';

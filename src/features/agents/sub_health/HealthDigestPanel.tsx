@@ -18,7 +18,7 @@ import { STATUS_CONFIG } from './statusConfig';
 import { ScoreRing } from './HealthScoreDisplay';
 import type { DryRunIssue, PersonaHealthCheck } from './types';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { formatTimestamp } from '@/lib/utils/formatters';
 import { Button } from '@/features/shared/components/buttons';

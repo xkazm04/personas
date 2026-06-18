@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { X, Check, MessageSquare, Clock, Mail, AlertCircle, Zap } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import ReasoningTrace from '@/features/shared/components/layout/ReasoningTrace';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';
 import { useTranslation } from '@/i18n/useTranslation';

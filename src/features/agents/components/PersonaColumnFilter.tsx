@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Filter, X } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaSelectorModal } from './PersonaSelectorModal';
+import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 
 interface PersonaColumnFilterProps {
   value: string;

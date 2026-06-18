@@ -9,7 +9,7 @@ import { SectionHeader } from '@/features/shared/components/layout/SectionHeader
 import { TOOLS_BTN_COMPACT, TOOLS_INNER_SPACE } from '@/lib/utils/designTokens';
 import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { BlastRadiusPanel, useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { getAutomationBlastRadius } from '@/api/agents/automations';
 
 interface AutomationsSectionProps {

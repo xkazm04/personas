@@ -7,7 +7,7 @@ import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnD
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
 import { formatRelativeTime, EVENT_STATUS_COLORS } from '@/lib/utils/formatters';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaEvent } from '@/lib/types/types';
 import { useEventBusListener } from '@/hooks/realtime/useEventBusListener';
 import { EventDetailModal } from './EventDetailModal';

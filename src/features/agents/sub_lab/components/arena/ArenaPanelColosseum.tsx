@@ -31,7 +31,7 @@ import { usePanelRunState } from '../../libs/usePanelRunState';
 import { useHealthCheck } from '@/features/agents/sub_health';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ArenaHistory } from './ArenaHistory';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
 import type { LabArenaRun } from '@/lib/bindings/LabArenaRun';

@@ -20,7 +20,7 @@ import { useElapsedTimer } from '@/hooks/utility/timing/useElapsedTimer';
 import { formatElapsed } from '@/lib/utils/formatters';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
-import { PipelineDots, StatusIndicator } from './PipelineDots';
+import { PipelineDots, StatusIndicator } from '@/features/agents/executionPlayer/PipelineDots';
 import { traceProgress } from '@/lib/execution/pipeline';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReasoningTrace } from '@/hooks/execution/useReasoningTrace';

@@ -4,7 +4,7 @@ import type { GlobalExecution } from '@/lib/types/types';
 import { formatDuration, getStatusEntry } from '@/lib/utils/formatters';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { BusinessOutcomeBadge } from '@/features/shared/components/display/BusinessOutcomeBadge';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 

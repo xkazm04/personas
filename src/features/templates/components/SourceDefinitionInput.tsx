@@ -36,7 +36,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ThemedSelect } from './ThemedSelect';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { silentCatch } from '@/lib/silentCatch';
 
 

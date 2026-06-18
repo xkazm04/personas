@@ -5,7 +5,7 @@ import {
   TextScalePicker,
   BrightnessPicker,
   SimpleThemePicker,
-} from '@/features/shared/components/picker/AppearancePickers';
+} from '@/features/settings/components/AppearancePickers';
 
 export default function TourAppearanceContent() {
   const { t } = useTranslation();

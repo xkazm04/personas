@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Send, ExternalLink, HelpCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { isComplexQuestion, type QuestionGroup } from './usePendingInteractions';
 

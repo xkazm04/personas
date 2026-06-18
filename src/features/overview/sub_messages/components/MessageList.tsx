@@ -20,7 +20,7 @@ import { seedMockMessage, deleteAllMessages } from '@/api/overview/messages';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/messageHelpers';
 import { PriorityChip } from './PriorityChip';
@@ -42,7 +42,7 @@ type ReadFilter = 'all' | 'unread' | 'read';
 // Filter options are now built inside the component to use translations
 
 import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';

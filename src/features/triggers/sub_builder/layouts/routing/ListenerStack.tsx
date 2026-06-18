@@ -4,7 +4,7 @@
  * Kept as a compact avatar stack (not named chips) so the collapsed row
  * stays scannable at N listeners. Full names live in the expanded drawer.
  */
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { EventRow } from '../routingHelpers';
 
 const AVATAR_LIMIT = 4;

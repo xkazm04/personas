@@ -7,7 +7,7 @@
 import { ShieldCheck, ShieldAlert, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import {
   modelTierLabel, modelTierAccent, attentionFor, relativeUpdated,
 } from '@/features/home/sub_cockpit/widgets/personaStats';

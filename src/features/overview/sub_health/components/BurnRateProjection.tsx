@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { DollarSign, AlertTriangle } from 'lucide-react';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 
 interface BurnRateProjectionProps {
   signals: PersonaHealthSignal[];

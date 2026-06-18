@@ -6,7 +6,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { MemoryTierFilter } from '@/api/overview/memories';

@@ -9,7 +9,7 @@ import {
   parseCustomIconId,
 } from '@/lib/icons/customIconStore';
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import {
   importPersonaIcon,
   listPersonaIcons,

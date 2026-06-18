@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Smile } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
 import { useViewportClampAbsolute } from '@/hooks/utility/interaction/useViewportClamp';
-import { IconSelector, EMOJI_PRESETS } from '@/features/shared/components/forms/IconSelector';
+import { IconSelector, EMOJI_PRESETS } from '@/features/agents/components/IconSelector';
 import { sanitizeIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { isAgentIcon, resolveAgentIconSrc } from '@/lib/icons/agentIconCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';

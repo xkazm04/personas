@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { SortableColumnHeader } from '@/features/shared/components/forms/SortableColumnHeader';
 import { ColumnResizeHandle, type ColumnWidthsApi } from '@/features/shared/components/display/ColumnResize';

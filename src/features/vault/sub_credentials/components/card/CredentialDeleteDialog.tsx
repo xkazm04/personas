@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { getCredentialBlastRadius } from '@/api/vault/credentials';
 import type { CredentialMetadata } from '@/lib/types/types';

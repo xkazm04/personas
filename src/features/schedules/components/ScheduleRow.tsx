@@ -12,7 +12,7 @@ import BackfillModal from './BackfillModal';
 import { ScheduleRowHistoryPanel } from './ScheduleRowHistoryPanel';
 import type { BackfillResult } from '@/api/pipeline/scheduler';
 import { useThemeStore } from '@/stores/themeStore';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface ScheduleRowProps {

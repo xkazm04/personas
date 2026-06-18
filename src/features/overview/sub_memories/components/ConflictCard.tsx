@@ -1,7 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Check, GitMerge, ChevronDown, X } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/bindings/PersonaMemory';
 import type { MemoryConflict, ConflictResolution } from '../libs/memoryConflicts';

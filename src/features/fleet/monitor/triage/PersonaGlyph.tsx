@@ -3,7 +3,7 @@
 // chip (first letters of two words) in the persona's colour (goal 2).
 
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { personaInitials } from './triageModel';
 

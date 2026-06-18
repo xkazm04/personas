@@ -11,14 +11,14 @@ import {
   Check, KeyRound,
   Info, CircleDot, AlertCircle, Plus, Loader2, RefreshCw, Zap,
 } from 'lucide-react';
-import { DevToolsProjectDropdown } from '@/features/shared/components/forms/DevToolsProjectDropdown';
+import { DevToolsProjectDropdown } from '@/features/plugins/dev-tools/components/DevToolsProjectDropdown';
 import { DirectoryPickerInput } from '@/features/shared/components/forms/DirectoryPickerInput';
-import { SourceDefinitionInput } from '@/features/shared/components/forms/SourceDefinitionInput';
+import { SourceDefinitionInput } from '@/features/templates/components/SourceDefinitionInput';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import type { DynamicOptionState } from './useDynamicQuestionOptions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SelectPills } from './SelectPills';
-import { CredentialPickerCards } from '@/features/shared/components/picker/CredentialPickerCards';
+import { CredentialPickerCards } from '@/features/vault/components/CredentialPickerCards';
 import { DebtText } from '@/i18n/DebtText';
 
 

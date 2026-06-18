@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Send, Pin, Check, CheckCheck, AlertCircle, MessageSquare, Sparkles, Compass } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily, memberColor } from '../sub_redRoom/useRedRoomFeed';

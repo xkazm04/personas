@@ -1,6 +1,6 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Crown, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { SpringCount } from '@/features/shared/components/display/SpringCount';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 import { headlineScore, type RankKey } from '../libs/leaderboardRanking';

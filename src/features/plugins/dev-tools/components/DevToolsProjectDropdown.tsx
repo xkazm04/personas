@@ -3,7 +3,7 @@ import { ChevronDown, FolderGit2, Check, Loader2, Wrench, Plus } from 'lucide-re
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useSystemStore } from '@/stores/systemStore';
-import { Listbox } from './Listbox';
+import { Listbox } from '@/features/shared/components/forms/Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 

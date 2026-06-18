@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily } from '@/features/teams/sub_redRoom/useRedRoomFeed';

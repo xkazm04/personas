@@ -106,7 +106,7 @@ const BackgroundServices = lazyRetry(() => import("@/features/shared/chrome/Back
 const CommandPalette = lazyRetry(() => import("@/features/shared/chrome/CommandPalette"));
 const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
-const ExecutionMiniPlayer = lazyRetry(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
+const ExecutionMiniPlayer = lazyRetry(() => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
@@ -124,7 +124,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/chrome/CommandPalette"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
-  () => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"),
+  () => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/chrome/notifications/NotificationCenter"),

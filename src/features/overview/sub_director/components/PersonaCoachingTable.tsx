@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { X, ChevronRight, ListFilter, TrendingUp, TrendingDown } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';

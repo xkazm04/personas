@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { GitBranch, ArrowRight } from 'lucide-react';
 import type { CascadeLink, PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 
 interface CascadeVisualizationProps {
   links: CascadeLink[];
