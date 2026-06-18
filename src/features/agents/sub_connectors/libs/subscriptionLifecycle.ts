@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 

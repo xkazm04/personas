@@ -2,7 +2,7 @@ import { Layers, Clock, Webhook, MousePointer, Radio, Shield, Brain, X, Split, U
 import { useAgentStore } from "@/stores/agentStore";
 import { useShallow } from "zustand/react/shallow";
 import { humanizeCron } from "@/features/shared/glyph/cron";
-import { getConnectorMeta, ConnectorIcon } from "@/features/shared/components/display/ConnectorMeta";
+import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
 import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';

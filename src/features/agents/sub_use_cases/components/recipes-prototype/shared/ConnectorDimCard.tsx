@@ -8,7 +8,7 @@ import { mutateCredentialLink } from '@/hooks/design/core/useDesignContextMutato
 import { useToastStore } from '@/stores/toastStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
-import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { DisplayUseCase } from './displayUseCase';

@@ -14,7 +14,7 @@ import { CapabilityTagBar } from './CapabilityTagBar';
 import { UseCaseLeftPanel } from './UseCaseLeftPanel';
 import { SigilEditModal } from '@/features/shared/glyph/persona-layout/SigilEditModal';
 import { resolveSigilEditBody } from '@/features/shared/glyph/persona-layout/sigilEditBodies';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { PetalState } from '@/features/shared/glyph/persona-sigil';

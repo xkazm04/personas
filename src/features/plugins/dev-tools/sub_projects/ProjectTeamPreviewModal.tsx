@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Activity, ChevronDown, ExternalLink, Layers, Users, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';

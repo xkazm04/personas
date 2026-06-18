@@ -5,7 +5,6 @@ import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboa
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from "@/stores/systemStore";
 import { isChunkLoadError } from '@/lib/lazyRetry';
 
 const logger = createLogger("error-boundary");
@@ -16,6 +15,9 @@ interface ErrorBoundaryProps {
   name?: string;
   /** Called when the user clicks "Try Again" */
   onReset?: () => void;
+  /** Called when the user clicks "Go to dashboard". Lets the host navigate home
+   *  without the boundary (a shared primitive) importing an app store. */
+  onGoHome?: () => void;
 }
 
 interface ErrorBoundaryState {
@@ -61,6 +63,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           error={this.state.error}
           errorInfo={this.state.errorInfo}
           onReset={this.handleReset}
+          onGoHome={this.props.onGoHome}
         />
       );
     }
@@ -75,11 +78,13 @@ function ErrorFallback({
   error,
   errorInfo,
   onReset,
+  onGoHome,
 }: {
   name?: string;
   error: Error | null;
   errorInfo: string | null;
   onReset: () => void;
+  onGoHome?: () => void;
 }) {
   const { t, tx } = useTranslation();
   const [showDetails, setShowDetails] = useState(false);
@@ -92,12 +97,10 @@ function ErrorFallback({
 
   const handleGoHome = () => {
     try {
-      // Use the statically-imported store. Previously this used require(), a
-      // Node/Webpack pattern Vite cannot resolve at runtime — the try always
-      // threw and every "Go Home" click hit window.location.reload(), wiping
-      // the user's in-memory onboarding/wizard state. Static ESM import is
-      // both faster and never throws on missing symbols.
-      useSystemStore.getState().setSidebarSection('home');
+      // The host wires `onGoHome` (e.g. navigate to the dashboard) — the boundary
+      // itself stays store-free so it can live in the shared catalog. If no host
+      // handler is provided we still clear the error via onReset().
+      onGoHome?.();
       onReset();
     } catch {
       // Store action itself failed (truly broken state) — fall back to hard

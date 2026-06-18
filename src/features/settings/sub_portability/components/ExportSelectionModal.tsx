@@ -16,7 +16,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { listPersonas } from '@/api/agents/personas';
 import { listCredentials } from '@/api/vault/credentials';
 import { listTeams } from '@/api/pipeline/teams';

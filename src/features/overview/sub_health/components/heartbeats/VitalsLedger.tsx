@@ -3,7 +3,7 @@ import {
   ChevronRight, ChevronDown, Heart, DollarSign, ShieldCheck, Eye, EyeOff,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { HeartbeatIndicator } from '../HeartbeatIndicator';
 import { InsightBand } from './insights';
 import { CompositeHealthBar, GradeDot, TrendBadge, MiniStat } from './primitives';

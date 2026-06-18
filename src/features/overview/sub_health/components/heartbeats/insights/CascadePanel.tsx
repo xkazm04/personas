@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { GitBranch, ArrowRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaHealthSignal, CascadeLink } from '@/stores/slices/overview/personaHealthSlice';
 import { InsightPanel } from './InsightPanel';
 import { buildChains } from './data';

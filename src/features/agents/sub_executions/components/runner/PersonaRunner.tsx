@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { sanitizeIconUrl, isIconUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -207,7 +208,7 @@ export function PersonaRunner() {
 
       {/* AI Self-Healing Strip */}
       {import.meta.env.DEV && state.aiHealing.phase !== 'idle' && (
-        <TerminalStrip lastLine={state.aiHealing.lastLine} lines={state.aiHealing.lines} isRunning={state.aiHealing.phase === 'started' || state.aiHealing.phase === 'diagnosing' || state.aiHealing.phase === 'applying'} isExpanded={state.showHealingLog} onToggle={() => state.setShowHealingLog((v: boolean) => !v)} operation="healing_analysis" counters={<AiHealingCounters phase={state.aiHealing.phase} fixCount={state.aiHealing.fixesApplied.length} shouldRetry={state.aiHealing.shouldRetry} />} />
+        <TerminalStrip lastLine={state.aiHealing.lastLine} lines={state.aiHealing.lines} isRunning={state.aiHealing.phase === 'started' || state.aiHealing.phase === 'diagnosing' || state.aiHealing.phase === 'applying'} isExpanded={state.showHealingLog} onToggle={() => state.setShowHealingLog((v: boolean) => !v)} capabilityBadge={<EngineCapabilityBadge operation="healing_analysis" compact />} counters={<AiHealingCounters phase={state.aiHealing.phase} fixCount={state.aiHealing.fixesApplied.length} shouldRetry={state.aiHealing.shouldRetry} />} />
       )}
 
       {/* Empty state */}

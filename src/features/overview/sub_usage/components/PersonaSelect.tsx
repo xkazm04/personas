@@ -1,5 +1,5 @@
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaSelectorModal } from '@/features/shared/components/forms/PersonaSelectorModal';
+import { PersonaSelectorModal } from '@/features/agents/components/PersonaSelectorModal';
 
 // ---------------------------------------------------------------------------
 // CompareToggle

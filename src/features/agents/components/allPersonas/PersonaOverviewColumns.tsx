@@ -8,7 +8,7 @@ import { useFormattedDate } from '@/hooks/utility/data/useFormattedDate';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './PersonaOverviewBadges';
-import { SetupStatusBadge } from '@/features/shared/components/display/SetupStatusBadge';
+import { SetupStatusBadge } from '@/features/vault/components/SetupStatusBadge';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
 import { VerdictTrendCell } from './VerdictTrendCell';

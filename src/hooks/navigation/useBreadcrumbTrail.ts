@@ -11,7 +11,7 @@ import {
   eventBusItems,
   templateItems,
   devToolsItems,
-} from '@/features/shared/components/layout/sidebar/sidebarData';
+} from '@/features/shared/chrome/sidebar/sidebarData';
 import { TAB_LABELS } from '@/features/agents/sub_editor/libs/editorTabConstants';
 
 

@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useCallback, useState } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Copy, Check } from 'lucide-react';
@@ -120,7 +121,7 @@ export function RecipeOutputSection({
                 isExpanded={terminalExpanded}
                 onToggle={() => setTerminalExpanded((p) => !p)}
                 expandedMaxHeight="max-h-48"
-                operation="recipe_execution"
+                capabilityBadge={<EngineCapabilityBadge operation="recipe_execution" compact />}
               />
             </div>
           ) : llmOutput ? (

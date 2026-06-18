@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { ExternalLink, Info, ChevronDown } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { rankBy, RANK_OPTIONS, type RankKey } from '../libs/leaderboardRanking';
 import type { LeaderboardEntry, PerformanceTier } from '../libs/leaderboardScoring';
 import { metricValue, fleetValue, scoreTint } from './leaderboardViewHelpers';

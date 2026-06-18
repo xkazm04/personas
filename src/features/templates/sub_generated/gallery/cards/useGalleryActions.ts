@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('gallery-actions');
-import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useVaultStore } from "@/stores/vaultStore";
 import { deleteDesignReview, cleanupDuplicateReviews, backfillServiceFlow, backfillRelatedTools } from '@/api/overview/reviews';
 import { computeAdoptionReadiness } from '../../shared/adoptionReadiness';

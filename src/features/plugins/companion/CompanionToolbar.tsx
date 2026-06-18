@@ -23,7 +23,7 @@ import {
 } from '@/api/companion';
 import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal';
 import { ComposerBrandIcon } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerBrandIcon';
-import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useCompanionStore } from './companionStore';
 import { VoiceControlPopover } from './VoiceControlPopover';
 

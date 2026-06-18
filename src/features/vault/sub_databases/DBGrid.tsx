@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Database, Table2, Code2 } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';

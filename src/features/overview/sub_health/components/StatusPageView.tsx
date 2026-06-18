@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useStatusPageData } from '../libs/useStatusPageData';
 import type { CompositeHealthEntry, DayStatus } from '../libs/compositeHealthScore';
 import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';

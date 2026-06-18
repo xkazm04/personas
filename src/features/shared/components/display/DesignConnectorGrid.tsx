@@ -11,7 +11,7 @@ import {
   Send,
   Mail,
 } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { AgentIR, SuggestedTrigger, SuggestedConnector } from '@/lib/types/designTypes';
 

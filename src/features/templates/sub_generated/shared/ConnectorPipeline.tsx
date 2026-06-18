@@ -1,5 +1,5 @@
 import { ChevronRight } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorPipelineStep } from '@/lib/types/designTypes';
 
 interface ConnectorPipelineProps {

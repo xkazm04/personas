@@ -1,5 +1,5 @@
 import type { Translations } from '@/i18n/generated/types';
-import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { ChannelSpecV2 } from '@/lib/bindings/ChannelSpecV2';
 import type { TriggerSelection } from '../useCasePickerShared';
 

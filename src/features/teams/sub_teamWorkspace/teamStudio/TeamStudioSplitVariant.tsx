@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings, LayoutGrid, Radio, MessagesSquare, Brain } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';

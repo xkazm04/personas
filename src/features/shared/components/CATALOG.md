@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**206 reusable components** live under `src/features/shared/components/`.
+**118 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -30,7 +30,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `AnimatedCounter` | Number that animates from previous to new value. |
 | `AnimatedList` | Max items that receive a stagger delay. |
 | `Badge` | Small labeled pill. Use for tags/counts; for status use StatusBadge/StatusDot. |
-| `BlastRadiusPanel` | _(add a `@catalog` tag)_ |
 | `BusinessOutcomeBadge` | _(add a `@catalog` tag)_ |
 | `CategoryChip` | _(add a `@catalog` tag)_ |
 | `ChartEmptyState` | _(add a `@catalog` tag)_ |
@@ -50,13 +49,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `InlineEditableText` | Click-to-edit inline text field. |
 | `LiveStatusDot` | Liveness dot with one shared vocabulary (off=muted, active=emerald, syncing=amber-pulse) plus an optional ping halo — used across  |
 | `Numeric` | Canonical number/percent/count display — locale + precision + unit. Use instead of raw toFixed/toLocaleString. |
-| `PersonaAvatar` | Persona avatar (icon/color) rendering. |
-| `PersonaIcon` | Persona display name. |
 | `RelativeTime` | Live-updating "2h ago" timestamp with absolute time on hover. Use for all timestamps. |
 | `RevealItem` | RevealItem — plays a one-shot staggered fade-in for a single list/table row as it is progressively revealed; tracks entry by id so |
 | `ScrollShadowContainer` | Classes applied to the inner scrollable div (e. |
 | `SectionLabel` | Small uppercase section label. |
-| `SetupStatusBadge` | _(add a `@catalog` tag)_ |
 | `SortableHeader` | Visible, already-translated column label. |
 | `SpringCount` | Count-up number animated with the shared cloud count-up spring (stiffness 180 / damping 22); wrap in <Numeric> for tabular figure  |
 | `StatCard` | Compact KPI / metric card — icon chip + label + big value, with an optional trend delta and hint. Use for dashboard stat rows inst |
@@ -72,17 +68,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 
 | Component | What it's for |
 |---|---|
-| `DesignContextViewer` | _(add a `@catalog` tag)_ |
-| `DraftEditStep` | _(add a `@catalog` tag)_ |
-| `DraftIdentityTab` | _(add a `@catalog` tag)_ |
-| `DraftJsonTab` | _(add a `@catalog` tag)_ |
-| `DraftPromptTab` | _(add a `@catalog` tag)_ |
-| `DraftSettingsTab` | _(add a `@catalog` tag)_ |
 | `JsonEditor` | JSON editing/validation editor. |
 | `MarkdownRenderer` | Safe markdown → React renderer (sanitized). |
 | `PromptTabsPreview` | _(add a `@catalog` tag)_ |
 | `PromptTemplateRenderer` | variable}} placeholder highlighting via inline code styling. |
-| `SectionEditor` | _(add a `@catalog` tag)_ |
 
 ## feedback — Loading, empty, error, confirm, toast — user feedback surfaces
 
@@ -93,18 +82,15 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DropZoneGlow` | rounded-card (8) / rounded-modal (12) so the SVG outline aligns. |
 | `EmptyState` | _(add a `@catalog` tag)_ |
 | `ErrorBanner` | User-facing error display — inline / banner / panel variants with retry + dismiss. |
-| `ErrorBoundary` | instead of killing the whole app. |
+| `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
 | `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorRecovery` | _(add a `@catalog` tag)_ |
 | `LoadingSpinner` | Canonical loading spinner with size + a11y label. Use for any full-element loading state. |
-| `NotificationCenter` | _(add a `@catalog` tag)_ |
 | `RecoverySpiral` | _(add a `@catalog` tag)_ |
 | `SaveFeedbackCheck` | Subtle inline checkmark that fades in/out to confirm an auto-save. |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
 | `SuspenseFallback` | Standard fallback for React.lazy/Suspense boundaries. |
-| `ToastContainer` | _(add a `@catalog` tag)_ |
-| `UpdateBanner` | _(add a `@catalog` tag)_ |
 
 ## forms — Inputs, toggles, selects, field wrappers, pickers
 
@@ -115,27 +101,19 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ColorPicker` | Color selection control. |
 | `ColumnDropdownFilter` | Filter options — first option should represent "no filter" (e. |
 | `DesignInput` | _(add a `@catalog` tag)_ |
-| `DevToolsProjectDropdown` | Currently selected project ID (or null). |
 | `DirectoryPickerInput` | _(add a `@catalog` tag)_ |
 | `FormErrorSummary` | Extra classes on the banner container (e. |
 | `FormField` | Labeled form-field wrapper (label + hint + error) around any input. |
 | `FormFieldGroup` | _(add a `@catalog` tag)_ |
-| `IconSelector` | _(add a `@catalog` tag)_ |
 | `KeyValueEditor` | Editable list of key/value pairs. |
 | `Listbox` | Accessible select/listbox dropdown. Use instead of raw <select> or custom dropdowns. |
 | `NumberStepper` | Numeric input with +/- steppers. |
 | `PasswordToggleField` | Password input with show/hide toggle. |
-| `PersonaColumnFilter` | matching standard header styling. |
-| `PersonaIconPickerModal` | Persona name — seeds the AI-generation prompt. |
-| `PersonaSelector` | Render each option's description beneath its name. |
-| `PersonaSelectorModal` | When true, modal opens immediately without rendering a trigger button. |
 | `PillGroup` | _(add a `@catalog` tag)_ |
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |
-| `PopupIconSelector` | _(add a `@catalog` tag)_ |
 | `SettingRow` | Label + description + toggle settings row with one consistent type ramp; shared across plugin setup panels. |
 | `Slider` | Fires continuously while dragging / on every keyboard step (the live "draft"). |
 | `SortableColumnHeader` | _(add a `@catalog` tag)_ |
-| `SourceDefinitionInput` | _(add a `@catalog` tag)_ |
 | `SuccessCheck` | SVG checkmark whose stroke draws in via the . |
 | `TableSelector` | _(add a `@catalog` tag)_ |
 | `ThemedSelect` | Extra wrapper classes (width, margin, etc. |
@@ -160,105 +138,36 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | Component | What it's for |
 |---|---|
 | `ActionRow` | Left-aligned content (filters, status chips, project picker, etc. |
-| `ActivityDots` | Tailwind bg color class (e. |
-| `AgentsSidebarNav` | _(add a `@catalog` tag)_ |
-| `AuthButton` | _(add a `@catalog` tag)_ |
-| `BackgroundServices` | _(add a `@catalog` tag)_ |
-| `BadgeSlot` | Click handler (e. |
-| `BreadcrumbTrail` | Renders a single breadcrumb segment (clickable or current). |
-| `ChannelTimelineWorkspace` | A draggable vertical divider — reports horizontal deltas, no re-render. |
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
-| `DesktopFooter` | _(add a `@catalog` tag)_ |
-| `EqualizerBars` | the YT progress bar occupies). |
-| `FleetActivityStrip` | _(add a `@catalog` tag)_ |
 | `FullScreenOverlay` | _(add a `@catalog` tag)_ |
 | `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
-| `LiveChannelOverlay` | Live-mode corner pop-ups for incoming team-channel messages — app-wide bottom-right stack driven by the shared channel feed, gated |
-| `LiveCommsStack` | Bottom-right chat-style stack of live channel-message pop-ups (latest 3 + overflow chip) with click-to-dismiss, hover-paused auto- |
-| `MergedRow` | Resolve the compact event label + tone + one-line message for any item. |
-| `MonitorCapabilities` | _(add a `@catalog` tag)_ |
-| `MonitorChannelGrid` | Channel mode — watch multiple team channels at once. |
-| `MonitorDrawer` | _(add a `@catalog` tag)_ |
-| `MonitorProjectColumns` | _(add a `@catalog` tag)_ |
-| `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
-| `OrbitDots` | _(add a `@catalog` tag)_ |
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
-| `PersonaGlyph` | _(add a `@catalog` tag)_ |
-| `PersonaMonitor` | _(add a `@catalog` tag)_ |
-| `PluginsSidebarNav` | _(add a `@catalog` tag)_ |
-| `QuickAnswerBody` | _(add a `@catalog` tag)_ |
-| `QuickAnswerPopover` | _(add a `@catalog` tag)_ |
-| `QuickAnswerQuestionGroup` | One persona's pending build questions. |
-| `QuickAnswerReviewCard` | Compact, inline approve/reject for a pending human review. |
-| `QuickAnswerReviewStepper` | ONE decision at a time, with its full context. |
-| `RadioFooter` | Time we give either engine to reach playing state after a play/load. |
-| `RadioSettingsCard` | Settings → Account section. |
 | `ReasoningTrace` | _(add a `@catalog` tag)_ |
 | `SectionCard` | Card with optional header/status-border/collapse. Use for grouped content panels. |
 | `SectionHeader` | Section header (icon + title + badge + trailing actions). |
 | `SectionHeading` | _(add a `@catalog` tag)_ |
 | `SegmentedTabs` | Segmented control / pill tab switcher. |
 | `SettingsScaffold` | Two-column settings layout — a sticky quick-nav rail (scroll-spy + smooth-scroll + animated active pill) beside a stack of Section |
-| `Sidebar` | _(add a `@catalog` tag)_ |
-| `SidebarLevel1` | _(add a `@catalog` tag)_ |
-| `SidebarLevel2` | _(add a `@catalog` tag)_ |
-| `SidebarLevel3` | _(add a `@catalog` tag)_ |
-| `SidebarSubNav` | _(add a `@catalog` tag)_ |
-| `StationPicker` | _(add a `@catalog` tag)_ |
-| `SystemLoadFooterIcon` | Smoothed CPU %. |
 | `TableSkeleton` | TableSkeleton — grid-shaped shimmer placeholder for a 12-col table (optional header band + N body rows), with per-column bar width |
-| `TeamsSidebarNav` | _(add a `@catalog` tag)_ |
-| `TitleBar` | _(add a `@catalog` tag)_ |
-| `TitleBarAmbient` | The time-of-day illustration in the centre of the title bar. |
-| `TitleBarDock` | Title-bar quick-action dock — capsule tray (search / schedules / review / monitor / notifications) with inline counts and keyboard |
-| `TitleCrossfade` | station switch). |
-| `useMonitorData` | _(add a `@catalog` tag)_ |
-| `usePendingInteractions` | _(add a `@catalog` tag)_ |
-| `useRadioState` | know when to refetch nowPlaying. |
 | `useSectionScrollSpy` | auto/scroll/overlay), else null. |
-| `useSomafmMetadata` | Poll cadence for SomaFM metadata. |
-| `useTitleBarTray` | and the toggle actions. |
-| `useYouTubePlayer` | Thin wrapper around the YouTube IFrame Player API. |
 | `VibeThemeProvider` | Applies persona-derived "vibe" CSS custom properties to a wrapper element. |
-| `VirtualStream` | headers + jump-to-newest). |
-| `VolumePopover` | _(add a `@catalog` tag)_ |
-
-## modals — Modal/dialog shells
-
-| Component | What it's for |
-|---|---|
-| `ExecutionDetailContent` | _(add a `@catalog` tag)_ |
-| `ExecutionDetailModal` | a single execution. |
 
 ## overlays — Popovers, dropdowns, command palette, filter bars
 
 | Component | What it's for |
 |---|---|
-| `CommandPalette` | _(add a `@catalog` tag)_ |
-| `CommandPaletteResults` | _(add a `@catalog` tag)_ |
 | `ConfirmDestructiveModal` | Modal title, e. |
-| `ExecutionMiniPlayer` | _(add a `@catalog` tag)_ |
 | `FilterBar` | _(add a `@catalog` tag)_ |
 | `FirstUseConsentModal` | _(add a `@catalog` tag)_ |
-| `PipelineDots` | _(add a `@catalog` tag)_ |
-| `QuickEditPanel` | _(add a `@catalog` tag)_ |
 | `QuickEditPopover` | QuickEditPopover — anchored inline-edit popover: header + arbitrary |
 | `UnsavedChangesModal` | _(add a `@catalog` tag)_ |
-
-## picker — Specialized pickers
-
-| Component | What it's for |
-|---|---|
-| `CredentialPickerCards` | _(add a `@catalog` tag)_ |
-| `VaultConnectorPicker` | _(add a `@catalog` tag)_ |
 
 ## progress — Progress bars, steppers, skeletons
 
 | Component | What it's for |
 |---|---|
 | `AnalysisModeView` | _(add a `@catalog` tag)_ |
-| `ConfigureStep` | _(add a `@catalog` tag)_ |
 | `ContentLoader` | _(add a `@catalog` tag)_ |
 | `EstimatedProgressBar` | if (progress < 75) return 'hsl(var(primary) / 0. |
 | `TerminalBody` | _(add a `@catalog` tag)_ |
@@ -277,17 +186,5 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalSearchBar` | _(add a `@catalog` tag)_ |
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
-## use-cases — Use-case list/row/history domain components
-
-| Component | What it's for |
-|---|---|
-| `MockModePanel` | _(add a `@catalog` tag)_ |
-| `StructuredField` | _(add a `@catalog` tag)_ |
-| `UseCaseExecutionPanel` | _(add a `@catalog` tag)_ |
-| `UseCaseHistory` | _(add a `@catalog` tag)_ |
-| `UseCaseRow` | _(add a `@catalog` tag)_ |
-| `UseCasesList` | _(add a `@catalog` tag)_ |
-| `useUseCaseExecution` | _(add a `@catalog` tag)_ |
-
 ---
-_206 components, 100 without a `@catalog` description._
+_118 components, 44 without a `@catalog` description._

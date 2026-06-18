@@ -17,7 +17,7 @@ import type { DesignUseCase } from '@/lib/types/frontendTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
 import { silentCatch } from '@/lib/silentCatch';
-import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { scheduleLabelFromSelection, resolveChannelCard } from './adoptionDimHelpers';
 import {
   composerScheduleToTriggerSelection,

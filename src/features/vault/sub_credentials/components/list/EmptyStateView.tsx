@@ -1,7 +1,7 @@
 import { Key, LayoutTemplate, Sparkles, Plug, ArrowRight, Globe } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 import { EmptyIllustration } from '@/features/shared/components/display/EmptyIllustration';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useMotion, useMotionVariants } from '@/hooks/utility/interaction/useMotion';

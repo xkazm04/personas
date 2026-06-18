@@ -1,3 +1,4 @@
+import { EngineCapabilityBadge } from '@/features/settings/sub_engine/components/EngineCapabilityBadge';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Sparkles, Check, RotateCcw } from 'lucide-react';
@@ -151,7 +152,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
               isExpanded={terminalExpanded}
               onToggle={() => setTerminalExpanded((p) => !p)}
               expandedMaxHeight="max-h-48"
-              operation="recipe_execution"
+              capabilityBadge={<EngineCapabilityBadge operation="recipe_execution" compact />}
             />
           </div>
         )}

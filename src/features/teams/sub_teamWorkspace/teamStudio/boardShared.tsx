@@ -7,7 +7,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { listTeamAssignmentSteps, resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
 import { silentCatch } from '@/lib/silentCatch';

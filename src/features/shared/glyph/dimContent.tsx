@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import type { Translations } from '@/i18n/en';
 import type { GlyphRow, GlyphDimension } from './types';
 import { parseChannels, channelIcon, channelTint } from './channels';

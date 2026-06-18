@@ -1,5 +1,5 @@
 import { Sparkles, Download } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { SectionLabel } from '@/features/shared/components/display/SectionLabel';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

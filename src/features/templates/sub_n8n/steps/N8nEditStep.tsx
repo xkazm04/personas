@@ -4,7 +4,7 @@ import { Wrench, ListChecks, ChevronDown, ChevronRight } from 'lucide-react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { CliRunPhase } from '@/hooks/execution/useCorrelatedCliStream';
-import { DraftEditStep, type DraftEditTab } from '@/features/shared/components/editors/draft-editor';
+import { DraftEditStep, type DraftEditTab } from '@/features/templates/draft-editor';
 import { ExecutionTerminal } from '@/features/agents/sub_executions';
 import { N8nEntitiesTab } from '../edit/N8nEntitiesTab';
 import { N8nUseCasesTab } from '../edit/N8nUseCasesTab';

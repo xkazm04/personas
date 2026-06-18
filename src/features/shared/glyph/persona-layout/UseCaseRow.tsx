@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Play, Power, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
-import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { CapabilitySigil } from '@/features/shared/glyph/CapabilitySigil';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import {

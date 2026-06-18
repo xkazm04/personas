@@ -1,5 +1,5 @@
 import { ArrowLeft, Sparkles, AlertTriangle, Lock, Check } from 'lucide-react';
-import { CONNECTOR_META, ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META, ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, Eligibility } from '../../types';

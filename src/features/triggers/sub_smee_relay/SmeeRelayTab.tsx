@@ -6,7 +6,7 @@ import {
   Plus, ExternalLink, Unplug, Plug,
   AlertCircle, Trash2, Pause, Play, Filter, X, CheckCircle2,
 } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';

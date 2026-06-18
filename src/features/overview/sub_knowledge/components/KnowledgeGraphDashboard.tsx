@@ -10,7 +10,7 @@ import type { ExecutionKnowledge } from '@/lib/bindings/ExecutionKnowledge';
 import { Button } from '@/features/shared/components/buttons';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ScrollShadowContainer } from '@/features/shared/components/display/ScrollShadowContainer';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';

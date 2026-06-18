@@ -14,7 +14,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatRelative } from './libs/cronHelpers';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 
 export default function CronAgentsPage() {
   const { t, tx } = useTranslation();

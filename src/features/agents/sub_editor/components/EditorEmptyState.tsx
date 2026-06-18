@@ -3,7 +3,7 @@ import { Bot, Plus } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';

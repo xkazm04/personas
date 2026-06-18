@@ -1,5 +1,5 @@
 import { Radio, Zap, Clock, ChevronRight } from 'lucide-react';
-import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import type { UseCaseItem } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function PipelineArrow() {

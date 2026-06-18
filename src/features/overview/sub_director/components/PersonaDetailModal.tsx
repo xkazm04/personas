@@ -3,7 +3,7 @@ import { ChevronDown, ChevronRight, Play, Eraser, Brain } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';

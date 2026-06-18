@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { ArrowRight, Play, GitBranch, Zap, AlertTriangle, Workflow, type LucideIcon } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { UseCaseFlow, FlowNode } from '@/lib/types/frontendTypes';
 

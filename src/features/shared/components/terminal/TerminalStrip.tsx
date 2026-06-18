@@ -1,14 +1,10 @@
-import { useEffect, useRef, lazy, Suspense, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { classifyLine, TERMINAL_STYLE_MAP } from '@/lib/utils/terminalColors';
 import { CopyButton } from '../buttons';
 import { Tooltip } from '../display/Tooltip';
-import type { CliOperation } from '@/features/settings/sub_engine/libs/engineCapabilities';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const EngineCapabilityBadge = lazy(() =>
-  import('@/features/settings/sub_engine/components/EngineCapabilityBadge').then(m => ({ default: m.EngineCapabilityBadge }))
-);
 interface TerminalStripProps {
   /** Single line shown in the collapsed strip (typically the latest log entry). */
   lastLine: string;
@@ -32,8 +28,9 @@ interface TerminalStripProps {
   lineClassName?: (line: string) => string;
   /** Max-height class for the expanded panel. Default `"max-h-40"`. */
   expandedMaxHeight?: string;
-  /** CLI operation type -- when set, shows the engine capability badge. */
-  operation?: CliOperation;
+  /** Optional engine-capability badge slot. Consumer-owned so this panel stays
+   *  a generic primitive (no settings/engine coupling). */
+  capabilityBadge?: ReactNode;
 }
 
 function defaultLineClassName(line: string): string {
@@ -50,7 +47,7 @@ export function TerminalStrip({
   counters,
   lineClassName = defaultLineClassName,
   expandedMaxHeight = 'max-h-40',
-  operation,
+  capabilityBadge,
 }: TerminalStripProps) {
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -75,12 +72,8 @@ export function TerminalStrip({
         {/* Consumer-provided counters / badges */}
         {counters}
 
-        {/* Engine capability badge */}
-        {operation && (
-          <Suspense fallback={null}>
-            <EngineCapabilityBadge operation={operation} compact />
-          </Suspense>
-        )}
+        {/* Engine capability badge (consumer-provided) */}
+        {capabilityBadge}
 
         {/* Last log line */}
         <span className="flex-1 typo-code text-foreground truncate">

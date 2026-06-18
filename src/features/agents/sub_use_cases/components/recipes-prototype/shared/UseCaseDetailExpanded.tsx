@@ -8,7 +8,7 @@ import {
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { CredentialMetadata } from '@/lib/types/types';
-import { UseCaseHistory } from '@/features/shared/components/use-cases/UseCaseHistory';
+import { UseCaseHistory } from '@/features/agents/sub_lab/use-cases/UseCaseHistory';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { EventRenameModal } from '../../core/EventRenameModal';

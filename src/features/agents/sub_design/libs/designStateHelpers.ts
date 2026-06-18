@@ -3,7 +3,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useToggleSet } from '@/hooks/utility/interaction/useToggleSet';
 import type { AgentIR } from '@/lib/types/designTypes';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { allIndices, buildChangeSummary } from '../DesignTabHelpers';
 import type { DesignFilesSection } from '@/lib/types/frontendTypes';
 import type { PersonaWithDetails } from '@/lib/types/types';

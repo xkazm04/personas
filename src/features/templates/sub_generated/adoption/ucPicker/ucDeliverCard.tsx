@@ -5,7 +5,7 @@
 // pulse halo animates during test firing.
 
 import { motion } from 'framer-motion';
-import { ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { Panel } from './ucPanel';
 import type { Destination, DestId } from './ucPickerTypes';
 import { DebtText } from '@/i18n/DebtText';

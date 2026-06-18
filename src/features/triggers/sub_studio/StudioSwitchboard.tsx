@@ -12,7 +12,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { Persona } from '@/lib/bindings/Persona';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { attentionFor } from '@/features/home/sub_cockpit/widgets/personaStats';

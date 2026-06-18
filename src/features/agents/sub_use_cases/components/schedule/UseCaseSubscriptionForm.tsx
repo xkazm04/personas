@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import type { UseCaseEventSubscription } from '@/features/shared/components/use-cases/UseCasesList';
+import type { UseCaseEventSubscription } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface UseCaseSubscriptionFormProps {

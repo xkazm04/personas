@@ -3,7 +3,7 @@ import { FlaskConical, Play, Square, ArrowRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
-import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import type { UseCaseItem } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { TestFixture } from '@/lib/types/frontendTypes';
 import { resolveEffectiveModel } from '../../libs/useCaseDetailHelpers';
 import { mutateSingleUseCase } from '@/hooks/design/core/useDesignContextMutator';

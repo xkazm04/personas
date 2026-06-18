@@ -12,7 +12,7 @@ import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { DIM_META, GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { PetalRow } from '@/features/shared/glyph/persona-layout/PetalRow';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
 import { useAdoptionDimensionModel } from './useAdoptionDimensionModel';

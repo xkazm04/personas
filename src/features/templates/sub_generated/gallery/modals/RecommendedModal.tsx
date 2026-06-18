@@ -1,6 +1,6 @@
 import { X, Sparkles, Download } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { BaseModal } from '../../shared/BaseModal';
 import { parseJsonOrDefault as parseJsonSafe } from '@/lib/utils/parseJson';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';

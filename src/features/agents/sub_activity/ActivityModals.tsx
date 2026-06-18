@@ -8,7 +8,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { updateManualReviewStatus } from '@/api/overview/reviews';
 import { deleteMessage } from '@/api/overview/messages';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
-import { ExecutionDetailModal } from '@/features/shared/components/modals/ExecutionDetailModal';
+import { ExecutionDetailModal } from '@/features/overview/ExecutionDetailModal';
 import { EventDetailModal } from '@/features/overview/sub_events/EventDetailModal';
 import MemoryDetailModal from '@/features/overview/sub_memories/components/MemoryDetailModal';
 import { MessageDetailModal } from '@/features/overview/sub_messages/components/MessageDetailModal';

@@ -5,7 +5,7 @@ import { listAllSubscriptions, listEvents, testEventFlow } from '@/api/overview/
 import type { PersonaEvent } from '@/lib/types/types';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaSelector } from '@/features/shared/components/forms/PersonaSelector';
+import { PersonaSelector } from '@/features/agents/components/PersonaSelector';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemplates';
 import { formatRelativeTime } from '@/lib/utils/formatters';

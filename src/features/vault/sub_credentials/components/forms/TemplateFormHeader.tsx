@@ -1,5 +1,5 @@
 import { Plug, Bot, Monitor, ArrowLeft } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition, ConnectorAuthMethod } from '@/lib/types/types';
 import { isDesktopBridge } from '@/lib/utils/platform/connectors';
 import { useTranslation } from '@/i18n/useTranslation';

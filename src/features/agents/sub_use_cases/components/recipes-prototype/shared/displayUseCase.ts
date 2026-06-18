@@ -1,6 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { AlertTriangle } from 'lucide-react';
-import { CONNECTOR_META } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META } from '@/lib/connectors/connectorMeta';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { Translations } from '@/i18n/generated/types';

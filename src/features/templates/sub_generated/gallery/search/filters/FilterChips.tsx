@@ -1,5 +1,5 @@
 import { CheckCircle2, AlertCircle, FlaskConical, X } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { getCategoryMeta } from './searchConstants';
 import { ARCH_CATEGORIES } from '../../../shared/architecturalCategories';
 import { useTranslation } from '@/i18n/useTranslation';

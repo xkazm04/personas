@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Cpu, Check, ChevronDown, Settings2 } from 'lucide-react';
 import { Listbox } from '@/features/shared/components/forms/Listbox';
-import type { UseCaseItem } from '@/features/shared/components/use-cases/UseCasesList';
+import type { UseCaseItem } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { ModelProfile, ModelProvider } from '@/lib/types/frontendTypes';
 import {
   OLLAMA_CLOUD_PRESETS,

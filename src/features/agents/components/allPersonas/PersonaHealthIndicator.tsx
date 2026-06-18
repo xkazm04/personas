@@ -1,5 +1,5 @@
 import { Check, Minus, X } from 'lucide-react';
-import { PersonaAvatar } from '@/features/shared/components/display/PersonaAvatar';
+import { PersonaAvatar } from '@/features/agents/components/PersonaAvatar';
 import { useTranslation } from '@/i18n/useTranslation';
 import { StatusShape, mapToShapeStatus } from '@/features/shared/components/display/StatusShape';
 import type { Persona } from '@/lib/types/types';

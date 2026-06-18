@@ -10,7 +10,7 @@ import DetailModal from '@/features/overview/components/dashboard/widgets/Detail
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
+import { PersonaColumnFilter } from '@/features/agents/components/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
 import { getEventStatusIcon } from '@/lib/design/eventTokens';

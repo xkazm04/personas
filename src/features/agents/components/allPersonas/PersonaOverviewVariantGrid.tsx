@@ -10,8 +10,8 @@
 import { memo } from 'react';
 import { Star, Zap, Clock } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useAgentStore } from '@/stores/agentStore';
 import { formatRelativeTime } from '@/lib/utils/formatters';

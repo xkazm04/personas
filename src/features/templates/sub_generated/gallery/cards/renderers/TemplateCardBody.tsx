@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Clock, CircleDot } from 'lucide-react';
-import { getConnectorMeta, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { TRIGGER_ICONS } from './templateCardTypes';
 import type { SuggestedTrigger } from '@/lib/types/designTypes';

@@ -3,7 +3,7 @@ import { HelpCircle, Send, Hash } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { BuildQuestion } from '@/lib/types/buildTypes';
-import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
+import { VaultConnectorPicker } from '@/features/vault/components/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
 import type { GlyphDimension } from './types';
 

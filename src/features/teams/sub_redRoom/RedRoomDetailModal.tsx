@@ -3,7 +3,7 @@ import { X, ExternalLink, Pin, AlertTriangle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { PersonaChip, usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily, memberColor, type RedRoomItem } from './useRedRoomFeed';
 

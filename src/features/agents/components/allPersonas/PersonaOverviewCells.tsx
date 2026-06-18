@@ -1,8 +1,8 @@
 import { Plug, Star } from 'lucide-react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
-import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { InlineEditableText } from '@/features/shared/components/display/InlineEditableText';
 import { extractConnectorNames } from '@/lib/personas/utils';

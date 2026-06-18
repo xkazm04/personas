@@ -4,7 +4,7 @@ import { User, Wrench, Target, Check, X, ChevronRight, ChevronLeft, Lock } from 
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
 import { useIsDarkTheme } from '@/stores/themeStore';
-import { CONNECTOR_META, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META, ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
 

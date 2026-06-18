@@ -1,5 +1,5 @@
 import { Monitor, Plug, ArrowLeft, Bot, MessageSquare } from 'lucide-react';
-import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import type { AutoCredMode } from '../helpers/types';
 import { useTranslation } from '@/i18n/useTranslation';

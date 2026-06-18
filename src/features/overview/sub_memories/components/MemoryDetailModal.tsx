@@ -1,5 +1,5 @@
 import { X, Tag, ExternalLink, Layers } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaMemory } from '@/lib/types/types';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';

@@ -141,6 +141,48 @@ export default tseslint.config(
       ],
     },
   },
+  // Catalog boundary: src/features/shared/components/** is the domain-agnostic
+  // primitive catalog (CATALOG.md). It must not couple to app state, IPC, or a
+  // feature — keeping it reusable and keeping the catalog honest. Domain/app-shell
+  // code lives in its owning feature or src/features/shared/chrome/. Enforced as
+  // an ERROR (the warn-level shared/** rule above is replaced for these files, so
+  // the Tauri bans are repeated here). See docs/refactor/catalog-curation.md.
+  {
+    files: ["src/features/shared/components/**/*.{ts,tsx}"],
+    ignores: ["src/features/shared/components/**/*.test.{ts,tsx}", "src/features/shared/components/**/*.stories.{ts,tsx}"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@tauri-apps/api/core",
+              importNames: ["invoke"],
+              message: "shared/components is the design-system catalog — IPC calls don't belong here. Lift to a feature module.",
+            },
+            {
+              name: "@/lib/tauriInvoke",
+              message: "shared/components is the design-system catalog — IPC calls don't belong here. Lift to a feature module.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@/stores/*", "@/stores/**", "@/api/*", "@/api/**", "@/lib/bindings/*", "@/lib/bindings/**"],
+              message: "shared/components is the domain-agnostic catalog — no store/api/binding imports. Pass data via props, or move this file to its owning feature / src/features/shared/chrome/. See docs/refactor/catalog-curation.md.",
+            },
+            {
+              group: ["@/features/*/**", "!@/features/shared/**"],
+              message: "shared/components is the catalog — it must not import from a feature. Pass via props, or relocate the component (domain → feature, app-shell → shared/chrome). See docs/refactor/catalog-curation.md.",
+            },
+            {
+              group: ["@tauri-apps/api/event", "@tauri-apps/api/window", "@tauri-apps/api/app"],
+              message: "shared/components is the design-system catalog — Tauri runtime APIs don't belong here. Lift to a feature module.",
+            },
+          ],
+        },
+      ],
+    },
+  },
   // Allow raw invoke in the wrapper itself, test mocks, and test automation bridge
   {
     files: [

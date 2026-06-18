@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from 'react';
 import { useVaultStore } from '@/stores/vaultStore';
-import { getConnectorMeta, type ConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { getConnectorMeta, type ConnectorMeta } from '@/lib/connectors/connectorMeta';
 
 export interface HealthyConnector {
   name: string;

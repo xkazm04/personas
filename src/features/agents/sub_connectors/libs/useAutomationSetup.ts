@@ -10,7 +10,7 @@ import type { CredentialMetadata } from '@/lib/types/types';
 import { githubListRepos, githubCheckPermissions, zapierListZaps } from '@/api/agents/automations';
 import { silentCatchNull } from "@/lib/silentCatch";
 import type { GitHubRepo, GitHubPermissions, DeployAutomationResult, ZapierZap } from '@/api/agents/automations';
-import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
+import { parseDesignContext } from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { DesignUseCase } from '@/lib/types/frontendTypes';
 
 export type ModalPhase = 'idle' | 'analyzing' | 'preview' | 'deploying' | 'success' | 'error';

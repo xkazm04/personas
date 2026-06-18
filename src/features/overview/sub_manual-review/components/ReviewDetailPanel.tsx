@@ -2,7 +2,7 @@ import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, X, Send, User, Cloud, ExternalLink, CheckCircle2, XCircle } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import Button from '@/features/shared/components/buttons/Button';
 import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';

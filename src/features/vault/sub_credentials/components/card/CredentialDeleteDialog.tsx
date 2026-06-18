@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useBlastRadius } from '@/features/shared/components/display/BlastRadiusPanel';
+import { BlastRadiusPanel, useBlastRadius } from '@/features/overview/components/BlastRadiusPanel';
 import { ConfirmDestructiveModal } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { getCredentialBlastRadius } from '@/api/vault/credentials';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -38,8 +38,7 @@ export function CredentialDeleteDialog({
         { label: t.vault.delete_dialog.label_name, value: deleteConfirm.credential.name },
         { label: t.vault.delete_dialog.label_type, value: deleteConfirm.credential.service_type },
       ],
-      blastRadiusItems: blastItems,
-      blastRadiusLoading: blastLoading,
+      blastRadius: <BlastRadiusPanel items={blastItems} loading={blastLoading} />,
       warningMessage: deleteConfirm.eventCountVerified === false
         ? t.vault.delete_dialog.unverified_warning
         : undefined,

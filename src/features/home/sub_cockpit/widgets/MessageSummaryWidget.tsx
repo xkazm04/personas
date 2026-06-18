@@ -4,7 +4,7 @@ import { ExternalLink, MessageSquare } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 

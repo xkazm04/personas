@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ExternalLink, BookMarked, AlertTriangle } from 'lucide-react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { createSubscription } from '@/api/overview/events';

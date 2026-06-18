@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Power, AlertTriangle, Plus, Sparkles, Play, Wand2, Loader2, X } from 'lucide-react';
-import { CONNECTOR_META, ConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { CONNECTOR_META, ConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { getMemoryCount } from '@/api/overview/memories';
 import { listManualReviews } from '@/api/overview/reviews';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';

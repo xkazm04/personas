@@ -1,0 +1,446 @@
+import { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
+import {
+  Search, Bot, Home, BarChart3, Radio, Key, FlaskConical,
+  Settings, Plus, Power, Play, ToggleLeft, Copy, Puzzle,
+  HeartPulse, Pencil, Trophy,
+} from 'lucide-react';
+import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
+import { useVaultStore } from "@/stores/vaultStore";
+import { useSystemStore } from "@/stores/systemStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useTranslation } from '@/i18n/useTranslation';
+import type { SidebarSection } from '@/lib/types/types';
+import {
+  type PaletteItem, type ResultKind,
+  fuzzyMatch, fuzzyScore, entryScore, trackRecent, getRecentAgentIds,
+  agentItem, credentialItem, templateItem, automationItem,
+  agentActionItems, type AgentActionCallbacks,
+} from '@/features/shared/chrome/commandPaletteUtils';
+import { executePersona } from '@/api/agents/executions';
+import { duplicatePersona } from '@/api/agents/personas';
+import { systemHealthCheck } from '@/api/system/system';
+import { CommandPaletteResults } from '@/features/shared/chrome/CommandPaletteResults';
+import { QuickEditPanel } from '@/features/agents/components/QuickEditPanel';
+import type { Persona } from '@/lib/bindings/Persona';
+import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
+import { useSettingsSearchEntries } from '@/features/settings/search/useSettingsSearchEntries';
+
+// -- Section icons -----------------------------------------------------
+
+const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'Home', icon: <Home className="w-4 h-4" /> },
+  { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
+  { id: 'personas', label: 'Agents', icon: <Bot className="w-4 h-4" /> },
+  { id: 'events', label: 'Event Bus', icon: <Radio className="w-4 h-4" /> },
+  { id: 'credentials', label: 'Keys', icon: <Key className="w-4 h-4" /> },
+  { id: 'design-reviews', label: 'Templates', icon: <FlaskConical className="w-4 h-4" /> },
+  { id: 'plugins', label: 'Plugins', icon: <Puzzle className="w-4 h-4" /> },
+  { id: 'settings', label: 'Settings', icon: <Settings className="w-4 h-4" /> },
+];
+
+export default function CommandPalette() {
+  const { t } = useTranslation();
+  const searchT = t.settings.search;
+  const open = useCommandPaletteStore((s) => s.open);
+  const scope = useCommandPaletteStore((s) => s.scope);
+  const togglePalette = useCommandPaletteStore((s) => s.togglePalette);
+  const closePalette = useCommandPaletteStore((s) => s.closePalette);
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const settingsSearch = useSettingsSearchEntries();
+
+  const personas = useAgentStore((s) => s.personas);
+  const teams = usePipelineStore((s) => s.teams);
+  const recipes = usePipelineStore((s) => s.recipes);
+  const credentials = useVaultStore((s) => s.credentials);
+  const automations = useVaultStore((s) => s.automations);
+  const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  const selectPersona = useAgentStore((s) => s.selectPersona);
+  const setIsCreatingPersona = useSystemStore((s) => s.setIsCreatingPersona);
+  const storeUpdatePersona = useAgentStore((s) => s.updatePersona);
+  const storeFetchPersonas = useAgentStore((s) => s.fetchPersonas);
+  const addToast = useToastStore((s) => s.addToast);
+
+  useAppKeyboard((e) => {
+    if (!((e.metaKey || e.ctrlKey) && e.key === 'k')) return false;
+    e.preventDefault();
+    togglePalette('all');
+    return true;
+  }, { priority: 90 });
+
+  useEffect(() => {
+    if (open) {
+      setQuery('');
+      setSelectedIndex(0);
+      setEditingPersona(null);
+      requestAnimationFrame(() => inputRef.current?.focus());
+    }
+  }, [open]);
+
+  const close = useCallback(() => closePalette(), [closePalette]);
+
+  const isCommandMode = query.startsWith('>');
+  const rawSearchQuery = isCommandMode ? query.slice(1).trim() : query.trim();
+  const searchQuery = useDeferredValue(rawSearchQuery);
+
+  const groupMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const g of teams) map[g.id] = g.name;
+    return map;
+  }, [teams]);
+
+  const paletteIcons = useMemo(() => ({
+    bot: <Bot className="w-4 h-4" />,
+    power: <Power className="w-4 h-4 text-foreground" />,
+    key: <Key className="w-4 h-4" />,
+    flask: <FlaskConical className="w-4 h-4" />,
+    play: <Play className="w-4 h-4" />,
+    toggle: <ToggleLeft className="w-4 h-4" />,
+    copy: <Copy className="w-4 h-4" />,
+    health: <HeartPulse className="w-4 h-4" />,
+    pencil: <Pencil className="w-4 h-4" />,
+  }), []);
+
+  const agentActions = useCallback((): AgentActionCallbacks => ({
+    onRun: (id: string) => {
+      executePersona(id).then(
+        () => addToast('Execution started', 'success'),
+        () => addToast('Failed to start execution', 'error'),
+      );
+    },
+    onToggle: (id: string, enabled: boolean) => {
+      storeUpdatePersona(id, { enabled }).then(
+        () => addToast(`Agent ${enabled ? 'enabled' : 'disabled'}`, 'success'),
+        () => addToast('Failed to toggle agent', 'error'),
+      );
+    },
+    onDuplicate: (id: string) => {
+      duplicatePersona(id).then(
+        (p) => {
+          storeFetchPersonas();
+          addToast(`Duplicated as "${p.name}"`, 'success');
+        },
+        () => addToast('Failed to duplicate agent', 'error'),
+      );
+    },
+    onHealthCheck: () => {
+      systemHealthCheck().then(
+        () => {
+          setSidebarSection('overview');
+          addToast('Health check complete', 'success');
+        },
+        () => addToast('Health check failed', 'error'),
+      );
+    },
+    onNavigate: (id: string) => {
+      setSidebarSection('personas');
+      selectPersona(id);
+    },
+    onQuickEdit: (id: string) => {
+      const p = personas.find(a => a.id === id);
+      if (p) setEditingPersona(p);
+    },
+  }), [addToast, storeUpdatePersona, storeFetchPersonas, setSidebarSection, selectPersona, personas]);
+
+  // Stage 1: stable entity lists (only recomputed when entities change, not on every keystroke)
+  const stableItems = useMemo(() => {
+    const agentItems = personas.map(p =>
+      agentItem(p, groupMap, selectPersona, setSidebarSection, paletteIcons.bot, paletteIcons.power),
+    );
+    const credItems = credentials.map(c =>
+      credentialItem(c, setSidebarSection, paletteIcons.key),
+    );
+    const templateItems = recipes.map(r =>
+      templateItem(r, setSidebarSection, paletteIcons.flask),
+    );
+    const autoItems = automations.map(a =>
+      automationItem(a, setSidebarSection, paletteIcons.flask),
+    );
+    const navItems = NAV_ITEMS.map(nav => ({
+      id: `nav:${nav.id}`, kind: 'navigation' as const, label: nav.label,
+      icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+    }));
+    const cbs = agentActions();
+    const commandItems: PaletteItem[] = [
+      {
+        id: 'cmd:create-agent', kind: 'action', label: 'Create New Agent',
+        icon: <Plus className="w-4 h-4" />,
+        onSelect: () => { setSidebarSection('personas'); setIsCreatingPersona(true); },
+      },
+      {
+        id: 'cmd:leaderboard', kind: 'action', label: 'Agent Leaderboard',
+        icon: <Trophy className="w-4 h-4" />,
+        onSelect: () => {
+          setSidebarSection('overview');
+          void import('@/stores/overviewStore').then(({ useOverviewStore }) =>
+            useOverviewStore.getState().setOverviewTab('leaderboard'),
+          );
+        },
+      },
+      ...NAV_ITEMS.map(nav => ({
+        id: `cmd:nav-${nav.id}`, kind: 'action' as const, label: `Go to ${nav.label}`,
+        icon: nav.icon, onSelect: () => setSidebarSection(nav.id),
+      })),
+      ...agentActionItems(personas, cbs, {
+        run: paletteIcons.play, toggle: paletteIcons.toggle, duplicate: paletteIcons.copy,
+        health: paletteIcons.health, edit: paletteIcons.pencil,
+      }),
+    ];
+    return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
+  }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions]);
+
+  // Settings entries (inline toggles + deep links). An empty query surfaces the
+  // recommended set only when the palette was opened focused on settings; typing
+  // always searches the full settings catalog regardless of scope.
+  const settingResults = useMemo((): PaletteItem[] => {
+    if (isCommandMode) return [];
+    if (!searchQuery) return scope === 'settings' ? settingsSearch.recommended : [];
+    return settingsSearch.all
+      .map(item => ({ item, score: entryScore(searchQuery, item) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12)
+      .map(({ item }) => item);
+  }, [settingsSearch, searchQuery, isCommandMode, scope]);
+
+  // Stage 2: filtered + scored (recomputed on deferred searchQuery)
+  const items = useMemo((): PaletteItem[] => {
+    const { agentItems, credItems, templateItems, autoItems, navItems, commandItems } = stableItems;
+    const results: PaletteItem[] = [];
+    const recentAgentIds = getRecentAgentIds();
+
+    if (isCommandMode) {
+      if (!searchQuery) return commandItems;
+      return commandItems
+        .filter(a => fuzzyMatch(searchQuery, a.label))
+        .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label));
+    }
+
+    // Settings-focused entry point with an empty query: show recommended
+    // settings only (no recent-agents / navigation clutter).
+    if (scope === 'settings' && !searchQuery) return settingResults;
+    // When focused on settings, settings rank above every other source.
+    if (scope === 'settings') results.push(...settingResults);
+
+    // -- Agents --
+    if (!searchQuery && recentAgentIds.length > 0) {
+      const agentMap = new Map(agentItems.map(a => [a.id.replace('agent:', ''), a]));
+      for (const id of recentAgentIds) {
+        const item = agentMap.get(id);
+        if (item) results.push(item);
+      }
+    }
+
+    if (searchQuery) {
+      const scoredAgents = agentItems
+        .map(item => {
+          const p = personas.find(pp => `agent:${pp.id}` === item.id)!;
+          return {
+            item,
+            score: Math.max(
+              fuzzyScore(searchQuery, p.name),
+              fuzzyScore(searchQuery, p.description ?? ''),
+              p.home_team_id && groupMap[p.home_team_id] ? fuzzyScore(searchQuery, groupMap[p.home_team_id]!) * 0.6 : 0,
+            ),
+          };
+        })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 20);
+
+      for (const { item } of scoredAgents) {
+        if (!results.some(r => r.id === item.id)) results.push(item);
+      }
+
+      // -- Credentials --
+      const scoredCreds = credItems
+        .map((item, i) => { const c = credentials[i]; return c ? { item, score: Math.max(fuzzyScore(searchQuery, c.name), fuzzyScore(searchQuery, c.service_type) * 0.7) } : { item, score: 0 }; })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { item } of scoredCreds) results.push(item);
+
+      // -- Templates --
+      const scoredTemplates = templateItems
+        .map((item, i) => { const r = recipes[i]; return r ? { item, score: Math.max(fuzzyScore(searchQuery, r.name), fuzzyScore(searchQuery, r.category ?? '') * 0.6) } : { item, score: 0 }; })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { item } of scoredTemplates) results.push(item);
+
+      // -- Automations --
+      const scoredAutomations = autoItems
+        .map((item, i) => { const a = automations[i]; return a ? { item, score: Math.max(fuzzyScore(searchQuery, a.name), fuzzyScore(searchQuery, a.platform) * 0.5) } : { item, score: 0 }; })
+        .filter(s => s.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10);
+      for (const { item } of scoredAutomations) results.push(item);
+    }
+
+    // -- Navigation --
+    if (searchQuery) {
+      results.push(...navItems.filter(n => fuzzyMatch(searchQuery, n.label))
+        .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label)));
+    } else {
+      results.push(...navItems);
+    }
+
+    // -- Settings (global scope: ranked after everything else) --
+    if (scope === 'all') results.push(...settingResults);
+
+    return results;
+  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations, scope, settingResults]);
+
+  useEffect(() => {
+    setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
+  }, [items.length]);
+
+  useEffect(() => {
+    const el = listRef.current?.querySelector(`[data-index="${selectedIndex}"]`);
+    el?.scrollIntoView({ block: 'nearest' });
+  }, [selectedIndex]);
+
+  const handleQuickEditSave = useCallback((id: string, updates: { description?: string; model?: string }) => {
+    const partial: Record<string, unknown> = {};
+    if (updates.description !== undefined) partial.description = updates.description || null;
+    if (updates.model !== undefined) {
+      const existing = editingPersona?.model_profile;
+      let profile: Record<string, unknown> = {};
+      if (existing) { profile = parseJsonOrDefault<Record<string, unknown>>(existing, {}); }
+      profile.model = updates.model || null;
+      partial.model_profile = JSON.stringify(profile);
+    }
+    storeUpdatePersona(id, partial as Parameters<typeof storeUpdatePersona>[1]).then(
+      () => { addToast('Agent updated', 'success'); close(); },
+      () => addToast('Failed to update agent', 'error'),
+    );
+  }, [storeUpdatePersona, addToast, close, editingPersona]);
+
+  const executeItem = useCallback((item: PaletteItem) => {
+    if (item.kind === 'agent') trackRecent(item.id.replace('agent:', ''));
+    item.onSelect();
+    if (!item.staysOpen) close();
+  }, [close]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(i => (i + 1) % Math.max(1, items.length));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(i => (i - 1 + items.length) % Math.max(1, items.length));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (items[selectedIndex]) executeItem(items[selectedIndex]);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        close();
+        break;
+    }
+  };
+
+  const sections = useMemo(() => {
+    const grouped: { kind: ResultKind; label: string; items: (PaletteItem & { globalIndex: number })[] }[] = [];
+    let idx = 0;
+    const recentAgentIds = getRecentAgentIds();
+    const addSection = (kind: ResultKind, label: string) => {
+      const sectionItems = items
+        .filter(i => i.kind === kind)
+        .map(i => ({ ...i, globalIndex: idx++ }));
+      if (sectionItems.length > 0) grouped.push({ kind, label, items: sectionItems });
+    };
+    if (isCommandMode) {
+      addSection('action', 'Commands');
+      addSection('agent-action', 'Agent Actions');
+    } else {
+      const settingsLabel = !searchQuery && scope === 'settings' ? searchT.recommended : searchT.section;
+      // Settings lead when the palette was opened focused on settings;
+      // otherwise they trail the entity/navigation results.
+      if (scope === 'settings') addSection('setting', settingsLabel);
+      addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
+      addSection('credential', 'Credentials');
+      addSection('template', 'Templates');
+      addSection('automation', 'Automations');
+      addSection('navigation', 'Navigation');
+      if (scope === 'all') addSection('setting', settingsLabel);
+    }
+    return grouped;
+  }, [items, isCommandMode, searchQuery, scope, searchT]);
+
+  return (
+    <>
+      {open && (
+        <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh]">
+          <div
+            className="animate-fade-slide-in absolute inset-0 bg-black/50 backdrop-blur-md"
+            onClick={() => { if (editingPersona) setEditingPersona(null); else close(); }}
+          />
+          <div
+            className="animate-fade-slide-in relative w-full max-w-lg glass-md rounded-xl shadow-elevation-4 overflow-hidden"
+          >
+            {!editingPersona && (
+              <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
+                <Search className="w-4 h-4 text-foreground shrink-0" />
+                <input
+                  ref={inputRef}
+                  value={query}
+                  onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
+                  onKeyDown={handleKeyDown}
+                  placeholder={scope === 'settings' ? searchT.placeholder : t.common.command_palette_placeholder}
+                  className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
+                  spellCheck={false}
+                />
+                <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-medium text-foreground bg-secondary/50 border border-primary/10 rounded">
+                  ESC
+                </kbd>
+              </div>
+            )}
+
+            {editingPersona ? (
+              <QuickEditPanel
+                persona={editingPersona}
+                onSave={handleQuickEditSave}
+                onCancel={() => setEditingPersona(null)}
+              />
+            ) : (
+              <>
+                <CommandPaletteResults
+                  sections={sections}
+                  selectedIndex={selectedIndex}
+                  onExecute={executeItem}
+                  onHover={setSelectedIndex}
+                  listRef={listRef}
+                />
+
+                <div className="flex items-center gap-4 px-4 py-2 border-t border-primary/10 text-[11px] text-foreground">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&uarr;&darr;</kbd>
+                    {t.common.command_palette_navigate}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&crarr;</kbd>
+                    {t.common.command_palette_select}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1 py-0.5 bg-secondary/50 border border-primary/10 rounded text-[10px]">&gt;</kbd>
+                    {t.common.command_palette_commands}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from 'react';
 import { useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
+import { BlastRadiusPanelLazy } from '@/features/overview/components/BlastRadiusPanel';
 import { getPersonaBlastRadius } from '@/api/agents/personas';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -45,7 +46,7 @@ export function usePersonaActions({
         title: t.agents.overview_actions.delete_agent,
         message: t.agents.overview_actions.delete_agent_message,
         details: [{ label: 'Name', value: persona.name }],
-        blastRadiusFetcher: () => getPersonaBlastRadius(id),
+        blastRadius: <BlastRadiusPanelLazy fetcher={() => getPersonaBlastRadius(id)} />,
         requireTypedConfirmation: persona.name,
         onConfirm: async () => {
           try {

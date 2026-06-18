@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { AlertTriangle, Shield, Zap, DollarSign, TrendingDown, ArrowRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { PersonaHealthSignal, RoutingRecommendation } from '@/stores/slices/overview/personaHealthSlice';
 import { InsightPanel } from './InsightPanel';
 import { buildAlerts, type InsightAlert, type AlertKind } from './data';

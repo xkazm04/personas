@@ -4,7 +4,7 @@ import {
   parseDesignContext,
   serializeDesignContext,
   mergeCredentialLink,
-} from '@/features/shared/components/use-cases/UseCasesList';
+} from '@/features/agents/sub_lab/use-cases/UseCasesList';
 import type { DesignFilesSection, DesignUseCase } from '@/lib/types/frontendTypes';
 
 // -- Mutation result type ------------------------------------------------

@@ -1,6 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Clock, AlertTriangle } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import type { CalendarEvent, ConflictGroup } from '../libs/calendarHelpers';
 
 export function EventTooltip({

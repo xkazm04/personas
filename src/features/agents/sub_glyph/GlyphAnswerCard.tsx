@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { HelpCircle, Send, X } from "lucide-react";
 import { DIM_META } from "@/features/shared/glyph";
 import type { BuildQuestion } from "@/lib/types/buildTypes";
-import { VaultConnectorPicker } from "@/features/shared/components/picker/VaultConnectorPicker";
+import { VaultConnectorPicker } from "@/features/vault/components/VaultConnectorPicker";
 import { useSystemStore } from "@/stores/systemStore";
 import { CELL_KEY_TO_DIM, DIM_LABEL } from "./glyphLayoutHelpers";
 import { useTranslation } from "@/i18n/useTranslation";
