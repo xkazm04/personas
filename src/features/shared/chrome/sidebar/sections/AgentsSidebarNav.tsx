@@ -9,7 +9,7 @@ import { usePrefetchOnHover } from '@/hooks/agents/usePrefetchOnHover';
 import { useRecentAgents } from '@/hooks/agents/useRecentAgents';
 import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
-import { cloudItems } from '../sidebarData';
+import { cloudItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // Color classes per activity type — mirror the SidebarLevel1 orbit dots so

@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { memo, useState, useMemo } from 'react';
 import { ArrowRight, type LucideIcon } from 'lucide-react';
-import { SIDEBAR_ICONS } from '@/features/shared/components/layout/sidebar/SidebarIcons';
+import { SIDEBAR_ICONS } from '@/features/shared/chrome/sidebar/SidebarIcons';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { SIMPLE_SECTIONS, DEV_MODE_SECTIONS } from '@/lib/utils/platform/platform';

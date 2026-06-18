@@ -3,7 +3,7 @@ import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
-import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
+import { IconGoals } from '@/features/shared/chrome/sidebar/SidebarIcons';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from '@/stores/systemStore';

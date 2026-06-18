@@ -9,8 +9,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { getSettingsItems } from '@/features/shared/components/layout/sidebar/sidebarData';
-import { settingEntry, type PaletteItem } from '@/features/shared/components/overlays/commandPaletteUtils';
+import { getSettingsItems } from '@/features/shared/chrome/sidebar/sidebarData';
+import { settingEntry, type PaletteItem } from '@/features/shared/chrome/commandPaletteUtils';
 import type { SettingsTab } from '@/lib/types/types';
 
 /**

@@ -10,7 +10,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, Search, MessagesSquare, Bell } from 'lucide-react';
-import FleetActivityStrip from '@/features/shared/components/layout/FleetActivityStrip';
+import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';

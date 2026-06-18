@@ -17,12 +17,12 @@ import {
   fuzzyMatch, fuzzyScore, entryScore, trackRecent, getRecentAgentIds,
   agentItem, credentialItem, templateItem, automationItem,
   agentActionItems, type AgentActionCallbacks,
-} from './commandPaletteUtils';
+} from '@/features/shared/chrome/commandPaletteUtils';
 import { executePersona } from '@/api/agents/executions';
 import { duplicatePersona } from '@/api/agents/personas';
 import { systemHealthCheck } from '@/api/system/system';
-import { CommandPaletteResults } from './CommandPaletteResults';
-import { QuickEditPanel } from './QuickEditPanel';
+import { CommandPaletteResults } from '@/features/shared/chrome/CommandPaletteResults';
+import { QuickEditPanel } from '@/features/shared/components/overlays/QuickEditPanel';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
 import { useCommandPaletteStore } from '@/stores/commandPaletteStore';

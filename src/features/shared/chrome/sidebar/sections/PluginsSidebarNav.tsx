@@ -25,9 +25,9 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import type { ArtistTab, DevToolsTab, TwinTab, PluginTab, ResearchLabTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
-import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researchLabItems, twinItems } from '../sidebarData';
+import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researchLabItems, twinItems } from '@/features/shared/chrome/sidebar/sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
-import SidebarLevel3, { type SidebarLevel3Item } from '../SidebarLevel3';
+import SidebarLevel3, { type SidebarLevel3Item } from '@/features/shared/chrome/sidebar/SidebarLevel3';
 import { debtText } from '@/i18n/DebtText';
 import { PLUGIN_ICONS } from '@/features/plugins/PluginIcons';
 

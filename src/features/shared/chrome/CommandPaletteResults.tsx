@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useScrollShadow } from '@/hooks/utility/interaction/useScrollShadow';
-import type { ResultKind, PaletteItem } from './commandPaletteUtils';
+import type { ResultKind, PaletteItem } from '@/features/shared/chrome/commandPaletteUtils';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const KIND_COLORS: Record<ResultKind, { icon: string; border: string }> = {

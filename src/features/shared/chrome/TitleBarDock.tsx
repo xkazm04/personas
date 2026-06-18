@@ -7,7 +7,7 @@ import { isTypingTarget } from '@/lib/keyboard/KeyboardNavMode';
 import { ActivityPulseIcon } from '@/features/shared/components/icons/ActivityPulseIcon';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useTitleBarTray, TrayOverlays } from './useTitleBarTray';
+import { useTitleBarTray, TrayOverlays } from '@/features/shared/chrome/useTitleBarTray';
 
 /**
  * @catalog Title-bar quick-action dock — capsule tray (search / schedules / review / monitor / notifications) with inline counts and keyboard-nav key hints.

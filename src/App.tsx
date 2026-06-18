@@ -1,8 +1,8 @@
 import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
-import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
-import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
+import UpdateBanner from "@/features/shared/chrome/UpdateBanner";
+import { ToastContainer } from "@/features/shared/chrome/ToastContainer";
 import { LiveChannelOverlay } from "@/features/fleet/monitor/live/LiveChannelOverlay";
 import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
 import { FirstUseConsentModal, hasUserConsented, storedConsentVersion } from "@/features/shared/components/overlays/FirstUseConsentModal";
@@ -13,8 +13,8 @@ import { ChartGradientDefs } from "@/features/overview/sub_usage/components/Char
 import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/picker/ResourcePickerHost";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
-import TitleBar from "@/features/shared/components/layout/TitleBar";
-import FleetActivityStrip from "@/features/shared/components/layout/FleetActivityStrip";
+import TitleBar from "@/features/shared/chrome/TitleBar";
+import FleetActivityStrip from "@/features/shared/chrome/FleetActivityStrip";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
@@ -102,14 +102,14 @@ class SilentErrorBoundary extends Component<
 // lazyRetry instead of raw React.lazy: a failed chunk fetch (dev-server
 // restart, post-deploy stale chunk) would otherwise cache the rejection
 // forever and brick the overlay until a full page reload.
-const BackgroundServices = lazyRetry(() => import("@/features/shared/components/layout/BackgroundServices"));
-const CommandPalette = lazyRetry(() => import("@/features/shared/components/overlays/CommandPalette"));
+const BackgroundServices = lazyRetry(() => import("@/features/shared/chrome/BackgroundServices"));
+const CommandPalette = lazyRetry(() => import("@/features/shared/chrome/CommandPalette"));
 const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
 const ExecutionMiniPlayer = lazyRetry(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
-const NotificationCenter = lazyRetry(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
+const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
@@ -120,14 +120,14 @@ const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/or
 // monitor, etc.). The transform `.then(m => ({ default: m.X }))` used by some
 // lazy() calls is unnecessary here — module identity matches by URL.
 const LAZY_OVERLAY_IMPORTS = [
-  () => import("@/features/shared/components/layout/BackgroundServices"),
-  () => import("@/features/shared/components/overlays/CommandPalette"),
+  () => import("@/features/shared/chrome/BackgroundServices"),
+  () => import("@/features/shared/chrome/CommandPalette"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
   () => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
-  () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
+  () => import("@/features/shared/chrome/notifications/NotificationCenter"),
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
   () => import("@/features/plugins/companion/CompanionPanel"),
   () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),

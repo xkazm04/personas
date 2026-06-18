@@ -26,7 +26,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
-import { computeFleetPulse, layoutSlots, slotCountForCapacity } from './fleetStripModel';
+import { computeFleetPulse, layoutSlots, slotCountForCapacity } from '@/features/shared/chrome/fleetStripModel';
 import { elapsedStr } from '@/features/fleet/monitor/monitorModel';
 
 /** App-settings key for the global concurrency cap (mirrors the Rust const). */

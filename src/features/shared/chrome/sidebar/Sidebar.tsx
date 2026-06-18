@@ -11,10 +11,10 @@ import type { SidebarSection } from '@/lib/types/types';
 
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { sections } from '@/features/shared/components/layout/sidebar/sidebarData';
-import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/components/layout/DesktopFooter';
-import SidebarLevel1 from '@/features/shared/components/layout/sidebar/SidebarLevel1';
-import SidebarLevel2 from '@/features/shared/components/layout/sidebar/SidebarLevel2';
+import { sections } from '@/features/shared/chrome/sidebar/sidebarData';
+import { SIDEBAR_TOGGLE_EVENT } from '@/features/shared/chrome/DesktopFooter';
+import SidebarLevel1 from '@/features/shared/chrome/sidebar/SidebarLevel1';
+import SidebarLevel2 from '@/features/shared/chrome/sidebar/SidebarLevel2';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
 import { useTranslation } from '@/i18n/useTranslation';
 

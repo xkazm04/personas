@@ -14,7 +14,7 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 
-import SystemLoadFooterIcon from '@/features/shared/components/layout/SystemLoadFooterIcon';
+import SystemLoadFooterIcon from '@/features/shared/chrome/SystemLoadFooterIcon';
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/plugins/radio/components/RadioFooter'));

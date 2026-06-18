@@ -13,7 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
-import type { SubNavItem } from './SidebarSubNav';
+import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import { type Tier, TIERS, isTierVisible } from '@/lib/constants/uiModes';
 
 export interface SectionDef {

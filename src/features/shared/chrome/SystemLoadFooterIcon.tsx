@@ -14,7 +14,7 @@ import { getSystemMetrics, type SystemMetrics } from '@/api/system/systemMetrics
 import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import { ema, nextLoadLevel, type LoadLevel } from './systemLoad';
+import { ema, nextLoadLevel, type LoadLevel } from '@/features/shared/components/layout/systemLoad';
 
 const POLL_MS = 2000;
 

@@ -5,8 +5,8 @@ import { Minus, Square, X, Copy, ArrowLeft } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { TitleBarAmbient } from '@/features/shared/components/layout/TitleBarAmbient';
-import TitleBarDock from './TitleBarDock';
+import { TitleBarAmbient } from '@/features/shared/chrome/TitleBarAmbient';
+import TitleBarDock from '@/features/shared/chrome/TitleBarDock';
 
 const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 

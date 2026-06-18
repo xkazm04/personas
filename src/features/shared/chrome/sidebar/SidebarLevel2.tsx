@@ -10,21 +10,21 @@ import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 
-import SidebarSubNav from './SidebarSubNav';
-import type { SubNavBadge, SubNavIndicator } from './SidebarSubNav';
+import SidebarSubNav from '@/features/shared/chrome/sidebar/SidebarSubNav';
+import type { SubNavBadge, SubNavIndicator } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
   eventBusItems, getSettingsItems,
-} from './sidebarData';
+} from '@/features/shared/chrome/sidebar/sidebarData';
 import { SETTINGS_ICON_ACCENTS } from '@/lib/design/statusTokens';
 import { useTier } from '@/hooks/utility/interaction/useTier';
-import { filterByTier } from './sidebarData';
-import { AgentsSidebarNav } from './sections/AgentsSidebarNav';
-import TeamsSidebarNav from './sections/TeamsSidebarNav';
-import { PluginsSidebarNav } from './sections/PluginsSidebarNav';
+import { filterByTier } from '@/features/shared/chrome/sidebar/sidebarData';
+import { AgentsSidebarNav } from '@/features/shared/chrome/sidebar/sections/AgentsSidebarNav';
+import TeamsSidebarNav from '@/features/shared/chrome/sidebar/sections/TeamsSidebarNav';
+import { PluginsSidebarNav } from '@/features/shared/chrome/sidebar/sections/PluginsSidebarNav';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
-import type { SubNavItem } from './SidebarSubNav';
+import type { SubNavItem } from '@/features/shared/chrome/sidebar/SidebarSubNav';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;

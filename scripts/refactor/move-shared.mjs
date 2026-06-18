@@ -12,7 +12,7 @@
  *     features/shared/components/editors/draft-editor features/templates/draft-editor
  */
 import { readdirSync, readFileSync, writeFileSync, statSync, mkdirSync, existsSync } from 'node:fs';
-import { join, dirname, sep } from 'node:path';
+import { join, dirname, sep, resolve, relative } from 'node:path';
 import { execSync } from 'node:child_process';
 
 const SRC = 'src';
@@ -38,8 +38,22 @@ function walkFiles(d) {
   }
   return out;
 }
+// Before moving a file, convert its RELATIVE imports to `@/` absolutes resolved
+// against its ORIGINAL location. Relatives pointing outside the moved subtree
+// would otherwise dangle at the new depth; ones pointing to co-moved siblings
+// become absolutes that the prefix-rewrite (step 2) then fixes. Uniform + safe.
+function absolutizeRelatives(absFile) {
+  const dir = dirname(absFile);
+  const orig = readFileSync(absFile, 'utf8');
+  const s = orig.replace(/((?:from|import)\s+['"])(\.[^'"]*)(['"])/g, (_m, pre, spec, post) => {
+    const rel = relative(SRC, resolve(dir, spec)).split(sep).join('/');
+    return `${pre}@/${rel}${post}`;
+  });
+  if (s !== orig) writeFileSync(absFile, s);
+}
 function gitmv(from, to) {
   if (existsSync(to)) return; // already relocated (idempotent re-run)
+  absolutizeRelatives(from);
   mkdirSync(dirname(to), { recursive: true });
   for (let i = 0; ; i++) {
     try { execSync(`git mv "${posix(from)}" "${posix(to)}"`, { stdio: ['ignore', 'ignore', 'pipe'] }); return; }
