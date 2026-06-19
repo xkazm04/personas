@@ -81,8 +81,21 @@ tokens), `custom/role-button-requires-keydown`.
 |---|---|---|
 | **`Numeric`** (`.toFixed`/`.toLocaleString` in JSX) | `custom/prefer-numeric` | ✅ **Done 2026-06-19** — **0** across `src/features`, enforced (warn). |
 | **`StatusBadge`** (hand-rolled variant/accent color combos) | `custom/prefer-status-badge` | ✅ **Done 2026-06-19** — **0** across `src/features`, enforced (warn). |
-| **`SectionCard`** (hand-rolled card shells) | _(none yet)_ | ⏳ Backlog — biggest/fuzziest; needs visual parity. |
+| **`SectionCard`** (exact-shell reimplementation) | `custom/prefer-section-card` | ✅ **Enforced 2026-06-19** — see note below. |
 | **`BaseModal`** (`fixed inset-0`) | `custom/enforce-base-modal` | ⏳ ~4 real one-offs left. |
+
+> **SectionCard — no faithful backlog (the "~350" was a mirage).** `prefer-section-card`
+> flags only a `<div>` reimplementing SectionCard's *exact* shell signature
+> (`bg-secondary/30` + `border-primary/12` + `shadow-elevation-1`). Across `src/features`
+> exactly **2** such elements existed — and both are *bespoke* cards (a rich collapsible
+> header; a bordered-header + flush `divide-y` list) that SectionCard's fixed header/padded
+> body can't express, so both carry a documented `eslint-disable` rather than a forced
+> migration. The "~350 hand-rolled card shells" from the audit are **differently-styled**
+> divs (`bg-card-bg`, `border-border`, other radii); converting them to SectionCard would
+> *change their appearance* — that is a deliberate **visual redesign with human/visual
+> review**, not a mechanical refactor, and is explicitly **out of scope** for the headless
+> adoption sweep. The rule's value is therefore purely forward: it stops a future plain
+> card from copy-pasting the shell instead of importing `SectionCard`.
 
 ~205 sites migrated across 4 subagent waves (settings/vault/teams/triggers/schedules →
 plugins/templates/home/shared → agents/overview sub-areas → scattered closeout).

@@ -74,6 +74,7 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
   const hasBreakdown = pills.length > 0 || summary.errors.length > 0;
 
   return (
+    // eslint-disable-next-line custom/prefer-section-card -- bespoke collapsible card: rich header (icon + count pills + timestamp + chevron) that SectionCard's fixed header can't express
     <div className={`bg-secondary/30 border border-primary/12 shadow-elevation-1 rounded-modal border-l-[3px] ${accent.border} overflow-hidden`}>
       <button
         type="button"

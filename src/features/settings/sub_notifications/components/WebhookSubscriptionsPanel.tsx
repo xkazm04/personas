@@ -184,6 +184,7 @@ export function WebhookSubscriptionsPanel() {
   if (loading) return null;
 
   return (
+    // eslint-disable-next-line custom/prefer-section-card -- bespoke panel: bordered header + flush divide-y list that SectionCard's padded body can't express
     <div className="rounded-modal border border-primary/12 bg-secondary/30 shadow-elevation-1 overflow-hidden">
       <div className="px-4 py-3 border-b border-primary/10 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
