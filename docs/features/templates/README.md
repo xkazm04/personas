@@ -218,6 +218,17 @@ mirroring the preset-adoption path — so a synthesized team actually hands work
 between members instead of silently stalling after the entry member (UAT L1
 F-TEAM-HANDOFF-SYNTH).
 
+L2 verification then exposed a deeper, pre-existing bug: the synthesis prompt
+told the LLM (and the examples showed) free-text roles like
+"coordinator"/"executor", but `persona_team_members.role` has a
+`CHECK(role IN ('orchestrator','worker','reviewer','router'))` — so the **first**
+`add_member` failed the constraint and aborted the whole synthesis, leaving
+orphaned personas + an empty team (no members/connections/handoff). Fixed two
+ways: the synthesis prompt now requests only the four valid role tokens, and
+`normalize_team_role` clamps any LLM deviation to the enum before insert. Live
+L2 then confirmed a real synth produces members + connections and
+`wire_team_handoff` fires (chain + event_listener triggers on the members).
+
 ## Common operations
 
 ### Add a new template

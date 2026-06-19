@@ -98,7 +98,7 @@ fn build_synthesis_prompt(
 ## Instructions
 
 1. Select 2-5 templates from the catalog that best address the user's request
-2. Assign each a role (e.g., "coordinator", "data-collector", "analyst", "executor", "reviewer")
+2. Assign each a role — use EXACTLY one of these four values (no others): "orchestrator" (coordinates/plans the team), "worker" (does the main task), "reviewer" (checks/QA/edits output), "router" (triages/dispatches). Most members are "worker".
 3. Define connections between them (data flows from source to target)
 4. Provide a brief team description
 
@@ -106,8 +106,8 @@ Return ONLY a JSON object in this exact format:
 ```json
 {{
   "templates": [
-    {{ "review_id": "<id from catalog>", "role": "coordinator" }},
-    {{ "review_id": "<id from catalog>", "role": "executor" }}
+    {{ "review_id": "<id from catalog>", "role": "orchestrator" }},
+    {{ "review_id": "<id from catalog>", "role": "worker" }}
   ],
   "connections": [
     {{ "source_index": 0, "target_index": 1 }}
@@ -161,6 +161,36 @@ fn build_design_context_from_result(design: &serde_json::Value, template_name: &
 // ============================================================================
 // Command
 // ============================================================================
+
+/// Clamp an LLM-assigned team role to the `persona_team_members.role` CHECK enum
+/// (`orchestrator | worker | reviewer | router`). The synthesis LLM picks
+/// descriptive roles ("coordinator", "analyst", "editor", …) that violate the DB
+/// CHECK constraint, which previously made the FIRST `add_member` fail and abort
+/// the whole synthesis — leaving orphaned personas + an empty team with no
+/// handoff wiring (UAT L2 finding). The prompt now requests the four valid
+/// tokens; this is the defensive net for when the model deviates anyway. Maps
+/// common synonyms; defaults to `worker`.
+fn normalize_team_role(role: &str) -> String {
+    let r = role.trim().to_lowercase();
+    if ["orchestrator", "worker", "reviewer", "router"].contains(&r.as_str()) {
+        return r;
+    }
+    let mapped = if r.contains("orchestr") || r.contains("lead") || r.contains("coordinat")
+        || r.contains("manager") || r.contains("director") || r.contains("plann")
+    {
+        "orchestrator"
+    } else if r.contains("review") || r.contains("qa") || r.contains("quality")
+        || r.contains("edit") || r.contains("critic") || r.contains("approv") || r.contains("audit")
+    {
+        "reviewer"
+    } else if r.contains("rout") || r.contains("dispatch") || r.contains("triage") || r.contains("classif")
+    {
+        "router"
+    } else {
+        "worker"
+    };
+    mapped.to_string()
+}
 
 #[tauri::command]
 pub async fn synthesize_team_from_templates(
@@ -375,7 +405,9 @@ pub async fn synthesize_team_from_templates(
 
     let mut member_ids: Vec<String> = Vec::new();
     for (i, persona_id) in persona_ids.iter().enumerate() {
-        let role = valid_templates.get(i).map(|(_, r)| r.clone());
+        // Clamp the LLM's role to the persona_team_members CHECK enum so a
+        // descriptive role never aborts add_member mid-synthesis (UAT L2 finding).
+        let role = valid_templates.get(i).map(|(_, r)| normalize_team_role(r));
         let (px, py) = positions.get(i).copied().unwrap_or((0.0, 0.0));
         let member = team_repo::add_member(
             &state.db,
