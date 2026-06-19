@@ -41,6 +41,9 @@ export const sections: SectionDef[] = [
   { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'plugins', icon: Puzzle, label: 'Plugins', minTier: TIERS.TEAM },
+  // Studio — the Athena web-dev companion preview (scaffold + embedded dev
+  // server). Dev-only while in active development (P1).
+  { id: 'studio', icon: Globe, label: 'Studio', devOnly: true },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
