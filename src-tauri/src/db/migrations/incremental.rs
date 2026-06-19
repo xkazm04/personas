@@ -2098,6 +2098,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added trigger_version column to persona_triggers for CAS safety");
     }
 
+    // -- Add unattended_mode column for the destructive-action gate (UAT P5) ------
+    // Controls what happens when this trigger fires UNATTENDED (schedule/event):
+    //   'auto'     — fire normally (default; preserves all existing behavior)
+    //   'dry_run'  — fire, but the launched run is_simulation (outbound suppressed)
+    //   'approval' — hold the launch for human approval before it runs
+    let has_unattended_mode: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_triggers') WHERE name = 'unattended_mode'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_unattended_mode {
+        ddl_step(
+            conn,
+            "ALTER TABLE persona_triggers ADD COLUMN unattended_mode TEXT NOT NULL DEFAULT 'auto';",
+        )?;
+        tracing::info!("Added unattended_mode column to persona_triggers (UAT P5 destructive-action gate)");
+    }
+
     // -- Composite indexes for memory & chat hot-path queries --------------------
     // These are idempotent (IF NOT EXISTS) and cover the top query patterns that
     // degrade to full table scans as data grows.

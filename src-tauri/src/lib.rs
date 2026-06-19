@@ -2338,6 +2338,7 @@ pub fn run() {
             commands::tools::triggers::list_triggers,
             commands::tools::triggers::create_trigger,
             commands::tools::triggers::update_trigger,
+            commands::tools::triggers::set_trigger_unattended_mode,
             commands::tools::triggers::delete_trigger,
             commands::tools::triggers::validate_trigger,
             commands::tools::triggers::get_trigger_health_map,

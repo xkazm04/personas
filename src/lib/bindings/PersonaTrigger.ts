@@ -9,4 +9,11 @@ status: string, last_triggered_at: string | null, next_trigger_at: string | null
 /**
  * Monotonic version counter for race-safe CAS in `mark_triggered`.
  */
-trigger_version: number, created_at: string, updated_at: string, use_case_id: string | null, };
+trigger_version: number, created_at: string, updated_at: string, use_case_id: string | null, 
+/**
+ * Behavior when this trigger fires UNATTENDED (schedule/event), the
+ * destructive-action gate (UAT P5): "auto" = fire normally (default),
+ * "dry_run" = fire but the launched run is_simulation (outbound side-effects
+ * suppressed), "approval" = hold the launch for human approval before it runs.
+ */
+unattended_mode: string, };

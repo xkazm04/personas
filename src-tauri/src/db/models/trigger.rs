@@ -443,11 +443,25 @@ pub struct PersonaTrigger {
     pub created_at: String,
     pub updated_at: String,
     pub use_case_id: Option<String>,
+    /// Behavior when this trigger fires UNATTENDED (schedule/event), the
+    /// destructive-action gate (UAT P5): "auto" = fire normally (default),
+    /// "dry_run" = fire but the launched run is_simulation (outbound side-effects
+    /// suppressed), "approval" = hold the launch for human approval before it runs.
+    #[serde(default = "default_unattended_mode")]
+    pub unattended_mode: String,
 }
 
 fn default_trigger_status() -> String {
     "active".into()
 }
+
+/// Default unattended-fire behavior — preserves all existing trigger behavior.
+pub fn default_unattended_mode() -> String {
+    "auto".into()
+}
+
+/// The valid `unattended_mode` values (the destructive-action gate, UAT P5).
+pub const UNATTENDED_MODES: &[&str] = &["auto", "dry_run", "approval"];
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
@@ -693,6 +707,7 @@ mod tests {
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-01T00:00:00Z".into(),
             use_case_id: None,
+            unattended_mode: "auto".into(),
         }
     }
 

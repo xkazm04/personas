@@ -34,6 +34,7 @@ row_mapper!(row_to_trigger -> PersonaTrigger {
     last_triggered_at, next_trigger_at,
     trigger_version [opt_i32],
     created_at, updated_at, use_case_id,
+    unattended_mode,
 });
 
 crud_get_by_id!(
@@ -183,6 +184,31 @@ pub fn create(pool: &DbPool, mut input: CreateTriggerInput) -> Result<PersonaTri
         }
 
         get_by_id(pool, &id)
+    })
+}
+
+/// Set the destructive-action gate (`unattended_mode`) for a trigger directly.
+/// Kept off `CreateTriggerInput`/`UpdateTriggerInput` to avoid a field cascade
+/// across the ~30 construction sites; the UI calls the dedicated command. (UAT P5)
+pub fn set_unattended_mode(
+    pool: &DbPool,
+    id: &str,
+    mode: &str,
+) -> Result<PersonaTrigger, AppError> {
+    timed_query!("persona_triggers", "persona_triggers::set_unattended_mode", {
+        if !crate::db::models::UNATTENDED_MODES.contains(&mode) {
+            return Err(AppError::Validation(format!(
+                "Invalid unattended_mode '{mode}' (expected one of: auto, dry_run, approval)"
+            )));
+        }
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_triggers SET unattended_mode = ?1, updated_at = ?2 WHERE id = ?3",
+            params![mode, now, id],
+        )?;
+        // get_by_id surfaces a NotFound if the id didn't exist (UPDATE affects 0 rows).
+        get_by_id(pool, id)
     })
 }
 

@@ -138,6 +138,28 @@ pub fn update_trigger(
     repo::update(&state.db, &id, input)
 }
 
+/// Set a trigger's destructive-action gate (UAT P5). `mode` ∈ `auto` | `dry_run`
+/// | `approval` — controls what happens when the trigger fires UNATTENDED:
+/// fire normally, fire-but-suppress-outbound (simulation), or hold for approval.
+#[tauri::command]
+pub fn set_trigger_unattended_mode(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    persona_id: String,
+    mode: String,
+) -> Result<PersonaTrigger, AppError> {
+    require_auth_sync(&state)?;
+    // Verify ownership: the trigger must belong to the specified persona.
+    let existing = repo::get_by_id(&state.db, &id)?;
+    if existing.persona_id != persona_id {
+        return Err(AppError::Validation(format!(
+            "Trigger {} does not belong to persona {}",
+            id, persona_id
+        )));
+    }
+    repo::set_unattended_mode(&state.db, &id, &mode)
+}
+
 #[tauri::command]
 pub fn delete_trigger(
     state: State<'_, Arc<AppState>>,
