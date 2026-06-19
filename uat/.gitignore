@@ -1,0 +1,2 @@
+# L2 captures (screenshots, raw model-turn dumps) are reproducible artifacts — keep them out of git.
+runs/*/captures/
