@@ -1,6 +1,7 @@
 import { ChevronRight, Cloud } from 'lucide-react';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -132,9 +133,9 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
               {statusLabel}
             </span>
             {review.source === 'cloud' && (
-              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
-                <Cloud className="w-2.5 h-2.5" /> Cloud
-              </span>
+              <StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>
+                Cloud
+              </StatusBadge>
             )}
           </div>
         </div>

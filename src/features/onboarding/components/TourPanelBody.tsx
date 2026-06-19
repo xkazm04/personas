@@ -4,6 +4,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { getActiveTourSteps, isExplorationTourEvent, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId, TourStepDef } from '@/stores/slices/system/tourSlice';
 import { Button } from '@/features/shared/components/buttons';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { getStepColors } from './tourConstants';
 import { StepProgress } from './StepProgress';
 import { TourIntroCard } from './TourIntroCard';
@@ -91,10 +92,13 @@ export function TourPanelBody({
           <h4 className="typo-heading text-foreground/90 flex items-center gap-2 min-w-0">
             <span className="truncate">{currentStep.title}</span>
             {isStepCompleted && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 typo-body font-medium text-emerald-400 flex-shrink-0">
-                <Check className="w-2.5 h-2.5" />
+              <StatusBadge
+                variant="success"
+                icon={<Check className="w-2.5 h-2.5" />}
+                className="px-1.5 py-0.5 rounded-input typo-body flex-shrink-0"
+              >
                 {t.onboarding.done_button}
-              </span>
+              </StatusBadge>
             )}
           </h4>
           {canShowMe && (

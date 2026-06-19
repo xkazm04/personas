@@ -6,6 +6,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { BusinessOutcomeBadge } from '@/features/shared/components/display/BusinessOutcomeBadge';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ExecutionDetail } from '@/features/agents/sub_executions';
 
 interface ExecutionRowProps {
@@ -55,10 +56,9 @@ export const ExecutionRow = memo(function ExecutionRow({ execution, isExpanded, 
         )}
 
         {execution.retry_count > 0 && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code font-mono rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={`Healing retry #${execution.retry_count}`}>
-            <RotateCw className="w-2.5 h-2.5" />
+          <StatusBadge accent="cyan" size="sm" className="typo-code font-mono rounded-card" icon={<RotateCw className="w-2.5 h-2.5" />} title={`Healing retry #${execution.retry_count}`}>
             #{execution.retry_count}
-          </span>
+          </StatusBadge>
         )}
 
         <span className="typo-code text-foreground min-w-[60px] text-right font-mono">

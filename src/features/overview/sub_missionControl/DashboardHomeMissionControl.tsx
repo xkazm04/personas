@@ -30,6 +30,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
@@ -775,7 +776,7 @@ export const StatusTicker = memo(function StatusTicker({
       </button>
       <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
         <span>runs</span>
-        <span className="tabular-nums">{totalExecutions.toLocaleString()}</span>
+        <Numeric value={totalExecutions} unit="count" />
       </button>
       <button type="button" onClick={() => onNavigate('observability')} className={`${linkCls} ml-auto flex-shrink-0`}>
         <span>synced</span>

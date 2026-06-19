@@ -5,6 +5,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { ScheduleEntry } from '../libs/scheduleHelpers';
 import { formatRelative } from '../libs/scheduleHelpers';
 import FrequencyEditor from './FrequencyEditor';
@@ -115,9 +116,9 @@ export default function ScheduleRow({
               {agent.persona_name}
             </span>
             {agent.headless && (
-              <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+              <StatusBadge accent="violet" size="sm" className="rounded">
                 headless
-              </span>
+              </StatusBadge>
             )}
           </div>
           <div className="flex items-center gap-2 typo-caption text-foreground mt-0.5">

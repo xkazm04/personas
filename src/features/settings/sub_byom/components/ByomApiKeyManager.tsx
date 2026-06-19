@@ -4,6 +4,7 @@ import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } fr
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 
@@ -444,9 +445,12 @@ function ConnectionBadge({ state }: { state: ConnectionState }) {
   }
 
   return (
-    <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-red-500/10 border border-red-500/20 text-red-400">
-      <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+    <StatusBadge
+      variant="error"
+      icon={<span className="w-1.5 h-1.5 rounded-full bg-red-400" />}
+      className="typo-caption px-1.5 py-0.5 rounded-input"
+    >
       {s.error}
-    </span>
+    </StatusBadge>
   );
 }

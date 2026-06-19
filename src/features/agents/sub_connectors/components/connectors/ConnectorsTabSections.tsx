@@ -2,6 +2,7 @@ import { Link, CheckCircle2, AlertCircle, RefreshCw, AlertTriangle } from 'lucid
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeader } from '@/features/shared/components/layout/SectionHeader';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ConnectorStatusCard } from './ConnectorStatusCard';
 import type { ConnectorStatus } from '../../libs/connectorTypes';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -76,19 +77,19 @@ export function ConnectorsSection({
         badge={(
           <>
             {healthy > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                <CheckCircle2 className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_healthy, { count: healthy })}
-              </span>
+              <StatusBadge variant="success" pill className="px-2 py-0.5 typo-body" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>
+                {tx(t.agents.connectors.st_healthy, { count: healthy })}
+              </StatusBadge>
             )}
             {unhealthy > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
-                <AlertCircle className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_failed, { count: unhealthy })}
-              </span>
+              <StatusBadge variant="error" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
+                {tx(t.agents.connectors.st_failed, { count: unhealthy })}
+              </StatusBadge>
             )}
             {unlinked > 0 && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                <AlertCircle className="w-2.5 h-2.5" /> {tx(t.agents.connectors.st_missing, { count: unlinked })}
-              </span>
+              <StatusBadge variant="warning" pill className="px-2 py-0.5 typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
+                {tx(t.agents.connectors.st_missing, { count: unlinked })}
+              </StatusBadge>
             )}
           </>
         )}

@@ -5,6 +5,7 @@ import { getToolPerformanceSummary } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { silentCatch } from '@/lib/silentCatch';
@@ -121,7 +122,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         sortable: true,
         sortFn: (a, b) => Number(a.total_runs) - Number(b.total_runs),
         render: (row) => (
-          <span className="tabular-nums text-foreground">{Number(row.total_runs).toLocaleString()}</span>
+          <Numeric value={Number(row.total_runs)} unit="count" className="text-foreground" />
         ),
       },
       {
@@ -166,9 +167,14 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
             errPct >= 10 ? 'text-rose-400' : errPct >= 1 ? 'text-amber-400' : 'text-foreground';
           return (
             <span className={`tabular-nums ${errClass}`}>
-              {Number(row.error_runs) === 0
-                ? '0'
-                : `${Number(row.error_runs).toLocaleString()} (${errPct.toFixed(1)}%)`}
+              {Number(row.error_runs) === 0 ? (
+                '0'
+              ) : (
+                <>
+                  <Numeric value={Number(row.error_runs)} unit="count" /> (
+                  <Numeric value={errPct} unit="percent" precision={1} />)
+                </>
+              )}
             </span>
           );
         },

@@ -1,6 +1,7 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { TrendValue } from '@/features/overview/libs/computeTrends';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface TrendIndicatorProps {
   trend: TrendValue;
@@ -36,7 +37,7 @@ export function TrendIndicator({ trend, invertPolarity }: TrendIndicatorProps) {
       title={`${label} ${trend.pctChange.toFixed(1)}% ${t.overview.trend.vs_previous}`}
     >
       <Icon className="w-3 h-3" />
-      {trend.pctChange.toFixed(0)}%
+      <Numeric value={trend.pctChange} unit="percent" precision={0} />
     </span>
   );
 }

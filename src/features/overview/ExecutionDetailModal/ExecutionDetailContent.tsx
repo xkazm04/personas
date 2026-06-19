@@ -13,6 +13,7 @@ import { ExecutionMemories } from '@/features/agents/sub_executions/detail/views
 import { ExecutionLogViewer } from '@/features/agents/sub_executions/detail/views/ExecutionLogViewer';
 import { parseOutputData, type OutputSection } from './outputParser';
 import { UserMessageCard, FlowSteps, ReviewsList, MemoriesList, EventsList, KnowledgeSection, OutcomeSection } from './OutputSections';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface Props {
@@ -88,9 +89,9 @@ export function ExecutionDetailContent({ execution, hasInputData, hasOutputData 
           {getStatusEntry(execution.status).label}
         </span>
         {execution.retry_count > 0 && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-            <RefreshCw className="w-2.5 h-2.5" /> {t.shared.execution_detail.retry_prefix}{execution.retry_count}
-          </span>
+          <StatusBadge accent="cyan" className="typo-body" icon={<RefreshCw className="w-2.5 h-2.5" />}>
+            {t.shared.execution_detail.retry_prefix}{execution.retry_count}
+          </StatusBadge>
         )}
         <span className="flex items-center gap-1 typo-body text-foreground"><Clock className="w-3 h-3" /> {formatDuration(execution.duration_ms)}</span>
         {execution.model_used && (

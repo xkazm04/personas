@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -66,13 +67,14 @@ export function AutomationCard({
           <div className="flex items-center gap-2 mt-0.5">
             <span className={`inline-flex items-center px-1.5 py-0 typo-body font-medium rounded border ${platformConfig.bg} ${platformConfig.color}`}>{t.agents.connectors[platformConfig.labelKey]}</span>
             {capabilityTitle && (
-              <span
-                className="inline-flex items-center gap-1 px-1.5 py-0 typo-body font-medium rounded border border-cyan-500/20 bg-cyan-500/10 text-cyan-400"
+              <StatusBadge
+                accent="cyan"
+                className="px-1.5 py-0 typo-body"
+                icon={<Layers className="w-2.5 h-2.5" />}
                 title={`Scoped to capability: ${capabilityTitle}`}
               >
-                <Layers className="w-2.5 h-2.5" />
                 {capabilityTitle}
-              </span>
+              </StatusBadge>
             )}
             {automation.lastTriggeredAt && <span className="typo-body text-foreground">{t.agents.connectors.auto_last_run.replace('{time}', formatRelativeTime(automation.lastTriggeredAt))}</span>}
             {!automation.lastTriggeredAt && automation.deploymentStatus !== 'draft' && <span className="typo-body text-foreground">{t.agents.connectors.auto_never_triggered}</span>}

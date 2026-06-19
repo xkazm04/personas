@@ -6,6 +6,7 @@ import {
   CalendarClock, RefreshCw, Pause, Calendar, Filter, Zap,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -202,10 +203,13 @@ export default function ScheduleTimeline() {
 
             {/* Stats badges */}
             <div className="flex items-center gap-1.5 typo-caption">
-              <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <Zap className="w-3 h-3" />
+              <StatusBadge
+                variant="info"
+                icon={<Zap className="w-3 h-3" />}
+                className="px-2 py-1 rounded-card typo-caption"
+              >
                 {tx(t.schedules.active_count, { count: activeCount })}
-              </span>
+              </StatusBadge>
               {pausedCount > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 rounded-card bg-primary/5 text-foreground border border-primary/10">
                   <Pause className="w-3 h-3" />

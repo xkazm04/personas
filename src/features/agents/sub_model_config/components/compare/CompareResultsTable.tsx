@@ -6,6 +6,7 @@ import type { ModelOption, ModelMetrics } from '../../libs/compareHelpers';
 import { MetricCard, CompareBar } from './CompareMetrics';
 import { OutputPreviews } from './CompareOutputPreviews';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export function ComparisonResults({
   modelA,
@@ -91,11 +92,11 @@ export function ComparisonResults({
                     <td className="px-3 py-2 text-foreground max-w-[180px] truncate">{scenario}</td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'A' ? 'font-bold' : ''}`}>
                       <span className={scoreColor(scoreA)}>{scoreA ?? '-'}</span>
-                      {rA && <span className="text-foreground ml-1.5 typo-caption">{(rA.durationMs / 1000).toFixed(1)}s</span>}
+                      {rA && <span className="text-foreground ml-1.5 typo-caption"><Numeric value={rA.durationMs / 1000} precision={1} />s</span>}
                     </td>
                     <td className={`px-3 py-2 text-center font-mono ${rowWinner === 'B' ? 'font-bold' : ''}`}>
                       <span className={scoreColor(scoreB)}>{scoreB ?? '-'}</span>
-                      {rB && <span className="text-foreground ml-1.5 typo-caption">{(rB.durationMs / 1000).toFixed(1)}s</span>}
+                      {rB && <span className="text-foreground ml-1.5 typo-caption"><Numeric value={rB.durationMs / 1000} precision={1} />s</span>}
                     </td>
                   </tr>
                 );

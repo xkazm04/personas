@@ -8,6 +8,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
@@ -113,7 +114,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 <span className="typo-body text-foreground">{SEVERITY_LABELS[review.severity] ?? 'Info'} {t.overview.review.severity_label}</span>
                 <span className="typo-body text-foreground">·</span>
                 <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
-                {isCloud && (<><span className="typo-body text-foreground">·</span><span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20"><Cloud className="w-2.5 h-2.5" />{t.overview.review.cloud_badge}</span></>)}
+                {isCloud && (<><span className="typo-body text-foreground">·</span><StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>{t.overview.review.cloud_badge}</StatusBadge></>)}
               </div>
             </div>
           </div>

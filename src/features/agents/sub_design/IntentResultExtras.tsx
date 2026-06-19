@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronRight, Target, Layers, Bug, Gauge,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type {
   IntentUseCase,
   IntentModelRecommendation,
@@ -190,7 +191,7 @@ function ModelRecommendationCard({ rec }: { rec: IntentModelRecommendation }) {
           <span className="typo-body text-foreground uppercase tracking-wider">{t.agents.design.label_est_cost_run}</span>
           <p className="typo-code font-mono text-foreground/90 mt-0.5 flex items-center gap-1">
             <DollarSign className="w-3 h-3 text-emerald-400/70" />
-            {rec.estimated_cost_per_run_usd.toFixed(3)}
+            <Numeric value={rec.estimated_cost_per_run_usd} precision={3} />
           </p>
         </div>
         <div>
