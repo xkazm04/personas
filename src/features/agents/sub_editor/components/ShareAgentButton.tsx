@@ -58,6 +58,7 @@ export function ShareAgentButton({ personaId }: { personaId: string }) {
       <AnimatePresence>
         {open && result && (
           <motion.div
+            // eslint-disable-next-line custom/enforce-base-modal -- anchored share popover, not a centered modal
             role="dialog"
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}

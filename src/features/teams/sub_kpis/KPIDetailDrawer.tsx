@@ -76,6 +76,7 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
   return (
     <div
       className="fixed inset-y-0 right-0 z-40 w-full max-w-[26rem] bg-background border-l border-primary/15 shadow-elevation-3 flex flex-col"
+      // eslint-disable-next-line custom/enforce-base-modal -- non-modal side drawer, no backdrop
       role="dialog"
       aria-label={kpi.name}
       data-testid="kpi-detail-drawer"
