@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useRef, useEffect, useState } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { MonitorPlay } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -386,7 +387,7 @@ function CompositionPreviewImpl(
           <div className="absolute bottom-2 right-2 flex items-center gap-1.5">
             {activeVideo && activeVideo.speed !== 1 && (
               <span className="px-1.5 py-0.5 rounded bg-rose-500/80 typo-code text-foreground tabular-nums">
-                {activeVideo.speed.toFixed(2)}×
+                <Numeric value={activeVideo.speed} precision={2} />×
               </span>
             )}
             <div className="px-2 py-0.5 rounded bg-black/70 backdrop-blur-sm">

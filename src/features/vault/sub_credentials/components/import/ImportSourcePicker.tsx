@@ -1,6 +1,7 @@
 import { FileText, KeyRound, Cloud, Shield, Lock, ArrowLeft } from 'lucide-react';
 import { IMPORT_SOURCES, type ImportSourceId } from './importHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 const ICON_MAP: Record<string, React.FC<{ className?: string; style?: React.CSSProperties }>> = {
   'file-text': FileText,
@@ -56,9 +57,9 @@ export function ImportSourcePicker({ onSelect, onBack }: ImportSourcePickerProps
                 </p>
                 <p className="typo-body text-foreground leading-snug">{source.description}</p>
                 {source.syncSupported && (
-                  <span className="inline-block mt-1 px-1.5 py-0.5 text-[11px] rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                  <StatusBadge accent="cyan" size="sm" className="mt-1">
                     {vi.sync_supported}
-                  </span>
+                  </StatusBadge>
                 )}
               </div>
             </button>

@@ -10,6 +10,7 @@ import {
   Check,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -222,16 +223,14 @@ function DeploymentRow({
                 {record.personaName}
               </span>
               {isLatest && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border border-emerald-500/20 bg-emerald-500/10 typo-caption font-medium text-emerald-400">
-                  <Check className="w-3 h-3" />
+                <StatusBadge variant="success" className="typo-caption" icon={<Check className="w-3 h-3" />}>
                   {t.gitlab.current}
-                </span>
+                </StatusBadge>
               )}
               {isRollback && (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border border-amber-500/20 bg-amber-500/10 typo-caption font-medium text-amber-400">
-                  <RotateCcw className="w-3 h-3" />
+                <StatusBadge variant="warning" className="typo-caption" icon={<RotateCcw className="w-3 h-3" />}>
                   {t.gitlab.rollback}
-                </span>
+                </StatusBadge>
               )}
               <span className="px-1.5 py-0.5 rounded-input border border-primary/10 bg-secondary/30 typo-caption text-foreground">
                 {record.method === 'api' ? t.gitlab.duo_agent_api : t.gitlab.agents_md}

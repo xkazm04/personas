@@ -1,5 +1,6 @@
 import { X, Play, RotateCcw, Check, Compass } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TourDef } from '@/stores/slices/system/tourSlice';
 import { TOUR_ICONS, getColors } from './data';
@@ -56,10 +57,9 @@ export function TourDetailModal({ tour, isCompleted, onStart, onClose }: TourDet
           </div>
           <div className="flex items-center gap-2">
             {isCompleted && (
-              <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-medium px-2 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20">
-                <Check className="w-2.5 h-2.5" />
+              <StatusBadge variant="success" icon={<Check className="w-2.5 h-2.5" />}>
                 {ht.done}
-              </span>
+              </StatusBadge>
             )}
             <button
               onClick={onClose}

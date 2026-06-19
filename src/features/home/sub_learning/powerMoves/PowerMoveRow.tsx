@@ -1,5 +1,6 @@
 import { Check, ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { launchPowerMove } from './launchPowerMove';
 import { usePowerMovesStore } from './powerMovesStore';
 import type { PowerMove } from './registry';
@@ -26,10 +27,9 @@ export function PowerMoveRow({ move }: { move: PowerMove }) {
       </div>
       <h4 className="flex-1 min-w-0 typo-body font-medium text-foreground truncate">{ht[move.titleKey]}</h4>
       {used && (
-        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0">
-          <Check className="w-2.5 h-2.5" />
+        <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />} className="flex-shrink-0">
           {ht.used_badge}
-        </span>
+        </StatusBadge>
       )}
       <span className="inline-flex items-center gap-0.5 typo-caption text-primary opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
         {ht.try_it}

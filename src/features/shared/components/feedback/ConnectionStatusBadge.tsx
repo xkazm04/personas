@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Wifi, WifiOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 interface ConnectionStatusBadgeProps {
   connected: boolean;
@@ -24,6 +25,7 @@ export function ConnectionStatusBadge({
 
   if (isBusy) {
     return (
+      // eslint-disable-next-line custom/prefer-status-badge -- has a custom animated pulse-dot leading element PLUS the Wifi icon and relative/z-10 overlay layering; StatusBadge's single icon slot can't express the two-element lead.
       <span className="relative overflow-hidden flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-400">
         <span className="w-1.5 h-1.5 rounded-full bg-amber-300/80 animate-[pulse_1.8s_ease-in-out_infinite] motion-reduce:animate-none" />
         <Wifi className="w-3 h-3 relative z-10 opacity-90" />
@@ -38,18 +40,20 @@ export function ConnectionStatusBadge({
 
   if (connected) {
     return (
-      <span className="flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-        <Wifi className="w-3 h-3 opacity-90 animate-[pulse_3.2s_ease-in-out_infinite] motion-reduce:animate-none" />
+      <StatusBadge
+        variant="success"
+        className="typo-body"
+        icon={<Wifi className="w-3 h-3 opacity-90 animate-[pulse_3.2s_ease-in-out_infinite] motion-reduce:animate-none" />}
+      >
         {resolvedConnected}
-      </span>
+      </StatusBadge>
     );
   }
 
   return (
-    <span className="flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border bg-red-500/10 border-red-500/20 text-red-400">
-      <WifiOff className="w-3 h-3" />
+    <StatusBadge variant="error" className="typo-body" icon={<WifiOff className="w-3 h-3" />}>
       {resolvedDisconnected}
-    </span>
+    </StatusBadge>
   );
 }
 
@@ -68,14 +72,13 @@ function ReconnectingBadge({ nextRetryAt, attempt }: { nextRetryAt: number | nul
   }, [nextRetryAt]);
 
   return (
-    <span
-      className="relative overflow-hidden flex items-center gap-1.5 typo-body px-2 py-0.5 rounded-lg border bg-amber-500/10 border-amber-500/20 text-amber-400"
+    <StatusBadge
+      variant="warning"
+      className="typo-body"
       title={tx(t.common.reconnect_attempt, { attempt: attempt + 1, seconds: secondsLeft })}
+      icon={<WifiOff className="w-3 h-3 opacity-70 animate-[pulse_1.4s_ease-in-out_infinite] motion-reduce:animate-none" />}
     >
-      <WifiOff className="w-3 h-3 opacity-70 animate-[pulse_1.4s_ease-in-out_infinite] motion-reduce:animate-none" />
-      <span className="relative z-10">
-        {t.common.reconnecting}{secondsLeft > 0 ? ` ${secondsLeft}s` : '...'}
-      </span>
-    </span>
+      {t.common.reconnecting}{secondsLeft > 0 ? ` ${secondsLeft}s` : '...'}
+    </StatusBadge>
   );
 }

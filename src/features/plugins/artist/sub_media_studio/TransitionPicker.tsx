@@ -1,4 +1,5 @@
 import { Scissors, Blend, Moon } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Slider } from '@/features/shared/components/forms/Slider';
 import type { TransitionType } from './types';
@@ -75,7 +76,7 @@ export default function TransitionPicker({
             className="flex-1"
           />
           <span className="text-md text-foreground w-7 text-right tabular-nums">
-            {duration.toFixed(1)}s
+            <Numeric value={duration} precision={1} />s
           </span>
         </div>
       )}

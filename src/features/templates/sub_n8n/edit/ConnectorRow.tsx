@@ -117,6 +117,7 @@ export function ConnectorRow({
         <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
           <Wrench className="w-3 h-3 text-foreground flex-shrink-0" />
           {tools.map((tool) => (
+            // eslint-disable-next-line custom/prefer-status-badge -- monospace tool-name identifier chip (typo-code/font-mono/rounded-card), not a semantic status badge
             <span
               key={tool.name}
               className="px-2 py-0.5 typo-code font-mono rounded-card bg-blue-500/10 text-blue-400 border border-blue-500/20"

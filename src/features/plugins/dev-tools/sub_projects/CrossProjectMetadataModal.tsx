@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import {
   X, RefreshCw, Network, Layers, Tag, Database, Globe,
   FolderTree, Target, Link2, Sparkles, Clock, AlertCircle,
@@ -189,9 +190,9 @@ function ProjectCard({ project }: { project: CrossProjectProjectMetadata }) {
                   </div>
                   <div className="flex items-center gap-1 flex-wrap">
                     {project.db_tables.map((tbl) => (
-                      <span key={tbl} className="rounded px-1.5 py-0.5 text-md font-mono bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                      <StatusBadge key={tbl} accent="violet" className="text-md font-mono">
                         {tbl}
-                      </span>
+                      </StatusBadge>
                     ))}
                   </div>
                 </div>
@@ -399,13 +400,14 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
                   </p>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {map.cross_project.shared_keywords.slice(0, 30).map((sk) => (
-                      <span
+                      <StatusBadge
                         key={sk.keyword}
-                        className="rounded-card px-2.5 py-1 text-md font-medium bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                        accent="violet"
+                        className="rounded-card text-md"
                         title={`In: ${sk.projects.join(', ')}`}
                       >
                         {sk.keyword} <span className="opacity-60">× {sk.count}</span>
-                      </span>
+                      </StatusBadge>
                     ))}
                   </div>
                 </div>

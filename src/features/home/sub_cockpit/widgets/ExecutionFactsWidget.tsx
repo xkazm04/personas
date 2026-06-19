@@ -4,6 +4,7 @@ import { Activity, AlertCircle, Cpu, DollarSign, Hourglass, Sparkles, Tag } from
 import { getExecution } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 import type { CockpitWidgetProps } from '../widgetRegistry';
@@ -67,21 +68,21 @@ export function ExecutionFactsWidget({ config, title }: CockpitWidgetProps) {
           <KpiTile
             icon={<DollarSign className="w-3.5 h-3.5 text-emerald-400/80" />}
             label={t.overview.cockpit.fact_cost}
-            value={`$${exec.cost_usd.toFixed(4)}`}
+            value={<Numeric value={exec.cost_usd} unit="usd" />}
           />
           <KpiTile
             icon={<Hourglass className="w-3.5 h-3.5 text-sky-400/80" />}
             label={t.overview.cockpit.fact_duration}
             value={
               exec.duration_ms != null
-                ? `${(exec.duration_ms / 1000).toFixed(1)}s`
+                ? <><Numeric value={exec.duration_ms / 1000} precision={1} />s</>
                 : '—'
             }
           />
           <KpiTile
             icon={<Activity className="w-3.5 h-3.5 text-amber-400/80" />}
             label={t.overview.cockpit.fact_tokens}
-            value={`${exec.input_tokens.toLocaleString()} / ${exec.output_tokens.toLocaleString()}`}
+            value={<><Numeric value={exec.input_tokens} /> / <Numeric value={exec.output_tokens} /></>}
           />
           <KpiTile
             icon={<Tag className="w-3.5 h-3.5 text-foreground" />}
@@ -106,7 +107,7 @@ function KpiTile({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: string;
+  value: React.ReactNode;
   tone?: 'success' | 'warning' | 'error' | null;
   mono?: boolean;
 }) {

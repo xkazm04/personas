@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Check, ChevronDown, ChevronRight, Globe, Settings, UserPlus, KeyRound,
   ShieldCheck, Copy, HelpCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { NegotiationStep } from '@/hooks/design/credential/useCredentialNegotiator';
 import { MOTION_TIMING } from '@/lib/utils/animation/animationPresets';
 import { STATUS_COLORS } from '@/lib/utils/designTokens';
@@ -78,9 +79,9 @@ export function StepHeader({ step, stepIndex, isActive, isCompleted, onSelect, c
             {step.action_type.replace('_', ' ')}
           </span>
           {step.requires_human && (
-            <span className="px-1.5 py-0.5 rounded typo-body font-medium text-amber-400 bg-amber-500/10 border border-amber-500/20">
+            <StatusBadge variant="warning" size="sm">
               {t.vault.negotiator_extra.manual_badge}
-            </span>
+            </StatusBadge>
           )}
         </div>
         {!isActive && (

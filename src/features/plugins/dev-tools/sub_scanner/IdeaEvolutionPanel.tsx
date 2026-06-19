@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Dna, AlertTriangle, Sparkles, Link2, CheckCircle2, Circle, Loader2, XCircle, ArrowRight, Workflow } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -154,7 +155,7 @@ export function IdeaEvolutionPanel() {
                     />
                   </div>
                   <span className={`text-md font-medium w-10 text-right ${fitnessColor(f.finalFitness)}`}>
-                    {f.finalFitness.toFixed(2)}
+                    <Numeric value={f.finalFitness} precision={2} />
                   </span>
                 </div>
               </div>

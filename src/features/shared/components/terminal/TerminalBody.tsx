@@ -5,6 +5,7 @@ import { TERMINAL_STYLE_MAP, parseSummaryLine } from '@/lib/utils/terminalColors
 import type { TerminalLineStyle } from '@/lib/utils/terminalColors';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTerminalClassification } from '@/hooks/utility/useTerminalClassification';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 /** Terminal empty state describing the current execution context. */
 export type TerminalEmptyState =
   | 'idle'
@@ -220,13 +221,13 @@ export function TerminalBody({
                           {summary.duration_ms != null && (
                             <div className="flex items-center gap-1.5 text-foreground">
                               <Timer className="w-3 h-3" />
-                              <span>{(summary.duration_ms / 1000).toFixed(1)}s</span>
+                              <span><Numeric value={summary.duration_ms / 1000} precision={1} />s</span>
                             </div>
                           )}
                           {summary.cost_usd != null && (
                             <div className="flex items-center gap-1.5 text-foreground">
                               <DollarSign className="w-3 h-3" />
-                              <span>${summary.cost_usd.toFixed(4)}</span>
+                              <span>$<Numeric value={summary.cost_usd} precision={4} /></span>
                             </div>
                           )}
                         </div>

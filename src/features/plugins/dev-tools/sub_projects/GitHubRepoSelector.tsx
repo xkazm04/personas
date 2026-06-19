@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, Search, ExternalLink, AlertCircle, Lock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 const Github = ({ className }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
@@ -242,7 +243,7 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
                       <div className="flex items-center gap-1.5">
                         <span className="typo-caption font-medium text-foreground truncate">{repo.full_name}</span>
                         {repo.private && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">{t.plugins.dev_projects.repo_private}</span>
+                          <StatusBadge variant="warning" size="sm" pill>{t.plugins.dev_projects.repo_private}</StatusBadge>
                         )}
                       </div>
                       {repo.description && (
@@ -264,10 +265,9 @@ export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
             <Github className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
             <span className="typo-caption font-medium text-foreground truncate flex-1">{previewName}</span>
             {selectedRepo?.private && (
-              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Lock className="w-2.5 h-2.5" />
+              <StatusBadge variant="warning" size="sm" pill icon={<Lock className="w-2.5 h-2.5" />}>
                 {t.plugins.dev_projects.repo_private}
-              </span>
+              </StatusBadge>
             )}
             <a
               href={value}

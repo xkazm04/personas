@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Dna, RefreshCw } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -85,7 +86,7 @@ export function WinningGeneProfile({ projectId }: { projectId: string }) {
                 <div className="flex-1 h-2 bg-background/60 rounded-full overflow-hidden">
                   <div className={`h-full ${color} transition-all`} style={{ width: `${(v / 10) * 100}%` }} />
                 </div>
-                <span className="typo-caption text-foreground w-8 text-right shrink-0 tabular-nums">{v.toFixed(1)}</span>
+                <span className="typo-caption text-foreground w-8 text-right shrink-0 tabular-nums"><Numeric value={v} precision={1} /></span>
               </div>
             );
           })}

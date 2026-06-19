@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Volume2, Save, Trash2, ExternalLink, Loader2, Play, Square, Radio } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -244,7 +245,7 @@ export default function VoiceBaseline() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.stability}</span>
-                  <span className="typo-caption text-foreground">{stability.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground"><Numeric value={stability} precision={2} /></span>
                 </div>
                 <Slider
                   min={0} max={1} step={0.05}
@@ -262,7 +263,7 @@ export default function VoiceBaseline() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.similarityBoost}</span>
-                  <span className="typo-caption text-foreground">{similarityBoost.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground"><Numeric value={similarityBoost} precision={2} /></span>
                 </div>
                 <Slider
                   min={0} max={1} step={0.05}
@@ -280,7 +281,7 @@ export default function VoiceBaseline() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <span className="typo-caption text-foreground font-medium">{t.voice.style}</span>
-                  <span className="typo-caption text-foreground">{style.toFixed(2)}</span>
+                  <span className="typo-caption text-foreground"><Numeric value={style} precision={2} /></span>
                 </div>
                 <Slider
                   min={0} max={1} step={0.05}

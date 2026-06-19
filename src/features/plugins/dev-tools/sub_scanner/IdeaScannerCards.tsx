@@ -13,6 +13,7 @@ import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import {
   SCAN_AGENTS, AGENT_CATEGORIES,
   type ScanAgentDef,
@@ -351,7 +352,7 @@ export function ScanHistoryTable({
               {entry.ideaCount}
             </span>
             <span className="text-md text-foreground font-mono">
-              {totalTokens > 0 ? totalTokens.toLocaleString() : '-'}
+              {totalTokens > 0 ? <Numeric value={totalTokens} /> : '-'}
             </span>
             <span className="text-md text-foreground">
               {formatDuration(entry.durationMs)}

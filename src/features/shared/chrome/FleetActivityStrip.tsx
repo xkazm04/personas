@@ -28,6 +28,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
 import { computeFleetPulse, layoutSlots, slotCountForCapacity } from '@/features/shared/chrome/fleetStripModel';
 import { elapsedStr } from '@/features/fleet/monitor/monitorModel';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /** App-settings key for the global concurrency cap (mirrors the Rust const). */
 const MAX_PARALLEL_KEY = 'max_parallel_executions';
@@ -216,9 +217,7 @@ export default function FleetActivityStrip() {
                 </span>
               )}
               {pulse.liveCostUsd > 0 && (
-                <span className="typo-caption text-foreground tabular-nums">
-                  ${pulse.liveCostUsd.toFixed(3)}
-                </span>
+                <Numeric value={pulse.liveCostUsd} unit="usd" className="typo-caption text-foreground tabular-nums" />
               )}
               <span className="typo-caption text-foreground border-l border-primary/15 pl-2.5">
                 {t.monitor.strip_open_hint}

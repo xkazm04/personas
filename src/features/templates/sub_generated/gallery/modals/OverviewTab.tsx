@@ -1,5 +1,6 @@
 import { Workflow, Lightbulb, AlertTriangle, BarChart3, ThumbsUp, ThumbsDown, DollarSign, Activity, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { AgentIR } from '@/lib/types/designTypes';
 import type { UseCaseFlow } from '@/lib/types/frontendTypes';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -93,7 +94,7 @@ export function OverviewTab({
                 <DollarSign className="w-3.5 h-3.5 text-amber-400/70" />
                 <span className="typo-body text-foreground">{t.templates.overview_tab.avg_cost_label}</span>
               </div>
-              <span className="typo-heading-lg font-semibold text-foreground/90 font-mono">${performance.avg_cost_usd.toFixed(3)}</span>
+              <Numeric value={performance.avg_cost_usd} unit="usd" className="typo-heading-lg font-semibold text-foreground/90 font-mono" />
             </div>
           </div>
           {/* Feedback summary */}

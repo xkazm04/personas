@@ -142,6 +142,7 @@ export function PreviewPhase() {
       </div>
 
       {oauthStatusMessage && !oauthStatusMessage.success && (
+        // eslint-disable-next-line custom/prefer-status-badge -- full-width error banner
         <div className="typo-body px-3 py-2 rounded-card bg-red-500/10 border border-red-500/20 text-red-400">
           {oauthStatusMessage.message}
         </div>

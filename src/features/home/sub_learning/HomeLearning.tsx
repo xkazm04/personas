@@ -3,6 +3,7 @@ import { GraduationCap, Compass, Check, ChevronRight } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { TOUR_REGISTRY, type TourDef } from '@/stores/slices/system/tourSlice';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TOUR_ICONS, getColors } from './data';
 import { TourDetailModal } from './TourDetailModal';
@@ -56,10 +57,9 @@ function TourCard({ tour, isCompleted, onClick }: { tour: TourDef; isCompleted: 
         <span className="text-[11px] text-foreground">{tx(ht.steps_count, { count: tour.steps.length })}</span>
       </div>
       {isCompleted && (
-        <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-medium px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 flex-shrink-0">
-          <Check className="w-2.5 h-2.5" />
+        <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />} className="flex-shrink-0">
           {ht.done}
-        </span>
+        </StatusBadge>
       )}
       <ChevronRight className="w-4 h-4 text-foreground group-hover:text-primary transition-colors flex-shrink-0" />
     </button>

@@ -13,6 +13,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -271,15 +272,14 @@ function VersionRow({ version, isConfirming, rollingBack, onRollback, onCancelRo
               {version.version}
             </span>
             {version.isCurrent && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border border-emerald-500/20 bg-emerald-500/10 typo-caption font-medium text-emerald-400">
-                <Check className="w-3 h-3" />
+              <StatusBadge variant="success" className="typo-caption" icon={<Check className="w-3 h-3" />}>
                 {t.gitlab.current}
-              </span>
+              </StatusBadge>
             )}
             {version.environment && (
-              <span className="px-1.5 py-0.5 rounded-input border border-violet-500/20 bg-violet-500/10 typo-caption font-medium text-violet-400">
+              <StatusBadge accent="violet" className="typo-caption">
                 {version.environment}
-              </span>
+              </StatusBadge>
             )}
           </div>
 

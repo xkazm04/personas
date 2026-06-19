@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Activity, ChevronDown, ExternalLink, Layers, Users, X } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
@@ -292,7 +293,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                           <span>
                             {t.plugins.dev_projects.team_preview_member_trust}:{' '}
                             <span className="font-mono text-foreground">
-                              {persona.trust_score?.toFixed(2) ?? '—'}
+                              {persona.trust_score != null ? <Numeric value={persona.trust_score} precision={2} /> : '—'}
                             </span>
                           </span>
                           <span>

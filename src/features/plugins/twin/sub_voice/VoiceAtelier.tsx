@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Volume2, Save, Trash2, ExternalLink, Loader2, Play, Square, Radio,
@@ -477,7 +478,7 @@ function SliderRow({ label, value, onChange, leftLabel, rightLabel }: SliderRowP
     <div>
       <div className="flex items-center justify-between mb-1">
         <span className="typo-caption text-foreground font-medium">{label}</span>
-        <span className="typo-data-md tabular-nums text-violet-300">{value.toFixed(2)}</span>
+        <span className="typo-data-md tabular-nums text-violet-300"><Numeric value={value} precision={2} /></span>
       </div>
       <Slider
         min={0} max={1} step={0.05}

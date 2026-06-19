@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Link, CheckCircle2, AlertCircle, RefreshCw, Wrench, Zap, ListChecks } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useVaultStore } from "@/stores/vaultStore";
 import { CredentialDesignModal } from '@/features/vault/sub_catalog/components/design/CredentialDesignModal';
 import {
@@ -102,16 +103,14 @@ export function N8nEntitiesTab({
               : t.templates.n8n.entities_from_workflow}
           </p>
           {cs.readyCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-              <CheckCircle2 className="w-2.5 h-2.5" />
+            <StatusBadge variant="success" pill className="typo-body" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>
               {cs.readyCount} ready
-            </span>
+            </StatusBadge>
           )}
           {cs.missingCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 typo-body rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400">
-              <AlertCircle className="w-2.5 h-2.5" />
+            <StatusBadge variant="warning" pill className="typo-body" icon={<AlertCircle className="w-2.5 h-2.5" />}>
               {cs.missingCount} missing
-            </span>
+            </StatusBadge>
           )}
         </div>
         <div className="flex items-center gap-1.5">
@@ -191,6 +190,7 @@ export function N8nEntitiesTab({
           <div className="space-y-1.5">
             {triggerItems.map((trigger, i) => (
               <div key={i} className="flex items-center gap-2 typo-body text-foreground/90">
+                {/* eslint-disable-next-line custom/prefer-status-badge -- monospace trigger-type identifier chip (typo-code/font-mono/rounded-card), not a semantic status badge */}
                 <span className="px-1.5 py-0.5 typo-code font-mono rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {trigger.trigger_type}
                 </span>

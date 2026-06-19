@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn, Globe, Settings } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -201,10 +202,9 @@ export default function CloudSyncPanel() {
                 <p className="typo-caption text-foreground">{user.email}</p>
               </div>
               {driveConnected ? (
-                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 typo-caption">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
+                <StatusBadge variant="success" className="rounded-card typo-caption" icon={<CheckCircle2 className="w-3.5 h-3.5" />}>
                   {t.plugins.obsidian_brain.drive_connected}
-                </span>
+                </StatusBadge>
               ) : (
                 <button
                   onClick={connectDrive}

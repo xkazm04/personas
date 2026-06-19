@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export interface CharBudgetProps {
   /** Current character count. */
@@ -60,7 +61,7 @@ export function CharBudget({ value, max, focused = true, className }: CharBudget
         visible ? 'opacity-100' : 'opacity-0 pointer-events-none'
       } ${stateClass} ${className ?? ''}`}
     >
-      {value.toLocaleString()}/{max.toLocaleString()}
+      <Numeric value={value} />/<Numeric value={max} />
     </span>
   );
 }

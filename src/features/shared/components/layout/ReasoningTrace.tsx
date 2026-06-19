@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReasoningEntry } from "@/hooks/execution/useReasoningTrace";
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface ReasoningTraceProps {
   entries: ReasoningEntry[];
@@ -121,8 +122,13 @@ function EntryRenderer({ entry, baseTime }: { entry: ReasoningEntry; baseTime: n
           <div className="min-w-0 flex-1 typo-caption">
             <span className="font-medium">{t.shared.reasoning_trace.complete}</span>
             <span className="text-foreground ml-2">
-              {(entry.durationMs / 1000).toFixed(1)}s
-              {entry.cost != null && ` \u00B7 $${entry.cost.toFixed(4)}`}
+              <Numeric value={entry.durationMs / 1000} precision={1} />s
+              {entry.cost != null && (
+                <>
+                  {' \u00B7 $'}
+                  <Numeric value={entry.cost} precision={4} />
+                </>
+              )}
               {entry.tokens != null && ` \u00B7 ${entry.tokens} tokens`}
             </span>
           </div>

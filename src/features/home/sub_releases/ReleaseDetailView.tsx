@@ -13,6 +13,7 @@
  */
 import type { Release, ReleaseItem, ReleaseItemType } from '@/data/releases';
 import { RELEASE_STATUS_META, RELEASE_TYPE_META } from '@/data/releases';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useReleasesTranslation } from './i18n/useReleasesTranslation';
 import type { ReleasesTranslation } from './i18n/useReleasesTranslation';
 
@@ -76,9 +77,9 @@ function ItemRow({
               {title}
             </h3>
             {isInProgress && (
-              <span className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-cyan-400">
+              <StatusBadge accent="cyan" size="sm" pill className="uppercase tracking-wider">
                 {inProgressLabel}
-              </span>
+              </StatusBadge>
             )}
             {item.added_at && (
               <span className="font-mono text-[10px] text-foreground">{item.added_at}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSpring, useMotionValueEvent, useReducedMotion } from 'framer-motion';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /**
  * Spring physics shared with the cloud `ActivityGauge` so every cloud telemetry
@@ -40,5 +41,9 @@ export function SpringCount({ value, format, className }: SpringCountProps) {
   useMotionValueEvent(spring, 'change', (v) => setDisplay(v));
 
   const shown = Math.round(reduce ? value : display);
-  return <span className={className}>{format ? format(shown) : shown.toLocaleString()}</span>;
+  return (
+    <span className={className}>
+      {format ? format(shown) : <Numeric value={shown} />}
+    </span>
+  );
 }

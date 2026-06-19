@@ -3,6 +3,7 @@ import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 
 export type ValidationGlow = 'none' | 'valid' | 'warning';
@@ -112,10 +113,9 @@ export function FieldActionButtons({
   return (
     <div className="flex items-center gap-1">
       {mode === 'confirming' && value && (
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 typo-body">
-          <Check className="w-2.5 h-2.5" />
+        <StatusBadge variant="success" size="sm" icon={<Check className="w-2.5 h-2.5" />}>
           captured
-        </span>
+        </StatusBadge>
       )}
       {isSecret && (
         <button

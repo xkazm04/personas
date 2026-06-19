@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { Slider } from '@/features/shared/components/forms/Slider';
 
 // ---------------------------------------------------------------------------
@@ -57,7 +58,7 @@ export function RangeField({
       <div className="flex items-center justify-between">
         <span className="typo-label text-foreground">{label}</span>
         <span className="text-md font-mono text-foreground tabular-nums">
-          {format ? format(value) : value.toFixed(2)}
+          {format ? format(value) : <Numeric value={value} precision={2} />}
         </span>
       </div>
       <Slider
