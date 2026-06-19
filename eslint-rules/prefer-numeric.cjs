@@ -53,15 +53,28 @@ module.exports = {
         const method = callee.property.name;
         if (method !== 'toFixed' && method !== 'toLocaleString') return;
 
-        // Only flag DISPLAY formatting: the call must sit inside JSX
-        // ({expr} / <Tag prop={expr}>), not in logic/string-building.
+        // Skip DATES — <Numeric> formats numbers, not dates (use RelativeTime /
+        // AbsoluteTime for those):
+        //  - `new Date(...).toLocaleString()` / `.toFixed()` on a fresh Date
+        const recv = callee.object;
+        if (recv && recv.type === 'NewExpression' && recv.callee && recv.callee.name === 'Date') return;
+        //  - `.toLocaleString(locale, { weekday/month/day/hour/… })` — date-format options
+        if (method === 'toLocaleString' && node.arguments.length >= 2) {
+          const opts = node.arguments[1];
+          if (opts && opts.type === 'ObjectExpression') {
+            const DATE_OPTS = new Set(['weekday', 'year', 'month', 'day', 'hour', 'minute', 'second', 'timeZone', 'timeZoneName', 'era', 'dayPeriod', 'dateStyle', 'timeStyle', 'hour12', 'calendar']);
+            if (opts.properties.some((pr) => pr.key && DATE_OPTS.has(pr.key.name || pr.key.value))) return;
+          }
+        }
+
+        // Must be DISPLAYED in JSX — and NOT handed to an inner function call. A
+        // number passed to tx()/format()/String.replace() is string-building, not
+        // a render site: a CallExpression ancestor before the JSX boundary → skip.
         let p = node.parent;
         let inJsx = false;
         while (p) {
-          if (p.type === 'JSXExpressionContainer') { inJsx = true; break; }
-          // Stop at a function boundary so a toFixed() in a nested callback that
-          // ultimately builds a non-JSX value isn't mis-attributed.
-          if (p.type === 'JSXElement' || p.type === 'JSXFragment') { inJsx = true; break; }
+          if (p.type === 'CallExpression') return;
+          if (p.type === 'JSXExpressionContainer' || p.type === 'JSXElement' || p.type === 'JSXFragment') { inJsx = true; break; }
           p = p.parent;
         }
         if (!inJsx) return;
