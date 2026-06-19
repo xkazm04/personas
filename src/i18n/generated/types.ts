@@ -580,6 +580,12 @@ export type Translations = {
     greeting_evening: string;
     operator: string;
     commander: string;
+    get_started: {
+      title: string;
+      subtitle: string;
+      build_cta: string;
+      ask_cta: string;
+    };
     summary_empty: string;
     summary_stats: string;
     quick_navigation: string;

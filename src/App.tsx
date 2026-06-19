@@ -114,6 +114,11 @@ const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network
 const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
+// First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
+// until startOnboarding() flips it), so it's safe to mount unconditionally once
+// consented. Previously orphaned — built but never rendered (UAT L1
+// F-ONBOARDING-DEAD-CODE); the Welcome hero's Get-Started CTA now triggers it.
+const OnboardingOverlay = lazyRetry(() => import("@/features/onboarding/components/OnboardingOverlay"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -124,6 +129,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/chrome/CommandPalette"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
+  () => import("@/features/onboarding/components/OnboardingOverlay"),
   () => import("@/features/agents/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
@@ -327,6 +333,7 @@ export default function App() {
                 <AlertToastContainer />
                 <GuidedTour />
                 <TourSpotlight />
+                <OnboardingOverlay />
                 <ExecutionMiniPlayer />
                 <CommandPalette />
                 <NotificationCenter />

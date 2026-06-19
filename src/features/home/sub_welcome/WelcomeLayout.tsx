@@ -3,6 +3,7 @@ import { SuspenseFallback } from '@/features/shared/components/feedback/Suspense
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import HeroHeader from './HeroHeader';
+import WelcomeGetStarted from './WelcomeGetStarted';
 import NavigationGrid, { type NavCard } from './NavigationGrid';
 import type { NavStatChip } from './lib/useNavCardStatus';
 import ResumeBanner from './ResumeBanner';
@@ -49,6 +50,7 @@ export default function WelcomeLayout({
         <div className="w-full px-6 py-4 space-y-4">
           <ResumeBanner />
           <HeroHeader greeting={greeting} displayName={displayName} />
+          <WelcomeGetStarted />
 
           {/* Below-fold content deferred to keep initial DOM small. WebView2
               hangs when too many nodes commit at once; `next-frame` runs as

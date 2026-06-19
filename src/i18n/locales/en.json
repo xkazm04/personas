@@ -574,6 +574,12 @@
     "greeting_evening": "Good Evening",
     "operator": "User",
     "commander": "Commander",
+    "get_started": {
+      "title": "Build your first agent",
+      "subtitle": "Describe a job in plain language and we'll set up a working agent — or ask the assistant to do it for you.",
+      "build_cta": "Build your first agent",
+      "ask_cta": "Ask the assistant"
+    },
     "summary_empty": "Get started by creating your first agent or exploring the platform.",
     "summary_stats": "You have {personasCount} agent{personasPlural} and {credentialsCount} credential{credentialsPlural} configured.",
     "quick_navigation": "Quick Navigation",
