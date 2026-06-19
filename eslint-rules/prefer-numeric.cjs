@@ -67,13 +67,17 @@ module.exports = {
           }
         }
 
-        // Must be DISPLAYED in JSX — and NOT handed to an inner function call. A
-        // number passed to tx()/format()/String.replace() is string-building, not
-        // a render site: a CallExpression ancestor before the JSX boundary → skip.
+        // Must be DISPLAYED in JSX — and NOT handed to an inner function call or a
+        // callback. A number passed to tx()/format()/replace() is string-building,
+        // and one computed inside a `format={(v) => …}` callback is returned as a
+        // string (e.g. a slider/chart formatter), not rendered. A CallExpression OR
+        // a Function/Arrow ancestor before the JSX boundary → skip. (A `.map(i =>
+        // <Row>{i.v.toFixed()}</Row>)` still flags: the inner JSX boundary is hit
+        // first, before the arrow.)
         let p = node.parent;
         let inJsx = false;
         while (p) {
-          if (p.type === 'CallExpression') return;
+          if (p.type === 'CallExpression' || p.type === 'ArrowFunctionExpression' || p.type === 'FunctionExpression') return;
           if (p.type === 'JSXExpressionContainer' || p.type === 'JSXElement' || p.type === 'JSXFragment') { inJsx = true; break; }
           p = p.parent;
         }

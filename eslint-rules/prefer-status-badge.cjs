@@ -82,6 +82,20 @@ module.exports = {
         const cls = classText(attr.value);
         if (!cls) return;
 
+        // Skip elements that borrow a status COLOR combo but aren't an inline
+        // badge — these are the recurring false positives: alert/notice banners,
+        // multiline/code panels, fixed-size step-circles, and modal-radius blocks.
+        // (A real badge uses px-*+py-0.5 + rounded-lg/full + a short label.)
+        const roleAttr = node.attributes.find(
+          (a) => a.type === 'JSXAttribute' && a.name && a.name.name === 'role',
+        );
+        const roleVal = roleAttr && roleAttr.value && roleAttr.value.type === 'Literal' ? roleAttr.value.value : null;
+        if (roleVal === 'alert' || roleVal === 'status') return; // alert/status region
+        if (/\bwhitespace-pre-wrap\b/.test(cls)) return;          // multiline text block
+        if (/\brounded-modal\b/.test(cls)) return;                // panel/modal, not a pill
+        if (/\bp-(2|2\.5|3|4|5|6)\b/.test(cls)) return;            // uniform block padding (banner/panel)
+        if (/\bw-\d/.test(cls) && /\bh-\d/.test(cls)) return;      // fixed-size square (step circle / icon dot)
+
         for (const [color, variant] of Object.entries(VARIANT_BY_COLOR)) {
           if (comboPresent(cls, color)) {
             context.report({ node, messageId: 'preferBadge', data: { kind: 'variant', name: variant } });
