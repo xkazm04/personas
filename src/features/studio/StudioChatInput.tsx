@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Send, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
 
@@ -62,9 +63,9 @@ export default function StudioChatInput({
                 </span>
               </span>
             ) : (
-              <span className="min-w-0 whitespace-pre-wrap break-words text-md text-foreground">
-                {reply}
-              </span>
+              <div className="min-w-0">
+                <MarkdownRenderer content={reply ?? ''} className="athena-chat-md" codeBlockActions />
+              </div>
             )}
             {!busy && reply !== null && (
               <button
