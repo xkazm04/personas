@@ -20,7 +20,7 @@ the **audit** (what's actually being reinvented, with counts), and the **backlog
 | a "no data / nothing here" block | `EmptyState` | `@/features/shared/components/feedback/EmptyState` |
 | `<button className="…">` with styling | `Button` / `AsyncButton` | `@/features/shared/components/buttons/Button` |
 | `navigator.clipboard.writeText(…)` + feedback | `CopyButton` / `useCopyToClipboard` | `@/features/shared/components/buttons/CopyButton` |
-| `fixed inset-0` backdrop + escape handling | `BaseModal` / `ConfirmDialog` | `@/features/shared/components/modals/BaseModal` |
+| `fixed inset-0` backdrop + escape handling | `BaseModal` / `ConfirmDialog` | `@/features/shared/components/modals` (re-exports `@/lib/ui/BaseModal`) |
 | `title="…"` / custom hover tooltip | `Tooltip` | `@/features/shared/components/display/Tooltip` |
 | `new Date().toLocaleString()` "ago"/recency display | `RelativeTime` | `@/features/shared/components/display/RelativeTime` |
 | `new Date().toLocaleString()` fixed date in JSX | `AbsoluteTime` | `@/features/shared/components/display/AbsoluteTime` |
