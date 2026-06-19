@@ -11,7 +11,8 @@ import {
   webbuildScaffold,
   webbuildStatus,
 } from '@/api/webbuild';
-import StudioBubble from './StudioBubble';
+import StudioChecklist from './StudioChecklist';
+import StudioChatInput from './StudioChatInput';
 
 // Dev-only experimental surface — P1 of the Athena web-dev companion
 // (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant;
@@ -220,7 +221,12 @@ export default function StudioPage() {
             <p className="typo-caption max-w-sm">{placeholder}</p>
           </div>
         )}
-        {selectedId && <StudioBubble projectId={selectedId} projectName={selectedName} />}
+        {selectedId && (
+          <>
+            <StudioChecklist />
+            <StudioChatInput projectId={selectedId} projectName={selectedName} />
+          </>
+        )}
       </div>
     </div>
   );
