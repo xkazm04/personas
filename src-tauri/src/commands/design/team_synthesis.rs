@@ -407,6 +407,17 @@ pub async fn synthesize_team_from_templates(
         }
     }
 
+    // 10. Wire intra-team handoff from the connection graph (chain + listener
+    //     triggers per non-feedback edge) so members actually fire each other.
+    //     Mirrors the preset-adoption path (team_preset_adopter.rs:536); without
+    //     it a synthesized team has roles + edges but no handoff plumbing and
+    //     silently stalls after the entry member (UAT L1 F-TEAM-HANDOFF-SYNTH).
+    //     Best-effort: a wiring failure must not fail an otherwise-successful
+    //     synthesis.
+    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
+        tracing::warn!(team_id = %team.id, error = %e, "synthesize_team: handoff wiring failed (continuing)");
+    }
+
     Ok(TeamSynthesisResult {
         team_id: team.id,
         team_name,

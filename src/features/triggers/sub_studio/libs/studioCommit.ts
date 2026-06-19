@@ -47,6 +47,12 @@ export function draftLinkToTriggerInput(link: DraftLink): CreateTriggerInput | n
       source_persona_id: link.source.personaId,
       condition: { type: conditionType },
       event_type: 'chain_triggered',
+      // Forward the source step's output so the target can see the previous
+      // step's result. The engine only injects `source_output` into the next
+      // step when this flag is true (engine/chain.rs); without it a Studio-built
+      // A->B chain advanced control flow but B received no upstream payload
+      // (UAT L1 F-CHAIN-NO-PAYLOAD-FORWARD). team_handoff wiring already sets it.
+      payload_forward: true,
     }),
     enabled: true,
     use_case_id: null,
