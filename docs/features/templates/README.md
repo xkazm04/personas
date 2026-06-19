@@ -195,6 +195,29 @@ switch. It surfaces **only matched connector keywords** — never raw window
 titles, paths, or clipboard text — so no ambient content leaks into the build
 UI. See [`../../concepts/ambient-context-fusion.md`](../../concepts/ambient-context-fusion.md).
 
+### Generated-persona error handling (honest-failure)
+
+The build prompt's Rule 7 (`build_session/session_prompt.rs`) bakes a mandatory
+error-handling contract into every generated persona's `system_prompt`: on a
+missing/expired credential, an unreachable service, or an auth error the agent
+must **stop and report the blocker** (emit `manual_review`, set
+`outcome_assessment.business_outcome = "precondition_failed"` / `"no_input_available"`)
+and must **never fabricate "realistic sample data"** to finish the run. The sole
+carve-out is a persona explicitly built as a demo, whose output must be labeled
+`SAMPLE`. This replaced an earlier clause that *mandated* fabricating sample data
+on failure (UAT L1 F-FABRICATION-CLAUSE). A runtime `DATA_HONESTY_INVARIANT`
+(`engine/prompt/templates.rs`, pushed for both execution disciplines) restates
+the rule above the persona prompt so personas built before the fix are honest at
+runtime too, and requires inline source citations for reported figures.
+
+### Synthesized teams wire handoff
+
+`synthesize_team_from_templates` (`commands/design/team_synthesis.rs`) now calls
+`engine::team_handoff::wire_team_handoff` after creating member connections —
+mirroring the preset-adoption path — so a synthesized team actually hands work
+between members instead of silently stalling after the entry member (UAT L1
+F-TEAM-HANDOFF-SYNTH).
+
 ## Common operations
 
 ### Add a new template

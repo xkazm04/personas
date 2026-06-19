@@ -22,6 +22,8 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | — System operations | A `SystemOpAutomation` (`system_op_automations` table) binds a trigger to a registered backend op that is **not** a persona execution. The catalog + runner live in `engine/system_ops.rs` (`run_op`, `run_due_schedule_automations`, `dispatch_event_automations`); the background event-bus tick runs due **schedule** rows (cron) and matches **event** rows against live bus events. IPC: `system_ops_list_kinds` / `_list_automations` / `_create_automation` / `_set_enabled` / `_delete_automation` / `_run_now`. The first op, `context_scan`, calls the existing `launch_context_scan` (incremental). | `commands/infrastructure/system_ops.rs`, `db/repos/system_ops.rs` |
 | Marketplace | Dev-only shared event catalog and subscriptions | `sub_shared/SharedEventsTab.tsx` |
 
+> **Chain output forwarding.** A persona→persona route committed from Chain Studio sets `payload_forward: true` in the `chain` trigger config (`sub_studio/libs/studioCommit.ts`), so the target step receives the source step's output as `source_output`. The engine only injects it when the flag is true (`engine/chain.rs`); earlier Studio-built chains advanced control flow but dropped the upstream payload (UAT L1 F-CHAIN-NO-PAYLOAD-FORWARD). Intra-team handoff wiring (`engine/team_handoff.rs`) already set the flag.
+
 ## Trigger editor mechanics
 
 `sub_triggers` contains the reusable trigger list/detail/editing components:

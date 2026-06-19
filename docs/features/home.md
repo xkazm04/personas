@@ -52,3 +52,5 @@ Implementation contract: [live-roadmap/live-roadmap.md](live-roadmap/live-roadma
 ## First-run guidance
 
 Welcome surfaces a `ResumeBanner` for unfinished work plus the `SetupCards` "Role → Tool → Goal" stepper. The deeper feature walkthroughs live in the guided tours panel (`TourLauncher` → `GuidedTour`) — see [onboarding.md](onboarding.md) for the tour registry and authoring contract.
+
+For a **fresh profile** (no personas, onboarding not completed), the hero shows a `WelcomeGetStarted` call-to-action band (`sub_welcome/WelcomeGetStarted.tsx`) — a primary **"Build your first agent"** button that launches the onboarding overlay (see [onboarding.md](onboarding.md)) and a secondary **"Ask the assistant"** that opens the companion chat. It hides once the user has a persona (and never renders during the initial persona fetch), so returning users don't see it. This is the deliberate cold-start entry point; the overlay is not auto-popped.

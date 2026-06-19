@@ -16,6 +16,10 @@ Onboarding covers guided tour state, first persona/template setup, credentials g
 | Execution | Run/test intro | `ExecutionStep.tsx` |
 | Appearance | Theme and visual setup | `AppearanceStep.tsx`, `steps/TourAppearanceContent.tsx` |
 
+## First-run entry point
+
+The `OnboardingOverlay` is mounted globally in `App.tsx` (lazy, once consented) and self-guards on `onboardingActive`, so it stays null until launched. It is reached from the Welcome hero's **"Build your first agent"** CTA (`sub_welcome/WelcomeGetStarted.tsx` → `startOnboarding()`), shown only for a fresh profile. (Previously the overlay component had no mount and `startOnboarding()` had no caller, so the flow was unreachable.) It is deliberately **not** auto-popped on launch — a guarded auto-open keyed off a "personas fetched once" signal is a tracked follow-up. Dismiss/Skip/Escape all close it via `BaseModal`; `dismissOnboarding()` remembers the step for `resumeOnboarding()`.
+
 ## Tour catalog
 
 Nine tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSlice.ts`) and all of them surface in Home > Learning. Each tour follows the same step schema described in [`src/features/onboarding/README.md`](../../src/features/onboarding/README.md).
