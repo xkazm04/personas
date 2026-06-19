@@ -94,6 +94,7 @@ module.exports = {
         if (/\bwhitespace-pre-wrap\b/.test(cls)) return;          // multiline text block
         if (/\brounded-modal\b/.test(cls)) return;                // panel/modal, not a pill
         if (/\bp-(2|2\.5|3|4|5|6)\b/.test(cls)) return;            // uniform block padding (banner/panel)
+        if (/\bpy-(1\.5|2|2\.5|3|4|5|6)\b/.test(cls)) return;      // tall vertical padding (badges use py-0.5) → message box
         if (/\bw-\d/.test(cls) && /\bh-\d/.test(cls)) return;      // fixed-size square (step circle / icon dot)
 
         for (const [color, variant] of Object.entries(VARIANT_BY_COLOR)) {

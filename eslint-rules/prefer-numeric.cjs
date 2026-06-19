@@ -78,7 +78,15 @@ module.exports = {
         let inJsx = false;
         while (p) {
           if (p.type === 'CallExpression' || p.type === 'ArrowFunctionExpression' || p.type === 'FunctionExpression') return;
-          if (p.type === 'JSXExpressionContainer' || p.type === 'JSXElement' || p.type === 'JSXFragment') { inJsx = true; break; }
+          if (p.type === 'JSXExpressionContainer') {
+            // An ATTRIBUTE value ({cx}/{title}/{value}/{style}) is not rendered text
+            // — it's a string/coord/prop, not a display site (and <Numeric> is an
+            // element, not assignable to a string-typed prop). Only a CHILD
+            // expression (parent is a JSXElement/JSXFragment) is displayed.
+            if (p.parent && p.parent.type === 'JSXAttribute') return;
+            inJsx = true; break;
+          }
+          if (p.type === 'JSXElement' || p.type === 'JSXFragment') { inJsx = true; break; }
           p = p.parent;
         }
         if (!inJsx) return;
