@@ -87,3 +87,26 @@ pub fn webbuild_list_servers(
     require_auth_sync(&state)?;
     Ok(state.webbuild_servers.list())
 }
+
+/// Send a build instruction to a project's build session — a project-rooted
+/// Claude Code turn (Athena) that edits the project's code. Streams progress on
+/// `companion://stream` keyed by session id `webbuild:<project_id>`; returns
+/// Athena's short summary of what changed. P2 of the web-dev companion.
+#[tauri::command]
+pub async fn webbuild_session_send(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    project_id: String,
+    message: String,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    let dir = std::path::PathBuf::from(&project.root_path);
+    if !dir.is_dir() {
+        return Err(AppError::Validation(format!(
+            "project path does not exist: {}",
+            project.root_path
+        )));
+    }
+    crate::companion::session::run_build_turn(&app, &state.user_db, &project_id, &dir, &message).await
+}

@@ -11,6 +11,7 @@ import {
   webbuildScaffold,
   webbuildStatus,
 } from '@/api/webbuild';
+import StudioBubble from './StudioBubble';
 
 // Dev-only experimental surface — P1 of the Athena web-dev companion
 // (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant;
@@ -133,6 +134,8 @@ export default function StudioPage() {
           ? COPY.noProjects
           : COPY.idleHint;
 
+  const selectedName = projects.find((p) => p.id === selectedId)?.name ?? 'project';
+
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
       {/* Single-row toolbar — scrolls horizontally instead of forcing the
@@ -217,6 +220,7 @@ export default function StudioPage() {
             <p className="typo-caption max-w-sm">{placeholder}</p>
           </div>
         )}
+        {selectedId && <StudioBubble projectId={selectedId} projectName={selectedName} />}
       </div>
     </div>
   );

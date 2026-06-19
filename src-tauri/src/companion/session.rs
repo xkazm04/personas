@@ -1136,6 +1136,88 @@ fn clean_segment_for_display(seg: &str) -> String {
     kept.join("\n").trim().to_string()
 }
 
+/// Concise coding-agent system prompt for a web-build session. Kept lean for
+/// v0 — the full web-build doctrine + Vision/checklist machinery land in P3.
+fn build_system_prompt(project_path: &std::path::Path) -> String {
+    format!(
+        "You are Athena's web-build engine — a focused coding agent working inside the local \
+web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
+already running that hot-reloads on every file save, so the user sees your changes \
+immediately in an embedded preview.\n\n\
+Make exactly the change the user asks for — cleanly, completely, and in keeping with the \
+project's existing conventions. Quality bars: real content (never lorem), responsive and \
+accessible markup, Tailwind utility discipline.\n\n\
+Rules:\n\
+- Edit files directly with your tools; keep the change scoped to the request.\n\
+- The dev server is ALREADY running — never start it, run a dev/build command, or install \
+unrelated dependencies.\n\
+- When done, reply with a SHORT (1-2 sentence) summary of what changed. The user is \
+watching the live preview, so do not over-explain or paste large diffs.",
+        path = project_path.display()
+    )
+}
+
+/// Run one build-session turn: a project-rooted Claude Code turn that edits the
+/// project's files (P2 of the web-dev companion). A distinct, independently
+/// resumable session from Athena's main chat — session id `webbuild:<project_id>`,
+/// spawned at the project cwd with a coding system prompt. Streams on
+/// `STREAM_EVENT` keyed by that session id; returns the assistant's summary text.
+pub async fn run_build_turn(
+    app: &AppHandle,
+    user_db: &UserDbPool,
+    project_id: &str,
+    project_path: &std::path::Path,
+    user_message: &str,
+) -> Result<String, AppError> {
+    let session_id = format!("webbuild:{project_id}");
+    let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
+    let claude_session_id = read_claude_session_id(user_db, &session_id)?;
+    let system_prompt = build_system_prompt(project_path);
+
+    match timeout(
+        TURN_TIMEOUT,
+        run_cli(
+            app,
+            &turn_id,
+            &session_id,
+            claude_session_id.as_deref(),
+            &system_prompt,
+            user_message,
+            user_db,
+            false,
+            Some(project_path),
+        ),
+    )
+    .await
+    {
+        Ok(Ok((text, _, _))) => Ok(text),
+        // Self-heal a stale `--resume` (deleted/expired CLI session): clear the
+        // pointer and retry once with a fresh session.
+        Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
+            clear_claude_session_id(user_db, &session_id)?;
+            let (text, _, _) = timeout(
+                TURN_TIMEOUT,
+                run_cli(
+                    app,
+                    &turn_id,
+                    &session_id,
+                    None,
+                    &system_prompt,
+                    user_message,
+                    user_db,
+                    false,
+                    Some(project_path),
+                ),
+            )
+            .await
+            .map_err(|_| AppError::Internal("build turn timed out".into()))??;
+            Ok(text)
+        }
+        Ok(Err(e)) => Err(e),
+        Err(_) => Err(AppError::Internal("build turn timed out".into())),
+    }
+}
+
 async fn run_cli(
     app: &AppHandle,
     turn_id: &str,
