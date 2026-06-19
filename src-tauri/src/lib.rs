@@ -28,6 +28,7 @@ pub mod test_automation;
 mod tray;
 mod utils;
 mod validation;
+mod webbuild;
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
