@@ -291,7 +291,7 @@ export default function PersonasPage() {
   return (
     <CanvasDragProvider>
       <CredentialNavProvider>
-        <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
+        <div className="flex flex-col h-full w-full min-w-0 bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
           {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
               transform-gpu + backface-hidden isolate each layer onto its own GPU
               texture so it rasters ONCE. Without isolation these full-screen layers

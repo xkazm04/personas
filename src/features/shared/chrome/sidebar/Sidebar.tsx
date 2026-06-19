@@ -141,12 +141,16 @@ export default function Sidebar() {
     setSidebarSection('personas');
   }, [selectPersona, setIsCreatingPersona, setSidebarSection]);
 
+  // Studio has no Level-2 sub-nav, so it collapses to just the Level-1 icon
+  // rail — don't reserve/render the empty 240px panel (it cropped the preview).
+  const hasLevel2 = sidebarSection !== 'studio';
+
   // Expose total sidebar width as a CSS variable so fixed-position elements
   // (e.g. GuidedTour) can dock to the sidebar edge without hardcoded offsets.
   useEffect(() => {
-    const width = IS_MOBILE ? 0 : collapsed ? 52 : 328; // Level1 + Level2
+    const width = IS_MOBILE ? 0 : collapsed ? 52 : hasLevel2 ? 328 : 88; // Level1 (+ Level2)
     document.documentElement.style.setProperty('--sidebar-width', `${width}px`);
-  }, [collapsed]);
+  }, [collapsed, hasLevel2]);
 
   const labelOf = useSidebarLabels();
   const { t, tx } = useTranslation();
@@ -177,8 +181,8 @@ export default function Sidebar() {
         {directorAttentionCount > 0 && ' ' + tx(directorAttentionCount === 1 ? t.sidebar.director_attention_sr : t.sidebar.director_attention_sr_other, { count: directorAttentionCount }) + '.'}
       </div>
 
-      {/* Level 2: Item list */}
-      {(IS_MOBILE ? mobileDrawerOpen : !collapsed) && (
+      {/* Level 2: Item list (sections without an L2 sub-nav skip it entirely) */}
+      {hasLevel2 && (IS_MOBILE ? mobileDrawerOpen : !collapsed) && (
         <>
           {IS_MOBILE && (
             <div
