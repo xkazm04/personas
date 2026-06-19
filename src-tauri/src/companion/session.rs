@@ -527,6 +527,7 @@ pub async fn send_turn(
             &effective_user_message,
             &user_db,
             browser_tools,
+            None,
         ),
     )
     .await
@@ -560,6 +561,7 @@ pub async fn send_turn(
                     &effective_user_message,
                     &user_db,
                     browser_tools,
+                    None,
                 ),
             )
             .await
@@ -1143,6 +1145,11 @@ async fn run_cli(
     user_message: &str,
     pool: &UserDbPool,
     browser_tools: bool,
+    // Working directory for the spawned CLI. `None` = the user's home dir (the
+    // default — so a normal Athena turn doesn't auto-pick up the Personas
+    // project's CLAUDE.md). `Some(path)` roots the turn in a project directory
+    // (web-build build sessions — P2 of the web-dev companion).
+    cwd_override: Option<&std::path::Path>,
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1208,9 +1215,12 @@ async fn run_cli(
         }
     }
 
-    // Spawn from the user's home directory (or a benign fallback) so we
-    // don't auto-pick up the Personas project's CLAUDE.md as context.
-    let cwd = dirs::home_dir().unwrap_or_else(|| std::env::temp_dir());
+    // Spawn from the user's home directory (or a benign fallback) by default so
+    // a normal turn doesn't auto-pick up the Personas project's CLAUDE.md. A
+    // build session overrides this to root the turn in its project directory.
+    let cwd = cwd_override
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(|| std::env::temp_dir()));
 
     let mut cmd = Command::new(&cmd_program);
     cmd.args(&argv)
