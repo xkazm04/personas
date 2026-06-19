@@ -18,7 +18,6 @@ import {
 // is in flux (same pattern as the /prototype sessions).
 const COPY = {
   title: 'Studio',
-  subtitle: 'Scaffold and preview a local web app, built by Athena.',
   newPlaceholder: 'New project name…',
   create: 'Create & preview',
   stop: 'Stop',
@@ -135,52 +134,55 @@ export default function StudioPage() {
           : COPY.idleHint;
 
   return (
-    <div className="flex h-full flex-col">
-      <header className="flex flex-col gap-3 border-b border-border px-5 py-4">
-        <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-primary" />
-          <h1 className="typo-title">{COPY.title}</h1>
-          <span className="typo-caption">{COPY.subtitle}</span>
-        </div>
+    <div className="flex h-full w-full min-w-0 flex-col">
+      {/* Single-row toolbar — scrolls horizontally instead of forcing the
+          parent width (the cropping cause). */}
+      <header className="flex w-full min-w-0 shrink-0 items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-border px-4 py-2">
+        <Bot className="h-5 w-5 shrink-0 text-primary" />
+        <h1 className="typo-title shrink-0">{COPY.title}</h1>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void create();
-            }}
-            placeholder={COPY.newPlaceholder}
-            className="rounded-input border border-border bg-secondary/40 px-3 py-1.5 text-md outline-none focus:border-primary/50"
-          />
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void create();
+          }}
+          placeholder={COPY.newPlaceholder}
+          className="w-44 shrink-0 rounded-input border border-border bg-secondary/40 px-3 py-1.5 text-md outline-none focus:border-primary/50"
+        />
+        <Button
+          variant="primary"
+          size="sm"
+          className="shrink-0"
+          icon={<Plus className="h-4 w-4" />}
+          loading={phase === 'scaffolding'}
+          disabled={!newName.trim() || phase === 'scaffolding'}
+          onClick={() => void create()}
+        >
+          {COPY.create}
+        </Button>
+
+        {projects.length > 0 && <div className="h-5 w-px shrink-0 bg-border" />}
+        {projects.map((p) => (
           <Button
-            variant="primary"
+            key={p.id}
+            variant={selectedId === p.id ? 'accent' : 'secondary'}
+            accentColor="violet"
             size="sm"
-            icon={<Plus className="h-4 w-4" />}
-            loading={phase === 'scaffolding'}
-            disabled={!newName.trim() || phase === 'scaffolding'}
-            onClick={() => void create()}
+            className="shrink-0"
+            onClick={() => void start(p.id)}
           >
-            {COPY.create}
+            {p.name}
           </Button>
-          {projects.map((p) => (
-            <Button
-              key={p.id}
-              variant={selectedId === p.id ? 'accent' : 'secondary'}
-              accentColor="violet"
-              size="sm"
-              onClick={() => void start(p.id)}
-            >
-              {p.name}
-            </Button>
-          ))}
-        </div>
+        ))}
 
         {selectedId && (
-          <div className="flex items-center gap-2">
+          <>
+            <div className="h-5 w-px shrink-0 bg-border" />
             <Button
               variant="secondary"
               size="sm"
+              className="shrink-0"
               icon={<RotateCcw className="h-4 w-4" />}
               onClick={reload}
             >
@@ -189,23 +191,26 @@ export default function StudioPage() {
             <Button
               variant="danger"
               size="sm"
+              className="shrink-0"
               icon={<Square className="h-4 w-4" />}
               onClick={() => void stop()}
             >
               {COPY.stop}
             </Button>
-            {status?.url && <span className="typo-caption">{status.url}</span>}
-          </div>
+            {status?.url && <span className="typo-caption shrink-0">{status.url}</span>}
+          </>
         )}
       </header>
 
-      <div className="relative flex-1 bg-black/20">
+      {/* Preview fills all remaining space; min-w-0/min-h-0 + absolute iframe
+          guarantee it isn't cropped by the toolbar's content width. */}
+      <div className="relative min-h-0 w-full min-w-0 flex-1 bg-black/20">
         {phase === 'live' && status?.healthy ? (
           <iframe
             key={iframeKey}
             src={status.url}
             title="preview"
-            className="h-full w-full border-0 bg-white"
+            className="absolute inset-0 h-full w-full border-0 bg-white"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center">
