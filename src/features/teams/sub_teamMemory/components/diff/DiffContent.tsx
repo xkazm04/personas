@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useState } from 'react';
 import { Plus, Minus, TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import type { MemoryRunDiff } from '../../libs/memoryDiff';
 
@@ -88,7 +89,7 @@ export default function DiffContent({ diff }: DiffContentProps) {
               <div key={s.category} className="flex items-center justify-between typo-caption px-1.5 py-0.5">
                 <span className={`capitalize ${CATEGORY_COLORS[s.category] ?? 'text-foreground'}`}>{s.category}</span>
                 <span className="flex items-center gap-1.5">
-                  <span className="text-foreground">{s.avgA.toFixed(1)} {'→'} {s.avgB.toFixed(1)}</span>
+                  <span className="text-foreground"><Numeric value={s.avgA} precision={1} /> {'→'} <Numeric value={s.avgB} precision={1} /></span>
                   {s.delta > 0 ? <TrendingUp className="w-3 h-3 text-emerald-400" /> : <TrendingDown className="w-3 h-3 text-amber-400" />}
                 </span>
               </div>

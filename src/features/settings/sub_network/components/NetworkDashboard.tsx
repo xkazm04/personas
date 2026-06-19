@@ -8,6 +8,7 @@ import {
 import { useSystemStore } from "@/stores/systemStore";
 import { usePolling } from '@/hooks/utility/timing/usePolling';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type {
   ConnectionHealth,
   MessagingMetrics,
@@ -113,7 +114,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         value={
           <span className="flex items-center gap-1">
             <ArrowUpRight className="w-3 h-3 text-emerald-400" />
-            {m.messagesSent.toLocaleString()}
+            <Numeric value={m.messagesSent} unit="count" precision={0} />
             <span className="text-foreground ml-1">({formatBytes(m.bytesSent)})</span>
           </span>
         }
@@ -123,7 +124,7 @@ function MessagingMetricsPanel({ m }: { m: MessagingMetrics }) {
         value={
           <span className="flex items-center gap-1">
             <ArrowDownLeft className="w-3 h-3 text-blue-400" />
-            {m.messagesReceived.toLocaleString()}
+            <Numeric value={m.messagesReceived} unit="count" precision={0} />
             <span className="text-foreground ml-1">({formatBytes(m.bytesReceived)})</span>
           </span>
         }
@@ -159,8 +160,8 @@ function ConnectionMetricsPanel({ m }: { m: ConnectionMetricsSnapshot }) {
 
   return (
     <MetricsSection title={st.connection_lifecycle} icon={Link2}>
-      <MetricRow label={st.attempts} value={m.connectionAttempts.toLocaleString()} />
-      <MetricRow label={st.established} value={m.connectionsEstablished.toLocaleString()} />
+      <MetricRow label={st.attempts} value={<Numeric value={m.connectionAttempts} unit="count" precision={0} />} />
+      <MetricRow label={st.established} value={<Numeric value={m.connectionsEstablished} unit="count" precision={0} />} />
       <MetricRow
         label={st.avg_connect_time}
         value={
@@ -206,7 +207,7 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
 
   return (
     <MetricsSection title={st.manifest_sync} icon={RefreshCw}>
-      <MetricRow label={st.sync_rounds} value={m.syncRounds.toLocaleString()} />
+      <MetricRow label={st.sync_rounds} value={<Numeric value={m.syncRounds} unit="count" precision={0} />} />
       <MetricRow
         label={st.success_fail}
         value={
@@ -230,7 +231,7 @@ function ManifestSyncPanel({ m }: { m: ManifestSyncMetrics }) {
       />
       <MetricRow
         label={st.entries_received}
-        value={m.totalEntriesReceived.toLocaleString()}
+        value={<Numeric value={m.totalEntriesReceived} unit="count" precision={0} />}
       />
     </MetricsSection>
   );

@@ -12,6 +12,7 @@ import {
   type CloudDeployment, type CloudTrigger, type CloudTriggerFiring,
 } from '@/api/system/cloud';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -335,7 +336,7 @@ export function CloudWebhooksTab() {
                       {f.durationMs != null ? `${f.durationMs}ms` : '—'}
                     </span>
                     <span className="text-right text-foreground">
-                      {f.costUsd != null ? `$${f.costUsd.toFixed(4)}` : '—'}
+                      {f.costUsd != null ? <Numeric value={f.costUsd} unit="usd" /> : '—'}
                     </span>
                   </div>
                 ))}

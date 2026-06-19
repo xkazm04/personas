@@ -1,5 +1,6 @@
 import { ShieldCheck, ShieldAlert, ShieldOff } from 'lucide-react';
 import type { EnclaveVerifyResult } from '@/api/network/enclave';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResult }) {
@@ -74,7 +75,7 @@ export function EnclaveVerificationView({ result }: { result: EnclaveVerifyResul
         <div className="grid grid-cols-2 gap-2 typo-caption">
           <div>
             <span className="text-foreground">{st.max_cost_label}</span>{' '}
-            <span className="text-foreground">${result.policy.maxCostUsd.toFixed(2)}</span>
+            <Numeric className="text-foreground" value={result.policy.maxCostUsd} unit="usd" />
           </div>
           <div>
             <span className="text-foreground">{st.max_turns_label}</span>{' '}

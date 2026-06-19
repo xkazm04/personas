@@ -1,5 +1,6 @@
 import { Brain, Cpu, Layers, Hash, Calendar } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { KnowledgeBase } from '@/api/vault/database/vectorKb';
 
 interface SettingsTabProps {
@@ -70,7 +71,7 @@ function InfoRow({ icon: Icon, label, value, mono }: { icon: typeof Brain; label
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-card bg-secondary/30 border border-primary/10 p-3 text-center">
-      <p className="typo-heading-lg font-semibold text-foreground/90">{value.toLocaleString()}</p>
+      <Numeric as="p" value={value} className="typo-heading-lg font-semibold text-foreground/90" />
       <p className="typo-caption text-foreground mt-1">{label}</p>
     </div>
   );

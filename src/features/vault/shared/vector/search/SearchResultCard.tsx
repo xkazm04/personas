@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { FileText, ChevronDown, ChevronUp } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { VectorSearchResult } from '@/api/vault/database/vectorKb';
 
@@ -60,7 +61,7 @@ export function SearchResultCard({ result, rank }: SearchResultCardProps) {
 
         {/* Metadata */}
         <div className="flex items-center gap-3 mt-2 typo-caption text-foreground">
-          <span>{sh.distance_label} {result.distance.toFixed(4)}</span>
+          <span>{sh.distance_label} <Numeric value={result.distance} precision={4} /></span>
           <span>{sh.chunk_label} {result.chunkId.slice(0, 8)}</span>
         </div>
       </div>

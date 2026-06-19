@@ -1,6 +1,7 @@
 import { Activity, TrendingDown } from 'lucide-react';
 import type { AnomalyScore } from '@/api/vault/rotation';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 const REMEDIATION_LABELS: Record<string, { labelKey: string; color: string; bg: string }> = {
   healthy: { labelKey: 'healthy', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
@@ -74,7 +75,7 @@ function RateBar({ label, rate, threshold }: { label: string; rate: number; thre
       <div className="flex items-center justify-between">
         <span className="typo-code text-foreground font-mono">{label}</span>
         <span className={`typo-code font-mono tabular-nums ${isOver ? 'text-red-400' : 'text-foreground'}`}>
-          {pct.toFixed(0)}%
+          <Numeric value={pct} unit="percent" precision={0} />
         </span>
       </div>
       <div className="h-1 bg-secondary/30 rounded-full overflow-hidden">

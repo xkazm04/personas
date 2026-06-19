@@ -7,6 +7,7 @@ import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
 import { getContrastRatio, getContrastLevel, type ContrastLevel } from '@/lib/theme/contrastRatio';
 import { Button } from '@/features/shared/components/buttons';
 import { Slider } from '@/features/shared/components/forms/Slider';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { ColorRow } from './ColorRow';
 import { ThemePreview } from './ThemePreview';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -52,7 +53,7 @@ function ContrastReadout({ vars, labels }: {
               <span className={`px-1.5 py-0.5 rounded-pill text-[9px] font-semibold tracking-wide ${badgeClass(p.level)}`}>
                 {badgeText(p.level)}
               </span>
-              <span className="typo-code font-mono text-foreground text-[11px]">{p.ratio.toFixed(1)}:1</span>
+              <span className="typo-code font-mono text-foreground text-[11px]"><Numeric value={p.ratio} precision={1} />:1</span>
             </div>
           </div>
         ))}

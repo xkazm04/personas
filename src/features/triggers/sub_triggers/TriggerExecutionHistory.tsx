@@ -4,6 +4,7 @@ import {
   RefreshCw, RotateCcw, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import { formatDuration, formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
 import { useTriggerHistory } from '../hooks/useTriggerHistory';
@@ -91,7 +92,7 @@ function ExecutionRow({ exec, isExpanded, onToggle, onReplay, isReplaying, repla
                 {(exec.input_tokens > 0 || exec.output_tokens > 0) && (
                   <span>{exec.input_tokens}{'→'}{exec.output_tokens} tokens</span>
                 )}
-                {exec.cost_usd > 0 && <span>${exec.cost_usd.toFixed(4)}</span>}
+                {exec.cost_usd > 0 && <span><Numeric value={exec.cost_usd} unit="usd" /></span>}
               </div>
 
               {/* Payloads */}

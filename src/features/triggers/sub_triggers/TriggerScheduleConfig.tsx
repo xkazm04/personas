@@ -1,4 +1,5 @@
 import { formatInterval } from '@/lib/utils/formatters';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { type CronPreview } from '@/api/pipeline/triggers';
 import { SchedulePreview, CronSchedulePreview } from './TriggerSchedulePreview';
 import { TimezoneSelect } from './TimezoneSelect';
@@ -106,7 +107,7 @@ export function IntervalConfig({
               <span className="text-foreground font-medium">{formatInterval(secs)}</span>
               {t.triggers.starting_from}{' '}
               <span className="text-foreground">
-                Approximately {runsPerDay.toLocaleString()} run{runsPerDay !== 1 ? 's' : ''} {t.triggers.per_day}
+                Approximately <Numeric value={runsPerDay} /> run{runsPerDay !== 1 ? 's' : ''} {t.triggers.per_day}
               </span>
             </p>
             <SchedulePreview intervalSeconds={secs} triggerType={triggerType} />

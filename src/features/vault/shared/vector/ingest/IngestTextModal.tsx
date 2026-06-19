@@ -3,6 +3,7 @@ import { X, Type } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { kbIngestText } from '@/api/vault/database/vectorKb';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface IngestTextModalProps {
   kbId: string;
@@ -76,7 +77,7 @@ export function IngestTextModal({ kbId, onClose, onIngested }: IngestTextModalPr
           <label className="typo-caption font-medium text-foreground mb-1.5 block">
             {sh.content_label}
             {text.length > 0 && (
-              <span className="ml-2 text-foreground">{text.length.toLocaleString()} chars</span>
+              <span className="ml-2 text-foreground"><Numeric value={text.length} /> chars</span>
             )}
           </label>
           <textarea

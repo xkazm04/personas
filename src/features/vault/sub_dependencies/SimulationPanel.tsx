@@ -2,6 +2,7 @@ import { FlaskConical, X } from 'lucide-react';
 import type { SimulationResult } from './credentialGraph';
 import { getSeverityStyles } from './graphConstants';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { escapeHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import {
   AffectedPersonas,
@@ -50,9 +51,12 @@ export function SimulationPanel({ simulation, onClose }: SimulationPanelProps) {
             <div className="text-[10px] text-foreground">{dep.daily_execs_lost}</div>
           </div>
           <div className="rounded-card bg-secondary/40 border border-primary/8 p-2 text-center">
-            <div className="typo-heading-lg font-semibold text-foreground/90">
-              ${simulation.estimatedDailyRevenueLost.toFixed(2)}
-            </div>
+            <Numeric
+              as="div"
+              value={simulation.estimatedDailyRevenueLost}
+              unit="usd"
+              className="typo-heading-lg font-semibold text-foreground/90"
+            />
             <div className="text-[10px] text-foreground">{dep.daily_cost_impact}</div>
           </div>
         </div>
