@@ -98,7 +98,7 @@ pub async fn webbuild_session_send(
     app: tauri::AppHandle,
     project_id: String,
     message: String,
-) -> Result<String, AppError> {
+) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
     let dir = std::path::PathBuf::from(&project.root_path);

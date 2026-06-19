@@ -13,6 +13,7 @@
 
 pub mod bun;
 pub mod devserver;
+pub mod plan;
 pub mod project;
 
 pub use devserver::{DevServerRegistry, DevServerStatus};

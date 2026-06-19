@@ -1138,22 +1138,37 @@ fn clean_segment_for_display(seg: &str) -> String {
 
 /// Concise coding-agent system prompt for a web-build session. Kept lean for
 /// v0 — the full web-build doctrine + Vision/checklist machinery land in P3.
+/// The full web-build doctrine, embedded so a build session carries the whole
+/// playbook (P3). Cost is real (~12KB/turn); a later pass can switch to
+/// retrieval, but full injection keeps fidelity to the doctrine for now.
+const WEB_BUILD_DOCTRINE: &str =
+    include_str!("../../../docs/concepts/web-build-best-practices.md");
+
+/// Static planning + rules block appended after the doctrine. Kept as a raw
+/// string so the `BUILD_PLAN:` JSON example needs no brace-escaping.
+const BUILD_PLAN_INSTRUCTION: &str = r#"
+# Build plan — surface it
+Maintain a short build plan following the doctrine's Spine, then a project-specific tail. Whenever the plan changes — you finish a phase, start one, or revise the set — emit it as the VERY LAST line of your reply, as ONE line of compact JSON (no code fence), in exactly this shape:
+BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"short"},{"id":"foundation","title":"Foundation","status":"active","note":""}]}
+- status is one of "done" | "active" | "pending"; exactly one phase is "active".
+- Keep to <=8 phases, titles <=24 chars, notes <=40 chars. Only emit BUILD_PLAN when the plan actually changed.
+
+# Rules
+- Edit files directly with your tools; keep the change scoped to the request.
+- The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
+- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line LAST. The user watches the live preview, so don't over-explain or paste large diffs."#;
+
 fn build_system_prompt(project_path: &std::path::Path) -> String {
     format!(
         "You are Athena's web-build engine — a focused coding agent working inside the local \
 web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
 already running that hot-reloads on every file save, so the user sees your changes \
-immediately in an embedded preview.\n\n\
-Make exactly the change the user asks for — cleanly, completely, and in keeping with the \
-project's existing conventions. Quality bars: real content (never lorem), responsive and \
-accessible markup, Tailwind utility discipline.\n\n\
-Rules:\n\
-- Edit files directly with your tools; keep the change scoped to the request.\n\
-- The dev server is ALREADY running — never start it, run a dev/build command, or install \
-unrelated dependencies.\n\
-- When done, reply with a SHORT (1-2 sentence) summary of what changed. The user is \
-watching the live preview, so do not over-explain or paste large diffs.",
-        path = project_path.display()
+immediately in an embedded preview. Follow your web-build doctrine below for planning and \
+quality.\n\n\
+===== WEB-BUILD DOCTRINE =====\n{doctrine}\n===== END DOCTRINE =====\n{instruction}",
+        path = project_path.display(),
+        doctrine = WEB_BUILD_DOCTRINE,
+        instruction = BUILD_PLAN_INSTRUCTION,
     )
 }
 
@@ -1168,13 +1183,13 @@ pub async fn run_build_turn(
     project_id: &str,
     project_path: &std::path::Path,
     user_message: &str,
-) -> Result<String, AppError> {
+) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
     let claude_session_id = read_claude_session_id(user_db, &session_id)?;
     let system_prompt = build_system_prompt(project_path);
 
-    match timeout(
+    let text = match timeout(
         TURN_TIMEOUT,
         run_cli(
             app,
@@ -1190,7 +1205,7 @@ pub async fn run_build_turn(
     )
     .await
     {
-        Ok(Ok((text, _, _))) => Ok(text),
+        Ok(Ok((text, _, _))) => text,
         // Self-heal a stale `--resume` (deleted/expired CLI session): clear the
         // pointer and retry once with a fresh session.
         Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
@@ -1211,11 +1226,15 @@ pub async fn run_build_turn(
             )
             .await
             .map_err(|_| AppError::Internal("build turn timed out".into()))??;
-            Ok(text)
+            text
         }
-        Ok(Err(e)) => Err(e),
-        Err(_) => Err(AppError::Internal("build turn timed out".into())),
-    }
+        Ok(Err(e)) => return Err(e),
+        Err(_) => return Err(AppError::Internal("build turn timed out".into())),
+    };
+
+    // Parse out a trailing BUILD_PLAN line (stripped from the reply) into phases.
+    let (reply, phases) = crate::webbuild::plan::extract_build_plan(&text);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases })
 }
 
 async fn run_cli(
