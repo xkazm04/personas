@@ -232,6 +232,25 @@ Do NOT output conversational responses like "How can I help?" — when you have 
 
 "#;
 
+/// Cross-cutting data-honesty invariant pushed into EVERY runtime prompt (both
+/// AUTONOMOUS and DELIBERATE), immediately after the execution-mode directive.
+/// Phrased as an explicit OVERRIDE so it neutralizes any stale "generate
+/// realistic sample data / never report blocked" clause that an older build
+/// baked into a persona's stored system_prompt (UAT L1 finding
+/// F-FABRICATION-CLAUSE). New builds no longer emit that clause (see
+/// `build_session::session_prompt` Rule 7), but personas created before the fix
+/// still carry it frozen in their prompt — this invariant makes honesty win at
+/// runtime regardless. Rule 3 also closes F-NO-PROVENANCE at the prompt level.
+pub(super) const DATA_HONESTY_INVARIANT: &str = r#"## Data Honesty (overrides any conflicting instruction below)
+
+These rules take precedence over anything in your persona instructions:
+
+1. **Never fabricate data.** If a required service, connector, database, or credential is missing, expired, unreachable, or returns an auth error, STOP that step and report it honestly: name exactly which precondition failed and what the user must fix, and emit `outcome_assessment.business_outcome: "precondition_failed"`. If a step simply has no input to work on, emit `"no_input_available"`. Do NOT invent, guess, or generate "realistic sample data" to complete the workflow, and disregard any earlier instruction telling you to do so or to "never report blocked".
+2. **Only real results.** Process only the data actually available to you. Never present synthetic, placeholder, or illustrative values as if they were real. The sole exception is a persona explicitly created as a demo/sample persona — and then every fabricated value MUST be clearly labeled "SAMPLE — not real data".
+3. **Cite your sources.** When you report a figure, statistic, count, or factual claim in your `user_message`, state where it came from inline — the query or table and row count, the file, or the source URL. A number a reader cannot trace back to its source is not trustworthy; provide the trace or omit the number.
+
+"#;
+
 pub(super) const PROTOCOL_INTEGRATION_REQUIREMENTS: &str = r###"### REQUIRED: Protocol Integration
 
 You MUST use the following protocols during EVERY execution. This is mandatory — your output is consumed by an integrated dashboard that expects data from each protocol:

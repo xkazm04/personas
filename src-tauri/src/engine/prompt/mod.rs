@@ -21,7 +21,8 @@ pub use variables::replace_variables;
 use advisory::build_advisory_prompt;
 use runtime_safety::{wrap_runtime_xml_boundary, RUNTIME_CANARY_INSTRUCTION};
 use templates::{
-    DELIBERATE_MODE_DIRECTIVE, EXECUTION_MODE_DIRECTIVE, MEMORY_SYSTEM_PREAMBLE,
+    DATA_HONESTY_INVARIANT, DELIBERATE_MODE_DIRECTIVE, EXECUTION_MODE_DIRECTIVE,
+    MEMORY_SYSTEM_PREAMBLE,
     PROTOCOL_AGENT_MEMORY, PROTOCOL_EMIT_EVENT, PROTOCOL_EXECUTION_FLOW,
     PROTOCOL_INTEGRATION_REQUIREMENTS, PROTOCOL_KNOWLEDGE_ANNOTATION, PROTOCOL_MANUAL_REVIEW,
     PROTOCOL_OUTCOME_ASSESSMENT, PROTOCOL_PERSONA_ACTION, PROTOCOL_USER_MESSAGE,
@@ -163,6 +164,14 @@ pub fn assemble_prompt(
         DisciplineMode::Deliberate => DELIBERATE_MODE_DIRECTIVE,
     };
     prompt.push_str(directive);
+
+    // Data-honesty invariant — pushed for BOTH disciplines right after the mode
+    // directive so it sits above the persona-authored prompt and overrides any
+    // stale "generate realistic sample data / never report blocked" clause that
+    // older builds froze into a persona's stored system_prompt (UAT L1
+    // F-FABRICATION-CLAUSE). New builds no longer emit that clause; this makes
+    // already-built personas honest at runtime too. Rule 3 closes F-NO-PROVENANCE.
+    prompt.push_str(DATA_HONESTY_INVARIANT);
 
     // P4: opt-in deep fan-out — instruct the model to delegate independent
     // parallel sub-tasks to subagents (Task tool). No-op on plans without Task;
