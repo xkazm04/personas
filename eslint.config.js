@@ -20,6 +20,7 @@ const noWholeStoreSubscription = require("./eslint-rules/no-whole-store-subscrip
 const enforceReducedMotionFallback = require("./eslint-rules/enforce-reduced-motion-fallback.cjs");
 const preferSharedClipboard = require("./eslint-rules/prefer-shared-clipboard.cjs");
 const preferNumeric = require("./eslint-rules/prefer-numeric.cjs");
+const preferStatusBadge = require("./eslint-rules/prefer-status-badge.cjs");
 const noUnprefixedWideMinWidth = require("./eslint-rules/no-unprefixed-wide-min-width.cjs");
 
 export default tseslint.config(
@@ -51,6 +52,7 @@ export default tseslint.config(
           "enforce-reduced-motion-fallback": enforceReducedMotionFallback,
           "prefer-shared-clipboard": preferSharedClipboard,
           "prefer-numeric": preferNumeric,
+          "prefer-status-badge": preferStatusBadge,
           "no-unprefixed-wide-min-width": noUnprefixedWideMinWidth,
         },
       },
@@ -100,6 +102,7 @@ export default tseslint.config(
       "custom/enforce-reduced-motion-fallback": "warn",
       "custom/prefer-shared-clipboard": "warn",
       "custom/prefer-numeric": "warn",
+      "custom/prefer-status-badge": "warn",
       "custom/no-unprefixed-wide-min-width": "warn",
     },
   },
