@@ -463,6 +463,24 @@ pub fn default_unattended_mode() -> String {
 /// The valid `unattended_mode` values (the destructive-action gate, UAT P5).
 pub const UNATTENDED_MODES: &[&str] = &["auto", "dry_run", "approval"];
 
+/// A scheduler-fired trigger HELD for human approval before it runs — the
+/// `approval` unattended-mode of the destructive-action gate (UAT P5). Captures
+/// enough to republish the held event on approval.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PendingTriggerFire {
+    pub id: String,
+    pub trigger_id: String,
+    pub persona_id: String,
+    pub event_type: String,
+    pub payload: Option<String>,
+    pub use_case_id: Option<String>,
+    /// "pending" | "approved" | "rejected".
+    pub status: String,
+    pub created_at: String,
+    pub resolved_at: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct CreateTriggerInput {

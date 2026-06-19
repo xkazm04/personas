@@ -212,6 +212,104 @@ pub fn set_unattended_mode(
     })
 }
 
+// -- Pending trigger fires (the `approval` unattended-mode hold, UAT P5) ------
+
+fn row_to_pending_fire(
+    row: &rusqlite::Row,
+) -> rusqlite::Result<crate::db::models::PendingTriggerFire> {
+    Ok(crate::db::models::PendingTriggerFire {
+        id: row.get("id")?,
+        trigger_id: row.get("trigger_id")?,
+        persona_id: row.get("persona_id")?,
+        event_type: row.get("event_type")?,
+        payload: row.get("payload")?,
+        use_case_id: row.get("use_case_id")?,
+        status: row.get("status")?,
+        created_at: row.get("created_at")?,
+        resolved_at: row.get("resolved_at")?,
+    })
+}
+
+/// Hold a scheduler-fired trigger for approval (don't publish its event yet).
+pub fn insert_pending_fire(
+    pool: &DbPool,
+    trigger_id: &str,
+    persona_id: &str,
+    event_type: &str,
+    payload: Option<&str>,
+    use_case_id: Option<&str>,
+) -> Result<crate::db::models::PendingTriggerFire, AppError> {
+    timed_query!("pending_trigger_fires", "pending_trigger_fires::insert", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO pending_trigger_fires
+             (id, trigger_id, persona_id, event_type, payload, use_case_id, status, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7)",
+            params![id, trigger_id, persona_id, event_type, payload, use_case_id, now],
+        )?;
+        conn.query_row(
+            "SELECT * FROM pending_trigger_fires WHERE id = ?1",
+            params![id],
+            row_to_pending_fire,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+/// All trigger fires awaiting human approval, newest first.
+pub fn list_pending_fires(
+    pool: &DbPool,
+) -> Result<Vec<crate::db::models::PendingTriggerFire>, AppError> {
+    timed_query!("pending_trigger_fires", "pending_trigger_fires::list", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM pending_trigger_fires WHERE status = 'pending' ORDER BY created_at DESC",
+        )?;
+        let rows = stmt.query_map([], row_to_pending_fire)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+    })
+}
+
+pub fn get_pending_fire(
+    pool: &DbPool,
+    id: &str,
+) -> Result<crate::db::models::PendingTriggerFire, AppError> {
+    timed_query!("pending_trigger_fires", "pending_trigger_fires::get", {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT * FROM pending_trigger_fires WHERE id = ?1",
+            params![id],
+            row_to_pending_fire,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => {
+                AppError::NotFound(format!("Pending trigger fire {id} not found"))
+            }
+            other => AppError::Database(other),
+        })
+    })
+}
+
+/// Resolve a pending fire (approve/reject). Only flips a still-`pending` row.
+pub fn resolve_pending_fire(
+    pool: &DbPool,
+    id: &str,
+    approved: bool,
+) -> Result<crate::db::models::PendingTriggerFire, AppError> {
+    timed_query!("pending_trigger_fires", "pending_trigger_fires::resolve", {
+        let status = if approved { "approved" } else { "rejected" };
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE pending_trigger_fires SET status = ?1, resolved_at = ?2 WHERE id = ?3 AND status = 'pending'",
+            params![status, now, id],
+        )?;
+        get_pending_fire(pool, id)
+    })
+}
+
 pub fn update(
     pool: &DbPool,
     id: &str,

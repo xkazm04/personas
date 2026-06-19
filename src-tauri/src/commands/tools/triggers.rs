@@ -4,7 +4,10 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::models::webhook_log::WebhookRequestLog;
-use crate::db::models::{CreateTriggerInput, PersonaTrigger, UpdateTriggerInput};
+use crate::db::models::{
+    CreatePersonaEventInput, CreateTriggerInput, PendingTriggerFire, PersonaTrigger,
+    UpdateTriggerInput,
+};
 use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as repo;
@@ -158,6 +161,50 @@ pub fn set_trigger_unattended_mode(
         )));
     }
     repo::set_unattended_mode(&state.db, &id, &mode)
+}
+
+/// List all trigger fires awaiting human approval (UAT P5 `approval` mode).
+#[tauri::command]
+pub fn list_pending_trigger_fires(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<PendingTriggerFire>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_pending_fires(&state.db)
+}
+
+/// Resolve a held trigger fire (UAT P5 `approval` mode). On approve, the held
+/// event is published so the run proceeds; on reject the fire is discarded.
+#[tauri::command]
+pub fn resolve_pending_trigger_fire(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    approved: bool,
+) -> Result<PendingTriggerFire, AppError> {
+    require_auth_sync(&state)?;
+    let pending = repo::get_pending_fire(&state.db, &id)?;
+    if pending.status != "pending" {
+        return Err(AppError::Validation(format!(
+            "Trigger fire {id} is already {}",
+            pending.status
+        )));
+    }
+    let resolved = repo::resolve_pending_fire(&state.db, &id, approved)?;
+    if approved {
+        // Publish the held event so the normal event-bus flow creates the run.
+        event_repo::publish(
+            &state.db,
+            CreatePersonaEventInput {
+                event_type: resolved.event_type.clone(),
+                source_type: "trigger".into(),
+                source_id: Some(resolved.trigger_id.clone()),
+                target_persona_id: Some(resolved.persona_id.clone()),
+                project_id: None,
+                payload: resolved.payload.clone(),
+                use_case_id: resolved.use_case_id.clone(),
+            },
+        )?;
+    }
+    Ok(resolved)
 }
 
 #[tauri::command]

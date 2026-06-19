@@ -2116,6 +2116,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added unattended_mode column to persona_triggers (UAT P5 destructive-action gate)");
     }
 
+    // -- Pending trigger fires (the 'approval' unattended-mode hold, UAT P5) ------
+    // When a scheduler-fired trigger is in `approval` mode, its fire is HELD here
+    // instead of publishing the event; a human approves/rejects, and on approval
+    // the captured event is published (the normal flow then creates the run).
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS pending_trigger_fires (
+            id              TEXT PRIMARY KEY,
+            trigger_id      TEXT NOT NULL REFERENCES persona_triggers(id) ON DELETE CASCADE,
+            persona_id      TEXT NOT NULL REFERENCES personas(id) ON DELETE CASCADE,
+            event_type      TEXT NOT NULL,
+            payload         TEXT,
+            use_case_id     TEXT,
+            status          TEXT NOT NULL DEFAULT 'pending'
+                            CHECK(status IN ('pending', 'approved', 'rejected')),
+            created_at      TEXT NOT NULL,
+            resolved_at     TEXT
+        );",
+    )?;
+    ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_ptf_status ON pending_trigger_fires(status);",
+    )?;
+
     // -- Composite indexes for memory & chat hot-path queries --------------------
     // These are idempotent (IF NOT EXISTS) and cover the top query patterns that
     // degrade to full table scans as data grows.

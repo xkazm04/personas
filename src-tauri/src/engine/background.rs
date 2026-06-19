@@ -1072,15 +1072,44 @@ pub(crate) async fn event_bus_tick(
                 continue;
             }
 
+            // Destructive-action gate (UAT P5): when a SCHEDULER-fired trigger
+            // (source_type == "trigger") is in `dry_run` mode, launch the run as
+            // a SIMULATION so outbound side-effects are suppressed (dispatch skips
+            // real notification/connector delivery for is_simulation runs). Only
+            // schedule/polling triggers publish source_type=="trigger" events;
+            // chain/event_listener triggers react to persona events, so this
+            // cleanly scopes to the unattended scheduler path.
+            let dry_run = event.source_type == "trigger"
+                && event
+                    .source_id
+                    .as_deref()
+                    .and_then(|sid| trigger_repo::get_by_id(pool, sid).ok())
+                    .map(|t| t.unattended_mode == "dry_run")
+                    .unwrap_or(false);
+
             // Create execution record (must be per-match, not batchable)
-            let exec = match exec_repo::create(
-                pool,
-                &persona.id,
-                None,
-                m.payload.clone(),
-                None,
-                m.use_case_id.clone(),
-            ) {
+            let create_result = if dry_run {
+                exec_repo::create_with_idempotency(
+                    pool,
+                    &persona.id,
+                    None,
+                    m.payload.clone(),
+                    None,
+                    m.use_case_id.clone(),
+                    None,
+                    true, // is_simulation
+                )
+            } else {
+                exec_repo::create(
+                    pool,
+                    &persona.id,
+                    None,
+                    m.payload.clone(),
+                    None,
+                    m.use_case_id.clone(),
+                )
+            };
+            let exec = match create_result {
                 Ok(e) => e,
                 Err(e) => {
                     tracing::error!("Event bus: failed to create execution: {}", e);
@@ -1088,6 +1117,13 @@ pub(crate) async fn event_bus_tick(
                     continue;
                 }
             };
+            if dry_run {
+                tracing::info!(
+                    persona_id = %persona.id,
+                    execution_id = %exec.id,
+                    "Event bus: trigger in dry_run mode — launched as simulation (outbound suppressed)"
+                );
+            }
 
             // Resolve tools from map
             let tools = tools_map.get(&persona.id).cloned().unwrap_or_default();
@@ -1928,6 +1964,33 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         let payload = cfg
             .payload()
             .or_else(|| Some(synthesize_trigger_fired_payload(&trigger, &cfg, &now_str)));
+
+        // 5b. Destructive-action gate (UAT P5): `approval` mode HOLDS the fire for
+        // human approval instead of publishing. The schedule has already advanced
+        // (mark_triggered above), so the fire is captured exactly once; on approval
+        // the held event is published (resolve_pending_trigger_fire).
+        if trigger.unattended_mode == "approval" {
+            match trigger_repo::insert_pending_fire(
+                pool,
+                &trigger.id,
+                &trigger.persona_id,
+                &event_type,
+                payload.as_deref(),
+                trigger.use_case_id.as_deref(),
+            ) {
+                Ok(pf) => tracing::info!(
+                    trigger_id = %trigger.id,
+                    persona_id = %trigger.persona_id,
+                    pending_id = %pf.id,
+                    "Trigger in approval mode — fire held for human approval (event not published)"
+                ),
+                Err(e) => tracing::error!(
+                    trigger_id = %trigger.id,
+                    "Failed to hold trigger fire for approval: {}", e
+                ),
+            }
+            continue;
+        }
 
         match event_repo::publish(
             pool,
