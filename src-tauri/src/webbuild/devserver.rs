@@ -13,6 +13,7 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
 use serde::Serialize;
+use ts_rs::TS;
 
 use crate::error::AppError;
 
@@ -25,10 +26,8 @@ struct DevServer {
 }
 
 /// Live status of a project's dev server, surfaced to the frontend.
-///
-/// (Plain `Serialize` for now; gains `#[derive(TS)] #[ts(export)]` in the next
-/// increment when it becomes a Tauri command return type.)
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct DevServerStatus {
     pub project_id: String,
@@ -49,14 +48,6 @@ pub struct DevServerRegistry {
 impl DevServerRegistry {
     pub fn new() -> Self {
         Self::default()
-    }
-
-    /// Is a server currently registered for this project?
-    pub fn is_running(&self, project_id: &str) -> bool {
-        self.servers
-            .lock()
-            .unwrap_or_else(|p| p.into_inner())
-            .contains_key(project_id)
     }
 
     /// Spawn `bun run dev` for `project_id` on `port`, replacing any prior
@@ -175,6 +166,19 @@ impl DevServerRegistry {
     }
 }
 
+/// Allocate a currently-free localhost TCP port for a new dev server. A brief
+/// TOCTOU window exists between this and the server binding it — acceptable for
+/// the single-user local flow (and the registry replaces a stuck server anyway).
+pub fn alloc_port() -> Result<u16, AppError> {
+    let listener = std::net::TcpListener::bind(("127.0.0.1", 0))
+        .map_err(|e| AppError::Internal(format!("allocate dev-server port: {e}")))?;
+    let port = listener
+        .local_addr()
+        .map_err(|e| AppError::Internal(format!("read allocated port: {e}")))?
+        .port();
+    Ok(port)
+}
+
 /// True if a TCP connect to `127.0.0.1:port` succeeds within a short timeout.
 fn port_is_open(port: u16) -> bool {
     let addr = SocketAddr::from(([127, 0, 0, 1], port));
@@ -212,7 +216,6 @@ mod tests {
     #[test]
     fn empty_registry_reports_nothing() {
         let reg = DevServerRegistry::new();
-        assert!(!reg.is_running("mk"));
         assert!(reg.status("mk").is_none());
         assert!(reg.list().is_empty());
         reg.stop("mk"); // idempotent no-op

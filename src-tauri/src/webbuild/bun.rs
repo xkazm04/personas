@@ -92,7 +92,8 @@ pub async fn run(
 pub(crate) fn hide_window(cmd: &mut tokio::process::Command) {
     #[cfg(windows)]
     {
-        use std::os::windows::process::CommandExt;
+        // `creation_flags` is an inherent method on tokio's Command (no
+        // `CommandExt` import needed, unlike std::process::Command).
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
         cmd.creation_flags(CREATE_NO_WINDOW);
     }

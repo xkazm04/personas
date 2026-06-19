@@ -471,6 +471,10 @@ pub struct AppState {
     /// keeps the lease fresh. Loop gating on `is_leader()` lands in a later
     /// phase — present here so all surfaces can read leadership now.
     pub leadership: Arc<engine::leadership::EngineLeadership>,
+    /// Bun dev-server registry for the web-build runtime (Athena web-dev
+    /// companion). Held here so `stop_all` runs from the app-exit hook and a
+    /// closing app never orphans a `bun`/`next` process tree.
+    pub webbuild_servers: Arc<webbuild::DevServerRegistry>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -1034,6 +1038,7 @@ pub fn run() {
                 leadership: Arc::new(engine::leadership::EngineLeadership::new(
                     app_data_dir.clone(),
                 )),
+                webbuild_servers: Arc::new(webbuild::DevServerRegistry::new()),
             });
             // Phase 1: spawn the project_tracking scheduler. The master
             // enable flag inside the tracker starts at false; the
@@ -3184,11 +3189,26 @@ pub fn run() {
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,
+            // Web-build runtime (Athena web-dev companion, P0)
+            commands::infrastructure::webbuild::webbuild_scaffold,
+            commands::infrastructure::webbuild::webbuild_dev_start,
+            commands::infrastructure::webbuild::webbuild_dev_stop,
+            commands::infrastructure::webbuild::webbuild_status,
+            commands::infrastructure::webbuild::webbuild_list_servers,
         ]))
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .unwrap_or_else(|e| {
             eprintln!("Fatal: Tauri application failed to start: {e}");
             std::process::exit(1);
+        })
+        .run(|app_handle, event| {
+            // Kill any running Bun dev servers when the app exits so a closing
+            // app never orphans a `bun`/`next` process tree (web-build runtime).
+            if matches!(event, tauri::RunEvent::Exit) {
+                if let Some(state) = app_handle.try_state::<Arc<AppState>>() {
+                    state.webbuild_servers.stop_all();
+                }
+            }
         });
 }
 

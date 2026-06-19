@@ -106,6 +106,7 @@ pub async fn scaffold_next_app(slug: &str) -> Result<PathBuf, AppError> {
             crate::utils::text::truncate_on_char_boundary(&out.stderr, 400)
         )));
     }
+    tracing::debug!(slug, output_bytes = out.stdout.len(), "scaffolded Next.js app");
     pin_turbopack_root(&dir).await?;
     Ok(dir)
 }
