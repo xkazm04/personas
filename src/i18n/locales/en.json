@@ -4466,7 +4466,8 @@
       "encrypt_now_other": "Encrypt {count} unencrypted credentials now",
       "encrypt_done_one": "Done -- {migrated} credential encrypted.",
       "encrypt_done_other": "Done -- {migrated} credentials encrypted.",
-      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app."
+      "encrypt_partial": "Encrypted {migrated}, failed {failed}. Try again or restart the app.",
+      "legacy_ipc": "Legacy IPC decryptions: {count}"
     },
     "delete_dialog": {
       "title": "Delete Credential",

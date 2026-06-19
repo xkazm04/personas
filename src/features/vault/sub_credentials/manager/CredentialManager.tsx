@@ -7,6 +7,7 @@ import { useCredentialManagerState } from './useCredentialManagerState';
 import { CredentialManagerHeader, CredentialToolbar } from './CredentialManagerHeader';
 import { CredentialManagerViews } from './CredentialManagerViews';
 import { VaultBreadcrumb } from './VaultBreadcrumb';
+import { VaultTrustBadge } from './VaultTrustBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 export function CredentialManager() {
@@ -60,6 +61,10 @@ export function CredentialManager() {
         credentials={credentials}
         bulk={bulk}
       />
+
+      {/* Standing trust panel — only on the credentials list (UAT L1
+          F-VAULT-TRUST-COPY-DEAD / F-VAULT-STATUS-COUNTERS). */}
+      {viewState.view === 'list' && <VaultTrustBadge />}
 
       {/* The catalog browse view's search row stands alone — drop the
           breadcrumb there. Other multi-level views (catalog-form, add-*) keep

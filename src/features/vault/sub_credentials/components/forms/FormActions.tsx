@@ -18,7 +18,6 @@ interface FormActionsProps {
 
 export function FormActions({
   vault,
-  fields,
   onSave,
   onCancel,
   isSaving,
@@ -31,15 +30,25 @@ export function FormActions({
       <div className="border-t border-primary/8" />
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          {vault && fields.some((f) => f.type === 'password') && (
-            <div className="flex items-center gap-1.5 typo-body text-emerald-400/70">
-              <Lock className="w-3 h-3" />
-              <span>
-                {vault.key_source === 'keychain'
-                  ? t.vault.credential_forms.encrypted_keychain
-                  : t.vault.credential_forms.encrypted_at_rest}
-              </span>
-            </div>
+          {/* Trust signal at the credential-entry moment — shown for ALL
+              credential types (not only password fields), so OAuth / bearer /
+              MCP-URL / DB creds get it too (UAT L1 F-VAULT-TRUST-COPY-DEAD). The
+              tooltip surfaces the AES-256-GCM + local-only reassurance copy. */}
+          {vault && (
+            <Tooltip
+              content={`${t.vault.vault_badge.aes_title} — ${t.vault.vault_badge.local_detail}`}
+              placement="top"
+              delay={200}
+            >
+              <div className="flex items-center gap-1.5 typo-body text-emerald-400/70 cursor-help">
+                <Lock className="w-3 h-3" />
+                <span>
+                  {vault.key_source === 'keychain'
+                    ? t.vault.credential_forms.encrypted_keychain
+                    : t.vault.credential_forms.encrypted_at_rest}
+                </span>
+              </div>
+            </Tooltip>
           )}
         </div>
         <div className="flex gap-2">
