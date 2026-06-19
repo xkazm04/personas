@@ -4479,7 +4479,6 @@ export type Translations = {
       encrypt_done_one: string;
       encrypt_done_other: string;
       encrypt_partial: string;
-      legacy_ipc: string;
     };
     delete_dialog: {
       title: string;
