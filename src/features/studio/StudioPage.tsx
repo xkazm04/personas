@@ -13,6 +13,7 @@ import {
 } from '@/api/webbuild';
 import StudioChecklist from './StudioChecklist';
 import StudioChatInput from './StudioChatInput';
+import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 
 // Dev-only experimental surface — P1 of the Athena web-dev companion
 // (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant;
@@ -39,7 +40,14 @@ export default function StudioPage() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [newName, setNewName] = useState('');
   const [iframeKey, setIframeKey] = useState(0);
+  const [phases, setPhases] = useState<BuildPhase[]>(MOCK_PHASES);
   const pollRef = useRef<number | null>(null);
+
+  // Reset the plan when switching projects (Athena's first build turn for the
+  // new project replaces it via the BUILD_PLAN line).
+  useEffect(() => {
+    setPhases(MOCK_PHASES);
+  }, [selectedId]);
 
   const stopPolling = useCallback(() => {
     if (pollRef.current) {
@@ -223,8 +231,12 @@ export default function StudioPage() {
         )}
         {selectedId && (
           <>
-            <StudioChecklist />
-            <StudioChatInput projectId={selectedId} projectName={selectedName} />
+            <StudioChecklist phases={phases} />
+            <StudioChatInput
+              projectId={selectedId}
+              projectName={selectedName}
+              onPhases={setPhases}
+            />
           </>
         )}
       </div>

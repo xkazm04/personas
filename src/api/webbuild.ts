@@ -1,6 +1,7 @@
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import type { BuildTurnResult } from '@/lib/bindings/BuildTurnResult';
 
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
@@ -37,4 +38,4 @@ export const webbuildListProjects = () =>
  * `webbuild:<projectId>`.
  */
 export const webbuildSessionSend = (projectId: string, message: string) =>
-  invokeWithTimeout<string>('webbuild_session_send', { projectId, message }, undefined, 900_000);
+  invokeWithTimeout<BuildTurnResult>('webbuild_session_send', { projectId, message }, undefined, 900_000);

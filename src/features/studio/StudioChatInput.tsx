@@ -5,6 +5,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
+import type { BuildPhase } from './studioBuildModel';
 
 // Minimal Studio chat: a send-only input with a single response bubble above it
 // that (1) sticks to the input, (2) shows an in-progress indicator while Athena
@@ -14,9 +15,11 @@ import { webbuildSessionSend } from '@/api/webbuild';
 export default function StudioChatInput({
   projectId,
   projectName,
+  onPhases,
 }: {
   projectId: string;
   projectName: string;
+  onPhases?: (phases: BuildPhase[]) => void;
 }) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -29,15 +32,16 @@ export default function StudioChatInput({
     setReply(null);
     setBusy(true);
     try {
-      const r = await webbuildSessionSend(projectId, text);
-      setReply(r.trim() || 'Done.');
+      const result = await webbuildSessionSend(projectId, text);
+      setReply(result.reply.trim() || 'Done.');
+      if (result.phases && result.phases.length > 0) onPhases?.(result.phases);
     } catch (e) {
       setReply('Something went wrong with that change.');
       toastCatch('build instruction')(e);
     } finally {
       setBusy(false);
     }
-  }, [input, busy, projectId]);
+  }, [input, busy, projectId, onPhases]);
 
   const showBubble = busy || reply !== null;
 

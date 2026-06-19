@@ -1,25 +1,18 @@
-// Shared model for the Studio build checklist. The phases are MOCKED here until
-// the `build_plan` op (P3) feeds real phases; they mirror the web-build
-// doctrine's Spine → Dynamic-Tail shape (docs/concepts/web-build-best-practices.md).
+import type { WebBuildPhase } from '@/lib/bindings/WebBuildPhase';
 
-export type PhaseStatus = 'done' | 'active' | 'pending';
+// The build-phase type flows from the backend (run_build_turn → BuildTurnResult).
+// FE alias so components read `BuildPhase` while the shape stays the binding's.
+export type BuildPhase = WebBuildPhase;
 
-export interface BuildPhase {
-  id: string;
-  title: string;
-  status: PhaseStatus;
-  /** Golden-output hint or the last thing that happened on this phase. */
-  note?: string;
-}
-
-/** Mock build plan (Spine + a couple generated tail phases) for prototyping. */
+// Placeholder plan shown before Athena emits a real one (her first build turn
+// replaces this via the BUILD_PLAN line). Mirrors the doctrine's Spine → Tail.
 export const MOCK_PHASES: BuildPhase[] = [
   { id: 'vision', title: 'Vision', status: 'done', note: 'Portfolio for a web-dev freelancer' },
   { id: 'brand', title: 'Brand & theme', status: 'done', note: 'Calm · modern · dark' },
   { id: 'direction', title: 'Design direction', status: 'active', note: 'Choosing the hero look' },
-  { id: 'foundation', title: 'Foundation', status: 'pending' },
-  { id: 'work', title: 'Work / case studies', status: 'pending' },
-  { id: 'contact', title: 'Contact', status: 'pending' },
+  { id: 'foundation', title: 'Foundation', status: 'pending', note: null },
+  { id: 'work', title: 'Work / case studies', status: 'pending', note: null },
+  { id: 'contact', title: 'Contact', status: 'pending', note: null },
 ];
 
 export function phaseProgress(phases: BuildPhase[]): {
