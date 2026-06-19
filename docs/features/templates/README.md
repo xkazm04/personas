@@ -229,6 +229,16 @@ ways: the synthesis prompt now requests only the four valid role tokens, and
 L2 then confirmed a real synth produces members + connections and
 `wire_team_handoff` fires (chain + event_listener triggers on the members).
 
+That same incident showed synth is **non-transactional** — the persona/team/
+member/connection/trigger writes each take their own pooled connection, so a
+failure partway used to leave orphaned personas + an empty team. Synth now runs
+the create steps inside a closure and, on any error, **compensates** by deleting
+every entity it had already persisted (`created_personas` + `created_team`; FK
+cascades reclaim members/connections/triggers). True single-transaction
+atomicity would require threading one connection through every repo call — the
+compensating rollback gives the same "all-or-nothing" guarantee without that
+cross-cutting refactor.
+
 ## Common operations
 
 ### Add a new template

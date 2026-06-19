@@ -273,6 +273,15 @@ pub async fn synthesize_team_from_templates(
         ));
     }
 
+    // 6-10. Assemble the team. Synth is non-transactional across these repo
+    // calls (each grabs its own pooled connection), so the closure performs the
+    // create steps and the `match` below COMPENSATES on any failure — deleting
+    // every entity already persisted so a mid-flight error never leaves orphaned
+    // personas + an empty team (UAT L2 follow-up). FK cascades clean up
+    // members/connections/triggers; we just delete the personas + team.
+    let mut created_personas: Vec<String> = Vec::new();
+    let mut created_team: Option<String> = None;
+    let assembled = (|| -> Result<TeamSynthesisResult, AppError> {
     // 6. Create personas via instant_adopt logic (inline, not calling tauri command)
     let mut persona_ids: Vec<String> = Vec::new();
     for (tmpl, _role) in &valid_templates {
@@ -370,6 +379,7 @@ pub async fn synthesize_team_from_templates(
             tracing::warn!(template = %tmpl.test_case_name, error = %e, "Failed to increment adoption count");
         }
 
+        created_personas.push(persona.id.clone());
         persona_ids.push(persona.id);
     }
 
@@ -388,6 +398,7 @@ pub async fn synthesize_team_from_templates(
             enabled: Some(true),
         },
     )?;
+    created_team = Some(team.id.clone());
 
     // 8. Add members with DAG layout positions
     let edge_pairs: Vec<(usize, usize)> = response
@@ -452,8 +463,35 @@ pub async fn synthesize_team_from_templates(
 
     Ok(TeamSynthesisResult {
         team_id: team.id,
-        team_name,
+        team_name: team_name.clone(),
         member_count: persona_ids.len(),
-        description: response.team_description,
+        description: response.team_description.clone(),
     })
+    })();
+
+    match assembled {
+        Ok(result) => Ok(result),
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                personas = created_personas.len(),
+                team = created_team.is_some(),
+                "synthesize_team failed mid-flight; rolling back partial state"
+            );
+            // Compensating rollback (best-effort). Delete personas first — FK
+            // cascades take their persona_team_members rows + persona_triggers —
+            // then the team (cascades any remaining members/connections).
+            for pid in &created_personas {
+                if let Err(ce) = persona_repo::delete(&state.db, pid) {
+                    tracing::warn!(persona_id = %pid, error = %ce, "synth rollback: persona delete failed");
+                }
+            }
+            if let Some(ref tid) = created_team {
+                if let Err(ce) = team_repo::delete(&state.db, tid) {
+                    tracing::warn!(team_id = %tid, error = %ce, "synth rollback: team delete failed");
+                }
+            }
+            Err(e)
+        }
+    }
 }
