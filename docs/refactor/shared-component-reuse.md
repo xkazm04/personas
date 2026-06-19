@@ -75,6 +75,25 @@ tokens), `custom/role-button-requires-keydown`.
 
 **Highest ROI migrations:** `Numeric` (240), `CopyButton` (31, cleanest), full-element `LoadingSpinner` swaps. Buttons (2,154) are a long-tail opportunistic migration, not a single task.
 
+### Adoption status (Phase 3)
+
+| Pattern | Rule | Status |
+|---|---|---|
+| **`Numeric`** (`.toFixed`/`.toLocaleString` in JSX) | `custom/prefer-numeric` | ✅ **Done 2026-06-19** — **0** across `src/features`, enforced (warn). |
+| **`StatusBadge`** (hand-rolled variant/accent color combos) | `custom/prefer-status-badge` | ✅ **Done 2026-06-19** — **0** across `src/features`, enforced (warn). |
+| **`SectionCard`** (hand-rolled card shells) | _(none yet)_ | ⏳ Backlog — biggest/fuzziest; needs visual parity. |
+| **`BaseModal`** (`fixed inset-0`) | `custom/enforce-base-modal` | ⏳ ~4 real one-offs left. |
+
+~205 sites migrated across 4 subagent waves (settings/vault/teams/triggers/schedules →
+plugins/templates/home/shared → agents/overview sub-areas → scattered closeout).
+**Key lesson:** the raw audit counts were *heavily inflated* by look-alikes — the true
+`Numeric` backlog was ~98 (not ~240; the rest were **dates**, SVG **coords/attr values**,
+and **formatter callbacks**), and the true `StatusBadge` backlog was ~75 (not ~250; the
+rest were **alert banners**, **step-circles**, **code chips**, and **message boxes** that
+merely borrow a status *color*). Both rules were sharpened iteratively against those
+false-positive shapes (see `eslint-rules/prefer-numeric.cjs` / `prefer-status-badge.cjs`
+header comments), so they now precisely flag *only* genuine display/badge reimplementations.
+
 ---
 
 ## 3. Backlog — components to CREATE or CONSOLIDATE
