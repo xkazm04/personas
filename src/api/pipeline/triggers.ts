@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { PersonaTrigger } from "@/lib/bindings/PersonaTrigger";
+import type { PendingTriggerFire } from "@/lib/bindings/PendingTriggerFire";
 import type { CreateTriggerInput } from "@/lib/bindings/CreateTriggerInput";
 import type { UpdateTriggerInput } from "@/lib/bindings/UpdateTriggerInput";
 import type { TriggerValidationResult } from "@/lib/bindings/TriggerValidationResult";
@@ -27,6 +28,27 @@ export const updateTrigger = (id: string, personaId: string, input: UpdateTrigge
 
 export const deleteTrigger = (id: string, personaId: string) =>
   invoke<boolean>("delete_trigger", { id, personaId });
+
+// ============================================================================
+// Destructive-action gate (UAT P5): unattended-fire mode + approval queue
+// ============================================================================
+
+export type UnattendedMode = "auto" | "dry_run" | "approval";
+
+/** Set a trigger's behavior when it fires UNATTENDED (schedule/event): fire
+ *  normally ("auto"), run-but-suppress-outbound ("dry_run"), or hold for human
+ *  approval ("approval"). */
+export const setTriggerUnattendedMode = (id: string, personaId: string, mode: UnattendedMode) =>
+  invoke<PersonaTrigger>("set_trigger_unattended_mode", { id, personaId, mode });
+
+/** Trigger fires currently held awaiting human approval (approval mode). */
+export const listPendingTriggerFires = () =>
+  invoke<PendingTriggerFire[]>("list_pending_trigger_fires");
+
+/** Approve (publish the held event → the run proceeds) or reject (discard) a
+ *  held trigger fire. */
+export const resolvePendingTriggerFire = (id: string, approved: boolean) =>
+  invoke<PendingTriggerFire>("resolve_pending_trigger_fire", { id, approved });
 
 // ============================================================================
 // Builder: atomic persona <-> event linking

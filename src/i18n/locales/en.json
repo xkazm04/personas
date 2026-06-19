@@ -9033,6 +9033,27 @@
     "schedule_mode_label": "Schedule Mode",
     "test_fire_label": "Test fire",
     "dry_run_label": "Dry run",
+    "unattended": {
+      "title": "When this runs unattended",
+      "subtitle": "Controls what happens when this trigger fires on its own (on schedule), without you watching.",
+      "auto": "Run automatically",
+      "auto_desc": "Fires and runs without asking — including any actions it sends, posts, or writes.",
+      "dry_run": "Dry run (safe)",
+      "dry_run_desc": "Fires on schedule but suppresses every outbound action — you review the result, then switch to automatic once you trust it.",
+      "approval": "Require my approval",
+      "approval_desc": "Holds each scheduled run until you approve it, so nothing happens unattended without your OK.",
+      "badge_dry_run": "Dry run",
+      "badge_approval": "Approval"
+    },
+    "pending_approval": {
+      "title": "Awaiting your approval",
+      "subtitle_one": "{count} scheduled run is held until you approve it.",
+      "subtitle_other": "{count} scheduled runs are held until you approve them.",
+      "run_now": "Approve & run",
+      "discard": "Discard",
+      "approved": "Approved — running",
+      "discarded": "Discarded"
+    },
     "copy_sample_curl": "Copy sample curl",
     "event_listener_label": "Event Listener",
     "execution_history": "Execution history",

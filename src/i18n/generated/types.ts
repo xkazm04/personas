@@ -9039,6 +9039,27 @@ export type Translations = {
     schedule_mode_label: string;
     test_fire_label: string;
     dry_run_label: string;
+    unattended: {
+      title: string;
+      subtitle: string;
+      auto: string;
+      auto_desc: string;
+      dry_run: string;
+      dry_run_desc: string;
+      approval: string;
+      approval_desc: string;
+      badge_dry_run: string;
+      badge_approval: string;
+    };
+    pending_approval: {
+      title: string;
+      subtitle_one: string;
+      subtitle_other: string;
+      run_now: string;
+      discard: string;
+      approved: string;
+      discarded: string;
+    };
     copy_sample_curl: string;
     event_listener_label: string;
     execution_history: string;

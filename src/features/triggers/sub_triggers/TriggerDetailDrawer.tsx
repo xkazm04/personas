@@ -7,6 +7,7 @@ import { useTriggerDetail } from '@/features/triggers/hooks/useTriggerDetail';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { RateLimitControls } from './RateLimitControls';
 import { ActiveHoursSection } from './ActiveHoursSection';
+import { UnattendedModeSection } from './UnattendedModeSection';
 import { TriggerExecutionHistory } from './TriggerExecutionHistory';
 import { ConfigSection } from './TriggerConfigSection';
 import { DryRunResultView } from './DryRunResultView';
@@ -44,6 +45,8 @@ export function TriggerDetailDrawer({ trigger, credentialEventsList, onDelete, r
         <RateLimitControls rateLimit={rateLimit} runtimeState={rateLimitState} onChange={onRateLimitChange} />
 
         <ActiveHoursSection config={rawConfig} onChange={onActiveWindowChange} />
+
+        <UnattendedModeSection trigger={trigger} />
 
         {/* Test Result */}
         {detail.testResult && (

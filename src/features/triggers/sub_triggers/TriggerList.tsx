@@ -16,6 +16,7 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { TriggerHealth } from './triggerListTypes';
 import { HealthDot } from './HealthDot';
 import { TriggerCountdown } from './TriggerCountdown';
+import { PendingTriggerApprovals } from './PendingTriggerApprovals';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDensity } from '@/hooks/utility/data/useDensity';
 import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
@@ -106,6 +107,7 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
           </div>
         ) : (
           <div className="p-6 space-y-6">
+            <PendingTriggerApprovals />
             <div className="flex items-center justify-between">
               <h3 className="typo-code font-mono text-foreground uppercase tracking-wider">{t.triggers.list.event_triggers}</h3>
               <DensityToggle density={density} onChange={setDensity} scopeId="trigger-list" />
@@ -163,6 +165,17 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               }`}>
                                 {trigger.enabled ? t.triggers.on_label : t.triggers.off_label}
                               </span>
+                              {trigger.unattended_mode && trigger.unattended_mode !== 'auto' && (
+                                <span className={`typo-code px-1.5 py-0.5 rounded-card font-mono border ${
+                                  trigger.unattended_mode === 'approval'
+                                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-amber-500/15 text-amber-400 border-amber-500/20'
+                                }`}>
+                                  {trigger.unattended_mode === 'approval'
+                                    ? t.triggers.unattended.badge_approval
+                                    : t.triggers.unattended.badge_dry_run}
+                                </span>
+                              )}
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
                               {triggerRateLimits[trigger.id]?.isThrottled && (
                                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full typo-body bg-red-500/15 text-red-400 border border-red-500/20 font-medium">
