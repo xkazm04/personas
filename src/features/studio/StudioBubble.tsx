@@ -1,27 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Send, X } from 'lucide-react';
-import Button from '@/features/shared/components/buttons/Button';
+import { useCallback, useState } from 'react';
+import { Bot } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
+import { BUBBLE_COPY, MOCK_PHASES, type BubbleViewProps, type Msg } from './studioBuildModel';
+import StudioBubbleBaseline from './StudioBubbleBaseline';
+import StudioBubbleThread from './StudioBubbleThread';
+import StudioBubbleCockpit from './StudioBubbleCockpit';
 
-// Compact, Studio-scoped comms "bubble" for talking to Athena about the build —
-// distinct from the large general CompanionPanel. P2 of the web-dev companion.
-// v1 is a floating bubble docked over the preview; the full orb-anchored flyout
-// (springing from the live AthenaOrb) is the next polish. Copy is local (i18n
-// deferred while the surface is in flux).
-const COPY = {
-  title: 'Build with Athena',
-  hint: 'Tell Athena what to change — e.g. "make the hero heading purple" or "add a contact section". She edits the code; the preview updates live.',
-  placeholder: 'Tell Athena what to build…',
-  working: 'Athena is working… watch the preview.',
-  failed: 'Something went wrong with that change.',
-  send: 'Send',
-};
+// Host for the Studio comms-bubble PROTOTYPE: owns the real chat state + the
+// build-session send, and A/Bs the directional variants behind a small switcher
+// (throwaway — collapses to the winner at consolidation). The variants are pure
+// presentation receiving identical props (studioBuildModel.BubbleViewProps).
 
-interface Msg {
-  role: 'you' | 'athena';
-  text: string;
-}
+type Variant = 'thread' | 'cockpit' | 'baseline';
+const VARIANTS: { id: Variant; label: string }[] = [
+  { id: 'thread', label: 'Thread' },
+  { id: 'cockpit', label: 'Cockpit' },
+  { id: 'baseline', label: 'Chat' },
+];
 
 export default function StudioBubble({
   projectId,
@@ -31,16 +27,12 @@ export default function StudioBubble({
   projectName: string;
 }) {
   const [open, setOpen] = useState(true);
+  const [variant, setVariant] = useState<Variant>('thread');
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, busy]);
-
-  const send = useCallback(async () => {
+  const onSend = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
     setInput('');
@@ -50,19 +42,25 @@ export default function StudioBubble({
       const reply = await webbuildSessionSend(projectId, text);
       setMessages((m) => [...m, { role: 'athena', text: reply.trim() || 'Done.' }]);
     } catch (e) {
-      setMessages((m) => [...m, { role: 'athena', text: COPY.failed }]);
+      setMessages((m) => [...m, { role: 'athena', text: 'Something went wrong with that change.' }]);
       toastCatch('build instruction')(e);
     } finally {
       setBusy(false);
     }
   }, [input, busy, projectId]);
 
+  // Stub for the orb-fly-to-comment behaviour — visualised as an Athena note for
+  // now; wired to the real orb glide + preview-bridge in a later increment.
+  const onPointAt = useCallback((label: string) => {
+    setMessages((m) => [...m, { role: 'athena', text: `Looking at the ${label}…` }]);
+  }, []);
+
   if (!open) {
     return (
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={COPY.title}
+        aria-label={BUBBLE_COPY.title}
         className="absolute bottom-4 right-4 flex h-12 w-12 items-center justify-center rounded-full border border-primary/30 bg-primary/15 text-primary shadow-elevation-3 backdrop-blur transition-colors hover:bg-primary/25"
       >
         <Bot className="h-6 w-6" />
@@ -70,67 +68,36 @@ export default function StudioBubble({
     );
   }
 
+  const viewProps: BubbleViewProps = {
+    projectName,
+    messages,
+    phases: MOCK_PHASES,
+    input,
+    setInput,
+    busy,
+    onSend,
+    onClose: () => setOpen(false),
+    onPointAt,
+  };
+
   return (
-    <div className="absolute bottom-4 right-4 flex max-h-[min(28rem,calc(100%-2rem))] w-80 max-w-[calc(100%-2rem)] flex-col overflow-hidden rounded-modal border border-border bg-background/95 shadow-elevation-4 backdrop-blur">
-      <header className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2">
-        <Bot className="h-4 w-4 text-primary" />
-        <span className="typo-caption flex-1 truncate text-foreground">
-          {COPY.title} · {projectName}
-        </span>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          aria-label="Minimize"
-          className="rounded-interactive p-1 text-foreground/60 hover:bg-secondary/60 hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </header>
-
-      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
-        {messages.length === 0 && <p className="typo-caption">{COPY.hint}</p>}
-        {messages.map((m, i) => (
-          <div
-            key={i}
-            className={
-              m.role === 'you'
-                ? 'ml-6 rounded-card bg-primary/15 px-3 py-1.5 text-md text-foreground'
-                : 'mr-6 flex gap-2 rounded-card bg-secondary/50 px-3 py-1.5 text-md text-foreground'
-            }
+    <div className="absolute bottom-4 right-4 flex w-[22rem] max-w-[calc(100%-2rem)] flex-col">
+      {/* Prototype variant switcher (throwaway). */}
+      <div className="mb-2 flex items-center gap-1 self-end rounded-full border border-border bg-background/90 p-0.5 shadow-elevation-2 backdrop-blur">
+        {VARIANTS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVariant(v.id)}
+            className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${variant === v.id ? 'bg-primary/20 text-primary' : 'text-foreground/60 hover:text-foreground'}`}
           >
-            {m.role === 'athena' && <Bot className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />}
-            <span className="whitespace-pre-wrap break-words">{m.text}</span>
-          </div>
+            {v.label}
+          </button>
         ))}
-        {busy && <p className="typo-caption">{COPY.working}</p>}
       </div>
-
-      <footer className="flex shrink-0 items-center gap-2 border-t border-border px-3 py-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          placeholder={COPY.placeholder}
-          disabled={busy}
-          className="min-w-0 flex-1 rounded-input border border-border bg-secondary/40 px-3 py-1.5 text-md outline-none focus:border-primary/50 disabled:opacity-60"
-        />
-        <Button
-          variant="primary"
-          size="sm"
-          className="shrink-0"
-          icon={<Send className="h-4 w-4" />}
-          loading={busy}
-          disabled={!input.trim() || busy}
-          onClick={() => void send()}
-        >
-          {COPY.send}
-        </Button>
-      </footer>
+      {variant === 'thread' && <StudioBubbleThread {...viewProps} />}
+      {variant === 'cockpit' && <StudioBubbleCockpit {...viewProps} />}
+      {variant === 'baseline' && <StudioBubbleBaseline {...viewProps} />}
     </div>
   );
 }
