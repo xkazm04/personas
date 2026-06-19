@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { Activity, Trash2, AlertCircle, ChevronDown, ChevronRight, Clock } from 'lucide-react';
 import { useSystemTraces } from '@/hooks/execution/useSystemTrace';
 import { SYSTEM_OPERATION_CONFIG, getSpanConfig } from '@/features/agents/sub_executions/libs/traceHelpers';
@@ -74,10 +75,9 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
         <span className="typo-code text-foreground/85 truncate flex-1">{trace.label}</span>
 
         {isActive && (
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code text-blue-400 bg-blue-500/10 rounded border border-blue-500/20 shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          <StatusBadge variant="info" size="sm" icon={<span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />} className="typo-code rounded shrink-0">
             Active
-          </span>
+          </StatusBadge>
         )}
 
         {hasErrors && (

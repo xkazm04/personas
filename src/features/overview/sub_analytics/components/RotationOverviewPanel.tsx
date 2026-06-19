@@ -7,6 +7,7 @@ import {
   CheckCircle2, Clock, TrendingDown, Timer,
   ExternalLink, Loader2,
 } from 'lucide-react';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -152,27 +153,27 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
         </div>
         <h3 className="typo-heading font-bold text-foreground/90 uppercase tracking-wider truncate">{t.overview.analytics_dashboard.credential_rotation}</h3>
         {stats.total > 0 && (
-          <span className="px-1.5 py-0 typo-caption font-bold rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20 flex-shrink-0">
+          <StatusBadge accent="violet" size="sm" className="font-bold flex-shrink-0">
             {stats.total}
-          </span>
+          </StatusBadge>
         )}
 
         {/* Summary pills — pushed right, wrap if needed */}
         <div className="flex items-center gap-1 ml-auto flex-wrap justify-end">
           {stats.active > 0 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0 typo-caption rounded-card bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" title={tx(t.overview.analytics_dashboard.active_count, { count: stats.active })}>
-              <Shield className="w-2.5 h-2.5" />{stats.active}
-            </span>
+            <StatusBadge variant="success" size="sm" icon={<Shield className="w-2.5 h-2.5" />} title={tx(t.overview.analytics_dashboard.active_count, { count: stats.active })}>
+              {stats.active}
+            </StatusBadge>
           )}
           {stats.expiringSoon > 0 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0 typo-caption rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20" title={tx(t.overview.analytics_dashboard.soon_count, { count: stats.expiringSoon })}>
-              <Clock className="w-2.5 h-2.5" />{stats.expiringSoon}
-            </span>
+            <StatusBadge variant="warning" size="sm" icon={<Clock className="w-2.5 h-2.5" />} title={tx(t.overview.analytics_dashboard.soon_count, { count: stats.expiringSoon })}>
+              {stats.expiringSoon}
+            </StatusBadge>
           )}
           {stats.anomalies > 0 && (
-            <span className="inline-flex items-center gap-0.5 px-1.5 py-0 typo-caption rounded-card bg-red-500/10 text-red-400 border border-red-500/20" title={stats.anomalies !== 1 ? tx(t.overview.analytics_dashboard.issues_count, { count: stats.anomalies }) : tx(t.overview.analytics_dashboard.issues_count_one, { count: stats.anomalies })}>
-              <AlertTriangle className="w-2.5 h-2.5" />{stats.anomalies}
-            </span>
+            <StatusBadge variant="error" size="sm" icon={<AlertTriangle className="w-2.5 h-2.5" />} title={stats.anomalies !== 1 ? tx(t.overview.analytics_dashboard.issues_count, { count: stats.anomalies }) : tx(t.overview.analytics_dashboard.issues_count_one, { count: stats.anomalies })}>
+              {stats.anomalies}
+            </StatusBadge>
           )}
           <button
             type="button"
@@ -244,12 +245,14 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
                   <span className="typo-body font-medium text-foreground/90 truncate">{item.credentialName}</span>
                   <span className="typo-caption text-foreground truncate">· {item.serviceType}</span>
                   {item.status.consecutive_failures > 0 && (
-                    <span
-                      className="inline-flex items-center px-1 typo-caption font-mono rounded-card bg-red-500/10 text-red-400 border border-red-500/20 flex-shrink-0"
+                    <StatusBadge
+                      variant="error"
+                      size="sm"
+                      className="font-mono flex-shrink-0"
                       title={tx(t.overview.analytics_dashboard.fail_count, { count: item.status.consecutive_failures })}
                     >
                       {item.status.consecutive_failures}x
-                    </span>
+                    </StatusBadge>
                   )}
                 </div>
 

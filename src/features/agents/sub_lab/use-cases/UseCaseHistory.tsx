@@ -5,6 +5,7 @@ import { listExecutionsForUseCase } from '@/api/agents/executions';
 import { formatRelativeTime, formatDuration } from '@/lib/utils/formatters';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 const logger = createLogger("use-case-history");
 
@@ -111,7 +112,7 @@ export function UseCaseHistory({ personaId, useCaseId, onRerun, refreshKey }: Us
               </span>
               {exec.cost_usd > 0 && (
                 <span className="typo-data text-foreground flex-shrink-0">
-                  ${exec.cost_usd.toFixed(4)}
+                  $<Numeric value={exec.cost_usd} precision={4} />
                 </span>
               )}
               {exec.input_data && (

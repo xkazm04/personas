@@ -8,6 +8,7 @@ import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { DeploymentHealthSparkline } from './DeploymentHealthSparkline';
 import type { HealthDataPoint } from './DeploymentHealthSparkline';
 import { AsyncButton } from '@/features/shared/components/buttons';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -116,7 +117,7 @@ export function DeploymentTable({
                 </span>
               </td>
               <td className="px-4 py-3 text-right typo-data text-foreground tabular-nums">
-                {row.invocations > 0 ? row.invocations.toLocaleString() : '-'}
+                {row.invocations > 0 ? <Numeric value={row.invocations} align="right" /> : '-'}
               </td>
               <td className="px-4 py-3">
                 {(() => {
@@ -159,9 +160,7 @@ export function DeploymentTable({
                     >
                       {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
                       {testResult.durationMs != null && (
-                        <span className="text-foreground">
-                          {testResult.durationMs < 1000 ? `${testResult.durationMs}ms` : `${(testResult.durationMs / 1000).toFixed(1)}s`}
-                        </span>
+                        <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
                       )}
                       {onDismissTest && (
                         <button

@@ -8,6 +8,7 @@ import { HealingIssueSummary } from './HealingIssueSummary';
 import { IssuesList } from './IssuesList';
 import { HealingTimeline } from './HealingTimeline';
 import { ErrorRecoveryBanner } from '@/features/shared/components/feedback/ErrorRecoveryBanner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HealingViewMode as ViewMode } from '@/lib/constants/uiModes';
 
@@ -97,9 +98,9 @@ export function HealingIssuesPanel({
           </div>
           <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.healing_issues_panel.title}</h3>
           {healingIssues.length > 0 && (
-            <span className="px-2 py-0.5 typo-body font-black tracking-wide rounded-card bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-elevation-1">
+            <StatusBadge variant="warning" className="typo-body font-black tracking-wide rounded-card shadow-elevation-1">
               {healingIssues.length}
-            </span>
+            </StatusBadge>
           )}
         </div>
         <div className="flex items-center gap-2">

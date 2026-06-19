@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Pause, Play, Trash2, Copy, ExternalLink, Check, DollarSign, FlaskConical, X } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { CloudDeployment } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { statusColor, statusIcon, timeAgo, budgetUtilization, budgetColor, formatCost } from './cloudDeploymentHelpers';
@@ -159,7 +160,7 @@ export function DeploymentCard({
               <DollarSign className="w-3 h-3" />
               {dt.budget_label} {formatCost(d.currentMonthCostUsd)} / {formatCost(d.maxMonthlyBudgetUsd)}
             </span>
-            <span>{budgetUtilization(d)?.toFixed(0) ?? 0}%</span>
+            <Numeric value={budgetUtilization(d) ?? 0} unit="percent" precision={0} />
           </div>
           <div className="h-1.5 rounded-full bg-secondary/50 overflow-hidden">
             <div
@@ -191,16 +192,10 @@ export function DeploymentCard({
               {testResult.status === 'pass' ? 'PASS' : 'FAIL'}
             </span>
             {testResult.durationMs != null && (
-              <span className="text-foreground">
-                {testResult.durationMs < 1000
-                  ? `${testResult.durationMs}ms`
-                  : `${(testResult.durationMs / 1000).toFixed(1)}s`}
-              </span>
+              <Numeric value={testResult.durationMs} unit="ms" className="text-foreground" />
             )}
             {testResult.costUsd > 0 && (
-              <span className="text-foreground">
-                ${testResult.costUsd.toFixed(4)}
-              </span>
+              <Numeric value={testResult.costUsd} unit="usd" className="text-foreground" />
             )}
             {testResult.error && (
               <span className="truncate text-red-400/80" title={testResult.error}>

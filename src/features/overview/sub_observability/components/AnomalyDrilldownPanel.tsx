@@ -3,6 +3,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { X, Search, AlertTriangle, Clock, ArrowRight, Zap, Shield, RefreshCw, Bell, HelpCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { AnomalyDrilldownData } from '@/lib/bindings/AnomalyDrilldownData';
 import type { CorrelatedEvent } from '@/lib/bindings/CorrelatedEvent';
 import type { RootCauseSuggestion } from '@/lib/bindings/RootCauseSuggestion';
@@ -162,12 +163,12 @@ export default function AnomalyDrilldownPanel({ anomaly, data, loading, error, o
         <div className="mt-3 flex items-center gap-4 typo-caption">
           <div className="flex items-center gap-1.5">
             <span className="text-foreground">{t.overview.anomaly_drilldown_extra.value_label}</span>
-            <span className="font-medium text-red-400">{anomaly.value.toFixed(2)}</span>
+            <Numeric value={anomaly.value} precision={2} className="font-medium text-red-400" />
           </div>
           <ArrowRight className="w-3 h-3 text-foreground" />
           <div className="flex items-center gap-1.5">
             <span className="text-foreground">{t.overview.anomaly_drilldown_extra.baseline_label}</span>
-            <span className="font-medium text-foreground">{anomaly.baseline.toFixed(2)}</span>
+            <Numeric value={anomaly.baseline} precision={2} className="font-medium text-foreground" />
           </div>
           <div className="ml-auto px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 font-semibold text-[11px]">
             +{deviationPct}%

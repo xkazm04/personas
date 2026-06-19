@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { Zap, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 
@@ -82,9 +83,9 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
               </span>
             )}
             {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20" title={isAutoFixPending ? 'Retry in progress' : 'Auto-healed via retry'}>
-                <RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} /> retry
-              </span>
+              <StatusBadge accent="cyan" size="sm" icon={<RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} />} className="typo-code rounded-card" title={isAutoFixPending ? 'Retry in progress' : 'Auto-healed via retry'}>
+                retry
+              </StatusBadge>
             )}
             <button
               onClick={() => onSelectIssue(issue)}

@@ -3,6 +3,7 @@ import { AlertTriangle, Shield, Zap, DollarSign, TrendingDown, ArrowRight } from
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { PersonaHealthSignal, RoutingRecommendation } from '@/stores/slices/overview/personaHealthSlice';
 import { InsightPanel } from './InsightPanel';
 import { buildAlerts, type InsightAlert, type AlertKind } from './data';
@@ -53,8 +54,8 @@ export function AlertsPanel({ signals, recommendations }: { signals: PersonaHeal
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="typo-data text-status-success">-${r.estimatedSaving.toFixed(2)}{pa.per_month}</p>
-                      <p className="typo-caption text-foreground tabular-nums">{(r.confidence * 100).toFixed(0)}{pa.confidence_pct}</p>
+                      <p className="typo-data text-status-success">-<Numeric value={r.estimatedSaving} unit="usd" />{pa.per_month}</p>
+                      <p className="typo-caption text-foreground tabular-nums"><Numeric value={r.confidence * 100} precision={0} />{pa.confidence_pct}</p>
                     </div>
                   </div>
                 ))}

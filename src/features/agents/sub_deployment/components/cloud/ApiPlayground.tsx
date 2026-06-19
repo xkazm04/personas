@@ -3,6 +3,7 @@ import { Send, Copy, Check, ChevronDown, ChevronRight, Terminal, Code2, Loader2 
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { executePersona } from '@/api/agents/executions';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -234,16 +235,10 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
               {response.status === 'success' ? '200 OK' : 'ERROR'}
             </span>
             {response.durationMs != null && (
-              <span className="text-foreground">
-                {response.durationMs < 1000
-                  ? `${response.durationMs}ms`
-                  : `${(response.durationMs / 1000).toFixed(1)}s`}
-              </span>
+              <Numeric value={response.durationMs} unit="ms" className="text-foreground" />
             )}
             {response.costUsd > 0 && (
-              <span className="text-foreground">
-                ${response.costUsd.toFixed(4)}
-              </span>
+              <Numeric value={response.costUsd} unit="usd" className="text-foreground" />
             )}
             {response.model && (
               <span className="text-foreground">{response.model}</span>

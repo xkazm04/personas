@@ -1,5 +1,6 @@
 import { DollarSign, Clock, Hash } from 'lucide-react';
 import { formatMs, formatCost } from '../libs/useReplayState';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 
 /** Cost accumulator panel. */
@@ -57,7 +58,7 @@ export function ReplayCostPanel({
           {formatMs(currentMs)}
         </span>
         <span className="typo-body text-foreground">
-          ({timePct.toFixed(0)}%)
+          (<Numeric value={timePct} unit="percent" precision={0} />)
         </span>
       </div>
 

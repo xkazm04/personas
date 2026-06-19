@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Network } from 'lucide-react';
 import { useStructuredStream } from '@/hooks/execution/useStructuredStream';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 interface Agent {
   type: string;
@@ -67,7 +68,7 @@ export function SubagentTree({ executionId }: { executionId: string }) {
             </span>
             <span className="typo-code text-foreground/90 shrink-0 font-mono">
               {a.status}
-              {a.tokens != null ? ` · ${a.tokens.toLocaleString()}` : ''}
+              {a.tokens != null ? <> · <Numeric value={a.tokens} /></> : ''}
             </span>
           </div>
         ))}

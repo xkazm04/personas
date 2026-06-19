@@ -17,6 +17,7 @@ import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState, { NoResults } from '@/features/shared/components/feedback/EmptyState';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export function UnifiedDeploymentDashboard() {
   const personaName = usePersonaNameMap();
@@ -246,7 +247,7 @@ export function UnifiedDeploymentDashboard() {
       {displayRows.length > 0 && (
         <div className="px-6 py-2.5 border-t border-primary/10 flex items-center justify-between typo-caption text-foreground flex-shrink-0">
           <span>{tx(dt.showing_of, { showing: displayRows.length, total: unified.length, plural: unified.length !== 1 ? 's' : '' })}</span>
-          <span>{dt.total_invocations} <span className="typo-data text-foreground">{totalInvocations.toLocaleString()}</span></span>
+          <span>{dt.total_invocations} <Numeric value={totalInvocations} className="typo-data text-foreground" /></span>
         </div>
       )}
     </div>

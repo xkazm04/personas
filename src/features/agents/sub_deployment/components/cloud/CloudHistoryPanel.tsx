@@ -11,6 +11,7 @@ import type { CloudExecution, CloudExecutionStats } from '@/api/system/cloud';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { statusIcon as _statusIcon, formatDuration, formatCost, timeAgo as _timeAgo } from './CloudHistoryHelpers';
+import { formatNumeric } from '@/lib/utils/formatters';
 import { StatCard } from './StatCard';
 import { DailyBreakdownChart } from './DailyBreakdownChart';
 import { silentCatch } from '@/lib/silentCatch';
@@ -126,7 +127,7 @@ export function CloudHistoryPanel() {
           <StatCard label="Total Runs" value={String(stats.totalExecutions)} />
           <StatCard
             label="Success Rate"
-            value={stats.successRate != null ? `${(stats.successRate * 100).toFixed(0)}%` : '-'}
+            value={stats.successRate != null ? formatNumeric(stats.successRate, 'ratio', { precision: 0 }) : '-'}
             color={stats.successRate != null && stats.successRate >= 0.9 ? 'emerald' : stats.successRate != null && stats.successRate >= 0.7 ? 'amber' : 'red'}
           />
           <StatCard label="Total Cost" value={formatCost(stats.totalCostUsd)} />

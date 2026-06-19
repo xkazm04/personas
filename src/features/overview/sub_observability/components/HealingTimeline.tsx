@@ -4,6 +4,7 @@ import {
   ChevronDown, ChevronRight, Shield,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import type { HealingTimelineEvent } from '@/lib/bindings/HealingTimelineEvent';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS, badgeClass } from '@/lib/utils/formatters';
 import { outcomeToHealth, healthScale } from '@/lib/design/statusTokens';
@@ -77,9 +78,9 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
             </span>
           )}
           {retryCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-mono rounded-input bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-              <RefreshCw className="w-2.5 h-2.5" /> {retryCount}
-            </span>
+            <StatusBadge accent="cyan" size="sm" icon={<RefreshCw className="w-2.5 h-2.5" />} className="font-mono rounded-input">
+              {retryCount}
+            </StatusBadge>
           )}
           <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-mono uppercase rounded-input ${badgeClass(sevBadge)}`}>
             {triggerSev}

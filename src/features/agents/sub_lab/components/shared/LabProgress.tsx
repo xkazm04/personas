@@ -2,6 +2,7 @@ import { Check, FileEdit, Sparkles, Play, BarChart3 } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 
 const LAB_PHASES = [
@@ -106,9 +107,11 @@ export function LabProgress() {
             <div className="flex items-center gap-3">
               {labProgress.elapsedMs != null && (
                 <span className="typo-caption text-foreground tabular-nums">
-                  {labProgress.elapsedMs >= 60000
-                    ? `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
-                    : `${(labProgress.elapsedMs / 1000).toFixed(1)}s`}
+                  {labProgress.elapsedMs >= 60000 ? (
+                    `${Math.floor(labProgress.elapsedMs / 60000)}m ${Math.round((labProgress.elapsedMs % 60000) / 1000)}s`
+                  ) : (
+                    <><Numeric value={labProgress.elapsedMs / 1000} precision={1} />s</>
+                  )}
                 </span>
               )}
               <span className="typo-data text-foreground tabular-nums">

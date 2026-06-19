@@ -9,6 +9,7 @@ import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { DebtText } from '@/i18n/DebtText';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 
 interface UserRatingEntry {
@@ -224,8 +225,8 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
 
                   {/* Cost & duration */}
                   <div className="flex items-center gap-3 pt-1 border-t border-primary/5 text-[11px] text-foreground">
-                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{agg.totalCost.toFixed(4)}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{(agg.avgDuration / 1000).toFixed(1)}<DebtText k="auto_s_avg_eaee6bda" /></span>
+                    <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" /><Numeric value={agg.totalCost} precision={4} /></span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /><Numeric value={agg.avgDuration / 1000} precision={1} /><DebtText k="auto_s_avg_eaee6bda" /></span>
                   </div>
                 </div>
               </div>
@@ -343,8 +344,8 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                                 <span>PC {pc ?? '—'}</span>
                               </div>
                               <div className="flex gap-2 text-[9px] text-foreground">
-                                <span>${cost.toFixed(4)}</span>
-                                <span>{(dur / 1000).toFixed(1)}s</span>
+                                <span>$<Numeric value={cost} precision={4} /></span>
+                                <span><Numeric value={dur / 1000} precision={1} />s</span>
                               </div>
                             </>
                           )}

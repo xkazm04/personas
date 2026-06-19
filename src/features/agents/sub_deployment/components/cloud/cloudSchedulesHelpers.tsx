@@ -7,6 +7,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { CloudDeployment } from '@/api/system/cloud';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { en } from '@/i18n/en';
 
 const t = en;
@@ -61,9 +62,9 @@ export function triggerTypeIcon(type: string) {
 
 export function healthBadge(status: string | null) {
   if (!status || status === 'healthy') {
-    return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"><CheckCircle2 className="w-2.5 h-2.5" />{t.deployment.cloud_healthy}</span>;
+    return <StatusBadge variant="success" size="sm" className="typo-caption" icon={<CheckCircle2 className="w-2.5 h-2.5" />}>{t.deployment.cloud_healthy}</StatusBadge>;
   }
-  return <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20"><AlertTriangle className="w-2.5 h-2.5" />{status}</span>;
+  return <StatusBadge variant="warning" size="sm" className="typo-caption" icon={<AlertTriangle className="w-2.5 h-2.5" />}>{status}</StatusBadge>;
 }
 
 // `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).

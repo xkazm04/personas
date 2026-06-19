@@ -8,6 +8,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { AgentSection } from './CronAgentCard';
 import { seedMockCronAgent } from '@/api/pipeline/triggers';
 import { createLogger } from "@/lib/log";
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 const logger = createLogger("cron-agents");
 
@@ -43,12 +44,12 @@ export default function CronAgentsPage() {
                 <Plus className="w-3.5 h-3.5" /> {t.overview.cron.mock_schedule}
               </button>
             )}
-            <span className="px-2 py-0.5 rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <StatusBadge accent="cyan">
               {tx(t.overview.cron.scheduled_count, { count: cronAgents.length })}
-            </span>
-            <span className="px-2 py-0.5 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            </StatusBadge>
+            <StatusBadge accent="violet">
               {tx(t.overview.cron.headless_count, { count: headless.length })}
-            </span>
+            </StatusBadge>
           </div>
         }
       />

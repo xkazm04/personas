@@ -12,6 +12,7 @@ import {
 import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function useIpcSnapshot() {
@@ -186,7 +187,7 @@ export default function IpcPerformancePanel() {
           <div className="text-left">
             <h3 className="typo-heading text-foreground/90 uppercase tracking-widest">{t.overview.ipc_panel.title}</h3>
             <div className="flex items-center gap-3 mt-0.5 typo-body text-foreground">
-              <span>{summary.totalCalls.toLocaleString()} calls</span>
+              <span><Numeric value={summary.totalCalls} /> calls</span>
               <span className="text-primary/15">|</span>
               <span>p50 <span className={latencyColor(summary.p50)}>{formatMs(summary.p50)}</span></span>
               <span className="text-primary/15">|</span>

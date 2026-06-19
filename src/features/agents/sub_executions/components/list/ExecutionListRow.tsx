@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftR
 import { formatTimestamp, formatDuration, getStatusEntry, badgeClass, formatCost } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
@@ -183,8 +184,8 @@ function ExecutionListRowImpl({
                   </Tooltip>
                 </div>
                 <div><span className="text-foreground typo-code uppercase">{e.model}</span><p className="text-foreground/90 typo-body mt-0.5">{execution.model_used || e.model_default}</p></div>
-                <div><span className="text-foreground typo-code uppercase">{e.input_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.input_tokens.toLocaleString()}</p></div>
-                <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><p className="text-foreground/90 typo-code mt-0.5">{execution.output_tokens.toLocaleString()}</p></div>
+                <div><span className="text-foreground typo-code uppercase">{e.input_tokens}</span><Numeric as="p" value={execution.input_tokens} className="text-foreground/90 typo-code mt-0.5" /></div>
+                <div><span className="text-foreground typo-code uppercase">{e.output_tokens}</span><Numeric as="p" value={execution.output_tokens} className="text-foreground/90 typo-code mt-0.5" /></div>
                 <div><span className="text-foreground typo-code uppercase">{e.cost}</span><p className="text-foreground/90 typo-code mt-0.5">{formatCost(execution.cost_usd, { precision: 4, language })}</p></div>
                 <div><span className="text-foreground typo-code uppercase">{e.completed}</span><p className="text-foreground/90 typo-body mt-0.5">{formatTimestamp(execution.completed_at)}</p></div>
               </div>

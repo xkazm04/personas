@@ -106,6 +106,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                         style={{ cursor: onAnomalyClick ? 'pointer' : undefined }}
                         onClick={() => handleAnomalyMarkerClick(anomaly.date)}
                       >
+                        {/* eslint-disable-next-line custom/prefer-numeric -- SVG title string */}
                         <title>{`Anomaly: cost +${anomaly.deviation_pct.toFixed(0)}% vs baseline — click to drill down`}</title>
                         {/* Pulse ring — static when reduced motion preferred */}
                         {shouldAnimate ? (

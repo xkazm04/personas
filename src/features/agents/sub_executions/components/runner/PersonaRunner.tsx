@@ -8,6 +8,7 @@ import { BudgetRecoveryCard } from './BudgetRecoveryCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { formatElapsed, getStatusEntry } from '@/lib/utils/formatters';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { KeyValueEditor } from '@/features/shared/components/forms/KeyValueEditor';
 import { ExecutionTerminal } from './ExecutionTerminal';
 import { useRunnerState } from '../../libs/useRunnerState';
@@ -189,8 +190,8 @@ export function PersonaRunner() {
         <div className={`animate-fade-slide-in rounded-modal border p-4 ${summaryPresentation.border} ${summaryPresentation.bg}`}>
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2"><StatusIcon status={state.executionSummary.status} className="w-5 h-5" /><span className={`typo-heading capitalize ${summaryPresentation.text}`}>{state.executionSummary.status}</span></div>
-            {state.executionSummary.duration_ms != null && <div className="flex items-center gap-1.5 text-foreground"><Timer className="w-3.5 h-3.5" /><span className="typo-code">{(state.executionSummary.duration_ms / 1000).toFixed(1)}s</span></div>}
-            {state.executionSummary.cost_usd != null && <div className="flex items-center gap-1.5 text-foreground"><DollarSign className="w-3.5 h-3.5" /><span className="typo-code">${state.executionSummary.cost_usd.toFixed(4)}</span></div>}
+            {state.executionSummary.duration_ms != null && <div className="flex items-center gap-1.5 text-foreground"><Timer className="w-3.5 h-3.5" /><span className="typo-code"><Numeric value={state.executionSummary.duration_ms / 1000} precision={1} />s</span></div>}
+            {state.executionSummary.cost_usd != null && <div className="flex items-center gap-1.5 text-foreground"><DollarSign className="w-3.5 h-3.5" /><span className="typo-code">$<Numeric value={state.executionSummary.cost_usd} precision={4} /></span></div>}
           </div>
           {state.executionSummary.status === 'cancelled' && (
             <div className="mt-3 pt-3 border-t border-amber-500/15 space-y-3">

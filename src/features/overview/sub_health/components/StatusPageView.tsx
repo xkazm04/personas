@@ -12,6 +12,8 @@ import type { HealthGrade } from '@/stores/slices/overview/personaHealthSlice';
 import { DebtText } from '@/i18n/DebtText';
 import { GRADE_THEME } from './heartbeats/model';
 import { GradeDot, TrendBadge } from './heartbeats/primitives';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import type { ReactNode } from 'react';
 
 // ---------------------------------------------------------------------------
 // Status Page — uptime-history table. Shares the Vitals Ledger quality bar:
@@ -75,7 +77,7 @@ export function StatusPageView() {
               </span>
               <span className="h-3 w-px bg-primary/15" aria-hidden="true" />
               <span className="typo-body text-foreground">
-                {t.overview.health_extra.uptime_30d_prefix} <span className="typo-data tabular-nums text-foreground/90 font-semibold">{(globalUptime * 100).toFixed(1)}%</span>
+                {t.overview.health_extra.uptime_30d_prefix} <Numeric value={globalUptime} unit="ratio" precision={1} className="typo-data text-foreground/90 font-semibold" />
               </span>
             </div>
           </div>
@@ -145,9 +147,7 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
           ))}
         </div>
 
-        <span className="typo-data tabular-nums text-foreground w-16 text-right shrink-0">
-          {(entry.uptimePercent * 100).toFixed(1)}%
-        </span>
+        <Numeric value={entry.uptimePercent} unit="ratio" precision={1} align="right" className="typo-data text-foreground w-16 shrink-0" />
 
         <TrendBadge trend={entry.trend} />
 
@@ -162,11 +162,11 @@ function StatusRow({ entry }: { entry: CompositeHealthEntry }) {
       {expanded && (
         <div className="px-4 pb-3 pt-1">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <ScoreBreakdown label="Success Rate" score={entry.successRateScore} detail={`${(entry.successRate * 100).toFixed(1)}%`} />
+            <ScoreBreakdown label="Success Rate" score={entry.successRateScore} detail={<Numeric value={entry.successRate} unit="ratio" precision={1} />} />
             <ScoreBreakdown label="Latency (p95)" score={entry.latencyScore} detail={formatLatency(entry.p95LatencyMs)} />
             <ScoreBreakdown label="Cost Anomalies" score={entry.costAnomalyScore} detail={`${entry.costAnomalyCount} detected`} />
             <ScoreBreakdown label="Healing Issues" score={entry.healingScore} detail={`${entry.openHealingIssues} open`} />
-            <ScoreBreakdown label="SLA Compliance" score={entry.slaComplianceScore} detail={`${(entry.slaCompliance * 100).toFixed(1)}%`} />
+            <ScoreBreakdown label="SLA Compliance" score={entry.slaComplianceScore} detail={<Numeric value={entry.slaCompliance} unit="ratio" precision={1} />} />
           </div>
           {entry.consecutiveFailures > 0 && (
             <div className="mt-2.5 flex items-center gap-1.5 typo-caption text-status-error">
@@ -191,7 +191,7 @@ function UptimeBar({ status, index, total }: { status: DayStatus; index: number;
   );
 }
 
-function ScoreBreakdown({ label, score, detail }: { label: string; score: number; detail: string }) {
+function ScoreBreakdown({ label, score, detail }: { label: string; score: number; detail: ReactNode }) {
   const tone = score >= 80 ? 'text-status-success' : score >= 50 ? 'text-status-warning' : 'text-status-error';
   const barTone = score >= 80 ? 'bg-status-success' : score >= 50 ? 'bg-status-warning' : 'bg-status-error';
 

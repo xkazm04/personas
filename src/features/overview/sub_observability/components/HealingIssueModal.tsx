@@ -3,6 +3,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
 import { SEVERITY_COLORS, HEALING_CATEGORY_COLORS } from '@/lib/utils/formatters';
@@ -139,22 +140,22 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
                 <Zap className="w-3 h-3" /> <DebtText k="auto_circuit_breaker_e76dce35" />
               </span>
             ) : isAutoFixPending ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border bg-amber-500/10 text-amber-400 border-amber-500/20">
-                <LoadingSpinner size="xs" /> retrying
-              </span>
+              <StatusBadge variant="warning" icon={<LoadingSpinner size="xs" />} className="text-sm font-mono uppercase rounded-card">
+                retrying
+              </StatusBadge>
             ) : isAutoFixed ? (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                <CheckCircle className="w-3 h-3" /> auto-fixed
-              </span>
+              <StatusBadge variant="success" icon={<CheckCircle className="w-3 h-3" />} className="text-sm font-mono uppercase rounded-card">
+                auto-fixed
+              </StatusBadge>
             ) : (
               <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${sev.bg} ${sev.text} ${sev.border}`}>
                 <AlertTriangle className="w-3 h-3" /> {issue.severity}
               </span>
             )}
             {(isAutoFixed || isAutoFixPending) && issue.execution_id && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
-                <RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} /> {isAutoFixPending ? 'retry in progress' : 'healed via retry'}
-              </span>
+              <StatusBadge accent="cyan" icon={<RefreshCw className={`w-2.5 h-2.5 ${isAutoFixPending ? 'animate-spin' : ''}`} />} className="text-sm font-mono rounded-card">
+                {isAutoFixPending ? 'retry in progress' : 'healed via retry'}
+              </StatusBadge>
             )}
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}

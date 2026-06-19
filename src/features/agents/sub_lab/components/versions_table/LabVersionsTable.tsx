@@ -14,6 +14,7 @@ import { buildVersionRows, type VersionRow } from '../../libs/versionMatrixRows'
 import { VersionStatusBadge } from './VersionStatusBadge';
 import { VersionRatingCell } from './VersionRatingCell';
 import { VersionRowActions, type RowActionHandlers } from './VersionRowActions';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 /** Regression flag threshold — a drop of this many composite points vs baseline. */
 const REGRESSION_DROP = 5;
@@ -191,7 +192,7 @@ export function LabVersionsTable() {
       { key: 'cost', label: lab.vr_col_cost, width: '90px', align: 'right',
         render: (row) => (
           <span className="typo-caption text-foreground tabular-nums">
-            {row.rating ? `$${row.rating.costUsd.toFixed(3)}` : '—'}
+            {row.rating ? <>$<Numeric value={row.rating.costUsd} precision={3} /></> : '—'}
           </span>
         ) },
       { key: 'status', label: lab.vr_col_status, width: '130px', render: (row) => <VersionStatusBadge row={row} /> },

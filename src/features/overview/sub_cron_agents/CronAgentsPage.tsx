@@ -15,6 +15,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatRelative } from './libs/cronHelpers';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 export default function CronAgentsPage() {
   const { t, tx } = useTranslation();
@@ -38,12 +39,12 @@ export default function CronAgentsPage() {
         subtitle={t.overview.cron.subtitle}
         actions={
           <div className="flex items-center gap-2 typo-caption text-foreground">
-            <span className="px-2 py-0.5 rounded-card bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <StatusBadge accent="cyan">
               {tx(t.overview.cron.scheduled_count, { count: cronAgents.length })}
-            </span>
-            <span className="px-2 py-0.5 rounded-card bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            </StatusBadge>
+            <StatusBadge accent="violet">
               {tx(t.overview.cron.headless_count, { count: headless.length })}
-            </span>
+            </StatusBadge>
           </div>
         }
       />
@@ -135,9 +136,9 @@ function AgentRow({ agent }: { agent: CronAgent }) {
         <div className="flex items-center gap-2">
           <span className="typo-heading text-foreground/90 truncate">{agent.persona_name}</span>
           {agent.headless && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <StatusBadge accent="violet" size="sm">
               headless
-            </span>
+            </StatusBadge>
           )}
         </div>
         <div className="flex items-center gap-2 typo-caption text-foreground mt-0.5">

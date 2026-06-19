@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMemo, useRef, useState } from 'react';
 import { useScaledFontSize } from '@/stores/themeStore';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export interface DailyPoint {
   date: string;
@@ -170,13 +171,13 @@ export function DailyBreakdownChart({ data }: { data: DailyPoint[] }) {
             {dt.tooltip_runs} <span className="text-foreground">{data[hoverIdx]!.count}</span>
           </p>
           <p className="text-foreground">
-            {dt.tooltip_cost} <span className="text-foreground">${data[hoverIdx]!.cost.toFixed(2)}</span>
+            {dt.tooltip_cost} <Numeric value={data[hoverIdx]!.cost} unit="usd" className="text-foreground" />
           </p>
           <p className="text-foreground">
             {dt.tooltip_success}{' '}
             <span style={{ color: successColor(data[hoverIdx]!.success_rate) }}>
               {data[hoverIdx]!.success_rate != null
-                ? `${(data[hoverIdx]!.success_rate! * 100).toFixed(0)}%`
+                ? <Numeric value={data[hoverIdx]!.success_rate} unit="ratio" precision={0} />
                 : '-'}
             </span>
           </p>

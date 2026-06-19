@@ -9,6 +9,7 @@ import type { LabResultKind } from '@/lib/bindings/LabResultKind';
 import type { LabToolCall } from '@/lib/bindings/LabToolCall';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 
 interface ScenarioResult {
@@ -176,8 +177,8 @@ export function ScenarioDetailPanel({ result, onClose, rating, ratingFeedback, o
           </div>
           <div className="flex-1" />
           <div className="text-right typo-caption text-foreground">
-            <div>${result.costUsd.toFixed(4)}</div>
-            <div>{(result.durationMs / 1000).toFixed(1)}s</div>
+            <div>$<Numeric value={result.costUsd} precision={4} /></div>
+            <div><Numeric value={result.durationMs / 1000} precision={1} />s</div>
           </div>
         </div>
 

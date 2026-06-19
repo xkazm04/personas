@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatDuration } from '@/lib/utils/formatters';
 import type { ToolCallStep } from './stageColors';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -36,9 +37,9 @@ export function SubSpanBar({
       {/* Left: indented tool name */}
       <div className="flex items-center gap-1.5 min-w-0 pl-8">
         <span className="w-4 flex-shrink-0" />
-        <span className="inline-flex px-1.5 py-0.5 typo-code uppercase rounded border bg-cyan-500/10 text-cyan-400 border-cyan-500/20 flex-shrink-0">
+        <StatusBadge accent="cyan" size="sm" className="typo-code uppercase flex-shrink-0">
           {t.agents.executions.tool_type_badge}
-        </span>
+        </StatusBadge>
         <span className="typo-code text-foreground truncate">{step.tool_name}</span>
       </div>
 

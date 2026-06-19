@@ -11,6 +11,7 @@ import {
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { CloudTrigger, CloudTriggerFiring } from '@/api/system/cloud';
 import {
   triggerTypeLabel,
@@ -126,7 +127,7 @@ export function TriggerListItem({
                      <LoadingSpinner size="xs" className="text-blue-400" />}
                     <span className="text-foreground">{f.status}</span>
                     <span className="text-foreground flex-1">{timeAgo(f.firedAt)}</span>
-                    {f.durationMs != null && <span className="text-foreground">{f.durationMs < 1000 ? `${f.durationMs}ms` : `${(Number(f.durationMs) / 1000).toFixed(1)}s`}</span>}
+                    {f.durationMs != null && <Numeric value={Number(f.durationMs)} unit="ms" className="text-foreground" />}
                     <span className="text-foreground">{formatCost(f.costUsd)}</span>
                   </div>
                 ))}

@@ -4,6 +4,7 @@ import {
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import { formatInterval, formatRelative } from '../libs/cronHelpers';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 
 function AgentSection({ title, agents }: { title: string; agents: CronAgent[] }) {
   return (
@@ -61,9 +62,9 @@ function AgentRow({ agent }: { agent: CronAgent }) {
         <div className="flex items-center gap-2">
           <span className="typo-heading text-foreground/90 truncate">{agent.persona_name}</span>
           {agent.headless && (
-            <span className="px-1.5 py-0.5 text-[10px] font-medium rounded bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <StatusBadge accent="violet" size="sm">
               headless
-            </span>
+            </StatusBadge>
           )}
         </div>
         <div className="flex items-center gap-2 typo-caption text-foreground mt-0.5">

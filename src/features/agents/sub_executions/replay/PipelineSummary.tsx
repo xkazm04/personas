@@ -3,6 +3,7 @@ import type { PipelineTrace } from '@/lib/execution/pipeline';
 import { PIPELINE_STAGES } from '@/lib/execution/pipeline';
 import { Clock, DollarSign, Zap, AlertCircle } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
 
 // ---------------------------------------------------------------------------
@@ -29,7 +30,7 @@ export function PipelineSummary({ trace, execution }: { trace: PipelineTrace; ex
           <DollarSign className="w-2.5 h-2.5" /> {e.cost}
         </div>
         <div className="typo-code text-foreground/90">
-          {execution.cost_usd > 0 ? `$${execution.cost_usd.toFixed(4)}` : '-'}
+          {execution.cost_usd > 0 ? <>$<Numeric value={execution.cost_usd} precision={4} /></> : '-'}
         </div>
       </div>
       <div className="rounded-card border border-primary/20 bg-secondary/40 p-3 space-y-1">

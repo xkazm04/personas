@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { HeartbeatIndicator } from '../HeartbeatIndicator';
 import { InsightBand } from './insights';
 import { CompositeHealthBar, GradeDot, TrendBadge, MiniStat } from './primitives';
@@ -152,8 +153,8 @@ function LedgerRow({ signal, expanded, onToggle }: { signal: PersonaHealthSignal
 
         <div className="hidden md:flex items-center justify-end gap-3 shrink-0 w-[200px]">
           <TrendBadge trend={signal.failureTrend} />
-          <MiniStat icon={Heart} value={`${signal.successRate.toFixed(0)}%`} tone={successTone} />
-          <MiniStat icon={DollarSign} value={`$${signal.dailyBurnRate.toFixed(2)}`} tone={burnTone} />
+          <MiniStat icon={Heart} value={<Numeric value={signal.successRate} unit="percent" precision={0} />} tone={successTone} />
+          <MiniStat icon={DollarSign} value={<Numeric value={signal.dailyBurnRate} unit="usd" />} tone={burnTone} />
         </div>
 
         <span className={`shrink-0 w-12 text-right typo-data tabular-nums font-semibold ${th.text}`}>{signal.heartbeatScore}</span>

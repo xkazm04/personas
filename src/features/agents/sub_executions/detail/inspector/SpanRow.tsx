@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
 import { getSpanTypeConfig } from './traceInspectorTypes';
 import type { SpanNode } from './traceInspectorTypes';
 import { WaterfallBar } from './WaterfallBar';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 export function SpanRow({
   node,
@@ -53,7 +54,7 @@ export function SpanRow({
 
         {span.cost_usd != null && span.cost_usd > 0 && (
           <span className="typo-code text-amber-400/70 flex-shrink-0">
-            ${span.cost_usd.toFixed(4)}
+            $<Numeric value={span.cost_usd} precision={4} />
           </span>
         )}
       </div>

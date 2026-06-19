@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { DollarSign, AlertTriangle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { InsightPanel } from './InsightPanel';
 import { buildBurn } from './data';
@@ -14,8 +15,8 @@ export function BurnPanel({ signals }: { signals: PersonaHealthSignal[] }) {
   return (
     <InsightPanel icon={DollarSign} accent="success" title={be.title} subtitle={tx(be.active_personas_subtitle, { count: b.activeCount })}>
       <div className="grid grid-cols-3 gap-2 mb-3">
-        <StatTile label={be.daily_burn} value={`$${b.totalDailyBurn.toFixed(2)}`} tone="text-status-success" />
-        <StatTile label={be.projected_monthly} value={`$${b.totalProjectedMonthly.toFixed(2)}`} tone="text-foreground/90" />
+        <StatTile label={be.daily_burn} value={<Numeric value={b.totalDailyBurn} unit="usd" />} tone="text-status-success" />
+        <StatTile label={be.projected_monthly} value={<Numeric value={b.totalProjectedMonthly} unit="usd" />} tone="text-foreground/90" />
         <StatTile label={be.at_risk} value={String(b.atRisk.length)} tone={b.atRisk.length > 0 ? 'text-status-error' : 'text-status-success'} />
       </div>
 
@@ -51,7 +52,7 @@ export function BurnPanel({ signals }: { signals: PersonaHealthSignal[] }) {
   );
 }
 
-function StatTile({ label, value, tone }: { label: string; value: string; tone: string }) {
+function StatTile({ label, value, tone }: { label: string; value: ReactNode; tone: string }) {
   return (
     <div className="px-2.5 py-2 rounded-card bg-secondary/40">
       <p className="typo-label text-foreground leading-tight">{label}</p>
@@ -72,7 +73,7 @@ function BurnBar({ signal, max }: { signal: PersonaHealthSignal; max: number }) 
       <div className="flex-1 h-1.5 rounded-full bg-secondary/40 overflow-hidden">
         <div className={`h-full rounded-full ${tone} transition-[width] duration-500`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="typo-data tabular-nums text-foreground w-14 text-right">${signal.dailyBurnRate.toFixed(2)}</span>
+      <Numeric value={signal.dailyBurnRate} unit="usd" align="right" className="typo-data text-foreground w-14" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { CheckCircle2, AlertTriangle, X, FlaskConical, Copy, FileText, Wrench, Shield, Cpu } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { DryRunReport } from '@/lib/bindings/DryRunReport';
@@ -114,7 +115,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
                 <Stat icon={<Cpu className="w-3.5 h-3.5" />} label={d.stat_model} value={report.model ?? d.stat_default_model} />
                 <Stat icon={<Wrench className="w-3.5 h-3.5" />} label={d.stat_tools} value={String(report.tools.length)} />
                 <Stat icon={<Shield className="w-3.5 h-3.5" />} label={d.stat_credentials} value={String(report.resolved_credentials.length)} />
-                <Stat icon={<FileText className="w-3.5 h-3.5" />} label={d.stat_prompt_chars} value={report.prompt_chars.toLocaleString()} />
+                <Stat icon={<FileText className="w-3.5 h-3.5" />} label={d.stat_prompt_chars} value={<Numeric value={report.prompt_chars} />} />
               </div>
 
               {/* Warnings */}
@@ -236,7 +237,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
   );
 }
 
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Stat({ icon, label, value }: { icon: ReactNode; label: string; value: ReactNode }) {
   return (
     <div className="flex flex-col gap-0.5 px-3 py-2 rounded-card border border-primary/10 bg-secondary/30">
       <div className="flex items-center gap-1.5 text-foreground typo-caption">

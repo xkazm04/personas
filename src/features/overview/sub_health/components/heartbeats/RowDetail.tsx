@@ -1,7 +1,9 @@
 import { Heart, DollarSign, Wrench, AlertTriangle, Clock } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { SegmentedVitalsBar } from './primitives';
 import { subScores, segLabels } from './model';
 
@@ -36,19 +38,19 @@ export function RowDetail({ signal }: { signal: PersonaHealthSignal }) {
         <MetricCell
           icon={Heart}
           label={h.success}
-          value={`${signal.successRate.toFixed(1)}%`}
+          value={<Numeric value={signal.successRate} unit="percent" precision={1} />}
           tone={signal.successRate >= 90 ? 'text-status-success' : signal.successRate >= 70 ? 'text-status-warning' : 'text-status-error'}
         />
         <MetricCell
           icon={DollarSign}
           label={h.burn}
-          value={`$${signal.dailyBurnRate.toFixed(2)}/d`}
+          value={<><Numeric value={signal.dailyBurnRate} unit="usd" />/d</>}
           tone={signal.budgetRatio > 0.8 ? 'text-status-error' : signal.budgetRatio > 0.5 ? 'text-status-warning' : 'text-status-success'}
         />
         <MetricCell
           icon={Wrench}
           label={h.healing}
-          value={`${signal.healingFrequency.toFixed(1)}/d`}
+          value={<><Numeric value={signal.healingFrequency} precision={1} />/d</>}
           tone={signal.healingFrequency > 2 ? 'text-status-error' : signal.healingFrequency > 0.5 ? 'text-status-warning' : 'text-status-success'}
         />
         <MetricCell
@@ -91,7 +93,7 @@ export function RowDetail({ signal }: { signal: PersonaHealthSignal }) {
   );
 }
 
-function MetricCell({ icon: Icon, label, value, tone }: { icon: LucideIcon; label: string; value: string; tone: string }) {
+function MetricCell({ icon: Icon, label, value, tone }: { icon: LucideIcon; label: string; value: ReactNode; tone: string }) {
   return (
     <div className="flex items-center gap-2 px-2.5 py-2 rounded-card bg-secondary/30">
       <Icon className={`w-3.5 h-3.5 shrink-0 ${tone}`} />

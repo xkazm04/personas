@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { HealthGrade, PersonaHealthSignal } from '@/stores/slices/overview/personaHealthSlice';
 import { GRADE_THEME, gradeFromScore, subScores, segLabels } from './model';
@@ -74,7 +75,7 @@ export function TrendBadge({ trend, label }: { trend: PersonaHealthSignal['failu
 
 /** A compact icon + tabular value, used for inline row stats. */
 export function MiniStat({ icon: Icon, value, tone = 'text-foreground', title }: {
-  icon: LucideIcon; value: string; tone?: string; title?: string;
+  icon: LucideIcon; value: ReactNode; tone?: string; title?: string;
 }) {
   return (
     <span className="inline-flex items-center gap-1 typo-data text-foreground" title={title}>
