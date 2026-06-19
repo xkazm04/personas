@@ -1,0 +1,831 @@
+{
+  "run": "2026-06-19-l1-thorough",
+  "generated": "2026-06-19",
+  "level": "L1",
+  "findings": [
+    {
+      "id": "F-FABRICATION-CLAUSE",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "finance-analyst",
+        "sales-rep",
+        "solo-founder",
+        "software-developer",
+        "content-marketer"
+      ],
+      "character": "finance-analyst",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "blocker",
+      "dimension": "trust",
+      "title": "Every generated persona's system_prompt is mandated to fabricate realistic sample data and never report 'blocked' on a service/auth failure",
+      "expected": "On a connector/DB/auth failure the agent stops and reports precondition_failed; it never ships fabricated data.",
+      "got": "Build Rule 7 unconditionally bakes into every generated system_prompt: 'If any required service ... is not accessible or returns auth errors, you MUST generate realistic sample data and continue the FULL workflow ... NEVER stop or report blocked.' No domain/tier/capability carve-out; injected for both interactive and one_shot builds. Contradicts the honest runtime outcome precondition_failed (templates.rs:289) and the DELIBERATE path; AUTONOMOUS is the default.",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:389; contrast templates.rs:289, prompt/mod.rs:160-165,212-233",
+      "code_check": "present-broken",
+      "reachable": true,
+      "l2_priority": "HIGHEST — build a finance/sales/code persona, kill/expire the connector, run it: does it emit fabricated rows + value_delivered or honestly report precondition_failed? Confirm whether Rule 7 propagates into structured_prompt.errorHandling beyond the fallback system_prompt."
+    },
+    {
+      "id": "F-PRICING-ABSENT",
+      "journey": "trust-and-governance",
+      "characters": [
+        "prospect-buyer",
+        "enterprise-admin"
+      ],
+      "character": "prospect-buyer",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "blocker",
+      "dimension": "completion",
+      "title": "No pricing / plan / cost-to-switch surface exists anywhere in-product; 'tier' means UI-complexity mode, not a paid plan",
+      "expected": "A buyer can find and understand what the product costs and what each tier includes in a short session.",
+      "got": "The account settings tab has Telemetry/Radio/Updates/Google-account sections only — no tier selector, no pricing, no plan comparison. 'Tiers' are UI-complexity modes (Simple/Power, default Team). Only dollar figures are Anthropic token costs paid to Anthropic. A src/features/**/*.tsx sweep for billing|checkout|stripe|payment|/month returns zero pricing UI. The APP_CONTEXT_MAP's 'Account -> Tier selector / pricing' entry is stale/wrong.",
+      "evidence": "src/features/settings/sub_account/components/AccountSettings.tsx:73-272; SettingsPage.tsx:9; src/lib/constants/uiModes.ts:24-68; ModelSelector.tsx:67-69",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "high — confirm no pricing lives behind sign-in or an external link; if truly absent this is the single highest-leverage buyer-conversion gap."
+    },
+    {
+      "id": "F-ONBOARDING-DEAD-CODE",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "smallbiz-owner",
+        "content-marketer",
+        "prospect-buyer"
+      ],
+      "character": "smallbiz-owner",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "blocker",
+      "dimension": "completion",
+      "title": "Cold-start onboarding overlay is dead code (never triggered); Welcome hero has no 'describe a job / get started' first action",
+      "expected": "A first-time user is guided from launch to one working automation (the built 5-step overlay: appearance -> discover -> pick-template -> adopt -> execute).",
+      "got": "onboardingActive is the only thing that mounts OnboardingOverlay and nothing flips it: startOnboarding/resumeOnboarding/reopenOnboarding have zero call sites in src/. The documented trigger surface (simple-mode empty-state CTA) does not exist. The fallback Welcome hero greets 'Good Morning, Commander' over a module-grid with no goal/intent box; the SetupCards goal stepper exists but is not mounted on the hero.",
+      "evidence": "src/stores/slices/system/onboardingSlice.ts:143,157,207; src/features/onboarding/components/OnboardingOverlay.tsx:83; src/features/home/sub_welcome/WelcomeLayout.tsx:45-68; HomeWelcome.tsx:36-38",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "P0 — confirm a fresh profile (no personas, onboardingCompleted=false) never sees the overlay and lands on the bare Welcome hero; time the path to first value for a 5-minute non-technical user."
+    },
+    {
+      "id": "F-VAULT-TRUST-COPY-DEAD",
+      "journey": "wire-credential-connector",
+      "characters": [
+        "enterprise-admin",
+        "it-sysadmin",
+        "finance-analyst",
+        "software-developer",
+        "prospect-buyer"
+      ],
+      "character": "enterprise-admin",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "major",
+      "dimension": "trust",
+      "title": "Reviewer-grade vault trust copy exists in 14 languages but renders in zero .tsx ('dead i18n'); entry-moment signal is one conditional pale line",
+      "expected": "At the credential-entry / standing vault moment the product shows the AES-256-GCM + OS-keychain + locality story.",
+      "got": "A full vault.vault_badge block (aes_title, aes_detail, keychain_detail, fallback_key_detail, ...) is authored + translated into all 14 locales but no .tsx component consumes any of it. The only live signal is a text-emerald-400/70 'Encrypted with OS Keychain / at rest' line that renders only when the form has a password-typed field — OAuth/bearer/MCP-URL/DB creds may show no trust signal. Crypto itself is genuinely senior-grade.",
+      "evidence": "strings src/i18n/locales/en.json vault.vault_badge (~4451-4463); zero .tsx consumer; sole live label src/features/vault/sub_credentials/components/forms/FormActions.tsx:34-43",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — confirm no other route renders these; cheap high-leverage fix: wire vault_badge into the credential form/header. Verify the label across all credential types."
+    },
+    {
+      "id": "F-VAULT-STATUS-COUNTERS",
+      "journey": "trust-and-governance",
+      "characters": [
+        "enterprise-admin",
+        "it-sysadmin",
+        "prospect-buyer"
+      ],
+      "character": "enterprise-admin",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "missing",
+      "title": "vault_status plaintext + legacy-IPC counters are computed but never surfaced to an admin; Admin tab is dev-only",
+      "expected": "An admin can answer 'are any credentials still plaintext?' and 'is anything on the weaker legacy IPC path?' from inside the product.",
+      "got": "vault_status returns key_source/total/encrypted/plaintext/legacy_ipc_decrypt_calls but the sole frontend consumer reads only key_source for the one-line label and drops the rest. Not surfaced in CredentialManager or AdminSettings; Admin tab is devOnly (absent in release builds).",
+      "evidence": "src-tauri/src/commands/credentials/crud.rs:362-375; sole consumer FormActions.tsx:38",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "high — single most defensible vault metric for a reviewer and it's invisible; confirm no standing trust panel exists in a shipping build."
+    },
+    {
+      "id": "F-TIER-GATE-STARTER",
+      "journey": "set-trigger-automate",
+      "characters": [
+        "content-marketer",
+        "solo-founder",
+        "enterprise-admin",
+        "it-sysadmin"
+      ],
+      "character": "content-marketer",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "major",
+      "dimension": "completion",
+      "title": "Team-tier sidebar gate locks core journey surfaces out of Starter (Events / Teams / Goals-KPI / Approvals); backend commands enforce no tier",
+      "expected": "The named surface of a discovery journey is reachable for the journey's intended tier, and tier gates hold at the command boundary.",
+      "got": "minTier: TIERS.TEAM on Events/Teams/Approvals sidebar sections makes them invisible+tree-shaken on Starter; goal-kpi is fully unreachable for solo-founder (L1-fail). Conversely create_team/synthesize_team check only require_auth — the gate is frontend-cosmetic and unenforced at the backend (bypass in a Builder-default build).",
+      "evidence": "src/features/shared/chrome/sidebar/sidebarData.ts:38,40,73-75; backend no-gate src-tauri/src/commands/teams/teams.rs:36-42; team_synthesis.rs:166-171",
+      "code_check": "confirmed",
+      "reachable": true,
+      "l2_priority": "medium — confirm Starter cannot reach Events/Goals; confirm whether any Starter fallback goal surface exists; if tiers ever map to entitlement, the backend bypass matters."
+    },
+    {
+      "id": "F-TEAM-HANDOFF-SYNTH",
+      "journey": "synthesize-team",
+      "characters": [
+        "freelance-agency",
+        "hobbyist-power",
+        "enterprise-admin"
+      ],
+      "character": "freelance-agency",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "major",
+      "dimension": "completion",
+      "title": "synthesize_team_from_templates creates connections but never wires handoff; disabled members swallow handoffs with no enabled guard",
+      "expected": "A synthesized team hands work between members toward the goal; a disabled member is flagged, not a silent swallow.",
+      "got": "synthesize_team_from_templates returns at team_synthesis.rs:410-416 without calling wire_team_handoff (the preset path team_preset_adopter.rs:536 does call it). wire_team_handoff wires triggers with no enabled guard, so a disabled member silently eats the baton (the documented soak-stall pattern). Repair requires a manual repair_team_handoff command with no obvious UI.",
+      "evidence": "synth team_synthesis.rs:410-416; preset team_preset_adopter.rs:536; no-guard wiring team_handoff.rs:104-186; repair cmd teams.rs:55",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "HIGH — confirm a synthesized team has no handoff plumbing and no in-UI repair affordance (flips to L1-fail for freelance-agency); disable a downstream member and observe whether work dead-ends silently."
+    },
+    {
+      "id": "F-TEAM-STALL-INVISIBLE",
+      "journey": "synthesize-team",
+      "characters": [
+        "hobbyist-power",
+        "enterprise-admin",
+        "freelance-agency"
+      ],
+      "character": "hobbyist-power",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "major",
+      "dimension": "trust",
+      "title": "Team handoff stall is invisible on the canvas — breadcrumb persisted but marked Delivered (not DLQ) and read by no UI",
+      "expected": "When a team stalls (disabled member swallows a handoff) the user sees a node-health / stalled-phase diagnostic.",
+      "got": "The disabled-member guard writes a 'cascade stalled here' breadcrumb but marks the event PersonaEventStatus::Delivered (not Failed/DLQ), so it appears in neither the Dead-Letter tab nor any canvas indicator. PersonaNode status badges have no stalled-cascade state. The canvas looks fully healthy while the chain is dead; a FleetLivenessWatchdog only raises a deduped incident after 2h idle.",
+      "evidence": "src-tauri/src/engine/background.rs:997-1020,1222-1230; src/features/teams/sub_canvas/components/nodes/PersonaNode.tsx:14-37",
+      "code_check": "present-but-missed",
+      "reachable": true,
+      "l2_priority": "HIGH — confirm disabling a downstream member produces a stalled team with no UI signal, and the breadcrumb is only findable via DB/event forensics."
+    },
+    {
+      "id": "F-NO-PROVENANCE",
+      "journey": "run-and-review-execution",
+      "characters": [
+        "finance-analyst",
+        "researcher"
+      ],
+      "character": "finance-analyst",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "major",
+      "dimension": "trust",
+      "title": "No structured provenance — a reported figure/claim cannot be traced to the SQL/rows/URL that produced it",
+      "expected": "Each number/claim in an agent report links to the query/rows/source that produced it so a senior can audit before signing.",
+      "got": "The execution output protocol (user_message markdown + execution_flow steps + manual_review + agent_memory + outcome_assessment) carries no figure->source binding; provenance survives only if the agent voluntarily cites it in prose. For web claims the cite-the-URL instruction is prompt-only (prompt.rs:1228-1230) with no enforcement, whereas internal write_fact ops reject an empty sources array at parse time — rigor is enforced for internal memory, only requested for the external deliverable.",
+      "evidence": "src/features/overview/ExecutionDetailModal/OutputSections.tsx:6-49; protocol src-tauri/src/engine/prompt/templates.rs:255-291; web-cite prompt-only src-tauri/src/companion/prompt.rs:1228-1230; enforced-internal dispatcher.rs:629-633",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "high — run a reconciliation/research persona and judge whether a skeptical reviewer can trace any reported figure back to a row/query/URL without redoing the work; confirm real WebSearch results carry openable URLs into the final answer."
+    },
+    {
+      "id": "F-BUILD-NO-CONTEXT",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "content-marketer",
+        "smallbiz-owner",
+        "software-developer"
+      ],
+      "character": "content-marketer",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "grounding",
+      "title": "Build session ingests no first-class context — only the intent string (no brand-voice samples, no role/goal, no per-persona repo pin)",
+      "expected": "The build uses the user's real context (writing samples / role / connected accounts / repo) so the generated persona is grounded, not LLM-invented from one sentence.",
+      "got": "build_session_prompt takes only intent + creds-summary + connector-summary + template_context + language + one_shot; the build surface passes only intentText. The existing DesignInput attachment UI offers only dev file types (api-spec/schema/mcp-config), is not on the build path, and does not flow into build_session_prompt. Brand voice is LLM-invented; the one in-band voice-sample path (Rule 23 accepts_reference) is crowded out by a 4-question hard cap. Solo repo-pin (CODEBASE_ROOT_PATH) is wired via team adoption, not a per-persona control.",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:32-39; call mod.rs:258; UI passes only intentText UnifiedBuildEntry.tsx:578 + useBuildSession.ts:127; attachments designInputHelpers.ts:11-18; Rule 23 vs cap session_prompt.rs:471-504 vs :579; repo-pin runner/mod.rs:1100-1164",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — judge actual output voice quality vs the senior bar; whether a voice sample is ever asked for; whether a solo code persona resolves the registered repo via the global probe."
+    },
+    {
+      "id": "F-NO-DESTRUCTIVE-GATE",
+      "journey": "run-and-review-execution",
+      "characters": [
+        "it-sysadmin"
+      ],
+      "character": "it-sysadmin",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "trust",
+      "title": "No default-on hard runtime gate on destructive/external actions; no per-trigger require-approval / dry-run",
+      "expected": "A destructive/external action (send/post/delete/write) is gated by a default-on hard interlock; a write-capable trigger can require approval or dry-run.",
+      "got": "Gating is per-capability review_policy decided at design time by the build LLM, enforced only if the model emits manual_review; MCP tools execute writes directly in call_tool() with no approval check, and defaults lean toward auto-publish (first option 'Never — auto-publish'; a simple-report fast-path resolves review_policy non-blocking without asking; trust_llm/auto_triage auto-resolve with no human). The true pre-exec requires_approval gate exists only on the companion/Athena path. The trigger model carries no approval_required/dry_run_only field.",
+      "evidence": "src-tauri/src/engine/dispatch.rs:605-707,638-683; session_prompt.rs:206,225,374,421,581; mcp_server/tools.rs:1000-1047; companion gate companion/dispatcher.rs:1453; trigger model background.rs:1629-1961",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "HIGH — build a Slack/email persona under the fast-path default and confirm whether it fires the external action without a human gate; arm a write-capable schedule trigger unattended; confirm the companion requires_approval interlock does NOT extend to general runs."
+    },
+    {
+      "id": "F-I18N-EDITOR-COMPANION",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "non-english-user"
+      ],
+      "character": "non-english-user",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "major",
+      "dimension": "clarity",
+      "title": "Capability/Behavior-Core editor 100% English under es (matrix_v3 0%); companion connector-call status 17% (English at the send moment); build narration/errors stream raw English from Rust",
+      "expected": "The review/edit capability view, the companion 'doing the job' status, and any build-failure error render in Spanish.",
+      "got": "matrix_v3 is 0/83 translated (verbatim English mirror) so the Behavior-Core editor renders entirely English on the 'do I trust this?' step. plugins.companion is 17% translated — the connector-call status (queued/running/done/failed + in-flight hint) is English while the retry row is Spanish (half-and-half card). Build narration ('Processing turn...', 'Draft ready for review') and the failure banner stream literal English from Rust, never entering i18n.",
+      "evidence": "es.json matrix_v3 (0/83); consumers BehaviorCoreEditor.tsx:139-252; ConnectorCallCard.tsx:71-80,191; Rust strings build_session/runner.rs:417,1068,1378; events.rs:68; render GlyphPrototypeLayout.tsx:516",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — confirm the editor/companion render English with es active and judge adoption impact; trigger a real build failure under es and judge trust impact; no-English-first-paint is also an L2 check."
+    },
+    {
+      "id": "F-A11Y-BUILD-PETALS",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "a11y-user"
+      ],
+      "character": "a11y-user",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "major",
+      "dimension": "completion",
+      "title": "Default build surface is a keyboard/SR dead-zone — clarifying questions answerable only by clicking unlabeled SVG petals; selectors lack state; result has no aria-live",
+      "expected": "The core build path is keyboard-completable; controls have accessible names + states; the result is announced.",
+      "got": "Glyph petals are bare SVG g/path with onClick/onMouseEnter only — no role, tabIndex, aria-label, or key handler; not in tab order, perceived by no screen reader; they are the only trigger for the question card (the card itself is fully accessible but unreachable). First-run option pickers (theme/text-size/language/template) signal selection with a visual Check only — no aria-pressed/checked/selected — though forms/AccessibleToggle + forms/Listbox exist and are correct. The execution result swaps text in place with no role=status/aria-live.",
+      "evidence": "petals src/features/shared/glyph/persona-sigil/GlyphHeroSigil.tsx:60-92; trigger GlyphFullLayout.tsx:172-174; pickers AppearancePickers.tsx:91-224, AppearanceStep.tsx:64-82; result ExecutionStep.tsx:130-169; correct primitive forms/AccessibleToggle.tsx",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "high — confirm with NVDA/VoiceOver that petals announce nothing and are skipped in tab cycle, no hidden keyboard alternative exists, and the 'completed' transition is silent."
+    },
+    {
+      "id": "F-ADOPTION-HIDES-CRED",
+      "journey": "adopt-template",
+      "characters": [
+        "hobbyist-power"
+      ],
+      "character": "hobbyist-power",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "missing",
+      "title": "Adoption hides missing-credential questions instead of surfacing the blocker — completes 'clean' then errors on first test",
+      "expected": "When a template needs an unowned credential, adoption tells the user 'this is the one thing left to wire' (a blocker CTA).",
+      "got": "matchVaultToQuestions computes blockedQuestionIds and the questionnaire filters those questions out of the render — they silently disappear. QuickAddCredentialModal is imported but not surfaced as a blocker CTA in this flow; the capability is quietly half-configured and the failure only appears at test_build_draft time when a {{param.X}} has no answer. (A QuestionnaireBlockedCredentialCta component exists in tree but is not the rendered path here.)",
+      "evidence": "src/features/templates/sub_generated/adoption/ChronologyAdoptionView.tsx:656,809-821; substitute_variables src-tauri/src/engine/adoption_answers.rs:56",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "HIGH — confirm live that a template needing an unowned connector completes adoption clean and then errors on first test (the exact 'silently fails on first run' the journey forbids)."
+    },
+    {
+      "id": "F-GOALS-PLACEBO",
+      "journey": "track-goal-kpi",
+      "characters": [
+        "enterprise-admin",
+        "finance-analyst",
+        "hobbyist-power"
+      ],
+      "character": "enterprise-admin",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "major",
+      "dimension": "missing",
+      "title": "Goal progress is decoupled from execution reality (outcome placebo); the honest outcome model is the separate, optional KPI layer",
+      "expected": "Goal progress reflects whether agents actually moved the number, distinguishing activity from outcome.",
+      "got": "Goal progress = manual % + checklist/sub-goal/step completion (compute_suggested_progress), not linked to PersonaExecution success/failure — a goal can read 100% while every run fails. The grounded path is the separate KPI layer (DevKpiMeasurement, real SQL over executions / live connector pulls), which is honest but a distinct setup; Goals alone read as a dashboard placebo. (Hobbyist notes the goal->to-do close-loop is title-string matched and drifts silently.)",
+      "evidence": "progress dev_tools_resolve_goal_progress (src-tauri/src/commands/infrastructure/dev_tools.rs); KPI layer src-tauri/src/db/models/dev_tools.rs:222-309; honest copy src/features/teams/sub_goals/GoalKpiLink.tsx:79; title-match goal_advance.rs:147-158,239",
+      "code_check": "present-but-missed",
+      "reachable": true,
+      "l2_priority": "medium — confirm whether a real KPI measurement appears from run data, or reads as a placebo too; confirm a real goal advance checks off the right to-dos without drift."
+    },
+    {
+      "id": "F-CHAIN-NO-PAYLOAD-FORWARD",
+      "journey": "set-trigger-automate",
+      "characters": [
+        "hobbyist-power"
+      ],
+      "character": "hobbyist-power",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "minor",
+      "dimension": "completion",
+      "title": "UI-created chains fire the next persona but do not forward the source output (second-hop data break); output-conditional routing not committable",
+      "expected": "A chain built in the Chain Studio passes the previous step's output to the next; output-conditional routing is available.",
+      "got": "studioCommit writes a config of only {source_persona_id, condition, event_type} and never sets payload_forward:true; the engine injects source_output into the next step only when payload_forward is true (chain.rs:242-261), so a Studio-built A->B chain advances control flow but B gets no upstream output. Forwarding is reachable only by hand-editing trigger config JSON. Output-conditional routing (output_match) is a refused commit ('not yet committable') though the backend jsonpath predicate exists.",
+      "evidence": "studioCommit.ts:43-53,13-14; StudioSwitchboard.tsx:143-158; engine chain.rs:242-261; CreateTriggerInput.ts:3",
+      "code_check": "present-broken",
+      "reachable": true,
+      "l2_priority": "high — confirm a Studio-built A->B chain runs B with empty/absent source_output (B can't see A's result without manual config surgery)."
+    },
+    {
+      "id": "F-SDR-CRED-WALL",
+      "journey": "adopt-template",
+      "characters": [
+        "sales-rep"
+      ],
+      "character": "sales-rep",
+      "cert_level": "L1",
+      "type": "broken-flow",
+      "severity": "major",
+      "dimension": "effort",
+      "title": "Best-fit outbound/SDR templates wall behind dev-grade OAuth/API-key setup; the only zero-config sales template does the adjacent job",
+      "expected": "The template matching the user's job is send-ready without a config maze for a non-technical Starter user.",
+      "got": "outbound-sales-intelligence-pipeline.json declares three required:true connectors (Hunter+Clearbit API keys, Google Sheets OAuth2 refresh-token flow, messaging bot token) — a developer task for a non-technical SDR. Same shape in personality-enriched-sales-prep and sales-proposal-generator. The one zero-credential sales template (local-business-lead-prospector, builtin personas_database + web_search) does lead discovery, not personalized named-prospect outreach — a partial fit.",
+      "evidence": "scripts/templates/sales/outbound-sales-intelligence-pipeline.json:67-165; local-business-lead-prospector.json",
+      "code_check": "confirmed",
+      "reachable": true,
+      "l2_priority": "medium — time from browsing to first successful run per sales template on a Starter fixture; whether quick-add can complete a Google OAuth without leaving the app."
+    },
+    {
+      "id": "F-TRIGGER-BLAST-RADIUS",
+      "journey": "set-trigger-automate",
+      "characters": [
+        "it-sysadmin",
+        "hobbyist-power"
+      ],
+      "character": "it-sysadmin",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "minor",
+      "dimension": "clarity",
+      "title": "Trigger UI shows 'armed' but not 'armed to do what'; an enabled trigger outside its active window reads identically to disabled",
+      "expected": "The trigger surface shows the run's external blast-radius and distinguishes 'off forever' from 'sleeping until active hours'.",
+      "got": "No blast-radius preview of the run's external capabilities at the trigger surface (armed is legible, 'armed to do what' is not). A trigger that is enabled yet outside its active window has no 'sleeping until X' affordance and renders the disabled label; the schedule advances regardless.",
+      "evidence": "src/features/triggers/sub_triggers/TriggerRow.tsx:32-58; TriggerCountdown.tsx:39; src-tauri/src/engine/background.rs:1676-1680",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "low"
+    },
+    {
+      "id": "F-NO-CONFIDENCE-AUTORESOLVE",
+      "journey": "run-and-review-execution",
+      "characters": [
+        "support-lead"
+      ],
+      "character": "support-lead",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "minor",
+      "dimension": "clarity",
+      "title": "No numeric confidence on routed reviews; 'auto-send is gated' is a default+prompt convention not a hard invariant (trust_llm/auto_triage auto-resolve with no UI warning)",
+      "expected": "The review card shows a confidence number she can threshold on, and warns when a capability auto-approves.",
+      "got": "The manual_review protocol carries no confidence field (confidence exists only on knowledge/improvement and is discarded at dispatch); the UI shows severity, not a confidence number, and she cannot set 'anything below X routes to me.' trust_llm and auto_triage policies auto-resolve reviews with no human and no UI banner, so a customer-facing draft could ship unseen — the default is the safe On, but the gate is a default + prompt policy, not an enforced interlock.",
+      "evidence": "templates.rs:196; parser.rs:522,532-535; discarded dispatch.rs:946; auto-resolve dispatch.rs:638-683; default On dispatch.rs:1116; UI ReviewDetailPanel.tsx:113-114",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — confirm a real low-confidence/ambiguous customer case is actually routed to review by the agent's own judgment, and whether the injected 'Prior Human Feedback' block measurably changes the next draft."
+    },
+    {
+      "id": "F-SETTINGS-NO-LANGUAGE",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "non-english-user"
+      ],
+      "character": "non-english-user",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "minor",
+      "dimension": "completion",
+      "title": "No language control in Settings -> Appearance (mental-model mismatch); language switcher lives only on Home + onboarding",
+      "expected": "The locale control lives at Settings -> Appearance where the OS-app convention puts it.",
+      "got": "AppearanceSettings has text-size/density/timezone/brightness/theming but no language switcher; the control lives only on Home (LanguageSwitcher) and in onboarding (AppearanceStep). A returning user wanting to switch back to Spanish won't find it where expected.",
+      "evidence": "src/features/settings/sub_appearance/components/AppearanceSettings.tsx:21-28 (no language); grep over src/features/settings returns no setLanguage/i18nStore",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "low — confirm Home's switcher is discoverable on a return visit, or recommend a language section in Settings -> Appearance."
+    },
+    {
+      "id": "F-CLIENT-OPERATOR-VIEW",
+      "journey": "adopt-template",
+      "characters": [
+        "freelance-agency"
+      ],
+      "character": "freelance-agency",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "minor",
+      "dimension": "missing",
+      "title": "Adopted template lands as a draft persona in a build matrix, not a client-operable artifact; no 'turn this persona into a reusable recipe' UI",
+      "expected": "A deliverable the user can hand a non-technical client to operate without entering the builder; a reachable build-once -> reusable-recipe loop.",
+      "got": "Adoption lands as a 'draft_ready — test & promote' persona inside a build matrix (a builder surface), with no client-operator/runbook view. promote_use_case_to_recipe exists as a command but has no UI caller (RecipeEditor only createRecipe from scratch).",
+      "evidence": "ChronologyAdoptionView.tsx:1240-1256; cmd crud.rs:355 (no UI caller); RecipeEditor.tsx:109",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — confirm there is no client-operator surface and no in-UI recipe-promotion affordance reachable to the user."
+    },
+    {
+      "id": "F-COMPANION-NO-USER-CORPUS",
+      "journey": "companion-do-a-job",
+      "characters": [
+        "researcher"
+      ],
+      "character": "researcher",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "grounding",
+      "title": "User's uploaded knowledge base is not injected into the companion turn (doctrine lane is app-docs scoped); KB/embeddings are ml-gated",
+      "expected": "The companion synthesizes across the user's own uploaded corpus (the documents they hand it), not just the live web.",
+      "got": "The companion retrieval doctrine lane pulls kind='doctrine' chunks = the app's own curated docs, not arbitrary user-uploaded research documents; the user's connectors + conversation history are injected but their uploaded corpus is not. 'Research my sources' means 'search the live web,' not 'synthesize the 15 PDFs in my folder.' The KB/embeddings path is ml-gated (desktop-full), so vector recall may be degraded on a standard Team build.",
+      "evidence": "src-tauri/src/companion/brain/retrieval.rs:184-218,341-378,353; context-map.json:1328-1340; ml-gate prompt.rs:14,23-26,36-37",
+      "code_check": "confirmed-absent",
+      "reachable": true,
+      "l2_priority": "medium — confirm whether a local_drive connector read can substitute for corpus retrieval (per-file fetch vs corpus RAG)."
+    },
+    {
+      "id": "F-WELCOME-FRAMING",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "prospect-buyer",
+        "smallbiz-owner"
+      ],
+      "character": "prospect-buyer",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "minor",
+      "dimension": "clarity",
+      "title": "Cold-start welcome uses unexplained 'Commander'/'Athena' framing and routes nav cards to tier-locked sections",
+      "expected": "A first-minute evaluator knows what the app is for and has an obvious 'see it work' next move.",
+      "got": "The hero addresses the user as 'Commander' with no explanation; the quick-nav grid surfaces Teams/Events/Plugins cards that are minTier: TEAM and dead-end for a Starter trial; no 'run a working example' first action is highlighted on the welcome screen. Reads as cosplay + dead-end doors to a skeptic.",
+      "evidence": "src/features/home/sub_welcome/HomeWelcome.tsx:11-20,38; tier gates sidebarData.ts:38,40,43",
+      "code_check": "present-broken",
+      "reachable": true,
+      "l2_priority": "low-medium — observe where a first-timer actually clicks first."
+    },
+    {
+      "id": "F-CONSENT-JARGON",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "smallbiz-owner"
+      ],
+      "character": "smallbiz-owner",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "minor",
+      "dimension": "clarity",
+      "title": "Consent gate front-loads opaque terms (P2P, foraging, telemetry, MCP) before any value; onboarding role labeled 'Office Rat'",
+      "expected": "A short, plain 'we keep your stuff on your machine' reassurance, and a recognizable role label.",
+      "got": "The first modal names P2P/foraging/telemetry/deploy/MCP — jargon to a non-technical tradesperson — eating into a 5-minute budget before any benefit. (The same modal is a strength for buyers/admins.) The unmounted SetupCards stepper funnels Starter users to a single role 'Office Rat / Non-technical user' — faintly demeaning and unrecognizable to an HVAC owner.",
+      "evidence": "src/App.tsx:304; FirstUseConsentModal.tsx; SetupCards.tsx:28-33,109; en.json:619-620",
+      "code_check": "by-design",
+      "reachable": true,
+      "l2_priority": "low — measure consent-gate time; whether plain-language per-section summaries exist."
+    },
+    {
+      "id": "F-COMPANION-SERIALIZED",
+      "journey": "companion-do-a-job",
+      "characters": [
+        "solo-founder"
+      ],
+      "character": "solo-founder",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "minor",
+      "dimension": "time-saved",
+      "title": "Companion turns are serialized behind a process-wide mutex (15-min ceiling); user waits per turn",
+      "expected": "A snappy 'just do it' assistant.",
+      "got": "Turns are serialized behind a process-wide mutex with a 15-min ceiling; by design (prevents session clobbering) and streaming keeps the UI live, but the conversation is one-at-a-time.",
+      "evidence": "src-tauri/src/companion/session.rs:319-326,291",
+      "code_check": "by-design",
+      "reachable": true,
+      "l2_priority": "low-medium — measure real turn latency for a build/run request (patience economics)."
+    },
+    {
+      "id": "F-COMPANION-DISCOVERABILITY",
+      "journey": "companion-do-a-job",
+      "characters": [
+        "smallbiz-owner"
+      ],
+      "character": "smallbiz-owner",
+      "cert_level": "L1",
+      "type": "confusion",
+      "severity": "major",
+      "dimension": "clarity",
+      "title": "Companion is reachable (orb defaults on, not tier-gated) but never signposted to a first-timer",
+      "expected": "The first-timer is told 'talk to this assistant to get things done.'",
+      "got": "The Athena orb is mounted globally and defaults on (not tier-gated), but the only entries are an easily-ignored floating orb and a Cockpit home-tab not surfaced on the Welcome hero (homeTab defaults to 'welcome'). Nothing on the first screen says 'ask the assistant,' and the Plugins->Companion sidebar entry is dev-gated away — so the orb is the only discoverable handle and isn't labeled as a chat.",
+      "evidence": "src/App.tsx:335; companionPluginSlice.ts:261 (companionOrbEnabled:true); AthenaOrbLayer.tsx:162; platform.ts:102; uiSlice.ts:319",
+      "code_check": "present-but-missed",
+      "reachable": true,
+      "l2_priority": "medium — verify the orb appears for a fresh Starter profile and tapping it opens a usable chat without a tier wall."
+    },
+    {
+      "id": "F-APPROVALS-GATED",
+      "journey": "run-and-review-execution",
+      "characters": [
+        "solo-founder"
+      ],
+      "character": "solo-founder",
+      "cert_level": "L1",
+      "type": "missing-feature",
+      "severity": "major",
+      "dimension": "trust",
+      "title": "The canonical Approvals (manual-review) surface is Team-gated and invisible on Starter; orb auto-surface defaults OFF",
+      "expected": "A discoverable place to see and act on items the agent flagged for human review (the core trust loop).",
+      "got": "Overview -> Approvals (manual-review) is minTier: TIERS.TEAM and invisible on Starter; Activity and Incidents likewise gated. Mitigations exist (OS notification fires; Home Cockpit DecisionsPanel surfaces reviews; orb decision-queue can resolve them) but the canonical surface is gated and the orb auto-surface (companionHandsFreeDecisions) defaults false.",
+      "evidence": "sidebarData.ts:73; useDecisionQueue.ts:44-46; mitigations useUnifiedInbox.ts:61-70, DecisionsPanelWidget.tsx",
+      "code_check": "present-but-missed",
+      "reachable": false,
+      "l2_priority": "medium — confirm a Starter build with review_policy:always shows the resulting review somewhere Priya can resolve it without flipping a setting or upgrading tier."
+    },
+    {
+      "id": "F-FINANCE-KPI-NO-RECIPE",
+      "journey": "track-goal-kpi",
+      "characters": [
+        "finance-analyst"
+      ],
+      "character": "finance-analyst",
+      "cert_level": "L1",
+      "type": "quality-gap",
+      "severity": "minor",
+      "dimension": "grounding",
+      "title": "Finance/revenue KPI has no built-in grounding recipe; per-measurement provenance stored but not surfaced",
+      "expected": "A revenue KPI auto-binds to her finance system and measures real revenue; clicking a measured value shows its source/evidence.",
+      "got": "No recipe for revenue/finance metric types (binding ships only PostHog pairs); a revenue KPI is either LLM-composed against a finance connector or degrades to a manual human-entered number disconnected from runs — never computed from the app's own execution rows. Provenance (source, evidence incl. execution_id) is persisted and returned but the measurement-history list renders only value + relative-time.",
+      "evidence": "kpi_binding.rs:88-97,149-179; scan fallback kpi_scan.rs:157; stored dev_tools.rs:4787-4819; history UI KPIDetailDrawer.tsx:190-201",
+      "code_check": "by-design",
+      "reachable": true,
+      "l2_priority": "low — confirm whether a Stripe/finance connector yields a real live revenue measurement or silently falls to manual; confirm history omits source/evidence per row."
+    },
+    {
+      "id": "S-CRYPTO",
+      "journey": "wire-credential-connector",
+      "characters": [
+        "enterprise-admin",
+        "it-sysadmin",
+        "finance-analyst",
+        "software-developer"
+      ],
+      "character": "enterprise-admin",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "trust",
+      "title": "At-rest credential crypto is senior-grade and fail-closed",
+      "expected": "Credentials encrypted at rest with a defensible scheme.",
+      "got": "AES-256-GCM + per-record OsRng nonce, OS-keychain master key with opt-in-only DPAPI fallback (PERSONAS_ALLOW_FALLBACK_KEY=1), mlock/VirtualLock anti-swap, zeroize-on-drop SecureString/EncryptedToken, keychain-required-by-default, legacy weak-IPC rejected by default; OAuth tokens use the same path.",
+      "evidence": "src-tauri/src/engine/crypto.rs:476-524,1254-1298,139,199,265,319; oauth.rs:402-410",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "none — protect; do not regress."
+    },
+    {
+      "id": "S-REVIEW-LOOP",
+      "journey": "run-and-review-execution",
+      "characters": [
+        "support-lead",
+        "software-developer",
+        "hobbyist-power",
+        "finance-analyst",
+        "it-sysadmin"
+      ],
+      "character": "support-lead",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "missing",
+      "title": "Review -> 'Learned' memory -> resume loop is real and feeds the next run",
+      "expected": "Accept/reject teaches the agent and resumes blocked work, not a dead-end.",
+      "got": "On a terminal review status the repo writes a typed learning memory (team_memories decision/constraint or solo learned), emits MANUAL_REVIEW_RESOLVED, raises a deep-linkable 'Learned: X' toast to an editable memory, publishes review_decision.*, resumes the blocked team assignment on approve / dispatches a follow-up for advisory reviews — and the runner injects the last resolved decisions ('repeat what was approved; do NOT repeat what was rejected') into the next execution's prompt.",
+      "evidence": "src-tauri/src/engine/runner/mod.rs:792-827; reviews.rs:1074-1136,1141-1283; manual_reviews.rs:168-187,267-435; eventBridge.ts:447-473",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm the injected feedback block measurably changes the next draft, not just lengthens the prompt."
+    },
+    {
+      "id": "S-VOICE-PERSISTS",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "content-marketer"
+      ],
+      "character": "content-marketer",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "senior-quality",
+      "title": "Generated voice/identity persists durably and is injected on every run",
+      "expected": "The user does not re-explain brand voice on every execution.",
+      "got": "behavior_core.voice flows into structured_prompt.identity, which the runtime prompt builder injects at every run — voice is captured durably, not re-asked.",
+      "evidence": "src-tauri/src/engine/build_session/session_prompt.rs:341; runtime inject engine/prompt/mod.rs:240-247",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "actual output voice quality is an L2 check."
+    },
+    {
+      "id": "S-EXPORT-SECRETFREE",
+      "journey": "adopt-template",
+      "characters": [
+        "freelance-agency"
+      ],
+      "character": "freelance-agency",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "trust",
+      "title": "Secret-free .persona export bundle + same-bundle gallery publish (real no-lock-in)",
+      "expected": "An exportable artifact carries no secrets and can be re-imported elsewhere.",
+      "got": "build_persona_bundle is a versioned envelope carrying only prompt/config/triggers/subscriptions/memories — zero secret/api_key/token fields; custom icons downgraded to built-ins; the public-gallery publish path reuses the same lossless bundle. Credentials never travel in the artifact.",
+      "evidence": "src-tauri/.../import_export.rs:44-203; gallery.rs:80",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm importer re-maps dangling local cred-ID references."
+    },
+    {
+      "id": "S-WEB-RESEARCH",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "sales-rep",
+        "researcher"
+      ],
+      "character": "sales-rep",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "missing",
+      "title": "Real, credential-free web research at runtime / in the companion turn",
+      "expected": "An agent can research a real account/topic with zero credential setup.",
+      "got": "Every persona's runtime prompt injects a '## Web Research' block with native WebSearch/WebFetch ('no credentials, always available'); the companion turn is a real Claude CLI spawn with no tool allowlist + skip-permissions, so WebSearch/WebFetch/Agent are live, plus an athena-web-researcher subagent that returns a synthesis with source URLs.",
+      "evidence": "engine/prompt/mod.rs:651-667; companion/session.rs:1164-1187; prompt.rs:1173-1179",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm real WebSearch results carry openable URLs into the final answer and the model doesn't recite training-data facts unmarked."
+    },
+    {
+      "id": "S-KPI-GROUNDED",
+      "journey": "track-goal-kpi",
+      "characters": [
+        "hobbyist-power",
+        "finance-analyst",
+        "enterprise-admin"
+      ],
+      "character": "hobbyist-power",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "grounding",
+      "title": "KPI measurement is genuinely outcome-grounded, not a placebo dashboard",
+      "expected": "KPI values come from real run data, distinguishing 'ran a lot' from 'moved the number.'",
+      "got": "measure_derived runs real SQL over persona_executions / team_assignment_events / audit_incidents / team_assignments and refuses to record a false-perfect 0% on no data; connector KPIs make deterministic live HTTPS pulls; codebase KPIs run real commands; measurements record source + structured evidence incl. originating execution_id.",
+      "evidence": "kpi_eval.rs:291-389,335-356; kpi_binding.rs:286-348; dispatch.rs:825-856",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm a real measurement appears from run data."
+    },
+    {
+      "id": "S-ADOPTION-HONEST",
+      "journey": "adopt-template",
+      "characters": [
+        "content-marketer",
+        "freelance-agency",
+        "sales-rep",
+        "smallbiz-owner"
+      ],
+      "character": "content-marketer",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "clarity",
+      "title": "Template adoption is atomic and honest about the one missing credential (no silent half-config)",
+      "expected": "Adoption wires the automation and clearly tells the user the one thing left to wire.",
+      "got": "Adoption wires tools/triggers/required-connectors/cross-persona event-subscriptions in one transaction, then a pre-flight check_persona_runnability stamps setup_status='needs_credentials' + the exact missing_credentials list back to the UI, surfaced inline via QuickAddCredentialModal / a typed blocked-credential CTA + 3-state eligibility — not a silent dump.",
+      "evidence": "template_adopt.rs:372-457,679-700,709-740; eligibility.ts:30-49; ChronologyAdoptionView.tsx:1499",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm the needs_credentials banner deep-links to add-credential and auto-test blocks vs runs-and-fails."
+    },
+    {
+      "id": "S-SEEDED-GALLERY",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "prospect-buyer"
+      ],
+      "character": "prospect-buyer",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "completion",
+      "title": "Auto-seeded example gallery (13 templates) gives a credible 'see it work' without building",
+      "expected": "A new user can see a credible working example without building one.",
+      "got": "The Templates gallery auto-seeds 13 published persona templates into the DB on first mount; a brand-new Starter user opens Templates and immediately sees real examples, each previewing the full capability description, connector pills, adoption count, and flow count. Templates is not tier-gated.",
+      "evidence": "useDesignReviews.ts:89-122; templateCatalog.ts; scripts/templates/content/*.json; sidebarData.ts:42",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "read the seeded prompts in full to confirm senior-quality."
+    },
+    {
+      "id": "S-BASEMODAL",
+      "journey": "first-run-onboarding",
+      "characters": [
+        "a11y-user"
+      ],
+      "character": "a11y-user",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "senior-quality",
+      "title": "BaseModal is a model a11y primitive",
+      "expected": "Modals trap focus, announce themselves, and return focus on close.",
+      "got": "role=dialog + aria-modal=true + aria-labelledby; real Tab/Shift-Tab focus trap; Escape-to-close when topmost; focus-first-focusable on open; focus returns to the triggering element on close. The onboarding overlay, glyph composer, and answer flows all sit on it.",
+      "evidence": "src/lib/ui/BaseModal.tsx:183-233",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "none — protect."
+    },
+    {
+      "id": "S-CONSENT-MODAL",
+      "journey": "trust-and-governance",
+      "characters": [
+        "enterprise-admin",
+        "prospect-buyer",
+        "it-sysadmin"
+      ],
+      "character": "enterprise-admin",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "trust",
+      "title": "First-use consent modal leads with the local-first/AES contract; P2P off by default + compile-gated",
+      "expected": "A reviewer-grade disclosure of storage/egress/networking before any data is entered.",
+      "got": "A checkbox-gated first-use modal explicitly discloses local-first storage + AES-256-GCM + 'no data to Personas servers unless you opt into cloud' + user-supplied keys + SSRF blocklist + monitoring + P2P + telemetry (opt-in), before any data entry. P2P auto_connect:false by default and the whole subsystem is compile-gated behind the p2p cargo feature (absent in the lite build); exposure is per-resource opt-in.",
+      "evidence": "src/features/shared/components/overlays/FirstUseConsentModal.tsx; App.tsx:304; p2p/types.rs:18-29; lib.rs:931",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "none — protect."
+    },
+    {
+      "id": "S-TRIGGER-LEGIBLE",
+      "journey": "set-trigger-automate",
+      "characters": [
+        "support-lead",
+        "hobbyist-power",
+        "it-sysadmin",
+        "content-marketer"
+      ],
+      "character": "support-lead",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "clarity",
+      "title": "Trigger armed/next-fire state is legible and real (backend-computed, not a saved-form illusion)",
+      "expected": "The user can tell a trigger is armed and when it next fires, and believe it'll run.",
+      "got": "A green/grey toggle (ToggleRight/ToggleLeft) shows armed at a glance; the schedule preview shows a human-readable cron description + 'Next run' in local time, computed backend-side from the cron with timezone + anchor-to-prior-fire drift correction; the tick loop atomically marks-and-fires with a CAS on trigger_version. A non-dev rhythm picker (One-off/Daily/Weekly/Monthly) needs no raw cron.",
+      "evidence": "TriggerRow.tsx:53-57; TriggerSchedulePreview.tsx:101-160; triggers.rs:734-778; scheduler compute_next_trigger_at; background.rs CAS fire; ComposerSchedulePickerModal.tsx:45-198",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm a trigger actually fires and the next-run wall-clock is tick-accurate."
+    },
+    {
+      "id": "S-PROMPT-INSPECTABLE",
+      "journey": "build-persona-from-intent",
+      "characters": [
+        "software-developer"
+      ],
+      "character": "software-developer",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "senior-quality",
+      "title": "Runtime prompt is fully readable, inspectable Rust (no hidden magic)",
+      "expected": "A skeptical developer can see what the agent is actually told and which credentials are injected.",
+      "got": "Runtime prompt assembly is plain Rust: identity/instructions/toolGuidance/examples/errorHandling sections, a '## Available Credentials' block listing the injected $ENV vars, and a '## Connector Usage Reference'. Credentials are AES-256-GCM-decrypted and pushed as {CONNECTOR}_{FIELD} env vars into the spawned Claude CLI with OAuth auto-refresh and a denylist guarding the CLI's own auth. The build session is a multi-turn gate machine with SQLite checkpoints, not a fill-in-the-blanks form.",
+      "evidence": "engine/prompt/mod.rs:120-851,512-583; runner/credentials.rs:46-174,446-825; build_session/runner.rs:144-1554",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "none — protect; this is what wins the skeptical developer."
+    },
+    {
+      "id": "S-UNCERTAINTY",
+      "journey": "companion-do-a-job",
+      "characters": [
+        "researcher"
+      ],
+      "character": "researcher",
+      "cert_level": "L1",
+      "type": "strength",
+      "severity": "info",
+      "dimension": "trust",
+      "title": "Calibrated uncertainty is privileged in the companion constitution (and internal fact-citation is code-enforced)",
+      "expected": "The assistant says 'I don't know' rather than confabulating; written facts must be cited.",
+      "got": "The constitution explicitly licenses hedging ('you can be unsure', 'I don't know' over puffing up), makes confidence a first-class field on written facts, and the dispatcher rejects a write_fact/write_procedural op with an empty sources array at parse time ('a fact you can't cite is a hallucination'). Internal-memory provenance is enforced in code (contrast F-NO-PROVENANCE: web-claim provenance is prompt-only).",
+      "evidence": "constitution.md:18-21,43-45,57-81,629-633,639; dispatcher.rs (fact op confidence + sources reject)",
+      "code_check": "confirmed-present",
+      "reachable": true,
+      "l2_priority": "confirm real runs reliably self-route uncertain results to review."
+    }
+  ]
+}
