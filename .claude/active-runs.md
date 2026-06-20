@@ -784,6 +784,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### /uat-p7 — Build Grounding package (2 of 3 findings) — completed (commits b22046b55, 72e3675e3, 58a567096; on master)
+- 2026-06-20. P8 (Tier/Reachability) DESCOPED — product is free → tier-lock findings moot.
+- **F-FINANCE-KPI-NO-RECIPE** (b22046b55, frontend on master): render stored DevKpiMeasurement provenance (source badge + evidence summary w/ full-JSON tooltip) in KPIDetailDrawer history — a measured value is now auditable. 7 unit tests (summarizeEvidence).
+- **F-BUILD-NO-CONTEXT** (72e3675e3 + doc 58a567096, worktree-uat-p7 → ff-merged): first-class optional `context` threaded build entry → start_session (all 5 callers; 4 wired, companion=None) → build_session_prompt, injected as a delimited "USER-PROVIDED REFERENCE CONTEXT" block framed as reference-not-instructions (prompt-injection guard), 8k UTF-8-safe truncation. UI = BuildContextField collapsed disclosure (pre-launch). Verified: 3 Rust unit tests pass + crate compiles (isolated .cargo-p7-target) + tsc/eslint clean + existing build-session tests green. **NOT live-smoke-tested** — :17320 test-automation server was down post-merge (app not running the test variant); Option/serde-default design = can't break existing builds.
+- REMAINING in P7: **F-NO-PROVENANCE** (major) — output protocol carries no figure→source binding; internal write_fact enforces sources at parse-time but the external deliverable only requests in prose. Riskiest (output-protocol + parser change) — deferred to its own focused pass.
+- ⚠️ CLEANUP: worktree dir `.claude/worktrees/uat-p7` is git-pruned + branch deleted, but the physical dir is Windows-locked (handle) — sweep later with `npm run clean:worktrees`.
+
 ### /uat-p5-minors — F-TRIGGER-BLAST-RADIUS + F-NO-CONFIDENCE-AUTORESOLVE — completed (commits 81c3dd21f, c31dee5b8, ac03bb1c1, 3276b95b5; on master)
 - 2026-06-20. Main checkout (frontend-only, no Rust/migration → HMR-verifiable live; no worktree needed). Atomic commit per finding + tests + docs.
 - **F-TRIGGER-BLAST-RADIUS** (81c3dd21f): `triggerArmState.ts` (client mirror of Rust `ActiveWindow::is_active_at`) → 3-state `disabled|sleeping|armed`; a Moon "Sleeping" badge on global TriggerList + per-persona TriggerRow when enabled-but-outside-active-window (previously read identical to disabled); shared `TriggerModeBadge` (dry_run/approval) now on the row too ("armed to do what"), replacing TriggerList's inline copy.
