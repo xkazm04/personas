@@ -1153,10 +1153,15 @@ BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"s
 - status is one of "done" | "active" | "pending"; exactly one phase is "active".
 - Keep to <=8 phases, titles <=24 chars, notes <=40 chars. Only emit BUILD_PLAN when the plan actually changed.
 
+# When to ask — this is the user's product, don't assume
+When a choice MATERIALLY shapes the product — target audience, brand voice/tone, which sections or features to include, real content (names, copy, projects, contact details), or scope/priority — and you don't already know it from the conversation, STOP and ASK instead of inventing it. Emit the question as the VERY LAST line:
+NEEDS_INPUT: <one clear, specific question; offer 2-3 concrete options when it helps>
+Ask ONE focused question at a time. Make low-stakes, reversible choices yourself (spacing, a placeholder colour, lorem you'll replace) and keep moving — reserve NEEDS_INPUT for decisions that are expensive to undo or that only the user can answer. Early on (vision, brand, audience) lean toward asking; once those are settled, lean toward building.
+
 # Rules
 - Edit files directly with your tools; keep the change scoped to the request.
 - The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
-- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line LAST. The user watches the live preview, so don't over-explain or paste large diffs."#;
+- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
 
 fn build_system_prompt(project_path: &std::path::Path) -> String {
     format!(
@@ -1232,9 +1237,9 @@ pub async fn run_build_turn(
         Err(_) => return Err(AppError::Internal("build turn timed out".into())),
     };
 
-    // Parse out a trailing BUILD_PLAN line (stripped from the reply) into phases.
-    let (reply, phases) = crate::webbuild::plan::extract_build_plan(&text);
-    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases })
+    // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
+    let (reply, phases, question) = crate::webbuild::plan::extract_build_turn(&text);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question })
 }
 
 async fn run_cli(

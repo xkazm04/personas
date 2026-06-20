@@ -1,7 +1,8 @@
-//! Build-plan model + extraction for web-build build turns (P3 of the web-dev
-//! companion). Athena emits her plan as a trailing `BUILD_PLAN: {json}` line in
-//! a build turn's reply; we parse it out (so the user never sees the raw JSON)
-//! and surface the phases in the Studio checklist drawer.
+//! Build-turn parsing for web-build turns (P3+). Athena emits structured
+//! trailing lines in a build turn's reply — `BUILD_PLAN: {json}` (her plan) and
+//! `NEEDS_INPUT: <question>` (a decision she needs the user to make). We parse
+//! both out (so the user never sees the raw markers), surface the phases in the
+//! checklist drawer, and surface the question so autonomous mode can pause.
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -20,14 +21,15 @@ pub struct WebBuildPhase {
     pub note: Option<String>,
 }
 
-/// Result of a build turn: Athena's cleaned reply plus an optional updated plan
-/// (present only on turns where she emitted/revised it).
+/// Result of a build turn: Athena's cleaned reply, an optional updated plan, and
+/// an optional question she needs answered before proceeding (`NEEDS_INPUT`).
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct BuildTurnResult {
     pub reply: String,
     pub phases: Option<Vec<WebBuildPhase>>,
+    pub question: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -35,15 +37,19 @@ struct PlanEnvelope {
     phases: Vec<WebBuildPhase>,
 }
 
-/// Extract a trailing `BUILD_PLAN: {json}` line from the assistant text. Returns
-/// the cleaned reply (the line stripped — never show the raw JSON) plus the
-/// parsed phases when the line is present and valid. A malformed line is still
-/// stripped (so it never leaks into the reply) but yields no phases.
-pub fn extract_build_plan(assistant_text: &str) -> (String, Option<Vec<WebBuildPhase>>) {
+/// Extract trailing `BUILD_PLAN: {json}` and `NEEDS_INPUT: <question>` lines from
+/// the assistant text. Returns the cleaned reply (markers stripped — never show
+/// raw markers) plus the parsed phases and question when present. Malformed
+/// markers are still stripped so they never leak into the reply.
+pub fn extract_build_turn(
+    assistant_text: &str,
+) -> (String, Option<Vec<WebBuildPhase>>, Option<String>) {
     let mut phases: Option<Vec<WebBuildPhase>> = None;
+    let mut question: Option<String> = None;
     let mut kept: Vec<&str> = Vec::with_capacity(assistant_text.lines().count());
     for line in assistant_text.lines() {
-        if let Some(rest) = line.trim_start().strip_prefix("BUILD_PLAN:") {
+        let trimmed = line.trim_start();
+        if let Some(rest) = trimmed.strip_prefix("BUILD_PLAN:") {
             if phases.is_none() {
                 if let Ok(env) = serde_json::from_str::<PlanEnvelope>(rest.trim()) {
                     if !env.phases.is_empty() {
@@ -51,12 +57,20 @@ pub fn extract_build_plan(assistant_text: &str) -> (String, Option<Vec<WebBuildP
                     }
                 }
             }
-            // Strip the line either way — the model should never surface raw JSON.
+            continue; // strip either way — never surface raw JSON
+        }
+        if let Some(rest) = trimmed.strip_prefix("NEEDS_INPUT:") {
+            if question.is_none() {
+                let q = rest.trim();
+                if !q.is_empty() {
+                    question = Some(q.to_string());
+                }
+            }
             continue;
         }
         kept.push(line);
     }
-    (kept.join("\n").trim().to_string(), phases)
+    (kept.join("\n").trim().to_string(), phases, question)
 }
 
 #[cfg(test)]
@@ -64,27 +78,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn extracts_and_strips_plan() {
-        let txt = "Replaced the hero with a centered heading.\nBUILD_PLAN: {\"phases\":[{\"id\":\"foundation\",\"title\":\"Foundation\",\"status\":\"active\"}]}";
-        let (reply, phases) = extract_build_plan(txt);
-        assert_eq!(reply, "Replaced the hero with a centered heading.");
-        let phases = phases.expect("phases parsed");
-        assert_eq!(phases.len(), 1);
-        assert_eq!(phases[0].id, "foundation");
-        assert_eq!(phases[0].status, "active");
-        assert!(phases[0].note.is_none());
+    fn extracts_plan_and_question_and_strips_them() {
+        let txt = "Set up the hero.\nNEEDS_INPUT: Should the palette be warm or cool?\nBUILD_PLAN: {\"phases\":[{\"id\":\"foundation\",\"title\":\"Foundation\",\"status\":\"active\"}]}";
+        let (reply, phases, question) = extract_build_turn(txt);
+        assert_eq!(reply, "Set up the hero.");
+        assert_eq!(phases.expect("phases").len(), 1);
+        assert_eq!(question.as_deref(), Some("Should the palette be warm or cool?"));
     }
 
     #[test]
-    fn no_plan_returns_text_unchanged() {
-        let (reply, phases) = extract_build_plan("Just a summary, no plan.");
-        assert_eq!(reply, "Just a summary, no plan.");
+    fn no_markers_returns_text_unchanged() {
+        let (reply, phases, question) = extract_build_turn("Just a summary.");
+        assert_eq!(reply, "Just a summary.");
         assert!(phases.is_none());
+        assert!(question.is_none());
     }
 
     #[test]
     fn malformed_plan_is_stripped_without_phases() {
-        let (reply, phases) = extract_build_plan("Done.\nBUILD_PLAN: not json");
+        let (reply, phases, _) = extract_build_turn("Done.\nBUILD_PLAN: not json");
         assert_eq!(reply, "Done.");
         assert!(phases.is_none());
     }
