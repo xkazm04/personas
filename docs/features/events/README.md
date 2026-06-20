@@ -80,7 +80,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 2. Communication repositories persist the event and expose it to logs/search.
 3. The execution engine/scheduler evaluates trigger and subscription matches.
 4. Matching persona triggers enqueue executions or route into chain/composite logic.
-5. Failures move into dead-letter handling after retry limits.
+5. Failures move into dead-letter handling after retry limits. A **targeted handoff to a disabled persona** dead-letters *immediately* (no retries) with reason "target persona disabled — cascade stalled here", so a stalled team chain surfaces in the Dead Letter Queue (and is replayable once the persona is re-enabled) instead of looking delivered (UAT F-TEAM-STALL-INVISIBLE).
 
 ## Outbound webhook notifications
 

@@ -1254,16 +1254,25 @@ pub(crate) async fn event_bus_tick(
                     tracing::error!(event_id = %event.id, "Failed to update DLQ status: {}", e);
                 }
             }
+        } else if dropped_disabled_target {
+            // A targeted handoff to a disabled persona is a STALLED cascade — no
+            // execution follows and the chain dead-ends here. Mark it DeadLetter
+            // (not Delivered) so it surfaces in the Dead-Letter tab instead of
+            // looking healthy; retrying is pointless until the user re-enables the
+            // persona, so DeadLetter (manual replay) is correct, not Failed
+            // (auto-retry churn). (UAT F-TEAM-STALL-INVISIBLE.)
+            let note = "handoff dropped: target persona disabled — cascade stalled here \
+                        (enable the persona and replay to resume)"
+                .to_string();
+            let _ = event_repo::update_status(
+                pool,
+                &event.id,
+                PersonaEventStatus::DeadLetter,
+                Some(note),
+            );
+            emit_event_to_frontend(app, event, PersonaEventStatus::DeadLetter);
         } else {
-            // Carry the disabled-target breadcrumb onto the delivered event so DB
-            // forensics (and any UI reading error_message) show why a targeted
-            // handoff produced no execution instead of an opaque "delivered".
-            let note = dropped_disabled_target.then(|| {
-                "handoff dropped: target persona disabled — cascade stalled here \
-                 (enable the persona to resume)"
-                    .to_string()
-            });
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, note);
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
             emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
         }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);

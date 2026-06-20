@@ -212,6 +212,15 @@ This doc set covers pillar 3. For pillar 1 see
    moves `pending → processing → completed/failed/dead_letter` with a
    retry counter. Events hit `dead_letter` after too many retries.
    Query `WHERE status = 'dead_letter'` to find stuck events.
+   **Disabled-target handoffs dead-letter immediately** (no retries): when a
+   targeted `team_handoff.*` event reaches a persona whose Active toggle is off,
+   the cascade dead-ends there — the event is marked `dead_letter` (not the old
+   silent `delivered`) with reason *"target persona disabled — cascade stalled
+   here"*, so the stall surfaces in the Dead-Letter tab and is replayable once
+   the persona is re-enabled, instead of the team looking healthy while the chain
+   is dead (UAT F-TEAM-STALL-INVISIBLE; `engine/background.rs` event-bus). Retrying
+   a disabled target is pointless, so it's `dead_letter` (manual replay), not
+   `failed` (auto-retry).
 5. **Trace IDs correlate chains**: every execution has a `trace_id`;
    events in a cascade share a `chain_trace_id` so you can query the
    whole cascade tree. Use `get_chain_trace` IPC to pull it.
