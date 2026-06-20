@@ -52,7 +52,6 @@ export function KpiSetupCard({ picker }: { picker: ExportPicker }) {
         </span>
         <div className="flex-1 min-w-0">
           <div className="typo-body font-medium text-foreground">{p.kpi_setup_title}</div>
-          <p className="typo-caption text-foreground leading-snug">{p.kpi_setup_hint}</p>
         </div>
         <AccessibleToggle
           checked={picker.includeKpiSetup}
@@ -91,7 +90,6 @@ export function SecuritySection({ picker }: { picker: ExportPicker }) {
         </span>
         <div className="flex-1 min-w-0">
           <div className="typo-body font-medium text-foreground">{p.memories_title}</div>
-          <p className="typo-caption text-foreground leading-snug">{p.memories_hint}</p>
         </div>
         <AccessibleToggle
           checked={picker.includeMemories}

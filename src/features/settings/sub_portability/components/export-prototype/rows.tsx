@@ -11,7 +11,7 @@ const ROW_BASE =
   'group flex items-center gap-3 px-3 py-2.5 rounded-card cursor-pointer transition-colors border';
 const rowTone = (selected: boolean) =>
   selected
-    ? 'bg-emerald-500/[0.07] border-emerald-500/25'
+    ? 'border-emerald-500/40'
     : 'border-transparent hover:bg-secondary/20';
 
 // ---------------------------------------------------------------------------
@@ -49,12 +49,7 @@ export function PersonaPickRow({
         frameStyle={{ backgroundColor: `${persona.color ?? 'var(--primary)'}15` }}
       />
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
-        </div>
-        {persona.description && (
-          <p className="typo-caption text-foreground truncate">{persona.description}</p>
-        )}
+        <span className="typo-body font-medium text-foreground truncate">{persona.name}</span>
       </div>
       <div className="hidden md:flex items-center gap-1.5 flex-shrink-0">
         {!persona.enabled && (
@@ -62,9 +57,11 @@ export function PersonaPickRow({
             {p.disabled}
           </StatChip>
         )}
-        <StatChip icon={<Cpu className="w-3 h-3" />} tone="violet" title={p.model_label}>
-          <span className="max-w-[8rem] truncate">{persona.model_profile ?? p.model_default}</span>
-        </StatChip>
+        {persona.model_profile && (
+          <StatChip icon={<Cpu className="w-3 h-3" />} tone="violet" title={p.model_label}>
+            <span className="max-w-[8rem] truncate">{persona.model_profile}</span>
+          </StatChip>
+        )}
         <StatChip icon={<ShieldCheck className="w-3 h-3" />} tone="emerald" title={p.trust_label_full}>
           {persona.trust_score}
         </StatChip>
