@@ -1104,6 +1104,12 @@ pub fn spawn_proactive_turn(
 /// the two never drift.
 const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
 
+/// Reasoning effort for web-build (Studio) turns. Build sessions prefer quality
+/// over speed/cost — non-technical users can't specify the quality bars a dev
+/// would, so we lean on the model's deepest thinking. Applied only to build
+/// turns (cwd_override present), not normal companion chat.
+const BUILD_TURN_EFFORT: &str = "xhigh";
+
 /// `run_cli`'s output: the display text plus the parsed terminal `result`
 /// usage (`None` when the CLI emitted no result event — older CLI, or the turn
 /// errored before the result line).
@@ -1298,6 +1304,12 @@ async fn run_cli(
         "--system-prompt-file".into(),
         prompt_file.to_string_lossy().to_string(),
     ]);
+
+    // Build-session turns prioritise quality — pin the deepest reasoning effort.
+    if cwd_override.is_some() {
+        argv.push("--effort".into());
+        argv.push(BUILD_TURN_EFFORT.into());
+    }
 
     // Browser-test turns: hand this single CLI spawn browser tools via MCP —
     // the browser-bridge endpoint (user's real Chrome through the paired
