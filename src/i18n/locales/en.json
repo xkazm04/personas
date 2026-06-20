@@ -6084,6 +6084,14 @@
       "unknown_persona": "Unknown Persona",
       "severity_label": "severity",
       "cloud_badge": "Cloud",
+      "auto_resolved": {
+        "badge": "Auto-resolved",
+        "tip_trust_llm": "Approved automatically by this capability's trust_llm review policy — it skipped your review queue without a human decision.",
+        "tip_auto_triage": "Decided by an automatic second-pass evaluator (auto_triage review policy) — it skipped your review queue without a human decision.",
+        "banner_trust_llm": "This review was auto-approved by the capability's trust_llm policy and never waited for you. Change the capability's review policy if you want to decide these yourself.",
+        "banner_auto_triage": "This review was resolved automatically by a second-pass auto_triage evaluator, not by you. Change the capability's review policy to require your approval.",
+        "reasoning_label": "Auto-triage reasoning"
+      },
       "backlog_group_title": "Dev Tools backlog",
       "backlog_accept": "Accept",
       "backlog_reject": "Reject",

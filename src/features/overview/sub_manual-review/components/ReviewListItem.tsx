@@ -4,6 +4,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { STATUS_LABELS, SEVERITY_LABELS } from '../libs/reviewHelpers';
+import { AutoResolvedBadge } from './AutoResolvedBadge';
 import type { ManualReviewItem } from '@/lib/types/types';
 
 export function SeverityIndicator({ severity }: { severity: string }) {
@@ -137,6 +138,7 @@ export function InboxItem({ review, isActive, onClick }: InboxItemProps) {
                 Cloud
               </StatusBadge>
             )}
+            <AutoResolvedBadge review={review} />
           </div>
         </div>
         <ChevronRight className={`w-3.5 h-3.5 mt-1 flex-shrink-0 transition-colors ${isActive ? 'text-primary' : 'text-foreground group-hover:text-muted-foreground/50'}`} />

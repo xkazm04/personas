@@ -9,8 +9,9 @@ import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
-import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
+import { SEVERITY_LABELS, parseSuggestedActions, detectAutoResolution } from '../libs/reviewHelpers';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { AutoResolvedBadge } from './AutoResolvedBadge';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -100,6 +101,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
   const acceptedCount = Object.values(decisionStates).filter((v) => v === 'accepted').length;
   const rejectedCount = Object.values(decisionStates).filter((v) => v === 'rejected').length;
   const hasDecisions = decisions.length > 0;
+  const autoResolution = detectAutoResolution(review);
 
   return (
     <div className="flex flex-col h-full">
@@ -115,6 +117,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                 <span className="typo-body text-foreground">·</span>
                 <RelativeTime timestamp={review.created_at} className="typo-body text-foreground" />
                 {isCloud && (<><span className="typo-body text-foreground">·</span><StatusBadge accent="indigo" size="sm" className="rounded typo-caption" icon={<Cloud className="w-2.5 h-2.5" />}>{t.overview.review.cloud_badge}</StatusBadge></>)}
+                {autoResolution && (<><span className="typo-body text-foreground">·</span><AutoResolvedBadge review={review} /></>)}
               </div>
             </div>
           </div>
@@ -129,6 +132,23 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
           </button>
         </div>
       </div>
+
+      {/* Auto-resolution notice: this review skipped the human queue by policy. */}
+      {autoResolution && (
+        <div className="flex-shrink-0 px-4 py-2 border-b border-amber-400/15 bg-amber-500/[0.06]">
+          <p className="typo-caption text-amber-300/90">
+            {autoResolution.kind === 'trust_llm'
+              ? t.overview.review.auto_resolved.banner_trust_llm
+              : t.overview.review.auto_resolved.banner_auto_triage}
+          </p>
+          {autoResolution.reasoning && (
+            <p className="typo-caption text-amber-200/70 mt-1">
+              <span className="font-medium">{t.overview.review.auto_resolved.reasoning_label}:</span>{' '}
+              {autoResolution.reasoning}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">

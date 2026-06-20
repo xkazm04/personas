@@ -6090,6 +6090,14 @@ export type Translations = {
       unknown_persona: string;
       severity_label: string;
       cloud_badge: string;
+      auto_resolved: {
+        badge: string;
+        tip_trust_llm: string;
+        tip_auto_triage: string;
+        banner_trust_llm: string;
+        banner_auto_triage: string;
+        reasoning_label: string;
+      };
       backlog_group_title: string;
       backlog_accept: string;
       backlog_reject: string;

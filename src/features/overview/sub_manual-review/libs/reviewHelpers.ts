@@ -56,3 +56,32 @@ export function stripPersonaPrefix(title: string | null | undefined, personaName
   }
   return t;
 }
+
+/**
+ * A review whose `review_policy` skipped the human queue. Detected from the
+ * stable machine markers the backend writes into `reviewer_notes`
+ * (engine/dispatch.rs trust_llm + engine/auto_triage.rs) — there is no
+ * structured `auto_resolved` column, so these well-known substrings are the
+ * signal. Surfacing this closes the "auto-send is a convention, not a visible
+ * invariant" gap (UAT P5 — F-NO-CONFIDENCE-AUTORESOLVE).
+ */
+export interface ReviewAutoResolution {
+  /** `trust_llm` = approved on sight by policy; `auto_triage` = second-pass LLM verdict. */
+  kind: 'trust_llm' | 'auto_triage';
+  /** The machine's reasoning to show (auto_triage only); null for trust_llm. */
+  reasoning: string | null;
+}
+
+export function detectAutoResolution(
+  review: { reviewer_notes: string | null },
+): ReviewAutoResolution | null {
+  const notes = review.reviewer_notes ?? '';
+  if (/\btrust_llm\b/i.test(notes)) return { kind: 'trust_llm', reasoning: null };
+  if (/\bauto_triage\b/i.test(notes)) {
+    // Note shape (engine/auto_triage.rs): "auto_triage LLM verdict: Approve — <reasoning>".
+    const m = notes.match(/verdict:\s*\w+\s*[—–-]+\s*(.+)$/i);
+    const reasoning = m?.[1]?.trim();
+    return { kind: 'auto_triage', reasoning: reasoning || notes };
+  }
+  return null;
+}
