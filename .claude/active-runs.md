@@ -802,6 +802,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### /uat-backlog-2 — F-CLIENT-OPERATOR-VIEW + origin merge — completed (commit ad438c17e; merge e2a971b69/bc4aae13b)
+- 2026-06-20. **Synced origin/master 1:1** (Athena studio/web-dev + healing + cleanup) with the UAT campaign via merge — resolved conflicts (ledger/settings-doc kept both; generated files regenerated). origin introduced a strict i18n-no-gaps pre-commit gate; translated the campaign's 45 untranslated en.json keys into all 13 locales via the repo pipeline (extract→13 Sonnet subagents→merge). tsc + cargo check clean post-merge. NOT pushed (37 commits ahead; user said pull).
+- **F-CLIENT-OPERATOR-VIEW** (ad438c17e): "Save as recipe" action on the capability detail (UseCaseDetailExpanded) → promoteUseCaseToRecipe (command existed, had no UI caller). null credential = shareable/secret-free recipe; success toast. 3 new keys × 13 locales. Broader client-operator/runbook view deferred.
+- **F-COMPANION-SERIALIZED** — verified ALREADY resolved (no change): TURN_LOCK is correct for the single-session companion; non-blocking queue + interrupt + 15-min timeout already mitigate "waits per turn". True concurrency = the risky multi-session/async architecture the user declined.
+
 ### /uat-backlog — F-ADOPTION-HIDES-CRED + F-TEAM-STALL-INVISIBLE + F-CONSENT-JARGON — completed (commits e5184c688, b7a9ee334; on master)
 - 2026-06-20. Three backlog findings the user asked to close this session.
 - **F-CONSENT-JARGON** (e5184c688, frontend): FirstUseConsentModal now LEADS with an emerald "Your data stays on your computer" reassurance card (before the warnings/jargon sections); reworded intro to plain language; de-jargoned titles ("Local Network Sharing (P2P)"→"Sharing across your devices", "Process Execution"→"Running tools on your computer", "Error Reporting & Telemetry"→"Error Reporting"). (Office Rat→Everyday user shipped in P10.) Comprehensive admin sections untouched (S-CONSENT-MODAL preserved).
