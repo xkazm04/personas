@@ -1,17 +1,20 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Send, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
+import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
+import { extractAssistantTextDelta } from '@/features/plugins/companion/extractAssistantText';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
 import type { BuildPhase } from './studioBuildModel';
 
 // Minimal Studio chat: a send-only input with a single response bubble above it
-// that (1) sticks to the input, (2) shows an in-progress indicator while Athena
-// works, and (3) shows her FULL reply after — no truncation. Athena-styled (Bot
-// avatar) but Studio-owned, so it behaves reliably (the orb FooterNotice reuse
-// truncated + didn't attach).
+// that streams Athena's reply LIVE (token-by-token, reusing the companion's
+// stream-delta extraction off `companion://stream` filtered to the build
+// session), then settles to her full markdown reply. The trailing BUILD_PLAN
+// line is hidden mid-stream so raw JSON never flashes.
 export default function StudioChatInput({
   projectId,
   projectName,
@@ -24,12 +27,36 @@ export default function StudioChatInput({
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<string | null>(null);
+  const [stream, setStream] = useState('');
+  const streamRef = useRef('');
+
+  // Live token stream for THIS project's build session.
+  const onStream = useCallback(
+    (event: { payload: CompanionStreamEvent }) => {
+      const ev = event.payload;
+      if (ev.sessionId !== `webbuild:${projectId}`) return;
+      if (ev.kind === 'started') {
+        streamRef.current = '';
+        setStream('');
+      } else if (ev.kind === 'cli') {
+        const delta = extractAssistantTextDelta(ev.payload);
+        if (delta) {
+          streamRef.current += delta;
+          setStream(streamRef.current);
+        }
+      }
+    },
+    [projectId],
+  );
+  useTauriEvent<CompanionStreamEvent>(COMPANION_STREAM_EVENT, onStream);
 
   const send = useCallback(async () => {
     const text = input.trim();
     if (!text || busy) return;
     setInput('');
     setReply(null);
+    streamRef.current = '';
+    setStream('');
     setBusy(true);
     try {
       const result = await webbuildSessionSend(projectId, text);
@@ -43,6 +70,8 @@ export default function StudioChatInput({
     }
   }, [input, busy, projectId, onPhases]);
 
+  // Hide the trailing BUILD_PLAN line while it streams (raw JSON never shows).
+  const streamDisplay = (stream.split('BUILD_PLAN:')[0] ?? '').trimEnd();
   const showBubble = busy || reply !== null;
 
   return (
@@ -58,14 +87,21 @@ export default function StudioChatInput({
           >
             <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
             {busy ? (
-              <span className="flex items-center gap-1.5 text-md text-foreground/80">
-                Athena is working
-                <span className="flex gap-0.5">
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
-                  <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:300ms]" />
+              streamDisplay ? (
+                <div className="max-h-48 min-w-0 overflow-y-auto whitespace-pre-wrap break-words text-md text-foreground/90">
+                  {streamDisplay}
+                  <span className="ml-0.5 inline-block h-3 w-0.5 animate-pulse bg-primary align-middle" />
+                </div>
+              ) : (
+                <span className="flex items-center gap-1.5 text-md text-foreground/80">
+                  Athena is working
+                  <span className="flex gap-0.5">
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:300ms]" />
+                  </span>
                 </span>
-              </span>
+              )
             ) : (
               <div className="min-w-0">
                 <MarkdownRenderer content={reply ?? ''} className="athena-chat-md" codeBlockActions />
