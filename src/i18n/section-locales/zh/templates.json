@@ -827,7 +827,18 @@
     "schedule_hourly": "每小时",
     "_comment_events_count": "为某项能力配置的跨角色事件订阅数量",
     "events_count_one": "{count} 个事件",
-    "events_count_other": "{count} 个事件"
+    "events_count_other": "{count} 个事件",
+    "left_messages_heading": "消息",
+    "persona_layout_dim_disable": "禁用",
+    "persona_layout_dim_disable_title": "为当前能力禁用此印记 — 构建过程中将跳过其问题。",
+    "persona_layout_dim_disabled": "已禁用",
+    "persona_layout_dim_reenable": "为当前能力重新启用此印记 — 其问题将重新出现。",
+    "persona_layout_rail_activated": "已激活",
+    "_comment_left_messages_heading": "Heading above the messaging-channels card in the adoption left panel — keep 1 word",
+    "_comment_persona_layout_dim_disable": "Footer toggle in the petal answer modal: disable this dimension for the active capability — keep 1 word",
+    "_comment_persona_layout_dim_disable_title": "Tooltip on the Disable toggle when the dimension is currently enabled",
+    "_comment_persona_layout_dim_reenable": "Tooltip on the Disable toggle when the dimension is currently disabled",
+    "_comment_persona_layout_rail_activated": "Left quick-action rail info box: shown next to the Memory/Review petal icon when that dimension is enabled — keep 1 word"
   },
   "scan": {
     "scanning_draft": "扫描代理草稿中...",

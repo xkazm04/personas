@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Bot, Grid3x3, Layers, Orbit, Rows3, Trash2 } from 'lucide-react';
+import { Bot, Orbit, Rows3, Trash2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -16,7 +16,6 @@ import { PersonaOverviewCardList } from './PersonaOverviewCardList';
 import { PersonaGroupDropRail } from './PersonaGroupDropRail';
 import { DirectorPanel } from './DirectorPanel';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
-import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
 import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
 import { PersonaConfigPanel } from './PersonaConfigPanel';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
@@ -32,7 +31,7 @@ import { listDirectorScoreTrends } from '@/api/director';
 
 
 
-type LayoutVariant = 'baseline' | 'grid' | 'constellation';
+type LayoutVariant = 'baseline' | 'constellation';
 
 /** Top-level view of the All-Personas page: the persona list, or the
  *  effective-config resolution table (migrated from Settings → Config). */
@@ -40,7 +39,6 @@ type PageTab = 'personas' | 'config';
 
 const LAYOUT_TABS: { id: LayoutVariant; label: string; sub: string; Icon: typeof Rows3 }[] = [
   { id: 'baseline', label: 'Table', sub: 'data-dense rows with sortable columns', Icon: Rows3 },
-  { id: 'grid', label: 'Grid', sub: 'uniform icon-first cards', Icon: Grid3x3 },
   { id: 'constellation', label: 'Constellation', sub: 'spatial fleet map by last run', Icon: Orbit },
 ];
 
@@ -49,7 +47,7 @@ const LAYOUT_STORAGE_KEY = 'persona-overview:layout';
 function readPersistedLayout(): LayoutVariant {
   try {
     const v = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (v === 'baseline' || v === 'grid' || v === 'constellation') return v;
+    if (v === 'baseline' || v === 'constellation') return v;
   } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch1")(err); }
   return 'baseline';
 }
@@ -278,8 +276,8 @@ export default function PersonaOverviewPage() {
               activeTab={pageTab}
               onTabChange={setPageTab}
               tabs={[
-                { id: 'personas', ariaLabel: t.agents.persona_list.all_personas, label: (<><Bot className="w-3.5 h-3.5" />{t.agents.persona_list.all_personas}</>) },
-                { id: 'config', ariaLabel: t.settings.config.title, label: (<><Layers className="w-3.5 h-3.5" />{t.settings.config.title}</>) },
+                { id: 'personas', ariaLabel: t.agents.persona_list.all_personas, label: t.agents.persona_list.all_personas },
+                { id: 'config', ariaLabel: t.settings.config.title, label: t.settings.config.title },
               ]}
             />
             {pageTab === 'personas' && (
@@ -307,17 +305,6 @@ export default function PersonaOverviewPage() {
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />
         ) : isMobile ? (
           <PersonaOverviewCardList
-            data={filteredData}
-            selectedIds={selectedIds}
-            onToggleSelect={handleToggleSelect}
-            isFavorite={isFavorite}
-            toggleFavorite={toggleFavorite}
-            onRowClick={handleRowClick}
-            isDraft={isDraft}
-            connectorNamesMap={connectorNamesMap}
-          />
-        ) : layout === 'grid' ? (
-          <PersonaOverviewVariantGrid
             data={filteredData}
             selectedIds={selectedIds}
             onToggleSelect={handleToggleSelect}

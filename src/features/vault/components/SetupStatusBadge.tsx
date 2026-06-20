@@ -1,6 +1,6 @@
 import { AlertTriangle, Settings, CheckCircle2 } from 'lucide-react';
 import type { PersonaSetup } from '@/lib/bindings/PersonaSetup';
-import { DebtText, debtText } from '@/i18n/DebtText';
+import { debtText } from '@/i18n/DebtText';
 
 
 type Status = 'ready' | 'needs_credentials' | 'misconfigured';
@@ -60,13 +60,16 @@ export function SetupStatusBadge({
   }
 
   if (key === 'needs_credentials') {
+    // Warning icon only — compact enough to sit on the same row as the primary
+    // status badge instead of wrapping onto its own line. The tooltip (and
+    // aria-label) still name exactly which connectors need setup.
     return (
       <span
-        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-caption font-medium bg-amber-500/10 text-amber-400 border border-amber-500/30 ${className}`}
+        className={`inline-flex items-center justify-center text-amber-400 ${className}`}
         title={setupTooltip(parseSetup(setupDetail))}
+        aria-label={debtText('auto_setup_required_9fa0e005')}
       >
-        <AlertTriangle className="w-3 h-3" />
-        <DebtText k="auto_setup_required_9fa0e005" />
+        <AlertTriangle className="w-4 h-4" />
       </span>
     );
   }

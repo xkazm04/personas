@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "应用的某个部分无法加载 — 这可能发生在更新或网络波动之后。您的数据是安全的；重新加载应用通常可以解决此问题。",
-  "reload_app": "重新加载应用"
+  "reload_app": "重新加载应用",
+  "suggested": "建议"
 }

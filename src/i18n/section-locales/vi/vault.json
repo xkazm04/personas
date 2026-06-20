@@ -538,7 +538,9 @@
     "sim_low": "Không có personas hoặc quy trình nào phụ thuộc vào thông tin xác thực này. Có thể thu hồi an toàn.",
     "sim_high": "Thu hồi {credentialName} sẽ ảnh hưởng đến {personas} tác nhân{personaPlural} trên không gian làm việc của bạn.",
     "sim_medium": "Thu hồi {credentialName} có phạm vi ảnh hưởng hạn chế.",
-    "per_day": "/ngày"
+    "per_day": "/ngày",
+    "graph_connections": "Kết nối",
+    "graph_empty": "Không có mối quan hệ nào để hiển thị"
   },
   "shared": {
     "add": "Thêm",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- quyền truy cập đã bị thu hồi. Vui lòng cấp phép lại để tiếp tục tự động hóa.",
-    "reconnect": "Kết nối lại"
+    "reconnect": "Kết nối lại",
+    "cli_expired": ") -- Phiên CLI đã hết hạn. Đăng nhập qua terminal của bạn, sau đó thử lại.",
+    "retry_capture": "Thử lại thu thập",
+    "retry_success": "Thông tin xác thực đã được làm mới từ phiên CLI"
   },
   "rotation_section": {
     "corrupted_warning": "Metadata healthcheck bị hỏng. Điểm bất thường không khả dụng cho đến khi healthcheck thành công tiếp theo ghi đè dữ liệu xấu.",

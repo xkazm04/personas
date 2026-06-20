@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} tác nhân cần huấn luyện",
   "director_attention_sr_other": "{count} tác nhân cần huấn luyện",
   "goals": "Mục tiêu",
-  "mission_control": "Trung tâm điều hành"
+  "mission_control": "Trung tâm điều hành",
+  "factory": "Factory",
+  "kpis": "KPI"
 }

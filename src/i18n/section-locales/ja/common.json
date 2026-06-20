@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "アプリの一部を読み込めませんでした -- これはアップデート後や接続の問題で発生することがあります。データは安全です。アプリを再読み込みすると通常は解決されます。",
-  "reload_app": "アプリを再読み込み"
+  "reload_app": "アプリを再読み込み",
+  "suggested": "おすすめ"
 }

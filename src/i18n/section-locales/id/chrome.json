@@ -46,7 +46,14 @@
     "toggle_monitor": "Buka / tutup Persona Monitor",
     "toggle_athena": "Buka / tutup chat Athena",
     "nav_mode": "Aktifkan/nonaktifkan mode navigasi keyboard",
-    "nav_mode_back": "Kembali satu halaman (dalam mode navigasi)"
+    "nav_mode_back": "Kembali satu halaman (dalam mode navigasi)",
+    "mode_toggle_aria": "Alihkan mode pintasan keyboard",
+    "mode_toggle_title": "Mode pintasan — klik untuk beralih · klik kanan untuk bantuan",
+    "nav_mode_monitor": "Alihkan monitor persona (mode nav)",
+    "nav_mode_notifications": "Alihkan notifikasi (mode nav)",
+    "nav_mode_review": "Alihkan tinjauan manusia (mode nav)",
+    "nav_mode_schedules": "Alihkan jadwal (mode nav)",
+    "nav_mode_search": "Buka pencarian (mode nav)"
   },
   "tray_schedules": "Jadwal",
   "tray_schedules_today": "{count} terjadwal hari ini",
@@ -60,5 +67,7 @@
     "headroom_green": "Masih banyak ruang untuk pekerjaan lebih",
     "headroom_amber": "Mulai sibuk — pertimbangkan untuk mengurangi",
     "headroom_red": "Sudah penuh — pertimbangkan untuk memperlambat"
-  }
+  },
+  "tray_acceptance": "Tujuan untuk diterima",
+  "tray_acceptance_pending": "{count} tujuan menunggu penerimaan Anda"
 }

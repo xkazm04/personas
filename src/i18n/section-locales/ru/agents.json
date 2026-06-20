@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Кэш-попадание",
+    "cached": "из кэша",
+    "deep_fanout": "Глубокое ветвление",
+    "deep_fanout_hint": "Делегируйте независимые параллельные подзадачи субагентам. Установите бюджетный лимит.",
+    "deep_fanout_unavailable": "Недоступно на этом плане — требуются инструменты Workflow/Task (Max/Team).",
+    "subagents": "Субагенты"
   },
   "lab": {
     "mode_arena": "Арена",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Улучшить персону «{name}» v{version} — ещё не измерялась. На чём сосредоточиться? ",
     "vr_metric_tool": "точность инструментов",
     "vr_metric_quality": "качество вывода",
-    "vr_metric_protocol": "соответствие протоколу"
+    "vr_metric_protocol": "соответствие протоколу",
+    "eco_col_attempted": "Попыток",
+    "eco_col_cost_success": "Стоимость / успех",
+    "eco_col_model": "Модель",
+    "eco_col_rate": "Доля решений",
+    "eco_col_resolved": "Решено",
+    "eco_empty": "Нет результатов оценки — запустите лабораторию для расчёта эффективности.",
+    "eco_subtitle": "Как часто каждая модель решает задачи и во сколько обходится каждый успех.",
+    "eco_title": "Экономичность"
   },
   "design": {
     "select_agent": "Выберите агента для анализа дизайна",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "Пилюля состояния ДОВЕРИЕ в ReviewDimCard",
     "review_pill_trust": "ДОВЕРИЕ",
     "_comment_dim_status_activated": "Значение в PersonaSigilSummary, когда булева характеристика (память/проверка/событие/ошибка) активна для возможности",
-    "dim_status_activated": "Активировано"
+    "dim_status_activated": "Активировано",
+    "engine_claude": "Движок: Claude",
+    "engine_claude_tooltip": "Полный Claude. Нажмите, чтобы включить смешанный режим: простые подзадачи (суммирование, извлечение, форматирование) передаются локальной модели для экономии premium-квоты.",
+    "engine_local_first": "Движок: локальный",
+    "engine_local_first_tooltip": "Локальный приоритет: Claude составляет задания и проверяет; локальная модель генерирует весь контент. Нажмите, чтобы вернуться к полному Claude.",
+    "engine_mixed": "Движок: смешанный",
+    "engine_mixed_tooltip": "Смешанный движок: Claude оркестрирует и передаёт простые подзадачи локальной модели через инструмент llm_delegate. Нажмите, чтобы вернуться к полному Claude.",
+    "petals_label": "Лепестки",
+    "recipe": "Рецепт",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Агент не выбран",
@@ -2631,7 +2655,8 @@
     "automations": "Автоматизации",
     "triggers_desc": "Подписки на события и настройка триггеров для каждой персоны появятся в этой вкладке.",
     "messaging_desc": "Каналы уведомлений и маршрутизация входящих для этого агента будут здесь.",
-    "automations_desc": "Отдельные правила автоматизации для этого агента будут здесь."
+    "automations_desc": "Отдельные правила автоматизации для этого агента будут здесь.",
+    "parameters": "Параметры"
   },
   "parameters_card": {
     "title": "Параметры",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "Загрузка таблиц…",
   "glyph_db_scope_error": "Не удалось загрузить таблицы — повторить",
   "glyph_db_scope_empty": "Таблицы не найдены",
-  "glyph_db_scope_selected": "{count} из {total} таблиц"
+  "glyph_db_scope_selected": "{count} из {total} таблиц",
+  "share": {
+    "button": "Поделиться",
+    "failed": "Не удалось опубликовать агента в галерее",
+    "hint": "Любой, у кого есть ссылка, откроет агента в Personas одним кликом.",
+    "import_failed": "Не удалось импортировать общего агента",
+    "imported": "Агент импортирован по ссылке",
+    "invite_hint": "Пригласите друга в Personas — вы получите бонус, когда он присоединится",
+    "published": "Опубликовано — скопируйте ссылку для отправки"
+  }
 }

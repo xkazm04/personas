@@ -8771,6 +8771,18 @@ export type Translations = {
       automation_delete: string;
       routes_title: string;
       existing_routes: string;
+      proto_tab_patchbay: string;
+      proto_tab_eventhub: string;
+      proto_tab_baseline: string;
+      proto_live: string;
+      proto_pending: string;
+      proto_add_listener: string;
+      proto_disconnect: string;
+      proto_rename_event: string;
+      proto_no_listeners: string;
+      proto_show_unconnected: string;
+      proto_hide_unconnected: string;
+      proto_chain_route: string;
       tab_compose: string;
       tab_routes: string;
       clear_all: string;
@@ -10030,6 +10042,8 @@ export type Translations = {
       field_budget: string;
       field_turns: string;
       field_cache: string;
+      _comment_per_capability: string;
+      per_capability: string;
       failed_to_resolve: string;
       config_could_not_be_resolved: string;
       search_placeholder: string;
@@ -16292,6 +16306,17 @@ export type Translations = {
     row_menu_label: string;
     row_menu_hide: string;
     row_menu_open_source: string;
+    manage_subtitle: string;
+    master_footer_title: string;
+    master_footer_desc: string;
+    master_resume_title: string;
+    master_resume_desc: string;
+    preview_play: string;
+    preview_stop: string;
+    youtube_premium_note: string;
+    keep_kept: string;
+    keep_hidden: string;
+    keep_toggle_label: string;
   };
   cockpit: {
     unknown_assistant: string;

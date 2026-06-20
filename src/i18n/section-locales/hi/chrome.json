@@ -46,7 +46,14 @@
     "toggle_monitor": "Persona Monitor खोलें / बंद करें",
     "toggle_athena": "Athena चैट खोलें / बंद करें",
     "nav_mode": "कीबोर्ड नेविगेशन मोड टॉगल करें",
-    "nav_mode_back": "एक पेज पीछे जाएँ (nav mode में)"
+    "nav_mode_back": "एक पेज पीछे जाएँ (nav mode में)",
+    "mode_toggle_aria": "कीबोर्ड शॉर्टकट मोड टॉगल करें",
+    "mode_toggle_title": "शॉर्टकट मोड — टॉगल करने के लिए क्लिक करें · सहायता के लिए राइट-क्लिक करें",
+    "nav_mode_monitor": "पर्सोना मॉनिटर टॉगल करें (नेव मोड में)",
+    "nav_mode_notifications": "सूचनाएं टॉगल करें (नेव मोड में)",
+    "nav_mode_review": "मानव समीक्षा टॉगल करें (नेव मोड में)",
+    "nav_mode_schedules": "शेड्यूल टॉगल करें (नेव मोड में)",
+    "nav_mode_search": "खोज खोलें (नेव मोड में)"
   },
   "tray_schedules": "Schedules",
   "tray_schedules_today": "आज {count} शेड्यूल",
@@ -60,5 +67,7 @@
     "headroom_green": "और काम के लिए पर्याप्त जगह है",
     "headroom_amber": "व्यस्त हो रहा है — थोड़ा कम करने पर विचार करें",
     "headroom_red": "क्षमता पर है — धीमा करने पर विचार करें"
-  }
+  },
+  "tray_acceptance": "स्वीकार करने के लिए लक्ष्य",
+  "tray_acceptance_pending": "{count} लक्ष्य आपकी स्वीकृति की प्रतीक्षा में"
 }

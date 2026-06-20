@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Schváleno, ale akci se nepodařilo provést",
   "channels_author_all": "Všichni",
   "channels_author_you": "Vy",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Vymazat vše",
+  "live_dismiss": "Zavřít",
+  "live_more": "+{count} dalších",
+  "live_open_timeline": "Otevřít v časové ose",
+  "live_toggle": "Živá oznámení",
+  "live_toggle_hint": "Zobrazit příchozí zprávy kanálu jako vyskakovací okna v rohu"
 }

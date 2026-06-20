@@ -74,6 +74,13 @@ export interface Connection {
   /** Phase C4 — capability scope when the trigger is scoped to one use case. */
   useCaseId?: string | null;
   chainCondition?: string;
+  /**
+   * For `chain` connections: the source persona whose completion fires this
+   * route. Chains all share the `chain_triggered` event row, so the per-edge
+   * source must live on the connection (not the row) to keep A→B / C→B distinct
+   * and render the true source in a connection-centric view.
+   */
+  sourcePersonaId?: string | null;
 }
 
 export interface EventRow {

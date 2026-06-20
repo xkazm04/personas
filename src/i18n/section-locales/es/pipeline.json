@@ -376,5 +376,13 @@
   "preset_setup_cta": "Configurar",
   "team_codebase_heading": "Repositorio de código",
   "team_codebase_hint": "Vincula este equipo a un repositorio de GitHub para que sus agentes compartan una única fuente de verdad.",
-  "team_connector_label": "Conector de GitHub"
+  "team_connector_label": "Conector de GitHub",
+  "preset": {
+    "button": "Publicar en la comunidad",
+    "failed": "No se pudo publicar este equipo como preset",
+    "heading": "Compartir con la comunidad",
+    "hint": "Publica este equipo como preset comunitario que otros pueden adoptar. Los agentes miembros se comparten sin credenciales.",
+    "published": "Equipo publicado en el catálogo de la comunidad",
+    "published_short": "Publicado"
+  }
 }

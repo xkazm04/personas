@@ -59,7 +59,7 @@ Advisory pre-release scripts (manual, not CI-gated):
 > before opening a PR (the local lefthook hooks enforce the fast subset; the full suites run in CI):
 
 - `npm run check` — TypeScript + ESLint (incl. the 18 custom rules)
-- `npm run check:i18n` · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
+- `npm run check:i18n:strict` (no translation gaps — see i18n § "Translation completeness") · `npm run check:error-registry` · `npm run check:themes` · `npm run check:tauri-configs`
 - `npm run test -- --run` (Vitest)
 - If Rust changed: `cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings`, `cargo test --manifest-path src-tauri/Cargo.toml`, and `cargo test export_bindings` (then commit `src/lib/bindings/`)
 - `node .ai/doctor.mjs` — `.ai` conformance (no hard FAILs)
@@ -264,7 +264,7 @@ The English type tree (`src/i18n/generated/types.ts`) is codegen'd from `locales
 1. **Add the key to `src/i18n/locales/en.json`** in the appropriate top-level section (`common`, `agents`, `vault`, …). The file is plain JSON.
 2. **Include a translator comment in the PR description or commit message** explaining context for short labels (e.g. "duplicate_agent: button in agent editor toolbar — keep 1-2 words"). JSON does not support inline comments; treat the PR/commit as the translator-facing context.
 3. **Use the key in your component** via `t.section.key` (autocompleted by the generated `Translations` type).
-4. **Do NOT add to non-English locale files** — they fall back to English automatically. Translation teams catch up asynchronously.
+4. **Translate the new keys into every locale in the same change** — do NOT rely on English fallback. A half-English non-English UI is the exact failure mode this rule prevents (see **Translation completeness — no gaps** below). Don't hand-edit 13 files: run `node scripts/i18n/translate-extract.mjs`, spawn one Sonnet subagent per locale to fill `.i18n-work/missing-<code>.json`, then `node scripts/i18n/translate-merge.mjs`. A pre-commit hook blocks commits that leave a gap.
 5. After editing `en.json`, the next `npm run dev` / `npm run build` regenerates `generated/types.ts`, `generated/enSectionStrings.ts`, and `section-locales/*/<section>.json`.
 
 ### When Adding New Backend Status Tokens
@@ -325,13 +325,44 @@ const FILTERS = [{ id: 'active', labelKey: 'common.active' as const }];
 ### Checking Coverage
 
 ```bash
-node scripts/i18n/check-coverage.mjs           # CI gate — fails if any locale's keyset has EXTRAS (stale keys)
+node scripts/i18n/check-coverage.mjs           # report — fails on EXTRAS (stale keys); MISSING only warns
+npm run check:i18n:strict                      # the no-gap gate — fails on MISSING or extra
 node scripts/i18n/check-coverage.mjs --json    # Machine-readable
-node scripts/i18n/check-coverage.mjs --strict  # Also fail on missing keys (use before a release)
-npm run check:i18n                             # Same as check-coverage above (wired into CI)
 ```
 
-`check-coverage.mjs` reads `src/i18n/locales/*.json`. Extras always fail (stale keys after a rename). Missing keys warn by default — translation lag is expected and the runtime fall-back to English keeps the app functional.
+`check-coverage.mjs` reads `src/i18n/locales/*.json`. **Extras always fail** (stale keys after a rename). **Missing keys (untranslated) are blocked at commit** by the `i18n-no-gaps` pre-commit hook, which runs `--strict` whenever a commit stages any `src/i18n/locales/*.json`. Default (non-strict) mode only warns, and is what pre-push + CI report.
+
+### Translation completeness — no gaps (ENFORCED)
+
+> English text rendered inside an otherwise-translated locale makes the app feel
+> broken — a half-translated UI is worse than none. So: **every key you add to
+> `en.json` must be translated into all other locales in the same change.** This
+> supersedes the old "translation teams catch up asynchronously" posture; the
+> runtime English fallback is a safety net, not a shipping state.
+
+**Enforcement:** the `i18n-no-gaps` **pre-commit** job (`lefthook.yml`) runs
+`check:i18n:strict` whenever a commit stages any `src/i18n/locales/*.json`, so a
+commit that adds `en.json` keys without translating every locale is blocked.
+Stage `en.json` and all locale files together — the hook reads the working tree.
+
+**How to close a gap (don't hand-edit 13 files — use the pipeline):**
+
+```bash
+node scripts/i18n/translate-extract.mjs   # 1. writes .i18n-work/missing-en.json (the gap) + _meta-keys.json
+# 2. Spawn ONE Sonnet subagent per non-English locale. Each reads
+#    .i18n-work/missing-en.json and writes .i18n-work/missing-<code>.json with
+#    the SAME keys translated. Rules: preserve {placeholders}; keep brand /
+#    technical terms (Claude, Personas, SomaFM, YouTube, API, KPI, MCP…); handle
+#    plural-variant keys; keep UI register concise; medium quality is fine.
+node scripts/i18n/translate-merge.mjs     # 3. validates + merges into locales + re-splits section-locales + asserts strict coverage
+```
+
+Medium-quality machine translation is explicitly acceptable — the bar is "no
+English mixed in", not literary polish (a human team can refine later without
+re-running the pipeline; the keys are all present). `translate-merge` refuses to
+merge any locale that dropped keys or broke a `{placeholder}`, and removes the
+`.i18n-work/` scratch dir on success. **New `en.json` keys are part of this — wiring
+i18n into a feature isn't done until `npm run check:i18n:strict` is clean.**
 
 ### Back-compat shim `src/i18n/en.ts`
 

@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Zásah do cache",
+    "cached": "z cache",
+    "deep_fanout": "Hluboké větvení",
+    "deep_fanout_hint": "Delegujte nezávislé paralelní podúkoly na dílčí agenty. Nastavte limit rozpočtu.",
+    "deep_fanout_unavailable": "Nedostupné v tomto plánu — vyžaduje nástroje Workflow/Task (Max/Team).",
+    "subagents": "Dílčí agenti"
   },
   "lab": {
     "mode_arena": "Aréna",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Vylepšit personu „{name}\" v{version} — zatím neměřena. Na co se mám zaměřit? ",
     "vr_metric_tool": "přesnost nástrojů",
     "vr_metric_quality": "kvalita výstupu",
-    "vr_metric_protocol": "shoda s protokolem"
+    "vr_metric_protocol": "shoda s protokolem",
+    "eco_col_attempted": "Pokusy",
+    "eco_col_cost_success": "Cena / Úspěch",
+    "eco_col_model": "Model",
+    "eco_col_rate": "Míra vyřešení",
+    "eco_col_resolved": "Vyřešeno",
+    "eco_empty": "Zatím žádné výsledky — spusťte Lab a naplňte statistiky nákladové efektivity.",
+    "eco_subtitle": "Jak často každý model vyřeší eval a co každý úspěch stojí.",
+    "eco_title": "Nákladová efektivita"
   },
   "design": {
     "select_agent": "Vyberte agenta pro zahájení analýzy návrhu",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard TRUST-state pill",
     "review_pill_trust": "DŮVĚRA",
     "_comment_dim_status_activated": "PersonaSigilSummary value shown when a boolean dim (memory/review/event/error) is active for the capability",
-    "dim_status_activated": "Aktivováno"
+    "dim_status_activated": "Aktivováno",
+    "engine_claude": "Engine: Claude",
+    "engine_claude_tooltip": "Plný Claude. Kliknutím aktivujete Smíšený režim: jednoduché podúkoly (shrnutí, extrakce, přeformátování) jsou přesunuty na lokální model, aby šetřily prémiovou kapacitu.",
+    "engine_local_first": "Engine: Lokální",
+    "engine_local_first_tooltip": "Lokální první: Claude sestavuje pracovní příkazy a ověřuje; lokální model vytváří veškerý obsah. Kliknutím se vrátíte na plný Claude.",
+    "engine_mixed": "Engine: Smíšený",
+    "engine_mixed_tooltip": "Smíšený engine: Claude orchestruje a přesouvá jednoduché podúkoly na lokální model přes nástroj llm_delegate. Kliknutím se vrátíte na plný Claude.",
+    "petals_label": "Okvětní lístky",
+    "recipe": "Recept",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Žádná persona nevybrána",
@@ -2631,7 +2655,8 @@
     "automations": "Automatizace",
     "triggers_desc": "Odběry událostí pro konkrétní persony a konfigurace spouštěčů budou k dispozici v této záložce.",
     "messaging_desc": "Notifikační kanály a směrování doručené pošty pro tohoto agenta budou zde.",
-    "automations_desc": "Samostatná pravidla automatizace pro tohoto agenta budou zde."
+    "automations_desc": "Samostatná pravidla automatizace pro tohoto agenta budou zde.",
+    "parameters": "Parametry"
   },
   "parameters_card": {
     "title": "Parametry",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "Načítám tabulky…",
   "glyph_db_scope_error": "Tabulky nelze načíst — zkusit znovu",
   "glyph_db_scope_empty": "Žádné tabulky nenalezeny",
-  "glyph_db_scope_selected": "{count} z {total} tabulek"
+  "glyph_db_scope_selected": "{count} z {total} tabulek",
+  "share": {
+    "button": "Sdílet",
+    "failed": "Agenta se nepodařilo zveřejnit v galerii",
+    "hint": "Kdokoli s odkazem může tohoto agenta otevřít v Personas jedním kliknutím.",
+    "import_failed": "Sdíleného agenta se nepodařilo importovat",
+    "imported": "Agent importován ze sdíleného odkazu",
+    "invite_hint": "Pozvěte přítele do Personas — dostanete kredit, když se přidá",
+    "published": "Sdíleno — zkopírujte odkaz a pošlete ho"
+  }
 }

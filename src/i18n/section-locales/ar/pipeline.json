@@ -376,5 +376,13 @@
   "preset_setup_cta": "إعداد",
   "team_codebase_heading": "مستودع قاعدة الكود",
   "team_codebase_hint": "اربط هذا الفريق بمستودع GitHub لكي يشترك وكلاؤه في مصدر حقيقة واحد.",
-  "team_connector_label": "موصّل GitHub"
+  "team_connector_label": "موصّل GitHub",
+  "preset": {
+    "button": "نشر للمجتمع",
+    "failed": "تعذّر نشر هذا الفريق كإعداد مسبق",
+    "heading": "مشاركة مع المجتمع",
+    "hint": "انشر هذا الفريق كإعداد مسبق للمجتمع يمكن للآخرين اعتماده. يُشارَك الوكلاء الأعضاء بدون أي بيانات اعتماد.",
+    "published": "نُشر الفريق في كتالوج المجتمع",
+    "published_short": "منشور"
+  }
 }

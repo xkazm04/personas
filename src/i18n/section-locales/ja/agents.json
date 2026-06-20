@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "キャッシュヒット",
+    "cached": "キャッシュ済み",
+    "deep_fanout": "ディープファンアウト",
+    "deep_fanout_hint": "独立した並列サブタスクをサブエージェントに委譲します。予算上限を設定してください。",
+    "deep_fanout_unavailable": "このプランでは利用不可 — Workflow/Task ツール (Max/Team) が必要です。",
+    "subagents": "サブエージェント"
   },
   "lab": {
     "mode_arena": "アリーナ",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "ペルソナ「{name}」v{version} を改善します — まだ測定されていません。何に集中すべきですか？ ",
     "vr_metric_tool": "ツール精度",
     "vr_metric_quality": "出力品質",
-    "vr_metric_protocol": "プロトコル準拠"
+    "vr_metric_protocol": "プロトコル準拠",
+    "eco_col_attempted": "試行回数",
+    "eco_col_cost_success": "コスト / 成功",
+    "eco_col_model": "モデル",
+    "eco_col_rate": "解決率",
+    "eco_col_resolved": "解決済み",
+    "eco_empty": "まだ評価結果がありません — Lab を実行してコスト効率を確認してください。",
+    "eco_subtitle": "各モデルが評価をどれだけ解決するか、および各成功のコスト。",
+    "eco_title": "コスト効率"
   },
   "design": {
     "select_agent": "デザイン分析を開始するエージェントを選択",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard のTRUST状態ピル",
     "review_pill_trust": "信頼",
     "_comment_dim_status_activated": "PersonaSigilSummary で論理ディム（メモリ/レビュー/イベント/エラー）がアクティブのときに表示される値",
-    "dim_status_activated": "有効"
+    "dim_status_activated": "有効",
+    "engine_claude": "エンジン: Claude",
+    "engine_claude_tooltip": "フル Claude。クリックでミックスを有効化: 単純なサブタスク（要約・抽出・再フォーマット）をローカルモデルにオフロードしてプレミアム容量を節約します。",
+    "engine_local_first": "エンジン: ローカル優先",
+    "engine_local_first_tooltip": "ローカル優先: Claude が作業指示を作成・検証し、ローカルモデルがすべてのコンテンツを生成します。クリックでフル Claude に戻ります。",
+    "engine_mixed": "エンジン: ミックス",
+    "engine_mixed_tooltip": "ミックスエンジン: Claude がオーケストレーションし、llm_delegate ツールで単純なサブタスクをローカルモデルにオフロードします。クリックでフル Claude に戻ります。",
+    "petals_label": "ペタル",
+    "recipe": "レシピ",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "ペルソナが選択されていません",
@@ -2631,7 +2655,8 @@
     "automations": "オートメーション",
     "triggers_desc": "ペルソナごとのイベントサブスクリプションとトリガー設定はこのタブに追加される予定です。",
     "messaging_desc": "このエージェントの通知チャンネルと受信ボックスルーティングはここに配置される予定です。",
-    "automations_desc": "このエージェントのスタンドアロン自動化ルールはここに配置される予定です。"
+    "automations_desc": "このエージェントのスタンドアロン自動化ルールはここに配置される予定です。",
+    "parameters": "パラメーター"
   },
   "parameters_card": {
     "title": "パラメーター",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "テーブルを読み込み中…",
   "glyph_db_scope_error": "テーブルを読み込めませんでした — 再試行",
   "glyph_db_scope_empty": "テーブルが見つかりません",
-  "glyph_db_scope_selected": "{total}件中{count}件のテーブル"
+  "glyph_db_scope_selected": "{total}件中{count}件のテーブル",
+  "share": {
+    "button": "共有",
+    "failed": "このエージェントをギャラリーに公開できませんでした",
+    "hint": "リンクを持つ誰でも、Personas でワンクリックでこのエージェントを開けます。",
+    "import_failed": "共有エージェントをインポートできませんでした",
+    "imported": "共有リンクからエージェントをインポートしました",
+    "invite_hint": "友達を Personas に招待 — 参加時にクレジットが付与されます",
+    "published": "共有済み — リンクをコピーして送信してください"
+  }
 }

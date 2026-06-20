@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv hat einen Fehler zurückgegeben (HTTP {status}). Versuchen Sie es gleich erneut.",
   "arxiv_error_network": "arXiv konnte nicht erreicht werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
   "arxiv_error_feed": "arXiv konnte diese Suchanfrage nicht verarbeiten. Versuchen Sie andere oder einfachere Schlüsselwörter.",
-  "arxiv_error_generic": "Die arXiv-Suche ist fehlgeschlagen. Versuchen Sie es erneut."
+  "arxiv_error_generic": "Die arXiv-Suche ist fehlgeschlagen. Versuchen Sie es erneut.",
+  "added_with_dedup": "{added} Quellen hinzugefügt ({duplicates} bereits in deiner Bibliothek)"
 }

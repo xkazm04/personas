@@ -14,7 +14,11 @@ service_type: string,
 /**
  * Human-readable label of the subsystem that needs it (e.g. tool name).
  */
-needed_by: string, } | { "kind": "connector", 
+needed_by: string, } | { "kind": "credential_by_id", 
+/**
+ * The `persona_credentials(id)` primary key.
+ */
+credential_id: string, needed_by: string, } | { "kind": "connector", 
 /**
  * The connector `name` in `connector_definitions`.
  */

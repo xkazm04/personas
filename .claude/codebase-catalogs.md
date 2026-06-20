@@ -1,8 +1,8 @@
 # Codebase Catalogs — personas
 
-> Generated: 2026-06-05T11:39:40.883Z
-> Templates: 133 across 15 categories
-> Connectors: 127 across 36 categories
+> Generated: 2026-06-20T08:04:53.028Z
+> Templates: 131 across 15 categories
+> Connectors: 129 across 36 categories
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for template/credential bucket dedup and gap analysis.
@@ -18,16 +18,17 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Template Catalog (133)
+## Template Catalog (131)
 
-### _team_presets (6)
+### _team_presets (7)
 
-- **undefined** — 从任何来源捕获想法,将其分诊为有依据的待办列表,跟踪执行期间所做的决定,并自动解决问题。六个预先连接的智能体共同将原始信号转化为已交付的工作。
 - **backlog-execution** — Capture ideas from any source, triage them into a grounded backlog, track decisions made during execution, and resolve issues automatically. Six pre-wired agents that together turn raw signal into shipped work.
 - **daily-ops** — A lightweight three-agent set for daily operational rhythm: morning email digest into a standup compilation into appointment orchestration. Minimal connectors, maximum cadence.
 - **engineering-triage** — Keep the codebase healthy. Scan for issues, prune dead code, guard documentation freshness, and gate quality — four agents that work the engineering hygiene backlog while you ship features.
 - **reflective-journaling** — A single grounded journaling coach that reads your vault, surfaces recurring patterns over time, and reflects them back in your chosen tone. A focused starting point you can grow into a larger team later.
 - **sdlc-lifecycle** — Eight pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a QA guardian tests each PR the dev clone opens in an isolated git worktree and then merges it (auto-merge per the project's standards policy) or returns it for fixes, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, a docs steward keeps the README and changelog in sync, and an artist generates on-brand UI/visual assets for the feature in parallel with the build. They hand work forward through events and share the same codebase and memory. (The artist needs an image-generation credential, and QA Guardian's PR-merge action needs a GitHub credential; without those they stay idle and the build cascade is unaffected.)
+- **undefined** — 从任何来源捕获想法,将其分诊为有依据的待办列表,跟踪执行期间所做的决定,并自动解决问题。六个预先连接的智能体共同将原始信号转化为已交付的工作。
+- **web-development** — A best-practice pod for shipping web applications, end to end on one codebase: a solution architect scopes the feature into a story-pointed plan, a design handoff coordinator turns that into UI/UX specs and assets, a dev clone implements the frontend + backend (writes the code and tests, runs them), a code reviewer guards quality, a QA guardian tests each PR in an isolated git worktree and merges it or returns it for fixes, a DevOps guardian builds, deploys, and monitors the release, a website conversion auditor audits the live site for performance and conversion, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory. (QA Guardian's PR-merge action and DevOps Guardian's deploy steps need a GitHub credential; without it they stay idle and the rest of the build cascade is unaffected.)
 
 ### content (13)
 
@@ -79,14 +80,12 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **solution-architect** — Senior solution architect for your codebase. Evaluates proposed changes and ideas against the existing architecture, then publishes a concise ADR (context / decision / consequences) plus a story-pointed task breakdown a delivery agent can pick up. Tracks decisions in memory so each review extends the architectural record instead of restating it. — flow: Codebase -> Messages
 - **user-lifecycle-manager** — Handles auth provider auth events (signup, email change, deletion), provisions user records in Supabase, sends onboarding email sequences via email, and posts new user celebrations to the messaging channel. Handles the full user lifecycle from sign-up to churn. — flow: auth provider -> Supabase -> messaging -> email
 
-### devops (6)
+### devops (4)
 
 - **devops-guardian** — Unified DevOps monitoring agent that scans application errors, infrastructure metrics, database health, and deployment status from connected monitoring tools, correlates cross-domain signals (deploy-induced regressions, resource bottlenecks), triages incidents for human review, and learns from triage decisions to improve alert quality over time. — flow: Monitoring -> Database -> Deployment -> Messages
 - **incident-logger** — Single source of truth for every operational incident — intake with severity classification, lifecycle tracking with escalation timers and update cadences, auto-closure for stale low-severity items, and human-approved post-incident reviews with cross-incident pattern detection. — flow: Messages
 - **release-manager** — Automates release discipline. When a change merges, it applies semantic-versioning rules to the commits, bumps the version file, prepends a categorized changelog entry, drafts release notes, and tags the release. Records every version decision in memory so versioning is reasoned and auditable — not just incremented. — flow: Codebase -> GitHub -> Messages
-- **sentry-production-monitor** — Pulls unresolved Sentry issues daily, reads stack-trace source code across all registered codebases for cross-project root cause analysis, delivers Jira-format reports per issue, and learns from human triage which error patterns are actionable vs noise. — flow: Sentry -> Codebases -> Messages
 - **telegram-ops-command-center** — AI-powered ops control plane in your team's Telegram group — authorized operators send natural language commands (health checks, deployments, rollbacks, broadcasts); destructive actions gate on YES confirmation from the initiating operator; critical events route to a messaging channel with severity color coding; daily ops summary rolls up commands, health, and deploys. — flow: Telegram -> Messages
-- **workflow-error-intelligence** — Meta-observability agent that watches every other persona on the platform — subscribes to execution failure events, classifies each error by category and root cause, detects cross-workflow patterns (recurring, cascading, service-wide), sends real-time critical alerts, and delivers daily digests and weekly reliability reports. — flow: Messages
 
 ### email (1)
 
@@ -95,7 +94,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 ### finance (12)
 
 - **accounting-reconciliation-use-case** — Pulls finance platform transactions, reconciles them against bank feeds, logs discrepancies to spreadsheet, alerts the finance team in the messaging channel, and ships a weekly reconciliation summary by email. Learns recurring transaction patterns so predictable entries stop triggering false alerts. — flow: finance platform -> spreadsheet -> messaging -> email
-- **budget-spending-monitor** — Silent-when-normal cloud cost watchdog. Pulls your weekly billing from cloud, cloud, or cloud, compares against a threshold and last week's baseline, and only messages you when something actually needs attention — threshold breach, service spike, or a brand-new service. — flow: Cloud Billing API -> Messages
+- **budget-spending-monitor** — Cloud cost control for AWS, Azure, or GCP. Delivers an always-on weekly report of per-service usage and cost (with week-over-week deltas), plus a daily threshold tracker that stays silent under budget and messages you only when projected or month-to-date spend is set to breach your threshold. — flow: Cloud Billing API -> Messages
 - **expense-receipt-processor** — Polls email for receipts and invoices, extracts vendor/amount/date/category with AI, logs everything to a spreadsheet, and flags anomalies (duplicates, high-amounts, missing recurring charges) via the messaging channel. Ships a weekly expense summary every Friday. — flow: email -> spreadsheet -> messaging
 - **finance-controller** — Keeps finance platform and spreadsheet in sync, chases overdue invoices via email with tiered reminders, flags anomalous expenses against a 30-day rolling baseline, and posts a weekly cash flow summary to the messaging channel. — flow: finance platform -> spreadsheet -> email -> messaging
 - **financial-stocks-signaller** — Weekly investment research: technical signals on a watchlist, congressional trading disclosures, and under-covered sector gems. Delivers one combined Monday briefing; every recommendation is human-reviewed and reviewed decisions persist as simulated trades. — flow: Alpha Vantage -> Capitol Trades -> Messages
@@ -142,11 +141,12 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **survey-processor** — Polls Google Forms for new survey responses, scores answers using a configurable rubric, writes structured records to spreadsheet, posts tier-aware summaries to the messaging channel, and sends personalized tier-based follow-up emails via email. — flow: Google Forms -> spreadsheet -> messaging -> email
 - **vault-grounded-journal-coach** — Reads new daily journal entries in your Obsidian vault, walks the vault for grounded context (past wiki articles, prior journals, meeting notes), detects recurring-struggle patterns across the last N weeks, and writes a tone-controlled reflection back into the same daily note under a `## Coach` section. Backward-looking companion to a daily-standup briefing — never a replacement for the user's own thinking, only a mirror grounded in their own knowledge. — flow: Obsidian Vault -> Personas Memory -> Messages
 
-### project-management (4)
+### project-management (5)
 
 - **agency-client-retainer-manager** — Watches email for incoming client change requests on monthly retainers, logs them as tracked work items with SLA deadlines, applies straightforward edits through the codebases connector, and assembles monthly maintenance reports with hours, SLA compliance, site health, and upsell recommendations. — flow: email -> Codebases -> Messages
 - **client-portal-orchestrator** — Runs the full agency client lifecycle on a relational knowledge base hub: verifies new signups, builds linked Client + Project pages, sends milestone emails at every phase transition, posts team updates to the messaging channel, flags stalled projects in the messaging channel, and compiles monthly portfolio reports. — flow: knowledge base -> email -> messaging -> messaging
 - **deadline-synchronizer** — Keeps boards deadlines in lockstep with calendar, fires tiered messaging reminders at 48h / 4h / 15min before due, and moves overdue cards to a 'Blocked' list with an explanatory comment so nothing rots silently. — flow: project management -> calendar -> messaging
+- **product-strategist** — The team's business seat. Owns WHAT gets built next: triages and ranks the dev backlog for real-world value (revenue, retention, user momentum), rejects low-value work with durable reasons, and keeps the next-up queue balanced across business, UX, and technical health — so an autonomous dev team ships what matters, not just what's interesting to refactor. — flow: Codebase
 - **technical-decision-tracker** — Architecture Decision Record (ADR) specialist that captures engineering decisions with full context, structured alternatives analysis, stakeholder sign-off, and linked code references in a knowledge base databases — then runs periodic review cycles so decisions don't rot into mysterious legacy. — flow: knowledge base -> Source Control -> Messages
 
 ### research (15)
@@ -182,10 +182,8 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **sheets-e-commerce-command-center** — Continuously monitors a Shopify store: logs every order to a spreadsheet with automatic classification (high-value, international, bulk, discounted), alerts on threshold-crossing inventory, flags quality-issue refunds, and delivers a daily sales digest with rolling-average trend analysis. — flow: E-Commerce -> Spreadsheet -> Messaging
 - **website-conversion-auditor** — Crawls a business website via the desktop browser, scores it across 10 conversion dimensions (contact, social proof, CTA, mobile, speed, navigation, content, design, trust, engagement), delivers a prioritized audit report with revenue-impact estimates, and produces a ready-to-paste redesign prompt for AI website builders. — flow: Browser -> Messaging
 
-### security (5)
+### security (3)
 
-- **access-request-manager** — Security access governance agent that monitors a shared inbox for access requests, routes them through manager then admin approval, maintains an immutable audit trail, enforces timeout escalation, and notifies all parties via in-app messaging. — flow: email -> Local Database -> Messages
-- **ai-environment-posture-audit** — Audits the agent's own runtime environment on a schedule (not the user's codebase). Reviews connected MCP servers for poisoning indicators, installed templates for prompt-injection vectors, settings for credential exposure, dangerous-permission usage, and stale credentials. Findings surface in the manual review queue with severity tagging and optional messaging alerts for critical items. — flow: Local agent state -> MCP server registry -> Template catalog -> Settings store -> messaging
 - **brand-protection-sentinel** — Generates lookalike domain variants, scans DNS + WHOIS for new registrations, analyzes hosted content for brand impersonation, scores threats, alerts on high-risk phishing via the messaging channel, and produces weekly brand protection summaries tracked in knowledge base. — flow: security lookup -> knowledge base -> messaging
 - **security-sentinel** — On-demand security auditor for your codebase. Runs three scans — dependency vulnerabilities, exposed secrets, and risky patterns (auth bypasses, PII handling, injection) — then files severity-ranked findings with concrete remediation. Tracks reported findings in memory so re-scans dedupe known issues and show what's fixed versus still open. — flow: Codebase -> Messages
 - **security-vulnerability-pipeline** — Orchestrates vulnerability management end-to-end: scans source control/source control pushes via security scanner, correlates findings against open Jira security tickets to prevent duplicates, creates severity-prioritized tickets for new vulnerabilities, and alerts messaging with severity-appropriate urgency. — flow: Source Control -> security scanner -> Jira -> messaging
@@ -200,7 +198,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Connector Catalog (127)
+## Connector Catalog (129)
 
 ### advertising (3)
 
@@ -208,8 +206,9 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **linkedin_ads** (OAuth, free) — LinkedIn Ads — B2B campaign analytics via the LinkedIn Marketing API. Use for sponsored-content performance, lead-gen-form conversions, and audience insights on LinkedIn's surfaces.
 - **meta_ads** (OAuth, free) — Meta (Facebook/Instagram) Ads — pulls campaign performance via Graph API v19. Use for ad spend, CTR, CPA, ROAS, and conversion tracking across paid social on Meta surfaces.
 
-### ai (6)
+### ai (7)
 
+- **anthropic-admin** (api_key, ?) — Anthropic organization admin API — usage and cost reporting per API key (LLM spend KPIs).
 - **deepgram** (API Key, freemium) — Deepgram speech-to-text, text-to-speech, and audio intelligence API for transcription, diarization, and voice AI.
 - **elevenlabs** (API Key, freemium) — ElevenLabs AI voice generation, text-to-speech, and audio processing platform.
 - **gemini_vision** (API Key, freemium) — Google Gemini Vision API for OCR, document understanding, and image analysis. Supports images and PDFs natively with up to 3,600 pages per request.
@@ -271,12 +270,13 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **hubspot** (PAT, paid) — HubSpot CRM for contacts, deals, marketing automation, and sales pipelines.
 - **pipedrive** (API Key, paid) — Pipedrive CRM for managing deals, contacts, activities, and sales pipelines via the Pipedrive REST API.
 
-### database (10)
+### database (11)
 
 - **convex** (Deploy Key, free) — Convex real-time backend-as-a-service with document database, serverless functions, and scheduling.
 - **duckdb** (Database Path, free) — DuckDB embedded analytical database for OLAP workloads, Parquet, CSV, and JSON.
 - **mongodb** (Connection String, free) — MongoDB document database with flexible schemas, aggregation pipelines, and Atlas cloud.
 - **neon** (API Key, free) — Neon serverless Postgres with branching, autoscaling, and bottomless storage.
+- **operations_database** (Built-in, ?) — Read-only views over the operational store -- executions, messages, human reviews, incidents, goals, and KPIs. Available on first launch; lets agents answer ad-hoc operational questions without an external service. Curated, parameterized, row-capped queries only -- no mutation.
 - **personas_database** (Built-in, ?) — Local SQLite database managed by Personas. Available on first launch -- agents can create tables, store data, and run SQL queries without any external service.
 - **planetscale** (Service Token, paid) — PlanetScale serverless MySQL platform with branching and non-blocking schema changes.
 - **postgres** (Connection String, free) — PostgreSQL open-source relational database with advanced SQL, JSONB, and extensibility.
@@ -449,24 +449,24 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - finance: 12  (well-covered)
 - productivity: 12  (well-covered)
 - sales: 12  (well-covered)
-- _team_presets: 6
-- devops: 6
+- _team_presets: 7
 - marketing: 6
-- security: 5
+- project-management: 5
 - support: 5
-- project-management: 4
+- devops: 4
 - legal: 3
+- security: 3
 - hr: 2  ← **sparse, gap candidate**
 - email: 1  ← **sparse, gap candidate**
 
 ### Connector categories by density
 
-- database: 10  (well-covered)
+- database: 11  (well-covered)
 - cloud: 9  (well-covered)
+- ai: 7
 - knowledge_base: 7
 - notifications: 7
 - storage: 7
-- ai: 6
 - messaging: 6
 - project_management: 5
 - social: 5
@@ -504,8 +504,8 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - PAT: 26
 - OAuth: 17
 - API Token: 9
+- Built-in: 4
 - Webhook URL: 4
-- Built-in: 3
 - Bot Token: 3
 - Service Account: 2
 - Access Key: 2
@@ -514,6 +514,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - Connection String: 2
 - Built-in (Local): 2
 - Access Token: 2
+- api_key: 1
 - API Key (KEY_ID:KEY_SECRET): 1
 - Write Key: 1
 - Local App: 1

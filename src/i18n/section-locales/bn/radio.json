@@ -39,5 +39,16 @@
   "group_toggle_label": "গ্রুপ টগল করুন",
   "row_menu_label": "স্টেশন কর্ম",
   "row_menu_hide": "পিকার থেকে লুকান",
-  "row_menu_open_source": "ওপেন সোর্স"
+  "row_menu_open_source": "ওপেন সোর্স",
+  "keep_hidden": "লুকানো",
+  "keep_kept": "রাখা",
+  "keep_toggle_label": "ফুটার পিকারে স্টেশন রাখুন",
+  "manage_subtitle": "স্টেশন কিউরেট করুন, প্লেব্যাক ডিফল্ট সেট করুন, এবং রাখার আগে যেকোনো কিছু প্রিভিউ করুন।",
+  "master_footer_desc": "অ্যাপ ফুটারে রেডিও দেখান।",
+  "master_footer_title": "ফুটার কন্ট্রোলার",
+  "master_resume_desc": "পরের বার শেষ স্টেশন স্বয়ংক্রিয়ভাবে শুরু করুন।",
+  "master_resume_title": "লঞ্চে পুনরায় শুরু",
+  "preview_play": "স্টেশন প্রিভিউ",
+  "preview_stop": "প্রিভিউ বন্ধ",
+  "youtube_premium_note": "YouTube স্টেশন একটি এমবেডেড প্লেয়ারের মাধ্যমে স্ট্রিম হয় — বিজ্ঞাপনমুক্ত অভিজ্ঞতার জন্য YouTube Premium প্ল্যান প্রয়োজন।"
 }

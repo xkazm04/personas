@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "ضربة ذاكرة التخزين",
+    "cached": "مخزّن مؤقتاً",
+    "deep_fanout": "تفرّع عميق",
+    "deep_fanout_hint": "تفويض مهام فرعية مستقلة ومتوازية إلى وكلاء فرعيين. حدّد حداً للميزانية.",
+    "deep_fanout_unavailable": "غير متاح في هذه الخطة — يتطلب أدوات Workflow/Task (Max/Team).",
+    "subagents": "وكلاء فرعيون"
   },
   "lab": {
     "mode_arena": "الساحة",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "تحسين الشخصية \"{name}\" v{version} — لم يُقس بعد. على ماذا يجب أن أركز؟ ",
     "vr_metric_tool": "دقة الأداة",
     "vr_metric_quality": "جودة المخرجات",
-    "vr_metric_protocol": "الالتزام بالبروتوكول"
+    "vr_metric_protocol": "الالتزام بالبروتوكول",
+    "eco_col_attempted": "المحاولات",
+    "eco_col_cost_success": "التكلفة / النجاح",
+    "eco_col_model": "النموذج",
+    "eco_col_rate": "معدل الحل",
+    "eco_col_resolved": "محلول",
+    "eco_empty": "لا توجد نتائج تقييم بعد — شغّل المختبر لملء كفاءة التكلفة.",
+    "eco_subtitle": "مدى تكرار حل كل نموذج للتقييم وتكلفة كل نجاح.",
+    "eco_title": "كفاءة التكلفة"
   },
   "design": {
     "select_agent": "اختر وكيلاً لبدء تحليل التصميم",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "حبة ReviewDimCard في حالة الثقة",
     "review_pill_trust": "ثقة",
     "_comment_dim_status_activated": "قيمة PersonaSigilSummary عند تفعيل بُعد منطقي (ذاكرة/مراجعة/حدث/خطأ) للقدرة",
-    "dim_status_activated": "مُفعَّل"
+    "dim_status_activated": "مُفعَّل",
+    "engine_claude": "المحرك: Claude",
+    "engine_claude_tooltip": "Claude بالكامل. انقر للتفعيل المختلط: تُحال المهام الفرعية البسيطة (تلخيص، استخراج، إعادة تنسيق) إلى نموذج محلي لتوفير الطاقة الاستيعابية.",
+    "engine_local_first": "المحرك: الأولوية للمحلي",
+    "engine_local_first_tooltip": "الأولوية للمحلي: Claude ينظّم أوامر العمل ويتحقق منها؛ النموذج المحلي ينتج كل المحتوى. انقر للعودة إلى Claude الكامل.",
+    "engine_mixed": "المحرك: مختلط",
+    "engine_mixed_tooltip": "محرك مختلط: Claude يُنسّق ويُحيل المهام الفرعية البسيطة إلى نموذج محلي عبر أداة llm_delegate. انقر للعودة إلى Claude الكامل.",
+    "petals_label": "بتلات",
+    "recipe": "وصفة",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "لم يتم اختيار وكيل",
@@ -2631,7 +2655,8 @@
     "automations": "الأتمتة",
     "triggers_desc": "ستظهر هنا اشتراكات الأحداث وإعدادات المحفّزات الخاصة بكل شخصية.",
     "messaging_desc": "ستُوجَد هنا قنوات الإشعارات وتوجيه صندوق الوارد لهذا الوكيل.",
-    "automations_desc": "ستُوجَد هنا قواعد الأتمتة المستقلة لهذا الوكيل."
+    "automations_desc": "ستُوجَد هنا قواعد الأتمتة المستقلة لهذا الوكيل.",
+    "parameters": "المعاملات"
   },
   "parameters_card": {
     "title": "المعاملات",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "جارٍ تحميل الجداول…",
   "glyph_db_scope_error": "تعذّر تحميل الجداول — أعد المحاولة",
   "glyph_db_scope_empty": "لا توجد جداول",
-  "glyph_db_scope_selected": "{count} من {total} جدول"
+  "glyph_db_scope_selected": "{count} من {total} جدول",
+  "share": {
+    "button": "مشاركة",
+    "failed": "تعذّر نشر هذا الوكيل في المعرض",
+    "hint": "يمكن لأي شخص لديه الرابط فتح هذا الوكيل في Personas بنقرة واحدة.",
+    "import_failed": "تعذّر استيراد الوكيل المشارك",
+    "imported": "تم استيراد الوكيل من رابط مشاركة",
+    "invite_hint": "ادعُ صديقاً إلى Personas — ستحصل على رصيد عند انضمامه",
+    "published": "تمت المشاركة — انسخ الرابط لإرساله"
+  }
 }

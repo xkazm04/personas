@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Trúng cache",
+    "cached": "đã cache",
+    "deep_fanout": "Phân nhánh sâu",
+    "deep_fanout_hint": "Giao các tác vụ con độc lập song song cho các subagent. Đặt giới hạn ngân sách.",
+    "deep_fanout_unavailable": "Không khả dụng ở gói này — cần công cụ Workflow/Task (Max/Team).",
+    "subagents": "Subagent"
   },
   "lab": {
     "mode_arena": "Đấu trường",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Cải thiện persona \"{name}\" v{version} — chưa được đo lường. Tôi nên tập trung vào điều gì? ",
     "vr_metric_tool": "độ chính xác công cụ",
     "vr_metric_quality": "chất lượng đầu ra",
-    "vr_metric_protocol": "tuân thủ giao thức"
+    "vr_metric_protocol": "tuân thủ giao thức",
+    "eco_col_attempted": "Lần thử",
+    "eco_col_cost_success": "Chi phí / Thành công",
+    "eco_col_model": "Model",
+    "eco_col_rate": "Tỷ lệ giải quyết",
+    "eco_col_resolved": "Đã giải quyết",
+    "eco_empty": "Chưa có kết quả đánh giá — chạy Lab để xem hiệu quả chi phí.",
+    "eco_subtitle": "Mỗi model giải quyết eval bao nhiêu lần và mỗi lần thành công tốn bao nhiêu.",
+    "eco_title": "Hiệu quả chi phí"
   },
   "design": {
     "select_agent": "Chọn tác nhân để bắt đầu phân tích thiết kế",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "Pill trạng thái TIN TƯỞNG của ReviewDimCard",
     "review_pill_trust": "TIN TƯỞNG",
     "_comment_dim_status_activated": "Giá trị PersonaSigilSummary hiển thị khi một dim boolean (bộ nhớ/đánh giá/sự kiện/lỗi) đang hoạt động cho khả năng",
-    "dim_status_activated": "Đã kích hoạt"
+    "dim_status_activated": "Đã kích hoạt",
+    "engine_claude": "Engine: Claude",
+    "engine_claude_tooltip": "Toàn bộ Claude. Nhấp để bật Hỗn hợp: các tác vụ con đơn giản (tóm tắt, trích xuất, định dạng lại) được chuyển sang model cục bộ để tiết kiệm dung lượng cao cấp.",
+    "engine_local_first": "Engine: Ưu tiên cục bộ",
+    "engine_local_first_tooltip": "Ưu tiên cục bộ: Claude soạn các lệnh công việc và xác thực; model cục bộ tạo ra toàn bộ nội dung. Nhấp để quay lại Claude đầy đủ.",
+    "engine_mixed": "Engine: Hỗn hợp",
+    "engine_mixed_tooltip": "Engine hỗn hợp: Claude điều phối và chuyển các tác vụ con đơn giản sang model cục bộ qua công cụ llm_delegate. Nhấp để quay lại Claude đầy đủ.",
+    "petals_label": "Petals",
+    "recipe": "Recipe",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Chưa chọn tác nhân",
@@ -2631,7 +2655,8 @@
     "automations": "Tự động hóa",
     "triggers_desc": "Đăng ký sự kiện và cấu hình trigger theo từng persona sẽ được hiển thị ở tab này.",
     "messaging_desc": "Kênh thông báo và định tuyến hộp thư đến cho agent này sẽ nằm ở đây.",
-    "automations_desc": "Các quy tắc tự động hóa độc lập cho agent này sẽ nằm ở đây."
+    "automations_desc": "Các quy tắc tự động hóa độc lập cho agent này sẽ nằm ở đây.",
+    "parameters": "Tham số"
   },
   "parameters_card": {
     "title": "Thông số",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "Đang tải bảng…",
   "glyph_db_scope_error": "Không thể tải bảng — thử lại",
   "glyph_db_scope_empty": "Không tìm thấy bảng nào",
-  "glyph_db_scope_selected": "{count} trong số {total} bảng"
+  "glyph_db_scope_selected": "{count} trong số {total} bảng",
+  "share": {
+    "button": "Chia sẻ",
+    "failed": "Không thể đăng agent này lên thư viện",
+    "hint": "Bất kỳ ai có link đều có thể mở agent này trong Personas chỉ bằng một cú nhấp.",
+    "import_failed": "Không thể nhập agent được chia sẻ đó",
+    "imported": "Đã nhập agent từ link chia sẻ",
+    "invite_hint": "Mời bạn bè tham gia Personas — bạn nhận tín dụng khi họ gia nhập",
+    "published": "Đã chia sẻ — sao chép link để gửi đi"
+  }
 }

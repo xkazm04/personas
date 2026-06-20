@@ -376,5 +376,13 @@
   "preset_setup_cta": "开始配置",
   "team_codebase_heading": "代码库仓库",
   "team_codebase_hint": "将此团队与 GitHub 仓库关联，让其 agents 共享同一数据源。",
-  "team_connector_label": "GitHub 连接器"
+  "team_connector_label": "GitHub 连接器",
+  "preset": {
+    "button": "发布到社区",
+    "failed": "无法将此团队发布为预设",
+    "heading": "与社区分享",
+    "hint": "将此团队发布为社区预设供他人采用。成员代理在不含任何凭据的情况下共享。",
+    "published": "团队已发布至社区目录",
+    "published_short": "已发布"
+  }
 }

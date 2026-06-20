@@ -181,5 +181,6 @@
   "arxiv_error_http": "أعاد arXiv خطأ (HTTP {status}). أعد المحاولة قريباً.",
   "arxiv_error_network": "تعذّر الوصول إلى arXiv. تحقق من اتصالك وأعد المحاولة.",
   "arxiv_error_feed": "تعذّر على arXiv معالجة هذا الاستعلام. جرّب كلمات مفتاحية مختلفة أو أبسط.",
-  "arxiv_error_generic": "فشل بحث arXiv. أعد المحاولة."
+  "arxiv_error_generic": "فشل بحث arXiv. أعد المحاولة.",
+  "added_with_dedup": "أُضيف {added} مصدر ({duplicates} موجود بالفعل في مكتبتك)"
 }

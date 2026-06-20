@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "Bagian aplikasi tidak dapat dimuat -- ini bisa terjadi setelah pembaruan atau gangguan koneksi. Data Anda aman; memuat ulang aplikasi biasanya menyelesaikannya.",
-  "reload_app": "Muat Ulang Aplikasi"
+  "reload_app": "Muat Ulang Aplikasi",
+  "suggested": "Disarankan"
 }

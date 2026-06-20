@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "ক্যাশ হিট",
+    "cached": "ক্যাশড",
+    "deep_fanout": "ডিপ ফ্যান-আউট",
+    "deep_fanout_hint": "স্বাধীন সমান্তরাল সাব-টাস্কগুলো সাবএজেন্টে ডেলিগেট করুন। একটি বাজেট ক্যাপ সেট করুন।",
+    "deep_fanout_unavailable": "এই প্ল্যানে অনুপলব্ধ — Workflow/Task টুলস প্রয়োজন (Max/Team)।",
+    "subagents": "সাবএজেন্ট"
   },
   "lab": {
     "mode_arena": "আরেনা",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "পার্সোনা \"{name}\" v{version} উন্নত করুন — এখনও পরিমাপ করা হয়নি। আমার কোথায় মনোযোগ দেওয়া উচিত? ",
     "vr_metric_tool": "টুলের নির্ভুলতা",
     "vr_metric_quality": "আউটপুটের মান",
-    "vr_metric_protocol": "প্রোটোকল সম্মতি"
+    "vr_metric_protocol": "প্রোটোকল সম্মতি",
+    "eco_col_attempted": "প্রচেষ্টা",
+    "eco_col_cost_success": "খরচ / সাফল্য",
+    "eco_col_model": "মডেল",
+    "eco_col_rate": "সমাধান হার",
+    "eco_col_resolved": "সমাধান",
+    "eco_empty": "এখনো কোনো ইভাল ফলাফল নেই — খরচ দক্ষতা পূরণ করতে Lab চালান।",
+    "eco_subtitle": "প্রতিটি মডেল কত ঘন ঘন ইভাল সমাধান করে এবং প্রতিটি সাফল্যের খরচ কত।",
+    "eco_title": "খরচ দক্ষতা"
   },
   "design": {
     "select_agent": "ডিজাইন বিশ্লেষণ শুরু করতে একটি এজেন্ট নির্বাচন করুন",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard TRUST-অবস্থার পিল",
     "review_pill_trust": "বিশ্বাস",
     "_comment_dim_status_activated": "PersonaSigilSummary মান যখন একটি বুলিয়ান ডিম (মেমরি/রিভিউ/ইভেন্ট/এরর) ক্যাপাবিলিটির জন্য সক্রিয়",
-    "dim_status_activated": "সক্রিয় করা হয়েছে"
+    "dim_status_activated": "সক্রিয় করা হয়েছে",
+    "engine_claude": "ইঞ্জিন: Claude",
+    "engine_claude_tooltip": "পূর্ণ Claude। মিশ্র সক্রিয় করতে ক্লিক করুন: সহজ সাব-টাস্ক (সারসংক্ষেপ, নিষ্কাশন, পুনর্বিন্যাস) একটি লোকাল মডেলে অফলোড হয়ে প্রিমিয়াম ক্যাপাসিটি বাঁচায়।",
+    "engine_local_first": "ইঞ্জিন: লোকাল-ফার্স্ট",
+    "engine_local_first_tooltip": "লোকাল-ফার্স্ট: Claude কাজের অর্ডার তৈরি করে এবং যাচাই করে; লোকাল মডেল সব কনটেন্ট তৈরি করে। পূর্ণ Claude-এ ফিরতে ক্লিক করুন।",
+    "engine_mixed": "ইঞ্জিন: মিশ্র",
+    "engine_mixed_tooltip": "মিশ্র ইঞ্জিন: Claude অর্কেস্ট্রেট করে এবং llm_delegate টুলের মাধ্যমে সহজ সাব-টাস্ক লোকাল মডেলে অফলোড করে। পূর্ণ Claude-এ ফিরতে ক্লিক করুন।",
+    "petals_label": "পেটালস",
+    "recipe": "রেসিপি",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "কোনো পার্সোনা নির্বাচিত নেই",
@@ -2631,7 +2655,8 @@
     "automations": "অটোমেশন",
     "triggers_desc": "প্রতি-পার্সোনা ইভেন্ট সাবস্ক্রিপশন ও ট্রিগার কনফিগারেশন এই ট্যাবে আসবে।",
     "messaging_desc": "এই এজেন্টের নোটিফিকেশন চ্যানেল ও ইনবক্স রাউটিং এখানে থাকবে।",
-    "automations_desc": "এই এজেন্টের স্বতন্ত্র অটোমেশন নিয়মগুলো এখানে থাকবে।"
+    "automations_desc": "এই এজেন্টের স্বতন্ত্র অটোমেশন নিয়মগুলো এখানে থাকবে।",
+    "parameters": "প্যারামিটার"
   },
   "parameters_card": {
     "title": "প্যারামিটার",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "টেবিল লোড হচ্ছে…",
   "glyph_db_scope_error": "টেবিল লোড করা যায়নি — আবার চেষ্টা করুন",
   "glyph_db_scope_empty": "কোনো টেবিল পাওয়া যায়নি",
-  "glyph_db_scope_selected": "{total}টির মধ্যে {count}টি টেবিল"
+  "glyph_db_scope_selected": "{total}টির মধ্যে {count}টি টেবিল",
+  "share": {
+    "button": "শেয়ার",
+    "failed": "এই এজেন্ট গ্যালারিতে প্রকাশ করা যায়নি",
+    "hint": "লিংক থাকা যে কেউ এক ক্লিকে Personas-এ এই এজেন্ট খুলতে পারবেন।",
+    "import_failed": "শেয়ার করা এজেন্টটি আমদানি করা যায়নি",
+    "imported": "শেয়ার লিংক থেকে এজেন্ট আমদানি হয়েছে",
+    "invite_hint": "Personas-এ একজন বন্ধুকে আমন্ত্রণ জানান — তারা যোগ দিলে আপনি ক্রেডিট পাবেন",
+    "published": "শেয়ার করা হয়েছে — পাঠাতে লিংক কপি করুন"
+  }
 }

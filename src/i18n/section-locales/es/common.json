@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "Una parte de la aplicación no pudo cargarse — esto puede ocurrir tras una actualización o un problema de conexión. Tus datos están seguros; recargar la aplicación suele resolverlo.",
-  "reload_app": "Recargar aplicación"
+  "reload_app": "Recargar aplicación",
+  "suggested": "Sugerido"
 }

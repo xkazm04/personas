@@ -39,5 +39,16 @@
   "group_toggle_label": "समूह टॉगल करें",
   "row_menu_label": "स्टेशन की कार्रवाई",
   "row_menu_hide": "बीनने वाले से छिपाएँ",
-  "row_menu_open_source": "खुला स्त्रोत"
+  "row_menu_open_source": "खुला स्त्रोत",
+  "keep_hidden": "छुपा",
+  "keep_kept": "रखा",
+  "keep_toggle_label": "स्टेशन को फुटर पिकर में रखें",
+  "manage_subtitle": "स्टेशन क्यूरेट करें, प्लेबैक डिफ़ॉल्ट सेट करें, और रखने से पहले कुछ भी प्रीव्यू करें।",
+  "master_footer_desc": "ऐप फुटर में रेडियो दिखाएं।",
+  "master_footer_title": "फुटर नियंत्रक",
+  "master_resume_desc": "अगली बार अंतिम स्टेशन ऑटो-स्टार्ट करें।",
+  "master_resume_title": "लॉन्च पर जारी रखें",
+  "preview_play": "स्टेशन प्रीव्यू",
+  "preview_stop": "प्रीव्यू रोकें",
+  "youtube_premium_note": "YouTube स्टेशन एक एम्बेडेड प्लेयर के माध्यम से स्ट्रीम होते हैं — विज्ञापन-मुक्त अनुभव के लिए YouTube Premium प्लान आवश्यक है।"
 }

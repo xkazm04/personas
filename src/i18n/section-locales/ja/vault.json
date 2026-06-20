@@ -538,7 +538,9 @@
     "sim_low": "この認証情報に依存するペルソナやワークフローはありません。失効しても安全です。",
     "sim_high": "{credentialName} を取り消すと、ワークスペース全体の {personas} persona{personaPlural} に影響します。",
     "sim_medium": "{credentialName} の取り消しは影響範囲が限定的です。",
-    "per_day": "/日"
+    "per_day": "/日",
+    "graph_connections": "接続",
+    "graph_empty": "表示する関係がありません"
   },
   "shared": {
     "add": "追加",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- アクセスが取り消されました。自動化を再開するには再認証してください。",
-    "reconnect": "再接続"
+    "reconnect": "再接続",
+    "cli_expired": ") -- CLI セッションが期限切れです。ターミナルからサインインしてから再試行してください。",
+    "retry_capture": "キャプチャを再試行",
+    "retry_success": "CLI セッションからクレデンシャルを更新しました"
   },
   "rotation_section": {
     "corrupted_warning": "ヘルスチェックメタデータが破損しています。次の正常なヘルスチェックが不正データを上書きするまで、異常スコアは利用できません。",

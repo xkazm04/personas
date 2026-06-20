@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# i18n translation pipeline scratch space (scripts/i18n/translate-extract|merge)
+.i18n-work/
+
 # Build output
 dist/
 .baseline/

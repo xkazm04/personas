@@ -1,26 +1,13 @@
 import { Plug, Star } from 'lucide-react';
-import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { InlineEditableText } from '@/features/shared/components/display/InlineEditableText';
 import { extractConnectorNames } from '@/lib/personas/utils';
-import { useToastStore } from '@/stores/toastStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
-
-/** Copy `text` to the clipboard and surface a short-lived success/error toast. */
-async function copyDescriptionToClipboard(text: string, labels: { description_copied: string; copy_failed: string }) {
-  const addToast = useToastStore.getState().addToast;
-  try {
-    await copyText(text);
-    addToast(labels.description_copied, 'success');
-  } catch {
-    addToast(labels.copy_failed, 'error');
-  }
-}
 
 /* -- Select checkbox cell -------------------------------------------- */
 
@@ -99,10 +86,9 @@ export function FavoriteCell({
   );
 }
 
-/* -- Persona identity cell (icon + name + description tooltip) ------- */
+/* -- Persona identity cell (icon + name) ---------------------------- */
 
 export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: Persona) => void }) {
-  const { t } = useTranslation();
   const updatePersona = useAgentStore((s) => s.updatePersona);
   return (
     <div className="flex items-center gap-3 min-w-0 w-full group">
@@ -110,7 +96,7 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
         className="icon-frame icon-frame-pop bg-primary/10 border border-primary/15 flex-shrink-0"
         style={persona.color ? { borderColor: `${persona.color}30`, backgroundColor: `${persona.color}15` } : undefined}
       >
-        <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" framed frameSize="lg" />
+        <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" framed frameSize="sm" />
       </div>
       <div className="min-w-0 flex-1">
         <InlineEditableText
@@ -120,20 +106,6 @@ export function NameCell({ persona, onClick }: { persona: Persona; onClick: (p: 
           className="text-md text-foreground/90 max-w-full"
           parentGroup
         />
-        {persona.description && (
-          <Tooltip content={`${persona.description}\n\nClick to copy`} placement="bottom">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                void copyDescriptionToClipboard(persona.description!, t.agents.persona_list);
-              }}
-              className="text-md text-foreground truncate cursor-copy text-left block max-w-full hover:text-muted-foreground/80 transition-colors"
-            >
-              {persona.description}
-            </button>
-          </Tooltip>
-        )}
       </div>
     </div>
   );

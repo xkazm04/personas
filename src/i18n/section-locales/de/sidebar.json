@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} Agent benötigt Coaching",
   "director_attention_sr_other": "{count} Agenten benötigen Coaching",
   "goals": "Ziele",
-  "mission_control": "Mission Control"
+  "mission_control": "Mission Control",
+  "factory": "Factory",
+  "kpis": "KPIs"
 }

@@ -538,7 +538,9 @@
     "sim_low": "이 자격 증명에 의존하는 페르소나나 워크플로가 없습니다. 취소가 안전합니다.",
     "sim_high": "{credentialName} 취소 시 워크스페이스의 {personas}개 페르소나{personaPlural}에 영향을 줍니다.",
     "sim_medium": "{credentialName} 취소 시 영향 범위가 제한적입니다.",
-    "per_day": "/일"
+    "per_day": "/일",
+    "graph_connections": "연결",
+    "graph_empty": "표시할 관계가 없습니다"
   },
   "shared": {
     "add": "추가",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- 액세스가 취소되었습니다. 자동화를 재개하려면 다시 인증하세요.",
-    "reconnect": "재연결"
+    "reconnect": "재연결",
+    "cli_expired": ") -- CLI 세션이 만료되었습니다. 터미널에서 로그인한 후 다시 시도하세요.",
+    "retry_capture": "다시 캡처",
+    "retry_success": "CLI 세션에서 자격증명이 새로 고쳐졌습니다"
   },
   "rotation_section": {
     "corrupted_warning": "상태 확인 메타데이터가 손상됨. 다음 성공적인 상태 확인이 손상된 데이터를 덮어쓸 때까지 이상 점수를 사용할 수 없습니다.",

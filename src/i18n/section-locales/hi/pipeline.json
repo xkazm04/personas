@@ -376,5 +376,13 @@
   "preset_setup_cta": "सेट अप करें",
   "team_codebase_heading": "कोडबेस रिपॉजिटरी",
   "team_codebase_hint": "इस टीम को एक GitHub रेपो से जोड़ें ताकि इसके agents एक साझा सत्य का स्रोत साझा करें।",
-  "team_connector_label": "GitHub connector"
+  "team_connector_label": "GitHub connector",
+  "preset": {
+    "button": "समुदाय में प्रकाशित करें",
+    "failed": "इस टीम को प्रीसेट के रूप में प्रकाशित नहीं किया जा सका",
+    "heading": "समुदाय के साथ साझा करें",
+    "hint": "इस टीम को एक समुदाय प्रीसेट के रूप में प्रकाशित करें जिसे अन्य अपना सकते हैं। सदस्य एजेंट बिना किसी क्रेडेंशियल के साझा किए जाते हैं।",
+    "published": "टीम समुदाय कैटलॉग में प्रकाशित",
+    "published_short": "प्रकाशित"
+  }
 }

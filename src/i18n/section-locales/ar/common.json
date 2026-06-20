@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "تعذّر تحميل جزء من التطبيق — قد يحدث هذا بعد تحديث أو انقطاع في الاتصال. بياناتك في أمان؛ عادةً ما يحل إعادة تشغيل التطبيق المشكلة.",
-  "reload_app": "إعادة تشغيل التطبيق"
+  "reload_app": "إعادة تشغيل التطبيق",
+  "suggested": "مقترح"
 }

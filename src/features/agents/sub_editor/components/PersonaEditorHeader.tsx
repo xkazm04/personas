@@ -115,6 +115,62 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
       ? { boxShadow: `0 0 12px var(--persona-accent-glow)` }
       : undefined;
 
+  // Governance controls — the Active on/off toggle + Share. Moved out of the
+  // header's top-right and onto the QuickStatsBar row (right-aligned) so the
+  // controls sit on the same line as the stat badges.
+  const headerControls = (
+    <div className="relative flex items-center gap-2">
+      <div className="flex items-center gap-2">
+        <span
+          className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
+          style={effective.enabled ? { color: accent ?? undefined } : undefined}
+        >
+          {effective.enabled ? t.common.active : t.common.off}
+        </span>
+        <AccessibleToggle
+          checked={effective.enabled}
+          onChange={handleHeaderToggle}
+          label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
+          disabled={!effective.enabled && !readiness.canEnable}
+          size="md"
+          className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
+          style={activeGlowStyle}
+        />
+      </div>
+      {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
+      <AnimatePresence>
+        {showReadinessPopover && readiness.reasons.length > 0 && (
+          <motion.div
+            ref={popoverRef}
+            role="alert"
+            aria-live="polite"
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-card shadow-elevation-3 p-2.5 z-50"
+          >
+            <div className="flex items-start justify-between gap-1">
+              <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5" /> {t.agents.editor_ui.cannot_enable}
+              </p>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setShowReadinessPopover(false)}
+                aria-label={t.common.dismiss}
+                className="w-6 h-6"
+              >
+                <X className="w-3.5 h-3.5" />
+              </Button>
+            </div>
+            {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-foreground pl-5">{r}</p>)}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+
   return (
     <ContentHeader
       icon={personaIcon}
@@ -129,61 +185,10 @@ export function PersonaEditorHeader({ draft, baseline, patch, setBaseline }: Per
           </span>
         ) : undefined
       }
-      actions={
-        <div className="relative flex flex-col items-end gap-1.5 flex-shrink-0">
-          {selectedPersona?.id && <ShareAgentButton personaId={selectedPersona.id} />}
-          {/* Active toggle — governance only. Per-capability Run/Simulate lives in the Use Case tab. */}
-          <div className="flex items-center gap-2">
-            <span
-              className={`typo-heading transition-colors ${effective.enabled ? '' : 'text-foreground'}`}
-              style={effective.enabled ? { color: accent ?? undefined } : undefined}
-            >
-              {effective.enabled ? t.common.active : t.common.off}
-            </span>
-            <AccessibleToggle
-              checked={effective.enabled}
-              onChange={handleHeaderToggle}
-              label={`${effective.enabled ? 'Disable' : 'Enable'} ${effective.name}`}
-              disabled={!effective.enabled && !readiness.canEnable}
-              size="md"
-              className={effective.enabled && !accent ? 'shadow-[0_0_12px_rgba(16,185,129,0.25)]' : ''}
-              style={activeGlowStyle}
-            />
-          </div>
-          <AnimatePresence>
-            {showReadinessPopover && readiness.reasons.length > 0 && (
-              <motion.div
-                ref={popoverRef}
-                role="alert"
-                aria-live="polite"
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.15 }}
-                className="absolute top-full right-0 mt-2 w-64 bg-background border border-amber-500/30 rounded-card shadow-elevation-3 p-2.5 z-50"
-              >
-                <div className="flex items-start justify-between gap-1">
-                  <p className="typo-heading text-amber-400 mb-1.5 flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5" /> {t.agents.editor_ui.cannot_enable}
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={() => setShowReadinessPopover(false)}
-                    aria-label={t.common.dismiss}
-                    className="w-6 h-6"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-                {readiness.reasons.map((r, i) => <p key={i} className="typo-body text-foreground pl-5">{r}</p>)}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      }
     >
-      {selectedPersona?.id && <QuickStatsBar personaId={selectedPersona.id} />}
+      {selectedPersona?.id && (
+        <QuickStatsBar personaId={selectedPersona.id} trailing={headerControls} />
+      )}
     </ContentHeader>
   );
 }

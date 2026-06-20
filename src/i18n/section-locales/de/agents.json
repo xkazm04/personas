@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Cache-Treffer",
+    "cached": "gecacht",
+    "deep_fanout": "Tiefes Fan-out",
+    "deep_fanout_hint": "Unabhängige parallele Teilaufgaben an Subagenten delegieren. Budget-Limit festlegen.",
+    "deep_fanout_unavailable": "In diesem Plan nicht verfügbar — benötigt Workflow/Task-Tools (Max/Team).",
+    "subagents": "Subagenten"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Verbessere Persona „{name}\" v{version} — noch nicht gemessen. Worauf soll ich mich konzentrieren? ",
     "vr_metric_tool": "Tool-Genauigkeit",
     "vr_metric_quality": "Ausgabequalität",
-    "vr_metric_protocol": "Protokoll-Konformität"
+    "vr_metric_protocol": "Protokoll-Konformität",
+    "eco_col_attempted": "Versuche",
+    "eco_col_cost_success": "Kosten / Erfolg",
+    "eco_col_model": "Modell",
+    "eco_col_rate": "Lösungsrate",
+    "eco_col_resolved": "Gelöst",
+    "eco_empty": "Noch keine Auswertungsergebnisse — Lab ausführen, um Kosteneffizienz zu befüllen.",
+    "eco_subtitle": "Wie oft jedes Modell eine Auswertung löst und was jeder Erfolg kostet.",
+    "eco_title": "Kosteneffizienz"
   },
   "design": {
     "select_agent": "Agenten auswählen, um Designanalyse zu starten",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "VERTRAUEN-Zustand-Pill der ReviewDimCard",
     "review_pill_trust": "VERTRAUEN",
     "_comment_dim_status_activated": "PersonaSigilSummary-Wert, wenn eine boolesche Dimension (Speicher/Überprüfung/Ereignis/Fehler) für die Funktion aktiv ist",
-    "dim_status_activated": "Aktiviert"
+    "dim_status_activated": "Aktiviert",
+    "engine_claude": "Engine: Claude",
+    "engine_claude_tooltip": "Vollständiges Claude. Klicken, um Gemischt zu aktivieren: einfache Teilaufgaben (zusammenfassen, extrahieren, umformatieren) werden an ein lokales Modell ausgelagert, um Premium-Kapazität zu sparen.",
+    "engine_local_first": "Engine: Lokal-first",
+    "engine_local_first_tooltip": "Lokal-first: Claude erstellt Arbeitsaufträge und validiert; das lokale Modell erzeugt alle Inhalte. Klicken, um zu vollständigem Claude zurückzukehren.",
+    "engine_mixed": "Engine: Gemischt",
+    "engine_mixed_tooltip": "Gemischte Engine: Claude orchestriert und lagert einfache Teilaufgaben über das llm_delegate-Tool an ein lokales Modell aus. Klicken, um zu vollständigem Claude zurückzukehren.",
+    "petals_label": "Blütenblätter",
+    "recipe": "Rezept",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Keine Persona ausgewählt",
@@ -2631,7 +2655,8 @@
     "automations": "Automatisierungen",
     "triggers_desc": "Personenbezogene Ereignisabonnements und Trigger-Konfiguration werden in diesem Tab verfügbar sein.",
     "messaging_desc": "Benachrichtigungskanäle und Posteingangs-Routing für diesen Agenten werden hier zu finden sein.",
-    "automations_desc": "Eigenständige Automatisierungsregeln für diesen Agenten werden hier zu finden sein."
+    "automations_desc": "Eigenständige Automatisierungsregeln für diesen Agenten werden hier zu finden sein.",
+    "parameters": "Parameter"
   },
   "parameters_card": {
     "title": "Parameter",
@@ -2660,5 +2685,14 @@
   "glyph_db_scope_loading": "Tabellen werden geladen…",
   "glyph_db_scope_error": "Tabellen konnten nicht geladen werden — erneut versuchen",
   "glyph_db_scope_empty": "Keine Tabellen gefunden",
-  "glyph_db_scope_selected": "{count} von {total} Tabellen"
+  "glyph_db_scope_selected": "{count} von {total} Tabellen",
+  "share": {
+    "button": "Teilen",
+    "failed": "Dieser Agent konnte nicht in der Galerie veröffentlicht werden",
+    "hint": "Jeder mit dem Link kann diesen Agenten mit einem Klick in Personas öffnen.",
+    "import_failed": "Dieser geteilte Agent konnte nicht importiert werden",
+    "imported": "Agent aus einem Teilungslink importiert",
+    "invite_hint": "Einen Freund zu Personas einladen — du wirst angerechnet, wenn er beitritt",
+    "published": "Geteilt — Link kopieren und senden"
+  }
 }

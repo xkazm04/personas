@@ -39,5 +39,16 @@
   "group_toggle_label": "تبديل المجموعة",
   "row_menu_label": "إجراءات المحطة",
   "row_menu_hide": "إخفاء من المنتقى",
-  "row_menu_open_source": "مفتوح المصدر"
+  "row_menu_open_source": "مفتوح المصدر",
+  "keep_hidden": "مخفي",
+  "keep_kept": "محفوظ",
+  "keep_toggle_label": "إبقاء المحطة في منتقي التذييل",
+  "manage_subtitle": "تنظيم المحطات وضبط إعدادات التشغيل ومعاينة أي محطة قبل حفظها.",
+  "master_footer_desc": "عرض الراديو في تذييل التطبيق.",
+  "master_footer_title": "تحكم التذييل",
+  "master_resume_desc": "بدء تشغيل آخر محطة تلقائياً في المرة القادمة.",
+  "master_resume_title": "استئناف عند الإطلاق",
+  "preview_play": "معاينة المحطة",
+  "preview_stop": "إيقاف المعاينة",
+  "youtube_premium_note": "محطات YouTube تبث عبر مشغّل مدمج — يلزم اشتراك YouTube Premium للاستمتاع بتجربة خالية من الإعلانات."
 }

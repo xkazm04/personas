@@ -538,7 +538,9 @@
     "sim_low": "Ninguna persona ni flujo de trabajo depende de esta credencial. Es seguro revocarla.",
     "sim_high": "Revocar {credentialName} afectaría a {personas} persona{personaPlural} en tu espacio de trabajo.",
     "sim_medium": "Revocar {credentialName} tiene un radio de impacto limitado.",
-    "per_day": "/día"
+    "per_day": "/día",
+    "graph_connections": "Conexiones",
+    "graph_empty": "No hay relaciones que mostrar"
   },
   "shared": {
     "add": "Agregar",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") — el acceso fue revocado. Vuelve a autorizar para reanudar las automatizaciones.",
-    "reconnect": "Reconectar"
+    "reconnect": "Reconectar",
+    "cli_expired": ") -- Sesión CLI expirada. Inicia sesión en tu terminal y vuelve a intentarlo.",
+    "retry_capture": "Reintentar captura",
+    "retry_success": "Credencial actualizada desde la sesión CLI"
   },
   "rotation_section": {
     "corrupted_warning": "Los metadatos de verificación de salud están dañados. Las puntuaciones de anomalía no están disponibles hasta que la próxima verificación exitosa sobrescriba los datos incorrectos.",

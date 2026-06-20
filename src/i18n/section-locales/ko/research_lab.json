@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv에서 오류가 반환되었습니다 (HTTP {status}). 잠시 후 다시 시도하세요.",
   "arxiv_error_network": "arXiv에 연결할 수 없습니다. 연결 상태를 확인하고 다시 시도하세요.",
   "arxiv_error_feed": "arXiv에서 해당 쿼리를 처리할 수 없습니다. 다른 키워드나 더 간단한 키워드를 시도해 보세요.",
-  "arxiv_error_generic": "arXiv 검색에 실패했습니다. 다시 시도하세요."
+  "arxiv_error_generic": "arXiv 검색에 실패했습니다. 다시 시도하세요.",
+  "added_with_dedup": "{added}개의 소스 추가됨 ({duplicates}개는 이미 라이브러리에 있음)"
 }

@@ -538,7 +538,9 @@
     "sim_low": "Na těchto údajích nezávisí persony ani workflow. Bezpečné k odvolání.",
     "sim_high": "Zrušení {credentialName} by ovlivnilo {personas} personu{personaPlural} v rámci tvého pracovního prostoru.",
     "sim_medium": "Zrušení {credentialName} má omezený dopad.",
-    "per_day": "/den"
+    "per_day": "/den",
+    "graph_connections": "Připojení",
+    "graph_empty": "Žádné vztahy k zobrazení"
   },
   "shared": {
     "add": "Přidat",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- přístup byl zrušen. Znovu autorizuj, aby se automatizace obnovily.",
-    "reconnect": "Znovu připojit"
+    "reconnect": "Znovu připojit",
+    "cli_expired": ") -- CLI relace vypršela. Přihlaste se přes terminál a zkuste znovu.",
+    "retry_capture": "Zkusit zachytit znovu",
+    "retry_success": "Přihlašovací údaj obnoven z CLI relace"
   },
   "rotation_section": {
     "corrupted_warning": "Metadata kontrol poškozena. Skóre anomálií bude dostupné po příští úspěšné kontrole.",

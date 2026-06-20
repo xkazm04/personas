@@ -46,7 +46,14 @@
     "toggle_monitor": "Persona Monitor öffnen / schließen",
     "toggle_athena": "Athena-Chat öffnen / schließen",
     "nav_mode": "Tastaturnavigationsmodus umschalten",
-    "nav_mode_back": "Eine Seite zurück (im Navigationsmodus)"
+    "nav_mode_back": "Eine Seite zurück (im Navigationsmodus)",
+    "mode_toggle_aria": "Tastaturkürzel-Modus umschalten",
+    "mode_toggle_title": "Kürzel-Modus — klicken zum Umschalten · Rechtsklick für Hilfe",
+    "nav_mode_monitor": "Persona-Monitor umschalten (im Nav-Modus)",
+    "nav_mode_notifications": "Benachrichtigungen umschalten (im Nav-Modus)",
+    "nav_mode_review": "Manuelle Prüfung umschalten (im Nav-Modus)",
+    "nav_mode_schedules": "Zeitpläne umschalten (im Nav-Modus)",
+    "nav_mode_search": "Suche öffnen (im Nav-Modus)"
   },
   "tray_schedules": "Zeitpläne",
   "tray_schedules_today": "{count} heute geplant",
@@ -60,5 +67,7 @@
     "headroom_green": "Genug Kapazität für mehr Arbeit",
     "headroom_amber": "Wird ausgelastet — Entlastung empfohlen",
     "headroom_red": "Kapazitätsgrenze erreicht — Verlangsamung empfohlen"
-  }
+  },
+  "tray_acceptance": "Ziele zur Annahme",
+  "tray_acceptance_pending": "{count} Ziele warten auf deine Annahme"
 }

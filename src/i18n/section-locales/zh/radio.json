@@ -39,5 +39,16 @@
   "group_toggle_label": "切换组",
   "row_menu_label": "车站行动",
   "row_menu_hide": "对选择器隐藏",
-  "row_menu_open_source": "开源"
+  "row_menu_open_source": "开源",
+  "keep_hidden": "已隐藏",
+  "keep_kept": "已保留",
+  "keep_toggle_label": "在底栏选择器中保留此电台",
+  "manage_subtitle": "管理电台、设置播放默认值，并在保留前预览。",
+  "master_footer_desc": "在应用底栏显示收音机。",
+  "master_footer_title": "底栏控制器",
+  "master_resume_desc": "下次自动启动上次播放的电台。",
+  "master_resume_title": "启动时恢复",
+  "preview_play": "预览电台",
+  "preview_stop": "停止预览",
+  "youtube_premium_note": "YouTube 电台通过内嵌播放器流式传输 — 无广告体验需要 YouTube Premium 会员。"
 }

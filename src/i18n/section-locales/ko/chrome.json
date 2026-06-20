@@ -46,7 +46,14 @@
     "toggle_monitor": "Persona Monitor 열기 / 닫기",
     "toggle_athena": "Athena 채팅 열기 / 닫기",
     "nav_mode": "키보드 탐색 모드 전환",
-    "nav_mode_back": "한 페이지 뒤로 이동 (탐색 모드)"
+    "nav_mode_back": "한 페이지 뒤로 이동 (탐색 모드)",
+    "mode_toggle_aria": "키보드 단축키 모드 전환",
+    "mode_toggle_title": "단축키 모드 — 클릭하여 전환 · 우클릭으로 도움말",
+    "nav_mode_monitor": "페르소나 모니터 전환 (탐색 모드)",
+    "nav_mode_notifications": "알림 전환 (탐색 모드)",
+    "nav_mode_review": "사람 검토 전환 (탐색 모드)",
+    "nav_mode_schedules": "일정 전환 (탐색 모드)",
+    "nav_mode_search": "검색 열기 (탐색 모드)"
   },
   "tray_schedules": "일정",
   "tray_schedules_today": "오늘 {count}개 예약됨",
@@ -60,5 +67,7 @@
     "headroom_green": "여유가 충분합니다",
     "headroom_amber": "바빠지고 있습니다 — 작업량을 줄이는 것을 고려하세요",
     "headroom_red": "한계에 도달했습니다 — 속도를 늦추는 것을 고려하세요"
-  }
+  },
+  "tray_acceptance": "수락할 목표",
+  "tray_acceptance_pending": "{count}개의 목표가 수락을 기다리고 있습니다"
 }

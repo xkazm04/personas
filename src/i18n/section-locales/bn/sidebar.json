@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} এজেন্টের কোচিং দরকার",
   "director_attention_sr_other": "{count} এজেন্টের কোচিং দরকার",
   "goals": "লক্ষ্যসমূহ",
-  "mission_control": "মিশন কন্ট্রোল"
+  "mission_control": "মিশন কন্ট্রোল",
+  "factory": "ফ্যাক্টরি",
+  "kpis": "KPI"
 }

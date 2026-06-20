@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { getVersion } from '@tauri-apps/api/app';
-import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2, Radio, CloudUpload } from 'lucide-react';
+import { Globe, LogOut, User, AlertCircle, RefreshCw, Activity, Download, CheckCircle2, CloudUpload } from 'lucide-react';
 import { SettingsScaffold, type SettingsSection } from '@/features/shared/components/layout/settings/SettingsScaffold';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useAuthStore } from '@/stores/authStore';
@@ -14,7 +14,6 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
-import RadioSettingsCard from '@/features/plugins/radio/components/RadioSettingsCard';
 import CloudSyncCard from './CloudSyncCard';
 
 export default function AccountSettings() {
@@ -93,13 +92,6 @@ export default function AccountSettings() {
           )}
         </div>
       ),
-    },
-    {
-      id: 'radio',
-      label: t.radio.settings_title,
-      icon: <Radio className="w-4 h-4 text-violet-400" />,
-      card: false,
-      content: <RadioSettingsCard />,
     },
     {
       id: 'updates',

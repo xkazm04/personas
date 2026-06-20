@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "承認されましたが、アクションを実行できませんでした",
   "channels_author_all": "全員",
   "channels_author_you": "あなた",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "すべてクリア",
+  "live_dismiss": "閉じる",
+  "live_more": "他 {count} 件",
+  "live_open_timeline": "タイムラインで開く",
+  "live_toggle": "ライブポップアップ",
+  "live_toggle_hint": "受信チャンネルメッセージをコーナーポップアップとして表示"
 }

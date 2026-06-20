@@ -39,5 +39,16 @@
   "group_toggle_label": "그룹 전환",
   "row_menu_label": "스테이션 작업",
   "row_menu_hide": "선택기에서 숨기기",
-  "row_menu_open_source": "오픈 소스"
+  "row_menu_open_source": "오픈 소스",
+  "keep_hidden": "숨김",
+  "keep_kept": "유지됨",
+  "keep_toggle_label": "푸터 선택기에 방송국 유지",
+  "manage_subtitle": "방송국을 관리하고, 재생 기본값을 설정하고, 유지하기 전에 미리 들어보세요.",
+  "master_footer_desc": "앱 푸터에 라디오를 표시합니다.",
+  "master_footer_title": "푸터 컨트롤러",
+  "master_resume_desc": "다음 시작 시 마지막 방송국을 자동 재생합니다.",
+  "master_resume_title": "시작 시 재개",
+  "preview_play": "방송국 미리 듣기",
+  "preview_stop": "미리 듣기 중지",
+  "youtube_premium_note": "YouTube 방송국은 내장 플레이어를 통해 스트리밍됩니다 — 광고 없는 경험을 위해 YouTube Premium 플랜이 필요합니다."
 }

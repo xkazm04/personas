@@ -827,7 +827,18 @@
     "schedule_hourly": "Stündlich",
     "_comment_events_count": "Anzahl der für eine Funktion konfigurierten persona-übergreifenden Ereignisabonnements",
     "events_count_one": "{count} Ereignis",
-    "events_count_other": "{count} Ereignisse"
+    "events_count_other": "{count} Ereignisse",
+    "left_messages_heading": "Nachrichten",
+    "persona_layout_dim_disable": "Deaktivieren",
+    "persona_layout_dim_disable_title": "Dieses Sigil für die aktive Fähigkeit deaktivieren — seine Fragen werden beim Aufbau übersprungen.",
+    "persona_layout_dim_disabled": "Deaktiviert",
+    "persona_layout_dim_reenable": "Dieses Sigil für die aktive Fähigkeit wieder aktivieren — seine Fragen erscheinen wieder.",
+    "persona_layout_rail_activated": "Aktiviert",
+    "_comment_left_messages_heading": "Heading above the messaging-channels card in the adoption left panel — keep 1 word",
+    "_comment_persona_layout_dim_disable": "Footer toggle in the petal answer modal: disable this dimension for the active capability — keep 1 word",
+    "_comment_persona_layout_dim_disable_title": "Tooltip on the Disable toggle when the dimension is currently enabled",
+    "_comment_persona_layout_dim_reenable": "Tooltip on the Disable toggle when the dimension is currently disabled",
+    "_comment_persona_layout_rail_activated": "Left quick-action rail info box: shown next to the Memory/Review petal icon when that dimension is enabled — keep 1 word"
   },
   "scan": {
     "scanning_draft": "Persona-Entwurf wird gescannt...",

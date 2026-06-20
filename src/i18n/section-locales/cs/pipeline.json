@@ -376,5 +376,13 @@
   "preset_setup_cta": "Nastavit",
   "team_codebase_heading": "Repozitář kódové základny",
   "team_codebase_hint": "Propojte tento tým s GitHub repozitářem, aby jeho agenti sdíleli jeden zdroj pravdy.",
-  "team_connector_label": "GitHub konektor"
+  "team_connector_label": "GitHub konektor",
+  "preset": {
+    "button": "Zveřejnit pro komunitu",
+    "failed": "Tým se nepodařilo zveřejnit jako preset",
+    "heading": "Sdílet s komunitou",
+    "hint": "Zveřejněte tento tým jako komunitní preset, který mohou ostatní přijmout. Členové jsou sdíleni bez přihlašovacích údajů.",
+    "published": "Tým zveřejněn v komunitním katalogu",
+    "published_short": "Zveřejněno"
+  }
 }

@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} agent potřebuje koučink",
   "director_attention_sr_other": "{count} agentů potřebuje koučink",
   "goals": "Cíle",
-  "mission_control": "Řídicí centrum"
+  "mission_control": "Řídicí centrum",
+  "factory": "Továrna",
+  "kpis": "KPI"
 }

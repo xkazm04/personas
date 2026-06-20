@@ -46,7 +46,14 @@
     "toggle_monitor": "Abrir / cerrar Monitor de personas",
     "toggle_athena": "Abrir / cerrar chat de Athena",
     "nav_mode": "Activar/desactivar modo de navegación por teclado",
-    "nav_mode_back": "Retroceder una página (en modo de navegación)"
+    "nav_mode_back": "Retroceder una página (en modo de navegación)",
+    "mode_toggle_aria": "Cambiar modo de atajos de teclado",
+    "mode_toggle_title": "Modo de atajos — clic para cambiar · clic derecho para ayuda",
+    "nav_mode_monitor": "Alternar monitor de persona (en modo navegación)",
+    "nav_mode_notifications": "Alternar notificaciones (en modo navegación)",
+    "nav_mode_review": "Alternar revisión humana (en modo navegación)",
+    "nav_mode_schedules": "Alternar programaciones (en modo navegación)",
+    "nav_mode_search": "Abrir búsqueda (en modo navegación)"
   },
   "tray_schedules": "Programaciones",
   "tray_schedules_today": "{count} programadas hoy",
@@ -60,5 +67,7 @@
     "headroom_green": "Amplia capacidad disponible para más trabajo",
     "headroom_amber": "Bastante ocupado — considera reducir la carga",
     "headroom_red": "Al límite de capacidad — considera ralentizar"
-  }
+  },
+  "tray_acceptance": "Objetivos por aceptar",
+  "tray_acceptance_pending": "{count} objetivos pendientes de aceptación"
 }

@@ -827,7 +827,18 @@
     "schedule_hourly": "Každou hodinu",
     "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
     "events_count_one": "{count} událost",
-    "events_count_other": "{count} událostí"
+    "events_count_other": "{count} událostí",
+    "left_messages_heading": "Zprávy",
+    "persona_layout_dim_disable": "Zakázat",
+    "persona_layout_dim_disable_title": "Zakázat tento symbol pro aktivní schopnost — jeho otázky budou přeskočeny během sestavení.",
+    "persona_layout_dim_disabled": "Zakázáno",
+    "persona_layout_dim_reenable": "Znovu povolit tento symbol pro aktivní schopnost — jeho otázky se znovu zobrazí.",
+    "persona_layout_rail_activated": "Aktivováno",
+    "_comment_left_messages_heading": "Heading above the messaging-channels card in the adoption left panel — keep 1 word",
+    "_comment_persona_layout_dim_disable": "Footer toggle in the petal answer modal: disable this dimension for the active capability — keep 1 word",
+    "_comment_persona_layout_dim_disable_title": "Tooltip on the Disable toggle when the dimension is currently enabled",
+    "_comment_persona_layout_dim_reenable": "Tooltip on the Disable toggle when the dimension is currently disabled",
+    "_comment_persona_layout_rail_activated": "Left quick-action rail info box: shown next to the Memory/Review petal icon when that dimension is enabled — keep 1 word"
   },
   "scan": {
     "scanning_draft": "Skenování návrhu persony...",

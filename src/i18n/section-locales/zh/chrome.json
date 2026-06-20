@@ -46,7 +46,14 @@
     "toggle_monitor": "打开 / 关闭 Persona Monitor",
     "toggle_athena": "打开 / 关闭 Athena 聊天",
     "nav_mode": "切换键盘导航模式",
-    "nav_mode_back": "返回上一页（导航模式下）"
+    "nav_mode_back": "返回上一页（导航模式下）",
+    "mode_toggle_aria": "切换键盘快捷键模式",
+    "mode_toggle_title": "快捷键模式 — 点击切换 · 右键查看帮助",
+    "nav_mode_monitor": "切换角色监控（导航模式）",
+    "nav_mode_notifications": "切换通知（导航模式）",
+    "nav_mode_review": "切换人工审核（导航模式）",
+    "nav_mode_schedules": "切换计划（导航模式）",
+    "nav_mode_search": "打开搜索（导航模式）"
   },
   "tray_schedules": "计划任务",
   "tray_schedules_today": "今日 {count} 个计划任务",
@@ -60,5 +67,7 @@
     "headroom_green": "资源充足，可承接更多工作",
     "headroom_amber": "负载较高，建议适当减轻",
     "headroom_red": "已达上限，建议放缓节奏"
-  }
+  },
+  "tray_acceptance": "待接受目标",
+  "tray_acceptance_pending": "{count} 个目标等待您接受"
 }

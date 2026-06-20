@@ -46,7 +46,14 @@
     "toggle_monitor": "Persona Monitor を開く / 閉じる",
     "toggle_athena": "Athena チャットを開く / 閉じる",
     "nav_mode": "キーボードナビゲーションモードの切り替え",
-    "nav_mode_back": "一つ前のページに戻る（ナビモード時）"
+    "nav_mode_back": "一つ前のページに戻る（ナビモード時）",
+    "mode_toggle_aria": "キーボードショートカットモードを切り替え",
+    "mode_toggle_title": "ショートカットモード — クリックで切り替え · 右クリックでヘルプ",
+    "nav_mode_monitor": "ペルソナモニターを切り替え（ナビゲーションモード）",
+    "nav_mode_notifications": "通知を切り替え（ナビゲーションモード）",
+    "nav_mode_review": "ヒューマンレビューを切り替え（ナビゲーションモード）",
+    "nav_mode_schedules": "スケジュールを切り替え（ナビゲーションモード）",
+    "nav_mode_search": "検索を開く（ナビゲーションモード）"
   },
   "tray_schedules": "スケジュール",
   "tray_schedules_today": "本日 {count} 件のスケジュール",
@@ -60,5 +67,7 @@
     "headroom_green": "余裕あり — さらに作業を追加できます",
     "headroom_amber": "混雑してきました — 負荷を下げることを検討してください",
     "headroom_red": "容量に達しました — 処理を減らすことを検討してください"
-  }
+  },
+  "tray_acceptance": "承認待ちのゴール",
+  "tray_acceptance_pending": "{count} 件のゴールが承認待ちです"
 }

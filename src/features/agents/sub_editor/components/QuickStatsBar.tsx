@@ -7,23 +7,39 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 interface QuickStatsBarProps {
   personaId: string;
+  /** Governance controls (Active toggle + Share) rendered at the end of the
+   *  stats row, pushed right — kept visible even when there are no stats yet. */
+  trailing?: React.ReactNode;
 }
 
-export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
+export function QuickStatsBar({ personaId, trailing }: QuickStatsBarProps) {
   const { t } = useTranslation();
   const { stats, loading, isEmpty } = useQuickStats(personaId);
 
+  const trailingNode = trailing ? (
+    <div className="ml-auto flex items-center gap-2">{trailing}</div>
+  ) : null;
+
   if (loading) {
     return (
-      <div className="flex items-center gap-2 mt-3 animate-pulse">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="h-6 w-20 rounded-card bg-primary/5" />
-        ))}
+      <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+        <div className="flex items-center gap-2 animate-pulse">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-6 w-20 rounded-card bg-primary/5" />
+          ))}
+        </div>
+        {trailingNode}
       </div>
     );
   }
 
-  if (isEmpty || !stats) return null;
+  if (isEmpty || !stats) {
+    return trailingNode ? (
+      <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
+        {trailingNode}
+      </div>
+    ) : null;
+  }
 
   return (
     <div className="flex items-center gap-1.5 mt-3 flex-wrap" data-testid="quick-stats-bar">
@@ -80,6 +96,7 @@ export function QuickStatsBar({ personaId }: QuickStatsBarProps) {
       >
         {t.agents.editor_ui.rank}
       </Button>
+      {trailingNode}
     </div>
   );
 }

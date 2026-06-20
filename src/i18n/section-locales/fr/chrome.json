@@ -46,7 +46,14 @@
     "toggle_monitor": "Ouvrir / fermer Persona Monitor",
     "toggle_athena": "Ouvrir / fermer le chat Athena",
     "nav_mode": "Activer/désactiver la navigation clavier",
-    "nav_mode_back": "Revenir à la page précédente (en mode navigation)"
+    "nav_mode_back": "Revenir à la page précédente (en mode navigation)",
+    "mode_toggle_aria": "Basculer le mode de raccourcis clavier",
+    "mode_toggle_title": "Mode raccourci — cliquer pour basculer · clic droit pour l'aide",
+    "nav_mode_monitor": "Afficher/masquer le moniteur de persona (mode navigation)",
+    "nav_mode_notifications": "Afficher/masquer les notifications (mode navigation)",
+    "nav_mode_review": "Afficher/masquer la revue humaine (mode navigation)",
+    "nav_mode_schedules": "Afficher/masquer les planifications (mode navigation)",
+    "nav_mode_search": "Ouvrir la recherche (mode navigation)"
   },
   "tray_schedules": "Planifications",
   "tray_schedules_today": "{count} planifiée(s) aujourd'hui",
@@ -60,5 +67,7 @@
     "headroom_green": "Largement disponible pour plus de travail",
     "headroom_amber": "Chargé — pensez à ralentir",
     "headroom_red": "À pleine capacité — envisagez de ralentir"
-  }
+  },
+  "tray_acceptance": "Objectifs à accepter",
+  "tray_acceptance_pending": "{count} objectifs en attente d'acceptation"
 }

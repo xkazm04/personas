@@ -35,16 +35,22 @@ appropriate engine and reports state transitions back via
   to launch the provider page in the system browser). Escape or
   outside-click dismisses the actions menu without closing the
   picker behind it.
-- A "Radio" card in **Settings → Account** (`RadioSettingsCard`) that
-  lists the curated catalog. YouTube stations show their tracklist;
-  stream stations show the source label + link. Three settings live
-  here: master enable, **auto-resume on launch** (when on, the last
-  playing station auto-starts the first time the footer mounts after
-  app open — off by default; grays out when the master switch is off),
-  and per-station hide-from-picker toggles. The row dot for the
-  currently active station glows in the accent colour (or pulses when
-  buffering), mirroring the footer's playing-state cue, so it's
-  visible at a glance which station is live while you toggle others.
+- The **Settings → Radio** tab (`RadioPage` → `RadioConsoleVariant`,
+  rendered through the standard `SettingsPage` tab map). It lists the
+  curated catalog grouped by provider (**SomaFM** streams and **YouTube**
+  mixes, with a "Premium required for ad-free" note on the YouTube
+  group) and adds a **preview / play** control on every station so you
+  can audition it before deciding what to keep — preview drives the real
+  global radio engine (`radioSetStation` → `radioPlay`), auto-enabling
+  the footer controller so you actually hear it. Also here: master
+  enable, **auto-resume on launch** (when on, the last playing station
+  auto-starts the first time the footer mounts after app open — off by
+  default), and per-station keep (hide-from-picker) toggles. The layout
+  is the "Console" mixing-desk metaphor — one channel strip per station
+  (accent rail · preview transport · label · live equalizer · keep
+  switch). Shared building blocks live in `radioManageShared.tsx`
+  (`groupStations`, `RadioMasterControls`, `PreviewButton`,
+  `YouTubePremiumNote`) and the preview wiring in `useStationPreview`.
 - While the engine is in `buffering` state (audio waiting for data or
   YouTube prebuffer) the play button swaps to a spinning loader tinted
   with the station accent, the now-playing accent dot pulses, and the

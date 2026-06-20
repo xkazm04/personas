@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "स्वीकृत हुआ, लेकिन कार्रवाई नहीं हो सकी",
   "channels_author_all": "सभी",
   "channels_author_you": "आप",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "सब साफ करें",
+  "live_dismiss": "खारिज करें",
+  "live_more": "+{count} और",
+  "live_open_timeline": "टाइमलाइन में खोलें",
+  "live_toggle": "लाइव पॉप-अप",
+  "live_toggle_hint": "आने वाले चैनल संदेश कोने के पॉप-अप के रूप में दिखाएं"
 }

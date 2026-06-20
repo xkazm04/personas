@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Đã phê duyệt, nhưng không thể thực hiện hành động",
   "channels_author_all": "Tất cả mọi người",
   "channels_author_you": "Bạn",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Xóa tất cả",
+  "live_dismiss": "Bỏ qua",
+  "live_more": "+{count} nữa",
+  "live_open_timeline": "Mở trong Timeline",
+  "live_toggle": "Pop-up trực tiếp",
+  "live_toggle_hint": "Hiển thị tin nhắn kênh mới dưới dạng pop-up ở góc màn hình"
 }

@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "승인되었지만 작업을 실행할 수 없습니다",
   "channels_author_all": "전체",
   "channels_author_you": "나",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "모두 지우기",
+  "live_dismiss": "닫기",
+  "live_more": "+{count}개 더",
+  "live_open_timeline": "타임라인에서 열기",
+  "live_toggle": "실시간 팝업",
+  "live_toggle_hint": "수신 채널 메시지를 모서리 팝업으로 표시"
 }
