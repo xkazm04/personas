@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**118 reusable components** live under `src/features/shared/components/`.
+**114 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -43,7 +43,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `EmptyIllustration` | _(add a `@catalog` tag)_ |
 | `EmptyState` | _(add a `@catalog` tag)_ |
 | `FieldHint` | Valid value range, e. |
-| `GlossaryTooltip` | The technical term to look up (case-insensitive). |
 | `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
 | `HeroMesh` | _(add a `@catalog` tag)_ |
 | `InlineEditableText` | Click-to-edit inline text field. |
@@ -85,10 +84,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `ErrorBoundary` | Called when the user clicks "Go to dashboard". |
 | `ErrorRecoveryBanner` | _(add a `@catalog` tag)_ |
 | `InlineErrorBanner` | _(add a `@catalog` tag)_ |
-| `InlineErrorRecovery` | _(add a `@catalog` tag)_ |
 | `LoadingSpinner` | Canonical loading spinner with size + a11y label. Use for any full-element loading state. |
-| `RecoverySpiral` | _(add a `@catalog` tag)_ |
-| `SaveFeedbackCheck` | Subtle inline checkmark that fades in/out to confirm an auto-save. |
 | `StalenessIndicator` | Epoch ms when this data source was last successfully fetched. |
 | `SuspenseFallback` | Standard fallback for React.lazy/Suspense boundaries. |
 
@@ -187,4 +183,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TerminalStrip` | _(add a `@catalog` tag)_ |
 
 ---
-_118 components, 44 without a `@catalog` description._
+_114 components, 42 without a `@catalog` description._
