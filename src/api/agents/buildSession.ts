@@ -39,6 +39,7 @@ export async function startBuildSession(
   language?: string | null,
   mode?: 'interactive' | 'one_shot' | null,
   companionSessionId?: string | null,
+  context?: string | null,
 ): Promise<string> {
   return invokeWithTimeout<string>("start_build_session", {
     channel,
@@ -49,6 +50,7 @@ export async function startBuildSession(
     language: language ?? null,
     mode: mode ?? null,
     companionSessionId: companionSessionId ?? null,
+    context: context ?? null,
   });
 }
 

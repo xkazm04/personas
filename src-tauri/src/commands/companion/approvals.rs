@@ -2428,6 +2428,7 @@ async fn execute_build_oneshot(
         None,
         Some("one_shot".to_string()),
         companion_session_id,
+        None, // build context: companion chat-grounding is a future extension (UAT P7)
     ) {
         // Roll back the orphan draft persona. The build never started, so the
         // just-committed stub ('New Persona' / "You are a helpful AI assistant.")

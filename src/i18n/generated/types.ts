@@ -2708,6 +2708,9 @@ export type Translations = {
     };
     matrix_entry: {
       new_agent: string;
+      context_toggle: string;
+      context_placeholder: string;
+      context_hint: string;
       failed_to_create: string;
       build_failed: string;
       header_title: string;

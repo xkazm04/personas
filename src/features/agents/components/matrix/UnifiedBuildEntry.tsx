@@ -35,6 +35,7 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
 import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
 import { BuildTemplateSuggestion } from "@/features/agents/components/matrix/BuildTemplateSuggestion";
+import { BuildContextField } from "@/features/agents/components/matrix/BuildContextField";
 import { getDesignReview } from "@/api/overview/reviews";
 import { cancelBuildSession } from "@/api/agents/buildSession";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
@@ -151,6 +152,12 @@ export function UnifiedBuildEntry() {
     intentTextRef.current = v;
     _setIntentText(v);
   }, []);
+  // Optional reference context (writing sample / role / brand guide) that grounds
+  // the build prompt (UAT P7 — F-BUILD-NO-CONTEXT). Read via ref in handleLaunch
+  // to avoid a stale closure, mirroring the intentText pattern above.
+  const [contextText, setContextText] = useState('');
+  const contextTextRef = useRef(contextText);
+  contextTextRef.current = contextText;
   // Pre-seed agentName from a companion prefill so the wizard shows
   // both fields filled. Cleared along with the prefill below.
   const [agentName, setAgentName] = useState(() => {
@@ -582,6 +589,7 @@ export function UnifiedBuildEntry() {
         parserResultJson ?? undefined,
         resolvedMode,
         pendingCompanionSessionIdRef.current,
+        contextTextRef.current.trim() || null,
       );
       // Launch succeeded — clear the active-build-intent mirror so the
       // Decisions panel stops scoping to this intent the next time the
@@ -791,6 +799,14 @@ export function UnifiedBuildEntry() {
         onAccept={handleAcceptTemplate}
         onDismiss={() => setTemplateSuggestionDismissed(true)}
       />
+
+      {!build.isBuilding && !hasDesignResult && (
+        <BuildContextField
+          value={contextText}
+          onChange={setContextText}
+          disabled={isLaunching}
+        />
+      )}
 
       {layout === "composer-prototype" ? (
         <GlyphPrototypeLayout

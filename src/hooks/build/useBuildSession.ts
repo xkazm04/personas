@@ -130,6 +130,7 @@ interface UseBuildSessionReturn {
     parserResultJson?: string,
     mode?: 'interactive' | 'one_shot' | null,
     companionSessionId?: string | null,
+    context?: string | null,
   ) => Promise<string>;
   answerQuestion: (
     cellKey: string,
@@ -289,6 +290,7 @@ export function useBuildSession(
       parserResultJson?: string,
       mode?: 'interactive' | 'one_shot' | null,
       companionSessionId?: string | null,
+      context?: string | null,
     ): Promise<string> => {
       // De-duplicate concurrent starts BEFORE any await. Without this, a
       // rapid double-click or a hydration/user-click race can both pass the
@@ -340,6 +342,7 @@ export function useBuildSession(
             language,
             mode ?? null,
             companionSessionId ?? null,
+            context ?? null,
           );
           startInvoke
             .then((sessionId) => {

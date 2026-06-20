@@ -129,6 +129,10 @@ impl BuildSessionManager {
         language: Option<String>,
         mode: Option<String>,
         companion_session_id: Option<String>,
+        // Optional user-provided reference context (writing sample, role/goal,
+        // brand guide) injected into the build prompt to ground the persona
+        // instead of inventing it from the intent alone (UAT P7).
+        context: Option<String>,
     ) -> Result<String, AppError> {
         let (input_tx, input_rx) = mpsc::channel::<UserAnswer>(32);
         let cancel_flag = Arc::new(AtomicBool::new(false));
@@ -262,6 +266,7 @@ impl BuildSessionManager {
             &template_context,
             language.as_deref(),
             is_one_shot,
+            context.as_deref(),
         );
 
         // Spawn the session task

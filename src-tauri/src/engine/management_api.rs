@@ -1646,6 +1646,9 @@ struct BuildStartBody {
     /// Optional Companion chat session that originated this build.
     #[serde(default)]
     companion_session_id: Option<String>,
+    /// Optional user-provided reference context to ground the build (UAT P7).
+    #[serde(default)]
+    context: Option<String>,
 }
 
 async fn start_build(
@@ -1677,6 +1680,7 @@ async fn start_build(
         body.language,
         body.mode,
         body.companion_session_id,
+        body.context,
     ) {
         Ok(sid) => ok_json(serde_json::json!({"session_id": sid})).into_response(),
         Err(e) => err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response(),

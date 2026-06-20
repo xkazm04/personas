@@ -96,6 +96,7 @@ export function useBuild({ personaId }: UseBuildOptions) {
       parserResultJson?: string,
       mode?: 'interactive' | 'one_shot' | null,
       companionSessionId?: string | null,
+      context?: string | null,
     ) => {
       await session.startSession(
         intent,
@@ -104,6 +105,7 @@ export function useBuild({ personaId }: UseBuildOptions) {
         parserResultJson,
         mode,
         companionSessionId,
+        context,
       );
     },
     [session],

@@ -947,6 +947,9 @@ struct BuildStartRequest {
     mode: Option<String>,
     #[serde(default)]
     companion_session_id: Option<String>,
+    /// Optional user-provided reference context to ground the build (UAT P7).
+    #[serde(default)]
+    context: Option<String>,
 }
 
 async fn handle_build_start(
@@ -970,6 +973,7 @@ async fn handle_build_start(
         req.language,
         req.mode,
         req.companion_session_id,
+        req.context,
     ) {
         Ok(sid) => Ok(serde_json::json!({"success": true, "sessionId": sid}).to_string()),
         Err(e) => Ok(serde_json::json!({"success": false, "error": e.to_string()}).to_string()),

@@ -2702,6 +2702,9 @@
     },
     "matrix_entry": {
       "new_agent": "New Agent",
+      "context_toggle": "Add reference context (optional)",
+      "context_placeholder": "Paste a writing sample, your role and goal, or a brand-voice guide — the build grounds the persona's voice and assumptions in it instead of inventing them from your one-line intent.",
+      "context_hint": "Used as reference material to shape the persona during this build. It is not stored afterward.",
       "failed_to_create": "Failed to create draft agent.",
       "build_failed": "Build failed to start. Check CLI configuration.",
       "header_title": "Build",

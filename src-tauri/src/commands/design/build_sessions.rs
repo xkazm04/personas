@@ -120,6 +120,7 @@ pub async fn start_build_session(
     language: Option<String>,
     mode: Option<String>,
     companion_session_id: Option<String>,
+    context: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -138,6 +139,7 @@ pub async fn start_build_session(
         language,
         mode,
         companion_session_id,
+        context,
     )?;
 
     Ok(session_id)
@@ -167,6 +169,7 @@ pub async fn start_build_session_headless(
     language: Option<String>,
     mode: Option<String>,
     companion_session_id: Option<String>,
+    context: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -191,6 +194,7 @@ pub async fn start_build_session_headless(
         language,
         mode,
         companion_session_id,
+        context,
     )?;
 
     Ok(session_id)
