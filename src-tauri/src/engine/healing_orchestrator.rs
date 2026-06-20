@@ -11,9 +11,11 @@
 //!    Not represented here because the runner exhausts the failover chain
 //!    before any failure reaches the healing pipeline.
 //!
-//! 2. **Rule-based retry** — exponential backoff (rate limit) or timeout
-//!    increase (timeout). Only for transient, auto-fixable categories
-//!    (`RateLimit`, `Timeout`) when retry budget remains.
+//! 2. **Rule-based retry** — exponential backoff (rate limit), timeout
+//!    increase (timeout), or a durable `RetryAt` for environmental caps:
+//!    usage-limit resets (`SessionLimit`) and Anthropic 5xx (`ApiError`,
+//!    escalating 10/20/30 min, resumes the session). Applies for transient,
+//!    auto-fixable categories when retry budget remains.
 //!
 //! 3. **AI Healing** — resume the original Claude session to diagnose and
 //!    apply fixes. Dev-mode only. Activates when rule-based healing cannot
@@ -54,7 +56,8 @@
 //! precedence, and reset paths.
 
 use super::healing::{
-    self, HealingAction, HealingDiagnosis, KnowledgeHint, UsageLimitInfo, MAX_RETRY_COUNT,
+    self, FailureCategory, HealingAction, HealingDiagnosis, KnowledgeHint, UsageLimitInfo,
+    MAX_RETRY_COUNT,
 };
 
 /// Threshold of consecutive failures before the persona-level circuit breaker
@@ -153,6 +156,20 @@ pub fn evaluate(ctx: &HealingContext) -> HealingStrategy {
     // wins as the safety valve.
     if let Some(ul) = ctx.usage_limit {
         let diagnosis = healing::usage_limit_diagnosis(ul, ctx.error, ctx.retry_count);
+        return match diagnosis.action {
+            HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
+            _ => HealingStrategy::CreateIssue { diagnosis },
+        };
+    }
+
+    // Step 3.6: API / server error (Anthropic 5xx / overloaded). `diagnose`
+    // produced either a durable escalating `RetryAt` (resume the session and
+    // continue — see `healing::diagnose`'s ApiError arm) or, once the per-chain
+    // retry budget is spent, `CreateIssue`. Like usage limits these failures are
+    // environmental (the provider is mid-incident), so we deliberately DON'T
+    // gate on `consecutive_failures < 3`; the circuit breaker (step 3) remains
+    // the safety valve that stops a persona hammering a sustained outage.
+    if matches!(category, FailureCategory::ApiError) {
         return match diagnosis.action {
             HealingAction::RetryAt { .. } => HealingStrategy::RuleBasedRetry { diagnosis },
             _ => HealingStrategy::CreateIssue { diagnosis },
@@ -524,6 +541,60 @@ mod tests {
         assert!(matches!(
             evaluate(&ctx),
             HealingStrategy::CreateIssue { .. }
+        ));
+    }
+
+    // --- API / server error (Anthropic 5xx) override (step 3.6) ----------
+
+    #[test]
+    fn api_error_with_budget_schedules_resume_retry() {
+        let ctx = HealingContext {
+            error: "HTTP 500 internal server error",
+            ..base_ctx()
+        };
+        let strategy = evaluate(&ctx);
+        assert!(matches!(strategy, HealingStrategy::RuleBasedRetry { .. }));
+        assert!(matches!(
+            strategy.diagnosis().action,
+            HealingAction::RetryAt { .. }
+        ));
+    }
+
+    #[test]
+    fn api_error_exhausted_creates_issue() {
+        let ctx = HealingContext {
+            error: "503 service unavailable",
+            retry_count: MAX_RETRY_COUNT,
+            ..base_ctx()
+        };
+        assert!(matches!(evaluate(&ctx), HealingStrategy::CreateIssue { .. }));
+    }
+
+    #[test]
+    fn api_error_schedules_retry_despite_consecutive_failures() {
+        // Environmental — not gated on `consecutive_failures < 3`, but the
+        // circuit breaker at THRESHOLD still wins (covered separately).
+        let ctx = HealingContext {
+            error: "internal server error",
+            consecutive_failures: 3,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::RuleBasedRetry { .. }
+        ));
+    }
+
+    #[test]
+    fn circuit_breaker_still_beats_api_error_retry() {
+        let ctx = HealingContext {
+            error: "HTTP 500 internal server error",
+            consecutive_failures: CIRCUIT_BREAKER_THRESHOLD,
+            ..base_ctx()
+        };
+        assert!(matches!(
+            evaluate(&ctx),
+            HealingStrategy::CircuitBreakerTripped { .. }
         ));
     }
 }
