@@ -32,22 +32,18 @@ export function SelectBox({
         e.stopPropagation();
         onChange();
       }}
-      className={`${px} rounded-input flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-      } ${
-        checked || indeterminate
-          ? 'bg-emerald-500 border border-emerald-500'
-          : 'bg-secondary/40 border border-primary/20 hover:border-primary/40'
+      className={`${px} rounded-input flex items-center justify-center flex-shrink-0 transition-all duration-200 bg-secondary/40 border border-primary/20 ${
+        disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-primary/40'
       }`}
     >
       {checked && !indeterminate && (
         <span className="animate-fade-slide-in">
-          <Check className={`${ic} text-foreground`} strokeWidth={3} />
+          <Check className={`${ic} text-emerald-400`} strokeWidth={3} />
         </span>
       )}
       {indeterminate && (
         <span className="animate-fade-slide-in">
-          <Minus className={`${ic} text-foreground`} strokeWidth={3} />
+          <Minus className={`${ic} text-emerald-400`} strokeWidth={3} />
         </span>
       )}
     </button>
