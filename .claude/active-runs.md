@@ -784,6 +784,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### /uat-p6 — Accessibility (F-A11Y-BUILD-PETALS) — completed (commit 2a8fe1ec6; on master)
+- 2026-06-20. Frontend-only a11y, 3 surfaces of the one major finding: (1) glyph hero petals (GlyphHeroSigil) — the only trigger for the build question card — were click-only SVG → now role=button + tabIndex=0 + localized aria-label (reused dim_* keys via t.templates.chronology) + aria-pressed + Enter/Space + onFocus↔hover + a :focus-visible ring path (CSS in globals.css; SVG outline unreliable). (2) AppearancePickers (text-scale/brightness/theme) + onboarding AppearanceStep (language) → aria-pressed. (3) ExecutionStep status indicator → role=status/aria-live=polite. Mirrored the existing accessible SigilPetal pattern; left S-BASEMODAL untouched.
+- Verified: tsc + eslint clean. NOT live-SR-tested (NVDA/VoiceOver per the finding's l2_priority) — :17320 down all session + SR testing needs a human. Did the all-tabbable petal approach (8 tab stops) not the full roving-tabindex group (1 stop + arrows) — complete a11y, lighter; roving is an optional refinement. Doc-sync: a11y attribute additions to existing controls (no new flow/page/feature) — dismissed.
+
 ### /uat-p7 — Build Grounding package (ALL 3 findings) — completed (commits b22046b55, 72e3675e3, 58a567096, e8ba989c7; on master)
 - 2026-06-20. P8 (Tier/Reachability) DESCOPED — product is free → tier-lock findings moot.
 - **F-FINANCE-KPI-NO-RECIPE** (b22046b55, frontend on master): render stored DevKpiMeasurement provenance (source badge + evidence summary w/ full-JSON tooltip) in KPIDetailDrawer history — a measured value is now auditable. 7 unit tests (summarizeEvidence).
