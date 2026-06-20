@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, Send, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
@@ -20,10 +20,14 @@ export default function StudioChatInput({
   projectId,
   projectName,
   onPhases,
+  seed,
+  onSeedConsumed,
 }: {
   projectId: string;
   projectName: string;
   onPhases?: (phases: BuildPhase[]) => void;
+  seed?: string | null;
+  onSeedConsumed?: () => void;
 }) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -53,27 +57,45 @@ export default function StudioChatInput({
   );
   useTauriEvent<CompanionStreamEvent>(COMPANION_STREAM_EVENT, onStream);
 
-  const send = useCallback(async () => {
-    const text = input.trim();
-    if (!text || busy) return;
-    setInput('');
-    setReply(null);
-    streamRef.current = '';
-    setStream('');
-    setBusy(true);
-    pulseForwardAck(); // orb acknowledges the send ("got it")
-    try {
-      const result = await webbuildSessionSend(projectId, text);
-      setReply(result.reply.trim() || 'Done.');
-      if (result.phases && result.phases.length > 0) onPhases?.(result.phases);
-      pulseMessageReaction(); // orb plays its one-shot reply reaction
-    } catch (e) {
-      setReply('Something went wrong with that change.');
-      toastCatch('build instruction')(e);
-    } finally {
-      setBusy(false);
+  const runTurn = useCallback(
+    async (raw: string) => {
+      const text = raw.trim();
+      if (!text || busy) return;
+      setInput('');
+      setReply(null);
+      streamRef.current = '';
+      setStream('');
+      setBusy(true);
+      pulseForwardAck(); // orb acknowledges the send ("got it")
+      try {
+        const result = await webbuildSessionSend(projectId, text);
+        setReply(result.reply.trim() || 'Done.');
+        if (result.phases && result.phases.length > 0) onPhases?.(result.phases);
+        pulseMessageReaction(); // orb plays its one-shot reply reaction
+      } catch (e) {
+        setReply('Something went wrong with that change.');
+        toastCatch('build instruction')(e);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [busy, projectId, onPhases, pulseForwardAck, pulseMessageReaction],
+  );
+  const send = useCallback(() => void runTurn(input), [runTurn, input]);
+
+  // Auto-send the project's seed vision once (set by the Vision start after the
+  // dev server is live), routed through the normal turn so it streams + reacts.
+  const seedSentRef = useRef(false);
+  useEffect(() => {
+    seedSentRef.current = false;
+  }, [projectId]);
+  useEffect(() => {
+    if (seed && !seedSentRef.current && !busy) {
+      seedSentRef.current = true;
+      onSeedConsumed?.();
+      void runTurn(seed);
     }
-  }, [input, busy, projectId, onPhases, pulseForwardAck, pulseMessageReaction]);
+  }, [seed, busy, runTurn, onSeedConsumed]);
 
   // Hide the trailing BUILD_PLAN line while it streams (raw JSON never shows).
   const streamDisplay = (stream.split('BUILD_PLAN:')[0] ?? '').trimEnd();

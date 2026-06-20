@@ -13,22 +13,19 @@ import {
 } from '@/api/webbuild';
 import StudioChecklist from './StudioChecklist';
 import StudioChatInput from './StudioChatInput';
+import StudioVisionStart from './StudioVisionStart';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 
-// Dev-only experimental surface — P1 of the Athena web-dev companion
-// (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant;
-// i18n is deferred to consolidation to avoid en.json churn while the surface
-// is in flux (same pattern as the /prototype sessions).
+// Dev-only experimental surface — Athena web-dev companion
+// (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant; i18n is
+// deferred to consolidation to avoid en.json churn while the surface is in flux.
 const COPY = {
   title: 'Studio',
-  newPlaceholder: 'New project name…',
-  create: 'Create & preview',
+  newProject: 'New',
   stop: 'Stop',
   reload: 'Reload',
-  starting: 'Starting the dev server…',
   scaffolding: 'Scaffolding with Bun — this can take a minute…',
-  idleHint: 'Pick or create a project, then start its dev server to preview it here.',
-  noProjects: 'No projects yet — create one to begin.',
+  starting: 'Starting the dev server…',
 };
 
 type Phase = 'idle' | 'scaffolding' | 'starting' | 'live' | 'error';
@@ -38,13 +35,12 @@ export default function StudioPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<DevServerStatus | null>(null);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [newName, setNewName] = useState('');
   const [iframeKey, setIframeKey] = useState(0);
   const [phases, setPhases] = useState<BuildPhase[]>(MOCK_PHASES);
+  const [pendingVision, setPendingVision] = useState<string | null>(null);
   const pollRef = useRef<number | null>(null);
 
-  // Reset the plan when switching projects (Athena's first build turn for the
-  // new project replaces it via the BUILD_PLAN line).
+  // Reset the plan when switching projects (Athena's first build turn replaces it).
   useEffect(() => {
     setPhases(MOCK_PHASES);
   }, [selectedId]);
@@ -117,31 +113,35 @@ export default function StudioPage() {
     setPhase('idle');
   }, [selectedId, stopPolling]);
 
-  const create = useCallback(async () => {
-    const name = newName.trim();
-    if (!name) return;
-    setPhase('scaffolding');
-    try {
-      const project = await webbuildScaffold(name);
-      setNewName('');
-      await refreshProjects();
-      await start(project.id);
-    } catch (e) {
-      setPhase('error');
-      toastCatch('scaffold project')(e);
-    }
-  }, [newName, refreshProjects, start]);
+  // Vision-phase init: scaffold from the brief, start the dev server, and seed
+  // the build session with the vision so Athena plans + builds toward it.
+  const createWithVision = useCallback(
+    async (name: string, vision: string) => {
+      setPhase('scaffolding');
+      try {
+        const project = await webbuildScaffold(name);
+        await refreshProjects();
+        setPendingVision(
+          `Here's the project vision:\n\n${vision}\n\nPlan it out (emit your BUILD_PLAN), then start building — the foundation first, then the most important section. Keep me posted in a sentence or two.`,
+        );
+        await start(project.id);
+      } catch (e) {
+        setPhase('error');
+        toastCatch('scaffold project')(e);
+      }
+    },
+    [refreshProjects, start],
+  );
+
+  const newProject = useCallback(() => {
+    stopPolling();
+    setSelectedId(null);
+    setStatus(null);
+    setPhase('idle');
+    setPendingVision(null);
+  }, [stopPolling]);
 
   const reload = useCallback(() => setIframeKey((k) => k + 1), []);
-
-  const placeholder =
-    phase === 'scaffolding'
-      ? COPY.scaffolding
-      : phase === 'starting'
-        ? COPY.starting
-        : projects.length === 0
-          ? COPY.noProjects
-          : COPY.idleHint;
 
   const selectedName = projects.find((p) => p.id === selectedId)?.name ?? 'project';
 
@@ -153,25 +153,14 @@ export default function StudioPage() {
         <Bot className="h-5 w-5 shrink-0 text-primary" />
         <h1 className="typo-title shrink-0">{COPY.title}</h1>
 
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') void create();
-          }}
-          placeholder={COPY.newPlaceholder}
-          className="w-44 shrink-0 rounded-input border border-border bg-secondary/40 px-3 py-1.5 text-md outline-none focus:border-primary/50"
-        />
         <Button
           variant="primary"
           size="sm"
           className="shrink-0"
           icon={<Plus className="h-4 w-4" />}
-          loading={phase === 'scaffolding'}
-          disabled={!newName.trim() || phase === 'scaffolding'}
-          onClick={() => void create()}
+          onClick={newProject}
         >
-          {COPY.create}
+          {COPY.newProject}
         </Button>
 
         {projects.length > 0 && <div className="h-5 w-px shrink-0 bg-border" />}
@@ -188,7 +177,7 @@ export default function StudioPage() {
           </Button>
         ))}
 
-        {selectedId && (
+        {phase === 'live' && status?.healthy && selectedId && (
           <>
             <div className="h-5 w-px shrink-0 bg-border" />
             <Button
@@ -209,7 +198,7 @@ export default function StudioPage() {
             >
               {COPY.stop}
             </Button>
-            {status?.url && <span className="typo-caption shrink-0">{status.url}</span>}
+            {status.url && <span className="typo-caption shrink-0">{status.url}</span>}
           </>
         )}
       </header>
@@ -217,27 +206,35 @@ export default function StudioPage() {
       {/* Preview fills all remaining space; min-w-0/min-h-0 + absolute iframe
           guarantee it isn't cropped by the toolbar's content width. */}
       <div className="relative min-h-0 w-full min-w-0 flex-1 bg-black/20">
-        {phase === 'live' && status?.healthy ? (
-          <iframe
-            key={iframeKey}
-            src={status.url}
-            title="preview"
-            className="absolute inset-0 h-full w-full border-0 bg-white"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center">
-            <p className="typo-caption max-w-sm">{placeholder}</p>
-          </div>
-        )}
-        {selectedId && (
+        {phase === 'live' && status?.healthy && selectedId ? (
           <>
+            <iframe
+              key={iframeKey}
+              src={status.url}
+              title="preview"
+              className="absolute inset-0 h-full w-full border-0 bg-white"
+            />
             <StudioChecklist phases={phases} />
             <StudioChatInput
               projectId={selectedId}
               projectName={selectedName}
               onPhases={setPhases}
+              seed={pendingVision}
+              onSeedConsumed={() => setPendingVision(null)}
             />
           </>
+        ) : (
+          <StudioVisionStart
+            onSubmit={createWithVision}
+            busy={phase === 'scaffolding' || phase === 'starting'}
+            statusLabel={
+              phase === 'scaffolding'
+                ? COPY.scaffolding
+                : phase === 'starting'
+                  ? COPY.starting
+                  : undefined
+            }
+          />
         )}
       </div>
     </div>
