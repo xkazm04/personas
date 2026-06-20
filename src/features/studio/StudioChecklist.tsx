@@ -68,7 +68,8 @@ export default function StudioChecklist({ phases = MOCK_PHASES }: { phases?: Bui
                 Build plan · {done}/{total}
               </span>
             </header>
-            <div className="overflow-y-auto p-3">
+            {/* ~4 phases visible; the rest scroll (plans can get long). */}
+            <div className="max-h-52 overflow-y-auto p-3">
               <StudioChecklistStepper phases={phases} />
             </div>
           </motion.aside>
