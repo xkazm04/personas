@@ -55,13 +55,17 @@ The card shows the current installed version (via `getVersion()`) and a relative
 
 The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back. Imported entities are always created as **new, disabled** rows with an `(imported)` name suffix — import never overwrites existing data.
 
-The **Export Workspace** button opens a selection modal where you pick exactly what to include across three categories:
+The **Export Workspace** button opens a near-full-width selection modal (the "manifest" layout) built to handpick across a large workspace: a left **scope rail** (Personas / Teams / Credentials with live selected/total counts), a search-first, filterable middle list (filter personas by team membership / enabled / starred; "Select N shown" bulk-selects the current filter), and a right **manifest cart** that tallies exactly what ships, its encryption state, and the export CTA. You pick what to include across three categories:
 
-- **Personas** — agents plus their triggers, event subscriptions, tool links, test suites, and (unless opted out) memories.
-- **Teams** — team canvases plus members, connections, and (unless opted out) team memories (the `team_memories` / `sub_teamMemory` store). On import, team memories are recreated under the new team id as manually-curated entries; run-specific provenance (`run_id` / `member_id` / `persona_id`) is intentionally dropped because it references rows that don't travel with the bundle.
+- **Personas** — agents plus their triggers, event subscriptions, tool links, test suites, and (unless opted out) memories. Each row surfaces model profile, trust score, and team membership.
+- **Teams** — team canvases plus members, connections, and (unless opted out) team memories (the `team_memories` / `sub_teamMemory` store). On import, team memories are recreated under the new team id as manually-curated entries; run-specific provenance (`run_id` / `member_id` / `persona_id`) is intentionally dropped because it references rows that don't travel with the bundle. Each team row badges its member count plus the KPI count of its project (and any off-track KPIs).
 - **Credentials** — non-secret metadata by default. Secrets are only embedded when you set an export passphrase, which AES-256-GCM-encrypts them into the bundle (format version 3).
 
-An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including a **Team Memories** count) preview what's in the workspace before exporting.
+An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including **Team Memories** and **KPIs** counts) preview what's in the workspace before exporting.
+
+### KPI setup travels with teams
+
+An **Include KPI setup** toggle (on by default, all-or-none) brings each selected team's **KPIs** (Teams › KPIs) along with the export. KPIs are project-scoped, so the modal resolves the projects of the selected teams server-side and bundles their `active`/`paused` KPIs (the live setup — `proposed` review-queue items and `archived` retirees are excluded), each with a capped, newest-first slice of its measurement history (~100 points). Because neither projects nor a team's project survive the bundle, **imported KPIs land in a single, deduped, dormant `Imported` project** — created on first KPI import and reused on subsequent ones (deduped by name). Imported KPIs are always created **`paused`** (their measure config is tied to the source environment and must be reviewed before measuring); their tier, calibration lines (`warn_at` / `crit_at`), and last-known value are preserved. The KPI section of the bundle is `serde`-default, so older bundles without it still import cleanly.
 
 Credential-only export/import (password-protected `.cred.enc` files) lives in a separate **Credential Vault** section of the same tab and is independent of the workspace bundle.
 

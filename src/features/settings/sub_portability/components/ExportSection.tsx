@@ -20,7 +20,7 @@ interface ExportSectionProps {
   showExportModal: boolean;
   onOpenExportModal: () => void;
   onCloseExportModal: () => void;
-  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, passphrase?: string) => void;
+  onExportSelective: (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, includeKpis: boolean, passphrase?: string) => void;
   onImport: (passphrase?: string) => void;
 }
 
@@ -136,6 +136,9 @@ export function ExportSection({
             )}
             {importResult.team_memories_created > 0 && (
               <span>{s.import_team_memories.replace('{count}', String(importResult.team_memories_created))}</span>
+            )}
+            {importResult.kpis_created > 0 && (
+              <span>{s.import_kpis.replace('{count}', String(importResult.kpis_created))}</span>
             )}
           </div>
           {importResult.warnings.length > 0 && (
