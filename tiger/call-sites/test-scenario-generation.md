@@ -3,8 +3,8 @@ id: test-scenario-generation
 type: tiger/call-site
 modality: text
 file: src-tauri/src/engine/test_runner.rs:543
-wrapper: spawn_cli_and_collect (temp driver, build_cli_args(None,None))
-provider: claude   model: default (Sonnet)
+wrapper: spawn_cli_and_collect (temp driver, build_cli_args(None,None) + LAB_MODEL pin)
+provider: claude   model: claude-sonnet-4-6 (pinned 2026-06-21; was undeclared account-default Opus 4.8)
 schema: no explicit validation — JSON array parse (test_runner.rs:701)
 grounding: 7/7
 quality_score: "—"

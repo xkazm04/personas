@@ -3,8 +3,8 @@ id: genome-critique-mutation
 type: tiger/call-site
 modality: text
 file: src-tauri/src/engine/genome_critique.rs:36
-wrapper: run_critique_cli (temp driver)
-provider: claude   model: default (Sonnet)
+wrapper: run_critique_cli (temp driver, CRITIQUE_MODEL pin)
+provider: claude   model: claude-sonnet-4-6 (pinned 2026-06-21; was undeclared account-default Opus 4.8)
 schema: yes — parse_rewrite_response (genome_critique.rs:173), hard fail on mismatch
 grounding: 5/5
 quality_score: "—"

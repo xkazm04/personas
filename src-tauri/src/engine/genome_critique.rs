@@ -138,11 +138,19 @@ No prose outside the JSON. No code fences. The first character of your response 
     )
 }
 
+/// Model for the genome prompt-critique pass. Pinned deliberately so prompt
+/// rewriting runs on a consistent, capable model rather than the undeclared
+/// account default (typically Opus 4.8). (tiger finding: lab/evolution tier
+/// rode account-default.)
+const CRITIQUE_MODEL: &str = "claude-sonnet-4-6";
+
 /// Spawn the Claude CLI in single-turn print mode and pipe the critique
 /// prompt to stdin. Returns the assistant's text response (or an error on
 /// timeout / spawn failure).
 async fn run_critique_cli(critique_prompt: &str) -> Result<String, String> {
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(CRITIQUE_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 

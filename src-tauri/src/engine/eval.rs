@@ -605,8 +605,15 @@ Respond with ONLY a JSON object:
     )
 }
 
+/// Model for the LLM test-result evaluator. Pinned deliberately so scoring runs
+/// on a consistent judge rather than the undeclared account default (typically
+/// Opus 4.8). (tiger finding: lab/eval tier rode account-default.)
+const LLM_EVAL_MODEL: &str = "claude-sonnet-4-6";
+
 async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(LLM_EVAL_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 

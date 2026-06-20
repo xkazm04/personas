@@ -27,7 +27,7 @@ characters: 10 (broad roster, adapted from /uat)
 These repeat across many call sites — fix once, lift many:
 
 1. **No token/cost telemetry on the headless tier.** The streaming exec path stamps `total_cost_usd` (parser.rs:227) and `cli_text_tracked` writes `companion_turn`, but the **direct-spawn scanners** (idea_scanner, standards_scan, kpi_scan, kpi_compose, context_generation, task_executor) and the **untracked `cli_text`** sites (kpi_derivation, kpi_binding) record **no cost/tokens**. Multi-minute Sonnet spawns are invisible to spend accounting.
-2. **`build_cli_args(None, None)` ignores persona ModelProfile.** `design-analysis-runner` (analysis.rs:118) and `auto-triage-evaluator` (auto_triage.rs) silently run Sonnet even when the persona is tuned to Haiku/Opus — a correctness + cost bug. Contrast `build_sessions.rs:129` which passes `Some(&persona)`.
+2. ✅ **RESOLVED 2026-06-21 — undeclared account-default on the lab/eval tier.** *Corrected from the init claim:* `design-analysis-runner` was a **false positive** (already passes `Some(&persona)`). The real bug was the **lab/eval/evolution tier riding the undeclared account default (Opus 4.8)** with no `--model`: `auto_triage`, `eval`, `genome_critique`, `test_runner` (×4). Fixed by pinning `claude-sonnet-4-6` (local model consts, matching the `idea_scanner`/`SYNTHESIS_MODEL` convention) → explicit + cost-predictable. The ~33 other `(None,None)` sites are persona-agnostic or already pin a model — not bugs.
 3. **Almost no caching.** Only `context-generation` (SHA256 file-hash), `kpi-binding` (compile-time recipe), and `test-scenario-generation` (10-min TTL) cache. Identical (prompt,input) re-spends everywhere else (auto-triage verdicts, design batch, smart-search).
 4. **Schema self-repair is rare.** Most sites hard-fail or silently default on bad JSON. `test-evaluation-llm` has retry+heuristic but the heuristic **masks** quality drops (shows "method=Timeout", not error).
 5. **Prompt-injection guards are inconsistent.** `smart-search` sanitizes + XML-boundaries the user query; `team-synthesis` inserts it RAW. OCR user-prompt overrides unvalidated.
@@ -36,8 +36,8 @@ These repeat across many call sites — fix once, lift many:
 
 | Tier | Model | Sites |
 |---|---|---|
-| Routed | persona ModelProfile (default `opus-4-8[1m]`) | executions, director, build-session, goal-decompose, fix-pass, memory-* |
-| Hardcoded | `claude-sonnet-4-6` | idea_scanner, standards_scan, task_executor, context_generation, kpi_*, team_synthesis, athena_reaction*, exec/msg-triage, artist, project-tracking |
+| Routed | persona ModelProfile (default `opus-4-8[1m]`) | executions, director, build-session, goal-decompose, fix-pass, memory-*, design-analysis |
+| Hardcoded | `claude-sonnet-4-6` | idea_scanner, standards_scan, task_executor, context_generation, kpi_*, team_synthesis, athena_reaction*, exec/msg-triage, artist, project-tracking, **auto_triage·eval·genome_critique·test_runner (pinned 2026-06-21)** |
 | Pinned | `claude-opus-4-8` | recall_synthesis, reflection, consolidation (brain synthesis — "quality > speed") |
 | Cheap | `claude-haiku` | smart-search |
 | External | `gemini-3.5-flash` | OCR |

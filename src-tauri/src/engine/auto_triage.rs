@@ -265,11 +265,19 @@ pub fn extract_review_policy_context(
 // Async LLM call
 // ---------------------------------------------------------------------------
 
+/// Model for the auto-triage evaluator. Pinned deliberately so the verdict runs
+/// on a consistent, capable judge rather than the undeclared account default
+/// (typically Opus 4.8) — explicit + cost-predictable, mirroring the other
+/// headless judges (`SYNTHESIS_MODEL`, idea-scanner). (tiger finding.)
+const EVALUATOR_MODEL: &str = "claude-sonnet-4-6";
+
 /// Spawn the Claude CLI in single-turn print mode and pipe the prompt to
 /// stdin. Returns the raw assistant text (or an error on timeout / spawn
 /// failure). Mirrors `genome_critique::run_critique_cli`.
 async fn run_evaluator_cli(prompt_text: &str) -> Result<String, String> {
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(EVALUATOR_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 

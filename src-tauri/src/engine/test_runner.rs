@@ -19,6 +19,14 @@ static SCENARIO_CACHE: std::sync::LazyLock<Mutex<HashMap<u64, (Instant, Vec<Test
 
 const SCENARIO_CACHE_TTL_SECS: u64 = 600;
 
+/// Model for the lab/test/evolution tooling (scenario generation, result
+/// summaries, draft + improvement passes). Pinned deliberately — without an
+/// explicit `--model` these headless spawns ride the undeclared account default
+/// (typically Opus 4.8), making cost neither predictable nor aligned with the
+/// rest of the headless tier. Mirrors `DEFAULT_CAPABILITY_MODEL` /
+/// `SYNTHESIS_MODEL` (tiger finding: lab tier rode account-default).
+const LAB_MODEL: &str = "claude-sonnet-4-6";
+
 /// Truncate `s` to at most `max_chars` characters without splitting a multibyte
 /// UTF-8 character. Byte-range slicing (`&s[..n]`) panics when `n` lands
 /// mid-glyph, which LLM output (emoji, smart quotes, em-dashes, CJK) routinely
@@ -563,6 +571,8 @@ pub(crate) async fn generate_scenarios(
         build_coordinator_prompt(persona, tools, use_case_filter, fixture_inputs);
 
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(LAB_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
@@ -1524,6 +1534,8 @@ Rules:
     );
 
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(LAB_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
@@ -2415,6 +2427,8 @@ pub async fn run_matrix_test(
 
     let draft_prompt_text = build_draft_generation_prompt(persona, &user_instruction, None);
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(LAB_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
@@ -2663,6 +2677,8 @@ pub async fn generate_targeted_improvements(
     let improvement_prompt = build_improvement_prompt(persona, run_results_summary, user_feedback);
 
     let mut cli_args = prompt::build_cli_args(None, None);
+    cli_args.args.push("--model".to_string());
+    cli_args.args.push(LAB_MODEL.to_string());
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 

@@ -3,8 +3,8 @@ id: test-evaluation-llm
 type: tiger/call-site
 modality: text
 file: src-tauri/src/engine/eval.rs:481
-wrapper: run_llm_eval (temp driver) + 2× retry + heuristic fallback
-provider: claude   model: default (Sonnet)
+wrapper: run_llm_eval (temp driver, LLM_EVAL_MODEL pin) + 2× retry + heuristic fallback
+provider: claude   model: claude-sonnet-4-6 (pinned 2026-06-21; was undeclared account-default Opus 4.8)
 schema: yes — parse_llm_eval_response (eval.rs:636) + validate (eval.rs:660)
 grounding: 7/7
 quality_score: "—"
