@@ -1641,7 +1641,10 @@
     "petals_label": "পেটালস",
     "recipe": "রেসিপি",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "\"{name}\" রেসিপি হিসেবে সংরক্ষিত হয়েছে — Templates → Recipes-এ খুঁজুন",
+    "save_as_recipe_label": "রেসিপি হিসেবে সংরক্ষণ করুন",
+    "save_as_recipe_tooltip": "এই সক্ষমতাটিকে একটি পুনর্ব্যবহারযোগ্য রেসিপিতে রূপান্তর করুন যা আবার গ্রহণ বা শেয়ার করা যাবে — কোনো ক্রেডেনশিয়াল অন্তর্ভুক্ত থাকে না"
   },
   "tools": {
     "no_persona": "কোনো পার্সোনা নির্বাচিত নেই",

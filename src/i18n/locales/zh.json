@@ -2402,7 +2402,10 @@
       "petals_label": "花瓣",
       "recipe": "配方",
       "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+      "recipe_saved_toast": "已将“{name}”保存为配方 — 可在模板 → 配方中查找",
+      "save_as_recipe_label": "保存为配方",
+      "save_as_recipe_tooltip": "将此能力转为可复用的配方，可再次采用或分享 — 不包含任何凭据"
     },
     "tools": {
       "no_persona": "未选择代理",

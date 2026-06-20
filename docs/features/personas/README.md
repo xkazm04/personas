@@ -184,7 +184,7 @@ the inline health badge in `EditorTabBar`):
 
 | Sub-tab | Component | Notes |
 |---|---|---|
-| Use Cases | `PersonaUseCasesTab` | the per-capability surface |
+| Use Cases | `PersonaUseCasesTab` | the per-capability surface. The capability detail (`UseCaseDetailExpanded`) header has a **Save as recipe** action that promotes the capability into a reusable [recipe](../recipes/README.md) via `promote_use_case_to_recipe` (UAT F-CLIENT-OPERATOR-VIEW — build-once → reusable-recipe loop). |
 | Properties | `DesignTab` (wizard / intent / phases / apply) | the design wizard + saved prompt/summary/feasibility (was "Prompt") |
 | Parameters | `PersonaParametersCard` (via `DesignParametersPanel`) | the persona's live tunable `{{param.*}}` values |
 | Connectors | `ConnectorsSection` (via `DesignConnectorsPanel`) | read-only view of the saved design's connectors + tools |

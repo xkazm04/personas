@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Power, Play, FlaskConical, AlertTriangle,
   Calendar, UserCheck, Brain, Activity, Pencil,
-  ListTodo, AlertOctagon, Cpu, ShieldCheck, ShieldOff,
+  ListTodo, AlertOctagon, Cpu, ShieldCheck, ShieldOff, BookMarked,
 } from 'lucide-react';
+import { promoteUseCaseToRecipe } from '@/api/recipes/recipes';
+import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import type { CredentialMetadata } from '@/lib/types/types';
@@ -58,8 +61,29 @@ export function UseCaseDetailExpanded({
 }: UseCaseDetailExpandedProps) {
   const [tab, setTab] = useState<'history' | 'config'>('history');
   const [renameOpen, setRenameOpen] = useState(false);
+  const [savingRecipe, setSavingRecipe] = useState(false);
   const fetchDetail = useAgentStore((s) => s.fetchDetail);
   const { t, tx } = useTranslation();
+
+  // Build-once → reusable-recipe loop (UAT F-CLIENT-OPERATOR-VIEW): the
+  // `promote_use_case_to_recipe` command existed but had no UI caller. Promote
+  // this capability into a shareable recipe (no credential baked in — the
+  // adopter resolves credentials), so the user can reuse/hand it off without
+  // rebuilding from scratch.
+  const handleSaveAsRecipe = useCallback(async () => {
+    if (savingRecipe) return;
+    setSavingRecipe(true);
+    try {
+      await promoteUseCaseToRecipe(null, uc.id, uc.title, uc.description || null, uc.category ?? null);
+      useToastStore
+        .getState()
+        .addToast(tx(t.agents.use_cases.recipe_saved_toast, { name: uc.title }), 'success');
+    } catch (e) {
+      toastCatch('promote_use_case_to_recipe')(e);
+    } finally {
+      setSavingRecipe(false);
+    }
+  }, [savingRecipe, uc.id, uc.title, uc.description, uc.category, t, tx]);
 
   const policy = usePolicyControls({ personaId, uc, memoriesDefault, reviewsDefault });
 
@@ -105,6 +129,18 @@ export function UseCaseDetailExpanded({
           <div className="typo-caption text-foreground mt-0.5">{uc.description}</div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Save as recipe — promote this capability into a reusable, shareable
+              recipe (UAT F-CLIENT-OPERATOR-VIEW: build-once → reusable-recipe loop). */}
+          <button
+            type="button"
+            onClick={handleSaveAsRecipe}
+            disabled={savingRecipe}
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-interactive border border-card-border bg-secondary/50 text-foreground/85 hover:border-primary/40 hover:text-primary typo-caption cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title={t.agents.use_cases.save_as_recipe_tooltip}
+          >
+            <BookMarked className="w-3 h-3" />
+            <span>{t.agents.use_cases.save_as_recipe_label}</span>
+          </button>
           {/* Rename event aliases — sits left of Pause */}
           <button
             type="button"

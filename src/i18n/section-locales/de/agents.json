@@ -1641,7 +1641,10 @@
     "petals_label": "Blütenblätter",
     "recipe": "Rezept",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "\"{name}\" als Rezept gespeichert – zu finden unter Vorlagen → Rezepte",
+    "save_as_recipe_label": "Als Rezept speichern",
+    "save_as_recipe_tooltip": "Diese Funktion in ein wiederverwendbares Rezept umwandeln, das erneut übernommen oder geteilt werden kann – ohne gespeicherte Zugangsdaten"
   },
   "tools": {
     "no_persona": "Keine Persona ausgewählt",

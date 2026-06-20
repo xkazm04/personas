@@ -1641,7 +1641,10 @@
     "petals_label": "Petal",
     "recipe": "Resep",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "Disimpan \"{name}\" sebagai resep — temukan di Templat → Resep",
+    "save_as_recipe_label": "Simpan sebagai resep",
+    "save_as_recipe_tooltip": "Ubah kemampuan ini menjadi resep yang dapat digunakan ulang atau dibagikan — kredensial tidak disertakan"
   },
   "tools": {
     "no_persona": "Tidak ada persona dipilih",

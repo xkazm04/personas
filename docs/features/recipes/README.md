@@ -46,4 +46,4 @@ Stage D Phase 5 adds the mode-2 affordance. When the chip first surfaces, the co
 
 ## Relationship to templates and personas
 
-Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow.
+Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow. **Promotion is reachable from the UI** (UAT F-CLIENT-OPERATOR-VIEW): the capability detail view (`UseCaseDetailExpanded`, in the persona Use Cases tab) has a **"Save as recipe"** action that calls `promote_use_case_to_recipe` (no credential baked in — the adopter resolves credentials), closing the build-once → reusable-recipe loop. Previously the command existed but had no caller, so a built capability couldn't be turned into a shareable recipe without rebuilding from scratch.

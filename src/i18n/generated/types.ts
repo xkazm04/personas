@@ -2298,6 +2298,9 @@ export type Translations = {
       run_title_detail: string;
       _comment_simulate_label: string;
       simulate_label: string;
+      save_as_recipe_label: string;
+      save_as_recipe_tooltip: string;
+      recipe_saved_toast: string;
       _comment_simulate_tooltip: string;
       simulate_tooltip: string;
       _comment_needs_attention_label: string;

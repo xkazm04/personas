@@ -2402,7 +2402,10 @@
       "petals_label": "Pétales",
       "recipe": "Recette",
       "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+      "recipe_saved_toast": "\"{name}\" enregistré comme recette — retrouvez-le dans Modèles → Recettes",
+      "save_as_recipe_label": "Enregistrer comme recette",
+      "save_as_recipe_tooltip": "Transformez cette capacité en recette réutilisable que vous pouvez réadopter ou partager — aucune accréditation n'est intégrée"
     },
     "tools": {
       "no_persona": "Aucun agent sélectionné",

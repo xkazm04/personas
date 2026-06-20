@@ -1641,7 +1641,10 @@
     "petals_label": "Petals",
     "recipe": "Recipe",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "Đã lưu \"{name}\" dưới dạng recipe — tìm trong Templates → Recipes",
+    "save_as_recipe_label": "Lưu thành recipe",
+    "save_as_recipe_tooltip": "Biến khả năng này thành recipe có thể tái sử dụng để áp dụng lại hoặc chia sẻ — không lưu thông tin đăng nhập"
   },
   "tools": {
     "no_persona": "Chưa chọn tác nhân",

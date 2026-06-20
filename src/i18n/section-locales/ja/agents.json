@@ -1641,7 +1641,10 @@
     "petals_label": "ペタル",
     "recipe": "レシピ",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "「{name}」をレシピとして保存しました — テンプレート → レシピで確認できます",
+    "save_as_recipe_label": "レシピとして保存",
+    "save_as_recipe_tooltip": "このケイパビリティを再利用可能なレシピに変換して、再度採用したり共有したりできます — 認証情報は含まれません"
   },
   "tools": {
     "no_persona": "ペルソナが選択されていません",

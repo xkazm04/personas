@@ -2402,7 +2402,10 @@
       "petals_label": "Okvětní lístky",
       "recipe": "Recept",
       "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+      "recipe_saved_toast": "Uloženo \"{name}\" jako recept — najdete ho v Šablonách → Recepty",
+      "save_as_recipe_label": "Uložit jako recept",
+      "save_as_recipe_tooltip": "Proměňte tuto schopnost ve znovupoužitelný recept, který lze znovu přijmout nebo sdílet — bez uložených přihlašovacích údajů"
     },
     "tools": {
       "no_persona": "Žádná persona nevybrána",

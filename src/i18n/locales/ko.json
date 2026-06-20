@@ -2402,7 +2402,10 @@
       "petals_label": "Petals",
       "recipe": "레시피",
       "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+      "recipe_saved_toast": "\"{name}\"을(를) 레시피로 저장했습니다 — 템플릿 → 레시피에서 확인하세요",
+      "save_as_recipe_label": "레시피로 저장",
+      "save_as_recipe_tooltip": "이 기능을 재사용 가능한 레시피로 만들어 다시 적용하거나 공유하세요 — 자격 증명은 포함되지 않습니다"
     },
     "tools": {
       "no_persona": "선택된 페르소나 없음",

@@ -1641,7 +1641,10 @@
     "petals_label": "Лепестки",
     "recipe": "Рецепт",
     "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+    "recipe_saved_toast": "«{name}» сохранён как рецепт — найдите его в Шаблоны → Рецепты",
+    "save_as_recipe_label": "Сохранить как рецепт",
+    "save_as_recipe_tooltip": "Превратите эту возможность в многоразовый рецепт, который можно повторно использовать или поделиться — учётные данные не включаются"
   },
   "tools": {
     "no_persona": "Агент не выбран",

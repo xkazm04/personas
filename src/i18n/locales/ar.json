@@ -2402,7 +2402,10 @@
       "petals_label": "بتلات",
       "recipe": "وصفة",
       "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
-      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
+      "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word",
+      "recipe_saved_toast": "تم حفظ \"{name}\" كوصفة — ابحث عنها في القوالب ← الوصفات",
+      "save_as_recipe_label": "حفظ كوصفة",
+      "save_as_recipe_tooltip": "حوّل هذه الإمكانية إلى وصفة قابلة لإعادة الاستخدام يمكنك تفعيلها مجدداً أو مشاركتها — دون تضمين أي بيانات اعتماد"
     },
     "tools": {
       "no_persona": "لم يتم اختيار وكيل",
