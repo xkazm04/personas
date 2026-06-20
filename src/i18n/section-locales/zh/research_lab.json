@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv 返回错误（HTTP {status}）。请稍后重试。",
   "arxiv_error_network": "无法连接到 arXiv。请检查网络连接后重试。",
   "arxiv_error_feed": "arXiv 无法处理该查询。请尝试不同或更简单的关键词。",
-  "arxiv_error_generic": "arXiv 搜索失败。请重试。"
+  "arxiv_error_generic": "arXiv 搜索失败。请重试。",
+  "added_with_dedup": "已添加 {added} 个来源（{duplicates} 个已在您的库中）"
 }

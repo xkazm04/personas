@@ -25,7 +25,8 @@
 //!
 //! | Category        | `retry_count < MAX` & no KB hint      | `retry_count >= MAX` OR KB `occurrence >= 5` | Notes                                       |
 //! | --------------- | ------------------------------------- | -------------------------------------------- | ------------------------------------------- |
-//! | `SessionLimit`  | window cap → `RetryAt(reset)`†        | → `CreateIssue`                              | † via [`usage_limit_diagnosis`] when the orchestrator has parsed [`UsageLimitInfo`]; weekly caps and unparsed session limits always `CreateIssue`. `RetryAt` is durable (`scheduled_retries` table). |
+//! | `SessionLimit`  | window/weekly cap → `RetryAt(reset)`† | → `CreateIssue`                              | † via [`usage_limit_diagnosis`] when the orchestrator has parsed [`UsageLimitInfo`]. Window → reset (~5h) or `now+5h`; weekly → reset when a timestamp was parsed, else `CreateIssue`. `RetryAt` is durable (`scheduled_retries`), restarts fresh. |
+//! | `ApiError`      | → `RetryAt(now + 10/20/30 min)`‡      | → `CreateIssue`                              | ‡ Anthropic 5xx/overloaded. Durable escalating retry that RESUMES the session (`Continuation::SessionResume`, reason tag `api_error_resume`) so the run continues instead of restarting. |
 //! | `RateLimit`     | → `RetryWithBackoff` (KB delay wins)  | → `CreateIssue`                              | `consecutive_failures` drives exponent      |
 //! | `Timeout`       | → `RetryWithTimeout` (×2, capped)     | → `CreateIssue`                              | New timeout capped at [`MAX_TIMEOUT_MS`]    |
 //! | `External`      | → `RetryWithBackoff`                  | → `CreateIssue`                              | Treated like `RateLimit` w/r/t retries      |
@@ -105,6 +106,14 @@ const USAGE_LIMIT_RESET_BUFFER_SECS: i64 = 120;
 /// timestamp. Claude's window is ~5 hours rolling, so "now + 5h" is the worst
 /// case and guaranteed to be past the reset.
 const USAGE_WINDOW_FALLBACK_HOURS: i64 = 5;
+/// Base wait (minutes) between API/server-error (`ApiError`) retries. The wait
+/// escalates per attempt — `base × (retry_count + 1)` → 10, 20, 30 minutes —
+/// giving a ~60-minute horizon across [`MAX_RETRY_COUNT`] attempts before the
+/// run folds into a manual issue. The Claude CLI already retries 5xx/overloaded
+/// internally, so by the time one surfaces here the provider is mid-incident;
+/// an immediate retry is pointless but a delayed, escalating one rides it out.
+/// Durable via `scheduled_retries` (RetryAt), so it survives app restarts.
+const API_ERROR_BASE_RETRY_MINUTES: i64 = 10;
 /// Maximum timeout in milliseconds — derived from the engine hard ceiling.
 const MAX_TIMEOUT_MS: u64 = super::ENGINE_MAX_EXECUTION_SECS * 1000;
 /// Maximum number of retries for a single execution chain.
@@ -177,23 +186,54 @@ pub fn usage_limit_diagnosis(
                 "Reduce schedule frequency or upgrade your plan — the usage window keeps being exhausted.".into(),
             ),
         },
-        UsageLimitScope::Weekly => HealingDiagnosis {
-            category: FailureCategory::SessionLimit,
-            action: HealingAction::CreateIssue,
-            title: "Weekly usage limit reached".into(),
-            description: format!(
-                "The provider's weekly usage cap was hit{}. Runs will keep failing until it resets. Error: {}",
-                ul.resets_at
-                    .map(|ts| format!(" (resets at {})", ts.to_rfc3339()))
-                    .unwrap_or_default(),
-                truncate(error, 200),
-            ),
-            severity: "high".into(),
-            db_category: "external".into(),
-            suggested_fix: Some(
-                "Pause schedules until the weekly limit resets, or upgrade your plan.".into(),
-            ),
-        },
+        UsageLimitScope::Weekly => {
+            // If the message carried a parseable reset time (the parser only
+            // keeps timestamps in the future and within ~8 days) and we still
+            // have retry budget, schedule a durable retry at the reset — the
+            // same treatment as the window case, just further out. When the
+            // reset time is unknown we can't know when to come back, so folding
+            // into a manual issue is the honest outcome. Weekly retries restart
+            // FRESH (a days-old CLI session transcript is likely GC'd, so a
+            // `--resume` would fail) — the reason tag stays `usage_limit_*`.
+            match ul.resets_at.filter(|ts| *ts > chrono::Utc::now()) {
+                Some(resets_at) if retry_count < MAX_RETRY_COUNT => {
+                    let retry_at =
+                        resets_at + chrono::Duration::seconds(USAGE_LIMIT_RESET_BUFFER_SECS);
+                    HealingDiagnosis {
+                        category: FailureCategory::SessionLimit,
+                        action: HealingAction::RetryAt { retry_at },
+                        title: "Weekly usage limit reached — retry scheduled".into(),
+                        description: format!(
+                            "The provider's weekly usage cap was hit. The run will retry automatically at the reset ({}). Error: {}",
+                            retry_at.to_rfc3339(),
+                            truncate(error, 200),
+                        ),
+                        severity: "medium".into(),
+                        db_category: "external".into(),
+                        suggested_fix: Some(
+                            "No action needed — the run retries when the weekly limit resets.".into(),
+                        ),
+                    }
+                }
+                _ => HealingDiagnosis {
+                    category: FailureCategory::SessionLimit,
+                    action: HealingAction::CreateIssue,
+                    title: "Weekly usage limit reached".into(),
+                    description: format!(
+                        "The provider's weekly usage cap was hit{}. Runs will keep failing until it resets. Error: {}",
+                        ul.resets_at
+                            .map(|ts| format!(" (resets at {})", ts.to_rfc3339()))
+                            .unwrap_or_default(),
+                        truncate(error, 200),
+                    ),
+                    severity: "high".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(
+                        "Pause schedules until the weekly limit resets, or upgrade your plan.".into(),
+                    ),
+                },
+            }
+        }
     }
 }
 
@@ -383,20 +423,55 @@ pub fn diagnose(
                 "Review tool configuration and add error recovery instructions.".into(),
             ),
         },
-        FailureCategory::ApiError => HealingDiagnosis {
-            category: *category,
-            action: HealingAction::CreateIssue,
-            title: "API server error".into(),
-            description: format!(
-                "An API server error was detected. Error: {}",
-                truncate(error, 200),
-            ),
-            severity: "high".into(),
-            db_category: "external".into(),
-            suggested_fix: Some(
-                "API provider may be experiencing issues. Retry later or check status page.".into(),
-            ),
-        },
+        FailureCategory::ApiError => {
+            // Anthropic-side server errors (5xx / overloaded). The Claude CLI
+            // already retries these internally with backoff, so a surfaced
+            // ApiError means the provider is likely mid-incident. Schedule a
+            // durable, escalating RetryAt (10 → 20 → 30 min) that RESUMES the
+            // session so the run continues from where it stopped rather than
+            // restarting. Fold to a manual issue once the per-chain budget is
+            // spent; knowledge-base preemptive escalation also applies.
+            let kb_escalate = kb_hint
+                .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
+                .unwrap_or(false);
+
+            if retry_count >= MAX_RETRY_COUNT || kb_escalate {
+                HealingDiagnosis {
+                    category: *category,
+                    action: HealingAction::CreateIssue,
+                    title: "API server error — retries exhausted".into(),
+                    description: format!(
+                        "The provider returned repeated server errors and {} retries have been exhausted. Manual investigation required. Error: {}",
+                        MAX_RETRY_COUNT,
+                        truncate(error, 200),
+                    ),
+                    severity: "high".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(
+                        "Check the provider status page — a sustained outage may require waiting or switching providers.".into(),
+                    ),
+                }
+            } else {
+                let minutes = API_ERROR_BASE_RETRY_MINUTES * (retry_count + 1);
+                let retry_at = chrono::Utc::now() + chrono::Duration::minutes(minutes);
+                HealingDiagnosis {
+                    category: *category,
+                    action: HealingAction::RetryAt { retry_at },
+                    title: "API server error — retry scheduled".into(),
+                    description: format!(
+                        "The provider returned a server error. The run will resume automatically at {} (in {}m). Error: {}",
+                        retry_at.to_rfc3339(),
+                        minutes,
+                        truncate(error, 200),
+                    ),
+                    severity: "medium".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(format!(
+                        "No action needed — the session resumes in {minutes}m once the provider recovers."
+                    )),
+                }
+            }
+        }
         FailureCategory::Validation => HealingDiagnosis {
             category: *category,
             action: HealingAction::CreateIssue,
@@ -899,5 +974,97 @@ mod tests {
             }
             other => panic!("expected RetryAt, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_usage_limit_weekly_with_reset_schedules_retry_at() {
+        // A weekly cap that carried a parseable reset time now schedules a
+        // durable retry at the reset instead of folding immediately.
+        let resets_at = chrono::Utc::now() + chrono::Duration::days(2);
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Weekly,
+            resets_at: Some(resets_at),
+        };
+        let d = usage_limit_diagnosis(&ul, "Claude weekly usage limit reached", 0);
+        match d.action {
+            HealingAction::RetryAt { retry_at } => {
+                assert_eq!(
+                    retry_at.timestamp(),
+                    resets_at.timestamp() + USAGE_LIMIT_RESET_BUFFER_SECS,
+                );
+            }
+            other => panic!("expected RetryAt, got {other:?}"),
+        }
+        assert_eq!(d.severity, "medium");
+    }
+
+    #[test]
+    fn test_usage_limit_weekly_with_reset_but_budget_exhausted_creates_issue() {
+        let ul = UsageLimitInfo {
+            scope: UsageLimitScope::Weekly,
+            resets_at: Some(chrono::Utc::now() + chrono::Duration::days(2)),
+        };
+        let d = usage_limit_diagnosis(&ul, "weekly limit reached", MAX_RETRY_COUNT);
+        assert_eq!(d.action, HealingAction::CreateIssue);
+    }
+
+    // --- ApiError (Anthropic 5xx) escalating durable resume-retry --------
+
+    #[test]
+    fn test_api_error_schedules_escalating_retry_at() {
+        // retry_count 0 → ~10m, 1 → ~20m, 2 → ~30m out.
+        for (rc, expected_min) in [(0i64, 10i64), (1, 20), (2, 30)] {
+            let before = chrono::Utc::now();
+            let d = diagnose(
+                &FailureCategory::ApiError,
+                "HTTP 500 internal server error",
+                600_000,
+                0,
+                rc,
+                None,
+            );
+            match d.action {
+                HealingAction::RetryAt { retry_at } => {
+                    let lo = before + chrono::Duration::minutes(expected_min - 1);
+                    let hi = chrono::Utc::now() + chrono::Duration::minutes(expected_min + 1);
+                    assert!(
+                        retry_at >= lo && retry_at <= hi,
+                        "retry_count {rc}: retry_at {retry_at} not ~{expected_min}m out"
+                    );
+                }
+                other => panic!("retry_count {rc}: expected RetryAt, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn test_api_error_folds_when_budget_exhausted() {
+        let d = diagnose(
+            &FailureCategory::ApiError,
+            "503 service unavailable",
+            600_000,
+            0,
+            MAX_RETRY_COUNT,
+            None,
+        );
+        assert_eq!(d.action, HealingAction::CreateIssue);
+        assert_eq!(d.severity, "high");
+    }
+
+    #[test]
+    fn test_api_error_kb_escalation_folds() {
+        let hint = KnowledgeHint {
+            recommended_delay_secs: None,
+            occurrence_count: KB_ESCALATION_THRESHOLD,
+        };
+        let d = diagnose(
+            &FailureCategory::ApiError,
+            "internal server error",
+            600_000,
+            0,
+            0,
+            Some(&hint),
+        );
+        assert_eq!(d.action, HealingAction::CreateIssue);
     }
 }

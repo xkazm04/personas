@@ -72,5 +72,7 @@
   "director_attention_sr": "{count}개 에이전트에 코칭 필요",
   "director_attention_sr_other": "{count}개 에이전트에 코칭 필요",
   "goals": "목표",
-  "mission_control": "미션 컨트롤"
+  "mission_control": "미션 컨트롤",
+  "factory": "팩토리",
+  "kpis": "KPI"
 }

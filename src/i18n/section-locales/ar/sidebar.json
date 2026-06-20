@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} وكيل يحتاج إلى إرشاد",
   "director_attention_sr_other": "{count} وكلاء يحتاجون إلى إرشاد",
   "goals": "الأهداف",
-  "mission_control": "مركز التحكم"
+  "mission_control": "مركز التحكم",
+  "factory": "المصنع",
+  "kpis": "KPIs"
 }

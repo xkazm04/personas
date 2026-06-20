@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Cache hit",
+    "cached": "dari cache",
+    "deep_fanout": "Fan-out mendalam",
+    "deep_fanout_hint": "Delegasikan sub-tugas paralel independen ke subagen. Tetapkan batas anggaran.",
+    "deep_fanout_unavailable": "Tidak tersedia di paket ini — membutuhkan alat Workflow/Task (Max/Team).",
+    "subagents": "Subagen"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Tingkatkan persona \"{name}\" v{version} — belum diukur. Apa yang harus saya fokuskan? ",
     "vr_metric_tool": "akurasi alat",
     "vr_metric_quality": "kualitas keluaran",
-    "vr_metric_protocol": "kepatuhan protokol"
+    "vr_metric_protocol": "kepatuhan protokol",
+    "eco_col_attempted": "Percobaan",
+    "eco_col_cost_success": "Biaya / Sukses",
+    "eco_col_model": "Model",
+    "eco_col_rate": "Tingkat Resolusi",
+    "eco_col_resolved": "Terselesaikan",
+    "eco_empty": "Belum ada hasil evaluasi — jalankan Lab untuk mengisi efisiensi biaya.",
+    "eco_subtitle": "Seberapa sering setiap model menyelesaikan evaluasi, dan berapa biaya per keberhasilan.",
+    "eco_title": "Efisiensi Biaya"
   },
   "design": {
     "select_agent": "Pilih agen untuk memulai analisis desain",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "Pil status TRUST pada ReviewDimCard",
     "review_pill_trust": "PERCAYA",
     "_comment_dim_status_activated": "Nilai PersonaSigilSummary yang ditampilkan saat dim boolean (memori/ulasan/event/error) aktif untuk kapabilitas",
-    "dim_status_activated": "Diaktifkan"
+    "dim_status_activated": "Diaktifkan",
+    "engine_claude": "Engine: Claude",
+    "engine_claude_tooltip": "Claude penuh. Klik untuk mengaktifkan Mixed: sub-tugas sederhana (rangkum, ekstrak, format ulang) dialihkan ke model lokal untuk menghemat kapasitas premium.",
+    "engine_local_first": "Engine: Lokal-utama",
+    "engine_local_first_tooltip": "Lokal-utama: Claude menyusun perintah kerja dan memvalidasi; model lokal menghasilkan semua konten. Klik untuk kembali ke Claude penuh.",
+    "engine_mixed": "Engine: Mixed",
+    "engine_mixed_tooltip": "Engine campuran: Claude mengatur dan mengalihkan sub-tugas sederhana ke model lokal via alat llm_delegate. Klik untuk kembali ke Claude penuh.",
+    "petals_label": "Petal",
+    "recipe": "Resep",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Tidak ada persona dipilih",
@@ -1855,7 +1879,10 @@
     "build_failed": "Build gagal dimulai. Periksa konfigurasi CLI.",
     "header_title": "Build",
     "header_subtitle_new": "Compose a new agent from scratch",
-    "header_subtitle_editing": "Editing {name}"
+    "header_subtitle_editing": "Editing {name}",
+    "context_hint": "Digunakan sebagai materi referensi untuk membentuk persona selama proses build ini. Tidak disimpan setelahnya.",
+    "context_placeholder": "Tempelkan contoh tulisan, peran dan tujuan Anda, atau panduan suara merek — build ini akan mendasarkan suara dan asumsi persona pada itu, bukan mengarangnya dari satu baris maksud Anda.",
+    "context_toggle": "Tambahkan konteks referensi (opsional)"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2631,7 +2658,8 @@
     "automations": "Otomasi",
     "triggers_desc": "Langganan acara per-persona dan konfigurasi pemicu akan tersedia di tab ini.",
     "messaging_desc": "Saluran notifikasi dan perutean kotak masuk untuk agen ini akan ada di sini.",
-    "automations_desc": "Aturan otomasi mandiri untuk agen ini akan ada di sini."
+    "automations_desc": "Aturan otomasi mandiri untuk agen ini akan ada di sini.",
+    "parameters": "Parameter"
   },
   "parameters_card": {
     "title": "Parameter",
@@ -2660,5 +2688,14 @@
   "glyph_db_scope_loading": "Memuat tabel…",
   "glyph_db_scope_error": "Gagal memuat tabel — coba lagi",
   "glyph_db_scope_empty": "Tidak ada tabel ditemukan",
-  "glyph_db_scope_selected": "{count} dari {total} tabel"
+  "glyph_db_scope_selected": "{count} dari {total} tabel",
+  "share": {
+    "button": "Bagikan",
+    "failed": "Gagal menerbitkan agen ini ke galeri",
+    "hint": "Siapa pun dengan tautan dapat membuka agen ini di Personas dalam satu klik.",
+    "import_failed": "Gagal mengimpor agen yang dibagikan",
+    "imported": "Agen diimpor dari tautan berbagi",
+    "invite_hint": "Undang teman ke Personas — Anda mendapat kredit saat mereka bergabung",
+    "published": "Dibagikan — salin tautannya untuk dikirim"
+  }
 }

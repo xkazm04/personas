@@ -376,5 +376,13 @@
   "preset_setup_cta": "Siapkan",
   "team_codebase_heading": "Repositori codebase",
   "team_codebase_hint": "Hubungkan tim ini ke repositori GitHub agar agennya berbagi satu sumber kebenaran.",
-  "team_connector_label": "Konektor GitHub"
+  "team_connector_label": "Konektor GitHub",
+  "preset": {
+    "button": "Terbitkan ke komunitas",
+    "failed": "Gagal menerbitkan tim ini sebagai preset",
+    "heading": "Bagikan ke komunitas",
+    "hint": "Terbitkan tim ini sebagai preset komunitas yang dapat diadopsi orang lain. Agen anggota dibagikan tanpa kredensial apa pun.",
+    "published": "Tim diterbitkan ke katalog komunitas",
+    "published_short": "Diterbitkan"
+  }
 }

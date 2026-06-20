@@ -6,7 +6,7 @@ import {
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers,
   GraduationCap, BookOpen, Trophy, AlertOctagon, Target, Swords,
-  User, Users, Mic, Volume2, Sparkles,
+  User, Users, Mic, Volume2, Sparkles, Headphones,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
   Clapperboard, MoonStar,
@@ -41,6 +41,9 @@ export const sections: SectionDef[] = [
   { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
   { id: 'plugins', icon: Puzzle, label: 'Plugins', minTier: TIERS.TEAM },
+  // Studio — the Athena web-dev companion preview (scaffold + embedded dev
+  // server). Dev-only while in active development (P1).
+  { id: 'studio', icon: Globe, label: 'Studio', devOnly: true },
   { id: 'settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -194,6 +197,7 @@ export function getSettingsItems(isDev: boolean, activeTier?: Tier): SubNavItem[
     { id: 'account', label: 'Account', icon: Globe },
     { id: 'appearance', label: 'Appearance', icon: Palette },
     { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'radio', label: 'Radio', icon: Headphones },
     { id: 'engine', label: 'Engine', icon: Cpu, devOnly: true },
     { id: 'byom', label: 'Custom Models', icon: Network, devOnly: true },
     { id: 'portability', label: 'Data', icon: HardDriveDownload, minTier: TIERS.TEAM },

@@ -1,4 +1,4 @@
-import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, type LucideIcon } from 'lucide-react';
+import { HardDriveDownload, AlertTriangle, Boxes, Download, ShieldCheck, HardDrive, Bot, Users, Wrench, KeyRound, Brain, BrainCircuit, FlaskConical, Target, type LucideIcon } from 'lucide-react';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -55,6 +55,7 @@ export default function DataPortabilitySettings() {
               <StatBadge icon={Brain} label={s.memories} value={dp.stats.memory_count} accent="text-cyan-400" />
               <StatBadge icon={BrainCircuit} label={s.team_memories} value={dp.stats.team_memory_count} accent="text-teal-400" />
               <StatBadge icon={FlaskConical} label={s.test_suites} value={dp.stats.test_suite_count} accent="text-rose-400" />
+              <StatBadge icon={Target} label={s.kpis} value={dp.stats.kpi_count} accent="text-pink-400" />
             </div>
           )}
         </div>

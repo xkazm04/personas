@@ -151,7 +151,9 @@
     "detail_note_label": "समाधान नोट (वैकल्पिक)",
     "detail_no_persona": "कोई एजेंट नहीं",
     "empty_open_title": "सब ठीक है",
-    "empty_filtered_title": "कोई मिलती घटना नहीं"
+    "empty_filtered_title": "कोई मिलती घटना नहीं",
+    "col_days": "दिन",
+    "col_incident": "घटना"
   },
   "observability": {
     "title": "अवलोकनशीलता",
@@ -352,7 +354,8 @@
     "sort_runs": "सर्वाधिक रन",
     "sort_recent": "सबसे नए",
     "needs_review": "समीक्षा आवश्यक",
-    "pending_scope_hint": "सभी लंबित एनोटेशन की समीक्षा के लिए एक पर्सोना चुनें।"
+    "pending_scope_hint": "सभी लंबित एनोटेशन की समीक्षा के लिए एक पर्सोना चुनें।",
+    "graph_tab": "ग्राफ"
   },
   "conflicts": {
     "dismissed": "विवाद खारिज किया गया",
@@ -506,7 +509,15 @@
     "delete_all": "सभी हटाएं",
     "delete_all_confirm_title": "सभी समीक्षाएं हटाएं?",
     "delete_all_confirm_body": "यह सभी {count} समीक्षाओं को स्थायी रूप से हटा देता है। इसे पूर्ववत नहीं किया जा सकता।",
-    "delete_all_confirm_cta": "सभी हटाएं"
+    "delete_all_confirm_cta": "सभी हटाएं",
+    "auto_resolved": {
+      "badge": "स्वतः-हल",
+      "banner_auto_triage": "यह समीक्षा एक दूसरे-पास auto_triage मूल्यांकनकर्ता द्वारा स्वचालित रूप से हल की गई, आपके द्वारा नहीं। क्षमता की समीक्षा नीति बदलें ताकि आपकी स्वीकृति आवश्यक हो।",
+      "banner_trust_llm": "यह समीक्षा क्षमता की trust_llm नीति द्वारा स्वतः-अनुमोदित हुई और आपका इंतज़ार कभी नहीं किया। यदि आप इन्हें स्वयं तय करना चाहते हैं तो क्षमता की समीक्षा नीति बदलें।",
+      "reasoning_label": "स्वतः-ट्रायज तर्क",
+      "tip_auto_triage": "एक स्वचालित दूसरे-पास मूल्यांकनकर्ता (auto_triage समीक्षा नीति) द्वारा तय किया गया — इसने मानव निर्णय के बिना आपकी समीक्षा कतार को छोड़ दिया।",
+      "tip_trust_llm": "इस क्षमता की trust_llm समीक्षा नीति द्वारा स्वचालित रूप से अनुमोदित — इसने मानव निर्णय के बिना आपकी समीक्षा कतार को छोड़ दिया।"
+    }
   },
   "messages_view": {
     "title": "संदेश",
@@ -852,7 +863,8 @@
     "cost_per_value": "लागत / मूल्य रन",
     "value_delivered_count": "वितरित मूल्य",
     "all_models": "सभी मॉडल",
-    "col_model": "मॉडल"
+    "col_model": "मॉडल",
+    "col_cost": "लागत"
   },
   "analytics_dashboard": {
     "title": "एनालिटिक्स",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "मैं अपने agents के लिए एक फ्लीट अनुकूलन सुझाव की समीक्षा कर रहा हूँ: \"{title}\"। {description} सुझाया गया कार्य: {action}। {focus}",
     "ask_athena_focus_persona": "कृपया agent \"{persona}\" की जांच करें और, यदि उपयोगी हो, वैकल्पिक मॉडल परखने के लिए उसका Lab खोलें, फिर जो मिले वह बताएं।",
     "ask_athena_focus_general": "कृपया इसकी जांच करें और क्या बदलना है इसकी सिफ़ारिश करें।"
+  },
+  "athena": {
+    "avg_cost": "औसत / टर्न",
+    "cost_by_action": "क्रिया प्रकार अनुसार लागत",
+    "cost_per_day": "Athena लागत प्रति दिन",
+    "errors": "टर्न त्रुटियां",
+    "health_hint": "सहायक कैसा कर रहा है",
+    "health_no_activity": "इस विंडो में कोई Athena गतिविधि नहीं",
+    "health_title": "Athena स्वास्थ्य",
+    "jobs_completed": "पूर्ण",
+    "jobs_failed": "विफल",
+    "jobs_title": "पृष्ठभूमि कार्य",
+    "leg_browser_test": "ब्राउज़र टेस्ट",
+    "leg_daily_brief": "दैनिक सारांश",
+    "leg_exec_triage": "निष्पादन ट्रायज",
+    "leg_execution_review": "निष्पादन समीक्षा",
+    "leg_fleet_analysis": "फ्लीट विश्लेषण",
+    "leg_msg_triage": "संदेश ट्रायज",
+    "leg_other": "अन्य",
+    "leg_reaction": "चैनल प्रतिक्रिया",
+    "leg_reaction_batch": "चैनल प्रतिक्रियाएं",
+    "leg_review_resolution": "समीक्षा समाधान",
+    "no_activity": "इस विंडो में कोई Athena गतिविधि नहीं",
+    "origin_autonomous": "स्वायत्त",
+    "origin_chat": "चैट",
+    "origin_external": "बाहरी",
+    "origin_headless": "पृष्ठभूमि",
+    "origin_proactive": "सक्रिय",
+    "proactive_budget": "आज का बजट",
+    "proactive_delivered": "प्रदान किया",
+    "proactive_dismissed": "खारिज किया",
+    "proactive_engaged": "संलग्न",
+    "proactive_engaged_rate": "संलग्नता दर",
+    "proactive_expired": "समाप्त",
+    "proactive_title": "सक्रिय अर्थव्यवस्था",
+    "section_hint": "आपके सहायक का अपना उपयोग",
+    "section_title": "Athena",
+    "tokens": "टोकन",
+    "tokens_io": "{input} इन · {output} आउट",
+    "total_cost": "Athena लागत",
+    "triage_attention": "ध्यान",
+    "triage_deep_dive": "गहरी जांच",
+    "triage_digest": "पाचित",
+    "triage_drop": "छोड़ा",
+    "triage_parse_failures": "पार्स विफलताएं",
+    "triage_passes": "पास",
+    "triage_title": "ट्रायज फनल",
+    "turns": "टर्न",
+    "vs_fleet": "Athena बनाम फ्लीट",
+    "vs_fleet_hint": "इस विंडो में कुल {total} खर्च में से {athena}"
+  },
+  "heartbeats": {
+    "all_clear_detail": "हर मॉनिटर्ड पर्सोना स्वस्थ सीमा के भीतर काम कर रहा है।",
+    "all_clear_title": "सभी सिस्टम सामान्य",
+    "chains": "चेन",
+    "col_persona": "पर्सोना",
+    "col_score": "HP",
+    "col_vitals": "ट्रेंड · सफलता · बर्न",
+    "focus_issues": "समस्याओं पर फोकस",
+    "healthy_hidden": "स्वस्थ छुपे",
+    "heartbeat": "हार्टबीट",
+    "hide_healthy": "स्वस्थ छुपाएं",
+    "idle": "निष्क्रिय",
+    "monitored": "मॉनिटर्ड",
+    "runs_suffix": "रन",
+    "seg_budget": "बजट",
+    "seg_healing": "हीलिंग",
+    "seg_stability": "स्थिरता",
+    "seg_success": "सफलता",
+    "show_all": "सब दिखाएं"
+  },
+  "provenance": {
+    "sourced_tip": "{count} स्रोत(ों) का उद्धरण जिन्हें आप ट्रेस और ऑडिट कर सकते हैं।",
+    "unsourced": "बिना स्रोत के",
+    "unsourced_tip": "इस रिपोर्ट में आंकड़े हैं लेकिन कोई Sources अनुभाग नहीं है — इन्हें उनके मूल तक ट्रेस नहीं किया जा सकता।"
   }
 }

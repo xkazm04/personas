@@ -69,7 +69,9 @@ export function buildEventRows(
     const row = ensureRow(c.eventType);
     addSourcePersona(row, c.sourcePersonaId);
     if (c.trigger.persona_id !== c.sourcePersonaId) {
-      if (!row.connections.some(x => x.personaId === c.trigger.persona_id && x.kind === 'chain')) {
+      // Dedup by (target, source) — not just target — so two distinct chains
+      // into the same persona (A→B and C→B) both survive as separate edges.
+      if (!row.connections.some(x => x.personaId === c.trigger.persona_id && x.kind === 'chain' && x.sourcePersonaId === c.sourcePersonaId)) {
         row.connections.push({
           kind: 'chain',
           subscriptionId: null,
@@ -77,6 +79,7 @@ export function buildEventRows(
           personaId: c.trigger.persona_id,
           persona: personaMap.get(c.trigger.persona_id),
           chainCondition: c.conditionType,
+          sourcePersonaId: c.sourcePersonaId,
         });
       }
     }

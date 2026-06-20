@@ -46,7 +46,14 @@
     "toggle_monitor": "Mở / đóng Persona Monitor",
     "toggle_athena": "Mở / đóng trò chuyện Athena",
     "nav_mode": "Bật/tắt chế độ điều hướng bàn phím",
-    "nav_mode_back": "Quay lại trang trước (trong chế độ điều hướng)"
+    "nav_mode_back": "Quay lại trang trước (trong chế độ điều hướng)",
+    "mode_toggle_aria": "Chuyển đổi chế độ phím tắt",
+    "mode_toggle_title": "Chế độ phím tắt — nhấp để chuyển · nhấp phải để trợ giúp",
+    "nav_mode_monitor": "Bật/tắt màn hình persona (ở chế độ điều hướng)",
+    "nav_mode_notifications": "Bật/tắt thông báo (ở chế độ điều hướng)",
+    "nav_mode_review": "Bật/tắt đánh giá của người dùng (ở chế độ điều hướng)",
+    "nav_mode_schedules": "Bật/tắt lịch trình (ở chế độ điều hướng)",
+    "nav_mode_search": "Mở tìm kiếm (ở chế độ điều hướng)"
   },
   "tray_schedules": "Lịch biểu",
   "tray_schedules_today": "{count} được lên lịch hôm nay",
@@ -60,5 +67,7 @@
     "headroom_green": "Còn nhiều dư địa để làm thêm việc",
     "headroom_amber": "Đang bận — cân nhắc giảm bớt tải",
     "headroom_red": "Đã đầy tải — cân nhắc chạy chậm lại"
-  }
+  },
+  "tray_acceptance": "Mục tiêu cần chấp thuận",
+  "tray_acceptance_pending": "{count} mục tiêu đang chờ chấp thuận"
 }

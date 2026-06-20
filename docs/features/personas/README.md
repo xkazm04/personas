@@ -398,23 +398,37 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    includes a `team` impact ("Member of team(s): … — will be removed from
    them") so removing an agent that belongs to a team warns first. The
    `persona_team_members` rows cascade on delete; the warning is informational.
-8. **The Grid and Constellation list layouts cap at 200 rendered personas.**
-   These two All-Personas layouts are unvirtualized — each card/node is a DOM
-   (Grid) or SVG (Constellation) subtree — so very large fleets are capped at
-   `PERSONA_RENDER_CAP = 200` with a "Showing 200 of N — narrow with search or
-   filters" notice. The default **table** layout (DataGrid) is virtualized and
-   shows all sizes; users with 200+ personas should use it or filter. True
-   windowing for the visual layouts (a responsive grid virtualizer) is a tracked
-   follow-up — see the architect perf scan (Phase E render-cap guardrail).
+8. **The Constellation list layout caps at 200 rendered personas.**
+   This All-Personas layout is unvirtualized — each node is an SVG subtree — so
+   very large fleets are capped at `PERSONA_RENDER_CAP = 200` with a "Showing
+   200 of N — narrow with search or filters" notice. The default **table**
+   layout (DataGrid) is virtualized and shows all sizes; users with 200+
+   personas should use it or filter. True windowing for the Constellation layout
+   is a tracked follow-up — see the architect perf scan (Phase E render-cap
+   guardrail). _(The uniform-card **Grid** layout was retired 2026-06-20.)_
 9. **The All-Personas page has a top-level view switcher: _Personas_ vs _Configuration_.**
-   _Personas_ is the list (the Table / Grid / Constellation layouts above).
+   _Personas_ is the list (the Table / Constellation layouts above).
    _Configuration_ (`allPersonas/PersonaConfigPanel.tsx`, migrated out of the old
    Settings → Config Resolution tab) is the per-persona **effective model-config**
    table: for every persona it resolves model / provider / budget / turns / cache
    through the agent → workspace → global → default cascade
    (`resolve_effective_config_bulk`, `engine/config_merge.rs`) and tags each cell
-   with the tier that supplied it. A cell reads `--` with a `DEFAULT` badge when no
-   tier sets that field — the accurate state for personas that inherit the CLI
-   default (per-capability model tiering lives on use-cases, not persona-level
-   `model_profile`). A name filter and an "Overrides only" toggle isolate personas
-   that have escaped workspace/global defaults.
+   with the tier that supplied it. When no tier sets the **Model** field (the
+   common case, since model tiering lives on use-cases rather than persona-level
+   `model_profile`), the Model cell surfaces the **distinct per-capability models**
+   the persona's use-cases declare via `model_override` — shown in violet with a
+   _Per capability_ tag (parsed client-side from `design_context`) instead of a
+   bare `--`. Other fields with no tier value still read `--` with a `DEFAULT`
+   badge. Each persona row is **expandable** (chevron in the Agent column): it
+   reveals one indented sub-row per capability, surfacing that capability's
+   **model** (from `model_override`) and its **provider**. Since bare-string
+   overrides carry no provider, the provider is **derived from the model name**
+   via a brand mapping (`haiku`/`sonnet`/`opus`/`claude` → Anthropic, `gpt`/`o#`
+   → OpenAI, `gemini` → Google, `llama`/`qwen`/… → Ollama) and rendered with the
+   provider's brand icon (an explicit override provider wins). The collapsed
+   parent row mirrors this — its **Provider** cell shows the distinct brand
+   icon(s) derived across the persona's capabilities when no tier supplies a
+   provider. A muted `—` means
+   the capability inherits the persona/default; budget/turns/cache are
+   persona-level so they read `—` on sub-rows. A name filter and an "Overrides
+   only" toggle isolate personas that have escaped workspace/global defaults.

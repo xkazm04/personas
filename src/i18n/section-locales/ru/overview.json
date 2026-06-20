@@ -151,7 +151,9 @@
     "detail_note_label": "Примечание о решении (необязательно)",
     "detail_no_persona": "Нет агента",
     "empty_open_title": "Всё в порядке",
-    "empty_filtered_title": "Совпадающих инцидентов нет"
+    "empty_filtered_title": "Совпадающих инцидентов нет",
+    "col_days": "Дни",
+    "col_incident": "Инцидент"
   },
   "observability": {
     "title": "Мониторинг",
@@ -352,7 +354,8 @@
     "sort_runs": "Больше всего запусков",
     "sort_recent": "Самые новые",
     "needs_review": "Требует проверки",
-    "pending_scope_hint": "Выберите персону, чтобы проверить все ожидающие аннотации."
+    "pending_scope_hint": "Выберите персону, чтобы проверить все ожидающие аннотации.",
+    "graph_tab": "Граф"
   },
   "conflicts": {
     "dismissed": "Конфликт отклонён",
@@ -506,7 +509,15 @@
     "delete_all": "Удалить все",
     "delete_all_confirm_title": "Удалить все проверки?",
     "delete_all_confirm_body": "Это безвозвратно удалит все {count} отзывов. Действие нельзя отменить.",
-    "delete_all_confirm_cta": "Удалить все"
+    "delete_all_confirm_cta": "Удалить все",
+    "auto_resolved": {
+      "badge": "Разрешено автоматически",
+      "banner_auto_triage": "Эта проверка была разрешена автоматически вторичным оценщиком auto_triage, а не вами. Измените политику проверки возможности, если хотите требовать вашего одобрения.",
+      "banner_trust_llm": "Эта проверка была автоматически одобрена политикой trust_llm возможности и не ждала вас. Измените политику проверки возможности, если хотите принимать такие решения самостоятельно.",
+      "reasoning_label": "Обоснование авто-триажа",
+      "tip_auto_triage": "Решение принято автоматическим вторичным оценщиком (политика проверки auto_triage) — ваша очередь проверки была пропущена без участия человека.",
+      "tip_trust_llm": "Одобрено автоматически политикой trust_llm этой возможности — ваша очередь проверки была пропущена без участия человека."
+    }
   },
   "messages_view": {
     "title": "Сообщения",
@@ -852,7 +863,8 @@
     "cost_per_value": "Стоимость / прогон с ценностью",
     "value_delivered_count": "Доставлено ценности",
     "all_models": "Все модели",
-    "col_model": "Модель"
+    "col_model": "Модель",
+    "col_cost": "Стоимость"
   },
   "analytics_dashboard": {
     "title": "Аналитика",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "Я рассматриваю предложение по оптимизации флота для своих агентов: «{title}». {description} Рекомендуемое действие: {action}. {focus}",
     "ask_athena_focus_persona": "Пожалуйста, изучи агента «{persona}» и, если это поможет, открой его Lab для тестирования альтернативных моделей, затем сообщи о своих выводах.",
     "ask_athena_focus_general": "Пожалуйста, изучи это и порекомендуй, что изменить."
+  },
+  "athena": {
+    "avg_cost": "Ср. / ход",
+    "cost_by_action": "Стоимость по типу действия",
+    "cost_per_day": "Стоимость Athena в день",
+    "errors": "Ошибки ходов",
+    "health_hint": "Состояние ассистента",
+    "health_no_activity": "Активности Athena за этот период нет",
+    "health_title": "Здоровье Athena",
+    "jobs_completed": "Завершено",
+    "jobs_failed": "Ошибка",
+    "jobs_title": "Фоновые задачи",
+    "leg_browser_test": "Браузерный тест",
+    "leg_daily_brief": "Ежедневный брифинг",
+    "leg_exec_triage": "Триаж выполнений",
+    "leg_execution_review": "Проверка выполнений",
+    "leg_fleet_analysis": "Анализ флота",
+    "leg_msg_triage": "Триаж сообщений",
+    "leg_other": "Прочее",
+    "leg_reaction": "Реакция канала",
+    "leg_reaction_batch": "Реакции канала",
+    "leg_review_resolution": "Разрешение проверки",
+    "no_activity": "Активности Athena за этот период нет",
+    "origin_autonomous": "Автономно",
+    "origin_chat": "Чат",
+    "origin_external": "Внешнее",
+    "origin_headless": "Фоновое",
+    "origin_proactive": "Проактивно",
+    "proactive_budget": "Бюджет сегодня",
+    "proactive_delivered": "Доставлено",
+    "proactive_dismissed": "Отклонено",
+    "proactive_engaged": "Взаимодействие",
+    "proactive_engaged_rate": "Доля взаимодействий",
+    "proactive_expired": "Истекло",
+    "proactive_title": "Проактивная экономика",
+    "section_hint": "Использование вашего ассистента",
+    "section_title": "Athena",
+    "tokens": "Токены",
+    "tokens_io": "{input} вх. · {output} исх.",
+    "total_cost": "Стоимость Athena",
+    "triage_attention": "Внимание",
+    "triage_deep_dive": "Глубокий анализ",
+    "triage_digest": "Обработано",
+    "triage_drop": "Отброшено",
+    "triage_parse_failures": "Ошибки разбора",
+    "triage_passes": "Пройдено",
+    "triage_title": "Воронка триажа",
+    "turns": "Ходы",
+    "vs_fleet": "Athena против флота",
+    "vs_fleet_hint": "{athena} из {total} общих расходов за период"
+  },
+  "heartbeats": {
+    "all_clear_detail": "Каждая отслеживаемая персона работает в нормальных пределах.",
+    "all_clear_title": "Все системы в норме",
+    "chains": "цепочки",
+    "col_persona": "Персона",
+    "col_score": "ОЗ",
+    "col_vitals": "Тренд · Успех · Расход",
+    "focus_issues": "Проблемы",
+    "healthy_hidden": "здоровые скрыты",
+    "heartbeat": "Пульс",
+    "hide_healthy": "Скрыть здоровых",
+    "idle": "Простой",
+    "monitored": "отслеживается",
+    "runs_suffix": "запусков",
+    "seg_budget": "Бюджет",
+    "seg_healing": "Восстановление",
+    "seg_stability": "Стабильность",
+    "seg_success": "Успех",
+    "show_all": "Показать все"
+  },
+  "provenance": {
+    "sourced_tip": "Ссылается на {count} источник(а), которые можно отследить и проверить.",
+    "unsourced": "Без источников",
+    "unsourced_tip": "Этот отчёт содержит данные, но не имеет раздела Sources — их невозможно проследить до первоисточника."
   }
 }

@@ -63,5 +63,7 @@
   "checkbox": "Rozumím, že tato aplikace odesílá data poskytovatelům AI, přistupuje k systémovým zdrojům (schránka, souborový systém, lokální síť) a spouští procesy mým jménem. Přijímám odpovědnost za to, jak ji konfiguruji a používám.",
   "checkbox_telemetry": "Pomoz vylepšit Personas odesíláním anonymních crash reportů a analytiky využití. Žádná osobní data nejsou zahrnuta. Toto můžeš změnit později v Nastavení.",
   "source_link": "Zobrazit zdroj a licenci",
-  "accept_button": "Rozumím, pokračovat"
+  "accept_button": "Rozumím, pokračovat",
+  "reassure_body": "Personas běží na vašem počítači. Vaše soubory, hesla a data agentů zůstávají lokálně — nic neopustí váš počítač, pokud sami nepřipojíte službu nebo nezapnete volitelnou funkci. Níže uvedené části přesně uvádějí, k čemu má aplikace přístup.",
+  "reassure_title": "Vaše data zůstávají na vašem počítači"
 }

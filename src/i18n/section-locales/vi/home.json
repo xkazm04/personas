@@ -182,5 +182,11 @@
     "trend_up": "tăng {pct}% so với 24h trước",
     "trend_down": "giảm {pct}% so với 24h trước",
     "trend_flat": "không đổi so với 24h trước"
+  },
+  "get_started": {
+    "ask_cta": "Hỏi trợ lý",
+    "build_cta": "Tạo agent đầu tiên",
+    "subtitle": "Mô tả công việc bằng ngôn ngữ thông thường và chúng tôi sẽ thiết lập một agent hoạt động — hoặc nhờ trợ lý thực hiện cho bạn.",
+    "title": "Tạo agent đầu tiên"
   }
 }

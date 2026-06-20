@@ -39,5 +39,16 @@
   "group_toggle_label": "Alihkan grup",
   "row_menu_label": "Tindakan stasiun",
   "row_menu_hide": "Sembunyikan dari pemetik",
-  "row_menu_open_source": "Sumber terbuka"
+  "row_menu_open_source": "Sumber terbuka",
+  "keep_hidden": "Disembunyikan",
+  "keep_kept": "Disimpan",
+  "keep_toggle_label": "Simpan stasiun di pemilih footer",
+  "manage_subtitle": "Kurasi stasiun, atur default pemutaran, dan pratinjau sebelum menyimpan.",
+  "master_footer_desc": "Tampilkan radio di footer aplikasi.",
+  "master_footer_title": "Kontroler footer",
+  "master_resume_desc": "Mulai otomatis stasiun terakhir saat berikutnya.",
+  "master_resume_title": "Lanjutkan saat dibuka",
+  "preview_play": "Pratinjau stasiun",
+  "preview_stop": "Hentikan pratinjau",
+  "youtube_premium_note": "Stasiun YouTube dialirkan melalui pemutar tertanam — diperlukan paket YouTube Premium untuk pengalaman bebas iklan."
 }

@@ -691,11 +691,58 @@
     "filter_placeholder": "تصفية…",
     "no_sources_match": "لا توجد مصادر تطابق \"{query}\"",
     "no_targets_match": "لا توجد شخصيات تطابق \"{query}\"",
-    "agent_fallback": "وكيل"
+    "agent_fallback": "وكيل",
+    "commit_all": "حفظ الكل",
+    "commit_blocked_output_match": "مسارات مطابقة الإخراج تحتاج تعبير مطابقة — قريباً",
+    "commit_blocked_signal": "مسارات مصدر الإشارة تحتاج إعداد مشغّل — قريباً",
+    "commit_route": "حفظ هذا المسار",
+    "existing_routes": "المسارات الحالية",
+    "proto_add_listener": "إضافة مستمع",
+    "proto_disconnect": "فصل المستمع",
+    "proto_hide_unconnected": "إخفاء غير المتصل",
+    "proto_live": "مباشر",
+    "proto_no_listeners": "لا مستمعون",
+    "proto_pending": "معلّق",
+    "proto_rename_event": "إعادة تسمية الحدث",
+    "proto_show_unconnected": "عرض {count} غير متصل",
+    "proto_tab_baseline": "تأليف فقط",
+    "proto_tab_eventhub": "مركز الأحداث",
+    "proto_tab_patchbay": "لوحة التوصيل",
+    "route_commit_failed": "تعذّر حفظ المسار",
+    "route_committed": "تم حفظ المسار",
+    "routes_committed": "تم حفظ {count} مسارات",
+    "tab_compose": "تأليف",
+    "tab_routes": "المسارات",
+    "proto_chain_route": "مسار السلسلة — يُطلَق عند اكتمال البيرسونا المصدر؛ لا يمكن إعادة تسمية الحدث"
   },
   "trigger_configured": "تم ضبط المحفّز",
   "secret_label": "سري",
   "copy_channel_url_title": "نسخ رابط القناة",
   "pause_relay": "إيقاف التتابع مؤقتًا",
-  "resume_relay": "استئناف التتابع"
+  "resume_relay": "استئناف التتابع",
+  "arm_state": {
+    "sleeping": "نائم",
+    "sleeping_title": "مفعّل، لكنه خارج ساعات النشاط — لن ينطلق حتى تُفتح نافذة النشاط من جديد."
+  },
+  "pending_approval": {
+    "approved": "معتمد — قيد التشغيل",
+    "discard": "تجاهل",
+    "discarded": "مُتجاهَل",
+    "run_now": "اعتمد وشغّل",
+    "subtitle_one": "تشغيل مجدوَل واحد ({count}) في الانتظار حتى تعتمده.",
+    "subtitle_other": "{count} تشغيلات مجدوَلة في الانتظار حتى تعتمدها.",
+    "title": "في انتظار موافقتك"
+  },
+  "unattended": {
+    "approval": "اطلب موافقتي",
+    "approval_desc": "يضع كل تشغيل مجدوَل في الانتظار حتى تعتمده، فلا شيء يحدث دون رقابة بغير إذنك.",
+    "auto": "تشغيل تلقائي",
+    "auto_desc": "ينطلق ويعمل دون سؤال — بما في ذلك أي إجراءات يرسلها أو ينشرها أو يكتبها.",
+    "badge_approval": "موافقة",
+    "badge_dry_run": "تشغيل تجريبي",
+    "dry_run": "تشغيل تجريبي (آمن)",
+    "dry_run_desc": "ينطلق وفق الجدول لكنه يوقف كل إجراء صادر — راجع النتيجة، ثم انتقل إلى التلقائي متى وثقت به.",
+    "subtitle": "يتحكم في ما يحدث عندما ينطلق هذا المشغّل من تلقاء نفسه (وفق الجدول) دون أن تراقبه.",
+    "title": "عند التشغيل دون رقابة"
+  }
 }

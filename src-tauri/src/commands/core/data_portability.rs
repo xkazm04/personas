@@ -14,6 +14,7 @@ use tauri_plugin_dialog::DialogExt;
 use ts_rs::TS;
 
 use crate::db::repos::communication::events as event_repo;
+use crate::db::repos::dev_tools as dev_tools_repo;
 use crate::engine::persona_icon::export_safe_icon;
 use crate::db::repos::core::{
     memories as memory_repo, personas as persona_repo,
@@ -66,6 +67,8 @@ const MAX_TEST_SUITES_PER_PERSONA: usize = 100;
 const MAX_TEAM_MEMBERS: usize = 50;
 const MAX_TEAM_CONNECTIONS: usize = 200;
 const MAX_TEAM_MEMORIES_PER_TEAM: usize = 500;
+const MAX_KPIS: usize = 200;
+const MAX_KPI_MEASUREMENTS: usize = 100;
 
 // ============================================================================
 // Export bundle types
@@ -83,6 +86,11 @@ pub struct PortabilityBundle {
     pub tool_definitions: Vec<ToolDefinitionExport>,
     pub teams: Vec<TeamExport>,
     pub credentials: Vec<CredentialMetaExport>,
+    // The KPI setup that travels with the selected teams (their projects' KPIs).
+    // Optional + serde-default so bundles written before this field existed still
+    // deserialize cleanly — no format-version bump (same precedent as team memories).
+    #[serde(default)]
+    pub kpis: Vec<KpiExport>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub encrypted_credentials: Option<CredentialExportEnvelope>,
 }
@@ -203,6 +211,50 @@ pub struct CredentialMetaExport {
     pub metadata: Option<String>,
 }
 
+/// A KPI definition in the portability bundle. KPIs are the outcome layer above
+/// goals (Teams › KPIs); they are project-scoped in the source workspace and
+/// "ride along" with their team. On import they land in a dedicated, dormant
+/// "Imported" project (see `import_bundle`). Live-state columns that don't carry
+/// cleanly across workspaces (assessment, skip-verdict, bindings, created_by/at)
+/// are intentionally NOT exported — the import re-derives a clean dormant KPI.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KpiExport {
+    pub name: String,
+    pub description: Option<String>,
+    pub category: String,
+    pub measure_kind: String,
+    pub measure_config: String,
+    pub unit: String,
+    pub direction: String,
+    pub baseline_value: Option<f64>,
+    pub target_value: Option<f64>,
+    pub target_date: Option<String>,
+    pub cadence: String,
+    /// The KPI's status in the source workspace (informational — imported KPIs
+    /// are always created `paused`, since their measure config is tied to the
+    /// source environment and must be reviewed before measuring).
+    pub status: String,
+    pub tier: String,
+    pub rationale: Option<String>,
+    pub needed_connector: Option<String>,
+    pub metric_type: Option<String>,
+    pub warn_at: Option<f64>,
+    pub crit_at: Option<f64>,
+    /// Measurement time series (newest-first, capped). Empty when the user
+    /// exported definitions only.
+    #[serde(default)]
+    pub measurements: Vec<KpiMeasurementExport>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct KpiMeasurementExport {
+    pub value: f64,
+    pub measured_at: String,
+    pub source: String,
+    pub evidence: Option<String>,
+    pub note: Option<String>,
+}
+
 // ============================================================================
 // Import result types
 // ============================================================================
@@ -215,6 +267,7 @@ pub struct PortabilityImportResult {
     pub tools_created: u32,
     pub credentials_created: u32,
     pub team_memories_created: u32,
+    pub kpis_created: u32,
     pub warnings: Vec<String>,
     pub id_mapping: std::collections::HashMap<String, String>,
 }
@@ -233,6 +286,7 @@ pub struct ExportStats {
     pub memory_count: u32,
     pub team_memory_count: u32,
     pub test_suite_count: u32,
+    pub kpi_count: u32,
 }
 
 // ============================================================================
@@ -262,6 +316,16 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
             team_memory_repo::get_total_count(pool, &t.id, None, None, None)? as u32;
     }
 
+    // KPIs that are part of a live "setup" — active or paused (proposed = review
+    // queue, archived = retired; neither travels). Matches the export filter.
+    let kpi_count = dev_tools_repo::list_all_kpis(pool)
+        .map(|kpis| {
+            kpis.iter()
+                .filter(|k| is_exportable_kpi(&k.status))
+                .count() as u32
+        })
+        .unwrap_or(0);
+
     Ok(ExportStats {
         persona_count: personas.len() as u32,
         tool_count: tools.len() as u32,
@@ -270,7 +334,14 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
         memory_count,
         team_memory_count,
         test_suite_count,
+        kpi_count,
     })
+}
+
+/// A KPI is part of an exportable "setup" when it is actively measured or
+/// paused — not a `proposed` review-queue suggestion or an `archived` retiree.
+fn is_exportable_kpi(status: &str) -> bool {
+    status == "active" || status == "paused"
 }
 
 /// Full export: export everything into a compressed JSON archive via save dialog.
@@ -285,8 +356,9 @@ pub async fn export_full(
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     let pool = &state.db;
+    // Full export carries the entire workspace, KPI setup included.
     let mut bundle =
-        build_export_bundle(pool, ExportScope::Full, include_memories.unwrap_or(true))?;
+        build_export_bundle(pool, ExportScope::Full, include_memories.unwrap_or(true), true)?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -303,6 +375,7 @@ pub async fn export_full(
 /// When `passphrase` is provided (>= 8 chars), credential secrets for the
 /// selected `credential_ids` are encrypted and embedded in the bundle.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn export_selective(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
@@ -310,6 +383,7 @@ pub async fn export_selective(
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
     include_memories: Option<bool>,
+    include_kpis: Option<bool>,
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     // When passphrase is provided (credential secrets involved), upgrade to privileged
@@ -325,7 +399,12 @@ pub async fn export_selective(
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
     };
-    let mut bundle = build_export_bundle(pool, scope, include_memories.unwrap_or(true))?;
+    let mut bundle = build_export_bundle(
+        pool,
+        scope,
+        include_memories.unwrap_or(true),
+        include_kpis.unwrap_or(true),
+    )?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -479,12 +558,14 @@ pub struct CompetitiveImportPreview {
 
 #[cfg(debug_assertions)]
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn export_selective_to_path(
     state: State<'_, Arc<AppState>>,
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
     include_memories: Option<bool>,
+    include_kpis: Option<bool>,
     passphrase: Option<String>,
     file_path: String,
 ) -> Result<bool, AppError> {
@@ -500,7 +581,12 @@ pub async fn export_selective_to_path(
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
     };
-    let mut bundle = build_export_bundle(pool, scope, include_memories.unwrap_or(true))?;
+    let mut bundle = build_export_bundle(
+        pool,
+        scope,
+        include_memories.unwrap_or(true),
+        include_kpis.unwrap_or(true),
+    )?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -609,6 +695,7 @@ fn build_export_bundle(
     pool: &DbPool,
     scope: ExportScope,
     include_memories: bool,
+    include_kpis: bool,
 ) -> Result<PortabilityBundle, AppError> {
     let all_personas = persona_repo::get_all(pool)?;
     let all_tools = tool_repo::get_all_definitions(pool)?;
@@ -853,6 +940,84 @@ fn build_export_bundle(
         })
         .collect();
 
+    // KPI setup. KPIs are project-scoped; the "team's KPI setup" is the KPIs of
+    // the projects its selected teams belong to. Full export takes every project's
+    // KPIs. Only active/paused KPIs travel; each carries a capped, newest-first
+    // slice of its measurement history.
+    let kpi_exports: Vec<KpiExport> = if include_kpis {
+        let source_kpis = match &scope {
+            ExportScope::Full => dev_tools_repo::list_all_kpis(pool)?,
+            ExportScope::Selective { .. } => {
+                let mut project_ids: std::collections::HashSet<String> =
+                    std::collections::HashSet::new();
+                for t in &all_teams {
+                    if selected_team_ids.contains(&t.id) {
+                        if let Some(pid) = &t.project_id {
+                            project_ids.insert(pid.clone());
+                        }
+                    }
+                }
+                let mut out = Vec::new();
+                let mut seen = std::collections::HashSet::new();
+                for pid in &project_ids {
+                    for k in dev_tools_repo::list_kpis(pool, pid, None)? {
+                        if seen.insert(k.id.clone()) {
+                            out.push(k);
+                        }
+                    }
+                }
+                out
+            }
+        };
+
+        source_kpis
+            .into_iter()
+            .filter(|k| is_exportable_kpi(&k.status))
+            .take(MAX_KPIS)
+            .map(|k| {
+                let measurements = dev_tools_repo::list_kpi_measurements(
+                    pool,
+                    &k.id,
+                    Some(MAX_KPI_MEASUREMENTS as i64),
+                )
+                .unwrap_or_default()
+                .into_iter()
+                .map(|m| KpiMeasurementExport {
+                    value: m.value,
+                    measured_at: m.measured_at,
+                    source: m.source,
+                    evidence: m.evidence,
+                    note: m.note,
+                })
+                .collect();
+
+                KpiExport {
+                    name: k.name,
+                    description: k.description,
+                    category: k.category,
+                    measure_kind: k.measure_kind,
+                    measure_config: k.measure_config,
+                    unit: k.unit,
+                    direction: k.direction,
+                    baseline_value: k.baseline_value,
+                    target_value: k.target_value,
+                    target_date: k.target_date,
+                    cadence: k.cadence,
+                    status: k.status,
+                    tier: k.tier,
+                    rationale: k.rationale,
+                    needed_connector: k.needed_connector,
+                    metric_type: k.metric_type,
+                    warn_at: k.warn_at,
+                    crit_at: k.crit_at,
+                    measurements,
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     Ok(PortabilityBundle {
         format_version: 2,
         exported_at: chrono::Utc::now().to_rfc3339(),
@@ -862,6 +1027,7 @@ fn build_export_bundle(
         tool_definitions: tool_exports,
         teams: team_exports,
         credentials: credential_exports,
+        kpis: kpi_exports,
         encrypted_credentials: None,
     })
 }
@@ -966,6 +1132,7 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     validation::require_max_count("tool_definitions", &bundle.tool_definitions, MAX_TOOLS)?;
     validation::require_max_count("teams", &bundle.teams, MAX_TEAMS)?;
     validation::require_max_count("credentials", &bundle.credentials, MAX_CREDENTIALS)?;
+    validation::require_max_count("kpis", &bundle.kpis, MAX_KPIS)?;
 
     // Validate tool definitions
     for (i, t) in bundle.tool_definitions.iter().enumerate() {
@@ -1011,6 +1178,39 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
             &format!("credential[{i}].metadata"),
             &c.metadata,
             MAX_SCHEMA_LEN,
+        )?;
+    }
+
+    // Validate KPI setup
+    for (i, k) in bundle.kpis.iter().enumerate() {
+        let prefix = format!("kpi[{i}]");
+        validation::require_non_empty(&format!("{prefix}.name"), &k.name)?;
+        validation::require_max_len(&format!("{prefix}.name"), &k.name, MAX_NAME_LEN)?;
+        validation::require_optional_max_len(
+            &format!("{prefix}.description"),
+            &k.description,
+            MAX_DESCRIPTION_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("{prefix}.category"),
+            &k.category,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("{prefix}.measure_kind"),
+            &k.measure_kind,
+            MAX_SHORT_FIELD_LEN,
+        )?;
+        validation::require_max_len(
+            &format!("{prefix}.measure_config"),
+            &k.measure_config,
+            MAX_CONFIG_LEN,
+        )?;
+        validation::require_max_len(&format!("{prefix}.unit"), &k.unit, MAX_SHORT_FIELD_LEN)?;
+        validation::require_max_count(
+            &format!("{prefix}.measurements"),
+            &k.measurements,
+            MAX_KPI_MEASUREMENTS,
         )?;
     }
 
@@ -1302,6 +1502,7 @@ fn import_bundle(
         tools_created: 0,
         credentials_created: 0,
         team_memories_created: 0,
+        kpis_created: 0,
         warnings: Vec::new(),
         id_mapping: std::collections::HashMap::new(),
     };
@@ -1657,6 +1858,120 @@ fn import_bundle(
             Err(e) => result
                 .warnings
                 .push(format!("Team '{}': {}", t.name, e)),
+        }
+    }
+
+    // Phase 6: Import KPI setup. KPIs are project-scoped and FK-bound to
+    // dev_projects, but neither projects nor a team's project survive the bundle.
+    // So imported KPIs land in a single, deduped, dormant "Imported" project —
+    // grouped, paused, and reviewable — instead of polluting a real project. The
+    // measure config is tied to the source environment, so a `paused` status keeps
+    // them out of autonomous measurement/derivation until the user reconfigures.
+    if !bundle.kpis.is_empty() {
+        let imported_project_id: Option<String> = match tx
+            .query_row(
+                "SELECT id FROM dev_projects WHERE name = 'Imported' LIMIT 1",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .ok()
+        {
+            Some(id) => Some(id),
+            None => {
+                let pid = uuid::Uuid::new_v4().to_string();
+                match tx.execute(
+                    "INSERT INTO dev_projects (id, name, root_path, description, status, created_at, updated_at)
+                     VALUES (?1, 'Imported', ?2, ?3, 'active', ?4, ?4)",
+                    rusqlite::params![
+                        pid,
+                        format!("imported://{pid}"),
+                        "Holds KPI setup brought in by workspace import. Review and reassign as needed.",
+                        now,
+                    ],
+                ) {
+                    Ok(_) => Some(pid),
+                    Err(e) => {
+                        result
+                            .warnings
+                            .push(format!("Could not create 'Imported' project for KPIs: {e}"));
+                        None
+                    }
+                }
+            }
+        };
+
+        if let Some(project_id) = imported_project_id {
+            for k in bundle.kpis.iter().take(MAX_KPIS) {
+                // Dedup by (project, name) so re-imports don't duplicate.
+                let exists = tx
+                    .query_row(
+                        "SELECT COUNT(*) FROM dev_kpis WHERE project_id = ?1 AND name = ?2",
+                        rusqlite::params![project_id, k.name],
+                        |row| row.get::<_, i32>(0),
+                    )
+                    .unwrap_or(0)
+                    > 0;
+                if exists {
+                    continue;
+                }
+
+                let kpi_id = uuid::Uuid::new_v4().to_string();
+                // Measurements are exported newest-first; the head seeds current state.
+                let latest = k.measurements.first();
+                let current_value = latest.map(|m| m.value);
+                let last_measured_at = latest.map(|m| m.measured_at.clone());
+
+                // Base insert mirrors create_kpi's proven column set; always paused.
+                match tx.execute(
+                    "INSERT INTO dev_kpis (id, project_id, context_group_id, name, description,
+                        category, measure_kind, measure_config, unit, direction,
+                        baseline_value, target_value, target_date, cadence, status,
+                        created_by, rationale, needed_connector, metric_type, context_id)
+                     VALUES (?1,?2,NULL,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,'paused','user',?14,?15,?16,NULL)",
+                    rusqlite::params![
+                        kpi_id, project_id, k.name, k.description, k.category, k.measure_kind,
+                        k.measure_config, k.unit, k.direction, k.baseline_value, k.target_value,
+                        k.target_date, k.cadence, k.rationale, k.needed_connector, k.metric_type,
+                    ],
+                ) {
+                    Ok(_) => {
+                        result.kpis_created += 1;
+
+                        // Preserve tier + calibration lines + seed last-known value.
+                        // These columns exist on the current schema; degrade quietly
+                        // (the KPI is already imported) if an older DB lacks them.
+                        let _ = tx.execute(
+                            "UPDATE dev_kpis SET tier = ?1, warn_at = ?2, crit_at = ?3,
+                                current_value = ?4, last_measured_at = ?5,
+                                updated_at = datetime('now')
+                             WHERE id = ?6",
+                            rusqlite::params![
+                                k.tier, k.warn_at, k.crit_at, current_value, last_measured_at, kpi_id,
+                            ],
+                        );
+
+                        for m in k.measurements.iter().take(MAX_KPI_MEASUREMENTS) {
+                            let mid = uuid::Uuid::new_v4().to_string();
+                            // Clamp to the CHECK-constrained source set.
+                            let source = match m.source.as_str() {
+                                "evaluator" | "manual" | "scan" | "health_snapshot" => {
+                                    m.source.as_str()
+                                }
+                                _ => "manual",
+                            };
+                            let _ = tx.execute(
+                                "INSERT INTO dev_kpi_measurements
+                                 (id, kpi_id, value, measured_at, source, evidence, note)
+                                 VALUES (?1,?2,?3,?4,?5,?6,?7)",
+                                rusqlite::params![
+                                    mid, kpi_id, m.value, m.measured_at, source, m.evidence, m.note,
+                                ],
+                            );
+                        }
+                    }
+                    Err(e) => result.warnings.push(format!("KPI '{}': {}", k.name, e)),
+                }
+            }
         }
     }
 
@@ -2464,6 +2779,7 @@ mod tests {
             tool_definitions: Vec::new(),
             teams: Vec::new(),
             credentials: Vec::new(),
+            kpis: Vec::new(),
             encrypted_credentials: None,
         }
     }
@@ -2578,5 +2894,122 @@ mod tests {
         assert_eq!(portable_team_memory_tags(&plain), Some("manual".into()));
 
         assert_eq!(portable_team_memory_tags(&None), None);
+    }
+
+    fn kpi_export(name: &str, measurements: Vec<KpiMeasurementExport>) -> KpiExport {
+        KpiExport {
+            name: name.into(),
+            description: Some("desc".into()),
+            category: "quality".into(),
+            measure_kind: "manual".into(),
+            measure_config: "{}".into(),
+            unit: "pct".into(),
+            direction: "up".into(),
+            baseline_value: Some(10.0),
+            target_value: Some(90.0),
+            target_date: None,
+            cadence: "weekly".into(),
+            status: "active".into(),
+            tier: "primary".into(),
+            rationale: Some("why".into()),
+            needed_connector: None,
+            metric_type: None,
+            warn_at: Some(40.0),
+            crit_at: Some(20.0),
+            measurements,
+        }
+    }
+
+    #[test]
+    fn import_bundle_lands_kpis_paused_in_imported_project_with_history() {
+        let pool = init_test_db().unwrap();
+        let mut bundle = empty_bundle();
+        // Measurements are exported newest-first; the head seeds current state.
+        bundle.kpis.push(kpi_export(
+            "Coverage",
+            vec![
+                KpiMeasurementExport {
+                    value: 72.0,
+                    measured_at: "2026-06-19T10:00:00Z".into(),
+                    source: "manual".into(),
+                    evidence: None,
+                    note: None,
+                },
+                KpiMeasurementExport {
+                    value: 65.0,
+                    measured_at: "2026-06-12T10:00:00Z".into(),
+                    source: "evaluator".into(),
+                    evidence: None,
+                    note: None,
+                },
+            ],
+        ));
+
+        let result = import_bundle(&pool, &bundle).expect("import must succeed");
+        assert_eq!(result.kpis_created, 1);
+
+        let conn = pool.get().unwrap();
+        let project_id: String = conn
+            .query_row("SELECT id FROM dev_projects WHERE name = 'Imported'", [], |r| {
+                r.get(0)
+            })
+            .expect("dedicated Imported project should exist");
+
+        let kpis = dev_tools_repo::list_kpis(&pool, &project_id, None).unwrap();
+        assert_eq!(kpis.len(), 1);
+        let k = &kpis[0];
+        assert_eq!(k.name, "Coverage");
+        // Always dormant on import, regardless of the source 'active' status.
+        assert_eq!(k.status, "paused");
+        assert_eq!(k.tier, "primary");
+        assert_eq!(k.warn_at, Some(40.0));
+        assert_eq!(k.crit_at, Some(20.0));
+        // Newest measurement seeds current_value/last_measured_at.
+        assert_eq!(k.current_value, Some(72.0));
+        assert_eq!(k.last_measured_at.as_deref(), Some("2026-06-19T10:00:00Z"));
+
+        let measurements = dev_tools_repo::list_kpi_measurements(&pool, &k.id, Some(100)).unwrap();
+        assert_eq!(measurements.len(), 2);
+    }
+
+    #[test]
+    fn import_bundle_dedups_kpis_by_name_on_reimport() {
+        let pool = init_test_db().unwrap();
+        let mut bundle = empty_bundle();
+        bundle.kpis.push(kpi_export("Coverage", Vec::new()));
+
+        assert_eq!(import_bundle(&pool, &bundle).unwrap().kpis_created, 1);
+        // Second import reuses the Imported project and skips the duplicate.
+        assert_eq!(import_bundle(&pool, &bundle).unwrap().kpis_created, 0);
+
+        let conn = pool.get().unwrap();
+        let kpi_count: i32 = conn
+            .query_row("SELECT COUNT(*) FROM dev_kpis", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(kpi_count, 1);
+        let project_count: i32 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM dev_projects WHERE name = 'Imported'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(project_count, 1);
+    }
+
+    #[test]
+    fn validate_bundle_rejects_too_many_kpi_measurements() {
+        let mut bundle = empty_bundle();
+        let measurements = (0..=MAX_KPI_MEASUREMENTS)
+            .map(|i| KpiMeasurementExport {
+                value: i as f64,
+                measured_at: "2026-06-19T10:00:00Z".into(),
+                source: "manual".into(),
+                evidence: None,
+                note: None,
+            })
+            .collect();
+        bundle.kpis.push(kpi_export("Coverage", measurements));
+        assert!(validate_bundle(&bundle).is_err());
     }
 }

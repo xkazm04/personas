@@ -39,5 +39,16 @@
   "group_toggle_label": "Gruppe umschalten",
   "row_menu_label": "Stationsaktionen",
   "row_menu_hide": "Vor dem Picker verstecken",
-  "row_menu_open_source": "Open Source"
+  "row_menu_open_source": "Open Source",
+  "keep_hidden": "Ausgeblendet",
+  "keep_kept": "Behalten",
+  "keep_toggle_label": "Station in der Fußleisten-Auswahl behalten",
+  "manage_subtitle": "Stationen kuratieren, Wiedergabe-Standards festlegen und alles vor dem Behalten vorhören.",
+  "master_footer_desc": "Radio in der App-Fußleiste anzeigen.",
+  "master_footer_title": "Fußleisten-Controller",
+  "master_resume_desc": "Beim nächsten Mal automatisch mit der letzten Station starten.",
+  "master_resume_title": "Beim Start fortsetzen",
+  "preview_play": "Station vorhören",
+  "preview_stop": "Vorschau stoppen",
+  "youtube_premium_note": "YouTube-Stationen streamen über einen eingebetteten Player — für eine werbefreie Erfahrung ist YouTube Premium erforderlich."
 }

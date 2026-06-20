@@ -182,5 +182,11 @@
     "trend_up": "subió {pct}% respecto a las 24h anteriores",
     "trend_down": "bajó {pct}% respecto a las 24h anteriores",
     "trend_flat": "sin cambios respecto a las 24h anteriores"
+  },
+  "get_started": {
+    "ask_cta": "Pregunta al asistente",
+    "build_cta": "Crea tu primer agente",
+    "subtitle": "Describe una tarea en lenguaje sencillo y configuraremos un agente funcional — o pide al asistente que lo haga por ti.",
+    "title": "Crea tu primer agente"
   }
 }

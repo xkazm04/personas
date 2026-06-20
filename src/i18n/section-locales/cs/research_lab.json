@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv vrátil chybu (HTTP {status}). Zkuste to za chvíli.",
   "arxiv_error_network": "Nepodařilo se spojit s arXiv. Zkontrolujte připojení a zkuste znovu.",
   "arxiv_error_feed": "arXiv nemohl zpracovat tento dotaz. Zkuste jiná nebo jednodušší klíčová slova.",
-  "arxiv_error_generic": "Vyhledávání arXiv selhalo. Zkuste to znovu."
+  "arxiv_error_generic": "Vyhledávání arXiv selhalo. Zkuste to znovu.",
+  "added_with_dedup": "Přidáno {added} zdrojů ({duplicates} již ve vaší knihovně)"
 }

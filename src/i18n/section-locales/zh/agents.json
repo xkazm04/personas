@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "缓存命中",
+    "cached": "已缓存",
+    "deep_fanout": "深度扇出",
+    "deep_fanout_hint": "将独立并行子任务委派给子代理，并设置预算上限。",
+    "deep_fanout_unavailable": "当前计划不可用 — 需要工作流/任务工具（Max/Team）。",
+    "subagents": "子代理"
   },
   "lab": {
     "mode_arena": "竞技场",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "改进角色\"{name}\" v{version} — 尚未评测。我应该重点关注什么？",
     "vr_metric_tool": "工具准确性",
     "vr_metric_quality": "输出质量",
-    "vr_metric_protocol": "协议合规性"
+    "vr_metric_protocol": "协议合规性",
+    "eco_col_attempted": "尝试次数",
+    "eco_col_cost_success": "成本/成功",
+    "eco_col_model": "模型",
+    "eco_col_rate": "解决率",
+    "eco_col_resolved": "已解决",
+    "eco_empty": "暂无评估结果 — 运行实验室以填充成本效益数据。",
+    "eco_subtitle": "每个模型解决评估的频率及每次成功的成本。",
+    "eco_title": "成本效益"
   },
   "design": {
     "select_agent": "选择代理以开始设计分析",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard 信任状态标签",
     "review_pill_trust": "信任",
     "_comment_dim_status_activated": "PersonaSigilSummary 中布尔维度（记忆/审核/事件/错误）激活时显示的值",
-    "dim_status_activated": "已激活"
+    "dim_status_activated": "已激活",
+    "engine_claude": "引擎：Claude",
+    "engine_claude_tooltip": "完整 Claude。点击启用混合模式：简单子任务（摘要、提取、重格式化）将分流到本地模型以节省高级容量。",
+    "engine_local_first": "引擎：本地优先",
+    "engine_local_first_tooltip": "本地优先：Claude 编排工作指令并验证；本地模型生成所有内容。点击返回完整 Claude。",
+    "engine_mixed": "引擎：混合",
+    "engine_mixed_tooltip": "混合引擎：Claude 通过 llm_delegate 工具编排并将简单子任务分流至本地模型。点击返回完整 Claude。",
+    "petals_label": "花瓣",
+    "recipe": "配方",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "未选择代理",
@@ -1855,7 +1879,10 @@
     "build_failed": "构建启动失败。请检查 CLI 配置。",
     "header_title": "Build",
     "header_subtitle_new": "Compose a new agent from scratch",
-    "header_subtitle_editing": "Editing {name}"
+    "header_subtitle_editing": "Editing {name}",
+    "context_hint": "用作参考材料，在此次构建过程中塑造人格。构建完成后不会保留。",
+    "context_placeholder": "粘贴写作样本、你的角色与目标，或品牌声音指南——构建时将以此为基础塑造人格的表达风格与前提假设，而非凭借你的一句话意图凭空创造。",
+    "context_toggle": "添加参考上下文（可选）"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2631,7 +2658,8 @@
     "automations": "自动化",
     "triggers_desc": "每个角色的事件订阅和触发器配置将在此标签页中提供。",
     "messaging_desc": "此智能体的通知渠道和收件箱路由将在此处显示。",
-    "automations_desc": "此智能体的独立自动化规则将在此处显示。"
+    "automations_desc": "此智能体的独立自动化规则将在此处显示。",
+    "parameters": "参数"
   },
   "parameters_card": {
     "title": "参数",
@@ -2660,5 +2688,14 @@
   "glyph_db_scope_loading": "正在加载表…",
   "glyph_db_scope_error": "无法加载表——请重试",
   "glyph_db_scope_empty": "未找到表",
-  "glyph_db_scope_selected": "{total} 个表中已选 {count} 个"
+  "glyph_db_scope_selected": "{total} 个表中已选 {count} 个",
+  "share": {
+    "button": "分享",
+    "failed": "无法将此代理发布到画廊",
+    "hint": "任何拥有链接的人均可一键在 Personas 中打开此代理。",
+    "import_failed": "无法导入该共享代理",
+    "imported": "已从分享链接导入代理",
+    "invite_hint": "邀请好友加入 Personas — 他们加入后您将获得积分",
+    "published": "已分享 — 复制链接发送给他人"
+  }
 }

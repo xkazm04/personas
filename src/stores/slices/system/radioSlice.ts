@@ -23,9 +23,9 @@ import type { SystemStore } from '../../storeTypes';
  *   reopening the picker (and the app).
  *
  * All four fields are persisted via `systemStore`'s `partialize`, so
- * user choices survive restarts. The toggles live in Settings →
- * Account (`RadioSettingsCard`); the collapse state is set inline in
- * the picker.
+ * user choices survive restarts. The toggles live in the Settings →
+ * Radio tab (`RadioConsoleVariant`); the collapse state is set inline
+ * in the picker.
  */
 export type StationSourceKind = 'youtubeTracks' | 'stream';
 

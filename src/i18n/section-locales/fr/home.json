@@ -182,5 +182,11 @@
     "trend_up": "en hausse de {pct}% par rapport aux 24h précédentes",
     "trend_down": "en baisse de {pct}% par rapport aux 24h précédentes",
     "trend_flat": "aucun changement par rapport aux 24h précédentes"
+  },
+  "get_started": {
+    "ask_cta": "Interroger l'assistant",
+    "build_cta": "Créer votre premier agent",
+    "subtitle": "Décrivez une tâche en langage courant et nous configurerons un agent opérationnel — ou demandez à l'assistant de le faire pour vous.",
+    "title": "Créez votre premier agent"
   }
 }

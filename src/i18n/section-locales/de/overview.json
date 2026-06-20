@@ -151,7 +151,9 @@
     "detail_note_label": "Lösungshinweis (optional)",
     "detail_no_persona": "Kein Agent",
     "empty_open_title": "Alles in Ordnung",
-    "empty_filtered_title": "Keine passenden Vorfälle"
+    "empty_filtered_title": "Keine passenden Vorfälle",
+    "col_days": "Tage",
+    "col_incident": "Vorfall"
   },
   "observability": {
     "title": "Observability",
@@ -352,7 +354,8 @@
     "sort_runs": "Meiste Ausführungen",
     "sort_recent": "Neueste",
     "needs_review": "Zu prüfen",
-    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen."
+    "pending_scope_hint": "Wählen Sie eine Persona, um alle ausstehenden Anmerkungen zu prüfen.",
+    "graph_tab": "Graph"
   },
   "conflicts": {
     "dismissed": "Konflikt verworfen",
@@ -506,7 +509,15 @@
     "delete_all": "Alle löschen",
     "delete_all_confirm_title": "Alle Prüfungen löschen?",
     "delete_all_confirm_body": "Dies löscht dauerhaft alle {count} Bewertungen. Dieser Vorgang kann nicht rückgängig gemacht werden.",
-    "delete_all_confirm_cta": "Alle löschen"
+    "delete_all_confirm_cta": "Alle löschen",
+    "auto_resolved": {
+      "badge": "Automatisch abgeschlossen",
+      "banner_auto_triage": "Diese Überprüfung wurde automatisch durch einen auto_triage-Evaluator im zweiten Durchlauf abgeschlossen, nicht von dir. Ändere die Überprüfungsrichtlinie der Funktion, um deine Genehmigung zu erfordern.",
+      "banner_trust_llm": "Diese Überprüfung wurde automatisch durch die trust_llm-Richtlinie der Funktion genehmigt und hat nie auf dich gewartet. Ändere die Überprüfungsrichtlinie der Funktion, wenn du diese selbst entscheiden möchtest.",
+      "reasoning_label": "Auto-Triage-Begründung",
+      "tip_auto_triage": "Entschieden durch einen automatischen Evaluator im zweiten Durchlauf (auto_triage-Überprüfungsrichtlinie) — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen.",
+      "tip_trust_llm": "Automatisch genehmigt durch die trust_llm-Überprüfungsrichtlinie dieser Funktion — deine Überprüfungswarteschlange wurde ohne menschliche Entscheidung übersprungen."
+    }
   },
   "messages_view": {
     "title": "Nachrichten",
@@ -852,7 +863,8 @@
     "cost_per_value": "Kosten / Wertlauf",
     "value_delivered_count": "Wert geliefert",
     "all_models": "Alle Modelle",
-    "col_model": "Modell"
+    "col_model": "Modell",
+    "col_cost": "Kosten"
   },
   "analytics_dashboard": {
     "title": "Analytik",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "Ich überprüfe einen Flottenoptimierungsvorschlag für meine Agenten: „{title}\". {description} Empfohlene Maßnahme: {action}. {focus}",
     "ask_athena_focus_persona": "Bitte untersuche den Agenten „{persona}\" und öffne bei Bedarf dessen Lab, um alternative Modelle zu testen. Berichte anschließend über deine Erkenntnisse.",
     "ask_athena_focus_general": "Bitte prüfe dies und empfehle, was geändert werden sollte."
+  },
+  "athena": {
+    "avg_cost": "Ø / Runde",
+    "cost_by_action": "Kosten nach Aktionstyp",
+    "cost_per_day": "Athena-Kosten pro Tag",
+    "errors": "Rundenfehler",
+    "health_hint": "Wie der Assistent läuft",
+    "health_no_activity": "Keine Athena-Aktivität in diesem Zeitfenster zu melden",
+    "health_title": "Athena-Gesundheit",
+    "jobs_completed": "Abgeschlossen",
+    "jobs_failed": "Fehlgeschlagen",
+    "jobs_title": "Hintergrundjobs",
+    "leg_browser_test": "Browser-Test",
+    "leg_daily_brief": "Tagesbriefing",
+    "leg_exec_triage": "Ausführungs-Triage",
+    "leg_execution_review": "Ausführungsüberprüfung",
+    "leg_fleet_analysis": "Fleet-Analyse",
+    "leg_msg_triage": "Nachrichten-Triage",
+    "leg_other": "Sonstiges",
+    "leg_reaction": "Channel-Reaktion",
+    "leg_reaction_batch": "Channel-Reaktionen",
+    "leg_review_resolution": "Prüfungsauflösung",
+    "no_activity": "Keine Athena-Aktivität in diesem Zeitfenster",
+    "origin_autonomous": "Autonom",
+    "origin_chat": "Chat",
+    "origin_external": "Extern",
+    "origin_headless": "Hintergrund",
+    "origin_proactive": "Proaktiv",
+    "proactive_budget": "Budget heute",
+    "proactive_delivered": "Zugestellt",
+    "proactive_dismissed": "Verworfen",
+    "proactive_engaged": "Interagiert",
+    "proactive_engaged_rate": "Interaktionsrate",
+    "proactive_expired": "Abgelaufen",
+    "proactive_title": "Proaktive Wirtschaft",
+    "section_hint": "Eigene Nutzung deines Assistenten",
+    "section_title": "Athena",
+    "tokens": "Token",
+    "tokens_io": "{input} ein · {output} aus",
+    "total_cost": "Athena-Kosten",
+    "triage_attention": "Aufmerksamkeit",
+    "triage_deep_dive": "Tiefenanalyse",
+    "triage_digest": "Verarbeitet",
+    "triage_drop": "Verworfen",
+    "triage_parse_failures": "Parse-Fehler",
+    "triage_passes": "Durchläufe",
+    "triage_title": "Triage-Trichter",
+    "turns": "Runden",
+    "vs_fleet": "Athena vs. Fleet",
+    "vs_fleet_hint": "{athena} von {total} Gesamtausgaben in diesem Zeitfenster"
+  },
+  "heartbeats": {
+    "all_clear_detail": "Jede überwachte Persona operiert innerhalb gesunder Schwellenwerte.",
+    "all_clear_title": "Alle Systeme normal",
+    "chains": "Ketten",
+    "col_persona": "Persona",
+    "col_score": "HP",
+    "col_vitals": "Trend · Erfolg · Verbrauch",
+    "focus_issues": "Probleme fokussieren",
+    "healthy_hidden": "gesunde ausgeblendet",
+    "heartbeat": "Herzschlag",
+    "hide_healthy": "Gesunde ausblenden",
+    "idle": "Inaktiv",
+    "monitored": "überwacht",
+    "runs_suffix": "Ausführungen",
+    "seg_budget": "Budget",
+    "seg_healing": "Heilung",
+    "seg_stability": "Stabilität",
+    "seg_success": "Erfolg",
+    "show_all": "Alle anzeigen"
+  },
+  "provenance": {
+    "sourced_tip": "Zitiert {count} Quelle(n), die du nachverfolgen und prüfen kannst.",
+    "unsourced": "Ohne Quellenangabe",
+    "unsourced_tip": "Dieser Bericht enthält Zahlen, aber keinen Sources-Abschnitt — sie lassen sich nicht auf ihren Ursprung zurückverfolgen."
   }
 }

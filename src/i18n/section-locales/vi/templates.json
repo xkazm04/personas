@@ -827,7 +827,18 @@
     "schedule_hourly": "Hàng giờ",
     "_comment_events_count": "Count of cross-persona event subscriptions configured for a capability",
     "events_count_one": "{count} sự kiện",
-    "events_count_other": "{count} sự kiện"
+    "events_count_other": "{count} sự kiện",
+    "left_messages_heading": "Tin nhắn",
+    "persona_layout_dim_disable": "Vô hiệu hóa",
+    "persona_layout_dim_disable_title": "Vô hiệu hóa sigil này cho khả năng đang hoạt động — các câu hỏi của nó sẽ bị bỏ qua trong quá trình xây dựng.",
+    "persona_layout_dim_disabled": "Đã vô hiệu hóa",
+    "persona_layout_dim_reenable": "Kích hoạt lại sigil này cho khả năng đang hoạt động — các câu hỏi của nó sẽ xuất hiện lại.",
+    "persona_layout_rail_activated": "Đã kích hoạt",
+    "_comment_left_messages_heading": "Heading above the messaging-channels card in the adoption left panel — keep 1 word",
+    "_comment_persona_layout_dim_disable": "Footer toggle in the petal answer modal: disable this dimension for the active capability — keep 1 word",
+    "_comment_persona_layout_dim_disable_title": "Tooltip on the Disable toggle when the dimension is currently enabled",
+    "_comment_persona_layout_dim_reenable": "Tooltip on the Disable toggle when the dimension is currently disabled",
+    "_comment_persona_layout_rail_activated": "Left quick-action rail info box: shown next to the Memory/Review petal icon when that dimension is enabled — keep 1 word"
   },
   "scan": {
     "scanning_draft": "Đang quét bản nháp persona...",

@@ -35,6 +35,7 @@
     "check:dead": "knip",
     "check:dead:files": "knip --include files",
     "check:i18n": "node scripts/i18n/check-coverage.mjs",
+    "check:i18n:strict": "node scripts/i18n/check-coverage.mjs --strict",
     "check:i18n-dead": "node scripts/i18n/find-unused-i18n-keys.mjs",
     "check:error-registry": "node scripts/i18n/check-error-registry-parity.mjs",
     "check:contracts": "node scripts/check-command-contract.mjs && node scripts/check-event-registry.mjs",

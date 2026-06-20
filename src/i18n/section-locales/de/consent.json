@@ -63,5 +63,7 @@
   "checkbox": "Ich verstehe, dass diese Anwendung Daten an KI-Anbieter sendet, auf Systemressourcen zugreift (Zwischenablage, Dateisystem, Netzwerk) und Prozesse in meinem Namen ausführt. Ich übernehme die Verantwortung für die Konfiguration und Nutzung.",
   "checkbox_telemetry": "Helfen Sie, Personas zu verbessern, indem Sie anonyme Absturzberichte und Nutzungsanalysen senden. Keine persönlichen Daten enthalten. Dies kann später in den Einstellungen geändert werden.",
   "source_link": "Quellcode & Lizenz anzeigen",
-  "accept_button": "Verstanden, weiter"
+  "accept_button": "Verstanden, weiter",
+  "reassure_body": "Personas läuft auf deinem Computer. Deine Dateien, Passwörter und Agentendaten bleiben lokal — nichts verlässt deinen Computer, es sei denn, du verbindest einen Dienst oder aktivierst selbst eine optionale Funktion. Die folgenden Abschnitte erläutern genau, worauf die App zugreifen kann.",
+  "reassure_title": "Deine Daten bleiben auf deinem Computer"
 }

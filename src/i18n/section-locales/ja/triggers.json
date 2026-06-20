@@ -691,11 +691,58 @@
     "filter_placeholder": "フィルター…",
     "no_sources_match": "「{query}」に一致するソースはありません",
     "no_targets_match": "「{query}」に一致するペルソナはありません",
-    "agent_fallback": "エージェント"
+    "agent_fallback": "エージェント",
+    "commit_all": "すべて保存",
+    "commit_blocked_output_match": "アウトプットマッチルートにはマッチ式が必要です — 近日公開",
+    "commit_blocked_signal": "シグナルソースルートにはトリガー設定が必要です — 近日公開",
+    "commit_route": "このルートを保存",
+    "existing_routes": "既存のルート",
+    "proto_add_listener": "リスナーを追加",
+    "proto_disconnect": "リスナーを切断",
+    "proto_hide_unconnected": "未接続を非表示",
+    "proto_live": "ライブ",
+    "proto_no_listeners": "リスナーなし",
+    "proto_pending": "保留中",
+    "proto_rename_event": "イベント名を変更",
+    "proto_show_unconnected": "未接続 {count} 件を表示",
+    "proto_tab_baseline": "作成のみ",
+    "proto_tab_eventhub": "イベントハブ",
+    "proto_tab_patchbay": "パッチベイ",
+    "route_commit_failed": "ルートを保存できませんでした",
+    "route_committed": "ルートを保存しました",
+    "routes_committed": "{count} 件のルートを保存しました",
+    "tab_compose": "作成",
+    "tab_routes": "ルート",
+    "proto_chain_route": "チェーンルート — ソースペルソナの完了時に発火します。イベント名は変更できません"
   },
   "trigger_configured": "トリガー設定済み",
   "secret_label": "シークレット",
   "copy_channel_url_title": "チャンネルURLをコピー",
   "pause_relay": "リレーを一時停止",
-  "resume_relay": "リレーを再開"
+  "resume_relay": "リレーを再開",
+  "arm_state": {
+    "sleeping": "スリープ中",
+    "sleeping_title": "有効ですが、アクティブ時間外です — アクティブウィンドウが再開するまで実行されません。"
+  },
+  "pending_approval": {
+    "approved": "承認済み — 実行中",
+    "discard": "破棄",
+    "discarded": "破棄済み",
+    "run_now": "承認して実行",
+    "subtitle_one": "{count}件のスケジュール実行が承認待ちで保留中です。",
+    "subtitle_other": "{count}件のスケジュール実行が承認待ちで保留中です。",
+    "title": "承認待ち"
+  },
+  "unattended": {
+    "approval": "承認を要求する",
+    "approval_desc": "スケジュール実行ごとにあなたの承認が得られるまで保留し、あなたの確認なしに何も実行されないようにします。",
+    "auto": "自動実行",
+    "auto_desc": "確認なしに実行します — 送信、投稿、書き込みなどのアクションも含みます。",
+    "badge_approval": "承認",
+    "badge_dry_run": "ドライラン",
+    "dry_run": "ドライラン（安全）",
+    "dry_run_desc": "スケジュール通りに実行されますが、すべての外部アクションを抑制します — 結果を確認し、信頼できると判断したら自動に切り替えてください。",
+    "subtitle": "このトリガーが単独で（スケジュールで）、あなたが監視していない状態で実行される場合の動作を制御します。",
+    "title": "無人実行時の動作"
+  }
 }

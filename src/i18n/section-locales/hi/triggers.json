@@ -691,11 +691,58 @@
     "filter_placeholder": "फ़िल्टर करें…",
     "no_sources_match": "\"{query}\" से कोई स्रोत नहीं मिला",
     "no_targets_match": "\"{query}\" से कोई persona नहीं मिला",
-    "agent_fallback": "Agent"
+    "agent_fallback": "Agent",
+    "commit_all": "सब सहेजें",
+    "commit_blocked_output_match": "आउटपुट-मैच रूट को मैच एक्सप्रेशन चाहिए — जल्द आ रहा है",
+    "commit_blocked_signal": "सिग्नल-स्रोत रूट को ट्रिगर कॉन्फिग चाहिए — जल्द आ रहा है",
+    "commit_route": "यह रूट सहेजें",
+    "existing_routes": "मौजूदा रूट",
+    "proto_add_listener": "लिसनर जोड़ें",
+    "proto_disconnect": "लिसनर डिस्कनेक्ट करें",
+    "proto_hide_unconnected": "असंबद्ध छुपाएं",
+    "proto_live": "लाइव",
+    "proto_no_listeners": "कोई लिसनर नहीं",
+    "proto_pending": "प्रतीक्षारत",
+    "proto_rename_event": "इवेंट का नाम बदलें",
+    "proto_show_unconnected": "{count} असंबद्ध दिखाएं",
+    "proto_tab_baseline": "केवल कंपोज़",
+    "proto_tab_eventhub": "Event hub",
+    "proto_tab_patchbay": "पैचबे",
+    "route_commit_failed": "रूट सहेजा नहीं जा सका",
+    "route_committed": "रूट सहेजा",
+    "routes_committed": "{count} रूट सहेजे",
+    "tab_compose": "कंपोज़",
+    "tab_routes": "रूट",
+    "proto_chain_route": "चेन रूट — स्रोत पर्सोना पूरा होने पर ट्रिगर होता है; इवेंट का नाम नहीं बदला जा सकता"
   },
   "trigger_configured": "ट्रिगर कॉन्फ़िगर हुआ",
   "secret_label": "सीक्रेट",
   "copy_channel_url_title": "चैनल URL कॉपी करें",
   "pause_relay": "रिले रोकें",
-  "resume_relay": "रिले पुनः शुरू करें"
+  "resume_relay": "रिले पुनः शुरू करें",
+  "arm_state": {
+    "sleeping": "सुप्त",
+    "sleeping_title": "सक्षम, लेकिन सक्रिय घंटों के बाहर — जब तक सक्रिय विंडो फिर नहीं खुलती, यह फायर नहीं होगा।"
+  },
+  "pending_approval": {
+    "approved": "अनुमोदित — चल रहा है",
+    "discard": "रद्द करें",
+    "discarded": "रद्द किया गया",
+    "run_now": "अनुमोदित करें और चलाएं",
+    "subtitle_one": "{count} निर्धारित रन आपकी स्वीकृति तक रोका गया है।",
+    "subtitle_other": "{count} निर्धारित रन आपकी स्वीकृति तक रोके गए हैं।",
+    "title": "आपकी स्वीकृति की प्रतीक्षा में"
+  },
+  "unattended": {
+    "approval": "मेरी स्वीकृति आवश्यक है",
+    "approval_desc": "प्रत्येक निर्धारित रन को आपकी स्वीकृति तक रोकता है, ताकि आपकी अनुमति के बिना कुछ भी बिना निगरानी के न हो।",
+    "auto": "स्वचालित रूप से चलाएं",
+    "auto_desc": "बिना पूछे फायर होता और चलता है — इसमें कोई भी क्रिया जो यह भेजता, पोस्ट करता, या लिखता है।",
+    "badge_approval": "स्वीकृति",
+    "badge_dry_run": "ड्राय रन",
+    "dry_run": "ड्राय रन (सुरक्षित)",
+    "dry_run_desc": "शेड्यूल पर फायर होता है लेकिन सभी आउटबाउंड क्रियाएं दबा देता है — आप परिणाम की समीक्षा करें, फिर जब भरोसा हो तो स्वचालित पर स्विच करें।",
+    "subtitle": "नियंत्रित करता है कि जब यह ट्रिगर अपने आप (शेड्यूल पर) फायर हो, बिना आपकी निगरानी के, तो क्या होता है।",
+    "title": "जब यह बिना निगरानी के चले"
+  }
 }

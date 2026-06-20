@@ -538,7 +538,9 @@
     "sim_low": "Tidak ada persona atau alur kerja yang bergantung pada kredensial ini. Aman untuk dicabut.",
     "sim_high": "Mencabut {credentialName} akan berdampak pada {personas} persona{personaPlural} di seluruh ruang kerja Anda.",
     "sim_medium": "Mencabut {credentialName} memiliki dampak terbatas.",
-    "per_day": "per hari"
+    "per_day": "per hari",
+    "graph_connections": "Koneksi",
+    "graph_empty": "Tidak ada relasi untuk ditampilkan"
   },
   "shared": {
     "add": "Tambah",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": "Akses dicabut",
-    "reconnect": "Sambungkan ulang"
+    "reconnect": "Sambungkan ulang",
+    "cli_expired": ") -- Sesi CLI kedaluwarsa. Masuk melalui terminal Anda, lalu coba lagi.",
+    "retry_capture": "Coba tangkap lagi",
+    "retry_success": "Kredensial diperbarui dari sesi CLI"
   },
   "rotation_section": {
     "corrupted_warning": "Metadata pemeriksaan kesehatan rusak. Skor anomali tidak tersedia sampai pemeriksaan kesehatan berikutnya yang berhasil menimpa data yang rusak.",

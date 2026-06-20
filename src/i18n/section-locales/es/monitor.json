@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Aprobado, pero no se pudo llevar a cabo la acción",
   "channels_author_all": "Todos",
   "channels_author_you": "Tú",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Borrar todo",
+  "live_dismiss": "Descartar",
+  "live_more": "+{count} más",
+  "live_open_timeline": "Abrir en Línea de tiempo",
+  "live_toggle": "Pop-ups en vivo",
+  "live_toggle_hint": "Mostrar mensajes entrantes de canal como pop-ups en la esquina"
 }

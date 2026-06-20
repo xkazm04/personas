@@ -538,7 +538,9 @@
     "sim_low": "无代理或工作流依赖此凭据。可以安全撤销。",
     "sim_high": "撤销 {credentialName} 将影响工作区中 {personas} 个代理{personaPlural}。",
     "sim_medium": "撤销 {credentialName} 的影响范围有限。",
-    "per_day": "/天"
+    "per_day": "/天",
+    "graph_connections": "连接",
+    "graph_empty": "没有可显示的关系"
   },
   "shared": {
     "add": "添加",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- 访问权限已被撤销。请重新授权以恢复自动化。",
-    "reconnect": "重新连接"
+    "reconnect": "重新连接",
+    "cli_expired": ") -- CLI 会话已过期。请通过终端重新登录，然后重试。",
+    "retry_capture": "重试捕获",
+    "retry_success": "凭据已从 CLI 会话刷新"
   },
   "rotation_section": {
     "corrupted_warning": "健康检查元数据已损坏。下次成功健康检查覆盖坏数据前，异常分数不可用。",

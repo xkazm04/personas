@@ -376,5 +376,13 @@
   "preset_setup_cta": "Thiết lập",
   "team_codebase_heading": "Kho lưu trữ mã nguồn",
   "team_codebase_hint": "Kết nối nhóm này với một kho GitHub để các agent chia sẻ một nguồn sự thật duy nhất.",
-  "team_connector_label": "GitHub connector"
+  "team_connector_label": "GitHub connector",
+  "preset": {
+    "button": "Đăng lên cộng đồng",
+    "failed": "Không thể đăng nhóm này dưới dạng preset",
+    "heading": "Chia sẻ với cộng đồng",
+    "hint": "Đăng nhóm này dưới dạng preset cộng đồng để người khác có thể áp dụng. Các agent thành viên được chia sẻ mà không có thông tin xác thực.",
+    "published": "Nhóm đã được đăng lên danh mục cộng đồng",
+    "published_short": "Đã đăng"
+  }
 }

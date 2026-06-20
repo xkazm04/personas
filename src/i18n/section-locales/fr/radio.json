@@ -39,5 +39,16 @@
   "group_toggle_label": "Basculer le groupe",
   "row_menu_label": "Actions des gares",
   "row_menu_hide": "Masquer du sélecteur",
-  "row_menu_open_source": "Source ouverte"
+  "row_menu_open_source": "Source ouverte",
+  "keep_hidden": "Masqué",
+  "keep_kept": "Conservé",
+  "keep_toggle_label": "Garder la station dans le sélecteur du pied de page",
+  "manage_subtitle": "Gérez les stations, définissez les paramètres de lecture par défaut et prévisualisez avant de conserver.",
+  "master_footer_desc": "Afficher la radio dans le pied de page de l'application.",
+  "master_footer_title": "Contrôleur de pied de page",
+  "master_resume_desc": "Démarrer automatiquement la dernière station au prochain lancement.",
+  "master_resume_title": "Reprendre au lancement",
+  "preview_play": "Prévisualiser la station",
+  "preview_stop": "Arrêter la prévisualisation",
+  "youtube_premium_note": "Les stations YouTube diffusent via un lecteur intégré — un abonnement YouTube Premium est requis pour une expérience sans publicité."
 }

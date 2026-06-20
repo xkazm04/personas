@@ -26,6 +26,8 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   credentials: ['vault', 'connector_roles', 'connector_licensing', 'auth'],
   'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared'],
   plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline'],
+  // Studio uses a local COPY constant (i18n deferred); only BASE_SECTIONS needed.
+  studio: [],
   schedules: ['schedules', 'triggers', 'event_types'],
   settings: ['settings', 'models', 'tiers', 'auth'],
 };

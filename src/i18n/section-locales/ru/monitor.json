@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Утверждено, но не удалось выполнить действие",
   "channels_author_all": "Все",
   "channels_author_you": "Вы",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Очистить всё",
+  "live_dismiss": "Скрыть",
+  "live_more": "+{count} ещё",
+  "live_open_timeline": "Открыть в хронологии",
+  "live_toggle": "Живые уведомления",
+  "live_toggle_hint": "Показывать входящие сообщения канала как всплывающие окна"
 }

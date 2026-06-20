@@ -182,5 +182,11 @@
     "trend_up": "nahoru o {pct} % oproti předchozím 24 h",
     "trend_down": "dolů o {pct} % oproti předchozím 24 h",
     "trend_flat": "žádná změna oproti předchozím 24 h"
+  },
+  "get_started": {
+    "ask_cta": "Zeptat se asistenta",
+    "build_cta": "Sestavit prvního agenta",
+    "subtitle": "Popište úlohu přirozeným jazykem a my nastavíme funkčního agenta — nebo to nechte na asistentovi.",
+    "title": "Sestavte svého prvního agenta"
   }
 }

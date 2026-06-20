@@ -39,5 +39,16 @@
   "group_toggle_label": "グループの切り替え",
   "row_menu_label": "ステーションアクション",
   "row_menu_hide": "ピッカーから隠す",
-  "row_menu_open_source": "オープンソース"
+  "row_menu_open_source": "オープンソース",
+  "keep_hidden": "非表示",
+  "keep_kept": "保持",
+  "keep_toggle_label": "フッターピッカーにステーションを保持",
+  "manage_subtitle": "ステーションを整理し、再生デフォルトを設定し、保持前にプレビューします。",
+  "master_footer_desc": "アプリのフッターにラジオを表示します。",
+  "master_footer_title": "フッターコントローラー",
+  "master_resume_desc": "次回起動時に最後のステーションを自動開始します。",
+  "master_resume_title": "起動時に再開",
+  "preview_play": "ステーションをプレビュー",
+  "preview_stop": "プレビューを停止",
+  "youtube_premium_note": "YouTube ステーションは埋め込みプレーヤーでストリーミングされます — 広告なしの体験には YouTube Premium プランが必要です。"
 }

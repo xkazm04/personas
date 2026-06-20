@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "Ein Teil der App konnte nicht geladen werden — das kann nach einem Update oder einer Verbindungsunterbrechung passieren. Ihre Daten sind sicher; ein Neustart der App behebt das Problem in der Regel.",
-  "reload_app": "App neu laden"
+  "reload_app": "App neu laden",
+  "suggested": "Vorgeschlagen"
 }

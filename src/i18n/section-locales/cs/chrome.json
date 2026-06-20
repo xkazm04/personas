@@ -46,7 +46,14 @@
     "toggle_monitor": "Otevřít / zavřít Monitor person",
     "toggle_athena": "Otevřít / zavřít chat Athena",
     "nav_mode": "Přepnout režim klávesové navigace",
-    "nav_mode_back": "Přejít o stránku zpět (v navigačním režimu)"
+    "nav_mode_back": "Přejít o stránku zpět (v navigačním režimu)",
+    "mode_toggle_aria": "Přepnout režim klávesových zkratek",
+    "mode_toggle_title": "Režim zkratek — kliknutím přepněte · pravé tlačítko pro nápovědu",
+    "nav_mode_monitor": "Přepnout monitor person (v navigačním režimu)",
+    "nav_mode_notifications": "Přepnout oznámení (v navigačním režimu)",
+    "nav_mode_review": "Přepnout ruční kontrolu (v navigačním režimu)",
+    "nav_mode_schedules": "Přepnout plány (v navigačním režimu)",
+    "nav_mode_search": "Otevřít vyhledávání (v navigačním režimu)"
   },
   "tray_schedules": "Plány",
   "tray_schedules_today": "{count} naplánováno dnes",
@@ -60,5 +67,7 @@
     "headroom_green": "Dostatek kapacity pro další práci",
     "headroom_amber": "Systém je vytížený — zvažte snížení zátěže",
     "headroom_red": "Na hranici kapacity — zvažte zpomalení"
-  }
+  },
+  "tray_acceptance": "Cíle k přijetí",
+  "tray_acceptance_pending": "{count} cílů čeká na vaše přijetí"
 }

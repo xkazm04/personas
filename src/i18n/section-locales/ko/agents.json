@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "캐시 적중",
+    "cached": "캐시됨",
+    "deep_fanout": "딥 팬아웃",
+    "deep_fanout_hint": "독립적인 병렬 하위 작업을 서브에이전트에 위임합니다. 예산 한도를 설정하세요.",
+    "deep_fanout_unavailable": "이 플랜에서는 사용 불가 — Workflow/Task 도구 필요 (Max/Team).",
+    "subagents": "서브에이전트"
   },
   "lab": {
     "mode_arena": "아레나",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "페르소나 \"{name}\" v{version} 개선 — 아직 측정되지 않았습니다. 어디에 집중해야 할까요? ",
     "vr_metric_tool": "도구 정확도",
     "vr_metric_quality": "출력 품질",
-    "vr_metric_protocol": "프로토콜 준수"
+    "vr_metric_protocol": "프로토콜 준수",
+    "eco_col_attempted": "시도 횟수",
+    "eco_col_cost_success": "비용 / 성공",
+    "eco_col_model": "모델",
+    "eco_col_rate": "해결률",
+    "eco_col_resolved": "해결됨",
+    "eco_empty": "아직 평가 결과 없음 — Lab을 실행하여 비용 효율을 확인하세요.",
+    "eco_subtitle": "각 모델이 평가를 해결하는 빈도와 성공당 비용입니다.",
+    "eco_title": "비용 효율"
   },
   "design": {
     "select_agent": "디자인 분석을 시작할 에이전트를 선택하세요",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard TRUST 상태 필",
     "review_pill_trust": "신뢰",
     "_comment_dim_status_activated": "기능에 대해 불리언 차원(메모리/검토/이벤트/오류)이 활성화될 때 PersonaSigilSummary에 표시되는 값",
-    "dim_status_activated": "활성화됨"
+    "dim_status_activated": "활성화됨",
+    "engine_claude": "엔진: Claude",
+    "engine_claude_tooltip": "전체 Claude. 클릭하여 혼합 모드 활성화: 단순 하위 작업(요약, 추출, 재형식화)은 로컬 모델로 오프로드하여 프리미엄 용량을 절약합니다.",
+    "engine_local_first": "엔진: 로컬 우선",
+    "engine_local_first_tooltip": "로컬 우선: Claude가 작업 지시를 구성하고 검증하며, 로컬 모델이 모든 콘텐츠를 생성합니다. 클릭하여 전체 Claude로 전환.",
+    "engine_mixed": "엔진: 혼합",
+    "engine_mixed_tooltip": "혼합 엔진: Claude가 조율하고 단순 하위 작업을 llm_delegate 도구를 통해 로컬 모델에 오프로드합니다. 클릭하여 전체 Claude로 전환.",
+    "petals_label": "Petals",
+    "recipe": "레시피",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "선택된 페르소나 없음",
@@ -1855,7 +1879,10 @@
     "build_failed": "빌드 시작 실패. CLI 구성을 확인하세요.",
     "header_title": "Build",
     "header_subtitle_new": "Compose a new agent from scratch",
-    "header_subtitle_editing": "Editing {name}"
+    "header_subtitle_editing": "Editing {name}",
+    "context_hint": "이 빌드 과정에서 페르소나를 형성하는 참고 자료로 사용됩니다. 이후에는 저장되지 않습니다.",
+    "context_placeholder": "글쓰기 샘플, 역할과 목표, 또는 브랜드 보이스 가이드를 붙여넣으세요 — 빌드가 한 줄짜리 의도를 추측하는 대신 이 내용을 바탕으로 페르소나의 어조와 전제를 구성합니다.",
+    "context_toggle": "참고 컨텍스트 추가 (선택사항)"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2631,7 +2658,8 @@
     "automations": "자동화",
     "triggers_desc": "퍼소나별 이벤트 구독 및 트리거 설정이 이 탭에 제공될 예정입니다.",
     "messaging_desc": "이 에이전트의 알림 채널 및 인박스 라우팅이 여기에 표시됩니다.",
-    "automations_desc": "이 에이전트의 독립 자동화 규칙이 여기에 표시됩니다."
+    "automations_desc": "이 에이전트의 독립 자동화 규칙이 여기에 표시됩니다.",
+    "parameters": "파라미터"
   },
   "parameters_card": {
     "title": "파라미터",
@@ -2660,5 +2688,14 @@
   "glyph_db_scope_loading": "테이블 로딩 중…",
   "glyph_db_scope_error": "테이블을 불러올 수 없습니다 — 다시 시도",
   "glyph_db_scope_empty": "테이블을 찾을 수 없습니다",
-  "glyph_db_scope_selected": "{total}개 중 {count}개 테이블"
+  "glyph_db_scope_selected": "{total}개 중 {count}개 테이블",
+  "share": {
+    "button": "공유",
+    "failed": "이 에이전트를 갤러리에 게시할 수 없습니다",
+    "hint": "링크가 있는 누구나 한 번의 클릭으로 Personas에서 이 에이전트를 열 수 있습니다.",
+    "import_failed": "공유된 에이전트를 가져올 수 없습니다",
+    "imported": "공유 링크에서 에이전트를 가져왔습니다",
+    "invite_hint": "친구를 Personas에 초대하세요 — 가입 시 적립됩니다",
+    "published": "공유됨 — 링크를 복사하여 전송하세요"
+  }
 }

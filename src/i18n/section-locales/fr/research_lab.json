@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv a renvoyé une erreur (HTTP {status}). Réessayez dans un moment.",
   "arxiv_error_network": "Impossible de joindre arXiv. Vérifiez votre connexion et réessayez.",
   "arxiv_error_feed": "arXiv n'a pas pu traiter cette requête. Essayez des mots-clés différents ou plus simples.",
-  "arxiv_error_generic": "La recherche arXiv a échoué. Réessayez."
+  "arxiv_error_generic": "La recherche arXiv a échoué. Réessayez.",
+  "added_with_dedup": "{added} sources ajoutées ({duplicates} déjà dans votre bibliothèque)"
 }

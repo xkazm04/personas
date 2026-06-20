@@ -63,5 +63,7 @@
   "checkbox": "Je comprends que cette application envoie des données aux fournisseurs d'IA, accède aux ressources système (presse-papiers, système de fichiers, réseau) et exécute des processus en mon nom. J'accepte la responsabilité de la façon dont je la configure et l'utilise.",
   "checkbox_telemetry": "Aidez à améliorer Personas en envoyant des rapports de plantage anonymes et des analyses d'utilisation. Aucune donnée personnelle n'est incluse. Vous pouvez modifier cela à tout moment dans les Paramètres.",
   "source_link": "Voir le code source et la licence",
-  "accept_button": "Je comprends, continuer"
+  "accept_button": "Je comprends, continuer",
+  "reassure_body": "Personas fonctionne sur votre machine. Vos fichiers, mots de passe et données d'agent restent en local — rien ne quitte votre ordinateur sauf si vous connectez un service ou activez vous-même une fonctionnalité optionnelle. Les sections ci-dessous indiquent exactement ce à quoi l'application peut accéder.",
+  "reassure_title": "Vos données restent sur votre ordinateur"
 }

@@ -376,5 +376,13 @@
   "preset_setup_cta": "セットアップ",
   "team_codebase_heading": "コードベースリポジトリ",
   "team_codebase_hint": "このチームを GitHub リポジトリに紐付けて、エージェント間で唯一の情報源を共有します。",
-  "team_connector_label": "GitHub コネクター"
+  "team_connector_label": "GitHub コネクター",
+  "preset": {
+    "button": "コミュニティに公開",
+    "failed": "このチームをプリセットとして公開できませんでした",
+    "heading": "コミュニティで共有",
+    "hint": "このチームをコミュニティプリセットとして公開し、他のユーザーが採用できるようにします。メンバーエージェントはクレデンシャルなしで共有されます。",
+    "published": "チームをコミュニティカタログに公開しました",
+    "published_short": "公開済み"
+  }
 }

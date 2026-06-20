@@ -165,5 +165,6 @@
   "form_error_summary_title_one": "{count} field needs your attention",
   "form_error_summary_title_other": "{count} fields need your attention",
   "error_boundary_chunk_subtitle": "Часть приложения не удалось загрузить — это может произойти после обновления или сбоя соединения. Ваши данные в безопасности; перезагрузка приложения обычно решает проблему.",
-  "reload_app": "Перезагрузить приложение"
+  "reload_app": "Перезагрузить приложение",
+  "suggested": "Предложено"
 }

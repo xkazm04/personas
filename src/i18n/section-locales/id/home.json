@@ -182,5 +182,11 @@
     "trend_up": "naik {pct}% vs 24 jam sebelumnya",
     "trend_down": "turun {pct}% vs 24 jam sebelumnya",
     "trend_flat": "tidak ada perubahan vs 24 jam sebelumnya"
+  },
+  "get_started": {
+    "ask_cta": "Tanya asisten",
+    "build_cta": "Buat agen pertama Anda",
+    "subtitle": "Jelaskan pekerjaan dalam bahasa biasa dan kami akan menyiapkan agen yang berfungsi — atau minta asisten untuk melakukannya untuk Anda.",
+    "title": "Buat agen pertama Anda"
   }
 }

@@ -228,6 +228,8 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   leonardo_ai:        { label: 'Leonardo AI',        color: '#6C3AEF', iconUrl: '/icons/connectors/leonardo-ai.svg',                    Icon: Bot },
   openai:             { label: 'OpenAI',             color: '#412991', iconUrl: '/icons/connectors/openai.svg',                         Icon: Bot },
   replicate:          { label: 'Replicate',          color: '#3D3D3D', iconUrl: '/icons/connectors/replicate.svg',                      Icon: Bot },
+  anthropic:          { label: 'Anthropic',          color: '#D97757', iconUrl: 'https://cdn.simpleicons.org/claude/D97757',            Icon: Bot },
+  ollama:             { label: 'Ollama',             color: '#A1A1AA', iconUrl: 'https://cdn.simpleicons.org/ollama/A1A1AA',            Icon: Bot },
 
   // -- Cloud Storage ---------------------------------------------
   dropbox:            { label: 'Dropbox',            color: '#0061FF', iconUrl: 'https://cdn.simpleicons.org/dropbox/0061FF',          Icon: HardDrive },

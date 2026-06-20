@@ -72,5 +72,7 @@
   "director_attention_sr": "{count} агенту нужно наставничество",
   "director_attention_sr_other": "{count} агентам нужно наставничество",
   "goals": "Цели",
-  "mission_control": "Центр управления"
+  "mission_control": "Центр управления",
+  "factory": "Фабрика",
+  "kpis": "KPI"
 }

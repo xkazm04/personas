@@ -9,6 +9,7 @@ const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.Compone
   account: lazy(() => import('@/features/settings/sub_account/components/AccountSettings')),
   appearance: lazy(() => import('@/features/settings/sub_appearance/components/AppearanceSettings')),
   notifications: lazy(() => import('@/features/settings/sub_notifications/components/NotificationSettings')),
+  radio: lazy(() => import('@/features/plugins/radio/components/RadioPage')),
   engine: lazy(() => import('@/features/settings/sub_engine/components/EngineSettings')),
   byom: lazy(() => import('@/features/settings/sub_byom/components/ByomSettings')),
   portability: lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),

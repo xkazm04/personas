@@ -376,5 +376,13 @@
   "preset_setup_cta": "Einrichten",
   "team_codebase_heading": "Codebase-Repository",
   "team_codebase_hint": "Dieses Team mit einem GitHub-Repository verknüpfen, damit seine Agenten eine gemeinsame Wahrheitsquelle teilen.",
-  "team_connector_label": "GitHub-Connector"
+  "team_connector_label": "GitHub-Connector",
+  "preset": {
+    "button": "In der Community veröffentlichen",
+    "failed": "Dieses Team konnte nicht als Preset veröffentlicht werden",
+    "heading": "Mit der Community teilen",
+    "hint": "Dieses Team als Community-Preset veröffentlichen, das andere übernehmen können. Mitglieder-Agenten werden ohne Credentials geteilt.",
+    "published": "Team im Community-Katalog veröffentlicht",
+    "published_short": "Veröffentlicht"
+  }
 }

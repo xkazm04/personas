@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv trả về lỗi (HTTP {status}). Thử lại sớm.",
   "arxiv_error_network": "Không thể kết nối arXiv. Kiểm tra kết nối của bạn và thử lại.",
   "arxiv_error_feed": "arXiv không thể xử lý truy vấn đó. Thử từ khóa khác hoặc đơn giản hơn.",
-  "arxiv_error_generic": "Tìm kiếm arXiv thất bại. Thử lại."
+  "arxiv_error_generic": "Tìm kiếm arXiv thất bại. Thử lại.",
+  "added_with_dedup": "Đã thêm {added} nguồn ({duplicates} đã có trong thư viện của bạn)"
 }

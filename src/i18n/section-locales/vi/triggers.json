@@ -691,11 +691,58 @@
     "filter_placeholder": "Lọc…",
     "no_sources_match": "Không có nguồn nào khớp với \"{query}\"",
     "no_targets_match": "Không có persona nào khớp với \"{query}\"",
-    "agent_fallback": "Agent"
+    "agent_fallback": "Agent",
+    "commit_all": "Lưu tất cả",
+    "commit_blocked_output_match": "Tuyến output-match cần biểu thức khớp — sắp ra mắt",
+    "commit_blocked_signal": "Tuyến nguồn tín hiệu cần cấu hình trigger — sắp ra mắt",
+    "commit_route": "Lưu tuyến này",
+    "existing_routes": "Tuyến hiện có",
+    "proto_add_listener": "Thêm listener",
+    "proto_disconnect": "Ngắt kết nối listener",
+    "proto_hide_unconnected": "Ẩn chưa kết nối",
+    "proto_live": "trực tiếp",
+    "proto_no_listeners": "Không có listener",
+    "proto_pending": "đang chờ",
+    "proto_rename_event": "Đổi tên sự kiện",
+    "proto_show_unconnected": "Hiện {count} chưa kết nối",
+    "proto_tab_baseline": "Chỉ soạn",
+    "proto_tab_eventhub": "Hub sự kiện",
+    "proto_tab_patchbay": "Patchbay",
+    "route_commit_failed": "Không thể lưu tuyến",
+    "route_committed": "Đã lưu tuyến",
+    "routes_committed": "Đã lưu {count} tuyến",
+    "tab_compose": "Soạn",
+    "tab_routes": "Tuyến",
+    "proto_chain_route": "Tuyến chuỗi — kích hoạt khi persona nguồn hoàn tất; không thể đổi tên sự kiện"
   },
   "trigger_configured": "trigger đã cấu hình",
   "secret_label": "Bí mật",
   "copy_channel_url_title": "Sao chép URL kênh",
   "pause_relay": "Tạm dừng relay",
-  "resume_relay": "Tiếp tục relay"
+  "resume_relay": "Tiếp tục relay",
+  "arm_state": {
+    "sleeping": "Đang ngủ",
+    "sleeping_title": "Đã bật, nhưng ngoài giờ hoạt động — sẽ không kích hoạt cho đến khi cửa sổ hoạt động mở lại."
+  },
+  "pending_approval": {
+    "approved": "Đã phê duyệt — đang chạy",
+    "discard": "Bỏ qua",
+    "discarded": "Đã bỏ qua",
+    "run_now": "Phê duyệt & chạy",
+    "subtitle_one": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
+    "subtitle_other": "{count} lần chạy theo lịch đang chờ bạn phê duyệt.",
+    "title": "Đang chờ phê duyệt của bạn"
+  },
+  "unattended": {
+    "approval": "Yêu cầu phê duyệt của tôi",
+    "approval_desc": "Giữ mỗi lần chạy theo lịch cho đến khi bạn phê duyệt, để không có gì xảy ra tự động mà không có sự đồng ý của bạn.",
+    "auto": "Chạy tự động",
+    "auto_desc": "Kích hoạt và chạy mà không cần hỏi — bao gồm mọi hành động gửi, đăng hoặc ghi.",
+    "badge_approval": "Phê duyệt",
+    "badge_dry_run": "Chạy thử",
+    "dry_run": "Chạy thử (an toàn)",
+    "dry_run_desc": "Kích hoạt theo lịch nhưng ngăn mọi hành động gửi đi — bạn xem xét kết quả, rồi chuyển sang tự động khi đã tin tưởng.",
+    "subtitle": "Kiểm soát những gì xảy ra khi trigger này tự kích hoạt (theo lịch), mà không có bạn theo dõi.",
+    "title": "Khi chạy không có người giám sát"
+  }
 }

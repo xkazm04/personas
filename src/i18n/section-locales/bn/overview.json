@@ -151,7 +151,9 @@
     "detail_note_label": "সমাধানের নোট (ঐচ্ছিক)",
     "detail_no_persona": "কোনো এজেন্ট নেই",
     "empty_open_title": "সব পরিষ্কার",
-    "empty_filtered_title": "কোনো মিলসই ঘটনা নেই"
+    "empty_filtered_title": "কোনো মিলসই ঘটনা নেই",
+    "col_days": "দিন",
+    "col_incident": "ঘটনা"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",
@@ -352,7 +354,8 @@
     "sort_runs": "সর্বাধিক রান",
     "sort_recent": "সাম্প্রতিকতম",
     "needs_review": "পর্যালোচনা প্রয়োজন",
-    "pending_scope_hint": "সমস্ত মুলতুবি টীকা পর্যালোচনা করতে একটি পার্সোনা নির্বাচন করুন।"
+    "pending_scope_hint": "সমস্ত মুলতুবি টীকা পর্যালোচনা করতে একটি পার্সোনা নির্বাচন করুন।",
+    "graph_tab": "গ্রাফ"
   },
   "conflicts": {
     "dismissed": "দ্বন্দ্ব বাতিল",
@@ -506,7 +509,15 @@
     "delete_all": "সব মুছুন",
     "delete_all_confirm_title": "সব পর্যালোচনা মুছবেন?",
     "delete_all_confirm_body": "এটি সমস্ত {count}টি রিভিউ স্থায়ীভাবে মুছে দেয়। এটি পূর্বাবস্থায় ফেরানো যাবে না।",
-    "delete_all_confirm_cta": "সব মুছুন"
+    "delete_all_confirm_cta": "সব মুছুন",
+    "auto_resolved": {
+      "badge": "স্বয়ংক্রিয়ভাবে সমাধান হয়েছে",
+      "banner_auto_triage": "এই রিভিউটি আপনার দ্বারা নয়, একটি দ্বিতীয়-পাস auto_triage মূল্যায়নকারী দ্বারা স্বয়ংক্রিয়ভাবে সমাধান হয়েছে। আপনার অনুমোদন প্রয়োজন করতে সক্ষমতার রিভিউ নীতি পরিবর্তন করুন।",
+      "banner_trust_llm": "এই রিভিউটি সক্ষমতার trust_llm নীতি দ্বারা স্বয়ংক্রিয়ভাবে অনুমোদিত হয়েছে এবং কখনো আপনার জন্য অপেক্ষা করেনি। নিজে সিদ্ধান্ত নিতে চাইলে সক্ষমতার রিভিউ নীতি পরিবর্তন করুন।",
+      "reasoning_label": "অটো-ট্রিয়াজ যুক্তি",
+      "tip_auto_triage": "একটি স্বয়ংক্রিয় দ্বিতীয়-পাস মূল্যায়নকারী দ্বারা সিদ্ধান্ত নেওয়া হয়েছে (auto_triage রিভিউ নীতি) — এটি মানবিক সিদ্ধান্ত ছাড়াই আপনার রিভিউ কিউ এড়িয়ে গেছে।",
+      "tip_trust_llm": "এই সক্ষমতার trust_llm রিভিউ নীতি দ্বারা স্বয়ংক্রিয়ভাবে অনুমোদিত — এটি মানবিক সিদ্ধান্ত ছাড়াই আপনার রিভিউ কিউ এড়িয়ে গেছে।"
+    }
   },
   "messages_view": {
     "title": "বার্তা",
@@ -852,7 +863,8 @@
     "cost_per_value": "খরচ / মূল্য রান",
     "value_delivered_count": "প্রদত্ত মূল্য",
     "all_models": "সব মডেল",
-    "col_model": "মডেল"
+    "col_model": "মডেল",
+    "col_cost": "খরচ"
   },
   "analytics_dashboard": {
     "title": "অ্যানালিটিক্স",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "আমি আমার এজেন্টগুলির জন্য একটি ফ্লিট অপ্টিমাইজেশন পরামর্শ পর্যালোচনা করছি: \"{title}\"। {description} প্রস্তাবিত পদক্ষেপ: {action}। {focus}",
     "ask_athena_focus_persona": "অনুগ্রহ করে \"{persona}\" এজেন্টটি পরীক্ষা করুন এবং প্রয়োজনে বিকল্প মডেল পরীক্ষার জন্য Lab খুলুন, তারপর আপনার ফলাফল জানান।",
     "ask_athena_focus_general": "অনুগ্রহ করে এটি পরীক্ষা করুন এবং কী পরিবর্তন করতে হবে তা সুপারিশ করুন।"
+  },
+  "athena": {
+    "avg_cost": "গড় / টার্ন",
+    "cost_by_action": "ক্রিয়ার ধরন অনুযায়ী খরচ",
+    "cost_per_day": "Athena-র দৈনিক খরচ",
+    "errors": "টার্ন ত্রুটি",
+    "health_hint": "সহকারী কেমন করছে",
+    "health_no_activity": "এই উইন্ডোতে কোনো Athena কার্যক্রম নেই",
+    "health_title": "Athena স্বাস্থ্য",
+    "jobs_completed": "সম্পন্ন",
+    "jobs_failed": "ব্যর্থ",
+    "jobs_title": "ব্যাকগ্রাউন্ড কাজ",
+    "leg_browser_test": "ব্রাউজার টেস্ট",
+    "leg_daily_brief": "দৈনিক ব্রিফ",
+    "leg_exec_triage": "এক্সিকিউশন ট্রিয়াজ",
+    "leg_execution_review": "এক্সিকিউশন রিভিউ",
+    "leg_fleet_analysis": "ফ্লিট বিশ্লেষণ",
+    "leg_msg_triage": "বার্তা ট্রিয়াজ",
+    "leg_other": "অন্যান্য",
+    "leg_reaction": "চ্যানেল রিঅ্যাকশন",
+    "leg_reaction_batch": "চ্যানেল রিঅ্যাকশন",
+    "leg_review_resolution": "রিভিউ রেজোলিউশন",
+    "no_activity": "এই উইন্ডোতে কোনো Athena কার্যক্রম নেই",
+    "origin_autonomous": "স্বায়ত্তশাসিত",
+    "origin_chat": "চ্যাট",
+    "origin_external": "বাহ্যিক",
+    "origin_headless": "ব্যাকগ্রাউন্ড",
+    "origin_proactive": "প্রোঅ্যাক্টিভ",
+    "proactive_budget": "আজকের বাজেট",
+    "proactive_delivered": "সরবরাহ",
+    "proactive_dismissed": "বাতিল",
+    "proactive_engaged": "সক্রিয়",
+    "proactive_engaged_rate": "সক্রিয় হার",
+    "proactive_expired": "মেয়াদোত্তীর্ণ",
+    "proactive_title": "প্রোঅ্যাক্টিভ অর্থনীতি",
+    "section_hint": "আপনার সহকারীর নিজস্ব ব্যবহার",
+    "section_title": "Athena",
+    "tokens": "টোকেন",
+    "tokens_io": "{input} ইন · {output} আউট",
+    "total_cost": "Athena খরচ",
+    "triage_attention": "মনোযোগ",
+    "triage_deep_dive": "গভীর বিশ্লেষণ",
+    "triage_digest": "সংকলিত",
+    "triage_drop": "বাদ",
+    "triage_parse_failures": "পার্স ব্যর্থতা",
+    "triage_passes": "পাস",
+    "triage_title": "ট্রিয়াজ ফানেল",
+    "turns": "টার্ন",
+    "vs_fleet": "Athena বনাম ফ্লিট",
+    "vs_fleet_hint": "এই উইন্ডোতে মোট {total}-এর মধ্যে {athena}"
+  },
+  "heartbeats": {
+    "all_clear_detail": "প্রতিটি পর্যবেক্ষিত পার্সোনা সুস্থ থ্রেশহোল্ডের মধ্যে কাজ করছে।",
+    "all_clear_title": "সব সিস্টেম স্বাভাবিক",
+    "chains": "চেইন",
+    "col_persona": "পার্সোনা",
+    "col_score": "HP",
+    "col_vitals": "প্রবণতা · সাফল্য · বার্ন",
+    "focus_issues": "সমস্যায় ফোকাস",
+    "healthy_hidden": "সুস্থ লুকানো",
+    "heartbeat": "হার্টবিট",
+    "hide_healthy": "সুস্থ লুকান",
+    "idle": "নিষ্ক্রিয়",
+    "monitored": "পর্যবেক্ষিত",
+    "runs_suffix": "রান",
+    "seg_budget": "বাজেট",
+    "seg_healing": "হিলিং",
+    "seg_stability": "স্থিতিশীলতা",
+    "seg_success": "সাফল্য",
+    "show_all": "সব দেখান"
+  },
+  "provenance": {
+    "sourced_tip": "{count}টি উৎস উদ্ধৃত করে যা আপনি ট্রেস ও অডিট করতে পারবেন।",
+    "unsourced": "উৎসবিহীন",
+    "unsourced_tip": "এই রিপোর্টে সংখ্যা আছে কিন্তু কোনো Sources বিভাগ নেই — এগুলো তাদের উৎসে ফিরিয়ে নিয়ে যাওয়া সম্ভব নয়।"
   }
 }

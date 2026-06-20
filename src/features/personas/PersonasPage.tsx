@@ -49,6 +49,7 @@ const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
 const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
 const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
 const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
+const StudioPage = lazyRetry(() => import('@/features/studio/StudioPage'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
@@ -276,6 +277,7 @@ export default function PersonasPage() {
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
     }
+    if (sidebarSection === 'studio' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Studio"><Suspense fallback={SectionFallback}><StudioPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'schedules') return <ErrorBoundary onGoHome={goHome} name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary onGoHome={goHome} name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {
@@ -289,7 +291,7 @@ export default function PersonasPage() {
   return (
     <CanvasDragProvider>
       <CredentialNavProvider>
-        <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
+        <div className="flex flex-col h-full w-full min-w-0 bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
           {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
               transform-gpu + backface-hidden isolate each layer onto its own GPU
               texture so it rasters ONCE. Without isolation these full-screen layers

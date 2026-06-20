@@ -63,5 +63,7 @@
   "checkbox": "Entiendo que esta aplicación envía datos a proveedores de IA, accede a recursos del sistema (portapapeles, sistema de archivos, red) y ejecuta procesos en mi nombre. Acepto la responsabilidad de cómo la configuro y uso.",
   "checkbox_telemetry": "Ayuda a mejorar Personas enviando informes de fallos anónimos y análisis de uso. No se incluyen datos personales. Puedes cambiar esto más tarde en Ajustes.",
   "source_link": "Ver código fuente y licencia",
-  "accept_button": "Entiendo, continuar"
+  "accept_button": "Entiendo, continuar",
+  "reassure_body": "Personas se ejecuta en tu máquina. Tus archivos, contraseñas y datos de agentes permanecen locales — nada sale de tu ordenador a menos que conectes un servicio o actives una función opcional tú mismo. Las secciones a continuación detallan exactamente a qué puede acceder la app.",
+  "reassure_title": "Tus datos permanecen en tu ordenador"
 }

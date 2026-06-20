@@ -151,7 +151,9 @@
     "detail_note_label": "Nota de resolución (opcional)",
     "detail_no_persona": "Sin agente",
     "empty_open_title": "Todo en orden",
-    "empty_filtered_title": "Sin incidentes coincidentes"
+    "empty_filtered_title": "Sin incidentes coincidentes",
+    "col_days": "Días",
+    "col_incident": "Incidente"
   },
   "observability": {
     "title": "Observabilidad",
@@ -352,7 +354,8 @@
     "sort_runs": "Más ejecuciones",
     "sort_recent": "Más recientes",
     "needs_review": "Requiere revisión",
-    "pending_scope_hint": "Selecciona un persona para revisar todas las anotaciones pendientes."
+    "pending_scope_hint": "Selecciona un persona para revisar todas las anotaciones pendientes.",
+    "graph_tab": "Grafo"
   },
   "conflicts": {
     "dismissed": "Conflicto descartado",
@@ -506,7 +509,15 @@
     "delete_all": "Eliminar todo",
     "delete_all_confirm_title": "¿Eliminar todas las revisiones?",
     "delete_all_confirm_body": "Esto elimina permanentemente las {count} reseñas. Esta acción no se puede deshacer.",
-    "delete_all_confirm_cta": "Eliminar todo"
+    "delete_all_confirm_cta": "Eliminar todo",
+    "auto_resolved": {
+      "badge": "Resuelto automáticamente",
+      "banner_auto_triage": "Esta revisión fue resuelta automáticamente por un evaluador de segunda pasada auto_triage, no por ti. Cambia la política de revisión de la capacidad para requerir tu aprobación.",
+      "banner_trust_llm": "Esta revisión fue aprobada automáticamente por la política trust_llm de la capacidad y nunca esperó tu intervención. Cambia la política de revisión de la capacidad si quieres decidir estas tú mismo.",
+      "reasoning_label": "Razonamiento del auto-triaje",
+      "tip_auto_triage": "Decidido por un evaluador automático de segunda pasada (política de revisión auto_triage) — omitió tu cola de revisión sin una decisión humana.",
+      "tip_trust_llm": "Aprobado automáticamente por la política de revisión trust_llm de esta capacidad — omitió tu cola de revisión sin una decisión humana."
+    }
   },
   "messages_view": {
     "title": "Mensajes",
@@ -852,7 +863,8 @@
     "cost_per_value": "Coste / ejecución de valor",
     "value_delivered_count": "Valor entregado",
     "all_models": "Todos los modelos",
-    "col_model": "Modelo"
+    "col_model": "Modelo",
+    "col_cost": "Coste"
   },
   "analytics_dashboard": {
     "title": "Análisis",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "Estoy revisando una sugerencia de optimización de flota para mis agentes: \"{title}\". {description} Acción sugerida: {action}. {focus}",
     "ask_athena_focus_persona": "Por favor, investiga el agente \"{persona}\" y, si fuera útil, abre su Lab para probar modelos alternativos y luego infórmame de lo que encuentres.",
     "ask_athena_focus_general": "Por favor, investiga esto y recomienda qué cambiar."
+  },
+  "athena": {
+    "avg_cost": "Prom. / turno",
+    "cost_by_action": "Coste por tipo de acción",
+    "cost_per_day": "Coste diario de Athena",
+    "errors": "Errores de turno",
+    "health_hint": "Cómo está funcionando el asistente",
+    "health_no_activity": "Sin actividad de Athena que reportar en este período",
+    "health_title": "Salud de Athena",
+    "jobs_completed": "Completados",
+    "jobs_failed": "Fallidos",
+    "jobs_title": "Trabajos en segundo plano",
+    "leg_browser_test": "Prueba de navegador",
+    "leg_daily_brief": "Informe diario",
+    "leg_exec_triage": "Triage de ejecución",
+    "leg_execution_review": "Revisión de ejecución",
+    "leg_fleet_analysis": "Análisis de flota",
+    "leg_msg_triage": "Triage de mensajes",
+    "leg_other": "Otro",
+    "leg_reaction": "Reacción de canal",
+    "leg_reaction_batch": "Reacciones de canal",
+    "leg_review_resolution": "Resolución de revisión",
+    "no_activity": "Sin actividad de Athena en este período",
+    "origin_autonomous": "Autónomo",
+    "origin_chat": "Chat",
+    "origin_external": "Externo",
+    "origin_headless": "Segundo plano",
+    "origin_proactive": "Proactivo",
+    "proactive_budget": "Presupuesto hoy",
+    "proactive_delivered": "Entregados",
+    "proactive_dismissed": "Descartados",
+    "proactive_engaged": "Interactuados",
+    "proactive_engaged_rate": "Tasa de interacción",
+    "proactive_expired": "Expirados",
+    "proactive_title": "Economía proactiva",
+    "section_hint": "El uso propio de tu asistente",
+    "section_title": "Athena",
+    "tokens": "Tokens",
+    "tokens_io": "{input} entrada · {output} salida",
+    "total_cost": "Coste de Athena",
+    "triage_attention": "Atención",
+    "triage_deep_dive": "Análisis profundo",
+    "triage_digest": "Resumidos",
+    "triage_drop": "Descartados",
+    "triage_parse_failures": "Errores de análisis",
+    "triage_passes": "Pasados",
+    "triage_title": "Embudo de triage",
+    "turns": "Turnos",
+    "vs_fleet": "Athena vs flota",
+    "vs_fleet_hint": "{athena} de {total} del gasto total en este período"
+  },
+  "heartbeats": {
+    "all_clear_detail": "Todas las personas monitorizadas operan dentro de los umbrales saludables.",
+    "all_clear_title": "Todos los sistemas nominales",
+    "chains": "cadenas",
+    "col_persona": "Persona",
+    "col_score": "PS",
+    "col_vitals": "Tendencia · Éxito · Gasto",
+    "focus_issues": "Problemas destacados",
+    "healthy_hidden": "saludables ocultos",
+    "heartbeat": "Latido",
+    "hide_healthy": "Ocultar saludables",
+    "idle": "Inactivo",
+    "monitored": "monitorizados",
+    "runs_suffix": "ejecuciones",
+    "seg_budget": "Presupuesto",
+    "seg_healing": "Recuperación",
+    "seg_stability": "Estabilidad",
+    "seg_success": "Éxito",
+    "show_all": "Mostrar todos"
+  },
+  "provenance": {
+    "sourced_tip": "Cita {count} fuente(s) que puedes rastrear y auditar.",
+    "unsourced": "Sin fuentes",
+    "unsourced_tip": "Este informe incluye cifras pero no tiene sección Sources — no se pueden rastrear hasta su origen."
   }
 }

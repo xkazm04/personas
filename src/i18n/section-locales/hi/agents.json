@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "कैश हिट",
+    "cached": "कैश्ड",
+    "deep_fanout": "गहरा फैन-आउट",
+    "deep_fanout_hint": "स्वतंत्र समानांतर उप-कार्य सबएजेंट्स को सौंपें। एक बजट सीमा निर्धारित करें।",
+    "deep_fanout_unavailable": "इस प्लान पर उपलब्ध नहीं — Workflow/Task टूल (Max/Team) आवश्यक है।",
+    "subagents": "सबएजेंट्स"
   },
   "lab": {
     "mode_arena": "एरेना",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "persona \"{name}\" v{version} को बेहतर करें — अभी मापा नहीं गया। मुझे किस पर ध्यान देना चाहिए? ",
     "vr_metric_tool": "टूल सटीकता",
     "vr_metric_quality": "आउटपुट गुणवत्ता",
-    "vr_metric_protocol": "protocol अनुपालन"
+    "vr_metric_protocol": "protocol अनुपालन",
+    "eco_col_attempted": "प्रयास",
+    "eco_col_cost_success": "लागत / सफलता",
+    "eco_col_model": "मॉडल",
+    "eco_col_rate": "रिज़ॉल्व दर",
+    "eco_col_resolved": "रिज़ॉल्व",
+    "eco_empty": "अभी तक कोई eval परिणाम नहीं — लागत दक्षता देखने के लिए Lab चलाएं।",
+    "eco_subtitle": "प्रत्येक मॉडल कितनी बार eval सुलझाता है, और प्रत्येक सफलता पर कितनी लागत आती है।",
+    "eco_title": "लागत दक्षता"
   },
   "design": {
     "select_agent": "डिज़ाइन विश्लेषण शुरू करने के लिए एक एजेंट चुनें",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard TRUST-state pill",
     "review_pill_trust": "TRUST",
     "_comment_dim_status_activated": "PersonaSigilSummary value shown when a boolean dim (memory/review/event/error) is active for the capability",
-    "dim_status_activated": "सक्रिय"
+    "dim_status_activated": "सक्रिय",
+    "engine_claude": "इंजन: Claude",
+    "engine_claude_tooltip": "पूर्ण Claude। मिश्रित सक्षम करने के लिए क्लिक करें: सरल उप-कार्य (सारांश, निष्कर्षण, पुन:स्वरूपण) प्रीमियम क्षमता बचाने के लिए स्थानीय मॉडल को सौंपे जाते हैं।",
+    "engine_local_first": "इंजन: लोकल-फर्स्ट",
+    "engine_local_first_tooltip": "लोकल-फर्स्ट: Claude कार्य आदेश बनाता और सत्यापित करता है; स्थानीय मॉडल सारी सामग्री तैयार करता है। पूर्ण Claude पर वापस जाने के लिए क्लिक करें।",
+    "engine_mixed": "इंजन: मिश्रित",
+    "engine_mixed_tooltip": "मिश्रित इंजन: Claude समन्वय करता है और llm_delegate टूल के ज़रिए सरल उप-कार्य स्थानीय मॉडल को सौंपता है। पूर्ण Claude पर वापस जाने के लिए क्लिक करें।",
+    "petals_label": "पेटल्स",
+    "recipe": "रेसिपी",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "कोई पर्सोना नहीं चुना गया",
@@ -1855,7 +1879,10 @@
     "build_failed": "बिल्ड शुरू नहीं हुई। CLI कॉन्फ़िगरेशन जांचें।",
     "header_title": "Build",
     "header_subtitle_new": "Compose a new agent from scratch",
-    "header_subtitle_editing": "Editing {name}"
+    "header_subtitle_editing": "Editing {name}",
+    "context_hint": "इस बिल्ड के दौरान persona को आकार देने के लिए संदर्भ सामग्री के रूप में उपयोग किया गया। इसे बाद में संग्रहीत नहीं किया जाता।",
+    "context_placeholder": "कोई लेखन नमूना, अपनी भूमिका और लक्ष्य, या ब्रांड-वॉयस गाइड पेस्ट करें — बिल्ड persona की आवाज़ और धारणाओं को आपकी एक-पंक्ति की मंशा से गढ़ने के बजाय इसमें आधारित करता है।",
+    "context_toggle": "संदर्भ जोड़ें (वैकल्पिक)"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2631,7 +2658,8 @@
     "automations": "ऑटोमेशन",
     "triggers_desc": "प्रति-पर्सोना ईवेंट सब्सक्रिप्शन और ट्रिगर कॉन्फ़िगरेशन इस टैब में आएगा।",
     "messaging_desc": "इस एजेंट के नोटिफिकेशन चैनल और इनबॉक्स रूटिंग यहाँ होंगे।",
-    "automations_desc": "इस एजेंट के लिए स्वतंत्र ऑटोमेशन नियम यहाँ होंगे।"
+    "automations_desc": "इस एजेंट के लिए स्वतंत्र ऑटोमेशन नियम यहाँ होंगे।",
+    "parameters": "पैरामीटर"
   },
   "parameters_card": {
     "title": "पैरामीटर्स",
@@ -2660,5 +2688,14 @@
   "glyph_db_scope_loading": "टेबल्स लोड हो रहे हैं…",
   "glyph_db_scope_error": "टेबल्स लोड नहीं हो सके — पुनः प्रयास करें",
   "glyph_db_scope_empty": "कोई टेबल नहीं मिली",
-  "glyph_db_scope_selected": "{total} में से {count} टेबल्स"
+  "glyph_db_scope_selected": "{total} में से {count} टेबल्स",
+  "share": {
+    "button": "साझा करें",
+    "failed": "इस एजेंट को गैलरी में प्रकाशित नहीं किया जा सका",
+    "hint": "लिंक वाला कोई भी व्यक्ति Personas में एक क्लिक में यह एजेंट खोल सकता है।",
+    "import_failed": "साझा एजेंट आयात नहीं किया जा सका",
+    "imported": "शेयर लिंक से एजेंट आयात किया गया",
+    "invite_hint": "किसी मित्र को Personas में आमंत्रित करें — जब वे जुड़ें तो आपको श्रेय मिलेगा",
+    "published": "साझा किया — भेजने के लिए लिंक कॉपी करें"
+  }
 }

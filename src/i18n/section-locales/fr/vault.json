@@ -538,7 +538,9 @@
     "sim_low": "Faible",
     "sim_high": "La révocation de {credentialName} impacterait {personas} persona{personaPlural} dans votre espace de travail.",
     "sim_medium": "La révocation de {credentialName} a un rayon d'impact limité.",
-    "per_day": "/jour"
+    "per_day": "/jour",
+    "graph_connections": "Connexions",
+    "graph_empty": "Aucune relation à afficher"
   },
   "shared": {
     "add": "Ajouter",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- l'accès a été révoqué. Veuillez ré-autoriser pour reprendre les automatisations.",
-    "reconnect": "Reconnecter"
+    "reconnect": "Reconnecter",
+    "cli_expired": ") -- Session CLI expirée. Connectez-vous via votre terminal, puis réessayez.",
+    "retry_capture": "Réessayer la capture",
+    "retry_success": "Credential actualisé depuis la session CLI"
   },
   "rotation_section": {
     "corrupted_warning": "Avertissement de corruption",

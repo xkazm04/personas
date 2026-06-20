@@ -691,11 +691,58 @@
     "filter_placeholder": "Filtrovat…",
     "no_sources_match": "Žádné zdroje neodpovídají \"{query}\"",
     "no_targets_match": "Žádné persony neodpovídají \"{query}\"",
-    "agent_fallback": "Agent"
+    "agent_fallback": "Agent",
+    "commit_all": "Uložit vše",
+    "commit_blocked_output_match": "Trasy pro shodu výstupu potřebují výraz shody — již brzy",
+    "commit_blocked_signal": "Trasy zdrojového signálu potřebují konfiguraci triggeru — již brzy",
+    "commit_route": "Uložit tuto trasu",
+    "existing_routes": "Existující trasy",
+    "proto_add_listener": "Přidat posluchač",
+    "proto_disconnect": "Odpojit posluchač",
+    "proto_hide_unconnected": "Skrýt nepřipojené",
+    "proto_live": "živě",
+    "proto_no_listeners": "Žádní posluchači",
+    "proto_pending": "čekající",
+    "proto_rename_event": "Přejmenovat událost",
+    "proto_show_unconnected": "Zobrazit {count} nepřipojených",
+    "proto_tab_baseline": "Pouze skládání",
+    "proto_tab_eventhub": "Centrum událostí",
+    "proto_tab_patchbay": "Propojovací panel",
+    "route_commit_failed": "Trasu se nepodařilo uložit",
+    "route_committed": "Trasa uložena",
+    "routes_committed": "Uloženo {count} tras",
+    "tab_compose": "Skládat",
+    "tab_routes": "Trasy",
+    "proto_chain_route": "Řetězová trasa — spustí se po dokončení zdrojové persony; událost nelze přejmenovat"
   },
   "trigger_configured": "trigger nakonfigurován",
   "secret_label": "Tajný klíč",
   "copy_channel_url_title": "Kopírovat URL kanálu",
   "pause_relay": "Pozastavit relay",
-  "resume_relay": "Obnovit relay"
+  "resume_relay": "Obnovit relay",
+  "arm_state": {
+    "sleeping": "Spí",
+    "sleeping_title": "Povoleno, ale mimo aktivní hodiny — nespustí se, dokud se aktivní okno znovu neotevře."
+  },
+  "pending_approval": {
+    "approved": "Schváleno — probíhá",
+    "discard": "Zahodit",
+    "discarded": "Zahozeno",
+    "run_now": "Schválit a spustit",
+    "subtitle_one": "{count} naplánované spuštění čeká na vaše schválení.",
+    "subtitle_other": "{count} naplánovaná spuštění čekají na vaše schválení.",
+    "title": "Čeká na vaše schválení"
+  },
+  "unattended": {
+    "approval": "Vyžadovat mé schválení",
+    "approval_desc": "Podrží každé naplánované spuštění, dokud ho neschválíte — bez vašeho souhlasu se nic nestane bez dozoru.",
+    "auto": "Spustit automaticky",
+    "auto_desc": "Spustí se a proběhne bez dotazování — včetně všech akcí, které odešle, zveřejní nebo zapíše.",
+    "badge_approval": "Schválení",
+    "badge_dry_run": "Zkušební běh",
+    "dry_run": "Zkušební běh (bezpečný)",
+    "dry_run_desc": "Spustí se dle plánu, ale potlačí všechny odchozí akce — výsledek zkontrolujete a po nabytí důvěry přepnete na automatický provoz.",
+    "subtitle": "Řídí, co se stane, když se tento spouštěč aktivuje sám (dle plánu), bez vašeho dozoru.",
+    "title": "Při spuštění bez dozoru"
+  }
 }

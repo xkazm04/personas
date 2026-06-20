@@ -244,11 +244,32 @@ This doc set covers pillar 3. For pillar 1 see
      on the failed run. Deliberately bypasses the `consecutive_failures<3`
      auto-fix gate (usage limits are environmental); the persona circuit
      breaker (5 consecutive) still wins.
-   - **Weekly**: stays a terminal failure + high-severity healing issue
-     ("Weekly usage limit reached") — too far out to auto-retry.
+   - **Weekly**: when the message carried a parseable reset time (the parser
+     keeps timestamps in the future and within ~8 days, which covers the
+     weekly cap), healing schedules a durable `HealingAction::RetryAt` at the
+     reset (+2-min buffer) — same `scheduled_retries` machinery as the window
+     case, just further out. Weekly retries restart **fresh** (a days-old CLI
+     session transcript is likely GC'd, so `--resume` would fail). Only when
+     **no** reset time is parseable does it fold to a terminal failure +
+     high-severity healing issue ("Weekly usage limit reached").
    The runner persists usage-limit failures in a round-trippable error
    message, so the manual `run_healing_analysis` path re-derives the same
    diagnosis from `error_message` alone.
+8. **Anthropic server errors (5xx / overloaded) auto-resume before folding.**
+   "internal server error" / "500" / "502" / "503" / "server error" classify
+   as `ApiError`. The Claude CLI already retries these internally with backoff,
+   so a *surfaced* `ApiError` means the provider is mid-incident — an immediate
+   retry is pointless. Healing instead emits a durable, **escalating**
+   `HealingAction::RetryAt` at `now + {10, 20, 30} min` (a ~60-min horizon
+   across the 3-retry budget), persisted to `scheduled_retries` so it survives
+   restarts. Crucially, these retries **resume the prior Claude session**
+   (`Continuation::SessionResume`, reason tag `api_error_resume` on the
+   scheduled-retry row) — the run continues where it stopped ("Continue the
+   previous execution.") instead of restarting from scratch. Falls back to a
+   fresh restart when the failed run never captured a `claude_session_id`. Like
+   usage limits this bypasses the `consecutive_failures<3` gate (environmental);
+   the persona circuit breaker (5 consecutive) still wins, and the budget folds
+   to a manual issue once spent.
 
 ## Common operations
 

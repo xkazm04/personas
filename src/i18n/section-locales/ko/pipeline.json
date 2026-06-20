@@ -376,5 +376,13 @@
   "preset_setup_cta": "설정",
   "team_codebase_heading": "코드베이스 저장소",
   "team_codebase_hint": "이 팀을 GitHub 저장소에 연결하여 에이전트들이 하나의 소스를 공유하도록 하세요.",
-  "team_connector_label": "GitHub 커넥터"
+  "team_connector_label": "GitHub 커넥터",
+  "preset": {
+    "button": "커뮤니티에 게시",
+    "failed": "이 팀을 프리셋으로 게시할 수 없습니다",
+    "heading": "커뮤니티와 공유",
+    "hint": "이 팀을 다른 사람들이 채택할 수 있는 커뮤니티 프리셋으로 게시합니다. 멤버 에이전트는 자격증명 없이 공유됩니다.",
+    "published": "커뮤니티 카탈로그에 팀이 게시됨",
+    "published_short": "게시됨"
+  }
 }

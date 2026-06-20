@@ -63,5 +63,7 @@
   "checkbox": "Saya memahami bahwa aplikasi ini mengirim data ke penyedia AI, mengakses sumber daya sistem (clipboard, sistem file, jaringan), dan mengeksekusi proses atas nama saya. Saya menerima tanggung jawab atas cara saya mengonfigurasi dan menggunakannya.",
   "checkbox_telemetry": "Bantu tingkatkan Personas dengan mengirimkan laporan crash anonim dan analitik penggunaan. Tidak ada data pribadi yang disertakan. Anda dapat mengubah ini nanti di Pengaturan.",
   "source_link": "Lihat sumber & lisensi",
-  "accept_button": "Saya Mengerti, Lanjutkan"
+  "accept_button": "Saya Mengerti, Lanjutkan",
+  "reassure_body": "Personas berjalan di mesin Anda. File, kata sandi, dan data agen Anda tetap lokal — tidak ada yang meninggalkan komputer Anda kecuali Anda menghubungkan layanan atau mengaktifkan fitur opsional sendiri. Bagian di bawah ini menjelaskan secara tepat apa yang dapat diakses aplikasi.",
+  "reassure_title": "Data Anda tetap di komputer Anda"
 }

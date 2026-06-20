@@ -144,8 +144,6 @@ export const STATE_HEX: Record<UseCaseHealth, string> = {
   disabled: '#94a3b8',
 };
 
-export const GRID_SLOT_COUNT = 9;
-
 /** Greedy longest-prefix match of a tool-hint against CONNECTOR_META keys.
  *  Tool hints look like "slack_send_message" or "google_drive_list_files";
  *  longest-key-first ensures `google_drive` wins over `google`. */

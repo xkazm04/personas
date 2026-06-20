@@ -39,5 +39,16 @@
   "group_toggle_label": "Přepnout skupinu",
   "row_menu_label": "Akce stanice",
   "row_menu_hide": "Skrýt před výběrem",
-  "row_menu_open_source": "Open source"
+  "row_menu_open_source": "Open source",
+  "keep_hidden": "Skryto",
+  "keep_kept": "Uloženo",
+  "keep_toggle_label": "Ponechat stanici ve výběru v zápatí",
+  "manage_subtitle": "Spravujte stanice, nastavte výchozí přehrávání a prohlédněte si cokoli před uložením.",
+  "master_footer_desc": "Zobrazit rádio v zápatí aplikace.",
+  "master_footer_title": "Ovladač zápatí",
+  "master_resume_desc": "Automaticky spustit poslední stanici při příštím spuštění.",
+  "master_resume_title": "Obnovit při spuštění",
+  "preview_play": "Náhled stanice",
+  "preview_stop": "Zastavit náhled",
+  "youtube_premium_note": "Stanice YouTube streamují přes vložený přehrávač — pro zážitek bez reklam je vyžadován plán YouTube Premium."
 }

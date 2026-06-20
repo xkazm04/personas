@@ -63,5 +63,7 @@
   "checkbox": "Tôi hiểu rằng ứng dụng này gửi dữ liệu đến nhà cung cấp AI, truy cập tài nguyên hệ thống (bộ nhớ tạm, hệ thống tệp, mạng) và thực thi tiến trình thay mặt tôi. Tôi chấp nhận trách nhiệm về cách tôi cấu hình và sử dụng nó.",
   "checkbox_telemetry": "Giúp cải thiện Personas bằng cách gửi báo cáo sự cố ẩn danh và phân tích sử dụng. Không có dữ liệu cá nhân nào được bao gồm. Bạn có thể thay đổi điều này sau trong Cài đặt.",
   "source_link": "Xem mã nguồn & giấy phép",
-  "accept_button": "Tôi hiểu, Tiếp tục"
+  "accept_button": "Tôi hiểu, Tiếp tục",
+  "reassure_body": "Personas chạy trên máy của bạn. Tệp, mật khẩu và dữ liệu agent của bạn được lưu cục bộ — không có gì rời khỏi máy tính của bạn trừ khi bạn kết nối một dịch vụ hoặc tự bật một tính năng tùy chọn. Các mục bên dưới giải thích chính xác những gì ứng dụng có thể truy cập.",
+  "reassure_title": "Dữ liệu của bạn ở lại trên máy tính"
 }

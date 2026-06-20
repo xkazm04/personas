@@ -39,5 +39,16 @@
   "group_toggle_label": "Alternar grupo",
   "row_menu_label": "Acciones de estación",
   "row_menu_hide": "Esconderse del selector",
-  "row_menu_open_source": "Código abierto"
+  "row_menu_open_source": "Código abierto",
+  "keep_hidden": "Oculto",
+  "keep_kept": "Guardado",
+  "keep_toggle_label": "Mantener la emisora en el selector del pie de página",
+  "manage_subtitle": "Gestiona emisoras, configura los ajustes de reproducción y previsualiza cualquiera antes de guardarla.",
+  "master_footer_desc": "Mostrar la radio en el pie de página de la app.",
+  "master_footer_title": "Control del pie de página",
+  "master_resume_desc": "Iniciar automáticamente la última emisora la próxima vez.",
+  "master_resume_title": "Reanudar al iniciar",
+  "preview_play": "Vista previa de la emisora",
+  "preview_stop": "Detener vista previa",
+  "youtube_premium_note": "Las emisoras de YouTube se reproducen mediante un reproductor integrado — se requiere un plan YouTube Premium para una experiencia sin anuncios."
 }

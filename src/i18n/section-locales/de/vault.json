@@ -538,7 +538,9 @@
     "sim_low": "Keine Personas oder Workflows hängen von diesen Zugangsdaten ab. Sicher zu widerrufen.",
     "sim_high": "Ein Widerruf von {credentialName} würde {personas} Persona{personaPlural} in Ihrem Workspace beeinträchtigen.",
     "sim_medium": "Ein Widerruf von {credentialName} hat begrenzte Auswirkungen.",
-    "per_day": "/Tag"
+    "per_day": "/Tag",
+    "graph_connections": "Verbindungen",
+    "graph_empty": "Keine Beziehungen anzuzeigen"
   },
   "shared": {
     "add": "Hinzufügen",
@@ -830,7 +832,10 @@
   },
   "reauth_banner": {
     "access_revoked": ") -- Zugriff wurde widerrufen. Bitte neu autorisieren, um Automatisierungen fortzusetzen.",
-    "reconnect": "Erneut verbinden"
+    "reconnect": "Erneut verbinden",
+    "cli_expired": ") -- CLI-Sitzung abgelaufen. Im Terminal anmelden und erneut versuchen.",
+    "retry_capture": "Erfassung erneut versuchen",
+    "retry_success": "Credential aus CLI-Sitzung aktualisiert"
   },
   "rotation_section": {
     "corrupted_warning": "Healthcheck-Metadaten sind beschädigt. Anomalie-Werte sind nicht verfügbar, bis der nächste erfolgreiche Healthcheck die fehlerhaften Daten überschreibt.",

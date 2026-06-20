@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Genehmigt, aber Aktion konnte nicht ausgeführt werden",
   "channels_author_all": "Alle",
   "channels_author_you": "Sie",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Alle löschen",
+  "live_dismiss": "Schließen",
+  "live_more": "+{count} weitere",
+  "live_open_timeline": "In Zeitachse öffnen",
+  "live_toggle": "Live-Einblendungen",
+  "live_toggle_hint": "Eingehende Channel-Nachrichten als Eck-Einblendungen anzeigen"
 }

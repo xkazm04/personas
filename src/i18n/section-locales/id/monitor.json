@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "Disetujui, tetapi tindakan tidak dapat dilaksanakan",
   "channels_author_all": "Semua orang",
   "channels_author_you": "Anda",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "Hapus semua",
+  "live_dismiss": "Tutup",
+  "live_more": "+{count} lagi",
+  "live_open_timeline": "Buka di Timeline",
+  "live_toggle": "Pop-up langsung",
+  "live_toggle_hint": "Tampilkan pesan saluran masuk sebagai pop-up pojok"
 }

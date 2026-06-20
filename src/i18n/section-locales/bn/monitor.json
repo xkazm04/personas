@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "অনুমোদিত, কিন্তু কাজটি সম্পন্ন করা যায়নি",
   "channels_author_all": "সবাই",
   "channels_author_you": "আপনি",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "সব সাফ করুন",
+  "live_dismiss": "বাতিল করুন",
+  "live_more": "+{count} আরো",
+  "live_open_timeline": "টাইমলাইনে খুলুন",
+  "live_toggle": "লাইভ পপ-আপ",
+  "live_toggle_hint": "আসন্ন চ্যানেল বার্তা কোণার পপ-আপ হিসেবে দেখান"
 }

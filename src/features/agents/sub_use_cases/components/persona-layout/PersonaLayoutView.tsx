@@ -259,25 +259,14 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     if (triggers.length > 0) out.trigger = { label: dimLabels.trigger, value: triggers.join(' · ') };
     out.task = { label: dimLabels.task, value: u.title };
 
-    // Apps (connector) — compact brand icons for the active capability's
-    // connector(s); rendered inline in the Petals rail's Apps row.
-    const connectorKeys: string[] = [];
-    const connectorFallback: string[] = [];
-    if (u.connectorKey) connectorKeys.push(u.connectorKey);
-    else if (u.connector) connectorFallback.push(u.connector);
-    if (connectorKeys.length > 0 || connectorFallback.length > 0) {
+    // Apps (connector) — brand icon ONLY when a real connector is bound
+    // (connectorKey resolved). `u.connector` falls back to the use-case
+    // category (e.g. "analysis", "notifications") which is NOT a connector, so
+    // without a key the Apps petal carries no value (stays off). Never text.
+    if (u.connectorKey) {
       out.connector = {
         label: dimLabels.connector,
-        value: (
-          <span className="inline-flex items-center gap-1 overflow-hidden">
-            {connectorKeys.slice(0, 4).map((key) => (
-              <ConnectorIcon key={key} meta={getConnectorMeta(key)} size="w-4 h-4" />
-            ))}
-            {connectorFallback.length > 0 && (
-              <span className="typo-caption truncate text-foreground">{connectorFallback.join(' · ')}</span>
-            )}
-          </span>
-        ),
+        value: <ConnectorIcon meta={getConnectorMeta(u.connectorKey)} size="w-4 h-4" />,
       };
     }
     const channels = [...new Set(u.notificationChannels)];

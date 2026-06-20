@@ -151,7 +151,9 @@
     "detail_note_label": "解決メモ（任意）",
     "detail_no_persona": "エージェントなし",
     "empty_open_title": "問題なし",
-    "empty_filtered_title": "該当するインシデントはありません"
+    "empty_filtered_title": "該当するインシデントはありません",
+    "col_days": "日数",
+    "col_incident": "インシデント"
   },
   "observability": {
     "title": "オブザーバビリティ",
@@ -352,7 +354,8 @@
     "sort_runs": "実行回数が多い順",
     "sort_recent": "最新順",
     "needs_review": "要確認",
-    "pending_scope_hint": "保留中の注釈をすべて確認するにはペルソナを選択してください。"
+    "pending_scope_hint": "保留中の注釈をすべて確認するにはペルソナを選択してください。",
+    "graph_tab": "グラフ"
   },
   "conflicts": {
     "dismissed": "競合を非表示にしました",
@@ -506,7 +509,15 @@
     "delete_all": "すべて削除",
     "delete_all_confirm_title": "すべてのレビューを削除しますか？",
     "delete_all_confirm_body": "この操作により{count}件のレビューが完全に削除されます。この操作は元に戻せません。",
-    "delete_all_confirm_cta": "すべて削除"
+    "delete_all_confirm_cta": "すべて削除",
+    "auto_resolved": {
+      "badge": "自動解決済み",
+      "banner_auto_triage": "このレビューはあなたではなく、二次パスのauto_triageエバリュエーターによって自動的に解決されました。あなたの承認を必要とするには、この機能のレビューポリシーを変更してください。",
+      "banner_trust_llm": "このレビューは機能のtrust_llmポリシーによって自動承認され、あなたの確認を待ちませんでした。自分で判断したい場合は、この機能のレビューポリシーを変更してください。",
+      "reasoning_label": "自動トリアージの理由",
+      "tip_auto_triage": "自動二次パスエバリュエーター（auto_triageレビューポリシー）によって判断され、人間の決定なしにレビューキューをスキップしました。",
+      "tip_trust_llm": "この機能のtrust_llmレビューポリシーによって自動承認され、人間の決定なしにレビューキューをスキップしました。"
+    }
   },
   "messages_view": {
     "title": "メッセージ",
@@ -852,7 +863,8 @@
     "cost_per_value": "コスト / 価値実行",
     "value_delivered_count": "価値提供数",
     "all_models": "すべてのモデル",
-    "col_model": "モデル"
+    "col_model": "モデル",
+    "col_cost": "コスト"
   },
   "analytics_dashboard": {
     "title": "分析",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "エージェントのフリート最適化の提案を確認しています：「{title}」。{description} 推奨アクション：{action}。{focus}",
     "ask_athena_focus_persona": "エージェント「{persona}」を調査し、役立つ場合はそのLabを開いて代替モデルをテストし、結果を報告してください。",
     "ask_athena_focus_general": "これを調査して、何を変更すべきか推奨してください。"
+  },
+  "athena": {
+    "avg_cost": "平均 / ターン",
+    "cost_by_action": "アクションタイプ別コスト",
+    "cost_per_day": "Athena の日次コスト",
+    "errors": "ターンエラー",
+    "health_hint": "アシスタントの状態",
+    "health_no_activity": "この期間の Athena アクティビティはありません",
+    "health_title": "Athena の健全性",
+    "jobs_completed": "完了",
+    "jobs_failed": "失敗",
+    "jobs_title": "バックグラウンドジョブ",
+    "leg_browser_test": "ブラウザテスト",
+    "leg_daily_brief": "デイリーブリーフ",
+    "leg_exec_triage": "実行トリアージ",
+    "leg_execution_review": "実行レビュー",
+    "leg_fleet_analysis": "フリート分析",
+    "leg_msg_triage": "メッセージトリアージ",
+    "leg_other": "その他",
+    "leg_reaction": "チャンネルリアクション",
+    "leg_reaction_batch": "チャンネルリアクション（バッチ）",
+    "leg_review_resolution": "レビュー解決",
+    "no_activity": "この期間の Athena アクティビティはありません",
+    "origin_autonomous": "自律",
+    "origin_chat": "チャット",
+    "origin_external": "外部",
+    "origin_headless": "バックグラウンド",
+    "origin_proactive": "プロアクティブ",
+    "proactive_budget": "今日の予算",
+    "proactive_delivered": "配信済み",
+    "proactive_dismissed": "却下済み",
+    "proactive_engaged": "エンゲージ",
+    "proactive_engaged_rate": "エンゲージ率",
+    "proactive_expired": "期限切れ",
+    "proactive_title": "プロアクティブエコノミー",
+    "section_hint": "アシスタント自身の使用状況",
+    "section_title": "Athena",
+    "tokens": "トークン",
+    "tokens_io": "{input} 入力 · {output} 出力",
+    "total_cost": "Athena コスト",
+    "triage_attention": "要注意",
+    "triage_deep_dive": "詳細分析",
+    "triage_digest": "ダイジェスト",
+    "triage_drop": "破棄",
+    "triage_parse_failures": "解析失敗",
+    "triage_passes": "通過",
+    "triage_title": "トリアージファネル",
+    "turns": "ターン",
+    "vs_fleet": "Athena vs フリート",
+    "vs_fleet_hint": "この期間の総支出 {total} のうち {athena}"
+  },
+  "heartbeats": {
+    "all_clear_detail": "監視中のすべてのペルソナが正常なしきい値内で動作しています。",
+    "all_clear_title": "すべてのシステムは正常です",
+    "chains": "チェーン",
+    "col_persona": "ペルソナ",
+    "col_score": "HP",
+    "col_vitals": "トレンド · 成功 · 消費",
+    "focus_issues": "問題に集中",
+    "healthy_hidden": "正常を非表示",
+    "heartbeat": "ハートビート",
+    "hide_healthy": "正常を隠す",
+    "idle": "アイドル",
+    "monitored": "監視中",
+    "runs_suffix": "回実行",
+    "seg_budget": "予算",
+    "seg_healing": "回復",
+    "seg_stability": "安定性",
+    "seg_success": "成功",
+    "show_all": "すべて表示"
+  },
+  "provenance": {
+    "sourced_tip": "{count}件のソースを参照しており、追跡・監査が可能です。",
+    "unsourced": "ソースなし",
+    "unsourced_tip": "このレポートには数値が含まれていますが、Sources セクションがないため、出所を遡ることができません。"
   }
 }

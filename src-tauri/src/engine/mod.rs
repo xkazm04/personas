@@ -19,7 +19,6 @@ pub mod auto_rollback;
 pub mod auto_triage;
 pub mod autopilot;
 pub mod automation_runner;
-pub mod backend;
 pub mod background;
 pub mod build_session;
 #[cfg(feature = "p2p")]
@@ -1462,6 +1461,7 @@ impl ExecutionEngine {
                 spawn_delayed_retry(
                     *delay_secs,
                     None,
+                    None, // backoff retries restart fresh
                     pool.clone(),
                     app.clone(),
                     persona_id.to_string(),
@@ -1484,6 +1484,7 @@ impl ExecutionEngine {
                 spawn_delayed_retry(
                     5,
                     Some(*new_timeout_ms),
+                    None, // timeout retries restart fresh
                     pool.clone(),
                     app.clone(),
                     persona_id.to_string(),
@@ -1522,14 +1523,14 @@ impl ExecutionEngine {
                     persona_id = %persona_id,
                     execution_id = %exec_id,
                     retry_at = %retry_at,
-                    "Healing analysis: persisting usage-limit retry",
+                    "Healing analysis: persisting scheduled retry",
                 );
                 if let Err(e) = scheduled_retries_repo::upsert(
                     pool,
                     exec_id,
                     persona_id,
                     &retry_at.to_rfc3339(),
-                    "usage_limit_window",
+                    retry_reason_for(diagnosis),
                 ) {
                     tracing::error!(
                         execution_id = %exec_id,
@@ -1569,15 +1570,12 @@ impl ExecutionEngine {
                 );
                 continue;
             }
-            let (original_exec_id, current_retry_count) =
-                match exec_repo::get_by_id(pool, &row.execution_id) {
-                    Ok(e) => (
-                        e.retry_of_execution_id
-                            .unwrap_or_else(|| row.execution_id.clone()),
-                        e.retry_count,
-                    ),
-                    Err(_) => (row.execution_id.clone(), 0),
-                };
+            let exec_row = exec_repo::get_by_id(pool, &row.execution_id).ok();
+            let original_exec_id = exec_row
+                .as_ref()
+                .and_then(|e| e.retry_of_execution_id.clone())
+                .unwrap_or_else(|| row.execution_id.clone());
+            let current_retry_count = exec_row.as_ref().map(|e| e.retry_count).unwrap_or(0);
             if current_retry_count >= healing::MAX_RETRY_COUNT {
                 tracing::warn!(
                     execution_id = %row.execution_id,
@@ -1585,15 +1583,35 @@ impl ExecutionEngine {
                 );
                 continue;
             }
+            // API/server-error retries resume the prior Claude session so the
+            // run continues where it stopped ("please continue"); usage-limit
+            // retries restart fresh. Falls back to a fresh restart when the
+            // failed run never captured a session id.
+            let continuation = if row.reason.as_deref() == Some("api_error_resume") {
+                match exec_row.as_ref().and_then(|e| e.claude_session_id.clone()) {
+                    Some(sid) => Some(types::Continuation::SessionResume(sid)),
+                    None => {
+                        tracing::info!(
+                            execution_id = %row.execution_id,
+                            "scheduled_retries: api-error retry has no session id, restarting fresh",
+                        );
+                        None
+                    }
+                }
+            } else {
+                None
+            };
             tracing::info!(
                 persona_id = %row.persona_id,
                 execution_id = %row.execution_id,
                 reason = ?row.reason,
-                "scheduled_retries: dispatching due usage-limit retry",
+                resume = continuation.is_some(),
+                "scheduled_retries: dispatching due retry",
             );
             spawn_delayed_retry(
                 0,
                 None,
+                continuation,
                 pool.clone(),
                 app.clone(),
                 row.persona_id,
@@ -3206,6 +3224,7 @@ fn spawn_healing_retry(
             spawn_delayed_retry(
                 *delay_secs,
                 None,
+                None, // backoff retries restart fresh
                 pool.clone(),
                 app.clone(),
                 persona_id.into(),
@@ -3229,6 +3248,7 @@ fn spawn_healing_retry(
             spawn_delayed_retry(
                 5,
                 Some(*new_timeout_ms),
+                None, // timeout retries restart fresh
                 pool.clone(),
                 app.clone(),
                 persona_id.into(),
@@ -3249,14 +3269,14 @@ fn spawn_healing_retry(
                 persona_id = %persona_id,
                 execution_id = %exec_id,
                 retry_at = %retry_at,
-                "Healing: persisting usage-limit retry",
+                "Healing: persisting scheduled retry",
             );
             if let Err(e) = scheduled_retries_repo::upsert(
                 pool,
                 exec_id,
                 persona_id,
                 &retry_at.to_rfc3339(),
-                "usage_limit_window",
+                retry_reason_for(diagnosis),
             ) {
                 tracing::error!(
                     execution_id = %exec_id,
@@ -3572,6 +3592,7 @@ fn spawn_healing_chain(
                         spawn_delayed_retry(
                             2, // short delay after AI fixes
                             None,
+                            None, // AI-healing already resumed; the re-attempt restarts fresh
                             pool.clone(),
                             app.clone(),
                             persona_id.clone(),
@@ -3656,6 +3677,18 @@ fn spawn_healing_chain(
     });
 }
 
+/// Reason tag stored on a `scheduled_retries` row. Drives the drain path's
+/// resume-vs-fresh decision (see [`ExecutionEngine::drain_due_scheduled_retries`]):
+/// `api_error_resume` rows resume the prior Claude session so the run continues
+/// where it stopped; usage-limit rows restart the task fresh (a usage window may
+/// reset hours/days later, by which point the CLI session transcript is gone).
+fn retry_reason_for(diagnosis: &healing::HealingDiagnosis) -> &'static str {
+    match diagnosis.category {
+        healing::FailureCategory::ApiError => "api_error_resume",
+        _ => "usage_limit_window",
+    }
+}
+
 /// Spawn a delayed retry execution for a failed persona.
 ///
 /// This is the core of the autonomous self-healing system. It:
@@ -3669,6 +3702,11 @@ fn spawn_healing_chain(
 fn spawn_delayed_retry(
     delay_secs: u64,
     timeout_override_ms: Option<u64>,
+    // Continuation for the retried run. `Some(SessionResume)` makes the retry
+    // `--resume` the prior session and continue ("please continue") rather than
+    // restart from a fresh prompt — used for API/server-error retries. `None`
+    // restarts the task (rate-limit / timeout / usage-limit retries).
+    continuation: Option<types::Continuation>,
     pool: DbPool,
     app: AppHandle,
     persona_id: String,
@@ -3799,7 +3837,7 @@ fn spawn_delayed_retry(
             log_dir,
             child_pids.clone(),
             cancelled.clone(),
-            None, // no continuation for healing retries
+            continuation, // SessionResume for api-error retries; None restarts fresh
             None, // chain_trace_id -- healing retries don't inherit chain context
             circuit_breaker,
         )

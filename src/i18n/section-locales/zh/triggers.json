@@ -691,11 +691,58 @@
     "filter_placeholder": "筛选…",
     "no_sources_match": "没有来源匹配\"{query}\"",
     "no_targets_match": "没有角色匹配\"{query}\"",
-    "agent_fallback": "智能体"
+    "agent_fallback": "智能体",
+    "commit_all": "全部保存",
+    "commit_blocked_output_match": "输出匹配路由需要匹配表达式 — 即将推出",
+    "commit_blocked_signal": "信号源路由需要触发器配置 — 即将推出",
+    "commit_route": "保存此路由",
+    "existing_routes": "现有路由",
+    "proto_add_listener": "添加监听器",
+    "proto_disconnect": "断开监听器",
+    "proto_hide_unconnected": "隐藏未连接项",
+    "proto_live": "实时",
+    "proto_no_listeners": "无监听器",
+    "proto_pending": "待处理",
+    "proto_rename_event": "重命名事件",
+    "proto_show_unconnected": "显示 {count} 个未连接项",
+    "proto_tab_baseline": "仅编排",
+    "proto_tab_eventhub": "事件中心",
+    "proto_tab_patchbay": "连接台",
+    "route_commit_failed": "无法保存路由",
+    "route_committed": "路由已保存",
+    "routes_committed": "已保存 {count} 条路由",
+    "tab_compose": "编排",
+    "tab_routes": "路由",
+    "proto_chain_route": "链式路由 — 当源 persona 完成时触发；该事件无法重命名"
   },
   "trigger_configured": "触发器已配置",
   "secret_label": "密钥",
   "copy_channel_url_title": "复制频道 URL",
   "pause_relay": "暂停中继",
-  "resume_relay": "恢复中继"
+  "resume_relay": "恢复中继",
+  "arm_state": {
+    "sleeping": "休眠中",
+    "sleeping_title": "已启用，但当前不在活跃时间段内——将在活跃窗口重新开启后触发。"
+  },
+  "pending_approval": {
+    "approved": "已批准——运行中",
+    "discard": "丢弃",
+    "discarded": "已丢弃",
+    "run_now": "批准并运行",
+    "subtitle_one": "有 {count} 个计划运行正等待你的批准。",
+    "subtitle_other": "有 {count} 个计划运行正等待你的批准。",
+    "title": "等待你的批准"
+  },
+  "unattended": {
+    "approval": "需要我的批准",
+    "approval_desc": "每次计划运行都将暂停，等待你批准，确保在无人值守时不会自行执行。",
+    "auto": "自动运行",
+    "auto_desc": "无需确认，直接触发并运行——包括发送、发布或写入的所有操作。",
+    "badge_approval": "需批准",
+    "badge_dry_run": "试运行",
+    "dry_run": "试运行（安全）",
+    "dry_run_desc": "按计划触发，但屏蔽所有对外操作——你可以审查结果，确认无误后再切换为自动模式。",
+    "subtitle": "控制此触发器在无人值守时（按计划）自动触发的行为。",
+    "title": "无人值守时的运行方式"
+  }
 }

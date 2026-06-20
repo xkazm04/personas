@@ -527,6 +527,7 @@ pub async fn send_turn(
             &effective_user_message,
             &user_db,
             browser_tools,
+            None,
         ),
     )
     .await
@@ -560,6 +561,7 @@ pub async fn send_turn(
                     &effective_user_message,
                     &user_db,
                     browser_tools,
+                    None,
                 ),
             )
             .await
@@ -1134,6 +1136,112 @@ fn clean_segment_for_display(seg: &str) -> String {
     kept.join("\n").trim().to_string()
 }
 
+/// Concise coding-agent system prompt for a web-build session. Kept lean for
+/// v0 — the full web-build doctrine + Vision/checklist machinery land in P3.
+/// The full web-build doctrine, embedded so a build session carries the whole
+/// playbook (P3). Cost is real (~12KB/turn); a later pass can switch to
+/// retrieval, but full injection keeps fidelity to the doctrine for now.
+const WEB_BUILD_DOCTRINE: &str =
+    include_str!("../../../docs/concepts/web-build-best-practices.md");
+
+/// Static planning + rules block appended after the doctrine. Kept as a raw
+/// string so the `BUILD_PLAN:` JSON example needs no brace-escaping.
+const BUILD_PLAN_INSTRUCTION: &str = r#"
+# Build plan — surface it
+Maintain a short build plan following the doctrine's Spine, then a project-specific tail. Whenever the plan changes — you finish a phase, start one, or revise the set — emit it as the VERY LAST line of your reply, as ONE line of compact JSON (no code fence), in exactly this shape:
+BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"short"},{"id":"foundation","title":"Foundation","status":"active","note":""}]}
+- status is one of "done" | "active" | "pending"; exactly one phase is "active".
+- Keep to <=8 phases, titles <=24 chars, notes <=40 chars. Only emit BUILD_PLAN when the plan actually changed.
+
+# When to ask — this is the user's product, don't assume
+When a choice MATERIALLY shapes the product — target audience, brand voice/tone, which sections or features to include, real content (names, copy, projects, contact details), or scope/priority — and you don't already know it from the conversation, STOP and ASK instead of inventing it. Emit the question as the VERY LAST line:
+NEEDS_INPUT: <one clear, specific question; offer 2-3 concrete options when it helps>
+Ask ONE focused question at a time. Make low-stakes, reversible choices yourself (spacing, a placeholder colour, lorem you'll replace) and keep moving — reserve NEEDS_INPUT for decisions that are expensive to undo or that only the user can answer. Early on (vision, brand, audience) lean toward asking; once those are settled, lean toward building.
+
+# Rules
+- Edit files directly with your tools; keep the change scoped to the request.
+- The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
+- Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
+
+fn build_system_prompt(project_path: &std::path::Path) -> String {
+    format!(
+        "You are Athena's web-build engine — a focused coding agent working inside the local \
+web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
+already running that hot-reloads on every file save, so the user sees your changes \
+immediately in an embedded preview. Follow your web-build doctrine below for planning and \
+quality.\n\n\
+===== WEB-BUILD DOCTRINE =====\n{doctrine}\n===== END DOCTRINE =====\n{instruction}",
+        path = project_path.display(),
+        doctrine = WEB_BUILD_DOCTRINE,
+        instruction = BUILD_PLAN_INSTRUCTION,
+    )
+}
+
+/// Run one build-session turn: a project-rooted Claude Code turn that edits the
+/// project's files (P2 of the web-dev companion). A distinct, independently
+/// resumable session from Athena's main chat — session id `webbuild:<project_id>`,
+/// spawned at the project cwd with a coding system prompt. Streams on
+/// `STREAM_EVENT` keyed by that session id; returns the assistant's summary text.
+pub async fn run_build_turn(
+    app: &AppHandle,
+    user_db: &UserDbPool,
+    project_id: &str,
+    project_path: &std::path::Path,
+    user_message: &str,
+) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
+    let session_id = format!("webbuild:{project_id}");
+    let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
+    let claude_session_id = read_claude_session_id(user_db, &session_id)?;
+    let system_prompt = build_system_prompt(project_path);
+
+    let text = match timeout(
+        TURN_TIMEOUT,
+        run_cli(
+            app,
+            &turn_id,
+            &session_id,
+            claude_session_id.as_deref(),
+            &system_prompt,
+            user_message,
+            user_db,
+            false,
+            Some(project_path),
+        ),
+    )
+    .await
+    {
+        Ok(Ok((text, _, _))) => text,
+        // Self-heal a stale `--resume` (deleted/expired CLI session): clear the
+        // pointer and retry once with a fresh session.
+        Ok(Err(e)) if is_stale_session_error(&e) && claude_session_id.is_some() => {
+            clear_claude_session_id(user_db, &session_id)?;
+            let (text, _, _) = timeout(
+                TURN_TIMEOUT,
+                run_cli(
+                    app,
+                    &turn_id,
+                    &session_id,
+                    None,
+                    &system_prompt,
+                    user_message,
+                    user_db,
+                    false,
+                    Some(project_path),
+                ),
+            )
+            .await
+            .map_err(|_| AppError::Internal("build turn timed out".into()))??;
+            text
+        }
+        Ok(Err(e)) => return Err(e),
+        Err(_) => return Err(AppError::Internal("build turn timed out".into())),
+    };
+
+    // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
+    let (reply, phases, question) = crate::webbuild::plan::extract_build_turn(&text);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question })
+}
+
 async fn run_cli(
     app: &AppHandle,
     turn_id: &str,
@@ -1143,6 +1251,11 @@ async fn run_cli(
     user_message: &str,
     pool: &UserDbPool,
     browser_tools: bool,
+    // Working directory for the spawned CLI. `None` = the user's home dir (the
+    // default — so a normal Athena turn doesn't auto-pick up the Personas
+    // project's CLAUDE.md). `Some(path)` roots the turn in a project directory
+    // (web-build build sessions — P2 of the web-dev companion).
+    cwd_override: Option<&std::path::Path>,
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1208,9 +1321,12 @@ async fn run_cli(
         }
     }
 
-    // Spawn from the user's home directory (or a benign fallback) so we
-    // don't auto-pick up the Personas project's CLAUDE.md as context.
-    let cwd = dirs::home_dir().unwrap_or_else(|| std::env::temp_dir());
+    // Spawn from the user's home directory (or a benign fallback) by default so
+    // a normal turn doesn't auto-pick up the Personas project's CLAUDE.md. A
+    // build session overrides this to root the turn in its project directory.
+    let cwd = cwd_override
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| dirs::home_dir().unwrap_or_else(|| std::env::temp_dir()));
 
     let mut cmd = Command::new(&cmd_program);
     cmd.args(&argv)

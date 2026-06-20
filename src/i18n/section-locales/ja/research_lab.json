@@ -181,5 +181,6 @@
   "arxiv_error_http": "arXiv がエラーを返しました（HTTP {status}）。しばらくしてから再試行してください。",
   "arxiv_error_network": "arXiv に接続できませんでした。接続を確認して再試行してください。",
   "arxiv_error_feed": "arXiv がそのクエリを処理できませんでした。別のキーワードやシンプルなキーワードをお試しください。",
-  "arxiv_error_generic": "arXiv 検索に失敗しました。再試行してください。"
+  "arxiv_error_generic": "arXiv 検索に失敗しました。再試行してください。",
+  "added_with_dedup": "{added} 件のソースを追加しました（{duplicates} 件はすでにライブラリにあります）"
 }

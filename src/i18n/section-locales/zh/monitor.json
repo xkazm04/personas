@@ -166,5 +166,11 @@
   "review_dispatch_blocked": "已批准，但无法执行该操作",
   "channels_author_all": "所有人",
   "channels_author_you": "您",
-  "channels_author_athena": "Athena"
+  "channels_author_athena": "Athena",
+  "live_clear_all": "全部清除",
+  "live_dismiss": "忽略",
+  "live_more": "+{count} 条",
+  "live_open_timeline": "在时间线中打开",
+  "live_toggle": "实时弹窗",
+  "live_toggle_hint": "以角落弹窗形式显示传入的频道消息"
 }

@@ -691,11 +691,58 @@
     "filter_placeholder": "Filtern…",
     "no_sources_match": "Keine Quellen entsprechen „{query}\"",
     "no_targets_match": "Keine Personas entsprechen „{query}\"",
-    "agent_fallback": "Agent"
+    "agent_fallback": "Agent",
+    "commit_all": "Alle speichern",
+    "commit_blocked_output_match": "Output-Match-Routen benötigen einen Match-Ausdruck — demnächst verfügbar",
+    "commit_blocked_signal": "Signal-Quellen-Routen benötigen eine Trigger-Konfiguration — demnächst verfügbar",
+    "commit_route": "Diese Route speichern",
+    "existing_routes": "Vorhandene Routen",
+    "proto_add_listener": "Listener hinzufügen",
+    "proto_disconnect": "Listener trennen",
+    "proto_hide_unconnected": "Nicht verbundene ausblenden",
+    "proto_live": "live",
+    "proto_no_listeners": "Keine Listener",
+    "proto_pending": "ausstehend",
+    "proto_rename_event": "Ereignis umbenennen",
+    "proto_show_unconnected": "{count} nicht verbundene anzeigen",
+    "proto_tab_baseline": "Nur komponieren",
+    "proto_tab_eventhub": "Event-Hub",
+    "proto_tab_patchbay": "Patchbay",
+    "route_commit_failed": "Route konnte nicht gespeichert werden",
+    "route_committed": "Route gespeichert",
+    "routes_committed": "{count} Routen gespeichert",
+    "tab_compose": "Komponieren",
+    "tab_routes": "Routen",
+    "proto_chain_route": "Chain-Route — wird ausgelöst, wenn die Quell-Persona abgeschlossen ist; das Event kann nicht umbenannt werden"
   },
   "trigger_configured": "Trigger konfiguriert",
   "secret_label": "Geheimnis",
   "copy_channel_url_title": "Kanal-URL kopieren",
   "pause_relay": "Relay pausieren",
-  "resume_relay": "Relay fortsetzen"
+  "resume_relay": "Relay fortsetzen",
+  "arm_state": {
+    "sleeping": "Ruhend",
+    "sleeping_title": "Aktiviert, aber außerhalb der aktiven Zeiten — wird nicht ausgelöst, bis das aktive Zeitfenster wieder öffnet."
+  },
+  "pending_approval": {
+    "approved": "Genehmigt — wird ausgeführt",
+    "discard": "Verwerfen",
+    "discarded": "Verworfen",
+    "run_now": "Genehmigen & ausführen",
+    "subtitle_one": "{count} geplanter Lauf wartet auf deine Genehmigung.",
+    "subtitle_other": "{count} geplante Läufe warten auf deine Genehmigung.",
+    "title": "Wartet auf deine Genehmigung"
+  },
+  "unattended": {
+    "approval": "Meine Genehmigung erfordern",
+    "approval_desc": "Hält jeden geplanten Lauf an, bis du ihn genehmigst, damit ohne dein OK nichts unbeaufsichtigt passiert.",
+    "auto": "Automatisch ausführen",
+    "auto_desc": "Wird ausgelöst und ausgeführt ohne Nachfrage — einschließlich aller Aktionen, die gesendet, gepostet oder geschrieben werden.",
+    "badge_approval": "Genehmigung",
+    "badge_dry_run": "Probelauf",
+    "dry_run": "Probelauf (sicher)",
+    "dry_run_desc": "Wird planmäßig ausgelöst, unterdrückt aber alle ausgehenden Aktionen — du prüfst das Ergebnis und wechselst auf automatisch, sobald du ihm vertraust.",
+    "subtitle": "Steuert, was passiert, wenn dieser Trigger eigenständig (planmäßig) ausgelöst wird, ohne dass du zusieht.",
+    "title": "Wenn dies unbeaufsichtigt läuft"
+  }
 }

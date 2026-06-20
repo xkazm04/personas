@@ -26,6 +26,18 @@ pre-commit:
     - name: gitleaks-staged
       run: node scripts/secret-scan.mjs
 
+    # Block commits that would ship a translation gap (English mixed into a
+    # non-English UI — which the user has ruled unacceptable). Scoped to locale
+    # edits so unrelated commits are unaffected; --strict fails on MISSING keys
+    # (not just the default extras), so adding en.json keys without translating
+    # every locale is blocked here rather than silently shipping English
+    # fallback. Fix via the pipeline: scripts/i18n/translate-extract.mjs →
+    # one Sonnet subagent per locale → scripts/i18n/translate-merge.mjs.
+    # See .claude/CLAUDE.md → "Translation completeness — no gaps".
+    - name: i18n-no-gaps
+      glob: "src/i18n/locales/*.json"
+      run: node scripts/i18n/check-coverage.mjs --strict
+
 pre-push:
   jobs:
     - name: typecheck

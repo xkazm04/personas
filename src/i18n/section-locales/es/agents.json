@@ -541,7 +541,13 @@
     "bulk_rerun_open_diff": "Open detailed diff for this pair",
     "compare_starred_pair": "Compare starred",
     "compare_starred_pair_tooltip": "Compare the two most recently starred executions",
-    "tab_director": "Director"
+    "tab_director": "Director",
+    "cache_hit": "Acierto de caché",
+    "cached": "en caché",
+    "deep_fanout": "Ramificación profunda",
+    "deep_fanout_hint": "Delega subtareas paralelas independientes a subagentes. Establece un límite de presupuesto.",
+    "deep_fanout_unavailable": "No disponible en este plan — requiere las herramientas Workflow/Task (Max/Team).",
+    "subagents": "Subagentes"
   },
   "lab": {
     "mode_arena": "Arena",
@@ -859,7 +865,15 @@
     "vr_improve_seed_plain": "Mejora el agente \"{name}\" v{version} — aún sin medir. ¿En qué debería enfocarme? ",
     "vr_metric_tool": "precisión de herramienta",
     "vr_metric_quality": "calidad de salida",
-    "vr_metric_protocol": "cumplimiento de protocolo"
+    "vr_metric_protocol": "cumplimiento de protocolo",
+    "eco_col_attempted": "Intentos",
+    "eco_col_cost_success": "Coste / Éxito",
+    "eco_col_model": "Modelo",
+    "eco_col_rate": "Tasa de resolución",
+    "eco_col_resolved": "Resueltos",
+    "eco_empty": "Sin resultados de evaluación — ejecuta el Lab para ver la eficiencia de costes.",
+    "eco_subtitle": "Con qué frecuencia cada modelo resuelve una evaluación y cuánto cuesta cada éxito.",
+    "eco_title": "Eficiencia de costes"
   },
   "design": {
     "select_agent": "Selecciona un agente para iniciar el análisis de diseño",
@@ -1617,7 +1631,17 @@
     "_comment_review_pill_trust": "ReviewDimCard TRUST-state pill",
     "review_pill_trust": "CONFIANZA",
     "_comment_dim_status_activated": "PersonaSigilSummary value shown when a boolean dim (memory/review/event/error) is active for the capability",
-    "dim_status_activated": "Activado"
+    "dim_status_activated": "Activado",
+    "engine_claude": "Motor: Claude",
+    "engine_claude_tooltip": "Claude completo. Haz clic para activar el modo Mixto: las subtareas simples (resumir, extraer, reformatear) se delegan a un modelo local para ahorrar capacidad premium.",
+    "engine_local_first": "Motor: Local primero",
+    "engine_local_first_tooltip": "Local primero: Claude compone las órdenes de trabajo y valida; el modelo local genera todo el contenido. Haz clic para volver a Claude completo.",
+    "engine_mixed": "Motor: Mixto",
+    "engine_mixed_tooltip": "Motor mixto: Claude orquesta y delega subtareas simples a un modelo local mediante la herramienta llm_delegate. Haz clic para volver a Claude completo.",
+    "petals_label": "Pétalos",
+    "recipe": "Receta",
+    "_comment_petals_label": "Use Cases left rail heading — the glyph 'petals' (capability dimensions); keep to 1 word",
+    "_comment_recipe": "Slim Use Cases header button (＋ Recipe) — opens Templates → Recipes; keep to 1 word"
   },
   "tools": {
     "no_persona": "Ninguna persona seleccionada",
@@ -1855,7 +1879,10 @@
     "build_failed": "Error al iniciar la construcción. Verifica la configuración del CLI.",
     "header_title": "Build",
     "header_subtitle_new": "Compose a new agent from scratch",
-    "header_subtitle_editing": "Editing {name}"
+    "header_subtitle_editing": "Editing {name}",
+    "context_hint": "Usado como material de referencia para moldear la persona durante esta construcción. No se almacena después.",
+    "context_placeholder": "Pega una muestra de escritura, tu rol y objetivo, o una guía de voz de marca — la construcción fundamenta la voz y las suposiciones de la persona en ello en lugar de inventarlas a partir de tu intención de una línea.",
+    "context_toggle": "Añadir contexto de referencia (opcional)"
   },
   "build_webhook_source": {
     "header": "Webhook source",
@@ -2631,7 +2658,8 @@
     "automations": "Automatizaciones",
     "triggers_desc": "Las suscripciones de eventos por persona y la configuración de disparadores estarán disponibles en esta pestaña.",
     "messaging_desc": "Los canales de notificación y el enrutamiento de bandeja de entrada para este agente se encontrarán aquí.",
-    "automations_desc": "Las reglas de automatización independientes para este agente se encontrarán aquí."
+    "automations_desc": "Las reglas de automatización independientes para este agente se encontrarán aquí.",
+    "parameters": "Parámetros"
   },
   "parameters_card": {
     "title": "Parámetros",
@@ -2660,5 +2688,14 @@
   "glyph_db_scope_loading": "Cargando tablas…",
   "glyph_db_scope_error": "No se pudieron cargar las tablas — reintentar",
   "glyph_db_scope_empty": "No se encontraron tablas",
-  "glyph_db_scope_selected": "{count} de {total} tablas"
+  "glyph_db_scope_selected": "{count} de {total} tablas",
+  "share": {
+    "button": "Compartir",
+    "failed": "No se pudo publicar este agente en la galería",
+    "hint": "Cualquier persona con el enlace puede abrir este agente en Personas con un clic.",
+    "import_failed": "No se pudo importar el agente compartido",
+    "imported": "Agente importado desde un enlace de compartición",
+    "invite_hint": "Invita a un amigo a Personas — recibirás crédito cuando se una",
+    "published": "Compartido — copia el enlace para enviarlo"
+  }
 }

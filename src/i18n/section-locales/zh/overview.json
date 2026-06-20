@@ -151,7 +151,9 @@
     "detail_note_label": "解决说明（可选）",
     "detail_no_persona": "无代理",
     "empty_open_title": "一切正常",
-    "empty_filtered_title": "无匹配事故"
+    "empty_filtered_title": "无匹配事故",
+    "col_days": "天数",
+    "col_incident": "事件"
   },
   "observability": {
     "title": "可观测性",
@@ -352,7 +354,8 @@
     "sort_runs": "运行最多",
     "sort_recent": "最新",
     "needs_review": "需审核",
-    "pending_scope_hint": "选择一个角色以审核所有待处理的注释。"
+    "pending_scope_hint": "选择一个角色以审核所有待处理的注释。",
+    "graph_tab": "图表"
   },
   "conflicts": {
     "dismissed": "冲突已忽略",
@@ -506,7 +509,15 @@
     "delete_all": "全部删除",
     "delete_all_confirm_title": "删除所有审查？",
     "delete_all_confirm_body": "此操作将永久删除全部 {count} 条评价，无法撤销。",
-    "delete_all_confirm_cta": "全部删除"
+    "delete_all_confirm_cta": "全部删除",
+    "auto_resolved": {
+      "badge": "已自动处理",
+      "banner_auto_triage": "此审核由第二轮 auto_triage 评估器自动处理，并非由你决定。如需人工审批，请修改该能力的审核策略。",
+      "banner_trust_llm": "此审核由该能力的 trust_llm 策略自动批准，未等待你的操作。如需自行决定，请修改该能力的审核策略。",
+      "reasoning_label": "自动分诊推理",
+      "tip_auto_triage": "由自动第二轮评估器决定（auto_triage 审核策略）——已跳过你的审核队列，无需人工决策。",
+      "tip_trust_llm": "由该能力的 trust_llm 审核策略自动批准——已跳过你的审核队列，无需人工决策。"
+    }
   },
   "messages_view": {
     "title": "消息",
@@ -852,7 +863,8 @@
     "cost_per_value": "费用 / 价值运行",
     "value_delivered_count": "已交付价值",
     "all_models": "所有模型",
-    "col_model": "模型"
+    "col_model": "模型",
+    "col_cost": "成本"
   },
   "analytics_dashboard": {
     "title": "分析",
@@ -1690,5 +1702,80 @@
     "ask_athena_prompt": "我正在查看我的智能体的舰队优化建议：\"{title}\"。{description} 建议操作：{action}。{focus}",
     "ask_athena_focus_persona": "请调查智能体\"{persona}\"，如有帮助，请打开其实验室测试备选模型，然后汇报您的发现。",
     "ask_athena_focus_general": "请调查此问题并推荐需要更改的内容。"
+  },
+  "athena": {
+    "avg_cost": "平均/轮次",
+    "cost_by_action": "按操作类型的成本",
+    "cost_per_day": "Athena 每日成本",
+    "errors": "轮次错误",
+    "health_hint": "助手的运行状况",
+    "health_no_activity": "此时间窗内无 Athena 活动报告",
+    "health_title": "Athena 健康状况",
+    "jobs_completed": "已完成",
+    "jobs_failed": "失败",
+    "jobs_title": "后台任务",
+    "leg_browser_test": "浏览器测试",
+    "leg_daily_brief": "每日简报",
+    "leg_exec_triage": "执行分诊",
+    "leg_execution_review": "执行审核",
+    "leg_fleet_analysis": "队列分析",
+    "leg_msg_triage": "消息分诊",
+    "leg_other": "其他",
+    "leg_reaction": "频道响应",
+    "leg_reaction_batch": "频道批量响应",
+    "leg_review_resolution": "审核解决",
+    "no_activity": "此时间窗内无 Athena 活动",
+    "origin_autonomous": "自主",
+    "origin_chat": "对话",
+    "origin_external": "外部",
+    "origin_headless": "后台",
+    "origin_proactive": "主动",
+    "proactive_budget": "今日预算",
+    "proactive_delivered": "已发送",
+    "proactive_dismissed": "已忽略",
+    "proactive_engaged": "已参与",
+    "proactive_engaged_rate": "参与率",
+    "proactive_expired": "已过期",
+    "proactive_title": "主动经济",
+    "section_hint": "您的助手自身使用情况",
+    "section_title": "Athena",
+    "tokens": "令牌",
+    "tokens_io": "{input} 输入 · {output} 输出",
+    "total_cost": "Athena 总成本",
+    "triage_attention": "需关注",
+    "triage_deep_dive": "深度分析",
+    "triage_digest": "已摘要",
+    "triage_drop": "已丢弃",
+    "triage_parse_failures": "解析失败",
+    "triage_passes": "通过",
+    "triage_title": "分诊漏斗",
+    "turns": "轮次",
+    "vs_fleet": "Athena 与队列",
+    "vs_fleet_hint": "此窗口内总支出 {total} 中 Athena 占 {athena}"
+  },
+  "heartbeats": {
+    "all_clear_detail": "所有受监控的角色均在健康阈值内运行。",
+    "all_clear_title": "所有系统正常",
+    "chains": "链",
+    "col_persona": "角色",
+    "col_score": "HP",
+    "col_vitals": "趋势 · 成功率 · 消耗",
+    "focus_issues": "关注问题",
+    "healthy_hidden": "健康项已隐藏",
+    "heartbeat": "心跳",
+    "hide_healthy": "隐藏健康项",
+    "idle": "空闲",
+    "monitored": "受监控",
+    "runs_suffix": "次运行",
+    "seg_budget": "预算",
+    "seg_healing": "自愈",
+    "seg_stability": "稳定性",
+    "seg_success": "成功率",
+    "show_all": "显示全部"
+  },
+  "provenance": {
+    "sourced_tip": "引用了 {count} 个可追溯和审计的来源。",
+    "unsourced": "无来源",
+    "unsourced_tip": "此报告包含数据，但无 Sources 章节——无法追溯其来源。"
   }
 }

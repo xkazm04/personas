@@ -182,5 +182,11 @@
     "trend_up": "+{pct}% gegenüber den letzten 24 Std.",
     "trend_down": "-{pct}% gegenüber den letzten 24 Std.",
     "trend_flat": "Keine Änderung gegenüber den letzten 24 Std."
+  },
+  "get_started": {
+    "ask_cta": "Assistenten fragen",
+    "build_cta": "Ersten Agenten erstellen",
+    "subtitle": "Beschreibe eine Aufgabe in einfacher Sprache und wir richten einen funktionierenden Agenten ein — oder bitte den Assistenten, es für dich zu tun.",
+    "title": "Ersten Agenten erstellen"
   }
 }
