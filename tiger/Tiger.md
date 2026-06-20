@@ -30,7 +30,7 @@ These repeat across many call sites — fix once, lift many:
 2. ✅ **RESOLVED 2026-06-21 — undeclared account-default on the lab/eval tier.** *Corrected from the init claim:* `design-analysis-runner` was a **false positive** (already passes `Some(&persona)`). The real bug was the **lab/eval/evolution tier riding the undeclared account default (Opus 4.8)** with no `--model`: `auto_triage`, `eval`, `genome_critique`, `test_runner` (×4). Fixed by pinning `claude-sonnet-4-6` (local model consts, matching the `idea_scanner`/`SYNTHESIS_MODEL` convention) → explicit + cost-predictable. The ~33 other `(None,None)` sites are persona-agnostic or already pin a model — not bugs.
 3. **Almost no caching.** Only `context-generation` (SHA256 file-hash), `kpi-binding` (compile-time recipe), and `test-scenario-generation` (10-min TTL) cache. Identical (prompt,input) re-spends everywhere else (auto-triage verdicts, design batch, smart-search).
 4. **Schema self-repair is rare.** Most sites hard-fail or silently default on bad JSON. `test-evaluation-llm` has retry+heuristic but the heuristic **masks** quality drops (shows "method=Timeout", not error).
-5. **Prompt-injection guards are inconsistent.** `smart-search` sanitizes + XML-boundaries the user query; `team-synthesis` inserts it RAW. OCR user-prompt overrides unvalidated.
+5. **Prompt-injection guards are inconsistent.** `smart-search` sanitizes + XML-boundaries the user query; ~~`team-synthesis` inserts it RAW~~ → **fixed 2026-06-21** (sanitize + XML boundary + guard, mirrors smart-search). OCR user-prompt overrides still unvalidated (open). Follow-up: extract a shared `prompt::sanitize_user_text` (smart_search + team_synthesis now duplicate it).
 
 ## Model posture (Lens-3 baseline — none benchmarked yet)
 
