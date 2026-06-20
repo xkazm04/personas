@@ -9045,6 +9045,10 @@
       "badge_dry_run": "Dry run",
       "badge_approval": "Approval"
     },
+    "arm_state": {
+      "sleeping": "Sleeping",
+      "sleeping_title": "Enabled, but outside its active hours — it won't fire until the active window reopens."
+    },
     "pending_approval": {
       "title": "Awaiting your approval",
       "subtitle_one": "{count} scheduled run is held until you approve it.",

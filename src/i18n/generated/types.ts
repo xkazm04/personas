@@ -9051,6 +9051,10 @@ export type Translations = {
       badge_dry_run: string;
       badge_approval: string;
     };
+    arm_state: {
+      sleeping: string;
+      sleeping_title: string;
+    };
     pending_approval: {
       title: string;
       subtitle_one: string;

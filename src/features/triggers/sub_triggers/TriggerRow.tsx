@@ -1,8 +1,10 @@
 import { memo } from 'react';
-import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert } from 'lucide-react';
+import { ToggleLeft, ToggleRight, ChevronDown, ShieldAlert, Moon } from 'lucide-react';
 import type { PersonaTrigger } from '@/lib/types/types';
 import { useAgentStore } from "@/stores/agentStore";
 import { TriggerStatusSummary } from './TriggerStatusSummary';
+import { TriggerModeBadge } from './TriggerModeBadge';
+import { getTriggerArmState } from './triggerArmState';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface TriggerRowProps {
@@ -16,6 +18,7 @@ interface TriggerRowProps {
 export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggleExpand, onToggleEnabled }: TriggerRowProps) {
   const { t, tx } = useTranslation();
   const budgetStatus = useAgentStore((s) => s.getBudgetStatus(trigger.persona_id));
+  const armState = getTriggerArmState(trigger);
 
   return (
     <div className="animate-fade-slide-in"
@@ -28,6 +31,18 @@ export const TriggerRow = memo(function TriggerRow({ trigger, expanded, onToggle
         <TriggerStatusSummary trigger={trigger} />
 
         <span className="ml-auto flex items-center gap-2">
+          {/* Fire-mode ("armed to do what") + sleeping state, so an enabled-but-
+              outside-active-window trigger no longer reads identically to disabled. */}
+          <TriggerModeBadge trigger={trigger} />
+          {armState === 'sleeping' && (
+            <span
+              className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded-card border border-indigo-400/25 bg-indigo-500/10 text-indigo-300/90"
+              title={t.triggers.arm_state.sleeping_title}
+            >
+              <Moon className="w-3 h-3" />
+              {t.triggers.arm_state.sleeping}
+            </span>
+          )}
           {/* Budget badges */}
           {budgetStatus === 'stale' && trigger.enabled && (
             <span className="flex items-center gap-1 px-1.5 py-0.5 typo-body rounded border border-muted-foreground/20 bg-muted/10 text-foreground" title={t.triggers.list.budget_unavailable}>

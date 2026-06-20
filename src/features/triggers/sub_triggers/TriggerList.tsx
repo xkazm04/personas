@@ -4,7 +4,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("trigger-list");
-import { ChevronRight, Zap, Shield } from 'lucide-react';
+import { ChevronRight, Zap, Shield, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { listAllTriggers } from "@/api/pipeline/triggers";
 
@@ -16,6 +16,8 @@ import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { TriggerHealth } from './triggerListTypes';
 import { HealthDot } from './HealthDot';
 import { TriggerCountdown } from './TriggerCountdown';
+import { TriggerModeBadge } from './TriggerModeBadge';
+import { getTriggerArmState } from './triggerArmState';
 import { PendingTriggerApprovals } from './PendingTriggerApprovals';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDensity } from '@/hooks/utility/data/useDensity';
@@ -165,15 +167,14 @@ export function TriggerList({ onNavigateToPersona }: TriggerListProps) {
                               }`}>
                                 {trigger.enabled ? t.triggers.on_label : t.triggers.off_label}
                               </span>
-                              {trigger.unattended_mode && trigger.unattended_mode !== 'auto' && (
-                                <span className={`typo-code px-1.5 py-0.5 rounded-card font-mono border ${
-                                  trigger.unattended_mode === 'approval'
-                                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
-                                    : 'bg-amber-500/15 text-amber-400 border-amber-500/20'
-                                }`}>
-                                  {trigger.unattended_mode === 'approval'
-                                    ? t.triggers.unattended.badge_approval
-                                    : t.triggers.unattended.badge_dry_run}
+                              <TriggerModeBadge trigger={trigger} />
+                              {getTriggerArmState(trigger) === 'sleeping' && (
+                                <span
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-card typo-body border border-indigo-400/25 bg-indigo-500/10 text-indigo-300/90"
+                                  title={t.triggers.arm_state.sleeping_title}
+                                >
+                                  <Moon className="w-2.5 h-2.5" />
+                                  {t.triggers.arm_state.sleeping}
                                 </span>
                               )}
                               <HealthDot health={triggerHealthMap[trigger.id] ?? 'unknown'} />
