@@ -210,6 +210,24 @@ on failure (UAT L1 F-FABRICATION-CLAUSE). A runtime `DATA_HONESTY_INVARIANT`
 the rule above the persona prompt so personas built before the fix are honest at
 runtime too, and requires inline source citations for reported figures.
 
+### Build grounding — optional reference context
+
+The build session can ingest **first-class reference context** beyond the intent
+string (UAT P7 — F-BUILD-NO-CONTEXT). `build_session_prompt`
+(`build_session/session_prompt.rs`) takes an optional `context` that, when
+present, is injected after the intent as a delimited **"USER-PROVIDED REFERENCE
+CONTEXT"** block — framed as reference material, *not* instructions (a
+prompt-injection guard so a pasted email can't hijack the build), and truncated
+to 8k chars. The persona grounds its voice, facts, and assumptions in it instead
+of inventing them from one sentence. `None`/blank reproduces the prior prompt
+byte-for-byte. It is threaded through `start_session` and all build entry points
+(the UI `start_build_session` command, the headless command, and the
+test-automation + management-api HTTP build endpoints); the companion one-shot
+path passes `None` for now. On the UI, an optional collapsed **"Add reference
+context"** field (`BuildContextField`, in the matrix build entry) collects a
+writing sample / role / brand guide pre-launch. The context is **transient** —
+used to build the prompt, not persisted on the build session row.
+
 ### Synthesized teams wire handoff
 
 `synthesize_team_from_templates` (`commands/design/team_synthesis.rs`) now calls
