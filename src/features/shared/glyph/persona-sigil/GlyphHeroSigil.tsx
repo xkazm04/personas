@@ -2,6 +2,7 @@ import { memo } from "react";
 import { DIM_META, PETAL_ANGLES, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { PetalState } from "./types";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface GlyphHeroSigilProps {
   size: number;
@@ -23,6 +24,8 @@ interface HeroPetalProps {
   isActive: boolean;
   dimOther: boolean;
   center: number;
+  /** Accessible name for the petal (localized dimension label). */
+  ariaLabel: string;
   onHover: (d: GlyphDimension | null) => void;
   onClick: (d: GlyphDimension) => void;
 }
@@ -47,7 +50,7 @@ const STROKE_WIDTH: Record<PetalState, number> = {
  *  ticking via useBuild) does not reconcile all 8 petals. Animation
  *  runs entirely in CSS via `glyph-petal-{pending,filling}` keyframes. */
 const HeroPetal = memo(function HeroPetal({
-  dim, angle, petalPath, state, isActive, dimOther, center, onHover, onClick,
+  dim, angle, petalPath, state, isActive, dimOther, center, ariaLabel, onHover, onClick,
 }: HeroPetalProps) {
   const meta = DIM_META[dim];
   const color = state === "error" ? "#fb923c" : meta.color;
@@ -60,17 +63,41 @@ const HeroPetal = memo(function HeroPetal({
   return (
     <g transform={`translate(${center} ${center}) rotate(${angle})`}>
       <g
-        className={PULSE_CLASS[state]}
+        className={`${PULSE_CLASS[state]} glyph-hero-petal`}
+        role="button"
+        tabIndex={0}
+        aria-label={ariaLabel}
+        aria-pressed={isActive}
         style={{
           cursor: "pointer",
           pointerEvents: "auto",
           opacity: dimOther && !isActive ? 0.25 : 1,
           transition: "opacity 0.25s ease",
+          outline: "none",
         }}
         onMouseEnter={() => onHover(dim)}
         onMouseLeave={() => onHover(null)}
+        onFocus={() => onHover(dim)}
+        onBlur={() => onHover(null)}
         onClick={(e) => { e.stopPropagation(); onClick(dim); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onClick(dim);
+          }
+        }}
       >
+        {/* Keyboard focus ring — a bright halo shown only on :focus-visible
+            (SVG `outline` rendering is unreliable, so we toggle a path's
+            opacity via CSS in globals.css instead). */}
+        <path
+          className="glyph-hero-petal-focus-ring"
+          d={petalPath}
+          fill="none"
+          stroke="#fff"
+          strokeWidth={3}
+        />
         <path
           d={petalPath}
           fill={color}
@@ -96,6 +123,8 @@ const HeroPetal = memo(function HeroPetal({
 export function GlyphHeroSigil({
   size, petalStates, activeDim, onHover, onClick, dimmed = false,
 }: GlyphHeroSigilProps) {
+  const { t } = useTranslation();
+  const c = t.templates.chronology;
   const center = size / 2;
   const petalOuter = size * 0.44;
   const petalInner = size * 0.13;
@@ -152,6 +181,7 @@ export function GlyphHeroSigil({
           isActive={activeDim === dim}
           dimOther={activeDim !== null && activeDim !== dim}
           center={center}
+          ariaLabel={c[DIM_META[dim].labelKey]}
           onHover={onHover}
           onClick={onClick}
         />

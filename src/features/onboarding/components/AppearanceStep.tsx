@@ -69,6 +69,7 @@ export function AppearanceStep() {
                 onMouseLeave={cancelPrefetch}
                 onPointerDown={() => prefetchNow(lang.code)}
                 onClick={() => setLanguage(lang.code)}
+                aria-pressed={isActive}
                 className={`flex items-center gap-2 px-3 py-2 rounded-modal border transition-colors typo-body ${
                   isActive
                     ? 'border-primary/30 bg-primary/5 text-foreground/90 font-medium'

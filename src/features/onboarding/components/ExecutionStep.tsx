@@ -127,8 +127,9 @@ export function ExecutionStep({
         </div>
       ) : (
         <div className="space-y-3">
-          {/* Status indicator */}
-          <div className="flex items-center gap-2">
+          {/* Status indicator — a live region so the executing→completed/error
+              transition is announced to screen readers (UAT P6 F-A11Y-BUILD-PETALS). */}
+          <div className="flex items-center gap-2" role="status" aria-live="polite">
             {finished ? (
               executionError ? (
                 <>

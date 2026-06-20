@@ -1692,6 +1692,18 @@ body[data-drag-active="true"] * {
   }
 }
 
+/* Keyboard focus ring for the build hero petals (UAT P7/P6 — F-A11Y-BUILD-PETALS).
+   SVG `outline` rendering is unreliable, so we toggle a dedicated focus-ring
+   path's opacity on :focus-visible instead. Mouse focus stays invisible. */
+.glyph-hero-petal-focus-ring {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.glyph-hero-petal:focus-visible .glyph-hero-petal-focus-ring {
+  opacity: 0.9;
+}
+
 @keyframes typing-dot {
 
   0%,

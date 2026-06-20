@@ -91,6 +91,7 @@ export function TextScalePicker({
           <button
             key={scale.id}
             onClick={() => setTextScale(scale.id)}
+            aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-textscale-${scale.id}` : undefined}
             className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
               isActive
@@ -149,6 +150,7 @@ export function BrightnessPicker({
           <button
             key={level.id}
             onClick={() => setBrightness(level.id)}
+            aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-brightness-${level.id}` : undefined}
             className={`relative flex flex-col items-center ${d.cardGap} ${d.cardPadding} rounded-modal border transition-colors ${
               isActive
@@ -205,6 +207,7 @@ export function SimpleThemePicker({
           <button
             key={theme.id}
             onClick={() => setTheme(theme.id)}
+            aria-pressed={isActive}
             data-testid={testIdPrefix ? `${testIdPrefix}-theme-${theme.id}` : undefined}
             className={`flex flex-col items-center ${d.cardGap} ${d.swatchInner} rounded-modal border transition-colors ${
               isActive
