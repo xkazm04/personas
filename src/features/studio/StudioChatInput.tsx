@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Send, X } from 'lucide-react';
+import { Bot, Send, Square, Wand2, X } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
@@ -11,11 +11,15 @@ import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
 import type { BuildPhase } from './studioBuildModel';
 
-// Minimal Studio chat: a send-only input with a single response bubble above it
-// that streams Athena's reply LIVE (token-by-token, reusing the companion's
-// stream-delta extraction off `companion://stream` filtered to the build
-// session), then settles to her full markdown reply. The trailing BUILD_PLAN
-// line is hidden mid-stream so raw JSON never flashes.
+// Autonomous mode: instead of one instruction at a time, Athena drives her own
+// plan — we keep sending "continue" turns until the plan is fully done (every
+// phase 'done'), the user stops, an error hits, or a safety cap is reached.
+const AUTO_MAX_TURNS = 12;
+const AUTO_INSTRUCTION =
+  'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. If everything is already built and polished, say so and mark all phases done.';
+
+// Minimal Studio chat: a send-only input + a live-streaming reply bubble, plus
+// an autonomous-build toggle next to Send.
 export default function StudioChatInput({
   projectId,
   projectName,
@@ -33,7 +37,12 @@ export default function StudioChatInput({
   const [busy, setBusy] = useState(false);
   const [reply, setReply] = useState<string | null>(null);
   const [stream, setStream] = useState('');
+  const [autonomous, setAutonomous] = useState(false);
   const streamRef = useRef('');
+  const autoRef = useRef(false);
+  const autoTurnsRef = useRef(0);
+  const phasesRef = useRef<BuildPhase[]>([]);
+  const seedSentRef = useRef(false);
   const pulseForwardAck = useCompanionStore((s) => s.pulseForwardAck);
   const pulseMessageReaction = useCompanionStore((s) => s.pulseMessageReaction);
 
@@ -70,11 +79,16 @@ export default function StudioChatInput({
       try {
         const result = await webbuildSessionSend(projectId, text);
         setReply(result.reply.trim() || 'Done.');
-        if (result.phases && result.phases.length > 0) onPhases?.(result.phases);
+        if (result.phases && result.phases.length > 0) {
+          phasesRef.current = result.phases;
+          onPhases?.(result.phases);
+        }
         pulseMessageReaction(); // orb plays its one-shot reply reaction
       } catch (e) {
         setReply('Something went wrong with that change.');
         toastCatch('build instruction')(e);
+        autoRef.current = false; // an error halts autonomous mode
+        setAutonomous(false);
       } finally {
         setBusy(false);
       }
@@ -83,12 +97,15 @@ export default function StudioChatInput({
   );
   const send = useCallback(() => void runTurn(input), [runTurn, input]);
 
-  // Auto-send the project's seed vision once (set by the Vision start after the
-  // dev server is live), routed through the normal turn so it streams + reacts.
-  const seedSentRef = useRef(false);
+  // Per-project reset: clear the seed latch, plan snapshot, and autonomous run.
   useEffect(() => {
     seedSentRef.current = false;
+    phasesRef.current = [];
+    autoRef.current = false;
+    setAutonomous(false);
   }, [projectId]);
+
+  // Auto-send the project's seed vision once, routed through the normal turn.
   useEffect(() => {
     if (seed && !seedSentRef.current && !busy) {
       seedSentRef.current = true;
@@ -97,9 +114,42 @@ export default function StudioChatInput({
     }
   }, [seed, busy, runTurn, onSeedConsumed]);
 
+  const stopAutonomous = useCallback(() => {
+    autoRef.current = false;
+    setAutonomous(false);
+  }, []);
+
+  const startAutonomous = useCallback(() => {
+    if (busy || autoRef.current) return;
+    autoTurnsRef.current = 0;
+    autoRef.current = true;
+    setAutonomous(true);
+    void runTurn(AUTO_INSTRUCTION);
+  }, [busy, runTurn]);
+
+  // Chain the next autonomous turn once the previous finishes, until the plan is
+  // complete (every phase 'done') or the safety cap is hit.
+  useEffect(() => {
+    if (!autonomous || busy || !autoRef.current) return;
+    const planDone =
+      phasesRef.current.length > 0 && phasesRef.current.every((p) => p.status === 'done');
+    if (planDone || autoTurnsRef.current >= AUTO_MAX_TURNS) {
+      stopAutonomous();
+      return;
+    }
+    const id = window.setTimeout(() => {
+      if (autoRef.current && !busy) {
+        autoTurnsRef.current += 1;
+        void runTurn(AUTO_INSTRUCTION);
+      }
+    }, 900);
+    return () => window.clearTimeout(id);
+  }, [autonomous, busy, runTurn, stopAutonomous]);
+
   // Hide the trailing BUILD_PLAN line while it streams (raw JSON never shows).
   const streamDisplay = (stream.split('BUILD_PLAN:')[0] ?? '').trimEnd();
   const showBubble = busy || reply !== null;
+  const working = busy || autonomous;
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 flex w-[min(38rem,calc(100%-7rem))] -translate-x-1/2 flex-col gap-2">
@@ -121,7 +171,7 @@ export default function StudioChatInput({
                 </div>
               ) : (
                 <span className="flex items-center gap-1.5 text-md text-foreground/80">
-                  Athena is working
+                  {autonomous ? 'Athena is building autonomously' : 'Athena is working'}
                   <span className="flex gap-0.5">
                     <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
                     <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
@@ -158,17 +208,34 @@ export default function StudioChatInput({
               void send();
             }
           }}
-          placeholder={`Tell Athena what to build in ${projectName}…`}
-          disabled={busy}
+          placeholder={
+            autonomous
+              ? 'Athena is building autonomously…'
+              : `Tell Athena what to build in ${projectName}…`
+          }
+          disabled={working}
           className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
         />
+        <button
+          type="button"
+          onClick={autonomous ? stopAutonomous : startAutonomous}
+          disabled={!autonomous && busy}
+          aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+            autonomous
+              ? 'bg-primary/20 text-primary'
+              : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary disabled:opacity-40'
+          }`}
+        >
+          {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+        </button>
         <Button
           variant="primary"
           size="sm"
           className="shrink-0 rounded-full"
           icon={<Send className="h-4 w-4" />}
-          loading={busy}
-          disabled={!input.trim() || busy}
+          loading={busy && !autonomous}
+          disabled={!input.trim() || working}
           onClick={() => void send()}
         >
           Send
