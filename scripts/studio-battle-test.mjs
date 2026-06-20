@@ -248,8 +248,11 @@ async function buildTurn(project, message) {
   }
   const { reply, phases, question } = extractMarkers(result);
   if (phases) project.phases = phases;
-  return { reply, phases, question, raw: result };
+  const rateLimited = /rate limit|temporarily limiting|overloaded|too many request|\b429\b/i.test(result);
+  return { reply, phases, question, raw: result, rateLimited };
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function simulateUser(project, question) {
   const prompt =
@@ -279,8 +282,21 @@ async function driveProject(project) {
     return;
   }
   let msg = `Here's the project vision:\n\n${project.vision}\n\nPlan it out (emit your BUILD_PLAN), then start building — the foundation first, then the most important section. Keep me posted in a sentence or two.`;
+  let rlRetries = 0;
   for (let turn = 0; turn < MAX_TURNS; turn++) {
     const r = await buildTurn(project, msg);
+    if (r.rateLimited) {
+      if (++rlRetries > 10) {
+        log(project.slug, '=== ABORTED (rate-limited too long) ===');
+        return;
+      }
+      const wait = Math.min(30 + rlRetries * 30, 180);
+      log(project.slug, `rate limited — backing off ${wait}s (retry ${rlRetries}); not counting this turn`);
+      turn--; // a rate-limited attempt is not a real build turn
+      await sleep(wait * 1000);
+      continue;
+    }
+    rlRetries = 0;
     const done = r.phases ? `${r.phases.filter((x) => x.status === 'done').length}/${r.phases.length}` : '-';
     log(project.slug, `turn ${turn} | plan ${done} | ${r.question ? 'QUESTION' : 'built'} | ${r.reply.slice(0, 120)}`);
     jlog(project.slug, { turn, reply: r.reply, phases: r.phases, question: r.question });
