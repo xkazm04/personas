@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "roaster-shop",
+    "vision": "An online shop for a small coffee roaster. A product grid of coffees, individual product pages, a cart I can add to and review, and a simple checkout form. Clean, warm, and genuinely shoppable."
+  },
+  {
+    "slug": "taskflow-app",
+    "vision": "A simple project and task manager web app. A landing page, a sign-up and log-in flow, and once logged in a board where I can create projects and tasks, mark them done, and see progress. A modern SaaS look."
+  },
+  {
+    "slug": "lumen-docs",
+    "vision": "A documentation and blog site for a fictional open-source library called Lumen. A home page, a docs section with several pages and a sidebar nav, a blog with a few posts, and search. Technical but very readable."
+  },
+  {
+    "slug": "metrics-live",
+    "vision": "A live-feeling analytics dashboard for a SaaS — active users, revenue, a real-time event feed, charts, and filters, reading from a local data source. Dark, dense, and professional."
+  },
+  {
+    "slug": "booking-wizard",
+    "vision": "A multi-step booking flow for a dentist — pick a service, choose a date and time from a calendar, enter your details, and confirm. Validation at each step, a progress indicator, friendly and trustworthy."
+  }
+]

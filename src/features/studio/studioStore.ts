@@ -41,7 +41,7 @@ export interface ProjectRuntime {
 
 const AUTO_MAX_TURNS = 12;
 const AUTO_INSTRUCTION =
-  'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. If a decision materially shapes the product and you do not know it, ask with NEEDS_INPUT instead of assuming. If everything is built and polished, say so and mark all phases done.';
+  'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. Decide the order yourself and keep going; do NOT ask which feature to build next or for permission to continue. Only use NEEDS_INPUT for real content or a business/data decision you genuinely cannot make. If everything is built and polished, say so and mark all phases done.';
 
 // Non-serializable per-project handles kept outside store state.
 const pollTimers = new Map<string, number>();
