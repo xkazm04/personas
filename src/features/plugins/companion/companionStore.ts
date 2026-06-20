@@ -249,6 +249,15 @@ interface CompanionStore {
   pulseForwardAck: () => void;
 
   /**
+   * Monotonic nonce bumped when an external surface (e.g. the Studio web-build
+   * chat) wants the orb to play its one-shot "message" reaction — the same clip
+   * + theme-glow a finished companion reply triggers. Lets the orb react to a
+   * build reply even though that turn never touches `streaming`.
+   */
+  messageReactionPulse: number;
+  pulseMessageReaction: () => void;
+
+  /**
    * Screen-space center (viewport px) of the orb at the moment the user
    * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
    * from the orb's position (and exit back toward it) for an orb→panel
@@ -656,6 +665,9 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   forwardAckPulse: 0,
   pulseForwardAck: () => set((s) => ({ forwardAckPulse: s.forwardAckPulse + 1 })),
+  messageReactionPulse: 0,
+  pulseMessageReaction: () =>
+    set((s) => ({ messageReactionPulse: s.messageReactionPulse + 1 })),
 
   orbOpenOrigin: null,
   setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),

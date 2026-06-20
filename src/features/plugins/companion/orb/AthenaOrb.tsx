@@ -321,6 +321,17 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     return () => clearTimeout(id);
   }, [forwardAckPulse]);
 
+  // External message reaction: an outside surface (the Studio web-build chat)
+  // bumps this pulse to make the orb play its one-shot `message` reaction. The
+  // build turn never touches `streaming`, so we bridge the pulse to messageNonce.
+  const messageReactionPulse = useCompanionStore((s) => s.messageReactionPulse);
+  const prevReactionPulseRef = useRef(messageReactionPulse);
+  useEffect(() => {
+    if (messageReactionPulse === prevReactionPulseRef.current) return;
+    prevReactionPulseRef.current = messageReactionPulse;
+    setMessageNonce((n) => n + 1);
+  }, [messageReactionPulse]);
+
   return (
     <motion.div
       className="group pointer-events-auto absolute select-none touch-none"

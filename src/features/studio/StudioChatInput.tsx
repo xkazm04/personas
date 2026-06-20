@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { COMPANION_STREAM_EVENT, type CompanionStreamEvent } from '@/api/companion';
 import { extractAssistantTextDelta } from '@/features/plugins/companion/extractAssistantText';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { toastCatch } from '@/lib/silentCatch';
 import { webbuildSessionSend } from '@/api/webbuild';
 import type { BuildPhase } from './studioBuildModel';
@@ -29,6 +30,8 @@ export default function StudioChatInput({
   const [reply, setReply] = useState<string | null>(null);
   const [stream, setStream] = useState('');
   const streamRef = useRef('');
+  const pulseForwardAck = useCompanionStore((s) => s.pulseForwardAck);
+  const pulseMessageReaction = useCompanionStore((s) => s.pulseMessageReaction);
 
   // Live token stream for THIS project's build session.
   const onStream = useCallback(
@@ -58,17 +61,19 @@ export default function StudioChatInput({
     streamRef.current = '';
     setStream('');
     setBusy(true);
+    pulseForwardAck(); // orb acknowledges the send ("got it")
     try {
       const result = await webbuildSessionSend(projectId, text);
       setReply(result.reply.trim() || 'Done.');
       if (result.phases && result.phases.length > 0) onPhases?.(result.phases);
+      pulseMessageReaction(); // orb plays its one-shot reply reaction
     } catch (e) {
       setReply('Something went wrong with that change.');
       toastCatch('build instruction')(e);
     } finally {
       setBusy(false);
     }
-  }, [input, busy, projectId, onPhases]);
+  }, [input, busy, projectId, onPhases, pulseForwardAck, pulseMessageReaction]);
 
   // Hide the trailing BUILD_PLAN line while it streams (raw JSON never shows).
   const streamDisplay = (stream.split('BUILD_PLAN:')[0] ?? '').trimEnd();
