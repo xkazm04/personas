@@ -37,6 +37,7 @@ export default function StudioChatInput() {
         {showBubble && (
           <motion.div
             key={`bubble-${activeId}`}
+            data-testid="studio-chat-bubble"
             initial={{ y: 12, opacity: 0, scale: 0.97 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 12, opacity: 0, scale: 0.97 }}
@@ -78,6 +79,7 @@ export default function StudioChatInput() {
 
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-4 pr-1.5 shadow-elevation-3 backdrop-blur">
         <input
+          data-testid="studio-chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

@@ -42,6 +42,7 @@ export default function StudioTabBar({
         return (
           <div
             key={id}
+            data-testid="studio-tab"
             className={`group flex shrink-0 items-center rounded-t-card border-b-2 transition-colors ${
               active
                 ? 'border-primary bg-secondary/50'
