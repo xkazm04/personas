@@ -39,3 +39,7 @@ export const webbuildListProjects = () =>
  */
 export const webbuildSessionSend = (projectId: string, message: string) =>
   invokeWithTimeout<BuildTurnResult>('webbuild_session_send', { projectId, message }, undefined, 900_000);
+
+/** The generated project's app-router routes (for the preview route switcher). */
+export const webbuildListRoutes = (projectId: string) =>
+  invokeWithTimeout<string[]>('webbuild_list_routes', { projectId });

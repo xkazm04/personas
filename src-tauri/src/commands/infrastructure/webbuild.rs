@@ -88,6 +88,18 @@ pub fn webbuild_list_servers(
     Ok(state.webbuild_servers.list())
 }
 
+/// List a generated project's app-router routes (for the Studio preview's
+/// cross-page navigation bar — click a route to jump the preview to it).
+#[tauri::command]
+pub fn webbuild_list_routes(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::routes::list_routes(std::path::Path::new(&project.root_path))
+}
+
 /// Send a build instruction to a project's build session — a project-rooted
 /// Claude Code turn (Athena) that edits the project's code. Streams progress on
 /// `companion://stream` keyed by session id `webbuild:<project_id>`; returns

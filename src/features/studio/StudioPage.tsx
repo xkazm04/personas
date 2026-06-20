@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Bot, RotateCcw } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
-import { webbuildListProjects } from '@/api/webbuild';
+import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import StudioTabBar from './StudioTabBar';
 import StudioChecklist from './StudioChecklist';
@@ -24,6 +24,8 @@ export default function StudioPage() {
   const [creating, setCreating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [iframeNonce, setIframeNonce] = useState(0);
+  const [previewRoute, setPreviewRoute] = useState('/');
+  const [routes, setRoutes] = useState<string[]>([]);
 
   const initStream = useStudioStore((s) => s.initStream);
   const createWithVision = useStudioStore((s) => s.createWithVision);
@@ -43,6 +45,22 @@ export default function StudioPage() {
     initStream();
     void refreshProjects();
   }, [initStream, refreshProjects]);
+
+  // Reset the preview route when switching projects.
+  useEffect(() => {
+    setPreviewRoute('/');
+  }, [activeId]);
+
+  // Discover the active project's routes once it's live (and after a reload).
+  useEffect(() => {
+    if (activeId && active?.phase === 'live') {
+      webbuildListRoutes(activeId)
+        .then(setRoutes)
+        .catch(() => setRoutes([]));
+    } else {
+      setRoutes([]);
+    }
+  }, [activeId, active?.phase, iframeNonce]);
 
   const onCreate = useCallback(
     async (name: string, vision: string) => {
@@ -72,7 +90,7 @@ export default function StudioPage() {
           <>
             <iframe
               key={`${activeId}-${iframeNonce}`}
-              src={active.status.url}
+              src={`${active.status.url}${previewRoute === '/' ? '' : previewRoute}`}
               title="preview"
               className="absolute inset-0 h-full w-full border-0 bg-white"
             />
@@ -84,6 +102,27 @@ export default function StudioPage() {
             >
               <RotateCcw className="h-4 w-4" />
             </button>
+            {/* Cross-page nav: click a route to jump the preview to it. */}
+            {routes.filter((r) => !r.includes('[')).length > 1 && (
+              <div className="absolute left-1/2 top-3 z-20 flex max-w-[60%] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/85 px-2 py-1 shadow-elevation-2 backdrop-blur">
+                {routes
+                  .filter((r) => !r.includes('['))
+                  .map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => setPreviewRoute(r)}
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                        previewRoute === r
+                          ? 'bg-primary/20 text-primary'
+                          : 'text-foreground/60 hover:text-foreground'
+                      }`}
+                    >
+                      {r}
+                    </button>
+                  ))}
+              </div>
+            )}
             <StudioChecklist phases={active.phases} />
             <StudioChatInput />
           </>
