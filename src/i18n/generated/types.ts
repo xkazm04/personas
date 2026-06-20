@@ -9565,6 +9565,8 @@ export type Translations = {
       subtitle: string;
       dark: string;
       light: string;
+      language: string;
+      language_hint: string;
       text_size: string;
       interface_mode: string;
       interface_mode_hint: string;
