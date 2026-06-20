@@ -1,0 +1,6 @@
+# Live-capture artifacts (Lens-2 raw model outputs, Lens-3 matrix dumps) are
+# reproducible — keep them out of git. The vault notes themselves are tracked.
+sessions/*/captures/
+_*.md
+_*.mjs
+.tiger-work/
