@@ -19,7 +19,7 @@
  *   MAX_TURNS=20 CONCURRENCY=3 node scripts/...
  */
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readFileSync, appendFileSync, existsSync, rmSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -184,35 +184,53 @@ function extractMarkers(text) {
   return { reply: kept.join('\n').trim(), phases, question };
 }
 
+// Serialize create-next-app — running 5 `bun x` in parallel contends on bun's
+// shared cache and most fail. Build turns still run fully in parallel.
+let scaffoldLock = Promise.resolve();
+function withScaffoldLock(fn) {
+  const result = scaffoldLock.then(fn, fn);
+  scaffoldLock = result.then(
+    () => {},
+    () => {},
+  );
+  return result;
+}
+
 async function scaffold(project) {
   project.dir = join(PROJ_ROOT, project.slug);
   if (existsSync(join(project.dir, 'package.json'))) {
     log(project.slug, 'scaffold: already present, skipping');
     return true;
   }
-  log(project.slug, 'scaffold: bun x create-next-app …');
-  const { code, err } = await run(
-    BUN,
-    [
-      'x',
-      'create-next-app@latest',
-      project.dir,
-      '--ts',
-      '--tailwind',
-      '--eslint',
-      '--app',
-      '--no-src-dir',
-      '--import-alias',
-      '@/*',
-      '--use-bun',
-      '--turbopack',
-      '--yes',
-    ],
-    { cwd: PROJ_ROOT, timeoutMs: SCAFFOLD_TIMEOUT_MS },
-  );
-  const ok = code === 0 && existsSync(join(project.dir, 'package.json'));
-  if (!ok) log(project.slug, `scaffold FAILED (code ${code}): ${err.slice(-300)}`);
-  return ok;
+  return withScaffoldLock(async () => {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      log(project.slug, `scaffold: bun x create-next-app … (attempt ${attempt})`);
+      const { code, err } = await run(
+        BUN,
+        [
+          'x',
+          'create-next-app@latest',
+          project.dir,
+          '--ts',
+          '--tailwind',
+          '--eslint',
+          '--app',
+          '--no-src-dir',
+          '--import-alias',
+          '@/*',
+          '--use-bun',
+          '--turbopack',
+          '--yes',
+        ],
+        { cwd: PROJ_ROOT, timeoutMs: SCAFFOLD_TIMEOUT_MS },
+      );
+      if (code === 0 && existsSync(join(project.dir, 'package.json'))) return true;
+      log(project.slug, `scaffold attempt ${attempt} failed (code ${code}): ${err.slice(-200)}`);
+      rmSync(project.dir, { recursive: true, force: true });
+      await sleep(3000);
+    }
+    return false;
+  });
 }
 
 async function buildTurn(project, message) {
