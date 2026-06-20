@@ -19,7 +19,6 @@ pub mod auto_rollback;
 pub mod auto_triage;
 pub mod autopilot;
 pub mod automation_runner;
-pub mod backend;
 pub mod background;
 pub mod build_session;
 #[cfg(feature = "p2p")]
