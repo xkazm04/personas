@@ -10521,6 +10521,8 @@ export type Translations = {
   consent: {
     title: string;
     subtitle: string;
+    reassure_title: string;
+    reassure_body: string;
     intro: string;
     ai_title: string;
     ai_tldr: string;
