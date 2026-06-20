@@ -16963,6 +16963,8 @@ export type Translations = {
     goal_marker_open: string;
     goal_link_title: string;
     goal_link_subtitle: string;
+    goal_ungrounded_title: string;
+    goal_ungrounded_body: string;
     steering_title: string;
     steering_none_offtrack: string;
     steering_outcome_pending: string;

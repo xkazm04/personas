@@ -16958,6 +16958,8 @@
     "goal_marker_open": "in flight",
     "goal_link_title": "Steering this KPI",
     "goal_link_subtitle": "This goal was derived to move this metric — the next measurement, not the goal finishing, decides if it worked.",
+    "goal_ungrounded_title": "Activity, not a measured outcome",
+    "goal_ungrounded_body": "Progress here reflects checklist completion — it can read done even if the work never moved the real number. Set up a KPI to ground this goal in a measured outcome.",
     "steering_title": "What the system is doing",
     "steering_none_offtrack": "Off track — no goal in flight yet.",
     "steering_outcome_pending": "Shipped — awaiting the next measurement to see if it moved.",

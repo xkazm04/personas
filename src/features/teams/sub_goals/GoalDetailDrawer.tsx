@@ -372,8 +372,20 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback
 
       {/* KPI cross-reference — when this goal serves/derives from a KPI, lead
           with the outcome it's steering (read-only projection; stays silent if
-          the KPI was archived). */}
-      {goal.kpi_id && <GoalKpiLink kpiId={goal.kpi_id} />}
+          the KPI was archived). When it doesn't, surface honestly that the
+          progress below is checklist activity, not a measured outcome (UAT P9
+          F-GOALS-PLACEBO), pointing to the grounded KPI layer. */}
+      {goal.kpi_id ? (
+        <GoalKpiLink kpiId={goal.kpi_id} />
+      ) : (
+        <div className="mb-4 rounded-card border border-amber-500/25 bg-amber-500/5 px-3.5 py-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Activity className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="typo-caption uppercase tracking-[0.18em] text-foreground">{t.kpis.goal_ungrounded_title}</span>
+          </div>
+          <p className="typo-caption text-foreground">{t.kpis.goal_ungrounded_body}</p>
+        </div>
+      )}
 
       {/* Acceptance gate — the agent/team finished; the user accepts (→ done,
           off the board) or sends it back to the team (→ in-progress, with a
