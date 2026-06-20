@@ -272,3 +272,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     },
   };
 });
+
+// Dev-only: expose the store so the test-automation bridge can drive Studio
+// (create projects, answer questions, run autonomous) from `/eval`. Guarded by
+// DEV so production never gets it.
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as unknown as { __studioStore?: typeof useStudioStore }).__studioStore = useStudioStore;
+}
