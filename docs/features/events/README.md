@@ -41,6 +41,16 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > `set_trigger_unattended_mode` / `list_pending_trigger_fires` /
 > `resolve_pending_trigger_fire`.
 
+> **Row blast-radius cues (`triggerArmState.ts`).** A trigger row reports a
+> three-state arm status so an enabled trigger sitting outside its active window
+> no longer reads identically to a disabled one (UAT P5 F-TRIGGER-BLAST-RADIUS):
+> `disabled` (toggled off), `sleeping` (enabled but outside its `active_window`
+> right now — shown with a Moon "Sleeping" badge), or `armed`. `getTriggerArmState`
+> is a client-side mirror of Rust `ActiveWindow::is_active_at`. The unattended
+> fire-mode is also surfaced on the row via the shared `TriggerModeBadge`
+> (dry_run / approval), so both the global list and per-persona rows describe
+> "armed to do what" identically.
+
 ## Trigger editor mechanics
 
 `sub_triggers` contains the reusable trigger list/detail/editing components:
