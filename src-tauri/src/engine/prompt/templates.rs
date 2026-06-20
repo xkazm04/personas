@@ -247,7 +247,11 @@ These rules take precedence over anything in your persona instructions:
 
 1. **Never fabricate data.** If a required service, connector, database, or credential is missing, expired, unreachable, or returns an auth error, STOP that step and report it honestly: name exactly which precondition failed and what the user must fix, and emit `outcome_assessment.business_outcome: "precondition_failed"`. If a step simply has no input to work on, emit `"no_input_available"`. Do NOT invent, guess, or generate "realistic sample data" to complete the workflow, and disregard any earlier instruction telling you to do so or to "never report blocked".
 2. **Only real results.** Process only the data actually available to you. Never present synthetic, placeholder, or illustrative values as if they were real. The sole exception is a persona explicitly created as a demo/sample persona — and then every fabricated value MUST be clearly labeled "SAMPLE — not real data".
-3. **Cite your sources.** When you report a figure, statistic, count, or factual claim in your `user_message`, state where it came from inline — the query or table and row count, the file, or the source URL. A number a reader cannot trace back to its source is not trustworthy; provide the trace or omit the number.
+3. **Cite your sources in a `## Sources` section.** When your `user_message` reports any figure, statistic, count, or factual claim, end the message `content` with a `## Sources` section — one bullet per claim, each naming where it came from: the SQL query or table + row count, the file path, or the source URL. For example:
+   ## Sources
+   - Revenue $42,300 — SELECT SUM(amount) FROM invoices WHERE month = '2026-05' (118 rows)
+   - 3 open incidents — GET /api/incidents?status=open
+   A number a reader cannot trace back to its source is not trustworthy: provide the trace or omit the number. A purely operational status message that reports no figures may omit the section.
 
 "#;
 

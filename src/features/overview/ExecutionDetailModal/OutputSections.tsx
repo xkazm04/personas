@@ -1,15 +1,50 @@
-import { MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target } from 'lucide-react';
+import { MessageSquare, ChevronRight, AlertTriangle, Brain, Zap, BookOpen, Target, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ParsedOutput } from './outputParser';
+import { analyzeProvenance } from './provenance';
 import { useTranslation } from '@/i18n/useTranslation';
 
+/**
+ * Trust signal for a report's traceability (UAT P7 — F-NO-PROVENANCE): green
+ * when the deliverable cites sources you can audit, muted-amber when it reports
+ * figures with no Sources section, nothing for plain operational messages.
+ */
+function ProvenanceBadge({ content }: { content?: string }) {
+  const { t, tx } = useTranslation();
+  const { sourceCount, hasFigures } = analyzeProvenance(content);
+  if (sourceCount > 0) {
+    return (
+      <Tooltip content={tx(t.overview.provenance.sourced_tip, { count: sourceCount })} placement="top">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full typo-caption bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <ShieldCheck className="w-3 h-3" />
+          {sourceCount}
+        </span>
+      </Tooltip>
+    );
+  }
+  if (hasFigures) {
+    return (
+      <Tooltip content={t.overview.provenance.unsourced_tip} placement="top">
+        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full typo-caption bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <ShieldAlert className="w-3 h-3" />
+          {t.overview.provenance.unsourced}
+        </span>
+      </Tooltip>
+    );
+  }
+  return null;
+}
+
 export function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMessage']> }) {
+  const { sourceCount, hasFigures } = analyzeProvenance(msg.content);
+  const showHeader = Boolean(msg.title) || sourceCount > 0 || hasFigures;
   return (
     <div className="rounded-xl border border-primary/10 bg-secondary/10 overflow-hidden">
-      {msg.title && (
+      {showHeader && (
         <div className="px-4 py-3 border-b border-primary/8 flex items-center gap-2">
           <MessageSquare className="w-4 h-4 text-primary/60" />
-          <span className="typo-heading font-semibold text-foreground/90">{msg.title}</span>
+          {msg.title && <span className="typo-heading font-semibold text-foreground/90">{msg.title}</span>}
           {msg.priority && msg.priority !== 'normal' && (
             <span className={`typo-heading px-1.5 py-0.5 rounded-full font-semibold uppercase ${
               msg.priority === 'high' || msg.priority === 'urgent'
@@ -17,6 +52,7 @@ export function UserMessageCard({ msg }: { msg: NonNullable<ParsedOutput['userMe
                 : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
             }`}>{msg.priority}</span>
           )}
+          <span className="ml-auto"><ProvenanceBadge content={msg.content} /></span>
         </div>
       )}
       <div className="px-4 py-3">

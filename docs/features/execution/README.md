@@ -97,6 +97,21 @@ src-tauri/src/commands/execution/annotations.rs  (IPC: add_annotation, list_exec
 src-tauri/src/db/repos/execution/annotations.rs  (persona_execution_annotations CRUD)
 ```
 
+### Output provenance (Sources)
+
+`DATA_HONESTY_INVARIANT` rule 3 (`engine/prompt/templates.rs`) requires a
+persona that reports any figure/statistic/claim in its `user_message` to end the
+message with a structured **`## Sources`** section — one bullet per claim naming
+its origin (SQL query + row count, file path, or URL) — so a reviewer can trace a
+number back to what produced it (UAT P7 — F-NO-PROVENANCE). This is a *prompt*
+requirement, not a parser gate: a free-form deliverable is never hard-rejected for
+missing sources (unlike internal `write_fact`, which rejects an empty `sources`
+array at parse time), because a legitimate run may genuinely have no citable
+source. Instead the UI surfaces the gap: `ExecutionDetailModal`'s `UserMessageCard`
+shows a **provenance badge** (`provenance.ts` → `analyzeProvenance`) — green
+"N sources" when the report cites sources, muted-amber "Unsourced" when it carries
+figures but no Sources section, nothing for plain operational messages.
+
 ### Execution annotations (tags, note, star)
 
 `persona_execution_annotations` is a thin write-rarely layer over

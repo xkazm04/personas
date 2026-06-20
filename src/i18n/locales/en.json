@@ -6050,6 +6050,11 @@
       "unknown_persona": "Unknown",
       "healing_retry": "Healing retry #{count}"
     },
+    "provenance": {
+      "sourced_tip": "Cites {count} source(s) you can trace and audit.",
+      "unsourced": "Unsourced",
+      "unsourced_tip": "This report includes figures but no Sources section — they can't be traced back to their origin."
+    },
     "review": {
       "title": "Manual Reviews",
       "subtitle": "{count} reviews",

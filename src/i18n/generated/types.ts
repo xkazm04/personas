@@ -6056,6 +6056,11 @@ export type Translations = {
       unknown_persona: string;
       healing_retry: string;
     };
+    provenance: {
+      sourced_tip: string;
+      unsourced: string;
+      unsourced_tip: string;
+    };
     review: {
       title: string;
       subtitle: string;
