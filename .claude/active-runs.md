@@ -784,6 +784,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+### /uat-p10 — Polish (F-SETTINGS-NO-LANGUAGE + F-CONSENT-JARGON partial) — completed (commit e55ff2a04; on master)
+- 2026-06-20. Frontend-only. **F-SETTINGS-NO-LANGUAGE:** mounted the existing LanguageCardGrid (exported from home/sub_welcome/LanguageSwitcher) as a new "Language" section in Settings→Appearance (AppearanceLanguageSettings.tsx) — language picker previously only on Home/onboarding. **F-CONSENT-JARGON (partial):** renamed onboarding role label "Office Rat"→"Everyday user" (en.json value only; key role_office_rat unchanged). tsc/eslint clean; doc settings/README.
+- **P10 scoping note:** most of P10's nominal content was already done or isn't "polish." F-COMPANION-DISCOVERABILITY + F-WELCOME-FRAMING (actionable half) were already fixed in P3 (WelcomeGetStarted's docstring names them). F-CHAIN-NO-PAYLOAD-FORWARD was fixed in P4. The genuinely-remaining items are SEPARATE EFFORTS, not polish (see below).
+- **UAT CAMPAIGN COMPLETE** for the original 10 packages (P8 descoped — free product). Remaining = a backlog of deliberately-deferred non-polish items, listed in the [[project_uat_skill_adoption]] memory.
+
 ### /uat-p9 — Goals/KPI (F-GOALS-PLACEBO) — completed (commit cc8635904; on master)
 - 2026-06-20. Frontend-only. The goal detail drawer already leads with GoalKpiLink (honest: "a goal finishing is not success; the next measurement decides") WHEN goal.kpi_id is set, but a goal WITHOUT a KPI showed only the checklist/manual progress % — the placebo (a goal can read 100% while every run failed). Added the no-kpi_id branch in GoalDetailDrawer: an honest "Activity, not a measured outcome" note pointing to the grounded KPI layer. Reused the existing GoalKpiLink honesty philosophy; protects S-KPI-GROUNDED (the genuinely-grounded KPI layer untouched). tsc/eslint clean; doc goals.md. NOT live-tested (:17320 down). DEFERRED (noted in commit): linking goal progress to live execution health; the title-string-matched goal→to-do close-loop drift (goal_advance.rs:147-158). updateGoal has no kpi_id field so no direct "link KPI" CTA — would need backend.
 
