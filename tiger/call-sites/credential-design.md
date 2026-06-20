@@ -12,7 +12,7 @@ code_score: 5
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]"]
 ---
 ## What it does
 AI connector design: NL intent ("Connect to Stripe API") → structured connector schema (name, fields, healthcheck). Background job, audit-logged.

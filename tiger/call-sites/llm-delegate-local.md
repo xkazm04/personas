@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[hobbyist-power]]"]
 ---
 ## What it does
 The BYOM "mixed engine" tool: when engine_mode=mixed, arms an `llm_delegate` MCP tool so the Claude orchestrator can hand a sub-task to a LOCAL model (lfm2.5 ~53 tok/s). Resilience-proven (survived Ollama death mid-run); NOT a cost lever (prompt machinery dominates).

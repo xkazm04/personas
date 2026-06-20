@@ -12,7 +12,7 @@ code_score: 5
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]", "[[support-lead]]"]
 ---
 ## What it does
 High-stakes: breaks a parked `awaiting_review` deadlock. One decision/assignment: approve (extra QA round + directive) / incident / abort_retry / goal_shelve / escalate.

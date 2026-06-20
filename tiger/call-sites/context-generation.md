@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[sales-rep]]", "[[software-developer]]"]
 ---
 ## What it does
 Builds/rescans the project Context Map (business-feature groups × contexts). Delta mode (changed files only) cuts tokens ~10×. Emits context-map.json + managed CLAUDE.md section.

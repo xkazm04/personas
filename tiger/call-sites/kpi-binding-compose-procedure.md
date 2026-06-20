@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[finance-analyst]]", "[[hobbyist-power]]"]
 ---
 ## What it does
 Composes a single-request HTTP procedure to measure a connector KPI. Recipe hit (e.g. posthog/unique_visitors) is instant; miss asks the LLM (1 retry).

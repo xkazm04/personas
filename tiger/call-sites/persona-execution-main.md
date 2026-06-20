@@ -12,7 +12,7 @@ code_score: 5
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[content-marketer]]", "[[finance-analyst]]", "[[non-english-user]]", "[[researcher]]", "[[sales-rep]]", "[[solo-founder]]", "[[support-lead]]"]
 ---
 ## What it does
 The apex: every persona execution. Spawns `claude -p --output-format stream-json`, streams + parses output, persists a `PersonaExecution` row. Entry: `execute_persona` command → `run_execution`.

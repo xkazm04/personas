@@ -12,7 +12,7 @@ code_score: 5
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[finance-analyst]]"]
 ---
 ## What it does
 The one non-Claude text path: HTTP POST to Google's generateContent. Base64 file → extracted text. Cancellable.

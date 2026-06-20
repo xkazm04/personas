@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]"]
 ---
 ## What it does
 LLM coach: evaluates a persona's recent executions, emits structured coaching verdicts (severity/category/suggested actions). Entry: `run_director_cycle_for` / `_batch`.

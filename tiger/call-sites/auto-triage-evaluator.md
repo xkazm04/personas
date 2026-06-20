@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[support-lead]]"]
 ---
 ## What it does
 When a capability's review_policy is `auto_triage`, a 2nd LLM pass approves/rejects the `manual_review` against persona decision_principles + constraints — no human. Fire-and-forget. Entry: `spawn_evaluator_task`.

@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[finance-analyst]]"]
 ---
 ## What it does
 When a KPI is off-track (pace/critical/floor breach), derive one concrete team goal — or skip if nothing would plausibly move the metric.

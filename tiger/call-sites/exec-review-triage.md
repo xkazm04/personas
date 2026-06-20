@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]", "[[solo-founder]]", "[[support-lead]]"]
 ---
 ## What it does
 Batched headless triage of recently-finished executions flagged by per-persona adaptive baselines: drop / digest / deep_dive. Default = drop.

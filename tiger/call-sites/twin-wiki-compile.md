@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[researcher]]"]
 ---
 ## What it does
 Digital-twin wiki compile: twin profile/tone/comms/facts → markdown wiki files under ~/Personas/twin-wikis/{id}/.

@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[researcher]]"]
 ---
 ## What it does
 LLM semantic lint of an Obsidian vault: ≤120 notes / ≤140k chars → inconsistencies, missing pages, proposed links, knowledge gaps. Opt-in; user reviews.

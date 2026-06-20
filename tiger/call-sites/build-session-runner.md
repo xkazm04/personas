@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[content-marketer]]", "[[non-english-user]]", "[[sales-rep]]", "[[solo-founder]]"]
 ---
 ## What it does
 The interactive "build a persona from intent" engine. Spawns Claude, streams v3 build events (behavior_core → capability_enumeration → resolution → agent_ir), runs the clarifying-question gate machine, persists draft. Entry: `start_build_session`.

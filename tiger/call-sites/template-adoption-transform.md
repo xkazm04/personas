@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[solo-founder]]"]
 ---
 ## What it does
 Adopt a catalog/n8n template into a persona IR: workflow JSON + parsed flow + user context → persona IR mapped back to nodes. Entry: `start_template_adoption_dialog`.

@@ -12,7 +12,7 @@ code_score: 5
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[finance-analyst]]"]
 ---
 ## What it does
 Claude-CLI OCR alternative: base64 file piped to stdin with prompt → stdout text. Uses the user's subscription. Drive-scoped variant available.

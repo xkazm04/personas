@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]", "[[hobbyist-power]]"]
 ---
 ## What it does
 Team composition: user request → select 2–5 passed templates, assign roles (orchestrator/worker/reviewer/router), define data-flow connections → team JSON. Entry: `synthesize_team`.

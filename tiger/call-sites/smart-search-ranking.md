@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[content-marketer]]", "[[non-english-user]]", "[[researcher]]", "[[sales-rep]]"]
 ---
 ## What it does
 Template smart-search: NL query → rank ≤100 template summaries by relevance, return ranked IDs + rationale. Entry: `execute_smart_search`.

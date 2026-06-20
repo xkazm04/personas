@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[hobbyist-power]]"]
 ---
 ## What it does
 Analyzes the codebase against selected scan-agents (security-auditor, code-optimizer, …) → 3–8 improvement ideas/agent → DevIdea records.

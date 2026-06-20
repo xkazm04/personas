@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[support-lead]]"]
 ---
 ## What it does
 Autonomous message triage: batches unread persona_messages (≤20/tick, oldest-first) → done / digest / attention. Mark-read or keep-unread accordingly.

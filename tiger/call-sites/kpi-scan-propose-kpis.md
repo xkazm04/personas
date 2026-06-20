@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[software-developer]]"]
 ---
 ## What it does
 Batch-proposes 0–8 KPIs for a project by exploring the repo (cwd=root), context map, existing+archived KPIs, connectors. Proposals land status='proposed' for the review queue.

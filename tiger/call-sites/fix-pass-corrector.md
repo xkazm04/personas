@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[software-developer]]"]
 ---
 ## What it does
 One-shot LLM correction of a broken agent_ir after a build test failure: current_ir + failure_summary → corrected_ir.

@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[content-marketer]]", "[[non-english-user]]", "[[sales-rep]]", "[[solo-founder]]"]
 ---
 ## What it does
 LLM recipe generation: workflow intent → researches a credential's API → reusable recipe (prompt template + input schema + example). Extracted as JSON.

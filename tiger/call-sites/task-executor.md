@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[software-developer]]"]
 ---
 ## What it does
 Executes multi-stage dev tasks (campaign/deep_build/quick). Streams output, parses [Progress] milestones → progress_pct, auto-opens a PR when run in an isolated worktree.

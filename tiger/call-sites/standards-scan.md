@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[enterprise-admin]]"]
 ---
 ## What it does
 One-shot scan: embedded `standards_ruleset.md` assessed against the live repo → one finding per rule. Full-replace each run.

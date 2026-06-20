@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[researcher]]"]
 ---
 ## What it does
 When raw retrieval chunks exceed ~5000 tokens, fold them into a focused "what matters this turn" briefing (200–300 tokens). Budget-gated, off-by-default, best-effort (degrades to raw chunks).

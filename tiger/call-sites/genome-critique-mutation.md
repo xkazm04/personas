@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[hobbyist-power]]"]
 ---
 ## What it does
 Evolution mutation operator: textual-gradient critique-and-rewrite of a persona's prompt segments from top-K failure patterns. Entry: `mutate_via_critique`.

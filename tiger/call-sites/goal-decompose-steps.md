@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[hobbyist-power]]", "[[software-developer]]"]
 ---
 ## What it does
 Decomposes a goal into 2–5 chained executable steps for a team's eligible personas — only when the goal has no authored to-dos (else steps taken verbatim). Linear SDLC chain (scope→implement→review→security→docs).

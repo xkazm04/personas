@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[researcher]]"]
 ---
 ## What it does
 Weekly first-person reflection journal: reads 60 recent episodes, observes patterns (preoccupations, shifts, unresolved threads), writes a markdown note + companion_node row.

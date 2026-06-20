@@ -3,7 +3,7 @@ type: tiger/home
 app: Personas Desktop
 last_run: 2026-06-20 (init — inventory scan only)
 call_sites: 45
-characters: 0 (pending — see "Next")
+characters: 10 (broad roster, adapted from /uat)
 ---
 
 # 🐯 Tiger — Personas LLM value map
@@ -19,6 +19,7 @@ characters: 0 (pending — see "Next")
 
 - **45 LLM call sites** inventoried (43 text · 2 vision · 1 local-delegate). 42 Claude-CLI, 1 Gemini (OCR), 1 local (BYOM).
 - **The whole app runs on the Claude Code CLI** (`claude -p stream-json`) — no Anthropic SDK. One engine, **6 spawn-wrapper variants** (see [[config]]). That fan-out is the #1 plumbing finding.
+- **10 Characters** drafted (broad roster, adapted from `uat/`) → `characters/`. They back-link **34/45** call sites; **11 sites have no Character** (Lens-2 blind spots — see below).
 - **No lens scored yet** (`quality_score`/`recommended_model` = "—"). init = discovery + scaffold only. Run `/tiger run --lens code` for the cheap pass, `--live` for value + benchmark.
 
 ## Cross-cutting Lens-1 findings (backlog seeds)
@@ -128,11 +129,17 @@ Top **downgrade** suspects: `reflection-journal` (Opus on prose), Sonnet scanner
 
 Grep-confirmed call sites the init agents flagged but didn't fully ground — pick up on the next scan: `engine/healing.rs` (self-heal retry), `engine/director.rs` brain notes, `dry_run.rs`, `discord_poller.rs`/`slack_poller.rs` (digest summaries), `engine/design_context.rs` (capability JSON), `commands/credentials/{auth_detect,foraging,auto_cred_browser,ai_artifact_flow}.rs`.
 
+## Characters (10) — the Lens-2/3 judgment harness
+
+[[solo-founder]] · [[content-marketer]] · [[software-developer]] · [[finance-analyst]] · [[support-lead]] · [[sales-rep]] · [[researcher]] · [[enterprise-admin]] · [[hobbyist-power]] · [[non-english-user]]
+
+**Lens-2 blind spots (11 call sites no Character hires)** — mostly internal/maintenance surfaces; if any deserve a user lens, extend a Character's `maps_to` on the next pass: `athena-reaction-single`, `athena-reaction-batch`, `companion-consolidation`, `behavioral-profile-synthesis`, `project-tracking-consolidator`, `memory-compile`, `test-scenario-generation`, `test-evaluation-llm`, `design-analysis-runner`, `design-review-batch`, `obsidian-revitalize`.
+
 ## Next
 
-1. **Characters** — pending. Reuse/adapt `/uat`'s 15-Character roster (`uat/characters/`), narrowed to LLM outputs. Ask: how many (1 / 5 / 10)?
-2. `/tiger run --lens code` — cheap static pass; turns the cross-cutting findings into a ranked backlog.
-3. `/tiger run --live --chars N` — real generations (Lens 2) + model benchmark (Lens 3) on the sampled high-value sites (see [[config]] open questions).
+1. `/tiger run --lens code` — cheap static pass; turns the cross-cutting findings into a ranked backlog.
+2. `/tiger run --live --chars N` — real generations (Lens 2) + model benchmark (Lens 3) on the sampled high-value sites (see [[config]] open questions).
+3. `/tiger benchmark <call-site>` — deep Lens-3 model matrix for one site (start with `reflection-journal` Opus→Sonnet downgrade or `review-resolution-athena` Sonnet→Opus upgrade).
 
 ## Sessions
 _(none yet — first `run` writes `sessions/<date>.md`)_

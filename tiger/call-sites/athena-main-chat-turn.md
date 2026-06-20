@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[non-english-user]]"]
 ---
 ## What it does
 The companion apex: the Athena chat turn. 5-layer system prompt (constitution + identity + observability digest + hybrid-retrieved memory + optional synthesis briefing) → `claude --print stream-json`, optionally resuming prior session. Dispatches ops (approval cards, navigations), persists turn as episodes.

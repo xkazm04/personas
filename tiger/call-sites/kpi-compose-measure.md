@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[finance-analyst]]"]
 ---
 ## What it does
 Composes + tests a codebase measurement for a KPI: builds a shell command (cwd=root), parses a number via a named strategy (coverage_pct/count_lines/regex/json_path).

@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[content-marketer]]"]
 ---
 ## What it does
 Background creative session (image gen / 3D / Blender MCP). Streams output to the frontend. Entry: `run_creative_cli` (line 543).

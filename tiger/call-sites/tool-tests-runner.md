@@ -12,7 +12,7 @@ code_score: 3
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[software-developer]]"]
 ---
 ## What it does
 During a build session, LLM generates real curl/API test commands (test_plan) for a persona's tools to verify they work. Sends agent_ir + tool names.

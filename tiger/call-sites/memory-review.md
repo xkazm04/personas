@@ -12,7 +12,7 @@ code_score: 4
 recommended_model: "—"
 status: discovered
 last_scanned: 2026-06-20
-characters: []
+characters: ["[[support-lead]]"]
 ---
 ## What it does
 Scores ≤200 memories for relevance (1–10) with optional recent-execution context (≤20 runs, clipped 1KB), classifies delete/update/keep; auto-apply or human-review proposal.
