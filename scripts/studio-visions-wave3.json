@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "atelier-studio",
+    "vision": "A website for a creative design studio called Atelier. Bold, artful, memorable — the kind of site that wins design awards. A striking hero, selected work, the studio's approach, and a contact. Make the visual direction distinctive, not generic."
+  },
+  {
+    "slug": "nova-saas",
+    "vision": "A landing page for Nova, a premium analytics SaaS. The polish bar is Linear and Stripe — refined typography, depth, tasteful motion. Hero, product showcase, features, social proof, pricing, and a strong call to action."
+  },
+  {
+    "slug": "lens-portfolio",
+    "vision": "A multi-page portfolio for a photographer named Mara — a home with featured work, a galleries page with several collections, an about page, and a contact page. Elegant and image-forward; let the photos breathe."
+  },
+  {
+    "slug": "bloom-skincare",
+    "vision": "A direct-to-consumer skincare brand called Bloom — a beautiful brand landing plus a shop with a product grid, product pages, and a cart. Clean, natural, premium beauty aesthetic."
+  },
+  {
+    "slug": "summit-conf",
+    "vision": "A site for a design + tech conference called Summit — a home with the pitch, a schedule page, a speakers page, and a tickets page. Energetic and modern; make people want to attend."
+  }
+]
