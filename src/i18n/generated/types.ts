@@ -16885,6 +16885,12 @@ export type Translations = {
     measure_failed: string;
     history_title: string;
     history_empty: string;
+    measurement_source: {
+      evaluator: string;
+      manual: string;
+      scan: string;
+      health_snapshot: string;
+    };
     pause_button: string;
     resume_button: string;
     archive_button: string;

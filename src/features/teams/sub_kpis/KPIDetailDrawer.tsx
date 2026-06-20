@@ -20,6 +20,7 @@ import Button from '@/features/shared/components/buttons/Button';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { summarizeEvidence } from './kpiMeasurementProvenance';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { paceDescriptor } from './kpiMath';
 import { categoryMeta, cadenceMeta, kindMeta } from './kpiMeta';
@@ -188,16 +189,35 @@ export function KPIDetailDrawer({ kpi, onClose }: { kpi: DevKpi; onClose: () => 
             <p className="typo-caption text-foreground opacity-80">{t.kpis.history_empty}</p>
           ) : (
             <ul className="space-y-1">
-              {measurements.map((m) => (
-                <li key={m.id} className="flex items-center gap-2 typo-body text-foreground">
-                  <span className="tabular-nums">
-                    <Numeric value={m.value} /> {kpi.unit}
-                  </span>
-                  <span className="typo-caption text-foreground opacity-80">
-                    <RelativeTime timestamp={m.measured_at} />
-                  </span>
-                </li>
-              ))}
+              {measurements.map((m) => {
+                const prov = summarizeEvidence(m.evidence);
+                const sourceLabels = t.kpis.measurement_source as Record<string, string>;
+                return (
+                  <li key={m.id} className="rounded-card border border-border/15 bg-secondary/20 px-2 py-1.5">
+                    <div className="flex items-center gap-2 typo-body text-foreground">
+                      <span className="tabular-nums font-medium">
+                        <Numeric value={m.value} /> {kpi.unit}
+                      </span>
+                      <span className="typo-caption text-foreground opacity-80">
+                        <RelativeTime timestamp={m.measured_at} />
+                      </span>
+                      <span className="ml-auto typo-caption px-1.5 py-0.5 rounded border border-border/20 bg-secondary/40 text-foreground">
+                        {sourceLabels[m.source] ?? m.source}
+                      </span>
+                    </div>
+                    {prov.summary && (
+                      prov.full ? (
+                        <Tooltip content={prov.full} placement="top">
+                          <p className="typo-caption text-foreground mt-0.5 font-mono truncate cursor-help">{prov.summary}</p>
+                        </Tooltip>
+                      ) : (
+                        <p className="typo-caption text-foreground mt-0.5 font-mono truncate">{prov.summary}</p>
+                      )
+                    )}
+                    {m.note && <p className="typo-caption text-foreground mt-0.5">{m.note}</p>}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>

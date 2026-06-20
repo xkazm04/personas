@@ -16880,6 +16880,12 @@
     "measure_failed": "Could not record the measurement",
     "history_title": "Measurement history",
     "history_empty": "No measurements recorded yet.",
+    "measurement_source": {
+      "evaluator": "Auto-measured",
+      "manual": "Manual entry",
+      "scan": "Scan",
+      "health_snapshot": "Health snapshot"
+    },
     "pause_button": "Pause",
     "resume_button": "Resume",
     "archive_button": "Archive",
