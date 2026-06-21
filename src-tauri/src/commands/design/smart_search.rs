@@ -154,6 +154,30 @@ Rules:
 }
 
 // ============================================================================
+// Result cache (tiger finding #3 — near-zero caching on the headless tier)
+// ============================================================================
+
+/// TTL cache for smart-search rankings, keyed on (query, candidate-set, model).
+/// Identical repeat searches (re-opening the panel, refine-then-undo) skip the
+/// 30-215s CLI rank. Implicitly invalidated: the candidate `summaries_json` is
+/// part of the key, so adding/editing a template changes it. Bounded on insert.
+static SMART_SEARCH_CACHE: std::sync::LazyLock<
+    std::sync::Mutex<std::collections::HashMap<u64, (std::time::Instant, Vec<String>, String)>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+
+const SMART_SEARCH_CACHE_TTL_SECS: u64 = 600;
+const SMART_SEARCH_CACHE_MAX: usize = 256;
+
+fn smart_search_cache_key(query: &str, summaries_json: &str, model: &str) -> u64 {
+    use std::hash::{Hash, Hasher};
+    let mut h = std::collections::hash_map::DefaultHasher::new();
+    query.hash(&mut h);
+    summaries_json.hash(&mut h);
+    model.hash(&mut h);
+    h.finish()
+}
+
+// ============================================================================
 // Tauri command
 // ============================================================================
 
@@ -239,6 +263,23 @@ pub async fn smart_search_templates(
         .filter(|m| !m.trim().is_empty())
         .unwrap_or_else(|| DEFAULT_SMART_SEARCH_MODEL.to_string());
 
+    // tiger #3: return a cached ranking for an identical recent query before
+    // paying for the 30-215s CLI rank. Key folds in the candidate set + model.
+    let cache_key = smart_search_cache_key(&query, &summaries_json, &model);
+    if let Ok(cache) = SMART_SEARCH_CACHE.lock() {
+        if let Some((ts, ranked_ids, rationale)) = cache.get(&cache_key) {
+            if ts.elapsed().as_secs() < SMART_SEARCH_CACHE_TTL_SECS {
+                return Ok(SmartSearchResult {
+                    ranked_ids: ranked_ids.clone(),
+                    rationale: rationale.clone(),
+                    cli_log: vec![],
+                    total_templates,
+                    templates_searched,
+                });
+            }
+        }
+    }
+
     // Build CLI args with resolved model
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
@@ -304,6 +345,17 @@ pub async fn smart_search_templates(
             })?;
 
     let raw: RawSearchResult = serde_json::from_str(&json_str).map_err(AppError::Serde)?;
+
+    // tiger #3: cache this ranking for identical repeat queries within the TTL.
+    if let Ok(mut cache) = SMART_SEARCH_CACHE.lock() {
+        if cache.len() > SMART_SEARCH_CACHE_MAX {
+            cache.retain(|_, (ts, _, _)| ts.elapsed().as_secs() < SMART_SEARCH_CACHE_TTL_SECS);
+        }
+        cache.insert(
+            cache_key,
+            (std::time::Instant::now(), raw.ranked_ids.clone(), raw.rationale.clone()),
+        );
+    }
 
     Ok(SmartSearchResult {
         ranked_ids: raw.ranked_ids,
