@@ -37,6 +37,31 @@ pub async fn webbuild_scaffold(
     )
 }
 
+/// Register an EXISTING project directory as a Dev Tools project (no scaffold) so
+/// it can be opened + built in Studio — e.g. an existing repo like the mk
+/// showcase. Same `dev_projects` registration as scaffold, minus create-next-app.
+#[tauri::command]
+pub async fn webbuild_register_existing(
+    state: State<'_, Arc<AppState>>,
+    name: String,
+    path: String,
+) -> Result<DevProject, AppError> {
+    require_auth(&state).await?;
+    if !std::path::Path::new(&path).is_dir() {
+        return Err(AppError::Validation(format!("path does not exist: {path}")));
+    }
+    repo::create_project(
+        &state.db,
+        &name,
+        &path,
+        None,
+        Some("active"),
+        Some("Next.js/TypeScript/Tailwind"),
+        None,
+        None,
+    )
+}
+
 /// Start (or restart) the Bun dev server for a registered project. Returns its
 /// status immediately; the server may still be booting (`healthy: false`) — the
 /// caller polls [`webbuild_status`] until healthy.
