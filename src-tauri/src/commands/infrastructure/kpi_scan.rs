@@ -519,8 +519,17 @@ async fn run_kpi_scan(
 
     let mut created = 0i32;
     let timeout_duration = std::time::Duration::from_secs(900); // 15 min — no repo mutation, exploration only
+    let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
+        source: "scanner",
+        trigger_kind: "kpi_scan",
+        model: Some("claude-sonnet-4-6"),
+        project_id: Some(project_id),
+        persona_id: None,
+    };
     let stream = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
+            // tiger #1: record the headless spend `result` line (no-op otherwise).
+            crate::db::repos::llm_spend::observe_line(pool, &spend_ctx, &line);
             let Some(text) = extract_display_text(&line) else { continue };
             let trimmed = text.trim();
             if trimmed.is_empty() {

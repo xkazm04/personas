@@ -4,6 +4,7 @@ pub mod dev_run_checkpoints;
 pub mod dev_tools;
 pub mod execution;
 pub mod lab;
+pub mod llm_spend;
 pub mod orchestration;
 pub mod research_lab;
 pub mod resources;

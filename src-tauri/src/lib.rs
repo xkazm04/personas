@@ -2807,6 +2807,7 @@ pub fn run() {
             commands::infrastructure::kpi_scan::dev_tools_scan_kpis,
             commands::infrastructure::kpi_scan::dev_tools_cancel_kpi_scan,
             commands::infrastructure::kpi_scan::dev_tools_get_kpi_scan_status,
+            commands::infrastructure::llm_spend::llm_spend_dashboard,
             commands::infrastructure::kpi_compose::dev_tools_compose_kpi_measure,
             commands::infrastructure::kpi_compose::dev_tools_propose_kpi,
             commands::infrastructure::kpi_compose::dev_tools_propose_kpi_auto,

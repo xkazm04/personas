@@ -485,7 +485,29 @@ Respond with your analysis, then EXACTLY ONE line that is this JSON object and n
     // answer, not a flake, so it does not retry.
     let mut declined = false;
     for attempt in 0..2u8 {
-        let blob = crate::companion::athena_reaction::cli_text(prompt.clone()).await?;
+        let (blob, usage) =
+            crate::companion::athena_reaction::cli_text_with_usage(prompt.clone()).await?;
+        // tiger #1: record headless spend per attempt (best-effort).
+        if let Some(u) = &usage {
+            crate::db::repos::llm_spend::record(
+                pool,
+                &crate::db::models::LlmSpendInsert {
+                    source: "kpi".to_string(),
+                    trigger_kind: "kpi_binding".to_string(),
+                    model: Some("claude-sonnet-4-6".to_string()),
+                    input_tokens: u.input_tokens,
+                    output_tokens: u.output_tokens,
+                    cache_read_tokens: u.cache_read_tokens,
+                    cache_creation_tokens: u.cache_creation_tokens,
+                    cost_usd: u.cost_usd,
+                    duration_ms: u.duration_ms,
+                    num_turns: u.num_turns,
+                    is_error: u.is_error,
+                    persona_id: None,
+                    project_id: Some(kpi.project_id.clone()),
+                },
+            );
+        }
         if let Some(procedure) = parse_procedure(&blob) {
             return Ok((procedure, "llm"));
         }

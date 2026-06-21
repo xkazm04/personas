@@ -420,6 +420,17 @@ pub(crate) async fn cli_text(prompt_text: String) -> Result<String, AppError> {
     Ok(cli_text_inner(prompt_text).await?.0)
 }
 
+/// Like [`cli_text`], but also returns the parsed terminal `result` usage so an
+/// engine caller can record the spend in its OWN ledger (e.g. `kpi_*` →
+/// `dev_llm_spend`, which is a `DbPool` table, not the companion `UserDbPool`
+/// that `cli_text_tracked` writes). `None` usage = the CLI emitted no result
+/// event. (tiger finding #1.)
+pub(crate) async fn cli_text_with_usage(
+    prompt_text: String,
+) -> Result<(String, Option<crate::companion::turn_ledger::CliUsage>), AppError> {
+    cli_text_inner(prompt_text).await
+}
+
 /// Like [`cli_text`], but records a `companion_turn` ledger row
 /// (origin=`headless`, labeled with `trigger_kind`) for Athena's own usage
 /// accounting. Returns `(display_text, turn_id)` — the triage legs use the id

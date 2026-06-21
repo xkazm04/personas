@@ -703,11 +703,20 @@ async fn run_idea_scan(
     // Extended to 20 minutes. If timeout fires but ideas were created,
     // the scan is treated as a partial success (see check below).
     let timeout_duration = std::time::Duration::from_secs(1200);
+    let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
+        source: "scanner",
+        trigger_kind: "idea_scan",
+        model: Some("claude-sonnet-4-6"),
+        project_id: Some(project_id),
+        persona_id: None,
+    };
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
                 continue;
             }
+            // tiger #1: record the headless spend `result` line (no-op otherwise).
+            crate::db::repos::llm_spend::observe_line(pool, &spend_ctx, &line);
 
             if let Some(text) = extract_display_text(&line) {
                 let trimmed = text.trim();

@@ -4705,6 +4705,50 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            // tiger finding #1: the headless LLM tier (scanners, lab/eval,
+            // design-artifact spawns) recorded no model/tokens/cost — the
+            // `result` line streamed past and was discarded. This is the
+            // dedicated spend ledger (separate from companion_turn, which stays
+            // companion-scoped). Append-only history: soft refs (no FK) so a
+            // row survives deletion of its persona/project. Free-text
+            // source/trigger_kind, mirroring companion_turn's origin.
+            id: "dev_llm_spend",
+            description: "Headless LLM spend ledger — model/tokens/cost per background call",
+            already_applied: |conn| has_table(conn, "dev_llm_spend"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_llm_spend (
+                        id                    TEXT PRIMARY KEY,
+                        source                TEXT NOT NULL,
+                        trigger_kind          TEXT NOT NULL,
+                        model                 TEXT,
+                        input_tokens          INTEGER,
+                        output_tokens         INTEGER,
+                        cache_read_tokens     INTEGER,
+                        cache_creation_tokens INTEGER,
+                        cost_usd              REAL,
+                        duration_ms           INTEGER,
+                        num_turns             INTEGER,
+                        is_error              INTEGER NOT NULL DEFAULT 0,
+                        persona_id            TEXT,
+                        project_id            TEXT,
+                        created_at            TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_llm_spend_created
+                        ON dev_llm_spend(created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_dev_llm_spend_source
+                        ON dev_llm_spend(source, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_dev_llm_spend_trigger
+                        ON dev_llm_spend(trigger_kind, created_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }

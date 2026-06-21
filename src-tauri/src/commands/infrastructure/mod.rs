@@ -17,6 +17,7 @@ pub mod gitlab;
 pub mod idea_scanner;
 pub mod kpi_compose;
 pub mod kpi_scan;
+pub mod llm_spend;
 pub mod incremental_scan;
 pub mod research_lab;
 pub mod settings;
