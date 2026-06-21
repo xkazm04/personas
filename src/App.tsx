@@ -113,6 +113,7 @@ const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/noti
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
@@ -334,6 +335,7 @@ export default function App() {
                 <CompanionPanel />
                 <AthenaOrbLayer />
                 <AthenaGuideLayer />
+                {import.meta.env.DEV && <StudioAttention />}
               </Suspense>
             </>
           )}
