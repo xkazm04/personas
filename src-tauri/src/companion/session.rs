@@ -529,6 +529,7 @@ pub async fn send_turn(
             browser_tools,
             None,
             None,
+            &[],
         ),
     )
     .await
@@ -564,6 +565,7 @@ pub async fn send_turn(
                     browser_tools,
                     None,
                     None,
+                    &[],
                 ),
             )
             .await
@@ -1220,6 +1222,8 @@ pub async fn run_build_turn(
     // defaults (deepest effort, balanced voice).
     effort: Option<&str>,
     style: Option<&str>,
+    // C8 — per-project MCP connectors to load this turn.
+    mcp: &[String],
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
@@ -1239,6 +1243,7 @@ pub async fn run_build_turn(
             false,
             Some(project_path),
             effort,
+            mcp,
         ),
     )
     .await
@@ -1261,6 +1266,7 @@ pub async fn run_build_turn(
                     false,
                     Some(project_path),
                     effort,
+                    mcp,
                 ),
             )
             .await
@@ -1295,6 +1301,8 @@ async fn run_cli(
     // Reasoning effort for build turns (cwd_override present). `None` → the
     // default `BUILD_TURN_EFFORT`. Ignored for non-build (companion-chat) turns.
     build_effort: Option<&str>,
+    // Per-project MCP connectors to load on a build turn (C8). Empty = none.
+    mcp: &[String],
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1369,6 +1377,21 @@ async fn run_cli(
                 error = %e,
                 "browser-test turn: failed to build browser MCP config; running without browser tools"
             ),
+        }
+    }
+
+    // Build turns can load per-project MCP connectors the user toggled on (C8).
+    let mut _build_mcp_config_file: Option<tempfile::NamedTempFile> = None;
+    if cwd_override.is_some() && !mcp.is_empty() {
+        if let Some(cfg) = crate::webbuild::mcp::build_config(mcp) {
+            if let Ok(mut f) = tempfile::Builder::new().suffix(".json").tempfile() {
+                use std::io::Write as _;
+                if write!(f, "{cfg}").is_ok() {
+                    argv.push("--mcp-config".into());
+                    argv.push(f.path().to_string_lossy().to_string());
+                    _build_mcp_config_file = Some(f);
+                }
+            }
         }
     }
 

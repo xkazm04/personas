@@ -19,12 +19,18 @@ const STYLES: { value: BuildStyle; label: string }[] = [
   { value: 'balanced', label: 'Balanced' },
   { value: 'teaching', label: 'Teaching' },
 ];
+// C8 — curated MCP connectors (ids must match the Rust registry in webbuild::mcp).
+const MCP_CONNECTORS: { id: string; label: string }[] = [
+  { id: 'context7', label: 'Docs' },
+  { id: 'playwright', label: 'Browser' },
+];
 
 export default function StudioBuildSettings({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const effort = useStudioStore((s) => s.runtimes[id]?.effort ?? 'xhigh');
   const style = useStudioStore((s) => s.runtimes[id]?.style ?? 'balanced');
   const gatePlan = useStudioStore((s) => s.runtimes[id]?.gatePlan ?? false);
+  const mcp = useStudioStore((s) => s.runtimes[id]?.mcp ?? []);
   const setBuildSettings = useStudioStore((s) => s.setBuildSettings);
 
   return (
@@ -79,6 +85,25 @@ export default function StudioBuildSettings({ id }: { id: string }) {
             <span className="text-[10px] text-foreground/40">applies now</span>
           </div>
           <StudioDesignKnobs id={id} onApply={() => setOpen(false)} />
+          <div className="my-2 border-t border-border/60" />
+          <Row label="Connectors" hint="extra tools">
+            {MCP_CONNECTORS.map((c) => {
+              const on = mcp.includes(c.id);
+              return (
+                <Seg
+                  key={c.id}
+                  active={on}
+                  onClick={() =>
+                    setBuildSettings(id, {
+                      mcp: on ? mcp.filter((m) => m !== c.id) : [...mcp, c.id],
+                    })
+                  }
+                >
+                  {c.label}
+                </Seg>
+              );
+            })}
+          </Row>
         </div>
       )}
     </div>

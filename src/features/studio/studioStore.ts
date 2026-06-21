@@ -48,6 +48,8 @@ export interface ProjectRuntime {
   decisionArea: string | null;
   /** C2 — plan-first gate: the seed turn plans + asks approval before editing. */
   gatePlan: boolean;
+  /** C8 — enabled MCP connector ids for build turns. */
+  mcp: string[];
 }
 
 const AUTO_MAX_TURNS = 12;
@@ -77,7 +79,7 @@ interface StudioStore {
   sendTurn: (id: string, text: string) => Promise<void>;
   setBuildSettings: (
     id: string,
-    p: { effort?: BuildEffort; style?: BuildStyle; gatePlan?: boolean },
+    p: { effort?: BuildEffort; style?: BuildStyle; gatePlan?: boolean; mcp?: string[] },
   ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
@@ -116,6 +118,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         options: [],
         decisionArea: null,
         gatePlan: false,
+        mcp: [],
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -184,7 +187,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     patch(id, { busy: true, reply: null, question: null, options: [], decisionArea: null, stream: '' });
     useCompanionStore.getState().pulseForwardAck();
     try {
-      const result = await webbuildSessionSend(id, text, rt.effort, rt.style);
+      const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
       patch(id, {
         reply: result.reply.trim() || 'Done.',

@@ -137,6 +137,8 @@ pub async fn webbuild_session_send(
     // voice/style (concise|balanced|teaching). Both optional → engine defaults.
     effort: Option<String>,
     style: Option<String>,
+    // C8 — per-project MCP connectors the user toggled on.
+    mcp: Option<Vec<String>>,
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
@@ -155,6 +157,7 @@ pub async fn webbuild_session_send(
         &message,
         effort.as_deref(),
         style.as_deref(),
+        mcp.as_deref().unwrap_or(&[]),
     )
     .await
 }

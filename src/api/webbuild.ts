@@ -48,10 +48,11 @@ export const webbuildSessionSend = (
   message: string,
   effort?: BuildEffort,
   style?: BuildStyle,
+  mcp?: string[],
 ) =>
   invokeWithTimeout<BuildTurnResult>(
     'webbuild_session_send',
-    { projectId, message, effort, style },
+    { projectId, message, effort, style, mcp },
     undefined,
     900_000,
   );
