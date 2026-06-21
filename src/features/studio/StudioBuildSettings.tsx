@@ -23,6 +23,7 @@ export default function StudioBuildSettings({ id }: { id: string }) {
   const [open, setOpen] = useState(false);
   const effort = useStudioStore((s) => s.runtimes[id]?.effort ?? 'xhigh');
   const style = useStudioStore((s) => s.runtimes[id]?.style ?? 'balanced');
+  const gatePlan = useStudioStore((s) => s.runtimes[id]?.gatePlan ?? false);
   const setBuildSettings = useStudioStore((s) => s.setBuildSettings);
 
   return (
@@ -62,6 +63,14 @@ export default function StudioBuildSettings({ id }: { id: string }) {
                 {o.label}
               </Seg>
             ))}
+          </Row>
+          <Row label="Plan first" hint="approve before building">
+            <Seg active={!gatePlan} onClick={() => setBuildSettings(id, { gatePlan: false })}>
+              Off
+            </Seg>
+            <Seg active={gatePlan} onClick={() => setBuildSettings(id, { gatePlan: true })}>
+              On
+            </Seg>
           </Row>
         </div>
       )}

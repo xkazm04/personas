@@ -44,9 +44,16 @@ export interface ProjectRuntime {
   style: BuildStyle;
   /** Clickable options for the current question (A1). Empty = free-text. */
   options: string[];
+  /** C2 — plan-first gate: the seed turn plans + asks approval before editing. */
+  gatePlan: boolean;
 }
 
 const AUTO_MAX_TURNS = 12;
+
+// C2 — plan-first gate: wrap the seed vision so Athena plans + asks approval
+// before editing any files. "Build it" (an A1 decision option) resumes the build.
+const planFirstSeed = (vision: string) =>
+  `${vision}\n\n[Plan first — before editing ANY files this turn: reply with your proposed build plan and a 1-2 sentence approach, emit the BUILD_PLAN line, and end with NEEDS_INPUT {"question":"Approve this plan and start building?","options":["Build it","Let me adjust"]}. Do not edit files yet.]`;
 const AUTO_INSTRUCTION =
   'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. Decide the order yourself and keep going; do NOT ask which feature to build next or for permission to continue. Only use NEEDS_INPUT for real content or a business/data decision you genuinely cannot make. If everything is built and polished, say so and mark all phases done.';
 
@@ -66,7 +73,10 @@ interface StudioStore {
   createWithVision: (name: string, vision: string) => Promise<void>;
   reload: (id: string) => void;
   sendTurn: (id: string, text: string) => Promise<void>;
-  setBuildSettings: (id: string, p: { effort?: BuildEffort; style?: BuildStyle }) => void;
+  setBuildSettings: (
+    id: string,
+    p: { effort?: BuildEffort; style?: BuildStyle; gatePlan?: boolean },
+  ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
 }
@@ -102,6 +112,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         effort: 'xhigh',
         style: 'balanced',
         options: [],
+        gatePlan: false,
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -130,7 +141,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
             // Auto-send the vision seed once the preview is live.
             const rt = get().runtimes[id];
             if (rt?.seedPending) {
-              const seed = rt.seedPending;
+              const seed = rt.gatePlan ? planFirstSeed(rt.seedPending) : rt.seedPending;
               patch(id, { seedPending: null });
               void get().sendTurn(id, seed);
             }
