@@ -1164,7 +1164,7 @@ BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"s
 # When to ask — this is the user's product, don't assume
 Reserve questions for things ONLY THE USER KNOWS: real content (names, copy, projects, prices, contact details), target audience, brand voice, business model, or which real data/integration to wire. For those, STOP and ASK instead of inventing it — emit it as the VERY LAST line:
 NEEDS_INPUT: {"question":"<one short question, 1-2 sentences>","options":["<short concrete choice>","<short concrete choice>"]}
-Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON.
+Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON. When the question is about a specific part of the page, add "area":"top"|"middle"|"bottom" so the user's eye is drawn to that region of the preview.
 Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices). Do NOT ask which section/feature to build next, what order to work in, or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, audience, real content) lean toward asking; once those are settled, lean hard toward building. Budget your questions: aim for only a handful of decisions across the ENTIRE build (roughly one per major phase, at most one per turn). When unsure but the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line rather than asking.
 
 # Visual quality — best in class, never "AI-generated"
@@ -1272,8 +1272,8 @@ pub async fn run_build_turn(
     };
 
     // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
-    let (reply, phases, question, options) = crate::webbuild::plan::extract_build_turn(&text);
-    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question, options })
+    let (reply, phases, question, options, area) = crate::webbuild::plan::extract_build_turn(&text);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question, options, area })
 }
 
 async fn run_cli(

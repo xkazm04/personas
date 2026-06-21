@@ -44,6 +44,8 @@ export interface ProjectRuntime {
   style: BuildStyle;
   /** Clickable options for the current question (A1). Empty = free-text. */
   options: string[];
+  /** Coarse preview region the current question is about (A3): top|middle|bottom. */
+  decisionArea: string | null;
   /** C2 — plan-first gate: the seed turn plans + asks approval before editing. */
   gatePlan: boolean;
 }
@@ -112,6 +114,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         effort: 'xhigh',
         style: 'balanced',
         options: [],
+        decisionArea: null,
         gatePlan: false,
       };
       return {
@@ -178,7 +181,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     const rt = get().runtimes[id];
     const text = raw.trim();
     if (!rt || rt.busy || !text) return;
-    patch(id, { busy: true, reply: null, question: null, options: [], stream: '' });
+    patch(id, { busy: true, reply: null, question: null, options: [], decisionArea: null, stream: '' });
     useCompanionStore.getState().pulseForwardAck();
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style);
@@ -187,6 +190,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         reply: result.reply.trim() || 'Done.',
         question: q,
         options: q ? (result.options ?? []) : [],
+        decisionArea: q ? (result.area ?? null) : null,
         ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
       });
       useCompanionStore.getState().pulseMessageReaction();

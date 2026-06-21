@@ -9,4 +9,8 @@ export type BuildTurnResult = { reply: string, phases: Array<WebBuildPhase> | nu
 /**
  * Clickable options for the question (A1). Empty = free-text answer.
  */
-options: Array<string>, };
+options: Array<string>, 
+/**
+ * Coarse preview region the question is about (A3): "top"|"middle"|"bottom".
+ */
+area: string | null, };

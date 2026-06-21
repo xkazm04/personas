@@ -149,6 +149,25 @@ export default function StudioPage() {
                     ))}
                   </div>
                 )}
+                {/* A3 — coarse orb pointer: pulse at the region the decision is about. */}
+                {active.question && active.decisionArea && (
+                  <div
+                    className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
+                      active.decisionArea === 'top'
+                        ? 'top-16'
+                        : active.decisionArea === 'bottom'
+                          ? 'bottom-32'
+                          : 'top-1/2 -translate-y-1/2'
+                    }`}
+                  >
+                    <span className="relative flex h-9 w-9 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
+                      <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary/25 ring-2 ring-primary backdrop-blur">
+                        <Bot className="h-4 w-4 text-primary" />
+                      </span>
+                    </span>
+                  </div>
+                )}
                 <StudioChecklist phases={active.phases} />
                 <StudioChatInput />
               </>
