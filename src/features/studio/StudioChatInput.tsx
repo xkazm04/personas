@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Send, Square, Wand2 } from 'lucide-react';
+import { Bot, Image as ImageIcon, Send, Square, Wand2 } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useStudioStore } from './studioStore';
@@ -32,6 +33,22 @@ export default function StudioChatInput() {
     if (!text || working) return;
     setInput('');
     void sendTurn(activeId, text);
+  };
+
+  // C5 — design-reference image: pick a file and pass its PATH to the build turn
+  // (Claude Code reads the image). File path, not clipboard — Windows paste is broken.
+  const pickReference = async () => {
+    if (working) return;
+    const path = await open({
+      multiple: false,
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }],
+    });
+    if (typeof path === 'string') {
+      void sendTurn(
+        activeId,
+        `Use the design reference image at "${path}" as inspiration — read the image first, then match its visual style (layout, colour, typography, mood) while keeping the real content we already have.`,
+      );
+    }
   };
 
   return (
@@ -104,6 +121,15 @@ export default function StudioChatInput() {
           disabled={working}
           className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
         />
+        <button
+          type="button"
+          onClick={() => void pickReference()}
+          disabled={working}
+          aria-label="Add a design reference image"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-foreground/55 transition-colors hover:bg-secondary/60 hover:text-primary disabled:opacity-40"
+        >
+          <ImageIcon className="h-4 w-4" />
+        </button>
         <StudioBuildSettings id={activeId} />
         <button
           type="button"
