@@ -759,11 +759,20 @@ async fn run_task_execution(
     let mut output_lines = 0i32;
 
     let timeout_duration = std::time::Duration::from_secs(600); // 10 min for tasks
+    let spend_ctx = crate::db::repos::llm_spend::SpendCtx {
+        source: "scanner",
+        trigger_kind: "task_exec",
+        model: Some("claude-sonnet-4-6"),
+        project_id: None,
+        persona_id: None,
+    };
     let stream_result = tokio::time::timeout(timeout_duration, async {
         while let Ok(Some(line)) = reader.next_line().await {
             if line.trim().is_empty() {
                 continue;
             }
+            // tiger #1: record the headless spend `result` line (no-op otherwise).
+            crate::db::repos::llm_spend::observe_line(pool, &spend_ctx, &line);
 
             if let Some(text) = extract_display_text(&line) {
                 let trimmed = text.trim();
