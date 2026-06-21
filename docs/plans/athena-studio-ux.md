@@ -107,30 +107,61 @@ and opens it. Depends on A1 (structured decisions in the store) + B2 (persistent
 stream). The wiring: the orb subscribes to `studioStore` pending-decisions. *Effort: M ·
 Risk: L–M.*
 
-## 5. Config / UX options from Claude's capabilities
+## 5. Workstream C — Control surfaces (config)
 
-> **Pending — being researched.** A background research pass is surveying Claude's
-> design- and agent-related capabilities (Artifacts/Canvas, output styles, structured
-> tool outputs, image input for design references, MCP, effort/thinking controls, plan
-> mode) for ones we can expose as **user-facing config/UX** in Studio — e.g. a
-> style/voice picker, design-reference image upload, the structured-decisions protocol
-> (A1), an effort/quality control, plan-preview-before-build. This section will be filled
-> in from that synthesis, scoped to what's reachable via the Claude Code CLI on a
-> subscription (vs API-only).
+This is the literal "have it under control" half of the agenda. Mapped from a survey of
+Claude's current capabilities, scoped to what's reachable via the **Claude Code CLI under
+a subscription** — which is what Studio runs on.
+
+**Reference — Claude Design** (Anthropic Labs, launched Apr 17 2026 on Opus 4.7; overhauled
+Jun 17 2026): Anthropic's own design tool — describe a visual, Claude builds it on a canvas
+you refine via inline comments, direct edits, and **adjustment knobs** (spacing/color/layout),
+with design-system import and a **code hand-off to Claude Code**. It's consumer Claude.ai (not
+headless), so not a dependency — but it's the north star for knob-based per-element control,
+and it validates the direction. (It also hands off *to* Claude Code, so a Claude-Design →
+Studio import path is a possible later integration.) Studio's differentiator stays: it builds
+a **real, running** app with a live preview that the user operates inside the desktop app —
+not a canvas-to-handoff.
+
+Control surfaces, ranked by leverage × feasibility:
+
+| # | Control | What the user gets | CLI-native? | Effort |
+|---|---|---|---|---|
+| C1 | **Effort / quality knob** (draft ↔ think-hard) | per-turn speed/quality dial; saves subscription budget | ✅ `--effort` / `CLAUDE_CODE_EFFORT_LEVEL` (we already pass `xhigh`) | S |
+| C2 | **Plan-preview-before-build gate** | "here's the plan — approve to build"; no runaway edits | ✅ we already emit `BUILD_PLAN`; add the gate (`opusplan` = plan-on-Opus / execute-on-Sonnet) | S–M |
+| C3 | **One-click build actions** ("Add auth", "Make responsive", "Dark mode", "Add a page") | common edits as buttons, no prompt-craft | ✅ `.claude/skills/` + sentinel ops | M |
+| C4 | **Athena voice/style picker** (beginner↔pro, concise↔teaching) | how chatty / teaching Athena is | ✅ `.claude/output-styles/` (never compacted) | S–M |
+| C5 | **Design-reference image upload** ("make it look like this") | drop a screenshot/mockup; Claude matches it | ✅ CLI image input — **pass file paths, not clipboard** (Windows paste broken, issue #26679) | M |
+| C6 | **Per-element adjustment knobs** (Claude Design's signature UX) | sliders for spacing/color/radius on the hovered element → scoped edit | ⚠️ needs A3's cross-origin element targeting (§3) | L |
+| C7 | **Version selector / branch-from-here** | explore directions without losing work | ✅ a git commit per turn = free version history | M |
+| C8 | **Toggleable MCP connectors** (component lib, icons, deploy) | per-project capabilities the user flips on | ✅ MCP via CLI | M |
+
+**A1 feasibility (settled):** the cleanest structured-decisions form is the Agent SDK's
+`outputFormat` JSON-schema (auto-validated + retried). Studio drives the **bare interactive
+CLI**, so we approximate with a **sentinel-op parse — the same mechanism as `BUILD_PLAN`**.
+A1 therefore needs no SDK migration; it's a new op on a proven path. (Migrating to the SDK
+later would buy schema-validated retries — track as a possible upgrade, not a prerequisite.)
+
+**Do-early (cheap, CLI-native, immediately "under control"):** C1, C2, C4 — then C3.
+C5/C6 are the design-native surfaces; C6 rides on A3.
 
 ## 6. Sequencing (dependency-ordered)
 
-1. **B2 — continuity foundation** (L). Cheap, and unblocks B3.
-2. **A1 — structured decisions** (M). The protocol everything else hangs off (A3, B3).
+1. **B2 — continuity foundation** (L) + **C1 effort knob** + **C4 style picker** (S, CLI-native).
+   Cheap, immediate "under control" wins; B2 unblocks B3.
+2. **A1 — structured decisions** (M) + **C2 plan-gate** (S–M). The protocol everything hangs
+   off (A3, B3); C2 rides on `BUILD_PLAN` + the new decision op.
 3. **B1 — smooth tabs** (M). Independent polish; can run alongside.
 4. **B3 — global orb signal** (M). Needs A1 + B2.
-5. **A2 — cadence** (L, ongoing). Prompt tuning, evaluated live.
-6. **A3 — orb-fly-to-element** (H). Needs A1 + the preview agent; prototype the
-   coarse-region feel early so the hard cross-origin build is de-risked.
+5. **C3 one-click actions** (M) + **A2 cadence** (L, ongoing).
+6. **A3 — orb-fly-to-element** (H) + **C6 adjustment knobs** (rides on A3) + **C5 image refs** (M).
+   Prototype the coarse-region feel early so the hard cross-origin build is de-risked.
+- Later / opportunistic: **C7 version selector** (git per-turn commits), **C8 MCP connectors**.
 
-Rationale: lock the decision protocol and continuity first (they're load-bearing for
-the rest), keep the expensive, risky cross-origin orb-pointing last, and prototype its
-feel cheaply before committing to the agent injection.
+Rationale: bank the cheap CLI-native control knobs (C1/C2/C4) *while* laying the continuity +
+decision foundations, since they're nearly free and directly serve "control." Keep the
+expensive, risky cross-origin orb-pointing + per-element knobs last, de-risked by an early
+coarse-region prototype.
 
 ## 7. How we evaluate (explicitly *not* the harness)
 
@@ -153,3 +184,8 @@ elements (decision card, orb behaviour). Felt-quality proxies to judge against:
    decision card designed for the orb anchor?
 3. **Tab warmth** — keep all previews mounted (memory cost) vs remount-on-switch
    (reload cost)? *Rec: warm for ≤6 tabs.*
+4. **Decision transport** — keep the bare-CLI sentinel-op parse (no migration; what
+   `BUILD_PLAN` already does) vs migrate to the Agent SDK's `outputFormat` JSON-schema
+   (schema-validated + auto-retried, but means driving Claude via the SDK not the
+   interactive CLI)? *Rec: sentinel-op now, SDK only if decision-format drift becomes a
+   real problem in live use.*
