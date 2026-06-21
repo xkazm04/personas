@@ -32,11 +32,18 @@ const OPEN_URL_EVENT: &str = event_name::AUTO_CRED_OPEN_URL;
 /// Model for browser automation tasks -- needs tool use capabilities.
 const BROWSER_MODEL: &str = "claude-sonnet-4-6";
 
-/// Timeout for browser automation (5 minutes -- browser work is slow).
-const BROWSER_TIMEOUT_SECS: u64 = 300;
+/// Hard timeout for the browser-automation CLI process (10 minutes). When a
+/// session stalls at a "waiting for user action" auth/login step, the stdout
+/// read loop blocks indefinitely; this deadline guarantees the process is
+/// killed (and its Chromium children swept) instead of hanging forever and
+/// orphaning the CLI. Kept just under the frontend IPC timeout
+/// (`BROWSER_SESSION_TIMEOUT_MS`, 11 min) so the backend always wins the race
+/// and returns a clean error rather than the frontend abandoning a live process.
+const BROWSER_TIMEOUT_SECS: u64 = 600;
 
-/// Timeout for guided mode (8 minutes -- user interacts manually).
-const GUIDED_TIMEOUT_SECS: u64 = 480;
+/// Timeout for guided mode (10 minutes -- user interacts manually). Same hard
+/// cap as the browser path so a guided session can't hang indefinitely either.
+const GUIDED_TIMEOUT_SECS: u64 = 600;
 
 /// Protocol prefix: when Claude outputs `OPEN_URL:https://...`, the frontend opens it.
 const OPEN_URL_PREFIX: &str = "OPEN_URL:";

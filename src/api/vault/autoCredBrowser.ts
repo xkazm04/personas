@@ -5,8 +5,14 @@ import type { AutoCredBrowserRequest } from "@/lib/bindings/AutoCredBrowserReque
 import type { AutoCredBrowserResult } from "@/lib/bindings/AutoCredBrowserResult";
 export type { AutoCredField, AutoCredBrowserRequest, AutoCredBrowserResult };
 
-/** IPC timeout for browser sessions -- 10 minutes to allow manual sign-in steps. */
-const BROWSER_SESSION_TIMEOUT_MS = 10 * 60 * 1000;
+/**
+ * IPC timeout for browser sessions. Kept 1 min ABOVE the backend's 10-minute
+ * hard process timeout (`BROWSER_TIMEOUT_SECS`) so the backend always times out,
+ * kills the CLI + Chromium, and returns a clean error first — the frontend IPC
+ * timeout is only a last-resort backstop and must not fire before the backend
+ * has had its chance to kill the process (which would orphan a live CLI).
+ */
+const BROWSER_SESSION_TIMEOUT_MS = 11 * 60 * 1000;
 
 export async function startAutoCredBrowser(request: AutoCredBrowserRequest): Promise<AutoCredBrowserResult> {
   return invoke<AutoCredBrowserResult>('start_auto_cred_browser', { request }, undefined, BROWSER_SESSION_TIMEOUT_MS);
