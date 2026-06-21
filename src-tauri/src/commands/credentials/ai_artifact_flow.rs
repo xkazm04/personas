@@ -390,6 +390,9 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
 pub struct ClaudeSpawnResult {
     pub text_output: String,
     pub stderr_output: String,
+    /// Raw stream-json `result` event line, if emitted — carries model / tokens
+    /// / cost for spend recording (tiger #1). `None` if no result event seen.
+    pub result_line: Option<String>,
 }
 
 /// Try to extract the response text from a stream-json "result" line.
@@ -479,6 +482,7 @@ pub async fn spawn_claude_and_collect(
         .ok_or_else(|| "Missing stdout pipe".to_string())?;
     let mut reader = BufReader::new(stdout).lines();
     let mut text_output = String::new();
+    let mut result_line: Option<String> = None;
 
     let timeout_duration = std::time::Duration::from_secs(timeout_secs);
     let stream_result = tokio::time::timeout(timeout_duration, async {
@@ -496,6 +500,7 @@ pub async fn spawn_claude_and_collect(
                     text_output.push('\n');
                 }
                 StreamLineType::Result { .. } => {
+                    result_line = Some(line.clone());
                     if let Some(result_text) = extract_result_text(&line) {
                         if text_output.trim().is_empty() && !result_text.trim().is_empty() {
                             text_output = result_text;
@@ -573,6 +578,7 @@ pub async fn spawn_claude_and_collect(
     Ok(ClaudeSpawnResult {
         text_output,
         stderr_output,
+        result_line,
     })
 }
 
@@ -588,6 +594,32 @@ pub async fn run_claude_prompt(
 ) -> Result<String, String> {
     let result =
         spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}, None).await?;
+
+    if result.text_output.trim().is_empty() {
+        return Err(empty_error.into());
+    }
+
+    Ok(result.text_output)
+}
+
+/// Like [`run_claude_prompt`], but records the call's spend in the
+/// `dev_llm_spend` ledger (tiger #1). `ctx` carries the tier / trigger_kind /
+/// optional persona+project refs. Recording is best-effort and never fails the
+/// call.
+pub async fn run_claude_prompt_tracked(
+    prompt_text: String,
+    cli_args: &crate::engine::types::CliArgs,
+    timeout_secs: u64,
+    empty_error: &str,
+    pool: &crate::db::DbPool,
+    ctx: crate::db::repos::llm_spend::SpendCtx<'_>,
+) -> Result<String, String> {
+    let result =
+        spawn_claude_and_collect(cli_args, prompt_text, timeout_secs, |_, _| {}, None).await?;
+
+    if let Some(rl) = &result.result_line {
+        crate::db::repos::llm_spend::observe_line(pool, &ctx, rl);
+    }
 
     if result.text_output.trim().is_empty() {
         return Err(empty_error.into());

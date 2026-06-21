@@ -233,7 +233,7 @@ pub async fn synthesize_team_from_templates(
     team_name: String,
 ) -> Result<TeamSynthesisResult, AppError> {
     require_auth(&state).await?;
-    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt;
+    use crate::commands::credentials::ai_artifact_flow::run_claude_prompt_tracked;
     use crate::commands::design::n8n_transform::cli_runner::extract_first_json_object_matching;
     use crate::engine::prompt;
     use crate::engine::topology_types::compute_dag_layout;
@@ -264,11 +264,19 @@ pub async fn synthesize_team_from_templates(
     cli_args.args.push("1".to_string());
 
     // 3. Call Claude
-    let output_text = run_claude_prompt(
+    let output_text = run_claude_prompt_tracked(
         prompt_text,
         &cli_args,
         SYNTHESIS_TIMEOUT_SECS,
         "Claude produced no output for team synthesis",
+        &state.db,
+        crate::db::repos::llm_spend::SpendCtx {
+            source: "design",
+            trigger_kind: "team_synthesis",
+            model: Some(SYNTHESIS_MODEL),
+            persona_id: None,
+            project_id: None,
+        },
     )
     .await
     .map_err(AppError::Internal)?;

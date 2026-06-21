@@ -269,6 +269,21 @@ pub async fn smart_search_templates(
     .await
     .map_err(AppError::Internal)?;
 
+    // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
+    if let Some(rl) = &spawn_result.result_line {
+        crate::db::repos::llm_spend::observe_line(
+            &state.db,
+            &crate::db::repos::llm_spend::SpendCtx {
+                source: "design",
+                trigger_kind: "smart_search",
+                model: None,
+                persona_id: None,
+                project_id: None,
+            },
+            rl,
+        );
+    }
+
     let output_text = &spawn_result.text_output;
     let log_lines: Vec<String> = cli_log.lock().unwrap_or_else(|e| e.into_inner()).clone();
 

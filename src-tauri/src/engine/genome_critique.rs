@@ -51,7 +51,21 @@ pub async fn mutate_via_critique(
     let current_prompt = render_segments(&incumbent.prompt_segments);
     let critique_prompt = build_critique_prompt(&persona.name, &current_prompt, &failures);
 
-    let assistant_text = run_critique_cli(&critique_prompt).await?;
+    let (assistant_text, result_line) = run_critique_cli(&critique_prompt).await?;
+    // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
+    if let Some(rl) = &result_line {
+        crate::db::repos::llm_spend::observe_line(
+            pool,
+            &crate::db::repos::llm_spend::SpendCtx {
+                source: "evaluator",
+                trigger_kind: "genome_critique",
+                model: Some(CRITIQUE_MODEL),
+                persona_id: Some(&persona.id),
+                project_id: None,
+            },
+            rl,
+        );
+    }
     let rewritten = parse_rewrite_response(&assistant_text)?;
 
     let mut mutated = incumbent.clone();
@@ -147,7 +161,7 @@ const CRITIQUE_MODEL: &str = "claude-sonnet-4-6";
 /// Spawn the Claude CLI in single-turn print mode and pipe the critique
 /// prompt to stdin. Returns the assistant's text response (or an error on
 /// timeout / spawn failure).
-async fn run_critique_cli(critique_prompt: &str) -> Result<String, String> {
+async fn run_critique_cli(critique_prompt: &str) -> Result<(String, Option<String>), String> {
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(CRITIQUE_MODEL.to_string());
@@ -159,20 +173,27 @@ async fn run_critique_cli(critique_prompt: &str) -> Result<String, String> {
     driver.write_stdin(critique_prompt.as_bytes()).await;
 
     let mut assistant_text = String::new();
+    let mut result_line: Option<String> = None;
     let timeout = tokio::time::Duration::from_secs(CRITIQUE_TIMEOUT_SECS);
     driver
         .collect_lines_with_timeout(timeout, |line| {
             let (line_type, _) = parser::parse_stream_line(line);
-            if let StreamLineType::AssistantText { text } = line_type {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
+            match line_type {
+                StreamLineType::AssistantText { text } => {
+                    assistant_text.push_str(&text);
+                    assistant_text.push('\n');
+                }
+                StreamLineType::Result { .. } => {
+                    result_line = Some(line.to_string());
+                }
+                _ => {}
             }
         })
         .await
         .map_err(|e| format!("Critique CLI timed out or failed: {e}"))?;
 
     let _ = driver.finish().await;
-    Ok(assistant_text)
+    Ok((assistant_text, result_line))
 }
 
 /// Parse the assistant's JSON response into a `Vec<String>` of rewritten

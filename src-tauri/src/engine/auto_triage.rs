@@ -274,7 +274,7 @@ const EVALUATOR_MODEL: &str = "claude-sonnet-4-6";
 /// Spawn the Claude CLI in single-turn print mode and pipe the prompt to
 /// stdin. Returns the raw assistant text (or an error on timeout / spawn
 /// failure). Mirrors `genome_critique::run_critique_cli`.
-async fn run_evaluator_cli(prompt_text: &str) -> Result<String, String> {
+async fn run_evaluator_cli(prompt_text: &str) -> Result<(String, Option<String>), String> {
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(EVALUATOR_MODEL.to_string());
@@ -286,27 +286,36 @@ async fn run_evaluator_cli(prompt_text: &str) -> Result<String, String> {
     driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
+    let mut result_line: Option<String> = None;
     let timeout = tokio::time::Duration::from_secs(EVALUATOR_TIMEOUT_SECS);
     driver
         .collect_lines_with_timeout(timeout, |line| {
             let (line_type, _) = parser::parse_stream_line(line);
-            if let StreamLineType::AssistantText { text } = line_type {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
+            match line_type {
+                StreamLineType::AssistantText { text } => {
+                    assistant_text.push_str(&text);
+                    assistant_text.push('\n');
+                }
+                StreamLineType::Result { .. } => {
+                    result_line = Some(line.to_string());
+                }
+                _ => {}
             }
         })
         .await
         .map_err(|e| format!("Evaluator CLI timed out or failed: {e}"))?;
 
     let _ = driver.finish().await;
-    Ok(assistant_text)
+    Ok((assistant_text, result_line))
 }
 
 /// End-to-end: build prompt, run CLI, parse verdict.
-pub async fn evaluate(req: &AutoTriageRequest) -> Result<AutoTriageDecision, String> {
+pub async fn evaluate(
+    req: &AutoTriageRequest,
+) -> Result<(AutoTriageDecision, Option<String>), String> {
     let prompt_text = build_evaluator_prompt(req);
-    let raw = run_evaluator_cli(&prompt_text).await?;
-    parse_verdict_response(&raw)
+    let (raw, result_line) = run_evaluator_cli(&prompt_text).await?;
+    Ok((parse_verdict_response(&raw)?, result_line))
 }
 
 // ---------------------------------------------------------------------------
@@ -361,7 +370,23 @@ async fn run_and_finalize(ctx: SpawnedEvaluatorContext) {
     };
 
     match evaluate(&request).await {
-        Ok(decision) => apply_verdict(&ctx, decision),
+        Ok((decision, result_line)) => {
+            // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
+            if let Some(rl) = &result_line {
+                crate::db::repos::llm_spend::observe_line(
+                    &ctx.pool,
+                    &crate::db::repos::llm_spend::SpendCtx {
+                        source: "evaluator",
+                        trigger_kind: "auto_triage",
+                        model: Some(EVALUATOR_MODEL),
+                        persona_id: Some(&ctx.persona_id),
+                        project_id: None,
+                    },
+                    rl,
+                );
+            }
+            apply_verdict(&ctx, decision)
+        }
         Err(err) => apply_fallback(&ctx, &err),
     }
 }
