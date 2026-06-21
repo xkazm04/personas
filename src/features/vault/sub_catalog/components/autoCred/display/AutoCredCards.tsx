@@ -25,7 +25,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   if (confirmed && !isLatest) {
     return (
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-emerald-500/15 bg-emerald-500/5 typo-body text-emerald-400/60">
+      <div data-testid="vault-autocred-waiting" className="flex items-center gap-2 px-3 py-1.5 rounded-card border border-emerald-500/15 bg-emerald-500/5 typo-body text-emerald-400/60">
         <Check className="w-3 h-3" />
         <span className="truncate">{message}</span>
       </div>
@@ -34,6 +34,7 @@ export function WaitingCard({ entry, isLatest }: { entry: BrowserLogEntry; isLat
 
   return (
     <div
+      data-testid="vault-autocred-waiting"
       className={`animate-fade-slide-in flex items-start gap-3 p-3 rounded-modal border-2 ${
         confirmed ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-amber-500/30 bg-amber-500/8'
       }`}

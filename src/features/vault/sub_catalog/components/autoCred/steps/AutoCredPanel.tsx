@@ -35,19 +35,18 @@ interface AutoCredPanelProps {
 export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPanelProps) {
   const { t, tx } = useTranslation();
   const [mode, setMode] = useState<AutoCredMode>('playwright');
-  const [modeChecked, setModeChecked] = useState(false);
 
-  // Check Playwright availability on mount
+  // Check Playwright availability on mount. This only refines the consent
+  // wording + which adapter is preferred — the backend re-checks availability
+  // and falls back to guided on its own — so we must NOT block session init (and
+  // therefore the "Start" button) on it. Gating init on this previously made
+  // "Start" a no-op until the (sometimes slow) npx check resolved.
   useEffect(() => {
     checkPlaywrightAvailable()
-      .then((available) => {
-        setMode(available ? 'playwright' : 'guided');
-        setModeChecked(true);
-      })
+      .then((available) => setMode(available ? 'playwright' : 'guided'))
       .catch((err) => {
         logger.warn('Playwright availability check failed, falling back to guided mode', { error: String(err) });
         setMode('guided');
-        setModeChecked(true);
       });
   }, []);
 
@@ -89,12 +88,16 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
       .join('|');
   }, [designResult.connector.fields]);
 
-  // Initialize session when design result arrives and mode is resolved
+  // Initialize the session as soon as a design result arrives. `init` is
+  // stable (useCallback) but `session` is a fresh object literal each render —
+  // depending on `session` directly re-ran init on every render and bounced the
+  // phase back to 'consent', so clicking "Start" appeared to do nothing. Call
+  // through a ref and re-init only when the connector / field shape changes.
+  const initRef = useRef(session.init);
+  initRef.current = session.init;
   useEffect(() => {
-    if (modeChecked) {
-      session.init(designResult);
-    }
-  }, [designResult, designResult.connector.name, fieldsHash, modeChecked, session]);
+    initRef.current(designResult);
+  }, [designResult, designResult.connector.name, fieldsHash]);
 
   const handleCancel = () => {
     session.reset();
@@ -102,7 +105,7 @@ export function AutoCredPanel({ designResult, onComplete, onCancel }: AutoCredPa
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="vault-autocred-panel" data-phase={session.phase}>
       <AnimatePresence mode="wait">
         {session.phase === 'consent' && (
           <motion.div key="consent" {...PHASE_TRANSITION}>

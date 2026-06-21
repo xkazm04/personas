@@ -88,6 +88,41 @@ pub fn webbuild_list_servers(
     Ok(state.webbuild_servers.list())
 }
 
+/// List a generated project's app-router routes (for the Studio preview's
+/// cross-page navigation bar — click a route to jump the preview to it).
+#[tauri::command]
+pub fn webbuild_list_routes(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::routes::list_routes(std::path::Path::new(&project.root_path))
+}
+
+/// List recent build-turn snapshots (C7 version history), newest first.
+#[tauri::command]
+pub fn webbuild_list_versions(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<crate::webbuild::versions::BuildVersion>, AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::versions::list_versions(std::path::Path::new(&project.root_path))
+}
+
+/// Restore the project's files to a prior snapshot (C7). Keeps git history.
+#[tauri::command]
+pub fn webbuild_restore_version(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    sha: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::versions::restore(std::path::Path::new(&project.root_path), &sha)
+}
+
 /// Send a build instruction to a project's build session — a project-rooted
 /// Claude Code turn (Athena) that edits the project's code. Streams progress on
 /// `companion://stream` keyed by session id `webbuild:<project_id>`; returns
@@ -98,6 +133,12 @@ pub async fn webbuild_session_send(
     app: tauri::AppHandle,
     project_id: String,
     message: String,
+    // Per-turn build controls: C1 effort knob (low|medium|high|xhigh) + C4
+    // voice/style (concise|balanced|teaching). Both optional → engine defaults.
+    effort: Option<String>,
+    style: Option<String>,
+    // C8 — per-project MCP connectors the user toggled on.
+    mcp: Option<Vec<String>>,
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
@@ -108,5 +149,15 @@ pub async fn webbuild_session_send(
             project.root_path
         )));
     }
-    crate::companion::session::run_build_turn(&app, &state.user_db, &project_id, &dir, &message).await
+    crate::companion::session::run_build_turn(
+        &app,
+        &state.user_db,
+        &project_id,
+        &dir,
+        &message,
+        effort.as_deref(),
+        style.as_deref(),
+        mcp.as_deref().unwrap_or(&[]),
+    )
+    .await
 }

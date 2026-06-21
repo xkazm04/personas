@@ -42,11 +42,16 @@ export function AnalyzingPhase({ outputLines, onCancel }: AnalyzingPhaseProps) {
   const derivedIdx = useMemo(() => deriveStageIndex(outputLines), [outputLines]);
 
   const sp = useStepProgress(STAGE_KEYS.length);
+  const { setDerivedIndex } = sp;
 
-  // Drive step progress from derived index
+  // Drive step progress from the derived index. Depend on the STABLE setter,
+  // NOT the whole `sp` object: `useStepProgress` returns a fresh object literal
+  // every render, so `[derivedIdx, sp]` re-ran this effect on every render and —
+  // because setDerivedIndex always produced a new completedSteps Set — looped
+  // infinitely ("Maximum update depth exceeded") for the entire analyzing phase.
   useEffect(() => {
-    sp.setDerivedIndex(derivedIdx);
-  }, [derivedIdx, sp]);
+    setDerivedIndex(derivedIdx);
+  }, [derivedIdx, setDerivedIndex]);
 
   // Progress: use derived index directly against total (4) for smooth 0->100
   const progress = Math.min((derivedIdx / STAGE_KEYS.length) * 100, 100);

@@ -261,12 +261,23 @@ pub fn get_dependents(
         })?;
         let structural = collect_rows(structural, "audit_log::get_dependents/structural");
 
-        // Find observed dependents from audit log (personas that have used this credential)
+        // Find observed dependents from audit log (personas that have used this
+        // credential). INNER JOIN personas so a persona that has since been
+        // DELETED is not surfaced as a live dependent: credential_audit_log is
+        // append-only with no FK to personas, so its rows outlive the persona
+        // they reference. Without this join the dependency graph showed every
+        // persona that ever touched a credential — including hundreds of long-
+        // deleted template/test personas — inflating the agent node count by
+        // an order of magnitude (349 distinct ids vs 22 live personas in one
+        // observed checkout). Use the live `p.name` rather than the audit-log
+        // snapshot so renamed personas read correctly too, matching the
+        // structural query above.
         let mut stmt2 = conn.prepare(
-            "SELECT persona_id, persona_name, MAX(created_at) AS last_used
-             FROM credential_audit_log
-             WHERE credential_id = ?1 AND persona_id IS NOT NULL
-             GROUP BY persona_id",
+            "SELECT cal.persona_id, p.name, MAX(cal.created_at) AS last_used
+             FROM credential_audit_log cal
+             INNER JOIN personas p ON p.id = cal.persona_id
+             WHERE cal.credential_id = ?1 AND cal.persona_id IS NOT NULL
+             GROUP BY cal.persona_id",
         )?;
         let observed = stmt2.query_map(params![credential_id], |row| {
             Ok(CredentialDependent {

@@ -79,6 +79,7 @@ export default function StudioChecklist({ phases = MOCK_PHASES }: { phases?: Bui
       <button
         type="button"
         onClick={toggle}
+        data-testid="studio-checklist-tab"
         aria-label="Build checklist"
         aria-expanded={expanded}
         className="flex w-8 shrink-0 flex-col items-center gap-1.5 rounded-l-card border border-r-0 border-border bg-background/90 py-2.5 text-foreground/70 shadow-elevation-2 backdrop-blur transition-colors hover:text-foreground"

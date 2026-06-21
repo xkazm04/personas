@@ -473,6 +473,13 @@ pub async fn spawn_claude_and_collect(
     for (key, val) in &cli_args.env_overrides {
         cmd.env(key, val);
     }
+    // Force monthly-subscription auth. Without this, an inherited/injected
+    // ANTHROPIC_API_KEY (e.g. from a repo `.env`) silently flips this CLI spawn
+    // — credential design + auto-cred browser + smart-search + semantic-lint —
+    // onto API-account billing, which dies with "Credit balance is too low".
+    // The persona runner already strips these via cli_process; this separate
+    // spawn path did not. Must run AFTER env_overrides so nothing re-adds them.
+    crate::engine::cli_process::force_subscription_auth(&mut cmd);
 
     let mut child = cmd.spawn().map_err(|e| {
         if e.kind() == std::io::ErrorKind::NotFound {

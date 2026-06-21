@@ -30,11 +30,27 @@ pub struct BuildTurnResult {
     pub reply: String,
     pub phases: Option<Vec<WebBuildPhase>>,
     pub question: Option<String>,
+    /// Clickable options for the question (A1). Empty = free-text answer.
+    #[serde(default)]
+    pub options: Vec<String>,
+    /// Coarse preview region the question is about (A3): "top"|"middle"|"bottom".
+    pub area: Option<String>,
 }
 
 #[derive(Deserialize)]
 struct PlanEnvelope {
     phases: Vec<WebBuildPhase>,
+}
+
+/// Structured `NEEDS_INPUT` payload (A1): a question plus clickable options.
+/// Parsing falls back to a plain-text question when the marker isn't JSON.
+#[derive(Deserialize)]
+struct DecisionEnvelope {
+    question: String,
+    #[serde(default)]
+    options: Vec<String>,
+    #[serde(default)]
+    area: Option<String>,
 }
 
 /// Extract trailing `BUILD_PLAN: {json}` and `NEEDS_INPUT: <question>` lines from
@@ -43,9 +59,11 @@ struct PlanEnvelope {
 /// markers are still stripped so they never leak into the reply.
 pub fn extract_build_turn(
     assistant_text: &str,
-) -> (String, Option<Vec<WebBuildPhase>>, Option<String>) {
+) -> (String, Option<Vec<WebBuildPhase>>, Option<String>, Vec<String>, Option<String>) {
     let mut phases: Option<Vec<WebBuildPhase>> = None;
     let mut question: Option<String> = None;
+    let mut options: Vec<String> = Vec::new();
+    let mut area: Option<String> = None;
     let mut kept: Vec<&str> = Vec::with_capacity(assistant_text.lines().count());
     for line in assistant_text.lines() {
         let trimmed = line.trim_start();
@@ -61,16 +79,33 @@ pub fn extract_build_turn(
         }
         if let Some(rest) = trimmed.strip_prefix("NEEDS_INPUT:") {
             if question.is_none() {
-                let q = rest.trim();
-                if !q.is_empty() {
-                    question = Some(q.to_string());
+                let raw = rest.trim();
+                if !raw.is_empty() {
+                    // Structured {question, options} (A1), else plain-text fallback.
+                    if let Ok(env) = serde_json::from_str::<DecisionEnvelope>(raw) {
+                        if !env.question.trim().is_empty() {
+                            question = Some(env.question.trim().to_string());
+                            options = env
+                                .options
+                                .into_iter()
+                                .map(|o| o.trim().to_string())
+                                .filter(|o| !o.is_empty())
+                                .collect();
+                            area = env
+                                .area
+                                .map(|a| a.trim().to_lowercase())
+                                .filter(|a| matches!(a.as_str(), "top" | "middle" | "bottom"));
+                        }
+                    } else {
+                        question = Some(raw.to_string());
+                    }
                 }
             }
             continue;
         }
         kept.push(line);
     }
-    (kept.join("\n").trim().to_string(), phases, question)
+    (kept.join("\n").trim().to_string(), phases, question, options, area)
 }
 
 #[cfg(test)]
@@ -80,7 +115,7 @@ mod tests {
     #[test]
     fn extracts_plan_and_question_and_strips_them() {
         let txt = "Set up the hero.\nNEEDS_INPUT: Should the palette be warm or cool?\nBUILD_PLAN: {\"phases\":[{\"id\":\"foundation\",\"title\":\"Foundation\",\"status\":\"active\"}]}";
-        let (reply, phases, question) = extract_build_turn(txt);
+        let (reply, phases, question, _options, _area) = extract_build_turn(txt);
         assert_eq!(reply, "Set up the hero.");
         assert_eq!(phases.expect("phases").len(), 1);
         assert_eq!(question.as_deref(), Some("Should the palette be warm or cool?"));
@@ -88,7 +123,7 @@ mod tests {
 
     #[test]
     fn no_markers_returns_text_unchanged() {
-        let (reply, phases, question) = extract_build_turn("Just a summary.");
+        let (reply, phases, question, _options, _area) = extract_build_turn("Just a summary.");
         assert_eq!(reply, "Just a summary.");
         assert!(phases.is_none());
         assert!(question.is_none());
@@ -96,8 +131,26 @@ mod tests {
 
     #[test]
     fn malformed_plan_is_stripped_without_phases() {
-        let (reply, phases, _) = extract_build_turn("Done.\nBUILD_PLAN: not json");
+        let (reply, phases, _, _, _) = extract_build_turn("Done.\nBUILD_PLAN: not json");
         assert_eq!(reply, "Done.");
         assert!(phases.is_none());
+    }
+
+    #[test]
+    fn parses_structured_decision_options() {
+        let txt = "Pick a vibe.\nNEEDS_INPUT: {\"question\":\"Warm or cool?\",\"options\":[\"Warm\",\"Cool\"],\"area\":\"top\"}";
+        let (reply, _, question, options, area) = extract_build_turn(txt);
+        assert_eq!(reply, "Pick a vibe.");
+        assert_eq!(question.as_deref(), Some("Warm or cool?"));
+        assert_eq!(options, vec!["Warm".to_string(), "Cool".to_string()]);
+        assert_eq!(area.as_deref(), Some("top"));
+    }
+
+    #[test]
+    fn plain_text_needs_input_has_no_options() {
+        let (_, _, question, options, _area) =
+            extract_build_turn("NEEDS_INPUT: What's your business name?");
+        assert_eq!(question.as_deref(), Some("What's your business name?"));
+        assert!(options.is_empty());
     }
 }

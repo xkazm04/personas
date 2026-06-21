@@ -113,6 +113,7 @@ const NotificationCenter = lazyRetry(() => import("@/features/shared/chrome/noti
 const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const StudioAttention = lazyRetry(() => import("@/features/studio/StudioAttention"));
 const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // First-run onboarding overlay. Self-guards on `onboardingActive` (returns null
 // until startOnboarding() flips it), so it's safe to mount unconditionally once
@@ -341,6 +342,7 @@ export default function App() {
                 <CompanionPanel />
                 <AthenaOrbLayer />
                 <AthenaGuideLayer />
+                {import.meta.env.DEV && <StudioAttention />}
               </Suspense>
             </>
           )}

@@ -2,6 +2,7 @@ import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { BuildTurnResult } from '@/lib/bindings/BuildTurnResult';
+import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
@@ -37,5 +38,33 @@ export const webbuildListProjects = () =>
  * timeout. Progress also streams on `companion://stream` keyed by
  * `webbuild:<projectId>`.
  */
-export const webbuildSessionSend = (projectId: string, message: string) =>
-  invokeWithTimeout<BuildTurnResult>('webbuild_session_send', { projectId, message }, undefined, 900_000);
+/** C1 effort knob — maps to the CLI `--effort` for build turns. */
+export type BuildEffort = 'low' | 'medium' | 'high' | 'xhigh';
+/** C4 voice/style — injected into the build system prompt. */
+export type BuildStyle = 'concise' | 'balanced' | 'teaching';
+
+export const webbuildSessionSend = (
+  projectId: string,
+  message: string,
+  effort?: BuildEffort,
+  style?: BuildStyle,
+  mcp?: string[],
+) =>
+  invokeWithTimeout<BuildTurnResult>(
+    'webbuild_session_send',
+    { projectId, message, effort, style, mcp },
+    undefined,
+    900_000,
+  );
+
+/** The generated project's app-router routes (for the preview route switcher). */
+export const webbuildListRoutes = (projectId: string) =>
+  invokeWithTimeout<string[]>('webbuild_list_routes', { projectId });
+
+/** C7 — recent build-turn snapshots (version history), newest first. */
+export const webbuildListVersions = (projectId: string) =>
+  invokeWithTimeout<BuildVersion[]>('webbuild_list_versions', { projectId });
+
+/** C7 — restore the project's files to a prior snapshot. */
+export const webbuildRestoreVersion = (projectId: string, sha: string) =>
+  invokeWithTimeout<void>('webbuild_restore_version', { projectId, sha });

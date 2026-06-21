@@ -13,7 +13,10 @@
 
 pub mod bun;
 pub mod devserver;
+pub mod mcp;
 pub mod plan;
 pub mod project;
+pub mod routes;
+pub mod versions;
 
 pub use devserver::{DevServerRegistry, DevServerStatus};

@@ -126,6 +126,9 @@ function CatalogAutoSetupInner({ connector, onComplete, onCancel }: CatalogAutoS
   return (
     <div
       key="auto-setup"
+      data-testid="vault-catalog-auto-setup"
+      data-phase={phase}
+      data-mode={mode}
       className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-6 space-y-4"
     >
       <SetupHeader connector={connector} mode={mode} phase={phase} onCancel={handleCancel} />

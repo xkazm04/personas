@@ -3199,6 +3199,9 @@ pub fn run() {
             commands::infrastructure::webbuild::webbuild_dev_stop,
             commands::infrastructure::webbuild::webbuild_status,
             commands::infrastructure::webbuild::webbuild_list_servers,
+            commands::infrastructure::webbuild::webbuild_list_routes,
+            commands::infrastructure::webbuild::webbuild_list_versions,
+            commands::infrastructure::webbuild::webbuild_restore_version,
             commands::infrastructure::webbuild::webbuild_session_send,
         ]))
         .build(tauri::generate_context!())

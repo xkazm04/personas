@@ -1,0 +1,22 @@
+[
+  {
+    "slug": "ops-console",
+    "vision": "An internal operations console for a logistics company — a sidebar with several views (shipments, fleet, drivers, alerts), dense tables with filtering and sorting, detail panels, and status indicators. Information-dense, fast, and professional, like a serious internal tool."
+  },
+  {
+    "slug": "gov-benefits",
+    "vision": "A government benefits application portal — a long multi-step form to apply for housing assistance, with clear instructions, validation, save-and-resume, and full accessibility (screen-reader friendly, keyboard navigable, WCAG AA). Calm, trustworthy, plain-language."
+  },
+  {
+    "slug": "flowforge-canvas",
+    "vision": "A visual workflow builder — a canvas where you drag nodes (triggers, actions, conditions) from a palette, connect them with edges, configure each node in a side panel, and see the flow. Like a simplified Zapier or n8n editor. Smooth and powerful."
+  },
+  {
+    "slug": "souk-rtl",
+    "vision": "A bilingual (English + Arabic) marketplace landing page for a Middle-Eastern artisan goods brand called Souk. Full RTL support when Arabic is selected, a language switcher, product highlights, and the brand story. Elegant and culturally considered."
+  },
+  {
+    "slug": "atlas-platform",
+    "vision": "An all-in-one team workspace called Atlas — a landing page, an auth flow, and once inside a real app shell with a dashboard, a projects view, a docs/wiki section, a calendar, and settings. A lot of surface area; make it cohesive and navigable."
+  }
+]

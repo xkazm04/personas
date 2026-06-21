@@ -54,6 +54,7 @@ export default function StudioVisionStart({
 
         <label className="mb-1 block typo-caption text-foreground/70">Project name</label>
         <input
+          data-testid="studio-vision-name"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="mara-portfolio"
@@ -62,6 +63,7 @@ export default function StudioVisionStart({
 
         <label className="mb-1 block typo-caption text-foreground/70">What do you want to build?</label>
         <textarea
+          data-testid="studio-vision-text"
           value={vision}
           onChange={(e) => setVision(e.target.value)}
           placeholder={EXAMPLE}
@@ -70,6 +72,7 @@ export default function StudioVisionStart({
         />
 
         <Button
+          data-testid="studio-vision-submit"
           variant="primary"
           className="w-full"
           icon={<Sparkles className="h-4 w-4" />}

@@ -14,6 +14,7 @@ the **code** that runs them lives under `tools/`, `scripts/`, `tests/`, and
 |--------|--------------|--------------|
 | [`strategy/`](strategy/) | The testing philosophy + cross-cutting workflow: the 0→max coverage progression, parallel-CLI test isolation, the test-DB submodule. | Planning coverage for a feature, or running tests alongside other CLI sessions. |
 | [`e2e/`](e2e/) | Concrete end-to-end scenario + regression plans (agent lifecycle, resilience, vault credentials, template adoption, build matrix). | Writing or running a full user-flow regression. |
+| [`connectors/`](connectors/) | Vault **Catalog connections** scenarios — the connector catalog grid + the **Auto-add** (MCP/Playwright browser) credential-setup flow. | Working on connector catalog / auto-cred browser automation. |
 | [`autonomy-eval/`](autonomy-eval/) | The **Team Autonomy Evaluation Framework** — a separate workstream that runs persona teams and scores production-quality output. Has its own rubric, run protocol, seed bank, and a golden sample run. | Working on team-autonomy measurement, not day-to-day feature tests. |
 | [`athena/`](athena/) | The Athena chat **quality suite** — conversational regression with hard assertions + an LLM judge. | After any change to Athena's prompt, constitution, dispatcher, or doctrine. |
 | [`fixtures/`](fixtures/) | Shared, version-controlled test inputs (render-plan fixtures, the large use-case catalog). | You need a stable input set instead of inventing one. |
@@ -36,6 +37,7 @@ Docs describe intent; these are the runnable harnesses.
 |----------|----------------|-----|
 | `strategy/coverage-strategy` (unit/component layer) | Vitest specs `src/**/*.test.ts` | `npm run test` |
 | `e2e/*` scenarios | Python MCP harnesses `tools/test-mcp/*.py` + Playwright specs `tests/playwright/` | `uvx --with httpx python tools/test-mcp/<file>.py` |
+| `connectors/connector-autoadd` | `tools/test-mcp/e2e_connectors_autoadd.py` | `uvx --with httpx python tools/test-mcp/e2e_connectors_autoadd.py` |
 | `e2e/template-adoption-*` | `tests/playwright/template-marathon-*` (driver + spec + fixtures) | `node tests/playwright/template-marathon-driver.mjs --golden` |
 | Athena guided walkthrough E2E ([feature doc](../features/companion/athena-guided-walkthroughs.md) §E2E) | `tests/playwright/athena-guided-walkthrough.spec.ts` | `npm run test:playwright:guidance` |
 | `autonomy-eval/*` | Node autonomy harness `scripts/test/*.mjs` (run / gather / evaluate / health-lint / judge-packet) | per [`autonomy-eval/run-protocol.md`](autonomy-eval/run-protocol.md) |

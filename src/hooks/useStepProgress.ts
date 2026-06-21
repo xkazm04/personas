@@ -107,15 +107,22 @@ export function useStepProgress(totalSteps: number): StepProgressResult {
     setActiveStepIndex(index);
   }, []);
 
-  // Derived mode: external index sets active, all prior auto-completed
+  // Derived mode: external index sets active, all prior auto-completed.
+  // Idempotent: return the SAME set reference when nothing changes so a caller
+  // that re-invokes with the same index can't force a spurious re-render (and,
+  // if it does so from an effect, an infinite render loop).
   const setDerivedIndex = useCallback((index: number) => {
     setActiveStepIndex(index);
     setCompletedSteps((prev) => {
+      let changed = false;
       const next = new Set(prev);
       for (let i = 0; i < index; i++) {
-        next.add(i);
+        if (!next.has(i)) {
+          next.add(i);
+          changed = true;
+        }
       }
-      return next;
+      return changed ? next : prev;
     });
   }, []);
 

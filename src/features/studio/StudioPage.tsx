@@ -1,56 +1,46 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Plus, RotateCcw, Square } from 'lucide-react';
-import Button from '@/features/shared/components/buttons/Button';
-import type { DevProject } from '@/lib/bindings/DevProject';
-import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
+import { useCallback, useEffect, useState } from 'react';
+import { Bot, RotateCcw } from 'lucide-react';
 import { toastCatch } from '@/lib/silentCatch';
-import {
-  webbuildDevStart,
-  webbuildDevStop,
-  webbuildListProjects,
-  webbuildScaffold,
-  webbuildStatus,
-} from '@/api/webbuild';
+import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
+import type { DevProject } from '@/lib/bindings/DevProject';
+import StudioTabBar from './StudioTabBar';
 import StudioChecklist from './StudioChecklist';
 import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
-import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
+import StudioVersions from './StudioVersions';
+import { useStudioStore } from './studioStore';
 
-// Dev-only experimental surface — Athena web-dev companion
-// (docs/plans/athena-webdev-companion-v0.md). Copy is a local constant; i18n is
-// deferred to consolidation to avoid en.json churn while the surface is in flux.
+// Dev-only experimental surface — Athena web-dev companion. Projects run as
+// browser-style tabs; all build runtime lives in studioStore so a project keeps
+// building while you're on another tab or another app module. Previews are kept
+// "warm" (every live tab mounted, only the active visible) so switching tabs is
+// instant + lossless instead of reloading the dev server each time (B1).
 const COPY = {
-  title: 'Studio',
-  newProject: 'New',
-  stop: 'Stop',
-  reload: 'Reload',
   scaffolding: 'Scaffolding with Bun — this can take a minute…',
   starting: 'Starting the dev server…',
+  error: 'Something went wrong starting this project.',
+  empty: 'No project open — use + to open an existing project or start a new one.',
 };
-
-type Phase = 'idle' | 'scaffolding' | 'starting' | 'live' | 'error';
 
 export default function StudioPage() {
   const [projects, setProjects] = useState<DevProject[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [status, setStatus] = useState<DevServerStatus | null>(null);
-  const [phase, setPhase] = useState<Phase>('idle');
-  const [iframeKey, setIframeKey] = useState(0);
-  const [phases, setPhases] = useState<BuildPhase[]>(MOCK_PHASES);
-  const [pendingVision, setPendingVision] = useState<string | null>(null);
-  const pollRef = useRef<number | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  // Per-tab UI state (keyed by project id) so each tab keeps its own route +
+  // reload nonce — switching tabs never disturbs another tab's preview.
+  const [iframeNonces, setIframeNonces] = useState<Record<string, number>>({});
+  const [previewRoutes, setPreviewRoutes] = useState<Record<string, string>>({});
+  const [routesByTab, setRoutesByTab] = useState<Record<string, string[]>>({});
 
-  // Reset the plan when switching projects (Athena's first build turn replaces it).
-  useEffect(() => {
-    setPhases(MOCK_PHASES);
-  }, [selectedId]);
+  const initStream = useStudioStore((s) => s.initStream);
+  const createWithVision = useStudioStore((s) => s.createWithVision);
+  const activeId = useStudioStore((s) => s.activeId);
+  const runtimes = useStudioStore((s) => s.runtimes);
+  const tabOrder = useStudioStore((s) => s.tabOrder);
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      window.clearInterval(pollRef.current);
-      pollRef.current = null;
-    }
-  }, []);
+  const active = activeId ? runtimes[activeId] : undefined;
+  const tabCount = tabOrder.length;
+  const activeNonce = activeId ? (iframeNonces[activeId] ?? 0) : 0;
 
   const refreshProjects = useCallback(async () => {
     try {
@@ -61,180 +51,151 @@ export default function StudioPage() {
   }, []);
 
   useEffect(() => {
+    initStream();
     void refreshProjects();
-    return stopPolling;
-  }, [refreshProjects, stopPolling]);
+  }, [initStream, refreshProjects]);
 
-  const beginPolling = useCallback(
-    (projectId: string) => {
-      stopPolling();
-      pollRef.current = window.setInterval(() => {
-        webbuildStatus(projectId)
-          .then((s) => {
-            setStatus(s);
-            if (s?.healthy) {
-              setPhase('live');
-              stopPolling();
-            }
-          })
-          .catch(() => {
-            /* transient while the server boots — keep polling */
-          });
-      }, 1500);
-    },
-    [stopPolling],
-  );
-
-  const start = useCallback(
-    async (projectId: string) => {
-      setSelectedId(projectId);
-      setPhase('starting');
-      setStatus(null);
-      try {
-        setStatus(await webbuildDevStart(projectId));
-        beginPolling(projectId);
-      } catch (e) {
-        setPhase('error');
-        toastCatch('start dev server')(e);
-      }
-    },
-    [beginPolling],
-  );
-
-  const stop = useCallback(async () => {
-    if (!selectedId) return;
-    stopPolling();
-    try {
-      await webbuildDevStop(selectedId);
-    } catch (e) {
-      toastCatch('stop dev server')(e);
+  // Discover the active tab's routes once it's live (and after a reload).
+  useEffect(() => {
+    if (activeId && active?.phase === 'live') {
+      const id = activeId;
+      webbuildListRoutes(id)
+        .then((r) => setRoutesByTab((m) => ({ ...m, [id]: r })))
+        .catch(() => setRoutesByTab((m) => ({ ...m, [id]: [] })));
     }
-    setStatus(null);
-    setPhase('idle');
-  }, [selectedId, stopPolling]);
+  }, [activeId, active?.phase, activeNonce]);
 
-  // Vision-phase init: scaffold from the brief, start the dev server, and seed
-  // the build session with the vision so Athena plans + builds toward it.
-  const createWithVision = useCallback(
+  const onCreate = useCallback(
     async (name: string, vision: string) => {
-      setPhase('scaffolding');
+      setSubmitting(true);
       try {
-        const project = await webbuildScaffold(name);
+        await createWithVision(name, vision);
         await refreshProjects();
-        setPendingVision(
-          `Here's the project vision:\n\n${vision}\n\nPlan it out (emit your BUILD_PLAN), then start building — the foundation first, then the most important section. Keep me posted in a sentence or two.`,
-        );
-        await start(project.id);
-      } catch (e) {
-        setPhase('error');
-        toastCatch('scaffold project')(e);
+        setCreating(false);
+      } finally {
+        setSubmitting(false);
       }
     },
-    [refreshProjects, start],
+    [createWithVision, refreshProjects],
   );
 
-  const newProject = useCallback(() => {
-    stopPolling();
-    setSelectedId(null);
-    setStatus(null);
-    setPhase('idle');
-    setPendingVision(null);
-  }, [stopPolling]);
-
-  const reload = useCallback(() => setIframeKey((k) => k + 1), []);
-
-  const selectedName = projects.find((p) => p.id === selectedId)?.name ?? 'project';
+  const showVision = creating || tabCount === 0;
+  const live = !!active && active.phase === 'live' && !!active.status?.healthy;
+  const liveTabs = tabOrder.filter((id) => {
+    const rt = runtimes[id];
+    return !!rt && rt.phase === 'live' && !!rt.status?.healthy;
+  });
+  const activeRoute = (activeId && previewRoutes[activeId]) || '/';
+  const navRoutes = ((activeId && routesByTab[activeId]) || []).filter((r) => !r.includes('['));
+  const reloadActive = () =>
+    activeId && setIframeNonces((m) => ({ ...m, [activeId]: (m[activeId] ?? 0) + 1 }));
+  const goToRoute = (r: string) =>
+    activeId && setPreviewRoutes((m) => ({ ...m, [activeId]: r }));
 
   return (
     <div className="flex h-full w-full min-w-0 flex-col">
-      {/* Single-row toolbar — scrolls horizontally instead of forcing the
-          parent width (the cropping cause). */}
-      <header className="flex w-full min-w-0 shrink-0 items-center gap-2 overflow-x-auto whitespace-nowrap border-b border-border px-4 py-2">
-        <Bot className="h-5 w-5 shrink-0 text-primary" />
-        <h1 className="typo-title shrink-0">{COPY.title}</h1>
+      <StudioTabBar projects={projects} onNew={() => setCreating(true)} />
 
-        <Button
-          variant="primary"
-          size="sm"
-          className="shrink-0"
-          icon={<Plus className="h-4 w-4" />}
-          onClick={newProject}
-        >
-          {COPY.newProject}
-        </Button>
-
-        {projects.length > 0 && <div className="h-5 w-px shrink-0 bg-border" />}
-        {projects.map((p) => (
-          <Button
-            key={p.id}
-            variant={selectedId === p.id ? 'accent' : 'secondary'}
-            accentColor="violet"
-            size="sm"
-            className="shrink-0"
-            onClick={() => void start(p.id)}
-          >
-            {p.name}
-          </Button>
-        ))}
-
-        {phase === 'live' && status?.healthy && selectedId && (
-          <>
-            <div className="h-5 w-px shrink-0 bg-border" />
-            <Button
-              variant="secondary"
-              size="sm"
-              className="shrink-0"
-              icon={<RotateCcw className="h-4 w-4" />}
-              onClick={reload}
-            >
-              {COPY.reload}
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              className="shrink-0"
-              icon={<Square className="h-4 w-4" />}
-              onClick={() => void stop()}
-            >
-              {COPY.stop}
-            </Button>
-            {status.url && <span className="typo-caption shrink-0">{status.url}</span>}
-          </>
-        )}
-      </header>
-
-      {/* Preview fills all remaining space; min-w-0/min-h-0 + absolute iframe
-          guarantee it isn't cropped by the toolbar's content width. */}
       <div className="relative min-h-0 w-full min-w-0 flex-1 bg-black/20">
-        {phase === 'live' && status?.healthy && selectedId ? (
-          <>
-            <iframe
-              key={iframeKey}
-              src={status.url}
-              title="preview"
-              className="absolute inset-0 h-full w-full border-0 bg-white"
-            />
-            <StudioChecklist phases={phases} />
-            <StudioChatInput
-              projectId={selectedId}
-              projectName={selectedName}
-              onPhases={setPhases}
-              seed={pendingVision}
-              onSeedConsumed={() => setPendingVision(null)}
-            />
-          </>
+        {showVision ? (
+          <StudioVisionStart onSubmit={onCreate} busy={submitting} />
         ) : (
-          <StudioVisionStart
-            onSubmit={createWithVision}
-            busy={phase === 'scaffolding' || phase === 'starting'}
-            statusLabel={
-              phase === 'scaffolding'
-                ? COPY.scaffolding
-                : phase === 'starting'
-                  ? COPY.starting
-                  : undefined
-            }
-          />
+          <>
+            {/* Warm previews — every live tab stays mounted; only active is shown. */}
+            {liveTabs.map((id) => {
+              const rt = runtimes[id];
+              if (!rt || !rt.status) return null;
+              const route = previewRoutes[id] ?? '/';
+              const nonce = iframeNonces[id] ?? 0;
+              const isActive = id === activeId;
+              return (
+                <iframe
+                  key={`${id}-${nonce}`}
+                  src={`${rt.status.url}${route === '/' ? '' : route}`}
+                  title={isActive ? 'preview' : `preview-${id}`}
+                  aria-hidden={!isActive}
+                  className={`absolute inset-0 h-full w-full border-0 bg-white transition-opacity duration-200 ${
+                    isActive ? 'opacity-100' : 'pointer-events-none opacity-0'
+                  }`}
+                />
+              );
+            })}
+
+            {live && activeId && active?.status ? (
+              <>
+                <button
+                  type="button"
+                  onClick={reloadActive}
+                  aria-label="Reload preview"
+                  className="absolute left-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/85 text-foreground/70 shadow-elevation-2 backdrop-blur hover:text-foreground"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+                <div className="absolute right-3 top-3 z-20">
+                  <StudioVersions id={activeId} onRestored={reloadActive} />
+                </div>
+                {/* Cross-page nav: click a route to jump the active preview to it. */}
+                {navRoutes.length > 1 && (
+                  <div className="absolute left-1/2 top-3 z-20 flex max-w-[60%] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/85 px-2 py-1 shadow-elevation-2 backdrop-blur">
+                    {navRoutes.map((r) => (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => goToRoute(r)}
+                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                          activeRoute === r
+                            ? 'bg-primary/20 text-primary'
+                            : 'text-foreground/60 hover:text-foreground'
+                        }`}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {/* A3 — coarse orb pointer: pulse at the region the decision is about. */}
+                {active.question && active.decisionArea && (
+                  <div
+                    className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
+                      active.decisionArea === 'top'
+                        ? 'top-16'
+                        : active.decisionArea === 'bottom'
+                          ? 'bottom-32'
+                          : 'top-1/2 -translate-y-1/2'
+                    }`}
+                  >
+                    <span className="relative flex h-9 w-9 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
+                      <span className="relative flex h-9 w-9 items-center justify-center rounded-full bg-primary/25 ring-2 ring-primary backdrop-blur">
+                        <Bot className="h-4 w-4 text-primary" />
+                      </span>
+                    </span>
+                  </div>
+                )}
+                <StudioChecklist phases={active.phases} />
+                <StudioChatInput />
+              </>
+            ) : active ? (
+              <div className="absolute inset-0 flex items-center justify-center px-6">
+                <div className="flex items-center gap-3 rounded-card border border-border bg-background/80 px-5 py-4 shadow-elevation-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <span className="text-md text-foreground/80">
+                    {active.phase === 'scaffolding'
+                      ? COPY.scaffolding
+                      : active.phase === 'starting'
+                        ? COPY.starting
+                        : active.phase === 'error'
+                          ? COPY.error
+                          : active.name}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center px-6 text-center">
+                <p className="typo-caption max-w-sm">{COPY.empty}</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -528,6 +528,8 @@ pub async fn send_turn(
             &user_db,
             browser_tools,
             None,
+            None,
+            &[],
         ),
     )
     .await
@@ -562,6 +564,8 @@ pub async fn send_turn(
                     &user_db,
                     browser_tools,
                     None,
+                    None,
+                    &[],
                 ),
             )
             .await
@@ -1104,6 +1108,12 @@ pub fn spawn_proactive_turn(
 /// the two never drift.
 const COMPANION_TURN_MODEL: &str = "claude-opus-4-8";
 
+/// Reasoning effort for web-build (Studio) turns. Build sessions prefer quality
+/// over speed/cost — non-technical users can't specify the quality bars a dev
+/// would, so we lean on the model's deepest thinking. Applied only to build
+/// turns (cwd_override present), not normal companion chat.
+const BUILD_TURN_EFFORT: &str = "xhigh";
+
 /// `run_cli`'s output: the display text plus the parsed terminal `result`
 /// usage (`None` when the CLI emitted no result event — older CLI, or the turn
 /// errored before the result line).
@@ -1154,17 +1164,30 @@ BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"s
 - Keep to <=8 phases, titles <=24 chars, notes <=40 chars. Only emit BUILD_PLAN when the plan actually changed.
 
 # When to ask — this is the user's product, don't assume
-When a choice MATERIALLY shapes the product — target audience, brand voice/tone, which sections or features to include, real content (names, copy, projects, contact details), or scope/priority — and you don't already know it from the conversation, STOP and ASK instead of inventing it. Emit the question as the VERY LAST line:
-NEEDS_INPUT: <one clear, specific question; offer 2-3 concrete options when it helps>
-Ask ONE focused question at a time. Make low-stakes, reversible choices yourself (spacing, a placeholder colour, lorem you'll replace) and keep moving — reserve NEEDS_INPUT for decisions that are expensive to undo or that only the user can answer. Early on (vision, brand, audience) lean toward asking; once those are settled, lean toward building.
+Reserve questions for things ONLY THE USER KNOWS: real content (names, copy, projects, prices, contact details), target audience, brand voice, business model, or which real data/integration to wire. For those, STOP and ASK instead of inventing it — emit it as the VERY LAST line:
+NEEDS_INPUT: {"question":"<one short question, 1-2 sentences>","options":["<short concrete choice>","<short concrete choice>"]}
+Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON. When the question is about a specific part of the page, add "area":"top"|"middle"|"bottom" so the user's eye is drawn to that region of the preview.
+Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices). Do NOT ask which section/feature to build next, what order to work in, or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, audience, real content) lean toward asking; once those are settled, lean hard toward building. Budget your questions: aim for only a handful of decisions across the ENTIRE build (roughly one per major phase, at most one per turn). When unsure but the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line rather than asking.
+
+# Visual quality — best in class, never "AI-generated"
+Hold the bar of Linear, Vercel, Stripe, Apple, Framer. Obsess over typography (scale, weight, tracking, leading), spacing rhythm, colour + contrast, hierarchy, depth, and cohesion; add tasteful hover/focus/transition micro-interactions and motion where it earns its place. Generic, templated, centred-everything, "AI-looking" output is a FAILURE — every surface must feel intentional, premium, and crafted by someone who cares.
+
+# Design direction — show 3, don't guess
+At the Design Direction phase, while the look is still open, build 2-3 GENUINELY DIFFERENT visual directions for the most important surface (usually the hero / first screen) behind a temporary in-page tab switcher so they can be compared live, then ask which to commit to or adjust (NEEDS_INPUT with options like "A / B / C"). Once chosen, delete the switcher + the losing variants and carry the winner through the rest. Prototype the LOOK only (type, colour, layout mood) — not logic or structure.
+
+# Navigation
+Every multi-page site includes a footer with cross-page navigation linking all its main pages, so the whole product is clickable end-to-end and easy to review.
+
+# Self-critique before "done"
+Before marking a phase done, review it as a demanding design lead would and fix the weak spots — alignment, spacing rhythm, type hierarchy, empty/hover/focus states, mobile. Run a typecheck (tsc --noEmit) and fix errors. "Builds + typechecks" is the floor, not the bar.
 
 # Rules
 - Edit files directly with your tools; keep the change scoped to the request.
 - The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
 - Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
 
-fn build_system_prompt(project_path: &std::path::Path) -> String {
-    format!(
+fn build_system_prompt(project_path: &std::path::Path, style: Option<&str>) -> String {
+    let base = format!(
         "You are Athena's web-build engine — a focused coding agent working inside the local \
 web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
 already running that hot-reloads on every file save, so the user sees your changes \
@@ -1174,7 +1197,14 @@ quality.\n\n\
         path = project_path.display(),
         doctrine = WEB_BUILD_DOCTRINE,
         instruction = BUILD_PLAN_INSTRUCTION,
-    )
+    );
+    // Optional user-chosen voice (the C4 style picker). Balanced / None = default.
+    let voice = match style {
+        Some("concise") => "\n\n# Voice\nKeep replies terse — one-sentence summaries, minimal explanation. The user watches the live preview, so show rather than tell.",
+        Some("teaching") => "\n\n# Voice\nBriefly explain your key choices in plain language as you go, so a non-technical user learns what's happening — keep it skimmable, never a lecture.",
+        _ => "",
+    };
+    format!("{base}{voice}")
 }
 
 /// Run one build-session turn: a project-rooted Claude Code turn that edits the
@@ -1188,11 +1218,17 @@ pub async fn run_build_turn(
     project_id: &str,
     project_path: &std::path::Path,
     user_message: &str,
+    // Per-turn build controls (C1 effort knob, C4 voice/style picker). `None` →
+    // defaults (deepest effort, balanced voice).
+    effort: Option<&str>,
+    style: Option<&str>,
+    // C8 — per-project MCP connectors to load this turn.
+    mcp: &[String],
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
     let claude_session_id = read_claude_session_id(user_db, &session_id)?;
-    let system_prompt = build_system_prompt(project_path);
+    let system_prompt = build_system_prompt(project_path, style);
 
     let text = match timeout(
         TURN_TIMEOUT,
@@ -1206,6 +1242,8 @@ pub async fn run_build_turn(
             user_db,
             false,
             Some(project_path),
+            effort,
+            mcp,
         ),
     )
     .await
@@ -1227,6 +1265,8 @@ pub async fn run_build_turn(
                     user_db,
                     false,
                     Some(project_path),
+                    effort,
+                    mcp,
                 ),
             )
             .await
@@ -1238,8 +1278,10 @@ pub async fn run_build_turn(
     };
 
     // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
-    let (reply, phases, question) = crate::webbuild::plan::extract_build_turn(&text);
-    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question })
+    let (reply, phases, question, options, area) = crate::webbuild::plan::extract_build_turn(&text);
+    // C7 — snapshot this turn into the project's git history (best-effort).
+    crate::webbuild::versions::commit_snapshot(project_path, &reply);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question, options, area })
 }
 
 async fn run_cli(
@@ -1256,6 +1298,11 @@ async fn run_cli(
     // project's CLAUDE.md). `Some(path)` roots the turn in a project directory
     // (web-build build sessions — P2 of the web-dev companion).
     cwd_override: Option<&std::path::Path>,
+    // Reasoning effort for build turns (cwd_override present). `None` → the
+    // default `BUILD_TURN_EFFORT`. Ignored for non-build (companion-chat) turns.
+    build_effort: Option<&str>,
+    // Per-project MCP connectors to load on a build turn (C8). Empty = none.
+    mcp: &[String],
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1299,6 +1346,18 @@ async fn run_cli(
         prompt_file.to_string_lossy().to_string(),
     ]);
 
+    // Build-session turns prioritise quality — pin reasoning effort. User-tunable
+    // per turn via the effort knob (C1); defaults to the deepest level. Validated
+    // against the known levels so we never inject an arbitrary flag value.
+    if cwd_override.is_some() {
+        let effort = match build_effort {
+            Some(e) if matches!(e, "low" | "medium" | "high" | "xhigh") => e,
+            _ => BUILD_TURN_EFFORT,
+        };
+        argv.push("--effort".into());
+        argv.push(effort.into());
+    }
+
     // Browser-test turns: hand this single CLI spawn browser tools via MCP —
     // the browser-bridge endpoint (user's real Chrome through the paired
     // extension) when one is connected, else the bundled Playwright MCP.
@@ -1318,6 +1377,21 @@ async fn run_cli(
                 error = %e,
                 "browser-test turn: failed to build browser MCP config; running without browser tools"
             ),
+        }
+    }
+
+    // Build turns can load per-project MCP connectors the user toggled on (C8).
+    let mut _build_mcp_config_file: Option<tempfile::NamedTempFile> = None;
+    if cwd_override.is_some() && !mcp.is_empty() {
+        if let Some(cfg) = crate::webbuild::mcp::build_config(mcp) {
+            if let Ok(mut f) = tempfile::Builder::new().suffix(".json").tempfile() {
+                use std::io::Write as _;
+                if write!(f, "{cfg}").is_ok() {
+                    argv.push("--mcp-config".into());
+                    argv.push(f.path().to_string_lossy().to_string());
+                    _build_mcp_config_file = Some(f);
+                }
+            }
         }
     }
 
