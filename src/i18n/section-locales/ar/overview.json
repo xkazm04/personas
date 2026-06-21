@@ -1777,5 +1777,22 @@
     "sourced_tip": "يستشهد بـ {count} مصدر يمكنك تتبعه والتحقق منه.",
     "unsourced": "غير موثّق",
     "unsourced_tip": "يتضمن هذا التقرير أرقاماً دون قسم Sources — لا يمكن تتبعها إلى مصدرها."
+  },
+  "llm_spend": {
+    "by_source": "التكلفة حسب المستوى",
+    "by_trigger": "التكلفة حسب المهمة",
+    "calls": "الاستدعاءات",
+    "cost_per_day": "التكلفة اليومية",
+    "errors": "الأخطاء",
+    "no_activity": "لا توجد استدعاءات LLM تلقائية مسجّلة في هذه الفترة",
+    "section_hint": "الماسحات والمقيّمات والمولّدات",
+    "section_title": "إنفاق LLM التلقائي",
+    "source_design": "التصميم",
+    "source_evaluator": "المقيّمات",
+    "source_kpi": "KPI",
+    "source_recipe": "الوصفات",
+    "source_scanner": "الماسحات",
+    "tokens": "الرموز",
+    "total_cost": "التكلفة الإجمالية"
   }
 }

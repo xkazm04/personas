@@ -1777,5 +1777,22 @@
     "sourced_tip": "{count} स्रोत(ों) का उद्धरण जिन्हें आप ट्रेस और ऑडिट कर सकते हैं।",
     "unsourced": "बिना स्रोत के",
     "unsourced_tip": "इस रिपोर्ट में आंकड़े हैं लेकिन कोई Sources अनुभाग नहीं है — इन्हें उनके मूल तक ट्रेस नहीं किया जा सकता।"
+  },
+  "llm_spend": {
+    "by_source": "स्तर के अनुसार लागत",
+    "by_trigger": "कार्य के अनुसार लागत",
+    "calls": "कॉल्स",
+    "cost_per_day": "प्रति दिन लागत",
+    "errors": "त्रुटियाँ",
+    "no_activity": "इस अवधि में कोई स्वचालित LLM कॉल दर्ज नहीं हुई",
+    "section_hint": "स्कैनर, मूल्यांकनकर्ता और जनरेटर",
+    "section_title": "स्वचालित LLM व्यय",
+    "source_design": "डिज़ाइन",
+    "source_evaluator": "मूल्यांकनकर्ता",
+    "source_kpi": "KPI",
+    "source_recipe": "रेसिपी",
+    "source_scanner": "स्कैनर",
+    "tokens": "टोकन",
+    "total_cost": "कुल लागत"
   }
 }

@@ -1777,5 +1777,22 @@
     "sourced_tip": "Trích dẫn {count} nguồn bạn có thể truy vết và kiểm tra.",
     "unsourced": "Không có nguồn",
     "unsourced_tip": "Báo cáo này có số liệu nhưng không có mục Sources — không thể truy nguyên nguồn gốc của chúng."
+  },
+  "llm_spend": {
+    "by_source": "Chi phí theo cấp độ",
+    "by_trigger": "Chi phí theo nhiệm vụ",
+    "calls": "Lượt gọi",
+    "cost_per_day": "Chi phí mỗi ngày",
+    "errors": "Lỗi",
+    "no_activity": "Không có lượt gọi LLM tự động nào được ghi lại trong khoảng thời gian này",
+    "section_hint": "Trình quét, đánh giá & tạo sinh",
+    "section_title": "Chi phí LLM tự động",
+    "source_design": "Thiết kế",
+    "source_evaluator": "Đánh giá",
+    "source_kpi": "KPI",
+    "source_recipe": "Công thức",
+    "source_scanner": "Trình quét",
+    "tokens": "Token",
+    "total_cost": "Tổng chi phí"
   }
 }

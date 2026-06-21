@@ -7255,6 +7255,23 @@
       "sourced_tip": "{count}개의 출처를 추적하고 감사할 수 있습니다.",
       "unsourced": "출처 없음",
       "unsourced_tip": "이 보고서에는 수치가 포함되어 있지만 Sources 섹션이 없습니다 — 출처를 추적할 수 없습니다."
+    },
+    "llm_spend": {
+      "by_source": "티어별 비용",
+      "by_trigger": "작업별 비용",
+      "calls": "호출 수",
+      "cost_per_day": "일별 비용",
+      "errors": "오류",
+      "no_activity": "이 기간에 기록된 자동 LLM 호출이 없습니다",
+      "section_hint": "스캐너, 평가기 및 생성기",
+      "section_title": "자동 LLM 지출",
+      "source_design": "디자인",
+      "source_evaluator": "평가기",
+      "source_kpi": "KPI",
+      "source_recipe": "레시피",
+      "source_scanner": "스캐너",
+      "tokens": "토큰",
+      "total_cost": "총 비용"
     }
   },
   "matrix_v3": {

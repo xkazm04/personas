@@ -7255,6 +7255,23 @@
       "sourced_tip": "Cita {count} fuente(s) que puedes rastrear y auditar.",
       "unsourced": "Sin fuentes",
       "unsourced_tip": "Este informe incluye cifras pero no tiene sección Sources — no se pueden rastrear hasta su origen."
+    },
+    "llm_spend": {
+      "by_source": "Coste por nivel",
+      "by_trigger": "Coste por tarea",
+      "calls": "Llamadas",
+      "cost_per_day": "Coste por día",
+      "errors": "Errores",
+      "no_activity": "No se registraron llamadas LLM automáticas en este período",
+      "section_hint": "Escáneres, evaluadores y generadores",
+      "section_title": "Gasto LLM Automático",
+      "source_design": "Diseño",
+      "source_evaluator": "Evaluadores",
+      "source_kpi": "KPI",
+      "source_recipe": "Recetas",
+      "source_scanner": "Escáneres",
+      "tokens": "Tokens",
+      "total_cost": "Coste total"
     }
   },
   "matrix_v3": {

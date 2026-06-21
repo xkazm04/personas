@@ -1777,5 +1777,22 @@
     "sourced_tip": "Zitiert {count} Quelle(n), die du nachverfolgen und prüfen kannst.",
     "unsourced": "Ohne Quellenangabe",
     "unsourced_tip": "Dieser Bericht enthält Zahlen, aber keinen Sources-Abschnitt — sie lassen sich nicht auf ihren Ursprung zurückverfolgen."
+  },
+  "llm_spend": {
+    "by_source": "Kosten nach Stufe",
+    "by_trigger": "Kosten nach Aufgabe",
+    "calls": "Aufrufe",
+    "cost_per_day": "Kosten pro Tag",
+    "errors": "Fehler",
+    "no_activity": "Keine automatischen LLM-Aufrufe in diesem Zeitraum aufgezeichnet",
+    "section_hint": "Scanner, Evaluatoren & Generatoren",
+    "section_title": "Automatische LLM-Ausgaben",
+    "source_design": "Design",
+    "source_evaluator": "Evaluatoren",
+    "source_kpi": "KPI",
+    "source_recipe": "Rezepte",
+    "source_scanner": "Scanner",
+    "tokens": "Tokens",
+    "total_cost": "Gesamtkosten"
   }
 }

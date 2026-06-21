@@ -1777,5 +1777,22 @@
     "sourced_tip": "{count}件のソースを参照しており、追跡・監査が可能です。",
     "unsourced": "ソースなし",
     "unsourced_tip": "このレポートには数値が含まれていますが、Sources セクションがないため、出所を遡ることができません。"
+  },
+  "llm_spend": {
+    "by_source": "ティア別コスト",
+    "by_trigger": "タスク別コスト",
+    "calls": "呼び出し回数",
+    "cost_per_day": "1日あたりのコスト",
+    "errors": "エラー",
+    "no_activity": "この期間にバックグラウンドLLM呼び出しの記録はありません",
+    "section_hint": "スキャナー・評価器・ジェネレーター",
+    "section_title": "バックグラウンド LLM 使用コスト",
+    "source_design": "デザイン",
+    "source_evaluator": "評価器",
+    "source_kpi": "KPI",
+    "source_recipe": "レシピ",
+    "source_scanner": "スキャナー",
+    "tokens": "トークン",
+    "total_cost": "合計コスト"
   }
 }

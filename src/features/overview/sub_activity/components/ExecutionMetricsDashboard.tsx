@@ -11,6 +11,7 @@ import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
 import { ValueRollupSection } from './ValueRollupSection';
 import { AthenaUsageSection } from './AthenaUsageSection';
+import { LlmSpendSection } from './LlmSpendSection';
 
 interface ExecutionMetricsDashboardProps {
   onClose?: () => void;
@@ -95,6 +96,9 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
 
       {/* Athena's own usage lane — what the assistant costs, by action type */}
       <AthenaUsageSection fleetCost={m.data.total_cost} />
+
+      {/* Headless LLM spend lane — scanners / evaluators / generators (tiger #1) */}
+      <LlmSpendSection />
 
       {/* Business-value rollup (value-delivered rate, cost-per-value, outcomes) */}
       <ValueRollupSection days={m.days} />

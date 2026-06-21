@@ -6543,6 +6543,23 @@
       "resume_subtitle": "Pick up where you left off",
       "knowledge_hub": "Knowledge Hub"
     },
+    "llm_spend": {
+      "section_title": "Headless LLM Spend",
+      "section_hint": "Scanners, evaluators & generators",
+      "no_activity": "No headless LLM calls recorded in this window",
+      "total_cost": "Total cost",
+      "calls": "Calls",
+      "tokens": "Tokens",
+      "errors": "Errors",
+      "by_source": "Cost by tier",
+      "by_trigger": "Cost by task",
+      "cost_per_day": "Cost per day",
+      "source_scanner": "Scanners",
+      "source_evaluator": "Evaluators",
+      "source_design": "Design",
+      "source_kpi": "KPI",
+      "source_recipe": "Recipes"
+    },
     "athena": {
       "section_title": "Athena",
       "section_hint": "Your assistant's own usage",

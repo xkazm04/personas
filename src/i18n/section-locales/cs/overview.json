@@ -1777,5 +1777,22 @@
     "sourced_tip": "Cituje {count} zdroj(e), které lze dohledat a ověřit.",
     "unsourced": "Bez zdrojů",
     "unsourced_tip": "Tato zpráva obsahuje čísla, ale žádnou sekci Sources — nelze je zpětně dohledat k jejich původu."
+  },
+  "llm_spend": {
+    "by_source": "Náklady podle úrovně",
+    "by_trigger": "Náklady podle úkolu",
+    "calls": "Volání",
+    "cost_per_day": "Náklady za den",
+    "errors": "Chyby",
+    "no_activity": "V tomto období nebyla zaznamenána žádná automatická volání LLM",
+    "section_hint": "Skenery, vyhodnocovače a generátory",
+    "section_title": "Automatické výdaje LLM",
+    "source_design": "Design",
+    "source_evaluator": "Vyhodnocovače",
+    "source_kpi": "KPI",
+    "source_recipe": "Recepty",
+    "source_scanner": "Skenery",
+    "tokens": "Tokeny",
+    "total_cost": "Celkové náklady"
   }
 }

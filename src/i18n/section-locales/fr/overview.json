@@ -1777,5 +1777,22 @@
     "sourced_tip": "Cite {count} source(s) que vous pouvez tracer et auditer.",
     "unsourced": "Sans source",
     "unsourced_tip": "Ce rapport contient des chiffres mais aucune section Sources — ils ne peuvent pas être retracés jusqu'à leur origine."
+  },
+  "llm_spend": {
+    "by_source": "Coût par niveau",
+    "by_trigger": "Coût par tâche",
+    "calls": "Appels",
+    "cost_per_day": "Coût par jour",
+    "errors": "Erreurs",
+    "no_activity": "Aucun appel LLM automatique enregistré sur cette période",
+    "section_hint": "Analyseurs, évaluateurs & générateurs",
+    "section_title": "Dépenses LLM automatiques",
+    "source_design": "Design",
+    "source_evaluator": "Évaluateurs",
+    "source_kpi": "KPI",
+    "source_recipe": "Recettes",
+    "source_scanner": "Analyseurs",
+    "tokens": "Tokens",
+    "total_cost": "Coût total"
   }
 }

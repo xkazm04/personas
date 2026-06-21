@@ -6549,6 +6549,23 @@ export type Translations = {
       resume_subtitle: string;
       knowledge_hub: string;
     };
+    llm_spend: {
+      section_title: string;
+      section_hint: string;
+      no_activity: string;
+      total_cost: string;
+      calls: string;
+      tokens: string;
+      errors: string;
+      by_source: string;
+      by_trigger: string;
+      cost_per_day: string;
+      source_scanner: string;
+      source_evaluator: string;
+      source_design: string;
+      source_kpi: string;
+      source_recipe: string;
+    };
     athena: {
       section_title: string;
       section_hint: string;

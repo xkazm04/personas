@@ -1777,5 +1777,22 @@
     "sourced_tip": "{count}টি উৎস উদ্ধৃত করে যা আপনি ট্রেস ও অডিট করতে পারবেন।",
     "unsourced": "উৎসবিহীন",
     "unsourced_tip": "এই রিপোর্টে সংখ্যা আছে কিন্তু কোনো Sources বিভাগ নেই — এগুলো তাদের উৎসে ফিরিয়ে নিয়ে যাওয়া সম্ভব নয়।"
+  },
+  "llm_spend": {
+    "by_source": "স্তর অনুযায়ী খরচ",
+    "by_trigger": "কাজ অনুযায়ী খরচ",
+    "calls": "কল",
+    "cost_per_day": "প্রতিদিনের খরচ",
+    "errors": "ত্রুটি",
+    "no_activity": "এই সময়ে কোনো স্বয়ংক্রিয় LLM কল রেকর্ড হয়নি",
+    "section_hint": "স্ক্যানার, মূল্যায়নকারী ও জেনারেটর",
+    "section_title": "স্বয়ংক্রিয় LLM ব্যয়",
+    "source_design": "ডিজাইন",
+    "source_evaluator": "মূল্যায়নকারী",
+    "source_kpi": "KPI",
+    "source_recipe": "রেসিপি",
+    "source_scanner": "স্ক্যানার",
+    "tokens": "টোকেন",
+    "total_cost": "মোট খরচ"
   }
 }

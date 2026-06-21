@@ -1777,5 +1777,22 @@
     "sourced_tip": "Mengutip {count} sumber yang dapat Anda lacak dan audit.",
     "unsourced": "Tanpa sumber",
     "unsourced_tip": "Laporan ini mencakup angka-angka tetapi tidak ada bagian Sources — tidak dapat dilacak kembali ke asalnya."
+  },
+  "llm_spend": {
+    "by_source": "Biaya per tier",
+    "by_trigger": "Biaya per tugas",
+    "calls": "Panggilan",
+    "cost_per_day": "Biaya per hari",
+    "errors": "Kesalahan",
+    "no_activity": "Tidak ada panggilan LLM otomatis yang tercatat dalam periode ini",
+    "section_hint": "Pemindai, evaluator & generator",
+    "section_title": "Pengeluaran LLM Otomatis",
+    "source_design": "Desain",
+    "source_evaluator": "Evaluator",
+    "source_kpi": "KPI",
+    "source_recipe": "Resep",
+    "source_scanner": "Pemindai",
+    "tokens": "Token",
+    "total_cost": "Total biaya"
   }
 }

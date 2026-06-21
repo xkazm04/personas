@@ -7255,6 +7255,23 @@
       "sourced_tip": "引用了 {count} 个可追溯和审计的来源。",
       "unsourced": "无来源",
       "unsourced_tip": "此报告包含数据，但无 Sources 章节——无法追溯其来源。"
+    },
+    "llm_spend": {
+      "by_source": "按层级划分成本",
+      "by_trigger": "按任务划分成本",
+      "calls": "调用次数",
+      "cost_per_day": "每日成本",
+      "errors": "错误",
+      "no_activity": "此时间段内无后台 LLM 调用记录",
+      "section_hint": "扫描器、评估器与生成器",
+      "section_title": "后台 LLM 支出",
+      "source_design": "设计",
+      "source_evaluator": "评估器",
+      "source_kpi": "KPI",
+      "source_recipe": "配方",
+      "source_scanner": "扫描器",
+      "tokens": "令牌",
+      "total_cost": "总成本"
     }
   },
   "matrix_v3": {
