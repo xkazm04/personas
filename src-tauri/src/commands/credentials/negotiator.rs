@@ -96,6 +96,7 @@ pub async fn start_credential_negotiation(
             track_pid: true,
             messages: NEGOTIATION_MESSAGES,
             extractor: credential_negotiator::extract_negotiation_result,
+            spend: None,
         })
         .await;
     });

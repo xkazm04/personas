@@ -315,6 +315,7 @@ pub async fn start_automation_design(
             track_pid: true,
             messages: AUTOMATION_DESIGN_MESSAGES,
             extractor: extract_automation_design_result,
+            spend: None,
         })
         .await;
     });

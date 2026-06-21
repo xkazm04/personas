@@ -8,7 +8,9 @@ static PLACEHOLDER_RE: LazyLock<Regex> =
 use serde_json::json;
 use tauri::{Emitter, State};
 
-use crate::commands::credentials::ai_artifact_flow::{spawn_ai_artifact_task, AiArtifactParams};
+use crate::commands::credentials::ai_artifact_flow::{
+    spawn_ai_artifact_task, AiArtifactParams, ArtifactSpend,
+};
 use crate::commands::credentials::shared::build_credential_task_cli_args;
 use crate::db::models::{
     CreatePersonaRecipeLinkInput, CreateRecipeInput, PersonaRecipeLink, RecipeDefinition,
@@ -231,6 +233,14 @@ pub async fn start_recipe_execution(
         track_pid: false,
         messages: recipe_execution::RECIPE_EXECUTION_MESSAGES,
         extractor: recipe_execution::extract_recipe_execution_result,
+        spend: Some(ArtifactSpend {
+            pool: state.db.clone(),
+            source: "recipe".into(),
+            trigger_kind: "recipe_execution".into(),
+            model: None,
+            persona_id: None,
+            project_id: None,
+        }),
     });
 
     Ok(json!({ "execution_id": execution_id }))
@@ -310,6 +320,14 @@ pub async fn start_recipe_generation(
         track_pid: false,
         messages: recipe_generation::RECIPE_GENERATION_MESSAGES,
         extractor: recipe_generation::extract_recipe_generation_result,
+        spend: Some(ArtifactSpend {
+            pool: state.db.clone(),
+            source: "recipe".into(),
+            trigger_kind: "recipe_generation".into(),
+            model: None,
+            persona_id: None,
+            project_id: None,
+        }),
     });
 
     Ok(json!({ "generation_id": generation_id }))
@@ -449,6 +467,14 @@ pub async fn start_recipe_versioning(
         track_pid: false,
         messages: recipe_versioning::RECIPE_VERSIONING_MESSAGES,
         extractor: recipe_versioning::extract_recipe_versioning_result,
+        spend: Some(ArtifactSpend {
+            pool: state.db.clone(),
+            source: "recipe".into(),
+            trigger_kind: "recipe_versioning".into(),
+            model: None,
+            persona_id: None,
+            project_id: None,
+        }),
     });
 
     Ok(json!({ "versioning_id": versioning_id }))

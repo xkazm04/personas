@@ -15,7 +15,7 @@ use crate::error::AppError;
 use crate::AppState;
 
 use super::ai_artifact_flow::{
-    run_ai_artifact_task, run_claude_prompt, AiArtifactMessages, AiArtifactParams,
+    run_ai_artifact_task, run_claude_prompt, AiArtifactMessages, AiArtifactParams, ArtifactSpend,
 };
 use super::shared::build_credential_task_cli_args;
 use crate::engine::event_registry::event_name;
@@ -80,6 +80,7 @@ pub async fn start_credential_design(
     );
 
     let design_id_clone = design_id.clone();
+    let spend_pool = state.db.clone();
 
     tokio::spawn(async move {
         run_ai_artifact_task(AiArtifactParams {
@@ -92,6 +93,14 @@ pub async fn start_credential_design(
             track_pid: true,
             messages: DESIGN_MESSAGES,
             extractor: credential_design::extract_credential_design_result,
+            spend: Some(ArtifactSpend {
+                pool: spend_pool,
+                source: "design".into(),
+                trigger_kind: "credential_design".into(),
+                model: None,
+                persona_id: None,
+                project_id: None,
+            }),
         })
         .await;
     });

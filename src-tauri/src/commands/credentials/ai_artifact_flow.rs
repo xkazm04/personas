@@ -62,6 +62,19 @@ pub struct AiArtifactMessages {
 
 // -- Task parameters ----------------------------------------------
 
+/// Optional spend-recording metadata (tiger #1). When present,
+/// `run_ai_artifact_task` records the call's model/tokens/cost in the
+/// `dev_llm_spend` ledger after the spawn. Owned, because the task outlives the
+/// caller (it runs on a detached tokio task).
+pub struct ArtifactSpend {
+    pub pool: crate::db::DbPool,
+    pub source: String,
+    pub trigger_kind: String,
+    pub model: Option<String>,
+    pub persona_id: Option<String>,
+    pub project_id: Option<String>,
+}
+
 /// Everything needed to run a single AI artifact generation task.
 pub struct AiArtifactParams {
     pub app: tauri::AppHandle,
@@ -78,6 +91,8 @@ pub struct AiArtifactParams {
     /// Pluggable extractor: given the full LLM text output, return the parsed
     /// JSON artifact or `None` on failure.
     pub extractor: fn(&str) -> Option<serde_json::Value>,
+    /// Optional spend recording (tiger #1). `None` = don't record.
+    pub spend: Option<ArtifactSpend>,
 }
 
 // -- Emit helpers -------------------------------------------------
@@ -174,6 +189,7 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
         track_pid,
         messages,
         extractor,
+        spend,
     } = params;
 
     let pid_tracker: Option<(&ActiveProcessRegistry, &str)> = if track_pid {
@@ -307,6 +323,20 @@ pub async fn run_ai_artifact_task(params: AiArtifactParams) {
             );
         }
         Ok(spawn_result) => {
+            // tiger #1: record headless spend (best-effort) before extraction.
+            if let (Some(s), Some(rl)) = (&spend, &spawn_result.result_line) {
+                crate::db::repos::llm_spend::observe_line(
+                    &s.pool,
+                    &crate::db::repos::llm_spend::SpendCtx {
+                        source: s.source.as_str(),
+                        trigger_kind: s.trigger_kind.as_str(),
+                        model: s.model.as_deref(),
+                        persona_id: s.persona_id.as_deref(),
+                        project_id: s.project_id.as_deref(),
+                    },
+                    rl,
+                );
+            }
             if !spawn_result.stderr_output.trim().is_empty() {
                 tracing::warn!(
                     task_id = %task_id,
