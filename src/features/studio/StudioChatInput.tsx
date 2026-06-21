@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownR
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
 import StudioDecision from './StudioDecision';
+import StudioQuickActions from './StudioQuickActions';
 
 // Project-scoped chat: reads the ACTIVE tab's runtime from the store, so the
 // input + bubble always reflect the active project; switching tabs swaps them,
@@ -79,6 +80,8 @@ export default function StudioChatInput() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {!working && !question && <StudioQuickActions id={activeId} />}
 
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-4 pr-1.5 shadow-elevation-3 backdrop-blur">
         <input
