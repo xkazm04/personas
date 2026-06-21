@@ -1,0 +1,6 @@
+[
+  {
+    "slug": "mk",
+    "vision": "Turn this repo into a polished multi-page showcase with FIVE distinct pages, plus a shared header (and footer) navigation that links all of them so they're clickable end to end. The five pages: (1) the home (/) is a tech product landing for a developer tool; (2) /marketing is a friendly, colourful product marketing page for a consumer app; (3) /dashboard is a data dashboard that reads local sample data and shows charts and KPIs; (4) /pipeline is an animated, scroll-driven explainer of a fully automated LLM development pipeline; (5) /mindmap is an interactive mindmap canvas where you can add, drag, and connect nodes. Each page should feel distinct and best-in-class. Build all five pages and the shared navigation."
+  }
+]

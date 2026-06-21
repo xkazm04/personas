@@ -197,6 +197,13 @@ function withScaffoldLock(fn) {
 }
 
 async function scaffold(project) {
+  // STUDIO_PROJECT_DIR=<path> builds INTO an existing repo (e.g. mk) as pages,
+  // instead of scaffolding a fresh project. No create-next-app.
+  if (process.env.STUDIO_PROJECT_DIR) {
+    project.dir = process.env.STUDIO_PROJECT_DIR;
+    log(project.slug, `using existing project dir: ${project.dir}`);
+    return existsSync(join(project.dir, 'package.json'));
+  }
   project.dir = join(PROJ_ROOT, project.slug);
   if (existsSync(join(project.dir, 'package.json'))) {
     log(project.slug, 'scaffold: already present, skipping');
