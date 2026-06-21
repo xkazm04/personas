@@ -74,7 +74,16 @@ pub async fn dev_tools_compose_kpi_measure(
     let kpi = repo::get_kpi(&state.db, &kpi_id)?;
     let project = repo::get_project_by_id(&state.db, &kpi.project_id)?;
     let prompt_text = build_measure_compose_prompt(&kpi);
-    launch_compose(app, project.root_path, prompt_text)
+    launch_compose(
+        app,
+        project.root_path,
+        prompt_text,
+        Some(ComposeSpend {
+            pool: state.db.clone(),
+            trigger_kind: "kpi_compose",
+            project_id: Some(kpi.project_id.clone()),
+        }),
+    )
 }
 
 /// Propose a complete KPI (metadata + tested measurement) from a one-line intent.
@@ -96,7 +105,16 @@ pub async fn dev_tools_propose_kpi(
     let project = repo::get_project_by_id(&state.db, &project_id)?;
     let scope = scope_block(&state.db, &project_id, context_group_id.as_deref(), context_id.as_deref());
     let prompt_text = build_propose_prompt(&project.name, &scope, intent.trim());
-    launch_compose(app, project.root_path, prompt_text)
+    launch_compose(
+        app,
+        project.root_path,
+        prompt_text,
+        Some(ComposeSpend {
+            pool: state.db.clone(),
+            trigger_kind: "kpi_propose",
+            project_id: Some(project_id.clone()),
+        }),
+    )
 }
 
 /// Create a PROPOSED KPI from structured metadata and (for the codebase
@@ -227,10 +245,20 @@ pub async fn dev_tools_cancel_kpi_compose(
 // Launch + run
 // =============================================================================
 
+/// Optional spend-recording for a compose run (tiger #1). Owned — the run
+/// happens on a detached tokio task. `trigger_kind` is `kpi_compose` (measure)
+/// or `kpi_propose`.
+struct ComposeSpend {
+    pool: crate::db::DbPool,
+    trigger_kind: &'static str,
+    project_id: Option<String>,
+}
+
 fn launch_compose(
     app: tauri::AppHandle,
     root_path: String,
     prompt_text: String,
+    spend: Option<ComposeSpend>,
 ) -> Result<Value, AppError> {
     let task_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
@@ -242,7 +270,7 @@ fn launch_compose(
     tokio::spawn(async move {
         let result = tokio::select! {
             _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
-            res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text) => res,
+            res = run_compose(&app_handle, &task_for_run, &root_path, prompt_text, spend) => res,
         };
         match result {
             Ok(true) => KPI_COMPOSE_JOBS.set_status(&app_handle, &task_for_run, "completed", None),
@@ -283,9 +311,14 @@ fn launch_compose_apply(
     let app_handle = app.clone();
     let task = task_id.clone();
     tokio::spawn(async move {
+        let spend = Some(ComposeSpend {
+            pool: pool.clone(),
+            trigger_kind: "kpi_compose",
+            project_id: None,
+        });
         let result = tokio::select! {
             _ = cancel_token.cancelled() => Err(AppError::Internal("compose cancelled".into())),
-            res = run_compose(&app_handle, &task, &root_path, prompt_text) => res,
+            res = run_compose(&app_handle, &task, &root_path, prompt_text, spend) => res,
         };
         match result {
             Ok(true) => {
@@ -358,6 +391,7 @@ async fn run_compose(
     task_id: &str,
     root_path: &str,
     prompt_text: String,
+    spend: Option<ComposeSpend>,
 ) -> Result<bool, AppError> {
     KPI_COMPOSE_JOBS.emit_line(app, task_id, "[Milestone] Composing & testing measurement…");
 
@@ -429,6 +463,20 @@ async fn run_compose(
         std::time::Duration::from_secs(COMPOSE_TIMEOUT_SECS),
         async {
             while let Ok(Some(line)) = reader.next_line().await {
+                // tiger #1: record the headless spend `result` line (no-op otherwise).
+                if let Some(cs) = spend.as_ref() {
+                    crate::db::repos::llm_spend::observe_line(
+                        &cs.pool,
+                        &crate::db::repos::llm_spend::SpendCtx {
+                            source: "kpi",
+                            trigger_kind: cs.trigger_kind,
+                            model: Some("claude-sonnet-4-6"),
+                            project_id: cs.project_id.as_deref(),
+                            persona_id: None,
+                        },
+                        &line,
+                    );
+                }
                 let Some(text) = extract_display_text(&line) else { continue };
                 let trimmed = text.trim();
                 if trimmed.is_empty() {
