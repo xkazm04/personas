@@ -7,6 +7,7 @@ import StudioTabBar from './StudioTabBar';
 import StudioChecklist from './StudioChecklist';
 import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
+import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
@@ -130,6 +131,9 @@ export default function StudioPage() {
                 >
                   <RotateCcw className="h-4 w-4" />
                 </button>
+                <div className="absolute right-3 top-3 z-20">
+                  <StudioVersions id={activeId} onRestored={reloadActive} />
+                </div>
                 {/* Cross-page nav: click a route to jump the active preview to it. */}
                 {navRoutes.length > 1 && (
                   <div className="absolute left-1/2 top-3 z-20 flex max-w-[60%] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/85 px-2 py-1 shadow-elevation-2 backdrop-blur">

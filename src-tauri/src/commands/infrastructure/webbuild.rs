@@ -100,6 +100,29 @@ pub fn webbuild_list_routes(
     crate::webbuild::routes::list_routes(std::path::Path::new(&project.root_path))
 }
 
+/// List recent build-turn snapshots (C7 version history), newest first.
+#[tauri::command]
+pub fn webbuild_list_versions(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<crate::webbuild::versions::BuildVersion>, AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::versions::list_versions(std::path::Path::new(&project.root_path))
+}
+
+/// Restore the project's files to a prior snapshot (C7). Keeps git history.
+#[tauri::command]
+pub fn webbuild_restore_version(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    sha: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let project = repo::get_project_by_id(&state.db, &project_id)?;
+    crate::webbuild::versions::restore(std::path::Path::new(&project.root_path), &sha)
+}
+
 /// Send a build instruction to a project's build session — a project-rooted
 /// Claude Code turn (Athena) that edits the project's code. Streams progress on
 /// `companion://stream` keyed by session id `webbuild:<project_id>`; returns

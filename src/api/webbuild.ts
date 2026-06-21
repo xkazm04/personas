@@ -2,6 +2,7 @@ import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import type { BuildTurnResult } from '@/lib/bindings/BuildTurnResult';
+import type { BuildVersion } from '@/lib/bindings/BuildVersion';
 
 // Web-build runtime IPC (Athena web-dev companion, P0/P1). Project rows reuse
 // the Dev Tools registry; dev servers live in the Rust `webbuild` module.
@@ -58,3 +59,11 @@ export const webbuildSessionSend = (
 /** The generated project's app-router routes (for the preview route switcher). */
 export const webbuildListRoutes = (projectId: string) =>
   invokeWithTimeout<string[]>('webbuild_list_routes', { projectId });
+
+/** C7 — recent build-turn snapshots (version history), newest first. */
+export const webbuildListVersions = (projectId: string) =>
+  invokeWithTimeout<BuildVersion[]>('webbuild_list_versions', { projectId });
+
+/** C7 — restore the project's files to a prior snapshot. */
+export const webbuildRestoreVersion = (projectId: string, sha: string) =>
+  invokeWithTimeout<void>('webbuild_restore_version', { projectId, sha });

@@ -1273,6 +1273,8 @@ pub async fn run_build_turn(
 
     // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
     let (reply, phases, question, options, area) = crate::webbuild::plan::extract_build_turn(&text);
+    // C7 — snapshot this turn into the project's git history (best-effort).
+    crate::webbuild::versions::commit_snapshot(project_path, &reply);
     Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question, options, area })
 }
 
