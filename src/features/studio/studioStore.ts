@@ -10,6 +10,8 @@ import {
   webbuildScaffold,
   webbuildSessionSend,
   webbuildStatus,
+  type BuildEffort,
+  type BuildStyle,
 } from '@/api/webbuild';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
@@ -37,6 +39,9 @@ export interface ProjectRuntime {
   seedPending: string | null;
   autoTurns: number;
   resumeAuto: boolean;
+  /** Per-turn build controls (C1 effort, C4 voice/style). */
+  effort: BuildEffort;
+  style: BuildStyle;
 }
 
 const AUTO_MAX_TURNS = 12;
@@ -59,6 +64,7 @@ interface StudioStore {
   createWithVision: (name: string, vision: string) => Promise<void>;
   reload: (id: string) => void;
   sendTurn: (id: string, text: string) => Promise<void>;
+  setBuildSettings: (id: string, p: { effort?: BuildEffort; style?: BuildStyle }) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
 }
@@ -91,6 +97,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
+        effort: 'xhigh',
+        style: 'balanced',
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -159,7 +167,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     patch(id, { busy: true, reply: null, question: null, stream: '' });
     useCompanionStore.getState().pulseForwardAck();
     try {
-      const result = await webbuildSessionSend(id, text);
+      const result = await webbuildSessionSend(id, text, rt.effort, rt.style);
       const q = result.question?.trim() || null;
       patch(id, {
         reply: result.reply.trim() || 'Done.',
@@ -220,6 +228,8 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     },
 
     setActive: (id) => set({ activeId: id }),
+
+    setBuildSettings: (id, p) => patch(id, p),
 
     closeTab: (id) => {
       stopPoll(id);

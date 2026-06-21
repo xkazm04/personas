@@ -528,6 +528,7 @@ pub async fn send_turn(
             &user_db,
             browser_tools,
             None,
+            None,
         ),
     )
     .await
@@ -561,6 +562,7 @@ pub async fn send_turn(
                     &effective_user_message,
                     &user_db,
                     browser_tools,
+                    None,
                     None,
                 ),
             )
@@ -1181,8 +1183,8 @@ Before marking a phase done, review it as a demanding design lead would and fix 
 - The dev server is ALREADY running — never start it, run a dev/build command, or install unrelated dependencies.
 - Reply with a SHORT (1-2 sentence) summary of what changed, then the BUILD_PLAN line, then a NEEDS_INPUT line last if you need a decision. The user watches the live preview, so don't over-explain or paste large diffs."#;
 
-fn build_system_prompt(project_path: &std::path::Path) -> String {
-    format!(
+fn build_system_prompt(project_path: &std::path::Path, style: Option<&str>) -> String {
+    let base = format!(
         "You are Athena's web-build engine — a focused coding agent working inside the local \
 web project at {path}. It is a Next.js + TypeScript + Tailwind app with a live dev server \
 already running that hot-reloads on every file save, so the user sees your changes \
@@ -1192,7 +1194,14 @@ quality.\n\n\
         path = project_path.display(),
         doctrine = WEB_BUILD_DOCTRINE,
         instruction = BUILD_PLAN_INSTRUCTION,
-    )
+    );
+    // Optional user-chosen voice (the C4 style picker). Balanced / None = default.
+    let voice = match style {
+        Some("concise") => "\n\n# Voice\nKeep replies terse — one-sentence summaries, minimal explanation. The user watches the live preview, so show rather than tell.",
+        Some("teaching") => "\n\n# Voice\nBriefly explain your key choices in plain language as you go, so a non-technical user learns what's happening — keep it skimmable, never a lecture.",
+        _ => "",
+    };
+    format!("{base}{voice}")
 }
 
 /// Run one build-session turn: a project-rooted Claude Code turn that edits the
@@ -1206,11 +1215,15 @@ pub async fn run_build_turn(
     project_id: &str,
     project_path: &std::path::Path,
     user_message: &str,
+    // Per-turn build controls (C1 effort knob, C4 voice/style picker). `None` →
+    // defaults (deepest effort, balanced voice).
+    effort: Option<&str>,
+    style: Option<&str>,
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
     let claude_session_id = read_claude_session_id(user_db, &session_id)?;
-    let system_prompt = build_system_prompt(project_path);
+    let system_prompt = build_system_prompt(project_path, style);
 
     let text = match timeout(
         TURN_TIMEOUT,
@@ -1224,6 +1237,7 @@ pub async fn run_build_turn(
             user_db,
             false,
             Some(project_path),
+            effort,
         ),
     )
     .await
@@ -1245,6 +1259,7 @@ pub async fn run_build_turn(
                     user_db,
                     false,
                     Some(project_path),
+                    effort,
                 ),
             )
             .await
@@ -1274,6 +1289,9 @@ async fn run_cli(
     // project's CLAUDE.md). `Some(path)` roots the turn in a project directory
     // (web-build build sessions — P2 of the web-dev companion).
     cwd_override: Option<&std::path::Path>,
+    // Reasoning effort for build turns (cwd_override present). `None` → the
+    // default `BUILD_TURN_EFFORT`. Ignored for non-build (companion-chat) turns.
+    build_effort: Option<&str>,
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1317,10 +1335,16 @@ async fn run_cli(
         prompt_file.to_string_lossy().to_string(),
     ]);
 
-    // Build-session turns prioritise quality — pin the deepest reasoning effort.
+    // Build-session turns prioritise quality — pin reasoning effort. User-tunable
+    // per turn via the effort knob (C1); defaults to the deepest level. Validated
+    // against the known levels so we never inject an arbitrary flag value.
     if cwd_override.is_some() {
+        let effort = match build_effort {
+            Some(e) if matches!(e, "low" | "medium" | "high" | "xhigh") => e,
+            _ => BUILD_TURN_EFFORT,
+        };
         argv.push("--effort".into());
-        argv.push(BUILD_TURN_EFFORT.into());
+        argv.push(effort.into());
     }
 
     // Browser-test turns: hand this single CLI spawn browser tools via MCP —

@@ -110,6 +110,10 @@ pub async fn webbuild_session_send(
     app: tauri::AppHandle,
     project_id: String,
     message: String,
+    // Per-turn build controls: C1 effort knob (low|medium|high|xhigh) + C4
+    // voice/style (concise|balanced|teaching). Both optional → engine defaults.
+    effort: Option<String>,
+    style: Option<String>,
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     require_auth(&state).await?;
     let project = repo::get_project_by_id(&state.db, &project_id)?;
@@ -120,5 +124,14 @@ pub async fn webbuild_session_send(
             project.root_path
         )));
     }
-    crate::companion::session::run_build_turn(&app, &state.user_db, &project_id, &dir, &message).await
+    crate::companion::session::run_build_turn(
+        &app,
+        &state.user_db,
+        &project_id,
+        &dir,
+        &message,
+        effort.as_deref(),
+        style.as_deref(),
+    )
+    .await
 }

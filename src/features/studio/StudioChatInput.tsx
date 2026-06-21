@@ -4,6 +4,7 @@ import { Bot, HelpCircle, Send, Square, Wand2 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useStudioStore } from './studioStore';
+import StudioBuildSettings from './StudioBuildSettings';
 
 // Project-scoped chat: reads the ACTIVE tab's runtime from the store, so the
 // input + bubble always reflect the active project; switching tabs swaps them,
@@ -98,6 +99,7 @@ export default function StudioChatInput() {
           disabled={working}
           className="min-w-0 flex-1 bg-transparent text-md text-foreground outline-none placeholder:text-foreground/45 disabled:opacity-60"
         />
+        <StudioBuildSettings id={activeId} />
         <button
           type="button"
           onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}

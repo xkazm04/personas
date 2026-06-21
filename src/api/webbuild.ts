@@ -37,8 +37,23 @@ export const webbuildListProjects = () =>
  * timeout. Progress also streams on `companion://stream` keyed by
  * `webbuild:<projectId>`.
  */
-export const webbuildSessionSend = (projectId: string, message: string) =>
-  invokeWithTimeout<BuildTurnResult>('webbuild_session_send', { projectId, message }, undefined, 900_000);
+/** C1 effort knob — maps to the CLI `--effort` for build turns. */
+export type BuildEffort = 'low' | 'medium' | 'high' | 'xhigh';
+/** C4 voice/style — injected into the build system prompt. */
+export type BuildStyle = 'concise' | 'balanced' | 'teaching';
+
+export const webbuildSessionSend = (
+  projectId: string,
+  message: string,
+  effort?: BuildEffort,
+  style?: BuildStyle,
+) =>
+  invokeWithTimeout<BuildTurnResult>(
+    'webbuild_session_send',
+    { projectId, message, effort, style },
+    undefined,
+    900_000,
+  );
 
 /** The generated project's app-router routes (for the preview route switcher). */
 export const webbuildListRoutes = (projectId: string) =>
