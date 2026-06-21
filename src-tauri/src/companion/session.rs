@@ -1163,7 +1163,8 @@ BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"s
 
 # When to ask — this is the user's product, don't assume
 Reserve questions for things ONLY THE USER KNOWS: real content (names, copy, projects, prices, contact details), target audience, brand voice, business model, or which real data/integration to wire. For those, STOP and ASK instead of inventing it — emit it as the VERY LAST line:
-NEEDS_INPUT: <one short question, 1-2 sentences max; at most 2-3 plain options, no markdown>
+NEEDS_INPUT: {"question":"<one short question, 1-2 sentences>","options":["<short concrete choice>","<short concrete choice>"]}
+Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON.
 Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices). Do NOT ask which section/feature to build next, what order to work in, or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, audience, real content) lean toward asking; once those are settled, lean hard toward building.
 
 # Visual quality — best in class, never "AI-generated"
@@ -1271,8 +1272,8 @@ pub async fn run_build_turn(
     };
 
     // Parse out trailing BUILD_PLAN / NEEDS_INPUT markers (stripped from the reply).
-    let (reply, phases, question) = crate::webbuild::plan::extract_build_turn(&text);
-    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question })
+    let (reply, phases, question, options) = crate::webbuild::plan::extract_build_turn(&text);
+    Ok(crate::webbuild::plan::BuildTurnResult { reply, phases, question, options })
 }
 
 async fn run_cli(

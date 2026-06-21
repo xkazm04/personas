@@ -42,6 +42,8 @@ export interface ProjectRuntime {
   /** Per-turn build controls (C1 effort, C4 voice/style). */
   effort: BuildEffort;
   style: BuildStyle;
+  /** Clickable options for the current question (A1). Empty = free-text. */
+  options: string[];
 }
 
 const AUTO_MAX_TURNS = 12;
@@ -99,6 +101,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         resumeAuto: false,
         effort: 'xhigh',
         style: 'balanced',
+        options: [],
       };
       return {
         runtimes: { ...s.runtimes, [id]: rt },
@@ -164,7 +167,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     const rt = get().runtimes[id];
     const text = raw.trim();
     if (!rt || rt.busy || !text) return;
-    patch(id, { busy: true, reply: null, question: null, stream: '' });
+    patch(id, { busy: true, reply: null, question: null, options: [], stream: '' });
     useCompanionStore.getState().pulseForwardAck();
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style);
@@ -172,6 +175,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       patch(id, {
         reply: result.reply.trim() || 'Done.',
         question: q,
+        options: q ? (result.options ?? []) : [],
         ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
       });
       useCompanionStore.getState().pulseMessageReaction();

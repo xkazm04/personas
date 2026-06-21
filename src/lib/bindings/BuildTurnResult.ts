@@ -5,4 +5,8 @@ import type { WebBuildPhase } from "./WebBuildPhase";
  * Result of a build turn: Athena's cleaned reply, an optional updated plan, and
  * an optional question she needs answered before proceeding (`NEEDS_INPUT`).
  */
-export type BuildTurnResult = { reply: string, phases: Array<WebBuildPhase> | null, question: string | null, };
+export type BuildTurnResult = { reply: string, phases: Array<WebBuildPhase> | null, question: string | null, 
+/**
+ * Clickable options for the question (A1). Empty = free-text answer.
+ */
+options: Array<string>, };

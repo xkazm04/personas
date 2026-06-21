@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, HelpCircle, Send, Square, Wand2 } from 'lucide-react';
+import { Bot, Send, Square, Wand2 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
+import StudioDecision from './StudioDecision';
 
 // Project-scoped chat: reads the ACTIVE tab's runtime from the store, so the
 // input + bubble always reflect the active project; switching tabs swaps them,
@@ -19,7 +20,7 @@ export default function StudioChatInput() {
   const stopAutonomous = useStudioStore((s) => s.stopAutonomous);
 
   if (!activeId || !rt) return null;
-  const { busy, stream, reply, question, autonomous, name } = rt;
+  const { busy, stream, reply, question, options, autonomous, name } = rt;
 
   const streamDisplay = (stream.split('BUILD_PLAN:')[0]?.split('NEEDS_INPUT:')[0] ?? '').trimEnd();
   const showBubble = busy || reply !== null || question !== null;
@@ -67,10 +68,11 @@ export default function StudioChatInput() {
                   <MarkdownRenderer content={reply} className="athena-chat-md" codeBlockActions />
                 )}
                 {question && (
-                  <div className="mt-2 flex items-start gap-1.5 rounded-card border-l-2 border-primary bg-primary/10 px-2.5 py-1.5">
-                    <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
-                    <span className="text-md text-foreground">{question}</span>
-                  </div>
+                  <StudioDecision
+                    question={question}
+                    options={options}
+                    onAnswer={(a) => void sendTurn(activeId, a)}
+                  />
                 )}
               </div>
             )}
