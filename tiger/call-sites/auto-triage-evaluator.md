@@ -7,10 +7,10 @@ wrapper: run_evaluator_cli (temp driver, build_cli_args(None,None) + EVALUATOR_M
 provider: claude   model: claude-sonnet-4-6 (pinned 2026-06-21; was undeclared account-default Opus 4.8)
 schema: yes — parse_verdict_response (auto_triage.rs:217), fallback to Resolved
 grounding: 6/6
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[support-lead]]"]
 ---

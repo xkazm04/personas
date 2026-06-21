@@ -7,10 +7,10 @@ wrapper: direct reqwest::post (Generative Language API)
 provider: gemini   model: gemini-3.5-flash (default, line 26)
 schema: yes — GeminiResponse (line 98)
 grounding: 0/2
-quality_score: "—"
+quality_score: 2
 code_score: 5
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[finance-analyst]]"]
 ---

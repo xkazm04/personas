@@ -7,10 +7,10 @@ wrapper: MCP tool (llm_delegate → local model)
 provider: local (BYOM / Ollama, e.g. lfm2.5)
 schema: tool-call schema
 grounding: n/a (delegated sub-prompt)
-quality_score: "—"
+quality_score: 2
 code_score: 3
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[hobbyist-power]]"]
 ---

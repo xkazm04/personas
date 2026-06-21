@@ -7,10 +7,10 @@ wrapper: cli_text (UNTRACKED) + recipe cache
 provider: claude   model: claude-sonnet-4-6
 schema: yes — kpi_procedure envelope (parse_procedure, line 380)
 grounding: 6/8
-quality_score: "—"
+quality_score: 3
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[finance-analyst]]", "[[hobbyist-power]]"]
 ---

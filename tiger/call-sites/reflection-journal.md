@@ -7,10 +7,10 @@ wrapper: call_claude_oneshot (ephemeral)
 provider: claude   model: claude-opus-4-8 (pinned, line 197)
 schema: no — free-form prose
 grounding: 3/5
-quality_score: "—"
+quality_score: 3
 code_score: 3
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[researcher]]"]
 ---

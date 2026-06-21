@@ -7,10 +7,10 @@ wrapper: CliProcessDriver::spawn_temp_no_stderr (build_cli_args(None,None))
 provider: claude   model: routing (no explicit --model)
 schema: yes — strict {steps:[...]} parse (line 502); hallucinated persona ids dropped
 grounding: 7/8
-quality_score: "—"
+quality_score: 3
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[hobbyist-power]]", "[[software-developer]]"]
 ---

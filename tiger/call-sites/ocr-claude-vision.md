@@ -7,10 +7,10 @@ wrapper: cli_text (Claude Code CLI binary + stdin base64 pipe)
 provider: claude   model: claude-code-cli (subscription, no API key)
 schema: yes — OcrDocument persistence
 grounding: 0/3
-quality_score: "—"
+quality_score: 2
 code_score: 5
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[finance-analyst]]"]
 ---

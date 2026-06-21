@@ -7,10 +7,10 @@ wrapper: execute_persona_inner (reuses main engine)
 provider: claude   model: Director persona's own ModelProfile
 schema: yes — parse_verdicts (director.rs:298)
 grounding: 8/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[enterprise-admin]]"]
 ---

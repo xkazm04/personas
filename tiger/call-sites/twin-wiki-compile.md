@@ -7,10 +7,10 @@ wrapper: cli_text (tokio Command, background)
 provider: claude   model: routing (build_cli_args, opaque here)
 schema: no — raw CLI output → file writes
 grounding: 1/3
-quality_score: "—"
+quality_score: 2
 code_score: 3
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[researcher]]"]
 ---

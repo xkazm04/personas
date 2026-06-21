@@ -7,10 +7,10 @@ wrapper: cli_text (athena_reaction.rs:419, UNTRACKED)
 provider: claude   model: claude-sonnet-4-6
 schema: yes — kpi_goal envelope (parse_kpi_goal, line 187)
 grounding: 8/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[finance-analyst]]"]
 ---

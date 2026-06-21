@@ -7,10 +7,10 @@ wrapper: direct Command spawn (+ delta mode + lazy clear)
 provider: claude   model: claude-sonnet-4-6 (hardcoded, line 817)
 schema: yes — context_map_* protocol (normalize_category/domain)
 grounding: 8/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[sales-rep]]", "[[software-developer]]"]
 ---

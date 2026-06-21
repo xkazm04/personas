@@ -7,10 +7,10 @@ wrapper: ai_artifact_flow::run_ai_artifact_task (build_credential_task_cli_args)
 provider: claude   model: (via build_credential_task_cli_args)
 schema: yes — extract_credential_design_result (JSON)
 grounding: 2/5
-quality_score: "—"
+quality_score: 3
 code_score: 5
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[enterprise-admin]]"]
 ---

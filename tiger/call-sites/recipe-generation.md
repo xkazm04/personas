@@ -7,10 +7,10 @@ wrapper: ai_artifact_flow (build_credential_task_cli_args)
 provider: claude   model: (via build_credential_task_cli_args)
 schema: yes — extract_recipe_generation_result (name + prompt_template keys)
 grounding: 1/3
-quality_score: "—"
+quality_score: 2
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[content-marketer]]", "[[non-english-user]]", "[[sales-rep]]", "[[solo-founder]]"]
 ---

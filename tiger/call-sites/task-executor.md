@@ -7,10 +7,10 @@ wrapper: direct Command spawn (+ optional --worktree)
 provider: claude   model: claude-sonnet-4-6 (hardcoded, line 668)
 schema: no — free-form + [Progress] JSON markers
 grounding: 6/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[software-developer]]"]
 ---

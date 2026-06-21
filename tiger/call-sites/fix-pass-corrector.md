@@ -7,10 +7,10 @@ wrapper: CliProcessDriver (one-shot)
 provider: claude   model: routing
 schema: yes — corrected_ir validated post-parse
 grounding: 7/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[software-developer]]"]
 ---

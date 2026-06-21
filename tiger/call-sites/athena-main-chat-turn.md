@@ -7,10 +7,10 @@ wrapper: run_cli (base_cli_invocation, --resume for continuity)
 provider: claude   model: routing / account default (--resume keeps state)
 schema: no — free-form chat; embedded JSON ops parsed by dispatcher
 grounding: 4/5
-quality_score: "—"
+quality_score: 3
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[non-english-user]]"]
 ---

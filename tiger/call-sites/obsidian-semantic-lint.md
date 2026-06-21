@@ -7,10 +7,10 @@ wrapper: spawn_claude_and_collect (ai_artifact_flow)
 provider: claude   model: settings SEMANTIC_LINT_MODEL_DEFAULT
 schema: yes — RawSemanticLint (line 68)
 grounding: 3/5
-quality_score: "—"
+quality_score: 2
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[researcher]]"]
 ---

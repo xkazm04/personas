@@ -7,7 +7,7 @@ wrapper: run_claude_prompt (SYNTHESIS_MODEL pin)
 provider: claude   model: claude-sonnet-4-6 (SYNTHESIS_MODEL, line 20)
 schema: SynthesisResponse — role String clamped by normalize_team_role (line 173)
 grounding: 6/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
 status: improved

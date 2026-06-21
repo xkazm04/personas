@@ -7,10 +7,10 @@ wrapper: build_cli_args + CliProcessDriver::spawn
 provider: claude   model: persona ModelProfile / engine/model_routing.rs (default account opus-4-8[1m])
 schema: yes — engine/parser.rs:227 extracts model/tokens/total_cost_usd
 grounding: 9/9
-quality_score: "—"
+quality_score: 5
 code_score: 5
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[content-marketer]]", "[[finance-analyst]]", "[[non-english-user]]", "[[researcher]]", "[[sales-rep]]", "[[solo-founder]]", "[[support-lead]]"]
 ---

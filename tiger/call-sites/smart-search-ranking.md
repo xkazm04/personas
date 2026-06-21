@@ -7,10 +7,10 @@ wrapper: spawn_claude_and_collect
 provider: claude   model: claude-haiku (settings SMART_SEARCH_MODEL_DEFAULT)
 schema: yes — RawSearchResult {ranked_ids, rationale}
 grounding: 8/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[content-marketer]]", "[[non-english-user]]", "[[researcher]]", "[[sales-rep]]"]
 ---

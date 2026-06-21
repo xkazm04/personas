@@ -7,10 +7,10 @@ wrapper: cli_text (background job, build_cli_args + stdin pipe)
 provider: claude   model: claude-sonnet-4-6 (hardcoded, line 551)
 schema: no — streamed output
 grounding: 0/5
-quality_score: "—"
+quality_score: 2
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[content-marketer]]"]
 ---

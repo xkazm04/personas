@@ -7,10 +7,10 @@ wrapper: direct Command spawn (build_cli_args(None,None), cwd=project root)
 provider: claude   model: claude-sonnet-4-6
 schema: yes — kpi_proposal envelope (line-delimited)
 grounding: 7/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[software-developer]]"]
 ---

@@ -7,10 +7,10 @@ wrapper: direct Command spawn (build_cli_args(None,None))
 provider: claude   model: claude-sonnet-4-6 (hardcoded, line 627)
 schema: yes — scan_idea/scan_summary protocol (parse_idea_protocol, line 228)
 grounding: 8/8
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[hobbyist-power]]"]
 ---

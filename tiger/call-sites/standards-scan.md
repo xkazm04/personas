@@ -7,10 +7,10 @@ wrapper: direct Command spawn (build_cli_args(None,None))
 provider: claude   model: claude-sonnet-4-6 (hardcoded, line 186)
 schema: yes — standards_finding protocol (norm-clamped fields)
 grounding: 2/8
-quality_score: "—"
+quality_score: 2
 code_score: 3
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[enterprise-admin]]"]
 ---

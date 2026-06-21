@@ -7,10 +7,10 @@ wrapper: run_claude_prompt_text_inner (n8n_transform/cli_runner.rs:673)
 provider: claude   model: claude-sonnet-4 (hardcoded)
 schema: yes (section-level) — N8nPersonaOutput
 grounding: 6/8
-quality_score: "—"
+quality_score: 3
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[solo-founder]]"]
 ---

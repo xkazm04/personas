@@ -7,10 +7,10 @@ wrapper: direct Command spawn (cwd=project root)
 provider: claude   model: claude-sonnet-4-6
 schema: yes — kpi_measure envelope (extract_result, line 442)
 grounding: 4/5
-quality_score: "—"
+quality_score: 4
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[finance-analyst]]"]
 ---

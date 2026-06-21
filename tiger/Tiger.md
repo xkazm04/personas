@@ -1,7 +1,7 @@
 ---
 type: tiger/home
 app: Personas Desktop
-last_run: 2026-06-20 (init — inventory scan only)
+last_run: 2026-06-21 (run — Lens 1 + Lens 2 L1, 33/45 sites value-scored)
 call_sites: 45
 characters: 10 (broad roster, adapted from /uat)
 ---
@@ -142,4 +142,4 @@ Grep-confirmed call sites the init agents flagged but didn't fully ground — pi
 3. `/tiger benchmark <call-site>` — deep Lens-3 model matrix for one site (start with `reflection-journal` Opus→Sonnet downgrade or `review-resolution-athena` Sonnet→Opus upgrade).
 
 ## Sessions
-_(none yet — first `run` writes `sessions/<date>.md`)_
+- [[2026-06-21-run]] — first full run. Lens 1 (code) delta: init's telemetry/model/injection/caching findings RESOLVED this session; open = schema self-repair, OCR prompt-override, auto-triage cache. Lens 2 (value, 10 Characters): grounding is bimodal — apex/core excellent (persona-exec 9/9, context-gen/idea-scanner/smart-search/kpi-derivation 8/8), **plugin/generation tier weak** (artist 0/5, OCR 0/3, twin 1/3, recipe 1/3). **Top backlog: (1) locale not propagated** (only build-session honors language → non-English users get English nearly everywhere); (2) recipe-generation grounding 1/3 (no API docs → hallucination, converged across 3 Characters); (3) artist 0/5 (no brand grounding). Lens 3 (model benchmark) deferred to `--live`.

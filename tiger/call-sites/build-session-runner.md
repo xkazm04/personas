@@ -7,10 +7,10 @@ wrapper: CliProcessDriver (v3 streaming build-event protocol)
 provider: claude   model: persona ModelProfile / routing
 schema: yes — v3 event protocol + gate state machine (gates.rs)
 grounding: 8/8
-quality_score: "—"
+quality_score: 3
 code_score: 4
 recommended_model: "—"
-status: discovered
+status: assessed
 last_scanned: 2026-06-20
 characters: ["[[content-marketer]]", "[[non-english-user]]", "[[sales-rep]]", "[[solo-founder]]"]
 ---
