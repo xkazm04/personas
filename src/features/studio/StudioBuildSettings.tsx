@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { Settings2 } from 'lucide-react';
 import { useStudioStore } from './studioStore';
+import StudioDesignKnobs from './StudioDesignKnobs';
 import type { BuildEffort, BuildStyle } from '@/api/webbuild';
 
 // C1 effort knob + C4 voice/style picker — per-project build controls in a small
@@ -72,6 +73,12 @@ export default function StudioBuildSettings({ id }: { id: string }) {
               On
             </Seg>
           </Row>
+          <div className="my-2 border-t border-border/60" />
+          <div className="mb-1.5 flex items-baseline justify-between">
+            <span className="typo-caption text-foreground/70">Nudge the design</span>
+            <span className="text-[10px] text-foreground/40">applies now</span>
+          </div>
+          <StudioDesignKnobs id={id} onApply={() => setOpen(false)} />
         </div>
       )}
     </div>
