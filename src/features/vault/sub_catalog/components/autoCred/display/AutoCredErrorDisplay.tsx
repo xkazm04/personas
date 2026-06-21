@@ -28,6 +28,8 @@ export function AutoCredErrorDisplay({
   return (
     <div
       key="error"
+      data-testid="vault-autocred-error"
+      data-error-kind={error.kind}
       className="animate-fade-slide-in space-y-4"
     >
       {/* Error header */}

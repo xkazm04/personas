@@ -24,6 +24,8 @@ export function AutoCredBrowserError({
   return (
     <div
       key="browser-error"
+      data-testid="vault-autocred-error"
+      data-error-kind={error.kind}
       className="animate-fade-slide-in space-y-4"
     >
       {/* Error banner */}

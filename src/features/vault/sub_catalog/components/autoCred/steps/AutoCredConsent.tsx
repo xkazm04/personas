@@ -33,6 +33,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
 
   return (
     <div
+      data-testid="vault-autocred-consent"
       className="animate-fade-slide-in space-y-4"
     >
       {/* Header */}
@@ -142,6 +143,7 @@ export function AutoCredConsent({ designResult, onConsent, onCancel, mode = 'pla
         </button>
         <button
           onClick={onConsent}
+          data-testid="vault-autocred-start"
           // text-foreground is deliberate: bg-violet-600 / bg-cyan-600 are saturated
           // and theme-stable. text-foreground would render dark-on-saturated on
           // light theme — passes WCAG but visually weaker. Keep until a

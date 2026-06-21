@@ -52,7 +52,7 @@ export function UrlCard({
   }
 
   return (
-    <div className="flex items-center gap-3 p-2.5 rounded-card border border-blue-500/20 bg-blue-500/5">
+    <div data-testid="vault-autocred-url" data-url={safeUrl ?? ''} className="flex items-center gap-3 p-2.5 rounded-card border border-blue-500/20 bg-blue-500/5">
       <ExternalLink className="w-4 h-4 text-blue-400 shrink-0" />
       <div className="flex-1 min-w-0">
         <p className="typo-body text-foreground">{entry.message.replace(/^Opening:\s*/, '')}</p>
