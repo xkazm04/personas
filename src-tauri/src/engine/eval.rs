@@ -16,6 +16,7 @@ use super::cli_process::CliProcessDriver;
 use super::parser;
 use super::prompt;
 use super::types::*;
+use crate::db::DbPool;
 
 // ============================================================================
 // EvalResult -- standardized output from any evaluation strategy
@@ -484,6 +485,8 @@ pub async fn eval_with_llm(
     persona_description: &str,
     scenario_name: &str,
     scenario_description: &str,
+    pool: &DbPool,
+    persona_id: Option<&str>,
 ) -> LlmEvalResult {
     let eval_prompt = build_llm_eval_prompt(
         input,
@@ -496,7 +499,7 @@ pub async fn eval_with_llm(
     // Try LLM eval up to 2 times before falling back to heuristic
     let mut last_err = String::new();
     for attempt in 0..2u8 {
-        match run_llm_eval(&eval_prompt).await {
+        match run_llm_eval(&eval_prompt, pool, persona_id).await {
             Ok(result) => return result,
             Err(e) => {
                 last_err = e.clone();
@@ -610,7 +613,11 @@ Respond with ONLY a JSON object:
 /// Opus 4.8). (tiger finding: lab/eval tier rode account-default.)
 const LLM_EVAL_MODEL: &str = "claude-sonnet-4-6";
 
-async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
+async fn run_llm_eval(
+    prompt_text: &str,
+    pool: &DbPool,
+    persona_id: Option<&str>,
+) -> Result<LlmEvalResult, String> {
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
     cli_args.args.push(LLM_EVAL_MODEL.to_string());
@@ -622,20 +629,42 @@ async fn run_llm_eval(prompt_text: &str) -> Result<LlmEvalResult, String> {
     driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
+    let mut result_line: Option<String> = None;
     let timeout = tokio::time::Duration::from_secs(180);
 
     driver
         .collect_lines_with_timeout(timeout, |line| {
             let (line_type, _) = parser::parse_stream_line(line);
-            if let StreamLineType::AssistantText { text } = line_type {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
+            match line_type {
+                StreamLineType::AssistantText { text } => {
+                    assistant_text.push_str(&text);
+                    assistant_text.push('\n');
+                }
+                StreamLineType::Result { .. } => {
+                    result_line = Some(line.to_string());
+                }
+                _ => {}
             }
         })
         .await
         .map_err(|e| format!("LLM eval timed out or failed: {e}"))?;
 
     let _ = driver.finish().await;
+
+    // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
+    if let Some(rl) = &result_line {
+        crate::db::repos::llm_spend::observe_line(
+            pool,
+            &crate::db::repos::llm_spend::SpendCtx {
+                source: "evaluator",
+                trigger_kind: "lab_eval",
+                model: Some(LLM_EVAL_MODEL),
+                persona_id,
+                project_id: None,
+            },
+            rl,
+        );
+    }
 
     parse_llm_eval_response(&assistant_text)
 }

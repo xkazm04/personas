@@ -316,7 +316,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     // 4. Compare variant scores against incumbent
 
     // Generate scenarios from incumbent
-    let scenarios = match generate_scenarios(&persona, &tools, None, None).await {
+    let scenarios = match generate_scenarios(&persona, &tools, None, None, &pool).await {
         Ok(s) if !s.is_empty() => s,
         Ok(_) => {
             if !try_status_update(
@@ -356,7 +356,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
 
     // Score the incumbent first (baseline)
     let incumbent_avg =
-        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model, &cycle_id).await;
+        evaluate_persona_on_scenarios(&persona, &tools, &scenarios, &eval_model, &cycle_id, &pool).await;
 
     // Score each variant
     let mut best_variant_idx: Option<usize> = None;
@@ -381,7 +381,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         variant_persona.structured_prompt = None;
 
         let variant_avg =
-            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model, &cycle_id)
+            evaluate_persona_on_scenarios(&variant_persona, &tools, &scenarios, &eval_model, &cycle_id, &pool)
                 .await;
 
         tracing::debug!(
@@ -520,6 +520,7 @@ async fn evaluate_persona_on_scenarios(
     scenarios: &[super::test_runner::TestScenario],
     model: &TestModelConfig,
     run_id: &str,
+    pool: &DbPool,
 ) -> f64 {
     let mut total_score: f64 = 0.0;
     let mut count: usize = 0;
@@ -529,7 +530,7 @@ async fn evaluate_persona_on_scenarios(
     for scenario in &scenarios[..max_scenarios] {
         match execute_scenario(persona, tools, scenario, model).await {
             Ok(output) => {
-                let scores = score_result(&output, scenario, persona).await;
+                let scores = score_result(&output, scenario, persona, pool).await;
                 // P2: record this scenario's cost against the cycle's aggregate
                 // budget (warn-only — the cycle is not aborted). score_result
                 // copies output.cost_usd into scores.cost_usd, so record it once

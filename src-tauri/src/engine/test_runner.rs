@@ -214,6 +214,7 @@ pub async fn run_test(
             tools,
             use_case_filter.as_deref(),
             fixture_inputs.as_deref(),
+            &pool,
         )
         .await
         {
@@ -312,6 +313,7 @@ pub async fn run_test(
         let mut handles = Vec::new();
         for (mi, model) in model_configs.iter().enumerate() {
             let persona_c = persona.clone();
+            let pool_c = pool.clone();
             let tools_c = tools.to_vec();
             let scenario_c = scenario.clone();
             let model_c = model.clone();
@@ -343,7 +345,7 @@ pub async fn run_test(
                 let result = execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                 let (status, scores) = match &result {
                     Ok(r) => {
-                        let s = score_result(r, &scenario_c, &persona_c).await;
+                        let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
                         (verdict_status(&s), s)
                     }
                     Err(e) => (
@@ -553,6 +555,7 @@ pub(crate) async fn generate_scenarios(
     tools: &[PersonaToolDefinition],
     use_case_filter: Option<&str>,
     fixture_inputs: Option<&str>,
+    pool: &DbPool,
 ) -> Result<Vec<TestScenario>, String> {
     // Check cache when no fixture inputs (fixtures imply custom data, not cacheable)
     if fixture_inputs.is_none() {
@@ -576,7 +579,19 @@ pub(crate) async fn generate_scenarios(
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
-    let output = spawn_cli_and_collect(&cli_args, &coordinator_prompt).await?;
+    let output = spawn_cli_and_collect(
+        &cli_args,
+        &coordinator_prompt,
+        pool,
+        crate::db::repos::llm_spend::SpendCtx {
+            source: "evaluator",
+            trigger_kind: "lab_scenario",
+            model: Some(LAB_MODEL),
+            persona_id: Some(&persona.id),
+            project_id: None,
+        },
+    )
+    .await?;
     let scenarios = parse_scenarios_from_output(&output)?;
 
     // Never cache empty results — doing so would poison the cache for up to 10 minutes,
@@ -1001,6 +1016,7 @@ pub(crate) async fn score_result(
     output: &ExecutionOutput,
     scenario: &TestScenario,
     persona: &Persona,
+    pool: &DbPool,
 ) -> ScoreResult {
     let expected_tools = scenario.expected_tool_sequence.as_deref();
     let expected_protocols = scenario.expected_protocols.as_deref();
@@ -1033,6 +1049,8 @@ pub(crate) async fn score_result(
         persona.description.as_deref().unwrap_or(""),
         &scenario.name,
         &scenario.description,
+        pool,
+        Some(persona.id.as_str()),
     )
     .await;
 
@@ -1203,24 +1221,42 @@ pub(crate) struct ExecutionOutput {
 /// Windows `CREATE_NO_WINDOW` flag, and env overrides/removals.
 /// Spawn Claude CLI, pipe prompt to stdin, collect all output as a plain string.
 /// Used for the coordinator (scenario generation).
-async fn spawn_cli_and_collect(cli_args: &CliArgs, prompt_text: &str) -> Result<String, String> {
+async fn spawn_cli_and_collect(
+    cli_args: &CliArgs,
+    prompt_text: &str,
+    pool: &DbPool,
+    spend: crate::db::repos::llm_spend::SpendCtx<'_>,
+) -> Result<String, String> {
     let mut driver = CliProcessDriver::spawn_temp_no_stderr(cli_args, "personas-test-coord")?;
     driver.write_stdin(prompt_text.as_bytes()).await;
 
     let mut assistant_text = String::new();
+    let mut result_line: Option<String> = None;
     let timeout = tokio::time::Duration::from_secs(300);
 
     driver
         .collect_lines_with_timeout(timeout, |line| {
             let (line_type, _) = parser::parse_stream_line(line);
-            if let StreamLineType::AssistantText { text } = line_type {
-                assistant_text.push_str(&text);
-                assistant_text.push('\n');
+            match line_type {
+                StreamLineType::AssistantText { text } => {
+                    assistant_text.push_str(&text);
+                    assistant_text.push('\n');
+                }
+                StreamLineType::Result { .. } => {
+                    result_line = Some(line.to_string());
+                }
+                _ => {}
             }
         })
         .await?;
 
     let _ = driver.finish().await;
+
+    // tiger #1: record headless spend in the dev_llm_spend ledger (best-effort).
+    if let Some(rl) = &result_line {
+        crate::db::repos::llm_spend::observe_line(pool, &spend, rl);
+    }
+
     Ok(assistant_text)
 }
 
@@ -1498,6 +1534,7 @@ async fn generate_llm_run_summary(
     persona_description: &str,
     tracker: &HashMap<String, Vec<(Option<i32>, Option<i32>, Option<i32>, f64, i64)>>,
     scenario_count: usize,
+    pool: &DbPool,
 ) -> Option<String> {
     let mut results_text = String::new();
     for (key, entries) in tracker.iter() {
@@ -1539,7 +1576,20 @@ Rules:
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
-    match spawn_cli_and_collect(&cli_args, &prompt).await {
+    match spawn_cli_and_collect(
+        &cli_args,
+        &prompt,
+        pool,
+        crate::db::repos::llm_spend::SpendCtx {
+            source: "evaluator",
+            trigger_kind: "lab_summary",
+            model: Some(LAB_MODEL),
+            persona_id: None,
+            project_id: None,
+        },
+    )
+    .await
+    {
         Ok(output) => {
             let text = output.trim().to_string();
             if text.is_empty() {
@@ -1574,7 +1624,7 @@ async fn run_lab_loop(
     emit_lab_status(app, cb.event_name, run_id, "generating", None);
 
     let scenarios =
-        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None).await {
+        match generate_scenarios(persona_for_scenarios, tools, use_case_filter, None, pool).await {
             Ok(s) if s.is_empty() => {
                 let now = chrono::Utc::now().to_rfc3339();
                 (cb.update_status)(
@@ -1661,6 +1711,7 @@ async fn run_lab_loop(
         for (mi, model) in model_configs.iter().enumerate() {
             for (vi, variant) in variants.iter().enumerate() {
                 let persona_c = variant.persona.clone();
+                let pool_c = pool.clone();
                 let tools_c = if variant.tools.is_empty() {
                     tools.to_vec()
                 } else {
@@ -1698,7 +1749,7 @@ async fn run_lab_loop(
                         execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                     let (status, scores) = match &result {
                         Ok(r) => {
-                            let s = score_result(r, &scenario_c, &persona_c).await;
+                            let s = score_result(r, &scenario_c, &persona_c, &pool_c).await;
                             (verdict_status(&s), s)
                         }
                         Err(e) => (
@@ -1789,6 +1840,7 @@ async fn run_lab_loop(
         persona_for_scenarios.description.as_deref().unwrap_or(""),
         &tracker,
         scenario_count as usize,
+        pool,
     )
     .await;
 
@@ -2432,7 +2484,20 @@ pub async fn run_matrix_test(
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
-    let draft_output = match spawn_cli_and_collect(&cli_args, &draft_prompt_text).await {
+    let draft_output = match spawn_cli_and_collect(
+        &cli_args,
+        &draft_prompt_text,
+        &pool,
+        crate::db::repos::llm_spend::SpendCtx {
+            source: "evaluator",
+            trigger_kind: "lab_draft",
+            model: Some(LAB_MODEL),
+            persona_id: Some(persona.id.as_str()),
+            project_id: None,
+        },
+    )
+    .await
+    {
         Ok(o) => o,
         Err(e) => {
             let msg = format!("Draft generation failed: {e}");
@@ -2672,8 +2737,6 @@ pub async fn generate_targeted_improvements(
     run_results_summary: &str,
     user_feedback: Option<&str>,
 ) -> Result<(serde_json::Value, String), String> {
-    let _ = pool; // available for future use (e.g. loading tools, history)
-
     let improvement_prompt = build_improvement_prompt(persona, run_results_summary, user_feedback);
 
     let mut cli_args = prompt::build_cli_args(None, None);
@@ -2682,7 +2745,19 @@ pub async fn generate_targeted_improvements(
     cli_args.args.push("--max-turns".to_string());
     cli_args.args.push("1".to_string());
 
-    let output = spawn_cli_and_collect(&cli_args, &improvement_prompt).await?;
+    let output = spawn_cli_and_collect(
+        &cli_args,
+        &improvement_prompt,
+        pool,
+        crate::db::repos::llm_spend::SpendCtx {
+            source: "evaluator",
+            trigger_kind: "lab_improve",
+            model: Some(LAB_MODEL),
+            persona_id: Some(persona.id.as_str()),
+            project_id: None,
+        },
+    )
+    .await?;
 
     parse_draft_from_output(&output)
 }
