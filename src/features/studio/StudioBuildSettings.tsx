@@ -37,6 +37,7 @@ export default function StudioBuildSettings({ id }: { id: string }) {
     <div className="relative shrink-0">
       <button
         type="button"
+        data-testid="studio-settings"
         onClick={() => setOpen((v) => !v)}
         aria-label="Build settings"
         className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
@@ -48,7 +49,10 @@ export default function StudioBuildSettings({ id }: { id: string }) {
         <Settings2 className="h-4 w-4" />
       </button>
       {open && (
-        <div className="absolute bottom-11 right-0 z-30 w-60 rounded-modal border border-border bg-background/95 p-3 shadow-elevation-4 backdrop-blur">
+        <div
+          data-testid="studio-settings-panel"
+          className="absolute bottom-11 right-0 z-30 w-60 rounded-modal border border-border bg-background/95 p-3 shadow-elevation-4 backdrop-blur"
+        >
           <Row label="Effort" hint="speed ↔ quality">
             {EFFORTS.map((o) => (
               <Seg

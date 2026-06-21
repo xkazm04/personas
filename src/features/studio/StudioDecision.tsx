@@ -24,6 +24,7 @@ export default function StudioDecision({
             <button
               key={o}
               type="button"
+              data-testid="studio-decision-option"
               onClick={() => onAnswer(o)}
               className="rounded-interactive border border-primary/40 bg-background/60 px-2.5 py-1 text-xs text-foreground transition-colors hover:bg-primary/20 hover:text-primary"
             >
