@@ -8,7 +8,7 @@
  *
  *   PERSONAS_BASE=http://127.0.0.1:17330 BUDGET_MIN=35 node scripts/studio-mk-live.mjs
  */
-import { readdirSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = process.env.PERSONAS_BASE || 'http://127.0.0.1:17330';
@@ -45,6 +45,28 @@ function mkRoutes() {
   return [...new Set(out)].sort();
 }
 
+// Newest mtime across the project's source — the real "is it still working?" signal.
+// Counts ANY edit (a polishing pass on an existing page, a new component, etc.), so a
+// busy build is never mistaken for a stall the way a page.tsx-count signal is.
+function newestMtime() {
+  let newest = 0;
+  const walk = (dir) => {
+    let entries = [];
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const e of entries) {
+      const p = join(dir, e.name);
+      if (e.isDirectory()) {
+        if (e.name === 'node_modules' || e.name === '.next' || e.name === '.git') continue;
+        walk(p);
+      } else if (/\.(tsx?|jsx?|css)$/.test(e.name)) {
+        try { const m = statSync(p).mtimeMs; if (m > newest) newest = m; } catch { /* ignore */ }
+      }
+    }
+  };
+  for (const r of ['app', 'components', 'src', 'lib']) walk(join(MK, r));
+  return newest;
+}
+
 const VISION =
   'Turn this repo into a polished multi-page showcase with FIVE distinct pages plus shared header/footer navigation linking them: (1) home = a tech product landing for a developer tool; (2) /marketing = a friendly product marketing page; (3) /dashboard = a data dashboard reading local sample data with charts and KPIs; (4) /pipeline = an animated scroll-driven explainer of an automated LLM dev pipeline; (5) /mindmap = an interactive mindmap canvas (add/drag/connect nodes). Each page distinct and best-in-class. Build all five pages and the shared navigation.';
 const NUDGE =
@@ -78,7 +100,7 @@ const NUDGE =
   await ev(`window.__studioStore.getState().startAutonomous(window.__mkId)`);
 
   const t0 = Date.now();
-  let lastProgress = t0, lastSig = '', answered = 0, lastNudge = 0;
+  let lastProgress = t0, lastSig = '', answered = 0, lastNudge = 0, lastMtime = newestMtime();
   while ((Date.now() - t0) / 60000 < BUDGET_MIN) {
     await focus();
     if ((await count('[data-testid="studio-decision-option"]')) > 0) {
@@ -94,9 +116,15 @@ const NUDGE =
     if (sig !== lastSig) {
       console.log(`  [t+${Math.round((Date.now() - t0) / 1000)}s] mk routes (${r.length}): ${sig || '(blank)'}`);
       lastSig = sig;
+    }
+    // mtime-based progress: any source edit (incl. polishing existing pages) resets the
+    // stall clock, so a busy build is never mistaken for a stall.
+    const mt = newestMtime();
+    if (mt > lastMtime + 500) {
+      lastMtime = mt;
       lastProgress = Date.now();
     }
-    // Stall-breaker: if no route progress for 3 min, nudge it forward (also clears any free-text question).
+    // Stall-breaker: only when NOTHING changed on disk for 3 min (genuinely stuck).
     if (Date.now() - lastProgress > 180000 && Date.now() - lastNudge > 120000) {
       await ev(`window.__studioStore.getState().sendTurn(window.__mkId, ${JSON.stringify(NUDGE)})`);
       lastNudge = Date.now();
