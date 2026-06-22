@@ -1474,7 +1474,16 @@ pub fn run() {
                 let bootstrap_pool = state_arc.db.clone();
                 tauri::async_runtime::spawn_blocking(move || {
                     match engine::management_api::get_or_create_system_api_key(&bootstrap_pool) {
-                        Ok(_) => tracing::info!("System API key bootstrapped"),
+                        Ok(key) => {
+                            // Also export the connector-bridge env in THIS process
+                            // so the split engine's in-process connector tools can
+                            // reach the :9420 credential proxy (same vars the CLI
+                            // path injects into the personas-mcp sidecar). Set once
+                            // at startup; edition 2021 → set_var is safe.
+                            std::env::set_var("PERSONAS_API_KEY", &key);
+                            std::env::set_var("PERSONAS_BRIDGE_URL", "http://127.0.0.1:9420");
+                            tracing::info!("System API key bootstrapped");
+                        }
                         Err(e) => tracing::warn!(
                             "Failed to bootstrap system API key: {} (management API \
                              routes will reject requests until a key is created)", e

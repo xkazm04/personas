@@ -399,6 +399,38 @@ const REMOTE_SAFE_MCP_TOOLS: &[&str] = &[
     "obsidian_vault_search",
 ];
 
+/// Connector MCP tools (Gmail/Drive/Calendar) — opt-in via the
+/// `qwen_connector_tools` setting (default OFF). They route through the desktop
+/// credential proxy on :9420 (credentials stay local; only args + results cross
+/// to the model). Off by default because enabling sends connector RESULTS (e.g.
+/// email content) to the remote provider — a per-team data-residency decision.
+const CONNECTOR_TOOLS: &[&str] = &[
+    "gmail_list_messages", "gmail_get_message",
+    "gdrive_list_files", "gdrive_get_file",
+    "gcalendar_list_events",
+];
+
+/// Whether a tool name may be exposed to the remote engine.
+fn tool_allowed(name: &str, connectors_on: bool) -> bool {
+    REMOTE_SAFE_MCP_TOOLS.contains(&name) || (connectors_on && CONNECTOR_TOOLS.contains(&name))
+}
+
+/// Read the connector opt-in (default false) from app_settings via the MCP pool.
+fn connector_tools_enabled(pool: &mcp_server::db::McpDbPool) -> bool {
+    pool.get()
+        .ok()
+        .and_then(|c| {
+            c.query_row(
+                "SELECT value FROM app_settings WHERE key = 'qwen_connector_tools'",
+                [],
+                |r| r.get::<_, String>(0),
+            )
+            .ok()
+        })
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(false)
+}
+
 fn cost_of(model: &str, in_tok: u64, out_tok: u64) -> f64 {
     match price_per_million(model) {
         Some((pin, pout)) => (in_tok as f64 / 1e6) * pin + (out_tok as f64 / 1e6) * pout,
@@ -432,11 +464,12 @@ async fn run_tool_loop(
     // Tool catalog = safe built-ins + the remote-safe MCP tools (run in-process
     // via mcp_server::tools::call_tool against a read connection to the same DB).
     let mcp_pool = mcp_server::db::open_pool(&default_data_dir().join("personas.db")).ok();
+    let connectors_on = mcp_pool.as_ref().map(connector_tools_enabled).unwrap_or(false);
     let mut schemas = builtin_tool_schemas();
     if mcp_pool.is_some() {
         for t in mcp_server::tools::list_tools() {
             let name = t.get("name").and_then(Value::as_str).unwrap_or("");
-            if REMOTE_SAFE_MCP_TOOLS.contains(&name) {
+            if tool_allowed(name, connectors_on) {
                 schemas.push(json!({
                     "type": "function",
                     "function": {
@@ -514,7 +547,7 @@ async fn run_tool_loop(
             emit_output(emitter, execution_id, &format!("🔧 {name}({})", args.to_string().chars().take(120).collect::<String>()));
             let result = if name == "get_current_time" || name == "http_get" {
                 execute_builtin_tool(&client, &name, &args).await
-            } else if REMOTE_SAFE_MCP_TOOLS.contains(&name.as_str()) {
+            } else if tool_allowed(&name, connectors_on) {
                 match &mcp_pool {
                     Some(pool) => mcp_call_text(&name, &args, pool),
                     None => format!("error: tool '{name}' backend unavailable"),
@@ -704,6 +737,22 @@ mod tests {
         assert!(price_per_million("qwen3-max").is_some());
         assert_eq!(price_per_million("qwen3.7-plus"), None); // unverified SKU -> $0 stamp
         assert_eq!(price_per_million("unknown"), None);
+    }
+
+    #[test]
+    fn connector_tools_gated_and_disjoint() {
+        // Safe read-only MCP tools are always allowed.
+        assert!(tool_allowed("personas_health", false));
+        // Connector tools only when explicitly opted in.
+        assert!(!tool_allowed("gmail_list_messages", false));
+        assert!(tool_allowed("gmail_list_messages", true));
+        // Write/exec tools are never exposed, even with connectors on.
+        assert!(!tool_allowed("personas_execute", true));
+        assert!(!tool_allowed("drive_write_text", true));
+        // The safe and connector lists must not overlap.
+        for t in CONNECTOR_TOOLS {
+            assert!(!REMOTE_SAFE_MCP_TOOLS.contains(t), "{t} double-listed");
+        }
     }
 
     /// Live end-to-end check against the real Qwen API. Ignored by default

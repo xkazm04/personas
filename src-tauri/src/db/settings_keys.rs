@@ -40,6 +40,11 @@ pub const QWEN_BASE_URL: &str = "qwen_base_url";
 /// Remote HTTP engine default model (per-capability `model_profile` usually pins it).
 pub const QWEN_MODEL: &str = "qwen_model";
 
+/// Opt-in: expose connector MCP tools (Gmail/Drive/Calendar) to remote (Qwen)
+/// engines. Default OFF — enabling sends connector RESULTS (e.g. email content)
+/// to the remote provider. Phase 3b-connectors.
+pub const QWEN_CONNECTOR_TOOLS: &str = "qwen_connector_tools";
+
 /// Athena autonomous wake window in minutes (docs/plans/athena-wake-window.md).
 /// 0 / unset = reactive (every tick); 30/60/120 = signals accumulate until the
 /// surface's last wake is older than the window (queue-size and priority
@@ -495,6 +500,7 @@ const ALLOWED_KEYS: &[&str] = &[
     LITELLM_MASTER_KEY,
     QWEN_BASE_URL,
     QWEN_MODEL,
+    QWEN_CONNECTOR_TOOLS,
     CLI_ENGINE,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,

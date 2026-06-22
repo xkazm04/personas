@@ -77,13 +77,28 @@ Live-verified: `live_qwen_mcp_tool` — Qwen called `personas_health`, the deskt
 ran it against the real local DB (`{personas:{enabled:76,total:78},…}`), and Qwen
 reported the count.
 
+### Connector tools — IMPLEMENTED (opt-in, default OFF)
+Connector tools (`gmail_*`/`gdrive_*`/`gcalendar_*`) are now exposable to remote
+engines, gated behind the `qwen_connector_tools` setting (default OFF):
+- At startup the desktop process exports `PERSONAS_API_KEY` +
+  `PERSONAS_BRIDGE_URL` (lib.rs, where the system key is already bootstrapped) —
+  the same vars the CLI path injects into the sidecar — so the engine's
+  in-process `call_tool` → `bridge_proxy` reaches the :9420 credential proxy.
+- When the opt-in is on, `CONNECTOR_TOOLS` are added to the catalog + routing
+  (`tool_allowed(name, connectors_on)`). **Credential boundary holds**: the proxy
+  decrypts + forwards the OAuth call locally; only tool *args* and *results* cross
+  to Qwen.
+- **Default OFF on purpose** — enabling sends connector *results* (e.g. email
+  bodies) to Qwen. That's a per-team data-residency decision.
+
+> Verification note: unlike earlier phases, the connector round-trip can't be
+> autonomously tested in `cargo test` — the :9420 proxy runs only in the live app
+> and needs configured Google OAuth credentials. The gating/allowlist logic is
+> unit-tested (`connector_tools_gated_and_disjoint`); the live Gmail/Drive call is
+> verified in the running app with the opt-in enabled.
+
 ### Remaining work
-- **Connector tools (`gmail_*`/`gdrive_*`/`gcalendar_*`)** are NOT yet exposed.
-  They route through the desktop credential proxy on `:9420` (needs
-  `PERSONAS_BRIDGE_URL` + `PERSONAS_API_KEY` in env). Exposing them = wiring that
-  bridge env for in-process calls + adding them to the allowlist. This is the
-  step that gives non-dev teams real SaaS connectors — **the credential boundary
-  holds**: the proxy decrypts/forwards locally; only args+results cross to Qwen.
+- **A UI toggle** for `qwen_connector_tools` (today flip it via `set_app_setting`).
 - **Per-persona tool scoping** — today the safe set is global; should be
   intersected with the persona's *declared* tools.
 - **Sandbox for code-exec tools** (Firecracker/E2B/gVisor) — only when a shell/fs
