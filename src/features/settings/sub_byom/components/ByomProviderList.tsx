@@ -1,7 +1,8 @@
-import { memo, useMemo, useState, useCallback, useEffect } from 'react';
-import { CloudCog, KeyRound } from 'lucide-react';
+import { memo, useMemo, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { CloudCog, KeyRound, Cloud, Terminal } from 'lucide-react';
 import type { ByomPolicy, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult } from '@/api/system/byom';
 import { testProviderConnection } from '@/api/system/byom';
+import { getQwenStatus } from '@/api/system/qwen';
 import { PROVIDER_OPTIONS, ENGINE_LABELS } from '../libs/byomHelpers';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { ProviderSparkline } from './ProviderSparkline';
@@ -18,6 +19,22 @@ const SPARKLINE_COLORS = {
   cost: '#8b5cf6',       // violet-500
   duration: '#f59e0b',   // amber-500
 } as const;
+
+// Provider cards for the redesigned Allowed-providers section. Claude is a local
+// CLI engine (enabled via the BYOM allowed-list; feasibility = CLI probe); Qwen
+// is a cloud HTTP provider (enabled by configuring an API key in the API Keys
+// tab; feasibility = key present). Labels are brand names — not translated.
+type ProviderKind = 'cli' | 'cloud';
+interface ProviderCardDesc {
+  id: string;
+  label: string;
+  icon: typeof Cloud;
+  kind: ProviderKind;
+}
+const PROVIDER_CARDS: ProviderCardDesc[] = [
+  { id: 'claude_code', label: 'Claude Code', icon: Terminal, kind: 'cli' },
+  { id: 'qwen', label: 'Qwen Cloud', icon: Cloud, kind: 'cloud' },
+];
 
 interface ByomProviderListProps {
   policy: ByomPolicy;
@@ -157,6 +174,18 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
   const { t } = useTranslation();
   const s = t.settings.byom;
 
+  // Qwen "enabled" state is backed by API-key presence (keyring), not the BYOM
+  // allowed-list. Loaded on mount; the tab remounts when the user returns from
+  // the API Keys tab, so a freshly-added key reflects here.
+  const [qwenConfigured, setQwenConfigured] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    getQwenStatus()
+      .then((st) => { if (!cancelled) setQwenConfigured(st.configured); })
+      .catch(() => setQwenConfigured(false));
+    return () => { cancelled = true; };
+  }, []);
+
   const handleTestConnection = useCallback(async (providerId: string) => {
     const transient: ConnectionTestResult = { state: 'testing' };
     healthCache.set(providerId, transient);
@@ -209,38 +238,50 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
 
   return (
     <div className="space-y-4">
-      {/* Allowed providers */}
+      {/* Allowed providers — card buttons (click to enable/disable) */}
       <div className="rounded-modal border border-primary/10 bg-card-bg p-4 space-y-3">
         <SectionHeading title={s.allowed_providers} />
         <p className="typo-body text-foreground">
           {s.allowed_providers_hint}
         </p>
-        <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-2">
-          {PROVIDER_OPTIONS.map((prov) => {
-            const isAllowed = policy.allowed_providers.includes(prov.id);
-            const test = testResults[prov.id];
-            return (
-              <div key={prov.id} className="flex flex-col gap-1.5">
-                <button
-                  onClick={() => toggleProvider(prov.id, 'allowed')}
-                  className={`p-3 rounded-card border text-left typo-body transition-all relative ${
-                    isAllowed
-                      ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
-                      : 'border-primary/10 text-foreground hover:border-primary/20'
-                  }`}
-                >
-                  <span className="flex items-center gap-2">
-                    {isAllowed && <HealthDot state={test?.state ?? 'idle'} />}
-                    <span>{prov.label}</span>
-                  </span>
-                  {isAllowed && <span className="ml-2 text-emerald-400">{s.allowed}</span>}
-                </button>
-                <TestConnectionButton
-                  providerId={prov.id}
-                  testState={test}
-                  onTest={handleTestConnection}
+        <div className="grid grid-cols-2 2xl:grid-cols-3 3xl:grid-cols-4 gap-3">
+          {PROVIDER_CARDS.map((card) => {
+            // Cloud provider (Qwen): enablement = API key configured. The card
+            // routes to the API Keys tab where the key is added/removed.
+            if (card.kind === 'cloud') {
+              return (
+                <ProviderCard
+                  key={card.id}
+                  card={card}
+                  enabled={qwenConfigured}
+                  onClick={() => onAddKey?.()}
+                  statusText={qwenConfigured ? s.allowed : s.qwen_needs_key}
+                  dotState={qwenConfigured ? 'pass' : undefined}
                 />
-              </div>
+              );
+            }
+            // CLI provider (Claude): enablement = BYOM allowed-list; clicking
+            // toggles it, and feasibility is probed via the CLI test.
+            const isAllowed = policy.allowed_providers.includes(card.id);
+            const test = testResults[card.id];
+            return (
+              <ProviderCard
+                key={card.id}
+                card={card}
+                enabled={isAllowed}
+                onClick={() => toggleProvider(card.id, 'allowed')}
+                statusText={isAllowed ? s.allowed : undefined}
+                dotState={isAllowed ? (test?.state ?? 'idle') : undefined}
+                footer={
+                  isAllowed ? (
+                    <TestConnectionButton
+                      providerId={card.id}
+                      testState={test}
+                      onTest={handleTestConnection}
+                    />
+                  ) : undefined
+                }
+              />
             );
           })}
         </div>
@@ -303,6 +344,52 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
           />
         )}
       </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Provider card (icon + name, click to enable/disable)
+// =============================================================================
+
+function ProviderCard({
+  card,
+  enabled,
+  onClick,
+  statusText,
+  dotState,
+  footer,
+}: {
+  card: ProviderCardDesc;
+  enabled: boolean;
+  onClick: () => void;
+  statusText?: string;
+  dotState?: TestState;
+  footer?: ReactNode;
+}) {
+  const Icon = card.icon;
+  return (
+    <div className="flex flex-col gap-1.5">
+      <button
+        onClick={onClick}
+        className={`p-3 rounded-card border text-left transition-all flex flex-col gap-2 ${
+          enabled
+            ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
+            : 'border-primary/10 text-foreground hover:border-primary/25 hover:bg-secondary/20'
+        }`}
+      >
+        <span className="flex items-center gap-2">
+          <Icon className={`w-5 h-5 shrink-0 ${enabled ? 'text-emerald-400' : 'text-foreground/70'}`} />
+          <span className="typo-body font-medium">{card.label}</span>
+          {dotState && <HealthDot state={dotState} />}
+        </span>
+        {statusText && (
+          <span className={`typo-caption ${enabled ? 'text-emerald-400' : 'text-foreground/60'}`}>
+            {statusText}
+          </span>
+        )}
+      </button>
+      {footer}
     </div>
   );
 }

@@ -405,7 +405,10 @@
     "usage_empty_title": "No provider activity yet",
     "usage_empty_description": "Once you allow a provider and run an agent, executions, cost, and latency for each provider will appear here.",
     "usage_empty_action": "Add a provider key",
-    "test_cli_scope_note": "Überprüft, ob der Anbieter-CLI installiert ist und reagiert. Der Modell-Endpunkt und API-Schlüssel werden beim ersten echten Einsatz validiert, nicht durch diese Prüfung."
+    "test_cli_scope_note": "Überprüft, ob der Anbieter-CLI installiert ist und reagiert. Der Modell-Endpunkt und API-Schlüssel werden beim ersten echten Einsatz validiert, nicht durch diese Prüfung.",
+    "provider_qwen_description": "DashScope-API-Schlüssel für Qwen-Cloud-Modelle. Erforderlich, um den Qwen-Anbieter zu aktivieren.",
+    "provider_qwen_label": "Qwen Cloud",
+    "qwen_needs_key": "API-Schlüssel hinzufügen, um zu aktivieren"
   },
   "admin": {
     "title": "Admin",

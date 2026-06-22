@@ -9897,6 +9897,9 @@ export type Translations = {
       provider_litellm_base_url_description: string;
       provider_litellm_master_key_label: string;
       provider_litellm_master_key_description: string;
+      provider_qwen_label: string;
+      provider_qwen_description: string;
+      qwen_needs_key: string;
       routing_title: string;
       routing_hint: string;
       routing_empty: string;

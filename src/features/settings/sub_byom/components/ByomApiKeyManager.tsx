@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Eye, EyeOff, Trash2, Check, X, Loader2, Copy } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
+import { getQwenStatus, setQwenCredentials, clearQwenCredentials } from '@/api/system/qwen';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
@@ -240,8 +241,124 @@ export function ByomApiKeyManager() {
               onTest={() => handleTest(index)}
             />
           ))}
+          {/* Qwen Cloud — keyring-backed (set_qwen_credentials), not app_settings. */}
+          <QwenKeyRow />
         </div>
       </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// Qwen Cloud API key (keyring-backed)
+// =============================================================================
+
+function QwenKeyRow() {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
+  const [configured, setConfigured] = useState(false);
+  const [value, setValue] = useState('');
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getQwenStatus()
+      .then((st) => { if (!cancelled) setConfigured(st.configured); })
+      .catch(() => setConfigured(false));
+    return () => { cancelled = true; };
+  }, []);
+
+  const save = useCallback(async () => {
+    const v = value.trim();
+    if (!v) return;
+    setBusy(true);
+    try {
+      await setQwenCredentials(v);
+      setConfigured(true);
+      setEditing(false);
+      setValue('');
+    } catch (err) {
+      logSecretSafeError('save', 'qwen-api-key', err);
+    } finally {
+      setBusy(false);
+    }
+  }, [value]);
+
+  const remove = useCallback(async () => {
+    setBusy(true);
+    try {
+      await clearQwenCredentials();
+      setConfigured(false);
+      setValue('');
+      setEditing(false);
+    } catch (err) {
+      logSecretSafeError('delete', 'qwen-api-key', err);
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  const showEditor = editing || !configured;
+
+  return (
+    <div className="rounded-card border border-primary/10 bg-secondary/20 p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="typo-body font-medium text-foreground">{s.provider_qwen_label}</span>
+          {configured && (
+            <span className="flex items-center gap-1 typo-caption px-1.5 py-0.5 rounded-input bg-secondary/40 border border-primary/15 text-foreground">
+              <Check className="w-3 h-3" />
+              {s.stored}
+            </span>
+          )}
+        </div>
+        {configured && !editing && (
+          <button
+            onClick={() => void remove()}
+            disabled={busy}
+            className="typo-caption p-1.5 rounded-input text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50"
+            title={s.remove_key}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      <p className="typo-caption text-foreground">{s.provider_qwen_description}</p>
+
+      {showEditor ? (
+        <div className="flex items-center gap-2">
+          <PasswordToggleField
+            className="flex-1"
+            inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
+              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40 font-mono"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="sk-..."
+            autoComplete="off"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && value.trim()) void save();
+              if (e.key === 'Escape') { setEditing(false); setValue(''); }
+            }}
+          />
+          <button
+            onClick={() => void save()}
+            disabled={!value.trim() || busy}
+            className="p-1.5 rounded-input text-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-30"
+            title={s.save_key_title}
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+          </button>
+        </div>
+      ) : (
+        <div onClick={() => setEditing(true)} className="flex items-center gap-2 cursor-pointer group">
+          <div className="flex-1 px-3 py-1.5 typo-code rounded-card border border-primary/10 bg-secondary/30
+            group-hover:border-primary/20 transition-all font-mono min-h-[32px] flex items-center">
+            <span className="text-foreground">{'•'.repeat(16)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

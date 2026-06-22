@@ -9746,7 +9746,10 @@
       "usage_empty_title": "No provider activity yet",
       "usage_empty_description": "Once you allow a provider and run an agent, executions, cost, and latency for each provider will appear here.",
       "usage_empty_action": "Add a provider key",
-      "test_cli_scope_note": "验证提供商 CLI 已安装并正常响应。模型端点和 API 密钥将在首次实际使用时验证，而非此处检查。"
+      "test_cli_scope_note": "验证提供商 CLI 已安装并正常响应。模型端点和 API 密钥将在首次实际使用时验证，而非此处检查。",
+      "provider_qwen_description": "用于 Qwen 云模型的 DashScope API 密钥。启用 Qwen 提供商时需要。",
+      "provider_qwen_label": "Qwen Cloud",
+      "qwen_needs_key": "添加 API 密钥以启用"
     },
     "admin": {
       "title": "管理",

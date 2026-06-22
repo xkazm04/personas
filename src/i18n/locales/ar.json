@@ -9746,7 +9746,10 @@
       "usage_empty_title": "No provider activity yet",
       "usage_empty_description": "Once you allow a provider and run an agent, executions, cost, and latency for each provider will appear here.",
       "usage_empty_action": "Add a provider key",
-      "test_cli_scope_note": "يتحقق من تثبيت CLI الموفّر واستجابته. يُتحقق من نقطة نهاية النموذج ومفتاح API عند الاستخدام الحقيقي الأول، وليس بهذا الفحص."
+      "test_cli_scope_note": "يتحقق من تثبيت CLI الموفّر واستجابته. يُتحقق من نقطة نهاية النموذج ومفتاح API عند الاستخدام الحقيقي الأول، وليس بهذا الفحص.",
+      "provider_qwen_description": "مفتاح واجهة برمجة التطبيقات DashScope لنماذج Qwen السحابية. مطلوب لتمكين مزوّد Qwen.",
+      "provider_qwen_label": "Qwen Cloud",
+      "qwen_needs_key": "أضف مفتاح API للتمكين"
     },
     "admin": {
       "title": "المدير",

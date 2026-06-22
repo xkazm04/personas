@@ -9746,7 +9746,10 @@
       "usage_empty_title": "No provider activity yet",
       "usage_empty_description": "Once you allow a provider and run an agent, executions, cost, and latency for each provider will appear here.",
       "usage_empty_action": "Add a provider key",
-      "test_cli_scope_note": "প্রোভাইডার CLI ইনস্টল এবং সাড়া দিচ্ছে কিনা যাচাই করে। মডেল এন্ডপয়েন্ট এবং API কী প্রথম বাস্তব ব্যবহারে যাচাই হয়, এই চেকে নয়।"
+      "test_cli_scope_note": "প্রোভাইডার CLI ইনস্টল এবং সাড়া দিচ্ছে কিনা যাচাই করে। মডেল এন্ডপয়েন্ট এবং API কী প্রথম বাস্তব ব্যবহারে যাচাই হয়, এই চেকে নয়।",
+      "provider_qwen_description": "Qwen ক্লাউড মডেলের জন্য DashScope API কী। Qwen প্রদানকারী সক্ষম করতে প্রয়োজন।",
+      "provider_qwen_label": "Qwen Cloud",
+      "qwen_needs_key": "সক্ষম করতে একটি API কী যোগ করুন"
     },
     "admin": {
       "title": "অ্যাডমিন",

@@ -9746,7 +9746,10 @@
       "usage_empty_title": "No provider activity yet",
       "usage_empty_description": "Once you allow a provider and run an agent, executions, cost, and latency for each provider will appear here.",
       "usage_empty_action": "Add a provider key",
-      "test_cli_scope_note": "Memverifikasi bahwa CLI penyedia terpasang dan merespons. Endpoint model dan API key divalidasi pada penggunaan nyata pertama, bukan oleh pemeriksaan ini."
+      "test_cli_scope_note": "Memverifikasi bahwa CLI penyedia terpasang dan merespons. Endpoint model dan API key divalidasi pada penggunaan nyata pertama, bukan oleh pemeriksaan ini.",
+      "provider_qwen_description": "Kunci API DashScope untuk model cloud Qwen. Diperlukan untuk mengaktifkan penyedia Qwen.",
+      "provider_qwen_label": "Qwen Cloud",
+      "qwen_needs_key": "Tambahkan kunci API untuk mengaktifkan"
     },
     "admin": {
       "title": "Admin",
