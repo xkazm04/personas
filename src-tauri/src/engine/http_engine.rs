@@ -397,6 +397,8 @@ const REMOTE_SAFE_MCP_TOOLS: &[&str] = &[
     "context_list_groups", "context_search_by_keyword", "context_get_by_file_path", "context_neighbors",
     "arena_list_models", "arena_list_runs", "arena_run_status", "arena_get_results",
     "obsidian_vault_search",
+    // Bounded write: lets a running persona post its own summary to Messages.
+    "post_message",
 ];
 
 /// Connector MCP tools (Gmail/Drive/Calendar) — opt-in via the

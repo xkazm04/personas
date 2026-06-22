@@ -1315,13 +1315,24 @@ pub async fn run_execution(
     // (handle_execution_result) persists the terminal DB row.
     if let Some(p) = model_profile.as_ref().and_then(|m| m.provider.as_deref()) {
         if super::http_engine::is_remote_http_provider(p) {
+            // A connector-only persona (no persona_tools rows) still needs the
+            // tool loop when the connector opt-in is on, so it can call gmail_*
+            // etc. So: tool loop if the persona has tools OR connectors are enabled.
+            let connectors_on = crate::db::repos::core::settings::get(
+                &pool,
+                crate::db::settings_keys::QWEN_CONNECTOR_TOOLS,
+            )
+            .ok()
+            .flatten()
+            .map(|v| v == "true" || v == "1")
+            .unwrap_or(false);
             return super::http_engine::run_http_execution(
                 &*emitter,
                 &execution_id,
                 &persona.name,
                 model_profile.as_ref().unwrap(),
                 &prompt_text,
-                !tools.is_empty(),
+                !tools.is_empty() || connectors_on,
                 &cancelled,
                 start_time,
             )
