@@ -1317,9 +1317,8 @@ pub async fn run_execution(
         if super::http_engine::is_remote_http_provider(p) {
             return super::http_engine::run_http_execution(
                 &*emitter,
-                &pool,
                 &execution_id,
-                &persona,
+                &persona.name,
                 model_profile.as_ref().unwrap(),
                 &prompt_text,
                 &tools,

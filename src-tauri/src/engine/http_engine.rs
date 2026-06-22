@@ -32,8 +32,7 @@ use futures_util::StreamExt;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::db::models::{Persona, PersonaToolDefinition};
-use crate::db::DbPool;
+use crate::db::models::PersonaToolDefinition;
 use crate::engine::event_registry::event_name;
 use crate::engine::events::{emit_to, ExecutionEventEmitter};
 use crate::engine::types::{
@@ -41,9 +40,9 @@ use crate::engine::types::{
 };
 
 /// Default DashScope (international) OpenAI-compatible endpoint.
-const DEFAULT_BASE_URL: &str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
+pub const DEFAULT_BASE_URL: &str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 /// Default model when a capability/persona doesn't pin one.
-const DEFAULT_MODEL: &str = "qwen3-coder-plus";
+pub const DEFAULT_MODEL: &str = "qwen3-coder-plus";
 /// Generous timeout — LLM generations (esp. reasoning models) are slow; the
 /// outer `run_execution_with_ceiling` still caps total wall time.
 const HTTP_TIMEOUT_SECS: u64 = 600;
@@ -135,6 +134,38 @@ fn load_keyring_qwen_key() -> Option<String> {
     None
 }
 
+/// Store the Qwen API key in the OS keyring. (no-op on mobile)
+#[cfg(feature = "desktop")]
+pub fn store_qwen_api_key(api_key: &str) -> Result<(), String> {
+    keyring::Entry::new("personas-desktop", "qwen-api-key")
+        .map_err(|e| format!("keyring entry error: {e}"))?
+        .set_password(api_key)
+        .map_err(|e| format!("failed to store qwen api key: {e}"))
+}
+
+#[cfg(not(feature = "desktop"))]
+pub fn store_qwen_api_key(_api_key: &str) -> Result<(), String> {
+    Ok(())
+}
+
+/// Remove the stored Qwen API key from the OS keyring. (no-op on mobile)
+#[cfg(feature = "desktop")]
+pub fn clear_qwen_api_key() {
+    if let Ok(entry) = keyring::Entry::new("personas-desktop", "qwen-api-key") {
+        let _ = entry.delete_credential();
+    }
+}
+
+#[cfg(not(feature = "desktop"))]
+pub fn clear_qwen_api_key() {}
+
+/// Whether a Qwen API key is configured (keyring or env) — never reveals it.
+pub fn qwen_key_configured() -> bool {
+    load_keyring_qwen_key().is_some()
+        || std::env::var("QWEN_API_KEY").is_ok_and(|v| !v.is_empty())
+        || std::env::var("DASHSCOPE_API_KEY").is_ok_and(|v| !v.is_empty())
+}
+
 /// Resolve the provider API key: profile override → OS keyring → env.
 fn resolve_api_key(model_profile: &ModelProfile) -> Option<String> {
     if let Some(t) = model_profile.auth_token.as_deref() {
@@ -163,9 +194,8 @@ fn resolve_api_key(model_profile: &ModelProfile) -> Option<String> {
 #[allow(clippy::too_many_arguments)]
 pub async fn run_http_execution(
     emitter: &dyn ExecutionEventEmitter,
-    _pool: &DbPool,
     execution_id: &str,
-    persona: &Persona,
+    persona_name: &str,
     model_profile: &ModelProfile,
     prompt_text: &str,
     tools: &[PersonaToolDefinition],
@@ -184,7 +214,7 @@ pub async fn run_http_execution(
             &format!(
                 "Remote provider '{provider}' is text-only in Phase 1, but persona \
                  '{}' has {} tool(s). Assign tool-using capabilities to the Claude engine.",
-                persona.name,
+                persona_name,
                 tools.len()
             ),
             start_time,
@@ -424,5 +454,45 @@ mod tests {
         assert!(price_per_million("qwen3-max").is_some());
         assert_eq!(price_per_million("qwen3.7-plus"), None); // unverified SKU -> $0 stamp
         assert_eq!(price_per_million("unknown"), None);
+    }
+
+    /// Live end-to-end check against the real Qwen API. Ignored by default
+    /// (needs a key + network). Run with:
+    ///   QWEN_API_KEY=... cargo test --features desktop --lib http_engine -- --ignored
+    #[tokio::test]
+    #[ignore = "hits the live Qwen API; set QWEN_API_KEY/DASHSCOPE_API_KEY and run with --ignored"]
+    async fn live_qwen_roundtrip() {
+        use crate::engine::events::NoOpEmitter;
+
+        let mp = ModelProfile {
+            model: Some(DEFAULT_MODEL.to_string()),
+            provider: Some("qwen".to_string()),
+            base_url: None,
+            auth_token: None,
+            prompt_cache_policy: None,
+            effort: None,
+        };
+        let emitter = NoOpEmitter::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+
+        let result = run_http_execution(
+            &emitter,
+            "live-test-exec",
+            "Live Test",
+            &mp,
+            "Reply with exactly the single word: PONG",
+            &[],
+            &cancelled,
+            Instant::now(),
+        )
+        .await;
+
+        assert!(result.success, "expected success, got error: {:?}", result.error);
+        let out = result.output.unwrap_or_default();
+        assert!(!out.trim().is_empty(), "expected non-empty output");
+        eprintln!(
+            "[live_qwen_roundtrip] model={:?} cost=${:.6} duration={}ms output={}",
+            result.model_used, result.cost_usd, result.duration_ms, out.trim()
+        );
     }
 }

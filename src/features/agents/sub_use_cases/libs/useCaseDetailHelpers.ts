@@ -23,6 +23,11 @@ export const MODEL_OPTIONS: ModelOption[] = [
   { id: 'haiku', label: 'Haiku', provider: 'anthropic', model: 'haiku' },
   { id: 'sonnet', label: 'Sonnet', provider: 'anthropic', model: 'sonnet' },
   { id: 'opus', label: 'Opus', provider: 'anthropic' },
+  // Qwen remote engine (Phase 1 split engine) — text-only capabilities run on
+  // Qwen Cloud via the HTTP engine instead of the local Claude CLI. base_url is
+  // omitted so the engine uses the configured `qwen_base_url` setting / default.
+  { id: 'qwen-coder', label: 'Qwen Coder', provider: 'qwen', model: 'qwen3-coder-plus' },
+  { id: 'qwen-max', label: 'Qwen Max', provider: 'qwen', model: 'qwen3-max' },
   ...OLLAMA_CLOUD_PRESETS.map((p) => ({
     id: p.value,
     label: p.label.split(' (')[0] ?? p.label,

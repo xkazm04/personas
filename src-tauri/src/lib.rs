@@ -2662,6 +2662,10 @@ pub fn run() {
             commands::infrastructure::settings::set_quality_gate_config,
             commands::infrastructure::settings::reset_quality_gate_config,
             commands::infrastructure::settings::list_settings_audit_entries,
+            // Infrastructure -- Qwen remote engine (Phase 1 split engine)
+            commands::infrastructure::qwen_engine::set_qwen_credentials,
+            commands::infrastructure::qwen_engine::get_qwen_status,
+            commands::infrastructure::qwen_engine::clear_qwen_credentials,
             // Infrastructure -- BYOM (Bring Your Own Model)
             commands::infrastructure::byom::get_byom_policy,
             commands::infrastructure::byom::set_byom_policy,

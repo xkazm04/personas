@@ -19,6 +19,7 @@ pub mod kpi_compose;
 pub mod kpi_scan;
 pub mod llm_spend;
 pub mod incremental_scan;
+pub mod qwen_engine;
 pub mod research_lab;
 pub mod settings;
 pub mod setup;
