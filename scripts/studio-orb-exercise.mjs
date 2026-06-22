@@ -24,7 +24,9 @@ const alive = async () => (await fetch(BASE + '/health').then((r) => r.json()).c
 const results = [];
 const check = (n, ok) => { results.push(ok); console.log(`${ok ? 'PASS' : 'FAIL'}  ${n}`); };
 
-const OPEN_MK = `window.__TAURI__.core.invoke('webbuild_register_existing',{name:'mk',path:'${MK}'}).then(p=>{window.__mkId=p.id;return window.__studioStore.getState().startExisting(p.id,'mk');}).catch(e=>{window.__mkErr=String(e&&e.message||e)})`;
+// Register → stop any stale/dead server (the registry can report a dead one as
+// "healthy") → start genuinely fresh so the preview serves + the agent loads.
+const OPEN_MK = `window.__TAURI__.core.invoke('webbuild_register_existing',{name:'mk',path:'${MK}'}).then(p=>{window.__mkId=p.id;return window.__TAURI__.core.invoke('webbuild_dev_stop',{projectId:p.id}).catch(()=>{}).then(()=>window.__studioStore.getState().startExisting(p.id,'mk'));}).catch(e=>{window.__mkErr=String(e&&e.message||e)})`;
 const INSTRUCTION =
   'On the home page, the hero headline could be stronger. Propose two alternative headlines and ask me which I prefer — point me at the headline element so I can see which part of the page you mean.';
 const PROBE_ORB = `(()=>{const c=window.__companionStore;const t=c&&c.getState&&c.getState().orbGuideTarget;let e=document.getElementById('__ot')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'__ot'}));e.textContent=t?('L'+Math.round(t.left)+',T'+Math.round(t.top)):'null';return 1})()`;
@@ -64,7 +66,7 @@ const readOrb = async () => { await ev(PROBE_ORB); await sleep(700); return (awa
     await ev(`(()=>{const r=window.__studioStore.getState().runtimes[window.__mkId];let e=document.getElementById('__dec')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'__dec'}));e.textContent='SEL='+((r&&r.decisionSelector)||'none')+' | AREA='+((r&&r.decisionArea)||'none');return 1})()`);
     await sleep(700);
     console.log('  Athena emitted →', (await query('#__dec'))[0]?.text || '?');
-    await sleep(2500); await focus(); // let the locate handshake + orb-fly settle
+    await sleep(7000); await focus(); // let the locate retries + handshake + orb-fly settle
     const ring = (await count('[data-testid="studio-orb-pointer"]')) >= 1;
     const orb = await readOrb();
     check('precise ring on the element (selector emitted + located)', ring);

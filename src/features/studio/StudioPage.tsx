@@ -93,17 +93,23 @@ export default function StudioPage() {
   }, []);
 
   // When a decision targets a specific element, ask the preview agent to locate it.
+  // Retry a few times: the preview may have just hot-reloaded from the build turn,
+  // so the agent's message listener might not be ready on the first ping. Each
+  // reply (handled above) sets pointerRect; extra pings after that are harmless.
   useEffect(() => {
     setPointerRect(null);
     if (!active?.question || !active?.decisionSelector) return;
-    const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
-    const win = iframe?.contentWindow;
-    if (!win) return;
     const selector = active.decisionSelector;
-    const t = window.setTimeout(() => {
-      win.postMessage({ source: 'athena', type: 'locate', selector, reqId: `${activeId}` }, '*');
-    }, 400);
-    return () => window.clearTimeout(t);
+    let tries = 0;
+    const interval = window.setInterval(() => {
+      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      iframe?.contentWindow?.postMessage(
+        { source: 'athena', type: 'locate', selector, reqId: `${activeId}` },
+        '*',
+      );
+      if (++tries >= 8) window.clearInterval(interval);
+    }, 700);
+    return () => window.clearInterval(interval);
   }, [activeId, active?.question, active?.decisionSelector]);
 
   // Fly Athena's global orb to the element a precise decision is about — reusing
