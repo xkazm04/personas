@@ -127,6 +127,8 @@ pub mod oauth_refresh_lock;
 // See ollama.rs module docs for the full revival checklist.
 #[cfg(feature = "ollama")]
 pub mod ollama;
+/// Remote HTTP inference (Qwen/DashScope) — Phase 1 split engine. See module docs.
+pub mod http_engine;
 pub mod optimizer;
 pub mod output_assertions;
 #[cfg(feature = "p2p")]

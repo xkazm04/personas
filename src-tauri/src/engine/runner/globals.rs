@@ -38,6 +38,11 @@ pub(super) fn resolve_global_provider_settings(pool: &DbPool, profile: &mut Mode
                 settings_keys::LITELLM_MASTER_KEY,
             );
         }
+        Some(providers::QWEN) => {
+            // Phase 1 split engine: fill the Qwen base URL from settings; the API
+            // key is resolved at call time (keyring/env) in engine::http_engine.
+            apply_global_setting(pool, &mut profile.base_url, settings_keys::QWEN_BASE_URL);
+        }
         _ => {}
     }
 }

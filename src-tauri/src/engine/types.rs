@@ -425,6 +425,8 @@ pub mod providers {
     pub const LITELLM: &str = "litellm";
     #[allow(dead_code)] // pending: matches the "custom" provider option in the settings UI; not yet branched on in dispatch
     pub const CUSTOM: &str = "custom";
+    /// Remote HTTP provider (Phase 1 split engine): Qwen via DashScope.
+    pub const QWEN: &str = "qwen";
 }
 
 // =============================================================================

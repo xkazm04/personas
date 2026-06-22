@@ -33,6 +33,13 @@ pub const LITELLM_BASE_URL: &str = "litellm_base_url";
 /// LiteLLM proxy master authentication key (`sk-...`).
 pub const LITELLM_MASTER_KEY: &str = "litellm_master_key";
 
+/// Remote HTTP engine (Phase 1 split): Qwen/DashScope OpenAI-compatible base URL.
+/// Default applied in `engine::http_engine` when unset.
+pub const QWEN_BASE_URL: &str = "qwen_base_url";
+
+/// Remote HTTP engine default model (per-capability `model_profile` usually pins it).
+pub const QWEN_MODEL: &str = "qwen_model";
+
 /// Athena autonomous wake window in minutes (docs/plans/athena-wake-window.md).
 /// 0 / unset = reactive (every tick); 30/60/120 = signals accumulate until the
 /// surface's last wake is older than the window (queue-size and priority
@@ -486,6 +493,8 @@ const ALLOWED_KEYS: &[&str] = &[
     DELEGATE_BASE_URL,
     LITELLM_BASE_URL,
     LITELLM_MASTER_KEY,
+    QWEN_BASE_URL,
+    QWEN_MODEL,
     CLI_ENGINE,
     BROWSER_BRIDGE_PAIRING_TOKEN,
     EVENT_RETENTION_DAYS,

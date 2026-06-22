@@ -1307,6 +1307,29 @@ pub async fn run_execution(
         );
     }
 
+    // ── Split engine (Phase 1): route per-capability to a remote HTTP provider
+    // (Qwen/DashScope) instead of spawning the local Claude CLI. Text-only —
+    // tool-using capabilities are rejected inside run_http_execution (they must
+    // use the Claude engine). The HTTP path emits the same EXECUTION_OUTPUT/
+    // EXECUTION_STATUS events and returns an ExecutionResult; the caller
+    // (handle_execution_result) persists the terminal DB row.
+    if let Some(p) = model_profile.as_ref().and_then(|m| m.provider.as_deref()) {
+        if super::http_engine::is_remote_http_provider(p) {
+            return super::http_engine::run_http_execution(
+                &*emitter,
+                &pool,
+                &execution_id,
+                &persona,
+                model_profile.as_ref().unwrap(),
+                &prompt_text,
+                &tools,
+                &cancelled,
+                start_time,
+            )
+            .await;
+        }
+    }
+
     // Resolve provider + build CLI args + spawn, trying each failover candidate
     let mut last_spawn_error: Option<String> = None;
     #[allow(unused_assignments)]
