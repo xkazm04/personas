@@ -37,6 +37,7 @@ export default function StudioQuickActions({ id }: { id: string }) {
         <button
           key={a.label}
           type="button"
+          data-testid="studio-quick-action"
           onClick={() => void sendTurn(id, a.prompt)}
           className="rounded-full border border-border bg-background/80 px-2.5 py-1 text-xs text-foreground/70 shadow-elevation-1 backdrop-blur transition-colors hover:border-primary/40 hover:text-primary"
         >

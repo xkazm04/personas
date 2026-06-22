@@ -13,4 +13,8 @@ options: Array<string>,
 /**
  * Coarse preview region the question is about (A3): "top"|"middle"|"bottom".
  */
-area: string | null, };
+area: string | null, 
+/**
+ * CSS selector of the element the question is about (A3 precise pointer).
+ */
+selector: string | null, };
