@@ -79,6 +79,9 @@ pub async fn webbuild_dev_start(
             project.root_path
         )));
     }
+    // Inject the dev-only preview agent so the precise orb pointer (A3) can locate
+    // elements in the cross-origin preview. Idempotent + best-effort.
+    crate::webbuild::preview_agent::ensure(&dir);
     let port = webbuild::devserver::alloc_port()?;
     state.webbuild_servers.start(&project_id, &dir, port).await
 }
