@@ -31,6 +31,14 @@ export default function StudioPage() {
   const [iframeNonces, setIframeNonces] = useState<Record<string, number>>({});
   const [previewRoutes, setPreviewRoutes] = useState<Record<string, string>>({});
   const [routesByTab, setRoutesByTab] = useState<Record<string, string[]>>({});
+  // Precise orb-pointer rect (A3) — the bounding box of the element a decision is
+  // about, reported by the preview agent over postMessage.
+  const [pointerRect, setPointerRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const initStream = useStudioStore((s) => s.initStream);
   const createWithVision = useStudioStore((s) => s.createWithVision);
@@ -64,6 +72,38 @@ export default function StudioPage() {
         .catch(() => setRoutesByTab((m) => ({ ...m, [id]: [] })));
     }
   }, [activeId, active?.phase, activeNonce]);
+
+  // A3 precise pointer — receive the preview agent's rect replies.
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as
+        | {
+            source?: string;
+            type?: string;
+            found?: boolean;
+            rect?: { x: number; y: number; width: number; height: number } | null;
+          }
+        | null;
+      if (!d || d.source !== 'athena-agent' || d.type !== 'located') return;
+      setPointerRect(d.found && d.rect ? d.rect : null);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // When a decision targets a specific element, ask the preview agent to locate it.
+  useEffect(() => {
+    setPointerRect(null);
+    if (!active?.question || !active?.decisionSelector) return;
+    const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+    const win = iframe?.contentWindow;
+    if (!win) return;
+    const selector = active.decisionSelector;
+    const t = window.setTimeout(() => {
+      win.postMessage({ source: 'athena', type: 'locate', selector, reqId: `${activeId}` }, '*');
+    }, 400);
+    return () => window.clearTimeout(t);
+  }, [activeId, active?.question, active?.decisionSelector]);
 
   const onCreate = useCallback(
     async (name: string, vision: string) => {
@@ -153,8 +193,26 @@ export default function StudioPage() {
                     ))}
                   </div>
                 )}
-                {/* A3 — coarse orb pointer: pulse at the region the decision is about. */}
-                {active.question && active.decisionArea && (
+                {/* A3 — orb pointer: precise ring around the element when the preview
+                    agent returned a rect, else the coarse top/middle/bottom region. */}
+                {active.question && pointerRect ? (
+                  <div
+                    className="pointer-events-none absolute z-20 rounded-lg ring-2 ring-primary transition-all duration-300"
+                    style={{
+                      left: pointerRect.x,
+                      top: pointerRect.y,
+                      width: pointerRect.width,
+                      height: pointerRect.height,
+                    }}
+                  >
+                    <span className="absolute -right-2.5 -top-2.5 flex h-7 w-7 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
+                      <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary/25 ring-2 ring-primary backdrop-blur">
+                        <Bot className="h-3.5 w-3.5 text-primary" />
+                      </span>
+                    </span>
+                  </div>
+                ) : active.question && active.decisionArea ? (
                   <div
                     className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
                       active.decisionArea === 'top'
@@ -171,7 +229,7 @@ export default function StudioPage() {
                       </span>
                     </span>
                   </div>
-                )}
+                ) : null}
                 <StudioChecklist phases={active.phases} />
                 <StudioChatInput />
               </>

@@ -46,6 +46,8 @@ export interface ProjectRuntime {
   options: string[];
   /** Coarse preview region the current question is about (A3): top|middle|bottom. */
   decisionArea: string | null;
+  /** CSS selector the current question is about (A3 precise orb pointer). */
+  decisionSelector: string | null;
   /** C2 — plan-first gate: the seed turn plans + asks approval before editing. */
   gatePlan: boolean;
   /** C8 — enabled MCP connector ids for build turns. */
@@ -117,6 +119,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         style: 'balanced',
         options: [],
         decisionArea: null,
+        decisionSelector: null,
         gatePlan: false,
         mcp: [],
       };
@@ -184,7 +187,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     const rt = get().runtimes[id];
     const text = raw.trim();
     if (!rt || rt.busy || !text) return;
-    patch(id, { busy: true, reply: null, question: null, options: [], decisionArea: null, stream: '' });
+    patch(id, {
+      busy: true,
+      reply: null,
+      question: null,
+      options: [],
+      decisionArea: null,
+      decisionSelector: null,
+      stream: '',
+    });
     useCompanionStore.getState().pulseForwardAck();
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
@@ -194,6 +205,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         question: q,
         options: q ? (result.options ?? []) : [],
         decisionArea: q ? (result.area ?? null) : null,
+        decisionSelector: q ? (result.selector ?? null) : null,
         ...(result.phases && result.phases.length > 0 ? { phases: result.phases } : {}),
       });
       useCompanionStore.getState().pulseMessageReaction();
