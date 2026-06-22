@@ -114,7 +114,7 @@ impl DevServerRegistry {
             project_id: project_id.to_string(),
             port,
             url: format!("http://localhost:{port}"),
-            healthy: port_is_open(port),
+            healthy: http_responds(port),
             uptime_secs: started.elapsed().as_secs(),
         })
     }
@@ -134,7 +134,7 @@ impl DevServerRegistry {
                 project_id: id,
                 port,
                 url: format!("http://localhost:{port}"),
-                healthy: port_is_open(port),
+                healthy: http_responds(port),
                 uptime_secs: started.elapsed().as_secs(),
             })
             .collect()
@@ -185,6 +185,34 @@ fn port_is_open(port: u16) -> bool {
     TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
 }
 
+/// True if an HTTP GET to `127.0.0.1:port` gets an `HTTP/...` response line.
+/// Stronger than a bare TCP connect: a dev server that bound the port but is
+/// wedged (compiling forever, or crashed with the socket lingering) still accepts
+/// the connection yet never serves — `port_is_open` would call it healthy and the
+/// preview would render blank. Requiring a real response makes "healthy" mean
+/// "actually serving", so a dead-but-bound server is never adopted.
+fn http_responds(port: u16) -> bool {
+    use std::io::{Read, Write};
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
+    let mut stream = match TcpStream::connect_timeout(&addr, Duration::from_millis(400)) {
+        Ok(s) => s,
+        Err(_) => return false,
+    };
+    let _ = stream.set_write_timeout(Some(Duration::from_millis(400)));
+    let _ = stream.set_read_timeout(Some(Duration::from_millis(1200)));
+    if stream
+        .write_all(b"GET / HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n")
+        .is_err()
+    {
+        return false;
+    }
+    let mut buf = [0u8; 12];
+    match stream.read(&mut buf) {
+        Ok(n) if n >= 4 => buf.starts_with(b"HTTP"),
+        _ => false,
+    }
+}
+
 /// Kill a process and its children. On Windows `bun` spawns a `next`/node
 /// child, so a bare kill orphans the server — use `taskkill /T`. Best-effort;
 /// failures (already-dead pid) are ignored.
@@ -226,5 +254,11 @@ mod tests {
     fn port_is_open_false_for_unused_port() {
         // A high, almost-certainly-unbound port should read as closed quickly.
         assert!(!port_is_open(59_137));
+    }
+
+    #[test]
+    fn http_responds_false_for_unused_port() {
+        // No server bound → no HTTP response → not "healthy".
+        assert!(!http_responds(59_138));
     }
 }
