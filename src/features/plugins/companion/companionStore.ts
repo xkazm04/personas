@@ -959,3 +959,9 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setFleetAutoNotice: (fleetAutoNotice) => set({ fleetAutoNotice }),
   clearFleetAutoNotice: () => set({ fleetAutoNotice: null }),
 }));
+
+// Dev-only: expose for the test-automation bridge (e.g. verifying the orb-fly
+// target during Studio orb-pointer runs). Absent from production builds.
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__companionStore = useCompanionStore;
+}
