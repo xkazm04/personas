@@ -61,6 +61,11 @@ impl DevServerRegistry {
     ) -> Result<DevServerStatus, AppError> {
         // Tear down any prior server for this project first.
         self.stop(project_id);
+        // Next keeps one dev server per project dir; a crash-orphaned `next dev`
+        // (the app was force-killed, skipping stop_all) would hold the lock and
+        // make every restart fail with "Another next dev server is already
+        // running". Clear it so reopening a project after a crash works.
+        clear_stale_next_lock(project_dir);
 
         let bun = super::bun::resolve_bun()?;
         let mut cmd = tokio::process::Command::new(&bun);
@@ -237,9 +242,73 @@ fn kill_tree(pid: u32) {
     }
 }
 
+/// Next records its single-per-dir dev server in `.next/dev/lock`
+/// (`{"pid":N,"port":P,...}`). A crash-orphaned `next dev` keeps that lock and
+/// blocks every restart. Before spawning, kill a still-live orphan named by the
+/// lock and remove the file. Best-effort + safe: only kills a pid that is still a
+/// live `node` process, so a recycled pid can't take down an unrelated process.
+fn clear_stale_next_lock(project_dir: &std::path::Path) {
+    let lock = project_dir.join(".next").join("dev").join("lock");
+    if let Ok(body) = std::fs::read_to_string(&lock) {
+        if let Some(pid) = parse_lock_pid(&body) {
+            if pid_is_node(pid) {
+                kill_tree(pid);
+            }
+        }
+        let _ = std::fs::remove_file(&lock);
+    }
+}
+
+/// Pull `pid` out of the Next dev lock JSON without a serde dependency here.
+fn parse_lock_pid(body: &str) -> Option<u32> {
+    let after = body.split_once("\"pid\"")?.1;
+    let after = after.trim_start().strip_prefix(':')?.trim_start();
+    let digits: String = after.chars().take_while(|c| c.is_ascii_digit()).collect();
+    digits.parse().ok()
+}
+
+/// True if `pid` is currently a live `node` process. Guards the lock-recovery
+/// kill against killing an unrelated process that recycled a dead orphan's pid.
+#[cfg(windows)]
+fn pid_is_node(pid: u32) -> bool {
+    use std::os::windows::process::CommandExt;
+    const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+    std::process::Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .stdin(Stdio::null())
+        .output()
+        .map(|o| {
+            String::from_utf8_lossy(&o.stdout)
+                .to_lowercase()
+                .contains("node.exe")
+        })
+        .unwrap_or(false)
+}
+
+#[cfg(not(windows))]
+fn pid_is_node(pid: u32) -> bool {
+    std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "comm="])
+        .output()
+        .map(|o| String::from_utf8_lossy(&o.stdout).contains("node"))
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_next_lock_pid() {
+        assert_eq!(
+            parse_lock_pid(r#"{"pid":12404,"port":52368,"hostname":"localhost"}"#),
+            Some(12404)
+        );
+        assert_eq!(parse_lock_pid(r#"{"port":1,"pid": 7 }"#), Some(7));
+        assert_eq!(parse_lock_pid(r#"{"port":1}"#), None);
+        assert_eq!(parse_lock_pid("not json"), None);
+    }
 
     #[test]
     fn empty_registry_reports_nothing() {
