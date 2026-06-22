@@ -50,6 +50,11 @@ pub async fn webbuild_register_existing(
     if !std::path::Path::new(&path).is_dir() {
         return Err(AppError::Validation(format!("path does not exist: {path}")));
     }
+    // Idempotent: re-registering the same repo returns the existing project row
+    // instead of hitting the UNIQUE(root_path) constraint.
+    if let Some(existing) = repo::get_project_by_path(&state.db, &path)? {
+        return Ok(existing);
+    }
     repo::create_project(
         &state.db,
         &name,

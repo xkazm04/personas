@@ -234,6 +234,23 @@ pub fn get_project_by_id(pool: &DbPool, id: &str) -> Result<DevProject, AppError
     })
 }
 
+/// Look up a dev project by its (exact) root path. Makes re-registering an
+/// existing repo idempotent. Returns None when no project has that path.
+pub fn get_project_by_path(pool: &DbPool, root_path: &str) -> Result<Option<DevProject>, AppError> {
+    timed_query!("dev_projects", "dev_projects::get_project_by_path", {
+        let conn = pool.get()?;
+        match conn.query_row(
+            "SELECT * FROM dev_projects WHERE root_path = ?1",
+            params![root_path],
+            row_to_project,
+        ) {
+            Ok(p) => Ok(Some(p)),
+            Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+            Err(e) => Err(AppError::Database(e)),
+        }
+    })
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_project(
     pool: &DbPool,
