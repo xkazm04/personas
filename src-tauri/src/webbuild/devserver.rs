@@ -184,16 +184,10 @@ pub fn alloc_port() -> Result<u16, AppError> {
     Ok(port)
 }
 
-/// True if a TCP connect to `127.0.0.1:port` succeeds within a short timeout.
-fn port_is_open(port: u16) -> bool {
-    let addr = SocketAddr::from(([127, 0, 0, 1], port));
-    TcpStream::connect_timeout(&addr, Duration::from_millis(300)).is_ok()
-}
-
 /// True if an HTTP GET to `127.0.0.1:port` gets an `HTTP/...` response line.
 /// Stronger than a bare TCP connect: a dev server that bound the port but is
 /// wedged (compiling forever, or crashed with the socket lingering) still accepts
-/// the connection yet never serves — `port_is_open` would call it healthy and the
+/// the connection yet never serves — a bare TCP check would call it healthy and the
 /// preview would render blank. Requiring a real response makes "healthy" mean
 /// "actually serving", so a dead-but-bound server is never adopted.
 fn http_responds(port: u16) -> bool {
@@ -317,12 +311,6 @@ mod tests {
         assert!(reg.list().is_empty());
         reg.stop("mk"); // idempotent no-op
         reg.stop_all(); // no-op
-    }
-
-    #[test]
-    fn port_is_open_false_for_unused_port() {
-        // A high, almost-certainly-unbound port should read as closed quickly.
-        assert!(!port_is_open(59_137));
     }
 
     #[test]
