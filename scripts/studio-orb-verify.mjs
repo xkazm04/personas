@@ -45,7 +45,9 @@ const CLEAR = `(()=>{const s=window.__studioStore;const id=window.__mkId;if(!s||
   }
   check('mk live with preview iframe', live);
   if (!live) process.exit(1);
-  await sleep(4000); // let the dev server compile + serve the agent
+  // Warm the home route (Next compiles lazily on first request) + let the agent mount.
+  await ev(`(()=>{const i=document.querySelector('iframe[title="preview"]');if(i)i.src=i.src;return 1})()`);
+  await sleep(15000);
 
   // 1) Agent injected into mk on disk
   check('preview agent file written to mk', existsSync(`${MK}/app/_athena-preview-agent.tsx`));
@@ -54,12 +56,12 @@ const CLEAR = `(()=>{const s=window.__studioStore;const id=window.__mkId;if(!s||
   check('layout.tsx mounts the agent', layoutMounts);
 
   // 2) Precise pointer on a real element (the home page has an <h1>)
-  await ev(injectDecision('h1')); await sleep(4500); await focus();
+  await ev(injectDecision('h1')); await sleep(6500); await focus();
   check('precise ring marker lands on <h1> (handshake works)', (await count('[data-testid="studio-orb-pointer"]')) >= 1);
   await ev(CLEAR); await sleep(1500);
 
   // 3) Missing element → no precise marker (graceful not-found)
-  await ev(injectDecision('.definitely-not-a-real-element-xyz')); await sleep(4500); await focus();
+  await ev(injectDecision('.definitely-not-a-real-element-xyz')); await sleep(6500); await focus();
   check('no precise marker for a missing element (graceful)', (await count('[data-testid="studio-orb-pointer"]')) === 0);
   await ev(CLEAR);
 
