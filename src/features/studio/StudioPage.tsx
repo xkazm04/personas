@@ -9,6 +9,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
 // browser-style tabs; all build runtime lives in studioStore so a project keeps
@@ -104,6 +105,24 @@ export default function StudioPage() {
     }, 400);
     return () => window.clearTimeout(t);
   }, [activeId, active?.question, active?.decisionSelector]);
+
+  // Fly Athena's global orb to the element a precise decision is about — reusing
+  // the companion walkthrough's orb-target glide. The element's rect is in the
+  // iframe's viewport; add the iframe's screen offset to get a screen position.
+  // Returns the orb to its dock when the decision clears or Studio unmounts.
+  useEffect(() => {
+    const setTarget = useCompanionStore.getState().setOrbGuideTarget;
+    if (active?.question && pointerRect) {
+      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      const ir = iframe?.getBoundingClientRect();
+      if (ir) {
+        setTarget({ left: ir.left + pointerRect.x + pointerRect.width, top: ir.top + pointerRect.y });
+      }
+    } else {
+      setTarget(null);
+    }
+    return () => useCompanionStore.getState().setOrbGuideTarget(null);
+  }, [active?.question, pointerRect]);
 
   const onCreate = useCallback(
     async (name: string, vision: string) => {
