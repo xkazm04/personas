@@ -197,6 +197,7 @@ export default function StudioPage() {
                     agent returned a rect, else the coarse top/middle/bottom region. */}
                 {active.question && pointerRect ? (
                   <div
+                    data-testid="studio-orb-pointer"
                     className="pointer-events-none absolute z-20 rounded-lg ring-2 ring-primary transition-all duration-300"
                     style={{
                       left: pointerRect.x,
