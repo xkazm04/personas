@@ -1321,7 +1321,7 @@ pub async fn run_execution(
                 &persona.name,
                 model_profile.as_ref().unwrap(),
                 &prompt_text,
-                &tools,
+                !tools.is_empty(),
                 &cancelled,
                 start_time,
             )

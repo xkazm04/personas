@@ -29,10 +29,11 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures_util::StreamExt;
+use chrono::Utc;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 
-use crate::db::models::PersonaToolDefinition;
 use crate::engine::event_registry::event_name;
 use crate::engine::events::{emit_to, ExecutionEventEmitter};
 use crate::engine::types::{
@@ -198,28 +199,12 @@ pub async fn run_http_execution(
     persona_name: &str,
     model_profile: &ModelProfile,
     prompt_text: &str,
-    tools: &[PersonaToolDefinition],
+    tools_enabled: bool,
     cancelled: &Arc<AtomicBool>,
     start_time: Instant,
 ) -> ExecutionResult {
     let provider = model_profile.provider.as_deref().unwrap_or("qwen");
     let model = model_profile.model.as_deref().unwrap_or(DEFAULT_MODEL).to_string();
-
-    // Phase-1 guard: remote path is text-only. Tool-using capabilities must run
-    // on the Claude engine until the tool-execution bridge exists.
-    if !tools.is_empty() {
-        return fail(
-            emitter,
-            execution_id,
-            &format!(
-                "Remote provider '{provider}' is text-only in Phase 1, but persona \
-                 '{}' has {} tool(s). Assign tool-using capabilities to the Claude engine.",
-                persona_name,
-                tools.len()
-            ),
-            start_time,
-        );
-    }
 
     let api_key = match resolve_api_key(model_profile) {
         Some(k) => k,
@@ -245,7 +230,16 @@ pub async fn run_http_execution(
         .to_string();
     let url = format!("{base_url}/chat/completions");
 
-    tracing::info!(execution_id, provider, model, %base_url, "[http_engine] starting remote inference");
+    tracing::info!(execution_id, provider, model, persona = persona_name, %base_url, tools_enabled, "[http_engine] starting remote inference");
+
+    // Phase 3: tool-using personas run the tool-calling loop (with the safe
+    // built-in toolset). Pure-text personas keep the Phase-1 streaming path.
+    if tools_enabled {
+        return run_tool_loop(
+            emitter, execution_id, provider, &model, &base_url, &api_key, prompt_text, cancelled, start_time,
+        )
+        .await;
+    }
 
     let body = ChatRequest {
         model: model.clone(),
@@ -382,6 +376,204 @@ pub async fn run_http_execution(
     }
 }
 
+// ── Tool-calling loop (Phase 3 bridge) ─────────────────────────────────────
+
+/// Max model⇄tool round-trips before we give up (prevents runaway loops).
+const MAX_TOOL_ITERS: usize = 6;
+/// Cap on a single http_get response fed back to the model.
+const HTTP_GET_MAX_BYTES: usize = 16 * 1024;
+
+fn cost_of(model: &str, in_tok: u64, out_tok: u64) -> f64 {
+    match price_per_million(model) {
+        Some((pin, pout)) => (in_tok as f64 / 1e6) * pin + (out_tok as f64 / 1e6) * pout,
+        None => 0.0,
+    }
+}
+
+/// Multi-turn tool loop: send prompt + built-in tool schemas; when the model
+/// returns `tool_calls`, execute them LOCALLY and feed results back, looping
+/// until a final answer or the iteration cap. Non-streaming (tool-call deltas
+/// are awkward to stream). Phase 3a exposes a fixed SAFE built-in toolset;
+/// per-persona connector/MCP tools are bridged in Phase 3b (see design doc).
+#[allow(clippy::too_many_arguments)]
+async fn run_tool_loop(
+    emitter: &dyn ExecutionEventEmitter,
+    execution_id: &str,
+    provider: &str,
+    model: &str,
+    base_url: &str,
+    api_key: &str,
+    prompt_text: &str,
+    cancelled: &Arc<AtomicBool>,
+    start_time: Instant,
+) -> ExecutionResult {
+    let url = format!("{base_url}/chat/completions");
+    let client = match Client::builder().timeout(Duration::from_secs(HTTP_TIMEOUT_SECS)).build() {
+        Ok(c) => c,
+        Err(e) => return fail(emitter, execution_id, &format!("HTTP client init failed: {e}"), start_time),
+    };
+
+    let schemas = builtin_tool_schemas();
+    let mut messages: Vec<Value> = vec![json!({ "role": "user", "content": prompt_text })];
+    let mut in_tok: u64 = 0;
+    let mut out_tok: u64 = 0;
+
+    for iter in 0..MAX_TOOL_ITERS {
+        if cancelled.load(Ordering::Relaxed) {
+            let duration_ms = start_time.elapsed().as_millis() as u64;
+            emit_status(emitter, execution_id, ExecutionState::Cancelled, Some("Cancelled"), duration_ms, None);
+            return ExecutionResult { success: false, error: Some("Cancelled".into()), duration_ms, model_used: Some(model.to_string()), ..Default::default() };
+        }
+
+        let body = json!({ "model": model, "messages": messages, "tools": schemas, "tool_choice": "auto" });
+        let resp = match client.post(&url).bearer_auth(api_key).json(&body).send().await {
+            Ok(r) if r.status().is_success() => r,
+            Ok(r) => {
+                let status = r.status();
+                let text = r.text().await.unwrap_or_default();
+                return fail(emitter, execution_id, &format!("{provider} API error ({status}): {}", &text[..text.len().min(300)]), start_time);
+            }
+            Err(e) => return fail(emitter, execution_id, &format!("Cannot reach {provider}: {e}"), start_time),
+        };
+        let data: Value = match resp.json().await {
+            Ok(v) => v,
+            Err(e) => return fail(emitter, execution_id, &format!("Invalid JSON from {provider}: {e}"), start_time),
+        };
+        if let Some(u) = data.get("usage") {
+            in_tok += u.get("prompt_tokens").and_then(Value::as_u64).unwrap_or(0);
+            out_tok += u.get("completion_tokens").and_then(Value::as_u64).unwrap_or(0);
+        }
+
+        let msg = data["choices"][0]["message"].clone();
+        let tool_calls = msg.get("tool_calls").and_then(Value::as_array).cloned().unwrap_or_default();
+
+        if tool_calls.is_empty() {
+            let content = msg.get("content").and_then(Value::as_str).unwrap_or("").to_string();
+            for line in content.split('\n') {
+                emit_output(emitter, execution_id, line);
+            }
+            let duration_ms = start_time.elapsed().as_millis() as u64;
+            let cost_usd = cost_of(model, in_tok, out_tok);
+            emit_status(emitter, execution_id, ExecutionState::Completed, None, duration_ms, Some(cost_usd));
+            tracing::info!(execution_id, provider, model, iters = iter + 1, in_tok, out_tok, cost_usd, "[http_engine] tool loop completed");
+            return ExecutionResult {
+                success: true,
+                output: (!content.is_empty()).then_some(content),
+                duration_ms,
+                model_used: Some(model.to_string()),
+                input_tokens: in_tok,
+                output_tokens: out_tok,
+                cost_usd,
+                ..Default::default()
+            };
+        }
+
+        // Append the assistant turn (carrying tool_calls), then execute each
+        // tool locally and feed the result back as a `tool` message.
+        messages.push(msg.clone());
+        for call in &tool_calls {
+            let id = call.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+            let name = call["function"]["name"].as_str().unwrap_or("").to_string();
+            let args_str = call["function"]["arguments"].as_str().unwrap_or("{}");
+            let args: Value = serde_json::from_str(args_str).unwrap_or_else(|_| json!({}));
+            emit_output(emitter, execution_id, &format!("🔧 {name}({})", args.to_string().chars().take(120).collect::<String>()));
+            let result = execute_builtin_tool(&client, &name, &args).await;
+            emit_output(emitter, execution_id, &format!("   ↳ {}", result.chars().take(200).collect::<String>()));
+            messages.push(json!({ "role": "tool", "tool_call_id": id, "content": result }));
+        }
+    }
+
+    fail(emitter, execution_id, &format!("Tool loop exceeded {MAX_TOOL_ITERS} iterations without a final answer"), start_time)
+}
+
+/// Safe built-in tools exposed to remote (Qwen) tool-using personas in Phase 3a.
+/// Credential-free and side-effect-light; per-persona connector tools are Phase 3b.
+fn builtin_tool_schemas() -> Value {
+    json!([
+        { "type": "function", "function": {
+            "name": "get_current_time",
+            "description": "Get the current UTC date and time in ISO 8601 format.",
+            "parameters": { "type": "object", "properties": {}, "required": [] }
+        }},
+        { "type": "function", "function": {
+            "name": "http_get",
+            "description": "Fetch the text body of a PUBLIC https:// URL via GET. Use for reading public web pages or public JSON APIs. Cannot reach private/internal/loopback addresses.",
+            "parameters": { "type": "object", "properties": {
+                "url": { "type": "string", "description": "An https:// URL" }
+            }, "required": ["url"] }
+        }}
+    ])
+}
+
+async fn execute_builtin_tool(client: &Client, name: &str, args: &Value) -> String {
+    match name {
+        "get_current_time" => Utc::now().to_rfc3339(),
+        "http_get" => {
+            let url = args.get("url").and_then(Value::as_str).unwrap_or("");
+            match http_get_guarded(client, url).await {
+                Ok(body) => body,
+                Err(e) => format!("error: {e}"),
+            }
+        }
+        other => format!("error: unknown tool '{other}'"),
+    }
+}
+
+/// GET a public URL with SSRF egress guards: https-only, and the resolved host
+/// must not map to a loopback / private / link-local / unspecified address.
+/// Pragmatic guard (not full DNS-rebinding protection, since reqwest re-resolves)
+/// — it enforces and documents the egress boundary for the Phase 3a PoC.
+async fn http_get_guarded(client: &Client, raw: &str) -> Result<String, String> {
+    let url = reqwest::Url::parse(raw).map_err(|e| format!("invalid url: {e}"))?;
+    if url.scheme() != "https" {
+        return Err("only https:// URLs are allowed".into());
+    }
+    let host = url.host_str().ok_or_else(|| "missing host".to_string())?.to_string();
+    let port = url.port_or_known_default().unwrap_or(443);
+
+    // Resolve off the async runtime and reject internal targets.
+    let host_for_resolve = host.clone();
+    let addrs = tokio::task::spawn_blocking(move || {
+        use std::net::ToSocketAddrs;
+        (host_for_resolve.as_str(), port)
+            .to_socket_addrs()
+            .map(|it| it.map(|s| s.ip()).collect::<Vec<_>>())
+    })
+    .await
+    .map_err(|e| format!("resolve task failed: {e}"))?
+    .map_err(|e| format!("dns resolution failed: {e}"))?;
+
+    if addrs.is_empty() {
+        return Err("host did not resolve".into());
+    }
+    if addrs.iter().any(is_blocked_ip) {
+        return Err("destination resolves to a private/internal address (blocked)".into());
+    }
+
+    let resp = client
+        .get(url)
+        .timeout(Duration::from_secs(10))
+        .send()
+        .await
+        .map_err(|e| format!("request failed: {e}"))?;
+    let status = resp.status();
+    let bytes = resp.bytes().await.map_err(|e| format!("read failed: {e}"))?;
+    let slice = &bytes[..bytes.len().min(HTTP_GET_MAX_BYTES)];
+    let truncated = if bytes.len() > HTTP_GET_MAX_BYTES { " …[truncated]" } else { "" };
+    Ok(format!("HTTP {status}\n{}{truncated}", String::from_utf8_lossy(slice)))
+}
+
+fn is_blocked_ip(ip: &std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v4) => {
+            v4.is_loopback() || v4.is_private() || v4.is_link_local() || v4.is_unspecified() || v4.is_broadcast()
+        }
+        std::net::IpAddr::V6(v6) => {
+            v6.is_loopback() || v6.is_unspecified() || (v6.segments()[0] & 0xfe00) == 0xfc00 // fc00::/7 unique-local
+        }
+    }
+}
+
 // ── Event helpers ────────────────────────────────────────────────────────
 
 fn emit_output(emitter: &dyn ExecutionEventEmitter, execution_id: &str, line: &str) {
@@ -481,7 +673,7 @@ mod tests {
             "Live Test",
             &mp,
             "Reply with exactly the single word: PONG",
-            &[],
+            false, // text-only path
             &cancelled,
             Instant::now(),
         )
@@ -493,6 +685,46 @@ mod tests {
         eprintln!(
             "[live_qwen_roundtrip] model={:?} cost=${:.6} duration={}ms output={}",
             result.model_used, result.cost_usd, result.duration_ms, out.trim()
+        );
+    }
+
+    /// Live tool-calling loop (Phase 3): the model must call the built-in
+    /// `get_current_time` tool and report the result. Ignored by default.
+    ///   QWEN_API_KEY=... cargo test --features desktop --lib http_engine -- --ignored
+    #[tokio::test]
+    #[ignore = "hits the live Qwen API + does a tool-calling round-trip; run with --ignored"]
+    async fn live_qwen_tool_loop() {
+        use crate::engine::events::NoOpEmitter;
+
+        let mp = ModelProfile {
+            model: Some(DEFAULT_MODEL.to_string()),
+            provider: Some("qwen".to_string()),
+            base_url: None,
+            auth_token: None,
+            prompt_cache_policy: None,
+            effort: None,
+        };
+        let emitter = NoOpEmitter::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+
+        let result = run_http_execution(
+            &emitter,
+            "live-tool-exec",
+            "Tool Test",
+            &mp,
+            "What is the current UTC time? You MUST call the get_current_time tool, then state the time you got.",
+            true, // tools enabled -> tool-calling loop
+            &cancelled,
+            Instant::now(),
+        )
+        .await;
+
+        assert!(result.success, "expected success, got error: {:?}", result.error);
+        let out = result.output.unwrap_or_default();
+        assert!(!out.trim().is_empty(), "expected non-empty output");
+        eprintln!(
+            "[live_qwen_tool_loop] cost=${:.6} duration={}ms output={}",
+            result.cost_usd, result.duration_ms, out.trim()
         );
     }
 }
