@@ -60,6 +60,10 @@ const readOrb = async () => { await ev(PROBE_ORB); await sleep(700); return (awa
   }
   check('Athena asked a clickable decision', gotDecision);
   if (gotDecision) {
+    // Diagnostic: what did Athena emit (selector / area)?
+    await ev(`(()=>{const r=window.__studioStore.getState().runtimes[window.__mkId];let e=document.getElementById('__dec')||document.body.appendChild(Object.assign(document.createElement('div'),{id:'__dec'}));e.textContent='SEL='+((r&&r.decisionSelector)||'none')+' | AREA='+((r&&r.decisionArea)||'none');return 1})()`);
+    await sleep(700);
+    console.log('  Athena emitted →', (await query('#__dec'))[0]?.text || '?');
     await sleep(2500); await focus(); // let the locate handshake + orb-fly settle
     const ring = (await count('[data-testid="studio-orb-pointer"]')) >= 1;
     const orb = await readOrb();
