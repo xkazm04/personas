@@ -7,7 +7,7 @@
 
 pub mod db;
 pub mod install;
-mod tools;
+pub mod tools;
 mod vault;
 
 #[cfg(test)]

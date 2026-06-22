@@ -18,6 +18,9 @@ pub mod ipc_auth;
 pub mod keyed_pool;
 mod local_http;
 mod logging;
+/// MCP tool implementations (also compiled into the `personas-mcp` binary).
+/// Exposed from the lib so the split engine can call tools in-process.
+pub mod mcp_server;
 mod notifications;
 mod radio;
 pub mod startup_timing;

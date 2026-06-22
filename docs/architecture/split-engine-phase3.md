@@ -1,6 +1,6 @@
 # Split Engine — Phase 3: the tool-execution bridge
 
-Status: **Phase 3a implemented** · Phase 3b designed · 2026-06-22 · worktree `qwen-http-engine`
+Status: **Phase 3a + 3b implemented** (connector tools pending) · 2026-06-22 · worktree `qwen-http-engine`
 
 ## Why
 
@@ -48,43 +48,55 @@ and **tool results (→model)** cross the wire (a data-residency fact, see below
 This is intentionally a **fixed** toolset — it proves the bridge + the egress
 control without yet exposing the full (dangerous) connector surface.
 
-## Phase 3b — DESIGN (bridge the real MCP/connector tools)
+## Phase 3b — IMPLEMENTED (in-process MCP bridge)
 
-Today the Claude CLI runs tools as **local MCP child processes** it owns
-(`cli_mcp_config.rs` → `personas-mcp` + project MCP servers; credentials injected
-as env). To give the remote model those same tools, **reuse that exact surface**
-rather than re-implementing it:
+The MCP tool implementations turned out to be **callable in-process**:
+`mcp_server::tools::call_tool(name, args, &McpDbPool)` (+ `list_tools()` for
+schemas) is a pure dispatcher with no Tauri/`crate::` deps. So instead of
+spawning `personas-mcp` and writing a stdio MCP client, we **reuse the exact
+tool impls directly** — far simpler, same reuse + same DB/credential handling.
 
-1. **Spawn `personas-mcp` and speak MCP** (stdio JSON-RPC) from a small Rust MCP
-   *client* (we only have the server today): `initialize` → `tools/list` →
-   `tools/call`. This reuses every existing tool implementation + its DB/vault
-   access verbatim. (Alternative — call the Rust tool impls in-process — couples
-   the engine to internals and loses the process boundary; rejected.)
-2. **Schema bridge:** convert each MCP tool's JSON-Schema into the OpenAI
-   `tools[].function` shape; expose only the persona's declared/allowed tools.
-3. **Credential boundary (the hard rule holds):** `personas-mcp` resolves
-   credentials locally exactly as the CLI path does (`resolve_credential_env_vars`
-   + `inject_design_context_credentials`). **Connector credentials never leave the
-   machine** — only tool *args* and *results* cross to the model.
-4. **Route:** model `tool_calls` → MCP `tools/call` → result → back to the model.
+What shipped:
+1. **Expose the module from the lib.** `mcp_server` was compiled only into the
+   `personas-mcp` binary (`mod mcp_server;` in `mcp_bin.rs`); added
+   `pub mod mcp_server;` to `lib.rs` and `pub mod tools;` so the engine can call
+   it. (No `crate::` deps → compiles cleanly in the lib.)
+2. **Schema bridge.** `list_tools()` (`{name, description, inputSchema}`) → OpenAI
+   `tools[].function {name, description, parameters}`, intersected with the
+   remote-safe allowlist, appended to the built-in schemas.
+3. **Route.** Qwen `tool_calls` → `mcp_server::tools::call_tool(...)` against a
+   read connection to the same DB (`open_pool(default_data_dir()/personas.db)`),
+   result flattened to text and fed back.
+4. **Remote-safe allowlist** (`REMOTE_SAFE_MCP_TOOLS`): read-only DB / knowledge /
+   context / arena queries + `obsidian_vault_search`. **Withheld**:
+   `personas_execute`, `*_write_*`, `drive_*`, `llm_delegate`, and connector tools
+   (`gmail_*`/`gdrive_*`/`gcalendar_*`). A prompt-injected remote model cannot
+   reach write/exec tools.
 
-### Safety gates Phase 3b MUST add (not in 3a)
-- **Remote-safe tool allowlist.** A prompt-injected remote model must not be able
-  to call destructive tools (shell, file-write, repo push). Classify each tool
-  `remote_safe: bool` (read-only/connector-scoped = yes; shell/fs/exec = no) and
-  expose only safe ones to remote engines; dangerous tools stay on Claude or
-  require the sandbox.
-- **Sandbox for code-exec tools** (Firecracker/E2B/gVisor) — only when a tool
-  actually runs untrusted code; out of scope until such a tool is exposed.
-- **Egress allowlist** for http-type tools (extend 3a's SSRF guard to a per-team
-  domain allowlist).
-- **Per-run tool budget** (max calls / wall-time) on top of `MAX_TOOL_ITERS`.
+Live-verified: `live_qwen_mcp_tool` — Qwen called `personas_health`, the desktop
+ran it against the real local DB (`{personas:{enabled:76,total:78},…}`), and Qwen
+reported the count.
+
+### Remaining work
+- **Connector tools (`gmail_*`/`gdrive_*`/`gcalendar_*`)** are NOT yet exposed.
+  They route through the desktop credential proxy on `:9420` (needs
+  `PERSONAS_BRIDGE_URL` + `PERSONAS_API_KEY` in env). Exposing them = wiring that
+  bridge env for in-process calls + adding them to the allowlist. This is the
+  step that gives non-dev teams real SaaS connectors — **the credential boundary
+  holds**: the proxy decrypts/forwards locally; only args+results cross to Qwen.
+- **Per-persona tool scoping** — today the safe set is global; should be
+  intersected with the persona's *declared* tools.
+- **Sandbox for code-exec tools** (Firecracker/E2B/gVisor) — only when a shell/fs
+  tool is ever exposed to a remote engine; out of scope here.
+- **Egress allowlist** for `http_get` (extend the SSRF guard to per-team domains)
+  and a **per-run tool budget** (max calls / wall-time) beyond `MAX_TOOL_ITERS`.
 
 ### Data-residency note (decide per persona/team)
-Even text-only Qwen already sends **prompt content** to Qwen's servers. Phase 3b
-adds **tool args + tool results** to that flow. Connector *credentials* stay local.
-Teams handling sensitive data should keep those personas on the local Claude
-engine, or restrict which tools/results a remote engine may see.
+Even text-only Qwen already sends **prompt content** to Qwen's servers. The bridge
+adds **tool args + tool results** to that flow (e.g. `personas_health` output).
+Connector *credentials* stay local. Teams handling sensitive data should keep
+those personas on the local Claude engine, or restrict which tools a remote
+engine may see.
 
 ## Files (3a)
 - `engine/http_engine.rs` — `run_tool_loop`, `builtin_tool_schemas`,

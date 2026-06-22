@@ -39,6 +39,8 @@ use crate::engine::events::{emit_to, ExecutionEventEmitter};
 use crate::engine::types::{
     ExecutionOutputEvent, ExecutionResult, ExecutionState, ExecutionStatusEvent, ModelProfile,
 };
+use crate::daemon::lock::default_data_dir;
+use crate::mcp_server;
 
 /// Default DashScope (international) OpenAI-compatible endpoint.
 pub const DEFAULT_BASE_URL: &str = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
@@ -383,6 +385,20 @@ const MAX_TOOL_ITERS: usize = 6;
 /// Cap on a single http_get response fed back to the model.
 const HTTP_GET_MAX_BYTES: usize = 16 * 1024;
 
+/// MCP tools safe to expose to a REMOTE model: read-only DB / knowledge /
+/// context queries with no external side effects. Write/exec/connector tools
+/// (personas_execute, *_write_*, drive_*, gmail_*/gdrive_*/gcalendar_*,
+/// llm_delegate) are deliberately withheld — a prompt-injected remote model must
+/// not be able to trigger them, and connector tools also need the local
+/// credential bridge (Phase 3b-connectors).
+const REMOTE_SAFE_MCP_TOOLS: &[&str] = &[
+    "personas_list", "personas_get", "personas_status", "personas_result", "personas_health",
+    "personas_knowledge_search", "personas_search_executions", "personas_list_templates",
+    "context_list_groups", "context_search_by_keyword", "context_get_by_file_path", "context_neighbors",
+    "arena_list_models", "arena_list_runs", "arena_run_status", "arena_get_results",
+    "obsidian_vault_search",
+];
+
 fn cost_of(model: &str, in_tok: u64, out_tok: u64) -> f64 {
     match price_per_million(model) {
         Some((pin, pout)) => (in_tok as f64 / 1e6) * pin + (out_tok as f64 / 1e6) * pout,
@@ -413,7 +429,26 @@ async fn run_tool_loop(
         Err(e) => return fail(emitter, execution_id, &format!("HTTP client init failed: {e}"), start_time),
     };
 
-    let schemas = builtin_tool_schemas();
+    // Tool catalog = safe built-ins + the remote-safe MCP tools (run in-process
+    // via mcp_server::tools::call_tool against a read connection to the same DB).
+    let mcp_pool = mcp_server::db::open_pool(&default_data_dir().join("personas.db")).ok();
+    let mut schemas = builtin_tool_schemas();
+    if mcp_pool.is_some() {
+        for t in mcp_server::tools::list_tools() {
+            let name = t.get("name").and_then(Value::as_str).unwrap_or("");
+            if REMOTE_SAFE_MCP_TOOLS.contains(&name) {
+                schemas.push(json!({
+                    "type": "function",
+                    "function": {
+                        "name": name,
+                        "description": t.get("description").cloned().unwrap_or_else(|| json!("")),
+                        "parameters": t.get("inputSchema").cloned().unwrap_or_else(|| json!({ "type": "object", "properties": {} })),
+                    }
+                }));
+            }
+        }
+    }
+    let tools_value = Value::Array(schemas);
     let mut messages: Vec<Value> = vec![json!({ "role": "user", "content": prompt_text })];
     let mut in_tok: u64 = 0;
     let mut out_tok: u64 = 0;
@@ -425,7 +460,7 @@ async fn run_tool_loop(
             return ExecutionResult { success: false, error: Some("Cancelled".into()), duration_ms, model_used: Some(model.to_string()), ..Default::default() };
         }
 
-        let body = json!({ "model": model, "messages": messages, "tools": schemas, "tool_choice": "auto" });
+        let body = json!({ "model": model, "messages": messages, "tools": tools_value, "tool_choice": "auto" });
         let resp = match client.post(&url).bearer_auth(api_key).json(&body).send().await {
             Ok(r) if r.status().is_success() => r,
             Ok(r) => {
@@ -477,7 +512,16 @@ async fn run_tool_loop(
             let args_str = call["function"]["arguments"].as_str().unwrap_or("{}");
             let args: Value = serde_json::from_str(args_str).unwrap_or_else(|_| json!({}));
             emit_output(emitter, execution_id, &format!("🔧 {name}({})", args.to_string().chars().take(120).collect::<String>()));
-            let result = execute_builtin_tool(&client, &name, &args).await;
+            let result = if name == "get_current_time" || name == "http_get" {
+                execute_builtin_tool(&client, &name, &args).await
+            } else if REMOTE_SAFE_MCP_TOOLS.contains(&name.as_str()) {
+                match &mcp_pool {
+                    Some(pool) => mcp_call_text(&name, &args, pool),
+                    None => format!("error: tool '{name}' backend unavailable"),
+                }
+            } else {
+                format!("error: tool '{name}' is not available to the remote engine")
+            };
             emit_output(emitter, execution_id, &format!("   ↳ {}", result.chars().take(200).collect::<String>()));
             messages.push(json!({ "role": "tool", "tool_call_id": id, "content": result }));
         }
@@ -488,21 +532,35 @@ async fn run_tool_loop(
 
 /// Safe built-in tools exposed to remote (Qwen) tool-using personas in Phase 3a.
 /// Credential-free and side-effect-light; per-persona connector tools are Phase 3b.
-fn builtin_tool_schemas() -> Value {
-    json!([
-        { "type": "function", "function": {
+fn builtin_tool_schemas() -> Vec<Value> {
+    vec![
+        json!({ "type": "function", "function": {
             "name": "get_current_time",
             "description": "Get the current UTC date and time in ISO 8601 format.",
             "parameters": { "type": "object", "properties": {}, "required": [] }
-        }},
-        { "type": "function", "function": {
+        }}),
+        json!({ "type": "function", "function": {
             "name": "http_get",
             "description": "Fetch the text body of a PUBLIC https:// URL via GET. Use for reading public web pages or public JSON APIs. Cannot reach private/internal/loopback addresses.",
             "parameters": { "type": "object", "properties": {
                 "url": { "type": "string", "description": "An https:// URL" }
             }, "required": ["url"] }
-        }}
-    ])
+        }}),
+    ]
+}
+
+/// Invoke an in-process MCP tool and flatten its `{content:[{text}], isError}`
+/// result to a plain string for the model.
+fn mcp_call_text(name: &str, args: &Value, pool: &mcp_server::db::McpDbPool) -> String {
+    let res = mcp_server::tools::call_tool(name, args, pool);
+    let text = res["content"][0]["text"].as_str().unwrap_or("").to_string();
+    if res["isError"].as_bool().unwrap_or(false) {
+        format!("error: {}", if text.is_empty() { "tool failed" } else { text.as_str() })
+    } else if text.is_empty() {
+        "(empty result)".to_string()
+    } else {
+        text
+    }
 }
 
 async fn execute_builtin_tool(client: &Client, name: &str, args: &Value) -> String {
@@ -725,6 +783,68 @@ mod tests {
         eprintln!(
             "[live_qwen_tool_loop] cost=${:.6} duration={}ms output={}",
             result.cost_usd, result.duration_ms, out.trim()
+        );
+    }
+
+    /// Capturing emitter so the MCP test can assert which tool actually fired.
+    struct CapturingEmitter {
+        events: std::sync::Mutex<Vec<(String, serde_json::Value)>>,
+    }
+    impl CapturingEmitter {
+        fn new() -> Self {
+            Self { events: std::sync::Mutex::new(Vec::new()) }
+        }
+        fn output_lines(&self) -> Vec<String> {
+            self.events
+                .lock()
+                .unwrap()
+                .iter()
+                .filter_map(|(_, p)| p.get("line").and_then(|v| v.as_str()).map(String::from))
+                .collect()
+        }
+    }
+    impl ExecutionEventEmitter for CapturingEmitter {
+        fn emit_json(&self, event: &str, payload: serde_json::Value) {
+            self.events.lock().unwrap().push((event.to_string(), payload));
+        }
+    }
+
+    /// Live Phase-3b bridge: the model calls the in-process MCP tool
+    /// `personas_health`; the desktop executes it against the local DB and feeds
+    /// the result back. Requires the app DB to exist at the default data dir.
+    ///   QWEN_API_KEY=... cargo test --features desktop --lib http_engine -- --ignored
+    #[tokio::test]
+    #[ignore = "hits live Qwen + calls an in-process MCP tool against the local DB; run with --ignored"]
+    async fn live_qwen_mcp_tool() {
+        let mp = ModelProfile {
+            model: Some(DEFAULT_MODEL.to_string()),
+            provider: Some("qwen".to_string()),
+            base_url: None,
+            auth_token: None,
+            prompt_cache_policy: None,
+            effort: None,
+        };
+        let cap = CapturingEmitter::new();
+        let cancelled = Arc::new(AtomicBool::new(false));
+
+        let result = run_http_execution(
+            &cap,
+            "live-mcp-exec",
+            "MCP Test",
+            &mp,
+            "Call the personas_health tool and report how many personas exist. You MUST use the tool.",
+            true,
+            &cancelled,
+            Instant::now(),
+        )
+        .await;
+
+        let lines = cap.output_lines();
+        eprintln!("[live_qwen_mcp_tool] success={} output:\n{}", result.success, lines.join("\n"));
+        assert!(result.success, "expected success, got error: {:?}", result.error);
+        assert!(
+            lines.iter().any(|l| l.contains("personas_health")),
+            "expected a personas_health tool call to fire; got lines: {lines:?}"
         );
     }
 }
