@@ -993,6 +993,42 @@ pub fn list_tools() -> Vec<Value> {
             }
         }));
     }
+
+    // Driver/build tools: create + configure personas, and post to Messages.
+    // create/set_model are driver-only (NOT in the engine's remote-safe allowlist);
+    // post_message IS remote-safe so a running persona can report its own summary.
+    tools.push(json!({
+        "name": "personas_create",
+        "description": "Create a new persona (AI agent) and return its id. Optionally set provider/model (e.g. provider='qwen', model='qwen3-coder-plus') to route its executions to a specific engine.",
+        "inputSchema": { "type": "object", "properties": {
+            "name": { "type": "string", "description": "Unique persona name (within the project)" },
+            "system_prompt": { "type": "string", "description": "The persona's system prompt / instructions" },
+            "description": { "type": "string", "description": "Optional one-line description" },
+            "provider": { "type": "string", "description": "Optional model provider, e.g. 'qwen' (default = Claude)" },
+            "model": { "type": "string", "description": "Optional model id, e.g. 'qwen3-coder-plus'" },
+            "enabled": { "type": "boolean", "description": "Whether the persona is enabled (default true)" }
+        }, "required": ["name", "system_prompt"] }
+    }));
+    tools.push(json!({
+        "name": "personas_set_model",
+        "description": "Change a persona's model/provider. Sets model_profile to {provider, model} — e.g. provider='qwen' routes its executions to the Qwen cloud engine.",
+        "inputSchema": { "type": "object", "properties": {
+            "persona_id": { "type": "string", "description": "The persona UUID" },
+            "provider": { "type": "string", "description": "Model provider, e.g. 'qwen', 'claude'" },
+            "model": { "type": "string", "description": "Optional model id, e.g. 'qwen3-coder-plus'" }
+        }, "required": ["persona_id", "provider"] }
+    }));
+    tools.push(json!({
+        "name": "post_message",
+        "description": "Post a message to the Messages module, attributed to a persona. Use to report a result or summary to the user.",
+        "inputSchema": { "type": "object", "properties": {
+            "content": { "type": "string", "description": "Message body (e.g. a summary)" },
+            "title": { "type": "string", "description": "Optional short title" },
+            "persona_id": { "type": "string", "description": "Attribution persona id (uses first available if omitted)" },
+            "priority": { "type": "string", "enum": ["low", "normal", "high"], "description": "Optional (default normal)" },
+            "execution_id": { "type": "string", "description": "Optional linked execution id" }
+        }, "required": ["content"] }
+    }));
     tools
 }
 
@@ -1009,6 +1045,9 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "personas_health" => handle_health(args, pool),
         "personas_search_executions" => handle_search_executions(args, pool),
         "personas_list_templates" => handle_list_templates(args, pool),
+        "personas_create" => handle_personas_create(args, pool),
+        "personas_set_model" => handle_personas_set_model(args, pool),
+        "post_message" => handle_post_message(args, pool),
         "arena_list_models" => handle_arena_list_models(args),
         "arena_list_runs" => handle_arena_list_runs(args, pool),
         "arena_run_status" => handle_arena_run_status(args, pool),
@@ -1041,6 +1080,113 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
             "isError": true
         }),
     }
+}
+
+// ── Persona create / configure + Messages (driver tools) ───────────────────
+
+fn handle_personas_create(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let name = args.get("name").and_then(|v| v.as_str()).ok_or("name is required")?;
+    let system_prompt = args
+        .get("system_prompt")
+        .and_then(|v| v.as_str())
+        .ok_or("system_prompt is required")?;
+    let description = args.get("description").and_then(|v| v.as_str());
+    let provider = args.get("provider").and_then(|v| v.as_str());
+    let model = args.get("model").and_then(|v| v.as_str());
+    let enabled = args.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+    let project_id = args.get("project_id").and_then(|v| v.as_str()).unwrap_or("default");
+
+    // model_profile is plaintext JSON (no auth_token → the engine reads it as-is;
+    // encrypt_model_profile no-ops without a secret). Only set when provider/model given.
+    let model_profile: Option<String> = if provider.is_some() || model.is_some() {
+        let mut obj = serde_json::Map::new();
+        if let Some(p) = provider {
+            obj.insert("provider".to_string(), json!(p));
+        }
+        if let Some(m) = model {
+            obj.insert("model".to_string(), json!(m));
+        }
+        Some(Value::Object(obj).to_string())
+    } else {
+        None
+    };
+
+    let conn = pool.get()?;
+    let exists: bool = conn
+        .query_row(
+            "SELECT 1 FROM personas WHERE project_id = ?1 AND name = ?2 LIMIT 1",
+            rusqlite::params![project_id, name],
+            |_| Ok(()),
+        )
+        .is_ok();
+    if exists {
+        return Err(format!("A persona named '{name}' already exists in project '{project_id}'"));
+    }
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO personas
+            (id, project_id, name, description, system_prompt, enabled, sensitive,
+             max_concurrent, timeout_ms, model_profile, created_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 4, 600000, ?7, ?8, ?8)",
+        rusqlite::params![id, project_id, name, description, system_prompt, enabled as i32, model_profile, now],
+    )
+    .map_err(|e| format!("Failed to create persona: {e}"))?;
+
+    Ok(json!({ "id": id, "name": name, "enabled": enabled, "provider": provider, "model": model }).to_string())
+}
+
+fn handle_personas_set_model(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let persona_id = args.get("persona_id").and_then(|v| v.as_str()).ok_or("persona_id is required")?;
+    let provider = args.get("provider").and_then(|v| v.as_str()).ok_or("provider is required")?;
+    let model = args.get("model").and_then(|v| v.as_str());
+
+    let mut obj = serde_json::Map::new();
+    obj.insert("provider".to_string(), json!(provider));
+    if let Some(m) = model {
+        obj.insert("model".to_string(), json!(m));
+    }
+    let profile = Value::Object(obj).to_string();
+
+    let conn = pool.get()?;
+    let updated = conn
+        .execute(
+            "UPDATE personas SET model_profile = ?1, updated_at = ?2 WHERE id = ?3",
+            rusqlite::params![profile, chrono::Utc::now().to_rfc3339(), persona_id],
+        )
+        .map_err(|e| format!("Failed to set model: {e}"))?;
+    if updated == 0 {
+        return Err(format!("No persona with id '{persona_id}'"));
+    }
+    Ok(json!({ "persona_id": persona_id, "model_profile": profile }).to_string())
+}
+
+fn handle_post_message(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let content = args.get("content").and_then(|v| v.as_str()).ok_or("content is required")?;
+    let title = args.get("title").and_then(|v| v.as_str());
+    let priority = args.get("priority").and_then(|v| v.as_str()).unwrap_or("normal");
+    let execution_id = args.get("execution_id").and_then(|v| v.as_str());
+
+    let conn = pool.get()?;
+    let persona_id = if let Some(pid) = args.get("persona_id").and_then(|v| v.as_str()) {
+        pid.to_string()
+    } else {
+        conn.query_row("SELECT id FROM personas LIMIT 1", [], |row| row.get::<_, String>(0))
+            .map_err(|_| "No personas available for attribution")?
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "INSERT INTO persona_messages
+            (id, persona_id, execution_id, title, content, content_type, priority, is_read, created_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, 'text', ?6, 0, ?7)",
+        rusqlite::params![id, persona_id, execution_id, title, content, priority, now],
+    )
+    .map_err(|e| format!("Failed to post message: {e}"))?;
+
+    Ok(json!({ "id": id, "persona_id": persona_id }).to_string())
 }
 
 // ── Obsidian vault tools (Athena vault access) ──────────────────────────────
@@ -1998,4 +2144,83 @@ fn handle_search_executions(args: &Value, pool: &McpDbPool) -> Result<String, St
 
     let results: Vec<Value> = rows.filter_map(|r| r.ok()).collect();
     serde_json::to_string_pretty(&results).map_err(|e| format!("Serialize error: {e}"))
+}
+
+#[cfg(test)]
+mod driver_tool_tests {
+    use super::call_tool;
+    use serde_json::{json, Value};
+
+    /// Build a throwaway DB with the minimal schema the driver tools touch, then
+    /// exercise create → set_model(qwen) → post_message end to end (no daemon/net).
+    #[test]
+    fn create_set_model_and_post_message() {
+        let path = std::env::temp_dir().join(format!("personas-mcp-test-{}.db", uuid::Uuid::new_v4()));
+        {
+            let c = rusqlite::Connection::open(&path).expect("open temp db");
+            c.execute_batch(
+                "CREATE TABLE personas (
+                    id TEXT PRIMARY KEY, project_id TEXT NOT NULL DEFAULT 'default', name TEXT NOT NULL,
+                    description TEXT, system_prompt TEXT NOT NULL, structured_prompt TEXT, icon TEXT, color TEXT,
+                    enabled INTEGER NOT NULL DEFAULT 1, sensitive INTEGER NOT NULL DEFAULT 0,
+                    max_concurrent INTEGER NOT NULL DEFAULT 1, timeout_ms INTEGER NOT NULL DEFAULT 300000,
+                    notification_channels TEXT, model_profile TEXT, max_budget_usd REAL, max_turns INTEGER,
+                    design_context TEXT, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+                 CREATE TABLE persona_messages (
+                    id TEXT PRIMARY KEY, persona_id TEXT NOT NULL, execution_id TEXT, title TEXT,
+                    content TEXT NOT NULL, content_type TEXT NOT NULL DEFAULT 'text',
+                    priority TEXT NOT NULL DEFAULT 'normal', is_read INTEGER NOT NULL DEFAULT 0,
+                    metadata TEXT, created_at TEXT NOT NULL, read_at TEXT, thread_id TEXT);",
+            )
+            .expect("create schema");
+        }
+        let pool = super::super::db::open_pool(&path).expect("open_pool");
+
+        let created = call_tool(
+            "personas_create",
+            &json!({ "name": "Gmail Summarizer", "system_prompt": "Fetch the last email and summarize it." }),
+            &pool,
+        );
+        assert_eq!(created["isError"], json!(false), "create failed: {created}");
+        let created_obj: Value =
+            serde_json::from_str(created["content"][0]["text"].as_str().unwrap()).unwrap();
+        let pid = created_obj["id"].as_str().unwrap().to_string();
+
+        let set = call_tool(
+            "personas_set_model",
+            &json!({ "persona_id": pid, "provider": "qwen", "model": "qwen3-coder-plus" }),
+            &pool,
+        );
+        assert_eq!(set["isError"], json!(false), "set_model failed: {set}");
+
+        let stored: String = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT model_profile FROM personas WHERE id = ?1",
+                rusqlite::params![pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(stored.contains("\"provider\":\"qwen\""), "model_profile not set: {stored}");
+
+        let posted = call_tool(
+            "post_message",
+            &json!({ "persona_id": pid, "title": "Summary", "content": "Last email: ..." }),
+            &pool,
+        );
+        assert_eq!(posted["isError"], json!(false), "post_message failed: {posted}");
+        let count: i64 = pool
+            .get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM persona_messages WHERE persona_id = ?1",
+                rusqlite::params![pid],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(count, 1, "expected 1 message");
+
+        let _ = std::fs::remove_file(&path);
+    }
 }

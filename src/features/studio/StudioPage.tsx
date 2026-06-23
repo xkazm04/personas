@@ -9,6 +9,7 @@ import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
 import { useStudioStore } from './studioStore';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 // Dev-only experimental surface — Athena web-dev companion. Projects run as
 // browser-style tabs; all build runtime lives in studioStore so a project keeps
@@ -31,6 +32,14 @@ export default function StudioPage() {
   const [iframeNonces, setIframeNonces] = useState<Record<string, number>>({});
   const [previewRoutes, setPreviewRoutes] = useState<Record<string, string>>({});
   const [routesByTab, setRoutesByTab] = useState<Record<string, string[]>>({});
+  // Precise orb-pointer rect (A3) — the bounding box of the element a decision is
+  // about, reported by the preview agent over postMessage.
+  const [pointerRect, setPointerRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
   const initStream = useStudioStore((s) => s.initStream);
   const createWithVision = useStudioStore((s) => s.createWithVision);
@@ -64,6 +73,62 @@ export default function StudioPage() {
         .catch(() => setRoutesByTab((m) => ({ ...m, [id]: [] })));
     }
   }, [activeId, active?.phase, activeNonce]);
+
+  // A3 precise pointer — receive the preview agent's rect replies.
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as
+        | {
+            source?: string;
+            type?: string;
+            found?: boolean;
+            rect?: { x: number; y: number; width: number; height: number } | null;
+          }
+        | null;
+      if (!d || d.source !== 'athena-agent' || d.type !== 'located') return;
+      setPointerRect(d.found && d.rect ? d.rect : null);
+    };
+    window.addEventListener('message', onMsg);
+    return () => window.removeEventListener('message', onMsg);
+  }, []);
+
+  // When a decision targets a specific element, ask the preview agent to locate it.
+  // Retry a few times: the preview may have just hot-reloaded from the build turn,
+  // so the agent's message listener might not be ready on the first ping. Each
+  // reply (handled above) sets pointerRect; extra pings after that are harmless.
+  useEffect(() => {
+    setPointerRect(null);
+    if (!active?.question || !active?.decisionSelector) return;
+    const selector = active.decisionSelector;
+    let tries = 0;
+    const interval = window.setInterval(() => {
+      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      iframe?.contentWindow?.postMessage(
+        { source: 'athena', type: 'locate', selector, reqId: `${activeId}` },
+        '*',
+      );
+      if (++tries >= 8) window.clearInterval(interval);
+    }, 700);
+    return () => window.clearInterval(interval);
+  }, [activeId, active?.question, active?.decisionSelector]);
+
+  // Fly Athena's global orb to the element a precise decision is about — reusing
+  // the companion walkthrough's orb-target glide. The element's rect is in the
+  // iframe's viewport; add the iframe's screen offset to get a screen position.
+  // Returns the orb to its dock when the decision clears or Studio unmounts.
+  useEffect(() => {
+    const setTarget = useCompanionStore.getState().setOrbGuideTarget;
+    if (active?.question && pointerRect) {
+      const iframe = document.querySelector('iframe[title="preview"]') as HTMLIFrameElement | null;
+      const ir = iframe?.getBoundingClientRect();
+      if (ir) {
+        setTarget({ left: ir.left + pointerRect.x + pointerRect.width, top: ir.top + pointerRect.y });
+      }
+    } else {
+      setTarget(null);
+    }
+    return () => useCompanionStore.getState().setOrbGuideTarget(null);
+  }, [active?.question, pointerRect]);
 
   const onCreate = useCallback(
     async (name: string, vision: string) => {
@@ -153,8 +218,27 @@ export default function StudioPage() {
                     ))}
                   </div>
                 )}
-                {/* A3 — coarse orb pointer: pulse at the region the decision is about. */}
-                {active.question && active.decisionArea && (
+                {/* A3 — orb pointer: precise ring around the element when the preview
+                    agent returned a rect, else the coarse top/middle/bottom region. */}
+                {active.question && pointerRect ? (
+                  <div
+                    data-testid="studio-orb-pointer"
+                    className="pointer-events-none absolute z-20 rounded-lg ring-2 ring-primary transition-all duration-300"
+                    style={{
+                      left: pointerRect.x,
+                      top: pointerRect.y,
+                      width: pointerRect.width,
+                      height: pointerRect.height,
+                    }}
+                  >
+                    <span className="absolute -right-2.5 -top-2.5 flex h-7 w-7 items-center justify-center">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40" />
+                      <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-primary/25 ring-2 ring-primary backdrop-blur">
+                        <Bot className="h-3.5 w-3.5 text-primary" />
+                      </span>
+                    </span>
+                  </div>
+                ) : active.question && active.decisionArea ? (
                   <div
                     className={`pointer-events-none absolute left-1/2 z-20 -translate-x-1/2 ${
                       active.decisionArea === 'top'
@@ -171,7 +255,7 @@ export default function StudioPage() {
                       </span>
                     </span>
                   </div>
-                )}
+                ) : null}
                 <StudioChecklist phases={active.phases} />
                 <StudioChatInput />
               </>

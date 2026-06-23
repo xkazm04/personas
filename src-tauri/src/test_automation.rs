@@ -137,18 +137,31 @@ async fn eval_bridge_method(
     eval_bridge_method_with_timeout(state, method, params, BRIDGE_TIMEOUT_DEFAULT).await
 }
 
+/// Force the main webview foreground (unminimize + show + focus). A backgrounded /
+/// occluded webview suspends and silently drops eval'd JS — the test bridge's main
+/// flakiness source. Called before each retry so a stalled op self-heals.
+fn force_foreground(state: &ServerState) {
+    if let Some(w) = state.app_handle.get_webview_window("main") {
+        let _ = w.unminimize();
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
 async fn eval_bridge_method_with_timeout(
     state: &ServerState,
     method: &str,
     params: &serde_json::Value,
     timeout_secs: u64,
 ) -> Result<String, (StatusCode, String)> {
-    // Try up to 2 times — first attempt + one retry on timeout
-    for attempt in 0..2u8 {
+    // Try up to 3 times — first attempt + two retries on timeout. A backgrounded /
+    // occluded webview silently drops eval'd JS, so before each retry we force the
+    // window foreground to resume it (the #1 cause of flaky live-UI runs).
+    for attempt in 0..3u8 {
         match try_eval_bridge(state, method, params, timeout_secs).await {
             Ok(result) => return Ok(result),
-            Err(e) if e.0 == StatusCode::GATEWAY_TIMEOUT && attempt == 0 => {
-                // First timeout — retry once after a brief pause to let the JS thread breathe
+            Err(e) if e.0 == StatusCode::GATEWAY_TIMEOUT && attempt < 2 => {
+                force_foreground(state);
                 tokio::time::sleep(Duration::from_millis(500)).await;
                 continue;
             }
@@ -229,6 +242,14 @@ async fn eval_and_await_response(
 }
 
 // ── HTTP handlers ───────────────────────────────────────────────────────────
+
+/// Force the app window foreground (defeat occlusion-suspend before a test run).
+async fn handle_focus(
+    AxumState(state): AxumState<ServerState>,
+) -> Result<String, (StatusCode, String)> {
+    force_foreground(&state);
+    Ok("{\"ok\":true}".to_string())
+}
 
 async fn handle_navigate(
     AxumState(state): AxumState<ServerState>,
@@ -1282,6 +1303,7 @@ fn build_router(state: ServerState) -> Router {
         .route("/wait", post(handle_wait))
         .route("/list-interactive", get(handle_list_interactive))
         .route("/eval", post(handle_eval))
+        .route("/focus", post(handle_focus))
         .route("/screenshot", post(handle_screenshot))
         .route("/perf/reset", post(handle_perf_reset))
         .route("/perf/snapshot", get(handle_perf_snapshot))

@@ -37,6 +37,36 @@ pub async fn webbuild_scaffold(
     )
 }
 
+/// Register an EXISTING project directory as a Dev Tools project (no scaffold) so
+/// it can be opened + built in Studio — e.g. an existing repo like the mk
+/// showcase. Same `dev_projects` registration as scaffold, minus create-next-app.
+#[tauri::command]
+pub async fn webbuild_register_existing(
+    state: State<'_, Arc<AppState>>,
+    name: String,
+    path: String,
+) -> Result<DevProject, AppError> {
+    require_auth(&state).await?;
+    if !std::path::Path::new(&path).is_dir() {
+        return Err(AppError::Validation(format!("path does not exist: {path}")));
+    }
+    // Idempotent: re-registering the same repo returns the existing project row
+    // instead of hitting the UNIQUE(root_path) constraint.
+    if let Some(existing) = repo::get_project_by_path(&state.db, &path)? {
+        return Ok(existing);
+    }
+    repo::create_project(
+        &state.db,
+        &name,
+        &path,
+        None,
+        Some("active"),
+        Some("Next.js/TypeScript/Tailwind"),
+        None,
+        None,
+    )
+}
+
 /// Start (or restart) the Bun dev server for a registered project. Returns its
 /// status immediately; the server may still be booting (`healthy: false`) — the
 /// caller polls [`webbuild_status`] until healthy.
@@ -54,6 +84,9 @@ pub async fn webbuild_dev_start(
             project.root_path
         )));
     }
+    // Inject the dev-only preview agent so the precise orb pointer (A3) can locate
+    // elements in the cross-origin preview. Idempotent + best-effort.
+    crate::webbuild::preview_agent::ensure(&dir);
     let port = webbuild::devserver::alloc_port()?;
     state.webbuild_servers.start(&project_id, &dir, port).await
 }

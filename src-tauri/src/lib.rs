@@ -3212,6 +3212,7 @@ pub fn run() {
             commands::fleet::process_scan::fleet_resume_orphan,
             // Web-build runtime (Athena web-dev companion, P0)
             commands::infrastructure::webbuild::webbuild_scaffold,
+            commands::infrastructure::webbuild::webbuild_register_existing,
             commands::infrastructure::webbuild::webbuild_dev_start,
             commands::infrastructure::webbuild::webbuild_dev_stop,
             commands::infrastructure::webbuild::webbuild_status,

@@ -1387,6 +1387,7 @@ export type CommandName =
   | "webbuild_list_routes"
   | "webbuild_list_servers"
   | "webbuild_list_versions"
+  | "webbuild_register_existing"
   | "webbuild_restore_version"
   | "webbuild_scaffold"
   | "webbuild_session_send"
