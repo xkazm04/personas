@@ -1,77 +1,175 @@
-// Shared L1 for all variants — the projects overview, derived from Flow's
-// cards. Per round-3 feedback: score-led stats per project, NO specific KPI
-// names (there are too many per project to surface here). The hero is the
-// health score; the name + stats are secondary tiers.
-import { STATUS_COLOR, rollup, projectKpis, type MockKpi } from './factoryMock';
-import { HealthBar, TrafficTally } from './factoryPrimitives';
+// L1 projects overview — the project-readiness MATRIX. Each dev_tools project is
+// a column (horizontal scroll, name-ascending); App Readiness Passport items are
+// the rows (Stack / Tooling / Readiness-for-full-automation), compared side by
+// side. Passport data is derived live from the cross-project scan + project
+// config (see usePassportData). "Rescan" re-runs that scan and re-derives.
+//
+// The Passport Wall is the production baseline here — the earlier KPI-health
+// Cards and the Heat-grid prototype were consolidated out (2026-06-21).
+import { useMemo, useState } from 'react';
+import { RefreshCw, Target } from 'lucide-react';
+
+import { setStandardsConfig, scanCodebase, createTask, executeTask, updateProject, installSkill } from '@/api/devTools/devTools';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { useImproveActivityStore } from '@/stores/improveActivityStore';
+import { Button } from '@/features/shared/components/buttons';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ProjectsPassportWall } from './passport';
+import type { WarningItem } from './passport/WarningBadge';
+import { ImproveProvider, type ImproveEngine } from './passport/improve/ImproveContext';
+import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
+import { usePassportData } from './passport/usePassportData';
 import { useFactoryData } from './factoryData';
+import { groupKpis, kpiStatus } from './factoryMock';
 
-export function ProjectsLayer({ onOpen, ed = (k) => k }: { onOpen: (id: string) => void; ed?: (k: MockKpi) => MockKpi }) {
-  const { projects, loading, error } = useFactoryData();
+export function ProjectsLayer({
+  onOpen,
+  onJumpKpi,
+}: {
+  onOpen: (id: string) => void;
+  onJumpKpi?: (projectId: string, groupId: string, kpiId: string) => void;
+}) {
+  const { passports, rawByProject, loading, error, generatedAt, rescanning, rescan, reload } = usePassportData();
+  const { projects: factoryProjects } = useFactoryData();
+  const [showPlan, setShowPlan] = useState(false);
+  const openSlugs = useMemo(() => new Set(passports.map((p) => p.identity.slug)), [passports]);
 
-  if (loading) return <div className="flex items-center justify-center py-16 typo-caption">Loading live KPI data…</div>;
-  if (error) {
-    return (
-      <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
-        <p className="typo-title mb-1">Couldn't load dev-tools data</p>
-        <p className="typo-caption">{error}</p>
-      </div>
-    );
-  }
-  if (projects.length === 0) {
-    return (
-      <div className="rounded-card border border-primary/15 bg-secondary/10 p-8 text-center">
-        <p className="typo-title-lg mb-1">No projects yet</p>
-        <p className="typo-caption">Register a project in Dev-Tools and scan its context map to populate the Factory.</p>
-      </div>
-    );
-  }
+  // Improve engine — lets actionable cells project + apply Tier-0 standards upgrades.
+  const improve = useMemo<ImproveEngine>(() => ({
+    getRaw: (slug) => rawByProject.get(slug),
+    allRaw: () => [...rawByProject.values()],
+    applyStandards: async (slug, json) => { await setStandardsConfig(slug, json); reload(); },
+    runContextScan: async (slug) => {
+      const raw = rawByProject.get(slug);
+      if (!raw) return undefined;
+      const { scan_id } = await scanCodebase(slug, raw.project.root_path);
+      // Register in the global activity dock (titlebar) so the scan stays
+      // visible while the user navigates across modules; completion is resolved
+      // globally in eventBridge (CONTEXT_GEN_COMPLETE → factory_scan). The Rust
+      // side runs the scan detached, so scanCodebase returns a scan_id at once.
+      useOverviewStore.getState().processStarted(
+        'factory_scan',
+        scan_id,
+        `Context scan: ${raw.project.name}`,
+        { section: 'plugins', tab: 'context-map' },
+      );
+      return scan_id;
+    },
+    bindConnector: async (slug, credId, field) => {
+      await updateProject(slug, field === 'pr' ? { prCredentialId: credId } : { monitoringCredentialId: credId });
+      reload();
+    },
+    installSkills: async (slug, items) => {
+      await Promise.all(items.map((it) => installSkill(it.name, it.source, slug, false)));
+      reload();
+    },
+    queueTask: async (slug, title, prompt) => { await createTask(title, slug, prompt); },
+    deployNow: async (slug, title, prompt) => {
+      const raw = rawByProject.get(slug);
+      const task = await createTask(title, slug, prompt);
+      // Surface the Claude-Code run in the global activity dock keyed by task id,
+      // deep-linking to the Task Runner where its output streams live (same
+      // surface as every other Claude-Code CLI execution). The run dispatches
+      // detached on the Rust side; its terminal status (completed/failed/
+      // cancelled) is resolved globally in eventBridge → factory_deploy, which
+      // also raises the completion notification, so the user can switch modules
+      // and be told when the LLM is done.
+      const ov = useOverviewStore.getState();
+      ov.processStarted(
+        'factory_deploy',
+        task.id,
+        `Upgrade ${raw?.project.name ?? 'project'}: ${title}`,
+        { section: 'plugins', tab: 'task-runner' },
+      );
+      try {
+        await executeTask(task.id);
+      } catch (e) {
+        // executeTask only rejects on dispatch failure (before any event), so
+        // settle the dock entry + un-busy the cell here; in-run terminal states
+        // arrive via events.
+        ov.processEnded('factory_deploy', 'failed', task.id);
+        useImproveActivityStore.getState().endByRun(task.id);
+        throw e;
+      }
+      return task.id;
+    },
+  }), [rawByProject, reload]);
+
+  // Off-track (crit) KPIs per project — folds the old AttentionBand into the
+  // matrix as a per-project warning badge on each cover.
+  const attentionByProject = useMemo(() => {
+    const m = new Map<string, WarningItem[]>();
+    for (const p of factoryProjects) {
+      const items: WarningItem[] = [];
+      for (const g of p.groups) {
+        for (const k of groupKpis(g)) {
+          if (kpiStatus(k) === 'crit') {
+            items.push({ groupId: g.id, kpiId: k.id, name: k.name, current: k.current, target: k.target, unit: k.unit });
+          }
+        }
+      }
+      if (items.length > 0) m.set(p.id, items);
+    }
+    return m;
+  }, [factoryProjects]);
 
   return (
-    <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">
-      {projects.map((p) => {
-        const all = projectKpis(p).map(ed);
-        const r = rollup(all);
-        const contexts = p.groups.reduce((n, g) => n + g.contexts.length, 0);
-        const color = r.health >= 70 ? STATUS_COLOR.met : r.health >= 40 ? STATUS_COLOR.warn : STATUS_COLOR.crit;
-        return (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => onOpen(p.id)}
-            className="text-left rounded-card border border-primary/15 bg-secondary/10 hover:border-primary/40 hover:bg-secondary/20 transition-colors p-4"
+    <div>
+      <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0 flex-wrap">
+          <h2 className="typo-section-title">Project readiness</h2>
+          {passports.length > 0 && <span className="typo-caption">{passports.length} projects</span>}
+          {generatedAt && (
+            <span className="typo-caption inline-flex items-center gap-1">
+              · scanned <RelativeTime timestamp={generatedAt} className="tabular-nums" />
+            </span>
+          )}
+        </div>
+        <div className="inline-flex items-center gap-2">
+          {passports.length > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Target className="w-3.5 h-3.5" />}
+              onClick={() => setShowPlan(true)}
+            >
+              Improve plan
+            </Button>
+          )}
+          <Button
+            variant="accent"
+            accentColor="violet"
+            size="sm"
+            icon={<RefreshCw className="w-3.5 h-3.5" />}
+            loading={rescanning}
+            onClick={rescan}
           >
-            <div className="flex items-start justify-between gap-3 mb-1">
-              <div className="min-w-0">
-                <h3 className="typo-title-lg truncate">{p.name}</h3>
-                <p className="typo-caption truncate">{p.stack}</p>
-              </div>
-              <div className="text-right leading-none">
-                <span className="typo-data-lg tabular-nums" style={{ color }}>{r.health}</span>
-                <span className="block typo-label text-foreground/50 mt-1">health</span>
-              </div>
-            </div>
-            <HealthBar value={r.health} className="mt-2" />
-            <div className="flex items-center justify-between mt-3">
-              <TrafficTally kpis={all} />
-              <div className="flex items-center gap-3">
-                <Stat n={p.groups.length} label="groups" />
-                <Stat n={contexts} label="contexts" />
-                <Stat n={all.length} label="KPIs" />
-              </div>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+            Rescan
+          </Button>
+        </div>
+      </div>
 
-function Stat({ n, label }: { n: number; label: string }) {
-  return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="typo-data text-foreground">{n}</span>
-      <span className="typo-caption">{label}</span>
-    </span>
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <LoadingSpinner label="Deriving project passports…" />
+        </div>
+      ) : error ? (
+        <div className="rounded-card border border-[var(--destructive)]/30 bg-[var(--destructive)]/5 p-4">
+          <p className="typo-title mb-1">Couldn't build project passports</p>
+          <p className="typo-caption">{error}</p>
+        </div>
+      ) : passports.length === 0 ? (
+        <div className="rounded-card border border-primary/15 bg-secondary/10 p-8 text-center">
+          <p className="typo-title-lg mb-1">No projects to compare yet</p>
+          <p className="typo-caption">Register a project in Dev-Tools and scan its context map, then Rescan to build its readiness passport.</p>
+        </div>
+      ) : (
+        <ImproveProvider value={improve}>
+          <ProjectsPassportWall passports={passports} openSlugs={openSlugs} onOpen={onOpen} attentionByProject={attentionByProject} onJumpKpi={onJumpKpi} />
+          <ImprovePlanPanel open={showPlan} onClose={() => setShowPlan(false)} />
+        </ImproveProvider>
+      )}
+    </div>
   );
 }

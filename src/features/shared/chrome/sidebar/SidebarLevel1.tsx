@@ -6,6 +6,7 @@ import { BadgeSlot, type BadgeDefinition } from '@/features/shared/chrome/sideba
 import { OrbitDots } from '@/features/shared/chrome/sidebar/OrbitDots';
 import { useSidebarAgentActivity } from '@/hooks/sidebar/useSidebarAgentActivity';
 import { useSystemStore } from "@/stores/systemStore";
+import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
 import { useBadgeCounts } from '@/hooks/sidebar/useBadgeCounts';
 import { useWhatsNewIndicator } from '@/hooks/sidebar/useWhatsNewIndicator';
 import type { SidebarSection } from '@/lib/types/types';
@@ -50,6 +51,10 @@ export default function SidebarLevel1({
     }))
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
+  // Any in-flight Factory golden-standard op (Claude deploy / context scan) →
+  // pulsing dot on the Teams button (mirrors the 2nd-level Factory dot + the
+  // spinning cell gear).
+  const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
   const setContextScanComplete = useSystemStore((s) => s.setContextScanComplete);
   const clearObsidianRevitalizeCompletion = useSystemStore((s) => s.clearObsidianRevitalizeCompletion);
   const { pendingReviewCount, unreadMessageCount } = useBadgeCounts();
@@ -108,6 +113,21 @@ export default function SidebarLevel1({
       // as "two things in flight". OrbitDots already encodes phase via
       // colour and tooltip, so the section pulses are removed.
       personas: [],
+      // Teams → Factory: a golden-standard upgrade (Claude deploy / context
+      // scan) fired from the project-readiness matrix is running. Pulses while
+      // in flight, then clears itself on completion (no lingering "done" dot —
+      // the matrix re-derives in place).
+      teams: [
+        {
+          id: 'factory-op-active',
+          priority: 2,
+          active: factoryRunning,
+          label: 'Factory upgrade in progress',
+          variant: 'pulse',
+          color: 'bg-violet-500 border-violet-600/50',
+          pingColor: 'bg-violet-500/40',
+        },
+      ],
       // Templates: no indicators — adoption creates a draft, visible via Agents
       plugins: [
         {
@@ -169,7 +189,7 @@ export default function SidebarLevel1({
     return map;
   }, [
     pendingReviewCount, unreadMessageCount,
-    contextScanActive, contextScanComplete,
+    contextScanActive, contextScanComplete, factoryRunning,
     setContextScanComplete, creativeSessionRunning, studioJobActive,
     obsidianRevitalizeRunning, obsidianRevitalizeJustCompleted,
     clearObsidianRevitalizeCompletion,

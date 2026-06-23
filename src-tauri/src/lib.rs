@@ -2959,6 +2959,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_cross_project_map,
             commands::infrastructure::dev_tools::dev_tools_generate_cross_project_metadata,
             commands::infrastructure::dev_tools::dev_tools_get_cross_project_metadata,
+            commands::infrastructure::dev_tools::dev_tools_probe_repo_evidence,
             commands::infrastructure::dev_tools::dev_tools_create_idea_batch,
             commands::infrastructure::dev_tools::dev_tools_search_across_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project_summary,

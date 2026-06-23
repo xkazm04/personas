@@ -18,6 +18,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
+import { useImproveActivityStore } from "@/stores/improveActivityStore";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
 import { getActiveTranslations } from "@/i18n/useTranslation";
@@ -440,6 +441,82 @@ const registry: EventRegistration[] = [
           }
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -- Factory "Improve" background processes (deploy + context scan) ---------
+  // The project-readiness matrix (Teams › Factory) fires golden-standard upgrades:
+  // a Claude-Code deploy task (createTask→executeTask) or a context scan. Both
+  // dispatch detached on the Rust side, so — exactly like the Twin Studio and
+  // Obsidian Revitalize listeners below — their global activity-dock entry is
+  // resolved (and a completion notification raised) HERE, NOT in the page that
+  // started them, so the user can switch across modules and still learn when the
+  // LLM finished. ProjectsLayer registers these under the `factory_deploy` /
+  // `factory_scan` domains keyed by the task id / scan id. This listener is a
+  // strict no-op for any task/scan NOT started there (it only ends a dock row
+  // that already exists), so it never disturbs the TaskRunnerPage `task_runner`
+  // or ProjectManager `context_scan` flows that own their own dock entries.
+  {
+    event: EventName.TASK_EXEC_STATUS,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.TASK_EXEC_STATUS, (payload) => {
+        const { job_id, status, error } = payload;
+        if (status !== "completed" && status !== "failed" && status !== "cancelled") return;
+        // Un-spin the originating matrix cell's gear (no-op if the run didn't
+        // come from a cell). Done before the dock guard so the gear always
+        // settles on a terminal status.
+        useImproveActivityStore.getState().endByRun(job_id);
+        const overview = useOverviewStore.getState();
+        const proc = overview.activeProcesses[`factory_deploy:${job_id}`];
+        if (!proc) return; // Not a Factory deploy — TaskRunnerPage owns its rows.
+        overview.processEnded("factory_deploy", status, job_id);
+        const label = proc.label ?? "Codebase upgrade";
+        useNotificationCenterStore.getState().addProcessNotification({
+          processType: "execution",
+          status,
+          title:
+            status === "completed" ? `${label} — done`
+            : status === "cancelled" ? `${label} — cancelled`
+            : `${label} — failed`,
+          summary:
+            status === "completed"
+              ? "Claude Code finished the golden-standard upgrade. Open the Task Runner to review the diff / PR."
+              : status === "cancelled"
+                ? "The upgrade task was cancelled."
+                : error ?? "The upgrade task failed. Open the Task Runner to inspect the output.",
+          redirectSection: "plugins",
+          redirectTab: "task-runner",
+        });
+        if (typeof window !== "undefined") {
+          // kind:'deploy' → the Wall re-derives from fresh project rows (cheap).
+          window.dispatchEvent(new CustomEvent("personas:factory-process-complete", { detail: { kind: "deploy" } }));
+        }
+      });
+      return [unlisten];
+    },
+  },
+  {
+    event: EventName.CONTEXT_GEN_COMPLETE,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.CONTEXT_GEN_COMPLETE, (payload) => {
+        // Un-spin the originating cell's gear (no-op if not cell-initiated).
+        useImproveActivityStore.getState().endByRun(payload.scan_id);
+        const overview = useOverviewStore.getState();
+        const proc = overview.activeProcesses[`factory_scan:${payload.scan_id}`];
+        if (!proc) return; // Not a Factory-initiated scan — ProjectManager owns context_scan.
+        const success = payload.status !== "failed";
+        overview.processEnded("factory_scan", success ? "completed" : "failed", payload.scan_id);
+        // The Rust side already fires an authoritative OS notification for context
+        // scans, so we don't double up with a bell entry here — just settle the
+        // dock + nudge the Wall. kind:'scan' tells the Wall to REGENERATE the
+        // cross-project metadata (not just re-derive): the context-graph level is
+        // computed from that aggregate, so a plain re-derive off the stale cache
+        // would leave the score unchanged after a successful scan.
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("personas:factory-process-complete", { detail: { kind: "scan" } }));
+        }
+      });
       return [unlisten];
     },
   },

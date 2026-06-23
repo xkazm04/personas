@@ -3,6 +3,7 @@ import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Gauge, Inbox,
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useImproveActivityStore, selectAnyImproveRunning } from '@/stores/improveActivityStore';
 import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
 import type { TeamsTab, GoalsTab, KpisTab } from '@/lib/types/types';
 
@@ -45,6 +46,8 @@ export function TeamsSidebarNav() {
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
+  // A golden-standard upgrade fired from the Factory readiness matrix is running.
+  const factoryRunning = useImproveActivityStore(selectAnyImproveRunning);
 
   useEffect(() => {
     void fetchTeams();
@@ -215,6 +218,14 @@ export function TeamsSidebarNav() {
         >
           <Factory className="w-4 h-4 flex-shrink-0" />
           {t.sidebar.factory}
+          {factoryRunning && (
+            // Decorative pulse — the running state is announced by the 1st-level
+            // Teams badge tooltip, so this is aria-hidden to avoid double-reading.
+            <span className="ml-auto relative flex items-center justify-center w-2.5 h-2.5" aria-hidden>
+              <span className="absolute inset-0 rounded-full animate-ping bg-violet-500/40" />
+              <span className="relative w-2 h-2 rounded-full bg-violet-500 border border-violet-600/50" />
+            </span>
+          )}
         </button>
       </div>
     </nav>

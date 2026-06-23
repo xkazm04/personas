@@ -3147,3 +3147,179 @@ pub fn dev_tools_kpi_list_bindings(
     require_auth_sync(&state)?;
     repo::list_kpi_bindings(&state.db, &kpi_id)
 }
+
+// ============================================================================
+// Repo evidence probe (D1 — deep evidence scanner)
+//
+// A deterministic, NO-LLM scan of a project's working tree that turns the
+// passport's permanent honest-gaps (tests always 'none', evals always 'none',
+// agent-instructions from team_id rather than the actual CLAUDE.md) into real,
+// file-backed signals. Cheap + bounded (skips node_modules/.git/target, caps the
+// walk) so it can run for every project on the readiness Wall. The frontend
+// derive (`passportDerive.ts`) consumes this defensively — when the command is
+// absent (older build) the wrapper returns null and the heuristics still apply.
+// ============================================================================
+
+#[derive(Debug, Default, serde::Serialize)]
+pub struct RepoEvidence {
+    /// false when the root path doesn't exist / isn't a directory.
+    pub scanned: bool,
+    pub has_package_json: bool,
+    pub package_scripts: Vec<String>,
+    pub test_framework: Option<String>,
+    pub has_tests: bool,
+    pub test_file_count: u32,
+    pub ci_workflows: Vec<String>,
+    pub has_claude_md: bool,
+    pub has_readme: bool,
+    pub has_security_md: bool,
+    pub has_dockerfile: bool,
+    pub has_dependabot: bool,
+    pub has_codeql: bool,
+    pub has_migrations: bool,
+    pub has_eval: bool,
+}
+
+fn re_exists(root: &std::path::Path, rel: &str) -> bool {
+    root.join(rel).exists()
+}
+
+/// Bounded walk: counts test files + detects migration/eval dirs without
+/// recursing into heavy build dirs or past a depth/entry cap.
+fn bounded_probe(root: &std::path::Path) -> (u32, bool, bool) {
+    const MAX_ENTRIES: u32 = 8000;
+    const MAX_DEPTH: usize = 5;
+    const SKIP: [&str; 8] = [
+        "node_modules", "target", "dist", "build", ".next", "vendor", "coverage", ".git",
+    ];
+    let mut test_count: u32 = 0;
+    let mut has_mig = false;
+    let mut has_eval = false;
+    let mut seen: u32 = 0;
+    let mut stack: Vec<(std::path::PathBuf, usize)> = vec![(root.to_path_buf(), 0)];
+    while let Some((dir, depth)) = stack.pop() {
+        if seen >= MAX_ENTRIES {
+            break;
+        }
+        let rd = match std::fs::read_dir(&dir) {
+            Ok(r) => r,
+            Err(_) => continue,
+        };
+        for entry in rd.flatten() {
+            seen += 1;
+            if seen >= MAX_ENTRIES {
+                break;
+            }
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
+            if is_dir {
+                if SKIP.contains(&name.as_str()) || name.starts_with('.') {
+                    continue;
+                }
+                if name == "migrations" || name == "migration" {
+                    has_mig = true;
+                }
+                if name == "evals" || name == "eval" {
+                    has_eval = true;
+                }
+                if depth + 1 <= MAX_DEPTH {
+                    stack.push((entry.path(), depth + 1));
+                }
+            } else if name.contains(".test.")
+                || name.contains(".spec.")
+                || name.ends_with("_test.rs")
+                || name.starts_with("test_")
+            {
+                test_count += 1;
+            }
+        }
+    }
+    (test_count, has_mig, has_eval)
+}
+
+#[tauri::command]
+pub fn dev_tools_probe_repo_evidence(
+    state: State<'_, Arc<AppState>>,
+    root_path: String,
+) -> Result<RepoEvidence, AppError> {
+    require_auth_sync(&state)?;
+    let root = std::path::Path::new(&root_path);
+    let mut ev = RepoEvidence::default();
+    if !root.is_dir() {
+        return Ok(ev); // scanned stays false — honest "couldn't read it"
+    }
+    ev.scanned = true;
+
+    // package.json → scripts + JS/TS test framework
+    if let Ok(txt) = std::fs::read_to_string(root.join("package.json")) {
+        ev.has_package_json = true;
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&txt) {
+            if let Some(scripts) = json.get("scripts").and_then(|v| v.as_object()) {
+                ev.package_scripts = scripts.keys().cloned().collect();
+            }
+            let mut deps = String::new();
+            for key in ["dependencies", "devDependencies"] {
+                if let Some(obj) = json.get(key).and_then(|v| v.as_object()) {
+                    for dk in obj.keys() {
+                        deps.push_str(&dk.to_lowercase());
+                        deps.push(' ');
+                    }
+                }
+            }
+            ev.test_framework = if deps.contains("vitest") {
+                Some("vitest".into())
+            } else if deps.contains("jest") {
+                Some("jest".into())
+            } else if deps.contains("playwright") {
+                Some("playwright".into())
+            } else if deps.contains("mocha") {
+                Some("mocha".into())
+            } else {
+                None
+            };
+        }
+    }
+    if ev.test_framework.is_none() {
+        if re_exists(root, "Cargo.toml") {
+            ev.test_framework = Some("cargo".into());
+        } else if re_exists(root, "pytest.ini")
+            || re_exists(root, "pyproject.toml")
+            || re_exists(root, "tox.ini")
+        {
+            ev.test_framework = Some("pytest".into());
+        }
+    }
+
+    ev.has_claude_md = re_exists(root, "CLAUDE.md");
+    ev.has_readme = re_exists(root, "README.md") || re_exists(root, "readme.md");
+    ev.has_security_md = re_exists(root, "SECURITY.md") || re_exists(root, ".github/SECURITY.md");
+    ev.has_dockerfile = re_exists(root, "Dockerfile")
+        || re_exists(root, "docker-compose.yml")
+        || re_exists(root, "compose.yaml");
+    ev.has_dependabot =
+        re_exists(root, ".github/dependabot.yml") || re_exists(root, ".github/dependabot.yaml");
+
+    // CI workflows + CodeQL
+    let wf = root.join(".github/workflows");
+    if wf.is_dir() {
+        if let Ok(rd) = std::fs::read_dir(&wf) {
+            for entry in rd.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.ends_with(".yml") || name.ends_with(".yaml") {
+                    if name.to_lowercase().contains("codeql") {
+                        ev.has_codeql = true;
+                    }
+                    ev.ci_workflows.push(name);
+                }
+            }
+        }
+    }
+
+    let (test_count, has_mig, has_eval) = bounded_probe(root);
+    ev.test_file_count = test_count;
+    ev.has_tests = test_count > 0 || ev.package_scripts.iter().any(|s| s == "test");
+    ev.has_migrations = has_mig;
+    ev.has_eval = has_eval;
+
+    Ok(ev)
+}

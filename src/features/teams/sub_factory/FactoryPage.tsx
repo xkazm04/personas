@@ -19,7 +19,6 @@ export default function FactoryPage() {
         icon={<FlaskConical className="w-5 h-5 text-violet-400" />}
         iconColor="violet"
         title="Factory"
-        subtitle="Next-gen KPI management — live dev-tools data. Drill projects → context × KPI matrix → calibrate."
       />
       <ContentBody>
         <FactoryDataProvider>

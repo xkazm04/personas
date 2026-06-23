@@ -9,7 +9,6 @@ import { saveKpiAssessment } from '@/api/devTools/kpis';
 
 import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryMock';
 import { Breadcrumb } from './factoryPrimitives';
-import { AttentionBand } from './AttentionBand';
 import { KpiProposalsPanel } from './KpiProposalsPanel';
 import { ProjectsLayer } from './ProjectsLayer';
 import { GroupKpiLayer } from './GroupKpiLayer';
@@ -122,12 +121,7 @@ export function FactoryShell({
       </>
     );
   } else {
-    content = (
-      <>
-        <AttentionBand projects={projects} ed={ed} onJump={jumpToKpi} />
-        <ProjectsLayer onOpen={setProjectId} ed={ed} />
-      </>
-    );
+    content = <ProjectsLayer onOpen={setProjectId} onJumpKpi={jumpToKpi} />;
   }
 
   return (

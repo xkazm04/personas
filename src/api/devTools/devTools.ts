@@ -320,6 +320,31 @@ export const generateCrossProjectMetadata = () =>
 export const getCrossProjectMetadata = () =>
   safeInvoke<CrossProjectMetadataMap | null>(null, "dev_tools_get_cross_project_metadata");
 
+/** Deterministic, no-LLM repo evidence (D1) — backs the passport derive with real
+ *  file signals. Hand-typed to mirror the Rust `RepoEvidence` (snake_case serde).
+ *  `safeInvoke` returns null on older builds where the command isn't registered,
+ *  so the derive falls back to its heuristics. */
+export interface RepoEvidence {
+  scanned: boolean;
+  has_package_json: boolean;
+  package_scripts: string[];
+  test_framework: string | null;
+  has_tests: boolean;
+  test_file_count: number;
+  ci_workflows: string[];
+  has_claude_md: boolean;
+  has_readme: boolean;
+  has_security_md: boolean;
+  has_dockerfile: boolean;
+  has_dependabot: boolean;
+  has_codeql: boolean;
+  has_migrations: boolean;
+  has_eval: boolean;
+}
+
+export const probeRepoEvidence = (rootPath: string) =>
+  safeInvoke<RepoEvidence | null>(null, "dev_tools_probe_repo_evidence", { rootPath });
+
 // ============================================================================
 // Competitions (multi-clone parallel task execution via Claude Code worktrees)
 // ============================================================================
