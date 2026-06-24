@@ -1,4 +1,4 @@
-import { Loader2, CheckCircle2, Sparkle, Clock } from 'lucide-react';
+import { CheckCircle2, Sparkle, Clock } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,9 +21,13 @@ import type { FleetLabelKey } from './FleetStatusDots';
  * reach the live grid, so they're absent from the visual map below.)
  */
 const STATE_VIS: Partial<
-  Record<FleetSessionState, { Icon: typeof Loader2; labelKey: FleetLabelKey; accent: string; spin?: boolean }>
+  Record<FleetSessionState, { Icon?: typeof CheckCircle2; labelKey: FleetLabelKey; accent: string }>
 > = {
-  running: { Icon: Loader2, labelKey: 'state_working', accent: 'text-blue-400', spin: true },
+  // `running` is intentionally icon-LESS — a spinning loader on every working
+  // tile is visual noise at scale (10+ CLIs). The blue label alone reads as
+  // "Working" without the distraction; the other (non-animated) states keep a
+  // static glance icon.
+  running: { labelKey: 'state_working', accent: 'text-blue-400' },
   spawning: { Icon: Sparkle, labelKey: 'state_spawning', accent: 'text-cyan-400' },
   idle: { Icon: CheckCircle2, labelKey: 'state_idle', accent: 'text-emerald-400' },
   stale: { Icon: Clock, labelKey: 'state_stale', accent: 'text-orange-400' },
@@ -40,7 +44,7 @@ export function FleetTileStatusBlock({ session: s }: { session: FleetSession }) 
       data-testid={`fleet-tile-status-${s.id}`}
       className="pointer-events-none flex h-full w-full flex-col items-center justify-center gap-1.5 bg-[#0a0a0c] px-3 py-3 text-center"
     >
-      <Icon className={`w-6 h-6 ${vis.accent} ${vis.spin ? 'animate-spin' : ''}`} aria-hidden="true" />
+      {Icon && <Icon className={`w-6 h-6 ${vis.accent}`} aria-hidden="true" />}
       <span className={`typo-caption font-medium ${vis.accent}`}>{t.plugins.fleet[vis.labelKey]}</span>
       <span className="typo-caption tabular-nums">
         {formatAgo(t, Number(s.lastActivityMs), now)}

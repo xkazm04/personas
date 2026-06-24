@@ -395,7 +395,11 @@ export default function FleetGridPage() {
       sessions
         // Hibernated sessions have no PTY to tile — exclude alongside exited.
         .filter((s) => s.state !== 'exited' && s.state !== 'hibernated')
-        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
+        // LOCKED spatial order: spawn time (stable), NOT activity. Reordering
+        // tiles on every state change is disorienting at scale — the operator
+        // builds muscle memory for "which session is in which cell", so a tile
+        // must stay put. New sessions append at the end; the grid never reshuffles.
+        .sort((a, b) => Number(a.createdAtMs) - Number(b.createdAtMs)),
     [sessions],
   );
 
