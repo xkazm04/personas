@@ -130,7 +130,7 @@ function finalizeContextScan(
 
 export default function ContextMapPage() {
   const { t, tx } = useTranslation();
-  const { fetchContextMap, createContextGroup, scanCodebase, runScan } = useDevToolsActions();
+  const { createContextGroup, scanCodebase, runScan } = useDevToolsActions();
 
   const storeGroups = useSystemStore((s) => s.contextGroups);
   const storeContexts = useSystemStore((s) => s.contexts);
@@ -140,6 +140,11 @@ export default function ContextMapPage() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
   const fetchKpis = useSystemStore((s) => s.fetchKpis);
+  // Stable store-method references (Zustand actions never change identity) for
+  // the context-map load effect below — see the comment there for why this must
+  // NOT use the per-render useDevToolsActions() wrappers.
+  const fetchContexts = useSystemStore((s) => s.fetchContexts);
+  const fetchContextGroups = useSystemStore((s) => s.fetchContextGroups);
   const scanPhase = useSystemStore((s) => s.scanPhase);
   const addToast = useToastStore((s) => s.addToast);
   const [scanningContextId, setScanningContextId] = useState<string | null>(null);
@@ -355,7 +360,19 @@ export default function ContextMapPage() {
     // the activeScanId guard avoids work when no scan is pending.
   }, [t, tx]);
 
-  useEffect(() => { fetchContextMap(); }, [fetchContextMap]);
+  // Load the context map on mount and whenever the active project changes.
+  // CRITICAL: depend on the STABLE store methods + activeProjectId — never on a
+  // useDevToolsActions() wrapper. Those wrappers are recreated on every render,
+  // so `}, [fetchContextMap])` re-ran this effect every render → fetch → store
+  // update → re-render → fetch … an unbounded IPC loop that hammered
+  // dev_tools_list_contexts / list_context_groups (which time out under a scan's
+  // DB write load — the looping "timed out" errors) and leaked the WebView
+  // renderer until it hit its ~4 GB process limit ("Out of Memory").
+  useEffect(() => {
+    if (!activeProjectId) return;
+    void fetchContextGroups(activeProjectId);
+    void fetchContexts(activeProjectId);
+  }, [activeProjectId, fetchContextGroups, fetchContexts]);
 
   const handleScan = useCallback(async () => {
     setScanLines([]);
