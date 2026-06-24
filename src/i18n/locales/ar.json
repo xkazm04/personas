@@ -244,7 +244,14 @@
     "live_more": "+{count} أكثر",
     "live_open_timeline": "فتح في الجدول الزمني",
     "live_toggle": "نوافذ منبثقة مباشرة",
-    "live_toggle_hint": "عرض رسائل القناة الواردة كنوافذ منبثقة في الزاوية"
+    "live_toggle_hint": "عرض رسائل القناة الواردة كنوافذ منبثقة في الزاوية",
+    "activity_mode": "النشاط",
+    "activity_mode_title": "النشاط — حالة كل شخصية مباشرةً على شكل شبكة",
+    "grid_state_attention": "يحتاج إليك",
+    "grid_state_failed": "فشل",
+    "grid_state_idle": "خامل",
+    "grid_state_running": "قيد التشغيل",
+    "grid_ungrouped": "غير مُجمَّع"
   },
   "common": {
     "loading": "جارٍ التحميل...",

@@ -244,7 +244,14 @@
     "live_more": "+{count} 条",
     "live_open_timeline": "在时间线中打开",
     "live_toggle": "实时弹窗",
-    "live_toggle_hint": "以角落弹窗形式显示传入的频道消息"
+    "live_toggle_hint": "以角落弹窗形式显示传入的频道消息",
+    "activity_mode": "活动",
+    "activity_mode_title": "活动 — 以网格形式显示每个角色的实时状态",
+    "grid_state_attention": "需要处理",
+    "grid_state_failed": "失败",
+    "grid_state_idle": "空闲",
+    "grid_state_running": "运行中",
+    "grid_ungrouped": "未分组"
   },
   "common": {
     "loading": "加载中...",

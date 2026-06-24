@@ -244,7 +244,14 @@
     "live_more": "+{count} weitere",
     "live_open_timeline": "In Zeitachse öffnen",
     "live_toggle": "Live-Einblendungen",
-    "live_toggle_hint": "Eingehende Channel-Nachrichten als Eck-Einblendungen anzeigen"
+    "live_toggle_hint": "Eingehende Channel-Nachrichten als Eck-Einblendungen anzeigen",
+    "activity_mode": "Aktivität",
+    "activity_mode_title": "Aktivität — der Live-Status jeder Persona als Raster",
+    "grid_state_attention": "Aktion nötig",
+    "grid_state_failed": "Fehlgeschlagen",
+    "grid_state_idle": "Inaktiv",
+    "grid_state_running": "Läuft",
+    "grid_ungrouped": "Ohne Gruppe"
   },
   "common": {
     "loading": "Laden...",

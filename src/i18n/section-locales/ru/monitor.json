@@ -172,5 +172,12 @@
   "live_more": "+{count} ещё",
   "live_open_timeline": "Открыть в хронологии",
   "live_toggle": "Живые уведомления",
-  "live_toggle_hint": "Показывать входящие сообщения канала как всплывающие окна"
+  "live_toggle_hint": "Показывать входящие сообщения канала как всплывающие окна",
+  "activity_mode": "Активность",
+  "activity_mode_title": "Активность — состояние каждой персоны в реальном времени в виде сетки",
+  "grid_state_attention": "Требует внимания",
+  "grid_state_failed": "Сбой",
+  "grid_state_idle": "Простаивает",
+  "grid_state_running": "Выполняется",
+  "grid_ungrouped": "Без группы"
 }

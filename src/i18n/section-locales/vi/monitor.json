@@ -172,5 +172,12 @@
   "live_more": "+{count} nữa",
   "live_open_timeline": "Mở trong Timeline",
   "live_toggle": "Pop-up trực tiếp",
-  "live_toggle_hint": "Hiển thị tin nhắn kênh mới dưới dạng pop-up ở góc màn hình"
+  "live_toggle_hint": "Hiển thị tin nhắn kênh mới dưới dạng pop-up ở góc màn hình",
+  "activity_mode": "Hoạt động",
+  "activity_mode_title": "Hoạt động — trạng thái trực tiếp của từng persona dưới dạng lưới",
+  "grid_state_attention": "Cần bạn",
+  "grid_state_failed": "Thất bại",
+  "grid_state_idle": "Không hoạt động",
+  "grid_state_running": "Đang chạy",
+  "grid_ungrouped": "Chưa nhóm"
 }

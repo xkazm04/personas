@@ -244,7 +244,14 @@
     "live_more": "+{count} de plus",
     "live_open_timeline": "Ouvrir dans la Timeline",
     "live_toggle": "Pop-ups en direct",
-    "live_toggle_hint": "Afficher les messages de canal entrants sous forme de pop-ups dans les coins"
+    "live_toggle_hint": "Afficher les messages de canal entrants sous forme de pop-ups dans les coins",
+    "activity_mode": "Activité",
+    "activity_mode_title": "Activité — l'état en direct de chaque persona sous forme de grille",
+    "grid_state_attention": "Action requise",
+    "grid_state_failed": "Échec",
+    "grid_state_idle": "Inactif",
+    "grid_state_running": "En cours",
+    "grid_ungrouped": "Sans groupe"
   },
   "common": {
     "loading": "Chargement...",

@@ -244,7 +244,14 @@
     "live_more": "+{count} lagi",
     "live_open_timeline": "Buka di Timeline",
     "live_toggle": "Pop-up langsung",
-    "live_toggle_hint": "Tampilkan pesan saluran masuk sebagai pop-up pojok"
+    "live_toggle_hint": "Tampilkan pesan saluran masuk sebagai pop-up pojok",
+    "activity_mode": "Aktivitas",
+    "activity_mode_title": "Aktivitas — status langsung setiap persona dalam bentuk kisi",
+    "grid_state_attention": "Perlu Anda",
+    "grid_state_failed": "Gagal",
+    "grid_state_idle": "Tidak aktif",
+    "grid_state_running": "Berjalan",
+    "grid_ungrouped": "Tanpa grup"
   },
   "common": {
     "loading": "Memuat...",

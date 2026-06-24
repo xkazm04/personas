@@ -192,6 +192,13 @@ export type Translations = {
     channels_combined_quiet: string;
     live_toggle: string;
     live_toggle_hint: string;
+    activity_mode: string;
+    activity_mode_title: string;
+    grid_state_running: string;
+    grid_state_attention: string;
+    grid_state_failed: string;
+    grid_state_idle: string;
+    grid_ungrouped: string;
     live_open_timeline: string;
     live_dismiss: string;
     live_clear_all: string;

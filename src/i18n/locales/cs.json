@@ -244,7 +244,14 @@
     "live_more": "+{count} dalších",
     "live_open_timeline": "Otevřít v časové ose",
     "live_toggle": "Živá oznámení",
-    "live_toggle_hint": "Zobrazit příchozí zprávy kanálu jako vyskakovací okna v rohu"
+    "live_toggle_hint": "Zobrazit příchozí zprávy kanálu jako vyskakovací okna v rohu",
+    "activity_mode": "Aktivita",
+    "activity_mode_title": "Aktivita — živý stav každé persony v mřížce",
+    "grid_state_attention": "Vyžaduje vás",
+    "grid_state_failed": "Selhalo",
+    "grid_state_idle": "Nečinné",
+    "grid_state_running": "Běží",
+    "grid_ungrouped": "Bez skupiny"
   },
   "common": {
     "loading": "Načítání...",

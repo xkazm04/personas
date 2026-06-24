@@ -244,7 +244,14 @@
     "live_more": "+{count} আরো",
     "live_open_timeline": "টাইমলাইনে খুলুন",
     "live_toggle": "লাইভ পপ-আপ",
-    "live_toggle_hint": "আসন্ন চ্যানেল বার্তা কোণার পপ-আপ হিসেবে দেখান"
+    "live_toggle_hint": "আসন্ন চ্যানেল বার্তা কোণার পপ-আপ হিসেবে দেখান",
+    "activity_mode": "অ্যাক্টিভিটি",
+    "activity_mode_title": "অ্যাক্টিভিটি — প্রতিটি পার্সোনার লাইভ অবস্থা গ্রিড আকারে",
+    "grid_state_attention": "আপনার প্রয়োজন",
+    "grid_state_failed": "ব্যর্থ",
+    "grid_state_idle": "নিষ্ক্রিয়",
+    "grid_state_running": "চলছে",
+    "grid_ungrouped": "গোষ্ঠীবিহীন"
   },
   "common": {
     "loading": "লোড হচ্ছে...",
