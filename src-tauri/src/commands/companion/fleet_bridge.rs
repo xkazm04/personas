@@ -174,6 +174,15 @@ fn attention_throttle() -> &'static Mutex<HashMap<String, i64>> {
 }
 const ATTENTION_MIN_INTERVAL_MS: i64 = 60_000;
 
+/// Per-session signature of the last on-screen decision we assessed. An
+/// unchanged prompt must NOT re-wake Athena — re-asking the same question yields
+/// the same answer and just spams. The 60s throttle catches rapid bounces; this
+/// catches a session that simply sits on one prompt for minutes.
+fn decision_signatures() -> &'static Mutex<HashMap<String, u64>> {
+    static S: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+    S.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
 /// Active fleet orchestration (autonomous mode only): when a session enters
 /// `AwaitingInput` — it finished its turn / is paused waiting for the next
 /// instruction — wake Athena with the live fleet digest so she decides the
@@ -221,6 +230,22 @@ pub fn orchestrate_on_awaiting(
         .next()
         .map(|(_, _, lines)| lines.join("\n"))
         .unwrap_or_default();
+    // Content-aware dedup: if this session's on-screen decision is unchanged
+    // since we last assessed it, don't wake her again. (The cooked tail strips
+    // ANSI/cursor, so the same prompt hashes stably.) This is what stops the
+    // "still parked, your checkpoint" loop on a session that sits on one prompt.
+    {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut h = DefaultHasher::new();
+        screen_text.hash(&mut h);
+        let sig = h.finish();
+        let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        if sigs.insert(session_id.to_string(), sig) == Some(sig) {
+            return; // same decision as last assessment — nothing new to decide
+        }
+    }
+
     // (B) Feed the on-screen decision to her — only when there's something to show.
     let screen_block = if screen_text.trim().is_empty() {
         String::new()
