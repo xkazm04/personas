@@ -124,39 +124,31 @@ pub fn spawn_session(
     // spawn; the session just runs without Athena MCP tools.
     let mcp = build_mcp_spawn(&id);
 
-    // `claude` is published to npm as a Unix shell script with no
-    // extension. PATH-searching for it on Windows finds the bare script,
-    // which CreateProcessW then refuses to exec (OS error 193 — "is
-    // not a valid Win32 application"). Two coexisting shims handle this:
-    //   • `claude.cmd` (batch shim)  — works under cmd.exe
-    //   • `claude.ps1` (PowerShell)  — works under powershell.exe
-    // We pick the .cmd path on Windows and bare `claude` everywhere else.
+    // Resolve the real `claude.exe` through the SAME canonical resolver the rest
+    // of the app uses (engine::cli_process::resolve_claude_exe_windows): the
+    // native installer (%USERPROFILE%\.local\bin) first, then the npm-global
+    // layout, then PATH. ONE source of truth — Fleet must NOT keep a separate
+    // lookup. Its old npm-only `claude.cmd` search stranded native-installer
+    // machines (where the npm global was removed), so no session could spawn.
     let mut cmd = if cfg!(windows) {
-        // Bypass the `cmd.exe /c <composed-string>` path on Windows.
-        // That path requires composing one big string for /c and
-        // re-deals with Windows argv quoting twice (cmd.exe parsing,
-        // then claude's argv parser), which makes any role spec
-        // carrying a quoted prompt — `--print "List files. Exit."` —
-        // arrive at claude as `"List` plus stray bare tokens.
-        //
-        // Direct invocation of `claude.cmd` via its absolute path lets
-        // portable-pty's CommandBuilder pass each arg as a separate
-        // argv entry through CreateProcessW. CreateProcessW handles
-        // the Windows-specific argv→command-line quoting per the
-        // standard CRT rules, and claude.cmd's batch wrapper
-        // re-forwards %* to the underlying node script. Each arg
-        // stays whole.
-        let claude_cmd = match locate_claude_cmd() {
+        // Invoke the resolved `.exe` directly (never via `cmd.exe /c`): a real PE
+        // binary lets portable-pty's CommandBuilder hand each arg to
+        // CreateProcessW as its own argv entry with standard CRT quoting, so a
+        // role spec carrying a quoted prompt (`--print "List files. Exit."`)
+        // arrives intact instead of being re-split by an extra cmd.exe parse.
+        let claude_exe = match crate::engine::cli_process::resolve_claude_exe_windows() {
             Some(p) => p,
             None => {
                 return Err(
-                    "fleet spawn: claude.cmd not found on PATH or in %APPDATA%\\npm \
-                     — install Claude Code (`npm i -g @anthropic-ai/claude-code`) first"
+                    "fleet spawn: claude executable not found (checked the native \
+                     installer %USERPROFILE%\\.local\\bin, the npm-global layout, and \
+                     PATH) — install Claude Code from \
+                     https://docs.anthropic.com/en/docs/claude-code"
                         .to_string(),
                 );
             }
         };
-        let mut c = CommandBuilder::new(&claude_cmd);
+        let mut c = CommandBuilder::new(&claude_exe);
         // Fleet sessions run unattended (orchestrated, often Athena-driven), so
         // permission prompts would just freeze them at AwaitingInput with no one
         // to answer. Skip them — the user opted into this for the fleet.
@@ -177,9 +169,9 @@ pub fn spawn_session(
             c.arg(a);
         }
         tracing::debug!(
-            program = %claude_cmd,
+            program = %claude_exe,
             args = ?args,
-            "fleet spawn: direct claude.cmd invocation"
+            "fleet spawn: direct claude.exe invocation"
         );
         c
     } else {
@@ -301,38 +293,6 @@ pub fn spawn_session(
     });
 
     Ok(id)
-}
-
-/// Locate `claude.cmd` for direct CreateProcessW spawn (Windows). We
-/// avoid going through `cmd.exe /c` so portable-pty handles argv
-/// quoting per the standard CRT rules — that way a role spec carrying
-/// `--print "Multi word prompt."` arrives intact at the underlying
-/// node script.
-///
-/// Resolution order:
-///   1. `%APPDATA%\npm\claude.cmd` (the npm-global default on Windows).
-///   2. Walk `PATH` looking for the first directory containing
-///      `claude.cmd`.
-///
-/// Returns the absolute path as a String. None when the binary isn't
-/// installed.
-#[cfg(windows)]
-fn locate_claude_cmd() -> Option<String> {
-    if let Some(appdata) = std::env::var_os("APPDATA") {
-        let cand = std::path::PathBuf::from(&appdata).join("npm").join("claude.cmd");
-        if cand.exists() {
-            return cand.to_str().map(str::to_string);
-        }
-    }
-    if let Some(path) = std::env::var_os("PATH") {
-        for dir in std::env::split_paths(&path) {
-            let cand = dir.join("claude.cmd");
-            if cand.exists() {
-                return cand.to_str().map(str::to_string);
-            }
-        }
-    }
-    None
 }
 
 /// Mint an MCP session token and write a per-session `mcp.json` that
