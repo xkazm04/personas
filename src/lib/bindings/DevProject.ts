@@ -18,12 +18,18 @@ auto_pr_on_success: boolean,
  * when None and `auto_pr_on_success` is true the wiring emits a warning
  * and skips PR creation.
  */
-pr_credential_id: string | null, 
+pr_credential_id: string | null,
+/**
+ * Credential row id for the LLM-observability connector (Langfuse, Helicone,
+ * LangSmith, …). Distinct from `monitoring_credential_id` (app monitoring);
+ * nullable, set via `dev_tools_update_project`. Added 2026-06-23.
+ */
+llm_tracking_credential_id: string | null,
 /**
  * URL of the living test environment this team delivers into (e.g. a
  * staging/preview deployment). Nullable; set once the env exists.
  */
-test_env_url: string | null, 
+test_env_url: string | null,
 /**
  * Branch deployed to the living test environment (e.g. `staging`). Nullable.
  */

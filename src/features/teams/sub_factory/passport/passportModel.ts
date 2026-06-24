@@ -70,7 +70,11 @@ export interface PassportStack {
   packageManager?: string;
   persistence: PassportPersistence[];
   monitoring: PassportMonitoring;
+  /** LLM-observability connector — 'connected' (a credential is bound) or null. */
+  llmTracking?: string | null;
   hosting?: string | null;
+  /** Auth method (Clerk / Auth.js / Supabase / …) or null. View-only. */
+  auth?: string | null;
   integrations: PassportIntegration[];
   secretsFrom?: string;
 }

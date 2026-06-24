@@ -36,7 +36,7 @@ import { ReadinessTrend } from './ReadinessTrend';
 const IMPROVABLE_ROWS = new Set([
   'ci', 'security', 'selfverify', 'context', 'instructions', 'tests', 'evals',
   'migrations', 'observability', 'aiflow', 'skills',
-  'errors', 'logs', 'metrics', 'tracing', 'hosting',
+  'errors', 'logs', 'metrics', 'tracing', 'hosting', 'llmtracking',
 ]);
 
 const COPY = {

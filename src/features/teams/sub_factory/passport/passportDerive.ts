@@ -208,7 +208,12 @@ export function derivePassportFromMetadata(
         tracing: project.monitoring_credential_id ? 'connected' : null,
         uptime: project.test_env_url ?? null,
       },
+      // LLM-observability connector — its own credential slot (distinct from
+      // app monitoring); 'connected' once a credential is bound.
+      llmTracking: project.llm_tracking_credential_id ? 'connected' : null,
       hosting: project.test_env_url ? 'test env' : null,
+      // Auth method detected from the repo's dependencies (view-only).
+      auth: ev?.auth_method ?? null,
       integrations,
     },
     automationReadiness: {

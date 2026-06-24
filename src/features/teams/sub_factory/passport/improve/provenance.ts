@@ -33,6 +33,10 @@ export function dimensionReason(rowKey: string, raw: ImproveRaw): string | null 
     case 'metrics':
     case 'tracing':
       return project.monitoring_credential_id ? 'A monitoring connector is bound.' : 'No monitoring connector is bound.';
+    case 'llmtracking':
+      return project.llm_tracking_credential_id
+        ? 'An LLM-observability connector is bound.'
+        : 'No LLM-tracking connector bound (Langfuse / Helicone / LangSmith / …).';
     case 'evals':
       return 'No evaluation harness detected.';
     case 'migrations':

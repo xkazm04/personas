@@ -1,6 +1,19 @@
 # Passport row actions — turning the readiness matrix into a codebase-upgrade surface
 
-_Status: P0–P3 ✓ + streaming ✓ + UI/UX-pass ✓ + Next-Directions D1–D5 ✓ (2026-06-23). Owner: Factory / Dev-tools._
+_Status: P0–P3 ✓ + streaming ✓ + UI/UX-pass ✓ + Next-Directions D1–D5 ✓ + Auth/LLM-tracking dims ✓ (2026-06-23). Owner: Factory / Dev-tools._
+
+> **Two new certificate dimensions (2026-06-23):**
+> - **Auth** (view-only) — a Stack row showing the detected auth method as text. The D1
+>   evidence probe (`RepoEvidence.auth_method`) detects it from package.json deps (Clerk /
+>   Auth.js / Auth0 / Supabase / Firebase / Lucia / WorkOS / Stytch / Kinde / Passport /
+>   Better Auth); the derive surfaces `stack.auth`. No action — informational.
+> - **LLM tracking** (connector-bindable, like monitoring) — a Tooling row wired to a
+>   **dedicated** credential slot `dev_projects.llm_tracking_credential_id` (new migration +
+>   DevProject field + repo/command + ts-rs binding) so it's distinct from app monitoring.
+>   `connectors.ts` adds an `llmtracking` spec (Langfuse/Helicone/LangSmith/Arize/Phoenix/
+>   Braintrust/Portkey/… service types, `bindField:'llm_tracking'`); `bindConnector` routes
+>   that field to `updateProject({llmTrackingCredentialId})`. Reuses the existing
+>   ConnectorSection UX. _Activates on the next app build (Rust column + command)._
 
 > **Next directions (D1–D5) — shipped 2026-06-23, all gated (tsc 0 / eslint 0 / 13 tests / Rust compiles):**
 > - **D1 — Deep evidence scanner.** New deterministic, no-LLM Rust command

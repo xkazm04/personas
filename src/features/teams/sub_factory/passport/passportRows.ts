@@ -113,6 +113,7 @@ export const SECTIONS: SectionSpec[] = [
       { key: 'frameworks', label: 'Frameworks', get: (p) => ({ kind: 'chips', items: p.stack.frameworks }) },
       { key: 'persistence', label: 'Persistence', get: (p) => ({ kind: 'chips', items: persistenceChips(p) }) },
       { key: 'hosting', label: 'Hosting', get: (p) => ({ kind: 'present', label: p.stack.hosting ?? null }) },
+      { key: 'auth', label: 'Auth', get: (p) => ({ kind: 'present', label: p.stack.auth ?? null }) },
     ],
   },
   {
@@ -125,6 +126,7 @@ export const SECTIONS: SectionSpec[] = [
       { key: 'logs', label: 'Logs', get: (p) => ({ kind: 'present', label: p.stack.monitoring.logs }) },
       { key: 'metrics', label: 'Metrics', get: (p) => ({ kind: 'present', label: p.stack.monitoring.metrics }) },
       { key: 'tracing', label: 'Tracing', get: (p) => ({ kind: 'present', label: p.stack.monitoring.tracing }) },
+      { key: 'llmtracking', label: 'LLM tracking', get: (p) => ({ kind: 'present', label: p.stack.llmTracking ?? null }) },
     ],
   },
 ];

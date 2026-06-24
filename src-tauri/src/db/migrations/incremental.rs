@@ -3669,6 +3669,13 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN monitoring_project_slug TEXT;")
         .ok();
 
+    // -- dev_projects: LLM-observability connector slot -----------------------
+    // A dedicated credential pointer for LLM tracking (Langfuse / Helicone /
+    // LangSmith / …), kept distinct from `monitoring_credential_id` (app
+    // monitoring). Nullable; set via dev_tools_update_project. Added 2026-06-23.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN llm_tracking_credential_id TEXT;")
+        .ok();
+
     // -- dev_projects: static_scan_config -------------------------------------
     // JSON envelope { tool: "fallow"|"knip"|..., command: [..argv..] } that
     // configures which static-analysis CLI the static_scan runner spawns for

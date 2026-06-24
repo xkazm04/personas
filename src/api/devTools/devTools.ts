@@ -67,7 +67,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null; llmTrackingCredentialId?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -90,6 +90,9 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // Option<Option<String>> like the test-env fields: a string SETS the
     // project's primary/default branch, `null` CLEARS, `undefined` leaves it.
     mainBranch: updates.mainBranch,
+    // Option<Option<String>>: binds the LLM-observability connector credential
+    // (distinct slot from monitoring). String SETS, null CLEARS, undefined leaves.
+    llmTrackingCredentialId: updates.llmTrackingCredentialId,
   });
 
 /** Set or clear the project's standards & branching policy (Pipeline Stage 3).
@@ -331,6 +334,7 @@ export interface RepoEvidence {
   test_framework: string | null;
   has_tests: boolean;
   test_file_count: number;
+  auth_method: string | null;
   ci_workflows: string[];
   has_claude_md: boolean;
   has_readme: boolean;

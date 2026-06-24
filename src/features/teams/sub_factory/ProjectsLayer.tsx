@@ -57,7 +57,11 @@ export function ProjectsLayer({
       return scan_id;
     },
     bindConnector: async (slug, credId, field) => {
-      await updateProject(slug, field === 'pr' ? { prCredentialId: credId } : { monitoringCredentialId: credId });
+      const updates =
+        field === 'pr' ? { prCredentialId: credId }
+        : field === 'llm_tracking' ? { llmTrackingCredentialId: credId }
+        : { monitoringCredentialId: credId };
+      await updateProject(slug, updates);
       reload();
     },
     installSkills: async (slug, items) => {

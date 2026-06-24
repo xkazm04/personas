@@ -28,7 +28,7 @@ export interface ImproveEngine {
   /** Run the project's context scan (Tier-1) — maps the repo into the graph. Returns the scan id. */
   runContextScan: (slug: string) => Promise<string | undefined>;
   /** Bind a vault credential to a project slot (Tier-2 connector wire) + re-derive. */
-  bindConnector: (slug: string, credentialId: string, field: 'monitoring' | 'pr') => Promise<void>;
+  bindConnector: (slug: string, credentialId: string, field: 'monitoring' | 'pr' | 'llm_tracking') => Promise<void>;
   /** Install reusable skills (from sibling projects / global) into the project + re-derive. */
   installSkills: (slug: string, items: { name: string; source: string | null }[]) => Promise<void>;
   /** Queue a Claude-Code upgrade task (Tier-3) without running it yet. */

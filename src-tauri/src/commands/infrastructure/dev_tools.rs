@@ -87,6 +87,7 @@ pub fn dev_tools_update_project(
     test_env_url: Option<Option<String>>,
     test_env_branch: Option<Option<String>>,
     main_branch: Option<Option<String>>,
+    llm_tracking_credential_id: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -104,6 +105,7 @@ pub fn dev_tools_update_project(
         test_env_url.as_ref().map(|o| o.as_deref()),
         test_env_branch.as_ref().map(|o| o.as_deref()),
         main_branch.as_ref().map(|o| o.as_deref()),
+        llm_tracking_credential_id.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -3169,6 +3171,8 @@ pub struct RepoEvidence {
     pub test_framework: Option<String>,
     pub has_tests: bool,
     pub test_file_count: u32,
+    /// Detected auth method (Clerk / Auth.js / Auth0 / Supabase / …) from deps.
+    pub auth_method: Option<String>,
     pub ci_workflows: Vec<String>,
     pub has_claude_md: bool,
     pub has_readme: bool,
@@ -3274,6 +3278,33 @@ pub fn dev_tools_probe_repo_evidence(
                 Some("playwright".into())
             } else if deps.contains("mocha") {
                 Some("mocha".into())
+            } else {
+                None
+            };
+            // Auth method — most specific brands first; multi-purpose platforms
+            // (Supabase/Firebase) last so a dedicated auth lib wins.
+            ev.auth_method = if deps.contains("clerk") {
+                Some("Clerk".into())
+            } else if deps.contains("next-auth") || deps.contains("@auth/") || deps.contains("authjs") {
+                Some("Auth.js".into())
+            } else if deps.contains("auth0") {
+                Some("Auth0".into())
+            } else if deps.contains("better-auth") {
+                Some("Better Auth".into())
+            } else if deps.contains("lucia") {
+                Some("Lucia".into())
+            } else if deps.contains("workos") {
+                Some("WorkOS".into())
+            } else if deps.contains("stytch") {
+                Some("Stytch".into())
+            } else if deps.contains("@kinde") {
+                Some("Kinde".into())
+            } else if deps.contains("supabase") {
+                Some("Supabase".into())
+            } else if deps.contains("firebase") {
+                Some("Firebase".into())
+            } else if deps.contains("passport") {
+                Some("Passport".into())
             } else {
                 None
             };

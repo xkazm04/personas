@@ -103,6 +103,10 @@ pub struct DevProject {
     /// when None and `auto_pr_on_success` is true the wiring emits a warning
     /// and skips PR creation.
     pub pr_credential_id: Option<String>,
+    /// Credential row id for the LLM-observability connector (Langfuse, Helicone,
+    /// LangSmith, …). Distinct from `monitoring_credential_id` (app monitoring);
+    /// nullable, set via `dev_tools_update_project`. Added 2026-06-23.
+    pub llm_tracking_credential_id: Option<String>,
     /// URL of the living test environment this team delivers into (e.g. a
     /// staging/preview deployment). Nullable; set once the env exists.
     pub test_env_url: Option<String>,

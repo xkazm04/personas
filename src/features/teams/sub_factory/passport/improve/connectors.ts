@@ -13,7 +13,7 @@ export interface ConnectorSpec {
   /** Credential serviceTypes that satisfy this row. */
   serviceTypes: string[];
   /** Which DevProject credential slot binding writes. */
-  bindField: 'monitoring' | 'pr';
+  bindField: 'monitoring' | 'pr' | 'llm_tracking';
   /** The row's gap exists (so wiring a connector is offered). */
   applicable: (p: AppPassport) => boolean;
 }
@@ -22,6 +22,14 @@ const MONITORING_SERVICE_TYPES = [
   'sentry', 'betterstack', 'better_stack', 'datadog', 'rollbar', 'bugsnag',
   'newrelic', 'new_relic', 'honeybadger', 'grafana', 'grafana_cloud', 'pingdom',
   'logtail', 'axiom', 'highlight', 'uptimerobot', 'uptime_robot',
+];
+
+// LLM-observability / tracing platforms — distinct vault category from app
+// monitoring (bound to its own DevProject slot).
+const LLM_TRACKING_SERVICE_TYPES = [
+  'langfuse', 'helicone', 'langsmith', 'arize', 'phoenix', 'braintrust',
+  'portkey', 'wandb', 'weights_and_biases', 'lunary', 'langwatch', 'openllmetry',
+  'posthog_llm', 'traceloop', 'baseten',
 ];
 
 export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
@@ -70,6 +78,14 @@ export const CONNECTOR_SPECS: Record<string, ConnectorSpec> = {
     serviceTypes: MONITORING_SERVICE_TYPES,
     bindField: 'monitoring',
     applicable: (p) => !p.stack.monitoring.tracing,
+  },
+  // LLM tracking — its own credential slot, like monitoring but for LLM-obs.
+  llmtracking: {
+    rowKey: 'llmtracking',
+    categoryLabel: 'LLM observability (Langfuse / Helicone / LangSmith / …)',
+    serviceTypes: LLM_TRACKING_SERVICE_TYPES,
+    bindField: 'llm_tracking',
+    applicable: (p) => !p.stack.llmTracking,
   },
 };
 
