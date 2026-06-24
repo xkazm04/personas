@@ -51,7 +51,7 @@ export function FleetOverlayTile({
     >
       <div className="flex items-center gap-1.5 px-2 py-1 border-b border-primary/10 bg-secondary/20 shrink-0">
         <FleetStatusDots state={s.state} reason={s.stateReason} />
-        <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.projectLabel}</span>
+        <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.title ?? s.projectLabel}</span>
         <button
           type="button"
           data-testid={`fleet-tile-view-${s.id}`}

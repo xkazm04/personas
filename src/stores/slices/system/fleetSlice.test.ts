@@ -46,6 +46,7 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     cwd: 'C:\\path\\to\\project',
     projectLabel: 'project',
     name: null,
+    title: null,
     args: [],
     state: 'spawning',
     lastActivityMs: BigInt(1_000_000),

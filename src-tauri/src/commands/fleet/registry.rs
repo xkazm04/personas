@@ -227,6 +227,9 @@ pub struct FleetSessionInner {
     /// User-supplied display name. None by default; settable via
     /// fleet_rename_session.
     pub name: Option<String>,
+    /// Live OSC terminal title from Claude Code (task summary), captured from the
+    /// PTY stream by the reader loop. `None` until Claude sets one.
+    pub title: Option<String>,
     pub args: Vec<String>,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
@@ -270,6 +273,7 @@ impl FleetSessionInner {
             cwd: self.cwd.to_string_lossy().into_owned(),
             project_label: self.project_label.clone(),
             name: self.name.clone(),
+            title: self.title.clone(),
             args: self.args.clone(),
             state: self.state,
             last_activity_ms: self.last_activity_ms,
@@ -454,6 +458,28 @@ impl FleetRegistry {
             return true;
         }
         false
+    }
+
+    /// Update a session's live terminal title (captured from the OSC stream).
+    /// Returns `true` only when the title actually changed, so the reader emits a
+    /// registry-changed event just on real changes (Claude retitles often).
+    pub fn set_title(&self, session_id: &str, title: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        let trimmed = title.trim();
+        let next = if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        };
+        if session.title != next {
+            session.title = next;
+            true
+        } else {
+            false
+        }
     }
 
     /// Mark a session's terminal subscribed (the frontend is now rendering it
@@ -709,6 +735,7 @@ mod tests {
             cwd: PathBuf::from("/tmp/test"),
             project_label: "test".to_string(),
             name: None,
+            title: None,
             args: Vec::new(),
             state,
             last_activity_ms: now_ms(),

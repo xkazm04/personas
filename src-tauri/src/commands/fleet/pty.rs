@@ -54,6 +54,133 @@ struct RegistryChangedPayload<'a> {
     session_id: &'a str,
 }
 
+/// Max bytes kept for a captured terminal title (titles are short summaries).
+const MAX_TITLE_BYTES: usize = 256;
+
+/// Incremental scanner for OSC window/icon-title sequences
+/// (`ESC ] {0|1|2} ; <utf8 title> (BEL | ESC \)`). Claude Code retitles the
+/// terminal with a live task summary; we capture the latest title to label the
+/// session. Byte-at-a-time, with state persisted across PTY reads, so a title
+/// split mid-chunk still assembles.
+#[derive(Default)]
+struct OscTitleScanner {
+    state: OscScanState,
+    params: Vec<u8>,
+    title: Vec<u8>,
+}
+
+#[derive(Default, Clone, Copy)]
+enum OscScanState {
+    #[default]
+    Ground,
+    Esc,      // saw ESC (0x1b)
+    Params,   // saw `ESC ]`, collecting Ps digits before `;`
+    Title,    // collecting the title text
+    TitleEsc, // saw ESC inside the title — possible ST terminator (`ESC \`)
+}
+
+impl OscTitleScanner {
+    /// Feed a PTY chunk; return the MOST RECENT complete title found, if any.
+    fn feed(&mut self, bytes: &[u8]) -> Option<String> {
+        let mut latest: Option<String> = None;
+        for &b in bytes {
+            match self.state {
+                OscScanState::Ground => {
+                    if b == 0x1b {
+                        self.state = OscScanState::Esc;
+                    }
+                }
+                OscScanState::Esc => {
+                    if b == b']' {
+                        self.params.clear();
+                        self.state = OscScanState::Params;
+                    } else {
+                        self.state = OscScanState::Ground;
+                    }
+                }
+                OscScanState::Params => {
+                    if b == b';' {
+                        // Title OSC iff Ps ∈ {0,1,2} (icon / window title).
+                        if matches!(self.params.as_slice(), b"0" | b"1" | b"2") {
+                            self.title.clear();
+                            self.state = OscScanState::Title;
+                        } else {
+                            self.state = OscScanState::Ground;
+                        }
+                    } else if self.params.len() < 4 && b.is_ascii_digit() {
+                        self.params.push(b);
+                    } else {
+                        self.state = OscScanState::Ground;
+                    }
+                }
+                OscScanState::Title => match b {
+                    0x07 => {
+                        latest = Some(self.take_title());
+                        self.state = OscScanState::Ground;
+                    }
+                    0x1b => self.state = OscScanState::TitleEsc,
+                    _ => {
+                        if self.title.len() < MAX_TITLE_BYTES {
+                            self.title.push(b);
+                        }
+                    }
+                },
+                OscScanState::TitleEsc => {
+                    if b == b'\\' {
+                        latest = Some(self.take_title());
+                    }
+                    self.state = OscScanState::Ground;
+                }
+            }
+        }
+        latest
+    }
+
+    fn take_title(&mut self) -> String {
+        let s = String::from_utf8_lossy(&self.title).trim().to_string();
+        self.title.clear();
+        s
+    }
+}
+
+#[cfg(test)]
+mod osc_title_tests {
+    use super::OscTitleScanner;
+
+    #[test]
+    fn captures_bel_terminated_title() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"\x1b]0;Fixing the auth bug\x07"), Some("Fixing the auth bug".into()));
+    }
+
+    #[test]
+    fn captures_st_terminated_window_title() {
+        let mut s = OscTitleScanner::default();
+        // OSC 2 (window title) terminated by ST (ESC \).
+        assert_eq!(s.feed(b"\x1b]2;Running tests\x1b\\"), Some("Running tests".into()));
+    }
+
+    #[test]
+    fn assembles_title_split_across_reads() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"output\x1b]0;Edit"), None);
+        assert_eq!(s.feed(b"ing files\x07more"), Some("Editing files".into()));
+    }
+
+    #[test]
+    fn ignores_non_title_osc_and_plain_output() {
+        let mut s = OscTitleScanner::default();
+        // OSC 8 (hyperlink) is not a title; plain text yields nothing.
+        assert_eq!(s.feed(b"\x1b]8;;https://x\x07hello world\n"), None);
+    }
+
+    #[test]
+    fn keeps_only_the_latest_title_in_a_chunk() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"\x1b]0;old\x07\x1b]0;new\x07"), Some("new".into()));
+    }
+}
+
 /// Spawn a new Claude Code session in a PTY rooted at `cwd`.
 ///
 /// Returns the freshly-minted internal `id` (UUID v4). The
@@ -193,17 +320,19 @@ pub fn spawn_session(
     cmd.cwd(&cwd);
     // xterm-256color is what xterm.js natively understands.
     cmd.env("TERM", "xterm-256color");
-    // Match the env contract used by the rest of the app's claude
-    // spawns (companion/session.rs, brain/reflection.rs, etc.). These
-    // shut off telemetry chatter and terminal-title rewriting that
-    // would otherwise leak into the PTY stream and confuse xterm.js.
-    // Critically we do NOT set ANTHROPIC_API_KEY — claude falls back
-    // to its OAuth/keychain credentials, which is the monthly-
-    // subscription path. See `companion/session.rs:783` for the
-    // canonical comment on why --bare + API-key auth is the wrong
-    // choice for processes the user is signed into.
+    // Match the env contract used by the rest of the app's claude spawns
+    // (companion/session.rs, brain/reflection.rs, etc.). This shuts off
+    // telemetry chatter. We deliberately KEEP terminal-title rewriting ON (no
+    // CLAUDE_CODE_DISABLE_TERMINAL_TITLE): Claude Code retitles the terminal with
+    // a live task summary via OSC, which the reader loop captures
+    // (`OscTitleScanner`) to give each session a distinct, meaningful header —
+    // the same auto-title it shows in a real terminal. xterm.js parses OSC titles
+    // natively, so they never leak as rendered text.
+    // Critically we do NOT set ANTHROPIC_API_KEY — claude falls back to its
+    // OAuth/keychain credentials, which is the monthly-subscription path. See
+    // `companion/session.rs:783` for the canonical comment on why --bare +
+    // API-key auth is the wrong choice for processes the user is signed into.
     cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    cmd.env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1");
 
     let child = pair
         .slave
@@ -246,6 +375,7 @@ pub fn spawn_session(
         cwd: cwd.clone(),
         project_label,
         name: None,
+        title: None,
         args: args.clone(),
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
@@ -391,6 +521,10 @@ fn reader_loop(
     // a second so the frozen-process stall check (stale.rs) has a fresh "the
     // PTY is still emitting" signal without per-chunk registry-lock churn.
     let mut last_output_note: Option<std::time::Instant> = None;
+    // Captures Claude Code's OSC window-title (a live task summary) from the byte
+    // stream so each session gets a distinct, meaningful header. State persists
+    // across reads so a title split mid-chunk still assembles.
+    let mut osc_title = OscTitleScanner::default();
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -424,6 +558,13 @@ fn reader_loop(
                             chunk,
                         },
                     );
+                }
+                // Capture Claude Code's live OSC terminal title (a task summary).
+                // Emits a registry-changed only on a real title change.
+                if let Some(title) = osc_title.feed(&buf[..n]) {
+                    if registry().set_title(&session_id, &title) {
+                        emit_registry_changed(&app, "updated", &session_id);
+                    }
                 }
             }
             Err(e) => {
