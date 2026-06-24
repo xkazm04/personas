@@ -535,7 +535,8 @@ async fn run_kpi_scan(
             if trimmed.is_empty() {
                 continue;
             }
-            KPI_SCAN_JOBS.emit_line(app, scan_id, trimmed.to_string());
+            // Verbose model prose → bounded ring only; milestones below stay live.
+            KPI_SCAN_JOBS.record_line(scan_id, trimmed.to_string());
 
             for proto_line in trimmed.lines() {
                 let Some(p) = parse_kpi_proposal(proto_line) else { continue };

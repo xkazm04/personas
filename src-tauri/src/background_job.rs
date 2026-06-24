@@ -328,6 +328,23 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         self.push_ring(job_id, line.into());
     }
 
+    /// Record-only sibling of [`record_line`] that accepts (and ignores) an
+    /// `app` handle.
+    ///
+    /// Many CLI streamers hand each line to a `move` closure that already
+    /// captured `app` for `emit_line`. Switching such a closure to record-only
+    /// via [`record_line`] would leave that `app` capture unused (a
+    /// `-D warnings` clippy break). This sibling keeps the `(app, id, line)`
+    /// shape so the switch is a one-token rename with no closure reshaping.
+    pub fn record_streamed(
+        &self,
+        _app: &tauri::AppHandle,
+        job_id: &str,
+        line: impl Into<String>,
+    ) {
+        self.push_ring(job_id, line.into());
+    }
+
     /// Mutate the extra state of a job entry.
     pub fn update_extra(&self, job_id: &str, f: impl FnOnce(&mut E)) {
         let mut jobs = self.lock_or_recover();
