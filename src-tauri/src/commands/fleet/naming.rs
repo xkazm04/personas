@@ -13,11 +13,18 @@ const NAMING_MODEL: &str = "claude-haiku-4-5-20251001";
 const NAMING_TIMEOUT_SECS: u64 = 30;
 
 /// Extract a clean, short title from the model's raw reply: first non-empty
-/// line, stripped of surrounding quotes/periods, capped to a tab-title length.
+/// line that isn't stream-json noise, stripped of surrounding quotes/periods,
+/// capped to a tab-title length.
+///
+/// The skip-JSON guard matters because global Claude Code hooks make every
+/// headless spawn emit `{"type":"system","subtype":"hook_started",…}` (and
+/// thinking/result) lines, which leak into the streamed `text_output`. Without
+/// the guard the first line — a hook event — would become the title. We prefer
+/// the parsed `result` field upstream; this is the backstop.
 fn clean_name(raw: &str) -> String {
     raw.lines()
         .map(str::trim)
-        .find(|l| !l.is_empty())
+        .find(|l| !l.is_empty() && !l.starts_with('{') && !l.starts_with('['))
         .unwrap_or("")
         .trim_matches(|c: char| c == '"' || c == '\'' || c == '.' || c.is_whitespace())
         .chars()
@@ -25,6 +32,15 @@ fn clean_name(raw: &str) -> String {
         .collect::<String>()
         .trim()
         .to_string()
+}
+
+/// Pull the final answer from a stream-json `result` line — the clean, canonical
+/// model output, free of the hook/thinking/system noise that pollutes the
+/// streamed `text_output` when global hooks are installed. `None` if the line
+/// isn't a parseable object with a string `result`.
+fn result_field(result_line: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(result_line).ok()?;
+    v.get("result")?.as_str().map(str::to_string)
 }
 
 /// Claude flags that take a following value — so we don't mistake the value
@@ -92,7 +108,15 @@ pub fn name_session_from_task(app: AppHandle, session_id: String, task: String) 
             }
         };
 
-        let name = clean_name(&out.text_output);
+        // Prefer the canonical `result` field (clean final answer); fall back to
+        // the streamed text_output, which clean_name de-noises as a backstop.
+        let raw = out
+            .result_line
+            .as_deref()
+            .and_then(result_field)
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or_else(|| out.text_output.clone());
+        let name = clean_name(&raw);
         if name.is_empty() {
             return;
         }
@@ -105,13 +129,33 @@ pub fn name_session_from_task(app: AppHandle, session_id: String, task: String) 
 
 #[cfg(test)]
 mod tests {
-    use super::{clean_name, task_from_args};
+    use super::{clean_name, result_field, task_from_args};
 
     #[test]
     fn clean_name_strips_quotes_and_takes_first_line() {
         assert_eq!(clean_name("\"Eval Engine Refactor\"\nextra"), "Eval Engine Refactor");
         assert_eq!(clean_name("  Auth Bug Fix.  "), "Auth Bug Fix");
         assert_eq!(clean_name(""), "");
+    }
+
+    #[test]
+    fn clean_name_skips_stream_json_noise() {
+        // Global hooks make headless spawns emit system/hook lines first; the
+        // real label follows. clean_name must skip the JSON and find the label.
+        let polluted = "{\"type\":\"system\",\"subtype\":\"hook_started\",\"hook_id\":\"x\"}\n\
+                        {\"type\":\"system\",\"subtype\":\"init\"}\n\
+                        JWT Token Authentication Refactor";
+        assert_eq!(clean_name(polluted), "JWT Token Authentication Refactor");
+        // All-noise (no label line) → empty, so the tile keeps its label.
+        assert_eq!(clean_name("{\"type\":\"result\",\"result\":\"x\"}"), "");
+    }
+
+    #[test]
+    fn result_field_extracts_clean_answer() {
+        let line = "{\"type\":\"result\",\"subtype\":\"success\",\"result\":\"JWT Token Authentication Refactor\"}";
+        assert_eq!(result_field(line), Some("JWT Token Authentication Refactor".to_string()));
+        assert_eq!(result_field("not json"), None);
+        assert_eq!(result_field("{\"type\":\"result\"}"), None);
     }
 
     #[test]

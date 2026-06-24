@@ -474,10 +474,13 @@ impl FleetRegistry {
     /// registry-changed event just on real changes (Claude retitles often).
     pub fn set_title(&self, session_id: &str, title: &str) -> bool {
         let trimmed = title.trim();
-        // Claude Code's generic headless title is "Claude Code" for EVERY session
-        // — ignore it (and empties) so it never clobbers a real OSC title or the
-        // LLM-assigned name. We only ever set the title to a meaningful value.
-        if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("Claude Code") {
+        // Claude Code's generic terminal title is just "claude" / "Claude Code"
+        // (optionally with a leading status glyph like "✳ ") for EVERY session —
+        // ignore it (and empties) so it never clobbers the LLM-assigned name or a
+        // real task summary. A title with MORE than the bare word ("claude —
+        // fixing auth") is a genuine summary and passes. We only ever set the
+        // title to a meaningful value.
+        if trimmed.is_empty() || is_generic_claude_title(trimmed) {
             return false;
         }
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -734,6 +737,19 @@ fn fleet_exit_reason(code: i32) -> String {
     }
 }
 
+/// True when an OSC terminal title is just Claude Code's bare generic name —
+/// "claude" / "Claude Code", optionally with a leading status glyph (✳, ●, ·)
+/// and surrounding whitespace. A title carrying MORE than the bare word (a real
+/// task summary like "claude — fixing auth") returns false and is kept. Used by
+/// `set_title` to stop the generic value clobbering the LLM-assigned name.
+fn is_generic_claude_title(title: &str) -> bool {
+    let core = title
+        .trim()
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .trim();
+    core.eq_ignore_ascii_case("claude") || core.eq_ignore_ascii_case("claude code")
+}
+
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
 pub fn now_ms() -> i64 {
@@ -747,6 +763,19 @@ pub fn now_ms() -> i64 {
 mod tests {
     use super::*;
     use std::sync::atomic::AtomicBool;
+
+    #[test]
+    fn generic_claude_titles_are_filtered_but_real_summaries_kept() {
+        // Generic — filtered (won't clobber the LLM name).
+        assert!(is_generic_claude_title("claude"));
+        assert!(is_generic_claude_title("Claude Code"));
+        assert!(is_generic_claude_title("✳ claude"));
+        assert!(is_generic_claude_title("  ● Claude Code  "));
+        // Real summaries / assigned names — kept.
+        assert!(!is_generic_claude_title("claude — fixing auth"));
+        assert!(!is_generic_claude_title("JWT Auth Refactor"));
+        assert!(!is_generic_claude_title("Dark Mode Toggle"));
+    }
 
     /// Build a minimal session record with no live PTY (master/writer `None`),
     /// so `hibernate` can be exercised without spawning a real child.
