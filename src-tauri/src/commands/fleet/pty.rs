@@ -397,6 +397,13 @@ pub fn spawn_session(
     // Notify the UI a new session showed up.
     emit_registry_changed(&app, "added", &id);
 
+    // P1 — give the session a distinct, meaningful title from its task via a
+    // cheap LLM call (the OSC title is just "Claude Code"). Spawn-with-task only;
+    // a bare interactive session keeps its project label until it titles itself.
+    if let Some(task) = super::naming::task_from_args(&args) {
+        super::naming::name_session_from_task(app.clone(), id.clone(), task);
+    }
+
     // Reader task — blocking I/O on its own thread. Owns the ring `Arc` so the
     // per-read hot path never touches the registry map lock.
     let app_reader = app.clone();

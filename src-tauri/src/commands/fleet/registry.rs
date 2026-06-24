@@ -473,22 +473,22 @@ impl FleetRegistry {
     /// Returns `true` only when the title actually changed, so the reader emits a
     /// registry-changed event just on real changes (Claude retitles often).
     pub fn set_title(&self, session_id: &str, title: &str) -> bool {
+        let trimmed = title.trim();
+        // Claude Code's generic headless title is "Claude Code" for EVERY session
+        // — ignore it (and empties) so it never clobbers a real OSC title or the
+        // LLM-assigned name. We only ever set the title to a meaningful value.
+        if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("Claude Code") {
+            return false;
+        }
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get_mut(session_id) else {
             return false;
         };
-        let trimmed = title.trim();
-        let next = if trimmed.is_empty() {
-            None
-        } else {
-            Some(trimmed.to_string())
-        };
-        if session.title != next {
-            session.title = next;
-            true
-        } else {
-            false
+        if session.title.as_deref() == Some(trimmed) {
+            return false;
         }
+        session.title = Some(trimmed.to_string());
+        true
     }
 
     /// Mark Athena as actively working this session's awaiting-input ticket for a
