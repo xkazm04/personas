@@ -209,26 +209,50 @@ pub fn orchestrate_on_awaiting(
         "waking Athena to assess the fleet (session entered AwaitingInput)"
     );
     let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
+
+    // (A) Capture what's actually on this session's screen — the prompt or
+    // decision it's blocked on — so Athena can evaluate a real single/multi-select
+    // question and pick or defer, instead of reasoning blind from the fleet
+    // digest. Cooked (ANSI-stripped) tail of the always-on PTY ring, so it works
+    // regardless of UI subscription. `None` rev ⇒ always returns the current tail.
+    let screen_text = crate::commands::fleet::registry::registry()
+        .preview_outputs(&[(session_id.to_string(), None)], 40)
+        .into_iter()
+        .next()
+        .map(|(_, _, lines)| lines.join("\n"))
+        .unwrap_or_default();
+    // (B) Feed the on-screen decision to her — only when there's something to show.
+    let screen_block = if screen_text.trim().is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n\nWhat this session's terminal currently shows — the prompt/decision it's waiting on:\n\
+             ```\n{screen_text}\n```\n"
+        )
+    };
+
     let directive = format!(
-        "Fleet orchestration check. Session \"{label}\" (project {proj}) just entered AwaitingInput \
-         — it finished its turn or is paused waiting for the next instruction. Live fleet status:\n\n\
-         {digest}\n\n\
-         Decide the single best next step for the session(s) that actually need one, then act under \
-         this confidence policy:\n\
-         • Every fleet_send_input you propose MUST carry a `confidence` param: \"high\", \"medium\", \
-         or \"low\", alongside the exact `text` to type (press_enter true) and a one-line `rationale`.\n\
-         • Use confidence \"high\" ONLY when the next step is obvious, safe, and you'd stake your \
-         judgment on it with no second opinion — high-confidence steps are applied automatically with \
-         no human check, so reserve it for the genuinely unambiguous.\n\
-         • Use \"medium\" or \"low\" whenever there is any real doubt, the step is a judgment call, or \
-         a wrong move would cost rework. These are NOT auto-applied: they surface to the user as a \
-         decision on the orb, so make the `rationale` a crisp one-liner the user can decide on at a \
-         glance, and still include the exact `text` you'd send.\n\
-         • If the work looks finished, or the situation needs a real human judgment call, do NOT \
-         propose a send-input at all — surface a concise decision to the user instead.\n\
+        "Fleet orchestration check. Session \"{project_label}\" (project {project_label}) just entered \
+         AwaitingInput — it finished its turn, or it's blocked on a prompt/decision (a single- or \
+         multiple-select question, a permission, or free-text input).{screen_block}\n\
+         Live fleet status:\n\n{digest}\n\n\
+         Decide the single best next step for the session(s) that actually need one.\n\
+         • (C) If the screen above shows a QUESTION or a SELECT decision, read the options and judge \
+         whether one is clearly best. If so, ANSWER it: propose a fleet_send_input whose `text` is \
+         exactly what to type to choose that option — the option's number, or its text — with \
+         press_enter true.\n\
+         • Every fleet_send_input MUST carry a `confidence` param (\"high\", \"medium\", or \"low\"), \
+         the exact `text`, and a one-line `rationale`.\n\
+         • \"high\" = obvious, safe, you'd stake your judgment on it with no second opinion — applied \
+         automatically with no human check, so reserve it for the genuinely unambiguous.\n\
+         • \"medium\"/\"low\" = any real doubt, a judgment call, or a wrong move would cost rework. \
+         NOT auto-applied: they surface to the user as a decision on the orb, so make `rationale` a \
+         crisp one-liner and still include your recommended `text`.\n\
+         • (D) If it's genuinely the USER's call — a personal preference, a risk you shouldn't take on \
+         their behalf, or the work looks finished — do NOT propose a send-input. Instead surface a \
+         concise decision on the orb telling them you're leaving this one to them; and if you have a \
+         lean, name your recommended option in one line so they can decide at a glance.\n\
          Leave sessions that are progressing fine alone. Be brief.",
-        label = project_label,
-        proj = project_label,
     );
 
     crate::companion::session::spawn_proactive_turn(
