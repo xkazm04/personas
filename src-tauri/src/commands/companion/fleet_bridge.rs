@@ -235,8 +235,9 @@ pub fn orchestrate_on_awaiting(
         "Fleet orchestration check. Session \"{project_label}\" (project {project_label}) just entered \
          AwaitingInput — it finished its turn, or it's blocked on a prompt/decision (a single- or \
          multiple-select question, a permission, or free-text input).{screen_block}\n\
-         Live fleet status:\n\n{digest}\n\n\
-         Decide the single best next step for the session(s) that actually need one.\n\
+         Fleet (brief background only):\n\n{digest}\n\n\
+         Focus on THIS session only and decide its single next step. This is a quick orchestration \
+         check, NOT a fleet status report — do NOT summarize, list, or re-flag the other sessions.\n\
          • (C) If the screen above shows a QUESTION or a SELECT decision, read the options and judge \
          whether one is clearly best. If so, ANSWER it: propose a fleet_send_input whose `text` is \
          exactly what to type to choose that option — the option's number, or its text — with \
@@ -252,7 +253,9 @@ pub fn orchestrate_on_awaiting(
          their behalf, or the work looks finished — do NOT propose a send-input. Instead surface a \
          concise decision on the orb telling them you're leaving this one to them; and if you have a \
          lean, name your recommended option in one line so they can decide at a glance.\n\
-         Leave sessions that are progressing fine alone. Be brief.",
+         • If this session is just progressing fine, do nothing at all.\n\
+         Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay; \
+         no preamble, no fleet-wide recap.",
     );
 
     crate::companion::session::spawn_proactive_turn(

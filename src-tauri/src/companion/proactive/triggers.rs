@@ -68,18 +68,24 @@ use super::Nudge;
 /// Order matters lightly: goals → backlog → cadence so a budget-
 /// limited evaluation surfaces objectives before commitments before
 /// rituals (the rough priority order most users assume).
-pub fn collect_all(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
+pub fn collect_all(pool: &UserDbPool, autonomous: bool) -> Result<Vec<Nudge>, AppError> {
     let mut out = Vec::new();
     out.extend(goal_target_approaching(pool).unwrap_or_default());
     out.extend(backlog_aging(pool).unwrap_or_default());
     out.extend(cadence_due(pool).unwrap_or_default());
     out.extend(on_this_day(pool).unwrap_or_default());
-    // Fleet attention — failed / long-waiting / stale sessions.
-    // No DB lookup (reads the in-process fleet registry); no error path.
-    out.extend(super::fleet_triggers::fleet_attention());
-    // D9 — stuck sessions inside dispatched_by_athena ops, suggesting
-    // a `fleet_intervene` proposal.
-    out.extend(super::fleet_triggers::stuck_dispatched_sessions());
+    // Fleet triggers are gated on autonomous mode. With Athena's autonomy OFF she
+    // should not be managing the fleet at all — no nudges, no re-checking loop;
+    // the user is driving the CLIs themselves. The passive reminders above (goals,
+    // backlog, cadence) are not fleet orchestration, so they stay.
+    if autonomous {
+        // Fleet attention — failed / long-waiting / stale sessions.
+        // No DB lookup (reads the in-process fleet registry); no error path.
+        out.extend(super::fleet_triggers::fleet_attention());
+        // D9 — stuck sessions inside dispatched_by_athena ops, suggesting
+        // a `fleet_intervene` proposal.
+        out.extend(super::fleet_triggers::stuck_dispatched_sessions());
+    }
     Ok(out)
 }
 
