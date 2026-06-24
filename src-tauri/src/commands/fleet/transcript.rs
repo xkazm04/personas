@@ -203,8 +203,10 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
             if let Some(s) = map.get_mut(&sid) {
                 s.claude_session_id = Some(claude_session_id.to_string());
                 s.last_activity_ms = now_ms();
-                s.state = FleetSessionState::Running;
-                s.state_reason = Some("Bound to transcript (SessionStart hook missed)".into());
+                // Binding ≠ working: mirror the SessionStart hook (Idle on launch).
+                // Real progress (a tool firing, transcript growth) drives Running.
+                s.state = FleetSessionState::Idle;
+                s.state_reason = Some("Bound to transcript — ready (SessionStart hook missed)".into());
                 bound = Some(sid);
             }
         }
@@ -215,7 +217,7 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
             event_name::FLEET_SESSION_STATE,
             FleetStatePayload {
                 session_id: sid.clone(),
-                state: "running",
+                state: "idle",
                 reason: Some("Bound to transcript".into()),
             },
         );
