@@ -384,6 +384,20 @@ pub async fn send_turn(
     // "Athena gave herself another turn". For autonomous, the CLI
     // receives a directive (see `effective_user_message` below) — we
     // never persist the marker token verbatim.
+    // Fleet orchestration runs as a background proactive turn whose *only*
+    // user-facing output should be the orb (her decision/approval, surfaced via
+    // the global dispatcher emits below) — never a chat transcript essay tagged
+    // `[proactive: fleet_orchestration]`. When this is set we skip every
+    // session-keyed chat side-effect (opening marker, Started/Finished events,
+    // progress/interim/final persists, the turn-summary chip); the dispatcher's
+    // global orb emits (approvals, navigations, …) run unconditionally, so she
+    // still surfaces — just on the orb, not in chat. False for every other turn,
+    // so the normal chat path is byte-for-byte unchanged.
+    let suppress_chat = matches!(
+        &origin,
+        TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
+    );
+
     let (open_role, open_content) = match &origin {
         TurnOrigin::User => (EpisodeRole::User, user_message.clone()),
         TurnOrigin::Autonomous { chain_index } => (
@@ -396,7 +410,9 @@ pub async fn send_turn(
         ),
         TurnOrigin::External { source } => (EpisodeRole::System, format!("[{source}]")),
     };
-    let user_ep_id = {
+    let user_ep_id = if suppress_chat {
+        String::new()
+    } else {
         #[cfg(feature = "ml")]
         {
             match &embedder {
@@ -424,15 +440,17 @@ pub async fn send_turn(
         }
     };
 
-    emit(
-        app,
-        StreamEvent {
-            session_id: session_id.clone(),
-            turn_id: turn_id.clone(),
-            kind: StreamEventKind::Started,
-            payload: user_ep_id.clone(),
-        },
-    );
+    if !suppress_chat {
+        emit(
+            app,
+            StreamEvent {
+                session_id: session_id.clone(),
+                turn_id: turn_id.clone(),
+                kind: StreamEventKind::Started,
+                payload: user_ep_id.clone(),
+            },
+        );
+    }
 
     // Read the prior claude session id (if any) for --resume.
     let claude_session_id = read_claude_session_id(&user_db, &session_id)?;
@@ -629,14 +647,16 @@ pub async fn send_turn(
     // The `PROGRESS:` sentinel prefix is how the frontend renders them as
     // asides; they're append-only (no embedding) — ephemeral conversational
     // texture, not memory-worthy facts.
-    for beat in &dispatched.progress_beats {
-        if let Err(e) = episodic::append_episode(
-            &user_db,
-            &session_id,
-            EpisodeRole::Assistant,
-            &format!("PROGRESS: {beat}"),
-        ) {
-            tracing::warn!(error = %e, "failed to persist progress beat episode");
+    if !suppress_chat {
+        for beat in &dispatched.progress_beats {
+            if let Err(e) = episodic::append_episode(
+                &user_db,
+                &session_id,
+                EpisodeRole::Assistant,
+                &format!("PROGRESS: {beat}"),
+            ) {
+                tracing::warn!(error = %e, "failed to persist progress beat episode");
+            }
         }
     }
 
@@ -654,11 +674,13 @@ pub async fn send_turn(
         .filter(|s| !s.trim().is_empty())
         .collect();
     let reply_text: String = if seg_clean.len() >= 2 {
-        for interim in &seg_clean[..seg_clean.len() - 1] {
-            if let Err(e) =
-                episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
-            {
-                tracing::warn!(error = %e, "failed to persist interim segment episode");
+        if !suppress_chat {
+            for interim in &seg_clean[..seg_clean.len() - 1] {
+                if let Err(e) =
+                    episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
+                {
+                    tracing::warn!(error = %e, "failed to persist interim segment episode");
+                }
             }
         }
         seg_clean[seg_clean.len() - 1].clone()
@@ -672,10 +694,14 @@ pub async fn send_turn(
         // bubble — replace with a tiny placeholder.
         "(proposing actions — see cards below)".to_string()
     } else {
-        reply_text
+        // Clone (not move) — `reply_text` is read again below for the fleet
+        // orb-note routing.
+        reply_text.clone()
     };
 
-    let assistant_ep_id = {
+    let assistant_ep_id = if suppress_chat {
+        String::new()
+    } else {
         #[cfg(feature = "ml")]
         {
             match &embedder {
@@ -702,6 +728,20 @@ pub async fn send_turn(
             episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, &display_text)?
         }
     };
+
+    // Fleet orchestration routes to the orb, not chat. Her DEFER note (prose,
+    // "I'm leaving this one to you") has no fleet_send_input approval to carry it
+    // onto the orb, and chat is suppressed — so surface it as a proactive orb
+    // card. Skip when she produced an approval (the orb already shows that) or
+    // said nothing actionable (a "progressing fine" no-op stays quiet).
+    if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
+        crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
+            app,
+            &user_db,
+            &turn_id,
+            &reply_text,
+        );
+    }
 
     // Athena value expansion / A1: record this turn's usage + dispatcher
     // side-effect counts in the companion_turn ledger so the Overview
@@ -895,7 +935,7 @@ pub async fn send_turn(
     // Per-turn rollup of dispatcher side-effects. The chip on each
     // completed bubble reads this; total=0 turns get nothing. Best-effort —
     // a missed emit just means no chip for that turn.
-    {
+    if !suppress_chat {
         let summary = TurnSummaryEvent {
             session_id: session_id.clone(),
             turn_id: turn_id.clone(),
@@ -913,15 +953,17 @@ pub async fn send_turn(
         }
     }
 
-    emit(
-        app,
-        StreamEvent {
-            session_id: session_id.clone(),
-            turn_id: turn_id.clone(),
-            kind: StreamEventKind::Finished,
-            payload: assistant_ep_id.clone(),
-        },
-    );
+    if !suppress_chat {
+        emit(
+            app,
+            StreamEvent {
+                session_id: session_id.clone(),
+                turn_id: turn_id.clone(),
+                kind: StreamEventKind::Finished,
+                payload: assistant_ep_id.clone(),
+            },
+        );
+    }
 
     // A2 — autonomous continuation. Schedule the next tick if:
     //   1. The session is in autonomous mode.

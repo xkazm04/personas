@@ -302,6 +302,52 @@ pub fn orchestrate_on_awaiting(
     );
 }
 
+/// Surface a fleet-orchestration **defer note** as an orb card instead of a
+/// chat episode. The companion turn for `fleet_orchestration` suppresses every
+/// chat side-effect (see `session::send_turn`'s `suppress_chat`), so when Athena
+/// leaves a decision to the user with a prose note — and has no `fleet_send_input`
+/// approval to carry it onto the orb — that note would otherwise vanish. Route it
+/// through the same proactive-nudge path the op-wrap-up reconciler uses: a card
+/// the user can engage/dismiss. `turn_ref` is the per-turn id, so the
+/// (kind, ref) dedupe never collides across sequential decisions. Best-effort.
+pub fn surface_fleet_orb_note(
+    app: &tauri::AppHandle,
+    pool: &crate::db::UserDbPool,
+    turn_ref: &str,
+    message: &str,
+) {
+    let nudge = crate::companion::proactive::Nudge {
+        trigger_kind: "fleet_orchestration".to_string(),
+        trigger_ref: Some(turn_ref.to_string()),
+        message: message.to_string(),
+    };
+    match crate::companion::proactive::enqueue_external(pool, &nudge) {
+        Ok(Some(msg)) => {
+            if let Err(e) = crate::companion::proactive::mark_delivered(pool, &msg.id) {
+                tracing::warn!(id = %msg.id, error = %e, "fleet orb note: mark_delivered failed");
+            }
+            let delivered = crate::companion::proactive::ProactiveMessage {
+                status: "delivered".into(),
+                ..msg
+            };
+            let payload = crate::commands::companion::proactive::ProactiveDelivery {
+                messages: vec![delivered],
+            };
+            if let Err(e) = app.emit(
+                crate::commands::companion::proactive::PROACTIVE_EVENT,
+                payload,
+            ) {
+                tracing::warn!(error = %e, "fleet orb note: proactive emit failed");
+            }
+        }
+        Ok(None) => {
+            // Dedupe — this exact turn already surfaced a card. Shouldn't
+            // happen (turn ids are unique) but harmless if it does.
+        }
+        Err(e) => tracing::warn!(error = %e, "fleet orb note: enqueue failed"),
+    }
+}
+
 /// Public re-export so the PTY reaper (`commands::fleet::pty`) can fire
 /// the same reconciliation path the frontend bridge takes when a
 /// session exits before the JS-side `useFleetCompanionBridge` has
