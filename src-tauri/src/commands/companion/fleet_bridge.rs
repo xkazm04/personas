@@ -283,6 +283,13 @@ pub fn orchestrate_on_awaiting(
          no preamble, no fleet-wide recap.",
     );
 
+    // P3 — show the operator that Athena has TAKEN this ticket and is reasoning:
+    // flip the tile to the light-blue "Athena's on it" state for her work window.
+    // Cleared automatically once she acts (→ Running) or the window lapses.
+    if crate::commands::fleet::registry::registry().mark_athena_active(session_id) {
+        crate::commands::fleet::pty::emit_registry_changed(app, "updated", session_id);
+    }
+
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
         Arc::new(state.user_db.clone()),

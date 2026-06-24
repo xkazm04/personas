@@ -8,8 +8,9 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PendingApproval } from '@/api/companion';
 
-/** Visual attention a session warrants. `none` → use the base border. */
-export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'none';
+/** Visual attention a session warrants. `none` → use the base border.
+ *  `athena` = she's actively reasoning about this session's ticket (light blue). */
+export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'athena' | 'none';
 
 /** Prefix of the Rust ticker's never-attached `state_reason` (see
  *  `stale.rs::is_never_attached`). Keep in sync with that string. */
@@ -30,7 +31,13 @@ export function isNeverAttached(s: Pick<FleetSession, 'stateReason'>): boolean {
 }
 
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
-export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): FleetAttention {
+export function sessionAttention(
+  s: Pick<FleetSession, 'state' | 'exitCode' | 'athenaActive'>,
+): FleetAttention {
+  // Athena has taken this awaiting ticket and is reasoning — show that (light
+  // blue) instead of "needs you" (violet). If she defers or her window lapses,
+  // `athenaActive` drops and it falls through to the real state below.
+  if (s.athenaActive) return 'athena';
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
@@ -72,6 +79,8 @@ export function attentionClass(a: FleetAttention): string {
       return 'fleet-attn-stale';
     case 'failed':
       return 'fleet-attn-failed';
+    case 'athena':
+      return 'fleet-attn-athena';
     default:
       return '';
   }

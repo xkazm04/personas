@@ -83,4 +83,12 @@ exitCode: number | null,
  * Free-form last-state-change reason — surfaced as a tooltip on the
  * status badge. e.g. "Notification: permission requested", "Stop hook".
  */
-stateReason: string | null, };
+stateReason: string | null, 
+/**
+ * True while Athena has actively taken this session's `AwaitingInput`
+ * ticket and is reasoning about it (a short self-expiring window set by
+ * `orchestrate_on_awaiting`). Drives the light-blue "Athena's on it" tile
+ * affordance so her work is visible. Only meaningful while `AwaitingInput`;
+ * once she acts (→ `Running`) or the window lapses, it's `false`.
+ */
+athenaActive: boolean, };

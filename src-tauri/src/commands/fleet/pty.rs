@@ -376,6 +376,7 @@ pub fn spawn_session(
         project_label,
         name: None,
         title: None,
+        athena_active_until_ms: 0,
         args: args.clone(),
         state: FleetSessionState::Spawning,
         last_activity_ms: now,

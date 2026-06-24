@@ -230,6 +230,10 @@ pub struct FleetSessionInner {
     /// Live OSC terminal title from Claude Code (task summary), captured from the
     /// PTY stream by the reader loop. `None` until Claude sets one.
     pub title: Option<String>,
+    /// Wall-clock ms until which Athena is considered to be actively working this
+    /// session's awaiting-input ticket (set by `orchestrate_on_awaiting`; a short
+    /// self-expiring window). `0` = not active. Drives the `athena_active` DTO.
+    pub athena_active_until_ms: i64,
     pub args: Vec<String>,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
@@ -283,6 +287,11 @@ impl FleetSessionInner {
             child_pid: self.child_pid,
             exit_code: self.exit_code,
             state_reason: self.state_reason.clone(),
+            // "Athena's on it" only reads true while she's still within her work
+            // window AND the session is still awaiting — once she acts (→ Running)
+            // or the window lapses, the tile drops back to its real state.
+            athena_active: self.athena_active_until_ms > now_ms()
+                && matches!(self.state, FleetSessionState::AwaitingInput),
         }
     }
 }
@@ -480,6 +489,19 @@ impl FleetRegistry {
         } else {
             false
         }
+    }
+
+    /// Mark Athena as actively working this session's awaiting-input ticket for a
+    /// short window, so the tile shows the light-blue "Athena's on it" affordance.
+    /// Returns true if the session exists (so the caller emits registry-changed).
+    pub fn mark_athena_active(&self, session_id: &str) -> bool {
+        const ATHENA_ACTIVE_WINDOW_MS: i64 = 120_000;
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.athena_active_until_ms = now_ms() + ATHENA_ACTIVE_WINDOW_MS;
+        true
     }
 
     /// Mark a session's terminal subscribed (the frontend is now rendering it
@@ -736,6 +758,7 @@ mod tests {
             project_label: "test".to_string(),
             name: None,
             title: None,
+            athena_active_until_ms: 0,
             args: Vec::new(),
             state,
             last_activity_ms: now_ms(),
