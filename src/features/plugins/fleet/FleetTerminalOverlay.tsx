@@ -9,7 +9,7 @@ import { FleetOverlayTile } from './FleetOverlayTile';
 import { setFleetFontOverride } from './fleetTerminalManager';
 import { useFleetTilePreviews } from './useFleetTilePreviews';
 import { approvalsForSession } from './fleetAttention';
-import { gridDim, densityFont } from './fleetGridLayout';
+import { gridDim, densityFont, allTilesLive } from './fleetGridLayout';
 
 interface Props {
   open: boolean;
@@ -94,15 +94,23 @@ export function FleetTerminalOverlay({
     return () => setFleetFontOverride(null);
   }, [open, dim]);
 
-  // Unwatched tiles (not active, not showing Insights) render a cheap polled
-  // preview instead of a live terminal — only the active tile subscribes. Poll
-  // them in one batched call while the grid is open.
+  // Small grids (≤ MAX_LIVE_TILES) render EVERY tile as a live terminal so the
+  // user can actually watch all sessions at once — the cost is trivial and the
+  // alternative (one live tile, the rest cooked previews) felt like the others
+  // "went black". Large grids keep the one-live-tile optimization to stay light.
+  const liveAll = allTilesLive(sessions.length);
+
+  // Unwatched tiles (not live, not showing Insights) render a cheap polled
+  // preview instead of a live terminal. When every tile is live there are none
+  // to preview, so we skip the poll entirely.
   const previewIds = useMemo(
     () =>
-      sessions
-        .map((s) => s.id)
-        .filter((id) => id !== activeSessionId && !insightTiles.has(id)),
-    [sessions, activeSessionId, insightTiles],
+      liveAll
+        ? []
+        : sessions
+            .map((s) => s.id)
+            .filter((id) => id !== activeSessionId && !insightTiles.has(id)),
+    [liveAll, sessions, activeSessionId, insightTiles],
   );
   const previews = useFleetTilePreviews(previewIds, { enabled: open });
 
@@ -192,6 +200,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
+            live={liveAll || s.id === activeSessionId}
             previewLines={previews.get(s.id)}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}

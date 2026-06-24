@@ -1,6 +1,22 @@
 /** Pure layout math for the fullscreen Fleet terminal grid overlay. */
 
 /**
+ * Max sessions for which the grid renders EVERY tile as a live (subscribed)
+ * terminal instead of a cheap polled preview. At or below this count the user
+ * almost certainly wants to watch them all at once, and the cost — one bounded
+ * ring + one IPC stream + one WebGL context per tile — is trivial on a modern
+ * machine. Above it, only the focused tile stays live and the rest fall back to
+ * previews, keeping a 16-CLI grid light. Safe to tune: exceeding the WebView's
+ * WebGL-context budget degrades gracefully to the DOM renderer, never crashes.
+ */
+export const MAX_LIVE_TILES = 6;
+
+/** Whether a grid of `n` live sessions should render every tile live. */
+export function allTilesLive(n: number): boolean {
+  return n <= MAX_LIVE_TILES;
+}
+
+/**
  * Column count for `n` sessions, capped at 4 → square grids 1×1 … 4×4.
  * 1→1, 2-4→2, 5-9→3, 10-16→4 (and 4 thereafter, the grid scrolls).
  */

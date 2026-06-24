@@ -140,10 +140,27 @@ fn cook_lines(bytes: &[u8], max_lines: usize) -> Vec<String> {
                         chars.next();
                         if ('\u{40}'..='\u{7e}').contains(&p) {
                             match p {
-                                // Erase display / alt-screen enter+exit → wipe.
+                                // Erase display. ONLY 2 (entire screen) and 3
+                                // (screen + scrollback) are genuine clears that
+                                // wipe everything. 0 (cursor→end), 1 (start→
+                                // cursor) and the bare `\x1b[J` are PARTIAL erases
+                                // that an inline TUI — Claude's input-box redraw —
+                                // emits on every keystroke/redraw; treating those
+                                // as a full wipe collapsed the cooked preview to
+                                // empty (the unwatched grid tiles went black).
+                                // Without a cursor grid we approximate the partial
+                                // case by clearing only the in-progress line and
+                                // preserving the scrollback above.
                                 'J' => {
+                                    let full = params
+                                        .trim()
+                                        .parse::<u32>()
+                                        .map(|n| n == 2 || n == 3)
+                                        .unwrap_or(false);
                                     cur.clear();
-                                    lines.clear();
+                                    if full {
+                                        lines.clear();
+                                    }
                                 }
                                 'h' | 'l' if params.contains("1049") => {
                                     cur.clear();
