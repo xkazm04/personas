@@ -18,6 +18,7 @@ import { MergedChannels } from '../channels/mergedFeed';
 import type { FeedTeam, TaggedItem } from '../channels/types';
 import type { Persona } from '@/lib/bindings/Persona';
 import { LiveCommsStack } from './LiveCommsStack';
+import { onMockLiveMessage } from './liveDevHarness';
 import { LIVE_TTL_MS, projectChannelItem, type LiveMessage, type LiveVariantProps } from './liveModel';
 
 const CAP = 30;        // bound the accumulated window
@@ -94,6 +95,11 @@ export function LiveChannelOverlay() {
   const enqueue = useCallback((msgs: LiveMessage[]) => {
     setIncoming((prev) => [...msgs, ...prev].slice(0, CAP));
   }, []);
+
+  // TEMP (prototype): inject a synthetic message when the Channels test cluster
+  // fires "Mock pop-up". Lets the redesign be evaluated on demand without
+  // waiting for live channel traffic. Remove with liveDevHarness.
+  useEffect(() => onMockLiveMessage((m) => enqueue([m])), [enqueue]);
   const onDismiss = useCallback((id: string) => setDismissed((p) => new Set(p).add(id)), []);
   const onDismissAll = useCallback(() => setDismissed(new Set(incomingRef.current.map((m) => m.id))), []);
   const onHover = useCallback((id: string, hovered: boolean) => {
