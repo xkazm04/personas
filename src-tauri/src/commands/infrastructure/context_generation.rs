@@ -938,8 +938,13 @@ async fn run_context_generation(
                     continue;
                 }
 
-                // Emit display text to frontend
-                CONTEXT_GEN_JOBS.emit_line(app, scan_id, trimmed.to_string());
+                // Record the model's prose to the bounded ring but do NOT stream
+                // it over IPC. This is the bulk of a scan's output (Claude's
+                // reasoning between tool calls) and the live overlay only needs
+                // the high-level milestones below — the user asked for
+                // "working/done", not the running log. The full text stays
+                // inspectable via the status snapshot.
+                CONTEXT_GEN_JOBS.record_line(scan_id, trimmed.to_string());
 
                 // Parse protocol messages from assistant output
                 for proto_line in trimmed.lines() {
@@ -1034,6 +1039,11 @@ async fn run_context_generation(
                     StreamLineType::AssistantToolUse { tool_name, input_preview } => {
                         let preview =
                             crate::utils::text::truncate_on_char_boundary(&input_preview, 100);
+                        // Tool lines are short (≤~130 bytes) and are the only
+                        // signal of liveness during Claude's exploration phase —
+                        // keep them on the live stream so the overlay doesn't
+                        // look frozen. The verbose *prose* (recorded above) is the
+                        // volume hog we keep off IPC, not these.
                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Tool] {tool_name}: {preview}"));
                     }
                     StreamLineType::Result { .. } => {

@@ -279,28 +279,32 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
         );
     }
 
-    /// Append a line to the job's output buffer and emit a Tauri output event.
-    ///
-    /// Two memory guards apply to EVERY job line (this is the single chokepoint
-    /// for all background-job streaming — context scan, design review, healing,
-    /// schema, etc.):
-    ///   1. The line is truncated to [`MAX_LINE_BYTES`] so a single huge message
-    ///      can't bloat the ring or the IPC payload.
-    ///   2. The store is a tail ring of [`MAX_LINES`]; the IPC event always
-    ///      carries the (truncated) line so a live viewer sees it, but the
-    ///      in-memory store never grows without bound.
-    pub fn emit_line(&self, app: &tauri::AppHandle, job_id: &str, line: impl Into<String>) {
-        let line = clamp_line(line.into());
-        {
-            let mut jobs = self.lock_or_recover();
-            let entry = jobs.entry(job_id.to_string()).or_default();
-            entry.lines.push(line.clone());
-            let overflow = entry.lines.len().saturating_sub(MAX_LINES);
-            if overflow > 0 {
-                entry.lines.drain(0..overflow);
-            }
+    /// Push a line into the job's tail ring, clamped to [`MAX_LINE_BYTES`] and
+    /// bounded to [`MAX_LINES`] (oldest dropped). Shared by `emit_line` and
+    /// `record_line`. Returns the clamped line so the caller can reuse it for an
+    /// IPC payload without re-clamping. This is the single chokepoint where
+    /// EVERY background-job line (context scan, design review, healing, schema…)
+    /// is size- and count-bounded.
+    fn push_ring(&self, job_id: &str, line: String) -> String {
+        let line = clamp_line(line);
+        let mut jobs = self.lock_or_recover();
+        let entry = jobs.entry(job_id.to_string()).or_default();
+        entry.lines.push(line.clone());
+        let overflow = entry.lines.len().saturating_sub(MAX_LINES);
+        if overflow > 0 {
+            entry.lines.drain(0..overflow);
         }
+        line
+    }
 
+    /// Append a line to the job's output ring AND stream it live over IPC.
+    ///
+    /// Reserve this for **high-level milestones / status** the user wants to see
+    /// regardless of whether a detail panel is open (`[Created]`, `[Complete]`,
+    /// `[Error]`, …). For noisy per-token / per-tool output, prefer
+    /// [`record_line`] so it never crosses into the WebView.
+    pub fn emit_line(&self, app: &tauri::AppHandle, job_id: &str, line: impl Into<String>) {
+        let line = self.push_ring(job_id, line.into());
         let _ = app.emit(
             self.output_event_name,
             OutputEvent {
@@ -308,6 +312,20 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
                 line,
             },
         );
+    }
+
+    /// Append a **verbose detail** line to the job's output ring WITHOUT
+    /// streaming it over IPC.
+    ///
+    /// The line is retained (bounded, same ring as `emit_line`) for on-demand
+    /// inspection via the status snapshot, but it never crosses into the WebView
+    /// — so a CLI that emits thousands of reasoning/tool lines costs the frontend
+    /// nothing. This is the "we only need the high-level state, not the log"
+    /// default: callers route noisy output here and reserve `emit_line` for
+    /// milestones. Mirrors the Fleet PTY ring, which buffers every chunk but only
+    /// forwards *subscribed* sessions over IPC.
+    pub fn record_line(&self, job_id: &str, line: impl Into<String>) {
+        self.push_ring(job_id, line.into());
     }
 
     /// Mutate the extra state of a job entry.
@@ -546,4 +564,66 @@ pub struct BackgroundTaskSnapshot<T: Clone + Serialize> {
     pub elapsed_secs: u64,
     #[serde(flatten)]
     pub extras: T,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mgr() -> BackgroundJobManager<()> {
+        BackgroundJobManager::new("test lock poisoned", "test-status", "test-output")
+    }
+
+    #[test]
+    fn clamp_line_keeps_small_truncates_large() {
+        let small = "short line".to_string();
+        assert_eq!(clamp_line(small.clone()), small);
+
+        let clamped = clamp_line("x".repeat(MAX_LINE_BYTES * 3));
+        assert!(
+            clamped.len() < MAX_LINE_BYTES + 64,
+            "kept text must be ≤ cap plus a short marker, got {}",
+            clamped.len()
+        );
+        assert!(clamped.contains("bytes truncated"));
+    }
+
+    #[test]
+    fn clamp_line_never_splits_multibyte() {
+        // '≤' is 3 bytes; a cap landing mid-char must yield valid UTF-8, not panic.
+        let clamped = clamp_line("≤".repeat(MAX_LINE_BYTES)); // 3 * cap bytes
+        assert!(clamped.contains("bytes truncated"));
+        // Round-trips as a String ⇒ valid UTF-8 by construction; assert the kept
+        // prefix is whole chars by re-parsing the head.
+        let head = clamped.split('…').next().unwrap();
+        assert!(head.chars().all(|c| c == '≤'));
+    }
+
+    #[test]
+    fn record_line_bounds_ring_to_tail() {
+        let m = mgr();
+        let job = "job-ring";
+        let overflow = 50usize;
+        for i in 0..(MAX_LINES + overflow) {
+            m.record_line(job, format!("line-{i}"));
+        }
+        let snap = m.get_snapshot(job).expect("job exists after record_line");
+        assert_eq!(snap.lines.len(), MAX_LINES, "ring bounded to MAX_LINES");
+        // Tail semantics: oldest dropped, newest kept.
+        assert_eq!(
+            snap.lines.last().unwrap(),
+            &format!("line-{}", MAX_LINES + overflow - 1)
+        );
+        assert_eq!(snap.lines.first().unwrap(), &format!("line-{overflow}"));
+    }
+
+    #[test]
+    fn record_line_clamps_each_stored_line() {
+        let m = mgr();
+        let job = "job-clamp";
+        m.record_line(job, "y".repeat(MAX_LINE_BYTES * 2));
+        let snap = m.get_snapshot(job).expect("job exists");
+        assert_eq!(snap.lines.len(), 1);
+        assert!(snap.lines[0].len() < MAX_LINE_BYTES + 64);
+    }
 }
