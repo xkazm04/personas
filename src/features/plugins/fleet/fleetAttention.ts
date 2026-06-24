@@ -47,6 +47,22 @@ export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): F
   }
 }
 
+/**
+ * Whether a session needs the operator's eyes RIGHT NOW — i.e. the grid should
+ * render a full live terminal for it rather than a cheap status block. Only
+ * `awaiting_input` qualifies today: Claude is blocked asking for input that
+ * Athena couldn't (or shouldn't) answer autonomously. Everything else either
+ * runs autonomously (`running`/`spawning`/`idle`) or is silently triaged by
+ * Athena (`stale`) and gets a status block — Athena still sees ALL of it via the
+ * backend (operative memory + ring + transcript), and escalates by raising the
+ * tile (a proposal, or the session flipping to `awaiting_input`). `exited`/
+ * `hibernated` are filtered out of the live grid upstream. Extension point: add
+ * escalated-`stale` here once Athena flags a stale session as needing a human.
+ */
+export function needsLiveAttention(s: Pick<FleetSession, 'state'>): boolean {
+  return s.state === 'awaiting_input';
+}
+
 /** CSS class (from globals.css) for an attention level, or '' for none. */
 export function attentionClass(a: FleetAttention): string {
   switch (a) {

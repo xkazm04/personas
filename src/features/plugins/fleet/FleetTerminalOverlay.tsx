@@ -7,9 +7,8 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
 import { setFleetFontOverride } from './fleetTerminalManager';
-import { useFleetTilePreviews } from './useFleetTilePreviews';
-import { approvalsForSession } from './fleetAttention';
-import { gridDim, densityFont, allTilesLive } from './fleetGridLayout';
+import { approvalsForSession, needsLiveAttention } from './fleetAttention';
+import { gridDim, densityFont } from './fleetGridLayout';
 
 interface Props {
   open: boolean;
@@ -94,25 +93,11 @@ export function FleetTerminalOverlay({
     return () => setFleetFontOverride(null);
   }, [open, dim]);
 
-  // Small grids (≤ MAX_LIVE_TILES) render EVERY tile as a live terminal so the
-  // user can actually watch all sessions at once — the cost is trivial and the
-  // alternative (one live tile, the rest cooked previews) felt like the others
-  // "went black". Large grids keep the one-live-tile optimization to stay light.
-  const liveAll = allTilesLive(sessions.length);
-
-  // Unwatched tiles (not live, not showing Insights) render a cheap polled
-  // preview instead of a live terminal. When every tile is live there are none
-  // to preview, so we skip the poll entirely.
-  const previewIds = useMemo(
-    () =>
-      liveAll
-        ? []
-        : sessions
-            .map((s) => s.id)
-            .filter((id) => id !== activeSessionId && !insightTiles.has(id)),
-    [liveAll, sessions, activeSessionId, insightTiles],
-  );
-  const previews = useFleetTilePreviews(previewIds, { enabled: open });
+  // Render policy: a tile mounts a live (subscribed) terminal only when it needs
+  // the operator (`needsLiveAttention` — awaiting_input) or it's the focused tile
+  // (the manual "peek"). Every other session is autonomous and renders a cheap
+  // status block — Athena triages those in the background with full backend
+  // visibility, so the grid stays calm regardless of how many sessions run.
 
   // Route the global titlebar Back button (and Escape) to minimize, instead of
   // navigating the underlying page out from under the overlay.
@@ -200,8 +185,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
-            live={liveAll || s.id === activeSessionId}
-            previewLines={previews.get(s.id)}
+            live={needsLiveAttention(s) || s.id === activeSessionId}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}
             onSelect={onSelect}

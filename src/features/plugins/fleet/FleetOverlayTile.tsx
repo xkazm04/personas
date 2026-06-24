@@ -2,7 +2,7 @@ import { Trash2, BarChart3, Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetTerminalPane } from './FleetTerminalPane';
-import { FleetTilePreview } from './FleetTilePreview';
+import { FleetTileStatusBlock } from './FleetTileStatusBlock';
 import { FleetSessionInsights } from './sub_grid/FleetSessionInsights';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
@@ -12,11 +12,10 @@ interface Props {
   session: FleetSession;
   /** Drives the highlighted border + which tile keyboard/skills target. */
   isActive: boolean;
-  /** Whether this tile mounts a live (subscribed) terminal vs a polled preview.
-   *  True for the active tile always, and for every tile in a small grid. */
+  /** Whether this tile mounts a live (subscribed) terminal vs a status block.
+   *  True for the focused tile and for any session that needs the operator
+   *  (`needsLiveAttention`); everything else renders a cheap status block. */
   live: boolean;
-  /** Cooked preview lines for a non-live tile. */
-  previewLines?: string[];
   /** Show the transcript-insights view instead of the live terminal. */
   showInsights: boolean;
   onToggleInsight: (id: string) => void;
@@ -36,7 +35,7 @@ interface Props {
  *  the Athena copilot bar. Extracted from FleetTerminalOverlay to keep both
  *  files lean. */
 export function FleetOverlayTile({
-  session: s, isActive, live, previewLines, showInsights, onToggleInsight, onSelect, onKill,
+  session: s, isActive, live, showInsights, onToggleInsight, onSelect, onKill,
   approvals, asking, onApprove, onReject, onAsk,
 }: Props) {
   const { t } = useTranslation();
@@ -81,13 +80,13 @@ export function FleetOverlayTile({
         {showInsights ? (
           <FleetSessionInsights claudeSessionId={s.claudeSessionId} />
         ) : live ? (
-          // Live (subscribed) terminal. Small grids make every tile live so all
-          // sessions are watchable at once; large grids keep only the focused
-          // tile live and render the rest as cheap polled previews, so a 16-tile
-          // grid streams one session, not sixteen. Click a tile to focus it.
+          // Live (subscribed) terminal — only the focused tile and sessions that
+          // need the operator (awaiting_input). Everything else autonomous gets
+          // the cheap status block below, so a 9-tile grid stays calm: Athena
+          // triages the rest in the background. Click a tile to focus (peek) it.
           <FleetTerminalPane sessionId={s.id} autoFocus={false} />
         ) : (
-          <FleetTilePreview lines={previewLines} />
+          <FleetTileStatusBlock session={s} />
         )}
       </div>
       <FleetTileAthenaBar
