@@ -32,6 +32,12 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 // Completion handler — shared by event listener + resync polling.
 // Reads everything from the store directly so it has no closure dependencies.
 // ---------------------------------------------------------------------------
+/** Cap the live scan-log buffer. A full context scan streams thousands of
+ *  lines; keeping them all (and rendering them all) blew the WebView heap and
+ *  crashed the app with OOM. We only ever show a scrolling tail, so retain the
+ *  most recent N — matching the backend ring (`background_job.rs` MAX_LINES). */
+const MAX_SCAN_LINES = 500;
+
 type ContextScanOutcome = 'success' | 'warning' | 'failed';
 
 interface ContextScanFinalize {
@@ -236,7 +242,11 @@ export default function ContextMapPage() {
   const handleScanOutput = useCallback((event: Event<{ job_id: string; line: string }>) => {
     const currentScanId = useSystemStore.getState().activeScanId;
     if (currentScanId && event.payload.job_id === currentScanId) {
-      setScanLines((prev) => [...prev, event.payload.line]);
+      setScanLines((prev) =>
+        prev.length >= MAX_SCAN_LINES
+          ? [...prev.slice(prev.length - MAX_SCAN_LINES + 1), event.payload.line]
+          : [...prev, event.payload.line],
+      );
     }
   }, []);
   useTauriEvent<{ job_id: string; line: string }>(EventName.CONTEXT_GEN_OUTPUT, handleScanOutput);
@@ -326,7 +336,7 @@ export default function ContextMapPage() {
         );
         if (cancelled) return;
         if (result.lines && result.lines.length > 0) {
-          setScanLines(result.lines);
+          setScanLines(result.lines.slice(-MAX_SCAN_LINES));
         }
         if (result.status === 'completed') {
           finalizeContextScan({ outcome: 'success' }, () => setScanLines([]), t, tx);

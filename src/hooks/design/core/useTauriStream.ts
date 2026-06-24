@@ -2,6 +2,12 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { silentCatch } from "@/lib/silentCatch";
 
+/** Cap the streamed-line buffer. This hook backs many CLI-driven design flows
+ *  (reviews, credential/schema/n8n/AI-artifact generation); a long run streams
+ *  thousands of lines and the panel only shows a scrolling tail, so retain the
+ *  most recent N to keep the JS heap flat. Matches the backend ring cap. */
+const MAX_STREAM_LINES = 500;
+
 // -- Types -------------------------------------------------------
 
 export interface TauriStreamOptions<TResult> {
@@ -106,7 +112,11 @@ export function useTauriStream<TResult>(
         listen(progressEvent, (event) => {
           if (generationRef.current !== gen) return;
           const line = getLine(event.payload as Record<string, unknown>);
-          setLines((prev) => [...prev, line]);
+          setLines((prev) =>
+            prev.length >= MAX_STREAM_LINES
+              ? [...prev.slice(prev.length - MAX_STREAM_LINES + 1), line]
+              : [...prev, line],
+          );
         }),
         listen(statusEvent, (event) => {
           if (generationRef.current !== gen) return;

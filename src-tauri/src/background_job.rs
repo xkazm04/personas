@@ -17,14 +17,38 @@ use crate::error::AppError;
 /// 30-minute TTL for completed/failed jobs before eviction.
 const JOB_TTL_SECS: u64 = 30 * 60;
 
-/// Maximum number of output lines stored per job.
+/// Maximum number of output lines stored per job. The store is a tail ring —
+/// once full, the oldest line is dropped so the most recent output survives
+/// (the `[Complete]`/`[Summary]` tail of a long scan is what a late poll needs,
+/// not the first 500 lines of directory-listing noise).
 const MAX_LINES: usize = 500;
+
+/// Maximum bytes kept for a single output line before it's truncated. One giant
+/// assistant message, a base64 blob, or a minified-JSON dump must not be allowed
+/// to bloat the in-memory ring *or* the IPC payload that crosses into the
+/// WebView (where it would inflate the JS heap and the DOM). The full detail
+/// still lands in the CLI transcript; the live log panel only needs a readable
+/// preview. Mirrors the per-line guard the raw CLI reader already applies in
+/// `engine::cli_process::MAX_LINE_BYTES`.
+const MAX_LINE_BYTES: usize = 4 * 1024; // 4 KB
 
 /// Default max age for a running job before it is considered stale (10 minutes).
 const DEFAULT_STALE_RUNNING_SECS: u64 = 10 * 60;
 
 /// Grace period added on top of the stale timeout (30 seconds).
 const STALE_GRACE_SECS: u64 = 30;
+
+/// Truncate a single output line to [`MAX_LINE_BYTES`], appending a marker that
+/// names how many bytes were dropped so the live log reads honestly rather than
+/// silently swallowing the tail.
+fn clamp_line(line: String) -> String {
+    if line.len() <= MAX_LINE_BYTES {
+        return line;
+    }
+    let kept = crate::utils::text::truncate_on_char_boundary(&line, MAX_LINE_BYTES);
+    let dropped = line.len() - kept.len();
+    format!("{kept}…[+{dropped} bytes truncated]")
+}
 
 // -- Core job fields shared by every background job -------------
 
@@ -256,13 +280,24 @@ impl<E: Clone + Default + Send + 'static> BackgroundJobManager<E> {
     }
 
     /// Append a line to the job's output buffer and emit a Tauri output event.
+    ///
+    /// Two memory guards apply to EVERY job line (this is the single chokepoint
+    /// for all background-job streaming — context scan, design review, healing,
+    /// schema, etc.):
+    ///   1. The line is truncated to [`MAX_LINE_BYTES`] so a single huge message
+    ///      can't bloat the ring or the IPC payload.
+    ///   2. The store is a tail ring of [`MAX_LINES`]; the IPC event always
+    ///      carries the (truncated) line so a live viewer sees it, but the
+    ///      in-memory store never grows without bound.
     pub fn emit_line(&self, app: &tauri::AppHandle, job_id: &str, line: impl Into<String>) {
-        let line = line.into();
+        let line = clamp_line(line.into());
         {
             let mut jobs = self.lock_or_recover();
             let entry = jobs.entry(job_id.to_string()).or_default();
-            if entry.lines.len() < MAX_LINES {
-                entry.lines.push(line.clone());
+            entry.lines.push(line.clone());
+            let overflow = entry.lines.len().saturating_sub(MAX_LINES);
+            if overflow > 0 {
+                entry.lines.drain(0..overflow);
             }
         }
 

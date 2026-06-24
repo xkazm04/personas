@@ -4,6 +4,9 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 
+/** Max log rows mounted in the overlay at once (the panel only shows ~15). */
+const RENDER_TAIL = 200;
+
 export default function ScanOverlay({
   scanning,
   lines,
@@ -51,7 +54,10 @@ export default function ScanOverlay({
           {lines.length === 0 ? (
             <p className="text-foreground">{t.plugins.dev_tools.waiting_for_output}</p>
           ) : (
-            lines.map((line, i) => (
+            // Render only the visible tail — the buffer is already tail-capped
+            // upstream, but never mount more rows than the panel can scroll
+            // through, so a fast burst can't spike DOM-node count.
+            lines.slice(-RENDER_TAIL).map((line, i) => (
               <div
                 key={i}
                 className={`${
