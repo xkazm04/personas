@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { open } from '@tauri-apps/plugin-dialog';
 import { FolderGit2, FolderInput, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
@@ -9,7 +10,8 @@ import { phaseProgress } from './studioBuildModel';
 
 // Browser-style tab strip. Each open project is a tab carrying its own live
 // status dot (so you can see which projects are building while you're on
-// another). The "+" opens a picker: existing projects to open, or a new build.
+// another). The "+" opens a picker: new build, import an existing project, or
+// re-open a previous one.
 export default function StudioTabBar({
   projects,
   onNew,
@@ -68,6 +70,18 @@ export default function StudioTabBar({
     if (typeof path === 'string') void importExisting(path);
   };
 
+  // The picker is portalled to <body> + fixed-positioned under the "+" button, so
+  // it escapes the tab strip's `overflow-x` clip (which would otherwise hide it).
+  const plusRef = useRef<HTMLButtonElement>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const togglePicker = () => {
+    if (!pickerOpen) {
+      const r = plusRef.current?.getBoundingClientRect();
+      if (r) setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+    }
+    setPickerOpen((o) => !o);
+  };
+
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
       {tabOrder.map((id) => {
@@ -87,9 +101,7 @@ export default function StudioTabBar({
             key={id}
             data-testid="studio-tab"
             className={`group flex shrink-0 items-center rounded-t-card border-b-2 transition-colors ${
-              active
-                ? 'border-primary bg-secondary/50'
-                : 'border-transparent hover:bg-secondary/30'
+              active ? 'border-primary bg-secondary/50' : 'border-transparent hover:bg-secondary/30'
             }`}
           >
             <button
@@ -115,112 +127,118 @@ export default function StudioTabBar({
       })}
 
       <button
+        ref={plusRef}
         type="button"
-        onClick={() => setPickerOpen((o) => !o)}
+        onClick={togglePicker}
         aria-label="Open or create a project"
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground"
       >
         <Plus className="h-4 w-4" />
       </button>
 
-      {pickerOpen && (
-        <>
-          <div className="fixed inset-0 z-30" onClick={() => setPickerOpen(false)} />
-          <div className="absolute left-3 top-full z-40 mt-1 w-56 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur">
-            <button
-              type="button"
-              onClick={() => {
-                setPickerOpen(false);
-                onNew();
-              }}
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+      {pickerOpen &&
+        createPortal(
+          <>
+            <div className="fixed inset-0 z-[120]" onClick={() => setPickerOpen(false)} />
+            <div
+              className="fixed z-[121] w-64 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur"
+              style={{ top: menuPos.top, right: menuPos.right }}
             >
-              <Plus className="h-3.5 w-3.5 text-primary" /> New project
-            </button>
-            <button
-              type="button"
-              onClick={() => void addExisting()}
-              className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
-            >
-              <FolderInput className="h-3.5 w-3.5 text-primary" /> Add existing project…
-            </button>
-            {(recent.length > 0 || importable.length > 0) && (
-              <div className="max-h-72 overflow-y-auto">
-                {recent.length > 0 && (
-                  <>
-                    <div className="my-1 h-px bg-border" />
-                    <div className="px-3 py-1 typo-caption text-foreground/45">Resume</div>
-                    {recent.map((p) => {
-                      const prog = phaseProgress(history[p.id]?.phases ?? []);
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => {
-                            setPickerOpen(false);
-                            void startExisting(p.id, p.name);
-                          }}
-                          className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
-                        >
-                          <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                          <span
-                            className="flex shrink-0 items-center gap-1 typo-caption text-foreground/45"
-                            title="Saved checklist progress — re-opens with its history"
+              <button
+                type="button"
+                onClick={() => {
+                  setPickerOpen(false);
+                  onNew();
+                }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+              >
+                <Plus className="h-3.5 w-3.5 text-primary" /> New project
+              </button>
+              <button
+                type="button"
+                onClick={() => void addExisting()}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+              >
+                <FolderInput className="h-3.5 w-3.5 text-primary" /> Add existing project…
+              </button>
+              {(recent.length > 0 || importable.length > 0) && (
+                <div className="max-h-72 overflow-y-auto">
+                  {recent.length > 0 && (
+                    <>
+                      <div className="my-1 h-px bg-border" />
+                      <div className="px-3 py-1 typo-caption text-foreground/45">Resume</div>
+                      {recent.map((p) => {
+                        const prog = phaseProgress(history[p.id]?.phases ?? []);
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setPickerOpen(false);
+                              void startExisting(p.id, p.name);
+                            }}
+                            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
                           >
-                            <ListChecks className="h-3 w-3" />
-                            {prog.done}/{prog.total}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </>
-                )}
-                {importable.length > 0 && (
-                  <>
-                    <div className="my-1 h-px bg-border" />
-                    <div className="px-3 py-1 typo-caption text-foreground/45">
-                      Dev Tools projects
-                    </div>
-                    {importable.map((p) => {
-                      const blocked = nextReady[p.id] === false;
-                      return (
-                        <button
-                          key={p.id}
-                          type="button"
-                          disabled={blocked}
-                          onClick={() => {
-                            if (blocked) return;
-                            setPickerOpen(false);
-                            void startExisting(p.id, p.name);
-                          }}
-                          title={
-                            blocked
-                              ? 'Not a Next.js app — Studio builds Next.js + Tailwind projects'
-                              : p.root_path
-                          }
-                          className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
-                            blocked
-                              ? 'cursor-not-allowed text-foreground/35'
-                              : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'
-                          }`}
-                        >
-                          <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                          <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                          {blocked && (
-                            <span className="shrink-0 typo-caption text-status-warning/80">
-                              Not Next.js
+                            <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                            <span
+                              className="flex shrink-0 items-center gap-1 typo-caption text-foreground/45"
+                              title="Saved checklist progress — re-opens with its history"
+                            >
+                              <ListChecks className="h-3 w-3" />
+                              {prog.done}/{prog.total}
                             </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </>
-      )}
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+                  {importable.length > 0 && (
+                    <>
+                      <div className="my-1 h-px bg-border" />
+                      <div className="px-3 py-1 typo-caption text-foreground/45">
+                        Dev Tools projects
+                      </div>
+                      {importable.map((p) => {
+                        const blocked = nextReady[p.id] === false;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            disabled={blocked}
+                            onClick={() => {
+                              if (blocked) return;
+                              setPickerOpen(false);
+                              void startExisting(p.id, p.name);
+                            }}
+                            title={
+                              blocked
+                                ? 'Not a Next.js app — Studio builds Next.js + Tailwind projects'
+                                : p.root_path
+                            }
+                            className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
+                              blocked
+                                ? 'cursor-not-allowed text-foreground/35'
+                                : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'
+                            }`}
+                          >
+                            <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                            <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                            {blocked && (
+                              <span className="shrink-0 typo-caption text-status-warning/80">
+                                Not Next.js
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </>,
+          document.body,
+        )}
     </header>
   );
 }
