@@ -297,6 +297,11 @@ pub fn adopt_preset(
                 },
             );
         }
+        // Design D: stamp the team's north star (shared motivation) so every
+        // member's deliberation turn imprints it.
+        if let Some(north_star) = &group_spec.north_star {
+            let _ = team_repo::set_north_star(&state.db, &team.id, north_star);
+        }
         Some(team.id.clone())
     } else {
         None
