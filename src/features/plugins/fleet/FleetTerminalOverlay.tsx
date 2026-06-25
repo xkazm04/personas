@@ -6,6 +6,7 @@ import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
+import { FleetAttentionLegend } from './FleetAttentionLegend';
 import { setFleetFontOverride } from './fleetTerminalManager';
 import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
@@ -148,6 +149,7 @@ export function FleetTerminalOverlay({
         </button>
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
+        <FleetAttentionLegend />
         <button
           type="button"
           data-testid="fleet-overlay-spawn"
