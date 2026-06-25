@@ -3101,6 +3101,72 @@ fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
 }
 
 #[cfg(test)]
+mod multiselect_tests {
+    use super::multiselect_keystrokes;
+
+    fn menu() -> Vec<String> {
+        // Mirrors the live AskUserQuestion multi-select layout.
+        [
+            "Which toppings would you like to add?",
+            "❯ 1. [ ] Cheese",
+            "  2. [ ] Mushroom",
+            "  3. [ ] Pepperoni",
+            "  4. [ ] Onion",
+            "  5. [ ] Type something",
+            "     Submit",
+            "  6. Chat about this",
+            "Enter to select · ↑/↓ to navigate · Esc to cancel",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+    }
+
+    fn flat(keys: &[Vec<u8>]) -> String {
+        keys.iter()
+            .map(|k| match k.as_slice() {
+                b" " => "SP".to_string(),
+                b"\r" => "CR".to_string(),
+                b"\x1b[A" => "UP".to_string(),
+                b"\x1b[B" => "DN".to_string(),
+                _ => "?".to_string(),
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    #[test]
+    fn select_all_four_then_submit_and_confirm() {
+        let keys = multiselect_keystrokes(&menu(), "1,2,3,4").expect("a multi-select plan");
+        // 4 Up clamp; per option: SP then DN (last option no trailing DN);
+        // DN past option4, DN past 'Type something' to Submit; CR, CR.
+        assert_eq!(
+            flat(&keys),
+            "UP,UP,UP,UP,SP,DN,SP,DN,SP,DN,SP,DN,DN,CR,CR"
+        );
+    }
+
+    #[test]
+    fn skips_already_checked_options() {
+        let mut m = menu();
+        m[1] = "❯ 1. [✔] Cheese".to_string(); // Cheese already selected
+        let keys = multiselect_keystrokes(&m, "1,2").expect("a plan");
+        // Option 1 already checked → no SP (just DN to opt2); option 2
+        // wanted+unchecked → SP, DN; opts 3,4 not wanted → DN each; then DN
+        // past 'Type something' to Submit; CR, CR.
+        assert_eq!(flat(&keys), "UP,UP,UP,UP,DN,SP,DN,DN,DN,DN,CR,CR");
+    }
+
+    #[test]
+    fn none_for_non_menu_or_freetext() {
+        // No checkbox menu.
+        assert!(multiselect_keystrokes(&["just some prose".to_string()], "1,2").is_none());
+        // A menu but a free-text (non-numeric) answer.
+        assert!(multiselect_keystrokes(&menu(), "throw an error").is_none());
+    }
+}
+
+#[cfg(test)]
 mod confidence_gate_tests {
     use super::fleet_send_input_is_high_confidence;
 
@@ -3142,6 +3208,37 @@ fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult,
         .get("press_enter")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
+
+    // MULTI-SELECT detection. A Claude Code AskUserQuestion multi-select is a
+    // checkbox TUI: a typed string like "1,2,3,4" only toggles the first item and
+    // never submits (verified live). Driving it needs ↑/↓ navigation + space to
+    // toggle each + Enter on Submit + Enter to confirm — and the keystrokes must
+    // be SPACED (~120ms); the TUI drops a rapid burst. We read the reconstructed
+    // screen (vt100) to recognize the menu and compute the toggle plan, then fire
+    // the keys on a timed task. Single-select / free-text falls through to the
+    // plain typed answer below.
+    if let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id) {
+        if let Some(keys) = multiselect_keystrokes(&lines, text) {
+            let sid = session_id.to_string();
+            let count = keys.len();
+            tokio::spawn(async move {
+                for k in keys {
+                    if let Err(e) =
+                        crate::commands::fleet::registry::registry().write_input(&sid, &k)
+                    {
+                        tracing::warn!(session_id = %sid, error = %e, "multi-select drive: write failed");
+                        break;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(120)).await;
+                }
+            });
+            return Ok(ExecuteResult::message(format!(
+                "Driving multi-select on `{}` ({count} keystrokes).",
+                &session_id[..session_id.len().min(8)],
+            )));
+        }
+    }
+
     let payload = if press_enter {
         format!("{text}\r")
     } else {
@@ -3155,6 +3252,89 @@ fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult,
         payload.len(),
         &session_id[..session_id.len().min(8)],
     )))
+}
+
+/// Recognize a Claude Code AskUserQuestion MULTI-select menu in a reconstructed
+/// screen and, if the answer names option numbers, return the keystroke sequence
+/// (one entry per key) to toggle the requested options and submit. `None` for a
+/// single-select / free-text answer / non-menu screen (caller types the answer).
+///
+/// Menu shape (verified live): numbered options with `[ ]`/`[✔]` checkboxes, then
+/// a `Type something` row and a `Submit` row, with an `↑/↓ to navigate · Enter to
+/// select` hint. The cursor starts on option 1 for a freshly-rendered menu (which
+/// is when orchestration fires). Plan: for each option top-down, toggle (space)
+/// the requested+unchecked ones (↓ between), step down to Submit (past `Type
+/// something` when present), Enter to reach the "Ready to submit?" confirm, Enter
+/// again to finalize (its cursor defaults to "Submit answers").
+fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec<Vec<u8>>> {
+    let joined = lines.join("\n");
+    let lower = joined.to_lowercase();
+    let has_checkbox = lines.iter().any(|l| {
+        let t = l.trim_start().trim_start_matches('❯').trim_start();
+        t.contains("[ ]") || t.contains("[✔]") || t.contains("[x]") || t.contains("[X]")
+    });
+    if !has_checkbox || !joined.contains("Submit") || !lower.contains("navigate") {
+        return None;
+    }
+    // Requested option numbers, e.g. "1,2,3,4" or "1 3".
+    let wanted: std::collections::BTreeSet<usize> = text
+        .split(|c: char| !c.is_ascii_digit())
+        .filter_map(|s| s.parse::<usize>().ok())
+        .filter(|n| *n >= 1)
+        .collect();
+    if wanted.is_empty() {
+        return None; // a free-text / label answer isn't a numeric toggle plan
+    }
+    // Parse toggle options in display order ("N. [state] Label"), skipping the
+    // `Type something` / `Submit` pseudo-rows.
+    let mut options: Vec<(usize, bool)> = Vec::new();
+    for l in lines {
+        let t = l.trim_start().trim_start_matches('❯').trim_start();
+        let Some(dot) = t.find(". ") else { continue };
+        let Ok(num) = t[..dot].trim().parse::<usize>() else { continue };
+        let rest = &t[dot + 2..];
+        let Some(ob) = rest.find('[') else { continue };
+        let Some(cb_rel) = rest[ob..].find(']') else { continue };
+        let inside = &rest[ob + 1..ob + cb_rel];
+        let checked = inside.contains('✔') || inside.to_lowercase().contains('x');
+        let label = rest[ob + cb_rel + 1..].trim();
+        if label.starts_with("Type something") || label.starts_with("Submit") {
+            continue;
+        }
+        options.push((num, checked));
+    }
+    if options.is_empty() {
+        return None;
+    }
+    let n = options.len();
+    let has_type_something = joined.contains("Type something");
+
+    let up: &[u8] = b"\x1b[A";
+    let down: &[u8] = b"\x1b[B";
+    let space: &[u8] = b" ";
+    let enter: &[u8] = b"\r";
+    let mut keys: Vec<Vec<u8>> = Vec::new();
+    // Clamp to the first option — a fresh menu already starts there; extra Ups
+    // are harmless because the list clamps at the top boundary.
+    for _ in 0..n {
+        keys.push(up.to_vec());
+    }
+    for (i, (num, checked)) in options.iter().enumerate() {
+        if wanted.contains(num) && !checked {
+            keys.push(space.to_vec());
+        }
+        if i + 1 < n {
+            keys.push(down.to_vec());
+        }
+    }
+    // Step from the last option to Submit (past `Type something` when shown).
+    keys.push(down.to_vec());
+    if has_type_something {
+        keys.push(down.to_vec());
+    }
+    keys.push(enter.to_vec()); // Submit -> "Ready to submit?" confirm
+    keys.push(enter.to_vec()); // confirm (defaults to "Submit answers")
+    Some(keys)
 }
 
 fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
