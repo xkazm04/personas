@@ -98,6 +98,28 @@ pub fn list_for_team(
     })
 }
 
+/// Recent turns of a deliberation (Design D) — newest-first. The moderator's +
+/// persona-turn context source (turns ride the existing channel via the
+/// `deliberation_id` link); reuses this repo's row mapping.
+pub fn list_for_deliberation(
+    pool: &DbPool,
+    deliberation_id: &str,
+    limit: i64,
+) -> Result<Vec<TeamChannelMessage>, AppError> {
+    timed_query!("team_channel", "team_channel::list_for_deliberation", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_channel_messages
+             WHERE deliberation_id = ?1
+             ORDER BY datetime(created_at) DESC, id DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![deliberation_id, limit], |r| row_to_message(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
 /// Injectable messages addressed to a persona (or the whole team) since a
 /// cutoff — the step-boundary injection source. `consumer='inject'` only;
 /// recency-capped by the caller's `limit`. Returns newest-first.

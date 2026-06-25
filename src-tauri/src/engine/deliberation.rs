@@ -10,7 +10,21 @@
 //!
 //! See docs/plans/team-deliberation-engine.md §3, §6.
 
+use std::sync::Arc;
+use std::time::Duration;
+
+use rusqlite::{params, OptionalExtension};
 use serde::Deserialize;
+use tauri::{AppHandle, Manager};
+
+use crate::db::models::TeamDeliberation;
+use crate::db::repos::resources::{
+    deliberation as deliberation_repo, team_channel as team_channel_repo,
+};
+use crate::db::settings_keys::AUTONOMOUS_DELIBERATION;
+use crate::db::DbPool;
+use crate::engine::subscription::{quota_cooldown_active, ReactiveSubscription};
+use crate::error::AppError;
 
 // ── Governance constants (tuned in D2/D7; see plan §12) ─────────────────────
 
@@ -290,6 +304,393 @@ fn select_speakers(requested: &[String], last_speaker: Option<&str>) -> Vec<Stri
     out
 }
 
+// ── The moderator (Haiku) + the deliberation tick (D2b) ─────────────────────
+
+/// A persona as the moderator sees it — enough to route by relevance.
+pub struct RosterMember {
+    pub id: String,
+    pub name: String,
+    /// Raw `core_profile` JSON (a [`crate::db::models::PersonaCore`]) when
+    /// authored (D5), else `None`.
+    pub core_profile: Option<String>,
+}
+
+/// Everything the moderator reasons over for one tick. Plain data so
+/// [`build_moderator_prompt`] stays pure + testable.
+pub struct ModeratorContext {
+    pub topic: String,
+    pub goal: Option<String>,
+    /// Raw `north_star` JSON (a [`crate::db::models::TeamNorthStar`]) when
+    /// authored (D5), else `None`.
+    pub north_star: Option<String>,
+    pub roster: Vec<RosterMember>,
+    /// Open agenda items oldest-first: (id, text).
+    pub open_agenda: Vec<(String, String)>,
+    /// Recent turns oldest-first: (author_label, body).
+    pub recent_turns: Vec<(String, String)>,
+}
+
+/// The moderator runs on Haiku — cheap, one batched call per tick (plan §3).
+pub const MODERATOR_MODEL: &str = "claude-haiku-4-5-20251001";
+/// Max deliberations advanced per tick — bounds a cold-start fan-out.
+const MAX_DELIBERATIONS_PER_TICK: usize = 8;
+/// Recent turns shown to the moderator.
+const MODERATOR_TURN_WINDOW: i64 = 12;
+
+/// Build the moderator prompt. The moderator is a CONVERSATION MANAGER, not a
+/// participant: it routes the key personas, curates the agenda, judges whether
+/// the round made progress, and biases toward action. Pure + testable.
+pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
+    use std::fmt::Write as _;
+    let mut p = String::new();
+    let _ = writeln!(
+        p,
+        "You are the MODERATOR of an autonomous team deliberation. You have no opinions of your own — you route the conversation, curate its agenda, judge whether it is making progress, and push it toward concrete decisions and tasks. Be SELECTIVE: pick only the 1-3 team members whose point of view most moves the current open agenda item forward. Never route the whole roster."
+    );
+    let _ = writeln!(p, "\n## TOPIC\n{}", ctx.topic);
+    if let Some(goal) = &ctx.goal {
+        let _ = writeln!(p, "\n## DESIRED OUTCOME\n{goal}");
+    }
+    if let Some(ns) = &ctx.north_star {
+        let _ = writeln!(p, "\n## TEAM NORTH STAR (shared)\n{ns}");
+    }
+    let _ = writeln!(p, "\n## TEAM MEMBERS (route by their core)");
+    for m in &ctx.roster {
+        match &m.core_profile {
+            Some(core) => {
+                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
+            }
+            None => {
+                let _ = writeln!(p, "- {} ({})", m.name, m.id);
+            }
+        }
+    }
+    let _ = writeln!(p, "\n## OPEN AGENDA");
+    if ctx.open_agenda.is_empty() {
+        let _ = writeln!(p, "(empty — if the topic is settled, conclude)");
+    } else {
+        for (id, item) in &ctx.open_agenda {
+            let _ = writeln!(p, "- [{id}] {item}");
+        }
+    }
+    let _ = writeln!(p, "\n## RECENT CONVERSATION");
+    if ctx.recent_turns.is_empty() {
+        let _ = writeln!(p, "(none yet — open the agenda and pick who speaks first)");
+    } else {
+        for (who, body) in &ctx.recent_turns {
+            let line = body.replace(['\n', '\r'], " ");
+            let line = if line.chars().count() > 240 {
+                line.chars().take(240).collect::<String>() + "…"
+            } else {
+                line
+            };
+            let _ = writeln!(p, "- {who}: {line}");
+        }
+    }
+    let _ = writeln!(
+        p,
+        "\n## YOUR DECISION\nReturn EXACTLY one JSON object, no prose:"
+    );
+    let _ = writeln!(
+        p,
+        r#"{{"deliberation": {{"next_speakers": ["<persona id>"], "agenda_add": ["<new open question>"], "agenda_resolve": [{{"id": "<agenda item id>", "resolution": "<decision>"}}], "round_outcome": "progressed" | "stalled", "action": "discuss" | "invoke_capability" | "spawn_assignment" | "escalate_to_user" | "conclude", "status": "continue" | "converged" | "stuck", "reason": "<one line>"}}}}"#
+    );
+    let _ = writeln!(
+        p,
+        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Use 'converged' or 'conclude' only when the agenda is effectively settled."
+    );
+    p
+}
+
+/// Extract the `{"deliberation": {...}}` object from possibly-prose output,
+/// reusing the channel decision's tolerant brace-matcher. `None` when no
+/// well-formed envelope is present (the caller falls back to a safe default).
+pub fn parse_decision(blob: &str) -> Option<ModeratorDecision> {
+    let marker = "\"deliberation\"";
+    let mut result = None;
+    let mut from = 0;
+    while let Some(rel) = blob[from..].find(marker) {
+        let pos = from + rel;
+        from = pos + marker.len();
+        let Some(open) = blob[..pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<ModeratorEnvelope>(candidate) {
+                result = Some(env.deliberation);
+            }
+        }
+    }
+    result
+}
+
+/// Run one moderation decision on Haiku. Records a `companion_turn` ledger row
+/// (audit) and returns the decision plus the call's `cost_usd` (for the
+/// deliberation's cost meter). An unparseable reply degrades to
+/// [`ModeratorDecision::default`] — a `stalled` round with no speakers, which
+/// the governance treats conservatively (the stall counter advances toward
+/// escalation).
+pub async fn run_moderator(
+    ctx: &ModeratorContext,
+    user_db: &crate::db::UserDbPool,
+) -> Result<(ModeratorDecision, Option<f64>), AppError> {
+    let prompt = build_moderator_prompt(ctx);
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+        prompt,
+        user_db,
+        "deliberation_moderate",
+        MODERATOR_MODEL,
+    )
+    .await?;
+    Ok((parse_decision(&blob).unwrap_or_default(), cost))
+}
+
+fn author_label(author_kind: &str) -> &'static str {
+    match author_kind {
+        "user" => "User",
+        "athena" => "Athena",
+        "director" => "Director",
+        "persona" => "Teammate",
+        _ => "System",
+    }
+}
+
+/// Design D — the deliberation tick. Advances each open team deliberation by a
+/// bounded number of persona turns (rate-shaping); the Haiku moderator routes
+/// the key personas + curates the agenda; progress/stall + cost/idle floors
+/// bound it (no turn budget). Default-OFF (`AUTONOMOUS_DELIBERATION`). The LLM
+/// stays OUT of the execution tick loop — this is a separate, budgeted,
+/// moderated loop that (in D4) emits work into the deterministic engine.
+pub struct DeliberationSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+}
+
+impl DeliberationSubscription {
+    /// Gather the moderator context for one deliberation: roster (+ authored
+    /// cores), team north star, open agenda, recent turns, and the last speaker
+    /// (anti-self-loop).
+    fn build_context(
+        &self,
+        delib: &TeamDeliberation,
+    ) -> Result<(ModeratorContext, Option<String>), AppError> {
+        let conn = self.pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT id, name, core_profile FROM personas WHERE home_team_id = ?1")?;
+        let roster = stmt
+            .query_map(params![delib.team_id], |r| {
+                Ok(RosterMember {
+                    id: r.get(0)?,
+                    name: r.get(1)?,
+                    core_profile: r.get(2)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?;
+        drop(stmt);
+
+        let north_star: Option<String> = conn
+            .query_row(
+                "SELECT north_star FROM persona_teams WHERE id = ?1",
+                params![delib.team_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .optional()
+            .map_err(AppError::Database)?
+            .flatten();
+
+        let open_agenda = deliberation_repo::list_agenda(&self.pool, &delib.id)?
+            .into_iter()
+            .filter(|a| a.status == "open")
+            .map(|a| (a.id, a.item))
+            .collect::<Vec<_>>();
+
+        let turns =
+            team_channel_repo::list_for_deliberation(&self.pool, &delib.id, MODERATOR_TURN_WINDOW)?;
+        let last_speaker = turns
+            .iter()
+            .find(|t| t.author_kind == "persona")
+            .and_then(|t| t.author_id.clone());
+        let recent_turns = turns
+            .into_iter()
+            .rev()
+            .map(|t| (author_label(&t.author_kind).to_string(), t.body))
+            .collect::<Vec<_>>();
+
+        Ok((
+            ModeratorContext {
+                topic: delib.topic.clone(),
+                goal: delib.goal.clone(),
+                north_star,
+                roster,
+                open_agenda,
+                recent_turns,
+            },
+            last_speaker,
+        ))
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for DeliberationSubscription {
+    fn name(&self) -> &'static str {
+        "deliberation"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(120)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(240)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(&self.pool, AUTONOMOUS_DELIBERATION)
+            .ok()
+            .flatten()
+            .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("deliberation: quota cooldown active — skipping tick");
+            return;
+        }
+        let Some(state) = self.app.try_state::<Arc<crate::AppState>>() else {
+            return;
+        };
+        let user_db = state.user_db.clone();
+        drop(state);
+
+        let delibs = match deliberation_repo::list_advanceable(&self.pool) {
+            Ok(d) => d,
+            Err(e) => {
+                tracing::warn!(error = %e, "deliberation: list_advanceable failed");
+                return;
+            }
+        };
+
+        for delib in delibs.into_iter().take(MAX_DELIBERATIONS_PER_TICK) {
+            // Hard floors first (cost / idle) — pause and wait for the user.
+            let now = chrono::Utc::now().to_rfc3339();
+            if let Some(breach) = floor_breach(
+                delib.cost_spent_usd,
+                delib.cost_budget_usd,
+                delib.idle_deadline.as_deref(),
+                &now,
+            ) {
+                let _ = deliberation_repo::update_progress(
+                    &self.pool,
+                    &delib.id,
+                    delib.round,
+                    delib.consecutive_stall_rounds,
+                    DeliberationStatus::Paused.as_str(),
+                );
+                tracing::info!(deliberation_id = %delib.id, ?breach, "deliberation: floor breach — paused");
+                continue;
+            }
+
+            let (ctx, last_speaker) = match self.build_context(&delib) {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: build_context failed");
+                    continue;
+                }
+            };
+
+            // One batched Haiku moderation decision (audited in companion_turn).
+            let (decision, cost) = match run_moderator(&ctx, &user_db).await {
+                Ok(x) => x,
+                Err(e) => {
+                    tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: moderator call failed");
+                    continue;
+                }
+            };
+            if let Some(c) = cost {
+                let _ = deliberation_repo::add_cost(&self.pool, &delib.id, c);
+            }
+
+            // Apply the moderator's agenda edits, then read the open count.
+            for item in &decision.agenda_add {
+                let _ = deliberation_repo::add_agenda_item(
+                    &self.pool,
+                    &delib.id,
+                    item,
+                    Some("moderator"),
+                );
+            }
+            for res in &decision.agenda_resolve {
+                let _ = deliberation_repo::resolve_agenda_item(
+                    &self.pool,
+                    &res.id,
+                    "resolved",
+                    Some(res.resolution.as_str()),
+                );
+            }
+            let open_after =
+                deliberation_repo::count_open_agenda(&self.pool, &delib.id).unwrap_or(0) as usize;
+
+            let progress = DeliberationProgress {
+                round: delib.round,
+                consecutive_stall_rounds: delib.consecutive_stall_rounds,
+            };
+            let t = plan_transition(progress, &decision, open_after, last_speaker.as_deref());
+
+            match t.outcome {
+                TickOutcome::Continue { speakers } => {
+                    let _ = deliberation_repo::update_progress(
+                        &self.pool,
+                        &delib.id,
+                        t.round,
+                        t.consecutive_stall_rounds,
+                        t.status.as_str(),
+                    );
+                    for sp in &speakers {
+                        // D3: run the persona's deliberation turn here (opinion
+                        // or self-promote to a gated capability). Stubbed.
+                        tracing::info!(deliberation_id = %delib.id, persona_id = %sp, reason = %decision.reason, "deliberation: would run persona turn (D3 stub)");
+                    }
+                }
+                TickOutcome::Escalate { reason } => {
+                    let _ = deliberation_repo::update_progress(
+                        &self.pool,
+                        &delib.id,
+                        t.round,
+                        t.consecutive_stall_rounds,
+                        t.status.as_str(),
+                    );
+                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: escalated to user");
+                    // D6 surfaces the escalation card; D4 wires the decision gate.
+                }
+                TickOutcome::Resolve { reason } => {
+                    let _ = deliberation_repo::finalize(
+                        &self.pool,
+                        &delib.id,
+                        t.status.as_str(),
+                        Some(reason),
+                        None,
+                    );
+                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved (D4 spawns the proposal)");
+                }
+                TickOutcome::Pause { reason } => {
+                    let _ = deliberation_repo::update_progress(
+                        &self.pool,
+                        &delib.id,
+                        t.round,
+                        t.consecutive_stall_rounds,
+                        t.status.as_str(),
+                    );
+                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: paused (backstop)");
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -433,5 +834,44 @@ mod tests {
         // Unspecified fields fall back to the safe defaults.
         assert_eq!(env.deliberation.action, ModeratorAction::Discuss);
         assert_eq!(env.deliberation.status, StatusSignal::Continue);
+    }
+}
+
+#[cfg(test)]
+mod moderator_tests {
+    use super::*;
+
+    #[test]
+    fn parse_extracts_envelope_from_prose() {
+        let blob = "Here is my call:\n{\"deliberation\": {\"next_speakers\": [\"p1\"], \"round_outcome\": \"progressed\", \"status\": \"continue\"}}\nthanks";
+        let d = parse_decision(blob).unwrap();
+        assert_eq!(d.next_speakers, vec!["p1".to_string()]);
+        assert_eq!(d.round_outcome, RoundOutcome::Progressed);
+    }
+
+    #[test]
+    fn parse_returns_none_without_marker() {
+        assert!(parse_decision("no json here").is_none());
+    }
+
+    #[test]
+    fn prompt_includes_topic_roster_and_agenda() {
+        let ctx = ModeratorContext {
+            topic: "Ship faster".into(),
+            goal: None,
+            north_star: None,
+            roster: vec![RosterMember {
+                id: "p1".into(),
+                name: "Architect".into(),
+                core_profile: None,
+            }],
+            open_agenda: vec![("a1".into(), "How to test?".into())],
+            recent_turns: vec![],
+        };
+        let p = build_moderator_prompt(&ctx);
+        assert!(p.contains("Ship faster"));
+        assert!(p.contains("Architect"));
+        assert!(p.contains("[a1] How to test?"));
+        assert!(p.contains("\"deliberation\""));
     }
 }
