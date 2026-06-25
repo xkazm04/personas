@@ -374,26 +374,16 @@ pub async fn auto_resolve_if_allowed(
     if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
         return Ok(false);
     }
-    // Athena-owned PTY guard: `fleet_send_input` is the one high-blast-radius
-    // entry on the allowlist. Under autonomous mode it would otherwise write
-    // `{text}\r` into ANY `session_id` Athena emits — including the user's OWN
-    // live terminal (a hallucinated or stale id, or a user-spawned session that
-    // drifted into AwaitingInput and woke the orchestrator). Only let it
-    // auto-fire when the target's visible-name sentinel proves Athena spawned
-    // the session herself; otherwise decline the autoapprove and leave the card
-    // PENDING (`Ok(false)`) so the user makes the call with a human in the loop.
-    // Checked BEFORE `load_pending` so the row stays `pending` rather than being
-    // transitioned to `running`. The manual approve path is intentionally NOT
-    // gated here — an explicit user click can still drive a non-Athena session.
-    if approval.action == "fleet_send_input"
-        && !fleet_send_input_targets_athena_session(&approval.params_json)
-    {
-        tracing::warn!(
-            approval_id = %approval.id,
-            "autonomous autoapprove declined for fleet_send_input: target session is not Athena-owned — left pending for an explicit user approval"
-        );
-        return Ok(false);
-    }
+    // Athena-owned PTY guard — RELAXED (user policy, 2026-06-25). Previously a
+    // `fleet_send_input` auto-fire was scoped to sessions Athena spawned herself,
+    // so on a USER's CLI even a high-confidence answer was left pending. The user
+    // explicitly wants autonomous Athena to ACT on their own fleet CLIs ("if
+    // confident enough she should act"). Autonomous mode (this whole path only
+    // runs under it) is the standing human consent, and the confidence gate below
+    // keeps auto-fire to the genuinely-unambiguous; anything less still surfaces
+    // as an orb consult. Targeting a dead/hallucinated session can't write
+    // anything — `execute_fleet_send_input` fails closed when the PTY writer is
+    // gone — so dropping the owner check doesn't widen real blast radius.
     // Cautious confidence gate (user policy "auto vs consult" = Cautious):
     // autonomous Athena only AUTO-fires a fleet_send_input she is highly
     // confident about. Medium / low / absent confidence is left PENDING
@@ -401,9 +391,9 @@ pub async fn auto_resolve_if_allowed(
     // and the user makes the call. Confidence is self-reported by Athena in the
     // proposal params (`confidence: "high" | "medium" | "low"` — see the
     // orchestration directive in `fleet_bridge::orchestrate_on_awaiting`);
-    // anything other than an explicit "high" fails safe toward consulting. The
-    // Athena-owned guard above still applies — confidence never widens scope,
-    // only narrows what auto-fires.
+    // anything other than an explicit "high" fails safe toward consulting — so
+    // with the owner guard relaxed, confidence is now the sole gate on what
+    // auto-fires vs. what surfaces as an orb consult.
     if approval.action == "fleet_send_input"
         && !fleet_send_input_is_high_confidence(&approval.params_json)
     {
@@ -425,24 +415,10 @@ pub async fn auto_resolve_if_allowed(
         finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
         return Ok(false);
     }
-    // Re-validate the fleet_send_input target against the SAME params we are about
-    // to execute. The guard above checked the propose-time `approval.params_json`,
-    // but `load_pending` re-reads the payload from the DB, which a concurrent
-    // writer or a manual edit could have mutated since propose — validating one
-    // copy while executing another is a TOCTOU that could redirect the PTY write
-    // to a session Athena doesn't own, including the user's own terminal
-    // (bug-hunt 2026-06-07 companion #5). Fail closed on the freshly-loaded value.
-    if action == "fleet_send_input" {
-        let fresh_json = serde_json::to_string(&params).unwrap_or_default();
-        if !fleet_send_input_targets_athena_session(&fresh_json) {
-            tracing::warn!(
-                approval_id = %approval.id,
-                "fleet_send_input target is not Athena-owned at execute time (payload changed since propose) — declining autoapprove"
-            );
-            finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
-            return Ok(false);
-        }
-    }
+    // (Owner re-check removed with the propose-time guard above — autonomous +
+    // high-confidence may now drive a user's own CLI. `execute_fleet_send_input`
+    // still fails closed if the target session id doesn't resolve to a live PTY
+    // writer, so a hallucinated/stale id writes nothing.)
     let exec_result = match action.as_str() {
         "write_fact" => execute_write_fact(&state, &params).await,
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
@@ -3099,25 +3075,6 @@ fn execute_schedule_proactive(
 // All four hit the fleet's in-process registry directly; no IPC
 // roundtrip. Each returns a human-readable message that lands as a
 // system episode so Athena can quote it on the next turn.
-
-/// Athena-owned PTY guard for the autonomous `fleet_send_input` autoapprove
-/// path (see `auto_resolve_if_allowed`). `params_json` is the bare params
-/// object the dispatcher persisted on the approval
-/// (`{ "session_id": "...", "text": "...", ... }`). Returns `true` only when it
-/// names a live Fleet session whose visible-name sentinel marks it as
-/// Athena-spawned. A missing / unparseable `session_id`, an unknown session, or
-/// a user-owned session all return `false` (fail-closed) — autonomous mode must
-/// never type into a PTY Athena didn't create. The manual approve path does not
-/// call this: an explicit human click can still drive any session.
-fn fleet_send_input_targets_athena_session(params_json: &str) -> bool {
-    serde_json::from_str::<serde_json::Value>(params_json)
-        .ok()
-        .as_ref()
-        .and_then(|v| v.get("session_id"))
-        .and_then(|s| s.as_str())
-        .map(|sid| crate::commands::fleet::registry::registry().is_athena_owned(sid))
-        .unwrap_or(false)
-}
 
 /// Whether a `fleet_send_input` proposal self-reports HIGH confidence — the
 /// cautious-mode gate for the autonomous autoapprove path. Only an explicit
