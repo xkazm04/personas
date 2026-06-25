@@ -292,7 +292,7 @@ pub async fn companion_approve_action(
     };
 
     finalize_approval(&state, &approval_id, status_text)?;
-    log_action_episode(&state, &embedder_log).await;
+    log_action_episode(&state, &action, &embedder_log).await;
 
     Ok(ApprovalOutcome {
         id: approval_id,
@@ -313,7 +313,7 @@ pub async fn companion_reject_action(
     finalize_approval(&state, &approval_id, APPROVAL_STATUS_REJECTED)?;
     let reason = reason.unwrap_or_else(|| "no reason given".into());
     let log = format!("[Athena action rejected] {action}\n\nReason: {reason}");
-    log_action_episode(&state, &log).await;
+    log_action_episode(&state, &action, &log).await;
     Ok(ApprovalOutcome {
         id: approval_id,
         status: APPROVAL_STATUS_REJECTED.into(),
@@ -443,7 +443,7 @@ pub async fn auto_resolve_if_allowed(
         ),
     };
     finalize_approval(&state, &approval.id, status_text)?;
-    log_action_episode(&state, &embedder_log).await;
+    log_action_episode(&state, &action, &embedder_log).await;
 
     // Notify-only orb indicator (user policy "safety net" = Notify only): when a
     // fleet_send_input auto-fired successfully, tell the orb what Athena just did
@@ -569,7 +569,16 @@ fn finalize_approval(
 /// Persist an action outcome as a system-role episode so future turns'
 /// system prompt sees what happened. Best-effort — failures here just
 /// mean the conversation transcript doesn't carry the action record.
-async fn log_action_episode(state: &State<'_, Arc<AppState>>, content: &str) {
+async fn log_action_episode(state: &State<'_, Arc<AppState>>, action: &str, content: &str) {
+    // Fleet actions (fleet_send_input / _broadcast / _kill / _intervene / …) are
+    // operational keystrokes into a CLI the user is already watching on the grid —
+    // their "approved & executed / failed" result is noise in the companion chat,
+    // not a conversational turn. Trace for debugging; do NOT persist as a visible
+    // episode. (User report: the Athena chat was overflowing with these.)
+    if action.starts_with("fleet_") {
+        tracing::debug!(action, "fleet action result not persisted to companion chat");
+        return;
+    }
     let pool = &state.user_db;
     let log_result = {
         #[cfg(feature = "ml")]
