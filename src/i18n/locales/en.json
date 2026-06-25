@@ -5206,6 +5206,8 @@
     "topic_placeholder": "What should the team decide?",
     "goal_placeholder": "Desired outcome (optional)",
     "start": "Start",
+    "advance": "Run a round",
+    "advance_running": "Running…",
     "list_empty": "No deliberations yet.",
     "status_open": "Open",
     "status_converging": "Converging",

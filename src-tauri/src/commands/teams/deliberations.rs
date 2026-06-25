@@ -86,6 +86,25 @@ pub fn list_deliberation_turns(
     Ok(turns)
 }
 
+/// Advance a deliberation by ONE moderated round on demand (user-initiated, so
+/// NOT gated by the `autonomous_deliberation` flag — that gate is for unattended
+/// background running). The moderator routes, the chosen personas speak, the
+/// agenda + status update. Returns the updated deliberation; the UI refetches
+/// the agenda + turns. Spends tokens (one Haiku moderator + a few Sonnet turns).
+#[tauri::command]
+pub async fn advance_team_deliberation(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+) -> Result<TeamDeliberation, AppError> {
+    require_auth(&state).await?;
+    let delib = repo::get(&state.db, &deliberation_id)?;
+    if delib.status == "resolved" || delib.status == "aborted" {
+        return Ok(delib); // terminal — nothing to advance
+    }
+    crate::engine::deliberation::advance_one_deliberation(&state.db, &state.user_db, &delib).await?;
+    repo::get(&state.db, &deliberation_id)
+}
+
 /// The decision gate (decision 8 — always gated in v1): approve a resolved
 /// deliberation's proposal, handing its objective to the team-assignment engine
 /// (`companion_assign_team`). Records the spawned assignment + posts a channel

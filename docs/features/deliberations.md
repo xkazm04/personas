@@ -7,10 +7,13 @@ topic, a live agenda, and a termination — the team's personas debate from thei
 distinct points of view, a cheap moderator keeps them on track, and the outcome
 is a concrete proposal you approve into a team assignment.
 
-> **Default OFF.** The autonomous moderator that drives a deliberation forward is
-> gated behind the `autonomous_deliberation` setting. With it off you can open a
-> deliberation and read its state, but it won't run rounds on its own. Turn it on
-> (Settings → autonomy) to let the team deliberate unattended.
+> **Default OFF — but you can drive it by hand.** The *autonomous* moderator that
+> advances a deliberation in the background is gated behind the
+> `autonomous_deliberation` setting; with it off, the team won't run rounds on its
+> own. **Regardless of that flag, the deliberation header has a *Run a round*
+> button** that advances the conversation one moderated round on demand — that's
+> the way to test or step through a deliberation. Turn the setting on
+> (Settings → autonomy) to let the team also deliberate unattended.
 
 ## Where it lives
 
@@ -19,8 +22,11 @@ Open a team's workspace → the **Deliberate** tab (next to Collab). The surface
 - **Left** — a *Start a deliberation* form (topic + optional desired outcome) and
   the list of the team's deliberations with their status.
 - **Right** — the selected deliberation:
-  - **Header** — status, the round counter, and a **cost meter** (spend vs.
-    budget). There is deliberately *no turn meter*: a deliberation is bounded by
+  - **Header** — status, the round counter, a **cost meter** (spend vs.
+    budget), and a **Run a round** button that advances the deliberation one
+    moderated round on demand (works whether or not autonomous deliberation is
+    enabled; shows *Running…* while the moderator + persona turns are in flight).
+    There is deliberately *no turn meter*: a deliberation is bounded by
     *progress* (its agenda and a stall limit) and by hard cost / idle floors, not
     by a turn count — so a productive conversation can run as long as it stays
     productive.

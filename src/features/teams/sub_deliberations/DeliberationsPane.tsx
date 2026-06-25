@@ -4,7 +4,7 @@
 // escalation card. The deliberation is bounded by progress (agenda + stall),
 // not a turn count, so there is NO turn meter — the agenda is the progress.
 import { useMemo, useState } from 'react';
-import { MessagesSquare, Plus, Gavel, CheckCircle2, CircleDot, AlertTriangle } from 'lucide-react';
+import { MessagesSquare, Plus, Gavel, CheckCircle2, CircleDot, AlertTriangle, Play } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -59,7 +59,9 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     turns,
     loading,
     busy,
+    advancing,
     create,
+    advance,
     approve,
     dismiss,
   } = useTeamDeliberations(teamId);
@@ -210,6 +212,23 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                   </span>
                 </span>
               </div>
+              {['open', 'converging', 'escalated', 'paused'].includes(detail.status) && (
+                <div className="mt-3">
+                  <AsyncButton
+                    onClick={async () => {
+                      try {
+                        await advance(detail.id);
+                      } catch (e) {
+                        toastCatch('DeliberationsPane.advance')(e);
+                      }
+                    }}
+                    isLoading={advancing}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body font-medium text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+                  >
+                    <Play className="h-3.5 w-3.5" /> {advancing ? td.advance_running : td.advance}
+                  </AsyncButton>
+                </div>
+              )}
             </div>
 
             {/* Proposal / escalation card */}

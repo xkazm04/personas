@@ -33,6 +33,17 @@ export const listDeliberationTurns = (deliberationId: string, limit?: number) =>
     limit: limit ?? null,
   });
 
+/** Advance a deliberation by one moderated round on demand (user-initiated;
+ *  not gated by the autonomous flag). Returns the updated deliberation. */
+export const advanceTeamDeliberation = (deliberationId: string) =>
+  // One round fans out to a Haiku moderator + up to 3 persona turns (+ a proposal
+  // synthesis on convergence) — well past the 90s default. Give it 4 minutes.
+  invoke<TeamDeliberation>(
+    'advance_team_deliberation',
+    { deliberationId },
+    { timeoutMs: 240_000 },
+  );
+
 /** Decision gate (always gated): approve a resolved proposal → spawns a real
  *  team assignment via companion_assign_team. Returns the assignment id. */
 export const approveDeliberationProposal = (deliberationId: string) =>

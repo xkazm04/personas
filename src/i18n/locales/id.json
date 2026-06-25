@@ -17161,6 +17161,8 @@
     "status_resolved": "Terselesaikan",
     "tab": "Deliberasi",
     "topic_placeholder": "Apa yang harus diputuskan tim?",
-    "turns_empty": "Belum ada giliran — tim akan mulai berbicara setelah deliberasi berjalan."
+    "turns_empty": "Belum ada giliran — tim akan mulai berbicara setelah deliberasi berjalan.",
+    "advance": "Jalankan putaran",
+    "advance_running": "Berjalan…"
   }
 }

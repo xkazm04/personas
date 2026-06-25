@@ -28,5 +28,7 @@
   "status_resolved": "Resuelto",
   "tab": "Deliberar",
   "topic_placeholder": "¿Qué debe decidir el equipo?",
-  "turns_empty": "Sin turnos aún — el equipo comenzará a hablar una vez que la deliberación esté en marcha."
+  "turns_empty": "Sin turnos aún — el equipo comenzará a hablar una vez que la deliberación esté en marcha.",
+  "advance": "Ejecutar ronda",
+  "advance_running": "Ejecutando…"
 }

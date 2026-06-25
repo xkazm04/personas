@@ -28,5 +28,7 @@
   "status_resolved": "已解决",
   "tab": "审议",
   "topic_placeholder": "团队需要决定什么？",
-  "turns_empty": "暂无发言 — 审议开始后团队将陆续发言。"
+  "turns_empty": "暂无发言 — 审议开始后团队将陆续发言。",
+  "advance": "运行一轮",
+  "advance_running": "运行中…"
 }

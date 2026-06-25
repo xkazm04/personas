@@ -2310,6 +2310,7 @@ pub fn run() {
             commands::teams::deliberations::get_team_deliberation,
             commands::teams::deliberations::list_deliberation_agenda,
             commands::teams::deliberations::list_deliberation_turns,
+            commands::teams::deliberations::advance_team_deliberation,
             commands::teams::deliberations::approve_deliberation_proposal,
             commands::teams::deliberations::dismiss_deliberation_proposal,
             commands::teams::assignments::advance_team_goal,

@@ -5212,6 +5212,8 @@ export type Translations = {
     topic_placeholder: string;
     goal_placeholder: string;
     start: string;
+    advance: string;
+    advance_running: string;
     list_empty: string;
     status_open: string;
     status_converging: string;

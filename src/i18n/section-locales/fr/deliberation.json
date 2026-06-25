@@ -28,5 +28,7 @@
   "status_resolved": "Résolu",
   "tab": "Délibérer",
   "topic_placeholder": "Que doit décider l'équipe ?",
-  "turns_empty": "Aucun tour pour l'instant — l'équipe commencera à parler dès que la délibération sera lancée."
+  "turns_empty": "Aucun tour pour l'instant — l'équipe commencera à parler dès que la délibération sera lancée.",
+  "advance": "Lancer un tour",
+  "advance_running": "En cours…"
 }

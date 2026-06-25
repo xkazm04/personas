@@ -17161,6 +17161,8 @@
     "status_resolved": "Đã giải quyết",
     "tab": "Deliberate",
     "topic_placeholder": "Nhóm nên quyết định điều gì?",
-    "turns_empty": "Chưa có lượt phát biểu — nhóm sẽ bắt đầu khi deliberation chạy."
+    "turns_empty": "Chưa có lượt phát biểu — nhóm sẽ bắt đầu khi deliberation chạy.",
+    "advance": "Chạy một vòng",
+    "advance_running": "Đang chạy…"
   }
 }

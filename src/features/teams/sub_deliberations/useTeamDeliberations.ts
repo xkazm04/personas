@@ -5,6 +5,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
 import {
+  advanceTeamDeliberation,
   approveDeliberationProposal,
   createTeamDeliberation,
   dismissDeliberationProposal,
@@ -28,6 +29,7 @@ export function useTeamDeliberations(teamId: string) {
   const [turns, setTurns] = useState<TeamChannelMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   const refreshList = useCallback(async () => {
     try {
@@ -98,6 +100,20 @@ export function useTeamDeliberations(teamId: string) {
     [teamId, refreshList],
   );
 
+  const advance = useCallback(
+    async (id: string) => {
+      setAdvancing(true);
+      try {
+        await advanceTeamDeliberation(id);
+        await refreshDetail(id);
+        await refreshList();
+      } finally {
+        setAdvancing(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
   const approve = useCallback(
     async (id: string) => {
       await approveDeliberationProposal(id);
@@ -125,7 +141,9 @@ export function useTeamDeliberations(teamId: string) {
     turns,
     loading,
     busy,
+    advancing,
     create,
+    advance,
     approve,
     dismiss,
     refreshList,

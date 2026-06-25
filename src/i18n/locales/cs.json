@@ -17161,6 +17161,8 @@
     "status_resolved": "Vyřešeno",
     "tab": "Deliberovat",
     "topic_placeholder": "O čem má tým rozhodnout?",
-    "turns_empty": "Zatím žádná kola — tým začne mluvit po spuštění deliberace."
+    "turns_empty": "Zatím žádná kola — tým začne mluvit po spuštění deliberace.",
+    "advance": "Spustit kolo",
+    "advance_running": "Probíhá…"
   }
 }

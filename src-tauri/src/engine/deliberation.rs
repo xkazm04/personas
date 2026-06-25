@@ -499,69 +499,180 @@ pub struct DeliberationSubscription {
     pub app: AppHandle,
 }
 
-impl DeliberationSubscription {
-    /// Gather the moderator context for one deliberation: roster (+ authored
-    /// cores), team north star, open agenda, recent turns, and the last speaker
-    /// (anti-self-loop).
-    fn build_context(
-        &self,
-        delib: &TeamDeliberation,
-    ) -> Result<(ModeratorContext, Option<String>), AppError> {
-        let conn = self.pool.get()?;
-        let mut stmt =
-            conn.prepare("SELECT id, name, core_profile FROM personas WHERE home_team_id = ?1")?;
-        let roster = stmt
-            .query_map(params![delib.team_id], |r| {
-                Ok(RosterMember {
-                    id: r.get(0)?,
-                    name: r.get(1)?,
-                    core_profile: r.get(2)?,
-                })
-            })?
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)?;
-        drop(stmt);
+/// Gather the moderator context for one deliberation: roster (+ authored cores),
+/// team north star, open agenda, recent turns, and the last speaker
+/// (anti-self-loop).
+fn build_moderator_context(
+    pool: &DbPool,
+    delib: &TeamDeliberation,
+) -> Result<(ModeratorContext, Option<String>), AppError> {
+    let conn = pool.get()?;
+    let mut stmt =
+        conn.prepare("SELECT id, name, core_profile FROM personas WHERE home_team_id = ?1")?;
+    let roster = stmt
+        .query_map(params![delib.team_id], |r| {
+            Ok(RosterMember {
+                id: r.get(0)?,
+                name: r.get(1)?,
+                core_profile: r.get(2)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(AppError::Database)?;
+    drop(stmt);
 
-        let north_star: Option<String> = conn
-            .query_row(
-                "SELECT north_star FROM persona_teams WHERE id = ?1",
-                params![delib.team_id],
-                |r| r.get::<_, Option<String>>(0),
-            )
-            .optional()
-            .map_err(AppError::Database)?
-            .flatten();
+    let north_star: Option<String> = conn
+        .query_row(
+            "SELECT north_star FROM persona_teams WHERE id = ?1",
+            params![delib.team_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .optional()
+        .map_err(AppError::Database)?
+        .flatten();
 
-        let open_agenda = deliberation_repo::list_agenda(&self.pool, &delib.id)?
-            .into_iter()
-            .filter(|a| a.status == "open")
-            .map(|a| (a.id, a.item))
-            .collect::<Vec<_>>();
+    let open_agenda = deliberation_repo::list_agenda(pool, &delib.id)?
+        .into_iter()
+        .filter(|a| a.status == "open")
+        .map(|a| (a.id, a.item))
+        .collect::<Vec<_>>();
 
-        let turns =
-            team_channel_repo::list_for_deliberation(&self.pool, &delib.id, MODERATOR_TURN_WINDOW)?;
-        let last_speaker = turns
-            .iter()
-            .find(|t| t.author_kind == "persona")
-            .and_then(|t| t.author_id.clone());
-        let recent_turns = turns
-            .into_iter()
-            .rev()
-            .map(|t| (author_label(&t.author_kind).to_string(), t.body))
-            .collect::<Vec<_>>();
+    let turns = team_channel_repo::list_for_deliberation(pool, &delib.id, MODERATOR_TURN_WINDOW)?;
+    let last_speaker = turns
+        .iter()
+        .find(|t| t.author_kind == "persona")
+        .and_then(|t| t.author_id.clone());
+    let recent_turns = turns
+        .into_iter()
+        .rev()
+        .map(|t| (author_label(&t.author_kind).to_string(), t.body))
+        .collect::<Vec<_>>();
 
-        Ok((
-            ModeratorContext {
-                topic: delib.topic.clone(),
-                goal: delib.goal.clone(),
-                north_star,
-                roster,
-                open_agenda,
-                recent_turns,
-            },
-            last_speaker,
-        ))
+    Ok((
+        ModeratorContext {
+            topic: delib.topic.clone(),
+            goal: delib.goal.clone(),
+            north_star,
+            roster,
+            open_agenda,
+            recent_turns,
+        },
+        last_speaker,
+    ))
+}
+
+/// Advance ONE deliberation by a single moderated round — the unit the
+/// subscription loops over and the on-demand `advance_team_deliberation` command
+/// invokes. Best-effort persona turns; surfaces context / moderator errors so an
+/// explicit (user-initiated) caller can show them.
+pub async fn advance_one_deliberation(
+    pool: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    delib: &TeamDeliberation,
+) -> Result<(), AppError> {
+    // Hard floors first (cost / idle) → pause and wait for the user.
+    let now = chrono::Utc::now().to_rfc3339();
+    if let Some(breach) = floor_breach(
+        delib.cost_spent_usd,
+        delib.cost_budget_usd,
+        delib.idle_deadline.as_deref(),
+        &now,
+    ) {
+        let _ = deliberation_repo::update_progress(
+            pool,
+            &delib.id,
+            delib.round,
+            delib.consecutive_stall_rounds,
+            DeliberationStatus::Paused.as_str(),
+        );
+        tracing::info!(deliberation_id = %delib.id, ?breach, "deliberation: floor breach — paused");
+        return Ok(());
     }
+
+    let (ctx, last_speaker) = build_moderator_context(pool, delib)?;
+    let (mut decision, cost) = run_moderator(&ctx, user_db).await?;
+    if let Some(c) = cost {
+        let _ = deliberation_repo::add_cost(pool, &delib.id, c);
+    }
+    for item in &decision.agenda_add {
+        let _ = deliberation_repo::add_agenda_item(pool, &delib.id, item, Some("moderator"));
+    }
+    for res in &decision.agenda_resolve {
+        let _ =
+            deliberation_repo::resolve_agenda_item(pool, &res.id, "resolved", Some(res.resolution.as_str()));
+    }
+    let open_after = deliberation_repo::count_open_agenda(pool, &delib.id).unwrap_or(0) as usize;
+    decision.next_speakers = decision
+        .next_speakers
+        .iter()
+        .filter_map(|s| resolve_speaker(s, &ctx.roster))
+        .collect();
+
+    let progress = DeliberationProgress {
+        round: delib.round,
+        consecutive_stall_rounds: delib.consecutive_stall_rounds,
+    };
+    let t = plan_transition(progress, &decision, open_after, last_speaker.as_deref());
+
+    match t.outcome {
+        TickOutcome::Continue { speakers } => {
+            let _ = deliberation_repo::update_progress(
+                pool,
+                &delib.id,
+                t.round,
+                t.consecutive_stall_rounds,
+                t.status.as_str(),
+            );
+            for sp in &speakers {
+                if let Err(e) =
+                    run_persona_deliberation_turn(pool, user_db, delib, sp, ctx.north_star.as_deref()).await
+                {
+                    tracing::warn!(deliberation_id = %delib.id, persona_id = %sp, error = %e, "deliberation: persona turn failed");
+                }
+            }
+        }
+        TickOutcome::Escalate { reason } => {
+            let _ = deliberation_repo::update_progress(
+                pool,
+                &delib.id,
+                t.round,
+                t.consecutive_stall_rounds,
+                t.status.as_str(),
+            );
+            tracing::info!(deliberation_id = %delib.id, reason, "deliberation: escalated to user");
+        }
+        TickOutcome::Resolve { reason } => {
+            let proposal = synthesize_proposal(pool, user_db, delib).await;
+            let resolution_json = serde_json::json!({
+                "kind": "proposal",
+                "status": "pending",
+                "reason": reason,
+                "proposal": proposal,
+            })
+            .to_string();
+            let _ = deliberation_repo::finalize(pool, &delib.id, t.status.as_str(), Some(&resolution_json), None);
+            let note = match &proposal {
+                Some(p) => format!(
+                    "Deliberation resolved — proposed: “{}” (awaiting your approval).",
+                    p.title
+                ),
+                None => "Deliberation resolved (no proposal synthesized — awaiting your review).".to_string(),
+            };
+            let _ = team_channel_repo::post_deliberation_turn(pool, &delib.id, &delib.team_id, "system", None, &note);
+            tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved + proposal synthesized");
+        }
+        TickOutcome::Pause { reason } => {
+            let _ = deliberation_repo::update_progress(
+                pool,
+                &delib.id,
+                t.round,
+                t.consecutive_stall_rounds,
+                t.status.as_str(),
+            );
+            tracing::info!(deliberation_id = %delib.id, reason, "deliberation: paused (backstop)");
+        }
+    }
+    Ok(())
 }
 
 #[async_trait::async_trait]
@@ -607,162 +718,8 @@ impl ReactiveSubscription for DeliberationSubscription {
         };
 
         for delib in delibs.into_iter().take(MAX_DELIBERATIONS_PER_TICK) {
-            // Hard floors first (cost / idle) — pause and wait for the user.
-            let now = chrono::Utc::now().to_rfc3339();
-            if let Some(breach) = floor_breach(
-                delib.cost_spent_usd,
-                delib.cost_budget_usd,
-                delib.idle_deadline.as_deref(),
-                &now,
-            ) {
-                let _ = deliberation_repo::update_progress(
-                    &self.pool,
-                    &delib.id,
-                    delib.round,
-                    delib.consecutive_stall_rounds,
-                    DeliberationStatus::Paused.as_str(),
-                );
-                tracing::info!(deliberation_id = %delib.id, ?breach, "deliberation: floor breach — paused");
-                continue;
-            }
-
-            let (ctx, last_speaker) = match self.build_context(&delib) {
-                Ok(c) => c,
-                Err(e) => {
-                    tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: build_context failed");
-                    continue;
-                }
-            };
-
-            // One batched Haiku moderation decision (audited in companion_turn).
-            let (mut decision, cost) = match run_moderator(&ctx, &user_db).await {
-                Ok(x) => x,
-                Err(e) => {
-                    tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: moderator call failed");
-                    continue;
-                }
-            };
-            if let Some(c) = cost {
-                let _ = deliberation_repo::add_cost(&self.pool, &delib.id, c);
-            }
-
-            // Apply the moderator's agenda edits, then read the open count.
-            for item in &decision.agenda_add {
-                let _ = deliberation_repo::add_agenda_item(
-                    &self.pool,
-                    &delib.id,
-                    item,
-                    Some("moderator"),
-                );
-            }
-            for res in &decision.agenda_resolve {
-                let _ = deliberation_repo::resolve_agenda_item(
-                    &self.pool,
-                    &res.id,
-                    "resolved",
-                    Some(res.resolution.as_str()),
-                );
-            }
-            let open_after =
-                deliberation_repo::count_open_agenda(&self.pool, &delib.id).unwrap_or(0) as usize;
-
-            // Resolve the moderator's next_speakers to canonical roster ids — the
-            // LLM sometimes returns a display name ("QA Guardian") or a guessed id
-            // ("dev_clone"); map them so the routed persona isn't silently dropped.
-            decision.next_speakers = decision
-                .next_speakers
-                .iter()
-                .filter_map(|s| resolve_speaker(s, &ctx.roster))
-                .collect();
-
-            let progress = DeliberationProgress {
-                round: delib.round,
-                consecutive_stall_rounds: delib.consecutive_stall_rounds,
-            };
-            let t = plan_transition(progress, &decision, open_after, last_speaker.as_deref());
-
-            match t.outcome {
-                TickOutcome::Continue { speakers } => {
-                    let _ = deliberation_repo::update_progress(
-                        &self.pool,
-                        &delib.id,
-                        t.round,
-                        t.consecutive_stall_rounds,
-                        t.status.as_str(),
-                    );
-                    for sp in &speakers {
-                        // Each speaker speaks in turn (re-reading the channel so a
-                        // later speaker sees an earlier one's same-tick turn).
-                        if let Err(e) = run_persona_deliberation_turn(
-                            &self.pool,
-                            &user_db,
-                            &delib,
-                            sp,
-                            ctx.north_star.as_deref(),
-                        )
-                        .await
-                        {
-                            tracing::warn!(deliberation_id = %delib.id, persona_id = %sp, error = %e, "deliberation: persona turn failed");
-                        }
-                    }
-                }
-                TickOutcome::Escalate { reason } => {
-                    let _ = deliberation_repo::update_progress(
-                        &self.pool,
-                        &delib.id,
-                        t.round,
-                        t.consecutive_stall_rounds,
-                        t.status.as_str(),
-                    );
-                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: escalated to user");
-                    // D6 surfaces the escalation card; D4 wires the decision gate.
-                }
-                TickOutcome::Resolve { reason } => {
-                    // Synthesize a concrete proposal from the deliberation — the
-                    // gated output. The user approves it (decision 8) to spawn a
-                    // real assignment via the decision-gate command (D4).
-                    let proposal = synthesize_proposal(&self.pool, &user_db, &delib).await;
-                    let resolution_json = serde_json::json!({
-                        "kind": "proposal",
-                        "status": "pending",
-                        "reason": reason,
-                        "proposal": proposal,
-                    })
-                    .to_string();
-                    let _ = deliberation_repo::finalize(
-                        &self.pool,
-                        &delib.id,
-                        t.status.as_str(),
-                        Some(&resolution_json),
-                        None,
-                    );
-                    let note = match &proposal {
-                        Some(p) => format!(
-                            "Deliberation resolved — proposed: “{}” (awaiting your approval).",
-                            p.title
-                        ),
-                        None => "Deliberation resolved (no proposal synthesized — awaiting your review).".to_string(),
-                    };
-                    let _ = team_channel_repo::post_deliberation_turn(
-                        &self.pool,
-                        &delib.id,
-                        &delib.team_id,
-                        "system",
-                        None,
-                        &note,
-                    );
-                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved + proposal synthesized (awaiting approval)");
-                }
-                TickOutcome::Pause { reason } => {
-                    let _ = deliberation_repo::update_progress(
-                        &self.pool,
-                        &delib.id,
-                        t.round,
-                        t.consecutive_stall_rounds,
-                        t.status.as_str(),
-                    );
-                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: paused (backstop)");
-                }
+            if let Err(e) = advance_one_deliberation(&self.pool, &user_db, &delib).await {
+                tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: advance failed");
             }
         }
     }

@@ -28,5 +28,7 @@
   "status_resolved": "Abgeschlossen",
   "tab": "Beraten",
   "topic_placeholder": "Worüber soll das Team entscheiden?",
-  "turns_empty": "Noch keine Beiträge — das Team beginnt zu sprechen, sobald die Beratung läuft."
+  "turns_empty": "Noch keine Beiträge — das Team beginnt zu sprechen, sobald die Beratung läuft.",
+  "advance": "Runde starten",
+  "advance_running": "Läuft…"
 }
