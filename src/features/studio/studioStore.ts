@@ -16,6 +16,7 @@ import {
 } from '@/api/webbuild';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
+import { useStudioHistory } from './studioHistory';
 
 // Studio runs multiple projects in parallel like browser tabs. Each project's
 // full build runtime lives HERE (not in a component) so a project keeps building
@@ -106,7 +107,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       return { runtimes: { ...s.runtimes, [id]: { ...rt, ...p } } };
     });
 
-  const ensure = (id: string, name: string) =>
+  const ensure = (id: string, name: string) => {
+    // Restore the checklist + message log from the persisted snapshot if we have
+    // one (re-opening a project after a restart); otherwise start fresh.
+    const h = useStudioHistory.getState().byProject[id];
     set((s) => {
       if (s.runtimes[id]) {
         const order = s.tabOrder.includes(id) ? s.tabOrder : [...s.tabOrder, id];
@@ -117,19 +121,19 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         name,
         phase: 'idle',
         status: null,
-        phases: MOCK_PHASES,
+        phases: h?.phases ?? MOCK_PHASES,
         busy: false,
         stream: '',
-        reply: null,
-        messages: [],
-        question: null,
+        reply: h?.reply ?? null,
+        messages: h?.messages ?? [],
+        question: h?.question ?? null,
         autonomous: false,
         seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
         effort: 'xhigh',
         style: 'balanced',
-        options: [],
+        options: h?.options ?? [],
         decisionArea: null,
         decisionSelector: null,
         gatePlan: false,
@@ -141,6 +145,21 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         activeId: id,
       };
     });
+  };
+
+  // Persist the project's checklist + message log so it survives an app restart.
+  const saveHistory = (id: string) => {
+    const rt = get().runtimes[id];
+    if (!rt) return;
+    useStudioHistory.getState().save(id, {
+      phases: rt.phases,
+      messages: rt.messages,
+      reply: rt.reply,
+      question: rt.question,
+      options: rt.options,
+      updatedAt: Date.now(),
+    });
+  };
 
   const stopPoll = (id: string) => {
     const t = pollTimers.get(id);
@@ -243,6 +262,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       toastCatch('build instruction')(e);
     } finally {
       patch(id, { busy: false });
+      saveHistory(id);
       // Chain the next autonomous turn.
       const cur = get().runtimes[id];
       if (cur?.autonomous) {
@@ -305,7 +325,6 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
     startExisting: async (id, name) => {
       ensure(id, name);
-      patch(id, { phases: MOCK_PHASES });
       await start(id);
     },
 

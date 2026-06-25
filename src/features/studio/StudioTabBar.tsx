@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Bot, Plus, X } from 'lucide-react';
+import { Bot, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { useStudioStore } from './studioStore';
+import { useStudioHistory } from './studioHistory';
+import { phaseProgress } from './studioBuildModel';
 
 // Browser-style tab strip. Each open project is a tab carrying its own live
 // status dot (so you can see which projects are building while you're on
@@ -21,7 +23,12 @@ export default function StudioTabBar({
   const closeTab = useStudioStore((s) => s.closeTab);
   const startExisting = useStudioStore((s) => s.startExisting);
 
-  const openable = projects.filter((p) => !tabOrder.includes(p.id));
+  const history = useStudioHistory((s) => s.byProject);
+  // Re-openable projects, most-recently-worked first so historic work is easy to
+  // resume from the toolbar.
+  const openable = projects
+    .filter((p) => !tabOrder.includes(p.id))
+    .sort((a, b) => (history[b.id]?.updatedAt ?? 0) - (history[a.id]?.updatedAt ?? 0));
 
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
@@ -94,21 +101,39 @@ export default function StudioTabBar({
             >
               <Plus className="h-3.5 w-3.5 text-primary" /> New project
             </button>
-            {openable.length > 0 && <div className="my-1 h-px bg-border" />}
+            {openable.length > 0 && (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <div className="px-3 py-1 typo-caption text-foreground/45">Recent projects</div>
+              </>
+            )}
             <div className="max-h-60 overflow-y-auto">
-              {openable.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    setPickerOpen(false);
-                    void startExisting(p.id, p.name);
-                  }}
-                  className="block w-full truncate px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
-                >
-                  {p.name}
-                </button>
-              ))}
+              {openable.map((p) => {
+                const h = history[p.id];
+                const prog = h ? phaseProgress(h.phases) : null;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setPickerOpen(false);
+                      void startExisting(p.id, p.name);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
+                  >
+                    <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                    {prog && (
+                      <span
+                        className="flex shrink-0 items-center gap-1 typo-caption text-foreground/45"
+                        title="Saved checklist progress — re-opens with its history"
+                      >
+                        <ListChecks className="h-3 w-3" />
+                        {prog.done}/{prog.total}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </>
