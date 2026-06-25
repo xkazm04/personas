@@ -304,6 +304,33 @@ fn select_speakers(requested: &[String], last_speaker: Option<&str>) -> Vec<Stri
     out
 }
 
+/// Map a moderator-supplied speaker token to a canonical roster persona id. The
+/// LLM is imprecise — it may return a display name ("QA Guardian"), a guessed
+/// snake_case id ("dev_clone"), or the real id. Match by exact id, then by
+/// normalized (alphanumeric-lowercased) id/name. `None` if nothing matches (a
+/// hallucinated persona is dropped, not run). Without this the routed persona is
+/// silently skipped — a real bug the live harness surfaced.
+pub fn resolve_speaker(requested: &str, roster: &[RosterMember]) -> Option<String> {
+    let req = requested.trim();
+    if req.is_empty() {
+        return None;
+    }
+    if let Some(m) = roster.iter().find(|m| m.id == req) {
+        return Some(m.id.clone());
+    }
+    let norm = |s: &str| -> String {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .flat_map(|c| c.to_lowercase())
+            .collect()
+    };
+    let nreq = norm(req);
+    roster
+        .iter()
+        .find(|m| norm(&m.id) == nreq || norm(&m.name) == nreq)
+        .map(|m| m.id.clone())
+}
+
 // ── The moderator (Haiku) + the deliberation tick (D2b) ─────────────────────
 
 /// A persona as the moderator sees it — enough to route by relevance.
@@ -393,11 +420,11 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     );
     let _ = writeln!(
         p,
-        r#"{{"deliberation": {{"next_speakers": ["<persona id>"], "agenda_add": ["<new open question>"], "agenda_resolve": [{{"id": "<agenda item id>", "resolution": "<decision>"}}], "round_outcome": "progressed" | "stalled", "action": "discuss" | "invoke_capability" | "spawn_assignment" | "escalate_to_user" | "conclude", "status": "continue" | "converged" | "stuck", "reason": "<one line>"}}}}"#
+        r#"{{"deliberation": {{"next_speakers": ["<exact id from the TEAM MEMBERS parentheses, e.g. qa>"], "agenda_add": ["<new open question>"], "agenda_resolve": [{{"id": "<agenda item id>", "resolution": "<decision>"}}], "round_outcome": "progressed" | "stalled", "action": "discuss" | "invoke_capability" | "spawn_assignment" | "escalate_to_user" | "conclude", "status": "continue" | "converged" | "stuck", "reason": "<one line>"}}}}"#
     );
     let _ = writeln!(
         p,
-        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Use 'converged' or 'conclude' only when the agenda is effectively settled."
+        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Use 'converged' or 'conclude' only when the agenda is effectively settled. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
     );
     p
 }
@@ -603,7 +630,7 @@ impl ReactiveSubscription for DeliberationSubscription {
             };
 
             // One batched Haiku moderation decision (audited in companion_turn).
-            let (decision, cost) = match run_moderator(&ctx, &user_db).await {
+            let (mut decision, cost) = match run_moderator(&ctx, &user_db).await {
                 Ok(x) => x,
                 Err(e) => {
                     tracing::warn!(deliberation_id = %delib.id, error = %e, "deliberation: moderator call failed");
@@ -633,6 +660,15 @@ impl ReactiveSubscription for DeliberationSubscription {
             }
             let open_after =
                 deliberation_repo::count_open_agenda(&self.pool, &delib.id).unwrap_or(0) as usize;
+
+            // Resolve the moderator's next_speakers to canonical roster ids — the
+            // LLM sometimes returns a display name ("QA Guardian") or a guessed id
+            // ("dev_clone"); map them so the routed persona isn't silently dropped.
+            decision.next_speakers = decision
+                .next_speakers
+                .iter()
+                .filter_map(|s| resolve_speaker(s, &ctx.roster))
+                .collect();
 
             let progress = DeliberationProgress {
                 round: delib.round,
@@ -1250,6 +1286,21 @@ mod moderator_tests {
         assert!(p.contains("Architect"));
         assert!(p.contains("[a1] How to test?"));
         assert!(p.contains("\"deliberation\""));
+    }
+
+    #[test]
+    fn resolve_speaker_handles_names_and_guessed_ids() {
+        // Exactly the mismatches the live harness surfaced.
+        let roster = vec![
+            RosterMember { id: "qa".into(), name: "QA Guardian".into(), core_profile: None },
+            RosterMember { id: "engineer".into(), name: "Dev Clone".into(), core_profile: None },
+            RosterMember { id: "product".into(), name: "Product Strategist".into(), core_profile: None },
+        ];
+        assert_eq!(resolve_speaker("qa", &roster).as_deref(), Some("qa")); // exact id
+        assert_eq!(resolve_speaker("QA Guardian", &roster).as_deref(), Some("qa")); // display name
+        assert_eq!(resolve_speaker("dev_clone", &roster).as_deref(), Some("engineer")); // guessed id
+        assert_eq!(resolve_speaker("product_strategist", &roster).as_deref(), Some("product"));
+        assert_eq!(resolve_speaker("nobody", &roster), None); // hallucinated → dropped
     }
 }
 
