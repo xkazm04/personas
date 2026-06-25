@@ -17130,5 +17130,37 @@
       "manual": "手动录入",
       "scan": "扫描"
     }
+  },
+  "deliberation": {
+    "agenda": "议程",
+    "agenda_empty": "暂无议程项。",
+    "approve": "批准并分配",
+    "author_moderator": "主持人",
+    "author_teammate": "队友",
+    "author_you": "你",
+    "conversation": "对话",
+    "cost_spent": "费用",
+    "dismiss": "驳回",
+    "empty_hint": "审议是一场有主持的对话，团队中的 Personas 从各自视角辩论某项决策，然后提出具体工作方案。",
+    "empty_title": "选择或发起审议",
+    "escalated_body": "团队未能自行解决此问题，已上报给你。请审阅对话并作出引导或裁决。",
+    "escalated_title": "需要你决策",
+    "goal_placeholder": "期望结果（可选）",
+    "list_empty": "暂无审议。",
+    "new": "发起审议",
+    "proposal": "提案",
+    "proposal_dismissed": "提案已驳回。",
+    "round": "轮次",
+    "spawned_assignment": "已批准 — 已生成任务",
+    "start": "开始",
+    "status_aborted": "已驳回",
+    "status_converging": "收敛中",
+    "status_escalated": "需要你",
+    "status_open": "进行中",
+    "status_paused": "已暂停",
+    "status_resolved": "已解决",
+    "tab": "审议",
+    "topic_placeholder": "团队需要决定什么？",
+    "turns_empty": "暂无发言 — 审议开始后团队将陆续发言。"
   }
 }

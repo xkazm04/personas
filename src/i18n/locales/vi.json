@@ -17130,5 +17130,37 @@
       "manual": "Nhập thủ công",
       "scan": "Quét"
     }
+  },
+  "deliberation": {
+    "agenda": "Chương trình nghị sự",
+    "agenda_empty": "Chưa có mục nào trong chương trình.",
+    "approve": "Phê duyệt & phân công",
+    "author_moderator": "Người điều phối",
+    "author_teammate": "Thành viên nhóm",
+    "author_you": "Bạn",
+    "conversation": "Cuộc trò chuyện",
+    "cost_spent": "Chi phí",
+    "dismiss": "Bỏ qua",
+    "empty_hint": "Deliberation là cuộc trò chuyện có điều phối, nơi các persona trong nhóm tranh luận về một quyết định từ góc nhìn riêng của mỗi người, sau đó đề xuất công việc cụ thể.",
+    "empty_title": "Chọn hoặc bắt đầu một deliberation",
+    "escalated_body": "Nhóm không thể tự giải quyết và đã chuyển lên cho bạn. Xem lại cuộc trò chuyện và định hướng hoặc giải quyết.",
+    "escalated_title": "Cần quyết định của bạn",
+    "goal_placeholder": "Kết quả mong muốn (tùy chọn)",
+    "list_empty": "Chưa có deliberation nào.",
+    "new": "Bắt đầu deliberation",
+    "proposal": "Đề xuất",
+    "proposal_dismissed": "Đề xuất đã bị bỏ qua.",
+    "round": "Vòng",
+    "spawned_assignment": "Đã phê duyệt — tạo nhiệm vụ",
+    "start": "Bắt đầu",
+    "status_aborted": "Đã hủy",
+    "status_converging": "Đang hội tụ",
+    "status_escalated": "Cần bạn",
+    "status_open": "Đang mở",
+    "status_paused": "Tạm dừng",
+    "status_resolved": "Đã giải quyết",
+    "tab": "Deliberate",
+    "topic_placeholder": "Nhóm nên quyết định điều gì?",
+    "turns_empty": "Chưa có lượt phát biểu — nhóm sẽ bắt đầu khi deliberation chạy."
   }
 }

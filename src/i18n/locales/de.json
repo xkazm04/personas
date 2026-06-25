@@ -17130,5 +17130,37 @@
       "manual": "Manuelle Eingabe",
       "scan": "Scan"
     }
+  },
+  "deliberation": {
+    "agenda": "Agenda",
+    "agenda_empty": "Noch keine Tagesordnungspunkte.",
+    "approve": "Genehmigen & zuweisen",
+    "author_moderator": "Moderator",
+    "author_teammate": "Teammitglied",
+    "author_you": "Sie",
+    "conversation": "Gespräch",
+    "cost_spent": "Kosten",
+    "dismiss": "Verwerfen",
+    "empty_hint": "Eine Beratung ist ein moderiertes Gespräch, bei dem die Personas des Teams eine Entscheidung aus ihren jeweiligen Perspektiven debattieren und dann konkrete Aufgaben vorschlagen.",
+    "empty_title": "Beratung auswählen oder starten",
+    "escalated_body": "Das Team konnte dies nicht eigenständig klären und hat es an Sie eskaliert. Überprüfen Sie das Gespräch und steuern oder lösen Sie es.",
+    "escalated_title": "Ihre Entscheidung erforderlich",
+    "goal_placeholder": "Gewünschtes Ergebnis (optional)",
+    "list_empty": "Noch keine Beratungen.",
+    "new": "Beratung starten",
+    "proposal": "Vorschlag",
+    "proposal_dismissed": "Vorschlag verworfen.",
+    "round": "Runde",
+    "spawned_assignment": "Genehmigt — Aufgabe erstellt",
+    "start": "Starten",
+    "status_aborted": "Verworfen",
+    "status_converging": "Annäherung",
+    "status_escalated": "Aktion erforderlich",
+    "status_open": "Offen",
+    "status_paused": "Pausiert",
+    "status_resolved": "Abgeschlossen",
+    "tab": "Beraten",
+    "topic_placeholder": "Worüber soll das Team entscheiden?",
+    "turns_empty": "Noch keine Beiträge — das Team beginnt zu sprechen, sobald die Beratung läuft."
   }
 }

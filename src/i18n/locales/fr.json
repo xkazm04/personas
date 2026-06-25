@@ -17130,5 +17130,37 @@
       "manual": "Saisie manuelle",
       "scan": "Analyse"
     }
+  },
+  "deliberation": {
+    "agenda": "Ordre du jour",
+    "agenda_empty": "Aucun point à l'ordre du jour.",
+    "approve": "Approuver & assigner",
+    "author_moderator": "Modérateur",
+    "author_teammate": "Coéquipier",
+    "author_you": "Vous",
+    "conversation": "Conversation",
+    "cost_spent": "Coût",
+    "dismiss": "Ignorer",
+    "empty_hint": "Une délibération est une conversation modérée où les personas de l'équipe débattent d'une décision selon leurs points de vue, puis proposent des actions concrètes.",
+    "empty_title": "Sélectionnez ou démarrez une délibération",
+    "escalated_body": "L'équipe n'a pas pu trancher seule et vous a transmis la décision. Consultez la conversation et orientez ou résolvez-la.",
+    "escalated_title": "Votre décision est requise",
+    "goal_placeholder": "Résultat souhaité (facultatif)",
+    "list_empty": "Aucune délibération pour l'instant.",
+    "new": "Démarrer une délibération",
+    "proposal": "Proposition",
+    "proposal_dismissed": "Proposition ignorée.",
+    "round": "Tour",
+    "spawned_assignment": "Approuvé — tâche créée",
+    "start": "Démarrer",
+    "status_aborted": "Ignoré",
+    "status_converging": "Convergence",
+    "status_escalated": "Votre avis",
+    "status_open": "Ouvert",
+    "status_paused": "En pause",
+    "status_resolved": "Résolu",
+    "tab": "Délibérer",
+    "topic_placeholder": "Que doit décider l'équipe ?",
+    "turns_empty": "Aucun tour pour l'instant — l'équipe commencera à parler dès que la délibération sera lancée."
   }
 }

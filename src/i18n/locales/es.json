@@ -17130,5 +17130,37 @@
       "manual": "Entrada manual",
       "scan": "Escaneo"
     }
+  },
+  "deliberation": {
+    "agenda": "Agenda",
+    "agenda_empty": "Sin elementos en la agenda.",
+    "approve": "Aprobar y asignar",
+    "author_moderator": "Moderador",
+    "author_teammate": "Compañero",
+    "author_you": "Tú",
+    "conversation": "Conversación",
+    "cost_spent": "Coste",
+    "dismiss": "Descartar",
+    "empty_hint": "Una deliberación es una conversación moderada donde las personas del equipo debaten una decisión desde sus distintos puntos de vista y luego proponen trabajo concreto.",
+    "empty_title": "Selecciona o inicia una deliberación",
+    "escalated_body": "El equipo no pudo resolver esto por su cuenta y te lo escaló. Revisa la conversación y orienta o resuelve.",
+    "escalated_title": "Se necesita tu decisión",
+    "goal_placeholder": "Resultado deseado (opcional)",
+    "list_empty": "Sin deliberaciones aún.",
+    "new": "Iniciar una deliberación",
+    "proposal": "Propuesta",
+    "proposal_dismissed": "Propuesta descartada.",
+    "round": "Ronda",
+    "spawned_assignment": "Aprobado — asignación creada",
+    "start": "Iniciar",
+    "status_aborted": "Descartado",
+    "status_converging": "Convergiendo",
+    "status_escalated": "Te necesita",
+    "status_open": "Abierto",
+    "status_paused": "En pausa",
+    "status_resolved": "Resuelto",
+    "tab": "Deliberar",
+    "topic_placeholder": "¿Qué debe decidir el equipo?",
+    "turns_empty": "Sin turnos aún — el equipo comenzará a hablar una vez que la deliberación esté en marcha."
   }
 }

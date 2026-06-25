@@ -17130,5 +17130,37 @@
       "manual": "Ruční zadání",
       "scan": "Skenování"
     }
+  },
+  "deliberation": {
+    "agenda": "Agenda",
+    "agenda_empty": "Zatím žádné body agendy.",
+    "approve": "Schválit a přiřadit",
+    "author_moderator": "Moderátor",
+    "author_teammate": "Člen týmu",
+    "author_you": "Vy",
+    "conversation": "Konverzace",
+    "cost_spent": "Náklady",
+    "dismiss": "Zamítnout",
+    "empty_hint": "Deliberace je moderovaná konverzace, kde týmové persony debatují o rozhodnutí ze svých různých pohledů a poté navrhují konkrétní práci.",
+    "empty_title": "Vyberte nebo zahajte deliberaci",
+    "escalated_body": "Tým to nedokázal vyřešit sám a eskaloval případ na vás. Projděte konverzaci a nasměrujte ji nebo ji vyřešte.",
+    "escalated_title": "Vyžaduje vaše rozhodnutí",
+    "goal_placeholder": "Požadovaný výsledek (volitelné)",
+    "list_empty": "Zatím žádné deliberace.",
+    "new": "Zahájit deliberaci",
+    "proposal": "Návrh",
+    "proposal_dismissed": "Návrh zamítnut.",
+    "round": "Kolo",
+    "spawned_assignment": "Schváleno — vytvořen úkol",
+    "start": "Spustit",
+    "status_aborted": "Zamítnuto",
+    "status_converging": "Sbíhá se",
+    "status_escalated": "Vyžaduje vás",
+    "status_open": "Otevřeno",
+    "status_paused": "Pozastaveno",
+    "status_resolved": "Vyřešeno",
+    "tab": "Deliberovat",
+    "topic_placeholder": "O čem má tým rozhodnout?",
+    "turns_empty": "Zatím žádná kola — tým začne mluvit po spuštění deliberace."
   }
 }

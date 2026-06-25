@@ -5206,6 +5206,38 @@ export type Translations = {
       backoff: string;
     };
   };
+  deliberation: {
+    tab: string;
+    new: string;
+    topic_placeholder: string;
+    goal_placeholder: string;
+    start: string;
+    list_empty: string;
+    status_open: string;
+    status_converging: string;
+    status_resolved: string;
+    status_escalated: string;
+    status_paused: string;
+    status_aborted: string;
+    round: string;
+    cost_spent: string;
+    empty_title: string;
+    empty_hint: string;
+    escalated_title: string;
+    escalated_body: string;
+    proposal: string;
+    approve: string;
+    dismiss: string;
+    spawned_assignment: string;
+    proposal_dismissed: string;
+    agenda: string;
+    agenda_empty: string;
+    conversation: string;
+    turns_empty: string;
+    author_teammate: string;
+    author_you: string;
+    author_moderator: string;
+  };
   deployment: {
     title: string;
     orchestrator_url: string;

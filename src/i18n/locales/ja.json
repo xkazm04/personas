@@ -17130,5 +17130,37 @@
       "manual": "手動入力",
       "scan": "スキャン"
     }
+  },
+  "deliberation": {
+    "agenda": "議題",
+    "agenda_empty": "議題はまだありません。",
+    "approve": "承認して割り当て",
+    "author_moderator": "モデレーター",
+    "author_teammate": "チームメンバー",
+    "author_you": "あなた",
+    "conversation": "会話",
+    "cost_spent": "コスト",
+    "dismiss": "却下",
+    "empty_hint": "ディスカッションとは、チームのペルソナがそれぞれの視点から意思決定を議論し、具体的な作業を提案するモデレート付き会話です。",
+    "empty_title": "ディスカッションを選択または開始",
+    "escalated_body": "チームだけでは解決できず、あなたにエスカレーションされました。会話を確認して、方向を示すか解決してください。",
+    "escalated_title": "あなたの判断が必要です",
+    "goal_placeholder": "望む結果（任意）",
+    "list_empty": "ディスカッションはまだありません。",
+    "new": "ディスカッションを開始",
+    "proposal": "提案",
+    "proposal_dismissed": "提案を却下しました。",
+    "round": "ラウンド",
+    "spawned_assignment": "承認済み — タスクを作成しました",
+    "start": "開始",
+    "status_aborted": "却下済み",
+    "status_converging": "収束中",
+    "status_escalated": "要対応",
+    "status_open": "進行中",
+    "status_paused": "一時停止",
+    "status_resolved": "解決済み",
+    "tab": "ディスカッション",
+    "topic_placeholder": "チームが決定すべきことは？",
+    "turns_empty": "まだ発言はありません — ディスカッションが開始されるとチームが発言を始めます。"
   }
 }

@@ -11,7 +11,8 @@ use tauri::State;
 
 use crate::commands::teams::assignments::{companion_assign_team, CompanionAssignTeamResult};
 use crate::db::models::{
-    CreateDeliberationInput, DeliberationAgendaItem, ProposalSpec, TeamDeliberation,
+    CreateDeliberationInput, DeliberationAgendaItem, ProposalSpec, TeamChannelMessage,
+    TeamDeliberation,
 };
 use crate::db::repos::resources::{deliberation as repo, team_channel as channel_repo};
 use crate::error::AppError;
@@ -68,6 +69,21 @@ pub fn list_deliberation_agenda(
 ) -> Result<Vec<DeliberationAgendaItem>, AppError> {
     require_auth_sync(&state)?;
     repo::list_agenda(&state.db, &deliberation_id)
+}
+
+/// The deliberation's turns (persona/system messages), oldest-first — the turn
+/// stream the UI renders. Reuses the channel's `deliberation_id` link.
+#[tauri::command]
+pub fn list_deliberation_turns(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+    limit: Option<i64>,
+) -> Result<Vec<TeamChannelMessage>, AppError> {
+    require_auth_sync(&state)?;
+    let mut turns =
+        channel_repo::list_for_deliberation(&state.db, &deliberation_id, limit.unwrap_or(200))?;
+    turns.reverse(); // list_for_deliberation is newest-first; the stream reads oldest-first
+    Ok(turns)
 }
 
 /// The decision gate (decision 8 — always gated in v1): approve a resolved
