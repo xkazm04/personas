@@ -268,8 +268,9 @@ pub fn orchestrate_on_awaiting(
          whether one is clearly best. If so, ANSWER it: propose a fleet_send_input whose `text` is \
          exactly what to type to choose that option — the option's number, or its text — with \
          press_enter true.\n\
-         • Every fleet_send_input MUST carry a `confidence` param (\"high\", \"medium\", or \"low\"), \
-         the exact `text`, and a one-line `rationale`.\n\
+         • Every fleet_send_input MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
+         verbatim; it's THIS session, and the action can't run without it — and carry a `confidence` \
+         param (\"high\", \"medium\", or \"low\"), the exact `text`, and a one-line `rationale`.\n\
          • \"high\" = obvious, safe, you'd stake your judgment on it with no second opinion — applied \
          automatically with no human check, so reserve it for the genuinely unambiguous.\n\
          • \"medium\"/\"low\" = any real doubt, a judgment call, or a wrong move would cost rework. \
