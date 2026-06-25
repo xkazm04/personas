@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image as ImageIcon, Send, Square, Wand2 } from 'lucide-react';
+import { CircleStop, Image as ImageIcon, Send, Square, Wand2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import Button from '@/features/shared/components/buttons/Button';
 import { useStudioStore } from './studioStore';
@@ -18,6 +18,7 @@ export default function StudioChatInput() {
   const sendTurn = useStudioStore((s) => s.sendTurn);
   const startAutonomous = useStudioStore((s) => s.startAutonomous);
   const stopAutonomous = useStudioStore((s) => s.stopAutonomous);
+  const stopTurn = useStudioStore((s) => s.stopTurn);
 
   if (!activeId || !rt) return null;
   const { busy, question, autonomous, name } = rt;
@@ -94,19 +95,31 @@ export default function StudioChatInput() {
           <ImageIcon className="h-4 w-4" />
         </button>
         <StudioBuildSettings id={activeId} />
-        <button
-          type="button"
-          onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
-          disabled={!autonomous && busy}
-          aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
-            autonomous
-              ? 'bg-primary/20 text-primary'
-              : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary disabled:opacity-40'
-          }`}
-        >
-          {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
-        </button>
+        {busy ? (
+          <button
+            type="button"
+            onClick={() => stopTurn(activeId)}
+            data-testid="studio-stop"
+            aria-label="Stop Athena"
+            className="flex h-8 shrink-0 items-center gap-1 rounded-full border border-status-error/40 bg-status-error/10 px-2.5 text-xs font-medium text-status-error transition-colors hover:bg-status-error/20"
+          >
+            <CircleStop className="h-4 w-4" />
+            Stop
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => (autonomous ? stopAutonomous(activeId) : startAutonomous(activeId))}
+            aria-label={autonomous ? 'Stop autonomous build' : 'Build autonomously'}
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors ${
+              autonomous
+                ? 'bg-primary/20 text-primary'
+                : 'text-foreground/55 hover:bg-secondary/60 hover:text-primary'
+            }`}
+          >
+            {autonomous ? <Square className="h-4 w-4" /> : <Wand2 className="h-4 w-4" />}
+          </button>
+        )}
         <Button
           variant="primary"
           size="sm"

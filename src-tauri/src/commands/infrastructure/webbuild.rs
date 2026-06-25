@@ -102,6 +102,21 @@ pub fn webbuild_dev_stop(
     Ok(())
 }
 
+/// Interrupt the in-flight build turn for a project — the Studio Stop button.
+/// Kills the running Claude CLI turn (same path as the main chat's Stop); the
+/// partial reply still returns to the pending `webbuild_session_send`. Returns
+/// whether a turn was actually running.
+#[tauri::command]
+pub fn webbuild_session_stop(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::companion::session::request_build_interrupt(&format!(
+        "webbuild:{project_id}"
+    )))
+}
+
 /// Live status of a project's dev server, or `None` when not running.
 #[tauri::command]
 pub fn webbuild_status(

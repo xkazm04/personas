@@ -9,6 +9,7 @@ import {
   webbuildDevStop,
   webbuildScaffold,
   webbuildSessionSend,
+  webbuildSessionStop,
   webbuildStatus,
   type BuildEffort,
   type BuildStyle,
@@ -94,6 +95,7 @@ interface StudioStore {
   ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
+  stopTurn: (id: string) => void;
 }
 
 export const useStudioStore = create<StudioStore>((set, get) => {
@@ -337,6 +339,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     stopAutonomous: (id) => {
       stopAuto(id);
       patch(id, { autonomous: false, resumeAuto: false });
+    },
+
+    stopTurn: (id) => {
+      // Interrupt the running CLI turn now + halt any autonomous loop. The
+      // pending runTurn resolves with whatever partial reply streamed and clears
+      // `busy`; autonomous is already off so it won't chain another turn.
+      stopAuto(id);
+      patch(id, { autonomous: false, resumeAuto: false });
+      void webbuildSessionStop(id).catch(() => {});
     },
   };
 });

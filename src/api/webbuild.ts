@@ -19,6 +19,10 @@ export const webbuildDevStart = (projectId: string) =>
 export const webbuildDevStop = (projectId: string) =>
   invokeWithTimeout<void>('webbuild_dev_stop', { projectId });
 
+/** Interrupt the in-flight build turn for a project (the Studio Stop button). */
+export const webbuildSessionStop = (projectId: string) =>
+  invokeWithTimeout<boolean>('webbuild_session_stop', { projectId });
+
 /** Live status of a project's dev server, or null when not running. */
 export const webbuildStatus = (projectId: string) =>
   invokeWithTimeout<DevServerStatus | null>('webbuild_status', { projectId });

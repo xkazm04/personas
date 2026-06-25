@@ -3221,6 +3221,7 @@ pub fn run() {
             commands::infrastructure::webbuild::webbuild_list_versions,
             commands::infrastructure::webbuild::webbuild_restore_version,
             commands::infrastructure::webbuild::webbuild_session_send,
+            commands::infrastructure::webbuild::webbuild_session_stop,
         ]))
         .build(tauri::generate_context!())
         .unwrap_or_else(|e| {
