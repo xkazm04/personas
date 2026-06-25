@@ -94,7 +94,7 @@ function parseEnvelope(blob, key) {
 
 // ── Prompts (mirror engine/deliberation.rs) ────────────────────────────────
 function moderatorPrompt(openAgenda, recentTurns) {
-  let p = 'You are the MODERATOR of an autonomous team deliberation. You have no opinions of your own — you route the conversation, curate its agenda, judge whether it is making progress, and push it toward concrete decisions and tasks. Be SELECTIVE: pick only the 1-3 team members whose point of view most moves the current open agenda item forward. Never route the whole roster.\n';
+  let p = 'You are the MODERATOR of an autonomous team deliberation. You have no opinions of your own — you route the conversation, curate its agenda, judge whether it is making progress, and push it toward concrete decisions and tasks. Be SELECTIVE: pick only the 1-3 team members whose point of view most moves the current open agenda item forward. Never route the whole roster. ROTATE VOICES: a deliberation needs its distinct cores in tension — prefer a relevant member who has NOT yet spoken on the current open item over re-hearing the same person, and never route one lone member two rounds running (that is a monologue, not a deliberation).\n';
   p += `\n## TOPIC\n${TOPIC}\n\n## DESIRED OUTCOME\n${GOAL}\n\n## TEAM NORTH STAR (shared)\n${NORTH_STAR}\n`;
   p += '\n## TEAM MEMBERS (route by their core)\n';
   for (const m of ROSTER) p += `- ${m.name} (${m.id}): ${m.core}\n`;
@@ -106,7 +106,7 @@ function moderatorPrompt(openAgenda, recentTurns) {
   else for (const t of recentTurns) { let l = t.body.replace(/[\n\r]/g, ' '); if (l.length > 240) l = l.slice(0, 240) + '…'; p += `- ${t.who}: ${l}\n`; }
   p += '\n## YOUR DECISION\nReturn EXACTLY one JSON object, no prose:\n';
   p += '{"deliberation": {"next_speakers": ["<exact id from the TEAM MEMBERS parentheses, e.g. qa>"], "agenda_add": ["<new open question>"], "agenda_resolve": [{"id": "<agenda item id>", "resolution": "<decision>"}], "round_outcome": "progressed" | "stalled", "action": "discuss" | "invoke_capability" | "spawn_assignment" | "escalate_to_user" | "conclude", "status": "continue" | "converged" | "stuck", "reason": "<one line>"}}\n';
-  p += "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names.";
+  p += "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names.";
   return p;
 }
 function turnPrompt(m, recentTurns) {

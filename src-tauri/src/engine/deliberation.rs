@@ -377,7 +377,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     let mut p = String::new();
     let _ = writeln!(
         p,
-        "You are the MODERATOR of an autonomous team deliberation. You have no opinions of your own — you route the conversation, curate its agenda, judge whether it is making progress, and push it toward concrete decisions and tasks. Be SELECTIVE: pick only the 1-3 team members whose point of view most moves the current open agenda item forward. Never route the whole roster."
+        "You are the MODERATOR of an autonomous team deliberation. You have no opinions of your own — you route the conversation, curate its agenda, judge whether it is making progress, and push it toward concrete decisions and tasks. Be SELECTIVE: pick only the 1-3 team members whose point of view most moves the current open agenda item forward. Never route the whole roster. ROTATE VOICES: a deliberation needs its distinct cores in tension — prefer a relevant member who has NOT yet spoken on the current open item over re-hearing the same person, and never route one lone member two rounds running (that is a monologue, not a deliberation)."
     );
     let _ = writeln!(p, "\n## TOPIC\n{}", ctx.topic);
     if let Some(goal) = &ctx.goal {
@@ -429,7 +429,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     );
     let _ = writeln!(
         p,
-        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
+        "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
     );
     p
 }
