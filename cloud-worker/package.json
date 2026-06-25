@@ -1,0 +1,15 @@
+{
+  "name": "personas-cloud-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Path A PoC: a minimal cloud worker implementing the desktop CloudClient contract, backed by Qwen (DashScope) instead of Claude.",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
