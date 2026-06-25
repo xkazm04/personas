@@ -597,7 +597,15 @@ impl FleetRegistry {
                 if *known_rev == Some(rev) {
                     return None; // unchanged since the caller last looked
                 }
-                Some((id.clone(), rev, ring.preview_lines(max_lines)))
+                // Reconstruct the rendered screen (vt100) rather than line-cook,
+                // so an at-prompt tile shows the actual menu/prompt instead of the
+                // alt-screen fragments the cooker produced. Keep the bottom
+                // `max_lines` (the cursor/prompt region) for the glance tile.
+                let mut lines = ring.render_screen(session.rows, session.cols);
+                if lines.len() > max_lines {
+                    lines.drain(0..lines.len() - max_lines);
+                }
+                Some((id.clone(), rev, lines))
             })
             .collect()
     }
