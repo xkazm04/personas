@@ -284,16 +284,22 @@ pub fn spawn_session(
             c.arg("--session-id");
             c.arg(sid);
         }
+        for a in &args {
+            c.arg(a);
+        }
+        // `--mcp-config <configs...>` is VARIADIC — it greedily consumes every
+        // following non-flag token. Emitted before the positional prompt it eats
+        // the prompt as a bogus config path, so claude exits 1 ("MCP config file
+        // not found: <cwd>/<prompt>") and the session dies on spawn — silently
+        // breaking EVERY spawn-with-task (and with it Athena's orchestration,
+        // since a dead session never reaches AwaitingInput). Emit it LAST, after
+        // the caller's args, so its only operand is the path. (forward-slash
+        // conversion avoids `--mcp-config` parsing a double-escaped Windows path
+        // as inline JSON.)
         if let Some(p) = mcp.config_path.as_deref() {
-            // Same forward-slash conversion as before — avoids
-            // `--mcp-config` parsing the path as inline JSON when the
-            // backslashed Windows form ends up double-escaped.
             let p_fwd = p.display().to_string().replace('\\', "/");
             c.arg("--mcp-config");
             c.arg(p_fwd);
-        }
-        for a in &args {
-            c.arg(a);
         }
         tracing::debug!(
             program = %claude_exe,
@@ -308,12 +314,14 @@ pub fn spawn_session(
             c.arg("--session-id");
             c.arg(sid);
         }
+        for a in &args {
+            c.arg(a);
+        }
+        // Variadic `--mcp-config` must come LAST, after the positional prompt —
+        // see the windows branch above for the full rationale.
         if let Some(p) = mcp.config_path.as_deref() {
             c.arg("--mcp-config");
             c.arg(p.as_os_str());
-        }
-        for a in &args {
-            c.arg(a);
         }
         c
     };
