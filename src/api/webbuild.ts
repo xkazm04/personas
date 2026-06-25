@@ -39,6 +39,11 @@ export const webbuildListProjects = () =>
 export const webbuildNextReady = (projectIds: string[]) =>
   invokeWithTimeout<string[]>('webbuild_next_ready', { projectIds });
 
+/** Register an existing project directory (an existing repo) as a Dev Tools
+ *  project so it can be opened in Studio. Idempotent on the path. */
+export const webbuildRegisterExisting = (name: string, path: string) =>
+  invokeWithTimeout<DevProject>('webbuild_register_existing', { name, path });
+
 /**
  * Send a build instruction to a project's build session — Athena edits the
  * project's code at its cwd; the dev server hot-reloads the preview. Returns

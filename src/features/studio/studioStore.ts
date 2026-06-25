@@ -7,6 +7,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
   webbuildDevStop,
+  webbuildNextReady,
+  webbuildRegisterExisting,
   webbuildScaffold,
   webbuildSessionSend,
   webbuildSessionStop,
@@ -87,6 +89,7 @@ interface StudioStore {
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
+  importExisting: (path: string) => Promise<void>;
   createWithVision: (name: string, vision: string) => Promise<void>;
   reload: (id: string) => void;
   sendTurn: (id: string, text: string) => Promise<void>;
@@ -326,6 +329,27 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     startExisting: async (id, name) => {
       ensure(id, name);
       await start(id);
+    },
+
+    importExisting: async (path) => {
+      try {
+        const name = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
+        const project = await webbuildRegisterExisting(name, path);
+        // Same Next-only guard as the picker: register it (so it shows in the
+        // Dev Tools list), but only open + start a preview for a Next.js app.
+        const ready = await webbuildNextReady([project.id]);
+        if (!ready.includes(project.id)) {
+          toastCatch('add existing project')(
+            new Error(
+              "This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects.",
+            ),
+          );
+          return;
+        }
+        await get().startExisting(project.id, project.name);
+      } catch (e) {
+        toastCatch('add existing project')(e);
+      }
     },
 
     createWithVision: async (name, vision) => {

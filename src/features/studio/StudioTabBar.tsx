@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { FolderGit2, ListChecks, Plus, X } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-dialog';
+import { FolderGit2, FolderInput, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import { webbuildNextReady } from '@/api/webbuild';
 import { useStudioStore } from './studioStore';
@@ -23,6 +24,7 @@ export default function StudioTabBar({
   const setActive = useStudioStore((s) => s.setActive);
   const closeTab = useStudioStore((s) => s.closeTab);
   const startExisting = useStudioStore((s) => s.startExisting);
+  const importExisting = useStudioStore((s) => s.importExisting);
 
   const history = useStudioHistory((s) => s.byProject);
   // Re-openable projects, most-recently-worked first so historic work is easy to
@@ -54,6 +56,17 @@ export default function StudioTabBar({
       cancelled = true;
     };
   }, [pickerOpen, importableKey]);
+
+  // Browse to an existing Next.js project folder, register it, open it as a tab.
+  const addExisting = async () => {
+    setPickerOpen(false);
+    const path = await open({
+      directory: true,
+      multiple: false,
+      title: 'Add an existing Next.js project',
+    });
+    if (typeof path === 'string') void importExisting(path);
+  };
 
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
@@ -123,6 +136,13 @@ export default function StudioTabBar({
               className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
             >
               <Plus className="h-3.5 w-3.5 text-primary" /> New project
+            </button>
+            <button
+              type="button"
+              onClick={() => void addExisting()}
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-md text-foreground hover:bg-secondary/50"
+            >
+              <FolderInput className="h-3.5 w-3.5 text-primary" /> Add existing project…
             </button>
             {(recent.length > 0 || importable.length > 0) && (
               <div className="max-h-72 overflow-y-auto">
