@@ -109,6 +109,22 @@ pub fn get_active_for_team(
     })
 }
 
+/// All deliberations for a team, newest-first — the board/channel read.
+pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamDeliberation>, AppError> {
+    timed_query!("deliberation", "deliberation::list_for_team", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_deliberations
+             WHERE team_id = ?1
+             ORDER BY datetime(updated_at) DESC",
+        )?;
+        let rows = stmt.query_map(params![team_id], |r| row_to_deliberation(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
 /// All deliberations the tick should advance — `open`/`converging` (live work).
 /// `escalated`/`paused` wait on the user and are excluded; terminal ones too.
 pub fn list_advanceable(pool: &DbPool) -> Result<Vec<TeamDeliberation>, AppError> {
