@@ -52,6 +52,11 @@ const metrics = {
   aborted: 0,
   costUsd: 0,
   errors: 0,
+  // Fix 5 — request→output yield (the efficiency signal): how many capability
+  // requests (⏸) actually produced a usable result (🛠) vs. failed (⚠).
+  turnRequests: 0,
+  turnOutputs: 0,
+  turnFailures: 0,
   perDeliberation: [],
 };
 
@@ -206,13 +211,26 @@ async function runOneDeliberation(topic) {
   }
   // Final read for outcome + cost.
   const final = (await call('get_team_deliberation', { deliberationId: id })) || d;
-  const turns = (await call('list_deliberation_turns', { deliberationId: id, limit: 500 })) || [];
+  // Pull turns from the parent + any tracks for an honest output-yield count.
+  const ids = [id];
+  for (const t of (await call('list_deliberation_tracks', { deliberationId: id })) || []) ids.push(t.id);
+  let turnsAll = [];
+  for (const tid of ids) turnsAll = turnsAll.concat((await call('list_deliberation_turns', { deliberationId: tid, limit: 500 })) || []);
+  const reqs = turnsAll.filter((t) => (t.body || '').startsWith('⏸')).length;
+  const outs = turnsAll.filter((t) => (t.body || '').startsWith('🛠') && !/no output/.test(t.body)).length;
+  const fails = turnsAll.filter((t) => (t.body || '').startsWith('⚠')).length;
+  metrics.turnRequests += reqs;
+  metrics.turnOutputs += outs;
+  metrics.turnFailures += fails;
   const outcome = {
     id,
     topic,
     status: final?.status,
     rounds: perDelib.rounds,
-    turns: turns.length,
+    turns: turnsAll.length,
+    requests: reqs,
+    outputs: outs,
+    failures: fails,
     actions: perDelib.actions,
     escalations: perDelib.escalations,
     didSplit: perDelib.didSplit,
@@ -237,6 +255,8 @@ function summary() {
       metrics.perDeliberation.length > 0
         ? round2(metrics.perDeliberation.reduce((a, b) => a + b.rounds, 0) / metrics.perDeliberation.length)
         : 0,
+    // The headline efficiency metric: usable outputs ÷ capability requests.
+    outputYield: metrics.turnRequests ? round2(metrics.turnOutputs / metrics.turnRequests) : 0,
     finishedAt: new Date().toISOString(),
   };
   try {
