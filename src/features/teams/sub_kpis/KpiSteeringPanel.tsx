@@ -117,7 +117,7 @@ export function KpiSteeringPanel({
                     </span>
                   )}
                   {g.target_date && (
-                    <span className={`inline-flex items-center gap-1 ${overdue ? 'text-destructive' : ''}`}>
+                    <span className={`inline-flex items-center gap-1 ${overdue ? 'text-status-error' : ''}`}>
                       <Clock className="w-3 h-3" /> {tx(t.kpis.due_by, { date: g.target_date.slice(0, 10) })}
                     </span>
                   )}
@@ -161,7 +161,7 @@ function OutcomeLine({ o, kpi }: { o: Outcome; kpi: DevKpi }) {
   }
   const improved = o.verdict === 'improved';
   const Icon = improved ? TrendingUp : TrendingDown;
-  const color = improved ? 'var(--success)' : 'var(--destructive)';
+  const color = improved ? 'var(--status-success)' : 'var(--status-error)';
   const key = improved ? t.kpis.steering_outcome_improved : t.kpis.steering_outcome_regressed;
   return (
     <p className="typo-caption mt-1 inline-flex items-center gap-1" style={{ color }}>

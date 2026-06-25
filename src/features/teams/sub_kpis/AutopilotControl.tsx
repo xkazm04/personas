@@ -33,8 +33,8 @@ interface ModeMeta {
 const MODES: ModeMeta[] = [
   { mode: 'off', icon: Power, label: (t) => t.kpis.autopilot_off, desc: (t) => t.kpis.autopilot_off_desc, accent: 'var(--muted-foreground)' },
   { mode: 'measure', icon: Activity, label: (t) => t.kpis.autopilot_measure, desc: (t) => t.kpis.autopilot_measure_desc, accent: 'var(--primary)' },
-  { mode: 'suggest', icon: Lightbulb, label: (t) => t.kpis.autopilot_suggest, desc: (t) => t.kpis.autopilot_suggest_desc, accent: 'var(--warning, #eab308)' },
-  { mode: 'full', icon: Rocket, label: (t) => t.kpis.autopilot_full, desc: (t) => t.kpis.autopilot_full_desc, accent: 'var(--success)' },
+  { mode: 'suggest', icon: Lightbulb, label: (t) => t.kpis.autopilot_suggest, desc: (t) => t.kpis.autopilot_suggest_desc, accent: 'var(--status-warning)' },
+  { mode: 'full', icon: Rocket, label: (t) => t.kpis.autopilot_full, desc: (t) => t.kpis.autopilot_full_desc, accent: 'var(--status-success)' },
 ];
 
 export function AutopilotControl({ projectId, className }: { projectId: string; className?: string }) {

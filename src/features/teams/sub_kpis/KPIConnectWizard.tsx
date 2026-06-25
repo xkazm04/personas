@@ -49,7 +49,7 @@ export function ComposedByBadge({ composedBy }: { composedBy: string }) {
     <span
       className={`inline-flex items-center gap-1 typo-caption tabular-nums rounded-interactive border px-1.5 py-0.5 ${
         recipe
-          ? 'border-success/30 bg-success/10 text-foreground'
+          ? 'border-status-success/30 bg-status-success/10 text-foreground'
           : 'border-primary/30 bg-primary/10 text-foreground'
       }`}
     >
@@ -288,7 +288,7 @@ export function KPIConnectWizard({
           {step === 'verify' && result && picked && (
             <>
               <Section title={t.kpis.wizard_verify_section}>
-                <div className="rounded-card border border-success/25 bg-success/10 px-4 py-3 flex items-baseline gap-2">
+                <div className="rounded-card border border-status-success/25 bg-status-success/10 px-4 py-3 flex items-baseline gap-2">
                   <span className="typo-title text-foreground tabular-nums">
                     <Numeric value={result.value} />
                   </span>

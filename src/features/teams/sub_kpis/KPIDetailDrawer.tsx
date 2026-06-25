@@ -443,7 +443,7 @@ function KpiStoryChart({
             x2={W - PAD}
             y1={model.targetY}
             y2={model.targetY}
-            stroke="var(--success)"
+            stroke="var(--status-success)"
             strokeDasharray="4 3"
             strokeWidth="1"
             opacity="0.7"

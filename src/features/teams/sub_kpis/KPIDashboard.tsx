@@ -6,7 +6,7 @@
 // lines from the measurement series). Everything clicks through to the
 // detail drawer; prose lives THERE, not on the dashboard. Filter by project.
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Gauge } from 'lucide-react';
+import { AlertTriangle, Gauge, TrendingUp, type LucideIcon } from 'lucide-react';
 
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { useSystemStore } from '@/stores/systemStore';
@@ -183,15 +183,15 @@ export function KPIDashboard({
 
       {/* Needs attention — the only loud element on the page */}
       {offTrack.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap rounded-card border border-destructive/30 bg-destructive/5 px-3 py-2">
-          <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-          <span className="typo-overline text-foreground">{t.kpis.attention_label}</span>
+        <div className="flex items-center gap-2 flex-wrap rounded-card border border-status-error/30 bg-status-error/5 px-3 py-2.5">
+          <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0" />
+          <span className="typo-overline text-status-error">{t.kpis.attention_label}</span>
           {offTrack.map(({ kpi }) => (
             <button
               key={kpi.id}
               type="button"
               onClick={() => onOpen(kpi.id)}
-              className="typo-caption text-foreground rounded-interactive border border-destructive/40 bg-destructive/10 hover:bg-destructive/20 transition-colors px-2 py-0.5 tabular-nums"
+              className="typo-caption text-foreground rounded-interactive border border-status-error/40 bg-status-error/10 hover:bg-status-error/20 transition-colors px-2 py-0.5 tabular-nums"
               data-testid={`kpi-attention-${kpi.id}`}
             >
               <span className="font-medium">{kpi.name}</span>{' '}
@@ -214,8 +214,7 @@ export function KPIDashboard({
       </div>
 
       {/* Distance to target — pace-colored horizontal bars, click → drawer */}
-      <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
-        <h3 className="typo-overline text-foreground mb-2">{t.kpis.chart_distance_title}</h3>
+      <ChartPanel title={t.kpis.chart_distance_title} icon={Gauge}>
         <LazyChart
           fallback={<div className="h-24" />}
           render={(R) => (
@@ -247,7 +246,7 @@ export function KPIDashboard({
                   fontSize={12}
                   tickLine={false}
                 />
-                <R.ReferenceLine x={100} stroke="var(--success)" strokeDasharray="4 3" />
+                <R.ReferenceLine x={100} stroke="var(--status-success)" strokeDasharray="4 3" />
                 <R.Tooltip
                   cursor={{ fill: 'var(--secondary)', opacity: 0.3 }}
                   contentStyle={{
@@ -280,12 +279,11 @@ export function KPIDashboard({
             </R.ResponsiveContainer>
           )}
         />
-      </section>
+      </ChartPanel>
 
       {/* Trend — progress vs target over time */}
       {trendModel && (
-        <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
-          <h3 className="typo-overline text-foreground mb-2">{t.kpis.chart_trend_title}</h3>
+        <ChartPanel title={t.kpis.chart_trend_title} icon={TrendingUp}>
           <LazyChart
             fallback={<div className="h-48" />}
             render={(R) => (
@@ -307,7 +305,7 @@ export function KPIDashboard({
                     fontSize={11}
                     width={42}
                   />
-                  <R.ReferenceLine y={100} stroke="var(--success)" strokeDasharray="4 3" />
+                  <R.ReferenceLine y={100} stroke="var(--status-success)" strokeDasharray="4 3" />
                   <R.Tooltip
                     labelFormatter={((ts: unknown) => new Date(Number(ts)).toLocaleString()) as never}
                     contentStyle={{
@@ -338,9 +336,32 @@ export function KPIDashboard({
               </R.ResponsiveContainer>
             )}
           />
-        </section>
+        </ChartPanel>
       )}
     </div>
+  );
+}
+
+/** Titled chart panel — shared chrome for the dashboard's chart sections so
+ *  every panel reads identically (border, surface tint, header, and the
+ *  recharts focus-outline resets that would otherwise be copy-pasted). */
+function ChartPanel({
+  title,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-card border border-primary/15 bg-secondary/10 p-4 [&_.recharts-wrapper]:outline-none [&_.recharts-surface]:outline-none [&_svg]:outline-none">
+      <h3 className="flex items-center gap-1.5 typo-overline text-foreground mb-3">
+        <Icon className="w-3.5 h-3.5 text-primary" aria-hidden />
+        {title}
+      </h3>
+      {children}
+    </section>
   );
 }
 
