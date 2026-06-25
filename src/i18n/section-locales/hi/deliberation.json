@@ -42,5 +42,11 @@
   "decision_abort": "रद्द करें",
   "decision_placeholder": "टीम के लिए दिशा जोड़ें (वैकल्पिक)",
   "decision_resolve": "अभी समाप्त करें",
-  "decision_resume": "भेजें और जारी रखें"
+  "decision_resume": "भेजें और जारी रखें",
+  "back_to_tracks": "ट्रैक पर वापस",
+  "merge_tracks": "ट्रैक मर्ज करें",
+  "run_all_tracks": "सभी ट्रैक चलाएं",
+  "split": "ट्रैक में विभाजित करें",
+  "status_tracking": "ट्रैकिंग",
+  "tracks_title": "समानांतर ट्रैक"
 }

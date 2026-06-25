@@ -5225,12 +5225,18 @@ export type Translations = {
     decision_resume: string;
     decision_resolve: string;
     decision_abort: string;
+    split: string;
+    tracks_title: string;
+    run_all_tracks: string;
+    merge_tracks: string;
+    back_to_tracks: string;
     list_empty: string;
     status_open: string;
     status_converging: string;
     status_resolved: string;
     status_escalated: string;
     status_awaiting_action: string;
+    status_tracking: string;
     status_paused: string;
     status_aborted: string;
     round: string;

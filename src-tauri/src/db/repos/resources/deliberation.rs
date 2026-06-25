@@ -24,6 +24,8 @@ fn row_to_deliberation(r: &Row) -> rusqlite::Result<TeamDeliberation> {
         resolution: r.get("resolution")?,
         spawned_assignment_id: r.get("spawned_assignment_id")?,
         pending_action: r.get("pending_action")?,
+        parent_id: r.get("parent_id")?,
+        roster_ids: r.get("roster_ids")?,
         created_by: r.get("created_by")?,
         created_at: r.get("created_at")?,
         updated_at: r.get("updated_at")?,
@@ -61,8 +63,8 @@ pub fn create(pool: &DbPool, input: CreateDeliberationInput) -> Result<TeamDelib
             "INSERT INTO team_deliberations
                (id, team_id, topic, goal, status, round, consecutive_stall_rounds,
                 cost_budget_usd, cost_spent_usd, idle_deadline, created_by,
-                created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, 'open', 0, 0, ?5, 0, ?6, ?7,
+                parent_id, roster_ids, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, 'open', 0, 0, ?5, 0, ?6, ?7, ?8, ?9,
                      datetime('now'), datetime('now'))",
             params![
                 id,
@@ -72,6 +74,8 @@ pub fn create(pool: &DbPool, input: CreateDeliberationInput) -> Result<TeamDelib
                 input.cost_budget_usd,
                 input.idle_deadline,
                 created_by,
+                input.parent_id,
+                input.roster_ids,
             ],
         )
         .map_err(AppError::Database)?;
@@ -98,8 +102,8 @@ pub fn get_active_for_team(
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM team_deliberations
-             WHERE team_id = ?1
-               AND status IN ('open','converging','escalated','paused','awaiting_action')
+             WHERE team_id = ?1 AND parent_id IS NULL
+               AND status IN ('open','converging','escalated','paused','awaiting_action','tracking')
              ORDER BY datetime(updated_at) DESC LIMIT 1",
         )?;
         let mut rows = stmt.query_map(params![team_id], |r| row_to_deliberation(r))?;
@@ -110,16 +114,33 @@ pub fn get_active_for_team(
     })
 }
 
-/// All deliberations for a team, newest-first — the board/channel read.
+/// Top-level deliberations for a team, newest-first — the board/channel read.
+/// Tracks (children) are excluded; they surface nested under their parent.
 pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamDeliberation>, AppError> {
     timed_query!("deliberation", "deliberation::list_for_team", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT * FROM team_deliberations
-             WHERE team_id = ?1
+             WHERE team_id = ?1 AND parent_id IS NULL
              ORDER BY datetime(updated_at) DESC",
         )?;
         let rows = stmt.query_map(params![team_id], |r| row_to_deliberation(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
+/// The child tracks of a parent deliberation, oldest-first (creation order).
+pub fn list_tracks(pool: &DbPool, parent_id: &str) -> Result<Vec<TeamDeliberation>, AppError> {
+    timed_query!("deliberation", "deliberation::list_tracks", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_deliberations
+             WHERE parent_id = ?1
+             ORDER BY datetime(created_at) ASC",
+        )?;
+        let rows = stmt.query_map(params![parent_id], |r| row_to_deliberation(r))?;
         Ok(rows
             .collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)?)
@@ -288,6 +309,24 @@ pub fn resolve_agenda_item(
                 SET status = ?2, resolution = ?3, resolved_at = datetime('now')
               WHERE id = ?1",
             params![id, status, resolution],
+        )
+        .map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
+/// Move an agenda item to another deliberation (used when splitting a parent's
+/// agenda across parallel tracks).
+pub fn reassign_agenda_item(
+    pool: &DbPool,
+    item_id: &str,
+    new_deliberation_id: &str,
+) -> Result<(), AppError> {
+    timed_query!("deliberation", "deliberation::reassign_agenda_item", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE deliberation_agenda SET deliberation_id = ?2 WHERE id = ?1",
+            params![item_id, new_deliberation_id],
         )
         .map_err(AppError::Database)?;
         Ok(())

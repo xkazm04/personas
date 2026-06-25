@@ -17175,6 +17175,12 @@
     "decision_abort": "中止",
     "decision_placeholder": "チームへの指示を追加（任意）",
     "decision_resolve": "今すぐまとめる",
-    "decision_resume": "送信して再開"
+    "decision_resume": "送信して再開",
+    "back_to_tracks": "トラックに戻る",
+    "merge_tracks": "トラックをマージ",
+    "run_all_tracks": "すべてのトラックを実行",
+    "split": "トラックに分割",
+    "status_tracking": "追跡中",
+    "tracks_title": "並列トラック"
   }
 }

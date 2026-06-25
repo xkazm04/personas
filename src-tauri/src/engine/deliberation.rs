@@ -509,7 +509,7 @@ fn build_moderator_context(
     let conn = pool.get()?;
     let mut stmt =
         conn.prepare("SELECT id, name, core_profile FROM personas WHERE home_team_id = ?1")?;
-    let roster = stmt
+    let full_roster = stmt
         .query_map(params![delib.team_id], |r| {
             Ok(RosterMember {
                 id: r.get(0)?,
@@ -520,6 +520,27 @@ fn build_moderator_context(
         .collect::<Result<Vec<_>, _>>()
         .map_err(AppError::Database)?;
     drop(stmt);
+
+    // Track scope: a track deliberation restricts the roster to its assigned
+    // personas (only when at least one matches — never strand a track with an
+    // empty roster).
+    let roster = match delib
+        .roster_ids
+        .as_deref()
+        .and_then(|j| serde_json::from_str::<Vec<String>>(j).ok())
+    {
+        Some(ids)
+            if !ids.is_empty()
+                && full_roster.iter().any(|m| ids.iter().any(|x| x == &m.id)) =>
+        {
+            let set: std::collections::HashSet<String> = ids.into_iter().collect();
+            full_roster
+                .into_iter()
+                .filter(|m| set.contains(&m.id))
+                .collect()
+        }
+        _ => full_roster,
+    };
 
     let north_star: Option<String> = conn
         .query_row(
@@ -1186,6 +1207,189 @@ pub async fn synthesize_proposal(
     parse_proposal(&blob)
 }
 
+// ── Parallel tracks: partition planner + merge (P2/P3) ──────────────────────
+
+/// One track the split planner proposes: a focus label, the open agenda item ids
+/// it owns, and the key personas (by id) assigned to it. All fields default so a
+/// partial object still parses.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct TrackPlan {
+    #[serde(default)]
+    pub focus: String,
+    #[serde(default)]
+    pub agenda_item_ids: Vec<String>,
+    #[serde(default)]
+    pub persona_ids: Vec<String>,
+}
+
+#[derive(Deserialize)]
+struct SplitEnvelope {
+    #[serde(default)]
+    tracks: Vec<TrackPlan>,
+}
+
+/// Build the split-planner prompt: partition the open agenda into independent,
+/// parallelizable tracks. Pure + testable.
+pub fn build_split_prompt(
+    topic: &str,
+    goal: Option<&str>,
+    roster: &[RosterMember],
+    open_agenda: &[(String, String)],
+) -> String {
+    use std::fmt::Write as _;
+    let mut p = String::new();
+    let _ = writeln!(
+        p,
+        "You are planning how to PARALLELIZE a team deliberation. Partition the OPEN agenda into 2-4 INDEPENDENT tracks that distinct sub-groups can work on at the SAME TIME. Items that depend on each other MUST go in the same track; unrelated items go in different tracks. Do NOT make a track per item if items are related — group by theme."
+    );
+    let _ = writeln!(p, "\n## TOPIC\n{topic}");
+    if let Some(g) = goal {
+        let _ = writeln!(p, "\n## DESIRED OUTCOME\n{g}");
+    }
+    let _ = writeln!(p, "\n## TEAM MEMBERS (assign the key ones per track by id)");
+    for m in roster {
+        match &m.core_profile {
+            Some(core) => {
+                let _ = writeln!(p, "- {} ({}): {}", m.name, m.id, core);
+            }
+            None => {
+                let _ = writeln!(p, "- {} ({})", m.name, m.id);
+            }
+        }
+    }
+    let _ = writeln!(p, "\n## OPEN AGENDA (assign EVERY item id to exactly one track)");
+    for (id, item) in open_agenda {
+        let _ = writeln!(p, "- [{id}] {item}");
+    }
+    let _ = writeln!(p, "\n## YOUR OUTPUT\nReturn EXACTLY one JSON object, no prose:");
+    let _ = writeln!(
+        p,
+        r#"{{"tracks": [{{"focus": "<short track label>", "agenda_item_ids": ["<id>", ...], "persona_ids": ["<member id>", ...]}}]}}"#
+    );
+    let _ = writeln!(
+        p,
+        "Rules: 2-4 tracks; assign EVERY agenda item id to exactly one track; 2-4 key personas per track by their EXACT id; the focus is a short label for the track's theme."
+    );
+    p
+}
+
+/// Extract `{"tracks": [...]}` from possibly-prose output (tolerant brace-match).
+pub fn parse_split(blob: &str) -> Vec<TrackPlan> {
+    let marker = "\"tracks\"";
+    let mut from = 0;
+    while let Some(rel) = blob[from..].find(marker) {
+        let pos = from + rel;
+        from = pos + marker.len();
+        let Some(open) = blob[..pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<SplitEnvelope>(candidate) {
+                return env.tracks;
+            }
+        }
+    }
+    vec![]
+}
+
+/// Run the split planner (Haiku) over a deliberation's open agenda + roster.
+pub async fn plan_split(
+    pool: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    delib: &TeamDeliberation,
+) -> Result<Vec<TrackPlan>, AppError> {
+    let (ctx, _) = build_moderator_context(pool, delib)?;
+    let prompt = build_split_prompt(&ctx.topic, ctx.goal.as_deref(), &ctx.roster, &ctx.open_agenda);
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+        prompt,
+        user_db,
+        "deliberation_split",
+        MODERATOR_MODEL,
+    )
+    .await?;
+    if let Some(c) = cost {
+        let _ = deliberation_repo::add_cost(pool, &delib.id, c);
+    }
+    Ok(parse_split(&blob))
+}
+
+/// Build the merge prompt: fold the resolved tracks' outcomes into ONE coherent
+/// proposal. `tracks` is (focus, outcome summary). Pure + testable.
+pub fn build_merge_prompt(
+    topic: &str,
+    goal: Option<&str>,
+    tracks: &[(String, String)],
+) -> String {
+    use std::fmt::Write as _;
+    let mut p = String::new();
+    let _ = writeln!(
+        p,
+        "Several PARALLEL sub-teams each deliberated one track of a larger topic. Merge their outcomes into ONE coherent, executable piece of work — reconcile overlaps and conflicts, keep every track's key decision."
+    );
+    let _ = writeln!(p, "\n## TOPIC\n{topic}");
+    if let Some(g) = goal {
+        let _ = writeln!(p, "\n## DESIRED OUTCOME\n{g}");
+    }
+    let _ = writeln!(p, "\n## TRACK OUTCOMES");
+    for (focus, outcome) in tracks {
+        let _ = writeln!(p, "- {focus}: {outcome}");
+    }
+    let _ = writeln!(
+        p,
+        "\n## YOUR OUTPUT\nProduce a single combined assignment. Return EXACTLY one JSON object, no prose:"
+    );
+    let _ = writeln!(
+        p,
+        r#"{{"proposal": {{"title": "<short title>", "objective": "<a clear, self-contained instruction the team will execute>", "summary": "<2-3 sentences: what was decided across the tracks and why>"}}}}"#
+    );
+    p
+}
+
+/// Synthesize ONE combined proposal from a parent's resolved tracks (Sonnet).
+pub async fn synthesize_merged_proposal(
+    pool: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    parent: &TeamDeliberation,
+    tracks: &[TeamDeliberation],
+) -> Option<ProposalSpec> {
+    let summaries: Vec<(String, String)> = tracks
+        .iter()
+        .map(|t| {
+            let outcome = t
+                .resolution
+                .as_deref()
+                .and_then(|r| serde_json::from_str::<serde_json::Value>(r).ok())
+                .and_then(|v| v.get("proposal").cloned())
+                .filter(|p| !p.is_null())
+                .map(|p| {
+                    let g = |k: &str| {
+                        p.get(k)
+                            .and_then(|x| x.as_str())
+                            .unwrap_or("")
+                            .to_string()
+                    };
+                    format!("{} — {} ({})", g("title"), g("objective"), g("summary"))
+                })
+                .unwrap_or_else(|| format!("(no proposal; status {})", t.status));
+            (t.topic.clone(), outcome)
+        })
+        .collect();
+    let prompt = build_merge_prompt(&parent.topic, parent.goal.as_deref(), &summaries);
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+        prompt,
+        user_db,
+        "deliberation_merge",
+        "claude-sonnet-4-6",
+    )
+    .await
+    .ok()?;
+    if let Some(c) = cost {
+        let _ = deliberation_repo::add_cost(pool, &parent.id, c);
+    }
+    parse_proposal(&blob)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1505,6 +1709,45 @@ mod proposal_tests {
     #[test]
     fn parse_proposal_none_without_marker() {
         assert!(parse_proposal("no proposal here").is_none());
+    }
+
+    #[test]
+    fn parse_split_extracts_tracks_from_prose() {
+        let blob = r#"Here's the plan: {"tracks": [
+            {"focus": "Auth", "agenda_item_ids": ["a1","a2"], "persona_ids": ["qa","security"]},
+            {"focus": "Billing", "agenda_item_ids": ["a3"], "persona_ids": ["product","engineer"]}
+        ]} done."#;
+        let tracks = parse_split(blob);
+        assert_eq!(tracks.len(), 2);
+        assert_eq!(tracks[0].focus, "Auth");
+        assert_eq!(tracks[0].agenda_item_ids, vec!["a1", "a2"]);
+        assert_eq!(tracks[1].persona_ids, vec!["product", "engineer"]);
+        assert!(parse_split("no tracks here").is_empty());
+    }
+
+    #[test]
+    fn split_prompt_lists_agenda_ids_and_roster() {
+        let roster = vec![RosterMember {
+            id: "qa".into(),
+            name: "QA Guardian".into(),
+            core_profile: None,
+        }];
+        let agenda = vec![("a1".to_string(), "Harden auth".to_string())];
+        let p = build_split_prompt("Ship v2", Some("be safe"), &roster, &agenda);
+        assert!(p.contains("[a1] Harden auth"));
+        assert!(p.contains("QA Guardian (qa)"));
+        assert!(p.contains("\"tracks\""));
+    }
+
+    #[test]
+    fn merge_prompt_lists_track_outcomes() {
+        let p = build_merge_prompt(
+            "Ship v2",
+            None,
+            &[("Auth".to_string(), "decided to gate".to_string())],
+        );
+        assert!(p.contains("Auth: decided to gate"));
+        assert!(p.contains("\"proposal\""));
     }
 
     #[test]

@@ -42,5 +42,11 @@
   "decision_abort": "Hủy bỏ",
   "decision_placeholder": "Thêm hướng dẫn cho nhóm (tùy chọn)",
   "decision_resolve": "Kết thúc ngay",
-  "decision_resume": "Gửi & tiếp tục"
+  "decision_resume": "Gửi & tiếp tục",
+  "back_to_tracks": "Quay lại các nhánh",
+  "merge_tracks": "Hợp nhất các nhánh",
+  "run_all_tracks": "Chạy tất cả các nhánh",
+  "split": "Tách thành các nhánh",
+  "status_tracking": "Đang theo dõi",
+  "tracks_title": "Các nhánh song song"
 }

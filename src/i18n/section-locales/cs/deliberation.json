@@ -42,5 +42,11 @@
   "decision_abort": "Přerušit",
   "decision_placeholder": "Přidejte směr pro tým (volitelné)",
   "decision_resolve": "Uzavřít nyní",
-  "decision_resume": "Odeslat a pokračovat"
+  "decision_resume": "Odeslat a pokračovat",
+  "back_to_tracks": "Zpět na větve",
+  "merge_tracks": "Sloučit větve",
+  "run_all_tracks": "Spustit všechny větve",
+  "split": "Rozdělit na větve",
+  "status_tracking": "Sledování",
+  "tracks_title": "Paralelní větve"
 }

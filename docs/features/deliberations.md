@@ -44,6 +44,12 @@ Open a team's workspace → the **Deliberate** tab (next to Collab). The surface
     Approve runs the capability for real (full tools/connectors), posts its output
     back as a turn, and resumes the discussion on top of it; Skip declines and
     continues. This is the conversation↔action↔conversation loop.
+  - **Split into tracks** — when the agenda has ≥2 open items, **Split into
+    tracks** partitions it into parallel sub-sessions (see below). The parent then
+    shows a **track board** — one card per track with its status + cost — plus
+    **Run all tracks** (advances them all concurrently), and **Merge tracks**
+    (once they're all done) to fold them into one proposal. Click a track to drill
+    into it; a breadcrumb returns to the board.
   - **Proposal / escalation card** — when the team converges, it synthesizes a
     concrete proposal (title + objective + summary). **Approve & assign** hands
     that objective to the team-assignment engine (the same path Athena uses), so
@@ -74,6 +80,20 @@ turn, rolls its cost into the deliberation meter, and flips the status back to
 `open` so the discussion continues on top of the real result. Hallucinated
 capability ids are dropped (the turn degrades to a plain message).
 
+**Parallel tracks (sub-sessions).** A multi-item agenda doesn't have to be worked
+serially. **Split into tracks** runs a Haiku planner that partitions the open
+agenda into 2–4 independent tracks (each a focus + its agenda items + key
+personas); each becomes a *child* deliberation (`parent_id` set, agenda items
+moved in, an optional `roster_ids` scope), and the parent parks at `tracking`.
+Tracks are ordinary deliberations, so they advance through everything above (Run
+a round / Run to budget / the autonomous tick). Parallelism is real: **Run all
+tracks** fires every track's advance concurrently (each is its own command), so K
+tracks progress at once, bounded by each track's share of the budget. When all
+tracks are terminal, **Merge tracks** synthesizes one combined proposal on the
+parent (Sonnet) — the normal Approve & assign gate then takes over. The
+one-active-per-team invariant counts only top-level deliberations (`parent_id IS
+NULL`), so a parent and its tracks don't collide.
+
 The personas' distinct viewpoints are authored at the **template level** as a
 `core` (motivation + stance + typed dials like `riskTolerance` /
 `speedVsQuality`), and the team's shared "be #1 in category" motivation as a
@@ -90,5 +110,7 @@ Full design, decisions, and the build phases are in
 `list_team_deliberations`, `get_team_deliberation`, `list_deliberation_agenda`,
 `list_deliberation_turns`, `advance_team_deliberation` (one on-demand round),
 `approve_deliberation_action` / `skip_deliberation_action` (the gated capability
-loop), `approve_deliberation_proposal` (the gated handoff),
-`dismiss_deliberation_proposal`.
+loop), `resolve_deliberation_escalation` (resume / wrap up / abort an escalated
+deliberation), `split_team_deliberation` / `list_deliberation_tracks` /
+`merge_deliberation_tracks` (parallel tracks), `approve_deliberation_proposal`
+(the gated handoff), `dismiss_deliberation_proposal`.

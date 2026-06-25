@@ -18,7 +18,8 @@ goal: string | null,
 /**
  * 'open' | 'converging' | 'resolved' | 'escalated' | 'paused' | 'aborted'
  * | 'awaiting_action' (a persona requested a capability — parked until the
- * user approves/skips it; see `pending_action`).
+ * user approves/skips it; see `pending_action`) | 'tracking' (a parent
+ * split into child tracks — parked until they resolve, then merged).
  */
 status: string, 
 /**
@@ -56,6 +57,17 @@ spawnedAssignmentId: string | null,
  * (decision 8). `None` otherwise.
  */
 pendingAction: string | null, 
+/**
+ * Parent deliberation id when this is a parallel **track** (sub-session);
+ * `None` for a top-level deliberation. Tracks own a slice of the parent's
+ * agenda and run concurrently; the parent merges them.
+ */
+parentId: string | null, 
+/**
+ * JSON array of persona ids this (track) deliberation is scoped to — the key
+ * personas the split planner assigned. `None` ⇒ the whole team is eligible.
+ */
+rosterIds: string | null, 
 /**
  * 'user' | 'athena' — who opened it.
  */

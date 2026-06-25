@@ -42,5 +42,11 @@
   "decision_abort": "إلغاء",
   "decision_placeholder": "أضف توجيهاً للفريق (اختياري)",
   "decision_resolve": "إنهاء الآن",
-  "decision_resume": "إرسال واستئناف"
+  "decision_resume": "إرسال واستئناف",
+  "back_to_tracks": "العودة إلى المسارات",
+  "merge_tracks": "دمج المسارات",
+  "run_all_tracks": "تشغيل جميع المسارات",
+  "split": "تقسيم إلى مسارات",
+  "status_tracking": "تتبع",
+  "tracks_title": "مسارات متوازية"
 }

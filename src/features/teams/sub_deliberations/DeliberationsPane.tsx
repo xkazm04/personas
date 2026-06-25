@@ -14,6 +14,10 @@ import {
   Play,
   Square,
   Wrench,
+  Split,
+  Layers,
+  ArrowLeft,
+  GitMerge,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -35,6 +39,7 @@ const STATUS_TONE: Record<string, string> = {
   resolved: 'bg-status-success/15 text-status-success border-status-success/30',
   escalated: 'bg-status-warning/15 text-status-warning border-status-warning/30',
   awaiting_action: 'bg-status-warning/15 text-status-warning border-status-warning/30',
+  tracking: 'bg-primary/15 text-primary border-primary/30',
   paused: 'bg-secondary/60 text-foreground border-primary/20',
   aborted: 'bg-secondary/60 text-foreground border-primary/20',
 };
@@ -69,11 +74,13 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     detail,
     agenda,
     turns,
+    tracks,
     loading,
     busy,
     advancing,
     actionBusy,
     decisionBusy,
+    trackBusy,
     running,
     create,
     advance,
@@ -82,6 +89,9 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     approveAction,
     skipAction,
     resolveEscalation,
+    split,
+    merge,
+    runAllTracks,
     approve,
     dismiss,
   } = useTeamDeliberations(teamId);
@@ -133,6 +143,15 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     }
   }, [detail?.pendingAction]);
   const canAutoAdvance = detail ? ['open', 'converging'].includes(detail.status) : false;
+  const isParentWithTracks = !!detail && !detail.parentId && tracks.length > 0;
+  const canSplit =
+    !!detail &&
+    !detail.parentId &&
+    tracks.length === 0 &&
+    ['open', 'converging', 'escalated'].includes(detail.status) &&
+    openAgenda.length >= 2;
+  const allTracksTerminal =
+    tracks.length > 0 && tracks.every((t) => ['resolved', 'aborted'].includes(t.status));
 
   return (
     <div className="flex h-full gap-4">
@@ -217,6 +236,16 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
+            {/* Track breadcrumb — back to the parent's track board */}
+            {detail.parentId && (
+              <button
+                type="button"
+                onClick={() => setSelectedId(detail.parentId)}
+                className="inline-flex w-fit items-center gap-1.5 typo-caption text-foreground/70 hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> {td.back_to_tracks}
+              </button>
+            )}
             {/* Header */}
             <div className="rounded-card border border-primary/10 bg-secondary/15 p-4">
               <div className="flex items-start gap-2">
@@ -292,6 +321,18 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                         <Play className="h-3.5 w-3.5" /> {td.run_to_budget}
                       </button>
                     ))}
+                  {canSplit && (
+                    <AsyncButton
+                      onClick={async () => {
+                        await split(detail.id);
+                      }}
+                      isLoading={trackBusy}
+                      disabled={running}
+                      className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/20 px-3 py-1.5 typo-body text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-50"
+                    >
+                      <Split className="h-3.5 w-3.5" /> {td.split}
+                    </AsyncButton>
+                  )}
                   {running && (
                     <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/60">
                       <LoadingSpinner /> {td.run_active}
@@ -300,6 +341,82 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                 </div>
               )}
             </div>
+
+            {/* Parallel track board (parent view) */}
+            {isParentWithTracks && (
+              <div className="rounded-card border border-primary/10 bg-secondary/15 p-4">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="flex items-center gap-1.5 typo-label uppercase tracking-wider text-primary">
+                    <Layers className="h-3.5 w-3.5" /> {td.tracks_title}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {running ? (
+                      <button
+                        type="button"
+                        onClick={stopRun}
+                        className="inline-flex items-center gap-1.5 rounded-interactive border border-status-warning/30 bg-status-warning/15 px-2.5 py-1 typo-caption font-medium text-status-warning hover:bg-status-warning/25 transition-colors"
+                      >
+                        <Square className="h-3.5 w-3.5" /> {td.run_stop}
+                      </button>
+                    ) : (
+                      !allTracksTerminal &&
+                      detail.status === 'tracking' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void runAllTracks(detail.id);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-2.5 py-1 typo-caption font-medium text-primary hover:bg-primary/25 transition-colors"
+                        >
+                          <Play className="h-3.5 w-3.5" /> {td.run_all_tracks}
+                        </button>
+                      )
+                    )}
+                    {allTracksTerminal && detail.status === 'tracking' && (
+                      <AsyncButton
+                        onClick={async () => {
+                          await merge(detail.id);
+                        }}
+                        isLoading={trackBusy}
+                        className="inline-flex items-center gap-1.5 rounded-interactive border border-status-success/30 bg-status-success/15 px-2.5 py-1 typo-caption font-medium text-status-success hover:bg-status-success/25 transition-colors disabled:opacity-50"
+                      >
+                        <GitMerge className="h-3.5 w-3.5" /> {td.merge_tracks}
+                      </AsyncButton>
+                    )}
+                  </div>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {tracks.map((tr) => (
+                    <button
+                      key={tr.id}
+                      type="button"
+                      onClick={() => setSelectedId(tr.id)}
+                      className="rounded-interactive border border-primary/10 bg-secondary/20 p-2.5 text-left hover:bg-secondary/40 transition-colors"
+                    >
+                      <span className="flex items-center justify-between gap-2">
+                        <span className="typo-body font-medium text-foreground line-clamp-1">
+                          {tr.topic}
+                        </span>
+                        <span
+                          className={`flex-shrink-0 rounded-full border px-1.5 py-px typo-caption ${
+                            STATUS_TONE[tr.status] ?? STATUS_TONE.paused
+                          }`}
+                        >
+                          {statusLabel(tr.status)}
+                        </span>
+                      </span>
+                      <span className="mt-1 flex items-center gap-2 typo-caption text-foreground/60">
+                        <span>
+                          {td.round} {tr.round}
+                        </span>
+                        <span>·</span>
+                        <Numeric value={tr.costSpentUsd} unit="usd" />
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Gated capability action — Approve & run / Skip */}
             {detail.status === 'awaiting_action' && pendingAction && (
@@ -442,7 +559,8 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
               </div>
             )}
 
-            {/* Agenda */}
+            {/* Agenda — hidden on a parent split into tracks (it lives in them) */}
+            {!isParentWithTracks && (
             <div className="rounded-card border border-primary/10 bg-secondary/15 p-4">
               <p className="typo-label uppercase tracking-wider text-primary mb-2">{td.agenda}</p>
               {agenda.length === 0 ? (
@@ -467,6 +585,7 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                 </ul>
               )}
             </div>
+            )}
 
             {/* Turn stream */}
             <div className="rounded-card border border-primary/10 bg-secondary/15 p-4">

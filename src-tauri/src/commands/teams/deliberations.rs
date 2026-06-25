@@ -42,6 +42,8 @@ pub fn create_team_deliberation(
             // (the loop then ends on convergence / round cap instead).
             cost_budget_usd: cost_budget_usd.filter(|b| *b > 0.0),
             idle_deadline: None,
+            parent_id: None,
+            roster_ids: None,
         },
     )
 }
@@ -422,6 +424,174 @@ pub async fn resolve_deliberation_escalation(
             )));
         }
     }
+    repo::get(&pool, &deliberation_id)
+}
+
+/// Split a deliberation into parallel **tracks** (sub-sessions). A Haiku planner
+/// partitions the OPEN agenda into 2-4 independent tracks (each a focus + its
+/// agenda items + key personas); each becomes a child deliberation that runs
+/// concurrently. The parent parks at 'tracking' until the tracks are merged.
+#[tauri::command]
+pub async fn split_team_deliberation(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+) -> Result<TeamDeliberation, AppError> {
+    require_auth(&state).await?;
+    let pool = state.db.clone();
+    let delib = repo::get(&pool, &deliberation_id)?;
+    if delib.parent_id.is_some() {
+        return Err(AppError::Validation("A track can't be split further".into()));
+    }
+    let open: Vec<_> = repo::list_agenda(&pool, &deliberation_id)?
+        .into_iter()
+        .filter(|a| a.status == "open")
+        .collect();
+    if open.len() < 2 {
+        return Err(AppError::Validation(
+            "Need at least 2 open agenda items to split into parallel tracks".into(),
+        ));
+    }
+    let plans: Vec<_> = crate::engine::deliberation::plan_split(&pool, &state.user_db, &delib)
+        .await?
+        .into_iter()
+        .filter(|p| !p.focus.trim().is_empty())
+        .collect();
+    if plans.len() < 2 {
+        return Err(AppError::Validation(
+            "The planner couldn't split this agenda into parallel tracks".into(),
+        ));
+    }
+
+    // Share the parent's budget across tracks (if one was set).
+    let per_track_budget = delib.cost_budget_usd.map(|b| (b / plans.len() as f64).max(0.0));
+    let open_ids: std::collections::HashSet<&str> = open.iter().map(|a| a.id.as_str()).collect();
+    let mut assigned: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut first_track_id: Option<String> = None;
+
+    for plan in &plans {
+        let roster_ids = if plan.persona_ids.is_empty() {
+            None
+        } else {
+            serde_json::to_string(&plan.persona_ids).ok()
+        };
+        let track = repo::create(
+            &pool,
+            CreateDeliberationInput {
+                team_id: delib.team_id.clone(),
+                topic: plan.focus.clone(),
+                goal: delib.goal.clone(),
+                created_by: Some("split".into()),
+                cost_budget_usd: per_track_budget,
+                idle_deadline: None,
+                parent_id: Some(delib.id.clone()),
+                roster_ids,
+            },
+        )?;
+        if first_track_id.is_none() {
+            first_track_id = Some(track.id.clone());
+        }
+        for item_id in &plan.agenda_item_ids {
+            if open_ids.contains(item_id.as_str()) && assigned.insert(item_id.clone()) {
+                let _ = repo::reassign_agenda_item(&pool, item_id, &track.id);
+            }
+        }
+        let _ = channel_repo::post_deliberation_turn(
+            &pool,
+            &track.id,
+            &delib.team_id,
+            "system",
+            None,
+            &format!("Track opened from “{}”: {}", delib.topic, plan.focus),
+        );
+    }
+
+    // Any open item the planner missed → catch-all into the first track so
+    // nothing is stranded on the (now parked) parent.
+    if let Some(first) = &first_track_id {
+        for a in &open {
+            if !assigned.contains(&a.id) {
+                let _ = repo::reassign_agenda_item(&pool, &a.id, first);
+            }
+        }
+    }
+
+    repo::update_progress(
+        &pool,
+        &deliberation_id,
+        delib.round,
+        delib.consecutive_stall_rounds,
+        "tracking",
+    )?;
+    let _ = channel_repo::post_deliberation_turn(
+        &pool,
+        &deliberation_id,
+        &delib.team_id,
+        "system",
+        None,
+        &format!("Split into {} parallel tracks.", plans.len()),
+    );
+    repo::get(&pool, &deliberation_id)
+}
+
+/// The child tracks of a parent deliberation (oldest-first) — the parent's
+/// "tracking" view renders these as concurrently-advanceable cards.
+#[tauri::command]
+pub fn list_deliberation_tracks(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+) -> Result<Vec<TeamDeliberation>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_tracks(&state.db, &deliberation_id)
+}
+
+/// Merge a parent's resolved tracks into ONE combined proposal (Sonnet). All
+/// tracks must be terminal (resolved/aborted). The parent then surfaces the
+/// gated Approve & assign card like any other resolved deliberation.
+#[tauri::command]
+pub async fn merge_deliberation_tracks(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+) -> Result<TeamDeliberation, AppError> {
+    require_auth(&state).await?;
+    let pool = state.db.clone();
+    let parent = repo::get(&pool, &deliberation_id)?;
+    let tracks = repo::list_tracks(&pool, &deliberation_id)?;
+    if tracks.is_empty() {
+        return Err(AppError::Validation("This deliberation has no tracks to merge".into()));
+    }
+    let unresolved = tracks
+        .iter()
+        .filter(|t| !matches!(t.status.as_str(), "resolved" | "aborted"))
+        .count();
+    if unresolved > 0 {
+        return Err(AppError::Validation(format!(
+            "{unresolved} track(s) still running — finish them before merging"
+        )));
+    }
+    let proposal =
+        crate::engine::deliberation::synthesize_merged_proposal(&pool, &state.user_db, &parent, &tracks)
+            .await;
+    let resolution_json = serde_json::json!({
+        "kind": "proposal",
+        "status": "pending",
+        "reason": "merged_tracks",
+        "proposal": proposal,
+    })
+    .to_string();
+    repo::finalize(&pool, &deliberation_id, "resolved", Some(&resolution_json), None)?;
+    let title = proposal.as_ref().map(|p| p.title.clone()).unwrap_or_default();
+    let _ = channel_repo::post_deliberation_turn(
+        &pool,
+        &deliberation_id,
+        &parent.team_id,
+        "system",
+        None,
+        &if title.is_empty() {
+            "Merged tracks — awaiting proposal review.".to_string()
+        } else {
+            format!("Merged {} tracks — proposed: “{title}” (awaiting approval).", tracks.len())
+        },
+    );
     repo::get(&pool, &deliberation_id)
 }
 

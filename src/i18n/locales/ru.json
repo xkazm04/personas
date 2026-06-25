@@ -17175,6 +17175,12 @@
     "decision_abort": "Прервать",
     "decision_placeholder": "Добавить направление для команды (необязательно)",
     "decision_resolve": "Завершить сейчас",
-    "decision_resume": "Отправить и продолжить"
+    "decision_resume": "Отправить и продолжить",
+    "back_to_tracks": "К трекам",
+    "merge_tracks": "Объединить треки",
+    "run_all_tracks": "Запустить все треки",
+    "split": "Разделить на треки",
+    "status_tracking": "Отслеживание",
+    "tracks_title": "Параллельные треки"
   }
 }

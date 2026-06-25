@@ -12,10 +12,13 @@ import {
   dismissDeliberationProposal,
   getTeamDeliberation,
   listDeliberationAgenda,
+  listDeliberationTracks,
   listDeliberationTurns,
   listTeamDeliberations,
+  mergeDeliberationTracks,
   resolveDeliberationEscalation,
   skipDeliberationAction,
+  splitTeamDeliberation,
 } from '@/api/pipeline/teamDeliberations';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import type { DeliberationAgendaItem } from '@/lib/bindings/DeliberationAgendaItem';
@@ -39,6 +42,8 @@ export function useTeamDeliberations(teamId: string) {
   const [detail, setDetail] = useState<TeamDeliberation | null>(null);
   const [agenda, setAgenda] = useState<DeliberationAgendaItem[]>([]);
   const [turns, setTurns] = useState<TeamChannelMessage[]>([]);
+  const [tracks, setTracks] = useState<TeamDeliberation[]>([]);
+  const [trackBusy, setTrackBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [advancing, setAdvancing] = useState(false);
@@ -59,14 +64,16 @@ export function useTeamDeliberations(teamId: string) {
 
   const refreshDetail = useCallback(async (id: string) => {
     try {
-      const [d, a, t] = await Promise.all([
+      const [d, a, t, tr] = await Promise.all([
         getTeamDeliberation(id),
         listDeliberationAgenda(id),
         listDeliberationTurns(id),
+        listDeliberationTracks(id),
       ]);
       setDetail(d);
       setAgenda(a);
       setTurns(t);
+      setTracks(tr);
     } catch (e) {
       toastCatch('useTeamDeliberations.refreshDetail')(e);
     }
@@ -87,6 +94,7 @@ export function useTeamDeliberations(teamId: string) {
       setDetail(null);
       setAgenda([]);
       setTurns([]);
+      setTracks([]);
     }
   }, [selectedId, refreshDetail]);
 
@@ -213,6 +221,73 @@ export function useTeamDeliberations(teamId: string) {
     [refreshDetail, refreshList],
   );
 
+  // Parallel tracks: split a parent into sub-sessions, run them all
+  // concurrently, then merge.
+  const split = useCallback(
+    async (id: string) => {
+      setTrackBusy(true);
+      try {
+        await splitTeamDeliberation(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.split')(e);
+      } finally {
+        setTrackBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const merge = useCallback(
+    async (id: string) => {
+      setTrackBusy(true);
+      try {
+        await mergeDeliberationTracks(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.merge')(e);
+      } finally {
+        setTrackBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Advance every auto-advanceable track of a parent CONCURRENTLY each round
+  // (Promise.all → true parallelism: each advance is its own Tauri command),
+  // looping until all tracks leave the auto-advance set or the user stops.
+  const runAllTracks = useCallback(
+    async (parentId: string) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      try {
+        while (runningRef.current) {
+          const current = await listDeliberationTracks(parentId);
+          setTracks(current);
+          const open = current.filter((t) => AUTO_ADVANCE_STATUSES.has(t.status));
+          if (open.length === 0) break;
+          await Promise.all(
+            open.map((t) =>
+              advanceTeamDeliberation(t.id).catch((e) => {
+                toastCatch('useTeamDeliberations.runAllTracks')(e);
+                return null;
+              }),
+            ),
+          );
+        }
+        await refreshDetail(parentId);
+        await refreshList();
+      } finally {
+        runningRef.current = false;
+        setRunning(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
   const approve = useCallback(
     async (id: string) => {
       await approveDeliberationProposal(id);
@@ -238,11 +313,13 @@ export function useTeamDeliberations(teamId: string) {
     detail,
     agenda,
     turns,
+    tracks,
     loading,
     busy,
     advancing,
     actionBusy,
     decisionBusy,
+    trackBusy,
     running,
     create,
     advance,
@@ -251,6 +328,9 @@ export function useTeamDeliberations(teamId: string) {
     approveAction,
     skipAction,
     resolveEscalation,
+    split,
+    merge,
+    runAllTracks,
     approve,
     dismiss,
     refreshList,

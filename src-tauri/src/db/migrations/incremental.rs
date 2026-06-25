@@ -3657,6 +3657,35 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Parallel deliberation tracks (sub-sessions). A deliberation can be split
+    // into child "tracks" (parent_id set), each owning a slice of the agenda and
+    // an optional roster subset (roster_ids). The parent parks at 'tracking'
+    // until its tracks resolve, then a merge synthesizes one combined proposal.
+    // The one-active-per-team index must count only TOP-LEVEL deliberations, or
+    // a parent + its tracks would collide — so it gains `parent_id IS NULL`.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_deliberations.tracks",
+            description: "Add parent_id + roster_ids for parallel deliberation tracks",
+            already_applied: |conn| has_column(conn, "team_deliberations", "parent_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE team_deliberations ADD COLUMN parent_id TEXT;
+                     ALTER TABLE team_deliberations ADD COLUMN roster_ids TEXT;
+                     DROP INDEX IF EXISTS idx_delib_one_active_per_team;
+                     CREATE UNIQUE INDEX IF NOT EXISTS idx_delib_one_active_per_team
+                         ON team_deliberations(team_id)
+                         WHERE parent_id IS NULL
+                           AND status IN ('open','converging','escalated','paused','awaiting_action','tracking');
+                     CREATE INDEX IF NOT EXISTS idx_delib_parent ON team_deliberations(parent_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

@@ -17175,6 +17175,12 @@
     "decision_abort": "Abandonner",
     "decision_placeholder": "Ajouter une direction pour l'équipe (optionnel)",
     "decision_resolve": "Finaliser maintenant",
-    "decision_resume": "Envoyer & reprendre"
+    "decision_resume": "Envoyer & reprendre",
+    "back_to_tracks": "Retour aux pistes",
+    "merge_tracks": "Fusionner les pistes",
+    "run_all_tracks": "Lancer toutes les pistes",
+    "split": "Diviser en pistes",
+    "status_tracking": "En attente",
+    "tracks_title": "Pistes parallèles"
   }
 }

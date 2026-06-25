@@ -28,7 +28,8 @@ pub struct TeamDeliberation {
     pub goal: Option<String>,
     /// 'open' | 'converging' | 'resolved' | 'escalated' | 'paused' | 'aborted'
     /// | 'awaiting_action' (a persona requested a capability — parked until the
-    /// user approves/skips it; see `pending_action`).
+    /// user approves/skips it; see `pending_action`) | 'tracking' (a parent
+    /// split into child tracks — parked until they resolve, then merged).
     pub status: String,
     /// Moderator rounds so far (escalation cadence).
     pub round: i32,
@@ -49,6 +50,13 @@ pub struct TeamDeliberation {
     /// requested a capability mid-deliberation and it is gated on user approval
     /// (decision 8). `None` otherwise.
     pub pending_action: Option<String>,
+    /// Parent deliberation id when this is a parallel **track** (sub-session);
+    /// `None` for a top-level deliberation. Tracks own a slice of the parent's
+    /// agenda and run concurrently; the parent merges them.
+    pub parent_id: Option<String>,
+    /// JSON array of persona ids this (track) deliberation is scoped to — the key
+    /// personas the split planner assigned. `None` ⇒ the whole team is eligible.
+    pub roster_ids: Option<String>,
     /// 'user' | 'athena' — who opened it.
     pub created_by: String,
     pub created_at: String,
@@ -158,4 +166,8 @@ pub struct CreateDeliberationInput {
     pub created_by: Option<String>,
     pub cost_budget_usd: Option<f64>,
     pub idle_deadline: Option<String>,
+    /// Set when creating a parallel track — the parent deliberation id.
+    pub parent_id: Option<String>,
+    /// Set on a track — JSON array of the key persona ids it is scoped to.
+    pub roster_ids: Option<String>,
 }

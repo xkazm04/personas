@@ -42,5 +42,11 @@
   "decision_abort": "বাতিল করুন",
   "decision_placeholder": "দলের জন্য নির্দেশনা যোগ করুন (ঐচ্ছিক)",
   "decision_resolve": "এখনই শেষ করুন",
-  "decision_resume": "পাঠান ও চালিয়ে যান"
+  "decision_resume": "পাঠান ও চালিয়ে যান",
+  "back_to_tracks": "ট্র্যাকে ফিরুন",
+  "merge_tracks": "ট্র্যাক একত্রিত করুন",
+  "run_all_tracks": "সব ট্র্যাক চালান",
+  "split": "ট্র্যাকে বিভক্ত করুন",
+  "status_tracking": "ট্র্যাকিং",
+  "tracks_title": "সমান্তরাল ট্র্যাক"
 }

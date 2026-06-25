@@ -41,6 +41,21 @@ export const listDeliberationTurns = (deliberationId: string, limit?: number) =>
     limit: limit ?? null,
   });
 
+/** Split a deliberation into parallel tracks (sub-sessions): a Haiku planner
+ *  partitions the open agenda into 2-4 child deliberations. Returns the parent
+ *  (now 'tracking'). Runs the planner, so a wide timeout. */
+export const splitTeamDeliberation = (deliberationId: string) =>
+  invoke<TeamDeliberation>('split_team_deliberation', { deliberationId }, { timeoutMs: 120_000 });
+
+/** The child tracks of a parent deliberation (oldest-first). */
+export const listDeliberationTracks = (deliberationId: string) =>
+  invoke<TeamDeliberation[]>('list_deliberation_tracks', { deliberationId });
+
+/** Merge a parent's resolved tracks into one combined proposal (Sonnet). All
+ *  tracks must be terminal. Returns the parent (now 'resolved', pending). */
+export const mergeDeliberationTracks = (deliberationId: string) =>
+  invoke<TeamDeliberation>('merge_deliberation_tracks', { deliberationId }, { timeoutMs: 180_000 });
+
 /** Advance a deliberation by one moderated round on demand (user-initiated;
  *  not gated by the autonomous flag). Returns the updated deliberation. */
 export const advanceTeamDeliberation = (deliberationId: string) =>

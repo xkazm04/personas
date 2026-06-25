@@ -17175,6 +17175,12 @@
     "decision_abort": "Abbrechen",
     "decision_placeholder": "Richtung für das Team angeben (optional)",
     "decision_resolve": "Jetzt abschließen",
-    "decision_resume": "Senden & fortsetzen"
+    "decision_resume": "Senden & fortsetzen",
+    "back_to_tracks": "Zurück zu Tracks",
+    "merge_tracks": "Tracks zusammenführen",
+    "run_all_tracks": "Alle Tracks ausführen",
+    "split": "In Tracks aufteilen",
+    "status_tracking": "Wird verfolgt",
+    "tracks_title": "Parallele Tracks"
   }
 }

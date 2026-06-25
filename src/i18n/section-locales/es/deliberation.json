@@ -42,5 +42,11 @@
   "decision_abort": "Cancelar",
   "decision_placeholder": "Añade una dirección para el equipo (opcional)",
   "decision_resolve": "Finalizar ahora",
-  "decision_resume": "Enviar y continuar"
+  "decision_resume": "Enviar y continuar",
+  "back_to_tracks": "Volver a las pistas",
+  "merge_tracks": "Combinar pistas",
+  "run_all_tracks": "Ejecutar todas las pistas",
+  "split": "Dividir en pistas",
+  "status_tracking": "Rastreando",
+  "tracks_title": "Pistas paralelas"
 }
