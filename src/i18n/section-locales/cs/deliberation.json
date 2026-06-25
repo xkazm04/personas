@@ -30,5 +30,13 @@
   "topic_placeholder": "O čem má tým rozhodnout?",
   "turns_empty": "Zatím žádná kola — tým začne mluvit po spuštění deliberace.",
   "advance": "Spustit kolo",
-  "advance_running": "Probíhá…"
+  "advance_running": "Probíhá…",
+  "action_run": "Schválit a spustit",
+  "action_skip": "Přeskočit",
+  "action_title": "Požadována schopnost — schvalte spuštění",
+  "budget_placeholder": "Rozpočet USD (volitelné)",
+  "run_active": "Probíhají kola…",
+  "run_stop": "Zastavit",
+  "run_to_budget": "Spustit do vyčerpání rozpočtu",
+  "status_awaiting_action": "Čeká na schválení"
 }

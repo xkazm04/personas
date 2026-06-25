@@ -624,10 +624,29 @@ pub async fn advance_one_deliberation(
                 t.status.as_str(),
             );
             for sp in &speakers {
-                if let Err(e) =
-                    run_persona_deliberation_turn(pool, user_db, delib, sp, ctx.north_star.as_deref()).await
-                {
-                    tracing::warn!(deliberation_id = %delib.id, persona_id = %sp, error = %e, "deliberation: persona turn failed");
+                match run_persona_deliberation_turn(pool, user_db, delib, sp, ctx.north_star.as_deref()).await {
+                    Ok(TurnOutcome::RequestedAction(action)) => {
+                        // Park on the gated capability — no more speakers this tick.
+                        if let Ok(json) = serde_json::to_string(&action) {
+                            let _ = deliberation_repo::set_pending_action(pool, &delib.id, &json);
+                            let _ = team_channel_repo::post_deliberation_turn(
+                                pool,
+                                &delib.id,
+                                &delib.team_id,
+                                "system",
+                                None,
+                                &format!(
+                                    "⏸ {} wants to run “{}” — awaiting your approval.",
+                                    action.persona_name, action.use_case_title
+                                ),
+                            );
+                        }
+                        break;
+                    }
+                    Ok(TurnOutcome::Spoke) => {}
+                    Err(e) => {
+                        tracing::warn!(deliberation_id = %delib.id, persona_id = %sp, error = %e, "deliberation: persona turn failed");
+                    }
                 }
             }
         }
@@ -759,6 +778,73 @@ pub struct PersonaTurnEnvelope {
     pub turn: PersonaTurn,
 }
 
+/// What a persona turn produced — either it just spoke, or it requested a
+/// (gated) capability that parks the deliberation for user approval (decision 8).
+#[derive(Debug, Clone)]
+pub enum TurnOutcome {
+    Spoke,
+    RequestedAction(crate::db::models::PendingAction),
+}
+
+/// A persona's enabled capabilities `(use_case_id, title)` from
+/// `personas.design_context`. Offered to the turn prompt as real ids and used to
+/// validate a requested capability (a hallucinated id is dropped — the turn
+/// degrades to a plain message).
+fn parse_capabilities(design_context: Option<&str>) -> Vec<(String, String)> {
+    let Some(dc) = design_context else {
+        return vec![];
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(dc) else {
+        return vec![];
+    };
+    let Some(arr) = crate::engine::design_context::pick_use_cases_array(&v) else {
+        return vec![];
+    };
+    arr.iter()
+        .filter_map(|uc| {
+            if uc.get("enabled").and_then(|b| b.as_bool()) == Some(false) {
+                return None;
+            }
+            let id = uc.get("id").and_then(|x| x.as_str())?.trim().to_string();
+            if id.is_empty() {
+                return None;
+            }
+            let title = uc
+                .get("title")
+                .and_then(|x| x.as_str())
+                .unwrap_or(&id)
+                .to_string();
+            Some((id, title))
+        })
+        .collect()
+}
+
+/// Resolve a persona-supplied capability id against its real capabilities (exact
+/// id, then normalized fuzzy — the same tolerance as [`resolve_speaker`]).
+fn resolve_capability(
+    requested: &str,
+    capabilities: &[(String, String)],
+) -> Option<(String, String)> {
+    let req = requested.trim();
+    if req.is_empty() {
+        return None;
+    }
+    if let Some(c) = capabilities.iter().find(|(id, _)| id == req) {
+        return Some(c.clone());
+    }
+    let norm = |s: &str| -> String {
+        s.chars()
+            .filter(|c| c.is_alphanumeric())
+            .flat_map(|c| c.to_lowercase())
+            .collect()
+    };
+    let nreq = norm(req);
+    capabilities
+        .iter()
+        .find(|(id, title)| norm(id) == nreq || norm(title) == nreq)
+        .cloned()
+}
+
 /// Recent turns a persona sees for context.
 const TURN_CONTEXT_WINDOW: i64 = 12;
 /// Scoped memories injected into a persona's turn.
@@ -777,6 +863,7 @@ pub fn build_turn_prompt(
     topic: &str,
     memories: &[String],
     recent_turns: &[(String, String)],
+    capabilities: &[(String, String)],
 ) -> String {
     use std::fmt::Write as _;
     let mut p = String::new();
@@ -812,15 +899,29 @@ pub fn build_turn_prompt(
             let _ = writeln!(p, "- {who}: {line}");
         }
     }
+    if !capabilities.is_empty() {
+        let _ = writeln!(
+            p,
+            "\n## YOUR CAPABILITIES (you may request ONE by its EXACT id)"
+        );
+        for (id, title) in capabilities {
+            let _ = writeln!(p, "- {id}: {title}");
+        }
+    }
+    let act_clause = if capabilities.is_empty() {
+        "Be concise (2-5 sentences). If the team is ready to commit to a concrete piece of work, propose it."
+    } else {
+        "Be concise (2-5 sentences). When an open point is better answered by DOING than by more talk — running an analysis, pulling real data, drafting the artifact — request the matching capability from YOUR CAPABILITIES via invoke_capability with its EXACT id. The team pauses for the user to approve it; once it runs, its real output is posted back and the discussion continues on top of it. Prefer acting over speculating when the data would settle the question. If the team is ready to commit to a concrete piece of work, propose it."
+    };
     let _ = writeln!(
         p,
-        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. Be concise (2-5 sentences). If your point is better served by USING one of your capabilities than by talking, request it. If the team is ready to commit to a concrete piece of work, propose it."
+        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. {act_clause}"
     );
     let _ = writeln!(
         p,
         r#"Return EXACTLY one JSON object, no prose:
-{{"turn": {{"message": "<your contribution>", "invoke_capability": {{"use_case_id": "<id>", "rationale": "<why>"}}, "propose_assignment": {{"title": "<title>", "rationale": "<why>"}}}}}}
-Omit invoke_capability / propose_assignment unless you mean them."#
+{{"turn": {{"message": "<your contribution>", "invoke_capability": {{"use_case_id": "<exact id from YOUR CAPABILITIES>", "rationale": "<why acting now beats discussing>"}}, "propose_assignment": {{"title": "<title>", "rationale": "<why>"}}}}}}
+Omit invoke_capability / propose_assignment unless you mean them. Always include a `message` explaining your point (and, if acting, why)."#
     );
     p
 }
@@ -859,22 +960,24 @@ pub async fn run_persona_deliberation_turn(
     delib: &TeamDeliberation,
     persona_id: &str,
     north_star: Option<&str>,
-) -> Result<(), AppError> {
-    // Persona voice + viewpoint + model.
-    let (name, identity, model_profile, core_profile): (
+) -> Result<TurnOutcome, AppError> {
+    // Persona voice + viewpoint + model + capabilities.
+    let (name, identity, model_profile, core_profile, design_context): (
         String,
         String,
+        Option<String>,
         Option<String>,
         Option<String>,
     ) = {
         let conn = pool.get()?;
         conn.query_row(
-            "SELECT name, system_prompt, model_profile, core_profile FROM personas WHERE id = ?1",
+            "SELECT name, system_prompt, model_profile, core_profile, design_context FROM personas WHERE id = ?1",
             params![persona_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
         )
         .map_err(AppError::Database)?
     };
+    let capabilities = parse_capabilities(design_context.as_deref());
     // Speak on the persona's own model tier (opinion turn — tool-less).
     let model = model_profile
         .as_deref()
@@ -916,6 +1019,7 @@ pub async fn run_persona_deliberation_turn(
         &delib.topic,
         &memories,
         &recent_turns,
+        &capabilities,
     );
 
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
@@ -940,14 +1044,30 @@ pub async fn run_persona_deliberation_turn(
             &turn.message,
         );
     }
-    // Capability / proposal requests are SURFACED only — always gated (D4).
+    // A capability request parks the deliberation for user approval (decision 8 —
+    // always gated). Validate the id against the persona's REAL capabilities; a
+    // hallucinated id degrades to a plain message (just spoke).
     if let Some(cap) = &turn.invoke_capability {
-        tracing::info!(deliberation_id = %delib.id, persona_id = %persona_id, use_case = %cap.use_case_id, "deliberation: persona requested a capability (gated — D4 executes)");
+        if let Some((use_case_id, use_case_title)) =
+            resolve_capability(&cap.use_case_id, &capabilities)
+        {
+            tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: persona requested a capability (gated — awaiting approval)");
+            return Ok(TurnOutcome::RequestedAction(crate::db::models::PendingAction {
+                persona_id: persona_id.to_string(),
+                persona_name: name,
+                use_case_id,
+                use_case_title,
+                rationale: cap.rationale.clone(),
+            }));
+        }
+        tracing::info!(deliberation_id = %delib.id, persona_id, requested = %cap.use_case_id, "deliberation: persona requested an unknown capability — ignored");
     }
+    // propose_assignment stays a soft signal — the resolve-time proposal path
+    // turns the deliberation's conclusion into one assignment.
     if let Some(prop) = &turn.propose_assignment {
-        tracing::info!(deliberation_id = %delib.id, persona_id = %persona_id, title = %prop.title, "deliberation: persona proposed an assignment (D4 decision gate)");
+        tracing::info!(deliberation_id = %delib.id, persona_id, title = %prop.title, "deliberation: persona proposed an assignment (synthesized at resolve)");
     }
-    Ok(())
+    Ok(TurnOutcome::Spoke)
 }
 
 // ── Proposal synthesis + the decision gate (D4) ─────────────────────────────
@@ -1296,6 +1416,7 @@ mod turn_tests {
             "Should we ship Friday?",
             &["prior: I flagged flaky tests".to_string()],
             &[("Teammate".to_string(), "Let's ship.".to_string())],
+            &[],
         );
         assert!(p.contains("QA Guardian"));
         assert!(p.contains("challenger"));
@@ -1304,6 +1425,68 @@ mod turn_tests {
         assert!(p.contains("push back"));
         assert!(p.contains("prior: I flagged flaky tests"));
         assert!(p.contains("\"turn\""));
+    }
+
+    #[test]
+    fn turn_prompt_offers_real_capabilities_and_invites_acting() {
+        let caps = [
+            ("run-regression".to_string(), "Run the regression suite".to_string()),
+            ("pull-metrics".to_string(), "Pull payment metrics".to_string()),
+        ];
+        let with = build_turn_prompt(
+            "QA",
+            "id",
+            None,
+            None,
+            "topic",
+            &[],
+            &[],
+            &caps,
+        );
+        assert!(with.contains("## YOUR CAPABILITIES"));
+        assert!(with.contains("run-regression: Run the regression suite"));
+        assert!(with.contains("invoke_capability")); // invited to act
+                                                      // No capabilities → no capability section (the JSON schema still
+                                                      // names the field, so check the section HEADER, not the substring).
+        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[]);
+        assert!(!without.contains("## YOUR CAPABILITIES"));
+    }
+
+    #[test]
+    fn parse_capabilities_filters_disabled_and_blank() {
+        let dc = r#"{"use_cases":[
+            {"id":"a","title":"Alpha"},
+            {"id":"b","title":"Beta","enabled":false},
+            {"id":"","title":"blank"},
+            {"id":"c"}
+        ]}"#;
+        let caps = parse_capabilities(Some(dc));
+        assert_eq!(caps.len(), 2);
+        assert_eq!(caps[0], ("a".to_string(), "Alpha".to_string()));
+        assert_eq!(caps[1], ("c".to_string(), "c".to_string())); // title falls back to id
+        assert!(parse_capabilities(None).is_empty());
+        assert!(parse_capabilities(Some("not json")).is_empty());
+    }
+
+    #[test]
+    fn resolve_capability_exact_then_fuzzy_else_none() {
+        let caps = [
+            ("run-regression".to_string(), "Run the regression suite".to_string()),
+            ("pull-metrics".to_string(), "Pull payment metrics".to_string()),
+        ];
+        assert_eq!(
+            resolve_capability("run-regression", &caps).unwrap().0,
+            "run-regression"
+        ); // exact id
+        assert_eq!(
+            resolve_capability("Run the regression suite", &caps).unwrap().0,
+            "run-regression"
+        ); // by title
+        assert_eq!(
+            resolve_capability("pull_metrics", &caps).unwrap().0,
+            "pull-metrics"
+        ); // normalized id (underscore vs hyphen)
+        assert!(resolve_capability("ship-it-now", &caps).is_none()); // hallucinated → dropped
     }
 }
 

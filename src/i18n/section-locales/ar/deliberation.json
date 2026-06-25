@@ -30,5 +30,13 @@
   "topic_placeholder": "ماذا يجب على الفريق أن يقرر؟",
   "turns_empty": "لا توجد أدوار بعد — سيبدأ الفريق بالحديث فور انطلاق المداولة.",
   "advance": "تشغيل جولة",
-  "advance_running": "جارٍ…"
+  "advance_running": "جارٍ…",
+  "action_run": "موافقة وتشغيل",
+  "action_skip": "تخطي",
+  "action_title": "تم طلب إمكانية — وافق للتشغيل",
+  "budget_placeholder": "الميزانية USD (اختياري)",
+  "run_active": "تشغيل الجولات…",
+  "run_stop": "إيقاف",
+  "run_to_budget": "تشغيل حتى الميزانية",
+  "status_awaiting_action": "بانتظار الموافقة"
 }

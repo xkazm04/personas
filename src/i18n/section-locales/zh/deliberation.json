@@ -30,5 +30,13 @@
   "topic_placeholder": "团队需要决定什么？",
   "turns_empty": "暂无发言 — 审议开始后团队将陆续发言。",
   "advance": "运行一轮",
-  "advance_running": "运行中…"
+  "advance_running": "运行中…",
+  "action_run": "批准并运行",
+  "action_skip": "跳过",
+  "action_title": "已请求能力 — 批准以运行",
+  "budget_placeholder": "预算 USD（可选）",
+  "run_active": "运行轮次中…",
+  "run_stop": "停止",
+  "run_to_budget": "运行至预算",
+  "status_awaiting_action": "待批准"
 }

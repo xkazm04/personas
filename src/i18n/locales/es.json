@@ -17163,6 +17163,14 @@
     "topic_placeholder": "¿Qué debe decidir el equipo?",
     "turns_empty": "Sin turnos aún — el equipo comenzará a hablar una vez que la deliberación esté en marcha.",
     "advance": "Ejecutar ronda",
-    "advance_running": "Ejecutando…"
+    "advance_running": "Ejecutando…",
+    "action_run": "Aprobar y ejecutar",
+    "action_skip": "Omitir",
+    "action_title": "Capacidad solicitada — aprueba para ejecutar",
+    "budget_placeholder": "Presupuesto USD (opcional)",
+    "run_active": "Ejecutando rondas…",
+    "run_stop": "Detener",
+    "run_to_budget": "Ejecutar hasta el presupuesto",
+    "status_awaiting_action": "Necesita aprobación"
   }
 }

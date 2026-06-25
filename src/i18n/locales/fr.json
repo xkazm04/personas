@@ -17163,6 +17163,14 @@
     "topic_placeholder": "Que doit décider l'équipe ?",
     "turns_empty": "Aucun tour pour l'instant — l'équipe commencera à parler dès que la délibération sera lancée.",
     "advance": "Lancer un tour",
-    "advance_running": "En cours…"
+    "advance_running": "En cours…",
+    "action_run": "Approuver & exécuter",
+    "action_skip": "Ignorer",
+    "action_title": "Capacité demandée — approuver pour exécuter",
+    "budget_placeholder": "Budget USD (optionnel)",
+    "run_active": "Rounds en cours…",
+    "run_stop": "Arrêter",
+    "run_to_budget": "Exécuter jusqu'au budget",
+    "status_awaiting_action": "En attente d'approbation"
   }
 }

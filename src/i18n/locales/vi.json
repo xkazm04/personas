@@ -17163,6 +17163,14 @@
     "topic_placeholder": "Nhóm nên quyết định điều gì?",
     "turns_empty": "Chưa có lượt phát biểu — nhóm sẽ bắt đầu khi deliberation chạy.",
     "advance": "Chạy một vòng",
-    "advance_running": "Đang chạy…"
+    "advance_running": "Đang chạy…",
+    "action_run": "Phê duyệt & chạy",
+    "action_skip": "Bỏ qua",
+    "action_title": "Yêu cầu năng lực — phê duyệt để chạy",
+    "budget_placeholder": "Ngân sách USD (tùy chọn)",
+    "run_active": "Đang chạy các vòng…",
+    "run_stop": "Dừng",
+    "run_to_budget": "Chạy đến ngân sách",
+    "status_awaiting_action": "Cần phê duyệt"
   }
 }

@@ -2,10 +2,11 @@
 // loads the selected one's detail + agenda + turns, and exposes create / approve
 // / dismiss. Polls the selected deliberation while it's active, since the
 // autonomous moderator tick mutates it server-side.
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toastCatch } from '@/lib/silentCatch';
 import {
   advanceTeamDeliberation,
+  approveDeliberationAction,
   approveDeliberationProposal,
   createTeamDeliberation,
   dismissDeliberationProposal,
@@ -13,12 +14,22 @@ import {
   listDeliberationAgenda,
   listDeliberationTurns,
   listTeamDeliberations,
+  skipDeliberationAction,
 } from '@/api/pipeline/teamDeliberations';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
 import type { DeliberationAgendaItem } from '@/lib/bindings/DeliberationAgendaItem';
 import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
 
-const ACTIVE_STATUSES = new Set(['open', 'converging', 'escalated', 'paused']);
+const ACTIVE_STATUSES = new Set([
+  'open',
+  'converging',
+  'escalated',
+  'paused',
+  'awaiting_action',
+]);
+/** Statuses the "Run to budget" loop keeps auto-advancing through. Anything
+ *  else (awaiting_action / escalated / resolved / aborted / paused) stops it. */
+const AUTO_ADVANCE_STATUSES = new Set(['open', 'converging']);
 const POLL_MS = 6000;
 
 export function useTeamDeliberations(teamId: string) {
@@ -30,6 +41,9 @@ export function useTeamDeliberations(teamId: string) {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [running, setRunning] = useState(false);
+  const runningRef = useRef(false);
 
   const refreshList = useCallback(async () => {
     try {
@@ -57,6 +71,8 @@ export function useTeamDeliberations(teamId: string) {
   }, []);
 
   useEffect(() => {
+    runningRef.current = false;
+    setRunning(false);
     setSelectedId(null);
     setDetail(null);
     void refreshList();
@@ -84,10 +100,10 @@ export function useTeamDeliberations(teamId: string) {
   }, [selectedId, detail, refreshDetail, refreshList]);
 
   const create = useCallback(
-    async (topic: string, goal?: string) => {
+    async (topic: string, goal?: string, costBudgetUsd?: number) => {
       setBusy(true);
       try {
-        const d = await createTeamDeliberation(teamId, topic, goal);
+        const d = await createTeamDeliberation(teamId, topic, goal, costBudgetUsd);
         await refreshList();
         setSelectedId(d.id);
         return d;
@@ -109,6 +125,69 @@ export function useTeamDeliberations(teamId: string) {
         await refreshList();
       } finally {
         setAdvancing(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Auto-advance round after round until the deliberation leaves the
+  // auto-advanceable set: budget spent (paused), action gate (awaiting_action),
+  // escalation, or resolution. The user can Stop at any round boundary.
+  const runToBudget = useCallback(
+    async (id: string) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      try {
+        while (runningRef.current) {
+          const d = await advanceTeamDeliberation(id);
+          await refreshDetail(id);
+          await refreshList();
+          if (!AUTO_ADVANCE_STATUSES.has(d.status)) break;
+        }
+      } catch (e) {
+        toastCatch('useTeamDeliberations.runToBudget')(e);
+      } finally {
+        runningRef.current = false;
+        setRunning(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const stopRun = useCallback(() => {
+    runningRef.current = false;
+    setRunning(false);
+  }, []);
+
+  // Gated capability action — approve (runs it, posts output, resumes) or skip.
+  const approveAction = useCallback(
+    async (id: string) => {
+      setActionBusy(true);
+      try {
+        await approveDeliberationAction(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.approveAction')(e);
+      } finally {
+        setActionBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const skipAction = useCallback(
+    async (id: string) => {
+      setActionBusy(true);
+      try {
+        await skipDeliberationAction(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.skipAction')(e);
+      } finally {
+        setActionBusy(false);
       }
     },
     [refreshDetail, refreshList],
@@ -142,8 +221,14 @@ export function useTeamDeliberations(teamId: string) {
     loading,
     busy,
     advancing,
+    actionBusy,
+    running,
     create,
     advance,
+    runToBudget,
+    stopRun,
+    approveAction,
+    skipAction,
     approve,
     dismiss,
     refreshList,

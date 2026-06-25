@@ -30,5 +30,13 @@
   "topic_placeholder": "टीम को क्या तय करना चाहिए?",
   "turns_empty": "अभी कोई टर्न नहीं — विचार-विमर्श शुरू होने पर टीम बोलना शुरू करेगी।",
   "advance": "एक राउंड चलाएं",
-  "advance_running": "चल रहा है…"
+  "advance_running": "चल रहा है…",
+  "action_run": "स्वीकृत करें और चलाएं",
+  "action_skip": "छोड़ें",
+  "action_title": "क्षमता अनुरोधित — चलाने के लिए स्वीकृत करें",
+  "budget_placeholder": "बजट USD (वैकल्पिक)",
+  "run_active": "राउंड चल रहे हैं…",
+  "run_stop": "रोकें",
+  "run_to_budget": "बजट तक चलाएं",
+  "status_awaiting_action": "अनुमोदन आवश्यक"
 }

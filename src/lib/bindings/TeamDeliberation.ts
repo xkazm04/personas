@@ -17,6 +17,8 @@ topic: string,
 goal: string | null, 
 /**
  * 'open' | 'converging' | 'resolved' | 'escalated' | 'paused' | 'aborted'
+ * | 'awaiting_action' (a persona requested a capability — parked until the
+ * user approves/skips it; see `pending_action`).
  */
 status: string, 
 /**
@@ -48,6 +50,12 @@ resolution: string | null,
  * Set when a proposal feeds the DAG.
  */
 spawnedAssignmentId: string | null, 
+/**
+ * JSON [`PendingAction`] when `status` is 'awaiting_action' — a persona
+ * requested a capability mid-deliberation and it is gated on user approval
+ * (decision 8). `None` otherwise.
+ */
+pendingAction: string | null, 
 /**
  * 'user' | 'athena' — who opened it.
  */

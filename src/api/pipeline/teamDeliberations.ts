@@ -7,13 +7,21 @@ import type { DeliberationAgendaItem } from '@/lib/bindings/DeliberationAgendaIt
 import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
 import type { CompanionAssignTeamResult } from '@/lib/bindings/CompanionAssignTeamResult';
 
-/** Open a deliberation on a team (the DB enforces one active per team). */
-export const createTeamDeliberation = (teamId: string, topic: string, goal?: string) =>
+/** Open a deliberation on a team (the DB enforces one active per team).
+ *  `costBudgetUsd` is the hard cost floor + the "Run to budget" stop (null ⇒
+ *  unbounded — the run loop then ends on convergence / round cap instead). */
+export const createTeamDeliberation = (
+  teamId: string,
+  topic: string,
+  goal?: string,
+  costBudgetUsd?: number,
+) =>
   invoke<TeamDeliberation>('create_team_deliberation', {
     teamId,
     topic,
     goal: goal ?? null,
     createdBy: null,
+    costBudgetUsd: costBudgetUsd ?? null,
   });
 
 /** All deliberations for a team, newest-first. */
@@ -43,6 +51,20 @@ export const advanceTeamDeliberation = (deliberationId: string) =>
     { deliberationId },
     { timeoutMs: 240_000 },
   );
+
+/** Approve a gated mid-deliberation capability action (decision 8): runs the
+ *  persona's capability for real, posts its output back as a turn, resumes the
+ *  conversation. Long — the capability executes — so give it a wide timeout. */
+export const approveDeliberationAction = (deliberationId: string) =>
+  invoke<TeamDeliberation>(
+    'approve_deliberation_action',
+    { deliberationId },
+    { timeoutMs: 300_000 },
+  );
+
+/** Skip a gated capability action — decline it and resume discussion. */
+export const skipDeliberationAction = (deliberationId: string) =>
+  invoke<TeamDeliberation>('skip_deliberation_action', { deliberationId });
 
 /** Decision gate (always gated): approve a resolved proposal → spawns a real
  *  team assignment via companion_assign_team. Returns the assignment id. */

@@ -4,7 +4,17 @@
 // escalation card. The deliberation is bounded by progress (agenda + stall),
 // not a turn count, so there is NO turn meter — the agenda is the progress.
 import { useMemo, useState } from 'react';
-import { MessagesSquare, Plus, Gavel, CheckCircle2, CircleDot, AlertTriangle, Play } from 'lucide-react';
+import {
+  MessagesSquare,
+  Plus,
+  Gavel,
+  CheckCircle2,
+  CircleDot,
+  AlertTriangle,
+  Play,
+  Square,
+  Wrench,
+} from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -14,6 +24,7 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
 import type { ProposalSpec } from '@/lib/bindings/ProposalSpec';
+import type { PendingAction } from '@/lib/bindings/PendingAction';
 import { useTeamDeliberations } from './useTeamDeliberations';
 
 const DEFAULT_BUDGET = 5;
@@ -23,6 +34,7 @@ const STATUS_TONE: Record<string, string> = {
   converging: 'bg-primary/15 text-primary border-primary/30',
   resolved: 'bg-status-success/15 text-status-success border-status-success/30',
   escalated: 'bg-status-warning/15 text-status-warning border-status-warning/30',
+  awaiting_action: 'bg-status-warning/15 text-status-warning border-status-warning/30',
   paused: 'bg-secondary/60 text-foreground border-primary/20',
   aborted: 'bg-secondary/60 text-foreground border-primary/20',
 };
@@ -60,14 +72,21 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     loading,
     busy,
     advancing,
+    actionBusy,
+    running,
     create,
     advance,
+    runToBudget,
+    stopRun,
+    approveAction,
+    skipAction,
     approve,
     dismiss,
   } = useTeamDeliberations(teamId);
 
   const [topic, setTopic] = useState('');
   const [goal, setGoal] = useState('');
+  const [budget, setBudget] = useState('');
 
   const statusLabel = (s: string): string =>
     (td as Record<string, string>)[`status_${s}`] ?? s;
@@ -92,14 +111,25 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
   const onStart = async () => {
     const tt = topic.trim();
     if (!tt) return;
-    await create(tt, goal.trim() || undefined);
+    const b = Number(budget);
+    await create(tt, goal.trim() || undefined, b > 0 ? b : undefined);
     setTopic('');
     setGoal('');
+    setBudget('');
   };
 
   const openAgenda = agenda.filter((a) => a.status === 'open');
   const resolvedAgenda = agenda.filter((a) => a.status !== 'open');
   const resolution = useMemo(() => parseResolution(detail?.resolution ?? null), [detail?.resolution]);
+  const pendingAction = useMemo<PendingAction | null>(() => {
+    if (!detail?.pendingAction) return null;
+    try {
+      return JSON.parse(detail.pendingAction) as PendingAction;
+    } catch {
+      return null;
+    }
+  }, [detail?.pendingAction]);
+  const canAutoAdvance = detail ? ['open', 'converging'].includes(detail.status) : false;
 
   return (
     <div className="flex h-full gap-4">
@@ -117,6 +147,16 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
             placeholder={td.goal_placeholder}
+            className="w-full rounded-input border border-primary/15 bg-background/60 px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/40 mb-2"
+          />
+          <input
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            type="number"
+            min="0"
+            step="0.5"
+            inputMode="decimal"
+            placeholder={td.budget_placeholder}
             className="w-full rounded-input border border-primary/15 bg-background/60 px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/40 mb-2"
           />
           <AsyncButton
@@ -213,7 +253,7 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                 </span>
               </div>
               {['open', 'converging', 'escalated', 'paused'].includes(detail.status) && (
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   <AsyncButton
                     onClick={async () => {
                       try {
@@ -223,13 +263,86 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
                       }
                     }}
                     isLoading={advancing}
+                    disabled={running}
                     className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body font-medium text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
                   >
                     <Play className="h-3.5 w-3.5" /> {advancing ? td.advance_running : td.advance}
                   </AsyncButton>
+                  {canAutoAdvance &&
+                    (running ? (
+                      <button
+                        type="button"
+                        onClick={stopRun}
+                        className="inline-flex items-center gap-1.5 rounded-interactive border border-status-warning/30 bg-status-warning/15 px-3 py-1.5 typo-body font-medium text-status-warning hover:bg-status-warning/25 transition-colors"
+                      >
+                        <Square className="h-3.5 w-3.5" /> {td.run_stop}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void runToBudget(detail.id);
+                        }}
+                        disabled={advancing}
+                        className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/20 px-3 py-1.5 typo-body text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-50"
+                      >
+                        <Play className="h-3.5 w-3.5" /> {td.run_to_budget}
+                      </button>
+                    ))}
+                  {running && (
+                    <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/60">
+                      <LoadingSpinner /> {td.run_active}
+                    </span>
+                  )}
                 </div>
               )}
             </div>
+
+            {/* Gated capability action — Approve & run / Skip */}
+            {detail.status === 'awaiting_action' && pendingAction && (
+              <div className="rounded-card border border-status-warning/35 bg-status-warning/[0.08] p-4">
+                <p className="flex items-center gap-1.5 typo-body font-semibold text-status-warning">
+                  <Wrench className="h-4 w-4" /> {td.action_title}
+                </p>
+                <p className="mt-2 typo-body text-foreground">
+                  <span className="font-medium">{pendingAction.personaName}</span> →{' '}
+                  {pendingAction.useCaseTitle}
+                </p>
+                {pendingAction.rationale && (
+                  <p className="mt-1 typo-caption text-foreground/70 italic">
+                    {pendingAction.rationale}
+                  </p>
+                )}
+                <div className="mt-3 flex gap-2">
+                  <AsyncButton
+                    onClick={async () => {
+                      try {
+                        await approveAction(detail.id);
+                      } catch (e) {
+                        toastCatch('DeliberationsPane.approveAction')(e);
+                      }
+                    }}
+                    isLoading={actionBusy}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-status-success/30 bg-status-success/15 px-3 py-1.5 typo-body font-medium text-status-success hover:bg-status-success/25 transition-colors disabled:opacity-50"
+                  >
+                    <Wrench className="h-3.5 w-3.5" /> {td.action_run}
+                  </AsyncButton>
+                  <AsyncButton
+                    onClick={async () => {
+                      try {
+                        await skipAction(detail.id);
+                      } catch (e) {
+                        toastCatch('DeliberationsPane.skipAction')(e);
+                      }
+                    }}
+                    disabled={actionBusy}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/20 px-3 py-1.5 typo-body text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-50"
+                  >
+                    {td.action_skip}
+                  </AsyncButton>
+                </div>
+              </div>
+            )}
 
             {/* Proposal / escalation card */}
             {detail.status === 'escalated' && (

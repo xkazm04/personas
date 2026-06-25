@@ -30,5 +30,13 @@
   "topic_placeholder": "Worüber soll das Team entscheiden?",
   "turns_empty": "Noch keine Beiträge — das Team beginnt zu sprechen, sobald die Beratung läuft.",
   "advance": "Runde starten",
-  "advance_running": "Läuft…"
+  "advance_running": "Läuft…",
+  "action_run": "Genehmigen & ausführen",
+  "action_skip": "Überspringen",
+  "action_title": "Funktion angefordert — genehmigen zum Ausführen",
+  "budget_placeholder": "Budget USD (optional)",
+  "run_active": "Runden laufen…",
+  "run_stop": "Stopp",
+  "run_to_budget": "Bis zum Budget ausführen",
+  "status_awaiting_action": "Genehmigung erforderlich"
 }

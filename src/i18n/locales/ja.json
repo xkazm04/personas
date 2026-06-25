@@ -17163,6 +17163,14 @@
     "topic_placeholder": "チームが決定すべきことは？",
     "turns_empty": "まだ発言はありません — ディスカッションが開始されるとチームが発言を始めます。",
     "advance": "ラウンドを実行",
-    "advance_running": "実行中…"
+    "advance_running": "実行中…",
+    "action_run": "承認して実行",
+    "action_skip": "スキップ",
+    "action_title": "機能のリクエスト — 承認して実行",
+    "budget_placeholder": "予算 USD（任意）",
+    "run_active": "ラウンド実行中…",
+    "run_stop": "停止",
+    "run_to_budget": "予算まで実行",
+    "status_awaiting_action": "承認待ち"
   }
 }

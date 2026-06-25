@@ -23,6 +23,7 @@ fn row_to_deliberation(r: &Row) -> rusqlite::Result<TeamDeliberation> {
         idle_deadline: r.get("idle_deadline")?,
         resolution: r.get("resolution")?,
         spawned_assignment_id: r.get("spawned_assignment_id")?,
+        pending_action: r.get("pending_action")?,
         created_by: r.get("created_by")?,
         created_at: r.get("created_at")?,
         updated_at: r.get("updated_at")?,
@@ -98,7 +99,7 @@ pub fn get_active_for_team(
         let mut stmt = conn.prepare(
             "SELECT * FROM team_deliberations
              WHERE team_id = ?1
-               AND status IN ('open','converging','escalated','paused')
+               AND status IN ('open','converging','escalated','paused','awaiting_action')
              ORDER BY datetime(updated_at) DESC LIMIT 1",
         )?;
         let mut rows = stmt.query_map(params![team_id], |r| row_to_deliberation(r))?;
@@ -174,6 +175,40 @@ pub fn add_cost(pool: &DbPool, id: &str, usd: f64) -> Result<(), AppError> {
                 SET cost_spent_usd = cost_spent_usd + ?2, updated_at = datetime('now')
               WHERE id = ?1",
             params![id, usd],
+        )
+        .map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
+/// Park a deliberation on a gated capability request: store the `PendingAction`
+/// JSON and flip status to 'awaiting_action'. The run loop stops here until the
+/// user approves or skips (decision 8).
+pub fn set_pending_action(pool: &DbPool, id: &str, action_json: &str) -> Result<(), AppError> {
+    timed_query!("deliberation", "deliberation::set_pending_action", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE team_deliberations
+                SET pending_action = ?2, status = 'awaiting_action',
+                    updated_at = datetime('now')
+              WHERE id = ?1",
+            params![id, action_json],
+        )
+        .map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
+/// Clear a gated action (approved or skipped) and return the deliberation to
+/// `status` (normally 'open' so discussion resumes).
+pub fn clear_pending_action(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
+    timed_query!("deliberation", "deliberation::clear_pending_action", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE team_deliberations
+                SET pending_action = NULL, status = ?2, updated_at = datetime('now')
+              WHERE id = ?1",
+            params![id, status],
         )
         .map_err(AppError::Database)?;
         Ok(())

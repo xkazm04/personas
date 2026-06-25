@@ -3633,6 +3633,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Gated mid-deliberation capability action (the conversation↔action loop).
+    // `pending_action` holds the awaiting-approval capability request (JSON); the
+    // new 'awaiting_action' status parks the deliberation until the user approves
+    // or skips. Rebuild the one-active-per-team index to cover the new status.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_deliberations.pending_action",
+            description: "Add pending_action + awaiting_action status (Design D gated actions)",
+            already_applied: |conn| has_column(conn, "team_deliberations", "pending_action"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE team_deliberations ADD COLUMN pending_action TEXT;
+                     DROP INDEX IF EXISTS idx_delib_one_active_per_team;
+                     CREATE UNIQUE INDEX IF NOT EXISTS idx_delib_one_active_per_team
+                         ON team_deliberations(team_id)
+                         WHERE status IN ('open','converging','escalated','paused','awaiting_action');",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

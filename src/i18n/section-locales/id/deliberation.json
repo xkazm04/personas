@@ -30,5 +30,13 @@
   "topic_placeholder": "Apa yang harus diputuskan tim?",
   "turns_empty": "Belum ada giliran — tim akan mulai berbicara setelah deliberasi berjalan.",
   "advance": "Jalankan putaran",
-  "advance_running": "Berjalan…"
+  "advance_running": "Berjalan…",
+  "action_run": "Setujui & jalankan",
+  "action_skip": "Lewati",
+  "action_title": "Kemampuan diminta — setujui untuk menjalankan",
+  "budget_placeholder": "Anggaran USD (opsional)",
+  "run_active": "Menjalankan putaran…",
+  "run_stop": "Hentikan",
+  "run_to_budget": "Jalankan hingga anggaran habis",
+  "status_awaiting_action": "Menunggu persetujuan"
 }

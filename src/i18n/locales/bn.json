@@ -17163,6 +17163,14 @@
     "topic_placeholder": "দলের কী সিদ্ধান্ত নেওয়া উচিত?",
     "turns_empty": "এখনও কোনো পালা নেই — বিতর্ক শুরু হলে দল কথা বলতে শুরু করবে।",
     "advance": "একটি রাউন্ড চালান",
-    "advance_running": "চলছে…"
+    "advance_running": "চলছে…",
+    "action_run": "অনুমোদন করুন ও চালান",
+    "action_skip": "এড়িয়ে যান",
+    "action_title": "সক্ষমতা অনুরোধ করা হয়েছে — চালাতে অনুমোদন করুন",
+    "budget_placeholder": "বাজেট USD (ঐচ্ছিক)",
+    "run_active": "রাউন্ড চলছে…",
+    "run_stop": "বন্ধ করুন",
+    "run_to_budget": "বাজেট পর্যন্ত চালান",
+    "status_awaiting_action": "অনুমোদন প্রয়োজন"
   }
 }

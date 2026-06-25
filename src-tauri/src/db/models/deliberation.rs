@@ -27,6 +27,8 @@ pub struct TeamDeliberation {
     /// Optional prose: what a good outcome looks like.
     pub goal: Option<String>,
     /// 'open' | 'converging' | 'resolved' | 'escalated' | 'paused' | 'aborted'
+    /// | 'awaiting_action' (a persona requested a capability — parked until the
+    /// user approves/skips it; see `pending_action`).
     pub status: String,
     /// Moderator rounds so far (escalation cadence).
     pub round: i32,
@@ -43,6 +45,10 @@ pub struct TeamDeliberation {
     pub resolution: Option<String>,
     /// Set when a proposal feeds the DAG.
     pub spawned_assignment_id: Option<String>,
+    /// JSON [`PendingAction`] when `status` is 'awaiting_action' — a persona
+    /// requested a capability mid-deliberation and it is gated on user approval
+    /// (decision 8). `None` otherwise.
+    pub pending_action: Option<String>,
     /// 'user' | 'athena' — who opened it.
     pub created_by: String,
     pub created_at: String,
@@ -123,6 +129,23 @@ pub struct ProposalSpec {
     pub objective: String,
     /// 2-3 sentences: what was decided and why.
     pub summary: String,
+}
+
+/// A persona's mid-deliberation capability request, parked for user approval
+/// (decision 8 — always gated). Serialized as JSON into
+/// `team_deliberations.pending_action`; the UI renders an Approve/Skip card.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PendingAction {
+    /// The persona that wants to act.
+    pub persona_id: String,
+    pub persona_name: String,
+    /// The capability (use case) it wants to run.
+    pub use_case_id: String,
+    pub use_case_title: String,
+    /// The persona's one-line rationale for acting now.
+    pub rationale: String,
 }
 
 /// Input for opening a deliberation (user or Athena — decision 4).
