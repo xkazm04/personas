@@ -3493,6 +3493,146 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // ── Design D: Team Channel Deliberation Engine (D1 schema) ──────────────
+    // Autonomous deliberation plane — see docs/plans/team-deliberation-engine.md.
+    // D1 lands schema + bindings only; nothing is wired into the engine yet, and
+    // the four added columns sit inert until their consuming phase (D3/D5).
+
+    // A deliberation: a bounded, moderated team conversation. Length is bounded
+    // by PROGRESS (the agenda + consecutive_stall_rounds), NOT a turn count.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_deliberations",
+            description: "Create team_deliberations (Design D deliberation plane)",
+            already_applied: |conn| has_table(conn, "team_deliberations"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS team_deliberations (
+                        id            TEXT PRIMARY KEY,
+                        team_id       TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+                        topic         TEXT NOT NULL,
+                        goal          TEXT,
+                        status        TEXT NOT NULL DEFAULT 'open',
+                        round         INTEGER NOT NULL DEFAULT 0,
+                        consecutive_stall_rounds INTEGER NOT NULL DEFAULT 0,
+                        cost_budget_usd  REAL,
+                        cost_spent_usd   REAL NOT NULL DEFAULT 0,
+                        idle_deadline    TEXT,
+                        resolution    TEXT,
+                        spawned_assignment_id TEXT,
+                        created_by    TEXT NOT NULL DEFAULT 'user',
+                        created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_delib_team_status
+                        ON team_deliberations(team_id, status, updated_at DESC);
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_delib_one_active_per_team
+                        ON team_deliberations(team_id)
+                        WHERE status IN ('open','converging','escalated','paused');",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // The agenda backbone — the termination contract (the deliberation ends when
+    // the agenda is empty), replacing the turn budget.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "deliberation_agenda",
+            description: "Create deliberation_agenda (Design D agenda backbone)",
+            already_applied: |conn| has_table(conn, "deliberation_agenda"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS deliberation_agenda (
+                        id              TEXT PRIMARY KEY,
+                        deliberation_id TEXT NOT NULL REFERENCES team_deliberations(id) ON DELETE CASCADE,
+                        item            TEXT NOT NULL,
+                        status          TEXT NOT NULL DEFAULT 'open',
+                        resolution      TEXT,
+                        opened_by       TEXT,
+                        created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        resolved_at     TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_agenda_delib_status
+                        ON deliberation_agenda(deliberation_id, status);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Link channel turns to their deliberation (turns ride the existing channel
+    // read-model + UI). Injection is BY deliberation_id, not the `consumer` field.
+    // Plain column (no inline FK) — matches the established ALTER-ADD style here.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_channel_messages.deliberation_id",
+            description: "Add deliberation_id to team_channel_messages (Design D)",
+            already_applied: |conn| has_column(conn, "team_channel_messages", "deliberation_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE team_channel_messages ADD COLUMN deliberation_id TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Persona deliberation identity (typed PersonaCore JSON) — authored at the
+    // template level (D5), read by the moderator (D2/D3). Inert until then.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.core_profile",
+            description: "Add core_profile to personas (Design D PersonaCore)",
+            already_applied: |conn| has_column(conn, "personas", "core_profile"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE personas ADD COLUMN core_profile TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Team shared motivation (typed TeamNorthStar JSON) — the "#1 in category"
+    // imprint every member shares. Authored at the team-preset level (D5).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_teams.north_star",
+            description: "Add north_star to persona_teams (Design D TeamNorthStar)",
+            already_applied: |conn| has_column(conn, "persona_teams", "north_star"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE persona_teams ADD COLUMN north_star TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Per-persona conversation-scoped memory: lets a persona recall "what I
+    // argued in this deliberation". Nullable scope; reuses persona_memories.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories.deliberation_id",
+            description: "Add deliberation_id scope to persona_memories (Design D)",
+            already_applied: |conn| has_column(conn, "persona_memories", "deliberation_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN deliberation_id TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
