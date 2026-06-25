@@ -109,6 +109,22 @@ pub struct TeamNorthStar {
     pub success_signals: Vec<String>,
 }
 
+/// The synthesized output of a resolved deliberation — a concrete assignment the
+/// team can execute. Stored in `team_deliberations.resolution` (as `proposal`)
+/// and, once approved (decision 8 — always gated in v1), handed to the
+/// team-assignment engine as the goal (D4).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ProposalSpec {
+    /// Short human title for the approval surface.
+    pub title: String,
+    /// The objective handed to the assignment engine as the goal text.
+    pub objective: String,
+    /// 2-3 sentences: what was decided and why.
+    pub summary: String,
+}
+
 /// Input for opening a deliberation (user or Athena — decision 4).
 #[derive(Debug, Clone, Deserialize)]
 pub struct CreateDeliberationInput {

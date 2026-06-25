@@ -17,7 +17,7 @@ use rusqlite::{params, OptionalExtension};
 use serde::Deserialize;
 use tauri::{AppHandle, Manager};
 
-use crate::db::models::TeamDeliberation;
+use crate::db::models::{DeliberationAgendaItem, ProposalSpec, TeamDeliberation};
 use crate::db::repos::resources::{
     deliberation as deliberation_repo, team_channel as team_channel_repo,
 };
@@ -677,14 +677,40 @@ impl ReactiveSubscription for DeliberationSubscription {
                     // D6 surfaces the escalation card; D4 wires the decision gate.
                 }
                 TickOutcome::Resolve { reason } => {
+                    // Synthesize a concrete proposal from the deliberation — the
+                    // gated output. The user approves it (decision 8) to spawn a
+                    // real assignment via the decision-gate command (D4).
+                    let proposal = synthesize_proposal(&self.pool, &user_db, &delib).await;
+                    let resolution_json = serde_json::json!({
+                        "kind": "proposal",
+                        "status": "pending",
+                        "reason": reason,
+                        "proposal": proposal,
+                    })
+                    .to_string();
                     let _ = deliberation_repo::finalize(
                         &self.pool,
                         &delib.id,
                         t.status.as_str(),
-                        Some(reason),
+                        Some(&resolution_json),
                         None,
                     );
-                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved (D4 spawns the proposal)");
+                    let note = match &proposal {
+                        Some(p) => format!(
+                            "Deliberation resolved — proposed: “{}” (awaiting your approval).",
+                            p.title
+                        ),
+                        None => "Deliberation resolved (no proposal synthesized — awaiting your review).".to_string(),
+                    };
+                    let _ = team_channel_repo::post_deliberation_turn(
+                        &self.pool,
+                        &delib.id,
+                        &delib.team_id,
+                        "system",
+                        None,
+                        &note,
+                    );
+                    tracing::info!(deliberation_id = %delib.id, reason, "deliberation: resolved + proposal synthesized (awaiting approval)");
                 }
                 TickOutcome::Pause { reason } => {
                     let _ = deliberation_repo::update_progress(
@@ -926,6 +952,122 @@ pub async fn run_persona_deliberation_turn(
     Ok(())
 }
 
+// ── Proposal synthesis + the decision gate (D4) ─────────────────────────────
+
+/// Build the proposal-synthesis prompt — turn a resolved deliberation into ONE
+/// concrete, executable assignment spec. Pure + testable.
+pub fn build_proposal_prompt(
+    topic: &str,
+    goal: Option<&str>,
+    agenda: &[DeliberationAgendaItem],
+    recent_turns: &[(String, String)],
+) -> String {
+    use std::fmt::Write as _;
+    let mut p = String::new();
+    let _ = writeln!(
+        p,
+        "You are synthesizing the outcome of a team deliberation into ONE concrete piece of work the team can execute next."
+    );
+    let _ = writeln!(p, "\n## TOPIC\n{topic}");
+    if let Some(g) = goal {
+        let _ = writeln!(p, "\n## DESIRED OUTCOME\n{g}");
+    }
+    let _ = writeln!(p, "\n## AGENDA");
+    if agenda.is_empty() {
+        let _ = writeln!(p, "(none recorded)");
+    } else {
+        for a in agenda {
+            match &a.resolution {
+                Some(r) => {
+                    let _ = writeln!(p, "- [{}] {} → {}", a.status, a.item, r);
+                }
+                None => {
+                    let _ = writeln!(p, "- [{}] {}", a.status, a.item);
+                }
+            }
+        }
+    }
+    let _ = writeln!(p, "\n## KEY POINTS FROM THE CONVERSATION");
+    if recent_turns.is_empty() {
+        let _ = writeln!(p, "(no turns recorded)");
+    } else {
+        for (who, body) in recent_turns {
+            let line = body.replace(['\n', '\r'], " ");
+            let line = if line.chars().count() > 240 {
+                line.chars().take(240).collect::<String>() + "…"
+            } else {
+                line
+            };
+            let _ = writeln!(p, "- {who}: {line}");
+        }
+    }
+    let _ = writeln!(
+        p,
+        "\n## YOUR OUTPUT\nProduce a single actionable assignment the team will execute. Return EXACTLY one JSON object, no prose:"
+    );
+    let _ = writeln!(
+        p,
+        r#"{{"proposal": {{"title": "<short title>", "objective": "<a clear, self-contained instruction the team will execute>", "summary": "<2-3 sentences: what was decided and why>"}}}}"#
+    );
+    p
+}
+
+/// Extract `{"proposal": {...}}` from possibly-prose output (tolerant brace-match).
+pub fn parse_proposal(blob: &str) -> Option<ProposalSpec> {
+    #[derive(serde::Deserialize)]
+    struct Env {
+        proposal: ProposalSpec,
+    }
+    let marker = "\"proposal\"";
+    let mut result = None;
+    let mut from = 0;
+    while let Some(rel) = blob[from..].find(marker) {
+        let pos = from + rel;
+        from = pos + marker.len();
+        let Some(open) = blob[..pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<Env>(candidate) {
+                result = Some(env.proposal);
+            }
+        }
+    }
+    result
+}
+
+/// Synthesize a proposal from a resolved deliberation (one Sonnet call —
+/// quality matters for the spec the team will execute). `None` if the call or
+/// parse fails; the resolution then carries no proposal (the user reviews the
+/// transcript). Rolls cost into the deliberation meter.
+pub async fn synthesize_proposal(
+    pool: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    delib: &TeamDeliberation,
+) -> Option<ProposalSpec> {
+    let agenda = deliberation_repo::list_agenda(pool, &delib.id).ok()?;
+    let turns = team_channel_repo::list_for_deliberation(pool, &delib.id, 20).ok()?;
+    let recent: Vec<(String, String)> = turns
+        .into_iter()
+        .rev()
+        .map(|t| (author_label(&t.author_kind).to_string(), t.body))
+        .collect();
+    let prompt = build_proposal_prompt(&delib.topic, delib.goal.as_deref(), &agenda, &recent);
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+        prompt,
+        user_db,
+        "deliberation_proposal",
+        "claude-sonnet-4-6",
+    )
+    .await
+    .ok()?;
+    if let Some(c) = cost {
+        let _ = deliberation_repo::add_cost(pool, &delib.id, c);
+    }
+    parse_proposal(&blob)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1149,5 +1291,46 @@ mod turn_tests {
         assert!(p.contains("push back"));
         assert!(p.contains("prior: I flagged flaky tests"));
         assert!(p.contains("\"turn\""));
+    }
+}
+
+#[cfg(test)]
+mod proposal_tests {
+    use super::*;
+
+    #[test]
+    fn parse_proposal_extracts_spec() {
+        let blob = r#"ok: {"proposal": {"title": "Harden auth", "objective": "Add rate limiting to the login route and a regression test.", "summary": "Team agreed security before speed."}}"#;
+        let spec = parse_proposal(blob).unwrap();
+        assert_eq!(spec.title, "Harden auth");
+        assert!(spec.objective.contains("rate limiting"));
+    }
+
+    #[test]
+    fn parse_proposal_none_without_marker() {
+        assert!(parse_proposal("no proposal here").is_none());
+    }
+
+    #[test]
+    fn proposal_prompt_includes_agenda_resolution() {
+        let agenda = vec![DeliberationAgendaItem {
+            id: "a1".into(),
+            deliberation_id: "d1".into(),
+            item: "Ship Friday?".into(),
+            status: "resolved".into(),
+            resolution: Some("No — harden first".into()),
+            opened_by: Some("moderator".into()),
+            created_at: "2026-01-01T00:00:00Z".into(),
+            resolved_at: None,
+        }];
+        let p = build_proposal_prompt(
+            "Release cadence",
+            Some("Decide Friday ship"),
+            &agenda,
+            &[("Teammate".into(), "I vote harden".into())],
+        );
+        assert!(p.contains("Release cadence"));
+        assert!(p.contains("Ship Friday? → No — harden first"));
+        assert!(p.contains("\"proposal\""));
     }
 }
