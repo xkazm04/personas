@@ -3138,12 +3138,9 @@ mod multiselect_tests {
     #[test]
     fn select_all_four_then_submit_and_confirm() {
         let keys = multiselect_keystrokes(&menu(), "1,2,3,4").expect("a multi-select plan");
-        // 4 Up clamp; per option: SP then DN (last option no trailing DN);
-        // DN past option4, DN past 'Type something' to Submit; CR, CR.
-        assert_eq!(
-            flat(&keys),
-            "UP,UP,UP,UP,SP,DN,SP,DN,SP,DN,SP,DN,DN,CR,CR"
-        );
+        // Per option: SP then DN (last option no trailing DN); DN past option4,
+        // DN past 'Type something' to Submit; CR (confirm), CR (finalize).
+        assert_eq!(flat(&keys), "SP,DN,SP,DN,SP,DN,SP,DN,DN,CR,CR");
     }
 
     #[test]
@@ -3154,7 +3151,7 @@ mod multiselect_tests {
         // Option 1 already checked → no SP (just DN to opt2); option 2
         // wanted+unchecked → SP, DN; opts 3,4 not wanted → DN each; then DN
         // past 'Type something' to Submit; CR, CR.
-        assert_eq!(flat(&keys), "UP,UP,UP,UP,DN,SP,DN,DN,DN,DN,CR,CR");
+        assert_eq!(flat(&keys), "DN,SP,DN,DN,DN,DN,CR,CR");
     }
 
     #[test]
@@ -3309,16 +3306,15 @@ fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec<Vec<u8>>> 
     let n = options.len();
     let has_type_something = joined.contains("Type something");
 
-    let up: &[u8] = b"\x1b[A";
     let down: &[u8] = b"\x1b[B";
     let space: &[u8] = b" ";
     let enter: &[u8] = b"\r";
     let mut keys: Vec<Vec<u8>> = Vec::new();
-    // Clamp to the first option — a fresh menu already starts there; extra Ups
-    // are harmless because the list clamps at the top boundary.
-    for _ in 0..n {
-        keys.push(up.to_vec());
-    }
+    // NOTE: we deliberately do NOT prepend any ↑ to "clamp" the cursor. The menu
+    // is freshly rendered when orchestration fires (cursor already on option 1),
+    // and Claude Code's list WRAPS on ↑ at the top — so a clamp would move the
+    // cursor to the bottom and the whole plan would land on Cancel. Start from
+    // option 1 as given.
     for (i, (num, checked)) in options.iter().enumerate() {
         if wanted.contains(num) && !checked {
             keys.push(space.to_vec());
