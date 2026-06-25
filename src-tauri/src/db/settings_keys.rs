@@ -280,6 +280,17 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Design D — whether the deliberation tick may, unattended, advance an open
+/// team deliberation (a moderated multi-persona conversation that produces work
+/// feeding the deterministic engine). The Haiku moderator picks the key
+/// personas to speak each tick; length is bounded by PROGRESS (agenda + stall
+/// accounting) and hard cost/idle floors, never a turn count. Default OFF —
+/// nothing deliberates autonomously until the user opts in. Read by
+/// `engine::subscription::DeliberationSubscription`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_DELIBERATION: &str = "autonomous_deliberation";
+/// Default for [`AUTONOMOUS_DELIBERATION`] — off (opt-in autonomy).
+pub const AUTONOMOUS_DELIBERATION_DEFAULT: bool = false;
+
 /// Whether Athena emits a once-per-day end-of-day rollup card summarizing
 /// everything that was dropped / digested / surfaced that day (the "full audit
 /// without the live noise"). Default OFF — opt-in. Read by
