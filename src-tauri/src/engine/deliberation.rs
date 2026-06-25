@@ -1334,3 +1334,96 @@ mod proposal_tests {
         assert!(p.contains("\"proposal\""));
     }
 }
+
+#[cfg(test)]
+mod core_content_tests {
+    //! D5b — verify the SDLC templates carry well-formed, *deliberately
+    //! divergent* cores (the anti-bland-convergence content). Reads the JSON
+    //! straight off disk (no DB/AppState), so it's the cheap content gate.
+    use crate::db::models::PersonaCore;
+
+    const SDLC_CORES: &[&str] = &[
+        "development/solution-architect.json",
+        "development/dev-clone.json",
+        "development/qa-guardian.json",
+        "development/code-reviewer.json",
+        "security/security-sentinel.json",
+        "devops/release-manager.json",
+        "development/docs-steward.json",
+        "marketing/visual-brand-asset-factory.json",
+        "project-management/product-strategist.json",
+    ];
+
+    fn load_core(rel: &str) -> PersonaCore {
+        let path = format!(
+            "{}/../scripts/templates/{}",
+            env!("CARGO_MANIFEST_DIR"),
+            rel
+        );
+        let raw =
+            std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {rel}: {e}"));
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        let core = v
+            .get("payload")
+            .and_then(|p| p.get("persona"))
+            .and_then(|p| p.get("core"))
+            .cloned()
+            .unwrap_or_else(|| panic!("{rel}: missing payload.persona.core"));
+        serde_json::from_value(core).unwrap_or_else(|e| panic!("{rel}: core is not a PersonaCore: {e}"))
+    }
+
+    #[test]
+    fn every_sdlc_member_has_a_wellformed_core() {
+        for rel in SDLC_CORES {
+            let c = load_core(rel);
+            assert!(!c.motivation.trim().is_empty(), "{rel}: empty motivation");
+            assert!(!c.stance.trim().is_empty(), "{rel}: empty stance");
+            assert!(
+                !c.north_star_commitment.trim().is_empty(),
+                "{rel}: empty north_star_commitment"
+            );
+            for (name, d) in [
+                ("risk_tolerance", c.risk_tolerance),
+                ("speed_vs_quality", c.speed_vs_quality),
+                ("deference", c.deference),
+            ] {
+                assert!((0.0..=1.0).contains(&d), "{rel}: {name} dial {d} out of [0,1]");
+            }
+            assert!(
+                matches!(
+                    c.conflict_style.as_str(),
+                    "challenger" | "harmonizer" | "analyst" | "pragmatist"
+                ),
+                "{rel}: bad conflict_style {}",
+                c.conflict_style
+            );
+        }
+    }
+
+    #[test]
+    fn cores_are_deliberately_divergent() {
+        // The whole point: shared north star, different routes. Verify the
+        // ship-fast vs verify-first tension is actually encoded in the dials —
+        // otherwise the deliberation converges to bland agreement (plan §11).
+        let product = load_core("project-management/product-strategist.json");
+        let qa = load_core("development/qa-guardian.json");
+        let security = load_core("security/security-sentinel.json");
+        let architect = load_core("development/solution-architect.json");
+
+        assert!(
+            product.speed_vs_quality > qa.speed_vs_quality + 0.3,
+            "product should lean far more to speed than QA ({} vs {})",
+            product.speed_vs_quality,
+            qa.speed_vs_quality
+        );
+        assert!(
+            security.risk_tolerance < product.risk_tolerance - 0.3,
+            "security should be far more risk-averse than product"
+        );
+        assert!(architect.speed_vs_quality < 0.4, "architect should lean to quality");
+        assert!(
+            product.risk_tolerance > 0.5 && qa.risk_tolerance < 0.3,
+            "the ship-fast vs verify-first tension must be encoded"
+        );
+    }
+}
