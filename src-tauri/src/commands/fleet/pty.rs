@@ -386,6 +386,8 @@ pub fn spawn_session(
         title: None,
         athena_active_until_ms: 0,
         args: args.clone(),
+        cols,
+        rows,
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
         last_pty_output_ms: 0,

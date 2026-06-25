@@ -100,6 +100,31 @@ impl OutputRing {
         let bytes: Vec<u8> = self.buf.iter().copied().skip(start).collect();
         cook_lines(&bytes, max_lines)
     }
+
+    /// Reconstruct the CURRENTLY-RENDERED screen from the raw ring bytes via a
+    /// real VT emulator, returning the visible grid as plain-text lines
+    /// (trailing blank lines trimmed). Unlike `preview_lines`' line-cooker, this
+    /// models cursor positioning + alt-screen, so an interactive cursor-addressed
+    /// TUI — an `AskUserQuestion` menu, a permission prompt — renders as the
+    /// operator actually sees it instead of collapsing to fragments. `cols` MUST
+    /// match the size claude drew at, or a cursor-positioned line wraps wrong.
+    pub fn render_screen(&self, rows: u16, cols: u16) -> Vec<String> {
+        let rows = rows.max(8);
+        let cols = cols.max(40);
+        let mut parser = vt100::Parser::new(rows, cols, 0);
+        // Feed the whole ring in order so the final screen reflects the latest
+        // repaint. The oldest bytes may be a truncated escape (the ring drops
+        // from the front) — vt100 resynchronizes, and the final screen is set by
+        // the last complete paint regardless.
+        let bytes: Vec<u8> = self.buf.iter().copied().collect();
+        parser.process(&bytes);
+        let contents = parser.screen().contents();
+        let mut lines: Vec<String> = contents.lines().map(str::to_string).collect();
+        while lines.last().is_some_and(|l| l.trim().is_empty()) {
+            lines.pop();
+        }
+        lines
+    }
 }
 
 /// Trim `lines` in place to at most `max` entries, dropping from the front
@@ -235,6 +260,11 @@ pub struct FleetSessionInner {
     /// self-expiring window). `0` = not active. Drives the `athena_active` DTO.
     pub athena_active_until_ms: i64,
     pub args: Vec<String>,
+    /// PTY dimensions (kept in sync with `resize`). Used to reconstruct the
+    /// rendered screen grid from the raw ring via vt100 — the cols especially
+    /// must match what claude drew at, or a cursor-addressed TUI wraps wrong.
+    pub cols: u16,
+    pub rows: u16,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
     /// When the PTY last produced ANY bytes (including idle status redraws).
@@ -389,18 +419,24 @@ impl FleetRegistry {
 
     /// Resize the PTY for `session_id`.
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
-        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get(session_id) else {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
             return Err(format!("session not found: {session_id}"));
         };
+        let rows = rows.max(8);
+        let cols = cols.max(40);
+        // Keep the stored dims in sync so screen reconstruction (render_screen)
+        // renders at the size claude is actually drawing to.
+        session.cols = cols;
+        session.rows = rows;
         let master_guard = session.master.lock().unwrap_or_else(|e| e.into_inner());
         let Some(master) = master_guard.as_ref() else {
             return Err(format!("session master dropped: {session_id}"));
         };
         master
             .resize(portable_pty::PtySize {
-                rows: rows.max(8),
-                cols: cols.max(40),
+                rows,
+                cols,
                 pixel_width: 0,
                 pixel_height: 0,
             })
@@ -564,6 +600,18 @@ impl FleetRegistry {
                 Some((id.clone(), rev, ring.preview_lines(max_lines)))
             })
             .collect()
+    }
+
+    /// Reconstruct the rendered screen for one session (its `rev` + the visible
+    /// grid as lines), using the session's stored PTY dims. `None` for an unknown
+    /// session. The companion orchestration uses this to actually READ what a
+    /// paused session is blocked on (a cursor-addressed TUI the line-cooker can't
+    /// render). See [`OutputRing::render_screen`].
+    pub fn render_screen_for(&self, session_id: &str) -> Option<(u32, Vec<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get(session_id)?;
+        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+        Some((ring.rev(), ring.render_screen(session.rows, session.cols)))
     }
 
     /// Records that the child has exited. Updates state and clears the
@@ -789,6 +837,8 @@ mod tests {
             title: None,
             athena_active_until_ms: 0,
             args: Vec::new(),
+            cols: 120,
+            rows: 32,
             state,
             last_activity_ms: now_ms(),
             last_pty_output_ms: 0,
@@ -803,6 +853,27 @@ mod tests {
             output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
             killer: None,
         }
+    }
+
+    #[test]
+    fn render_screen_reconstructs_cursor_addressed_tui() {
+        let mut ring = OutputRing::new(OUTPUT_RING_CAP);
+        // Enter alt-screen, clear, then draw a menu via cursor positioning
+        // (CSI row;col H) — exactly the shape an AskUserQuestion menu uses and
+        // the line-cooker collapses (it resets on ?1049h/2J and ignores cursor
+        // moves, so it would yield only the last fragment).
+        let seq = b"\x1b[?1049h\x1b[2J\
+            \x1b[1;1HChoose validation strategy:\
+            \x1b[3;3H1. Throw\x1b[4;3H2. Return null\
+            \x1b[6;1HEnter to select";
+        ring.push(seq);
+        let joined = ring.render_screen(10, 80).join("\n");
+        assert!(joined.contains("Choose validation strategy:"), "got: {joined}");
+        assert!(joined.contains("1. Throw"), "got: {joined}");
+        assert!(joined.contains("2. Return null"), "got: {joined}");
+        assert!(joined.contains("Enter to select"), "got: {joined}");
+        // The cooker would NOT reconstruct these cursor-addressed rows.
+        assert!(cook_lines(seq, 40).join("\n").trim() != joined.trim());
     }
 
     #[test]

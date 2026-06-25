@@ -222,13 +222,14 @@ pub fn orchestrate_on_awaiting(
     // (A) Capture what's actually on this session's screen — the prompt or
     // decision it's blocked on — so Athena can evaluate a real single/multi-select
     // question and pick or defer, instead of reasoning blind from the fleet
-    // digest. Cooked (ANSI-stripped) tail of the always-on PTY ring, so it works
-    // regardless of UI subscription. `None` rev ⇒ always returns the current tail.
+    // digest. RECONSTRUCTED via a VT emulator (`render_screen_for`) from the
+    // always-on PTY ring, so it works regardless of UI subscription AND renders
+    // an interactive cursor-addressed TUI (an AskUserQuestion menu, a permission
+    // prompt) as the operator sees it — the old line-cooker collapsed those to
+    // empty/fragments, so Athena saw nothing and refused to decide.
     let screen_text = crate::commands::fleet::registry::registry()
-        .preview_outputs(&[(session_id.to_string(), None)], 40)
-        .into_iter()
-        .next()
-        .map(|(_, _, lines)| lines.join("\n"))
+        .render_screen_for(session_id)
+        .map(|(_, lines)| lines.join("\n"))
         .unwrap_or_default();
     // Content-aware dedup: if this session's on-screen decision is unchanged
     // since we last assessed it, don't wake her again. (The cooked tail strips
