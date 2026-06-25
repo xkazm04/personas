@@ -24,6 +24,13 @@ import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 
 export type StudioPhase = 'idle' | 'scaffolding' | 'starting' | 'live' | 'error';
 
+/** One completed Athena reply — the chat history shows each as its own bubble. */
+export interface StudioMessage {
+  id: string;
+  text: string;
+  ts: number;
+}
+
 export interface ProjectRuntime {
   id: string;
   name: string;
@@ -33,6 +40,8 @@ export interface ProjectRuntime {
   busy: boolean;
   stream: string;
   reply: string | null;
+  /** Every completed Athena reply this session, oldest→newest (1a history). */
+  messages: StudioMessage[];
   question: string | null;
   autonomous: boolean;
   /** Vision text to auto-send as the first turn once the server is live. */
@@ -110,6 +119,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         busy: false,
         stream: '',
         reply: null,
+        messages: [],
         question: null,
         autonomous: false,
         seedPending: null,
@@ -200,8 +210,13 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
+      const reply = result.reply.trim() || 'Done.';
       patch(id, {
-        reply: result.reply.trim() || 'Done.',
+        reply,
+        messages: [
+          ...(get().runtimes[id]?.messages ?? []),
+          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+        ],
         question: q,
         options: q ? (result.options ?? []) : [],
         decisionArea: q ? (result.area ?? null) : null,
@@ -213,7 +228,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });
     } catch (e) {
-      patch(id, { reply: 'Something went wrong with that change.', autonomous: false, resumeAuto: false });
+      const reply = 'Something went wrong with that change.';
+      patch(id, {
+        reply,
+        messages: [
+          ...(get().runtimes[id]?.messages ?? []),
+          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+        ],
+        autonomous: false,
+        resumeAuto: false,
+      });
       toastCatch('build instruction')(e);
     } finally {
       patch(id, { busy: false });

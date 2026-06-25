@@ -1,18 +1,16 @@
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Bot, Image as ImageIcon, Send, Square, Wand2 } from 'lucide-react';
+import { Image as ImageIcon, Send, Square, Wand2 } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import Button from '@/features/shared/components/buttons/Button';
-import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useStudioStore } from './studioStore';
 import StudioBuildSettings from './StudioBuildSettings';
-import StudioDecision from './StudioDecision';
+import StudioMessages from './StudioMessages';
 import StudioQuickActions from './StudioQuickActions';
 
 // Project-scoped chat: reads the ACTIVE tab's runtime from the store, so the
-// input + bubble always reflect the active project; switching tabs swaps them,
-// and a background project keeps streaming into its own runtime. The project
-// name is shown so it's clear which project you're talking to.
+// input + bubbles always reflect the active project; switching tabs swaps them,
+// and a background project keeps streaming into its own runtime. The response log
+// + streaming live in StudioMessages; this owns the input row.
 export default function StudioChatInput() {
   const [input, setInput] = useState('');
   const activeId = useStudioStore((s) => s.activeId);
@@ -22,11 +20,16 @@ export default function StudioChatInput() {
   const stopAutonomous = useStudioStore((s) => s.stopAutonomous);
 
   if (!activeId || !rt) return null;
-  const { busy, stream, reply, question, options, autonomous, name } = rt;
-
-  const streamDisplay = (stream.split('BUILD_PLAN:')[0]?.split('NEEDS_INPUT:')[0] ?? '').trimEnd();
-  const showBubble = busy || reply !== null || question !== null;
+  const { busy, question, autonomous, name } = rt;
   const working = busy || autonomous;
+
+  // 2a — subtle inner glow that reads the input's state at a glance: purple when
+  // Athena needs a decision, blue while she's working, plain otherwise.
+  const stateShadow = question
+    ? 'inset 0 0 0 1px rgba(168,85,247,0.55), inset 0 1px 14px rgba(168,85,247,0.22), 0 8px 24px -8px rgba(0,0,0,0.45)'
+    : working
+      ? 'inset 0 0 0 1px rgba(96,165,250,0.50), inset 0 1px 14px rgba(96,165,250,0.18), 0 8px 24px -8px rgba(0,0,0,0.45)'
+      : undefined;
 
   const send = () => {
     const text = input.trim();
@@ -53,54 +56,14 @@ export default function StudioChatInput() {
 
   return (
     <div className="absolute bottom-4 left-1/2 z-20 flex w-[min(38rem,calc(100%-7rem))] -translate-x-1/2 flex-col gap-2">
-      <AnimatePresence mode="wait">
-        {showBubble && (
-          <motion.div
-            key={`bubble-${activeId}`}
-            data-testid="studio-chat-bubble"
-            initial={{ y: 12, opacity: 0, scale: 0.97 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0, scale: 0.97 }}
-            transition={{ type: 'spring', stiffness: 460, damping: 30 }}
-            className="pointer-events-auto flex max-w-full items-start gap-2 self-start rounded-modal border border-border bg-background/95 px-3 py-2 shadow-elevation-4 backdrop-blur"
-          >
-            <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            {busy ? (
-              streamDisplay ? (
-                <div className="max-h-48 min-w-0 overflow-y-auto">
-                  <MarkdownRenderer content={streamDisplay} className="athena-chat-md" />
-                </div>
-              ) : (
-                <span className="flex items-center gap-1.5 text-md text-foreground/80">
-                  {autonomous ? `Building ${name} autonomously` : 'Athena is working'}
-                  <span className="flex gap-0.5">
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:300ms]" />
-                  </span>
-                </span>
-              )
-            ) : (
-              <div className="min-w-0">
-                {reply && (
-                  <MarkdownRenderer content={reply} className="athena-chat-md" codeBlockActions />
-                )}
-                {question && (
-                  <StudioDecision
-                    question={question}
-                    options={options}
-                    onAnswer={(a) => void sendTurn(activeId, a)}
-                  />
-                )}
-              </div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <StudioMessages />
 
       {!working && !question && <StudioQuickActions id={activeId} />}
 
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-4 pr-1.5 shadow-elevation-3 backdrop-blur">
+      <div
+        className="pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-background/90 py-1.5 pl-4 pr-1.5 shadow-elevation-3 backdrop-blur transition-shadow duration-300"
+        style={stateShadow ? { boxShadow: stateShadow } : undefined}
+      >
         <input
           data-testid="studio-chat-input"
           value={input}
