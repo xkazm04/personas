@@ -8,7 +8,7 @@
 
 import { memo, useMemo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Target, CheckCircle2, Layers } from 'lucide-react';
+import { CheckCircle2, Layers } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -139,21 +139,14 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
           <header className="flex items-center gap-2 px-3 py-2">
             <span className="h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: col.color }} />
             <span className="typo-heading font-semibold truncate text-foreground">{col.name}</span>
-            {col.cards.length > 0 && (
-              <span className="ml-auto rounded-full bg-secondary/60 px-1.5 py-0.5 typo-caption text-foreground tabular-nums">
-                {COPY.attentionCount(col.cards.length)}
-              </span>
-            )}
           </header>
 
           <div className="flex-1 min-h-0 space-y-3 overflow-y-auto px-2.5 pb-3">
-            {/* Active goals (preview) — only for real teams */}
+            {/* Active goals — only for real teams */}
             {col.goals.length > 0 && (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 px-0.5">
-                  <Target className="h-3 w-3 text-foreground" />
-                  <span className="typo-caption uppercase tracking-wider text-foreground">{COPY.activeGoals}</span>
-                  <span className="rounded-full border border-primary/15 px-1 py-px typo-caption text-foreground">{COPY.goalsPreview}</span>
+                  <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{COPY.activeGoals}</span>
                 </div>
                 {col.goals.map((g, i) => (
                   <div key={i} className="rounded-interactive border border-primary/8 bg-background/40 px-2 py-1.5">
@@ -169,10 +162,13 @@ function MonitorProjectColumnsImpl({ cards, personas, teams, selectedPersonaId, 
               </div>
             )}
 
+            {/* Divider between the goals section and Needs attention. */}
+            {col.goals.length > 0 && <div aria-hidden className="border-t border-primary/10" />}
+
             {/* Needs attention */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 px-0.5">
-                <span className="typo-caption uppercase tracking-wider text-foreground">{COPY.needsAttention}</span>
+                <span className="typo-caption font-semibold uppercase tracking-wider text-primary">{COPY.needsAttention}</span>
               </div>
               {col.cards.length === 0 ? (
                 <div className="flex items-center gap-1.5 rounded-interactive border border-primary/8 px-2 py-1.5">
