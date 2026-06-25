@@ -650,9 +650,19 @@ impl ReactiveSubscription for DeliberationSubscription {
                         t.status.as_str(),
                     );
                     for sp in &speakers {
-                        // D3: run the persona's deliberation turn here (opinion
-                        // or self-promote to a gated capability). Stubbed.
-                        tracing::info!(deliberation_id = %delib.id, persona_id = %sp, reason = %decision.reason, "deliberation: would run persona turn (D3 stub)");
+                        // Each speaker speaks in turn (re-reading the channel so a
+                        // later speaker sees an earlier one's same-tick turn).
+                        if let Err(e) = run_persona_deliberation_turn(
+                            &self.pool,
+                            &user_db,
+                            &delib,
+                            sp,
+                            ctx.north_star.as_deref(),
+                        )
+                        .await
+                        {
+                            tracing::warn!(deliberation_id = %delib.id, persona_id = %sp, error = %e, "deliberation: persona turn failed");
+                        }
                     }
                 }
                 TickOutcome::Escalate { reason } => {
@@ -689,6 +699,231 @@ impl ReactiveSubscription for DeliberationSubscription {
             }
         }
     }
+}
+
+// ── The persona deliberation turn (D3) ──────────────────────────────────────
+
+/// A persona's protocol reply for one turn. The persona decides for ITSELF
+/// whether to just opine (`message`) or to act (`invoke_capability` /
+/// `propose_assignment`). All fields default so a partial object still parses.
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct PersonaTurn {
+    #[serde(default)]
+    pub message: String,
+    #[serde(default)]
+    pub invoke_capability: Option<CapabilityRequest>,
+    #[serde(default)]
+    pub propose_assignment: Option<AssignmentProposal>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct CapabilityRequest {
+    pub use_case_id: String,
+    #[serde(default)]
+    pub rationale: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AssignmentProposal {
+    pub title: String,
+    #[serde(default)]
+    pub rationale: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PersonaTurnEnvelope {
+    pub turn: PersonaTurn,
+}
+
+/// Recent turns a persona sees for context.
+const TURN_CONTEXT_WINDOW: i64 = 12;
+/// Scoped memories injected into a persona's turn.
+const TURN_MEMORY_LIMIT: i64 = 5;
+
+/// Build a persona's deliberation-turn prompt — its identity + core (distinct
+/// viewpoint) + the team north star + topic + scoped memory + the conversation
+/// so far. LICENSES disagreement (the anti-bland-convergence lever, plan §11).
+/// Pure + testable.
+#[allow(clippy::too_many_arguments)]
+pub fn build_turn_prompt(
+    name: &str,
+    identity: &str,
+    core_profile: Option<&str>,
+    north_star: Option<&str>,
+    topic: &str,
+    memories: &[String],
+    recent_turns: &[(String, String)],
+) -> String {
+    use std::fmt::Write as _;
+    let mut p = String::new();
+    let _ = writeln!(
+        p,
+        "You are {name}, a member of an autonomous product team in a live deliberation."
+    );
+    let _ = writeln!(p, "\n## YOUR IDENTITY\n{identity}");
+    if let Some(core) = core_profile {
+        let _ = writeln!(p, "\n## YOUR CORE (think and speak from this)\n{core}");
+    }
+    if let Some(ns) = north_star {
+        let _ = writeln!(p, "\n## TEAM NORTH STAR (shared)\n{ns}");
+    }
+    let _ = writeln!(p, "\n## THE TOPIC\n{topic}");
+    if !memories.is_empty() {
+        let _ = writeln!(p, "\n## WHAT YOU REMEMBER (from this deliberation)");
+        for m in memories {
+            let _ = writeln!(p, "- {m}");
+        }
+    }
+    let _ = writeln!(p, "\n## THE CONVERSATION SO FAR");
+    if recent_turns.is_empty() {
+        let _ = writeln!(p, "(you are opening the discussion)");
+    } else {
+        for (who, body) in recent_turns {
+            let line = body.replace(['\n', '\r'], " ");
+            let line = if line.chars().count() > 280 {
+                line.chars().take(280).collect::<String>() + "…"
+            } else {
+                line
+            };
+            let _ = writeln!(p, "- {who}: {line}");
+        }
+    }
+    let _ = writeln!(
+        p,
+        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. Be concise (2-5 sentences). If your point is better served by USING one of your capabilities than by talking, request it. If the team is ready to commit to a concrete piece of work, propose it."
+    );
+    let _ = writeln!(
+        p,
+        r#"Return EXACTLY one JSON object, no prose:
+{{"turn": {{"message": "<your contribution>", "invoke_capability": {{"use_case_id": "<id>", "rationale": "<why>"}}, "propose_assignment": {{"title": "<title>", "rationale": "<why>"}}}}}}
+Omit invoke_capability / propose_assignment unless you mean them."#
+    );
+    p
+}
+
+/// Extract `{"turn": {...}}` from possibly-prose output (tolerant brace-match).
+pub fn parse_turn(blob: &str) -> Option<PersonaTurn> {
+    let marker = "\"turn\"";
+    let mut result = None;
+    let mut from = 0;
+    while let Some(rel) = blob[from..].find(marker) {
+        let pos = from + rel;
+        from = pos + marker.len();
+        let Some(open) = blob[..pos].rfind('{') else {
+            continue;
+        };
+        if let Some(close) = crate::companion::athena_reaction::match_braces(&blob[open..]) {
+            let candidate = &blob[open..open + close + 1];
+            if let Ok(env) = serde_json::from_str::<PersonaTurnEnvelope>(candidate) {
+                result = Some(env.turn);
+            }
+        }
+    }
+    result
+}
+
+/// Run ONE persona's deliberation turn — the ad-hoc single-turn primitive the
+/// engine never had (only multi-step DAG assignments). The persona reads its
+/// identity + core + the conversation + its scoped memory and either opines or
+/// self-promotes to a capability / proposes work. Tool-less (an opinion is
+/// cheap); the turn posts into the deliberation channel and rolls its cost into
+/// the deliberation meter. Capability / proposal requests are SURFACED only —
+/// always gated; D4 wires the approval + DAG handoff (decision 8).
+pub async fn run_persona_deliberation_turn(
+    pool: &DbPool,
+    user_db: &crate::db::UserDbPool,
+    delib: &TeamDeliberation,
+    persona_id: &str,
+    north_star: Option<&str>,
+) -> Result<(), AppError> {
+    // Persona voice + viewpoint + model.
+    let (name, identity, model_profile, core_profile): (
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+    ) = {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT name, system_prompt, model_profile, core_profile FROM personas WHERE id = ?1",
+            params![persona_id],
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?)),
+        )
+        .map_err(AppError::Database)?
+    };
+    // Speak on the persona's own model tier (opinion turn — tool-less).
+    let model = model_profile
+        .as_deref()
+        .and_then(|mp| serde_json::from_str::<serde_json::Value>(mp).ok())
+        .and_then(|v| v.get("model").and_then(|m| m.as_str()).map(String::from))
+        .unwrap_or_else(|| crate::engine::prompt::DEFAULT_CAPABILITY_MODEL.to_string());
+
+    // Deliberation-scoped memory (what this persona argued before).
+    let memories: Vec<String> = {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT title, content FROM persona_memories
+             WHERE persona_id = ?1 AND deliberation_id = ?2
+             ORDER BY datetime(created_at) DESC LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![persona_id, delib.id, TURN_MEMORY_LIMIT], |r| {
+            let title: String = r.get(0)?;
+            let content: String = r.get(1)?;
+            Ok(format!("{title}: {content}"))
+        })?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?
+    };
+
+    // The conversation so far (re-read so sequential same-tick speakers see each
+    // other), oldest-first.
+    let turns = team_channel_repo::list_for_deliberation(pool, &delib.id, TURN_CONTEXT_WINDOW)?;
+    let recent_turns: Vec<(String, String)> = turns
+        .into_iter()
+        .rev()
+        .map(|t| (author_label(&t.author_kind).to_string(), t.body))
+        .collect();
+
+    let prompt = build_turn_prompt(
+        &name,
+        &identity,
+        core_profile.as_deref(),
+        north_star,
+        &delib.topic,
+        &memories,
+        &recent_turns,
+    );
+
+    let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
+        prompt,
+        user_db,
+        "deliberation_turn",
+        &model,
+    )
+    .await?;
+    if let Some(c) = cost {
+        let _ = deliberation_repo::add_cost(pool, &delib.id, c);
+    }
+
+    let turn = parse_turn(&blob).unwrap_or_default();
+    if !turn.message.trim().is_empty() {
+        let _ = team_channel_repo::post_deliberation_turn(
+            pool,
+            &delib.id,
+            &delib.team_id,
+            "persona",
+            Some(persona_id),
+            &turn.message,
+        );
+    }
+    // Capability / proposal requests are SURFACED only — always gated (D4).
+    if let Some(cap) = &turn.invoke_capability {
+        tracing::info!(deliberation_id = %delib.id, persona_id = %persona_id, use_case = %cap.use_case_id, "deliberation: persona requested a capability (gated — D4 executes)");
+    }
+    if let Some(prop) = &turn.propose_assignment {
+        tracing::info!(deliberation_id = %delib.id, persona_id = %persona_id, title = %prop.title, "deliberation: persona proposed an assignment (D4 decision gate)");
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -873,5 +1108,46 @@ mod moderator_tests {
         assert!(p.contains("Architect"));
         assert!(p.contains("[a1] How to test?"));
         assert!(p.contains("\"deliberation\""));
+    }
+}
+
+#[cfg(test)]
+mod turn_tests {
+    use super::*;
+
+    #[test]
+    fn parse_turn_extracts_message_and_capability() {
+        let blob = r#"sure: {"turn": {"message": "I disagree — harden first.", "invoke_capability": {"use_case_id": "uc_audit", "rationale": "check deps"}}}"#;
+        let t = parse_turn(blob).unwrap();
+        assert_eq!(t.message, "I disagree — harden first.");
+        assert_eq!(t.invoke_capability.unwrap().use_case_id, "uc_audit");
+        assert!(t.propose_assignment.is_none());
+    }
+
+    #[test]
+    fn parse_turn_message_only() {
+        let t = parse_turn(r#"{"turn": {"message": "Agreed."}}"#).unwrap();
+        assert_eq!(t.message, "Agreed.");
+        assert!(t.invoke_capability.is_none());
+    }
+
+    #[test]
+    fn turn_prompt_licenses_disagreement_and_includes_core() {
+        let p = build_turn_prompt(
+            "QA Guardian",
+            "You guard quality.",
+            Some(r#"{"stance":"challenger"}"#),
+            Some("Be #1"),
+            "Should we ship Friday?",
+            &["prior: I flagged flaky tests".to_string()],
+            &[("Teammate".to_string(), "Let's ship.".to_string())],
+        );
+        assert!(p.contains("QA Guardian"));
+        assert!(p.contains("challenger"));
+        assert!(p.contains("Be #1"));
+        assert!(p.contains("Should we ship Friday?"));
+        assert!(p.contains("push back"));
+        assert!(p.contains("prior: I flagged flaky tests"));
+        assert!(p.contains("\"turn\""));
     }
 }

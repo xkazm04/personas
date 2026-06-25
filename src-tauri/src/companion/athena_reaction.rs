@@ -440,7 +440,7 @@ pub(crate) async fn cli_decision_with_model(
     prompt_text: String,
     user_db: &crate::db::UserDbPool,
     trigger_kind: &'static str,
-    model: &'static str,
+    model: &str,
 ) -> Result<(String, Option<f64>), AppError> {
     let (text, usage) = cli_text_inner(prompt_text, model).await?;
     let cost = usage.as_ref().and_then(|u| u.cost_usd);
