@@ -73,11 +73,17 @@ export default function StudioTabBar({
   // The picker is portalled to <body> + fixed-positioned under the "+" button, so
   // it escapes the tab strip's `overflow-x` clip (which would otherwise hide it).
   const plusRef = useRef<HTMLButtonElement>(null);
-  const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
   const togglePicker = () => {
     if (!pickerOpen) {
       const r = plusRef.current?.getBoundingClientRect();
-      if (r) setMenuPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) });
+      if (r) {
+        // Open to the RIGHT of the + button (left edge aligned with it), clamped
+        // so the 16rem-wide menu never runs off either edge of the window.
+        const width = 256;
+        const left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8));
+        setMenuPos({ top: r.bottom + 4, left });
+      }
     }
     setPickerOpen((o) => !o);
   };
@@ -142,7 +148,7 @@ export default function StudioTabBar({
             <div className="fixed inset-0 z-[120]" onClick={() => setPickerOpen(false)} />
             <div
               className="fixed z-[121] w-64 overflow-hidden rounded-card border border-border bg-background/95 py-1 shadow-elevation-4 backdrop-blur"
-              style={{ top: menuPos.top, right: menuPos.right }}
+              style={{ top: menuPos.top, left: menuPos.left }}
             >
               <button
                 type="button"
