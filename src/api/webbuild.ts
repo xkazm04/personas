@@ -35,6 +35,10 @@ export const webbuildListServers = () =>
 export const webbuildListProjects = () =>
   invokeWithTimeout<DevProject[]>('dev_tools_list_projects', { status: undefined });
 
+/** Of the given projects, the ids that are Next.js apps Studio can build. */
+export const webbuildNextReady = (projectIds: string[]) =>
+  invokeWithTimeout<string[]>('webbuild_next_ready', { projectIds });
+
 /**
  * Send a build instruction to a project's build session — Athena edits the
  * project's code at its cwd; the dev server hot-reloads the preview. Returns

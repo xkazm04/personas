@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FolderGit2, ListChecks, Plus, X } from 'lucide-react';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import { webbuildNextReady } from '@/api/webbuild';
 import { useStudioStore } from './studioStore';
 import { useStudioHistory } from './studioHistory';
 import { phaseProgress } from './studioBuildModel';
@@ -33,6 +34,26 @@ export default function StudioTabBar({
   // Personas Dev Tools projects you can import as a fresh Studio tab.
   const recent = openable.filter((p) => history[p.id]);
   const importable = openable.filter((p) => !history[p.id]);
+
+  // Flag Dev Tools projects that aren't Next.js apps (Studio's preview runs
+  // `next dev`) — checked on disk when the picker opens. undefined = unknown.
+  const [nextReady, setNextReady] = useState<Record<string, boolean>>({});
+  const importableKey = importable.map((p) => p.id).join(',');
+  useEffect(() => {
+    if (!pickerOpen || !importableKey) return;
+    const ids = importableKey.split(',');
+    let cancelled = false;
+    void webbuildNextReady(ids)
+      .then((readyIds) => {
+        if (cancelled) return;
+        const set = new Set(readyIds);
+        setNextReady(Object.fromEntries(ids.map((id) => [id, set.has(id)])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [pickerOpen, importableKey]);
 
   return (
     <header className="relative flex w-full min-w-0 shrink-0 items-center gap-1.5 overflow-x-auto whitespace-nowrap border-b border-border px-3 py-1.5">
@@ -140,21 +161,39 @@ export default function StudioTabBar({
                     <div className="px-3 py-1 typo-caption text-foreground/45">
                       Dev Tools projects
                     </div>
-                    {importable.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setPickerOpen(false);
-                          void startExisting(p.id, p.name);
-                        }}
-                        title={p.root_path}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-md text-foreground/80 hover:bg-secondary/50 hover:text-foreground"
-                      >
-                        <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
-                        <span className="min-w-0 flex-1 truncate">{p.name}</span>
-                      </button>
-                    ))}
+                    {importable.map((p) => {
+                      const blocked = nextReady[p.id] === false;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          disabled={blocked}
+                          onClick={() => {
+                            if (blocked) return;
+                            setPickerOpen(false);
+                            void startExisting(p.id, p.name);
+                          }}
+                          title={
+                            blocked
+                              ? 'Not a Next.js app — Studio builds Next.js + Tailwind projects'
+                              : p.root_path
+                          }
+                          className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-md ${
+                            blocked
+                              ? 'cursor-not-allowed text-foreground/35'
+                              : 'text-foreground/80 hover:bg-secondary/50 hover:text-foreground'
+                          }`}
+                        >
+                          <FolderGit2 className="h-3.5 w-3.5 shrink-0 text-foreground/40" />
+                          <span className="min-w-0 flex-1 truncate">{p.name}</span>
+                          {blocked && (
+                            <span className="shrink-0 typo-caption text-status-warning/80">
+                              Not Next.js
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </>
                 )}
               </div>
