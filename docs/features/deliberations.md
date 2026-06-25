@@ -48,8 +48,10 @@ Open a team's workspace → the **Deliberate** tab (next to Collab). The surface
     concrete proposal (title + objective + summary). **Approve & assign** hands
     that objective to the team-assignment engine (the same path Athena uses), so
     the deliberation *feeds the deterministic engine* — talk becomes shipped work.
-    If the team can't settle it, the card becomes **"Your decision needed"** and
-    escalates to you.
+    If the team can't settle it, the card becomes **"Your decision needed"** with
+    an inline decision: type a steer and **Send & resume** (the team continues
+    with your direction and a fresh stall budget), **Wrap up now** (synthesize a
+    proposal from where it landed), or **Abort**.
 
 ## How it works (architecture)
 

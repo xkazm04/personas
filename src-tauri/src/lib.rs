@@ -2313,6 +2313,7 @@ pub fn run() {
             commands::teams::deliberations::advance_team_deliberation,
             commands::teams::deliberations::approve_deliberation_action,
             commands::teams::deliberations::skip_deliberation_action,
+            commands::teams::deliberations::resolve_deliberation_escalation,
             commands::teams::deliberations::approve_deliberation_proposal,
             commands::teams::deliberations::dismiss_deliberation_proposal,
             commands::teams::assignments::advance_team_goal,

@@ -38,5 +38,9 @@
   "run_active": "Выполняются раунды…",
   "run_stop": "Стоп",
   "run_to_budget": "Запуск до бюджета",
-  "status_awaiting_action": "Требует одобрения"
+  "status_awaiting_action": "Требует одобрения",
+  "decision_abort": "Прервать",
+  "decision_placeholder": "Добавить направление для команды (необязательно)",
+  "decision_resolve": "Завершить сейчас",
+  "decision_resume": "Отправить и продолжить"
 }

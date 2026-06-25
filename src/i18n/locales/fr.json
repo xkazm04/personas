@@ -17171,6 +17171,10 @@
     "run_active": "Rounds en cours…",
     "run_stop": "Arrêter",
     "run_to_budget": "Exécuter jusqu'au budget",
-    "status_awaiting_action": "En attente d'approbation"
+    "status_awaiting_action": "En attente d'approbation",
+    "decision_abort": "Abandonner",
+    "decision_placeholder": "Ajouter une direction pour l'équipe (optionnel)",
+    "decision_resolve": "Finaliser maintenant",
+    "decision_resume": "Envoyer & reprendre"
   }
 }

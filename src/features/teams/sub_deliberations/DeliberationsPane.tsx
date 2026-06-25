@@ -73,6 +73,7 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     busy,
     advancing,
     actionBusy,
+    decisionBusy,
     running,
     create,
     advance,
@@ -80,6 +81,7 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
     stopRun,
     approveAction,
     skipAction,
+    resolveEscalation,
     approve,
     dismiss,
   } = useTeamDeliberations(teamId);
@@ -87,6 +89,7 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
   const [topic, setTopic] = useState('');
   const [goal, setGoal] = useState('');
   const [budget, setBudget] = useState('');
+  const [decisionNote, setDecisionNote] = useState('');
 
   const statusLabel = (s: string): string =>
     (td as Record<string, string>)[`status_${s}`] ?? s;
@@ -344,13 +347,53 @@ export function DeliberationsPane({ teamId }: { teamId: string }) {
               </div>
             )}
 
-            {/* Proposal / escalation card */}
+            {/* Escalation — the human decision, kept in-module */}
             {detail.status === 'escalated' && (
               <div className="rounded-card border border-status-warning/30 bg-status-warning/[0.08] p-4">
                 <p className="flex items-center gap-1.5 typo-body font-semibold text-status-warning">
                   <AlertTriangle className="h-4 w-4" /> {td.escalated_title}
                 </p>
                 <p className="mt-1 typo-caption text-foreground/80">{td.escalated_body}</p>
+                <textarea
+                  value={decisionNote}
+                  onChange={(e) => setDecisionNote(e.target.value)}
+                  placeholder={td.decision_placeholder}
+                  rows={2}
+                  className="mt-3 w-full rounded-input border border-primary/15 bg-background/60 px-2 py-1.5 typo-caption text-foreground placeholder:text-foreground/40 resize-y"
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <AsyncButton
+                    onClick={async () => {
+                      await resolveEscalation(detail.id, 'resume', decisionNote.trim() || undefined);
+                      setDecisionNote('');
+                    }}
+                    isLoading={decisionBusy}
+                    disabled={!decisionNote.trim()}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/30 bg-primary/15 px-3 py-1.5 typo-body font-medium text-primary hover:bg-primary/25 transition-colors disabled:opacity-50"
+                  >
+                    <Play className="h-3.5 w-3.5" /> {td.decision_resume}
+                  </AsyncButton>
+                  <AsyncButton
+                    onClick={async () => {
+                      await resolveEscalation(detail.id, 'resolve', decisionNote.trim() || undefined);
+                      setDecisionNote('');
+                    }}
+                    disabled={decisionBusy}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-status-success/30 bg-status-success/15 px-3 py-1.5 typo-body font-medium text-status-success hover:bg-status-success/25 transition-colors disabled:opacity-50"
+                  >
+                    <Gavel className="h-3.5 w-3.5" /> {td.decision_resolve}
+                  </AsyncButton>
+                  <AsyncButton
+                    onClick={async () => {
+                      await resolveEscalation(detail.id, 'abort');
+                      setDecisionNote('');
+                    }}
+                    disabled={decisionBusy}
+                    className="inline-flex items-center gap-1.5 rounded-interactive border border-primary/20 px-3 py-1.5 typo-body text-foreground/80 hover:bg-secondary/40 transition-colors disabled:opacity-50"
+                  >
+                    {td.decision_abort}
+                  </AsyncButton>
+                </div>
               </div>
             )}
             {resolution?.proposal && resolution.status === 'pending' && (

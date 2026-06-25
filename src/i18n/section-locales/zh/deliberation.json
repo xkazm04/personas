@@ -38,5 +38,9 @@
   "run_active": "运行轮次中…",
   "run_stop": "停止",
   "run_to_budget": "运行至预算",
-  "status_awaiting_action": "待批准"
+  "status_awaiting_action": "待批准",
+  "decision_abort": "中止",
+  "decision_placeholder": "为团队添加指导方向（可选）",
+  "decision_resolve": "立即结束",
+  "decision_resume": "发送并继续"
 }

@@ -38,5 +38,9 @@
   "run_active": "राउंड चल रहे हैं…",
   "run_stop": "रोकें",
   "run_to_budget": "बजट तक चलाएं",
-  "status_awaiting_action": "अनुमोदन आवश्यक"
+  "status_awaiting_action": "अनुमोदन आवश्यक",
+  "decision_abort": "रद्द करें",
+  "decision_placeholder": "टीम के लिए दिशा जोड़ें (वैकल्पिक)",
+  "decision_resolve": "अभी समाप्त करें",
+  "decision_resume": "भेजें और जारी रखें"
 }

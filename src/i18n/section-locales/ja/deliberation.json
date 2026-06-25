@@ -38,5 +38,9 @@
   "run_active": "ラウンド実行中…",
   "run_stop": "停止",
   "run_to_budget": "予算まで実行",
-  "status_awaiting_action": "承認待ち"
+  "status_awaiting_action": "承認待ち",
+  "decision_abort": "中止",
+  "decision_placeholder": "チームへの指示を追加（任意）",
+  "decision_resolve": "今すぐまとめる",
+  "decision_resume": "送信して再開"
 }

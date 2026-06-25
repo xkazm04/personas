@@ -38,5 +38,9 @@
   "run_active": "রাউন্ড চলছে…",
   "run_stop": "বন্ধ করুন",
   "run_to_budget": "বাজেট পর্যন্ত চালান",
-  "status_awaiting_action": "অনুমোদন প্রয়োজন"
+  "status_awaiting_action": "অনুমোদন প্রয়োজন",
+  "decision_abort": "বাতিল করুন",
+  "decision_placeholder": "দলের জন্য নির্দেশনা যোগ করুন (ঐচ্ছিক)",
+  "decision_resolve": "এখনই শেষ করুন",
+  "decision_resume": "পাঠান ও চালিয়ে যান"
 }

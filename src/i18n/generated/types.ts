@@ -5221,6 +5221,10 @@ export type Translations = {
     action_title: string;
     action_run: string;
     action_skip: string;
+    decision_placeholder: string;
+    decision_resume: string;
+    decision_resolve: string;
+    decision_abort: string;
     list_empty: string;
     status_open: string;
     status_converging: string;

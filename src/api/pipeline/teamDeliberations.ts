@@ -66,6 +66,20 @@ export const approveDeliberationAction = (deliberationId: string) =>
 export const skipDeliberationAction = (deliberationId: string) =>
   invoke<TeamDeliberation>('skip_deliberation_action', { deliberationId });
 
+/** Resolve an escalated ("your decision needed") deliberation: 'resume' (post
+ *  the optional steer + continue), 'resolve' (synthesize a proposal now), or
+ *  'abort' (drop it). */
+export const resolveDeliberationEscalation = (
+  deliberationId: string,
+  decision: 'resume' | 'resolve' | 'abort',
+  comment?: string,
+) =>
+  invoke<TeamDeliberation>(
+    'resolve_deliberation_escalation',
+    { deliberationId, decision, comment: comment ?? null },
+    { timeoutMs: 120_000 },
+  );
+
 /** Decision gate (always gated): approve a resolved proposal → spawns a real
  *  team assignment via companion_assign_team. Returns the assignment id. */
 export const approveDeliberationProposal = (deliberationId: string) =>

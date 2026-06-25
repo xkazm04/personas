@@ -331,6 +331,100 @@ pub fn skip_deliberation_action(
     repo::get(&state.db, &deliberation_id)
 }
 
+/// Resolve an escalated deliberation — the human decision the "Your decision
+/// needed" card surfaces, kept inside the Deliberate module. `decision`:
+///   - "resume"  → post the optional `comment` as a user turn, reset the stall
+///     counter, and reopen so the team continues with your steer.
+///   - "resolve" → synthesize a proposal from the current state (the gated
+///     proposal card then offers Approve & assign).
+///   - "abort"   → drop the deliberation.
+#[tauri::command]
+pub async fn resolve_deliberation_escalation(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+    decision: String,
+    comment: Option<String>,
+) -> Result<TeamDeliberation, AppError> {
+    require_auth(&state).await?;
+    let pool = state.db.clone();
+    let delib = repo::get(&pool, &deliberation_id)?;
+    let note = comment.as_deref().map(str::trim).filter(|c| !c.is_empty());
+
+    match decision.as_str() {
+        "resume" => {
+            if let Some(c) = note {
+                let _ = channel_repo::post_deliberation_turn(
+                    &pool,
+                    &deliberation_id,
+                    &delib.team_id,
+                    "user",
+                    None,
+                    c,
+                );
+            }
+            // Fresh stall budget so it doesn't immediately re-escalate.
+            repo::update_progress(&pool, &deliberation_id, delib.round, 0, "open")?;
+        }
+        "resolve" => {
+            if let Some(c) = note {
+                let _ = channel_repo::post_deliberation_turn(
+                    &pool,
+                    &deliberation_id,
+                    &delib.team_id,
+                    "user",
+                    None,
+                    c,
+                );
+            }
+            let proposal =
+                crate::engine::deliberation::synthesize_proposal(&pool, &state.user_db, &delib)
+                    .await;
+            let resolution_json = serde_json::json!({
+                "kind": "proposal",
+                "status": "pending",
+                "reason": "user_resolved",
+                "proposal": proposal,
+            })
+            .to_string();
+            repo::finalize(&pool, &deliberation_id, "resolved", Some(&resolution_json), None)?;
+            let title = proposal.as_ref().map(|p| p.title.clone()).unwrap_or_default();
+            let _ = channel_repo::post_deliberation_turn(
+                &pool,
+                &deliberation_id,
+                &delib.team_id,
+                "system",
+                None,
+                &if title.is_empty() {
+                    "Wrapped up by you — awaiting proposal review.".to_string()
+                } else {
+                    format!("Wrapped up by you — proposed: “{title}” (awaiting approval).")
+                },
+            );
+        }
+        "abort" => {
+            let dismissed = serde_json::json!({
+                "kind": "proposal", "status": "dismissed", "reason": "user_aborted"
+            })
+            .to_string();
+            repo::finalize(&pool, &deliberation_id, "aborted", Some(&dismissed), None)?;
+            let _ = channel_repo::post_deliberation_turn(
+                &pool,
+                &deliberation_id,
+                &delib.team_id,
+                "system",
+                None,
+                "Deliberation aborted by you.",
+            );
+        }
+        other => {
+            return Err(AppError::Validation(format!(
+                "Unknown escalation decision '{other}'"
+            )));
+        }
+    }
+    repo::get(&pool, &deliberation_id)
+}
+
 /// Dismiss a resolved deliberation's proposal without spawning work.
 #[tauri::command]
 pub fn dismiss_deliberation_proposal(

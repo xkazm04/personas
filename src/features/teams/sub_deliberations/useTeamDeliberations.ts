@@ -14,6 +14,7 @@ import {
   listDeliberationAgenda,
   listDeliberationTurns,
   listTeamDeliberations,
+  resolveDeliberationEscalation,
   skipDeliberationAction,
 } from '@/api/pipeline/teamDeliberations';
 import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
@@ -42,6 +43,7 @@ export function useTeamDeliberations(teamId: string) {
   const [busy, setBusy] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(false);
   const [running, setRunning] = useState(false);
   const runningRef = useRef(false);
 
@@ -193,6 +195,24 @@ export function useTeamDeliberations(teamId: string) {
     [refreshDetail, refreshList],
   );
 
+  // Escalation ("your decision needed") — resume with a steer, wrap up into a
+  // proposal, or abort.
+  const resolveEscalation = useCallback(
+    async (id: string, decision: 'resume' | 'resolve' | 'abort', comment?: string) => {
+      setDecisionBusy(true);
+      try {
+        await resolveDeliberationEscalation(id, decision, comment);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.resolveEscalation')(e);
+      } finally {
+        setDecisionBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
   const approve = useCallback(
     async (id: string) => {
       await approveDeliberationProposal(id);
@@ -222,6 +242,7 @@ export function useTeamDeliberations(teamId: string) {
     busy,
     advancing,
     actionBusy,
+    decisionBusy,
     running,
     create,
     advance,
@@ -229,6 +250,7 @@ export function useTeamDeliberations(teamId: string) {
     stopRun,
     approveAction,
     skipAction,
+    resolveEscalation,
     approve,
     dismiss,
     refreshList,

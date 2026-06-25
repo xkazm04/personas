@@ -38,5 +38,9 @@
   "run_active": "تشغيل الجولات…",
   "run_stop": "إيقاف",
   "run_to_budget": "تشغيل حتى الميزانية",
-  "status_awaiting_action": "بانتظار الموافقة"
+  "status_awaiting_action": "بانتظار الموافقة",
+  "decision_abort": "إلغاء",
+  "decision_placeholder": "أضف توجيهاً للفريق (اختياري)",
+  "decision_resolve": "إنهاء الآن",
+  "decision_resume": "إرسال واستئناف"
 }

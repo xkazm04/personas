@@ -17171,6 +17171,10 @@
     "run_active": "Ejecutando rondas…",
     "run_stop": "Detener",
     "run_to_budget": "Ejecutar hasta el presupuesto",
-    "status_awaiting_action": "Necesita aprobación"
+    "status_awaiting_action": "Necesita aprobación",
+    "decision_abort": "Cancelar",
+    "decision_placeholder": "Añade una dirección para el equipo (opcional)",
+    "decision_resolve": "Finalizar ahora",
+    "decision_resume": "Enviar y continuar"
   }
 }

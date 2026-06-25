@@ -38,5 +38,9 @@
   "run_active": "Probíhají kola…",
   "run_stop": "Zastavit",
   "run_to_budget": "Spustit do vyčerpání rozpočtu",
-  "status_awaiting_action": "Čeká na schválení"
+  "status_awaiting_action": "Čeká na schválení",
+  "decision_abort": "Přerušit",
+  "decision_placeholder": "Přidejte směr pro tým (volitelné)",
+  "decision_resolve": "Uzavřít nyní",
+  "decision_resume": "Odeslat a pokračovat"
 }

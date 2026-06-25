@@ -38,5 +38,9 @@
   "run_active": "Đang chạy các vòng…",
   "run_stop": "Dừng",
   "run_to_budget": "Chạy đến ngân sách",
-  "status_awaiting_action": "Cần phê duyệt"
+  "status_awaiting_action": "Cần phê duyệt",
+  "decision_abort": "Hủy bỏ",
+  "decision_placeholder": "Thêm hướng dẫn cho nhóm (tùy chọn)",
+  "decision_resolve": "Kết thúc ngay",
+  "decision_resume": "Gửi & tiếp tục"
 }

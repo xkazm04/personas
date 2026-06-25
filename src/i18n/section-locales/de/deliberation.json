@@ -38,5 +38,9 @@
   "run_active": "Runden laufen…",
   "run_stop": "Stopp",
   "run_to_budget": "Bis zum Budget ausführen",
-  "status_awaiting_action": "Genehmigung erforderlich"
+  "status_awaiting_action": "Genehmigung erforderlich",
+  "decision_abort": "Abbrechen",
+  "decision_placeholder": "Richtung für das Team angeben (optional)",
+  "decision_resolve": "Jetzt abschließen",
+  "decision_resume": "Senden & fortsetzen"
 }

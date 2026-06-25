@@ -17171,6 +17171,10 @@
     "run_active": "라운드 실행 중…",
     "run_stop": "중지",
     "run_to_budget": "예산까지 실행",
-    "status_awaiting_action": "승인 필요"
+    "status_awaiting_action": "승인 필요",
+    "decision_abort": "중단",
+    "decision_placeholder": "팀에게 방향 추가 (선택 사항)",
+    "decision_resolve": "지금 마무리",
+    "decision_resume": "전송 후 재개"
   }
 }

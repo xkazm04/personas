@@ -38,5 +38,9 @@
   "run_active": "Menjalankan putaran…",
   "run_stop": "Hentikan",
   "run_to_budget": "Jalankan hingga anggaran habis",
-  "status_awaiting_action": "Menunggu persetujuan"
+  "status_awaiting_action": "Menunggu persetujuan",
+  "decision_abort": "Batalkan",
+  "decision_placeholder": "Tambahkan arahan untuk tim (opsional)",
+  "decision_resolve": "Selesaikan sekarang",
+  "decision_resume": "Kirim & lanjutkan"
 }
