@@ -37,11 +37,14 @@ pub const STALL_LIMIT: i32 = 3;
 pub const MAX_TURNS_PER_TICK: usize = 3;
 /// A single persona may not speak more than this many times in a row.
 pub const MAX_CONSECUTIVE_PERSONA_TURNS: usize = 2;
-/// Absolute backstop on moderator rounds — a deliberation that never stalls and
-/// never breaches a floor still cannot run forever. High by design (long
-/// productive conversations are the goal); this only catches a pathological
-/// always-"progressed" loop.
-pub const MAX_ROUNDS_BACKSTOP: i32 = 500;
+/// Force a resolution (synthesize a proposal from the current state) by this
+/// round if the moderator hasn't converged on its own — a productive
+/// deliberation must still PRODUCE an outcome rather than run out a budget with
+/// nothing. Generous so genuinely long conversations are allowed; this is a
+/// safety net, not a tight cap. (The cooperation cert surfaced under-convergence
+/// — a run with 5/5 cooperation that never declared `converged` and ended with
+/// no proposal.)
+pub const CONVERGE_BY_ROUND: i32 = 12;
 /// Default cost ceiling (USD) when a deliberation declares none.
 pub const DEFAULT_COST_BUDGET_USD: f64 = 5.0;
 /// Default idle window (minutes) — no progress and no user activity past this
@@ -257,14 +260,16 @@ pub fn plan_transition(
             outcome: TickOutcome::Escalate { reason },
         };
     }
-    // 3. Absolute round backstop → pause.
-    if round >= MAX_ROUNDS_BACKSTOP {
+    // 3. Round cap → force a resolution (synthesize a proposal from what's
+    //    there) so a productive-but-unconverged deliberation still ships an
+    //    outcome rather than ending empty.
+    if round >= CONVERGE_BY_ROUND {
         return Transition {
-            status: DeliberationStatus::Paused,
+            status: DeliberationStatus::Resolved,
             round,
             consecutive_stall_rounds: stall,
-            outcome: TickOutcome::Pause {
-                reason: "round_backstop",
+            outcome: TickOutcome::Resolve {
+                reason: "round_cap",
             },
         };
     }
@@ -424,7 +429,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     );
     let _ = writeln!(
         p,
-        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Use 'converged' or 'conclude' only when the agenda is effectively settled. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
+        "\nRules: 'progressed' ONLY if this round produced a decision, a task, or genuinely new information — restating prior points is 'stalled'. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
     );
     p
 }
@@ -1204,15 +1209,15 @@ mod tests {
     }
 
     #[test]
-    fn round_backstop_pauses() {
+    fn round_cap_forces_resolve() {
         let t = plan_transition(
-            prog(MAX_ROUNDS_BACKSTOP - 1, 0),
+            prog(CONVERGE_BY_ROUND - 1, 0),
             &decision(RoundOutcome::Progressed, &["a"]),
             3,
             None,
         );
-        assert_eq!(t.status, DeliberationStatus::Paused);
-        assert_eq!(t.outcome, TickOutcome::Pause { reason: "round_backstop" });
+        assert_eq!(t.status, DeliberationStatus::Resolved);
+        assert_eq!(t.outcome, TickOutcome::Resolve { reason: "round_cap" });
     }
 
     #[test]
