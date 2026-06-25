@@ -342,6 +342,20 @@ pub fn spawn_session(
     // API-key auth is the wrong choice for processes the user is signed into.
     cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
 
+    // Force subscription auth: actively STRIP any INHERITED API-account env
+    // (ANTHROPIC_API_KEY / _AUTH_TOKEN / _BASE_URL) the app picked up from the
+    // user's shell or a repo `.env`. Not setting it isn't enough — if it's
+    // present, claude prompts "Detected a custom API key… use it?" during first-
+    // run onboarding and, when declined, derails into a fresh OAuth login a
+    // headless fleet session can't complete (it dead-ends at "paste code here").
+    // Mirrors `cli_process::force_subscription_auth`, which the companion path
+    // uses; that one only handles `tokio::process::Command`, so we apply the same
+    // reserved-env list to the PTY `CommandBuilder` here. (Found in a live PoF
+    // pass: fleet CLIs stuck at OAuth because the key leaked through.)
+    for &key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
+        cmd.env_remove(key);
+    }
+
     let child = pair
         .slave
         .spawn_command(cmd)
