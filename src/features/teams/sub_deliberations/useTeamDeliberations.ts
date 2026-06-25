@@ -16,6 +16,7 @@ import {
   listDeliberationTurns,
   listTeamDeliberations,
   mergeDeliberationTracks,
+  pollDeliberationAction,
   resolveDeliberationEscalation,
   skipDeliberationAction,
   splitTeamDeliberation,
@@ -30,6 +31,8 @@ const ACTIVE_STATUSES = new Set([
   'escalated',
   'paused',
   'awaiting_action',
+  'action_running',
+  'tracking',
 ]);
 /** Statuses the "Run to budget" loop keeps auto-advancing through. Anything
  *  else (awaiting_action / escalated / resolved / aborted / paused) stops it. */
@@ -102,7 +105,11 @@ export function useTeamDeliberations(teamId: string) {
   // it). Stops once it's terminal (resolved/aborted).
   useEffect(() => {
     if (!selectedId || !detail || !ACTIVE_STATUSES.has(detail.status)) return;
+    const running = detail.status === 'action_running';
     const iv = setInterval(() => {
+      // While a capability is running, reap it (posts output + resumes) instead
+      // of a plain refresh, so the flow recovers even without the autonomous tick.
+      if (running) void pollDeliberationAction(selectedId).catch(() => {});
       void refreshDetail(selectedId);
       void refreshList();
     }, POLL_MS);
@@ -171,13 +178,29 @@ export function useTeamDeliberations(teamId: string) {
   }, []);
 
   // Gated capability action — approve (runs it, posts output, resumes) or skip.
+  // Approve a gated capability: spawn it (returns fast at 'action_running'),
+  // poll-reap until its output posts, then advance one recovery round so the
+  // team discusses the result — the conversation↔action↔conversation loop.
   const approveAction = useCallback(
     async (id: string) => {
       setActionBusy(true);
       try {
-        await approveDeliberationAction(id);
+        let d = await approveDeliberationAction(id);
         await refreshDetail(id);
         await refreshList();
+        // Wait out the capability (each poll is a short call — no long invoke).
+        for (let i = 0; i < 600 && d.status === 'action_running'; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          d = await pollDeliberationAction(id);
+        }
+        await refreshDetail(id);
+        await refreshList();
+        // Recovery: discuss the freshly-posted output.
+        if (d.status === 'open') {
+          await advanceTeamDeliberation(id);
+          await refreshDetail(id);
+          await refreshList();
+        }
       } catch (e) {
         toastCatch('useTeamDeliberations.approveAction')(e);
       } finally {

@@ -48,5 +48,6 @@
   "run_all_tracks": "সব ট্র্যাক চালান",
   "split": "ট্র্যাকে বিভক্ত করুন",
   "status_tracking": "ট্র্যাকিং",
-  "tracks_title": "সমান্তরাল ট্র্যাক"
+  "tracks_title": "সমান্তরাল ট্র্যাক",
+  "status_action_running": "কাজ চলছে…"
 }

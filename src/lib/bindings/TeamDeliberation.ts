@@ -69,6 +69,12 @@ parentId: string | null,
  */
 rosterIds: string | null, 
 /**
+ * The `persona_executions` id of an approved capability that is running
+ * (status 'action_running'); the reaper posts its output back + resumes the
+ * conversation when it finishes. `None` otherwise.
+ */
+actionExecutionId: string | null, 
+/**
  * 'user' | 'athena' — who opened it.
  */
 createdBy: string, createdAt: string, updatedAt: string, };

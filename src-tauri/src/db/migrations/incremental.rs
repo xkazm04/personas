@@ -3686,6 +3686,31 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Async gated actions: an approved capability runs in the background; the
+    // deliberation parks at 'action_running' holding its persona_executions id,
+    // and a reaper posts the output back + resumes when it finishes (so the flow
+    // recovers even when the capability outlives any single request).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_deliberations.action_execution",
+            description: "Add action_execution_id + action_running status (async gated actions)",
+            already_applied: |conn| has_column(conn, "team_deliberations", "action_execution_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE team_deliberations ADD COLUMN action_execution_id TEXT;
+                     DROP INDEX IF EXISTS idx_delib_one_active_per_team;
+                     CREATE UNIQUE INDEX IF NOT EXISTS idx_delib_one_active_per_team
+                         ON team_deliberations(team_id)
+                         WHERE parent_id IS NULL
+                           AND status IN ('open','converging','escalated','paused','awaiting_action','tracking','action_running');",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

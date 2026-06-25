@@ -48,5 +48,6 @@
   "run_all_tracks": "تشغيل جميع المسارات",
   "split": "تقسيم إلى مسارات",
   "status_tracking": "تتبع",
-  "tracks_title": "مسارات متوازية"
+  "tracks_title": "مسارات متوازية",
+  "status_action_running": "جارٍ العمل…"
 }

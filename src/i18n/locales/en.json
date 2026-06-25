@@ -5230,6 +5230,7 @@
     "status_resolved": "Resolved",
     "status_escalated": "Needs you",
     "status_awaiting_action": "Needs approval",
+    "status_action_running": "Working…",
     "status_tracking": "Tracking",
     "status_paused": "Paused",
     "status_aborted": "Dismissed",

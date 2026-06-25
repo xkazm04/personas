@@ -48,5 +48,6 @@
   "run_all_tracks": "Alle Tracks ausführen",
   "split": "In Tracks aufteilen",
   "status_tracking": "Wird verfolgt",
-  "tracks_title": "Parallele Tracks"
+  "tracks_title": "Parallele Tracks",
+  "status_action_running": "Wird ausgeführt…"
 }

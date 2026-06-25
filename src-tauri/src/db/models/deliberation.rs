@@ -57,6 +57,10 @@ pub struct TeamDeliberation {
     /// JSON array of persona ids this (track) deliberation is scoped to — the key
     /// personas the split planner assigned. `None` ⇒ the whole team is eligible.
     pub roster_ids: Option<String>,
+    /// The `persona_executions` id of an approved capability that is running
+    /// (status 'action_running'); the reaper posts its output back + resumes the
+    /// conversation when it finishes. `None` otherwise.
+    pub action_execution_id: Option<String>,
     /// 'user' | 'athena' — who opened it.
     pub created_by: String,
     pub created_at: String,

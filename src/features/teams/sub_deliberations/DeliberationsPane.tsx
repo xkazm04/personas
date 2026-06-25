@@ -39,6 +39,7 @@ const STATUS_TONE: Record<string, string> = {
   resolved: 'bg-status-success/15 text-status-success border-status-success/30',
   escalated: 'bg-status-warning/15 text-status-warning border-status-warning/30',
   awaiting_action: 'bg-status-warning/15 text-status-warning border-status-warning/30',
+  action_running: 'bg-primary/15 text-primary border-primary/30',
   tracking: 'bg-primary/15 text-primary border-primary/30',
   paused: 'bg-secondary/60 text-foreground border-primary/20',
   aborted: 'bg-secondary/60 text-foreground border-primary/20',

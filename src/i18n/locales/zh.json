@@ -17181,6 +17181,7 @@
     "run_all_tracks": "运行所有轨道",
     "split": "拆分为轨道",
     "status_tracking": "追踪中",
-    "tracks_title": "并行轨道"
+    "tracks_title": "并行轨道",
+    "status_action_running": "执行中…"
   }
 }

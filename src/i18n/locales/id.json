@@ -17181,6 +17181,7 @@
     "run_all_tracks": "Jalankan semua jalur",
     "split": "Bagi ke jalur",
     "status_tracking": "Melacak",
-    "tracks_title": "Jalur paralel"
+    "tracks_title": "Jalur paralel",
+    "status_action_running": "Memproses…"
   }
 }

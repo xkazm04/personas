@@ -17181,6 +17181,7 @@
     "run_all_tracks": "Ejecutar todas las pistas",
     "split": "Dividir en pistas",
     "status_tracking": "Rastreando",
-    "tracks_title": "Pistas paralelas"
+    "tracks_title": "Pistas paralelas",
+    "status_action_running": "Trabajando…"
   }
 }

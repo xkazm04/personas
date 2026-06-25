@@ -48,5 +48,6 @@
   "run_all_tracks": "Запустить все треки",
   "split": "Разделить на треки",
   "status_tracking": "Отслеживание",
-  "tracks_title": "Параллельные треки"
+  "tracks_title": "Параллельные треки",
+  "status_action_running": "Выполняется…"
 }

@@ -749,6 +749,16 @@ impl ReactiveSubscription for DeliberationSubscription {
         let user_db = state.user_db.clone();
         drop(state);
 
+        // Reap finished background actions first (post output + resume to 'open'
+        // so the next advance discusses the result — the recovery path).
+        if let Ok(running) = deliberation_repo::list_action_running(&self.pool) {
+            for d in running {
+                if let Err(e) = reap_action(&self.pool, &d) {
+                    tracing::warn!(deliberation_id = %d.id, error = %e, "deliberation: reap_action failed");
+                }
+            }
+        }
+
         let delibs = match deliberation_repo::list_advanceable(&self.pool) {
             Ok(d) => d,
             Err(e) => {
@@ -1089,6 +1099,70 @@ pub async fn run_persona_deliberation_turn(
         tracing::info!(deliberation_id = %delib.id, persona_id, title = %prop.title, "deliberation: persona proposed an assignment (synthesized at resolve)");
     }
     Ok(TurnOutcome::Spoke)
+}
+
+/// Reap an approved capability that has finished: post its output back into the
+/// deliberation as a turn (+ roll its cost into the meter) and resume the
+/// conversation ('open'). Returns `Ok(true)` if it reaped, `Ok(false)` if the
+/// execution is still running. No LLM — pure DB + a channel post — so it's cheap
+/// to sweep from the tick and the on-demand poll alike. This is what makes the
+/// action flow recover even when a capability outlives the approving request.
+pub fn reap_action(pool: &DbPool, delib: &TeamDeliberation) -> Result<bool, AppError> {
+    let Some(exec_id) = delib.action_execution_id.as_deref() else {
+        return Ok(false);
+    };
+    let action: Option<crate::db::models::PendingAction> = delib
+        .pending_action
+        .as_deref()
+        .and_then(|j| serde_json::from_str(j).ok());
+    let title = action
+        .as_ref()
+        .map(|a| a.use_case_title.clone())
+        .unwrap_or_else(|| "the capability".to_string());
+    let persona_id = action.as_ref().map(|a| a.persona_id.clone());
+
+    let row = {
+        let conn = pool.get()?;
+        conn.query_row(
+            "SELECT status, output_data, cost_usd FROM persona_executions WHERE id = ?1",
+            params![exec_id],
+            |r| {
+                Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, Option<String>>(1)?,
+                    r.get::<_, f64>(2)?,
+                ))
+            },
+        )
+        .optional()
+        .map_err(AppError::Database)?
+    };
+    // Missing row ⇒ don't hang forever; treat as terminal.
+    let (status, output, cost) = row.unwrap_or_else(|| ("missing".to_string(), None, 0.0));
+    if matches!(status.as_str(), "queued" | "running" | "pending") {
+        return Ok(false); // still cooking
+    }
+    if cost > 0.0 {
+        let _ = deliberation_repo::add_cost(pool, &delib.id, cost);
+    }
+    let body = match (status.as_str(), output.as_deref()) {
+        ("completed", Some(out)) if !out.trim().is_empty() => {
+            format!("🛠 Ran “{title}”:\n\n{}", out.trim())
+        }
+        ("completed", _) => format!("🛠 Ran “{title}” — it produced no output."),
+        ("missing", _) => format!("⚠ “{title}” could not be found — continuing discussion."),
+        _ => format!("⚠ “{title}” did not complete ({status}) — continuing discussion."),
+    };
+    let _ = team_channel_repo::post_deliberation_turn(
+        pool,
+        &delib.id,
+        &delib.team_id,
+        "persona",
+        persona_id.as_deref(),
+        &body,
+    );
+    deliberation_repo::clear_pending_action(pool, &delib.id, "open")?;
+    Ok(true)
 }
 
 // ── Proposal synthesis + the decision gate (D4) ─────────────────────────────

@@ -2312,6 +2312,7 @@ pub fn run() {
             commands::teams::deliberations::list_deliberation_turns,
             commands::teams::deliberations::advance_team_deliberation,
             commands::teams::deliberations::approve_deliberation_action,
+            commands::teams::deliberations::poll_deliberation_action,
             commands::teams::deliberations::skip_deliberation_action,
             commands::teams::deliberations::resolve_deliberation_escalation,
             commands::teams::deliberations::split_team_deliberation,

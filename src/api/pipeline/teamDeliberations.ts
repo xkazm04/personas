@@ -77,6 +77,11 @@ export const approveDeliberationAction = (deliberationId: string) =>
     { timeoutMs: 300_000 },
   );
 
+/** Reap a running capability if it finished: posts its output back + resumes.
+ *  Cheap + idempotent — poll while a deliberation is 'action_running'. */
+export const pollDeliberationAction = (deliberationId: string) =>
+  invoke<TeamDeliberation>('poll_deliberation_action', { deliberationId });
+
 /** Skip a gated capability action — decline it and resume discussion. */
 export const skipDeliberationAction = (deliberationId: string) =>
   invoke<TeamDeliberation>('skip_deliberation_action', { deliberationId });

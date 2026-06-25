@@ -73,12 +73,17 @@ comes from the agenda (termination), a stall limit (circularity), rate-shaping
 shown its *real* enabled capabilities and may request one (`invoke_capability`
 with a real `use_case_id`). That parks the deliberation at `awaiting_action` with
 a `pending_action` and waits for the user (the autonomous loop never side-effects
-unattended — decision 8). On approval, `approve_deliberation_action` runs that
+unattended — decision 8). On approval, `approve_deliberation_action` *spawns* that
 capability through the normal single-execution engine (`execute_persona_inner`,
-full tools/connectors), waits for its output, posts it back into the channel as a
-turn, rolls its cost into the deliberation meter, and flips the status back to
-`open` so the discussion continues on top of the real result. Hallucinated
-capability ids are dropped (the turn degrades to a plain message).
+full tools/connectors) and parks the deliberation at `action_running` holding the
+execution id — it does **not** block on the result. A reaper (`reap_action`,
+swept by the on-demand poll and the autonomous tick) posts the output back into
+the channel as a turn when it finishes, rolls its cost into the meter, and flips
+the status back to `open`; the conversation then advances a recovery round on top
+of the real result. This async design means the flow recovers even when a
+capability outlives the approving request — the earlier "still running, check the
+log" dead-end is gone. Hallucinated capability ids are dropped (the turn degrades
+to a plain message).
 
 **Parallel tracks (sub-sessions).** A multi-item agenda doesn't have to be worked
 serially. **Split into tracks** runs a Haiku planner that partitions the open

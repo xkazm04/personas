@@ -5236,6 +5236,7 @@ export type Translations = {
     status_resolved: string;
     status_escalated: string;
     status_awaiting_action: string;
+    status_action_running: string;
     status_tracking: string;
     status_paused: string;
     status_aborted: string;

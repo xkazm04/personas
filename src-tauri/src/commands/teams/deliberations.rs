@@ -178,10 +178,12 @@ pub async fn approve_deliberation_proposal(
 }
 
 /// Approve a gated mid-deliberation capability action (decision 8 — always
-/// gated). Runs the persona's requested capability FOR REAL (full tools /
-/// connectors, the approval is the gate for any side effect), waits for its
-/// output, posts that output back into the deliberation as a turn the team can
-/// build on, rolls its cost into the deliberation meter, and resumes discussion.
+/// gated). SPAWNS the persona's requested capability FOR REAL (full tools /
+/// connectors — the approval is the gate for any side effect) and parks the
+/// deliberation at 'action_running' holding the execution id; the reaper
+/// (`poll_deliberation_action` on demand, or the autonomous tick) posts the
+/// output back + resumes the conversation when it finishes. Returns fast — the
+/// approval never blocks on a long-running capability (the bug this replaces).
 #[tauri::command]
 pub async fn approve_deliberation_action(
     state: State<'_, Arc<AppState>>,
@@ -214,7 +216,7 @@ pub async fn approve_deliberation_action(
     })
     .to_string();
 
-    let exec = match crate::commands::execution::executions::execute_persona_inner(
+    match crate::commands::execution::executions::execute_persona_inner(
         &state,
         app,
         action.persona_id.clone(),
@@ -227,7 +229,21 @@ pub async fn approve_deliberation_action(
     )
     .await
     {
-        Ok(e) => e,
+        Ok(exec) => {
+            // Park on the running execution; the reaper finishes it.
+            repo::set_action_running(&pool, &deliberation_id, &exec.id)?;
+            let _ = channel_repo::post_deliberation_turn(
+                &pool,
+                &deliberation_id,
+                &delib.team_id,
+                "system",
+                None,
+                &format!(
+                    "▶ Running “{}” — its result will post here when it finishes.",
+                    action.use_case_title
+                ),
+            );
+        }
         Err(e) => {
             let _ = channel_repo::post_deliberation_turn(
                 &pool,
@@ -241,70 +257,26 @@ pub async fn approve_deliberation_action(
                 ),
             );
             let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
-            return repo::get(&pool, &deliberation_id);
         }
-    };
-
-    // The runner fills output_data async — poll until terminal (~4 min ceiling).
-    let mut status = exec.status.clone();
-    let mut output = exec.output_data.clone();
-    let mut cost = exec.cost_usd;
-    for _ in 0..120 {
-        if status == "completed" || status == "failed" || status == "cancelled" {
-            break;
-        }
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-        let row = {
-            let conn = pool.get()?;
-            conn.query_row(
-                "SELECT status, output_data, cost_usd FROM persona_executions WHERE id = ?1",
-                rusqlite::params![exec.id],
-                |r| {
-                    Ok((
-                        r.get::<_, String>(0)?,
-                        r.get::<_, Option<String>>(1)?,
-                        r.get::<_, f64>(2)?,
-                    ))
-                },
-            )
-            .map_err(AppError::Database)?
-        };
-        status = row.0;
-        output = row.1;
-        cost = row.2;
     }
-
-    if cost > 0.0 {
-        let _ = repo::add_cost(&pool, &deliberation_id, cost);
-    }
-
-    let body = match (status.as_str(), output.as_deref()) {
-        ("completed", Some(out)) if !out.trim().is_empty() => {
-            format!("🛠 Ran “{}”:\n\n{}", action.use_case_title, out.trim())
-        }
-        ("completed", _) => {
-            format!("🛠 Ran “{}” — it produced no output.", action.use_case_title)
-        }
-        ("failed", _) | ("cancelled", _) => format!(
-            "⚠ “{}” did not complete ({status}). Continuing discussion.",
-            action.use_case_title
-        ),
-        _ => format!(
-            "⏳ “{}” is still running — its result will land in the execution log. Continuing discussion.",
-            action.use_case_title
-        ),
-    };
-    let _ = channel_repo::post_deliberation_turn(
-        &pool,
-        &deliberation_id,
-        &delib.team_id,
-        "persona",
-        Some(&action.persona_id),
-        &body,
-    );
-
-    let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
     repo::get(&pool, &deliberation_id)
+}
+
+/// Reap a running capability if it has finished: post its output back as a turn
+/// and resume the conversation ('open'). Idempotent + cheap (no LLM) — the UI
+/// polls this while a deliberation is 'action_running', and the autonomous tick
+/// sweeps it too. Returns the (possibly updated) deliberation.
+#[tauri::command]
+pub fn poll_deliberation_action(
+    state: State<'_, Arc<AppState>>,
+    deliberation_id: String,
+) -> Result<TeamDeliberation, AppError> {
+    require_auth_sync(&state)?;
+    let delib = repo::get(&state.db, &deliberation_id)?;
+    if delib.status == "action_running" {
+        let _ = crate::engine::deliberation::reap_action(&state.db, &delib);
+    }
+    repo::get(&state.db, &deliberation_id)
 }
 
 /// Skip a gated capability action — decline it and resume the discussion.

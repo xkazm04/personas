@@ -2,9 +2,21 @@ import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import type { LucideIcon } from 'lucide-react';
 import { CheckCircle2, XCircle, AlertTriangle, Pause, Clock, Loader2, HelpCircle } from 'lucide-react';
 
+/**
+ * SQLite `datetime('now')` returns "YYYY-MM-DD HH:MM:SS" — UTC, but with NO
+ * timezone marker, which `new Date()` misreads as LOCAL time (so a row written
+ * "now" can read "2h ago" for a UTC+2 viewer). Normalize a bare datetime to
+ * explicit UTC; pass through anything already zoned (trailing `Z`/`±HH:MM`).
+ */
+export function normalizeTimestamp(dateStr: string): string {
+  return /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(\.\d+)?$/.test(dateStr)
+    ? `${dateStr.replace(' ', 'T')}Z`
+    : dateStr;
+}
+
 export function formatTimestamp(timestamp: string | null, fallback = '-'): string {
   if (!timestamp) return fallback;
-  return new Date(timestamp).toLocaleString();
+  return new Date(normalizeTimestamp(timestamp)).toLocaleString();
 }
 
 export function formatRelativeTime(
@@ -13,7 +25,7 @@ export function formatRelativeTime(
   opts?: { dateFallbackDays?: number },
 ): string {
   if (!dateStr) return fallback;
-  const then = new Date(dateStr).getTime();
+  const then = new Date(normalizeTimestamp(dateStr)).getTime();
   if (isNaN(then)) return fallback;
   const now = Date.now();
   const diffSeconds = Math.floor((now - then) / 1000);

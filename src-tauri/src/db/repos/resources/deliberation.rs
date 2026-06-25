@@ -26,6 +26,7 @@ fn row_to_deliberation(r: &Row) -> rusqlite::Result<TeamDeliberation> {
         pending_action: r.get("pending_action")?,
         parent_id: r.get("parent_id")?,
         roster_ids: r.get("roster_ids")?,
+        action_execution_id: r.get("action_execution_id")?,
         created_by: r.get("created_by")?,
         created_at: r.get("created_at")?,
         updated_at: r.get("updated_at")?,
@@ -220,19 +221,55 @@ pub fn set_pending_action(pool: &DbPool, id: &str, action_json: &str) -> Result<
     })
 }
 
-/// Clear a gated action (approved or skipped) and return the deliberation to
-/// `status` (normally 'open' so discussion resumes).
+/// Clear a gated action (approved/skipped/reaped) and return the deliberation to
+/// `status` (normally 'open' so discussion resumes). Clears both the pending
+/// request and any running-execution link.
 pub fn clear_pending_action(pool: &DbPool, id: &str, status: &str) -> Result<(), AppError> {
     timed_query!("deliberation", "deliberation::clear_pending_action", {
         let conn = pool.get()?;
         conn.execute(
             "UPDATE team_deliberations
-                SET pending_action = NULL, status = ?2, updated_at = datetime('now')
+                SET pending_action = NULL, action_execution_id = NULL, status = ?2,
+                    updated_at = datetime('now')
               WHERE id = ?1",
             params![id, status],
         )
         .map_err(AppError::Database)?;
         Ok(())
+    })
+}
+
+/// Mark an approved capability as running in the background: hold its execution
+/// id and park at 'action_running' (the reaper finishes it).
+pub fn set_action_running(pool: &DbPool, id: &str, execution_id: &str) -> Result<(), AppError> {
+    timed_query!("deliberation", "deliberation::set_action_running", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE team_deliberations
+                SET action_execution_id = ?2, status = 'action_running',
+                    updated_at = datetime('now')
+              WHERE id = ?1",
+            params![id, execution_id],
+        )
+        .map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
+/// Deliberations with a capability running in the background — the reaper sweeps
+/// these to post outputs back + resume the conversation.
+pub fn list_action_running(pool: &DbPool) -> Result<Vec<TeamDeliberation>, AppError> {
+    timed_query!("deliberation", "deliberation::list_action_running", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_deliberations
+             WHERE status = 'action_running'
+             ORDER BY datetime(updated_at) ASC",
+        )?;
+        let rows = stmt.query_map([], |r| row_to_deliberation(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
     })
 }
 

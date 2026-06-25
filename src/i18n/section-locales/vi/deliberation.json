@@ -48,5 +48,6 @@
   "run_all_tracks": "Chạy tất cả các nhánh",
   "split": "Tách thành các nhánh",
   "status_tracking": "Đang theo dõi",
-  "tracks_title": "Các nhánh song song"
+  "tracks_title": "Các nhánh song song",
+  "status_action_running": "Đang xử lý…"
 }

@@ -48,5 +48,6 @@
   "run_all_tracks": "모든 트랙 실행",
   "split": "트랙으로 분할",
   "status_tracking": "추적 중",
-  "tracks_title": "병렬 트랙"
+  "tracks_title": "병렬 트랙",
+  "status_action_running": "작업 중…"
 }

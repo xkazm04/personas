@@ -48,5 +48,6 @@
   "run_all_tracks": "सभी ट्रैक चलाएं",
   "split": "ट्रैक में विभाजित करें",
   "status_tracking": "ट्रैकिंग",
-  "tracks_title": "समानांतर ट्रैक"
+  "tracks_title": "समानांतर ट्रैक",
+  "status_action_running": "काम हो रहा है…"
 }

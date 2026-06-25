@@ -17181,6 +17181,7 @@
     "run_all_tracks": "Lancer toutes les pistes",
     "split": "Diviser en pistes",
     "status_tracking": "En attente",
-    "tracks_title": "Pistes parallèles"
+    "tracks_title": "Pistes parallèles",
+    "status_action_running": "En cours…"
   }
 }
