@@ -98,6 +98,59 @@ pub fn list_for_team(
     })
 }
 
+/// Recent turns of a deliberation (Design D) — newest-first. The moderator's +
+/// persona-turn context source (turns ride the existing channel via the
+/// `deliberation_id` link); reuses this repo's row mapping.
+pub fn list_for_deliberation(
+    pool: &DbPool,
+    deliberation_id: &str,
+    limit: i64,
+) -> Result<Vec<TeamChannelMessage>, AppError> {
+    timed_query!("team_channel", "team_channel::list_for_deliberation", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM team_channel_messages
+             WHERE deliberation_id = ?1
+             ORDER BY datetime(created_at) DESC, id DESC LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![deliberation_id, limit], |r| row_to_message(r))?;
+        Ok(rows
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)?)
+    })
+}
+
+/// Post a persona/system turn INTO a deliberation (Design D, D3). Sets
+/// `deliberation_id` (the firebreak boundary — deliberation injection is by that,
+/// not by `consumer`) and `consumer='display'` so it never injects into a normal
+/// step outside the deliberation. The persona turn primitive writes through here.
+pub fn post_deliberation_turn(
+    pool: &DbPool,
+    deliberation_id: &str,
+    team_id: &str,
+    author_kind: &str,
+    author_id: Option<&str>,
+    body: &str,
+) -> Result<TeamChannelMessage, AppError> {
+    timed_query!("team_channel", "team_channel::post_deliberation_turn", {
+        let body = body.trim();
+        if body.is_empty() {
+            return Err(AppError::Validation("Turn body cannot be empty".into()));
+        }
+        let id = format!("tcm-{}", uuid::Uuid::new_v4());
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO team_channel_messages
+                (id, team_id, author_kind, author_id, body, addressed_to, reply_to,
+                 assignment_id, consumer, deliveries, deliberation_id, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, NULL, NULL, 'display', NULL, ?6, datetime('now'))",
+            params![id, team_id, author_kind, author_id, body, deliberation_id],
+        )
+        .map_err(AppError::Database)?;
+        get(pool, &id)
+    })
+}
+
 /// Injectable messages addressed to a persona (or the whole team) since a
 /// cutoff — the step-boundary injection source. `consumer='inject'` only;
 /// recency-capped by the caller's `limit`. Returns newest-first.

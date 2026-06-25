@@ -172,5 +172,12 @@
   "live_more": "+{count} और",
   "live_open_timeline": "टाइमलाइन में खोलें",
   "live_toggle": "लाइव पॉप-अप",
-  "live_toggle_hint": "आने वाले चैनल संदेश कोने के पॉप-अप के रूप में दिखाएं"
+  "live_toggle_hint": "आने वाले चैनल संदेश कोने के पॉप-अप के रूप में दिखाएं",
+  "activity_mode": "गतिविधि",
+  "activity_mode_title": "गतिविधि — हर पर्सोना की लाइव स्थिति ग्रिड के रूप में",
+  "grid_state_attention": "आपकी ज़रूरत",
+  "grid_state_failed": "विफल",
+  "grid_state_idle": "निष्क्रिय",
+  "grid_state_running": "चल रहा है",
+  "grid_ungrouped": "बिना समूह"
 }

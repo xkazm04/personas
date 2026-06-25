@@ -5,4 +5,10 @@ export type TeamPresetGroupSpec = { name: string, color: string,
  * Optional `sharedInstructions` to seed the PersonaGroup with.
  * Surfaces in the GroupEditModal under the same field once adopted.
  */
-shared_instructions: string | null, };
+shared_instructions: string | null, 
+/**
+ * Design D — the team's `north_star` (a `TeamNorthStar` JSON: the shared
+ * "#1 in category" motivation every member imprints). Stamped onto
+ * `persona_teams.north_star` at adoption. Optional (older presets omit it).
+ */
+north_star: string | null, };

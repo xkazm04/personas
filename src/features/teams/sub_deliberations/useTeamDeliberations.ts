@@ -1,0 +1,361 @@
+// Design D — the deliberations data hook (D6). Lists a team's deliberations,
+// loads the selected one's detail + agenda + turns, and exposes create / approve
+// / dismiss. Polls the selected deliberation while it's active, since the
+// autonomous moderator tick mutates it server-side.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toastCatch } from '@/lib/silentCatch';
+import {
+  advanceTeamDeliberation,
+  approveDeliberationAction,
+  approveDeliberationProposal,
+  createTeamDeliberation,
+  dismissDeliberationProposal,
+  getTeamDeliberation,
+  listDeliberationAgenda,
+  listDeliberationTracks,
+  listDeliberationTurns,
+  listTeamDeliberations,
+  mergeDeliberationTracks,
+  pollDeliberationAction,
+  resolveDeliberationEscalation,
+  skipDeliberationAction,
+  splitTeamDeliberation,
+} from '@/api/pipeline/teamDeliberations';
+import type { TeamDeliberation } from '@/lib/bindings/TeamDeliberation';
+import type { DeliberationAgendaItem } from '@/lib/bindings/DeliberationAgendaItem';
+import type { TeamChannelMessage } from '@/lib/bindings/TeamChannelMessage';
+
+const ACTIVE_STATUSES = new Set([
+  'open',
+  'converging',
+  'escalated',
+  'paused',
+  'awaiting_action',
+  'action_running',
+  'tracking',
+]);
+/** Statuses the "Run to budget" loop keeps auto-advancing through. Anything
+ *  else (awaiting_action / escalated / resolved / aborted / paused) stops it. */
+const AUTO_ADVANCE_STATUSES = new Set(['open', 'converging']);
+const POLL_MS = 6000;
+
+export function useTeamDeliberations(teamId: string) {
+  const [list, setList] = useState<TeamDeliberation[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<TeamDeliberation | null>(null);
+  const [agenda, setAgenda] = useState<DeliberationAgendaItem[]>([]);
+  const [turns, setTurns] = useState<TeamChannelMessage[]>([]);
+  const [tracks, setTracks] = useState<TeamDeliberation[]>([]);
+  const [trackBusy, setTrackBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [decisionBusy, setDecisionBusy] = useState(false);
+  const [running, setRunning] = useState(false);
+  const runningRef = useRef(false);
+
+  const refreshList = useCallback(async () => {
+    try {
+      setList(await listTeamDeliberations(teamId));
+    } catch (e) {
+      toastCatch('useTeamDeliberations.refreshList')(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [teamId]);
+
+  const refreshDetail = useCallback(async (id: string) => {
+    try {
+      const [d, a, t, tr] = await Promise.all([
+        getTeamDeliberation(id),
+        listDeliberationAgenda(id),
+        listDeliberationTurns(id),
+        listDeliberationTracks(id),
+      ]);
+      setDetail(d);
+      setAgenda(a);
+      setTurns(t);
+      setTracks(tr);
+    } catch (e) {
+      toastCatch('useTeamDeliberations.refreshDetail')(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    runningRef.current = false;
+    setRunning(false);
+    setSelectedId(null);
+    setDetail(null);
+    void refreshList();
+  }, [teamId, refreshList]);
+
+  useEffect(() => {
+    if (selectedId) {
+      void refreshDetail(selectedId);
+    } else {
+      setDetail(null);
+      setAgenda([]);
+      setTurns([]);
+      setTracks([]);
+    }
+  }, [selectedId, refreshDetail]);
+
+  // Poll the selected deliberation while it's active (the moderator tick mutates
+  // it). Stops once it's terminal (resolved/aborted).
+  useEffect(() => {
+    if (!selectedId || !detail || !ACTIVE_STATUSES.has(detail.status)) return;
+    const running = detail.status === 'action_running';
+    const iv = setInterval(() => {
+      // While a capability is running, reap it (posts output + resumes) instead
+      // of a plain refresh, so the flow recovers even without the autonomous tick.
+      if (running) void pollDeliberationAction(selectedId).catch(() => {});
+      void refreshDetail(selectedId);
+      void refreshList();
+    }, POLL_MS);
+    return () => clearInterval(iv);
+  }, [selectedId, detail, refreshDetail, refreshList]);
+
+  const create = useCallback(
+    async (topic: string, goal?: string, costBudgetUsd?: number) => {
+      setBusy(true);
+      try {
+        const d = await createTeamDeliberation(teamId, topic, goal, costBudgetUsd);
+        await refreshList();
+        setSelectedId(d.id);
+        return d;
+      } catch (e) {
+        toastCatch('useTeamDeliberations.create')(e);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [teamId, refreshList],
+  );
+
+  const advance = useCallback(
+    async (id: string) => {
+      setAdvancing(true);
+      try {
+        await advanceTeamDeliberation(id);
+        await refreshDetail(id);
+        await refreshList();
+      } finally {
+        setAdvancing(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Auto-advance round after round until the deliberation leaves the
+  // auto-advanceable set: budget spent (paused), action gate (awaiting_action),
+  // escalation, or resolution. The user can Stop at any round boundary.
+  const runToBudget = useCallback(
+    async (id: string) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      try {
+        while (runningRef.current) {
+          const d = await advanceTeamDeliberation(id);
+          await refreshDetail(id);
+          await refreshList();
+          if (!AUTO_ADVANCE_STATUSES.has(d.status)) break;
+        }
+      } catch (e) {
+        toastCatch('useTeamDeliberations.runToBudget')(e);
+      } finally {
+        runningRef.current = false;
+        setRunning(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const stopRun = useCallback(() => {
+    runningRef.current = false;
+    setRunning(false);
+  }, []);
+
+  // Gated capability action — approve (runs it, posts output, resumes) or skip.
+  // Approve a gated capability: spawn it (returns fast at 'action_running'),
+  // poll-reap until its output posts, then advance one recovery round so the
+  // team discusses the result — the conversation↔action↔conversation loop.
+  const approveAction = useCallback(
+    async (id: string) => {
+      setActionBusy(true);
+      try {
+        let d = await approveDeliberationAction(id);
+        await refreshDetail(id);
+        await refreshList();
+        // Wait out the capability (each poll is a short call — no long invoke).
+        for (let i = 0; i < 600 && d.status === 'action_running'; i++) {
+          await new Promise((r) => setTimeout(r, 2000));
+          d = await pollDeliberationAction(id);
+        }
+        await refreshDetail(id);
+        await refreshList();
+        // Recovery: discuss the freshly-posted output.
+        if (d.status === 'open') {
+          await advanceTeamDeliberation(id);
+          await refreshDetail(id);
+          await refreshList();
+        }
+      } catch (e) {
+        toastCatch('useTeamDeliberations.approveAction')(e);
+      } finally {
+        setActionBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const skipAction = useCallback(
+    async (id: string) => {
+      setActionBusy(true);
+      try {
+        await skipDeliberationAction(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.skipAction')(e);
+      } finally {
+        setActionBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Escalation ("your decision needed") — resume with a steer, wrap up into a
+  // proposal, or abort.
+  const resolveEscalation = useCallback(
+    async (id: string, decision: 'resume' | 'resolve' | 'abort', comment?: string) => {
+      setDecisionBusy(true);
+      try {
+        await resolveDeliberationEscalation(id, decision, comment);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.resolveEscalation')(e);
+      } finally {
+        setDecisionBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Parallel tracks: split a parent into sub-sessions, run them all
+  // concurrently, then merge.
+  const split = useCallback(
+    async (id: string) => {
+      setTrackBusy(true);
+      try {
+        await splitTeamDeliberation(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.split')(e);
+      } finally {
+        setTrackBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const merge = useCallback(
+    async (id: string) => {
+      setTrackBusy(true);
+      try {
+        await mergeDeliberationTracks(id);
+        await refreshDetail(id);
+        await refreshList();
+      } catch (e) {
+        toastCatch('useTeamDeliberations.merge')(e);
+      } finally {
+        setTrackBusy(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  // Advance every auto-advanceable track of a parent CONCURRENTLY each round
+  // (Promise.all → true parallelism: each advance is its own Tauri command),
+  // looping until all tracks leave the auto-advance set or the user stops.
+  const runAllTracks = useCallback(
+    async (parentId: string) => {
+      if (runningRef.current) return;
+      runningRef.current = true;
+      setRunning(true);
+      try {
+        while (runningRef.current) {
+          const current = await listDeliberationTracks(parentId);
+          setTracks(current);
+          const open = current.filter((t) => AUTO_ADVANCE_STATUSES.has(t.status));
+          if (open.length === 0) break;
+          await Promise.all(
+            open.map((t) =>
+              advanceTeamDeliberation(t.id).catch((e) => {
+                toastCatch('useTeamDeliberations.runAllTracks')(e);
+                return null;
+              }),
+            ),
+          );
+        }
+        await refreshDetail(parentId);
+        await refreshList();
+      } finally {
+        runningRef.current = false;
+        setRunning(false);
+      }
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const approve = useCallback(
+    async (id: string) => {
+      await approveDeliberationProposal(id);
+      await refreshDetail(id);
+      await refreshList();
+    },
+    [refreshDetail, refreshList],
+  );
+
+  const dismiss = useCallback(
+    async (id: string) => {
+      await dismissDeliberationProposal(id);
+      await refreshDetail(id);
+      await refreshList();
+    },
+    [refreshDetail, refreshList],
+  );
+
+  return {
+    list,
+    selectedId,
+    setSelectedId,
+    detail,
+    agenda,
+    turns,
+    tracks,
+    loading,
+    busy,
+    advancing,
+    actionBusy,
+    decisionBusy,
+    trackBusy,
+    running,
+    create,
+    advance,
+    runToBudget,
+    stopRun,
+    approveAction,
+    skipAction,
+    resolveEscalation,
+    split,
+    merge,
+    runAllTracks,
+    approve,
+    dismiss,
+    refreshList,
+  };
+}

@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime, normalizeTimestamp } from '@/lib/utils/formatters';
 import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
 import { Tooltip } from './Tooltip';
 
@@ -26,7 +26,9 @@ export const RelativeTime = memo(function RelativeTime({
 }: RelativeTimeProps) {
   const isoStr = typeof timestamp === 'number'
     ? new Date(timestamp).toISOString()
-    : timestamp;
+    : timestamp
+      ? normalizeTimestamp(timestamp)
+      : timestamp;
 
   const ms = isoStr ? Date.parse(isoStr) : NaN;
   useRelativeTimeTick(Number.isNaN(ms) ? null : ms);

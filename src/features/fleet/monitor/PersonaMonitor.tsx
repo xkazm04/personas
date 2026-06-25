@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Search, MessagesSquare, Bell } from 'lucide-react';
+import { X, Activity, Search, MessagesSquare, Bell, LayoutGrid } from 'lucide-react';
 import FleetActivityStrip from '@/features/shared/chrome/FleetActivityStrip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
@@ -20,6 +20,7 @@ import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import { MonitorChannelGrid } from './channels';
 import { MonitorProjectColumns } from './triage/MonitorProjectColumns';
+import { FleetGridView } from './grid/FleetGridView';
 import {
   buildMonitorModel,
   processStatusMeta, processStatusLabel, elapsedStr,
@@ -53,7 +54,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // transient `monitorInitialView` signal, landing straight on the Timeline.
   const monitorInitialView = useSystemStore((s) => s.monitorInitialView);
   const setMonitorInitialView = useSystemStore((s) => s.setMonitorInitialView);
-  const [viewMode, setViewMode] = useState<'fleet' | 'channels'>(monitorInitialView ?? 'fleet');
+  const [viewMode, setViewMode] = useState<'fleet' | 'channels' | 'grid'>(monitorInitialView ?? 'fleet');
   useEffect(() => {
     if (!monitorInitialView) return;
     setViewMode(monitorInitialView);
@@ -92,10 +93,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    // Only fleet view reads `now` (elapsed-time on cards + SystemBand). In
-    // channel view nothing consumes it, so ticking there would re-render the
-    // whole channel workspace once a second for nothing — gate it out.
-    if (!anyRunning || viewMode !== 'fleet') return;
+    // `now` drives elapsed-time on fleet cards / SystemBand and the drawer's
+    // live timers (shared by fleet + grid). Channel view consumes none of it, so
+    // ticking there would re-render the whole channel workspace for nothing.
+    if (!anyRunning || viewMode === 'channels') return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, [anyRunning, viewMode]);
@@ -167,7 +168,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {viewMode === 'fleet' && (
+          {viewMode !== 'channels' && (
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
               <input
@@ -190,6 +191,23 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               )}
             </div>
           )}
+          {/* Activity: the whole fleet as state-coloured persona squares,
+              grouped by team — the control-panel read for hundreds of personas.
+              Sits next to Channels; toggles back to the columns fleet view. */}
+          <button
+            type="button"
+            onClick={() => setViewMode((v) => (v === 'grid' ? 'fleet' : 'grid'))}
+            aria-pressed={viewMode === 'grid'}
+            title={t.monitor.activity_mode_title}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
+              viewMode === 'grid'
+                ? 'border-primary/45 bg-primary/15 text-primary'
+                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+            }`}
+          >
+            <LayoutGrid className="w-3 h-3" />
+            {t.monitor.activity_mode}
+          </button>
           {/* Channels → Timeline: the 3-zone all-team channel workspace (team
               filter · merged stream · Quick Answer). Always reachable so the
               entry never disappears when no teams are loaded. */}
@@ -252,13 +270,23 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       /* Body — project columns overview with the drawer layered over it */
       <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
         <div className="absolute inset-0 overflow-hidden px-5 py-4">
-          <MonitorProjectColumns
-            cards={displayCards}
-            personas={personas}
-            teams={teams}
-            selectedPersonaId={selection?.personaId ?? null}
-            onSelect={handleCardSelect}
-          />
+          {viewMode === 'grid' ? (
+            <FleetGridView
+              cards={displayCards}
+              personas={personas}
+              teams={teams}
+              selectedPersonaId={selection?.personaId ?? null}
+              onSelect={handleCardSelect}
+            />
+          ) : (
+            <MonitorProjectColumns
+              cards={displayCards}
+              personas={personas}
+              teams={teams}
+              selectedPersonaId={selection?.personaId ?? null}
+              onSelect={handleCardSelect}
+            />
+          )}
         </div>
 
         <AnimatePresence>

@@ -9,10 +9,8 @@ export const COPY = {
   actionEmpty: 'Nothing needs you right now',
   needsAttention: 'Needs attention',
   activeGoals: 'Active goals',
-  goalsPreview: 'preview',
   noTeam: 'No team',
   allClear: 'All clear',
-  attentionCount: (n: number) => `${n} ${n === 1 ? 'item' : 'items'}`,
 } as const;
 
 /**
@@ -95,7 +93,9 @@ export function mockGoalsForGroup(groupId: string): MockGoal[] {
   const goals: MockGoal[] = [];
   for (let i = 0; i < count; i++) {
     const idx = (h + i * 7) % GOAL_POOL.length;
-    const progress = ((h >> (i + 2)) % 100);
+    // Unsigned shift: `h` is a uint32 (>>> 0 above), so a plain signed `>>`
+    // reinterprets any h >= 2^31 as negative and yields negative percentages.
+    const progress = ((h >>> (i + 2)) % 100);
     goals.push({ title: GOAL_POOL[idx]!, progress });
   }
   return goals;

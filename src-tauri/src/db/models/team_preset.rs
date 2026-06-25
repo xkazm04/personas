@@ -84,6 +84,10 @@ pub struct TeamPresetGroupSpec {
     /// Optional `sharedInstructions` to seed the PersonaGroup with.
     /// Surfaces in the GroupEditModal under the same field once adopted.
     pub shared_instructions: Option<String>,
+    /// Design D — the team's `north_star` (a `TeamNorthStar` JSON: the shared
+    /// "#1 in category" motivation every member imprints). Stamped onto
+    /// `persona_teams.north_star` at adoption. Optional (older presets omit it).
+    pub north_star: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Radio, Activity, Send, Users, ChevronDown, Check, Sparkles, User, Bell,
+  Radio, Activity, Send, Users, ChevronDown, Check, Sparkles, User, Bell, FlaskConical,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -14,6 +14,8 @@ import { QuickAnswerBody } from '@/features/agents/quick-answer/QuickAnswerBody'
 import { GoalsTimeline } from '@/features/teams/sub_goals/GoalsTimeline';
 import { MergedChannels } from './mergedFeed';
 import { VirtualStream } from './VirtualStream';
+// Dev harness: enforce one live pop-up from this top strip (kept for dev).
+import { emitMockLiveMessage } from '../live/liveDevHarness';
 import { matchesFilter, matchesAuthor } from './feedFilter';
 import { type FeedTeam, type FeedFilter, type AuthorFilter, type TaggedItem, type PresenceMap } from './types';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
@@ -289,6 +291,9 @@ function WorkspaceInner({
   const { t } = useTranslation();
   const liveOn = useSystemStore((s) => s.monitorLiveMode);
   const toggleLive = useSystemStore((s) => s.toggleMonitorLiveMode);
+  // Dev: enforce one live pop-up (force-enables live mode, then injects one).
+  const setLive = useSystemStore((s) => s.setMonitorLiveMode);
+  const mockPopup = useCallback(() => { setLive(true); emitMockLiveMessage(); }, [setLive]);
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [filter, setFilter] = useState<FeedFilter>('all');
@@ -386,6 +391,16 @@ function WorkspaceInner({
           >
             <Bell className="h-3 w-3" />
             {t.monitor.live_toggle}
+          </button>
+          {/* Dev: enforce one live pop-up to exercise the overlay on demand. */}
+          <button
+            type="button"
+            onClick={mockPopup}
+            title="Mock a live pop-up"
+            className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-0.5 typo-caption text-amber-300 transition-colors hover:bg-amber-400/20"
+          >
+            <FlaskConical className="h-3 w-3" />
+            Mock
           </button>
           {layoutControl}
         </div>

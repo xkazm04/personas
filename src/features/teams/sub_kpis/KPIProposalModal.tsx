@@ -77,7 +77,7 @@ export function KPIProposalModal({ kpi, onClose }: { kpi: DevKpi; onClose: () =>
             <p className="typo-caption text-foreground mt-0.5">
               {cat.label(t)} · {cad.label(t)}
               {kpi.baseline_value != null && (
-                <span className="inline-flex items-center gap-1 ml-2 tabular-nums rounded-interactive border border-success/30 bg-success/10 px-1.5 py-0.5">
+                <span className="inline-flex items-center gap-1 ml-2 tabular-nums rounded-interactive border border-status-success/30 bg-status-success/10 px-1.5 py-0.5">
                   <FlaskConical className="w-3 h-3" />
                   {tx(t.kpis.evidence_chip, { value: kpi.baseline_value, unit: kpi.unit || '' })}
                 </span>

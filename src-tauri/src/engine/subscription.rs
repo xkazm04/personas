@@ -1351,7 +1351,7 @@ const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
 /// limit). Cheap recency probe over recent failed executions; the self-heal
 /// still retries the work once the window clears.
 const QUOTA_COOLDOWN_LOOKBACK_MINUTES: i64 = 15;
-fn quota_cooldown_active(pool: &DbPool) -> bool {
+pub(crate) fn quota_cooldown_active(pool: &DbPool) -> bool {
     let Ok(conn) = pool.get() else { return false };
     let n: i64 = conn
         .query_row(

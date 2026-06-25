@@ -62,9 +62,9 @@ export function cadenceMeta(cadence: string): KpiTokenMeta {
 
 /** Theme color for a pace state — the ramp every KPI visual shares. */
 export const TRACK_COLOR: Record<KpiTrack, string> = {
-  met: 'var(--success)',
+  met: 'var(--status-success)',
   'on-track': 'var(--primary)',
-  'off-track': 'var(--destructive)',
+  'off-track': 'var(--status-error)',
   unmeasured: 'var(--muted-foreground, var(--primary))',
 };
 

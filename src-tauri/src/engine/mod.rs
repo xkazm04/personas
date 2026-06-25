@@ -55,6 +55,7 @@ pub mod crypto;
 pub mod curation_scheduler;
 pub mod system_ops;
 pub mod db_query;
+pub mod deliberation;
 pub mod design;
 pub mod design_context;
 #[cfg(feature = "desktop")]

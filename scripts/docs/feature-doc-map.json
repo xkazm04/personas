@@ -563,6 +563,14 @@
         "src/api/devTools/kpis.ts",
         "src-tauri/src/commands/infrastructure/kpi_scan.rs"
       ]
+    },
+    {
+      "doc": "docs/features/deliberations.md",
+      "sourceGlobs": [
+        "src/features/teams/sub_deliberations/**",
+        "src-tauri/src/commands/teams/deliberations.rs",
+        "src-tauri/src/engine/deliberation.rs"
+      ]
     }
   ]
 }

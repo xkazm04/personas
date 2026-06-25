@@ -537,6 +537,16 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Design D — deliberation moderator. Advances each open team
+        // deliberation by a bounded number of persona turns per tick (a Haiku
+        // moderator routes the key personas + curates the agenda; progress/stall
+        // + cost/idle floors bound it — no turn budget). Default-OFF
+        // `autonomous_deliberation`. Persona turns land in D3; the LLM never
+        // enters the execution tick loop (the C-on-B doctrine).
+        Box::new(crate::engine::deliberation::DeliberationSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // KPI → Goal derivation — derive goals from off-track KPIs (default-OFF
         // `autonomous_kpi_goal_derivation`; fresh-measurement + one-open-goal +
         // re-measure-after-completion gates; skip is a legitimate outcome).

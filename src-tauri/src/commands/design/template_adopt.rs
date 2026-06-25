@@ -361,6 +361,13 @@ pub fn instant_adopt_template_inner(
         .and_then(|v| v.as_i64())
         .filter(|n| (1..=64).contains(n))
         .map(|n| n as i32);
+    // Design D: the persona's authored `core` (motivation/stance/dials — its
+    // distinct deliberation viewpoint). Applied post-create to `core_profile`,
+    // same pattern as timeout_ms (the n8n draft doesn't carry it).
+    let template_core: Option<String> = persona_meta
+        .and_then(|m| m.get("core"))
+        .filter(|c| !c.is_null())
+        .map(|c| c.to_string());
     let persona_name = persona_meta
         .and_then(|m| m.get("name"))
         .and_then(|v| v.as_str())
@@ -614,6 +621,17 @@ pub fn instant_adopt_template_inner(
                     );
                 }
             }
+        }
+    }
+
+    // Design D: stamp the authored core into `core_profile` (the deliberation
+    // moderator routes by it; persona turns speak from it). Best-effort.
+    if let (Some(pid), Some(core)) = (created_persona_id.as_deref(), &template_core) {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET core_profile = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![core, chrono::Utc::now().to_rfc3339(), pid],
+            );
         }
     }
 

@@ -158,6 +158,25 @@ runner — appears in the **System band** above the grid.
 > by the runner carry the persona name, so live runs land on the right card;
 > genuinely app-level work has no persona and shows in the System band.
 
+## Activity view
+
+The header's **Activity** button (next to **Channels**) swaps the card grid
+for a denser control-panel read built for hundreds of personas. Every persona
+becomes a small **square with its initials**, coloured by state:
+
+- **Dark gray** — idle (nothing running, nothing pending).
+- **Pulsing theme colour** — executing a task.
+- **Amber** — needs you (setup / human review / queued / draft).
+- **Red** — last execution failed.
+
+The colour reuses the same priority-resolved state as the card grid, so the
+two views always agree. Personas are grouped into slim **one-per-team
+columns** (the team shown as an initials chip with a colour divider, no
+count), with a teamless **Ungrouped** tray below. A compact legend keys the
+four states in the section's bottom-right corner. Clicking any square opens
+the same [drawer](#the-drawer) on the persona's most relevant section — the
+entry point for acting on a persona straight from the grid.
+
 ## The drawer
 
 Opening a badge slides a drawer **down** from the top over the grid (the grid

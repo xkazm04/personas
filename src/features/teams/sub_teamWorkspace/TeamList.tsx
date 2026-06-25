@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine } from 'lucide-react';
+import { Plus, Users, Zap, Trash2, ArrowRight, Layers, PenLine, Workflow, type LucideIcon } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
@@ -149,7 +149,7 @@ export default function TeamList() {
             <Button variant="secondary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={() => setPresetFlowOpen(true)} data-testid="team-preset-btn">
               {t.pipeline.preset_team}
             </Button>
-            <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
+            <Button variant="accent" accentColor="indigo" size="sm" icon={<Zap className="w-4 h-4" />} onClick={() => setShowAutoTeam(true)}>
               {t.pipeline.auto_team}
             </Button>
             <Button variant="primary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={() => setShowCreate(true)}>
@@ -233,6 +233,21 @@ interface TeamRowProps {
   ts: TeamStudioStrings;
 }
 
+// Team synthesis (auto-team) lets the model pick an `icon`, which it sometimes
+// returns as a lucide icon NAME (e.g. "Workflow") rather than an emoji. Map the
+// known names to their components so the row shows a glyph, not raw label text.
+const NAMED_TEAM_ICONS: Record<string, LucideIcon> = {
+  workflow: Workflow,
+};
+
+/** Row glyph: a named lucide icon, else the emoji string, else the Layers fallback. */
+function TeamGlyph({ icon }: { icon: string | null }) {
+  const Named = icon ? NAMED_TEAM_ICONS[icon.trim().toLowerCase()] : undefined;
+  if (Named) return <Named className="w-3.5 h-3.5" />;
+  if (icon) return <span className="typo-body leading-none">{icon}</span>;
+  return <Layers className="w-3.5 h-3.5" />;
+}
+
 function TeamRow({
   team,
   counts,
@@ -253,7 +268,7 @@ function TeamRow({
           className="flex-shrink-0 w-7 h-7 rounded-interactive flex items-center justify-center border"
           style={{ backgroundColor: `${team.color}1f`, borderColor: `${team.color}40`, color: team.color }}
         >
-          {team.icon ? <span className="typo-body leading-none">{team.icon}</span> : <Layers className="w-3.5 h-3.5" />}
+          <TeamGlyph icon={team.icon} />
         </span>
         <span className="min-w-0">
           <span className="flex items-center gap-1.5 min-w-0">
@@ -266,9 +281,6 @@ function TeamRow({
               </Tooltip>
             )}
           </span>
-          {team.description && (
-            <span className="block typo-caption text-foreground truncate">{team.description}</span>
-          )}
         </span>
       </button>
 
@@ -408,7 +420,7 @@ function EmptyState({
         <Button variant="primary" size="sm" icon={<Layers className="w-4 h-4" />} onClick={onPreset}>
           {t.pipeline.preset_team}
         </Button>
-        <Button variant="accent" size="sm" icon={<Zap className="w-4 h-4" />} onClick={onAuto}>
+        <Button variant="accent" accentColor="indigo" size="sm" icon={<Zap className="w-4 h-4" />} onClick={onAuto}>
           {t.pipeline.auto_team}
         </Button>
         <Button variant="secondary" size="sm" icon={<Plus className="w-4 h-4" />} onClick={onCreate}>

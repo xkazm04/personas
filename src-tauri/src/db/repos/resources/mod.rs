@@ -6,6 +6,7 @@ pub mod connectors;
 pub mod credential_recipes;
 pub mod credentials;
 pub mod db_schema;
+pub mod deliberation;
 pub mod deployment_history;
 #[cfg(feature = "p2p")]
 pub mod exposure;

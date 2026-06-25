@@ -1,13 +1,20 @@
 ---
 name: leonardo
-description: Generate images with Leonardo AI (Lucid Origin model), remove backgrounds, analyze with Gemini vision, and write SVG. For brand assets, UI illustrations, backgrounds, and icons.
+description: Generate images with OpenAI gpt-image-2 (primary) or Leonardo AI (fallback), remove backgrounds, analyze with Gemini vision, and write SVG. For brand assets, UI illustrations, backgrounds, and icons.
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(node *), Bash(npx *)
 argument-hint: <description of visual asset to create>
 ---
 
 # Leonardo — AI Image Generation & Visual Assets
 
-Generate production-quality images using Leonardo AI's Lucid Origin model, with Gemini vision for analysis and iterative refinement.
+Generate production-quality images. **Default generator: OpenAI `gpt-image-2`**
+(snapshot `gpt-image-2-2026-04-21`) — an agentic image model that reasons about
+structure (and can web-search) before rendering and returns 2K-capable PNGs;
+needs `OPENAI_API_KEY`. **Fallback: Leonardo AI** (Lucid Origin) when no OpenAI
+key is set. Gemini vision is used for analysis and iterative refinement.
+
+Prefer gpt-image-2 for logos/brand marks (cleaner typography, fewer AI tells);
+use Leonardo for cheap bulk/ambient art or when only a Leonardo key is present.
 
 ## Interactive Workflow
 
@@ -57,7 +64,27 @@ Leonardo's Lucid Origin does not support `--transparent`. Use the remove-bg pipe
 
 ## Tools
 
-### Leonardo Image Generation
+### OpenAI gpt-image-2 (primary)
+```bash
+node .claude/skills/leonardo/tools/openai-image.mjs generate \
+  --prompt "description" \
+  --output path.png \
+  --size 1024x1024 \
+  --quality high \
+  [--background transparent]   # transparent for icons/illustrations
+```
+**Model:** `gpt-image-2` (override via `OPENAI_IMAGE_MODEL`). **Sizes:** `1024x1024`, `1536x1024`, `1024x1536`, `auto`. **Quality:** `low` · `medium` · `high` · `auto`. Returns PNG inline (no polling). Native `--background transparent` (no remove-bg step needed). Edit/iterate: `openai-image.mjs edit --prompt "..." --image in.png --output out.png`. Requires `OPENAI_API_KEY`.
+
+### gpt-image-2 via a Leonardo key (no OpenAI key needed)
+Leonardo hosts gpt-image-2 under its own v2 API, so it runs on `LEONARDO_API_KEY`:
+```bash
+node .claude/skills/leonardo/tools/leonardo-gpt-image.mjs generate \
+  --prompt "description" --output path.png \
+  --width 1024 --height 1024 --quality MEDIUM --quantity 2
+```
+`POST /api/rest/v2/generations` with `{ model:"gpt-image-2", public, parameters:{ prompt, width, height (×16), quantity, quality LOW|MEDIUM|HIGH, prompt_enhance } }`; retrieve via `GET /api/rest/v1/generations/{id}` → `generations_by_pk.generated_images[].url`. Use this when only a Leonardo key is present (e.g. cost-shared on Leonardo credits).
+
+### Leonardo Image Generation (Lucid Origin fallback)
 ```bash
 node .claude/skills/leonardo/tools/leonardo-image.mjs generate \
   --prompt "description" \
@@ -94,10 +121,11 @@ node .claude/skills/leonardo/tools/gemini-recognize.mjs \
 
 ## Environment
 Requires in `.env`:
-- `LEONARDO_API_KEY` — from app.leonardo.ai
+- `OPENAI_API_KEY` — primary generator (gpt-image-2); from platform.openai.com/api-keys
+- `LEONARDO_API_KEY` — fallback generator; from app.leonardo.ai
 - `GEMINI_API_KEY` — for vision analysis
 
-Load env before running: `export $(grep -E '^(LEONARDO_API_KEY|GEMINI_API_KEY)=' .env | xargs)`
+Load env before running: `export $(grep -E '^(OPENAI_API_KEY|LEONARDO_API_KEY|GEMINI_API_KEY)=' .env | xargs)`
 
 ## Brand Direction
 Personas brand identity: **Neon android head** — representing AI agents of the new generation. Futuristic, glowing, geometric, clean. Primary palette from `src/styles/globals.css`.

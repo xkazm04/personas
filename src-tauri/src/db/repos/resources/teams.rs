@@ -289,6 +289,22 @@ pub fn clone_team(pool: &DbPool, source_team_id: &str) -> Result<PersonaTeam, Ap
     })
 }
 
+/// Stamp a team's north star (Design D — the shared "#1 in category" motivation,
+/// seeded from a team preset at adoption). Direct setter so the new column needs
+/// no `PersonaTeam` / `UpdateTeamInput` wiring (the deliberation engine reads
+/// `north_star` via direct SQL).
+pub fn set_north_star(pool: &DbPool, team_id: &str, north_star: &str) -> Result<(), AppError> {
+    timed_query!("teams", "teams::set_north_star", {
+        let conn = pool.get()?;
+        conn.execute(
+            "UPDATE persona_teams SET north_star = ?2, updated_at = datetime('now') WHERE id = ?1",
+            params![team_id, north_star],
+        )
+        .map_err(AppError::Database)?;
+        Ok(())
+    })
+}
+
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("teams", "teams::delete", {
         let mut conn = pool.get()?;
