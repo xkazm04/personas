@@ -103,3 +103,6 @@ tools/test-mcp/reports/
 
 # Athena browser extension QA pairing config (carries a live token)
 tools/athena-browser-extension/config.json
+
+# Deliberation soak run artifacts
+scripts/test/.soak/

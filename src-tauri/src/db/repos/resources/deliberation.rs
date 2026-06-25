@@ -209,10 +209,13 @@ pub fn add_cost(pool: &DbPool, id: &str, usd: f64) -> Result<(), AppError> {
 pub fn set_pending_action(pool: &DbPool, id: &str, action_json: &str) -> Result<(), AppError> {
     timed_query!("deliberation", "deliberation::set_pending_action", {
         let conn = pool.get()?;
+        // Clear any prior action_execution_id — a fresh request must not inherit a
+        // finished action's execution link (else the reaper/get_execution would
+        // resolve the wrong, already-done execution).
         conn.execute(
             "UPDATE team_deliberations
-                SET pending_action = ?2, status = 'awaiting_action',
-                    updated_at = datetime('now')
+                SET pending_action = ?2, action_execution_id = NULL,
+                    status = 'awaiting_action', updated_at = datetime('now')
               WHERE id = ?1",
             params![id, action_json],
         )
