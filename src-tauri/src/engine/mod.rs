@@ -649,6 +649,32 @@ impl ExecutionEngine {
             .insert(persona_id.to_string())
     }
 
+    /// Blocking-context twin of [`Self::try_start_healing`], for callers running
+    /// inside `spawn_blocking` (e.g. the auto-rollback tick) rather than on a
+    /// Tokio worker thread. Returns `true` if the healing slot was acquired,
+    /// `false` if a session already holds it.
+    ///
+    /// Auto-rollback acquires this before touching the prompt columns so it can
+    /// never write `personas.system_prompt` / `structured_prompt` concurrently
+    /// with an AI-healing session (which mutates the same columns and holds this
+    /// slot for its whole lifetime). Every `true` return MUST be paired with
+    /// [`Self::finish_healing_blocking`] on every exit path, or the persona's
+    /// healing is bricked until restart.
+    ///
+    /// Safe to call only from a blocking thread; `blocking_lock` panics on a
+    /// Tokio runtime worker thread.
+    pub fn try_start_healing_blocking(&self, persona_id: &str) -> bool {
+        self.healing_personas
+            .blocking_lock()
+            .insert(persona_id.to_string())
+    }
+
+    /// Release a healing slot acquired via [`Self::try_start_healing_blocking`].
+    /// Safe to call only from a blocking thread (see that method).
+    pub fn finish_healing_blocking(&self, persona_id: &str) {
+        self.healing_personas.blocking_lock().remove(persona_id);
+    }
+
     /// Register a oneshot receiver that fires when the given execution
     /// reaches a terminal state (completed, failed, cancelled, etc.).
     /// Multiple callers can subscribe to the same execution.

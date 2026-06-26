@@ -33,14 +33,31 @@
 //!   event. If rule-based retry activates, AI healing is skipped for that
 //!   event (the retry itself may later trigger AI healing if it also fails).
 //!
-//! - **Auto-rollback is independent.** It may revert a persona's prompt
-//!   version concurrently with individual-failure healing. This is safe
-//!   because auto-rollback checks aggregate error rates and operates at the
-//!   prompt-version level, while individual healing operates at the
-//!   execution level.
+//! - **Auto-rollback and AI healing share the prompt columns — NOT independent.**
+//!   Both `apply_db_fixes` (AI healing, `ai_healing.rs`) and `perform_rollback`
+//!   (`auto_rollback.rs`) write `personas.system_prompt` / `structured_prompt`,
+//!   so the old "they operate at different levels, therefore safe" claim was
+//!   false — they hit the same two columns. Mutual exclusion is now enforced by
+//!   the `healing_personas` slot: AI healing holds it for its whole session, and
+//!   `auto_rollback_tick` acquires the SAME slot (via
+//!   `ExecutionEngine::try_start_healing_blocking`) before calling
+//!   `perform_rollback`, skipping any persona with an in-flight heal and
+//!   releasing on every path. **Invariant: the two prompt writes can never
+//!   interleave for one persona.**
+//!
+//!   KNOWN GAP (follow-up): `apply_db_fixes` mutates the live prompt WITHOUT
+//!   snapshotting a new `persona_prompt_versions` row, so auto-rollback's
+//!   version-level error-rate metrics still attribute the persona's history to
+//!   the pre-heal production version. The slot above stops the concurrent
+//!   clobber, but a later tick can still roll a healed prompt back to an older
+//!   snapshot because the heal is invisible to the version metrics. Versioning
+//!   the heal (new production version + deployment marker) is the deeper fix and
+//!   is deliberately deferred — it needs a version-semantics decision, not a
+//!   guess.
 //!
 //! - **The `healing_personas` lock** prevents concurrent AI healing sessions
-//!   on the same persona.
+//!   on the same persona — and now also blocks an auto-rollback prompt write
+//!   from racing an in-flight heal (see above).
 //!
 //! # Circuit Breaker (persona-level)
 //!

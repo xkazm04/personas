@@ -49,7 +49,16 @@ fn compute_weighted_error_rate(points: &[&crate::db::models::PromptPerformancePo
 
 /// Check all personas that have auto-rollback enabled and trigger rollback
 /// when the current prompt version's error rate exceeds 2x the previous version's.
-pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
+///
+/// `engine` is used purely for prompt-write mutual exclusion: both this tick and
+/// AI healing write `personas.system_prompt` / `structured_prompt`, so before
+/// `perform_rollback` we acquire the same `healing_personas` slot the healer
+/// holds and skip any persona with an in-flight heal (see `perform_rollback`).
+pub fn auto_rollback_tick(
+    pool: &DbPool,
+    app: &tauri::AppHandle,
+    engine: &std::sync::Arc<super::ExecutionEngine>,
+) {
     // 1. Get all personas
     let personas = match persona_repo::get_all(pool) {
         Ok(p) => p,
@@ -328,8 +337,28 @@ pub fn auto_rollback_tick(pool: &DbPool, app: &tauri::AppHandle) {
             "Auto-rollback: current version error rate exceeds 2x threshold, rolling back",
         );
 
-        // 6. Perform rollback to the previous version
-        if let Err(e) = perform_rollback(pool, &persona.id, &previous.id) {
+        // Mutually exclude with AI healing before touching the prompt columns.
+        // `apply_db_fixes` (ai_healing.rs) and `perform_rollback` both write
+        // personas.system_prompt / structured_prompt; the healer holds the
+        // `healing_personas` slot for its entire session, so acquiring the SAME
+        // slot here guarantees the two prompt writes can never interleave
+        // (lost-update). If a heal is already in flight we skip this persona —
+        // the heal owns the prompt right now; a later tick re-evaluates.
+        if !engine.try_start_healing_blocking(&persona.id) {
+            tracing::info!(
+                persona_id = %persona.id,
+                "Auto-rollback: skipping — AI healing in flight; the heal owns the prompt columns",
+            );
+            skipped += 1;
+            continue;
+        }
+
+        // 6. Perform rollback to the previous version. Release the healing slot
+        // on EVERY path (success or error) so a future heal is never blocked.
+        let rollback_result = perform_rollback(pool, &persona.id, &previous.id);
+        engine.finish_healing_blocking(&persona.id);
+
+        if let Err(e) = rollback_result {
             tracing::error!(
                 persona_id = %persona.id,
                 error = %e,

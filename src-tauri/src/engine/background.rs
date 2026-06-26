@@ -441,6 +441,7 @@ pub fn start_loops(
         Box::new(subscription::AutoRollbackSubscription {
             pool: pool.clone(),
             app: app.clone(),
+            engine: engine.clone(),
         }),
         Box::new(OAuthRefreshSubscription {
             pool: pool.clone(),

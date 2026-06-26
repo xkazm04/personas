@@ -219,6 +219,9 @@ pub struct CompositeSubscription {
 pub struct AutoRollbackSubscription {
     pub pool: DbPool,
     pub app: AppHandle,
+    /// Engine handle, used only to acquire the `healing_personas` slot so a
+    /// rollback's prompt write can't race a concurrent AI-healing prompt write.
+    pub engine: Arc<ExecutionEngine>,
 }
 
 /// OAuth token refresh subscription: proactively refresh tokens before expiry.
@@ -883,8 +886,9 @@ impl ReactiveSubscription for AutoRollbackSubscription {
     async fn tick(&self) {
         let pool = self.pool.clone();
         let app = self.app.clone();
+        let engine = self.engine.clone();
         run_blocking_tick(move || {
-            super::auto_rollback::auto_rollback_tick(&pool, &app)
+            super::auto_rollback::auto_rollback_tick(&pool, &app, &engine)
         })
         .await;
     }
