@@ -354,7 +354,7 @@ function setupBackgroundExecListeners(
    try {
     const { listen } = await import("@tauri-apps/api/event");
     const { EventName } = await import("@/lib/eventRegistry");
-    const { isTerminalState } = await import("@/lib/execution/executionState");
+    const { isTerminalState, parseExecutionState } = await import("@/lib/execution/executionState");
     const { classifyLine } = await import("@/lib/utils/terminalColors");
 
     unlistenOutput = await listen<{ execution_id: string; line: string }>(
@@ -375,7 +375,7 @@ function setupBackgroundExecListeners(
         const textLines = outputLines.filter((l) => classifyLine(l) === "text");
         const fullResponse = textLines.join("\n").trim();
         const terminalStatus = event.payload.status;
-        const succeeded = fullResponse.length > 0 && !terminalStatus.toLowerCase().includes("fail");
+        const succeeded = parseExecutionState(terminalStatus) === "completed" && fullResponse.length > 0;
 
         try {
           if (succeeded) {
