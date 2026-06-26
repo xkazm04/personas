@@ -12,7 +12,12 @@ use std::sync::Arc;
 
 /// Check whether an IP address is in a private, loopback, or link-local range
 /// that should not be reachable from outbound HTTP requests.
-fn is_private_ip(ip: IpAddr) -> bool {
+///
+/// This is the single strongest private-IP predicate in the engine: it also
+/// covers CGNAT (`100.64.0.0/10`, e.g. Tailscale) and IPv4-mapped-IPv6 private
+/// addresses. Other modules (`healthcheck`, `ssrf_safe_dns`) delegate here so
+/// the historical divergent copies cannot drift and reopen an SSRF bypass.
+pub(crate) fn is_private_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => {
             v4.is_loopback()              // 127.0.0.0/8

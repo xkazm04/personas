@@ -1276,31 +1276,14 @@ pub(crate) fn validate_healthcheck_url(url: &str) -> Result<(), AppError> {
 }
 
 /// Check if an IP address is in a private, loopback, or link-local range.
+///
+/// Delegates to the single strongest predicate (`url_safety::is_private_ip`) so
+/// the three historical copies cannot drift. That predicate additionally blocks
+/// CGNAT (`100.64.0.0/10`, e.g. Tailscale) and IPv4-mapped-IPv6 private
+/// addresses — the gaps this local copy used to miss, which were an SSRF bypass
+/// on the live API-proxy resolver (`ssrf_safe_dns`, which filters via this fn).
 pub(crate) fn is_private_ip(ip: &IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(v4) => {
-            v4.is_loopback()             // 127.0.0.0/8
-                || v4.is_private()        // 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-                || v4.is_link_local()     // 169.254.0.0/16 (cloud metadata!)
-                || v4.is_unspecified()    // 0.0.0.0
-                || v4.is_broadcast() // 255.255.255.255
-        }
-        IpAddr::V6(v6) => {
-            v6.is_loopback()             // ::1
-                || v6.is_unspecified()    // ::
-                || is_ipv6_private(v6)
-        }
-    }
-}
-
-/// Check IPv6 private/internal ranges: ULA (fc00::/7) and link-local (fe80::/10).
-fn is_ipv6_private(v6: &std::net::Ipv6Addr) -> bool {
-    let segments = v6.segments();
-    let first = segments[0];
-    // fc00::/7 -- Unique Local Addresses
-    (first & 0xfe00) == 0xfc00
-    // fe80::/10 -- Link-Local
-    || (first & 0xffc0) == 0xfe80
+    super::url_safety::is_private_ip(*ip)
 }
 
 // Auth token resolution and OAuth token exchange are now handled by
