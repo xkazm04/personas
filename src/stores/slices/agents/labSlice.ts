@@ -23,8 +23,14 @@ import * as Sentry from "@sentry/react";
 
 const logger = createLogger("lab-slice");
 
+// Each mode owns its OWN lifecycle instance so concurrent runs don't clobber
+// each other's running flag / progress. (Previously ab + eval reused the matrix
+// lifecycle, so cancelling/finishing one mode flipped isMatrixRunning while
+// another mode was still live, and progress events overwrote a shared field.)
 const arenaLifecycle = createRunLifecycle('isArenaRunning', 'arenaProgress');
+const abLifecycle = createRunLifecycle('isAbRunning', 'abProgress');
 const matrixLifecycle = createRunLifecycle('isMatrixRunning', 'matrixProgress');
+const evalLifecycle = createRunLifecycle('isEvalRunning', 'evalProgress');
 // Legacy alias — panels that still check isLabRunning will see true if ANY mode is running
 const labLifecycle = createRunLifecycle('isLabRunning', 'labProgress');
 
@@ -272,8 +278,12 @@ export interface LabSlice {
   // Per-mode running state (allows concurrent runs)
   isArenaRunning: boolean;
   arenaProgress: LabRunProgress | null;
+  isAbRunning: boolean;
+  abProgress: LabRunProgress | null;
   isMatrixRunning: boolean;
   matrixProgress: LabRunProgress | null;
+  isEvalRunning: boolean;
+  evalProgress: LabRunProgress | null;
   // Legacy shared state (true if ANY mode is running)
   isLabRunning: boolean;
   labProgress: LabRunProgress | null;
@@ -359,9 +369,9 @@ export interface LabSlice {
 export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, get) => {
   // Instantiate CRUD factories -- one line per mode
   const arena  = createLabCrud<LabArenaRun, LabArenaResult>('arenaRuns', 'arenaResultsMap', 'arena', { list: api.labListArenaRuns, results: api.labGetArenaResults, remove: api.labDeleteArenaRun, cancel: api.labCancelArena }, set, get, arenaLifecycle);
-  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set, get, matrixLifecycle);
+  const ab     = createLabCrud<LabAbRun, LabAbResult>('abRuns', 'abResultsMap', 'A/B', { list: api.labListAbRuns, results: api.labGetAbResults, remove: api.labDeleteAbRun, cancel: api.labCancelAb }, set, get, abLifecycle);
   const matrix = createLabCrud<LabMatrixRun, LabMatrixResult>('matrixRuns', 'matrixResultsMap', 'matrix', { list: api.labListMatrixRuns, results: api.labGetMatrixResults, remove: api.labDeleteMatrixRun, cancel: api.labCancelMatrix }, set, get, matrixLifecycle);
-  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set, get, matrixLifecycle);
+  const eval_  = createLabCrud<LabEvalRun, LabEvalResult>('evalRuns', 'evalResultsMap', 'eval', { list: api.labListEvalRuns, results: api.labGetEvalResults, remove: api.labDeleteEvalRun, cancel: api.labCancelEval }, set, get, evalLifecycle);
 
   return {
     // Mode
@@ -376,8 +386,12 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     // Per-mode running state
     isArenaRunning: false,
     arenaProgress: null,
+    isAbRunning: false,
+    abProgress: null,
     isMatrixRunning: false,
     matrixProgress: null,
+    isEvalRunning: false,
+    evalProgress: null,
     // Legacy shared
     isLabRunning: false,
     labProgress: null,
@@ -385,9 +399,12 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     labRunningPersonaIds: [],
     setLabProgress: (p) => set({ labProgress: p }),
     finishLabRun: (mode) => {
-      // Finish the mode-specific lifecycle
+      // Finish ONLY the mode-specific lifecycle — each mode owns its own flag,
+      // so finishing A/B must not flip Matrix's/Eval's running state.
       if (mode === 'arena') arenaLifecycle.markFinished(set);
-      else if (mode === 'matrix' || mode === 'ab' || mode === 'eval') matrixLifecycle.markFinished(set);
+      else if (mode === 'ab') abLifecycle.markFinished(set);
+      else if (mode === 'matrix') matrixLifecycle.markFinished(set);
+      else if (mode === 'eval') evalLifecycle.markFinished(set);
       labLifecycle.markFinished(set);
       const personaId = get().selectedPersona?.id;
       // Drop this persona from the running set — the lab run ended.
@@ -558,10 +575,23 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       }
     },
     activateVersion: async (personaId, versionId, modelId, provider) => {
+      // Capture the prior live state BEFORE any mutation. activateVersion is two
+      // independent IPC calls (prompt rollback, then model switch); if step 2
+      // fails there is no DB transaction to undo step 1, so the persona would be
+      // left running version V's prompt (tagged production) on the OLD model
+      // while the table falsely marks the new (version, model) cell active. We
+      // snapshot enough to compensate that partial-activation TS-side.
+      const priorProfile = get().personas.find((p) => p.id === personaId)?.model_profile ?? null;
+      const priorProductionVersionId = get().promptVersions.find(
+        (v) => v.persona_id === personaId && v.tag === "production",
+      )?.id ?? null;
+
+      let rolledBack = false;
       try {
         // 1. Roll the version's prompt live + tag it production (same path as
         //    the legacy Versions panel's rollback).
         await api.labRollbackVersion(versionId);
+        rolledBack = true;
         // 2. Switch the active model, preserving any other model_profile fields
         //    (base_url / auth_token / cache policy) the persona already carries —
         //    only the model + provider change. Reuses the encrypted-profile
@@ -573,11 +603,10 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         //    profile would cross-contaminate its base_url/auth_token onto this
         //    one. If the target isn't in the loaded list, start clean rather than
         //    inherit the wrong profile.
-        const current = get().personas.find((p) => p.id === personaId)?.model_profile;
         let profile: Record<string, unknown> = {};
-        if (current) {
+        if (priorProfile) {
           try {
-            profile = JSON.parse(current) as Record<string, unknown>;
+            profile = JSON.parse(priorProfile) as Record<string, unknown>;
           } catch {
             profile = {};
           }
@@ -590,7 +619,43 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         get().fetchVersions(personaId);
         get().fetchVersionRatings(personaId);
       } catch (err) {
-        reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
+        if (rolledBack) {
+          // Partial activation: step 1 (prompt rollback) committed but step 2
+          // (model switch) failed. Compensate by rolling the PRIOR production
+          // version's prompt back, so the live state matches what the user had
+          // before (prompt + model both prior) instead of a half-applied mix.
+          let reverted = false;
+          if (priorProductionVersionId && priorProductionVersionId !== versionId) {
+            try {
+              await api.labRollbackVersion(priorProductionVersionId);
+              reverted = true;
+            } catch (compErr) {
+              logger.warn("activateVersion compensation (prompt revert) failed", {
+                personaId,
+                versionId,
+                priorProductionVersionId,
+                err: compErr instanceof Error ? compErr.message : String(compErr),
+              });
+            }
+          }
+          // Re-sync derived state so the UI reflects ACTUAL state, never the
+          // optimistic "activated" claim.
+          try { await get().selectPersona(personaId); } catch { /* best-effort refresh */ }
+          get().fetchVersions(personaId);
+          get().fetchVersionRatings(personaId);
+          useToastStore.getState().addToast(
+            reverted
+              ? "Activation failed: the model couldn't be switched, so the version change was reverted. No changes were applied — please retry."
+              : "Partial activation: the version is now live but the model did NOT switch (still the previous model). Re-activate to finish — a fully atomic fix requires a backend change.",
+            "error",
+            8000,
+          );
+          // Record the error in state/Sentry without a second (generic) toast.
+          reportError(err, "Failed to activate version", set, { action: "lab.activateVersion", severity: "state" });
+        } else {
+          // Step 1 itself failed — nothing was applied, surface normally.
+          reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
+        }
       }
     },
 
@@ -617,13 +682,20 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
           if (entry === entries[0]) {
             set({ labProgress: mapped, isLabRunning: true });
           }
-          // Set mode-specific running state
+          // Set mode-specific running state — restore each mode's own flag +
+          // progress so a refresh mid-run doesn't fold ab/matrix/eval onto one.
           if (mode === "arena") {
             arenaLifecycle.markStarted(set);
             set({ arenaProgress: mapped });
-          } else if (mode === "matrix" || mode === "ab" || mode === "eval") {
+          } else if (mode === "ab") {
+            abLifecycle.markStarted(set);
+            set({ abProgress: mapped });
+          } else if (mode === "matrix") {
             matrixLifecycle.markStarted(set);
             set({ matrixProgress: mapped });
+          } else if (mode === "eval") {
+            evalLifecycle.markStarted(set);
+            set({ evalProgress: mapped });
           }
         }
       } catch (err) {

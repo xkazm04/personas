@@ -51,10 +51,14 @@ describe('labSlice cancel*: per-mode lifecycle (regression for stuck flags)', ()
     // where it ended last time (start permits entry from any prior state).
     (useAgentStore as unknown as { setState: (s: Record<string, unknown>) => void }).setState({
       isArenaRunning: false,
+      isAbRunning: false,
       isMatrixRunning: false,
+      isEvalRunning: false,
       isLabRunning: false,
       arenaProgress: null,
+      abProgress: null,
       matrixProgress: null,
+      evalProgress: null,
       labProgress: null,
     });
   });
@@ -84,23 +88,41 @@ describe('labSlice cancel*: per-mode lifecycle (regression for stuck flags)', ()
     expect(useAgentStore.getState().matrixProgress).toBeNull();
   });
 
-  it('cancelAb clears isMatrixRunning (ab shares the matrix lifecycle)', async () => {
-    // Per labSlice.ts, ab/matrix/eval all use `matrixLifecycle` — so cancelAb
-    // must reset `isMatrixRunning`, not the legacy `isLabRunning`.
+  it('cancelAb clears isAbRunning (A/B owns its own per-mode lifecycle)', async () => {
+    // A/B now has its OWN lifecycle (isAbRunning) — it no longer shares the
+    // matrix flag, so cancelAb must reset isAbRunning and leave matrix alone.
     await useAgentStore.getState().startAb('p-1', 'vA', 'vB', []);
-    expect(useAgentStore.getState().isMatrixRunning).toBe(true);
+    expect(useAgentStore.getState().isAbRunning).toBe(true);
 
     await useAgentStore.getState().cancelAb('ab-run');
 
-    expect(useAgentStore.getState().isMatrixRunning).toBe(false);
+    expect(useAgentStore.getState().isAbRunning).toBe(false);
+    expect(useAgentStore.getState().abProgress).toBeNull();
   });
 
-  it('cancelEval clears isMatrixRunning (eval shares the matrix lifecycle)', async () => {
+  it('cancelEval clears isEvalRunning (Eval owns its own per-mode lifecycle)', async () => {
     await useAgentStore.getState().startEval('p-1', ['v1'], []);
-    expect(useAgentStore.getState().isMatrixRunning).toBe(true);
+    expect(useAgentStore.getState().isEvalRunning).toBe(true);
 
     await useAgentStore.getState().cancelEval('eval-run');
 
-    expect(useAgentStore.getState().isMatrixRunning).toBe(false);
+    expect(useAgentStore.getState().isEvalRunning).toBe(false);
+    expect(useAgentStore.getState().evalProgress).toBeNull();
+  });
+
+  it('concurrent ab/matrix/eval runs keep independent running flags', async () => {
+    // Start all three concurrently — each owns its own flag now.
+    await useAgentStore.getState().startMatrix('p-1', 'do a thing', []);
+    await useAgentStore.getState().startAb('p-1', 'vA', 'vB', []);
+    await useAgentStore.getState().startEval('p-1', ['v1', 'v2'], []);
+    expect(useAgentStore.getState().isMatrixRunning).toBe(true);
+    expect(useAgentStore.getState().isAbRunning).toBe(true);
+    expect(useAgentStore.getState().isEvalRunning).toBe(true);
+
+    // Cancelling A/B must NOT clear Matrix's or Eval's running state.
+    await useAgentStore.getState().cancelAb('ab-run');
+    expect(useAgentStore.getState().isAbRunning).toBe(false);
+    expect(useAgentStore.getState().isMatrixRunning).toBe(true);
+    expect(useAgentStore.getState().isEvalRunning).toBe(true);
   });
 });
