@@ -181,8 +181,11 @@ impl StrategyRegistry {
     /// 1. Exact match in the registry.
     /// 2. If the connector's metadata contains `oauth_type: "google"`, return
     ///    the Google OAuth strategy.
-    /// 3. If service_type contains a known substring ("google", "clickup"),
-    ///    return the corresponding strategy.
+    /// 3. Substring fallback: a "google" service_type only routes to
+    ///    GoogleOAuthStrategy when the connector is actually OAuth
+    ///    (`oauth_type == "google"`) — API-key google connectors (e.g.
+    ///    `google_gemini`) fall through to the default. "clickup" routes to
+    ///    the ClickUp strategy.
     /// 4. Default strategy.
     pub fn get(
         &self,
@@ -201,34 +204,47 @@ impl StrategyRegistry {
             return s.as_ref();
         }
 
+        // Parse the connector's `oauth_type` from metadata once. Used by both
+        // the metadata override (step 2) and the substring fallback (step 3),
+        // so an API-key google connector is never misrouted to OAuth.
+        let oauth_type: Option<String> = connector_metadata
+            .and_then(|meta_json| serde_json::from_str::<serde_json::Value>(meta_json).ok())
+            .and_then(|val| {
+                val.get("oauth_type")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            });
+
         // 2. Metadata-based override
-        if let Some(meta_json) = connector_metadata {
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(meta_json) {
-                let oauth_type = val.get("oauth_type").and_then(|v| v.as_str());
-                if let Some(ot) = oauth_type {
-                    let strategy_key = match ot {
-                        "google" => Some("google-oauth"),
-                        "microsoft" => Some("microsoft-oauth"),
-                        _ => None,
-                    };
-                    if let Some(key) = strategy_key {
-                        if let Some(s) = self.strategies.get(key) {
-                            tracing::debug!(
-                                service_type = %service_type,
-                                oauth_type = ot,
-                                resolution = "metadata_override",
-                                ?registered,
-                                "Connector strategy selected via metadata oauth_type override"
-                            );
-                            return s.as_ref();
-                        }
-                    }
+        if let Some(ot) = oauth_type.as_deref() {
+            let strategy_key = match ot {
+                "google" => Some("google-oauth"),
+                "microsoft" => Some("microsoft-oauth"),
+                _ => None,
+            };
+            if let Some(key) = strategy_key {
+                if let Some(s) = self.strategies.get(key) {
+                    tracing::debug!(
+                        service_type = %service_type,
+                        oauth_type = ot,
+                        resolution = "metadata_override",
+                        ?registered,
+                        "Connector strategy selected via metadata oauth_type override"
+                    );
+                    return s.as_ref();
                 }
             }
         }
 
-        // 3. Substring fallback for service_type patterns
-        if service_type.contains("google") {
+        // 3. Substring fallback for service_type patterns.
+        //    The "google" substring routes to GoogleOAuthStrategy ONLY for
+        //    connectors that are actually OAuth (`oauth_type == "google"`, which
+        //    every legit Google OAuth connector carries). API-key google
+        //    connectors — e.g. `google_gemini` (auth_type "api_key", secret in
+        //    `api_key`, no oauth_type) — must NOT be treated as OAuth, or
+        //    resolve_oauth_token errors on a missing refresh_token; they fall
+        //    through to DefaultStrategy and authenticate via their api_key.
+        if service_type.contains("google") && oauth_type.as_deref() == Some("google") {
             if let Some(s) = self.strategies.get("google-oauth") {
                 tracing::debug!(
                     service_type = %service_type,
