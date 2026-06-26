@@ -260,8 +260,16 @@ pub fn instant_adopt_template_inner(
     }
     validate_json_field("design_result_json", &design_result_json)?;
 
-    // Backend integrity check: verify the design result against the embedded manifest.
-    // This catches tampered templates even if the frontend checksums were bypassed.
+    // Backend integrity check (currently ADVISORY — see check_template_integrity).
+    // This does NOT yet catch tampered templates: the embedded CHECKSUM_MANIFEST is
+    // keyed by full relative FILE PATH and hashes the ENTIRE template file, while
+    // every real caller passes a bare template id + payload-only JSON. So no shipped
+    // template resolves in the manifest (is_known_template == false for 100% of
+    // adoptions) and the "known-but-tampered" reject branch is unreachable. Today
+    // this only logs a warning for unknown templates; it allows adoption either way.
+    // Real enforcement requires a payload-keyed manifest regen (codegen) so the hash
+    // is computed over the SAME payload JSON the callers pass — see the note on
+    // check_template_integrity for the precise reconciliation needed.
     check_template_integrity(&template_name, &design_result_json)?;
 
     let mut design: serde_json::Value = serde_json::from_str(&design_result_json)
