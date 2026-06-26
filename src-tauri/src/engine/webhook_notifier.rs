@@ -23,7 +23,9 @@
 //! every producer (engine, scheduler, healing, smee/relay, GitLab) and
 //! survives restarts via the persisted watermark.
 
+use std::collections::HashMap;
 use std::str::FromStr;
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -443,6 +445,109 @@ pub async fn dispatch_to_url(
 }
 
 // =============================================================================
+// Per-subscription consecutive-failure circuit breaker
+// =============================================================================
+//
+// The dispatcher owns no long-lived in-memory struct: `run_dispatcher` keeps
+// only the `DbPool`/`AppHandle`, every `tick` is a fresh free-function call, and
+// the sole durable state is the DB watermark. A single permanently-failing sink
+// (e.g. a deleted Discord webhook → permanent 404) would therefore fail on the
+// earliest matching event every tick, pinning the GLOBAL watermark just below
+// that event forever: a healthy subscription gets the same events re-POSTed
+// every tick (duplicate spam), and once >MAX_EVENTS_PER_TICK newer events
+// accumulate behind the pin they never enter the oldest-first window at all
+// (notification loss). One dead sink poisons the whole pipeline.
+//
+// This module-level breaker — a `Mutex<HashMap<subscription_id, count>>`,
+// mirroring `notifications::TEST_DELIVERY_RATE_LIMIT` — counts consecutive
+// failed deliveries per subscription. Once a sub reaches
+// `BROKEN_FAILURE_THRESHOLD` it is "broken": its failures no longer contribute
+// to the `earliest_failed` watermark (so it stops pinning the shared cursor)
+// and delivery is skipped, except for an occasional recovery probe so a sink
+// that comes back online clears itself without re-POSTing to a dead endpoint
+// every tick. A success resets the counter. State is in-memory only and resets
+// on restart — the correct default, since a restart re-probes every sink afresh.
+//
+// Healthy subs are untouched: their first `BROKEN_FAILURE_THRESHOLD - 1`
+// consecutive failures still pin the watermark, preserving transient-outage
+// retry (5xx / timeout / DNS blip / not-yet-decryptable credential).
+
+/// Consecutive failed deliveries after which a subscription is treated as
+/// broken (excluded from the watermark and skipped except for probes).
+const BROKEN_FAILURE_THRESHOLD: u32 = 5;
+
+/// Once broken, attempt a recovery probe on roughly every Nth matching event
+/// (skipping delivery in between) so a recovered sink clears the breaker
+/// without hammering a dead endpoint each tick.
+const BROKEN_PROBE_EVERY: u32 = 12;
+
+/// In-memory consecutive-failure count per subscription id. See the module
+/// comment above for why the counter lives here rather than on a notifier
+/// struct or in the DB (no persistent in-memory state exists to hang it on,
+/// and a restart should re-probe every sink anyway).
+static CONSECUTIVE_FAILURES: LazyLock<Mutex<HashMap<String, u32>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+fn breaker_lock() -> std::sync::MutexGuard<'static, HashMap<String, u32>> {
+    CONSECUTIVE_FAILURES.lock().unwrap_or_else(|poisoned| {
+        tracing::warn!(
+            "webhook_notifier breaker mutex poisoned — recovering inner data; \
+             a thread previously panicked while holding this lock"
+        );
+        poisoned.into_inner()
+    })
+}
+
+/// What the breaker says to do with the next matching event for `sub_id`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BreakerAction {
+    /// Healthy (failures below the threshold): deliver normally; a failure may
+    /// still pin the watermark so transient outages are retried.
+    Deliver,
+    /// Broken but due for a recovery probe: attempt delivery, but a failure
+    /// must NOT pin the watermark.
+    Probe,
+    /// Broken and not a probe: skip delivery entirely and don't pin the cursor.
+    Skip,
+}
+
+fn breaker_decide(sub_id: &str) -> BreakerAction {
+    let count = breaker_lock().get(sub_id).copied().unwrap_or(0);
+    if count < BROKEN_FAILURE_THRESHOLD {
+        BreakerAction::Deliver
+    } else if (count - BROKEN_FAILURE_THRESHOLD) % BROKEN_PROBE_EVERY == 0 {
+        BreakerAction::Probe
+    } else {
+        BreakerAction::Skip
+    }
+}
+
+/// Record a delivery result for `sub_id`. Returns `true` if the subscription is
+/// now broken (consecutive failures have reached the threshold). A success
+/// clears the counter so the sink is treated as healthy again.
+fn breaker_record(sub_id: &str, ok: bool) -> bool {
+    let mut map = breaker_lock();
+    if ok {
+        map.remove(sub_id);
+        false
+    } else {
+        let count = map.entry(sub_id.to_string()).or_insert(0);
+        *count = count.saturating_add(1);
+        *count >= BROKEN_FAILURE_THRESHOLD
+    }
+}
+
+/// Advance the breaker for a broken sub whose delivery we skipped this tick, so
+/// the probe cadence keeps moving toward the next recovery attempt.
+fn breaker_note_skip(sub_id: &str) {
+    let mut map = breaker_lock();
+    let count = map
+        .entry(sub_id.to_string())
+        .or_insert(BROKEN_FAILURE_THRESHOLD);
+    *count = count.saturating_add(1);
+}
+
+// =============================================================================
 // Tick — process all unseen events through all matching subscriptions
 // =============================================================================
 
@@ -477,7 +582,10 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
         .collect();
 
     let mut delivered = 0usize;
-    // Earliest event (by created_at) that had ANY failed delivery this tick.
+    // Earliest event (by created_at) that had a failed delivery from a
+    // still-healthy (non-broken) subscription this tick. Broken sinks are
+    // excluded (see the circuit-breaker section) so a single dead webhook can't
+    // pin the shared watermark and re-spam every healthy subscription forever.
     let mut earliest_failed: Option<String> = None;
 
     for event in &events {
@@ -488,14 +596,30 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
                 continue;
             }
             let sub = &subscriptions[*idx];
+
+            // Circuit breaker: a sub that has failed past the threshold is
+            // "broken" — skip its delivery (except an occasional probe) and,
+            // crucially, never let it pin the shared watermark.
+            if breaker_decide(&sub.id) == BreakerAction::Skip {
+                breaker_note_skip(&sub.id);
+                continue;
+            }
+
             let processor = processor_for_subscription(sub);
             let outcome = processor.process(pool, sub, event, &event_ctx).await;
+            let now_broken = breaker_record(&sub.id, outcome.ok);
             if outcome.ok {
                 delivered += 1;
-            } else if earliest_failed
-                .as_deref()
-                .map_or(true, |c| event.created_at.as_str() < c)
+            } else if !now_broken
+                && earliest_failed
+                    .as_deref()
+                    .map_or(true, |c| event.created_at.as_str() < c)
             {
+                // Only a still-healthy sub (failures below the broken
+                // threshold) holds the watermark back, preserving transient-
+                // outage retry. A sub that is already broken, one that just
+                // crossed the threshold on this failure, and every recovery
+                // probe are all excluded so a dead sink can't pin the cursor.
                 earliest_failed = Some(event.created_at.clone());
             }
         }
@@ -509,8 +633,12 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
     // Holding the watermark below the first failure makes a later tick re-fetch
     // and re-deliver those events once the endpoint recovers. Re-delivering
     // already-succeeded events at/after that timestamp is the accepted cost of a
-    // time-based watermark; a per-(event,subscription) retry cursor is the
-    // deeper fix.
+    // time-based watermark for a HEALTHY sub. A persistently-failing sub no
+    // longer holds the cursor here at all: the circuit breaker above declares it
+    // broken after `BROKEN_FAILURE_THRESHOLD` consecutive failures and excludes
+    // it from `earliest_failed`, so one dead sink can't pin the global cursor or
+    // re-spam the healthy ones. (A per-(event,subscription) retry cursor remains
+    // the deeper fix for per-sub at-least-once replay.)
     // Advance to the (created_at, id) of the newest event we can safely pass:
     // the max by (created_at, id) among events strictly before the earliest
     // failed event's timestamp (or all events if none failed). Tuple max
@@ -724,5 +852,51 @@ mod tests {
     fn webhook_processor_kind() {
         let p = WebhookProcessor;
         assert_eq!(p.kind(), "webhook");
+    }
+
+    // --- Circuit breaker -----------------------------------------------------
+    // Each test uses a unique subscription id so the shared static map never
+    // causes cross-test interference under parallel execution.
+
+    #[test]
+    fn breaker_starts_healthy_and_resets_on_success() {
+        let id = "breaker-test-healthy";
+        assert_eq!(breaker_decide(id), BreakerAction::Deliver);
+        // Failures below the threshold keep the sub "healthy": the caller is
+        // told it is NOT broken (so it still pins the watermark) and the next
+        // encounter is still a normal delivery.
+        for _ in 0..(BROKEN_FAILURE_THRESHOLD - 1) {
+            assert!(!breaker_record(id, false));
+            assert_eq!(breaker_decide(id), BreakerAction::Deliver);
+        }
+        // A success clears the counter entirely.
+        assert!(!breaker_record(id, true));
+        assert_eq!(breaker_decide(id), BreakerAction::Deliver);
+    }
+
+    #[test]
+    fn breaker_trips_at_threshold_then_probes_then_skips() {
+        let id = "breaker-test-trip";
+        // The failure that reaches the threshold reports the sub as now-broken.
+        for i in 1..=BROKEN_FAILURE_THRESHOLD {
+            assert_eq!(breaker_record(id, false), i >= BROKEN_FAILURE_THRESHOLD);
+        }
+        // At exactly the threshold the next encounter is a recovery probe...
+        assert_eq!(breaker_decide(id), BreakerAction::Probe);
+        // ...and skipping advances the cadence so subsequent encounters skip.
+        breaker_note_skip(id);
+        assert_eq!(breaker_decide(id), BreakerAction::Skip);
+    }
+
+    #[test]
+    fn breaker_recovers_after_break_on_success() {
+        let id = "breaker-test-recover";
+        for _ in 0..BROKEN_FAILURE_THRESHOLD {
+            breaker_record(id, false);
+        }
+        assert_ne!(breaker_decide(id), BreakerAction::Deliver); // broken
+        // A successful probe clears the breaker and the sub is healthy again.
+        assert!(!breaker_record(id, true));
+        assert_eq!(breaker_decide(id), BreakerAction::Deliver);
     }
 }
