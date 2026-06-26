@@ -22,6 +22,7 @@ import type { Continuation } from "@/lib/bindings/Continuation";
 import type { DesignDriftEvent } from "@/lib/design/designDrift";
 import { loadDriftEvents, saveDriftEvents } from "@/lib/design/designDrift";
 import { cancelExecution, executePersona, getExecution, listExecutionsSummary } from "@/api/agents/executions";
+import { InvokeTimeoutError } from "@/lib/tauriInvoke";
 
 import { executionSink } from "@/lib/execution/executionSink";
 import { TERMINAL_STATUS_SET } from "@/lib/execution/executionState";
@@ -45,6 +46,44 @@ const COMPLETED_OUTPUT_TTL_MS = 30 * 60 * 1000;
 const EXECUTIONS_CACHE_TTL_MS = 30_000;
 /** Max personas kept in the per-persona executions cache (LRU-evicted). */
 const EXECUTIONS_CACHE_MAX_PERSONAS = 12;
+
+/**
+ * How long a minted foreground idempotency key may be REUSED on a retry of the
+ * same logical request. The idempotency key must stay stable across a
+ * timeout+retry so the backend's `create_with_idempotency` returns the
+ * already-spawned execution instead of double-spawning. But it must NOT stay
+ * stable forever, or a user deliberately re-running the same input minutes
+ * later would silently receive the previous (orphaned) run's result. The slot
+ * is normally cleared the moment the foreground run reaches a terminal state
+ * (finishExecution / cancelExecution); this window is only a backstop for the
+ * case where the first run was orphaned by the timeout and the user never
+ * retried — after it elapses, an identical request mints a fresh key.
+ */
+const IDEMPOTENCY_REUSE_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Stable signature for a logical execution request. Used only in-memory to
+ * decide whether a new foreground call is a RETRY of the pending request (→
+ * reuse its idempotency key) or a DIFFERENT request (→ mint a fresh key). It is
+ * never transmitted. Derived from the ORIGINAL caller inputs (not the
+ * middleware-enriched inputData, which can be non-deterministic) so a retry of
+ * the same user action produces the same signature.
+ */
+function executionRequestSignature(
+  personaId: string,
+  useCaseId: string | undefined,
+  inputData: object | undefined,
+  continuation: Continuation | undefined,
+): string {
+  try {
+    return JSON.stringify([personaId, useCaseId ?? null, inputData ?? null, continuation ?? null]);
+  } catch {
+    // Unstringifiable input (e.g. a cycle) — return a unique signature so we
+    // never accidentally collapse two unrelated requests onto one key. This
+    // forfeits retry-dedup for this edge case but can never wrong-dedup.
+    return `nonstable:${crypto.randomUUID()}`;
+  }
+}
 
 /** Finish-time map keyed by executionId. Module-local (not persisted). */
 const completedOutputFinishedAt = new Map<string, number>();
@@ -231,6 +270,14 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
   // is always written (it's keyed and correct regardless of order).
   let fetchExecSeq = 0;
 
+  // Stable idempotency key for the single FOREGROUND run. Persisted (closure-
+  // local, like inflightFetch) ACROSS a timeout+retry so the retry reuses the
+  // key and the backend dedups instead of double-spawning. Keyed by a request
+  // signature so a retry of the SAME request reuses the key, while a different
+  // request or a deliberate re-run (after the slot is cleared on terminal)
+  // mints a fresh one. Background (concurrent) runs never touch this slot.
+  let pendingForegroundIdem: { signature: string; key: string; mintedAt: number } | null = null;
+
   return ({
     executions: [],
     executionsLoading: false,
@@ -301,10 +348,38 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
         modelUsed: null,
       }, trace);
 
-      // Generate an idempotency key so that if the IPC times out and the user
-      // retries, the backend returns the already-created execution instead of
-      // spawning a duplicate.
-      const idempotencyKey = crypto.randomUUID();
+      // Idempotency key so that if the IPC times out and the user retries, the
+      // backend returns the already-created execution instead of spawning a
+      // duplicate. The key MUST be stable across a timeout+retry — a fresh
+      // crypto.randomUUID() per call meant the backend's create_with_idempotency
+      // never matched on the retry, so a SECOND execution spawned (double $).
+      // We therefore reuse the pending key when this call is a retry of the same
+      // logical request (same persona/useCase/input/continuation) within the
+      // reuse window, and only mint a new key for a different request or a
+      // deliberate re-run after the previous run reached terminal (the slot is
+      // cleared in finishExecution / cancelExecution / clearExecutionOutput).
+      // Background (concurrent) runs always mint fresh: they are explicitly the
+      // user asking for ANOTHER simultaneous run, which must not dedup.
+      let idempotencyKey: string;
+      if (runInBackground) {
+        idempotencyKey = crypto.randomUUID();
+      } else {
+        const signature = executionRequestSignature(personaId, useCaseId, inputData, continuation);
+        const now = Date.now();
+        if (
+          pendingForegroundIdem &&
+          pendingForegroundIdem.signature === signature &&
+          now - pendingForegroundIdem.mintedAt < IDEMPOTENCY_REUSE_WINDOW_MS
+        ) {
+          // Retry of the same logical request → reuse so the backend returns
+          // the already-spawned execution.
+          idempotencyKey = pendingForegroundIdem.key;
+        } else {
+          // New request, deliberate re-run, or a stale slot → fresh key.
+          idempotencyKey = crypto.randomUUID();
+          pendingForegroundIdem = { signature, key: idempotencyKey, mintedAt: now };
+        }
+      }
 
       const execution = await executePersona(
         personaId,
@@ -357,6 +432,14 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       trace = traceStage(trace, 'validate', undefined, String(err));
       trace = completeTrace(trace);
       if (!runInBackground) {
+        // Keep the stable idempotency key ONLY on a timeout: the backend may
+        // have spawned the run before the IPC deadline, so a retry must reuse
+        // the key to re-attach instead of double-spawning. Any other failure
+        // means the run did not start, so clear the slot — the user's next
+        // click is a fresh request, not a retry.
+        if (!(err instanceof InvokeTimeoutError)) {
+          pendingForegroundIdem = null;
+        }
         executionLifecycle.markFailed(set);
         reportError(err, "Failed to execute persona", set, { action: "executePersona", stateUpdates: { executionPersonaId: null, activeUseCaseId: null, pipelineTrace: trace } });
       } else {
@@ -389,6 +472,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
 
       // Preserve the execution ID for Resume before clearing active state.
       const lastId = get().activeExecutionId;
+      // Foreground run is being torn down — drop its stable idempotency key so
+      // a subsequent identical request mints a fresh one.
+      pendingForegroundIdem = null;
       // Always reset execution state regardless of API success/failure.
       executionLifecycle.markCancelled(set);
       set({ activeExecutionId: null, lastExecutionId: lastId, executionPersonaId: null, activeUseCaseId: null, queuePosition: null, queueDepth: null, isExecuting: false });
@@ -485,6 +571,9 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       });
     }
 
+    // Foreground run reached terminal — drop its stable idempotency key so the
+    // next identical request is treated as a deliberate fresh run, not a retry.
+    pendingForegroundIdem = null;
     executionLifecycle.markFinished(set);
     // isExecuting:false is set defensively here (not only inside markFinished)
     // so the flag clears even if the FSM transition is rejected — e.g. a
@@ -583,6 +672,8 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       get().cancelExecution(activeId);
     }
     executionSink.clear();
+    // Drop any stable foreground idempotency key — the run is being abandoned.
+    pendingForegroundIdem = null;
     executionLifecycle.markCancelled(set);
     set({ executionOutput: [], executionOutputBytes: 0, activeExecutionId: null, executionPersonaId: null, activeUseCaseId: null, pipelineTrace: null, queuePosition: null, queueDepth: null, isExecuting: false });
   },
