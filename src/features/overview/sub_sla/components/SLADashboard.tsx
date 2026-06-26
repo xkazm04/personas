@@ -52,7 +52,23 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
 
   const body = (loading && !data) ? null
     : !data ? <InlineErrorBanner severity="info" message={t.overview.sla.no_data} />
-    : (
+    : (() => {
+      // Distinguish a genuine 0% success rate (real failures) from an empty /
+      // low-activity window with no decided runs. When nothing has completed
+      // or failed in the window, the backend returns its divide-by-zero
+      // fallback of `success_rate = 0.0` (sla.rs); rendering that as a red
+      // "0.0%" falsely screams "total failure" when the truth is "no data".
+      // `decidedRuns === 0` is the no-data sentinel — mirror the per-agent
+      // "no data" treatment (neutral color + "—") instead. A real 0% with
+      // actual failures still has decidedRuns > 0, so it stays red.
+      const decidedRuns = Number(data.global.successful) + Number(data.global.failed);
+      const hasActivity = decidedRuns > 0;
+      const successValue = hasActivity ? formatPercent(data.global.success_rate) : '—';
+      const successColor = hasActivity ? slaColor(data.global.success_rate) : 'neutral';
+      const successSub = hasActivity
+        ? tx(t.overview.sla.executions_summary, { successful: Number(data.global.successful), total: decidedRuns })
+        : t.overview.sla.no_agent_data;
+      return (
       <div className="space-y-6">
         {embedded ? (
           // Compact row: day filter + 2 primary metrics (success rate, avg latency)
@@ -62,9 +78,9 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
             <CompactMetric
               icon={<Shield className="w-3.5 h-3.5" />}
               label={t.overview.sla.success_rate}
-              value={formatPercent(data.global.success_rate)}
-              sub={tx(t.overview.sla.executions_summary, { successful: Number(data.global.successful), total: Number(data.global.successful) + Number(data.global.failed) })}
-              color={slaColor(data.global.success_rate)}
+              value={successValue}
+              sub={successSub}
+              color={successColor}
             />
             <CompactMetric
               icon={<Clock className="w-3.5 h-3.5" />}
@@ -92,7 +108,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <SlaCard label={t.overview.sla.success_rate} value={formatPercent(data.global.success_rate)} sub={tx(t.overview.sla.executions_summary, { successful: Number(data.global.successful), total: Number(data.global.successful) + Number(data.global.failed) })} color={slaColor(data.global.success_rate)} icon={<Shield className="w-4 h-4" />} tooltip={t.overview.sla.success_rate_tooltip} />
+            <SlaCard label={t.overview.sla.success_rate} value={successValue} sub={successSub} color={successColor} icon={<Shield className="w-4 h-4" />} tooltip={t.overview.sla.success_rate_tooltip} />
             <SlaCard label={t.overview.sla.avg_latency} value={formatDuration(data.global.avg_duration_ms)} sub={tx(t.overview.sla.active_agents, { count: Number(data.global.active_persona_count) })} color="blue" icon={<Clock className="w-4 h-4" />} tooltip={tx(t.overview.sla.windowed_tooltip, { days })} />
             <SlaCard label={t.overview.sla.open_issues} value={String(data.healing_summary.open_issues)} sub={tx(t.overview.sla.circuit_breakers, { count: Number(data.healing_summary.circuit_breaker_count) })} color={Number(data.healing_summary.open_issues) > 0 ? 'amber' : 'emerald'} icon={<AlertTriangle className="w-4 h-4" />} scope={t.overview.sla.all_time_badge} tooltip={t.overview.sla.open_issues_tooltip} />
             <SlaCard label={t.overview.sla.auto_healed} value={String(data.healing_summary.auto_fixed_count)} sub={tx(t.overview.sla.known_patterns, { count: Number(data.healing_summary.knowledge_patterns) })} color="violet" icon={<Wrench className="w-4 h-4" />} scope={t.overview.sla.all_time_badge} tooltip={t.overview.sla.auto_healed_tooltip} />
@@ -109,7 +125,7 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
         )}
 
         <div className="rounded-modal border border-primary/10 bg-secondary/5 shadow-elevation-2 overflow-hidden">
-          <div className={`h-0.5 ${HEALTH_STATUS_TOKEN[rateToHealth(data.global.success_rate)].icon} opacity-60`} />
+          <div className={`h-0.5 ${HEALTH_STATUS_TOKEN[hasActivity ? rateToHealth(data.global.success_rate) : 'neutral'].icon} opacity-60`} />
           <SectionHeader icon={Users} title={t.overview.sla.per_agent} accent="text-primary" />
           {data.persona_stats.length === 0 ? (
             <div className="px-5 py-8 text-center typo-body text-foreground">{t.overview.sla.no_agent_data}</div>
@@ -122,7 +138,8 @@ export default function SLADashboard({ embedded = false }: SLADashboardProps) {
           )}
         </div>
       </div>
-    );
+      );
+    })();
 
   if (embedded) {
     return body;
@@ -165,6 +182,8 @@ function CompactMetric({ icon, label, value, sub, color }: {
     red: 'text-rose-400',
     blue: 'text-blue-400',
     violet: 'text-violet-400',
+    // No-data / not-enough-activity state: neutral foreground, never red.
+    neutral: 'text-foreground',
   };
   const tone = colorMap[color] ?? 'text-foreground';
   return (

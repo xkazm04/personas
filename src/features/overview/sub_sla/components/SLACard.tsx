@@ -24,6 +24,8 @@ export function SlaCard({ label, value, sub, color, icon, tooltip, scope }: {
     red: healthClasses('critical'),
     blue: healthClasses('info'),
     violet: `text-violet-400 bg-violet-500/10 border-violet-500/20`,
+    // No-data / not-enough-activity state: neutral grey card, never red.
+    neutral: healthClasses('neutral'),
   };
   const cls = colorMap[color] || colorMap['emerald'];
 
