@@ -42,6 +42,31 @@ export function useFleetCompanionBridge(): void {
     const findSession = (id: string): FleetSession | undefined =>
       sessionsRef.current.find((s) => s.id === id);
 
+    // The bridge is always-on and is the ONLY thing that keeps
+    // `useSystemStore.fleetSessions` current when the Fleet page is not
+    // mounted (the page's listeners are torn down on unmount). Without this
+    // the store stays `[]` until the user opens the Fleet tab once, so every
+    // handler below would hit its `if (!sess) return` guard and record
+    // nothing. Coalesce snapshot refreshes: a burst of registry/state events —
+    // or the Fleet page ALSO refreshing while it's mounted — would otherwise
+    // fan out into many `fleet_list_sessions` IPC round trips. `fleetRefresh`
+    // is idempotent (it replaces the whole snapshot), so collapsing a burst
+    // into one fetch is safe, lossless, and non-destructive even when both
+    // this bridge and the Fleet page refresh on the same event.
+    let refreshTimer: number | undefined;
+    const scheduleRefresh = () => {
+      if (refreshTimer !== undefined) return;
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = undefined;
+        useSystemStore.getState().fleetRefresh().catch(silentCatch('useFleetCompanionBridge:refresh'));
+      }, 150);
+    };
+
+    // Pull an initial snapshot on mount so `findSession` resolves for sessions
+    // that already exist (incl. `claude` started externally before the app),
+    // independent of whether the Fleet tab has ever been opened.
+    useSystemStore.getState().fleetRefresh().catch(silentCatch('useFleetCompanionBridge:mount'));
+
     // Tracks the previous state per session so we can detect "added"
     // (no prior entry) vs "state_changed" (transition) without depending
     // on Fleet's coarse FLEET_REGISTRY_CHANGED { kind } field, which
@@ -52,7 +77,12 @@ export function useFleetCompanionBridge(): void {
       EventName.FLEET_SESSION_STATE,
       (event) => {
         const sess = findSession(event.payload.session_id);
-        if (!sess) return; // store hasn't caught up yet; the FLEET_REGISTRY_CHANGED path will record it
+        if (!sess) {
+          // Store hasn't caught up yet — actively pull a fresh snapshot so the
+          // next event for this session resolves instead of silently dropping.
+          scheduleRefresh();
+          return;
+        }
         lastState.set(event.payload.session_id, event.payload.state as FleetSessionState);
         invoke<string>('companion_record_fleet_event', {
           input: {
@@ -72,7 +102,10 @@ export function useFleetCompanionBridge(): void {
       EventName.FLEET_SESSION_EXITED,
       (event) => {
         const sess = findSession(event.payload.session_id);
-        if (!sess) return;
+        if (!sess) {
+          scheduleRefresh();
+          return;
+        }
         lastState.set(event.payload.session_id, 'exited');
         invoke<string>('companion_record_fleet_event', {
           input: {
@@ -90,6 +123,10 @@ export function useFleetCompanionBridge(): void {
     const unRegistryP = listen<{ kind: 'added' | 'removed' | 'updated'; session_id: string }>(
       EventName.FLEET_REGISTRY_CHANGED,
       (event) => {
+        // Keep the store fresh independent of the Fleet page (mirrors
+        // FleetGridPage, which re-fetches on add/update to get the full row).
+        // Coalesced, so this is safe even when the Fleet page refreshes too.
+        if (event.payload.kind !== 'removed') scheduleRefresh();
         if (event.payload.kind !== 'added') return;
         // "added" → wait one tick for the slice refresh, then record.
         setTimeout(() => {
@@ -136,6 +173,7 @@ export function useFleetCompanionBridge(): void {
       unExitedP.then((fn) => fn());
       unRegistryP.then((fn) => fn());
       unAutoP.then((fn) => fn());
+      if (refreshTimer !== undefined) window.clearTimeout(refreshTimer);
       if (noticeTimer) window.clearTimeout(noticeTimer);
     };
   }, []);

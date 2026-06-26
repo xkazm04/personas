@@ -72,7 +72,8 @@ export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
   // Always-on bridge: writes Fleet lifecycle events to Athena's
   // episodic memory regardless of which sidebar section is active.
-  // No-op when no fleet sessions exist.
+  // Self-sufficient — it refreshes the fleet store on mount and on
+  // registry/state events, so it records without the Fleet tab ever opening.
   useFleetCompanionBridge();
   // Same lifetime as the Fleet bridge: subscribes to MCP guidance /
   // approval requests from claude sessions so the chat panel can

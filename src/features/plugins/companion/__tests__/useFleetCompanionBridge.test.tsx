@@ -23,6 +23,13 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 const handlers = new Map<string, (event: { payload: unknown }) => void>();
 const unlisten = vi.fn();
 
+// The bridge now drives the snapshot itself via the imperative store API
+// (`useSystemStore.getState().fleetRefresh()`). Hoist a shared spy so both
+// the store mock factory and the test assertions can reach the same fn.
+const { fleetRefresh } = vi.hoisted(() => ({
+  fleetRefresh: vi.fn(() => Promise.resolve()),
+}));
+
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn((name: string, cb: (e: { payload: unknown }) => void) => {
     handlers.set(name, cb);
@@ -56,10 +63,21 @@ const SAMPLE_SESSION: FleetSession = {
   stateReason: null,
 };
 
-vi.mock('@/stores/systemStore', () => ({
-  useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ fleetSessions: [SAMPLE_SESSION] }),
-}));
+// Mirror the real zustand store: `useSystemStore` is a callable hook
+// (reactive selector) that ALSO carries an imperative `getState()` returning
+// the full state object. The bridge uses both — the selector for the live
+// `fleetSessions` slice and `getState().fleetRefresh()` to pull a snapshot.
+vi.mock('@/stores/systemStore', () => {
+  // Build state lazily inside getState() so `SAMPLE_SESSION` is read at
+  // call time (render/mount), not at factory time — static imports are
+  // hoisted above the const, so an eager read would hit a TDZ.
+  const getState = () => ({ fleetSessions: [SAMPLE_SESSION], fleetRefresh });
+  const useSystemStore = Object.assign(
+    (selector: (s: Record<string, unknown>) => unknown) => selector(getState()),
+    { getState },
+  );
+  return { useSystemStore };
+});
 
 import { useFleetCompanionBridge } from '../useFleetCompanionBridge';
 
@@ -71,6 +89,7 @@ describe('useFleetCompanionBridge', () => {
   beforeEach(() => {
     handlers.clear();
     vi.mocked(tauriInvoke.invokeWithTimeout).mockClear();
+    fleetRefresh.mockClear();
     unlisten.mockClear();
   });
 
@@ -82,6 +101,13 @@ describe('useFleetCompanionBridge', () => {
       expect(handlers.has(FLEET_EXITED)).toBe(true);
       expect(handlers.has(FLEET_REGISTRY)).toBe(true);
     });
+  });
+
+  it('pulls an initial fleet snapshot on mount', async () => {
+    // The bridge is the only thing keeping `fleetSessions` current when the
+    // Fleet page is unmounted, so it must seed the slice once on mount.
+    renderHook(() => useFleetCompanionBridge());
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1));
   });
 
   it('routes FLEET_SESSION_STATE → companion_record_fleet_event { kind:"state_changed" }', async () => {
@@ -131,9 +157,11 @@ describe('useFleetCompanionBridge', () => {
     });
   });
 
-  it('ignores events for sessions not in the slice cache (race protection)', async () => {
+  it('schedules a snapshot refresh (records nothing) for a session not yet in the cache', async () => {
     renderHook(() => useFleetCompanionBridge());
     await waitFor(() => expect(handlers.has(FLEET_STATE)).toBe(true));
+    // mount already pulled one snapshot; isolate the event-driven refresh.
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1));
 
     act(() => {
       handlers.get(FLEET_STATE)!({
@@ -141,14 +169,17 @@ describe('useFleetCompanionBridge', () => {
       });
     });
 
-    // Stronger than "expect not called" — flush microtasks and confirm.
-    await new Promise((r) => setTimeout(r, 50));
+    // New behavior: instead of silently dropping the event, the bridge
+    // schedules a coalesced (150ms) refresh so the store can catch up and the
+    // next event for this session resolves. No episode is recorded yet.
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(2), { timeout: 1000 });
     expect(tauriInvoke.invokeWithTimeout).not.toHaveBeenCalled();
   });
 
-  it('FLEET_REGISTRY_CHANGED kind:"added" debounces and records once', async () => {
+  it('FLEET_REGISTRY_CHANGED kind:"added" refreshes the slice and records once', async () => {
     renderHook(() => useFleetCompanionBridge());
     await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
 
     act(() => {
       handlers.get(FLEET_REGISTRY)!({
@@ -156,8 +187,12 @@ describe('useFleetCompanionBridge', () => {
       });
     });
 
-    // The added path is intentionally debounced ~250ms so the slice
-    // has time to populate session metadata.
+    // New behavior: "added" (a non-"removed" kind) also schedules a coalesced
+    // refresh so the slice carries the new row.
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(2), { timeout: 1000 });
+
+    // The added path is additionally debounced ~250ms so the slice
+    // has time to populate session metadata before the episode is recorded.
     await waitFor(
       () => expect(tauriInvoke.invokeWithTimeout).toHaveBeenCalledTimes(1),
       { timeout: 1000 },
@@ -171,21 +206,40 @@ describe('useFleetCompanionBridge', () => {
     });
   });
 
-  it('ignores FLEET_REGISTRY_CHANGED for "updated" / "removed"', async () => {
+  it('FLEET_REGISTRY_CHANGED kind:"updated" refreshes the slice but records nothing', async () => {
     renderHook(() => useFleetCompanionBridge());
     await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
 
     act(() => {
       handlers.get(FLEET_REGISTRY)!({
         payload: { kind: 'updated', session_id: SAMPLE_SESSION.id },
       });
+    });
+
+    // "updated" is non-"removed" → schedules a refresh, but never records an
+    // episode (only "added" records a spawn).
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(2), { timeout: 1000 });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(tauriInvoke.invokeWithTimeout).not.toHaveBeenCalled();
+  });
+
+  it('FLEET_REGISTRY_CHANGED kind:"removed" neither refreshes nor records', async () => {
+    renderHook(() => useFleetCompanionBridge());
+    await waitFor(() => expect(handlers.has(FLEET_REGISTRY)).toBe(true));
+    await waitFor(() => expect(fleetRefresh).toHaveBeenCalledTimes(1)); // mount
+
+    act(() => {
       handlers.get(FLEET_REGISTRY)!({
         payload: { kind: 'removed', session_id: SAMPLE_SESSION.id },
       });
     });
 
-    // No invoke even after the debounce window.
-    await new Promise((r) => setTimeout(r, 400));
+    // "removed" is the one kind that must NOT pull a snapshot (the row is gone)
+    // and never records. Wait past the 150ms debounce window to be sure no
+    // additional refresh beyond the mount one was scheduled.
+    await new Promise((r) => setTimeout(r, 250));
+    expect(fleetRefresh).toHaveBeenCalledTimes(1);
     expect(tauriInvoke.invokeWithTimeout).not.toHaveBeenCalled();
   });
 });
