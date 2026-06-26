@@ -94,8 +94,17 @@ pub fn evaluate(
     let Some(picks_blob) = scoped_resources_json else {
         return Ok(EnforcementOutcome::Allow);
     };
-    let picks: HashMap<String, serde_json::Value> =
-        serde_json::from_str(picks_blob).unwrap_or_default();
+    // An empty / `{}` / `null` blob means "broad scope" (allow). A *non-empty*
+    // blob that fails to parse must fail CLOSED: silently treating corrupt scope
+    // (truncated write, schema drift, manual edit) as broad would let a
+    // deliberately narrowed credential regain full reach with no log line. This
+    // mirrors the fail-closed handling of malformed connector specs below.
+    let trimmed_blob = picks_blob.trim();
+    if trimmed_blob.is_empty() || trimmed_blob == "{}" || trimmed_blob == "null" {
+        return Ok(EnforcementOutcome::Allow);
+    }
+    let picks: HashMap<String, serde_json::Value> = serde_json::from_str(picks_blob)
+        .map_err(|e| AppError::Internal(format!("Malformed scoped_resources_json: {e}")))?;
     if picks.is_empty() {
         return Ok(EnforcementOutcome::Allow);
     }
