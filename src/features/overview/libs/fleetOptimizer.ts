@@ -267,8 +267,12 @@ export function generateFleetRecommendation(
   // actually healthy. A struggling fleet (low/zero overall success) that didn't
   // trip a specific rec above must NOT get a falsely-reassuring "smooth / no
   // optimization needed" green status; suppress the rec instead.
-  if (!Number.isFinite(dashboard.overall_success_rate)
-      || dashboard.overall_success_rate < HEALTHY_FLEET_SUCCESS_PCT) {
+  // `overall_success_rate` is a [0,1] ratio (total_completed/total_executions)
+  // while HEALTHY_FLEET_SUCCESS_PCT is a percentage — normalize once to a
+  // percent and use it in BOTH the gate and the description below.
+  const overallSuccessPct = dashboard.overall_success_rate * 100;
+  if (!Number.isFinite(overallSuccessPct)
+      || overallSuccessPct < HEALTHY_FLEET_SUCCESS_PCT) {
     return null;
   }
 
@@ -277,7 +281,7 @@ export function generateFleetRecommendation(
     type: 'healthy_fleet',
     severity: 'info',
     title: 'Fleet Running Smoothly',
-    description: `${dashboard.total_executions} executions across ${dashboard.top_personas.length} agents with ${Math.round(dashboard.overall_success_rate)}% success rate. No optimization needed.`,
+    description: `${dashboard.total_executions} executions across ${dashboard.top_personas.length} agents with ${Math.round(overallSuccessPct)}% success rate. No optimization needed.`,
     personaIds: [],
     personaNames: [],
     impact: 'No action required',
