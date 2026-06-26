@@ -83,20 +83,48 @@ pub fn sensitivity_map_for_connector(
 /// Determine whether a credential field is sensitive.
 ///
 /// Priority:
-/// 1. Connector schema `sensitive` flag (authoritative single source of truth)
-/// 2. Fallback to `NON_SENSITIVE_KEYS` heuristic for connectors without schema
+/// 1. **Secret-name backstop (non-negotiable).** If the field name itself
+///    classifies as a secret (token/key/secret/password — see
+///    `classify_field_type`) and it is NOT on the explicit `NON_SENSITIVE_KEYS`
+///    allowlist, the field is ALWAYS encrypted regardless of the schema flag.
+///    The connector schema is user/AI-authorable, so a mis-authored
+///    `"sensitive": false` must not be able to downgrade a real secret (e.g.
+///    `api_key`, `access_token`) to plaintext-at-rest.
+/// 2. Connector schema `sensitive` flag.
+/// 3. Fallback to `NON_SENSITIVE_KEYS` heuristic for connectors without schema
 ///    annotations or for ad-hoc fields not declared in the schema.
 pub fn is_field_sensitive(
     sensitivity_map: Option<&HashMap<String, bool>>,
     field_key: &str,
 ) -> bool {
+    let lower = field_key.to_lowercase();
+    let in_non_sensitive_allowlist = NON_SENSITIVE_KEYS.contains(&lower.as_str());
+
+    // 1. Secret-name backstop. The allowlist still wins so legitimately public
+    //    fields that merely *contain* a secret-ish word (e.g. `token_type` =>
+    //    "Bearer") are not needlessly encrypted; only truly secret-named,
+    //    non-allowlisted fields are force-encrypted.
+    if !in_non_sensitive_allowlist && classify_field_type(field_key) == "secret" {
+        // Surface the misconfiguration without leaking the value.
+        if let Some(map) = sensitivity_map {
+            if map.get(field_key) == Some(&false) {
+                tracing::warn!(
+                    field_key = %field_key,
+                    "Connector schema marks a secret-typed field non-sensitive; forcing encryption"
+                );
+            }
+        }
+        return true;
+    }
+
+    // 2. Connector schema flag.
     if let Some(map) = sensitivity_map {
         if let Some(&sensitive) = map.get(field_key) {
             return sensitive;
         }
     }
-    // Fallback: any key NOT in the hardcoded list is treated as sensitive
-    !NON_SENSITIVE_KEYS.contains(&field_key.to_lowercase().as_str())
+    // 3. Fallback: any key NOT in the hardcoded list is treated as sensitive
+    !in_non_sensitive_allowlist
 }
 
 // ============================================================================
@@ -385,37 +413,32 @@ pub fn update_with_fields(
                 param_values.iter().map(|p| p.as_ref()).collect();
             tx.execute(&sql, params_ref.as_slice())?;
 
-            // -- 2. Save fields if provided --
-            // `Some(map)` is an AUTHORITATIVE new field set (including empty); only
-            // `None` means "leave fields untouched". Always DELETE on `Some` so a
-            // clear-to-empty (e.g. revoking a leaked key) actually removes the old
-            // encrypted rows instead of silently retaining a decryptable secret.
+            // -- 2. MERGE fields if provided --
+            //
+            // `Some(map)` from the edit path is NOT an authoritative full field
+            // set. The edit form (`CredentialEditForm`) only ever holds the
+            // connector's declared fields seeded blank and never loads the
+            // decrypted stored values, so a submitted map routinely omits hidden
+            // OAuth token rows (`access_token`/`refresh_token`) and carries blank
+            // optional secrets. A delete-all + reinsert here silently revoked
+            // those tokens and blanked good secrets on a mere name/url edit.
+            //
+            // So we MERGE rather than replace:
+            //   * fields ABSENT from the map are left untouched (hidden OAuth
+            //     tokens survive a name/url edit);
+            //   * a submitted BLANK value means "leave the current value
+            //     unchanged" — never overwrite or insert an empty secret;
+            //   * a submitted NON-BLANK value is upserted (insert or update).
+            //
+            // Intentional field removal/revocation goes through `delete_fields`
+            // or the dedicated per-field commands, not a blanked edit-form save.
             if let Some(field_map) = fields {
-                // Delete existing fields and re-insert within the same transaction.
-                tx.execute(
-                    "DELETE FROM credential_fields WHERE credential_id = ?1",
-                    params![id],
-                )?;
-
                 for (key, value) in field_map {
+                    if value.trim().is_empty() {
+                        continue;
+                    }
                     let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-                    let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                        .map_err(|e| {
-                            AppError::Internal(format!("Field encryption failed: {e}"))
-                        })?;
-
-                    let field_type = classify_field_type(key);
-                    let field_id = uuid::Uuid::new_v4().to_string();
-
-                    tx.execute(
-                        "INSERT INTO credential_fields
-                         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-                         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
-                        params![
-                            field_id, id, key, enc_val, field_iv,
-                            field_type, is_sensitive as i32, now,
-                        ],
-                    )?;
+                    upsert_field_on_conn(&tx, id, key, value, is_sensitive)?;
                 }
             }
 

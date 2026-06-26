@@ -60,13 +60,28 @@ export function OverviewTab({
       )}
 
       {isEditing ? (
+        <>
+          <p className="typo-caption text-muted-foreground -mb-2">
+            Leave a field blank to keep its current saved value. Only fields you
+            fill in are updated; hidden tokens and untouched secrets are preserved.
+          </p>
         <CredentialEditForm
           initialValues={googleOAuth.getValues()}
           fields={connector.fields}
           onSave={async (values) => {
             try {
               setEditError(null);
-              await updateCredential(credential.id, { data: values });
+              // Only submit fields the user actually filled in. The form never
+              // loads decrypted stored secrets, so a blank input is "unknown",
+              // not "cleared" — sending it would blank a good secret. The backend
+              // merges (upserts) these; omitted fields (incl. hidden OAuth tokens)
+              // are left intact.
+              const changed = Object.fromEntries(
+                Object.entries(values).filter(
+                  ([, v]) => typeof v === 'string' && v.trim() !== '',
+                ),
+              );
+              await updateCredential(credential.id, { data: changed });
               googleOAuth.reset();
               setIsEditing(false);
               // Open the resource picker if the connector declares any.
@@ -94,6 +109,7 @@ export function OverviewTab({
           isHealthchecking={isHealthchecking}
           healthcheckResult={effectiveHealthcheckResult}
         />
+        </>
       ) : (
         <>
           {/* Primary actions */}
