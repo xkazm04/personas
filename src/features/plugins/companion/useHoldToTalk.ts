@@ -44,6 +44,7 @@ export interface HoldToTalk {
 
 export function useHoldToTalk(): HoldToTalk {
   const setVoiceTurnRequest = useCompanionStore((s) => s.setVoiceTurnRequest);
+  const setVoiceCaptureActive = useCompanionStore((s) => s.setVoiceCaptureActive);
   const dictation = useSpeechInput();
   const [talking, setTalking] = useState(false);
   const talkingRef = useRef(false);
@@ -121,6 +122,17 @@ export function useHoldToTalk(): HoldToTalk {
       }
     }
   }, [dictation.listening, dictation.finalText, dictation, setVoiceTurnRequest]);
+
+  // Mirror the live capture state into the store so the Voice settings panel
+  // (a different tree) can disable the STT-engine switch while a session is in
+  // flight — flipping the engine mid-capture would strand the running mic. The
+  // unmount cleanup clears the flag if we tear down while still talking.
+  useEffect(() => {
+    setVoiceCaptureActive(talking);
+    return () => {
+      if (talking) setVoiceCaptureActive(false);
+    };
+  }, [talking, setVoiceCaptureActive]);
 
   return {
     supported: dictation.supported,

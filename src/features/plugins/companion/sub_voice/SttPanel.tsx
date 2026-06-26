@@ -15,6 +15,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
+import { useCompanionStore } from '../companionStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
@@ -41,6 +42,11 @@ export default function SttPanel() {
   const { t } = useTranslation();
   const engine = useSystemStore((s) => s.companionSttEngine);
   const setEngine = useSystemStore((s) => s.setCompanionSttEngine);
+  // Block engine switching while a hold-to-talk capture is live: the active
+  // dictation hook is selected purely from this value, so flipping it mid-
+  // capture would swap the controller's hook reference and strand the running
+  // mic. The capture hooks (footer/orb) mirror their state into this flag.
+  const captureActive = useCompanionStore((s) => s.voiceCaptureActive);
 
   return (
     <div className="space-y-4">
@@ -52,6 +58,7 @@ export default function SttPanel() {
         <div className="grid grid-cols-2 gap-2 px-1 py-2">
           <EngineButton
             active={engine === 'browser'}
+            disabled={captureActive}
             onClick={() => setEngine('browser')}
             icon={<Cloud className="w-4 h-4" />}
             label={t.plugins.companion.stt_engine_browser}
@@ -59,6 +66,7 @@ export default function SttPanel() {
           />
           <EngineButton
             active={engine === 'whisper'}
+            disabled={captureActive}
             onClick={() => setEngine('whisper')}
             icon={<HardDrive className="w-4 h-4" />}
             label={t.plugins.companion.stt_engine_whisper}
@@ -85,15 +93,18 @@ interface EngineButtonProps {
   icon: React.ReactNode;
   label: string;
   caption: string;
+  /** Locked while a voice capture is live (switching engine mid-capture would strand the mic). */
+  disabled?: boolean;
 }
 
-function EngineButton({ active, onClick, icon, label, caption }: EngineButtonProps) {
+function EngineButton({ active, onClick, icon, label, caption, disabled = false }: EngineButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
-      className={`text-left rounded-card border p-3 transition-colors focus-ring ${
+      className={`text-left rounded-card border p-3 transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
         active
           ? 'border-cyan-500/50 bg-cyan-500/10'
           : 'border-foreground/10 bg-secondary/20 hover:bg-secondary/40'

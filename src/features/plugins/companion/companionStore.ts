@@ -229,6 +229,18 @@ interface CompanionStore {
   setVoiceTurnRequest: (text: string | null) => void;
 
   /**
+   * True while a hold-to-talk capture/transcription session is in flight
+   * (set by `useHoldToTalk` from `start()` until the session fully ends).
+   * Lives in the store because the capture hooks (footer icon + orb) and the
+   * Voice settings panel live in different trees: `SttPanel` reads this to
+   * disable the STT-engine switch mid-capture. Switching engine while the mic
+   * is live swaps the active dictation hook (selected purely from
+   * `companionSttEngine`) and would otherwise strand the running mic.
+   */
+  voiceCaptureActive: boolean;
+  setVoiceCaptureActive: (value: boolean) => void;
+
+  /**
    * A starter message dropped into the chat from elsewhere in the app (e.g. the
    * Add-KPI modal's "Ask Athena" action). The always-mounted panel opens itself
    * and sends it, beginning a guided conversation. Latest-wins; the consumer
@@ -660,6 +672,8 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   voiceTurnRequest: null,
   setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+  voiceCaptureActive: false,
+  setVoiceCaptureActive: (voiceCaptureActive) => set({ voiceCaptureActive }),
   pendingChatPrompt: null,
   setPendingChatPrompt: (pendingChatPrompt) => set({ pendingChatPrompt }),
 
