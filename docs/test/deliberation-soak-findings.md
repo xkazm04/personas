@@ -137,3 +137,31 @@ throughput/cost.
 **Harness metric note (fixed):** a split deliberation's cost was undercounted —
 the harness read only the parent's `costSpentUsd`, not the tracks' (each track is
 a separate deliberation). It now sums track costs into the per-deliberation total.
+
+## Wave 4 — judge fixes + cost lever (Opus parent / Sonnet tracks, 1 h)
+
+Three judge fixes (group-scoped capability de-dup, within-deliberation
+stale-revalidation, bias-to-act) + the moderator cost lever. Clean 60-min run.
+
+| Metric | W1 Haiku | W2 Opus grouped | W3 Opus per-item | **W4 fixes** |
+| --- | --- | --- | --- | --- |
+| Output yield | 13% | 76% | 100% | **100%** |
+| Failures / escalations | 29 / 22 | 0 / 2 | 0 / 0 | **0 / 0** |
+| In-group duplicate runs | high | some | **yes** (parent+track) | **0%** |
+| Cost / deliberation | $0.43 | $2.62 | ~$5.1 | **~$3.5** |
+
+**Read:** the fixes hold — **0 duplicate runs**, 100% yield, 0 failures, 0
+escalations, and each capability ran exactly once per deliberation (no
+re-validation loops, no announce-spin). Cost/deliberation fell vs the per-item
+wave because the fixes made deliberations **more focused** — they converged
+single-thread and **did not split** (0 splits this wave), so the Sonnet-track
+cost lever and cross-track de-dup weren't exercised here (they're covered by unit
+tests + Wave 3's duplicate evidence). Splitting is sampling-dependent (Wave 3 on
+the same team/questions split into 2 tracks; Wave 4's three questions each
+converged before the agenda grew to the ≥2-open-item split threshold). Net: the
+efficiency pillar is now clean for the common single-thread path; a split-heavy
+run is still the way to measure the Sonnet cost lever directly.
+
+**Remaining follow-up:** full result-*content* sharing across tracks (beyond the
+"already ran" titles) is limited by the 240-char per-turn context truncation — the
+deeper improvement once split-heavy runs warrant it.
