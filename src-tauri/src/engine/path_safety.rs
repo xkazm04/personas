@@ -338,16 +338,47 @@ pub fn validate_file_access_path(
         }
     }
 
-    // Block system directories
+    // Resolve the REAL path before the security checks, to defeat symlink
+    // escapes (e.g. a home-anchored symlink `~/notes -> /etc` would let
+    // `~/notes/shadow` pass every textual gate yet open `/etc/shadow`).
+    // Canonicalize the file when it exists; otherwise canonicalize the parent
+    // (which must exist) and re-append the file name. This mirrors
+    // `validate_save_path`, which already canonicalizes for exactly this reason
+    // — the previous string-only checks here were asymmetric and unsafe.
+    let canonical_path = match raw.canonicalize() {
+        Ok(canon) => canon,
+        Err(_) => {
+            let parent = raw
+                .parent()
+                .ok_or_else(|| format!("Cannot determine parent directory for: {trimmed}"))?;
+            let file_name = raw
+                .file_name()
+                .ok_or_else(|| format!("Cannot determine file name for: {trimmed}"))?;
+            let canonical_parent = parent.canonicalize().map_err(|e| {
+                format!("Parent directory does not exist or is inaccessible: {e}")
+            })?;
+            canonical_parent.join(file_name)
+        }
+    };
+    let mut canonical_str = canonical_path
+        .to_string_lossy()
+        .replace('\\', "/")
+        .to_lowercase();
+    // Strip the Windows extended-path prefix (\\?\) canonicalize() may add.
+    if canonical_str.starts_with("//?/") {
+        canonical_str = canonical_str[4..].to_string();
+    }
+
+    // Block system directories (checked against the RESOLVED path).
     for prefix in BLOCKED_PREFIXES_UNIX {
-        if normalised == *prefix || normalised.starts_with(&format!("{prefix}/")) {
+        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
             return Err(format!(
                 "Access to system directory is not allowed: {trimmed}"
             ));
         }
     }
     for prefix in BLOCKED_PREFIXES_WINDOWS {
-        if normalised == *prefix || normalised.starts_with(&format!("{prefix}/")) {
+        if canonical_str == *prefix || canonical_str.starts_with(&format!("{prefix}/")) {
             return Err(format!(
                 "Access to system directory is not allowed: {trimmed}"
             ));
@@ -356,21 +387,21 @@ pub fn validate_file_access_path(
 
     // Block the app data directory
     if let Some(app_data) = app_data_dir_normalised() {
-        if normalised == app_data || normalised.starts_with(&format!("{app_data}/")) {
+        if canonical_str == app_data || canonical_str.starts_with(&format!("{app_data}/")) {
             return Err(format!(
                 "Access to the application data directory is not allowed: {trimmed}"
             ));
         }
     }
 
-    // Must be under user home
-    if !is_under_user_home(&normalised) {
+    // Must be under user home (checked against the RESOLVED path).
+    if !is_under_user_home(&canonical_str) {
         return Err(format!(
             "File path must be under your home directory: {trimmed}"
         ));
     }
 
-    Ok(raw.to_path_buf())
+    Ok(canonical_path)
 }
 
 #[cfg(test)]
