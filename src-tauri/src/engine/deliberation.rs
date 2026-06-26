@@ -957,24 +957,36 @@ fn extract_capability_title(body: &str, set: &mut std::collections::BTreeSet<Str
     }
 }
 
-/// Capabilities already run / attempted across the TEAM's recent deliberations
-/// (last 6h) — spans this deliberation, its parent + sibling tracks, AND recent
-/// prior deliberations. Fixes (1) cross-track duplicate runs and (2) stale
-/// re-validation of unchanged work: a persona is shown these and won't re-request
-/// them (the prompt still allows a re-run if the code genuinely changed).
+/// The deliberation ids in this deliberation's GROUP — the parent (or self, if
+/// top-level) plus all its tracks. The unit across which capability work is
+/// de-duped + shared (a parent and its parallel tracks are one logical effort).
+fn group_deliberation_ids(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
+    let root = delib
+        .parent_id
+        .clone()
+        .unwrap_or_else(|| delib.id.clone());
+    let mut ids = std::collections::BTreeSet::new();
+    ids.insert(root.clone());
+    ids.insert(delib.id.clone());
+    if let Ok(tracks) = deliberation_repo::list_tracks(pool, &root) {
+        for t in tracks {
+            ids.insert(t.id);
+        }
+    }
+    ids.into_iter().collect()
+}
+
+/// Capabilities already run / attempted across this deliberation's GROUP (the
+/// parent + its sibling tracks + self). Fixes the cross-track duplicate-run bug
+/// (a track no longer re-runs what the parent or a sibling already ran) and the
+/// within-deliberation re-validation impulse — without de-duping across separate
+/// top-level questions (which would leave a fresh deliberation discussing blind).
 fn gather_attempted(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
     let mut set = std::collections::BTreeSet::new();
-    if let Ok(conn) = pool.get() {
-        if let Ok(mut stmt) = conn.prepare(
-            "SELECT body FROM team_channel_messages
-             WHERE team_id = ?1 AND deliberation_id IS NOT NULL
-               AND datetime(created_at) > datetime('now','-6 hours')
-             ORDER BY datetime(created_at) DESC LIMIT 200",
-        ) {
-            if let Ok(rows) = stmt.query_map(params![delib.team_id], |r| r.get::<_, String>(0)) {
-                for body in rows.flatten() {
-                    extract_capability_title(&body, &mut set);
-                }
+    for id in group_deliberation_ids(pool, delib) {
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            for t in &turns {
+                extract_capability_title(&t.body, &mut set);
             }
         }
     }
@@ -1048,7 +1060,7 @@ pub fn build_turn_prompt(
     if !attempted.is_empty() {
         let _ = writeln!(
             p,
-            "\n## ALREADY RUN / ATTEMPTED (this deliberation, its tracks, and the team's recent work) — do NOT request these again; build on their results. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
+            "\n## ALREADY RUN / ATTEMPTED (this deliberation and its parallel tracks) — do NOT request these again; build on their results. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
         );
         for title in attempted {
             let _ = writeln!(p, "- {title}");
