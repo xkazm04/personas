@@ -10,7 +10,13 @@
 //! 3. By default refuses if the state is `AdoptableWithSetup` and
 //!    returns the missing-tools list so the frontend can drive the
 //!    "wire X first" guided flow. Set `auto_setup: true` to wire the
-//!    missing-but-catalogued tools as part of the adoption.
+//!    missing-but-catalogued tools as part of the adoption. When the
+//!    `AdoptableWithSetup` verdict has NO auto-wireable tools — i.e. the
+//!    setup need is connector/credential wiring (or an unverified,
+//!    `tool_hints`-less recipe) — adoption is refused regardless of
+//!    `auto_setup`, since `auto_setup` only wires tools and cannot
+//!    provision a credential. This prevents seeding a persona that can't
+//!    actually run the recipe on first use.
 //! 4. Creates the `persona_recipe_links` row.
 //! 5. Returns an `AdoptionResult` with the link id, eligibility, and
 //!    the list of tools auto-wired by this call (empty unless
@@ -34,7 +40,8 @@ use crate::db::repos::resources::recipes as recipe_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
 use crate::engine::recipe_eligibility::{
-    score_recipe_eligibility, RecipeEligibility, RecipeEligibilityState,
+    extract_required_connectors, score_recipe_eligibility, RecipeEligibility,
+    RecipeEligibilityState,
 };
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -88,6 +95,24 @@ pub fn adopt_recipe_for_persona_inner(
     // Soft-stop on AdoptableWithSetup unless caller opted in to auto_setup.
     let mut auto_wired_tools: Vec<String> = Vec::new();
     if eligibility.state == RecipeEligibilityState::AdoptableWithSetup {
+        // No auto-wireable tools means the setup need is connector/credential
+        // wiring (or an unverified, tool_hints-less recipe). `auto_setup` only
+        // wires tools — it cannot provision a credential — so refuse outright
+        // rather than link a persona that would fail on first run.
+        if eligibility.missing_tools_addable.is_empty() {
+            let connectors = extract_required_connectors(&recipe);
+            let detail = if connectors.is_empty() {
+                "it declares requirements this gate could not verify".to_string()
+            } else {
+                format!(
+                    "wire these connectors first in the Vault: {}",
+                    connectors.join(", ")
+                )
+            };
+            return Err(AppError::Validation(format!(
+                "recipe {recipe_id} needs setup before adoption — {detail}."
+            )));
+        }
         if !auto_setup {
             return Err(AppError::Validation(format!(
                 "recipe {recipe_id} needs setup before adoption — \
@@ -405,6 +430,66 @@ mod tests {
         assert!(
             !linked.iter().any(|r| r.id == recipe.id),
             "corrupt recipe must not be linked to the persona"
+        );
+    }
+
+    #[test]
+    fn connector_only_recipe_is_refused_even_with_auto_setup() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "P-G");
+        // No tool_hints, but the recipe declares a connector requirement. The
+        // scorer downgrades it to AdoptableWithSetup with no auto-wireable
+        // tools; auto_setup can't provision a credential, so adoption must be
+        // refused rather than silently seeding a non-functional persona.
+        let uc_json = serde_json::json!({
+            "id": "uc_test",
+            "title": "Connector-only UC",
+            "connectors": ["gmail"],
+        });
+        let pt = serde_json::to_string(&uc_json).unwrap();
+        let recipe = recipe_repo::create_with_id(
+            &pool,
+            "rec-connector-only",
+            CreateRecipeInput {
+                credential_id: None,
+                use_case_id: None,
+                name: "Connector Recipe".to_string(),
+                description: Some("test".to_string()),
+                category: None,
+                prompt_template: pt,
+                input_schema: None,
+                output_contract: None,
+                tool_requirements: None,
+                credential_requirements: None,
+                model_preference: None,
+                sample_inputs: None,
+                tags: None,
+                icon: None,
+                color: None,
+                source_template_id: None,
+                source_use_case_id: None,
+                source_use_case_name: None,
+                source_version: None,
+            },
+        )
+        .unwrap();
+
+        // Even with auto_setup=true the recipe must not adopt — a credential
+        // can't be auto-wired.
+        let err = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe.id, true)
+            .expect_err("connector-only recipe must not silently adopt");
+        let msg = err.to_string();
+        assert!(msg.contains("needs setup"), "error must mention setup; got: {msg}");
+        assert!(
+            msg.contains("gmail"),
+            "error must name the connector that needs wiring; got: {msg}"
+        );
+
+        // And no link was created.
+        let linked = recipe_repo::get_for_persona(&pool, &persona_id).unwrap();
+        assert!(
+            !linked.iter().any(|r| r.id == recipe.id),
+            "connector-only recipe must not be linked to the persona"
         );
     }
 }

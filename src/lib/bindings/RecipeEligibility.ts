@@ -9,8 +9,12 @@ import type { RecipeEligibilityState } from "./RecipeEligibilityState";
 export type RecipeEligibility = { recipe_id: string, persona_id: string, state: RecipeEligibilityState, 
 /**
  * Tool names the recipe declares via `tool_hints[]` in its
- * serialized UC. Empty vec means the recipe has no tool
- * requirements (vacuously eligible against any persona).
+ * serialized UC. Empty vec means the recipe declares no tool
+ * requirements — vacuously eligible against any persona ONLY when it
+ * also declares no `connectors[]`. A no-tool-signal recipe that DOES
+ * declare connectors is downgraded to `AdoptableWithSetup` (see the
+ * module-level INVARIANT), so an empty `required_tools` no longer
+ * implies `Eligible` on its own.
  */
 required_tools: Array<string>, 
 /**

@@ -27,11 +27,26 @@
 //! pass; the scoring algorithm doesn't care which side of the
 //! comparison the strings come from.
 //!
-//! Connectors are NOT scored in v1. The recipe's `connectors[]` field
-//! lists credential-type requirements (e.g. `{type: "gmail",
-//! auth_type: "oauth2"}`). E.2 (adoption command) will hydrate those
-//! against the persona's wired credentials; E.1 stays focused on the
-//! tool-name comparison so the scoring stays cheap and deterministic.
+//! Connectors are not *name-scored* against the persona's wired
+//! credentials in v1 — that hydration lives in E.2 (adoption). But their
+//! PRESENCE is honest input to the verdict: a recipe whose only declared
+//! requirement is a connector (e.g. `{type: "gmail", auth_type:
+//! "oauth2"}` or a `"gmail"` slug) and that carries NO tool signal must
+//! NOT score `Eligible`. That would be a false green light — the card
+//! promises one-click adopt, the user adopts, and the persona has no
+//! matching credential so it fails on first run. Such
+//! no-tool-signal-but-connectored recipes are downgraded to
+//! `AdoptableWithSetup` (see the state pick below). Full
+//! connector-vs-wired-credential scoring remains an E.2/future
+//! enhancement.
+//!
+//! INVARIANT: `Eligible` means "every modelled requirement this gate can
+//! verify is satisfied". For that to be meaningful, derivation MUST
+//! populate `tool_hints[]` for any recipe whose capability depends on
+//! tools — an unpopulated `tool_hints[]` is read as "no tool signal", not
+//! "no requirements". A recipe with neither `tool_hints[]` nor
+//! `connectors[]` is genuinely requirement-free and stays vacuously
+//! `Eligible`.
 
 use std::collections::HashSet;
 
@@ -60,8 +75,12 @@ pub struct RecipeEligibility {
     pub persona_id: String,
     pub state: RecipeEligibilityState,
     /// Tool names the recipe declares via `tool_hints[]` in its
-    /// serialized UC. Empty vec means the recipe has no tool
-    /// requirements (vacuously eligible against any persona).
+    /// serialized UC. Empty vec means the recipe declares no tool
+    /// requirements — vacuously eligible against any persona ONLY when it
+    /// also declares no `connectors[]`. A no-tool-signal recipe that DOES
+    /// declare connectors is downgraded to `AdoptableWithSetup` (see the
+    /// module-level INVARIANT), so an empty `required_tools` no longer
+    /// implies `Eligible` on its own.
     pub required_tools: Vec<String>,
     /// Required tools the persona already has wired.
     pub satisfied_tools: Vec<String>,
@@ -123,13 +142,26 @@ pub fn score_recipe_eligibility(
         }
     }
 
+    // Connector (credential) requirements the recipe declares. v1 does not
+    // name-score these against the persona's wired credentials, but their
+    // *presence* keeps a no-tool-signal recipe from claiming a false
+    // `Eligible` (see module-level docs + INVARIANT).
+    let required_connectors = extract_required_connectors(recipe);
+
     let state = if !missing_uncatalogued.is_empty() {
         RecipeEligibilityState::Incompatible
     } else if !missing_addable.is_empty() {
         RecipeEligibilityState::AdoptableWithSetup
+    } else if required.is_empty() && !required_connectors.is_empty() {
+        // No tool-name signal at all, but the recipe declares connector
+        // (credential) requirements this gate cannot verify in v1. Downgrade
+        // from the vacuous `Eligible` to `AdoptableWithSetup` so neither the
+        // UI nor the adoption flow promises one-click for a persona that has
+        // no matching credential and would fail on first run.
+        RecipeEligibilityState::AdoptableWithSetup
     } else {
-        // No required tools at all → Eligible (vacuous).
-        // All required tools satisfied → Eligible.
+        // Either every declared tool is satisfied, or the recipe declares no
+        // requirements at all (no tools AND no connectors) → genuinely Eligible.
         RecipeEligibilityState::Eligible
     };
 
@@ -253,7 +285,50 @@ fn extract_required_tools(recipe: &RecipeDefinition) -> RequiredTools {
         ));
     }
 
+    // No tool-requirement field declared. This is "no tool signal", NOT
+    // necessarily "no requirements": the scorer still inspects `connectors[]`
+    // (via `extract_required_connectors`) before deciding Eligible vs
+    // AdoptableWithSetup. See the module-level INVARIANT.
     RequiredTools::Resolved(Vec::new())
+}
+
+/// Read a recipe's declared connector (credential) requirements from its
+/// serialized UC `connectors[]`. Mirrors the frontend `recipeAdapter`: each
+/// element is either a slug string (`"gmail"`) or an object carrying a
+/// `name`/`type` field (`{type: "gmail", auth_type: "oauth2"}`). Blank and
+/// unrecognised elements are skipped.
+///
+/// Returns the resolved connector slugs. An empty result means the recipe
+/// declares no (recognisable) connector requirement. Exposed `pub(crate)` so
+/// the adoption flow can name the connectors in its "needs setup" message.
+pub(crate) fn extract_required_connectors(recipe: &RecipeDefinition) -> Vec<String> {
+    let Ok(serde_json::Value::Object(uc)) =
+        serde_json::from_str::<serde_json::Value>(&recipe.prompt_template)
+    else {
+        // A plain-text / non-object prompt_template carries no UC connectors.
+        return Vec::new();
+    };
+    let Some(arr) = uc.get("connectors").and_then(|v| v.as_array()) else {
+        return Vec::new();
+    };
+    arr.iter()
+        .filter_map(|c| match c {
+            serde_json::Value::String(s) => {
+                let s = s.trim();
+                (!s.is_empty()).then(|| s.to_string())
+            }
+            // Object shape: prefer `name`, fall back to `type` (the
+            // credential-type form documented at the top of this module).
+            serde_json::Value::Object(o) => o
+                .get("name")
+                .or_else(|| o.get("type"))
+                .and_then(|v| v.as_str())
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .map(str::to_string),
+            _ => None,
+        })
+        .collect()
 }
 
 #[cfg(test)]
@@ -493,5 +568,53 @@ mod tests {
         let result = score_recipe_eligibility(&r, "p1", &persona_tools, &catalog);
         assert_eq!(result.required_tools, vec!["file_read"]);
         assert_eq!(result.state, RecipeEligibilityState::Eligible);
+    }
+
+    #[test]
+    fn no_tool_signal_with_connectors_is_adoptable_with_setup_not_eligible() {
+        // The core false-green-light fix: a recipe whose only declared
+        // requirement is a connector (credential), with NO tool_hints, must
+        // NOT score Eligible — it can't be verified, so it isn't one-click.
+        let r = recipe("r1", r#"{"id":"uc","connectors":["gmail"]}"#, None);
+        let result = score_recipe_eligibility(&r, "p1", &[], &[]);
+        assert_eq!(result.state, RecipeEligibilityState::AdoptableWithSetup);
+        assert!(result.required_tools.is_empty());
+    }
+
+    #[test]
+    fn no_tool_signal_with_object_shape_connectors_is_adoptable_with_setup() {
+        // Connectors may be objects ({type, auth_type}) rather than slug
+        // strings — both shapes must trigger the downgrade.
+        let r = recipe(
+            "r1",
+            r#"{"id":"uc","connectors":[{"type":"gmail","auth_type":"oauth2"}]}"#,
+            None,
+        );
+        let result = score_recipe_eligibility(&r, "p1", &[], &[]);
+        assert_eq!(result.state, RecipeEligibilityState::AdoptableWithSetup);
+    }
+
+    #[test]
+    fn satisfied_tools_with_connectors_still_eligible() {
+        // Genuine tool overlap must still report Eligible even when the recipe
+        // also declares connectors — only the *no-tool-signal* case downgrades.
+        let r = recipe(
+            "r1",
+            r#"{"id":"uc","tool_hints":["file_read"],"connectors":["gmail"]}"#,
+            None,
+        );
+        let persona_tools = vec![td("file_read")];
+        let catalog = persona_tools.clone();
+        let result = score_recipe_eligibility(&r, "p1", &persona_tools, &catalog);
+        assert_eq!(result.state, RecipeEligibilityState::Eligible);
+    }
+
+    #[test]
+    fn no_tool_signal_and_empty_connectors_stays_vacuously_eligible() {
+        // No tools AND no connectors → genuinely requirement-free → Eligible.
+        let r = recipe("r1", r#"{"id":"uc","connectors":[]}"#, None);
+        let result = score_recipe_eligibility(&r, "p1", &[], &[]);
+        assert_eq!(result.state, RecipeEligibilityState::Eligible);
+        assert!(result.required_tools.is_empty());
     }
 }
