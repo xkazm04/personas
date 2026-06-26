@@ -382,6 +382,9 @@ pub struct ModeratorContext {
 /// far a more capable conversation manager pushes flow efficiency. Reasoning
 /// effort isn't exposed on the headless `claude -p` path, so it runs at default.
 pub const MODERATOR_MODEL: &str = "claude-opus-4-8";
+/// Track (child) moderator — Sonnet. A track is one scoped checklist item, so a
+/// cheaper conversation manager suffices; keeps the Opus tax on the parent only.
+pub const TRACK_MODERATOR_MODEL: &str = "claude-sonnet-4-6";
 /// Max deliberations advanced per tick — bounds a cold-start fan-out.
 const MAX_DELIBERATIONS_PER_TICK: usize = 8;
 /// Recent turns shown to the moderator.
@@ -481,22 +484,34 @@ pub fn parse_decision(blob: &str) -> Option<ModeratorDecision> {
     result
 }
 
-/// Run one moderation decision on Haiku. Records a `companion_turn` ledger row
-/// (audit) and returns the decision plus the call's `cost_usd` (for the
-/// deliberation's cost meter). An unparseable reply degrades to
-/// [`ModeratorDecision::default`] — a `stalled` round with no speakers, which
-/// the governance treats conservatively (the stall counter advances toward
-/// escalation).
+/// The moderator model for a deliberation: Opus on the top-level parent (the
+/// hard conversation-management + cross-track synthesis), Sonnet on child tracks
+/// (a single scoped checklist item — cheaper, still capable). Cost lever: tracks
+/// dominate the call volume when a deliberation splits, so this is where the
+/// Opus tax is biggest.
+pub fn moderator_model_for(delib: &TeamDeliberation) -> &'static str {
+    if delib.parent_id.is_some() {
+        TRACK_MODERATOR_MODEL
+    } else {
+        MODERATOR_MODEL
+    }
+}
+
+/// Run one moderation decision. Records a `companion_turn` ledger row (audit) and
+/// returns the decision plus the call's `cost_usd` (for the deliberation's cost
+/// meter). An unparseable reply degrades to [`ModeratorDecision::default`] — a
+/// `stalled` round with no speakers, which the governance treats conservatively.
 pub async fn run_moderator(
     ctx: &ModeratorContext,
     user_db: &crate::db::UserDbPool,
+    model: &str,
 ) -> Result<(ModeratorDecision, Option<f64>), AppError> {
     let prompt = build_moderator_prompt(ctx);
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
         prompt,
         user_db,
         "deliberation_moderate",
-        MODERATOR_MODEL,
+        model,
     )
     .await?;
     Ok((parse_decision(&blob).unwrap_or_default(), cost))
@@ -642,7 +657,7 @@ pub async fn advance_one_deliberation(
     }
 
     let (ctx, last_speaker) = build_moderator_context(pool, delib)?;
-    let (mut decision, cost) = run_moderator(&ctx, user_db).await?;
+    let (mut decision, cost) = run_moderator(&ctx, user_db, moderator_model_for(delib)).await?;
     if let Some(c) = cost {
         let _ = deliberation_repo::add_cost(pool, &delib.id, c);
     }
