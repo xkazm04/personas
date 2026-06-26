@@ -281,7 +281,12 @@ impl ByomPolicy {
     ///
     /// **Severity assignment:**
     /// - `Error`: Provider is explicitly blocked — contradictory config that will never work.
+    /// - `Error`: An enabled compliance rule has non-empty `workflow_tags` — it can
+    ///   never match (no tag source feeds `evaluate`) so its restriction fails OPEN.
+    ///   Blocking, because saving a no-op security control is worse than rejecting it.
     /// - `Warning`: Provider is not in the allowed list — the rule has no effect currently.
+    /// - `Warning`: An enabled routing rule targets a `task_complexity` other than
+    ///   `TaskComplexity::DEFAULT` — the runner never produces it, so the rule is inert.
     /// - `Info`: References an unknown provider — may be a typo or future provider.
     ///
     /// **Precedence rule**: `allowed_providers` is the ceiling — compliance rules
@@ -342,6 +347,29 @@ impl ByomPolicy {
             if !rule.enabled {
                 continue;
             }
+            // SECURITY (fail-open guard): compliance rules only restrict providers
+            // when one of their `workflow_tags` matches a persona tag inside
+            // `evaluate`. No production caller supplies tags yet — the runner
+            // passes `&[]` (see `engine/runner/mod.rs`, the `evaluate(&[], None)`
+            // call) because `Persona` has no tag source wired up. A rule with a
+            // non-empty `workflow_tags` therefore NEVER matches, so its provider
+            // restriction is never enforced and the control fails OPEN — the worst
+            // direction for a security control. Emit a blocking error so an admin
+            // cannot save a policy that silently pretends to enforce compliance.
+            // Removing the runtime fail-open requires a real persona tag source
+            // (a product decision); until then this rule must not be saveable.
+            if !rule.workflow_tags.is_empty() {
+                warnings.push(PolicyWarning {
+                    severity: PolicyWarningSeverity::Error,
+                    message: format!(
+                        "Compliance rule '{}' will never match: tag-based compliance routing \
+                         is not wired up (executions supply no workflow tags), so its provider \
+                         restriction is NOT enforced and fails open. Remove this rule until \
+                         tag-based compliance matching is implemented.",
+                        rule.name,
+                    ),
+                });
+            }
             for provider_str in &rule.allowed_providers {
                 if let Ok(kind) = provider_str.parse() {
                     if blocked_set.contains(&kind) {
@@ -379,6 +407,30 @@ impl ByomPolicy {
         for rule in &self.routing_rules {
             if !rule.enabled {
                 continue;
+            }
+            // Inert-rule guard: `evaluate` matches a routing rule only when its
+            // `task_complexity` equals the complexity it resolved for the
+            // execution. No production caller classifies complexity yet — the
+            // runner passes `None`, which `evaluate` resolves to
+            // `TaskComplexity::DEFAULT` (`Standard`). Any rule keyed to a
+            // different complexity (`Simple`/`Critical`) can therefore never
+            // fire today, so the configured routing silently no-ops. Surface a
+            // warning so the admin sees the rule is inert instead of trusting a
+            // routing contract the runner cannot honor. (Non-blocking: unlike the
+            // compliance fail-open, an inert cost-routing rule is a correctness/
+            // cost issue, not a security control, so it should not block saving.)
+            if rule.task_complexity != TaskComplexity::DEFAULT {
+                warnings.push(PolicyWarning {
+                    severity: PolicyWarningSeverity::Warning,
+                    message: format!(
+                        "Routing rule '{}' targets task complexity '{:?}', but the runner only \
+                         ever produces '{:?}' today (no task-complexity classifier is wired up), \
+                         so this rule never fires.",
+                        rule.name,
+                        rule.task_complexity,
+                        TaskComplexity::DEFAULT,
+                    ),
+                });
             }
             if let Ok(kind) = rule.provider.parse() {
                 if blocked_set.contains(&kind) {
@@ -749,10 +801,21 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
-        assert!(warnings[0].message.contains("HIPAA"));
-        assert!(warnings[0].message.contains("other_provider"));
+        // Two warnings now: (1) Error — the rule is inert because workflow-tag
+        // routing is not wired up; (2) Info — the unknown `other_provider`.
+        assert_eq!(warnings.len(), 2);
+        let inert = warnings
+            .iter()
+            .find(|w| w.severity == PolicyWarningSeverity::Error)
+            .expect("inert-compliance error");
+        assert!(inert.message.contains("HIPAA"));
+        assert!(inert.message.contains("never match"));
+        let unknown = warnings
+            .iter()
+            .find(|w| w.severity == PolicyWarningSeverity::Info)
+            .expect("unknown-provider info");
+        assert!(unknown.message.contains("HIPAA"));
+        assert!(unknown.message.contains("other_provider"));
     }
 
     #[test]
@@ -769,9 +832,16 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
-        assert!(warnings[0].message.contains("explicitly blocked"));
+        // Two Errors now: (1) the rule is inert (no tag source); (2) its allowed
+        // provider is explicitly blocked.
+        assert_eq!(warnings.len(), 2);
+        assert!(warnings
+            .iter()
+            .all(|w| w.severity == PolicyWarningSeverity::Error));
+        assert!(warnings.iter().any(|w| w.message.contains("never match")));
+        assert!(warnings
+            .iter()
+            .any(|w| w.message.contains("explicitly blocked")));
     }
 
     #[test]
@@ -789,9 +859,19 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Info);
-        assert!(warnings[0].message.contains("other_provider"));
+        // Two warnings now: (1) Warning — the `Simple` rule is inert (runner only
+        // ever produces `Standard`); (2) Info — the unknown `other_provider`.
+        assert_eq!(warnings.len(), 2);
+        let inert = warnings
+            .iter()
+            .find(|w| w.severity == PolicyWarningSeverity::Warning)
+            .expect("inert-routing warning");
+        assert!(inert.message.contains("never fires"));
+        let unknown = warnings
+            .iter()
+            .find(|w| w.severity == PolicyWarningSeverity::Info)
+            .expect("unknown-provider info");
+        assert!(unknown.message.contains("other_provider"));
     }
 
     #[test]
@@ -809,9 +889,18 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 1);
-        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
-        assert!(warnings[0].message.contains("explicitly blocked"));
+        // Two warnings now: (1) Error — provider explicitly blocked; (2) Warning —
+        // the `Simple` rule is inert (runner only ever produces `Standard`).
+        assert_eq!(warnings.len(), 2);
+        let blocked = warnings
+            .iter()
+            .find(|w| w.severity == PolicyWarningSeverity::Error)
+            .expect("blocked-provider error");
+        assert!(blocked.message.contains("explicitly blocked"));
+        assert!(warnings
+            .iter()
+            .any(|w| w.severity == PolicyWarningSeverity::Warning
+                && w.message.contains("never fires")));
     }
 
     #[test]
@@ -834,26 +923,41 @@ mod tests {
             ..Default::default()
         };
         let warnings = policy.validate();
-        assert_eq!(warnings.len(), 2);
+        // Four warnings now:
+        //   - Info  : routing rule references unknown `nonexistent_provider`
+        //   - Info  : compliance rule references unknown `also_unknown`
+        //   - Warning: the `Simple` routing rule is inert (runner only does Standard)
+        //   - Error : the tagged compliance rule is inert (no tag source = fails open)
+        assert_eq!(warnings.len(), 4);
+        assert_eq!(
+            warnings
+                .iter()
+                .filter(|w| w.severity == PolicyWarningSeverity::Info)
+                .count(),
+            2
+        );
         assert!(warnings
             .iter()
-            .all(|w| w.severity == PolicyWarningSeverity::Info));
+            .any(|w| w.severity == PolicyWarningSeverity::Warning
+                && w.message.contains("never fires")));
+        assert!(warnings
+            .iter()
+            .any(|w| w.severity == PolicyWarningSeverity::Error
+                && w.message.contains("never match")));
     }
 
     #[test]
     fn test_validate_clean_policy_no_warnings() {
+        // A genuinely clean policy: provider in the allowed set, and the only
+        // routing rule targets `Standard` (the one complexity the runner can
+        // actually produce). No compliance rule, because any rule with non-empty
+        // workflow_tags is currently inert and is flagged as a blocking error.
         let policy = ByomPolicy {
             enabled: true,
             allowed_providers: vec!["claude_code".into()],
-            compliance_rules: vec![ComplianceRule {
-                name: "HIPAA".into(),
-                workflow_tags: vec!["hipaa".into()],
-                allowed_providers: vec!["claude_code".into()],
-                enabled: true,
-            }],
             routing_rules: vec![RoutingRule {
-                name: "Use Claude for critical".into(),
-                task_complexity: TaskComplexity::Critical,
+                name: "Use Claude for standard".into(),
+                task_complexity: TaskComplexity::Standard,
                 provider: "claude_code".into(),
                 model: None,
                 enabled: true,
@@ -1074,5 +1178,153 @@ mod tests {
             .all(|w| w.severity == PolicyWarningSeverity::Info));
         assert!(warnings[0].message.contains("bad1"));
         assert!(warnings[1].message.contains("bad2"));
+    }
+
+    // =========================================================================
+    // Inert-rule visibility (silent fail-open / no-op guards)
+    //
+    // `evaluate` cannot today match compliance rules (no persona tag source) or
+    // Simple/Critical routing rules (no complexity classifier). These tests pin
+    // that `validate` surfaces those inert rules so the admin UI cannot silently
+    // accept a no-op security/cost control. Runtime ENFORCEMENT is intentionally
+    // unchanged — wiring a real tag/complexity source is a separate product
+    // decision.
+    // =========================================================================
+
+    #[test]
+    fn test_validate_compliance_rule_with_tags_is_blocking_error() {
+        // The core fail-open finding: a tagged compliance rule never matches
+        // (runner passes no tags), so it must be flagged as a blocking error.
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Error);
+        assert!(warnings[0].message.contains("HIPAA"));
+        assert!(warnings[0].message.contains("never match"));
+        assert!(warnings[0].message.contains("fails open"));
+        // Strong enough to block the save (mirrors the blocked-provider-typo case).
+        assert!(policy.has_blocking_errors());
+    }
+
+    #[test]
+    fn test_validate_inert_compliance_rule_blocks_save() {
+        let pool = crate::db::init_test_db().expect("test db");
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let result = policy.save(&pool);
+        let err =
+            result.expect_err("save must refuse a policy with an inert (fail-open) compliance rule");
+        let msg = format!("{err:?}");
+        assert!(
+            msg.contains("blocking errors") && msg.contains("HIPAA"),
+            "expected validation error mentioning the inert HIPAA rule, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn test_validate_compliance_rule_without_tags_is_not_flagged() {
+        // A rule with empty workflow_tags can't fail open on the tag path (it
+        // simply never matches anything), so it is not flagged by the inert guard.
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "No tags".into(),
+                workflow_tags: vec![],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert!(warnings.is_empty());
+    }
+
+    #[test]
+    fn test_validate_routing_rule_standard_is_not_inert() {
+        // Standard is the one complexity the runner produces, so a Standard rule
+        // is NOT inert and must not be flagged.
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            routing_rules: vec![RoutingRule {
+                name: "Standard route".into(),
+                task_complexity: TaskComplexity::Standard,
+                provider: "claude_code".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert!(warnings.is_empty());
+    }
+
+    #[test]
+    fn test_validate_routing_rule_critical_is_inert_warning() {
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            routing_rules: vec![RoutingRule {
+                name: "Critical route".into(),
+                task_complexity: TaskComplexity::Critical,
+                provider: "claude_code".into(),
+                model: None,
+                enabled: true,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert_eq!(warnings.len(), 1);
+        assert_eq!(warnings[0].severity, PolicyWarningSeverity::Warning);
+        assert!(warnings[0].message.contains("Critical route"));
+        assert!(warnings[0].message.contains("never fires"));
+        // A merely-inert routing rule must NOT block saving.
+        assert!(!policy.has_blocking_errors());
+    }
+
+    #[test]
+    fn test_validate_disabled_inert_rules_are_not_flagged() {
+        // Disabled rules are skipped by `evaluate`, so they should not produce
+        // inert warnings either.
+        let policy = ByomPolicy {
+            enabled: true,
+            allowed_providers: vec!["claude_code".into()],
+            compliance_rules: vec![ComplianceRule {
+                name: "Disabled HIPAA".into(),
+                workflow_tags: vec!["hipaa".into()],
+                allowed_providers: vec!["claude_code".into()],
+                enabled: false,
+            }],
+            routing_rules: vec![RoutingRule {
+                name: "Disabled simple".into(),
+                task_complexity: TaskComplexity::Simple,
+                provider: "claude_code".into(),
+                model: None,
+                enabled: false,
+            }],
+            ..Default::default()
+        };
+        let warnings = policy.validate();
+        assert!(warnings.is_empty());
     }
 }
