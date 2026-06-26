@@ -262,14 +262,21 @@ fn parse_value(output: &str, strategy: &str) -> Option<f64> {
                 continue;
             };
             let mut cur = &v;
+            let mut ok = true;
             for seg in path.split('.') {
                 match cur.get(seg) {
                     Some(next) => cur = next,
-                    None => break,
+                    None => {
+                        // Partial-path match: never coerce an intermediate node.
+                        ok = false;
+                        break;
+                    }
                 }
             }
-            if let Some(n) = cur.as_f64() {
-                return Some(n);
+            if ok {
+                if let Some(n) = cur.as_f64() {
+                    return Some(n);
+                }
             }
         }
         return None;
@@ -414,6 +421,16 @@ mod tests {
     fn json_path_walks_last_json_line() {
         let out = "log noise\n{\"total\":{\"pct\":83.5}}\n";
         assert_eq!(parse_value(out, "json_path:total.pct"), Some(83.5));
+    }
+
+    #[test]
+    fn json_path_partial_match_yields_none_not_intermediate_number() {
+        // `total.pct` over `{"total":100}` must NOT record 100 (the
+        // intermediate `total` node) — a partial path is no value at all.
+        let out = "log noise\n{\"total\":100}\n";
+        assert_eq!(parse_value(out, "json_path:total.pct"), None);
+        // A path that fully resolves to that number still works.
+        assert_eq!(parse_value(out, "json_path:total"), Some(100.0));
     }
 
     #[test]
