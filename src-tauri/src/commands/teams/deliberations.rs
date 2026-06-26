@@ -202,6 +202,25 @@ pub async fn approve_deliberation_action(
         .and_then(|j| serde_json::from_str(j).ok())
         .ok_or_else(|| AppError::Validation("No pending action to approve".into()))?;
 
+    // Approval-time group de-dup: if this capability already ran/failed or is
+    // running in a sibling track, don't spawn a duplicate — resume on the existing
+    // result. Closes the parallel-track race the turn-time de-dup can't catch.
+    if crate::engine::deliberation::capability_active_in_group(&pool, &delib, &action.use_case_title) {
+        let _ = channel_repo::post_deliberation_turn(
+            &pool,
+            &deliberation_id,
+            &delib.team_id,
+            "system",
+            None,
+            &format!(
+                "“{}” already ran (or is running) in this deliberation's group — building on that result instead of re-running.",
+                action.use_case_title
+            ),
+        );
+        let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
+        return repo::get(&pool, &deliberation_id);
+    }
+
     // Context for the capability so it acts on the deliberation, not in a vacuum.
     let input = serde_json::json!({
         "source": "team_deliberation",

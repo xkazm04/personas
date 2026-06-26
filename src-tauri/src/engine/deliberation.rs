@@ -993,6 +993,92 @@ fn gather_attempted(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
     set.into_iter().collect()
 }
 
+/// Pull a concise digest (title + verdict/summary excerpt) out of a 🛠 result
+/// body so a track/sibling can BUILD ON the finding instead of re-running it or
+/// asking "where's the output?". Anchors on a verdict/summary marker when present.
+fn finding_digest(body: &str) -> Option<(String, String)> {
+    let a = body.find('“')?;
+    let rest = &body[a + '“'.len_utf8()..];
+    let b = rest.find('”')?;
+    let title = rest[..b].trim().to_string();
+    let after = rest.get(b + '”'.len_utf8()..).unwrap_or("");
+    let lower = after.to_lowercase();
+    let anchor = ["verdict", "executive summary", "## summary", "ship/no-ship", "recommendation"]
+        .iter()
+        .filter_map(|k| lower.find(k))
+        .min()
+        .unwrap_or(0);
+    let digest: String = after[anchor..].chars().take(700).collect();
+    let digest = digest.split_whitespace().collect::<Vec<_>>().join(" ");
+    if digest.trim().is_empty() {
+        None
+    } else {
+        Some((title, digest))
+    }
+}
+
+/// The group's completed capability FINDINGS (title + digest) — injected into the
+/// turn prompt so tracks build on the parent's/siblings' results (the
+/// result-CONTENT sharing the personas explicitly asked for). Deduped by title
+/// (latest wins), capped to the few most recent.
+fn gather_findings(pool: &DbPool, delib: &TeamDeliberation) -> Vec<(String, String)> {
+    let mut by_title: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    for id in group_deliberation_ids(pool, delib) {
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            // oldest-first so later (better-grounded) results overwrite earlier.
+            for t in turns.iter().rev() {
+                if t.body.starts_with('🛠') {
+                    if let Some((title, digest)) = finding_digest(&t.body) {
+                        by_title.insert(title, digest);
+                    }
+                }
+            }
+        }
+    }
+    by_title.into_iter().rev().take(4).collect()
+}
+
+/// True if `title` already ran (🛠) or failed (⚠) anywhere in the group, OR is
+/// running right now in a sibling (another group deliberation parked at
+/// 'action_running' for the same capability). The approval-time guard that closes
+/// the parallel-track duplicate-run race the turn-time de-dup can't catch.
+pub fn capability_active_in_group(pool: &DbPool, delib: &TeamDeliberation, title: &str) -> bool {
+    for id in group_deliberation_ids(pool, delib) {
+        // A sibling running the same capability concurrently.
+        if id != delib.id {
+            if let Ok(d) = deliberation_repo::get(pool, &id) {
+                if d.status == "action_running" {
+                    if let Some(pa) = d
+                        .pending_action
+                        .as_deref()
+                        .and_then(|j| serde_json::from_str::<crate::db::models::PendingAction>(j).ok())
+                    {
+                        if pa.use_case_title == title {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        // Already completed/failed in any group deliberation.
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            for t in &turns {
+                if t.body.starts_with('🛠') || t.body.starts_with('⚠') {
+                    if let Some(a) = t.body.find('“') {
+                        let rest = &t.body[a + '“'.len_utf8()..];
+                        if let Some(b) = rest.find('”') {
+                            if &rest[..b] == title {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
 /// Recent turns a persona sees for context.
 const TURN_CONTEXT_WINDOW: i64 = 12;
 /// Scoped memories injected into a persona's turn.
@@ -1013,6 +1099,7 @@ pub fn build_turn_prompt(
     recent_turns: &[(String, String)],
     capabilities: &[(String, String)],
     attempted: &[String],
+    findings: &[(String, String)],
 ) -> String {
     use std::fmt::Write as _;
     let mut p = String::new();
@@ -1057,10 +1144,19 @@ pub fn build_turn_prompt(
             let _ = writeln!(p, "- {id}: {title}");
         }
     }
+    if !findings.is_empty() {
+        let _ = writeln!(
+            p,
+            "\n## PRIOR FINDINGS (results already produced in this deliberation/its tracks — BUILD ON THESE, do not re-derive or re-run):"
+        );
+        for (title, digest) in findings {
+            let _ = writeln!(p, "- {title}: {digest}");
+        }
+    }
     if !attempted.is_empty() {
         let _ = writeln!(
             p,
-            "\n## ALREADY RUN / ATTEMPTED (this deliberation and its parallel tracks) — do NOT request these again; build on their results. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
+            "\n## ALREADY RUN / ATTEMPTED (this deliberation and its parallel tracks) — do NOT request these again; build on their results above. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
         );
         for title in attempted {
             let _ = writeln!(p, "- {title}");
@@ -1073,7 +1169,7 @@ pub fn build_turn_prompt(
     };
     let _ = writeln!(
         p,
-        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. {act_clause}"
+        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. {act_clause} If you want a capability that is NOT listed in YOUR CAPABILITIES, it is unavailable to you — do NOT keep announcing you'll run it; use the PRIOR FINDINGS, state the gap ONCE, and move the decision forward with what the team has."
     );
     let _ = writeln!(
         p,
@@ -1177,10 +1273,18 @@ pub async fn run_persona_deliberation_turn(
         .map(|t| (author_label(&t.author_kind).to_string(), t.body))
         .collect();
 
-    // Capabilities already run / attempted across the team's recent work (this
-    // deliberation, its parent + sibling tracks, and recent prior deliberations)
-    // so the persona doesn't re-run them (cross-track + stale-revalidation dedup).
+    // What the group already ran/attempted (titles) + the actual findings.
     let attempted = gather_attempted(pool, delib);
+    let findings = gather_findings(pool, delib);
+    // Fix 3: don't even OFFER a capability that already ran or failed in the group
+    // — the persona builds on its result instead of re-requesting it (kills the
+    // re-request + announce loops for done/unavailable capabilities).
+    let attempted_set: std::collections::HashSet<&str> =
+        attempted.iter().map(|s| s.as_str()).collect();
+    let capabilities: Vec<(String, String)> = capabilities
+        .into_iter()
+        .filter(|(_, title)| !attempted_set.contains(title.as_str()))
+        .collect();
 
     let prompt = build_turn_prompt(
         &name,
@@ -1192,6 +1296,7 @@ pub async fn run_persona_deliberation_turn(
         &recent_turns,
         &capabilities,
         &attempted,
+        &findings,
     );
 
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
@@ -1879,6 +1984,7 @@ mod turn_tests {
             &[("Teammate".to_string(), "Let's ship.".to_string())],
             &[],
             &[],
+            &[],
         );
         assert!(p.contains("QA Guardian"));
         assert!(p.contains("challenger"));
@@ -1905,22 +2011,31 @@ mod turn_tests {
             &[],
             &caps,
             &[],
+            &[],
         );
         assert!(with.contains("## YOUR CAPABILITIES"));
         assert!(with.contains("run-regression: Run the regression suite"));
         assert!(with.contains("invoke_capability")); // invited to act
                                                       // No capabilities → no capability section (the JSON schema still
                                                       // names the field, so check the section HEADER, not the substring).
-        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[], &[]);
+        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[], &[], &[]);
         assert!(!without.contains("## YOUR CAPABILITIES"));
         // Already-attempted capabilities are listed so the persona won't re-request.
         let dedup = build_turn_prompt(
             "QA", "id", None, None, "topic", &[], &[],
             &[("uc-x".to_string(), "Run X".to_string())],
             &["Run X".to_string()],
+            &[],
         );
         assert!(dedup.contains("ALREADY RUN / ATTEMPTED"));
         assert!(dedup.contains("- Run X"));
+        // PRIOR FINDINGS digests are injected so tracks build on them.
+        let shared = build_turn_prompt(
+            "QA", "id", None, None, "topic", &[], &[], &[], &[],
+            &[("Security Scan".to_string(), "Verdict: SHIP, 0 critical".to_string())],
+        );
+        assert!(shared.contains("PRIOR FINDINGS"));
+        assert!(shared.contains("Security Scan: Verdict: SHIP, 0 critical"));
     }
 
     #[test]
