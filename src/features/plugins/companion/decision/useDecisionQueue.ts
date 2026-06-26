@@ -107,6 +107,10 @@ function approvalToDecision(approval: PendingApproval): PendingDecision {
       if (outcome.clientAction) applyClientAction(outcome.clientAction);
     } catch (err) {
       silentCatch('companion/decision:approval')(err);
+      // Propagate so runDecisionOption's failure path fires: keep the decision
+      // pending + surface a retry toast. Swallowing here records a false
+      // "resolved" and clears the bubble for an action that never landed.
+      throw err;
     }
   };
 
@@ -207,6 +211,9 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
       await updateManualReviewStatus(review.id, status);
     } catch (err) {
       silentCatch('companion/decision:review')(err);
+      // Propagate so runDecisionOption keeps the review pending + toasts on
+      // failure instead of falsely clearing it as resolved.
+      throw err;
     }
   };
 
@@ -218,6 +225,9 @@ function reviewToDecision(review: PersonaManualReview): PendingDecision {
       await dispatchReviewAction(review.id, action);
     } catch (err) {
       silentCatch('companion/decision:review-action')(err);
+      // Propagate so runDecisionOption keeps the review pending + toasts on
+      // failure instead of falsely clearing it as resolved.
+      throw err;
     }
   };
   const actionOptions: DecisionOption[] = parseSuggestedActions(review.suggested_actions)
