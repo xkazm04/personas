@@ -60,7 +60,22 @@ pub async fn companion_tts(
             })?;
             tts::elevenlabs::synthesize(&state, &cred_id, &request).await
         }
-        TtsEngineId::Piper => tts::piper::synthesize(&state, &request).await,
+        TtsEngineId::Piper => {
+            // Backpressure: cap concurrent local piper sidecars so chunked
+            // replies / TTS-while-STT don't stack unbounded ONNX-voice loads.
+            // Held across the synth call; released on every exit path via the
+            // permit's Drop. ElevenLabs is a network call and isn't gated here.
+            // (combined-scan 2026-06-25 #3)
+            let _permit = state
+                .companion_tts_semaphore
+                .clone()
+                .acquire_owned()
+                .await
+                .map_err(|_| {
+                    AppError::Internal("companion_tts: synthesis semaphore closed".into())
+                })?;
+            tts::piper::synthesize(&state, &request).await
+        }
     }
 }
 

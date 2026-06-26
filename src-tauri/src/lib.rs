@@ -478,6 +478,17 @@ pub struct AppState {
     /// companion). Held here so `stop_all` runs from the app-exit hook and a
     /// closing app never orphans a `bun`/`next` process tree.
     pub webbuild_servers: Arc<webbuild::DevServerRegistry>,
+    /// Backpressure for the local Piper TTS sidecar. Each piper process loads a
+    /// full ONNX voice into memory; chunked replies (multiple `companion_tts`
+    /// calls) or TTS-while-STT could otherwise stack unbounded piper processes
+    /// and spike memory. Permit is held across the synth call. (combined-scan
+    /// 2026-06-25 #3 — separate per-engine cap so one piper + one whisper can
+    /// still run at once.)
+    pub companion_tts_semaphore: Arc<tokio::sync::Semaphore>,
+    /// Backpressure for the local whisper STT sidecar. Whisper saturates all
+    /// CPU cores, so overlapping dictations must not stack whisper processes.
+    /// Permit is held across the transcribe call. (combined-scan 2026-06-25 #3)
+    pub companion_stt_semaphore: Arc<tokio::sync::Semaphore>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -1042,6 +1053,12 @@ pub fn run() {
                     app_data_dir.clone(),
                 )),
                 webbuild_servers: Arc::new(webbuild::DevServerRegistry::new()),
+                // Cap local voice sidecars at one process per engine so chunked
+                // TTS / TTS-while-STT can't stack unbounded piper/whisper procs
+                // (combined-scan 2026-06-25 #3). Separate semaphores: one piper
+                // and one whisper may still run concurrently.
+                companion_tts_semaphore: Arc::new(tokio::sync::Semaphore::new(1)),
+                companion_stt_semaphore: Arc::new(tokio::sync::Semaphore::new(1)),
             });
             // Phase 1: spawn the project_tracking scheduler. The master
             // enable flag inside the tracker starts at false; the

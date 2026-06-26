@@ -25,7 +25,44 @@ import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import type { DictationState } from './useDictation';
 
+/**
+ * whisper.cpp's required input contract: **16 kHz, mono, 16-bit PCM**.
+ *
+ * The Rust validator (`validate_wav_format`, src-tauri/src/companion/stt/mod.rs)
+ * hard-rejects any WAV whose header sample rate is not exactly 16000, so every
+ * clip we encode and ship over `companion_stt_transcribe` MUST be 16 kHz mono.
+ *
+ * We *request* this rate via `new AudioContext({ sampleRate: 16000 })`, but the
+ * option is only honored on Chromium/WebView2 (Windows). WebKit-based webviews
+ * (WKWebView on macOS, WebKitGTK on Linux) historically IGNORE it and run the
+ * context at the hardware rate (44.1/48 kHz). {@link resampleTo16k} reconciles
+ * that mismatch on the client before {@link encodeWav}, so the contract holds
+ * on every platform instead of silently breaking on WebKit.
+ */
 const TARGET_SAMPLE_RATE = 16000;
+
+/**
+ * Resample mono Float32 PCM from `fromRate` to {@link TARGET_SAMPLE_RATE}
+ * (16 kHz) via linear interpolation. Handles both decimation (48 kHz → 16 kHz)
+ * and upsampling; plain linear interpolation is sufficient for whisper, which
+ * band-limits its own input. Returns the buffer unchanged when it is already
+ * at the target rate (the Chromium/WebView2 fast path is a no-op).
+ */
+function resampleTo16k(input: Float32Array, fromRate: number): Float32Array {
+  if (fromRate === TARGET_SAMPLE_RATE || input.length === 0) return input;
+  const ratio = TARGET_SAMPLE_RATE / fromRate;
+  const outLen = Math.max(1, Math.round(input.length * ratio));
+  const out = new Float32Array(outLen);
+  const lastIdx = input.length - 1;
+  for (let i = 0; i < outLen; i++) {
+    const srcPos = i / ratio; // position in the source-rate timeline
+    const i0 = Math.floor(srcPos);
+    const i1 = Math.min(i0 + 1, lastIdx);
+    const frac = srcPos - i0;
+    out[i] = (input[i0] ?? 0) * (1 - frac) + (input[i1] ?? 0) * frac;
+  }
+  return out;
+}
 
 /** Encode mono Float32 PCM samples as a 16-bit PCM WAV (little-endian). */
 function encodeWav(samples: Float32Array, sampleRate: number): Uint8Array {
@@ -100,6 +137,11 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
   modelRef.current = modelId;
   const langRef = useRef<string | undefined>(lang);
   langRef.current = lang;
+  // Monotonic transcription id. Each `finishAndTranscribe` claims the next id;
+  // a result only applies if it is still the latest. Guards the case where a
+  // `reset()` (or a newer turn) happens while an earlier transcription is still
+  // resolving — a slow stale result must not clobber the current finalText.
+  const transcribeIdRef = useRef(0);
 
   const teardown = useCallback(() => {
     try {
@@ -180,7 +222,9 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
     // Concatenate captured PCM, encode WAV, transcribe. `listening` stays
     // true until the transcript lands so the hold-to-talk consumer reads
     // finalText on the listening→false transition.
-    const sampleRate = ctxRef.current?.sampleRate ?? TARGET_SAMPLE_RATE;
+    // The context may NOT actually be 16 kHz (WebKit ignores the requested
+    // rate), so capture whatever it ran at and resample below.
+    const captureRate = ctxRef.current?.sampleRate ?? TARGET_SAMPLE_RATE;
     const chunks = chunksRef.current;
     chunksRef.current = [];
     teardown();
@@ -197,15 +241,24 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
       merged.set(c, offset);
       offset += c.length;
     }
-    const wav = encodeWav(merged, sampleRate);
+    // Pin to the 16 kHz contract before encoding: resample if the platform gave
+    // us a different rate (no-op on Chromium/WebView2), then stamp 16000 in the
+    // WAV header so the Rust validator accepts it on every webview.
+    const samples16k = resampleTo16k(merged, captureRate);
+    const wav = encodeWav(samples16k, TARGET_SAMPLE_RATE);
     const base64 = bytesToBase64(wav);
 
+    const reqId = ++transcribeIdRef.current;
     companionSttTranscribe(base64, model, langRef.current)
       .then((text) => {
+        // Discard a stale result that resolved after a reset / newer turn.
+        if (transcribeIdRef.current !== reqId) return;
         setFinalText(text.trim());
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : String(err));
+        if (transcribeIdRef.current === reqId) {
+          setError(err instanceof Error ? err.message : String(err));
+        }
         silentCatch('companion_stt_transcribe')(err);
       })
       .finally(() => setListening(false));
@@ -223,6 +276,9 @@ export function useLocalDictation({ lang }: { lang?: string } = {}): DictationSt
   }, [listening, finishAndTranscribe]);
 
   const reset = useCallback(() => {
+    // Bump the id so any transcription still in flight is treated as stale and
+    // can't repopulate the text we're clearing here.
+    transcribeIdRef.current++;
     setFinalText('');
     setError(null);
   }, []);

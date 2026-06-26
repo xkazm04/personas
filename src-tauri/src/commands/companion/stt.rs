@@ -47,6 +47,17 @@ pub async fn companion_stt_transcribe(
         None => None,
     };
 
+    // Backpressure: cap concurrent whisper sidecars at one. Whisper saturates
+    // all CPU cores, so overlapping dictations must serialize instead of
+    // stacking. Held across the transcribe call; released on every exit path
+    // via the permit's Drop. (combined-scan 2026-06-25 #3)
+    let _permit = state
+        .companion_stt_semaphore
+        .clone()
+        .acquire_owned()
+        .await
+        .map_err(|_| AppError::Internal("companion_stt: transcription semaphore closed".into()))?;
+
     stt::whisper::transcribe(&bytes, &model_id, lang.as_deref()).await
 }
 
