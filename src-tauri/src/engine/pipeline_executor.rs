@@ -9,7 +9,7 @@
 //! - **Command runner**: deterministic (non-LLM) pipeline nodes
 //! - **Approval gates**: pause pipeline for human review
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -217,6 +217,30 @@ fn should_skip_node(
                     .and_then(|o| o.as_deref()),
             )
     })
+}
+
+/// Check if a node should be skipped because EVERY one of its predecessors was
+/// skipped (transitively — `skipped` accumulates in topological order, so an
+/// upstream-skipped predecessor is already recorded by the time we reach this
+/// node).
+///
+/// Such a node has no real upstream input: if it ran, `resolve_node_input`
+/// would find zero present predecessor outputs and fall back to the *global*
+/// pipeline input, silently producing output as if a gated-off branch had
+/// executed. Propagating the skip instead is the correct behavior.
+///
+/// Returns `false` for a genuine root node (no predecessors → it legitimately
+/// runs on `pipeline_input`) and for any node with at least one NON-skipped
+/// predecessor (it runs on that predecessor's output, unchanged).
+fn all_predecessors_skipped(
+    predecessor_map: &HashMap<String, Vec<String>>,
+    member_id: &str,
+    skipped: &HashSet<String>,
+) -> bool {
+    match predecessor_map.get(member_id) {
+        Some(preds) if !preds.is_empty() => preds.iter().all(|p| skipped.contains(p)),
+        _ => false,
+    }
 }
 
 // ============================================================================
@@ -749,6 +773,12 @@ pub async fn run_pipeline(ctx: PipelineContext) {
     };
 
     let mut node_outputs: HashMap<String, Option<String>> = HashMap::new();
+    // Members that did NOT produce output because they were gated off (a
+    // conditional edge's condition was not met) or because every one of their
+    // predecessors was itself skipped. Tracked so a skip propagates to
+    // non-conditional descendants instead of letting them silently run on the
+    // global pipeline input.
+    let mut skipped: HashSet<String> = HashSet::new();
     let mut statuses = ctx.initial_node_statuses.clone();
     let mut has_failure = false;
     let mut memories_created: u32 = 0;
@@ -813,12 +843,35 @@ pub async fn run_pipeline(ctx: PipelineContext) {
         // Skip this node if an incoming conditional edge's condition is not
         // met by the source node's output.
         if should_skip_node(member_id, &ctx.connections, &node_outputs) {
+            skipped.insert(member_id.clone());
             update_node_status(
                 &mut statuses,
                 member_id,
                 &[
                     ("status", serde_json::json!("skipped")),
                     ("skip_reason", serde_json::json!("condition_not_met")),
+                ],
+            );
+            emitter.emit("running", &statuses, Some(memories_created));
+            continue;
+        }
+
+        // ── Upstream-skip propagation ────────────────────────────────
+        // If EVERY predecessor of this node was skipped, the node has no
+        // upstream output to run on. Running it would make resolve_node_input
+        // find zero present predecessors and fall back to the GLOBAL pipeline
+        // input — silently producing output as if the gated-off branch had
+        // executed (then auto-committing it to team memory and threading it
+        // downstream). Propagate the skip instead. A node with at least one
+        // non-skipped predecessor, or a genuine root, is unaffected.
+        if all_predecessors_skipped(&predecessor_map, member_id, &skipped) {
+            skipped.insert(member_id.clone());
+            update_node_status(
+                &mut statuses,
+                member_id,
+                &[
+                    ("status", serde_json::json!("skipped")),
+                    ("skip_reason", serde_json::json!("upstream_skipped")),
                 ],
             );
             emitter.emit("running", &statuses, Some(memories_created));
