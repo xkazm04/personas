@@ -380,11 +380,27 @@ pub async fn send_turn(
     let session_id = DEFAULT_SESSION_ID.to_string();
     let turn_id = format!("turn_{}", short_random());
 
-    // Serialize turns (see TURN_LOCK). The user path waits for any in-flight turn;
-    // background spawners skip rather than queue, so autonomous/proactive work
-    // never preempts the user and two turns never --resume the session at once.
+    // Serialize turns (see TURN_LOCK). User-initiated paths wait for any
+    // in-flight turn; background spawners skip rather than queue, so
+    // autonomous/proactive work never preempts the user and two turns never
+    // --resume the session at once.
+    //
+    // `External` ("Ask Athena" and similar frontend surfaces) is genuinely
+    // user-initiated — a real button press carrying the user's intent, even
+    // though the prompt text is system-crafted — so it block-acquires like
+    // `User`. If it used `try_lock`, a request would be silently dropped
+    // whenever a turn is in flight (common: autonomous mode keeps a 15s-spaced
+    // tick chain alive), with no reply, error, or queue entry. Awaiting can't
+    // deadlock: the lock is only ever held within a single `send_turn` body,
+    // which is bounded by TURN_TIMEOUT, and no code path re-enters `send_turn`
+    // synchronously while holding it (the autonomous/proactive spawners are
+    // fire-and-forget on their own threads).
+    //
+    // Background origins (`Autonomous` ticks, `Proactive` turns) keep
+    // `try_lock` and self-skip when busy: a missed autonomous tick self-heals
+    // on the next one, and queuing them would let machine work pile up.
     let _turn_guard = match &origin {
-        TurnOrigin::User => TURN_LOCK.lock().await,
+        TurnOrigin::User | TurnOrigin::External { .. } => TURN_LOCK.lock().await,
         _ => match TURN_LOCK.try_lock() {
             Ok(g) => g,
             Err(_) => {
