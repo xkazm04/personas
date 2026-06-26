@@ -467,7 +467,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       if (streaming && sid && pid) {
         const textLines = out.filter((l) => classifyLine(l) === 'text');
         const fullResponse = textLines.join('\n').trim();
-        void get().finishChatStream(fullResponse, pid, sid, get().activeExecutionId ?? undefined);
+        // Cancel is a non-completed terminal state — pass 'cancelled' so the
+        // chat finalize surfaces an error instead of persisting the partial
+        // (truncated) reply as an authoritative assistant answer (agent-chat #1).
+        void get().finishChatStream(fullResponse, pid, sid, get().activeExecutionId ?? undefined, 'cancelled');
       }
 
       // Preserve the execution ID for Resume before clearing active state.
@@ -529,7 +532,10 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     if (chatStreaming && streamingChatSessionId && streamingChatPersonaId) {
       const textLines = output.filter((l) => classifyLine(l) === 'text');
       const fullResponse = textLines.join('\n').trim();
-      void get().finishChatStream(fullResponse, streamingChatPersonaId, streamingChatSessionId, get().activeExecutionId ?? undefined);
+      // Forward the terminal status so the chat finalize only persists a clean
+      // assistant message when the turn actually 'completed'; failed/cancelled/
+      // incomplete/unknown turns surface an error instead (agent-chat #1).
+      void get().finishChatStream(fullResponse, streamingChatPersonaId, streamingChatSessionId, get().activeExecutionId ?? undefined, _status);
     }
 
     // Capture context for drift detection before resetting state.

@@ -15,6 +15,8 @@ import {
 } from "@/api/agents/chat";
 import { executePersona, getExecution } from "@/api/agents/executions";
 import type { Continuation } from "@/lib/bindings/Continuation";
+import { parseExecutionState } from "@/lib/execution/executionState";
+import { en } from "@/i18n/en";
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -79,7 +81,7 @@ export interface ChatSlice {
   sendChatMessage: (personaId: string, sessionId: string, content: string) => Promise<void>;
   clearChatSession: (personaId: string, sessionId: string) => Promise<void>;
   appendChatStreamLine: (line: string) => void;
-  finishChatStream: (fullResponse: string, personaId: string, sessionId: string, executionId?: string) => Promise<void>;
+  finishChatStream: (fullResponse: string, personaId: string, sessionId: string, executionId?: string, status?: string) => Promise<void>;
   /**
    * Restore a chat session for a persona. When `sessionId` is omitted, the
    * most-recently-used session is restored (previous behavior). When provided,
@@ -234,8 +236,10 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
       });
     }
 
-    // 4. Start execution — set executionPersonaId so useExecutionStream can match output
-    set({ chatStreaming: true, streamingChatSessionId: sessionId, streamingChatPersonaId: personaId, executionPersonaId: personaId, executionOutput: [], isExecuting: true });
+    // 4. Start execution — set executionPersonaId so useExecutionStream can match output.
+    // Clear any prior turn error so a Retry doesn't show a stale error card next
+    // to the new thinking indicator.
+    set({ chatStreaming: true, streamingChatSessionId: sessionId, streamingChatPersonaId: personaId, executionPersonaId: personaId, executionOutput: [], isExecuting: true, error: null });
     try {
       const exec = await executePersona(personaId, undefined, conversationInput, undefined, continuation, crypto.randomUUID());
       if (exec?.id) {
@@ -280,7 +284,7 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // This is a no-op; the ChatTab reads executionOutput directly from the store
   },
 
-  finishChatStream: async (fullResponse, personaId, sessionId, executionId) => {
+  finishChatStream: async (fullResponse, personaId, sessionId, executionId, status) => {
     // Idempotency guard. A single terminal EXECUTION_STATUS event is observed by
     // BOTH chatSlice's per-execution listener AND executionSlice.finishExecution
     // (and cancelExecution is a third entry point). Previously chatStreaming was
@@ -291,6 +295,25 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
     // await, so concurrent callers short-circuit.
     if (!get().chatStreaming) return;
     set({ chatStreaming: false, streamingChatSessionId: null, streamingChatPersonaId: null });
+
+    // Honor the terminal status. Only a turn that reached 'completed' is a real
+    // answer worth persisting. For any other terminal state — failed / cancelled
+    // / incomplete / unknown — or a missing status (backend stream death routed
+    // through the watchdog), persisting the text would store a truncated/failed
+    // reply as an authoritative assistant message that is then re-sent as
+    // conversation context and `--resume`d as if it were genuine (agent-chat #1).
+    // Instead surface a chat-visible error (ChatThread's error card + Retry) and
+    // drop the partial text. Classify via the canonical state machine, never a
+    // substring.
+    const finalState = parseExecutionState(status);
+    if (finalState !== 'completed') {
+      const message = finalState === 'cancelled'
+        ? en.agents.editor_ui.execution_cancelled
+        : en.execution.something_went_wrong;
+      set({ error: message, errorKind: null });
+      return;
+    }
+
     if (!fullResponse.trim()) {
       return;
     }
@@ -474,7 +497,9 @@ function setupChatExecListeners(
         const output = get().executionOutput;
         const textLines = output.filter((l) => classifyLine(l) === 'text');
         const fullResponse = textLines.join('\n').trim();
-        void get().finishChatStream(fullResponse, personaId, sessionId, executionId);
+        // Pass the terminal status so a non-completed turn surfaces an error
+        // instead of persisting partial text as a clean answer (agent-chat #1).
+        void get().finishChatStream(fullResponse, personaId, sessionId, executionId, event.payload.status);
         set({ isExecuting: false, activeExecutionId: null, executionPersonaId: null });
         cleanup();
         chatExecCleanup = null;
@@ -493,7 +518,11 @@ function setupChatExecListeners(
       const output = get().executionOutput;
       const textLines = output.filter((l) => classifyLine(l) === 'text');
       const fullResponse = textLines.join('\n').trim();
-      void get().finishChatStream(fullResponse, personaId, sessionId, executionId);
+      // The watchdog fires only when the backend stream died WITHOUT ever
+      // emitting a terminal status — treat it as a non-completed ('incomplete')
+      // turn so the finalize surfaces an error rather than presenting whatever
+      // partial text landed 20 minutes ago as an authoritative answer.
+      void get().finishChatStream(fullResponse, personaId, sessionId, executionId, 'incomplete');
       set({ isExecuting: false, activeExecutionId: null, executionPersonaId: null });
       cleanup();
       chatExecCleanup = null;

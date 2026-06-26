@@ -9,7 +9,7 @@ import { useCorrelatedCliStream } from './useCorrelatedCliStream';
 import { EventName } from '@/lib/eventRegistry';
 import { traceStage, runMiddleware, type FinalizeStatusPayload } from '@/lib/execution/pipeline';
 import { isTerminalState } from '@/lib/execution/executionState';
-import { validatePayload, ExecutionStatusSchema } from '@/lib/validation/eventPayloads';
+import { validatePayload, ExecutionStatusSchema, type ExecutionStatusPayload } from '@/lib/validation/eventPayloads';
 import type { QueueStatusPayload } from '@/stores/slices/agents/executionSlice';
 import { getExecutionLogLines } from '@/api/agents/executions';
 import { checkNewHumanReviews } from '@/lib/notifications/checkHumanReviews';
@@ -24,6 +24,11 @@ export function usePersonaExecution() {
   const prevPersonaIdRef = useRef<string | null>(null);
   const streamTracedRef = useRef(false);
   const queueUnlistenRef = useRef<UnlistenFn | null>(null);
+  // True when the focused execution's correlated CLI stream has been torn down
+  // by a persona switch while activeExecutionId is still set. While detached,
+  // the background EXECUTION_STATUS listener finalizes the owning run's terminal
+  // event (execution-runner #2). Reset when a fresh execution attaches its stream.
+  const focusedStreamDetachedRef = useRef(false);
 
   /** Guard: returns true when the executing persona still matches the selected persona. */
   const isOwnerAligned = (): boolean => {
@@ -48,33 +53,19 @@ export function usePersonaExecution() {
     store.appendExecutionOutput(line);
   }, []);
 
-  const handleStatusEvent = useCallback((raw: Record<string, unknown>) => {
-    if (!isOwnerAligned()) return;
-
-    const validated = validatePayload('execution-status', raw, ExecutionStatusSchema);
-    if (!validated) return;
-
+  /**
+   * Finalize a TERMINAL status event for the owning execution: trace + run the
+   * finalize_status middleware, surface any error line, then call finishExecution
+   * (which clears activeExecutionId / isExecuting / the recovery key on EVERY
+   * terminal state). Factored out of handleStatusEvent so the background listener
+   * can reuse it when the focused stream has been detached by a persona switch
+   * (execution-runner #2). Neither caller is gated on owner-alignment here,
+   * because a run navigated away from must still finalize.
+   */
+  const finalizeTerminalStatus = useCallback((validated: ExecutionStatusPayload) => {
     const { status, error, duration_ms, cost_usd } = validated;
-
-    // Correlate by execution id: drop events that belong to a different run than
-    // the focused one. Owner-alignment alone can't distinguish two runs of the
-    // same persona, so a late/duplicated terminal event for a PRIOR run could
-    // tear down the live run's UI (clear activeExecutionId, stop output, drop the
-    // recovery key) while it keeps running headless (bug-hunt 2026-06-07
-    // execution #5). When no execution id is present (legacy) or no run is active,
-    // fall through to preserve prior behavior.
-    const eventExecId = raw.execution_id as string | undefined;
-    const focusedExecId = useAgentStore.getState().activeExecutionId;
-    if (eventExecId && focusedExecId && eventExecId !== focusedExecId) return;
-
-    // When promoted from queue to running, clear queue position
-    if (status === 'running') {
-      useAgentStore.getState().setQueueStatus(null, null);
-    }
-
-    if (!isTerminalState(status)) return;
-
     const store = useAgentStore.getState();
+
     // Pipeline: trace finalize_status
     if (store.pipelineTrace) {
       useAgentStore.setState((state) => ({
@@ -119,6 +110,35 @@ export function usePersonaExecution() {
       void checkNewHumanReviews(execPersonaId, execPersonaName).catch(() => {});
     }
   }, []);
+
+  const handleStatusEvent = useCallback((raw: Record<string, unknown>) => {
+    if (!isOwnerAligned()) return;
+
+    const validated = validatePayload('execution-status', raw, ExecutionStatusSchema);
+    if (!validated) return;
+
+    const { status } = validated;
+
+    // Correlate by execution id: drop events that belong to a different run than
+    // the focused one. Owner-alignment alone can't distinguish two runs of the
+    // same persona, so a late/duplicated terminal event for a PRIOR run could
+    // tear down the live run's UI (clear activeExecutionId, stop output, drop the
+    // recovery key) while it keeps running headless (bug-hunt 2026-06-07
+    // execution #5). When no execution id is present (legacy) or no run is active,
+    // fall through to preserve prior behavior.
+    const eventExecId = raw.execution_id as string | undefined;
+    const focusedExecId = useAgentStore.getState().activeExecutionId;
+    if (eventExecId && focusedExecId && eventExecId !== focusedExecId) return;
+
+    // When promoted from queue to running, clear queue position
+    if (status === 'running') {
+      useAgentStore.getState().setQueueStatus(null, null);
+    }
+
+    if (!isTerminalState(status)) return;
+
+    finalizeTerminalStatus(validated);
+  }, [finalizeTerminalStatus]);
 
   const { start, cleanup } = useCorrelatedCliStream({
     outputEvent: EventName.EXECUTION_OUTPUT,
@@ -233,6 +253,15 @@ export function usePersonaExecution() {
         const store = useAgentStore.getState();
         if (store.executionPersonaId && store.executionPersonaId !== selectedPersonaId) {
           void cleanup();
+          // The correlated stream that owns handleStatusEvent for the active run
+          // is now torn down, but the run keeps going in the backend and
+          // activeExecutionId stays set. Flag it so the background
+          // EXECUTION_STATUS listener finalizes its terminal event
+          // (execution-runner #2) — otherwise the event is handled by neither
+          // listener and isExecuting sticks for up to 30 min.
+          if (store.activeExecutionId) {
+            focusedStreamDetachedRef.current = true;
+          }
         }
       }
       prevPersonaIdRef.current = selectedPersonaId;
@@ -244,6 +273,9 @@ export function usePersonaExecution() {
     if (activeExecutionId && activeExecutionId !== prevExecIdRef.current) {
       prevExecIdRef.current = activeExecutionId;
       streamTracedRef.current = false;
+      // A fresh focused stream is being attached for this execution; clear any
+      // detached flag left over from a previous run's persona switch.
+      focusedStreamDetachedRef.current = false;
       void start(activeExecutionId);
     }
   }, [activeExecutionId, start]);
@@ -263,8 +295,22 @@ export function usePersonaExecution() {
         if (!execId) return;
 
         const store = useAgentStore.getState();
-        // Skip if this is the focused execution (handled by the correlated stream)
-        if (store.activeExecutionId === execId) return;
+        // The focused execution is normally finalized by the correlated CLI
+        // stream's handleStatusEvent. But when the user navigates to another
+        // persona mid-run, that stream is torn down while activeExecutionId is
+        // still set — the terminal event would then be caught by NEITHER listener,
+        // pinning isExecuting for up to RUN_MAX_DURATION_MS and forcing every new
+        // run into background mode (execution-runner #2). When the focused stream
+        // has been detached, finalize the owning run HERE, regardless of which
+        // persona is now selected, so activeExecutionId / isExecuting / the
+        // recovery key always clear on terminal.
+        if (store.activeExecutionId === execId) {
+          if (!focusedStreamDetachedRef.current) return; // stream still live → it finalizes
+          if (!isTerminalState(payload.status as string)) return; // only terminal finalizes a detached run
+          const validated = validatePayload('execution-status', payload, ExecutionStatusSchema);
+          if (validated) finalizeTerminalStatus(validated);
+          return;
+        }
 
         // Check if this is a tracked background execution
         const bg = store.backgroundExecutions.find((b) => b.executionId === execId);
@@ -288,7 +334,9 @@ export function usePersonaExecution() {
     };
     void setup();
     return () => { cancelled = true; if (bgUnlistenRef.current) { bgUnlistenRef.current(); bgUnlistenRef.current = null; } };
-  }, []);
+    // finalizeTerminalStatus is a stable useCallback — listed to satisfy
+    // exhaustive-deps; its identity never changes so the listener registers once.
+  }, [finalizeTerminalStatus]);
 
   // Clean up listeners on unmount
   useEffect(() => {
