@@ -297,12 +297,32 @@ pub fn instant_adopt_template_inner(
     let lookup = |id: &str| -> Result<crate::db::models::RecipeDefinition, AppError> {
         crate::db::repos::resources::recipes::get_by_id(&pool_for_lookup, id)
     };
-    if let Err(e) = crate::engine::template_v3::hydrate_recipe_refs(&mut design, lookup) {
-        tracing::warn!(
-            template = %template_name,
-            error = %e,
-            "instant_adopt_template: recipe_ref hydration failed; proceeding with un-hydrated payload"
-        );
+    // Hydration is FATAL, not best-effort. `hydrate_recipe_refs` mutates
+    // `use_cases` IN PLACE per entry, so a mid-list failure (a referenced
+    // recipe is missing, or its `prompt_template` isn't valid serialized-UC
+    // JSON) leaves earlier UCs hydrated and later ones as bare
+    // `{recipe_ref: …}` stubs. `normalize_v3_to_flat` then maps those stubs
+    // to EMPTY use cases (no trigger/connectors/events) and we'd return Ok for
+    // a structurally broken persona — a green "adopted" modal over a persona
+    // with missing capabilities and the default prompt. Propagate the error
+    // (which carries the offending recipe id) so the adoption row goes
+    // `failed` instead of silently adopting a half-hydrated payload.
+    crate::engine::template_v3::hydrate_recipe_refs(&mut design, lookup).map_err(|e| {
+        AppError::Validation(format!(
+            "Template '{template_name}' adoption failed during recipe hydration: {e}. \
+             No persona was created to avoid a partially-configured result."
+        ))
+    })?;
+    // Defense in depth: even if hydration returned Ok, assert no `recipe_ref`
+    // stubs survive in `use_cases` before normalization. A surviving stub
+    // would normalize to an empty Use Case and be silently adopted — fail the
+    // adoption instead so a partial hydrate can never be reported as success.
+    if let Some(stub_id) = first_unhydrated_recipe_ref(&design) {
+        return Err(AppError::Validation(format!(
+            "Template '{template_name}' adoption failed: a use case still references \
+             un-hydrated recipe '{stub_id}' after hydration — refusing to adopt a \
+             partially-configured persona."
+        )));
     }
     if crate::engine::template_v3::is_v3_shape(&design) {
         crate::engine::template_v3::normalize_v3_to_flat(&mut design);
@@ -772,6 +792,26 @@ pub fn instant_adopt_template_inner(
         "instant_adopt_template: completed with tools + triggers"
     );
     Ok(response)
+}
+
+/// Return the id of the first `use_cases[]` entry that still carries a
+/// `recipe_ref` stub (i.e. was NOT hydrated), if any. Used as a post-
+/// hydration guard in `instant_adopt_template_inner`: a surviving stub
+/// normalizes to an empty Use Case (no trigger / connectors / events), so a
+/// partial hydrate would otherwise be reported as a successful adoption.
+/// Failing on a surviving stub keeps that from ever happening.
+fn first_unhydrated_recipe_ref(design: &serde_json::Value) -> Option<String> {
+    let use_cases = design.get("use_cases").and_then(|v| v.as_array())?;
+    for uc in use_cases {
+        if let Some(recipe_ref) = uc.get("recipe_ref") {
+            let id = recipe_ref
+                .get("id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("<unknown>");
+            return Some(id.to_string());
+        }
+    }
+    None
 }
 
 /// Auth types that mean "no vault credential needed". Templates use these
