@@ -242,6 +242,31 @@ pub fn clear_pending_action(pool: &DbPool, id: &str, status: &str) -> Result<(),
     })
 }
 
+/// Atomically claim a capability for a deliberation GROUP. Returns `true` if this
+/// caller won the claim (proceed to spawn), `false` if a sibling/parent already
+/// claimed it (skip — build on the existing result). Race-free: the table's
+/// PRIMARY KEY on (group_root, use_case_id) makes `INSERT OR IGNORE` the arbiter,
+/// so two parallel-track approvals can't both spawn the same capability.
+pub fn claim_capability(
+    pool: &DbPool,
+    group_root: &str,
+    use_case_id: &str,
+    deliberation_id: &str,
+) -> Result<bool, AppError> {
+    timed_query!("deliberation", "deliberation::claim_capability", {
+        let conn = pool.get()?;
+        let n = conn
+            .execute(
+                "INSERT OR IGNORE INTO deliberation_capability_claims
+                   (group_root, use_case_id, deliberation_id)
+                 VALUES (?1, ?2, ?3)",
+                params![group_root, use_case_id, deliberation_id],
+            )
+            .map_err(AppError::Database)?;
+        Ok(n == 1)
+    })
+}
+
 /// Mark an approved capability as running in the background: hold its execution
 /// id and park at 'action_running' (the reaper finishes it).
 pub fn set_action_running(pool: &DbPool, id: &str, execution_id: &str) -> Result<(), AppError> {

@@ -221,6 +221,26 @@ pub async fn approve_deliberation_action(
         return repo::get(&pool, &deliberation_id);
     }
 
+    // Atomic claim — the race-free gate that closes the concurrent parallel-track
+    // duplicate the title/turn scans above can't (two tracks approving the same
+    // cross-cutting capability at the same instant). The PRIMARY KEY arbitrates.
+    let group_root = delib.parent_id.clone().unwrap_or_else(|| delib.id.clone());
+    if !repo::claim_capability(&pool, &group_root, &action.use_case_id, &deliberation_id)? {
+        let _ = channel_repo::post_deliberation_turn(
+            &pool,
+            &deliberation_id,
+            &delib.team_id,
+            "system",
+            None,
+            &format!(
+                "“{}” is already being handled in this deliberation's group — building on that result instead of running a duplicate.",
+                action.use_case_title
+            ),
+        );
+        let _ = repo::clear_pending_action(&pool, &deliberation_id, "open");
+        return repo::get(&pool, &deliberation_id);
+    }
+
     // Context for the capability so it acts on the deliberation, not in a vacuum.
     let input = serde_json::json!({
         "source": "team_deliberation",
