@@ -169,6 +169,17 @@ pub fn enqueue_external(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<Proac
 /// retention, so it grew unbounded — slowing queries and the dedupe scan.
 const PROACTIVE_RETENTION_WINDOW: &str = "-30 days";
 
+/// How long a `delivered` card waits for the user to engage/dismiss before the
+/// opportunistic sweep in [`enqueue_if_new`] ages it to `expired`. An ignored
+/// "Athena reached out" card otherwise stays `delivered` forever, which (a)
+/// permanently dedupe-blocks re-nudging for that `(trigger_kind, trigger_ref)`
+/// and (b) keeps the row out of the retention prune (which skips
+/// queued/delivered), so ignored cards accumulate unbounded. Aging to `expired`
+/// unblocks both: dedupe excludes `expired`, and the prune reaps it once past
+/// [`PROACTIVE_RETENTION_WINDOW`]. `queued` rows (incl. future-dated scheduled
+/// check-ins) are untouched.
+const PROACTIVE_DELIVERED_EXPIRY_WINDOW: &str = "-7 days";
+
 /// Insert a new proactive message *unless* an unresolved one with
 /// matching `(trigger_kind, trigger_ref)` already exists. Returns
 /// `Some` for new inserts, `None` when deduped.
@@ -206,9 +217,23 @@ fn enqueue_if_new(pool: &UserDbPool, nudge: &Nudge) -> Result<Option<ProactiveMe
             now
         ],
     )?;
+    // Opportunistic expiry: age `delivered` cards the user never engaged or
+    // dismissed past the expiry window to `expired`. This is the only escape
+    // hatch out of `delivered` besides `resolve()`; without it an ignored card
+    // dedupe-blocks its trigger forever and never becomes prune-eligible.
+    // `queued` (incl. future-dated scheduled rows) is left alone. Best-effort.
+    let _ = conn.execute(
+        "UPDATE companion_proactive_message
+         SET status = 'expired'
+         WHERE status = 'delivered'
+           AND COALESCE(delivered_at, created_at) < datetime('now', ?1)",
+        params![PROACTIVE_DELIVERED_EXPIRY_WINDOW],
+    );
     // Opportunistic retention: prune long-resolved messages so the table
     // doesn't grow unbounded. Only terminal-status rows (engaged/dismissed/
-    // expired) past the window are removed — queued/delivered stay. Best-effort.
+    // expired) past the window are removed — queued/delivered stay. The expiry
+    // sweep above feeds ignored cards into this prune once they age out.
+    // Best-effort.
     let _ = conn.execute(
         "DELETE FROM companion_proactive_message
          WHERE status NOT IN ('queued', 'delivered')
