@@ -70,6 +70,16 @@ pub fn make_dedup_key(source_table: &str, source_id: &str) -> String {
     format!("{source_table}:{source_id}")
 }
 
+/// Source tables whose incidents drive auto-continuation off `source_id` (the
+/// blocked execution id for `persona_blocker`, the parked assignment id for
+/// `team_assignments`) — see [`find_continuation_candidates`] and
+/// `engine::incident_continuation`. Every DISTINCT source row of these tables
+/// needs its OWN incident to ever be continued, so they are EXCLUDED from the
+/// title-based open-dup guard in [`promote`] (which would otherwise collapse two
+/// distinct blocked executions that share a title into one, abandoning the rest).
+/// Their idempotency comes solely from the per-source `dedup_key UNIQUE`.
+const CONTINUABLE_SOURCE_TABLES: &[&str] = &["persona_blocker", "team_assignments"];
+
 // -- Promotion (idempotent insert) -------------------------------------------
 
 /// Idempotently promote a source row into the incidents inbox.
@@ -164,26 +174,37 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
         // run. Compare on a normalized title (lowercase, digits collapsed, 64
         // chars) within the same persona (or, for persona-less system sources,
         // the same kind): an OPEN match means this incident already exists.
-        let title_key = normalize_title_key(&input.title);
-        let open_titles: Vec<String> = if let Some(pid) = input.persona_id.as_deref() {
-            let mut stmt = conn.prepare(
-                "SELECT title FROM audit_incidents WHERE status = 'open' AND persona_id = ?1",
-            )?;
-            let rows = stmt.query_map(params![pid], |r| r.get::<_, String>(0))?;
-            rows.filter_map(Result::ok).collect()
-        } else {
-            let mut stmt = conn.prepare(
-                "SELECT title FROM audit_incidents
-                 WHERE status = 'open' AND persona_id IS NULL AND kind = ?1",
-            )?;
-            let rows = stmt.query_map(params![input.kind], |r| r.get::<_, String>(0))?;
-            rows.filter_map(Result::ok).collect()
-        };
-        if open_titles
-            .iter()
-            .any(|t| normalize_title_key(t) == title_key)
-        {
-            return Ok(None);
+        // EXCEPTION for continuable sources (`persona_blocker`,
+        // `team_assignments`): their recovery loop keys on `source_id`, so each
+        // distinct blocked execution / parked assignment needs its OWN incident.
+        // Two distinct executions blocked on the same thing share a title — and
+        // collapsing them via the title guard would permanently abandon all but
+        // one (no row, no inbox entry, no continuation). For these tables we skip
+        // the title guard entirely and rely on the per-source `dedup_key UNIQUE`
+        // (the `INSERT OR IGNORE` below), which still makes a genuine re-promote
+        // of the SAME source row a no-op without merging DISTINCT ones.
+        if !CONTINUABLE_SOURCE_TABLES.contains(&input.source_table.as_str()) {
+            let title_key = normalize_title_key(&input.title);
+            let open_titles: Vec<String> = if let Some(pid) = input.persona_id.as_deref() {
+                let mut stmt = conn.prepare(
+                    "SELECT title FROM audit_incidents WHERE status = 'open' AND persona_id = ?1",
+                )?;
+                let rows = stmt.query_map(params![pid], |r| r.get::<_, String>(0))?;
+                rows.filter_map(Result::ok).collect()
+            } else {
+                let mut stmt = conn.prepare(
+                    "SELECT title FROM audit_incidents
+                     WHERE status = 'open' AND persona_id IS NULL AND kind = ?1",
+                )?;
+                let rows = stmt.query_map(params![input.kind], |r| r.get::<_, String>(0))?;
+                rows.filter_map(Result::ok).collect()
+            };
+            if open_titles
+                .iter()
+                .any(|t| normalize_title_key(t) == title_key)
+            {
+                return Ok(None);
+            }
         }
         let rows = conn.execute(
             "INSERT OR IGNORE INTO audit_incidents
@@ -670,6 +691,61 @@ mod tests {
         let row = get_by_id(&pool, &first.unwrap()).unwrap();
         assert_eq!(row.severity, "medium");
         assert_eq!(row.title, "T1");
+    }
+
+    /// Regression for the open-dup guard silently dropping distinct concurrent
+    /// blocked-execution incidents. Two DISTINCT `persona_blocker` executions
+    /// (different `source_id`) that share a title must EACH get their own
+    /// continuable incident — the title guard is bypassed for continuable
+    /// sources — while a genuine re-promote of the SAME `source_id` still dedups
+    /// via the per-source `dedup_key UNIQUE`. Non-continuable sources keep the
+    /// title-based open-dup guard (a second distinct source with the same open
+    /// title is dropped).
+    #[test]
+    fn continuable_sources_bypass_title_dedup_but_keep_per_source_dedup() {
+        let pool = init_test_db().unwrap();
+
+        // E1 and E2 are two distinct blocked executions with the SAME title.
+        let e1 = promote(
+            &pool,
+            make_input("persona_blocker", "exec-1", "high", "Missing API credential for Stripe"),
+        )
+        .unwrap();
+        let e2 = promote(
+            &pool,
+            make_input("persona_blocker", "exec-2", "high", "Missing API credential for Stripe"),
+        )
+        .unwrap();
+        assert!(e1.is_some(), "first blocked execution gets an incident");
+        assert!(
+            e2.is_some(),
+            "a DISTINCT blocked execution with the same title must ALSO get its own incident"
+        );
+        assert_ne!(e1, e2);
+
+        // Re-promoting the SAME source row is still a no-op (per-source dedup_key).
+        let e2_again = promote(
+            &pool,
+            make_input("persona_blocker", "exec-2", "high", "Missing API credential for Stripe"),
+        )
+        .unwrap();
+        assert!(
+            e2_again.is_none(),
+            "re-promoting the same source_id must dedup via dedup_key UNIQUE"
+        );
+
+        // Both distinct executions are independently continuable.
+        resolve(&pool, e1.as_ref().unwrap(), Some("creds added")).unwrap();
+        resolve(&pool, e2.as_ref().unwrap(), Some("creds added")).unwrap();
+        let candidates = find_continuation_candidates(&pool, 50).unwrap();
+        assert_eq!(candidates.len(), 2, "each blocked execution is its own continuation candidate");
+
+        // Non-continuable sources still collapse same-title duplicates: a second
+        // DISTINCT source row with the same open title is dropped.
+        let a1 = promote(&pool, make_input("fired_alerts", "alert-1", "high", "Latency spike")).unwrap();
+        let a2 = promote(&pool, make_input("fired_alerts", "alert-2", "high", "Latency spike")).unwrap();
+        assert!(a1.is_some());
+        assert!(a2.is_none(), "non-continuable sources keep the title-based open-dup guard");
     }
 
     #[test]
