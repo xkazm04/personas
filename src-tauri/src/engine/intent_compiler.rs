@@ -212,10 +212,11 @@ Intent extension rules:
 3. Each use case `input_schema` must be valid JSON Schema
 4. `sample_input` must conform to the `input_schema` with realistic data
 5. `execution_mode` should be "e2e" when tools/connectors are available, "mock" otherwise
-6. `model_recommendation` should pick the cheapest model that meets quality needs:
-   - "haiku" (~$0.25/1K tokens) for simple routing, filtering, formatting
-   - "sonnet" (~$3/1K tokens) for analysis, summarization, multi-step reasoning
-   - "opus" (~$15/1K tokens) for complex creative/strategic tasks
+6. `model_recommendation` should pick the cheapest model that meets quality needs
+   (approximate input-side prices per 1M tokens, for relative comparison only):
+   - "haiku" (~$0.25 per 1M tokens) for simple routing, filtering, formatting
+   - "sonnet" (~$3 per 1M tokens) for analysis, summarization, multi-step reasoning
+   - "opus" (~$15 per 1M tokens) for complex creative/strategic tasks
 7. Generate 10-20 `test_scenarios` with good coverage:
    - At least 5 happy_path scenarios
    - At least 3 edge_case scenarios
