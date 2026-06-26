@@ -836,7 +836,11 @@ pub async fn execute_api_request(
     let mut resp = build_request(&token)?
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("API request failed: {e}")))?;
+        // Strip the URL from the reqwest error: dynamic base URLs can embed a
+        // secret in the path (e.g. `https://api.telegram.org/bot{token}`), and
+        // reqwest::Error's Display would leak it. `.without_url()` preserves the
+        // failure detail without the secret-bearing URL.
+        .map_err(|e| AppError::Internal(format!("API request failed: {}", e.without_url())))?;
 
     // Refresh-on-401 hardening: an OAuth access_token that the local
     // oauth_token_expires_at still marks valid can nonetheless be rejected by the
@@ -866,7 +870,10 @@ pub async fn execute_api_request(
                 resp = build_request(&token)?
                     .send()
                     .await
-                    .map_err(|e| AppError::Internal(format!("API request retry failed: {e}")))?;
+                    // Same URL-stripping as the main send above: the retry URL can
+                    // embed a secret in its path, which reqwest::Error's Display
+                    // would otherwise leak.
+                    .map_err(|e| AppError::Internal(format!("API request retry failed: {}", e.without_url())))?;
             }
             Err(e) => {
                 // Refresh genuinely failed (e.g. invalid_grant / revoked grant) —

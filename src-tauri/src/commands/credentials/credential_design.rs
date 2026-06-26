@@ -264,7 +264,12 @@ pub async fn test_credential_design_healthcheck(
         }
         Err(e) => Ok(json!({
             "success": false,
-            "message": format!("Claude healthcheck request failed: {}", e),
+            // Strip the request URL from the reqwest error before it reaches the
+            // toast/log: the resolved endpoint may carry credential values in its
+            // query/path (e.g. `?apikey={{api_key}}`), and reqwest::Error's Display
+            // includes that URL. `.without_url()` keeps the failure detail (timeout/
+            // connect/etc.) while dropping the secret-bearing URL.
+            "message": format!("Claude healthcheck request failed: {}", e.without_url()),
             "healthcheck_config": config,
         })),
     }
