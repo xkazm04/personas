@@ -446,23 +446,54 @@ pub fn create_with_idempotency(
             let id = uuid::Uuid::new_v4().to_string();
             let now = chrono::Utc::now().to_rfc3339();
 
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-            "INSERT INTO persona_executions
-             (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
-             VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)",
-            )?;
-            stmt.execute(params![
-                id,
-                persona_id,
-                trigger_id,
-                input_data,
-                model_used,
-                use_case_id,
-                idempotency_key,
-                is_simulation as i64,
-                now
-            ])?;
+            // Insert-first with conflict handling so a concurrent same-key insert
+            // (a lost TOCTOU race against the pre-check above — e.g. a double-
+            // delivered webhook or a timeout-retry) dedups instead of hard-
+            // erroring on the `idx_pe_idempotency` unique index. The conflict
+            // target repeats that partial index's `WHERE idempotency_key IS NOT
+            // NULL` clause so SQLite selects it. A NULL `idempotency_key` is not
+            // in the partial index, so it can never conflict and always inserts
+            // (preserving the no-dedup path's behavior). Scope the connection so
+            // it is released before any re-select below.
+            let rows_changed = {
+                let conn = pool.get()?;
+                let mut stmt = conn.prepare_cached(
+                "INSERT INTO persona_executions
+                 (id, persona_id, trigger_id, status, input_data, model_used, input_tokens, output_tokens, cost_usd, use_case_id, idempotency_key, is_simulation, created_at)
+                 VALUES (?1, ?2, ?3, 'queued', ?4, ?5, 0, 0, 0, ?6, ?7, ?8, ?9)
+                 ON CONFLICT(idempotency_key) WHERE idempotency_key IS NOT NULL DO NOTHING",
+                )?;
+                stmt.execute(params![
+                    id,
+                    persona_id,
+                    trigger_id,
+                    input_data,
+                    model_used,
+                    use_case_id,
+                    idempotency_key,
+                    is_simulation as i64,
+                    now
+                ])?
+            };
+
+            // rows_changed == 0 means the INSERT hit ON CONFLICT DO NOTHING:
+            // another caller won the race and already inserted a row for this
+            // idempotency key. Re-select and return that existing row so the
+            // retry is transparently idempotent (same return shape as a fresh
+            // insert). For a NULL key this branch is unreachable (no conflict
+            // possible), so the no-dedup path still falls through to get_by_id.
+            if rows_changed == 0 {
+                if let Some(ref key) = idempotency_key {
+                    if let Some(existing) = get_by_idempotency_key(pool, key)? {
+                        tracing::info!(
+                            idempotency_key = %key,
+                            execution_id = %existing.id,
+                            "Returning existing execution after INSERT conflict (idempotency dedup race)"
+                        );
+                        return Ok(existing);
+                    }
+                }
+            }
 
             get_by_id(pool, &id)
         }
