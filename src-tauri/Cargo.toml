@@ -199,6 +199,12 @@ image = { version = "0.25", default-features = false, features = ["png", "jpeg",
 # fleet UI itself is DEV-only at the sidebar level but the Rust module
 # always compiles so type/ts-rs surfaces stay stable.
 portable-pty = "0.8"
+# In-memory VT/ANSI terminal emulator. Fleet feeds a session's raw PTY bytes
+# through this to RECONSTRUCT the rendered screen grid — what the user actually
+# sees — instead of the lossy line-cooker. Needed so Athena's orchestration can
+# read an alt-screen, cursor-addressed TUI (e.g. an `AskUserQuestion` menu) that
+# the cooker collapses to fragments. Pure Rust, no system deps.
+vt100 = "0.15"
 
 [[bin]]
 name = "personas-mcp"

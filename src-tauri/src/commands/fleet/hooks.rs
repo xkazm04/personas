@@ -230,9 +230,14 @@ fn apply_hook(
     }
 
     let (new_state, reason) = match event_kind {
+        // SessionStart means Claude LAUNCHED, not that it's working — a fresh
+        // session with no task sits idle at the prompt. Reserve Running for real
+        // progress: UserPromptSubmit, a tool firing (revive_to_running_on_activity),
+        // or transcript growth (the stale ticker). This is what stops a
+        // just-spawned session from reading "Working".
         "sessionstart" => (
-            FleetSessionState::Running,
-            "SessionStart hook".to_string(),
+            FleetSessionState::Idle,
+            "SessionStart — Claude launched, ready".to_string(),
         ),
         "notification" => (
             FleetSessionState::AwaitingInput,

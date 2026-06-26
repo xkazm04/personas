@@ -161,14 +161,14 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
       ) : (
         <span className="typo-caption font-medium truncate flex-1 min-w-0 flex items-baseline gap-1.5">
           <span className="truncate">{session.projectLabel}</span>
-          {session.name && (
+          {(session.name ?? session.title) && (
             <>
               <span className="text-foreground select-none">·</span>
               <span
                 className="text-foreground italic truncate min-w-0"
                 data-testid={`fleet-session-name-${session.id}`}
               >
-                {session.name}
+                {session.name ?? session.title}
               </span>
             </>
           )}

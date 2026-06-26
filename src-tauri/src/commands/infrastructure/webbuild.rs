@@ -102,6 +102,41 @@ pub fn webbuild_dev_stop(
     Ok(())
 }
 
+/// Interrupt the in-flight build turn for a project — the Studio Stop button.
+/// Kills the running Claude CLI turn (same path as the main chat's Stop); the
+/// partial reply still returns to the pending `webbuild_session_send`. Returns
+/// whether a turn was actually running.
+#[tauri::command]
+pub fn webbuild_session_stop(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    Ok(crate::companion::session::request_build_interrupt(&format!(
+        "webbuild:{project_id}"
+    )))
+}
+
+/// Of the given projects, return the ids that are Next.js apps Studio can build
+/// + preview (checked against each project's files on disk). Lets the import
+/// picker flag incompatible Dev Tools projects before they fail to start.
+#[tauri::command]
+pub fn webbuild_next_ready(
+    state: State<'_, Arc<AppState>>,
+    project_ids: Vec<String>,
+) -> Result<Vec<String>, AppError> {
+    require_auth_sync(&state)?;
+    let ready = project_ids
+        .into_iter()
+        .filter(|id| {
+            repo::get_project_by_id(&state.db, id)
+                .map(|p| webbuild::project::is_next_app(std::path::Path::new(&p.root_path)))
+                .unwrap_or(false)
+        })
+        .collect();
+    Ok(ready)
+}
+
 /// Live status of a project's dev server, or `None` when not running.
 #[tauri::command]
 pub fn webbuild_status(

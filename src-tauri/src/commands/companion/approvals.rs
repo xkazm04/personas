@@ -292,7 +292,7 @@ pub async fn companion_approve_action(
     };
 
     finalize_approval(&state, &approval_id, status_text)?;
-    log_action_episode(&state, &embedder_log).await;
+    log_action_episode(&state, &action, &embedder_log).await;
 
     Ok(ApprovalOutcome {
         id: approval_id,
@@ -313,7 +313,7 @@ pub async fn companion_reject_action(
     finalize_approval(&state, &approval_id, APPROVAL_STATUS_REJECTED)?;
     let reason = reason.unwrap_or_else(|| "no reason given".into());
     let log = format!("[Athena action rejected] {action}\n\nReason: {reason}");
-    log_action_episode(&state, &log).await;
+    log_action_episode(&state, &action, &log).await;
     Ok(ApprovalOutcome {
         id: approval_id,
         status: APPROVAL_STATUS_REJECTED.into(),
@@ -374,26 +374,16 @@ pub async fn auto_resolve_if_allowed(
     if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
         return Ok(false);
     }
-    // Athena-owned PTY guard: `fleet_send_input` is the one high-blast-radius
-    // entry on the allowlist. Under autonomous mode it would otherwise write
-    // `{text}\r` into ANY `session_id` Athena emits — including the user's OWN
-    // live terminal (a hallucinated or stale id, or a user-spawned session that
-    // drifted into AwaitingInput and woke the orchestrator). Only let it
-    // auto-fire when the target's visible-name sentinel proves Athena spawned
-    // the session herself; otherwise decline the autoapprove and leave the card
-    // PENDING (`Ok(false)`) so the user makes the call with a human in the loop.
-    // Checked BEFORE `load_pending` so the row stays `pending` rather than being
-    // transitioned to `running`. The manual approve path is intentionally NOT
-    // gated here — an explicit user click can still drive a non-Athena session.
-    if approval.action == "fleet_send_input"
-        && !fleet_send_input_targets_athena_session(&approval.params_json)
-    {
-        tracing::warn!(
-            approval_id = %approval.id,
-            "autonomous autoapprove declined for fleet_send_input: target session is not Athena-owned — left pending for an explicit user approval"
-        );
-        return Ok(false);
-    }
+    // Athena-owned PTY guard — RELAXED (user policy, 2026-06-25). Previously a
+    // `fleet_send_input` auto-fire was scoped to sessions Athena spawned herself,
+    // so on a USER's CLI even a high-confidence answer was left pending. The user
+    // explicitly wants autonomous Athena to ACT on their own fleet CLIs ("if
+    // confident enough she should act"). Autonomous mode (this whole path only
+    // runs under it) is the standing human consent, and the confidence gate below
+    // keeps auto-fire to the genuinely-unambiguous; anything less still surfaces
+    // as an orb consult. Targeting a dead/hallucinated session can't write
+    // anything — `execute_fleet_send_input` fails closed when the PTY writer is
+    // gone — so dropping the owner check doesn't widen real blast radius.
     // Cautious confidence gate (user policy "auto vs consult" = Cautious):
     // autonomous Athena only AUTO-fires a fleet_send_input she is highly
     // confident about. Medium / low / absent confidence is left PENDING
@@ -401,9 +391,9 @@ pub async fn auto_resolve_if_allowed(
     // and the user makes the call. Confidence is self-reported by Athena in the
     // proposal params (`confidence: "high" | "medium" | "low"` — see the
     // orchestration directive in `fleet_bridge::orchestrate_on_awaiting`);
-    // anything other than an explicit "high" fails safe toward consulting. The
-    // Athena-owned guard above still applies — confidence never widens scope,
-    // only narrows what auto-fires.
+    // anything other than an explicit "high" fails safe toward consulting — so
+    // with the owner guard relaxed, confidence is now the sole gate on what
+    // auto-fires vs. what surfaces as an orb consult.
     if approval.action == "fleet_send_input"
         && !fleet_send_input_is_high_confidence(&approval.params_json)
     {
@@ -425,24 +415,10 @@ pub async fn auto_resolve_if_allowed(
         finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
         return Ok(false);
     }
-    // Re-validate the fleet_send_input target against the SAME params we are about
-    // to execute. The guard above checked the propose-time `approval.params_json`,
-    // but `load_pending` re-reads the payload from the DB, which a concurrent
-    // writer or a manual edit could have mutated since propose — validating one
-    // copy while executing another is a TOCTOU that could redirect the PTY write
-    // to a session Athena doesn't own, including the user's own terminal
-    // (bug-hunt 2026-06-07 companion #5). Fail closed on the freshly-loaded value.
-    if action == "fleet_send_input" {
-        let fresh_json = serde_json::to_string(&params).unwrap_or_default();
-        if !fleet_send_input_targets_athena_session(&fresh_json) {
-            tracing::warn!(
-                approval_id = %approval.id,
-                "fleet_send_input target is not Athena-owned at execute time (payload changed since propose) — declining autoapprove"
-            );
-            finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
-            return Ok(false);
-        }
-    }
+    // (Owner re-check removed with the propose-time guard above — autonomous +
+    // high-confidence may now drive a user's own CLI. `execute_fleet_send_input`
+    // still fails closed if the target session id doesn't resolve to a live PTY
+    // writer, so a hallucinated/stale id writes nothing.)
     let exec_result = match action.as_str() {
         "write_fact" => execute_write_fact(&state, &params).await,
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
@@ -467,7 +443,7 @@ pub async fn auto_resolve_if_allowed(
         ),
     };
     finalize_approval(&state, &approval.id, status_text)?;
-    log_action_episode(&state, &embedder_log).await;
+    log_action_episode(&state, &action, &embedder_log).await;
 
     // Notify-only orb indicator (user policy "safety net" = Notify only): when a
     // fleet_send_input auto-fired successfully, tell the orb what Athena just did
@@ -593,7 +569,16 @@ fn finalize_approval(
 /// Persist an action outcome as a system-role episode so future turns'
 /// system prompt sees what happened. Best-effort — failures here just
 /// mean the conversation transcript doesn't carry the action record.
-async fn log_action_episode(state: &State<'_, Arc<AppState>>, content: &str) {
+async fn log_action_episode(state: &State<'_, Arc<AppState>>, action: &str, content: &str) {
+    // Fleet actions (fleet_send_input / _broadcast / _kill / _intervene / …) are
+    // operational keystrokes into a CLI the user is already watching on the grid —
+    // their "approved & executed / failed" result is noise in the companion chat,
+    // not a conversational turn. Trace for debugging; do NOT persist as a visible
+    // episode. (User report: the Athena chat was overflowing with these.)
+    if action.starts_with("fleet_") {
+        tracing::debug!(action, "fleet action result not persisted to companion chat");
+        return;
+    }
     let pool = &state.user_db;
     let log_result = {
         #[cfg(feature = "ml")]
@@ -3100,25 +3085,6 @@ fn execute_schedule_proactive(
 // roundtrip. Each returns a human-readable message that lands as a
 // system episode so Athena can quote it on the next turn.
 
-/// Athena-owned PTY guard for the autonomous `fleet_send_input` autoapprove
-/// path (see `auto_resolve_if_allowed`). `params_json` is the bare params
-/// object the dispatcher persisted on the approval
-/// (`{ "session_id": "...", "text": "...", ... }`). Returns `true` only when it
-/// names a live Fleet session whose visible-name sentinel marks it as
-/// Athena-spawned. A missing / unparseable `session_id`, an unknown session, or
-/// a user-owned session all return `false` (fail-closed) — autonomous mode must
-/// never type into a PTY Athena didn't create. The manual approve path does not
-/// call this: an explicit human click can still drive any session.
-fn fleet_send_input_targets_athena_session(params_json: &str) -> bool {
-    serde_json::from_str::<serde_json::Value>(params_json)
-        .ok()
-        .as_ref()
-        .and_then(|v| v.get("session_id"))
-        .and_then(|s| s.as_str())
-        .map(|sid| crate::commands::fleet::registry::registry().is_athena_owned(sid))
-        .unwrap_or(false)
-}
-
 /// Whether a `fleet_send_input` proposal self-reports HIGH confidence — the
 /// cautious-mode gate for the autonomous autoapprove path. Only an explicit
 /// `"high"` lets Athena act unsupervised; `"medium"` / `"low"` / missing /
@@ -3132,6 +3098,69 @@ fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
         .and_then(|c| c.as_str())
         .map(|c| c.trim().eq_ignore_ascii_case("high"))
         .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod multiselect_tests {
+    use super::multiselect_keystrokes;
+
+    fn menu() -> Vec<String> {
+        // Mirrors the live AskUserQuestion multi-select layout.
+        [
+            "Which toppings would you like to add?",
+            "❯ 1. [ ] Cheese",
+            "  2. [ ] Mushroom",
+            "  3. [ ] Pepperoni",
+            "  4. [ ] Onion",
+            "  5. [ ] Type something",
+            "     Submit",
+            "  6. Chat about this",
+            "Enter to select · ↑/↓ to navigate · Esc to cancel",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+    }
+
+    fn flat(keys: &[Vec<u8>]) -> String {
+        keys.iter()
+            .map(|k| match k.as_slice() {
+                b" " => "SP".to_string(),
+                b"\r" => "CR".to_string(),
+                b"\x1b[A" => "UP".to_string(),
+                b"\x1b[B" => "DN".to_string(),
+                _ => "?".to_string(),
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    }
+
+    #[test]
+    fn select_all_four_then_submit_and_confirm() {
+        let keys = multiselect_keystrokes(&menu(), "1,2,3,4").expect("a multi-select plan");
+        // Per option: SP then DN (last option no trailing DN); DN past option4,
+        // DN past 'Type something' to Submit; CR (confirm), CR (finalize).
+        assert_eq!(flat(&keys), "SP,DN,SP,DN,SP,DN,SP,DN,DN,CR,CR");
+    }
+
+    #[test]
+    fn skips_already_checked_options() {
+        let mut m = menu();
+        m[1] = "❯ 1. [✔] Cheese".to_string(); // Cheese already selected
+        let keys = multiselect_keystrokes(&m, "1,2").expect("a plan");
+        // Option 1 already checked → no SP (just DN to opt2); option 2
+        // wanted+unchecked → SP, DN; opts 3,4 not wanted → DN each; then DN
+        // past 'Type something' to Submit; CR, CR.
+        assert_eq!(flat(&keys), "DN,SP,DN,DN,DN,DN,CR,CR");
+    }
+
+    #[test]
+    fn none_for_non_menu_or_freetext() {
+        // No checkbox menu.
+        assert!(multiselect_keystrokes(&["just some prose".to_string()], "1,2").is_none());
+        // A menu but a free-text (non-numeric) answer.
+        assert!(multiselect_keystrokes(&menu(), "throw an error").is_none());
+    }
 }
 
 #[cfg(test)]
@@ -3176,6 +3205,37 @@ fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult,
         .get("press_enter")
         .and_then(|v| v.as_bool())
         .unwrap_or(true);
+
+    // MULTI-SELECT detection. A Claude Code AskUserQuestion multi-select is a
+    // checkbox TUI: a typed string like "1,2,3,4" only toggles the first item and
+    // never submits (verified live). Driving it needs ↑/↓ navigation + space to
+    // toggle each + Enter on Submit + Enter to confirm — and the keystrokes must
+    // be SPACED (~120ms); the TUI drops a rapid burst. We read the reconstructed
+    // screen (vt100) to recognize the menu and compute the toggle plan, then fire
+    // the keys on a timed task. Single-select / free-text falls through to the
+    // plain typed answer below.
+    if let Some((_, lines)) = crate::commands::fleet::registry::registry().render_screen_for(session_id) {
+        if let Some(keys) = multiselect_keystrokes(&lines, text) {
+            let sid = session_id.to_string();
+            let count = keys.len();
+            tokio::spawn(async move {
+                for k in keys {
+                    if let Err(e) =
+                        crate::commands::fleet::registry::registry().write_input(&sid, &k)
+                    {
+                        tracing::warn!(session_id = %sid, error = %e, "multi-select drive: write failed");
+                        break;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_millis(120)).await;
+                }
+            });
+            return Ok(ExecuteResult::message(format!(
+                "Driving multi-select on `{}` ({count} keystrokes).",
+                &session_id[..session_id.len().min(8)],
+            )));
+        }
+    }
+
     let payload = if press_enter {
         format!("{text}\r")
     } else {
@@ -3189,6 +3249,88 @@ fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult,
         payload.len(),
         &session_id[..session_id.len().min(8)],
     )))
+}
+
+/// Recognize a Claude Code AskUserQuestion MULTI-select menu in a reconstructed
+/// screen and, if the answer names option numbers, return the keystroke sequence
+/// (one entry per key) to toggle the requested options and submit. `None` for a
+/// single-select / free-text answer / non-menu screen (caller types the answer).
+///
+/// Menu shape (verified live): numbered options with `[ ]`/`[✔]` checkboxes, then
+/// a `Type something` row and a `Submit` row, with an `↑/↓ to navigate · Enter to
+/// select` hint. The cursor starts on option 1 for a freshly-rendered menu (which
+/// is when orchestration fires). Plan: for each option top-down, toggle (space)
+/// the requested+unchecked ones (↓ between), step down to Submit (past `Type
+/// something` when present), Enter to reach the "Ready to submit?" confirm, Enter
+/// again to finalize (its cursor defaults to "Submit answers").
+fn multiselect_keystrokes(lines: &[String], text: &str) -> Option<Vec<Vec<u8>>> {
+    let joined = lines.join("\n");
+    let lower = joined.to_lowercase();
+    let has_checkbox = lines.iter().any(|l| {
+        let t = l.trim_start().trim_start_matches('❯').trim_start();
+        t.contains("[ ]") || t.contains("[✔]") || t.contains("[x]") || t.contains("[X]")
+    });
+    if !has_checkbox || !joined.contains("Submit") || !lower.contains("navigate") {
+        return None;
+    }
+    // Requested option numbers, e.g. "1,2,3,4" or "1 3".
+    let wanted: std::collections::BTreeSet<usize> = text
+        .split(|c: char| !c.is_ascii_digit())
+        .filter_map(|s| s.parse::<usize>().ok())
+        .filter(|n| *n >= 1)
+        .collect();
+    if wanted.is_empty() {
+        return None; // a free-text / label answer isn't a numeric toggle plan
+    }
+    // Parse toggle options in display order ("N. [state] Label"), skipping the
+    // `Type something` / `Submit` pseudo-rows.
+    let mut options: Vec<(usize, bool)> = Vec::new();
+    for l in lines {
+        let t = l.trim_start().trim_start_matches('❯').trim_start();
+        let Some(dot) = t.find(". ") else { continue };
+        let Ok(num) = t[..dot].trim().parse::<usize>() else { continue };
+        let rest = &t[dot + 2..];
+        let Some(ob) = rest.find('[') else { continue };
+        let Some(cb_rel) = rest[ob..].find(']') else { continue };
+        let inside = &rest[ob + 1..ob + cb_rel];
+        let checked = inside.contains('✔') || inside.to_lowercase().contains('x');
+        let label = rest[ob + cb_rel + 1..].trim();
+        if label.starts_with("Type something") || label.starts_with("Submit") {
+            continue;
+        }
+        options.push((num, checked));
+    }
+    if options.is_empty() {
+        return None;
+    }
+    let n = options.len();
+    let has_type_something = joined.contains("Type something");
+
+    let down: &[u8] = b"\x1b[B";
+    let space: &[u8] = b" ";
+    let enter: &[u8] = b"\r";
+    let mut keys: Vec<Vec<u8>> = Vec::new();
+    // NOTE: we deliberately do NOT prepend any ↑ to "clamp" the cursor. The menu
+    // is freshly rendered when orchestration fires (cursor already on option 1),
+    // and Claude Code's list WRAPS on ↑ at the top — so a clamp would move the
+    // cursor to the bottom and the whole plan would land on Cancel. Start from
+    // option 1 as given.
+    for (i, (num, checked)) in options.iter().enumerate() {
+        if wanted.contains(num) && !checked {
+            keys.push(space.to_vec());
+        }
+        if i + 1 < n {
+            keys.push(down.to_vec());
+        }
+    }
+    // Step from the last option to Submit (past `Type something` when shown).
+    keys.push(down.to_vec());
+    if has_type_something {
+        keys.push(down.to_vec());
+    }
+    keys.push(enter.to_vec()); // Submit -> "Ready to submit?" confirm
+    keys.push(enter.to_vec()); // confirm (defaults to "Submit answers")
+    Some(keys)
 }
 
 fn execute_fleet_broadcast(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {

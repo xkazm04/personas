@@ -10,7 +10,7 @@
 //! feedback land in later phases. The companion_session row holds a single
 //! `id='default'` pointer; multi-companion support is deferred.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::process::Stdio;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
@@ -123,6 +123,41 @@ fn was_interrupted(turn_id: &str) -> bool {
 fn clear_interrupt(turn_id: &str) {
     if let Ok(mut g) = INTERRUPTED_TURNS.lock() {
         g.remove(turn_id);
+    }
+}
+
+/// Active build turns keyed by session id (`webbuild:<project_id>`) → the
+/// in-flight `turn_id`. Lets the Studio Stop button interrupt a build turn by
+/// project — the frontend never sees the turn id. Set for the duration of
+/// `run_build_turn`, cleared on every exit path by `BuildTurnGuard`.
+static ACTIVE_BUILD_TURNS: LazyLock<Mutex<HashMap<String, String>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+/// Interrupt the in-flight build turn for `session_id`, if any. Returns whether a
+/// turn was found. The streaming loop kills the child within ~200ms and finalizes
+/// whatever partial reply it has — same path as the main chat's Stop button.
+pub fn request_build_interrupt(session_id: &str) -> bool {
+    let turn = ACTIVE_BUILD_TURNS
+        .lock()
+        .ok()
+        .and_then(|g| g.get(session_id).cloned());
+    match turn {
+        Some(turn_id) => {
+            request_interrupt(&turn_id);
+            true
+        }
+        None => false,
+    }
+}
+
+/// Clears the `session_id → turn_id` entry on drop, so it's removed on every
+/// `run_build_turn` exit (success, error, early `?` return).
+struct BuildTurnGuard(String);
+impl Drop for BuildTurnGuard {
+    fn drop(&mut self) {
+        if let Ok(mut g) = ACTIVE_BUILD_TURNS.lock() {
+            g.remove(&self.0);
+        }
     }
 }
 
@@ -384,6 +419,20 @@ pub async fn send_turn(
     // "Athena gave herself another turn". For autonomous, the CLI
     // receives a directive (see `effective_user_message` below) — we
     // never persist the marker token verbatim.
+    // Fleet orchestration runs as a background proactive turn whose *only*
+    // user-facing output should be the orb (her decision/approval, surfaced via
+    // the global dispatcher emits below) — never a chat transcript essay tagged
+    // `[proactive: fleet_orchestration]`. When this is set we skip every
+    // session-keyed chat side-effect (opening marker, Started/Finished events,
+    // progress/interim/final persists, the turn-summary chip); the dispatcher's
+    // global orb emits (approvals, navigations, …) run unconditionally, so she
+    // still surfaces — just on the orb, not in chat. False for every other turn,
+    // so the normal chat path is byte-for-byte unchanged.
+    let suppress_chat = matches!(
+        &origin,
+        TurnOrigin::Proactive { trigger_kind, .. } if trigger_kind == "fleet_orchestration"
+    );
+
     let (open_role, open_content) = match &origin {
         TurnOrigin::User => (EpisodeRole::User, user_message.clone()),
         TurnOrigin::Autonomous { chain_index } => (
@@ -396,7 +445,9 @@ pub async fn send_turn(
         ),
         TurnOrigin::External { source } => (EpisodeRole::System, format!("[{source}]")),
     };
-    let user_ep_id = {
+    let user_ep_id = if suppress_chat {
+        String::new()
+    } else {
         #[cfg(feature = "ml")]
         {
             match &embedder {
@@ -424,15 +475,17 @@ pub async fn send_turn(
         }
     };
 
-    emit(
-        app,
-        StreamEvent {
-            session_id: session_id.clone(),
-            turn_id: turn_id.clone(),
-            kind: StreamEventKind::Started,
-            payload: user_ep_id.clone(),
-        },
-    );
+    if !suppress_chat {
+        emit(
+            app,
+            StreamEvent {
+                session_id: session_id.clone(),
+                turn_id: turn_id.clone(),
+                kind: StreamEventKind::Started,
+                payload: user_ep_id.clone(),
+            },
+        );
+    }
 
     // Read the prior claude session id (if any) for --resume.
     let claude_session_id = read_claude_session_id(&user_db, &session_id)?;
@@ -629,14 +682,16 @@ pub async fn send_turn(
     // The `PROGRESS:` sentinel prefix is how the frontend renders them as
     // asides; they're append-only (no embedding) — ephemeral conversational
     // texture, not memory-worthy facts.
-    for beat in &dispatched.progress_beats {
-        if let Err(e) = episodic::append_episode(
-            &user_db,
-            &session_id,
-            EpisodeRole::Assistant,
-            &format!("PROGRESS: {beat}"),
-        ) {
-            tracing::warn!(error = %e, "failed to persist progress beat episode");
+    if !suppress_chat {
+        for beat in &dispatched.progress_beats {
+            if let Err(e) = episodic::append_episode(
+                &user_db,
+                &session_id,
+                EpisodeRole::Assistant,
+                &format!("PROGRESS: {beat}"),
+            ) {
+                tracing::warn!(error = %e, "failed to persist progress beat episode");
+            }
         }
     }
 
@@ -654,11 +709,13 @@ pub async fn send_turn(
         .filter(|s| !s.trim().is_empty())
         .collect();
     let reply_text: String = if seg_clean.len() >= 2 {
-        for interim in &seg_clean[..seg_clean.len() - 1] {
-            if let Err(e) =
-                episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
-            {
-                tracing::warn!(error = %e, "failed to persist interim segment episode");
+        if !suppress_chat {
+            for interim in &seg_clean[..seg_clean.len() - 1] {
+                if let Err(e) =
+                    episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
+                {
+                    tracing::warn!(error = %e, "failed to persist interim segment episode");
+                }
             }
         }
         seg_clean[seg_clean.len() - 1].clone()
@@ -672,10 +729,14 @@ pub async fn send_turn(
         // bubble — replace with a tiny placeholder.
         "(proposing actions — see cards below)".to_string()
     } else {
-        reply_text
+        // Clone (not move) — `reply_text` is read again below for the fleet
+        // orb-note routing.
+        reply_text.clone()
     };
 
-    let assistant_ep_id = {
+    let assistant_ep_id = if suppress_chat {
+        String::new()
+    } else {
         #[cfg(feature = "ml")]
         {
             match &embedder {
@@ -702,6 +763,20 @@ pub async fn send_turn(
             episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, &display_text)?
         }
     };
+
+    // Fleet orchestration routes to the orb, not chat. Her DEFER note (prose,
+    // "I'm leaving this one to you") has no fleet_send_input approval to carry it
+    // onto the orb, and chat is suppressed — so surface it as a proactive orb
+    // card. Skip when she produced an approval (the orb already shows that) or
+    // said nothing actionable (a "progressing fine" no-op stays quiet).
+    if suppress_chat && dispatched.approvals.is_empty() && !reply_text.trim().is_empty() {
+        crate::commands::companion::fleet_bridge::surface_fleet_orb_note(
+            app,
+            &user_db,
+            &turn_id,
+            &reply_text,
+        );
+    }
 
     // Athena value expansion / A1: record this turn's usage + dispatcher
     // side-effect counts in the companion_turn ledger so the Overview
@@ -895,7 +970,7 @@ pub async fn send_turn(
     // Per-turn rollup of dispatcher side-effects. The chip on each
     // completed bubble reads this; total=0 turns get nothing. Best-effort —
     // a missed emit just means no chip for that turn.
-    {
+    if !suppress_chat {
         let summary = TurnSummaryEvent {
             session_id: session_id.clone(),
             turn_id: turn_id.clone(),
@@ -913,15 +988,17 @@ pub async fn send_turn(
         }
     }
 
-    emit(
-        app,
-        StreamEvent {
-            session_id: session_id.clone(),
-            turn_id: turn_id.clone(),
-            kind: StreamEventKind::Finished,
-            payload: assistant_ep_id.clone(),
-        },
-    );
+    if !suppress_chat {
+        emit(
+            app,
+            StreamEvent {
+                session_id: session_id.clone(),
+                turn_id: turn_id.clone(),
+                kind: StreamEventKind::Finished,
+                payload: assistant_ep_id.clone(),
+            },
+        );
+    }
 
     // A2 — autonomous continuation. Schedule the next tick if:
     //   1. The session is in autonomous mode.
@@ -1163,14 +1240,20 @@ BUILD_PLAN: {"phases":[{"id":"vision","title":"Vision","status":"done","note":"s
 - status is one of "done" | "active" | "pending"; exactly one phase is "active".
 - Keep to <=8 phases, titles <=24 chars, notes <=40 chars. Only emit BUILD_PLAN when the plan actually changed.
 
+# Research first — ground in reality, not memory
+Early on (vision, brand, design direction) don't lean only on training data — use WebSearch to check what's CURRENT: real reference sites in this domain, today's design trends, current framework/library versions and APIs, and any real facts the content needs. For a broad question, spawn parallel subagents (the Task tool) to research several angles at once, then synthesise. Note in one line what you found and how it shaped a choice. Once the direction is set and you're iterating, stop researching and build.
+
 # When to ask — this is the user's product, don't assume
 Reserve questions for things ONLY THE USER KNOWS: real content (names, copy, projects, prices, contact details), target audience, brand voice, business model, or which real data/integration to wire. For those, STOP and ASK instead of inventing it — emit it as the VERY LAST line:
 NEEDS_INPUT: {"question":"<one short question, 1-2 sentences>","options":["<short concrete choice>","<short concrete choice>"]}
 Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON. When your question is about a specific element on the page — and you almost always know which, since you just wrote its markup — ALWAYS include "selector": a robust CSS selector that matches it in the live DOM (a tag like "h1", a class you added, or a "[data-*]" attribute; e.g. ".hero h1" or "[data-cta]"). Athena's orb then flies straight to that element so the user sees exactly what you mean. Use "area":"top"|"middle"|"bottom" only as a coarse fallback when no single element fits.
-Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices). Do NOT ask which section/feature to build next, what order to work in, or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, audience, real content) lean toward asking; once those are settled, lean hard toward building. Budget your questions: aim for only a handful of decisions across the ENTIRE build (roughly one per major phase, at most one per turn). When unsure but the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line rather than asking.
+Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Two calls you must NEVER make alone, because they define the user's product: (1) the brand / product NAME, and (2) the core FEATURE SET / scope — which pages, sections, and capabilities ship. ASK both explicitly and early (concrete options plus room for the user's own answer) before you build around them; inventing a name or a scope the user then has to undo wastes far more than one question. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices) and do NOT ask what order to work in or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, NAME, feature set, audience, real content) lean hard toward ASKING; once those are settled, lean hard toward building. Don't drown the user (roughly one decision per major phase, at most one per turn, only what genuinely needs them) — but never skip a product-defining decision to save a question. When unsure and the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line.
 
 # Visual quality — best in class, never "AI-generated"
 Hold the bar of Linear, Vercel, Stripe, Apple, Framer. Obsess over typography (scale, weight, tracking, leading), spacing rhythm, colour + contrast, hierarchy, depth, and cohesion; add tasteful hover/focus/transition micro-interactions and motion where it earns its place. Generic, templated, centred-everything, "AI-looking" output is a FAILURE — every surface must feel intentional, premium, and crafted by someone who cares.
+
+# Typography size — readable by default
+Body and UI text must be comfortably readable. Treat the base size (~16px, Tailwind "text-base") as the FLOOR for anything a person reads — paragraphs, labels, nav, buttons, inputs, form fields. Use "text-sm" sparingly and ONLY for genuinely secondary, glanceable text (captions, metadata, dense tables); NEVER use "text-xs" or smaller for content a user must read. Undersized type is a classic lazy-"AI" tell and a real readability failure — when in doubt, size UP.
 
 # Design direction — show 3, don't guess
 At the Design Direction phase, while the look is still open, build 2-3 GENUINELY DIFFERENT visual directions for the most important surface (usually the hero / first screen) behind a temporary in-page tab switcher so they can be compared live, then ask which to commit to or adjust (NEEDS_INPUT with options like "A / B / C"). Once chosen, delete the switcher + the losing variants and carry the winner through the rest. Prototype the LOOK only (type, colour, layout mood) — not logic or structure.
@@ -1227,6 +1310,12 @@ pub async fn run_build_turn(
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
+    // Register so the Studio Stop button can interrupt this turn by project id
+    // (the frontend never learns the turn id). Cleared on every exit by the guard.
+    if let Ok(mut g) = ACTIVE_BUILD_TURNS.lock() {
+        g.insert(session_id.clone(), turn_id.clone());
+    }
+    let _turn_guard = BuildTurnGuard(session_id.clone());
     let claude_session_id = read_claude_session_id(user_db, &session_id)?;
     let system_prompt = build_system_prompt(project_path, style);
 

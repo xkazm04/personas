@@ -63,6 +63,29 @@ pub fn project_dir(slug: &str) -> Result<PathBuf, AppError> {
     Ok(projects_root()?.join(slug))
 }
 
+/// True if `dir` looks like a Next.js app Studio can build + preview: a
+/// `next.config.*` is present, or `next` is a (dev)dependency in package.json.
+/// Used to flag incompatible Dev Tools projects in the Studio import picker
+/// before they fail to start a `next dev` server.
+pub fn is_next_app(dir: &Path) -> bool {
+    for cfg in ["next.config.js", "next.config.ts", "next.config.mjs", "next.config.cjs"] {
+        if dir.join(cfg).is_file() {
+            return true;
+        }
+    }
+    if let Ok(body) = std::fs::read_to_string(dir.join("package.json")) {
+        if let Ok(json) = serde_json::from_str::<serde_json::Value>(&body) {
+            let has_next = |key: &str| {
+                json.get(key)
+                    .and_then(|d| d.as_object())
+                    .is_some_and(|o| o.contains_key("next"))
+            };
+            return has_next("dependencies") || has_next("devDependencies");
+        }
+    }
+    false
+}
+
 /// Scaffold a blank Next.js + TS + Tailwind app into `<projects_root>/<slug>/`
 /// using Bun, then pin the Turbopack workspace root. Returns the created dir.
 /// Errors if the directory already exists.

@@ -396,7 +396,10 @@ async fn run_proactive_tick(
     // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an
     // extra-candidate source; engaging lands the user on Overview → Incidents.
     extra.extend(proactive_engine::incident_triggers::incident_blocker_nudges(&app_state.db));
-    let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra)?;
+    // Fleet triggers only fire when Athena's autonomy is on (see collect_all) —
+    // with it off, she leaves the fleet to the user instead of re-checking it.
+    let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&app_state.db);
+    let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra, autonomous)?;
     if new_msgs.is_empty() {
         return Ok(());
     }
@@ -405,7 +408,9 @@ async fn run_proactive_tick(
 
 #[cfg(not(feature = "desktop"))]
 async fn run_proactive_tick(pool: &UserDbPool, app: &AppHandle) -> Result<(), AppError> {
-    let new_msgs = proactive_engine::evaluate(pool)?;
+    // Non-desktop has no Fleet; pass autonomous=false so the fleet triggers
+    // (gated in collect_all) are skipped — they'd read an empty registry anyway.
+    let new_msgs = proactive_engine::evaluate(pool, false)?;
     if new_msgs.is_empty() {
         return Ok(());
     }

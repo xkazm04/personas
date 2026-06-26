@@ -437,7 +437,9 @@ pub async fn obsidian_revitalize_start(
             let app = app_for_task.clone();
             let id = job_for_task.clone();
             move |line: &str| {
-                REVITALIZE_JOBS.emit_line(&app, &id, line.to_string());
+                // Raw CLI prose → bounded ring only (no IPC); the [Milestone]
+                // lines around this carry the high-level state the panel needs.
+                REVITALIZE_JOBS.record_streamed(&app, &id, line.to_string());
             }
         };
 

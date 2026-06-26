@@ -295,7 +295,9 @@ fn build_section_callbacks(
     let app1 = app.clone();
     let id1 = transform_id.to_string();
     let on_line = move |line: &str| {
-        emit_n8n_transform_line(&app1, &id1, line.to_string());
+        // Raw CLI prose → bounded ring only (no IPC); the [Section]/[Milestone]
+        // lines carry the high-level state the live panel needs.
+        record_n8n_transform_line(&app1, &id1, line.to_string());
     };
 
     let app2 = app.clone();
@@ -654,7 +656,8 @@ pub async fn run_claude_prompt_text(
         let app = app.clone();
         let id = id.to_string();
         Box::new(move |line: &str| {
-            emit_n8n_transform_line(&app, &id, line.to_string());
+            // Raw CLI prose → bounded ring only (no IPC); milestones stay live.
+            record_n8n_transform_line(&app, &id, line.to_string());
         }) as Box<dyn Fn(&str) + Send + Sync>
     });
     let (text, session_id, _) =

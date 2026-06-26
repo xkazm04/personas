@@ -54,6 +54,133 @@ struct RegistryChangedPayload<'a> {
     session_id: &'a str,
 }
 
+/// Max bytes kept for a captured terminal title (titles are short summaries).
+const MAX_TITLE_BYTES: usize = 256;
+
+/// Incremental scanner for OSC window/icon-title sequences
+/// (`ESC ] {0|1|2} ; <utf8 title> (BEL | ESC \)`). Claude Code retitles the
+/// terminal with a live task summary; we capture the latest title to label the
+/// session. Byte-at-a-time, with state persisted across PTY reads, so a title
+/// split mid-chunk still assembles.
+#[derive(Default)]
+struct OscTitleScanner {
+    state: OscScanState,
+    params: Vec<u8>,
+    title: Vec<u8>,
+}
+
+#[derive(Default, Clone, Copy)]
+enum OscScanState {
+    #[default]
+    Ground,
+    Esc,      // saw ESC (0x1b)
+    Params,   // saw `ESC ]`, collecting Ps digits before `;`
+    Title,    // collecting the title text
+    TitleEsc, // saw ESC inside the title — possible ST terminator (`ESC \`)
+}
+
+impl OscTitleScanner {
+    /// Feed a PTY chunk; return the MOST RECENT complete title found, if any.
+    fn feed(&mut self, bytes: &[u8]) -> Option<String> {
+        let mut latest: Option<String> = None;
+        for &b in bytes {
+            match self.state {
+                OscScanState::Ground => {
+                    if b == 0x1b {
+                        self.state = OscScanState::Esc;
+                    }
+                }
+                OscScanState::Esc => {
+                    if b == b']' {
+                        self.params.clear();
+                        self.state = OscScanState::Params;
+                    } else {
+                        self.state = OscScanState::Ground;
+                    }
+                }
+                OscScanState::Params => {
+                    if b == b';' {
+                        // Title OSC iff Ps ∈ {0,1,2} (icon / window title).
+                        if matches!(self.params.as_slice(), b"0" | b"1" | b"2") {
+                            self.title.clear();
+                            self.state = OscScanState::Title;
+                        } else {
+                            self.state = OscScanState::Ground;
+                        }
+                    } else if self.params.len() < 4 && b.is_ascii_digit() {
+                        self.params.push(b);
+                    } else {
+                        self.state = OscScanState::Ground;
+                    }
+                }
+                OscScanState::Title => match b {
+                    0x07 => {
+                        latest = Some(self.take_title());
+                        self.state = OscScanState::Ground;
+                    }
+                    0x1b => self.state = OscScanState::TitleEsc,
+                    _ => {
+                        if self.title.len() < MAX_TITLE_BYTES {
+                            self.title.push(b);
+                        }
+                    }
+                },
+                OscScanState::TitleEsc => {
+                    if b == b'\\' {
+                        latest = Some(self.take_title());
+                    }
+                    self.state = OscScanState::Ground;
+                }
+            }
+        }
+        latest
+    }
+
+    fn take_title(&mut self) -> String {
+        let s = String::from_utf8_lossy(&self.title).trim().to_string();
+        self.title.clear();
+        s
+    }
+}
+
+#[cfg(test)]
+mod osc_title_tests {
+    use super::OscTitleScanner;
+
+    #[test]
+    fn captures_bel_terminated_title() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"\x1b]0;Fixing the auth bug\x07"), Some("Fixing the auth bug".into()));
+    }
+
+    #[test]
+    fn captures_st_terminated_window_title() {
+        let mut s = OscTitleScanner::default();
+        // OSC 2 (window title) terminated by ST (ESC \).
+        assert_eq!(s.feed(b"\x1b]2;Running tests\x1b\\"), Some("Running tests".into()));
+    }
+
+    #[test]
+    fn assembles_title_split_across_reads() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"output\x1b]0;Edit"), None);
+        assert_eq!(s.feed(b"ing files\x07more"), Some("Editing files".into()));
+    }
+
+    #[test]
+    fn ignores_non_title_osc_and_plain_output() {
+        let mut s = OscTitleScanner::default();
+        // OSC 8 (hyperlink) is not a title; plain text yields nothing.
+        assert_eq!(s.feed(b"\x1b]8;;https://x\x07hello world\n"), None);
+    }
+
+    #[test]
+    fn keeps_only_the_latest_title_in_a_chunk() {
+        let mut s = OscTitleScanner::default();
+        assert_eq!(s.feed(b"\x1b]0;old\x07\x1b]0;new\x07"), Some("new".into()));
+    }
+}
+
 /// Spawn a new Claude Code session in a PTY rooted at `cwd`.
 ///
 /// Returns the freshly-minted internal `id` (UUID v4). The
@@ -124,39 +251,31 @@ pub fn spawn_session(
     // spawn; the session just runs without Athena MCP tools.
     let mcp = build_mcp_spawn(&id);
 
-    // `claude` is published to npm as a Unix shell script with no
-    // extension. PATH-searching for it on Windows finds the bare script,
-    // which CreateProcessW then refuses to exec (OS error 193 — "is
-    // not a valid Win32 application"). Two coexisting shims handle this:
-    //   • `claude.cmd` (batch shim)  — works under cmd.exe
-    //   • `claude.ps1` (PowerShell)  — works under powershell.exe
-    // We pick the .cmd path on Windows and bare `claude` everywhere else.
+    // Resolve the real `claude.exe` through the SAME canonical resolver the rest
+    // of the app uses (engine::cli_process::resolve_claude_exe_windows): the
+    // native installer (%USERPROFILE%\.local\bin) first, then the npm-global
+    // layout, then PATH. ONE source of truth — Fleet must NOT keep a separate
+    // lookup. Its old npm-only `claude.cmd` search stranded native-installer
+    // machines (where the npm global was removed), so no session could spawn.
     let mut cmd = if cfg!(windows) {
-        // Bypass the `cmd.exe /c <composed-string>` path on Windows.
-        // That path requires composing one big string for /c and
-        // re-deals with Windows argv quoting twice (cmd.exe parsing,
-        // then claude's argv parser), which makes any role spec
-        // carrying a quoted prompt — `--print "List files. Exit."` —
-        // arrive at claude as `"List` plus stray bare tokens.
-        //
-        // Direct invocation of `claude.cmd` via its absolute path lets
-        // portable-pty's CommandBuilder pass each arg as a separate
-        // argv entry through CreateProcessW. CreateProcessW handles
-        // the Windows-specific argv→command-line quoting per the
-        // standard CRT rules, and claude.cmd's batch wrapper
-        // re-forwards %* to the underlying node script. Each arg
-        // stays whole.
-        let claude_cmd = match locate_claude_cmd() {
+        // Invoke the resolved `.exe` directly (never via `cmd.exe /c`): a real PE
+        // binary lets portable-pty's CommandBuilder hand each arg to
+        // CreateProcessW as its own argv entry with standard CRT quoting, so a
+        // role spec carrying a quoted prompt (`--print "List files. Exit."`)
+        // arrives intact instead of being re-split by an extra cmd.exe parse.
+        let claude_exe = match crate::engine::cli_process::resolve_claude_exe_windows() {
             Some(p) => p,
             None => {
                 return Err(
-                    "fleet spawn: claude.cmd not found on PATH or in %APPDATA%\\npm \
-                     — install Claude Code (`npm i -g @anthropic-ai/claude-code`) first"
+                    "fleet spawn: claude executable not found (checked the native \
+                     installer %USERPROFILE%\\.local\\bin, the npm-global layout, and \
+                     PATH) — install Claude Code from \
+                     https://docs.anthropic.com/en/docs/claude-code"
                         .to_string(),
                 );
             }
         };
-        let mut c = CommandBuilder::new(&claude_cmd);
+        let mut c = CommandBuilder::new(&claude_exe);
         // Fleet sessions run unattended (orchestrated, often Athena-driven), so
         // permission prompts would just freeze them at AwaitingInput with no one
         // to answer. Skip them — the user opted into this for the fleet.
@@ -165,21 +284,27 @@ pub fn spawn_session(
             c.arg("--session-id");
             c.arg(sid);
         }
+        for a in &args {
+            c.arg(a);
+        }
+        // `--mcp-config <configs...>` is VARIADIC — it greedily consumes every
+        // following non-flag token. Emitted before the positional prompt it eats
+        // the prompt as a bogus config path, so claude exits 1 ("MCP config file
+        // not found: <cwd>/<prompt>") and the session dies on spawn — silently
+        // breaking EVERY spawn-with-task (and with it Athena's orchestration,
+        // since a dead session never reaches AwaitingInput). Emit it LAST, after
+        // the caller's args, so its only operand is the path. (forward-slash
+        // conversion avoids `--mcp-config` parsing a double-escaped Windows path
+        // as inline JSON.)
         if let Some(p) = mcp.config_path.as_deref() {
-            // Same forward-slash conversion as before — avoids
-            // `--mcp-config` parsing the path as inline JSON when the
-            // backslashed Windows form ends up double-escaped.
             let p_fwd = p.display().to_string().replace('\\', "/");
             c.arg("--mcp-config");
             c.arg(p_fwd);
         }
-        for a in &args {
-            c.arg(a);
-        }
         tracing::debug!(
-            program = %claude_cmd,
+            program = %claude_exe,
             args = ?args,
-            "fleet spawn: direct claude.cmd invocation"
+            "fleet spawn: direct claude.exe invocation"
         );
         c
     } else {
@@ -189,29 +314,47 @@ pub fn spawn_session(
             c.arg("--session-id");
             c.arg(sid);
         }
+        for a in &args {
+            c.arg(a);
+        }
+        // Variadic `--mcp-config` must come LAST, after the positional prompt —
+        // see the windows branch above for the full rationale.
         if let Some(p) = mcp.config_path.as_deref() {
             c.arg("--mcp-config");
             c.arg(p.as_os_str());
-        }
-        for a in &args {
-            c.arg(a);
         }
         c
     };
     cmd.cwd(&cwd);
     // xterm-256color is what xterm.js natively understands.
     cmd.env("TERM", "xterm-256color");
-    // Match the env contract used by the rest of the app's claude
-    // spawns (companion/session.rs, brain/reflection.rs, etc.). These
-    // shut off telemetry chatter and terminal-title rewriting that
-    // would otherwise leak into the PTY stream and confuse xterm.js.
-    // Critically we do NOT set ANTHROPIC_API_KEY — claude falls back
-    // to its OAuth/keychain credentials, which is the monthly-
-    // subscription path. See `companion/session.rs:783` for the
-    // canonical comment on why --bare + API-key auth is the wrong
-    // choice for processes the user is signed into.
+    // Match the env contract used by the rest of the app's claude spawns
+    // (companion/session.rs, brain/reflection.rs, etc.). This shuts off
+    // telemetry chatter. We deliberately KEEP terminal-title rewriting ON (no
+    // CLAUDE_CODE_DISABLE_TERMINAL_TITLE): Claude Code retitles the terminal with
+    // a live task summary via OSC, which the reader loop captures
+    // (`OscTitleScanner`) to give each session a distinct, meaningful header —
+    // the same auto-title it shows in a real terminal. xterm.js parses OSC titles
+    // natively, so they never leak as rendered text.
+    // Critically we do NOT set ANTHROPIC_API_KEY — claude falls back to its
+    // OAuth/keychain credentials, which is the monthly-subscription path. See
+    // `companion/session.rs:783` for the canonical comment on why --bare +
+    // API-key auth is the wrong choice for processes the user is signed into.
     cmd.env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1");
-    cmd.env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1");
+
+    // Force subscription auth: actively STRIP any INHERITED API-account env
+    // (ANTHROPIC_API_KEY / _AUTH_TOKEN / _BASE_URL) the app picked up from the
+    // user's shell or a repo `.env`. Not setting it isn't enough — if it's
+    // present, claude prompts "Detected a custom API key… use it?" during first-
+    // run onboarding and, when declined, derails into a fresh OAuth login a
+    // headless fleet session can't complete (it dead-ends at "paste code here").
+    // Mirrors `cli_process::force_subscription_auth`, which the companion path
+    // uses; that one only handles `tokio::process::Command`, so we apply the same
+    // reserved-env list to the PTY `CommandBuilder` here. (Found in a live PoF
+    // pass: fleet CLIs stuck at OAuth because the key leaked through.)
+    for &key in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
+        cmd.env_remove(key);
+    }
 
     let child = pair
         .slave
@@ -254,7 +397,11 @@ pub fn spawn_session(
         cwd: cwd.clone(),
         project_label,
         name: None,
+        title: None,
+        athena_active_until_ms: 0,
         args: args.clone(),
+        cols,
+        rows,
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
         last_pty_output_ms: 0,
@@ -273,6 +420,13 @@ pub fn spawn_session(
 
     // Notify the UI a new session showed up.
     emit_registry_changed(&app, "added", &id);
+
+    // P1 — give the session a distinct, meaningful title from its task via a
+    // cheap LLM call (the OSC title is just "Claude Code"). Spawn-with-task only;
+    // a bare interactive session keeps its project label until it titles itself.
+    if let Some(task) = super::naming::task_from_args(&args) {
+        super::naming::name_session_from_task(app.clone(), id.clone(), task);
+    }
 
     // Reader task — blocking I/O on its own thread. Owns the ring `Arc` so the
     // per-read hot path never touches the registry map lock.
@@ -301,38 +455,6 @@ pub fn spawn_session(
     });
 
     Ok(id)
-}
-
-/// Locate `claude.cmd` for direct CreateProcessW spawn (Windows). We
-/// avoid going through `cmd.exe /c` so portable-pty handles argv
-/// quoting per the standard CRT rules — that way a role spec carrying
-/// `--print "Multi word prompt."` arrives intact at the underlying
-/// node script.
-///
-/// Resolution order:
-///   1. `%APPDATA%\npm\claude.cmd` (the npm-global default on Windows).
-///   2. Walk `PATH` looking for the first directory containing
-///      `claude.cmd`.
-///
-/// Returns the absolute path as a String. None when the binary isn't
-/// installed.
-#[cfg(windows)]
-fn locate_claude_cmd() -> Option<String> {
-    if let Some(appdata) = std::env::var_os("APPDATA") {
-        let cand = std::path::PathBuf::from(&appdata).join("npm").join("claude.cmd");
-        if cand.exists() {
-            return cand.to_str().map(str::to_string);
-        }
-    }
-    if let Some(path) = std::env::var_os("PATH") {
-        for dir in std::env::split_paths(&path) {
-            let cand = dir.join("claude.cmd");
-            if cand.exists() {
-                return cand.to_str().map(str::to_string);
-            }
-        }
-    }
-    None
 }
 
 /// Mint an MCP session token and write a per-session `mcp.json` that
@@ -431,6 +553,10 @@ fn reader_loop(
     // a second so the frozen-process stall check (stale.rs) has a fresh "the
     // PTY is still emitting" signal without per-chunk registry-lock churn.
     let mut last_output_note: Option<std::time::Instant> = None;
+    // Captures Claude Code's OSC window-title (a live task summary) from the byte
+    // stream so each session gets a distinct, meaningful header. State persists
+    // across reads so a title split mid-chunk still assembles.
+    let mut osc_title = OscTitleScanner::default();
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -464,6 +590,13 @@ fn reader_loop(
                             chunk,
                         },
                     );
+                }
+                // Capture Claude Code's live OSC terminal title (a task summary).
+                // Emits a registry-changed only on a real title change.
+                if let Some(title) = osc_title.feed(&buf[..n]) {
+                    if registry().set_title(&session_id, &title) {
+                        emit_registry_changed(&app, "updated", &session_id);
+                    }
                 }
             }
             Err(e) => {

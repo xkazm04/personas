@@ -83,8 +83,11 @@ pub struct Nudge {
 /// Returns `Vec<ProactiveMessage>` for the *newly inserted* messages
 /// only — anything deduped or budget-skipped is silently swallowed
 /// (still tracked via the existing rows, just not surfaced again).
-pub fn evaluate(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
-    evaluate_with_extra_candidates(pool, Vec::new())
+/// Convenience wrapper with no extra candidates — used by the non-desktop tick
+/// (desktop threads `ambient_match` nudges via `evaluate_with_extra_candidates`).
+#[cfg(not(feature = "desktop"))]
+pub fn evaluate(pool: &UserDbPool, autonomous: bool) -> Result<Vec<ProactiveMessage>, AppError> {
+    evaluate_with_extra_candidates(pool, Vec::new(), autonomous)
 }
 
 /// Like [`evaluate`] but accepts a list of pre-built `Nudge`s to merge
@@ -97,6 +100,7 @@ pub fn evaluate(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
 pub fn evaluate_with_extra_candidates(
     pool: &UserDbPool,
     extra: Vec<Nudge>,
+    autonomous: bool,
 ) -> Result<Vec<ProactiveMessage>, AppError> {
     if quiet::is_quiet_now(pool).unwrap_or(false) {
         tracing::debug!("proactive: quiet hours — skipping evaluation");
@@ -105,7 +109,7 @@ pub fn evaluate_with_extra_candidates(
     let mut budget = budget::today(pool)?;
 
     let mut new_msgs = Vec::new();
-    let mut candidates = triggers::collect_all(pool)?;
+    let mut candidates = triggers::collect_all(pool, autonomous)?;
     candidates.extend(extra);
     for nudge in candidates {
         if budget.is_exhausted() {

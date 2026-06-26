@@ -48,13 +48,11 @@ import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
-import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { useFleetHotkeys } from '../useFleetHotkeys';
 import { FleetHotkeysHelp } from '../FleetHotkeysHelp';
 import { FleetSpawnTaskModal } from '../FleetSpawnTaskModal';
 import { FleetSummaryPills } from '../FleetSummaryPills';
-import { FleetStatusLegend } from '../FleetStatusLegend';
 import type { FleetLabelKey } from '../FleetStatusDots';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -325,19 +323,10 @@ export default function FleetGridPage() {
     }
   }, []);
 
-  // Companion approvals folded into the same "Needs you" surface — the
-  // idea's "approve/reject companion actions" half. Read-only on the
-  // companion store except for removing the row once resolved.
-  const approvalItems = useMemo(
-    () =>
-      companionApprovals.map((a) => ({
-        id: a.id,
-        label: actionLabel(t, a.action),
-        rationale: a.rationale,
-      })),
-    [companionApprovals, t],
-  );
-
+  // Companion approvals no longer surface in the Needs-You banner — Athena's
+  // orb owns decision approval in Grid mode (`OrbDecisionBubble`). The store
+  // read + resolve handlers stay: the grid overlay still shows the matching
+  // `fleet_send_input` proposal on its target tile, and these resolve it.
   const handleApprove = useCallback(async (id: string) => {
     try {
       await companionApproveAction(id);
@@ -395,7 +384,11 @@ export default function FleetGridPage() {
       sessions
         // Hibernated sessions have no PTY to tile — exclude alongside exited.
         .filter((s) => s.state !== 'exited' && s.state !== 'hibernated')
-        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
+        // LOCKED spatial order: spawn time (stable), NOT activity. Reordering
+        // tiles on every state change is disorienting at scale — the operator
+        // builds muscle memory for "which session is in which cell", so a tile
+        // must stay put. New sessions append at the end; the grid never reshuffles.
+        .sort((a, b) => Number(a.createdAtMs) - Number(b.createdAtMs)),
     [sessions],
   );
 
@@ -570,7 +563,6 @@ export default function FleetGridPage() {
             >
               <Keyboard className="w-3.5 h-3.5" />
             </button>
-            <FleetStatusLegend />
             <FleetHooksPill />
           </div>
         }
@@ -586,13 +578,10 @@ export default function FleetGridPage() {
           waiting={waitingSessions}
           onJump={handleActivate}
           onReply={handleReply}
-          approvals={approvalItems}
-          onApprove={handleApprove}
-          onReject={handleRejectApproval}
           onCycleNext={handleCycleNext}
         />
 
-        {sessions.length > 0 && waitingSessions.length === 0 && approvalItems.length === 0 && (
+        {sessions.length > 0 && waitingSessions.length === 0 && (
           <div
             data-testid="fleet-all-clear"
             className="mb-3 inline-flex items-center gap-1.5 rounded-card border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 typo-caption text-emerald-300"

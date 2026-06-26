@@ -6,9 +6,9 @@ import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
+import { FleetAttentionLegend } from './FleetAttentionLegend';
 import { setFleetFontOverride } from './fleetTerminalManager';
-import { useFleetTilePreviews } from './useFleetTilePreviews';
-import { approvalsForSession } from './fleetAttention';
+import { approvalsForSession, needsLiveAttention } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
 
 interface Props {
@@ -94,17 +94,11 @@ export function FleetTerminalOverlay({
     return () => setFleetFontOverride(null);
   }, [open, dim]);
 
-  // Unwatched tiles (not active, not showing Insights) render a cheap polled
-  // preview instead of a live terminal — only the active tile subscribes. Poll
-  // them in one batched call while the grid is open.
-  const previewIds = useMemo(
-    () =>
-      sessions
-        .map((s) => s.id)
-        .filter((id) => id !== activeSessionId && !insightTiles.has(id)),
-    [sessions, activeSessionId, insightTiles],
-  );
-  const previews = useFleetTilePreviews(previewIds, { enabled: open });
+  // Render policy: a tile mounts a live (subscribed) terminal only when it needs
+  // the operator (`needsLiveAttention` — awaiting_input) or it's the focused tile
+  // (the manual "peek"). Every other session is autonomous and renders a cheap
+  // status block — Athena triages those in the background with full backend
+  // visibility, so the grid stays calm regardless of how many sessions run.
 
   // Route the global titlebar Back button (and Escape) to minimize, instead of
   // navigating the underlying page out from under the overlay.
@@ -155,6 +149,7 @@ export function FleetTerminalOverlay({
         </button>
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
+        <FleetAttentionLegend />
         <button
           type="button"
           data-testid="fleet-overlay-spawn"
@@ -192,7 +187,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
-            previewLines={previews.get(s.id)}
+            live={needsLiveAttention(s) || s.id === activeSessionId}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}
             onSelect={onSelect}

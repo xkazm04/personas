@@ -7,14 +7,18 @@ import { toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
   webbuildDevStop,
+  webbuildNextReady,
+  webbuildRegisterExisting,
   webbuildScaffold,
   webbuildSessionSend,
+  webbuildSessionStop,
   webbuildStatus,
   type BuildEffort,
   type BuildStyle,
 } from '@/api/webbuild';
 import type { DevServerStatus } from '@/lib/bindings/DevServerStatus';
 import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
+import { useStudioHistory } from './studioHistory';
 
 // Studio runs multiple projects in parallel like browser tabs. Each project's
 // full build runtime lives HERE (not in a component) so a project keeps building
@@ -23,6 +27,13 @@ import { MOCK_PHASES, type BuildPhase } from './studioBuildModel';
 // that used to die with StudioChatInput on unmount.
 
 export type StudioPhase = 'idle' | 'scaffolding' | 'starting' | 'live' | 'error';
+
+/** One completed Athena reply — the chat history shows each as its own bubble. */
+export interface StudioMessage {
+  id: string;
+  text: string;
+  ts: number;
+}
 
 export interface ProjectRuntime {
   id: string;
@@ -33,6 +44,8 @@ export interface ProjectRuntime {
   busy: boolean;
   stream: string;
   reply: string | null;
+  /** Every completed Athena reply this session, oldest→newest (1a history). */
+  messages: StudioMessage[];
   question: string | null;
   autonomous: boolean;
   /** Vision text to auto-send as the first turn once the server is live. */
@@ -76,6 +89,7 @@ interface StudioStore {
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
+  importExisting: (path: string) => Promise<void>;
   createWithVision: (name: string, vision: string) => Promise<void>;
   reload: (id: string) => void;
   sendTurn: (id: string, text: string) => Promise<void>;
@@ -85,6 +99,7 @@ interface StudioStore {
   ) => void;
   startAutonomous: (id: string) => void;
   stopAutonomous: (id: string) => void;
+  stopTurn: (id: string) => void;
 }
 
 export const useStudioStore = create<StudioStore>((set, get) => {
@@ -95,7 +110,10 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       return { runtimes: { ...s.runtimes, [id]: { ...rt, ...p } } };
     });
 
-  const ensure = (id: string, name: string) =>
+  const ensure = (id: string, name: string) => {
+    // Restore the checklist + message log from the persisted snapshot if we have
+    // one (re-opening a project after a restart); otherwise start fresh.
+    const h = useStudioHistory.getState().byProject[id];
     set((s) => {
       if (s.runtimes[id]) {
         const order = s.tabOrder.includes(id) ? s.tabOrder : [...s.tabOrder, id];
@@ -106,18 +124,19 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         name,
         phase: 'idle',
         status: null,
-        phases: MOCK_PHASES,
+        phases: h?.phases ?? MOCK_PHASES,
         busy: false,
         stream: '',
-        reply: null,
-        question: null,
+        reply: h?.reply ?? null,
+        messages: h?.messages ?? [],
+        question: h?.question ?? null,
         autonomous: false,
         seedPending: null,
         autoTurns: 0,
         resumeAuto: false,
         effort: 'xhigh',
         style: 'balanced',
-        options: [],
+        options: h?.options ?? [],
         decisionArea: null,
         decisionSelector: null,
         gatePlan: false,
@@ -129,6 +148,21 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         activeId: id,
       };
     });
+  };
+
+  // Persist the project's checklist + message log so it survives an app restart.
+  const saveHistory = (id: string) => {
+    const rt = get().runtimes[id];
+    if (!rt) return;
+    useStudioHistory.getState().save(id, {
+      phases: rt.phases,
+      messages: rt.messages,
+      reply: rt.reply,
+      question: rt.question,
+      options: rt.options,
+      updatedAt: Date.now(),
+    });
+  };
 
   const stopPoll = (id: string) => {
     const t = pollTimers.get(id);
@@ -200,8 +234,13 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     try {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
+      const reply = result.reply.trim() || 'Done.';
       patch(id, {
-        reply: result.reply.trim() || 'Done.',
+        reply,
+        messages: [
+          ...(get().runtimes[id]?.messages ?? []),
+          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+        ],
         question: q,
         options: q ? (result.options ?? []) : [],
         decisionArea: q ? (result.area ?? null) : null,
@@ -213,10 +252,20 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (q && cur?.autonomous) patch(id, { autonomous: false, resumeAuto: true });
       else if (!q && cur?.resumeAuto) patch(id, { resumeAuto: false, autonomous: true });
     } catch (e) {
-      patch(id, { reply: 'Something went wrong with that change.', autonomous: false, resumeAuto: false });
+      const reply = 'Something went wrong with that change.';
+      patch(id, {
+        reply,
+        messages: [
+          ...(get().runtimes[id]?.messages ?? []),
+          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+        ],
+        autonomous: false,
+        resumeAuto: false,
+      });
       toastCatch('build instruction')(e);
     } finally {
       patch(id, { busy: false });
+      saveHistory(id);
       // Chain the next autonomous turn.
       const cur = get().runtimes[id];
       if (cur?.autonomous) {
@@ -279,8 +328,28 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
     startExisting: async (id, name) => {
       ensure(id, name);
-      patch(id, { phases: MOCK_PHASES });
       await start(id);
+    },
+
+    importExisting: async (path) => {
+      try {
+        const name = path.split(/[\\/]/).filter(Boolean).pop() ?? 'project';
+        const project = await webbuildRegisterExisting(name, path);
+        // Same Next-only guard as the picker: register it (so it shows in the
+        // Dev Tools list), but only open + start a preview for a Next.js app.
+        const ready = await webbuildNextReady([project.id]);
+        if (!ready.includes(project.id)) {
+          toastCatch('add existing project')(
+            new Error(
+              "This folder isn't a Next.js app — Studio builds Next.js + Tailwind projects.",
+            ),
+          );
+          return;
+        }
+        await get().startExisting(project.id, project.name);
+      } catch (e) {
+        toastCatch('add existing project')(e);
+      }
     },
 
     createWithVision: async (name, vision) => {
@@ -313,6 +382,15 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     stopAutonomous: (id) => {
       stopAuto(id);
       patch(id, { autonomous: false, resumeAuto: false });
+    },
+
+    stopTurn: (id) => {
+      // Interrupt the running CLI turn now + halt any autonomous loop. The
+      // pending runTurn resolves with whatever partial reply streamed and clears
+      // `busy`; autonomous is already off so it won't chain another turn.
+      stopAuto(id);
+      patch(id, { autonomous: false, resumeAuto: false });
+      void webbuildSessionStop(id).catch(() => {});
     },
   };
 });

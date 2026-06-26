@@ -1546,7 +1546,9 @@ async fn run_unified_adopt_turn1(
     let app_for_emit = app.clone();
     let adopt_id_for_emit = adopt_id.to_string();
     let on_line = move |line: &str| {
-        ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
+        // Raw CLI prose → bounded ring only (no IPC); the [Milestone] lines around
+        // this call carry the high-level state the live panel needs.
+        ADOPT_JOBS.record_streamed(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
     let llm_start = std::time::Instant::now();
     let (output_text, captured_session_id, _) =
@@ -1700,7 +1702,8 @@ TRIGGER POLICY (binding):
     let app_for_emit2 = app.clone();
     let adopt_id_for_emit2 = adopt_id.to_string();
     let on_line2 = move |line: &str| {
-        ADOPT_JOBS.emit_line(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
+        // Raw CLI prose → bounded ring only (no IPC); milestones stay live.
+        ADOPT_JOBS.record_streamed(&app_for_emit2, &adopt_id_for_emit2, line.to_string());
     };
     let llm_start = std::time::Instant::now();
     let (output_text, _, _) =
@@ -2175,7 +2178,8 @@ Return ONLY valid JSON (no markdown fences, no commentary).
     let app_for_emit = app.clone();
     let gen_id_for_emit = gen_id.to_string();
     let on_line = move |line: &str| {
-        GEN_JOBS.emit_line(&app_for_emit, &gen_id_for_emit, line.to_string());
+        // Raw CLI prose → bounded ring only (no IPC); milestones stay live.
+        GEN_JOBS.record_streamed(&app_for_emit, &gen_id_for_emit, line.to_string());
     };
 
     let llm_start = std::time::Instant::now();
@@ -2252,7 +2256,8 @@ async fn run_template_adopt_job(
     let app_for_emit = app.clone();
     let adopt_id_for_emit = adopt_id.to_string();
     let on_line = move |line: &str| {
-        ADOPT_JOBS.emit_line(&app_for_emit, &adopt_id_for_emit, line.to_string());
+        // Raw CLI prose → bounded ring only (no IPC); milestones stay live.
+        ADOPT_JOBS.record_streamed(&app_for_emit, &adopt_id_for_emit, line.to_string());
     };
     let llm_start = std::time::Instant::now();
     let (output_text, _session_id, _) =

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 export type { PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry, TestRunResult, GitOperationResult } from '@/api/devTools/devTools';
@@ -11,18 +12,23 @@ export type { PortfolioHealthSummary, TechRadarEntry, RiskMatrixEntry, TestRunRe
  * Convenience wrappers auto-resolve `activeProjectId` from the store for
  * methods that require it, matching the zero-arg signatures the UI expects.
  */
-export function useDevToolsActions() {
-  // Read the store lazily inside each action so callers always see the latest
-  // state at call time. Reading `useSystemStore.getState()` once at hook body
-  // and closing over that snapshot is a silent bug — the component calling
-  // this hook doesn't necessarily subscribe to `ideas`/`tasks`, so without a
-  // re-render the closed-over `store` stays frozen at first mount and
-  // `batchFromAcceptedIdeas` / `startBatch` / `cancelAllTasks` would operate
-  // on empty arrays after any backend-driven state change.
-  const s = () => useSystemStore.getState();
-  const pid = () => s().activeProjectId ?? '';
+// Read the store lazily inside each action so callers always see the latest
+// state at call time. Reading `useSystemStore.getState()` once and closing over
+// that snapshot is a silent bug — the closed-over state would freeze at first
+// mount and `batchFromAcceptedIdeas` / `startBatch` / `cancelAllTasks` would
+// operate on empty arrays after any backend-driven change. Hoisted to module
+// scope (stable identity) so the useMemo below can keep `[]` deps.
+const s = () => useSystemStore.getState();
+const pid = () => s().activeProjectId ?? '';
 
-  return {
+export function useDevToolsActions() {
+  // Memoize so every returned action keeps a STABLE identity across renders.
+  // The closures read getState() at call time, so there's no render-time state
+  // to capture — `[]` is correct. Stability is REQUIRED: a consumer that lists
+  // one of these actions in a useEffect dependency array would otherwise re-run
+  // that effect every render — the infinite fetch→re-render loop that leaked
+  // ContextMapPage's renderer to OOM. This hardens the whole class.
+  return useMemo(() => ({
     // Context Map -- convenience wrappers that resolve projectId
     fetchContextMap: async () => {
       const id = pid();
@@ -106,5 +112,5 @@ export function useDevToolsActions() {
     getPortfolioHealth: () => devApi.getPortfolioHealth(),
     getTechRadar: () => devApi.getTechRadar(),
     getRiskMatrix: () => devApi.getRiskMatrix(),
-  } as const;
+  }) as const, []);
 }

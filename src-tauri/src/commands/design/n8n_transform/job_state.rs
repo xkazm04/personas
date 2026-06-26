@@ -68,6 +68,17 @@ pub fn emit_n8n_transform_line(
     N8N_JOBS.emit_line(app, transform_id, line);
 }
 
+/// Record a verbose transform line into the bounded ring WITHOUT streaming it
+/// over IPC. Use for raw CLI prose; keep [`emit_n8n_transform_line`] for the
+/// `[Milestone]`/`[Section]` lines the live panel actually needs.
+pub fn record_n8n_transform_line(
+    app: &tauri::AppHandle,
+    transform_id: &str,
+    line: impl Into<String>,
+) {
+    N8N_JOBS.record_streamed(app, transform_id, line);
+}
+
 pub fn set_n8n_transform_draft(transform_id: &str, draft: &N8nPersonaOutput) {
     match serde_json::to_value(draft) {
         Ok(serialized) => {

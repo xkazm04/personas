@@ -53,7 +53,10 @@ pub async fn companion_evaluate_proactive_now(
     // Same guards (quiet hours / budget / dedupe) apply via the evaluator.
     let mut extra = proactive::triggers::dev_goal_nudges(&state.db);
     extra.extend(proactive::incident_triggers::incident_blocker_nudges(&state.db));
-    let mut new_msgs = proactive::evaluate_with_extra_candidates(&state.user_db, extra)?;
+    // Fleet triggers only fire with autonomous mode on (see collect_all).
+    let autonomous = crate::commands::companion::chat::autonomous_mode_enabled(&state.db);
+    let mut new_msgs =
+        proactive::evaluate_with_extra_candidates(&state.user_db, extra, autonomous)?;
     // Athena's `schedule_proactive` commitments flow through the same
     // emit + status transition as trigger-driven nudges, but their
     // candidate set comes from a time-based sweep instead of

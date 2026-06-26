@@ -781,7 +781,9 @@ async fn run_task_execution(
                 }
 
                 output_lines += 1;
-                TASK_EXEC_JOBS.emit_line(app, task_id, trimmed.to_string());
+                // Verbose model prose → bounded ring only; the [Progress]/[Milestone]
+                // markers parsed below carry the high-level state to the live panel.
+                TASK_EXEC_JOBS.record_line(task_id, trimmed.to_string());
 
                 // Parse structured [Progress] markers for milestone tracking.
                 // Format: [Progress] {"milestone": "implementing", "detail": "..."}

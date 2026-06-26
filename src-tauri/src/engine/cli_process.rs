@@ -96,8 +96,12 @@ pub fn claude_cli_invocation() -> (String, Vec<String>) {
 ///    to).
 /// 3. **PATH scan** — each PATH entry, as plain `<dir>\claude.exe` first,
 ///    then the npm layout under `<dir>`.
+/// Canonical Windows resolver for the real `claude.exe`. `pub(crate)` so Fleet's
+/// PTY spawn (`commands::fleet::pty`) shares this ONE source of truth instead of
+/// keeping its own lookup — see that module for why a separate npm-only search
+/// stranded native-installer users.
 #[cfg(windows)]
-fn resolve_claude_exe_windows() -> Option<String> {
+pub(crate) fn resolve_claude_exe_windows() -> Option<String> {
     fn ok(p: std::path::PathBuf) -> Option<String> {
         if p.exists() {
             p.to_str().map(str::to_string)

@@ -19,6 +19,10 @@ export const webbuildDevStart = (projectId: string) =>
 export const webbuildDevStop = (projectId: string) =>
   invokeWithTimeout<void>('webbuild_dev_stop', { projectId });
 
+/** Interrupt the in-flight build turn for a project (the Studio Stop button). */
+export const webbuildSessionStop = (projectId: string) =>
+  invokeWithTimeout<boolean>('webbuild_session_stop', { projectId });
+
 /** Live status of a project's dev server, or null when not running. */
 export const webbuildStatus = (projectId: string) =>
   invokeWithTimeout<DevServerStatus | null>('webbuild_status', { projectId });
@@ -30,6 +34,15 @@ export const webbuildListServers = () =>
 /** Registered Dev Tools projects — reused for the Studio project picker. */
 export const webbuildListProjects = () =>
   invokeWithTimeout<DevProject[]>('dev_tools_list_projects', { status: undefined });
+
+/** Of the given projects, the ids that are Next.js apps Studio can build. */
+export const webbuildNextReady = (projectIds: string[]) =>
+  invokeWithTimeout<string[]>('webbuild_next_ready', { projectIds });
+
+/** Register an existing project directory (an existing repo) as a Dev Tools
+ *  project so it can be opened in Studio. Idempotent on the path. */
+export const webbuildRegisterExisting = (name: string, path: string) =>
+  invokeWithTimeout<DevProject>('webbuild_register_existing', { name, path });
 
 /**
  * Send a build instruction to a project's build session — Athena edits the

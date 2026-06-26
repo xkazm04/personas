@@ -174,6 +174,15 @@ fn attention_throttle() -> &'static Mutex<HashMap<String, i64>> {
 }
 const ATTENTION_MIN_INTERVAL_MS: i64 = 60_000;
 
+/// Per-session signature of the last on-screen decision we assessed. An
+/// unchanged prompt must NOT re-wake Athena — re-asking the same question yields
+/// the same answer and just spams. The 60s throttle catches rapid bounces; this
+/// catches a session that simply sits on one prompt for minutes.
+fn decision_signatures() -> &'static Mutex<HashMap<String, u64>> {
+    static S: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+    S.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
 /// Active fleet orchestration (autonomous mode only): when a session enters
 /// `AwaitingInput` — it finished its turn / is paused waiting for the next
 /// instruction — wake Athena with the live fleet digest so she decides the
@@ -209,27 +218,79 @@ pub fn orchestrate_on_awaiting(
         "waking Athena to assess the fleet (session entered AwaitingInput)"
     );
     let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
+
+    // (A) Capture what's actually on this session's screen — the prompt or
+    // decision it's blocked on — so Athena can evaluate a real single/multi-select
+    // question and pick or defer, instead of reasoning blind from the fleet
+    // digest. RECONSTRUCTED via a VT emulator (`render_screen_for`) from the
+    // always-on PTY ring, so it works regardless of UI subscription AND renders
+    // an interactive cursor-addressed TUI (an AskUserQuestion menu, a permission
+    // prompt) as the operator sees it — the old line-cooker collapsed those to
+    // empty/fragments, so Athena saw nothing and refused to decide.
+    let screen_text = crate::commands::fleet::registry::registry()
+        .render_screen_for(session_id)
+        .map(|(_, lines)| lines.join("\n"))
+        .unwrap_or_default();
+    // Content-aware dedup: if this session's on-screen decision is unchanged
+    // since we last assessed it, don't wake her again. (The cooked tail strips
+    // ANSI/cursor, so the same prompt hashes stably.) This is what stops the
+    // "still parked, your checkpoint" loop on a session that sits on one prompt.
+    {
+        use std::collections::hash_map::DefaultHasher;
+        use std::hash::{Hash, Hasher};
+        let mut h = DefaultHasher::new();
+        screen_text.hash(&mut h);
+        let sig = h.finish();
+        let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        if sigs.insert(session_id.to_string(), sig) == Some(sig) {
+            return; // same decision as last assessment — nothing new to decide
+        }
+    }
+
+    // (B) Feed the on-screen decision to her — only when there's something to show.
+    let screen_block = if screen_text.trim().is_empty() {
+        String::new()
+    } else {
+        format!(
+            "\n\nWhat this session's terminal currently shows — the prompt/decision it's waiting on:\n\
+             ```\n{screen_text}\n```\n"
+        )
+    };
+
     let directive = format!(
-        "Fleet orchestration check. Session \"{label}\" (project {proj}) just entered AwaitingInput \
-         — it finished its turn or is paused waiting for the next instruction. Live fleet status:\n\n\
-         {digest}\n\n\
-         Decide the single best next step for the session(s) that actually need one, then act under \
-         this confidence policy:\n\
-         • Every fleet_send_input you propose MUST carry a `confidence` param: \"high\", \"medium\", \
-         or \"low\", alongside the exact `text` to type (press_enter true) and a one-line `rationale`.\n\
-         • Use confidence \"high\" ONLY when the next step is obvious, safe, and you'd stake your \
-         judgment on it with no second opinion — high-confidence steps are applied automatically with \
-         no human check, so reserve it for the genuinely unambiguous.\n\
-         • Use \"medium\" or \"low\" whenever there is any real doubt, the step is a judgment call, or \
-         a wrong move would cost rework. These are NOT auto-applied: they surface to the user as a \
-         decision on the orb, so make the `rationale` a crisp one-liner the user can decide on at a \
-         glance, and still include the exact `text` you'd send.\n\
-         • If the work looks finished, or the situation needs a real human judgment call, do NOT \
-         propose a send-input at all — surface a concise decision to the user instead.\n\
-         Leave sessions that are progressing fine alone. Be brief.",
-        label = project_label,
-        proj = project_label,
+        "Fleet orchestration check. Session \"{project_label}\" (project {project_label}) just entered \
+         AwaitingInput — it finished its turn, or it's blocked on a prompt/decision (a single- or \
+         multiple-select question, a permission, or free-text input).{screen_block}\n\
+         Fleet (brief background only):\n\n{digest}\n\n\
+         Focus on THIS session only and decide its single next step. This is a quick orchestration \
+         check, NOT a fleet status report — do NOT summarize, list, or re-flag the other sessions.\n\
+         • (C) If the screen above shows a QUESTION or a SELECT decision, read the options and judge \
+         whether one is clearly best. If so, ANSWER it: propose a fleet_send_input whose `text` is \
+         exactly what to type to choose that option — the option's number, or its text — with \
+         press_enter true.\n\
+         • Every fleet_send_input MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
+         verbatim; it's THIS session, and the action can't run without it — and carry a `confidence` \
+         param (\"high\", \"medium\", or \"low\"), the exact `text`, and a one-line `rationale`.\n\
+         • \"high\" = obvious, safe, you'd stake your judgment on it with no second opinion — applied \
+         automatically with no human check, so reserve it for the genuinely unambiguous.\n\
+         • \"medium\"/\"low\" = any real doubt, a judgment call, or a wrong move would cost rework. \
+         NOT auto-applied: they surface to the user as a decision on the orb, so make `rationale` a \
+         crisp one-liner and still include your recommended `text`.\n\
+         • (D) If it's genuinely the USER's call — a personal preference, a risk you shouldn't take on \
+         their behalf, or the work looks finished — do NOT propose a send-input. Instead surface a \
+         concise decision on the orb telling them you're leaving this one to them; and if you have a \
+         lean, name your recommended option in one line so they can decide at a glance.\n\
+         • If this session is just progressing fine, do nothing at all.\n\
+         Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay; \
+         no preamble, no fleet-wide recap.",
     );
+
+    // P3 — show the operator that Athena has TAKEN this ticket and is reasoning:
+    // flip the tile to the light-blue "Athena's on it" state for her work window.
+    // Cleared automatically once she acts (→ Running) or the window lapses.
+    if crate::commands::fleet::registry::registry().mark_athena_active(session_id) {
+        crate::commands::fleet::pty::emit_registry_changed(app, "updated", session_id);
+    }
 
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
@@ -241,6 +302,52 @@ pub fn orchestrate_on_awaiting(
         Some(session_id.to_string()),
         directive,
     );
+}
+
+/// Surface a fleet-orchestration **defer note** as an orb card instead of a
+/// chat episode. The companion turn for `fleet_orchestration` suppresses every
+/// chat side-effect (see `session::send_turn`'s `suppress_chat`), so when Athena
+/// leaves a decision to the user with a prose note — and has no `fleet_send_input`
+/// approval to carry it onto the orb — that note would otherwise vanish. Route it
+/// through the same proactive-nudge path the op-wrap-up reconciler uses: a card
+/// the user can engage/dismiss. `turn_ref` is the per-turn id, so the
+/// (kind, ref) dedupe never collides across sequential decisions. Best-effort.
+pub fn surface_fleet_orb_note(
+    app: &tauri::AppHandle,
+    pool: &crate::db::UserDbPool,
+    turn_ref: &str,
+    message: &str,
+) {
+    let nudge = crate::companion::proactive::Nudge {
+        trigger_kind: "fleet_orchestration".to_string(),
+        trigger_ref: Some(turn_ref.to_string()),
+        message: message.to_string(),
+    };
+    match crate::companion::proactive::enqueue_external(pool, &nudge) {
+        Ok(Some(msg)) => {
+            if let Err(e) = crate::companion::proactive::mark_delivered(pool, &msg.id) {
+                tracing::warn!(id = %msg.id, error = %e, "fleet orb note: mark_delivered failed");
+            }
+            let delivered = crate::companion::proactive::ProactiveMessage {
+                status: "delivered".into(),
+                ..msg
+            };
+            let payload = crate::commands::companion::proactive::ProactiveDelivery {
+                messages: vec![delivered],
+            };
+            if let Err(e) = app.emit(
+                crate::commands::companion::proactive::PROACTIVE_EVENT,
+                payload,
+            ) {
+                tracing::warn!(error = %e, "fleet orb note: proactive emit failed");
+            }
+        }
+        Ok(None) => {
+            // Dedupe — this exact turn already surfaced a card. Shouldn't
+            // happen (turn ids are unique) but harmless if it does.
+        }
+        Err(e) => tracing::warn!(error = %e, "fleet orb note: enqueue failed"),
+    }
 }
 
 /// Public re-export so the PTY reaper (`commands::fleet::pty`) can fire

@@ -2,7 +2,7 @@ import { Trash2, BarChart3, Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetTerminalPane } from './FleetTerminalPane';
-import { FleetTilePreview } from './FleetTilePreview';
+import { FleetTileStatusBlock } from './FleetTileStatusBlock';
 import { FleetSessionInsights } from './sub_grid/FleetSessionInsights';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
@@ -10,9 +10,12 @@ import { sessionAttention, attentionClass, type FleetTileApproval } from './flee
 
 interface Props {
   session: FleetSession;
+  /** Drives the highlighted border + which tile keyboard/skills target. */
   isActive: boolean;
-  /** Cooked preview lines for an inactive tile (only the active tile is live). */
-  previewLines?: string[];
+  /** Whether this tile mounts a live (subscribed) terminal vs a status block.
+   *  True for the focused tile and for any session that needs the operator
+   *  (`needsLiveAttention`); everything else renders a cheap status block. */
+  live: boolean;
   /** Show the transcript-insights view instead of the live terminal. */
   showInsights: boolean;
   onToggleInsight: (id: string) => void;
@@ -32,7 +35,7 @@ interface Props {
  *  the Athena copilot bar. Extracted from FleetTerminalOverlay to keep both
  *  files lean. */
 export function FleetOverlayTile({
-  session: s, isActive, previewLines, showInsights, onToggleInsight, onSelect, onKill,
+  session: s, isActive, live, showInsights, onToggleInsight, onSelect, onKill,
   approvals, asking, onApprove, onReject, onAsk,
 }: Props) {
   const { t } = useTranslation();
@@ -48,7 +51,7 @@ export function FleetOverlayTile({
     >
       <div className="flex items-center gap-1.5 px-2 py-1 border-b border-primary/10 bg-secondary/20 shrink-0">
         <FleetStatusDots state={s.state} reason={s.stateReason} />
-        <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.projectLabel}</span>
+        <span className="typo-caption truncate flex-1 min-w-0 text-foreground">{s.name ?? s.title ?? s.projectLabel}</span>
         <button
           type="button"
           data-testid={`fleet-tile-view-${s.id}`}
@@ -76,13 +79,14 @@ export function FleetOverlayTile({
       <div className="flex-1 min-h-0">
         {showInsights ? (
           <FleetSessionInsights claudeSessionId={s.claudeSessionId} />
-        ) : isActive ? (
-          // Only the active tile mounts a real (subscribed) terminal — the rest
-          // render a cheap polled preview, so a 16-tile grid streams one
-          // session, not sixteen. Click a tile to make it the live one.
+        ) : live ? (
+          // Live (subscribed) terminal — only the focused tile and sessions that
+          // need the operator (awaiting_input). Everything else autonomous gets
+          // the cheap status block below, so a 9-tile grid stays calm: Athena
+          // triages the rest in the background. Click a tile to focus (peek) it.
           <FleetTerminalPane sessionId={s.id} autoFocus={false} />
         ) : (
-          <FleetTilePreview lines={previewLines} />
+          <FleetTileStatusBlock session={s} />
         )}
       </div>
       <FleetTileAthenaBar

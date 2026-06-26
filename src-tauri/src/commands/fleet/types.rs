@@ -72,6 +72,11 @@ pub struct FleetSession {
     /// multiple parallel sessions on the same project (e.g. "refactor",
     /// "tests", "smoke run"). Settable via `fleet_rename_session`.
     pub name: Option<String>,
+    /// Live terminal title emitted by Claude Code via OSC (a summary of the
+    /// current task), captured from the PTY stream. `None` until Claude sets one.
+    /// The UI prefers this over `name` / `project_label` to label a tile, so each
+    /// session reads distinctly instead of all showing the same project name.
+    pub title: Option<String>,
     /// Extra CLI arguments passed to `claude` at spawn time. Empty by default.
     pub args: Vec<String>,
     /// Current lifecycle state. See [`FleetSessionState`].
@@ -96,6 +101,12 @@ pub struct FleetSession {
     /// Free-form last-state-change reason — surfaced as a tooltip on the
     /// status badge. e.g. "Notification: permission requested", "Stop hook".
     pub state_reason: Option<String>,
+    /// True while Athena has actively taken this session's `AwaitingInput`
+    /// ticket and is reasoning about it (a short self-expiring window set by
+    /// `orchestrate_on_awaiting`). Drives the light-blue "Athena's on it" tile
+    /// affordance so her work is visible. Only meaningful while `AwaitingInput`;
+    /// once she acts (→ `Running`) or the window lapses, it's `false`.
+    pub athena_active: bool,
 }
 
 /// Snapshot of the full fleet registry — returned by `fleet_list_sessions`.

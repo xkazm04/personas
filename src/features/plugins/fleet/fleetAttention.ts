@@ -8,8 +8,9 @@
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PendingApproval } from '@/api/companion';
 
-/** Visual attention a session warrants. `none` → use the base border. */
-export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'none';
+/** Visual attention a session warrants. `none` → use the base border.
+ *  `athena` = she's actively reasoning about this session's ticket (light blue). */
+export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'athena' | 'none';
 
 /** Prefix of the Rust ticker's never-attached `state_reason` (see
  *  `stale.rs::is_never_attached`). Keep in sync with that string. */
@@ -30,7 +31,13 @@ export function isNeverAttached(s: Pick<FleetSession, 'stateReason'>): boolean {
 }
 
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
-export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): FleetAttention {
+export function sessionAttention(
+  s: Pick<FleetSession, 'state' | 'exitCode' | 'athenaActive'>,
+): FleetAttention {
+  // Athena has taken this awaiting ticket and is reasoning — show that (light
+  // blue) instead of "needs you" (violet). If she defers or her window lapses,
+  // `athenaActive` drops and it falls through to the real state below.
+  if (s.athenaActive) return 'athena';
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
@@ -47,6 +54,22 @@ export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): F
   }
 }
 
+/**
+ * Whether a session needs the operator's eyes RIGHT NOW — i.e. the grid should
+ * render a full live terminal for it rather than a cheap status block. Only
+ * `awaiting_input` qualifies today: Claude is blocked asking for input that
+ * Athena couldn't (or shouldn't) answer autonomously. Everything else either
+ * runs autonomously (`running`/`spawning`/`idle`) or is silently triaged by
+ * Athena (`stale`) and gets a status block — Athena still sees ALL of it via the
+ * backend (operative memory + ring + transcript), and escalates by raising the
+ * tile (a proposal, or the session flipping to `awaiting_input`). `exited`/
+ * `hibernated` are filtered out of the live grid upstream. Extension point: add
+ * escalated-`stale` here once Athena flags a stale session as needing a human.
+ */
+export function needsLiveAttention(s: Pick<FleetSession, 'state'>): boolean {
+  return s.state === 'awaiting_input';
+}
+
 /** CSS class (from globals.css) for an attention level, or '' for none. */
 export function attentionClass(a: FleetAttention): string {
   switch (a) {
@@ -56,6 +79,8 @@ export function attentionClass(a: FleetAttention): string {
       return 'fleet-attn-stale';
     case 'failed':
       return 'fleet-attn-failed';
+    case 'athena':
+      return 'fleet-attn-athena';
     default:
       return '';
   }

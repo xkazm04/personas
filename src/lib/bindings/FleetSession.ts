@@ -36,6 +36,13 @@ projectLabel: string,
  */
 name: string | null, 
 /**
+ * Live terminal title emitted by Claude Code via OSC (a summary of the
+ * current task), captured from the PTY stream. `None` until Claude sets one.
+ * The UI prefers this over `name` / `project_label` to label a tile, so each
+ * session reads distinctly instead of all showing the same project name.
+ */
+title: string | null, 
+/**
  * Extra CLI arguments passed to `claude` at spawn time. Empty by default.
  */
 args: Array<string>, 
@@ -76,4 +83,12 @@ exitCode: number | null,
  * Free-form last-state-change reason — surfaced as a tooltip on the
  * status badge. e.g. "Notification: permission requested", "Stop hook".
  */
-stateReason: string | null, };
+stateReason: string | null, 
+/**
+ * True while Athena has actively taken this session's `AwaitingInput`
+ * ticket and is reasoning about it (a short self-expiring window set by
+ * `orchestrate_on_awaiting`). Drives the light-blue "Athena's on it" tile
+ * affordance so her work is visible. Only meaningful while `AwaitingInput`;
+ * once she acts (→ `Running`) or the window lapses, it's `false`.
+ */
+athenaActive: boolean, };

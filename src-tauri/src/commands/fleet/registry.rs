@@ -100,6 +100,31 @@ impl OutputRing {
         let bytes: Vec<u8> = self.buf.iter().copied().skip(start).collect();
         cook_lines(&bytes, max_lines)
     }
+
+    /// Reconstruct the CURRENTLY-RENDERED screen from the raw ring bytes via a
+    /// real VT emulator, returning the visible grid as plain-text lines
+    /// (trailing blank lines trimmed). Unlike `preview_lines`' line-cooker, this
+    /// models cursor positioning + alt-screen, so an interactive cursor-addressed
+    /// TUI — an `AskUserQuestion` menu, a permission prompt — renders as the
+    /// operator actually sees it instead of collapsing to fragments. `cols` MUST
+    /// match the size claude drew at, or a cursor-positioned line wraps wrong.
+    pub fn render_screen(&self, rows: u16, cols: u16) -> Vec<String> {
+        let rows = rows.max(8);
+        let cols = cols.max(40);
+        let mut parser = vt100::Parser::new(rows, cols, 0);
+        // Feed the whole ring in order so the final screen reflects the latest
+        // repaint. The oldest bytes may be a truncated escape (the ring drops
+        // from the front) — vt100 resynchronizes, and the final screen is set by
+        // the last complete paint regardless.
+        let bytes: Vec<u8> = self.buf.iter().copied().collect();
+        parser.process(&bytes);
+        let contents = parser.screen().contents();
+        let mut lines: Vec<String> = contents.lines().map(str::to_string).collect();
+        while lines.last().is_some_and(|l| l.trim().is_empty()) {
+            lines.pop();
+        }
+        lines
+    }
 }
 
 /// Trim `lines` in place to at most `max` entries, dropping from the front
@@ -140,10 +165,27 @@ fn cook_lines(bytes: &[u8], max_lines: usize) -> Vec<String> {
                         chars.next();
                         if ('\u{40}'..='\u{7e}').contains(&p) {
                             match p {
-                                // Erase display / alt-screen enter+exit → wipe.
+                                // Erase display. ONLY 2 (entire screen) and 3
+                                // (screen + scrollback) are genuine clears that
+                                // wipe everything. 0 (cursor→end), 1 (start→
+                                // cursor) and the bare `\x1b[J` are PARTIAL erases
+                                // that an inline TUI — Claude's input-box redraw —
+                                // emits on every keystroke/redraw; treating those
+                                // as a full wipe collapsed the cooked preview to
+                                // empty (the unwatched grid tiles went black).
+                                // Without a cursor grid we approximate the partial
+                                // case by clearing only the in-progress line and
+                                // preserving the scrollback above.
                                 'J' => {
+                                    let full = params
+                                        .trim()
+                                        .parse::<u32>()
+                                        .map(|n| n == 2 || n == 3)
+                                        .unwrap_or(false);
                                     cur.clear();
-                                    lines.clear();
+                                    if full {
+                                        lines.clear();
+                                    }
                                 }
                                 'h' | 'l' if params.contains("1049") => {
                                     cur.clear();
@@ -210,7 +252,19 @@ pub struct FleetSessionInner {
     /// User-supplied display name. None by default; settable via
     /// fleet_rename_session.
     pub name: Option<String>,
+    /// Live OSC terminal title from Claude Code (task summary), captured from the
+    /// PTY stream by the reader loop. `None` until Claude sets one.
+    pub title: Option<String>,
+    /// Wall-clock ms until which Athena is considered to be actively working this
+    /// session's awaiting-input ticket (set by `orchestrate_on_awaiting`; a short
+    /// self-expiring window). `0` = not active. Drives the `athena_active` DTO.
+    pub athena_active_until_ms: i64,
     pub args: Vec<String>,
+    /// PTY dimensions (kept in sync with `resize`). Used to reconstruct the
+    /// rendered screen grid from the raw ring via vt100 — the cols especially
+    /// must match what claude drew at, or a cursor-addressed TUI wraps wrong.
+    pub cols: u16,
+    pub rows: u16,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
     /// When the PTY last produced ANY bytes (including idle status redraws).
@@ -253,6 +307,7 @@ impl FleetSessionInner {
             cwd: self.cwd.to_string_lossy().into_owned(),
             project_label: self.project_label.clone(),
             name: self.name.clone(),
+            title: self.title.clone(),
             args: self.args.clone(),
             state: self.state,
             last_activity_ms: self.last_activity_ms,
@@ -262,6 +317,11 @@ impl FleetSessionInner {
             child_pid: self.child_pid,
             exit_code: self.exit_code,
             state_reason: self.state_reason.clone(),
+            // "Athena's on it" only reads true while she's still within her work
+            // window AND the session is still awaiting — once she acts (→ Running)
+            // or the window lapses, the tile drops back to its real state.
+            athena_active: self.athena_active_until_ms > now_ms()
+                && matches!(self.state, FleetSessionState::AwaitingInput),
         }
     }
 }
@@ -359,18 +419,24 @@ impl FleetRegistry {
 
     /// Resize the PTY for `session_id`.
     pub fn resize(&self, session_id: &str, cols: u16, rows: u16) -> Result<(), String> {
-        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        let Some(session) = map.get(session_id) else {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
             return Err(format!("session not found: {session_id}"));
         };
+        let rows = rows.max(8);
+        let cols = cols.max(40);
+        // Keep the stored dims in sync so screen reconstruction (render_screen)
+        // renders at the size claude is actually drawing to.
+        session.cols = cols;
+        session.rows = rows;
         let master_guard = session.master.lock().unwrap_or_else(|e| e.into_inner());
         let Some(master) = master_guard.as_ref() else {
             return Err(format!("session master dropped: {session_id}"));
         };
         master
             .resize(portable_pty::PtySize {
-                rows: rows.max(8),
-                cols: cols.max(40),
+                rows,
+                cols,
                 pixel_width: 0,
                 pixel_height: 0,
             })
@@ -439,6 +505,44 @@ impl FleetRegistry {
         false
     }
 
+    /// Update a session's live terminal title (captured from the OSC stream).
+    /// Returns `true` only when the title actually changed, so the reader emits a
+    /// registry-changed event just on real changes (Claude retitles often).
+    pub fn set_title(&self, session_id: &str, title: &str) -> bool {
+        let trimmed = title.trim();
+        // Claude Code's generic terminal title is just "claude" / "Claude Code"
+        // (optionally with a leading status glyph like "✳ ") for EVERY session —
+        // ignore it (and empties) so it never clobbers the LLM-assigned name or a
+        // real task summary. A title with MORE than the bare word ("claude —
+        // fixing auth") is a genuine summary and passes. We only ever set the
+        // title to a meaningful value.
+        if trimmed.is_empty() || is_generic_claude_title(trimmed) {
+            return false;
+        }
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        if session.title.as_deref() == Some(trimmed) {
+            return false;
+        }
+        session.title = Some(trimmed.to_string());
+        true
+    }
+
+    /// Mark Athena as actively working this session's awaiting-input ticket for a
+    /// short window, so the tile shows the light-blue "Athena's on it" affordance.
+    /// Returns true if the session exists (so the caller emits registry-changed).
+    pub fn mark_athena_active(&self, session_id: &str) -> bool {
+        const ATHENA_ACTIVE_WINDOW_MS: i64 = 120_000;
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else {
+            return false;
+        };
+        session.athena_active_until_ms = now_ms() + ATHENA_ACTIVE_WINDOW_MS;
+        true
+    }
+
     /// Mark a session's terminal subscribed (the frontend is now rendering it
     /// live) and return its ring snapshot so the freshly-focused terminal can
     /// hydrate. After this returns, the reader task forwards live chunks over
@@ -493,9 +597,29 @@ impl FleetRegistry {
                 if *known_rev == Some(rev) {
                     return None; // unchanged since the caller last looked
                 }
-                Some((id.clone(), rev, ring.preview_lines(max_lines)))
+                // Reconstruct the rendered screen (vt100) rather than line-cook,
+                // so an at-prompt tile shows the actual menu/prompt instead of the
+                // alt-screen fragments the cooker produced. Keep the bottom
+                // `max_lines` (the cursor/prompt region) for the glance tile.
+                let mut lines = ring.render_screen(session.rows, session.cols);
+                if lines.len() > max_lines {
+                    lines.drain(0..lines.len() - max_lines);
+                }
+                Some((id.clone(), rev, lines))
             })
             .collect()
+    }
+
+    /// Reconstruct the rendered screen for one session (its `rev` + the visible
+    /// grid as lines), using the session's stored PTY dims. `None` for an unknown
+    /// session. The companion orchestration uses this to actually READ what a
+    /// paused session is blocked on (a cursor-addressed TUI the line-cooker can't
+    /// render). See [`OutputRing::render_screen`].
+    pub fn render_screen_for(&self, session_id: &str) -> Option<(u32, Vec<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get(session_id)?;
+        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+        Some((ring.rev(), ring.render_screen(session.rows, session.cols)))
     }
 
     /// Records that the child has exited. Updates state and clears the
@@ -669,6 +793,19 @@ fn fleet_exit_reason(code: i32) -> String {
     }
 }
 
+/// True when an OSC terminal title is just Claude Code's bare generic name —
+/// "claude" / "Claude Code", optionally with a leading status glyph (✳, ●, ·)
+/// and surrounding whitespace. A title carrying MORE than the bare word (a real
+/// task summary like "claude — fixing auth") returns false and is kept. Used by
+/// `set_title` to stop the generic value clobbering the LLM-assigned name.
+fn is_generic_claude_title(title: &str) -> bool {
+    let core = title
+        .trim()
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .trim();
+    core.eq_ignore_ascii_case("claude") || core.eq_ignore_ascii_case("claude code")
+}
+
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
 pub fn now_ms() -> i64 {
@@ -683,6 +820,19 @@ mod tests {
     use super::*;
     use std::sync::atomic::AtomicBool;
 
+    #[test]
+    fn generic_claude_titles_are_filtered_but_real_summaries_kept() {
+        // Generic — filtered (won't clobber the LLM name).
+        assert!(is_generic_claude_title("claude"));
+        assert!(is_generic_claude_title("Claude Code"));
+        assert!(is_generic_claude_title("✳ claude"));
+        assert!(is_generic_claude_title("  ● Claude Code  "));
+        // Real summaries / assigned names — kept.
+        assert!(!is_generic_claude_title("claude — fixing auth"));
+        assert!(!is_generic_claude_title("JWT Auth Refactor"));
+        assert!(!is_generic_claude_title("Dark Mode Toggle"));
+    }
+
     /// Build a minimal session record with no live PTY (master/writer `None`),
     /// so `hibernate` can be exercised without spawning a real child.
     fn session(id: &str, state: FleetSessionState, csid: Option<&str>) -> FleetSessionInner {
@@ -692,7 +842,11 @@ mod tests {
             cwd: PathBuf::from("/tmp/test"),
             project_label: "test".to_string(),
             name: None,
+            title: None,
+            athena_active_until_ms: 0,
             args: Vec::new(),
+            cols: 120,
+            rows: 32,
             state,
             last_activity_ms: now_ms(),
             last_pty_output_ms: 0,
@@ -707,6 +861,27 @@ mod tests {
             output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
             killer: None,
         }
+    }
+
+    #[test]
+    fn render_screen_reconstructs_cursor_addressed_tui() {
+        let mut ring = OutputRing::new(OUTPUT_RING_CAP);
+        // Enter alt-screen, clear, then draw a menu via cursor positioning
+        // (CSI row;col H) — exactly the shape an AskUserQuestion menu uses and
+        // the line-cooker collapses (it resets on ?1049h/2J and ignores cursor
+        // moves, so it would yield only the last fragment).
+        let seq = b"\x1b[?1049h\x1b[2J\
+            \x1b[1;1HChoose validation strategy:\
+            \x1b[3;3H1. Throw\x1b[4;3H2. Return null\
+            \x1b[6;1HEnter to select";
+        ring.push(seq);
+        let joined = ring.render_screen(10, 80).join("\n");
+        assert!(joined.contains("Choose validation strategy:"), "got: {joined}");
+        assert!(joined.contains("1. Throw"), "got: {joined}");
+        assert!(joined.contains("2. Return null"), "got: {joined}");
+        assert!(joined.contains("Enter to select"), "got: {joined}");
+        // The cooker would NOT reconstruct these cursor-addressed rows.
+        assert!(cook_lines(seq, 40).join("\n").trim() != joined.trim());
     }
 
     #[test]

@@ -482,7 +482,8 @@ async fn run_compose(
                 if trimmed.is_empty() {
                     continue;
                 }
-                KPI_COMPOSE_JOBS.emit_line(app, task_id, trimmed.to_string());
+                // Verbose model prose → bounded ring only; milestones stay live.
+                KPI_COMPOSE_JOBS.record_line(task_id, trimmed.to_string());
                 if found {
                     continue;
                 }

@@ -118,11 +118,15 @@ export function OrbDecisionBubble() {
     t.plugins.companion.decision_title,
   ]);
 
-  // The bubble (and its arrow/handle) docks against the orb, and the orb only
-  // exists while `minimized` — with the chat panel open (or Athena dismissed)
-  // there is no anchor, so render nothing. The decision is NOT lost: it stays
-  // in `pendingDecision` and re-surfaces when the orb returns.
-  if (!decision || companionState !== 'minimized') return null;
+  // The bubble docks against the orb, which normally exists only while
+  // `minimized` — with the chat panel open (or Athena dismissed) there's no
+  // anchor, so render nothing (the decision stays in `pendingDecision` and
+  // re-surfaces when the orb returns). EXCEPTION: in Grid mode the orb is lifted
+  // over the fleet overlay (`AthenaOrbLayer` → z-[210]) and stays visible even
+  // with the chat open, so a fleet orchestration decision MUST surface there —
+  // otherwise an operator running the grid (often with the chat open to watch)
+  // sees nothing to approve and Athena appears stuck. (User report 2026-06-25.)
+  if (!decision || (companionState !== 'minimized' && !fleetGridOpen)) return null;
 
   // Click → run the option then clear. Shared with the `;`-leader key (Slice 5)
   // and spoken-number answering (Slice 7) via `runDecisionOption` so all three

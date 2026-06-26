@@ -724,7 +724,9 @@ async fn run_idea_scan(
                     continue;
                 }
 
-                IDEA_SCAN_JOBS.emit_line(app, scan_id, trimmed.to_string());
+                // Verbose model prose → bounded ring only; the milestones below
+                // carry the high-level state the live panel needs.
+                IDEA_SCAN_JOBS.record_line(scan_id, trimmed.to_string());
 
                 // Parse protocol messages
                 for proto_line in trimmed.lines() {
