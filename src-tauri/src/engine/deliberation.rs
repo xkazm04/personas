@@ -456,7 +456,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     );
     let _ = writeln!(
         p,
-        "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
+        "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names. Bias to ACTION over process: if a member has announced it will run a capability across rounds with no result ever appearing, that capability is unavailable — stop routing for it and converge or move to the next item. Never spend rounds debating whether you *can* act, or re-running work the team already has results for."
     );
     p
 }
@@ -940,6 +940,47 @@ fn resolve_capability(
         .cloned()
 }
 
+/// Pull the capability title out of a marker turn body (🛠 Ran “X” / ▶ Running
+/// “X” / ⚠ …“X” / ⏸ …run “X”) into `set`.
+fn extract_capability_title(body: &str, set: &mut std::collections::BTreeSet<String>) {
+    if body.starts_with('🛠')
+        || body.starts_with('▶')
+        || body.starts_with('⚠')
+        || body.starts_with('⏸')
+    {
+        if let Some(a) = body.find('“') {
+            let rest = &body[a + '“'.len_utf8()..];
+            if let Some(b) = rest.find('”') {
+                set.insert(rest[..b].to_string());
+            }
+        }
+    }
+}
+
+/// Capabilities already run / attempted across the TEAM's recent deliberations
+/// (last 6h) — spans this deliberation, its parent + sibling tracks, AND recent
+/// prior deliberations. Fixes (1) cross-track duplicate runs and (2) stale
+/// re-validation of unchanged work: a persona is shown these and won't re-request
+/// them (the prompt still allows a re-run if the code genuinely changed).
+fn gather_attempted(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
+    let mut set = std::collections::BTreeSet::new();
+    if let Ok(conn) = pool.get() {
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT body FROM team_channel_messages
+             WHERE team_id = ?1 AND deliberation_id IS NOT NULL
+               AND datetime(created_at) > datetime('now','-6 hours')
+             ORDER BY datetime(created_at) DESC LIMIT 200",
+        ) {
+            if let Ok(rows) = stmt.query_map(params![delib.team_id], |r| r.get::<_, String>(0)) {
+                for body in rows.flatten() {
+                    extract_capability_title(&body, &mut set);
+                }
+            }
+        }
+    }
+    set.into_iter().collect()
+}
+
 /// Recent turns a persona sees for context.
 const TURN_CONTEXT_WINDOW: i64 = 12;
 /// Scoped memories injected into a persona's turn.
@@ -1007,7 +1048,7 @@ pub fn build_turn_prompt(
     if !attempted.is_empty() {
         let _ = writeln!(
             p,
-            "\n## ALREADY RUN / ATTEMPTED THIS DELIBERATION — do NOT request these again (build on the result, or note the gap if it failed):"
+            "\n## ALREADY RUN / ATTEMPTED (this deliberation, its tracks, and the team's recent work) — do NOT request these again; build on their results. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
         );
         for title in attempted {
             let _ = writeln!(p, "- {title}");
@@ -1016,7 +1057,7 @@ pub fn build_turn_prompt(
     let act_clause = if capabilities.is_empty() {
         "Be concise (2-5 sentences). If the team is ready to commit to a concrete piece of work, propose it."
     } else {
-        "Be concise (2-5 sentences). When an open point is better answered by DOING than by more talk — running an analysis, pulling real data, drafting the artifact — request the matching capability from YOUR CAPABILITIES via invoke_capability with its EXACT id, BUT never one already listed under ALREADY RUN / ATTEMPTED (use its result or move on). The team pauses for approval; once it runs, its real output is posted back and the discussion continues on top of it. Prefer acting over speculating when the data would settle the question. If the team is ready to commit to a concrete piece of work, propose it."
+        "Be concise (2-5 sentences). When an open point is better answered by DOING than by more talk — running an analysis, pulling real data, drafting the artifact — request the matching capability from YOUR CAPABILITIES via invoke_capability with its EXACT id, BUT never one under ALREADY RUN / ATTEMPTED (use its result or move on). Do NOT merely ANNOUNCE you will run something — either request it THIS turn, or contribute substance; 'I will run X' without actually requesting it wastes the round. The team pauses for approval; once it runs, its real output is posted back. Prefer acting over speculating when data would settle the question. If the team is ready to commit, propose the concrete piece of work."
     };
     let _ = writeln!(
         p,
@@ -1124,26 +1165,10 @@ pub async fn run_persona_deliberation_turn(
         .map(|t| (author_label(&t.author_kind).to_string(), t.body))
         .collect();
 
-    // Capabilities already run / attempted / requested in this deliberation, so
-    // the persona doesn't re-request them (Fix 2/3 — kills the re-request storms).
-    let attempted: Vec<String> = {
-        let mut set = std::collections::BTreeSet::new();
-        for (_, body) in &recent_turns {
-            if body.starts_with('🛠')
-                || body.starts_with('▶')
-                || body.starts_with('⚠')
-                || body.starts_with('⏸')
-            {
-                if let Some(a) = body.find('“') {
-                    let rest = &body[a + '“'.len_utf8()..];
-                    if let Some(b) = rest.find('”') {
-                        set.insert(rest[..b].to_string());
-                    }
-                }
-            }
-        }
-        set.into_iter().collect()
-    };
+    // Capabilities already run / attempted across the team's recent work (this
+    // deliberation, its parent + sibling tracks, and recent prior deliberations)
+    // so the persona doesn't re-run them (cross-track + stale-revalidation dedup).
+    let attempted = gather_attempted(pool, delib);
 
     let prompt = build_turn_prompt(
         &name,
