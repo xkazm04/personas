@@ -189,6 +189,21 @@ pub fn resolve_review_edit(
 ) -> Result<(), AppError> {
     assignment_repo::edit_step_description(&pool, &step_id, &description)?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
+    // F1 (manual path): the failed step's dependents were cascade-skipped at
+    // failure time — re-queuing only the edited step would leave the pipeline
+    // tail (review / QA-merge) terminal-`skipped`, so the assignment completes
+    // WITHOUT its merge gate (PR stranded open, goal falsely "done"). Restore
+    // the cascade-skipped subtree too, mirroring auto_resume_retryable_steps.
+    let roots: HashSet<String> = HashSet::from([step_id]);
+    match restore_cascade_skipped_dependents(&pool, &step.assignment_id, &roots) {
+        Ok(n) if n > 0 => {
+            tracing::info!(assignment_id = %step.assignment_id, restored = n, "review edit: restored cascade-skipped dependents");
+        }
+        Err(e) => {
+            tracing::warn!(assignment_id = %step.assignment_id, error = %e, "review edit: failed to restore skipped dependents");
+        }
+        _ => {}
+    }
     resume_assignment(pool, app, engine, embedding_manager, step.assignment_id);
     Ok(())
 }
@@ -205,6 +220,20 @@ pub fn resolve_review_reassign(
 ) -> Result<(), AppError> {
     assignment_repo::override_step_assignment(&pool, &step_id, &persona_id, use_case_id.as_deref())?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
+    // F1 (manual path): mirror resolve_review_edit / auto_resume_retryable_steps
+    // — re-queuing only the reassigned step would leave its cascade-skipped
+    // review / QA-merge dependents terminal-`skipped`, bypassing the merge gate.
+    // Restore the cascade-skipped subtree so the tail re-runs once the step does.
+    let roots: HashSet<String> = HashSet::from([step_id]);
+    match restore_cascade_skipped_dependents(&pool, &step.assignment_id, &roots) {
+        Ok(n) if n > 0 => {
+            tracing::info!(assignment_id = %step.assignment_id, restored = n, "review reassign: restored cascade-skipped dependents");
+        }
+        Err(e) => {
+            tracing::warn!(assignment_id = %step.assignment_id, error = %e, "review reassign: failed to restore skipped dependents");
+        }
+        _ => {}
+    }
     resume_assignment(pool, app, engine, embedding_manager, step.assignment_id);
     Ok(())
 }
