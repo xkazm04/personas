@@ -105,8 +105,9 @@ pub fn management_router(state: ManagementState) -> Router {
         .route("/agent-card/{persona_id}", get(get_agent_card))
         .route("/a2a/{persona_id}", post(handle_a2a_request))
         // Build sessions -- third-party MCP clients drive a persona build
-        // end-to-end through these endpoints. Auth-gated (any valid key);
-        // V2 may add a `personas:build` scope check.
+        // end-to-end through these endpoints. Gated by `require_api_key`, which
+        // additionally requires the `personas:build` scope for this whole
+        // surface (see `required_scope_for_request`).
         .route("/api/build", post(start_build))
         .route("/api/build/{session_id}", get(build_status))
         .route("/api/build/{session_id}/pending", get(build_pending))
@@ -160,10 +161,60 @@ fn is_trusted_management_origin(origin: &str) -> bool {
 // API key auth middleware
 // =============================================================================
 
-/// Require a valid `Authorization: Bearer <token>` header. Tokens are checked
-/// against `external_api_keys`. Disabled / revoked / unknown tokens return
-/// 401. The middleware never logs token plaintext — only the prefix when a
-/// match succeeds, for traceability.
+/// Scope strings minted for external API keys (see `external_api_keys::create`
+/// and the API-keys UI catalog in `CreateApiKeyDialog.tsx`). Authorization maps
+/// each sensitive route to one of these scopes. `personas:read` is implicit —
+/// read routes require only a valid key, so no constant is needed for it.
+const SCOPE_EXECUTE: &str = "personas:execute";
+const SCOPE_BUILD: &str = "personas:build";
+
+/// Map an incoming request to the scope an API key must hold to call it, or
+/// `None` for routes that need only a valid (authenticated) key.
+///
+/// Policy:
+/// - `/a2a/*` + `/agent-card/*` — the agent-to-agent surface. Authenticated
+///   only: these carry their own per-persona `gateway_exposure` gate, so any
+///   valid key may reach them (subject to that gate). Left unchanged here to
+///   preserve the A2A contract.
+/// - `/api/build*` — the build-wizard surface external MCP clients drive.
+///   Requires `personas:build` (the scope the API-keys UI grants by default and
+///   the build-mcp tool documents). The whole flow, including its status GETs,
+///   is gated so a key without build scope can neither inspect nor drive builds.
+/// - `/api/proxy*` — the credential proxy injects stored secrets server-side;
+///   requires `personas:execute` (the scope the internal "system" key, used by
+///   the connector bridge, holds).
+/// - all other `/api/*` — read verbs (GET/HEAD) need only authentication;
+///   mutating verbs (POST/…) require `personas:execute`.
+///
+/// The mapping is method-aware so read-only keys keep read access while losing
+/// the ability to execute personas, mutate versions/settings, drive the
+/// credential proxy, or run builds.
+fn required_scope_for_request(method: &Method, path: &str) -> Option<&'static str> {
+    if path.starts_with("/a2a/") || path.starts_with("/agent-card/") {
+        return None;
+    }
+    if path.starts_with("/api/build") {
+        return Some(SCOPE_BUILD);
+    }
+    if path.starts_with("/api/proxy") {
+        return Some(SCOPE_EXECUTE);
+    }
+    if path.starts_with("/api/") {
+        return match *method {
+            Method::GET | Method::HEAD | Method::OPTIONS => None,
+            _ => Some(SCOPE_EXECUTE),
+        };
+    }
+    None
+}
+
+/// Require a valid `Authorization: Bearer <token>` header AND the scope the
+/// matched route demands. Tokens are checked against `external_api_keys`;
+/// disabled / revoked / unknown tokens return 401. An authenticated key that
+/// lacks the route's required scope (see [`required_scope_for_request`]) is
+/// rejected with 403 — authentication alone never authorizes mutating or
+/// credential-bearing routes. The middleware never logs token plaintext — only
+/// the prefix when a match succeeds, for traceability.
 async fn require_api_key(
     AxumState(state): AxumState<Arc<ManagementState>>,
     req: Request,
@@ -182,6 +233,27 @@ async fn require_api_key(
 
     match api_key_repo::find_by_token(&state.pool, &token) {
         Ok(Some(key)) => {
+            // Authorization: enforce the per-route scope. A token that
+            // authenticates but lacks the scope a route demands (e.g. a
+            // read-only key hitting the credential proxy, version rollback, or
+            // a build) is denied with 403. `parsed_scopes` fails closed (empty
+            // vec) on a corrupt `scopes` column, so a malformed row authorizes
+            // nothing scope-gated.
+            if let Some(required) = required_scope_for_request(req.method(), req.uri().path()) {
+                if !key.parsed_scopes().iter().any(|s| s == required) {
+                    tracing::warn!(
+                        prefix = %key.key_prefix,
+                        required_scope = required,
+                        method = %req.method(),
+                        path = %req.uri().path(),
+                        "external api key denied: missing required scope"
+                    );
+                    return Err(err_json_tuple(
+                        StatusCode::FORBIDDEN,
+                        "api key lacks the scope required for this route",
+                    ));
+                }
+            }
             tracing::debug!(prefix = %key.key_prefix, "external api key accepted");
             Ok(next.run(req).await)
         }
@@ -2156,6 +2228,72 @@ mod tests {
         let task = build_a2a_task(&row, "p-5");
         assert_eq!(task.status.state, "completed");
         assert!(task.artifacts.is_empty());
+    }
+
+    #[test]
+    fn scope_mapping_gates_sensitive_routes_but_not_reads() {
+        // Read routes: any valid (authenticated) key, no scope required.
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/api/personas"),
+            None
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/api/executions"),
+            None
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/api/versions/p1"),
+            None
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/api/settings/auto-optimize/p1"),
+            None
+        );
+
+        // A2A surface: authenticated only (its own per-persona exposure gate).
+        assert_eq!(required_scope_for_request(&Method::POST, "/a2a/p1"), None);
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/agent-card/p1"),
+            None
+        );
+
+        // Mutating /api/* routes require execute.
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/execute/p1"),
+            Some(SCOPE_EXECUTE)
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/versions/v1/rollback"),
+            Some(SCOPE_EXECUTE)
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/lab/arena/p1"),
+            Some(SCOPE_EXECUTE)
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/settings/health-watch/p1"),
+            Some(SCOPE_EXECUTE)
+        );
+
+        // Credential proxy requires execute (injects stored secrets).
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/proxy/cred1"),
+            Some(SCOPE_EXECUTE)
+        );
+
+        // Build surface requires the dedicated build scope — even status GETs.
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/build"),
+            Some(SCOPE_BUILD)
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::GET, "/api/build/s1"),
+            Some(SCOPE_BUILD)
+        );
+        assert_eq!(
+            required_scope_for_request(&Method::POST, "/api/build/s1/promote"),
+            Some(SCOPE_BUILD)
+        );
     }
 
     #[test]
