@@ -9,6 +9,53 @@ use ts_rs::TS;
 use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
+/// Validate that a GitHub owner or repository name is safe to interpolate into
+/// API URL paths. GitHub logins and repo names are limited to ASCII
+/// alphanumerics plus `.`, `_`, and `-`. Rejecting anything else stops path
+/// separators and dot-segments (`../..`) that URL normalization would collapse
+/// into a *different* `api.github.com` endpoint under the user's PAT.
+fn validate_repo_segment(field: &str, value: &str) -> Result<(), AppError> {
+    if value.is_empty() {
+        return Err(AppError::Validation(format!(
+            "GitHub {field} must not be empty"
+        )));
+    }
+    if !value
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-'))
+    {
+        return Err(AppError::Validation(format!(
+            "Invalid GitHub {field} '{value}': only letters, digits, '.', '_', and '-' are allowed"
+        )));
+    }
+    Ok(())
+}
+
+/// Validate that a git ref (branch / tag / commit-ish) is safe to interpolate
+/// into API URL paths. Rejects values that could alter the target endpoint:
+/// dot-segments (`..`), query/fragment markers (`?`, `#`), backslashes,
+/// whitespace, control characters, a leading `/`, and the empty string. All of
+/// these are already forbidden in real git ref names, so no legitimate ref is
+/// rejected.
+fn validate_git_ref(field: &str, value: &str) -> Result<(), AppError> {
+    if value.is_empty() {
+        return Err(AppError::Validation(format!(
+            "GitHub {field} must not be empty"
+        )));
+    }
+    if value.starts_with('/')
+        || value.contains("..")
+        || value
+            .chars()
+            .any(|c| c.is_whitespace() || c.is_control() || matches!(c, '?' | '#' | '\\'))
+    {
+        return Err(AppError::Validation(format!(
+            "Invalid GitHub {field} '{value}': must not be empty, start with '/', or contain '..', '?', '#', '\\\\', whitespace, or control characters"
+        )));
+    }
+    Ok(())
+}
+
 /// Single-flight per `owner/repo` for patch-release cuts. Concurrent CICD runs
 /// would otherwise both read the same latest release, compute the same next
 /// tag, and race two create calls — the loser hits GitHub's 422 "tag already
@@ -285,6 +332,8 @@ impl GitHubClient {
         title: &str,
         body: Option<&str>,
     ) -> Result<GitHubPullRequest, AppError> {
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
         let url = format!("https://api.github.com/repos/{owner}/{repo}/pulls");
         let payload = serde_json::json!({
             "title": title,
@@ -331,6 +380,8 @@ impl GitHubClient {
         event_type: &str,
         client_payload: &Value,
     ) -> Result<(), AppError> {
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
         let url = format!("https://api.github.com/repos/{owner}/{repo}/dispatches");
         let body = serde_json::json!({
             "event_type": event_type,
@@ -368,6 +419,8 @@ impl GitHubClient {
         owner: &str,
         repo: &str,
     ) -> Result<Option<GitHubRelease>, AppError> {
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
         let url = format!("https://api.github.com/repos/{owner}/{repo}/releases/latest");
         let resp = self
             .http
@@ -403,6 +456,10 @@ impl GitHubClient {
         base: &str,
         head: &str,
     ) -> Result<i64, AppError> {
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
+        validate_git_ref("compare base", base)?;
+        validate_git_ref("compare head", head)?;
         let url = format!("https://api.github.com/repos/{owner}/{repo}/compare/{base}...{head}");
         let resp = self
             .http
@@ -439,6 +496,8 @@ impl GitHubClient {
         body: &str,
         target_commitish: Option<&str>,
     ) -> Result<GitHubRelease, AppError> {
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
         let url = format!("https://api.github.com/repos/{owner}/{repo}/releases");
         let mut payload = serde_json::json!({
             "tag_name": tag_name,
@@ -485,6 +544,15 @@ impl GitHubClient {
         base_branch: &str,
         dry_run: bool,
     ) -> Result<PatchReleaseOutcome, AppError> {
+        // Validate every caller-supplied path component up front (the trust
+        // boundary) so an invalid `owner`/`repo`/`base_branch` can never reach
+        // URL construction — including the no-prior-release path where
+        // `base_branch` would otherwise only flow into a JSON body. The
+        // per-builder guards below remain as defense in depth for other callers.
+        validate_repo_segment("owner", owner)?;
+        validate_repo_segment("repo", repo)?;
+        validate_git_ref("base_branch", base_branch)?;
+
         // Serialize real (non-dry) runs per repo so two concurrent CICD cuts
         // can't both create the same next tag. Dry runs create nothing, so they
         // skip the guard (and never block a real run). Released on return.
