@@ -206,3 +206,37 @@ one more round — chiefly (1) result-content sharing, (2) approval-time de-dup,
 a hard unavailable-capability stop. (Harness note: with no active deliberation
 cleared, the wave resumed leftover deliberations and mislabeled their topic as the
 `TOPIC` value — a metric-labeling bug, not an engine fault.)
+
+## Wave 6 — three dead-spending fixes (split-forced, 1 h)
+
+result-content sharing + approval-time group de-dup + don't-offer-already-run.
+2 deliberations, both split (6 + 5 tracks), 36 rounds, 0 errors.
+
+| Metric | W5 (split, pre-fix) | **W6 (split + 3 fixes)** |
+| --- | --- | --- |
+| Output yield | 63% | **89%** |
+| Capability failures | 2 | **0** |
+| Escalations | 2 | **0** |
+| In-group duplicate runs | 20% | 25% (one cross-cutting cap) |
+
+**Two of three fixes fully landed (transcript-confirmed):**
+- **Result-content sharing — WORKS.** Tracks now reference the parent's scan
+  findings specifically and build on them ("0 Critical, 0 High … MED-1 auth guard
+  confirmed not reverted by PR#85"). The Wave-5 *"the scan output wasn't surfaced
+  in this thread"* complaint is **gone**.
+- **Announce-loop — gone.** The unavailable-capability case is now stated once:
+  *"Codebase connector is unavailable … a live uc_coverage_scan cannot execute —
+  stating that gap once"* — then the persona pivots to an available capability.
+- **Quality high** — Security Scan (v0.37.0, MED-1 fixed), ADR 0047 (two *new*
+  perf findings the prior ADR missed: N+1 INSERT in `insertEvents`, missing
+  `token_ledger` compound index), a Code Review that **REQUEST_CHANGES** on a real
+  gap (savings-roi auth guard has no 401 test) while others said SHIP — genuine
+  productive disagreement, concrete decisions.
+
+**Remaining dead-spend — the concurrent-track race.** Architecture Review still
+ran 2× (a cross-cutting capability two tracks both wanted at the same instant).
+The approval-time guard catches *sequential* duplicates (Security Scan, Code
+Review each ran ×1) but the check + spawn aren't atomic, so simultaneous approvals
+across parallel tracks can both pass. **Last fix = an atomic capability claim**
+(DB-unique on `group_root + use_case_id`, or serialized per-group approval). Also
+a minor merge double-post observed once (harness re-merged a parent).
