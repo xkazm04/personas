@@ -502,6 +502,7 @@
     "impact_high": "Menghapus kredensial ini akan berdampak pada {count} agen. Pertimbangkan rotasi daripada penghapusan.",
     "impact_medium": "Kredensial ini digunakan oleh {count} agen. Tinjau dependensi sebelum melakukan perubahan.",
     "impact_low": "Tidak ada agen yang bergantung pada kredensial ini. Aman untuk dimodifikasi atau dihapus.",
+    "impact_events": "Kredensial ini menjalankan {count} pemicu peristiwa. Menghapusnya akan merusaknya.",
     "affected_agents": "Agen Terpengaruh",
     "affected_events": "Peristiwa Terpengaruh",
     "no_credentials_graph": "Tidak ada kredensial untuk divisualisasikan",

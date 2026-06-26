@@ -4220,6 +4220,7 @@ export type Translations = {
       impact_high: string;
       impact_medium: string;
       impact_low: string;
+      impact_events: string;
       affected_agents: string;
       affected_events: string;
       no_credentials_graph: string;

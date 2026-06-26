@@ -86,12 +86,17 @@ export function BlastRadiusPanel({
                 </span>
               </div>
 
-              {/* Impact summary */}
+              {/* Impact summary. When agents drive the risk, report the agent
+                  count; when the only dependents are events (0 agents but the
+                  severity was floored to 'medium' by the event count) report
+                  the events instead of "minimal impact". */}
               <div className="typo-caption text-foreground leading-relaxed">
                 {blast.severity === 'high' ? (
                   <span>{tx(dep.impact_high, { count: blast.affectedAgents.length })}</span>
-                ) : blast.severity === 'medium' ? (
+                ) : blast.affectedAgents.length > 0 ? (
                   <span>{tx(dep.impact_medium, { count: blast.affectedAgents.length })}</span>
+                ) : blast.affectedEvents.length > 0 ? (
+                  <span>{tx(dep.impact_events, { count: blast.affectedEvents.length })}</span>
                 ) : (
                   <span>{dep.impact_low}</span>
                 )}

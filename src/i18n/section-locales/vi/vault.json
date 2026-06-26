@@ -502,6 +502,7 @@
     "impact_high": "Xóa thông tin xác thực này sẽ ảnh hưởng đến {count} tác nhân. Hãy xem xét xoay vòng thay vì xóa.",
     "impact_medium": "Thông tin xác thực này được {count} tác nhân sử dụng. Hãy xem lại các phụ thuộc trước khi thay đổi.",
     "impact_low": "Không có tác nhân nào phụ thuộc vào thông tin xác thực này. Có thể sửa đổi hoặc xóa an toàn.",
+    "impact_events": "Thông tin xác thực này cung cấp cho {count} trình kích hoạt sự kiện. Xóa nó sẽ làm chúng ngừng hoạt động.",
     "affected_agents": "Tác nhân bị ảnh hưởng",
     "affected_events": "Sự kiện bị ảnh hưởng",
     "no_credentials_graph": "Không có thông tin xác thực để vẽ đồ thị",

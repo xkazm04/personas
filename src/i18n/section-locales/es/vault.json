@@ -502,6 +502,7 @@
     "impact_high": "Eliminar esta credencial afectaría a {count} agentes. Considera rotar en lugar de eliminar.",
     "impact_medium": "Esta credencial es utilizada por {count} agente(s). Revisa las dependencias antes de realizar cambios.",
     "impact_low": "Ningún agente depende de esta credencial. Es seguro modificarla o eliminarla.",
+    "impact_events": "Esta credencial activa {count} disparador(es) de eventos. Eliminarla los romperá.",
     "affected_agents": "Agentes afectados",
     "affected_events": "Eventos afectados",
     "no_credentials_graph": "Sin credenciales para graficar",

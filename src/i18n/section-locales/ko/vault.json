@@ -502,6 +502,7 @@
     "impact_high": "이 자격 증명을 제거하면 {count}개 에이전트에 영향을 미칩니다. 삭제 대신 교체를 고려하세요.",
     "impact_medium": "이 자격 증명은 {count}개 에이전트가 사용 중입니다. 변경 전 의존성을 검토하세요.",
     "impact_low": "이 자격 증명에 의존하는 에이전트가 없습니다. 수정 또는 제거가 안전합니다.",
+    "impact_events": "이 자격 증명은 {count}개의 이벤트 트리거를 구동합니다. 삭제하면 해당 트리거가 중단됩니다.",
     "affected_agents": "영향받는 에이전트",
     "affected_events": "영향받는 이벤트",
     "no_credentials_graph": "그래프화할 자격 증명 없음",

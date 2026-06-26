@@ -3974,6 +3974,7 @@
       "impact_high": "Das Entfernen dieser Zugangsdaten würde {count} Agenten beeinflussen. Erwägen Sie eine Rotation statt Löschung.",
       "impact_medium": "Diese Zugangsdaten werden von {count} Agent(en) verwendet. Abhängigkeiten vor Änderungen prüfen.",
       "impact_low": "Keine Agenten hängen von diesen Zugangsdaten ab. Sicher zu ändern oder zu entfernen.",
+      "impact_events": "Diese Zugangsdaten betreiben {count} Ereignis-Trigger. Ein Löschen würde sie unterbrechen.",
       "affected_agents": "Betroffene Agenten",
       "affected_events": "Betroffene Ereignisse",
       "no_credentials_graph": "Keine Zugangsdaten zum Visualisieren",

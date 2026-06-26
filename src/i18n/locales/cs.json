@@ -3974,6 +3974,7 @@
       "impact_high": "Odebrání těchto údajů ovlivní {count} agentů. Zvažte spíše rotaci.",
       "impact_medium": "Tyto údaje používá {count} agent(ů). Před změnami zkontrolujte závislosti.",
       "impact_low": "Na těchto údajích nezávisí žádní agenti. Lze bezpečně měnit či smazat.",
+      "impact_events": "Tyto údaje pohánějí {count} spouštěčů událostí. Jejich smazání je naruší.",
       "affected_agents": "Dotčení agenti",
       "affected_events": "Dotčené události",
       "no_credentials_graph": "Žádné údaje pro graf",

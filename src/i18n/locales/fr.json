@@ -3974,6 +3974,7 @@
       "impact_high": "La suppression de cet identifiant affecterait {count} agents. Envisagez plutôt une rotation.",
       "impact_medium": "Cet identifiant est utilisé par {count} agent(s). Vérifiez les dépendances avant toute modification.",
       "impact_low": "Impact faible",
+      "impact_events": "Cet identifiant alimente {count} déclencheur(s) lié(s) aux événements. Le supprimer les cassera.",
       "affected_agents": "Agents affectés",
       "affected_events": "Événements affectés",
       "no_credentials_graph": "Aucun identifiant dans le graphe",

@@ -3974,6 +3974,7 @@
       "impact_high": "删除此凭据将影响 {count} 个代理。建议轮换而非删除。",
       "impact_medium": "此凭据被 {count} 个代理使用。修改前请检查依赖关系。",
       "impact_low": "无代理依赖此凭据。可以安全修改或删除。",
+      "impact_events": "此凭据为 {count} 个事件触发器提供支持。删除将导致它们失效。",
       "affected_agents": "受影响代理",
       "affected_events": "受影响事件",
       "no_credentials_graph": "无凭据可图示",

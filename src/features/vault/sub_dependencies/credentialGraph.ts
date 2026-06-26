@@ -60,11 +60,16 @@ export function fromAgentNodeId(nodeId: string): string {
  *   feedback has historically flagged 3-agent breakages as "outage" whereas
  *   1–2 are "degraded".
  * - `MEDIUM_SEVERITY_AGENT_COUNT = 1` — any agent depending on a credential
- *   is at least a "degraded" rotation risk; zero dependents is the only
- *   "low" state.
+ *   is at least a "degraded" rotation risk.
+ *
+ * "Dependents" spans BOTH agents and credential-events: a credential whose
+ * only consumers are events (webhook/poller triggers, 0 agents) still powers
+ * live triggers, so `severityForBlastRadius` bumps it to at least 'medium' —
+ * it is never reported as 'low'/"minimal impact". The only "low" state is
+ * genuinely zero dependents: 0 agents AND 0 events.
  *
  * Tune here, not at the call site. Both `analyzeBlastRadius` and
- * `simulateRevocation` read from this object.
+ * `simulateRevocation` read from this object via `severityForBlastRadius`.
  */
 export const BLAST_RADIUS_THRESHOLDS = {
   HIGH_SEVERITY_AGENT_COUNT: 3,
@@ -78,6 +83,23 @@ export function severityForAgentCount(
   if (affectedAgents >= BLAST_RADIUS_THRESHOLDS.HIGH_SEVERITY_AGENT_COUNT) return 'high';
   if (affectedAgents >= BLAST_RADIUS_THRESHOLDS.MEDIUM_SEVERITY_AGENT_COUNT) return 'medium';
   return 'low';
+}
+
+/**
+ * Combine the affected-agent and affected-event counts into one blast-radius
+ * severity. Agents drive the bucket via {@link severityForAgentCount}, then any
+ * dependent event floors the result at 'medium'. This closes the gap where a
+ * credential consumed ONLY by credential-events (0 agents) scored 'low' and the
+ * UI told the user it was "safe to delete" while live triggers still depended on
+ * it. A genuinely-unused credential (0 agents AND 0 events) stays 'low'.
+ */
+export function severityForBlastRadius(
+  affectedAgents: number,
+  affectedEvents: number,
+): 'low' | 'medium' | 'high' {
+  const agentSeverity = severityForAgentCount(affectedAgents);
+  if (agentSeverity === 'low' && affectedEvents > 0) return 'medium';
+  return agentSeverity;
 }
 
 // ---------------------------------------------------------------------------
@@ -190,7 +212,9 @@ export function analyzeBlastRadius(
   }
 
   // Severity derived from shared threshold table (see BLAST_RADIUS_THRESHOLDS).
-  const severity = severityForAgentCount(affectedAgents.length);
+  // Events count toward the bucket too: a credential consumed only by events
+  // (0 agents) must not read as 'low'/"minimal impact".
+  const severity = severityForBlastRadius(affectedAgents.length, affectedEvents.length);
 
   return {
     credentialId,
@@ -284,6 +308,17 @@ export function simulateRevocation(
     }
   }
 
+  // 1b. Count affected events (dedupe per event node) so severity folds them
+  //     in exactly like analyzeBlastRadius — an events-only credential (0
+  //     personas) must not simulate as 'low'/safe-to-revoke.
+  const eventIds = new Set<string>();
+  for (const edge of allEdges) {
+    const otherId = edge.source === credentialId ? edge.target : edge.source;
+    const otherNode = graph.nodes.find((n) => n.id === otherId);
+    if (otherNode?.kind === 'event') eventIds.add(otherId);
+  }
+  const affectedEventCount = eventIds.size;
+
   // 2. Impact metrics
   const estimatedDailyExecutionsLost = affectedPersonas.reduce(
     (sum, p) => sum + Math.round(p.recentExecutions / 7),
@@ -319,7 +354,7 @@ export function simulateRevocation(
     estimatedDailyExecutionsLost,
     estimatedDailyRevenueLost: Math.round(estimatedDailyRevenueLost * 100) / 100,
     failoverSuggestions,
-    severity: severityForAgentCount(affectedPersonas.length),
+    severity: severityForBlastRadius(affectedPersonas.length, affectedEventCount),
   };
 }
 

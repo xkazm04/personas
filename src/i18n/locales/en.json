@@ -4214,6 +4214,7 @@
       "impact_high": "Removing this credential would impact {count} agents. Consider rotating instead of deleting.",
       "impact_medium": "This credential is used by {count} agent(s). Review dependencies before changes.",
       "impact_low": "No agents depend on this credential. Safe to modify or remove.",
+      "impact_events": "This credential powers {count} event trigger(s). Deleting it will break them.",
       "affected_agents": "Affected Agents",
       "affected_events": "Affected Events",
       "no_credentials_graph": "No credentials to graph",
