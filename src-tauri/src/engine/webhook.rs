@@ -514,7 +514,10 @@ async fn process_webhook(
 /// Verify HMAC-SHA256 signature.
 ///
 /// Supports both `sha256=<hex>` format (GitHub-style) and plain hex.
-fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
+///
+/// Exposed `pub(crate)` so the smee relay can reuse this constant-time
+/// verifier instead of duplicating crypto (see `engine::smee_relay`).
+pub(crate) fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> bool {
     // Strip "sha256=" prefix if present
     let hex_sig = signature.strip_prefix("sha256=").unwrap_or(signature);
 

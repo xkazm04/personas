@@ -31,6 +31,27 @@ const MAX_SSE_BUFFER_BYTES: usize = 1_024 * 1_024;
 /// server accepts TCP then immediately closes (e.g., rate limiting).
 const MIN_STABLE_CONNECTION_SECS: u64 = 30;
 
+/// Optional shared secret for authenticating inbound smee payloads.
+///
+/// SECURITY: smee.io provides NO authenticity guarantee — the channel URL is an
+/// unauthenticated bearer credential, and `allowed_repos` matches an
+/// attacker-controllable JSON field (routing only, not authentication). When an
+/// operator sets `PERSONAS_SMEE_WEBHOOK_SECRET` to the same secret configured on
+/// the GitHub webhook, the relay verifies GitHub's forwarded
+/// `x-hub-signature-256` and fails closed on a missing/invalid signature. This
+/// is OPT-IN: when unset (the default) we cannot authenticate inbound events and
+/// accept them as before, so existing relays are not broken.
+///
+/// Read once per relay task (env-var pattern, mirrors `webhook::webhook_port`);
+/// changing it requires a relay restart. A per-relay, stored, *required* secret
+/// (DB column + UI) is a deferred config decision — see harness notes.
+fn smee_webhook_secret() -> Option<String> {
+    std::env::var("PERSONAS_SMEE_WEBHOOK_SECRET")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+}
+
 /// Normalize SSE line endings: `\r\n` → `\n`, then bare `\r` → `\n`.
 /// The SSE spec allows `\r`, `\n`, or `\r\n` as line terminators; normalizing
 /// up-front lets the rest of the parser only look for `\n`.
@@ -187,11 +208,18 @@ struct RelayParams {
     source_id: Option<String>,
     target_persona_id: Option<String>,
     event_filter: Option<Vec<String>>,
-    /// Origin allowlist (parsed from allowed_repos column). When `Some`,
-    /// only events whose `body.repository.full_name` matches an entry are
-    /// relayed. `None` accepts any origin (back-compat) but logs a WARN
-    /// once per relay session so the operator notices.
+    /// Routing filter (NOT a security control). When `Some`, only events whose
+    /// `body.repository.full_name` matches an entry are relayed. That field is
+    /// part of the attacker-controllable smee body, so an attacker who can POST
+    /// to the channel can forge it — this list only keeps unrelated/mis-routed
+    /// repos off this relay's persona; it does NOT authenticate the sender.
+    /// `None` accepts any origin (back-compat).
     allowed_repos: Option<Vec<String>>,
+    /// Optional shared secret (from `PERSONAS_SMEE_WEBHOOK_SECRET`) used to
+    /// verify GitHub's forwarded `x-hub-signature-256`. When `Some`, the relay
+    /// fails closed on a missing/invalid signature. `None` (default) means
+    /// inbound events cannot be authenticated and are accepted as before.
+    webhook_secret: Option<String>,
 }
 
 /// Cross-reconnect de-duplication for a smee relay. smee.io replays the
@@ -372,15 +400,50 @@ async fn relay_sse_core(
                 .cloned()
                 .unwrap_or(payload_json.clone());
 
-            // Apply origin allowlist if configured. Drops events whose
-            // body.repository.full_name is not in the configured list.
-            // smee.io provides no authenticity guarantee on inbound payloads;
-            // anyone who learns the channel URL can POST to it. The allowlist
-            // is a defense-in-depth check that only events from expected
-            // GitHub repos reach the local event bus. (HMAC verification over
-            // the raw body is tracked as a separate follow-up — smee envelopes
-            // ship parsed JSON which makes byte-exact HMAC reconstruction
-            // unreliable.)
+            // --- Authenticity gate (opt-in HMAC) ---
+            // SECURITY: smee.io provides NO authenticity guarantee. Anyone who
+            // learns the channel URL can POST arbitrary payloads, so the channel
+            // URL is effectively an UNAUTHENTICATED BEARER CREDENTIAL. When an
+            // operator configures `PERSONAS_SMEE_WEBHOOK_SECRET` (matching the
+            // GitHub webhook secret), verify GitHub's forwarded
+            // `x-hub-signature-256` over the body and FAIL CLOSED on a
+            // missing/invalid signature. Reuses the constant-time verifier from
+            // `engine::webhook` rather than re-implementing crypto.
+            //
+            // Caveat: smee re-serializes the JSON body, so the bytes we hash may
+            // not be byte-identical to what GitHub signed; operators enabling
+            // verification should expect strict matching. Reliable, *mandatory*
+            // per-relay verification (raw-body forwarding + a stored per-relay
+            // secret) is deferred — see harness notes.
+            if let Some(ref secret) = params.webhook_secret {
+                let signature = payload_json
+                    .get("x-hub-signature-256")
+                    .or_else(|| payload_json.get("X-Hub-Signature-256"))
+                    .and_then(|v| v.as_str());
+                let body_bytes = serde_json::to_vec(&body).unwrap_or_default();
+                let verified = match signature {
+                    Some(sig) => super::webhook::verify_hmac_sha256(secret, &body_bytes, sig),
+                    None => false,
+                };
+                if !verified {
+                    tracing::warn!(
+                        relay_id = %params.relay_key,
+                        event_type = %event_type,
+                        had_signature = signature.is_some(),
+                        "Smee relay: rejected event — HMAC verification failed \
+                         (secret configured but signature missing or invalid). Dropping."
+                    );
+                    continue;
+                }
+            }
+
+            // Routing filter (NOT a security control). Drops events whose
+            // body.repository.full_name is not in the configured list. That
+            // field comes from the attacker-controllable smee body, so anyone
+            // who can POST to the channel can forge it — `allowed_repos` only
+            // keeps unrelated/mis-routed repos off this relay's persona; it does
+            // NOT authenticate the sender. Sender authenticity is the job of the
+            // opt-in HMAC gate above.
             if let Some(ref allow) = params.allowed_repos {
                 let repo_full_name = body
                     .get("repository")
@@ -655,16 +718,23 @@ pub async fn run_smee_relay(
                     }
                 },
             };
+            // Read the optional authenticity secret once per relay task.
+            let webhook_secret2 = smee_webhook_secret();
             let cancel = CancellationToken::new();
             let cancel_for_task = cancel.clone();
 
             let handle = tokio::spawn(async move {
-                if allowed_repos2.is_none() {
+                if webhook_secret2.is_none() {
+                    // Posture: be explicit that inbound events are unauthenticated.
+                    // The previous warning implied `allowed_repos` restricted
+                    // origins; it does not — that field is forgeable.
                     tracing::warn!(
                         relay_id = %relay_id2,
-                        "Smee relay has no allowed_repos configured; will accept events from \
-                         any GitHub repo that learns the channel URL. Configure an allowlist \
-                         to restrict origins."
+                        "Smee relay: inbound events are NOT authenticated — the channel URL is an \
+                         unauthenticated bearer credential and allowed_repos is a routing filter \
+                         (forgeable), not a security control. Anyone who learns the URL can inject \
+                         events that spawn persona executions. Set PERSONAS_SMEE_WEBHOOK_SECRET to \
+                         the GitHub webhook secret to enable HMAC verification (fail-closed)."
                     );
                 }
                 let mut backoff = Duration::from_secs(1);
@@ -685,6 +755,7 @@ pub async fn run_smee_relay(
                         target_persona_id: target_persona_id2.clone(),
                         event_filter: event_filter2.clone(),
                         allowed_repos: allowed_repos2.clone(),
+                        webhook_secret: webhook_secret2.clone(),
                     };
                     let connected_at = Instant::now();
                     match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task, &mut dedup).await {
