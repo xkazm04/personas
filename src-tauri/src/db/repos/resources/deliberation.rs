@@ -429,3 +429,92 @@ pub fn count_open_agenda(pool: &DbPool, deliberation_id: &str) -> Result<i64, Ap
         Ok(n)
     })
 }
+
+#[cfg(test)]
+mod claim_capability_tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
+
+    fn count_rows(pool: &DbPool, group_root: &str, use_case_id: &str) -> i64 {
+        pool.get()
+            .unwrap()
+            .query_row(
+                "SELECT COUNT(*) FROM deliberation_capability_claims
+                   WHERE group_root = ?1 AND use_case_id = ?2",
+                params![group_root, use_case_id],
+                |r| r.get(0),
+            )
+            .unwrap()
+    }
+
+    /// The contended path: N parallel tracks in the SAME group approve the SAME
+    /// capability at the same instant. The atomic claim must elect exactly one
+    /// winner — this is the live failure mode (Wave 6 "Architecture Review ×2").
+    #[test]
+    fn contended_claim_elects_exactly_one_winner() {
+        let pool = init_test_db().unwrap();
+        let group_root = "grp-parent-1";
+        let use_case_id = "uc-architecture-review";
+
+        // 12 sibling tracks race, released simultaneously by a barrier so the
+        // claims genuinely overlap rather than serialize by scheduling luck.
+        let n = 12usize;
+        let barrier = Arc::new(Barrier::new(n));
+        let handles: Vec<_> = (0..n)
+            .map(|i| {
+                let pool = pool.clone();
+                let barrier = Arc::clone(&barrier);
+                let gr = group_root.to_string();
+                let uc = use_case_id.to_string();
+                thread::spawn(move || {
+                    let track_id = format!("track-{i}");
+                    barrier.wait();
+                    claim_capability(&pool, &gr, &uc, &track_id).unwrap()
+                })
+            })
+            .collect();
+
+        let winners = handles
+            .into_iter()
+            .filter(|_| true)
+            .map(|h| h.join().unwrap())
+            .filter(|&won| won)
+            .count();
+
+        assert_eq!(winners, 1, "exactly one track may win a contended claim");
+        assert_eq!(
+            count_rows(&pool, group_root, use_case_id),
+            1,
+            "exactly one claim row must exist after the race"
+        );
+
+        // A late, sequential approval of the same capability must also lose —
+        // the claim persists for the life of the group.
+        assert!(
+            !claim_capability(&pool, group_root, use_case_id, "track-late").unwrap(),
+            "a later approval of an already-claimed capability must skip"
+        );
+    }
+
+    /// The claim is scoped to (group_root, use_case_id) — it must NOT block a
+    /// DIFFERENT capability in the same group (two tracks doing different work
+    /// both proceed) nor the SAME capability in a different group (a separate
+    /// deliberation runs its own copy).
+    #[test]
+    fn claim_does_not_over_suppress_across_capability_or_group() {
+        let pool = init_test_db().unwrap();
+
+        // Same group, different capabilities → both win (diverse tracks proceed).
+        assert!(claim_capability(&pool, "grp-A", "uc-code-review", "track-1").unwrap());
+        assert!(claim_capability(&pool, "grp-A", "uc-security-scan", "track-2").unwrap());
+
+        // Same capability, different group → both win (group isolation).
+        assert!(claim_capability(&pool, "grp-A", "uc-arch-review", "track-3").unwrap());
+        assert!(claim_capability(&pool, "grp-B", "uc-arch-review", "track-4").unwrap());
+
+        // But a repeat within grp-A of an already-claimed capability loses.
+        assert!(!claim_capability(&pool, "grp-A", "uc-code-review", "track-5").unwrap());
+    }
+}
