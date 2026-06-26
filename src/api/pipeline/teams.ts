@@ -34,6 +34,29 @@ export const deleteTeam = (id: string) =>
 export const cloneTeam = (sourceTeamId: string) =>
   invoke<PersonaTeam>("clone_team", { sourceTeamId });
 
+/**
+ * Summary of a handoff-wiring pass — mirrors the Rust `HandoffWireResult`
+ * (not ts-rs-exported, so typed inline here). Returned by
+ * `repair_team_handoff`.
+ */
+export interface HandoffWireResult {
+  team_id: string;
+  edges_total: number;
+  edges_wired: number;
+  chain_triggers_created: number;
+  listeners_created: number;
+  skipped_existing: number;
+}
+
+/**
+ * Wire (or repair) a team's intra-team handoff from its connection graph —
+ * creates the `chain`/`event_listener` triggers that make S→T edges fire so
+ * downstream members cascade. Idempotent (only missing triggers are created).
+ * Surfaced by the preset-adoption flow when `handoff_wired === false`.
+ */
+export const repairTeamHandoff = (teamId: string) =>
+  invoke<HandoffWireResult>("repair_team_handoff", { teamId });
+
 export const listTeamMembers = (teamId: string) =>
   invoke<PersonaTeamMember[]>("list_team_members", { teamId });
 

@@ -537,10 +537,17 @@ pub fn adopt_preset(
     //    triggers per non-feedback edge) so members actually fire each other.
     //    Best-effort: a wiring failure must not fail an otherwise-successful
     //    adoption, but it IS the difference between a team that can cascade
-    //    and one that stalls after the entry member.
-    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
-        tracing::warn!(team_id = %team.id, error = %e, "adopt_team_preset: handoff wiring failed (continuing)");
-    }
+    //    and one that stalls after the entry member — so capture the outcome
+    //    on the result (`handoff_wired`/`handoff_error`) instead of swallowing
+    //    it, letting the UI surface a "Repair handoff" affordance.
+    let (handoff_wired, handoff_error) =
+        match crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
+            Ok(_) => (true, None),
+            Err(e) => {
+                tracing::warn!(team_id = %team.id, error = %e, "adopt_team_preset: handoff wiring failed (continuing)");
+                (false, Some(e.to_string()))
+            }
+        };
 
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
@@ -549,6 +556,8 @@ pub fn adopt_preset(
         members,
         failed_members: failures,
         created_connections,
+        handoff_wired,
+        handoff_error,
     })
 }
 
@@ -822,9 +831,17 @@ pub fn retry_failed_members(
     all_members.extend(new_members);
 
     // Re-wire handoff now that newly-retried members + their connections exist.
-    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, team_id) {
-        tracing::warn!(team_id, error = %e, "retry_failed_members: handoff wiring failed (continuing)");
-    }
+    // Surface the outcome on the result (same contract as adopt_preset) so a
+    // retry that lands members but fails to wire them still tells the UI the
+    // team isn't cascading yet.
+    let (handoff_wired, handoff_error) =
+        match crate::engine::team_handoff::wire_team_handoff(&state.db, team_id) {
+            Ok(_) => (true, None),
+            Err(e) => {
+                tracing::warn!(team_id, error = %e, "retry_failed_members: handoff wiring failed (continuing)");
+                (false, Some(e.to_string()))
+            }
+        };
 
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
@@ -833,6 +850,8 @@ pub fn retry_failed_members(
         members: all_members,
         failed_members: failures,
         created_connections,
+        handoff_wired,
+        handoff_error,
     })
 }
 

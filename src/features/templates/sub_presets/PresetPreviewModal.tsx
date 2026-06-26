@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, Wrench, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -191,16 +191,18 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
 
       {/* Footer — adoption gate or "open team" CTA */}
       <div className="px-5 py-3 border-t border-primary/10 flex items-center justify-between gap-2">
-        <p className="typo-caption text-foreground">
+        <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-amber-400' : 'text-foreground'}`}>
           {a.stage === 'preview' && t.templates.presets.footer_preview_hint}
           {a.stage === 'adopting' && t.templates.presets.footer_adopting_hint}
           {a.stage === 'done' && a.result && (
-            a.result.failed_members.length === 0
-              ? tx(t.templates.presets.footer_done_hint, { count: a.result.members.length })
-              : tx(t.templates.presets.footer_done_partial, {
-                  ok: a.result.members.length,
-                  failed: a.result.failed_members.length,
-                })
+            a.handoffNeedsRepair
+              ? t.templates.presets.footer_handoff_warning
+              : a.result.failed_members.length === 0
+                ? tx(t.templates.presets.footer_done_hint, { count: a.result.members.length })
+                : tx(t.templates.presets.footer_done_partial, {
+                    ok: a.result.members.length,
+                    failed: a.result.failed_members.length,
+                  })
           )}
         </p>
         <div className="flex items-center gap-2">
@@ -257,6 +259,18 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
               data-testid="preset-retry-failed-button"
             >
               {tx(t.templates.presets.retry_failed_button, { count: a.result.failed_members.length })}
+            </Button>
+          )}
+          {a.stage === 'done' && a.handoffNeedsRepair && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<Wrench className="w-4 h-4" />}
+              onClick={() => void a.repairHandoff()}
+              disabled={a.repairingHandoff}
+              data-testid="preset-repair-handoff-button"
+            >
+              {t.templates.presets.repair_handoff_button}
             </Button>
           )}
           {a.stage === 'done' && a.result && (

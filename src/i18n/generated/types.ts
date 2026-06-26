@@ -7584,6 +7584,11 @@ export type Translations = {
       footer_adopting_hint: string;
       footer_done_hint: string;
       footer_done_partial: string;
+      footer_handoff_warning: string;
+      repair_handoff_button: string;
+      toast_handoff_warning: string;
+      toast_handoff_repaired: string;
+      toast_handoff_repair_failed: string;
       status_queued: string;
       status_adopting: string;
       status_done: string;

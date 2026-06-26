@@ -11,5 +11,25 @@ import type { AdoptedTeamPresetMember } from "./AdoptedTeamPresetMember";
  * manifest's members into success vs. failure. `created_connections` is
  * the count of edges actually wired (an edge is skipped silently when
  * either endpoint role failed adoption).
+ *
+ * `handoff_wired` reflects step 5 — the `team_handoff::wire_team_handoff`
+ * pass that turns the connection graph into the `chain`/`event_listener`
+ * triggers members fire each other through. It is the difference between a
+ * team that cascades and one that stalls after its entry member. Wiring is
+ * best-effort (it never fails the adoption), so this flag carries the truth
+ * to the UI: `false` means the team was created but is NOT cascading, and
+ * the modal surfaces a "Repair handoff" affordance (the `repair_team_handoff`
+ * command re-runs the wiring). `handoff_error` holds the underlying error
+ * string when wiring failed (`None` on success).
  */
-export type AdoptedTeamPresetResult = { preset_id: string, team_id: string, home_team_id: string | null, members: Array<AdoptedTeamPresetMember>, failed_members: Array<AdoptedTeamPresetFailure>, created_connections: number, };
+export type AdoptedTeamPresetResult = { preset_id: string, team_id: string, home_team_id: string | null, members: Array<AdoptedTeamPresetMember>, failed_members: Array<AdoptedTeamPresetFailure>, created_connections: number, 
+/**
+ * `true` when step-5 handoff wiring succeeded; `false` when it failed
+ * (the team exists but downstream members won't cascade until repaired).
+ */
+handoff_wired: boolean, 
+/**
+ * The error string from a failed `wire_team_handoff` pass; `None` when
+ * `handoff_wired == true`.
+ */
+handoff_error: string | null, };

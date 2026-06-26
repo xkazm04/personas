@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, CheckCircle2, Loader2, RotateCcw, Settings2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, RotateCcw, Settings2, Wrench } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -101,6 +101,18 @@ export function PresetPrimaryActions({
             {tx(t.templates.presets.retry_failed_button, { count: a.result.failed_members.length })}
           </Button>
         )}
+        {a.handoffNeedsRepair && (
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={<Wrench className="w-4 h-4" />}
+            onClick={() => void a.repairHandoff()}
+            disabled={a.repairingHandoff}
+            data-testid="preset-repair-handoff-button"
+          >
+            {t.templates.presets.repair_handoff_button}
+          </Button>
+        )}
         <Button variant="primary" size="sm" onClick={a.openTeam} data-testid="preset-open-team-button">
           {t.templates.presets.open_team_button}
         </Button>
@@ -184,15 +196,17 @@ export function PresetCustomizePanel({ a, customizing }: { a: PresetAdoptionCont
 export function PresetFooterHint({ a }: { a: PresetAdoptionController }) {
   const { t, tx } = useTranslation();
   return (
-    <p className="typo-caption text-foreground">
+    <p className={`typo-caption ${a.handoffNeedsRepair ? 'text-amber-400' : 'text-foreground'}`}>
       {a.stage === 'preview' && t.templates.presets.footer_preview_hint}
       {a.stage === 'done' && a.result && (
-        a.result.failed_members.length === 0
-          ? tx(t.templates.presets.footer_done_hint, { count: a.result.members.length })
-          : tx(t.templates.presets.footer_done_partial, {
-              ok: a.result.members.length,
-              failed: a.result.failed_members.length,
-            })
+        a.handoffNeedsRepair
+          ? t.templates.presets.footer_handoff_warning
+          : a.result.failed_members.length === 0
+            ? tx(t.templates.presets.footer_done_hint, { count: a.result.members.length })
+            : tx(t.templates.presets.footer_done_partial, {
+                ok: a.result.members.length,
+                failed: a.result.failed_members.length,
+              })
       )}
     </p>
   );

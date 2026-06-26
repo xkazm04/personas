@@ -13,6 +13,7 @@ import {
   retryTeamPresetMembers,
   type PresetParameterOverrides,
 } from '@/api/templates/teamPresets';
+import { repairTeamHandoff } from '@/api/pipeline/teams';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
@@ -66,6 +67,13 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
   const [overrides, setOverrides] = useState<PresetParameterOverrides>({});
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
   const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
+  // Step-5 handoff wiring can fail silently on the backend (best-effort), in
+  // which case the team is created but won't cascade past its entry member.
+  // `result.handoff_wired === false` surfaces that; `handoffRepaired` flips
+  // once the user runs the in-modal repair so the warning clears without a
+  // full re-fetch. `repairingHandoff` gates the button while the repair runs.
+  const [handoffRepaired, setHandoffRepaired] = useState(false);
+  const [repairingHandoff, setRepairingHandoff] = useState(false);
   // Synchronous re-entrancy guard: `stage` lags a render behind setStage,
   // so a double-click could fire two adopt() calls before the button reflects
   // the 'adopting' stage. The backend also single-flights per preset, but this
@@ -88,6 +96,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     setResult(null);
     setOverrides({});
     setExpandedRoles(new Set());
+    setHandoffRepaired(false);
     getPresetAdoptionSchema(preset.id)
       .then(setSchema)
       .catch((err) => {
@@ -125,6 +134,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     );
     setStage('adopting');
     setResult(null);
+    setHandoffRepaired(false);
     try {
       const overridePayload = Object.keys(overrides).length > 0 ? overrides : null;
       const rolesPayload =
@@ -137,10 +147,16 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       ]);
       setStage('done');
       if (res.failed_members.length === 0) {
-        addToast(
-          tx(t.templates.presets.toast_success, { count: res.members.length, name: preset.name }),
-          'success',
-        );
+        if (res.handoff_wired) {
+          addToast(
+            tx(t.templates.presets.toast_success, { count: res.members.length, name: preset.name }),
+            'success',
+          );
+        } else {
+          // Members all landed, but the team can't cascade — don't claim full
+          // success. Point the user at the in-modal "Repair handoff" affordance.
+          addToast(t.templates.presets.toast_handoff_warning, 'warning');
+        }
       } else {
         addToast(
           tx(t.templates.presets.toast_partial, {
@@ -163,6 +179,7 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     if (!result) return;
     const failedRoles = result.failed_members.map((f) => f.role);
     if (failedRoles.length === 0) return;
+    setHandoffRepaired(false);
     setRows((prev) =>
       prev.map((r) =>
         failedRoles.includes(r.role)
@@ -200,6 +217,25 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
       addToast(t.templates.presets.toast_retry_failure, 'error');
     }
   }, [result, preset.id, overrides, fetchPersonas, fetchTeams, addToast, t, tx]);
+
+  // Re-run the backend handoff wiring for the adopted team. The
+  // `repair_team_handoff` command is idempotent, so a click is always safe;
+  // on success the warning state clears (no re-fetch needed since the only
+  // thing that changed is invisible trigger rows).
+  const repairHandoff = useCallback(async () => {
+    if (!result || repairingHandoff) return;
+    setRepairingHandoff(true);
+    try {
+      await repairTeamHandoff(result.team_id);
+      setHandoffRepaired(true);
+      addToast(t.templates.presets.toast_handoff_repaired, 'success');
+    } catch (err) {
+      silentCatch('usePresetAdoption:repairHandoff')(err);
+      addToast(t.templates.presets.toast_handoff_repair_failed, 'error');
+    } finally {
+      setRepairingHandoff(false);
+    }
+  }, [result, repairingHandoff, addToast, t]);
 
   const openTeam = useCallback(() => {
     if (onOpenTeam && result) {
@@ -261,6 +297,10 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     });
   }, [rows, result]);
 
+  // True once an adoption/retry landed a team whose handoff wiring failed and
+  // the user hasn't repaired it yet — drives the modal's warning + repair CTA.
+  const handoffNeedsRepair = !!result && result.handoff_wired === false && !handoffRepaired;
+
   return {
     // state
     stage,
@@ -272,11 +312,14 @@ export function usePresetAdoption(preset: TeamPreset, opts: UsePresetAdoptionOpt
     selectedRoles,
     overrideCount,
     schemaByRole,
+    handoffNeedsRepair,
+    repairingHandoff,
     // setters / actions
     setOverrides,
     setExpandedRoles,
     adopt,
     retry,
+    repairHandoff,
     openTeam,
     toggleRoleExpanded,
     toggleMemberSelection,

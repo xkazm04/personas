@@ -5,7 +5,11 @@ export type SmeeRelay = { id: string, label: string, channelUrl: string, status:
  * JSON-encoded array of `owner/repo` strings. When populated, the relay
  * drops events whose body.repository.full_name is not in the list.
  * `None` or `Some("[]")` accepts events from any repo (back-compat).
- * Origin authentication only -- complements but does not replace
- * downstream HMAC verification (see harness-learnings).
+ *
+ * NOT a security control: `repository.full_name` is read from the
+ * attacker-controllable smee payload, so anyone who can POST to the
+ * channel URL can forge it. This is a routing filter only. Sender
+ * authenticity must come from the opt-in HMAC gate in
+ * `engine::smee_relay` (PERSONAS_SMEE_WEBHOOK_SECRET), not from this list.
  */
 allowedRepos: string | null, };

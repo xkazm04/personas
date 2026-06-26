@@ -8578,7 +8578,12 @@
       "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই",
       "preview_members_select_hint": "Click to include / exclude",
       "graph_legend_sequential": "হাত ছাড়া",
-      "graph_legend_feedback": "ফেরত পাঠায়"
+      "graph_legend_feedback": "ফেরত পাঠায়",
+      "footer_handoff_warning": "Team built, but handoff wiring failed — downstream members won't run until you repair it.",
+      "repair_handoff_button": "Repair handoff",
+      "toast_handoff_warning": "Team built, but handoff wiring failed — click Repair handoff so downstream members run.",
+      "toast_handoff_repaired": "Handoff wiring repaired — the team can now cascade.",
+      "toast_handoff_repair_failed": "Handoff repair failed"
     },
     "compare": {
       "compare": "তুলনা করুন",
