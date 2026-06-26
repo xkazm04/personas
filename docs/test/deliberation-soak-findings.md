@@ -76,8 +76,30 @@ capable conversation manager, to measure how far efficiency goes with the fixes
 *and* a stronger orchestrator. (Reasoning effort isn't exposed on the headless
 `claude -p` path, so it runs at default.)
 
-## Wave 2 — Opus moderator + fixes (different project)
+## Wave 2 — Opus moderator + all 5 fixes (different project)
 
-Team **SDLC2 — Grant Writing**, same prod-readiness questions, unlimited budget,
-240 min. _(results pending — compare `outputYield`, ⚠-rate, re-request count,
-escalations, and rounds-to-resolve against Wave 1.)_
+Team **SDLC2 — Grant Writing**, same prod-readiness questions, unlimited budget.
+14 deliberations (13 resolved) before the host machine slept overnight and wedged
+the harness on a hung call (a harness bug — no client-side `fetch` timeout / hard
+wall-clock kill — *not* an engine fault; engine logged 0 errors).
+
+| Metric | Wave 1 (Haiku, baseline) | Wave 2 (Opus + fixes) | Change |
+| --- | --- | --- | --- |
+| Request → output **yield** | 13% | **76%** | ~6× |
+| Capability failures (⚠) | 29 | **0** | eliminated |
+| Requests / delib | 9.4 | 2.1 | ~4× fewer (de-dup) |
+| Reap rate (output returned) | 30% | **96%** | work no longer wasted |
+| Escalations / delib | 1.4 | 0.15 | ~9× fewer |
+| Rounds / delib | 3.1 | **9.0** | deeper deliberation |
+| Cost / delib | $0.43 | $2.62 | ~6× (Opus) |
+
+**Read:** the structural wins trace to the fixes (de-dup → fewer requests;
+pre-flight → 0 failures; result-gating → 96% reap + near-zero escalations); Opus
+adds depth (3× more rounds, sharper routing). The one real cost is the ~6×
+per-deliberation Opus tax on the moderator. Combined generalization test (new
+team + new domain + Opus + fixes), not a controlled A/B — but the structural
+metrics are mechanism-driven, not domain luck.
+
+**Harness follow-up:** add a client-side `fetch` timeout + an absolute
+wall-clock kill so a sleep/hung-call can't overrun the budget (Wave 2 ran ~7h40m
+wall vs the 240-min cap because the loop wedged after the machine slept).

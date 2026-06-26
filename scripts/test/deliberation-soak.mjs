@@ -74,12 +74,22 @@ function log(line) {
 }
 
 async function bridge(command, params = {}, timeoutSecs = 280) {
-  const res = await fetch(`http://127.0.0.1:${PORT}/bridge-exec`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ method: 'invokeCommand', params: { command, params }, timeout_secs: timeoutSecs }),
-  });
-  const text = await res.text();
+  // Client-side abort so a hung/asleep bridge can never wedge the loop forever
+  // (the call then throws → call() catches → the loop re-checks the deadline).
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), (timeoutSecs + 25) * 1000);
+  let text;
+  try {
+    const res = await fetch(`http://127.0.0.1:${PORT}/bridge-exec`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'invokeCommand', params: { command, params }, timeout_secs: timeoutSecs }),
+      signal: ctrl.signal,
+    });
+    text = await res.text();
+  } finally {
+    clearTimeout(to);
+  }
   let env;
   try {
     env = JSON.parse(text);
@@ -289,10 +299,22 @@ async function main() {
   // Periodic heartbeat summary.
   const hb = setInterval(() => log({ event: 'heartbeat', ...summary() }), 60_000);
 
+  // Hard wall-clock kill: fires at the deadline even if the loop is wedged on a
+  // hung await (or the host slept and woke past the cap) — the backstop that the
+  // overnight wave-2 run lacked. Writes the summary and exits.
+  const hardKill = setTimeout(() => {
+    const s = summary();
+    log({ event: 'SOAK_HARD_STOP', ...s });
+    // eslint-disable-next-line no-console
+    console.log('\n=== SOAK SUMMARY (hard stop at deadline) ===\n' + JSON.stringify(s, null, 2));
+    process.exit(0);
+  }, Math.max(1000, deadline - Date.now()));
+
   while (Date.now() < deadline) {
     await runOneDeliberation(QUESTIONS[qi++ % QUESTIONS.length]);
   }
 
+  clearTimeout(hardKill);
   clearInterval(hb);
   const s = summary();
   log({ event: 'SOAK_COMPLETE', ...s });
