@@ -95,36 +95,68 @@ pub struct DesktopConnectorManifest {
     pub justifications: HashMap<String, String>,
 }
 
+/// Resolve a binary reference to its canonical on-disk path.
+///
+/// Bare names (no path separator) are looked up on the system `PATH` via
+/// `which`; path-form references are canonicalized directly. Symlinks, NTFS
+/// junctions, and 8.3 short names are resolved. Returns a lowercase,
+/// forward-slash-normalized path string, or `None` if it can't be resolved to a
+/// real file. This is the trust anchor for [`DesktopConnectorManifest::is_binary_allowed`]:
+/// a bare allowlist entry only matches the binary `PATH` would actually launch,
+/// never an arbitrary-directory file that happens to share the name.
+fn canonical_binary_path(binary: &str) -> Option<String> {
+    let resolved = if binary.contains('/') || binary.contains('\\') {
+        std::path::Path::new(binary).canonicalize().ok()?
+    } else {
+        which::which(binary).ok()?.canonicalize().ok()?
+    };
+    Some(resolved.to_string_lossy().replace('\\', "/").to_lowercase())
+}
+
 impl DesktopConnectorManifest {
     /// Validate that a binary path is in the allowlist.
     ///
-    /// Uses filesystem canonicalization when available to resolve symlinks,
-    /// NTFS junctions, and 8.3 short names before comparison.
+    /// Resolves both sides to their real on-disk paths (symlinks, NTFS
+    /// junctions, 8.3 names, and — for bare names — the system `PATH`) and
+    /// requires full-path equality. A bare allowlist entry such as `"docker"`
+    /// matches only the binary `PATH` resolves it to, NOT any executable that
+    /// merely shares the filename in an arbitrary directory.
     pub fn is_binary_allowed(&self, binary: &str) -> bool {
         if self.allowed_binaries.is_empty() {
             return false;
         }
 
-        // Try canonical form first (resolves symlinks, junctions, 8.3 names).
-        let canonical = std::path::Path::new(binary)
-            .canonicalize()
-            .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
         let normalized = binary.replace('\\', "/").to_lowercase();
+        // Real on-disk path of the requested binary (bare names resolve via the
+        // system PATH). Used for full-path equality against allowlist entries.
+        let resolved = canonical_binary_path(binary);
 
         self.allowed_binaries.iter().any(|allowed| {
             let norm_allowed = allowed.replace('\\', "/").to_lowercase();
-            let canon_allowed = std::path::Path::new(allowed)
-                .canonicalize()
-                .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase());
 
-            // Prefer canonical comparison when both sides resolve.
-            if let (Ok(ref cb), Ok(ref ca)) = (&canonical, &canon_allowed) {
-                return *cb == *ca || cb.ends_with(&format!("/{ca}"));
+            // Bare allowlist name (e.g. "docker"). Accept only when the request
+            // is the same bare name (the OS launches it from the trusted PATH)
+            // or resolves to the *exact* binary PATH would launch for that name.
+            // Never accept an executable that merely shares the filename in an
+            // arbitrary directory -- that is the planted-binary code-exec vector
+            // a basename `ends_with` check used to allow.
+            if !norm_allowed.contains('/') {
+                if normalized == norm_allowed {
+                    return true;
+                }
+                return match (&resolved, canonical_binary_path(allowed)) {
+                    (Some(req), Some(canon)) => *req == canon,
+                    _ => false,
+                };
             }
 
-            // Fall back to normalized string matching (bare binary names
-            // like "docker" won't have a canonical path).
-            normalized == norm_allowed || normalized.ends_with(&format!("/{norm_allowed}"))
+            // Path-form allowlist entry: require full canonical-path equality
+            // (falling back to exact normalized-string equality only when
+            // neither side resolves to a real file).
+            match (&resolved, canonical_binary_path(allowed)) {
+                (Some(req), Some(canon)) => *req == canon,
+                _ => normalized == norm_allowed,
+            }
         })
     }
 
@@ -215,7 +247,12 @@ impl DesktopConnectorManifest {
                 .map(|cp| cp.to_string_lossy().replace('\\', "/").to_lowercase())
                 .unwrap_or_else(|_| prefix.replace('\\', "/").to_lowercase());
 
-            check_path.starts_with(&canon_prefix)
+            // Enforce a `/` directory boundary so a sibling dir that merely
+            // shares a name prefix ("/home/u/project" vs "/home/u/project-x")
+            // is NOT treated as inside the allowed root. Mirrors the
+            // blocked-prefix logic in path_safety.rs.
+            check_path == canon_prefix
+                || check_path.starts_with(&format!("{canon_prefix}/"))
         })
     }
 
