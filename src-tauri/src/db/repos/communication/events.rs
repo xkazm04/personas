@@ -461,6 +461,69 @@ pub fn exists_by_source_id(pool: &DbPool, source_id: &str) -> Result<bool, AppEr
     })
 }
 
+/// Collect the `fired_at` slot timestamps of every backfill catch-up event
+/// already published for a trigger (`source_id`). Used by the user-initiated
+/// backfill command to skip slots that were already enqueued — by a prior click
+/// or by the auto-backfill path — preventing duplicate / cost-runaway runs.
+///
+/// Payloads are encrypted at rest, so this can't be a `json_extract` WHERE
+/// clause; instead we decrypt each candidate row and inspect its JSON for the
+/// `backfill_slot: true` marker + `fired_at`. The scan is bounded by the 30-day
+/// event-cleanup window so it stays small. NOTE: triggers that carry an explicit
+/// configured `payload` don't get the synthesized marker (true for both the auto
+/// and user paths), so those degrade to no-dedup — matching pre-existing
+/// behaviour; closing that gap would require a dedicated slot-time column.
+pub fn backfill_slot_times_for_source(
+    pool: &DbPool,
+    source_id: &str,
+) -> Result<std::collections::HashSet<String>, AppError> {
+    timed_query!(
+        "persona_events",
+        "persona_events::backfill_slot_times_for_source",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT payload, payload_iv FROM persona_events
+                 WHERE source_id = ?1 AND source_type = 'trigger'",
+            )?;
+            let rows = stmt.query_map(params![source_id], |row| {
+                let raw_payload: Option<String> = row.get(0)?;
+                let payload_iv: Option<String> = row.get(1).unwrap_or(None);
+                Ok((raw_payload, payload_iv))
+            })?;
+
+            let mut slots: std::collections::HashSet<String> = std::collections::HashSet::new();
+            for row in rows.flatten() {
+                let (raw_payload, payload_iv) = row;
+                let plaintext = match (raw_payload, payload_iv) {
+                    (Some(ct), Some(ref iv)) if !iv.is_empty() => {
+                        match crypto::decrypt_from_db(&ct, iv) {
+                            Ok(pt) => pt,
+                            Err(_) => continue,
+                        }
+                    }
+                    (Some(pt), _) => pt, // plaintext fallback (encryption disabled/failed)
+                    (None, _) => continue,
+                };
+                if let Ok(serde_json::Value::Object(map)) =
+                    serde_json::from_str::<serde_json::Value>(&plaintext)
+                {
+                    let is_backfill = map
+                        .get("backfill_slot")
+                        .and_then(|v| v.as_bool())
+                        .unwrap_or(false);
+                    if is_backfill {
+                        if let Some(fired_at) = map.get("fired_at").and_then(|v| v.as_str()) {
+                            slots.insert(fired_at.to_string());
+                        }
+                    }
+                }
+            }
+            Ok(slots)
+        }
+    )
+}
+
 /// Count events of one type emitted by one persona since a timestamp. Used by
 /// the team-assignment orchestrator to detect that a step's execution emitted
 /// a verdict event (e.g. `qa.pr.changes_requested`) during its run window —

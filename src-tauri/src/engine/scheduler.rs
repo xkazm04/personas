@@ -19,6 +19,35 @@ pub(crate) fn invalid_schedule_timezone(cfg: &TriggerConfig) -> Option<(String, 
     }
 }
 
+/// A schedule's `timezone` string could not be parsed into an IANA zone.
+/// Carries the raw value and the parser's message so callers can log/surface
+/// the same diagnostics the live path always did.
+pub(crate) struct ScheduleTzError {
+    pub raw: String,
+    pub message: String,
+}
+
+/// Resolve a schedule's `timezone` field into a concrete [`Tz`], applying ONE
+/// shared error policy across the live and backfill paths so they can never
+/// diverge again:
+///
+/// - `None` (no timezone authored) → `Ok(None)`; caller falls back to local.
+/// - `Some(valid)` → `Ok(Some(tz))`.
+/// - `Some(invalid)` → `Err(..)`; the caller must REFUSE (live path returns
+///   `None` → `next_trigger_at` NULL; backfill paths return an empty slot set
+///   and the user-initiated command surfaces a validation error). This replaces
+///   the old backfill behaviour of `.parse().ok()`-ing into system-local, which
+///   silently replayed every slot at the wrong wall-clock hour.
+pub(crate) fn resolve_schedule_tz(raw: Option<&str>) -> Result<Option<Tz>, ScheduleTzError> {
+    match raw {
+        None => Ok(None),
+        Some(s) => s.parse::<Tz>().map(Some).map_err(|err| ScheduleTzError {
+            raw: s.to_string(),
+            message: err.to_string(),
+        }),
+    }
+}
+
 /// Compute the next trigger time from an already-parsed `TriggerConfig`.
 /// Called by `compute_next_trigger_at` and also directly from `background.rs`
 /// when `parse_config()` has already been called for other purposes.
@@ -77,20 +106,17 @@ pub(crate) fn compute_next_from_config_anchored(
             ..
         } => {
             let schedule = cron::parse_cron_seeded(cron_expr, seed).ok()?;
-            let resolved_tz: Option<Tz> = match timezone.as_deref() {
-                None => None,
-                Some(raw) => match raw.parse::<Tz>() {
-                    Ok(tz) => Some(tz),
-                    Err(err) => {
-                        tracing::warn!(
-                            cron = %cron_expr,
-                            timezone_raw = %raw,
-                            error = %err,
-                            "schedule timezone failed to parse; refusing to compute next fire time"
-                        );
-                        return None;
-                    }
-                },
+            let resolved_tz: Option<Tz> = match resolve_schedule_tz(timezone.as_deref()) {
+                Ok(tz) => tz,
+                Err(err) => {
+                    tracing::warn!(
+                        cron = %cron_expr,
+                        timezone_raw = %err.raw,
+                        error = %err.message,
+                        "schedule timezone failed to parse; refusing to compute next fire time"
+                    );
+                    return None;
+                }
             };
             let next = match resolved_tz {
                 Some(tz) => cron::next_fire_time_in_tz(&schedule, now, tz)?,
@@ -173,9 +199,14 @@ pub fn compute_slots_in_range(
             let Ok(schedule) = cron::parse_cron_seeded(expr, seed) else {
                 return slots;
             };
-            let tz = timezone
-                .as_deref()
-                .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+            // Mirror the live path: on an unparseable zone, REFUSE (empty slot
+            // set) rather than `.ok()`-ing into system-local and replaying every
+            // slot at the wrong wall-clock hour. The user-initiated command
+            // pre-validates the zone and surfaces an error before reaching here.
+            let tz = match resolve_schedule_tz(timezone.as_deref()) {
+                Ok(tz) => tz,
+                Err(_) => return slots,
+            };
             let mut from = start;
             while slots.len() < cap {
                 let next = match tz {

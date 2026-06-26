@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
@@ -133,6 +134,23 @@ pub fn backfill_schedule(
     }
     let cfg = trigger.parse_config();
 
+    // Finding #3: refuse to backfill on an unparseable timezone instead of
+    // silently replaying every slot at the wrong wall-clock hour. The live
+    // scheduler refuses (next_trigger_at NULL) on a bad zone; surface that same
+    // refusal here as a validation error rather than falling back to local.
+    if let TriggerConfig::Schedule {
+        timezone: Some(raw),
+        ..
+    } = &cfg
+    {
+        if let Err(err) = sched_logic::resolve_schedule_tz(Some(raw.as_str())) {
+            return Err(AppError::Validation(format!(
+                "backfill refused: schedule timezone '{}' is not a valid IANA zone ({})",
+                err.raw, err.message
+            )));
+        }
+    }
+
     // Cap to one over the limit so we can detect whether the user's window
     // actually overflowed (`capped == true`) versus fitting exactly.
     let probe_cap = BACKFILL_MAX_SLOTS_PER_REQUEST + 1;
@@ -143,7 +161,7 @@ pub fn backfill_schedule(
         cron::seed_hash(&trigger.id),
         probe_cap,
     );
-    let capped = slots.len() > BACKFILL_MAX_SLOTS_PER_REQUEST;
+    let mut capped = slots.len() > BACKFILL_MAX_SLOTS_PER_REQUEST;
     if capped {
         slots.truncate(BACKFILL_MAX_SLOTS_PER_REQUEST);
     }
@@ -151,10 +169,54 @@ pub fn backfill_schedule(
     let event_type = cfg.event_type().to_string();
     let mut enqueued: u32 = 0;
     let mut failures: u32 = 0;
+    let mut skipped_duplicate: u32 = 0;
     let mut slot_times: Vec<String> = Vec::with_capacity(slots.len());
+
+    // Finding #2: dedup against backfill slots already published (a prior click
+    // on this command OR the auto-backfill path), so re-clicking can't multiply
+    // the exact same slots into duplicate executions.
+    let already_published = event_repo::backfill_slot_times_for_source(&state.db, &trigger.id)?;
+
+    // Finding #2: apply the SAME per-persona hourly ceiling the auto path uses,
+    // so an on-demand replay can't blow past the scheduled-execution rate cap.
+    let hourly_ceiling = background::schedule_executions_per_persona_hour(&state.db);
+    let mut scheduled_publishes_by_persona: HashMap<String, i64> = HashMap::new();
 
     for slot in &slots {
         let slot_iso = slot.to_rfc3339();
+
+        // Idempotent re-click: skip a slot already enqueued earlier.
+        if already_published.contains(&slot_iso) {
+            skipped_duplicate += 1;
+            tracing::debug!(
+                trigger_id = %trigger.id,
+                slot = %slot_iso,
+                "user-initiated backfill slot skipped — already published"
+            );
+            continue;
+        }
+
+        // Per-persona hourly cap, mirroring the auto path. Stop here (partial
+        // catch-up, surfaced via `capped`) and log a healing issue so the
+        // ceiling is visible instead of silently over-firing.
+        if background::schedule_hourly_cap_exceeded(
+            &state.db,
+            &trigger,
+            now,
+            hourly_ceiling,
+            &scheduled_publishes_by_persona,
+        ) {
+            background::log_schedule_rate_limit_issue(&state.db, &trigger, hourly_ceiling);
+            tracing::warn!(
+                trigger_id = %trigger.id,
+                persona_id = %trigger.persona_id,
+                hourly_ceiling,
+                "user-initiated backfill halted: scheduled execution hourly cap exceeded"
+            );
+            capped = true;
+            break;
+        }
+
         let payload = cfg
             .payload()
             .or_else(|| Some(synthesize_user_backfill_payload(&trigger, &cfg, &slot_iso)));
@@ -172,6 +234,9 @@ pub fn backfill_schedule(
         ) {
             Ok(_) => {
                 enqueued += 1;
+                *scheduled_publishes_by_persona
+                    .entry(trigger.persona_id.clone())
+                    .or_default() += 1;
                 slot_times.push(slot_iso);
             }
             Err(e) => {
@@ -193,6 +258,7 @@ pub fn backfill_schedule(
         window_end = %effective_end,
         enqueued,
         failures,
+        skipped_duplicate,
         capped,
         "user-initiated backfill completed"
     );

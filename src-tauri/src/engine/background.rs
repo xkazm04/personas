@@ -1432,7 +1432,7 @@ const BACKFILL_HARD_CAP: usize = crate::engine::limits::BACKFILL_HARD_CAP;
 /// dropped (the same semantics as the per-trigger drop-oldest).
 const GLOBAL_BACKFILL_PER_TICK: usize = 50;
 
-fn schedule_executions_per_persona_hour(pool: &DbPool) -> i64 {
+pub(crate) fn schedule_executions_per_persona_hour(pool: &DbPool) -> i64 {
     match settings::get(pool, settings_keys::SCHEDULE_EXECUTIONS_PER_PERSONA_HOUR)
         .ok()
         .flatten()
@@ -1459,7 +1459,7 @@ fn schedule_executions_per_persona_hour(pool: &DbPool) -> i64 {
     }
 }
 
-fn schedule_hourly_cap_exceeded(
+pub(crate) fn schedule_hourly_cap_exceeded(
     pool: &DbPool,
     trigger: &crate::db::models::PersonaTrigger,
     now: chrono::DateTime<chrono::Utc>,
@@ -1499,7 +1499,7 @@ fn schedule_over_budget(max_budget: Option<f64>, monthly_spend: f64) -> bool {
     matches!(max_budget, Some(budget) if budget > 0.0 && monthly_spend >= budget)
 }
 
-fn log_schedule_rate_limit_issue(
+pub(crate) fn log_schedule_rate_limit_issue(
     pool: &DbPool,
     trigger: &crate::db::models::PersonaTrigger,
     ceiling: i64,
@@ -1587,9 +1587,13 @@ fn compute_missed_backfill_slots(
             let Ok(schedule) = crate::engine::cron::parse_cron_seeded(expr, seed) else {
                 return slots;
             };
-            let tz = timezone
-                .as_deref()
-                .and_then(|s| s.parse::<chrono_tz::Tz>().ok());
+            // Mirror the live path's refuse-on-bad-zone policy: an unparseable
+            // timezone yields an EMPTY catch-up set rather than silently falling
+            // back to system-local and replaying at the wrong wall-clock hour.
+            let tz = match sched_logic::resolve_schedule_tz(timezone.as_deref()) {
+                Ok(tz) => tz,
+                Err(_) => return slots,
+            };
             let mut from = last_fire;
             while slots.len() < BACKFILL_HARD_CAP {
                 let next = match tz {
@@ -1732,7 +1736,16 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             // Anchored on the trigger's prior scheduled fire so intervals keep
             // their cadence even when this slot is skipped (drift fix).
             let next = sched_logic::compute_next_trigger_at(&trigger, now);
-            let _ = trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
+            // Skip path: advance ONLY the schedule pointer (next_trigger_at +
+            // version), never last_triggered_at — that watermark must keep
+            // tracking the last actually-fired slot so auto-backfill can replay
+            // the slots skipped while outside the active window.
+            let _ = trigger_repo::advance_schedule_pointer(
+                pool,
+                &trigger.id,
+                next,
+                trigger.trigger_version,
+            );
             tracing::debug!(trigger_id = %trigger.id, "Trigger outside active window, skipping");
             continue;
         }
@@ -1784,8 +1797,15 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
                 let next = sched_logic::compute_next_trigger_at(&trigger, now);
-                let _ =
-                    trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version);
+                // Skip path: advance the pointer only, preserving last_triggered_at
+                // as the true last-fired watermark so backfill replays every run
+                // missed while the persona was paused on budget.
+                let _ = trigger_repo::advance_schedule_pointer(
+                    pool,
+                    &trigger.id,
+                    next,
+                    trigger.trigger_version,
+                );
                 continue;
             }
         }
@@ -1934,7 +1954,15 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
                 &scheduled_publishes_by_persona,
             )
         {
-            match trigger_repo::mark_triggered(pool, &trigger.id, next, trigger.trigger_version) {
+            // Skip path: advance the pointer only (CAS on version), never
+            // last_triggered_at — the fired-watermark must stay put so the
+            // rate-limited slot is replayed by backfill once headroom returns.
+            match trigger_repo::advance_schedule_pointer(
+                pool,
+                &trigger.id,
+                next,
+                trigger.trigger_version,
+            ) {
                 Ok(true) => {}
                 Ok(false) => {
                     tracing::debug!(trigger_id = %trigger.id, "Trigger already claimed by another tick, skipping rate-limit advance");

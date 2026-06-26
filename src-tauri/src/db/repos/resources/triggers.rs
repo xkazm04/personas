@@ -1684,6 +1684,45 @@ pub fn mark_triggered(
     })
 }
 
+/// Advance ONLY the schedule pointer on a *skip* — without touching
+/// `last_triggered_at`.
+///
+/// The auto-backfill catch-up window is `(last_triggered_at, now]`, so
+/// `last_triggered_at` must remain the watermark of the last slot that actually
+/// *fired/published*. The skip paths (over-budget, out-of-active-window,
+/// rate-limited) still need to advance `next_trigger_at` (so the overdue slot
+/// isn't re-evaluated every 5s tick) and bump `trigger_version` (so the CAS in
+/// `mark_triggered` still detects concurrent advances) — but they must NOT move
+/// the fired-watermark forward, or days of missed runs would silently never be
+/// replayed after a pause.
+///
+/// Mirrors `mark_triggered`'s CAS semantics: the WHERE clause checks
+/// `trigger_version = expected_version`, so a concurrent tick that already
+/// advanced the schedule makes this UPDATE touch 0 rows and return `Ok(false)`.
+pub fn advance_schedule_pointer(
+    pool: &DbPool,
+    id: &str,
+    next_trigger_at: Option<String>,
+    expected_version: i32,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_triggers",
+        "persona_triggers::advance_schedule_pointer",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            let rows = conn.execute(
+                "UPDATE persona_triggers
+                 SET next_trigger_at = ?1, updated_at = ?2,
+                     trigger_version = trigger_version + 1
+                 WHERE id = ?3 AND trigger_version = ?4",
+                params![next_trigger_at, now, id, expected_version],
+            )?;
+            Ok(rows > 0)
+        }
+    )
+}
+
 /// Unconditionally advance a trigger's schedule after a manual execution.
 ///
 /// Unlike `mark_triggered` (which uses CAS to prevent double-fire from
