@@ -23,6 +23,9 @@ const POLL_MS = Number(process.env.POLL_MS || 4000);
 const SPLIT = process.env.SPLIT !== '0'; // exercise parallel tracks by default
 const OUT = process.env.OUT || `scripts/test/.soak/soak-${Date.now()}.jsonl`;
 
+// A fixed multi-area question (TOPIC env) forces a rich agenda → reliable
+// per-item splits; otherwise rotate the varied set below.
+const FIXED_TOPIC = (process.env.TOPIC || '').trim();
 // Rotated production-readiness questions so a 4h run gathers varied data.
 const QUESTIONS = [
   'Is the app ready for production?',
@@ -315,7 +318,7 @@ async function main() {
   }, Math.max(1000, deadline - Date.now()));
 
   while (Date.now() < deadline) {
-    await runOneDeliberation(QUESTIONS[qi++ % QUESTIONS.length]);
+    await runOneDeliberation(FIXED_TOPIC || QUESTIONS[qi++ % QUESTIONS.length]);
   }
 
   clearTimeout(hardKill);
