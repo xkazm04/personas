@@ -217,7 +217,6 @@ async function runOneDeliberation(topic) {
   while (Date.now() < deadline && ACTIVE.has(d.status)) {
     d = (await step(d, perDelib)) || (await call('get_team_deliberation', { deliberationId: id }));
     if (!d) break;
-    metrics.costUsd = round2(metrics.costUsd + 0); // cost is read from d below
     await sleep(POLL_MS);
   }
   // Final read for outcome + cost.
@@ -226,7 +225,11 @@ async function runOneDeliberation(topic) {
   const ids = [id];
   for (const t of (await call('list_deliberation_tracks', { deliberationId: id })) || []) ids.push(t.id);
   let turnsAll = [];
+  let trackCost = 0;
   for (const tid of ids) turnsAll = turnsAll.concat((await call('list_deliberation_turns', { deliberationId: tid, limit: 500 })) || []);
+  // Sum the tracks' own spend — they're separate deliberations, so the parent's
+  // costSpentUsd alone undercounts a split deliberation's true cost.
+  for (const tr of (await call('list_deliberation_tracks', { deliberationId: id })) || []) trackCost += tr.costSpentUsd || 0;
   const reqs = turnsAll.filter((t) => (t.body || '').startsWith('⏸')).length;
   const outs = turnsAll.filter((t) => (t.body || '').startsWith('🛠') && !/no output/.test(t.body)).length;
   const fails = turnsAll.filter((t) => (t.body || '').startsWith('⚠')).length;
@@ -245,10 +248,10 @@ async function runOneDeliberation(topic) {
     actions: perDelib.actions,
     escalations: perDelib.escalations,
     didSplit: perDelib.didSplit,
-    costUsd: final?.costSpentUsd ?? 0,
+    costUsd: round2((final?.costSpentUsd ?? 0) + trackCost),
     wallMin: round2((Date.now() - tStart) / 60_000),
   };
-  metrics.costUsd = round2(metrics.costUsd + (final?.costSpentUsd ?? 0));
+  metrics.costUsd = round2(metrics.costUsd + (final?.costSpentUsd ?? 0) + trackCost);
   if (final?.status === 'resolved') metrics.resolved++;
   if (final?.status === 'aborted') metrics.aborted++;
   metrics.perDeliberation.push(outcome);

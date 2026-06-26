@@ -100,6 +100,40 @@ per-deliberation Opus tax on the moderator. Combined generalization test (new
 team + new domain + Opus + fixes), not a controlled A/B — but the structural
 metrics are mechanism-driven, not domain luck.
 
-**Harness follow-up:** add a client-side `fetch` timeout + an absolute
+**Harness follow-up (done):** client-side `fetch` timeout + an absolute
 wall-clock kill so a sleep/hung-call can't overrun the budget (Wave 2 ran ~7h40m
 wall vs the 240-min cap because the loop wedged after the machine slept).
+
+## Wave 3 — per-checklist-item parallel split (Opus, 1 h)
+
+Same team/questions, but the split planner now makes **one track per independent
+checklist item** (2–6 tracks) and the harness splits early (≥2 items at round ≥1),
+so the team works the whole checklist in parallel. 60-min cap, hard-killed cleanly
+at 60.0 min (no overrun — the hardening works).
+
+Example resolved deliberation, "Is the app ready for production?":
+
+| Track (checklist item) | sub-team | rounds | cost | outcome |
+| --- | --- | --- | --- | --- |
+| Blocking vs. non-blocking gaps | 4 | 11 | $2.99 | resolved |
+| Named launch criteria & acceptance bar | 3 | 5 | $1.75 | resolved |
+| (parent merge) | — | — | $0.39 | resolved |
+
+| Metric | Wave 1 (Haiku) | Wave 2 (Opus, grouped) | Wave 3 (Opus, per-item) |
+| --- | --- | --- | --- |
+| Output yield | 13% | 76% | **100%** (4/4) |
+| Failures / escalations | 29 / 22 | 0 / 2 | **0 / 0** |
+| Cost / deliberation | $0.43 | $2.62 | **~$5.1** (real) |
+| Throughput | ~4/h | ~3.5/h | **~1.5/h** |
+
+**Read:** per-item split is the **quality ceiling** — every request delivered,
+zero failures, zero walls; each item got a focused sub-team that worked it to the
+depth it needed (11 rounds vs 5). The flip side: **each item becomes a full Opus
+sub-deliberation**, so cost multiplies (~12× the Haiku baseline) and throughput
+drops to ~1.5 deliberations/h. Lever: per-item + Opus for exhaustive
+high-confidence coverage; grouped split or a cheaper track-moderator for
+throughput/cost.
+
+**Harness metric note (fixed):** a split deliberation's cost was undercounted —
+the harness read only the parent's `costSpentUsd`, not the tracks' (each track is
+a separate deliberation). It now sums track costs into the per-deliberation total.
