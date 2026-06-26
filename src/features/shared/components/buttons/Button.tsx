@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
   type ButtonHTMLAttributes,
+  type MouseEvent,
   type MutableRefObject,
   type ReactNode,
 } from 'react';
@@ -119,6 +120,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       children,
       type = 'button',
       style,
+      onClick,
       ...rest
     },
     ref,
@@ -152,6 +154,31 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         else if (ref) (ref as MutableRefObject<HTMLButtonElement | null>).current = node;
       },
       [ref],
+    );
+
+    // Double-submit guard — only engages when `onClick` returns a thenable (i.e. an async
+    // handler). The native click event is dispatched synchronously, so a fast double-click
+    // can fire twice before React commits a reactive `loading`/`disabled` re-render. We block
+    // the second invocation while the first promise is still pending via a synchronous ref.
+    // Plain synchronous (void-returning) handlers NEVER set the ref, so rapid-click controls
+    // (steppers, toggles, paginators) keep firing on every click exactly as before.
+    const inFlightRef = useRef(false);
+    const handleClick = useCallback(
+      (e: MouseEvent<HTMLButtonElement>) => {
+        if (!onClick) return;
+        if (inFlightRef.current) {
+          e.preventDefault();
+          return;
+        }
+        const result = (onClick as (ev: MouseEvent<HTMLButtonElement>) => unknown)(e);
+        if (result != null && typeof (result as { then?: unknown }).then === 'function') {
+          inFlightRef.current = true;
+          void Promise.resolve(result).finally(() => {
+            inFlightRef.current = false;
+          });
+        }
+      },
+      [onClick],
     );
 
     // Look up accent classes from static map (ensures Tailwind can detect them during purging)
@@ -197,6 +224,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={classes}
         style={mergedStyle}
         aria-busy={loading || undefined}
+        onClick={onClick ? handleClick : undefined}
       >
         {loading && isIconOnly ? (
           <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden="true">
