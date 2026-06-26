@@ -340,3 +340,28 @@ pub fn complete_cycle(
         }
     )
 }
+
+/// Advance ONLY the policy's `last_cycle_at`/`updated_at` clock — without
+/// touching `total_cycles` or `total_promotions`. Called on a *failed*
+/// terminal evolution path so `should_evolve` requires a fresh
+/// `min_executions_between` window before retrying. Without this, a persona
+/// whose cycle fails persistently (e.g. zero scenarios generated) leaves
+/// `last_cycle_at` frozen, so the post-execution gate re-fires the same failing
+/// cycle on every subsequent execution — a real CLI/$$ retry storm with zero
+/// forward progress. `total_cycles` stays success-only (bumped solely by
+/// `complete_cycle`).
+pub fn mark_cycle_attempted(pool: &DbPool, policy_id: &str) -> Result<(), AppError> {
+    timed_query!(
+        "lab_evolution_cycles",
+        "lab_evolution_cycles::mark_cycle_attempted",
+        {
+            let now = chrono::Utc::now().to_rfc3339();
+            let conn = pool.get()?;
+            conn.execute(
+                "UPDATE evolution_policies SET last_cycle_at = ?1, updated_at = ?1 WHERE id = ?2",
+                params![now, policy_id],
+            )?;
+            Ok(())
+        }
+    )
+}

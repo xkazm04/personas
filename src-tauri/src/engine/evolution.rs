@@ -130,6 +130,43 @@ fn try_status_update(
 }
 
 // =============================================================================
+// Backoff-clock guard
+// =============================================================================
+
+/// RAII guard that advances the policy's backoff clock (`last_cycle_at`) when a
+/// cycle ends on a *failure* path.
+///
+/// The SUCCESS path calls `complete_cycle` (which stamps `last_cycle_at` and
+/// bumps `total_cycles`) and then sets `finalized = true`, so this guard does
+/// NOT double-stamp. Any early `return` from `run_evolution_cycle` (persona
+/// load failure, empty scenarios, a status write that won't land, etc.) drops
+/// the guard with `finalized == false`, stamping `last_cycle_at = now` via
+/// `mark_cycle_attempted` so `should_evolve` waits a fresh
+/// `min_executions_between` window before retrying — closing the failed-cycle
+/// auto-trigger retry storm. `total_cycles` is never bumped here (success-only).
+struct CycleClockGuard<'a> {
+    pool: &'a DbPool,
+    policy_id: String,
+    finalized: bool,
+}
+
+impl Drop for CycleClockGuard<'_> {
+    fn drop(&mut self) {
+        if self.finalized {
+            return;
+        }
+        if let Err(e) = evolution_repo::mark_cycle_attempted(self.pool, &self.policy_id) {
+            tracing::warn!(
+                policy_id = %self.policy_id,
+                error = %e,
+                "Failed to advance last_cycle_at after a failed evolution cycle — \
+                 next completed execution may re-fire the cycle prematurely",
+            );
+        }
+    }
+}
+
+// =============================================================================
 // Evolution loop
 // =============================================================================
 
@@ -165,6 +202,17 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     };
 
     let mut status_reliable = true;
+
+    // Backoff-clock guard. Created AFTER the single-flight guard so the
+    // concurrent-refusal path above does NOT stamp (the in-flight holder owns
+    // the clock). On every *failure* return below this drops with
+    // `finalized == false` and advances `last_cycle_at`; the success path sets
+    // `finalized = true` after `complete_cycle` so we never double-stamp.
+    let mut clock_guard = CycleClockGuard {
+        pool: &pool,
+        policy_id: policy.id.clone(),
+        finalized: false,
+    };
 
     // P2: track aggregate cost across this cycle's many CLI spawns (variants ×
     // scenarios × run+eval). Warn-only — see engine/run_budget.rs.
@@ -474,8 +522,13 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     };
 
     let summary_json = serde_json::to_string(&summary).unwrap_or_default();
-    // complete_cycle is critical — retry once on failure
-    if let Err(e) = evolution_repo::complete_cycle(
+    // complete_cycle is critical — retry once on failure. It stamps
+    // `last_cycle_at` AND bumps `total_cycles` (success-only). On success we mark
+    // the clock guard finalized so it does not double-stamp; if BOTH attempts
+    // fail the guard stays armed and advances `last_cycle_at` on its own (the
+    // clock still moves, just without the `total_cycles` bump), preventing a
+    // retry storm even when the completion write itself is failing.
+    let completed = match evolution_repo::complete_cycle(
         &pool,
         &cycle_id,
         promoted,
@@ -483,21 +536,31 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
         incumbent_fitness.overall,
         &summary_json,
     ) {
-        tracing::warn!(cycle_id = %cycle_id, error = %e, "complete_cycle failed, retrying");
-        if let Err(retry_err) = evolution_repo::complete_cycle(
-            &pool,
-            &cycle_id,
-            promoted,
-            best_variant_idx.map(|_| best_variant_score),
-            incumbent_fitness.overall,
-            &summary_json,
-        ) {
-            tracing::error!(
-                cycle_id = %cycle_id,
-                error = %retry_err,
-                "complete_cycle retry also failed — cycle will appear stuck in DB",
-            );
+        Ok(()) => true,
+        Err(e) => {
+            tracing::warn!(cycle_id = %cycle_id, error = %e, "complete_cycle failed, retrying");
+            match evolution_repo::complete_cycle(
+                &pool,
+                &cycle_id,
+                promoted,
+                best_variant_idx.map(|_| best_variant_score),
+                incumbent_fitness.overall,
+                &summary_json,
+            ) {
+                Ok(()) => true,
+                Err(retry_err) => {
+                    tracing::error!(
+                        cycle_id = %cycle_id,
+                        error = %retry_err,
+                        "complete_cycle retry also failed — cycle will appear stuck in DB",
+                    );
+                    false
+                }
+            }
         }
+    };
+    if completed {
+        clock_guard.finalized = true;
     }
 
     // P2: finalize + persist the cycle's budget (retained 30m in-memory; the row
