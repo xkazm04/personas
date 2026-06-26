@@ -165,3 +165,44 @@ run is still the way to measure the Sonnet cost lever directly.
 **Remaining follow-up:** full result-*content* sharing across tracks (beyond the
 "already ran" titles) is limited by the 240-char per-turn context truncation — the
 deeper improvement once split-heavy runs warrant it.
+
+## Wave 5 — split-forced (5-area audit, Opus parent / Sonnet tracks, 1 h)
+
+A fixed 5-area question (`TOPIC` env) forced splits every time: 3 deliberations,
+**all split** into per-area tracks (3 / 6 / 5 tracks), 3 merges, 63 rounds, 0
+errors. Sonnet tracks cost $0.19–$1.58 each (vs Opus tracks $1.75–$2.99 in W3) —
+**cost lever confirmed**; ~$4.3/deliberation.
+
+**Quality (judge read of a full split transcript): strong.** The capability
+outputs are real and decision-useful — a v0.35.0 Security Scan (0 Crit/High, 3
+MED + 9 LOW, file:line, ship verdict, DB-migration blockers), ADR 0042
+(SHIP verdict + PR triage + task breakdown), a Code Review (APPROVE, auth
+boundaries verified line-by-line). Each track resolved to a concrete proposal.
+Cross-track de-dup mostly held — tracks built on the parent's scans instead of
+re-running them.
+
+**But dead-spending is reduced, not eliminated** (the bar for days-of-autonomy):
+1. **Result-CONTENT sharing gap (personas explicitly hit it).** A track's Security
+   Sentinel: *"The On-Demand Security Scan is already in ALREADY RUN — but its
+   output wasn't surfaced in this thread … someone needs to post the actual
+   findings here."* The de-dup tells a track *that* a capability ran but not
+   *what it found* (truncation + cross-deliberation). They cope via memory, but
+   it's real friction. **#1 remaining fix.**
+2. **Announce-but-never-run loop persists.** A track announced `uc_bug_hunt` 4×
+   (an unavailable capability) without it ever running; two turns near-verbatim.
+   The bias-to-act rule reduced but didn't kill it — the moderator kept routing
+   for it. Needs a hard "after one unfulfilled/unavailable attempt, stop routing".
+3. **Duplicate runs down to ~20%, not 0** — Architecture Review ran 2× in two
+   groups: a parallel-track race (concurrent tracks request the same capability
+   before either's result posts). Needs an **approval-time** atomic group de-dup.
+4. **Empty rounds** — one track logged 11 rounds but 3 turns (~8 produced no
+   turn). Routing/forced-reaction rounds that yield nothing.
+5. **Pre-flight miss** — Release Automation was requested then failed (`⚠`
+   connector not set up); the persona then said "already ran" and tried again.
+   Pre-flight only filters `setup_status=needs_credentials`, not runtime-unavailable.
+
+**Verdict:** quality pillar is there; the efficiency/no-dead-spending pillar needs
+one more round — chiefly (1) result-content sharing, (2) approval-time de-dup, (3)
+a hard unavailable-capability stop. (Harness note: with no active deliberation
+cleared, the wave resumed leftover deliberations and mislabeled their topic as the
+`TOPIC` value — a metric-labeling bug, not an engine fault.)
