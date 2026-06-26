@@ -1410,7 +1410,7 @@ pub fn build_split_prompt(
     let mut p = String::new();
     let _ = writeln!(
         p,
-        "You are planning how to PARALLELIZE a team deliberation. Partition the OPEN agenda into 2-4 INDEPENDENT tracks that distinct sub-groups can work on at the SAME TIME. Items that depend on each other MUST go in the same track; unrelated items go in different tracks. Do NOT make a track per item if items are related — group by theme."
+        "You are planning how to PARALLELIZE a team deliberation. Partition the OPEN agenda into parallel tracks — PREFER ONE TRACK PER INDEPENDENT CHECKLIST ITEM so the team can work every item at the SAME TIME until each hits a wall. Put items in the same track ONLY when one genuinely blocks or depends on the other. Aim for 2-6 tracks."
     );
     let _ = writeln!(p, "\n## TOPIC\n{topic}");
     if let Some(g) = goal {
@@ -1438,7 +1438,7 @@ pub fn build_split_prompt(
     );
     let _ = writeln!(
         p,
-        "Rules: 2-4 tracks; assign EVERY agenda item id to exactly one track; 2-4 key personas per track by their EXACT id; the focus is a short label for the track's theme."
+        "Rules: 2-6 tracks (one per independent checklist item where possible); assign EVERY agenda item id to exactly one track; 2-4 key personas per track by their EXACT id; the focus is a short label for the item."
     );
     p
 }

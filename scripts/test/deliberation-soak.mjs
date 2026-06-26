@@ -121,10 +121,11 @@ async function step(d, perDelib) {
   switch (d.status) {
     case 'open':
     case 'converging': {
-      // Optionally split a rich agenda once, to exercise parallel tracks.
-      if (SPLIT && !perDelib.didSplit && !d.parentId && d.round >= 2) {
+      // Split EARLY into per-item tracks so the team works the whole checklist in
+      // parallel until each item hits a wall.
+      if (SPLIT && !perDelib.didSplit && !d.parentId && d.round >= 1) {
         const agenda = (await call('list_deliberation_agenda', { deliberationId: id })) || [];
-        if (agenda.filter((a) => a.status === 'open').length >= 3) {
+        if (agenda.filter((a) => a.status === 'open').length >= 2) {
           perDelib.didSplit = true;
           log({ event: 'split', deliberationId: id });
           const after = await call('split_team_deliberation', { deliberationId: id }, 180);
