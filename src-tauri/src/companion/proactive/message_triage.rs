@@ -31,9 +31,12 @@
 //! progressively. First enable seeds the cursor to "now": the historical
 //! unread pile stays untouched for the user (no retroactive mass-read).
 
+use std::sync::LazyLock;
+
 use crate::db::repos::communication::messages as msg_repo;
 use crate::db::settings_keys::{AUTONOMOUS_MESSAGE_TRIAGE, COMPANION_MSG_TRIAGE_CURSOR};
 use crate::db::DbPool;
+use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
 
 /// Proactive-card trigger kind for the aggregated digest.
@@ -237,6 +240,21 @@ pub async fn triage_unread_messages(
     if !triage_enabled(sys_db) {
         return Ok(0);
     }
+
+    // In-flight guard (mirrors `exec_triage` in execution_review.rs:660). The
+    // wake gate below is a non-atomic read and `log_wake` lands only AFTER the
+    // expensive `cli_text_tracked` turn, so two concurrently-reachable passes
+    // (the 5-min tick plus any manual "triage now" IPC mirroring the exec-review
+    // one) can both pass the gate before either logs the wake and double-fire
+    // the CLI: duplicate token/$ spend, duplicate cards, and a double cursor
+    // advance that can skip unread messages past the user. Hold a process-wide
+    // lease for the whole pass so an overlapping call early-returns; the RAII
+    // handle releases the key on every exit path (incl. panic unwind).
+    static TRIAGE_INFLIGHT: LazyLock<InflightGuard> = LazyLock::new(InflightGuard::new);
+    let _inflight = match TRIAGE_INFLIGHT.guard("message_triage") {
+        Some(handle) => handle,
+        None => return Ok(0),
+    };
 
     // First enable: seed to "now" — never retroactively mass-read the
     // historical unread pile.

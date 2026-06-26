@@ -13,7 +13,7 @@
 //! implementing the trait -- no new `tokio::spawn` block needed.
 
 use std::panic::AssertUnwindSafe;
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 use futures_util::FutureExt;
@@ -22,6 +22,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use super::event_registry::event_name;
 use crate::db::DbPool;
 use crate::engine::background::{SchedulerState, SubscriptionCrashEvent};
+use crate::engine::inflight_guard::InflightGuard;
 use crate::engine::ExecutionEngine;
 
 // ---------------------------------------------------------------------------
@@ -2579,6 +2580,22 @@ impl ReactiveSubscription for AthenaChannelReactionSubscription {
                 }
             }
         }
+
+        // In-flight guard (mirrors `exec_triage` in execution_review.rs:660).
+        // The wake gate below is a non-atomic read and `log_wake` lands only
+        // AFTER the batch `run_athena_reaction_batch` CLI turn completes. A
+        // reaction turn can outlast the 300s tick interval, so an overlapping
+        // tick would pass the gate before the first logged its wake and
+        // double-fire the CLI — duplicate channel posts and double token/$
+        // spend. Hold a process-wide lease across the gate→CLI→log_wake region
+        // so a concurrent tick early-returns instead of starting a second CLI
+        // turn; the RAII handle releases the key on every exit (incl. panic).
+        static CHANNEL_REACTIONS_INFLIGHT: LazyLock<InflightGuard> =
+            LazyLock::new(InflightGuard::new);
+        let _inflight = match CHANNEL_REACTIONS_INFLIGHT.guard("channel_reactions") {
+            Some(handle) => handle,
+            None => return,
+        };
 
         let signals = {
             let pool = self.pool.clone();
