@@ -240,3 +240,46 @@ Review each ran ×1) but the check + spawn aren't atomic, so simultaneous approv
 across parallel tracks can both pass. **Last fix = an atomic capability claim**
 (DB-unique on `group_root + use_case_id`, or serialized per-group approval). Also
 a minor merge double-post observed once (harness re-merged a parent).
+
+## Wave 7 — atomic capability claim (split-forced, 1 h) — FINAL
+
+`deliberation_capability_claims` table, `PRIMARY KEY (group_root, use_case_id)`;
+`approve_deliberation_action` does an atomic `INSERT OR IGNORE` claim *before*
+spawn — first concurrent approval wins (`n==1`, runs), any simultaneous one gets
+`n==0` and skips (builds on the result). Commit `0236fcfe9`, 36 tests pass,
+migration live-confirmed (`errors: 0`). Grant Writing, Opus parent / Sonnet tracks.
+3 deliberations resolved, 2 split (6 tracks each), 48 rounds.
+
+| Metric | W6 (3 fixes) | **W7 (+ atomic claim)** |
+| --- | --- | --- |
+| In-group duplicate runs | 25% | **0%** ✅ |
+| Capability failures | 0 | **0** |
+| Escalations | 0 | **0** |
+| Errors | 0 | **0** |
+| Capability runs / groups | — | 6 runs / 3 groups, 0 dup |
+
+**Duplicate-run race CLOSED.** Across 3 groups (12 tracks) every capability ran
+exactly once — `On-Demand Security Scan`, `Code Review`, `Scheduled Architecture
+Review`, `Idea Architecture Analysis` each ×1. The W6 "Architecture Review ×2"
+cannot recur: the DB primary key arbitrates concurrent track approvals.
+
+**Honest caveat — contended path not live-stressed.** In both split groups the
+parallel tracks *naturally diversified* (each area-owner picked an area-appropriate
+capability), so two tracks never raced for the *same* capability this wave. The 0%
+is real (no dup occurred) but the claim's blocking branch wasn't independently
+triggered live — it's proven by unit test (`claim_capability` returns true once,
+false after) and correct by construction (PK constraint). Belt-and-suspenders only.
+
+**Quality held (transcript-confirmed, P&S track).** Gated loop runs clean:
+request (⏸) → run (▶) → result (🛠) → discuss-on-top → resolve. Result-content
+sharing works *across tracks*: the architect references `ADR-0031` (the Idea
+Architecture Analysis output) **and** the A11Y blocker from another track
+("the block on ship is accessibility A11Y-ALERT1/2, not P&S") to make the right
+call — defer P&S, propose "Implement per-request pagination per ADR-0031". No
+empty rounds, no duplicate chat, grounded deliverables at parent (merge proposal)
+and track (pagination task) level.
+
+**Dead-spending pillar — closed.** Ladder across waves: yield 13% → 89%;
+failures 29 → 0; escalations 22 → 0; in-group duplicate runs eliminated;
+result-content sharing + announce-loop fixed. Autonomous-team reliability target
+("works for days without dead spending") met on this engine.
