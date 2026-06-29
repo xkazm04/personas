@@ -85,12 +85,15 @@ pub fn get_value_rollup(
     repo::get_value_rollup(&state.db, days, persona_id.as_deref())
 }
 
-/// Returns per-persona monthly spend.
+/// Returns per-persona monthly spend for the budget UI.
 ///
-/// `utc_offset_minutes` — the user's local UTC offset in minutes (e.g. UTC-8 → -480,
-/// UTC+2 → 120).  When provided the "start of month" boundary is computed in the
-/// user's local timezone so that spend totals match their calendar month.  When
-/// omitted the query falls back to UTC.
+/// The spend total here MUST equal what the server budget gate enforces, so the
+/// "start of month" boundary is UTC (`datetime('now', 'start of month')`) and the
+/// counted row set matches `get_monthly_spend` exactly via the shared
+/// `MONTHLY_SPEND_PREDICATE`. The `utc_offset_minutes` argument is still accepted
+/// for backward compatibility with existing callers but is intentionally ignored —
+/// a local-timezone boundary would make the badge disagree with the gate that
+/// actually blocks runs.
 #[tauri::command]
 #[instrument(skip(state), fields(utc_offset_minutes))]
 pub fn get_all_monthly_spend(
@@ -151,22 +154,31 @@ pub fn get_overview_bundle(
 
 fn get_all_monthly_spend_with_conn(
     conn: &Connection,
-    utc_offset_minutes: Option<i32>,
+    _utc_offset_minutes: Option<i32>,
 ) -> Result<MonthlySpendResult, AppError> {
-    let period_start_str = monthly_period_start_utc(utc_offset_minutes);
-    let mut stmt = conn.prepare_cached(
+    // The budget UI MUST measure exactly what the server budget gate enforces,
+    // so per-persona spend uses the shared MONTHLY_SPEND_PREDICATE — the SAME
+    // status set, UTC start-of-month boundary, and ops-chat exclusion as
+    // db::repos::execution::executions::get_monthly_spend (the gate that BLOCKS
+    // runs). These MUST stay in lock-step; see the engine/background.rs invariant
+    // (~1498-1510): "the budget UI shows terminal statuses only, ops-chat
+    // excluded". Because the boundary is UTC (to match the server), the caller's
+    // utc_offset_minutes is intentionally ignored.
+    let period_start_str = monthly_period_start_utc(None);
+    let sql = format!(
         "SELECT p.id, COALESCE(e.spend, 0.0), p.max_budget_usd, p.name
          FROM personas p
          LEFT JOIN (
              SELECT persona_id, SUM(cost_usd) AS spend
              FROM persona_executions
-             WHERE created_at >= ?1
-               AND status IN ('completed', 'failed')
+             WHERE {}
              GROUP BY persona_id
          ) e ON e.persona_id = p.id
          ORDER BY p.name",
-    )?;
-    let rows = stmt.query_map(rusqlite::params![period_start_str], |row| {
+        crate::db::repos::execution::executions::MONTHLY_SPEND_PREDICATE
+    );
+    let mut stmt = conn.prepare_cached(&sql)?;
+    let rows = stmt.query_map([], |row| {
         Ok(PersonaMonthlySpend {
             id: row.get(0)?,
             spend: row.get(1)?,

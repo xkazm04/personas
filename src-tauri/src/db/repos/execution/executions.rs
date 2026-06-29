@@ -1458,25 +1458,38 @@ pub fn get_retry_chains_batch(
     )
 }
 
+/// Spend predicate enforced by the monthly-budget gate, shared VERBATIM by both
+/// the per-persona server gate `get_monthly_spend` (which BLOCKS runs) and the
+/// all-persona budget UI feed `get_all_monthly_spend_with_conn`
+/// (`commands/communication/observability/metrics.rs`). These two MUST stay in
+/// lock-step: if they diverge, the UI badge / pause number stops matching what
+/// the server actually enforces. See the invariant in `engine/background.rs`
+/// (~1498-1510): "the budget UI shows terminal statuses only, ops-chat excluded".
+/// Three axes that must match exactly:
+///   1. status set — completed/failed/incomplete/cancelled. Cancelled rows may
+///      have consumed API credits before the process was killed, so they count
+///      toward the budget; in-flight (running/queued) rows do not.
+///   2. month boundary — UTC `datetime('now', 'start of month')` (NOT local time).
+///   3. ops-chat excluded — conversational `_ops` Chat-tab queries are not
+///      billable agent executions.
+pub const MONTHLY_SPEND_PREDICATE: &str = "status IN ('completed', 'failed', 'incomplete', 'cancelled') AND created_at >= datetime('now', 'start of month') AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')";
+
 pub fn get_monthly_spend(pool: &DbPool, persona_id: &str) -> Result<f64, AppError> {
     timed_query!(
         "persona_executions",
         "persona_executions::get_monthly_spend",
         {
             let conn = pool.get()?;
-            // Include completed, failed, incomplete, and cancelled executions in spend
-            // tracking. Cancelled executions may have consumed API credits before the
-            // process was killed, and those costs must count toward budget enforcement.
-            // Exclude ops chat executions from spend tracking — they are conversational
-            // queries from the Chat tab, not billable agent executions.
-            let spend: f64 = conn.query_row(
+            // Spend predicate is the shared MONTHLY_SPEND_PREDICATE so this server
+            // gate and the budget UI feed (get_all_monthly_spend_with_conn) can
+            // never drift on status set, month boundary, or ops-chat exclusion.
+            // See its doc comment above + the engine/background.rs invariant.
+            let sql = format!(
                 "SELECT COALESCE(SUM(cost_usd), 0.0) FROM persona_executions
-             WHERE persona_id = ?1 AND status IN ('completed', 'failed', 'incomplete', 'cancelled')
-             AND created_at >= datetime('now', 'start of month')
-             AND (input_data IS NULL OR input_data NOT LIKE '%\"_ops\"%')",
-                params![persona_id],
-                |row| row.get(0),
-            )?;
+             WHERE persona_id = ?1 AND {}",
+                MONTHLY_SPEND_PREDICATE
+            );
+            let spend: f64 = conn.query_row(&sql, params![persona_id], |row| row.get(0))?;
             Ok(spend)
         }
     )
