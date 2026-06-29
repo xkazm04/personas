@@ -31,7 +31,9 @@ const read = (f) => JSON.parse(readFileSync(`${ROOT}/${f}`, 'utf8'));
 const STALL_LIMIT = 3;
 const MAX_TURNS_PER_TICK = 3;
 const MAX_ROUNDS = 6;
-const MOD_MODEL = 'claude-haiku-4-5-20251001';
+// Mirror the engine: the (parent-level) moderator runs on Opus. A single linear
+// cert deliberation is top-level, so it grades the real production moderator.
+const MOD_MODEL = 'claude-opus-4-8';
 const TURN_MODEL = 'claude-sonnet-4-6';
 
 // ── Roster (real SDLC cores) ───────────────────────────────────────────────
@@ -115,7 +117,7 @@ function turnPrompt(m, recentTurns) {
   p += '\n## THE CONVERSATION SO FAR\n';
   if (!recentTurns.length) p += '(you are opening the discussion)\n';
   else for (const t of recentTurns) { let l = t.body.replace(/[\n\r]/g, ' '); if (l.length > 280) l = l.slice(0, 280) + '…'; p += `- ${t.who}: ${l}\n`; }
-  p += '\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. Be concise (2-5 sentences).\n';
+  p += '\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. Be concise (2-5 sentences). If the team is ready to commit to a concrete piece of work, propose it.\n';
   p += 'Return EXACTLY one JSON object, no prose:\n{"turn": {"message": "<your contribution>"}}';
   return p;
 }

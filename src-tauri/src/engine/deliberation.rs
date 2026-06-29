@@ -217,18 +217,29 @@ pub fn plan_transition(
     decision: &ModeratorDecision,
     open_agenda_after: usize,
     last_speaker: Option<&str>,
+    result_pending: bool,
 ) -> Transition {
     let round = progress.round + 1;
-    let stall = match decision.round_outcome {
-        RoundOutcome::Progressed => 0,
-        RoundOutcome::Stalled => progress.consecutive_stall_rounds + 1,
+    // A freshly-returned capability result IS progress, and the team must react
+    // to it before the deliberation may end (Fix 1/4: stop resolving/escalating
+    // while paid-for work is undiscussed). The round-cap backstop below still
+    // applies so this can't loop forever.
+    let stall = if result_pending {
+        0
+    } else {
+        match decision.round_outcome {
+            RoundOutcome::Progressed => 0,
+            RoundOutcome::Stalled => progress.consecutive_stall_rounds + 1,
+        }
     };
 
     // Termination precedence (highest first):
-    // 1. Converged / concluded / empty agenda → resolve.
-    if decision.status == StatusSignal::Converged
-        || decision.action == ModeratorAction::Conclude
-        || open_agenda_after == 0
+    // 1. Converged / concluded / empty agenda → resolve — UNLESS a capability
+    //    result just landed and hasn't been discussed (force a reaction round).
+    if !result_pending
+        && (decision.status == StatusSignal::Converged
+            || decision.action == ModeratorAction::Conclude
+            || open_agenda_after == 0)
     {
         return Transition {
             status: DeliberationStatus::Resolved,
@@ -243,10 +254,12 @@ pub fn plan_transition(
             },
         };
     }
-    // 2. Stall limit / explicit escalate / stuck → escalate to user.
-    if stall >= STALL_LIMIT
-        || decision.action == ModeratorAction::EscalateToUser
-        || decision.status == StatusSignal::Stuck
+    // 2. Stall limit / explicit escalate / stuck → escalate to user. Never while
+    //    a result is pending discussion (the team isn't stuck, it has new data).
+    if !result_pending
+        && (stall >= STALL_LIMIT
+            || decision.action == ModeratorAction::EscalateToUser
+            || decision.status == StatusSignal::Stuck)
     {
         let reason = if stall >= STALL_LIMIT {
             "stall_limit"
@@ -360,10 +373,18 @@ pub struct ModeratorContext {
     pub open_agenda: Vec<(String, String)>,
     /// Recent turns oldest-first: (author_label, body).
     pub recent_turns: Vec<(String, String)>,
+    /// A capability result (🛠) or failure (⚠) just landed as the newest turn and
+    /// the team hasn't reacted yet — block convergence/escalation for one round.
+    pub result_pending: bool,
 }
 
-/// The moderator runs on Haiku — cheap, one batched call per tick (plan §3).
-pub const MODERATOR_MODEL: &str = "claude-haiku-4-5-20251001";
+/// The moderator (orchestrator) runs on Opus — promoted from Haiku to test how
+/// far a more capable conversation manager pushes flow efficiency. Reasoning
+/// effort isn't exposed on the headless `claude -p` path, so it runs at default.
+pub const MODERATOR_MODEL: &str = "claude-opus-4-8";
+/// Track (child) moderator — Sonnet. A track is one scoped checklist item, so a
+/// cheaper conversation manager suffices; keeps the Opus tax on the parent only.
+pub const TRACK_MODERATOR_MODEL: &str = "claude-sonnet-4-6";
 /// Max deliberations advanced per tick — bounds a cold-start fan-out.
 const MAX_DELIBERATIONS_PER_TICK: usize = 8;
 /// Recent turns shown to the moderator.
@@ -419,6 +440,12 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
             let _ = writeln!(p, "- {who}: {line}");
         }
     }
+    if ctx.result_pending {
+        let _ = writeln!(
+            p,
+            "\n## A RESULT JUST LANDED\nThe newest message is a capability result (🛠) or a failed attempt (⚠). Route ONE round for the most relevant member to react to it — pull out the decision it implies, or note the gap if it failed. Do NOT converge or escalate this round; the team must build on this data first. Never re-request a capability that already ran or failed above."
+        );
+    }
     let _ = writeln!(
         p,
         "\n## YOUR DECISION\nReturn EXACTLY one JSON object, no prose:"
@@ -429,7 +456,7 @@ pub fn build_moderator_prompt(ctx: &ModeratorContext) -> String {
     );
     let _ = writeln!(
         p,
-        "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names."
+        "\nRules: mark 'progressed' if this round produced a decision, a task, genuinely new information, OR a participant MOVED their position, narrowed the disagreement, or put a new concrete option on the table — a stance shift toward common ground IS progress, not restating. Mark 'stalled' only when a round merely repeats already-settled points or circles without moving any position. Prefer 'invoke_capability'/'spawn_assignment' when an open item is better answered by doing than by more discussion. Bias toward CONVERGING: as soon as the team has a workable decision (even if minor sub-questions remain open), set status:'converged' to lock it into a proposal — do NOT keep deliberating once the core decision is clear. next_speakers MUST be the exact ids shown in parentheses in TEAM MEMBERS (e.g. 'qa', 'engineer') — never the display names. Bias to ACTION over process: if a member has announced it will run a capability across rounds with no result ever appearing, that capability is unavailable — stop routing for it and converge or move to the next item. Never spend rounds debating whether you *can* act, or re-running work the team already has results for."
     );
     p
 }
@@ -457,22 +484,34 @@ pub fn parse_decision(blob: &str) -> Option<ModeratorDecision> {
     result
 }
 
-/// Run one moderation decision on Haiku. Records a `companion_turn` ledger row
-/// (audit) and returns the decision plus the call's `cost_usd` (for the
-/// deliberation's cost meter). An unparseable reply degrades to
-/// [`ModeratorDecision::default`] — a `stalled` round with no speakers, which
-/// the governance treats conservatively (the stall counter advances toward
-/// escalation).
+/// The moderator model for a deliberation: Opus on the top-level parent (the
+/// hard conversation-management + cross-track synthesis), Sonnet on child tracks
+/// (a single scoped checklist item — cheaper, still capable). Cost lever: tracks
+/// dominate the call volume when a deliberation splits, so this is where the
+/// Opus tax is biggest.
+pub fn moderator_model_for(delib: &TeamDeliberation) -> &'static str {
+    if delib.parent_id.is_some() {
+        TRACK_MODERATOR_MODEL
+    } else {
+        MODERATOR_MODEL
+    }
+}
+
+/// Run one moderation decision. Records a `companion_turn` ledger row (audit) and
+/// returns the decision plus the call's `cost_usd` (for the deliberation's cost
+/// meter). An unparseable reply degrades to [`ModeratorDecision::default`] — a
+/// `stalled` round with no speakers, which the governance treats conservatively.
 pub async fn run_moderator(
     ctx: &ModeratorContext,
     user_db: &crate::db::UserDbPool,
+    model: &str,
 ) -> Result<(ModeratorDecision, Option<f64>), AppError> {
     let prompt = build_moderator_prompt(ctx);
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
         prompt,
         user_db,
         "deliberation_moderate",
-        MODERATOR_MODEL,
+        model,
     )
     .await?;
     Ok((parse_decision(&blob).unwrap_or_default(), cost))
@@ -569,6 +608,12 @@ fn build_moderator_context(
         .map(|t| (author_label(&t.author_kind).to_string(), t.body))
         .collect::<Vec<_>>();
 
+    // A capability result/failure as the newest turn that no one has answered.
+    let result_pending = recent_turns
+        .last()
+        .map(|(_, b)| b.starts_with('🛠') || b.starts_with('⚠'))
+        .unwrap_or(false);
+
     Ok((
         ModeratorContext {
             topic: delib.topic.clone(),
@@ -577,6 +622,7 @@ fn build_moderator_context(
             roster,
             open_agenda,
             recent_turns,
+            result_pending,
         },
         last_speaker,
     ))
@@ -611,7 +657,7 @@ pub async fn advance_one_deliberation(
     }
 
     let (ctx, last_speaker) = build_moderator_context(pool, delib)?;
-    let (mut decision, cost) = run_moderator(&ctx, user_db).await?;
+    let (mut decision, cost) = run_moderator(&ctx, user_db, moderator_model_for(delib)).await?;
     if let Some(c) = cost {
         let _ = deliberation_repo::add_cost(pool, &delib.id, c);
     }
@@ -633,10 +679,28 @@ pub async fn advance_one_deliberation(
         round: delib.round,
         consecutive_stall_rounds: delib.consecutive_stall_rounds,
     };
-    let t = plan_transition(progress, &decision, open_after, last_speaker.as_deref());
+    let t = plan_transition(
+        progress,
+        &decision,
+        open_after,
+        last_speaker.as_deref(),
+        ctx.result_pending,
+    );
 
     match t.outcome {
-        TickOutcome::Continue { speakers } => {
+        TickOutcome::Continue { mut speakers } => {
+            // A forced reaction round (a result just landed) must route someone
+            // even if the moderator tried to converge with no speakers.
+            if speakers.is_empty() && ctx.result_pending {
+                if let Some(m) = ctx
+                    .roster
+                    .iter()
+                    .find(|m| Some(m.id.as_str()) != last_speaker.as_deref())
+                    .or_else(|| ctx.roster.first())
+                {
+                    speakers.push(m.id.clone());
+                }
+            }
             let _ = deliberation_repo::update_progress(
                 pool,
                 &delib.id,
@@ -876,6 +940,145 @@ fn resolve_capability(
         .cloned()
 }
 
+/// Pull the capability title out of a marker turn body (🛠 Ran “X” / ▶ Running
+/// “X” / ⚠ …“X” / ⏸ …run “X”) into `set`.
+fn extract_capability_title(body: &str, set: &mut std::collections::BTreeSet<String>) {
+    if body.starts_with('🛠')
+        || body.starts_with('▶')
+        || body.starts_with('⚠')
+        || body.starts_with('⏸')
+    {
+        if let Some(a) = body.find('“') {
+            let rest = &body[a + '“'.len_utf8()..];
+            if let Some(b) = rest.find('”') {
+                set.insert(rest[..b].to_string());
+            }
+        }
+    }
+}
+
+/// The deliberation ids in this deliberation's GROUP — the parent (or self, if
+/// top-level) plus all its tracks. The unit across which capability work is
+/// de-duped + shared (a parent and its parallel tracks are one logical effort).
+fn group_deliberation_ids(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
+    let root = delib
+        .parent_id
+        .clone()
+        .unwrap_or_else(|| delib.id.clone());
+    let mut ids = std::collections::BTreeSet::new();
+    ids.insert(root.clone());
+    ids.insert(delib.id.clone());
+    if let Ok(tracks) = deliberation_repo::list_tracks(pool, &root) {
+        for t in tracks {
+            ids.insert(t.id);
+        }
+    }
+    ids.into_iter().collect()
+}
+
+/// Capabilities already run / attempted across this deliberation's GROUP (the
+/// parent + its sibling tracks + self). Fixes the cross-track duplicate-run bug
+/// (a track no longer re-runs what the parent or a sibling already ran) and the
+/// within-deliberation re-validation impulse — without de-duping across separate
+/// top-level questions (which would leave a fresh deliberation discussing blind).
+fn gather_attempted(pool: &DbPool, delib: &TeamDeliberation) -> Vec<String> {
+    let mut set = std::collections::BTreeSet::new();
+    for id in group_deliberation_ids(pool, delib) {
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            for t in &turns {
+                extract_capability_title(&t.body, &mut set);
+            }
+        }
+    }
+    set.into_iter().collect()
+}
+
+/// Pull a concise digest (title + verdict/summary excerpt) out of a 🛠 result
+/// body so a track/sibling can BUILD ON the finding instead of re-running it or
+/// asking "where's the output?". Anchors on a verdict/summary marker when present.
+fn finding_digest(body: &str) -> Option<(String, String)> {
+    let a = body.find('“')?;
+    let rest = &body[a + '“'.len_utf8()..];
+    let b = rest.find('”')?;
+    let title = rest[..b].trim().to_string();
+    let after = rest.get(b + '”'.len_utf8()..).unwrap_or("");
+    let lower = after.to_lowercase();
+    let anchor = ["verdict", "executive summary", "## summary", "ship/no-ship", "recommendation"]
+        .iter()
+        .filter_map(|k| lower.find(k))
+        .min()
+        .unwrap_or(0);
+    let digest: String = after[anchor..].chars().take(700).collect();
+    let digest = digest.split_whitespace().collect::<Vec<_>>().join(" ");
+    if digest.trim().is_empty() {
+        None
+    } else {
+        Some((title, digest))
+    }
+}
+
+/// The group's completed capability FINDINGS (title + digest) — injected into the
+/// turn prompt so tracks build on the parent's/siblings' results (the
+/// result-CONTENT sharing the personas explicitly asked for). Deduped by title
+/// (latest wins), capped to the few most recent.
+fn gather_findings(pool: &DbPool, delib: &TeamDeliberation) -> Vec<(String, String)> {
+    let mut by_title: std::collections::BTreeMap<String, String> = std::collections::BTreeMap::new();
+    for id in group_deliberation_ids(pool, delib) {
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            // oldest-first so later (better-grounded) results overwrite earlier.
+            for t in turns.iter().rev() {
+                if t.body.starts_with('🛠') {
+                    if let Some((title, digest)) = finding_digest(&t.body) {
+                        by_title.insert(title, digest);
+                    }
+                }
+            }
+        }
+    }
+    by_title.into_iter().rev().take(4).collect()
+}
+
+/// True if `title` already ran (🛠) or failed (⚠) anywhere in the group, OR is
+/// running right now in a sibling (another group deliberation parked at
+/// 'action_running' for the same capability). The approval-time guard that closes
+/// the parallel-track duplicate-run race the turn-time de-dup can't catch.
+pub fn capability_active_in_group(pool: &DbPool, delib: &TeamDeliberation, title: &str) -> bool {
+    for id in group_deliberation_ids(pool, delib) {
+        // A sibling running the same capability concurrently.
+        if id != delib.id {
+            if let Ok(d) = deliberation_repo::get(pool, &id) {
+                if d.status == "action_running" {
+                    if let Some(pa) = d
+                        .pending_action
+                        .as_deref()
+                        .and_then(|j| serde_json::from_str::<crate::db::models::PendingAction>(j).ok())
+                    {
+                        if pa.use_case_title == title {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        // Already completed/failed in any group deliberation.
+        if let Ok(turns) = team_channel_repo::list_for_deliberation(pool, &id, 200) {
+            for t in &turns {
+                if t.body.starts_with('🛠') || t.body.starts_with('⚠') {
+                    if let Some(a) = t.body.find('“') {
+                        let rest = &t.body[a + '“'.len_utf8()..];
+                        if let Some(b) = rest.find('”') {
+                            if &rest[..b] == title {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    false
+}
+
 /// Recent turns a persona sees for context.
 const TURN_CONTEXT_WINDOW: i64 = 12;
 /// Scoped memories injected into a persona's turn.
@@ -895,6 +1098,8 @@ pub fn build_turn_prompt(
     memories: &[String],
     recent_turns: &[(String, String)],
     capabilities: &[(String, String)],
+    attempted: &[String],
+    findings: &[(String, String)],
 ) -> String {
     use std::fmt::Write as _;
     let mut p = String::new();
@@ -939,14 +1144,32 @@ pub fn build_turn_prompt(
             let _ = writeln!(p, "- {id}: {title}");
         }
     }
+    if !findings.is_empty() {
+        let _ = writeln!(
+            p,
+            "\n## PRIOR FINDINGS (results already produced in this deliberation/its tracks — BUILD ON THESE, do not re-derive or re-run):"
+        );
+        for (title, digest) in findings {
+            let _ = writeln!(p, "- {title}: {digest}");
+        }
+    }
+    if !attempted.is_empty() {
+        let _ = writeln!(
+            p,
+            "\n## ALREADY RUN / ATTEMPTED (this deliberation and its parallel tracks) — do NOT request these again; build on their results above. Only re-run one if you have a SPECIFIC reason the underlying code/data changed since:"
+        );
+        for title in attempted {
+            let _ = writeln!(p, "- {title}");
+        }
+    }
     let act_clause = if capabilities.is_empty() {
         "Be concise (2-5 sentences). If the team is ready to commit to a concrete piece of work, propose it."
     } else {
-        "Be concise (2-5 sentences). When an open point is better answered by DOING than by more talk — running an analysis, pulling real data, drafting the artifact — request the matching capability from YOUR CAPABILITIES via invoke_capability with its EXACT id. The team pauses for the user to approve it; once it runs, its real output is posted back and the discussion continues on top of it. Prefer acting over speculating when the data would settle the question. If the team is ready to commit to a concrete piece of work, propose it."
+        "Be concise (2-5 sentences). When an open point is better answered by DOING than by more talk — running an analysis, pulling real data, drafting the artifact — request the matching capability from YOUR CAPABILITIES via invoke_capability with its EXACT id, BUT never one under ALREADY RUN / ATTEMPTED (use its result or move on). Do NOT merely ANNOUNCE you will run something — either request it THIS turn, or contribute substance; 'I will run X' without actually requesting it wastes the round. The team pauses for approval; once it runs, its real output is posted back. Prefer acting over speculating when data would settle the question. If the team is ready to commit, propose the concrete piece of work."
     };
     let _ = writeln!(
         p,
-        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. {act_clause}"
+        "\n## YOUR TURN\nContribute ONE substantive message that moves the team forward FROM YOUR POINT OF VIEW. You are EXPECTED to push back when a proposal conflicts with your core — productive disagreement improves the outcome; do not just agree. {act_clause} If you want a capability that is NOT listed in YOUR CAPABILITIES, it is unavailable to you — do NOT keep announcing you'll run it; use the PRIOR FINDINGS, state the gap ONCE, and move the decision forward with what the team has."
     );
     let _ = writeln!(
         p,
@@ -992,23 +1215,31 @@ pub async fn run_persona_deliberation_turn(
     persona_id: &str,
     north_star: Option<&str>,
 ) -> Result<TurnOutcome, AppError> {
-    // Persona voice + viewpoint + model + capabilities.
-    let (name, identity, model_profile, core_profile, design_context): (
+    // Persona voice + viewpoint + model + capabilities + readiness.
+    let (name, identity, model_profile, core_profile, design_context, setup_status): (
         String,
         String,
+        Option<String>,
         Option<String>,
         Option<String>,
         Option<String>,
     ) = {
         let conn = pool.get()?;
         conn.query_row(
-            "SELECT name, system_prompt, model_profile, core_profile, design_context FROM personas WHERE id = ?1",
+            "SELECT name, system_prompt, model_profile, core_profile, design_context, setup_status FROM personas WHERE id = ?1",
             params![persona_id],
-            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?)),
+            |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?, r.get(3)?, r.get(4)?, r.get(5)?)),
         )
         .map_err(AppError::Database)?
     };
-    let capabilities = parse_capabilities(design_context.as_deref());
+    // Pre-flight (Fix 2/3): a persona whose connectors aren't set up can't run
+    // capabilities — the executor's needs_credentials gate would reject them — so
+    // don't offer any; it discusses instead of requesting unrunnable work.
+    let capabilities = if setup_status.as_deref() == Some("needs_credentials") {
+        Vec::new()
+    } else {
+        parse_capabilities(design_context.as_deref())
+    };
     // Speak on the persona's own model tier (opinion turn — tool-less).
     let model = model_profile
         .as_deref()
@@ -1042,6 +1273,19 @@ pub async fn run_persona_deliberation_turn(
         .map(|t| (author_label(&t.author_kind).to_string(), t.body))
         .collect();
 
+    // What the group already ran/attempted (titles) + the actual findings.
+    let attempted = gather_attempted(pool, delib);
+    let findings = gather_findings(pool, delib);
+    // Fix 3: don't even OFFER a capability that already ran or failed in the group
+    // — the persona builds on its result instead of re-requesting it (kills the
+    // re-request + announce loops for done/unavailable capabilities).
+    let attempted_set: std::collections::HashSet<&str> =
+        attempted.iter().map(|s| s.as_str()).collect();
+    let capabilities: Vec<(String, String)> = capabilities
+        .into_iter()
+        .filter(|(_, title)| !attempted_set.contains(title.as_str()))
+        .collect();
+
     let prompt = build_turn_prompt(
         &name,
         &identity,
@@ -1051,6 +1295,8 @@ pub async fn run_persona_deliberation_turn(
         &memories,
         &recent_turns,
         &capabilities,
+        &attempted,
+        &findings,
     );
 
     let (blob, cost) = crate::companion::athena_reaction::cli_decision_with_model(
@@ -1082,16 +1328,23 @@ pub async fn run_persona_deliberation_turn(
         if let Some((use_case_id, use_case_title)) =
             resolve_capability(&cap.use_case_id, &capabilities)
         {
-            tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: persona requested a capability (gated — awaiting approval)");
-            return Ok(TurnOutcome::RequestedAction(crate::db::models::PendingAction {
-                persona_id: persona_id.to_string(),
-                persona_name: name,
-                use_case_id,
-                use_case_title,
-                rationale: cap.rationale.clone(),
-            }));
+            // Fix 2/3: don't re-run a capability already attempted this
+            // deliberation — degrade to the message (the persona still spoke).
+            if attempted.iter().any(|a| a == &use_case_title) {
+                tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: capability already attempted — dropping re-request");
+            } else {
+                tracing::info!(deliberation_id = %delib.id, persona_id, use_case = %use_case_id, "deliberation: persona requested a capability (gated — awaiting approval)");
+                return Ok(TurnOutcome::RequestedAction(crate::db::models::PendingAction {
+                    persona_id: persona_id.to_string(),
+                    persona_name: name,
+                    use_case_id,
+                    use_case_title,
+                    rationale: cap.rationale.clone(),
+                }));
+            }
+        } else {
+            tracing::info!(deliberation_id = %delib.id, persona_id, requested = %cap.use_case_id, "deliberation: persona requested an unknown capability — ignored");
         }
-        tracing::info!(deliberation_id = %delib.id, persona_id, requested = %cap.use_case_id, "deliberation: persona requested an unknown capability — ignored");
     }
     // propose_assignment stays a soft signal — the resolve-time proposal path
     // turns the deliberation's conclusion into one assignment.
@@ -1314,7 +1567,7 @@ pub fn build_split_prompt(
     let mut p = String::new();
     let _ = writeln!(
         p,
-        "You are planning how to PARALLELIZE a team deliberation. Partition the OPEN agenda into 2-4 INDEPENDENT tracks that distinct sub-groups can work on at the SAME TIME. Items that depend on each other MUST go in the same track; unrelated items go in different tracks. Do NOT make a track per item if items are related — group by theme."
+        "You are planning how to PARALLELIZE a team deliberation. Partition the OPEN agenda into parallel tracks — PREFER ONE TRACK PER INDEPENDENT CHECKLIST ITEM so the team can work every item at the SAME TIME until each hits a wall. Put items in the same track ONLY when one genuinely blocks or depends on the other. Aim for 2-6 tracks."
     );
     let _ = writeln!(p, "\n## TOPIC\n{topic}");
     if let Some(g) = goal {
@@ -1342,7 +1595,7 @@ pub fn build_split_prompt(
     );
     let _ = writeln!(
         p,
-        "Rules: 2-4 tracks; assign EVERY agenda item id to exactly one track; 2-4 key personas per track by their EXACT id; the focus is a short label for the track's theme."
+        "Rules: 2-6 tracks (one per independent checklist item where possible); assign EVERY agenda item id to exactly one track; 2-4 key personas per track by their EXACT id; the focus is a short label for the item."
     );
     p
 }
@@ -1484,7 +1737,7 @@ mod tests {
 
     #[test]
     fn progressed_round_resets_stall_and_continues() {
-        let t = plan_transition(prog(2, 2), &decision(RoundOutcome::Progressed, &["a"]), 3, None);
+        let t = plan_transition(prog(2, 2), &decision(RoundOutcome::Progressed, &["a"]), 3, None, false);
         assert_eq!(t.consecutive_stall_rounds, 0);
         assert_eq!(t.round, 3);
         assert_eq!(t.status, DeliberationStatus::Open);
@@ -1498,7 +1751,7 @@ mod tests {
 
     #[test]
     fn stalled_rounds_accumulate_then_escalate_at_limit() {
-        let t1 = plan_transition(prog(0, 0), &decision(RoundOutcome::Stalled, &["a"]), 2, None);
+        let t1 = plan_transition(prog(0, 0), &decision(RoundOutcome::Stalled, &["a"]), 2, None, false);
         assert_eq!(t1.consecutive_stall_rounds, 1);
         assert!(matches!(t1.outcome, TickOutcome::Continue { .. }));
 
@@ -1507,6 +1760,7 @@ mod tests {
             &decision(RoundOutcome::Stalled, &["a"]),
             2,
             None,
+            false,
         );
         assert_eq!(t2.consecutive_stall_rounds, STALL_LIMIT);
         assert_eq!(t2.status, DeliberationStatus::Escalated);
@@ -1515,7 +1769,7 @@ mod tests {
 
     #[test]
     fn empty_agenda_resolves() {
-        let t = plan_transition(prog(1, 0), &decision(RoundOutcome::Progressed, &["a"]), 0, None);
+        let t = plan_transition(prog(1, 0), &decision(RoundOutcome::Progressed, &["a"]), 0, None, false);
         assert_eq!(t.status, DeliberationStatus::Resolved);
         assert_eq!(t.outcome, TickOutcome::Resolve { reason: "agenda_clear" });
     }
@@ -1524,7 +1778,7 @@ mod tests {
     fn converged_signal_resolves_even_with_open_agenda() {
         let mut d = decision(RoundOutcome::Progressed, &["a"]);
         d.status = StatusSignal::Converged;
-        let t = plan_transition(prog(1, 0), &d, 4, None);
+        let t = plan_transition(prog(1, 0), &d, 4, None, false);
         assert_eq!(t.status, DeliberationStatus::Resolved);
         assert_eq!(t.outcome, TickOutcome::Resolve { reason: "converged" });
     }
@@ -1533,7 +1787,7 @@ mod tests {
     fn explicit_escalate_action_escalates() {
         let mut d = decision(RoundOutcome::Progressed, &["a"]);
         d.action = ModeratorAction::EscalateToUser;
-        let t = plan_transition(prog(1, 0), &d, 3, None);
+        let t = plan_transition(prog(1, 0), &d, 3, None, false);
         assert_eq!(t.status, DeliberationStatus::Escalated);
         assert_eq!(
             t.outcome,
@@ -1546,7 +1800,7 @@ mod tests {
     #[test]
     fn speakers_capped_and_deduped() {
         let d = decision(RoundOutcome::Progressed, &["a", "a", "b", "c", "d"]);
-        let t = plan_transition(prog(1, 0), &d, 3, None);
+        let t = plan_transition(prog(1, 0), &d, 3, None, false);
         match t.outcome {
             TickOutcome::Continue { speakers } => {
                 assert_eq!(speakers, vec!["a".to_string(), "b".into(), "c".into()]);
@@ -1559,7 +1813,7 @@ mod tests {
     #[test]
     fn anti_self_loop_drops_sole_repeat_speaker() {
         let d = decision(RoundOutcome::Progressed, &["a"]);
-        let t = plan_transition(prog(1, 0), &d, 3, Some("a"));
+        let t = plan_transition(prog(1, 0), &d, 3, Some("a"), false);
         assert_eq!(t.outcome, TickOutcome::Continue { speakers: vec![] });
     }
 
@@ -1570,9 +1824,39 @@ mod tests {
             &decision(RoundOutcome::Progressed, &["a"]),
             3,
             None,
+            false,
         );
         assert_eq!(t.status, DeliberationStatus::Resolved);
         assert_eq!(t.outcome, TickOutcome::Resolve { reason: "round_cap" });
+    }
+
+    #[test]
+    fn result_pending_blocks_resolve_and_escalate() {
+        // A converged signal is suppressed while a capability result is undiscussed.
+        let mut d = decision(RoundOutcome::Progressed, &["a"]);
+        d.status = StatusSignal::Converged;
+        let t = plan_transition(prog(1, 0), &d, 4, None, true);
+        assert_eq!(t.status, DeliberationStatus::Open);
+        assert!(matches!(t.outcome, TickOutcome::Continue { .. }));
+        // Stall-limit escalation is also suppressed, and the stall counter resets.
+        let s = plan_transition(
+            prog(5, STALL_LIMIT - 1),
+            &decision(RoundOutcome::Stalled, &["a"]),
+            2,
+            None,
+            true,
+        );
+        assert_eq!(s.consecutive_stall_rounds, 0);
+        assert!(matches!(s.outcome, TickOutcome::Continue { .. }));
+        // The round-cap backstop still applies even with a result pending.
+        let cap = plan_transition(
+            prog(CONVERGE_BY_ROUND - 1, 0),
+            &decision(RoundOutcome::Progressed, &["a"]),
+            3,
+            None,
+            true,
+        );
+        assert_eq!(cap.status, DeliberationStatus::Resolved);
     }
 
     #[test]
@@ -1640,12 +1924,16 @@ mod moderator_tests {
             }],
             open_agenda: vec![("a1".into(), "How to test?".into())],
             recent_turns: vec![],
+            result_pending: false,
         };
         let p = build_moderator_prompt(&ctx);
         assert!(p.contains("Ship faster"));
         assert!(p.contains("Architect"));
         assert!(p.contains("[a1] How to test?"));
         assert!(p.contains("\"deliberation\""));
+        // With a result pending, the moderator is told to react first.
+        let ctx2 = ModeratorContext { result_pending: true, ..ctx };
+        assert!(build_moderator_prompt(&ctx2).contains("A RESULT JUST LANDED"));
     }
 
     #[test]
@@ -1695,6 +1983,8 @@ mod turn_tests {
             &["prior: I flagged flaky tests".to_string()],
             &[("Teammate".to_string(), "Let's ship.".to_string())],
             &[],
+            &[],
+            &[],
         );
         assert!(p.contains("QA Guardian"));
         assert!(p.contains("challenger"));
@@ -1720,14 +2010,32 @@ mod turn_tests {
             &[],
             &[],
             &caps,
+            &[],
+            &[],
         );
         assert!(with.contains("## YOUR CAPABILITIES"));
         assert!(with.contains("run-regression: Run the regression suite"));
         assert!(with.contains("invoke_capability")); // invited to act
                                                       // No capabilities → no capability section (the JSON schema still
                                                       // names the field, so check the section HEADER, not the substring).
-        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[]);
+        let without = build_turn_prompt("QA", "id", None, None, "topic", &[], &[], &[], &[], &[]);
         assert!(!without.contains("## YOUR CAPABILITIES"));
+        // Already-attempted capabilities are listed so the persona won't re-request.
+        let dedup = build_turn_prompt(
+            "QA", "id", None, None, "topic", &[], &[],
+            &[("uc-x".to_string(), "Run X".to_string())],
+            &["Run X".to_string()],
+            &[],
+        );
+        assert!(dedup.contains("ALREADY RUN / ATTEMPTED"));
+        assert!(dedup.contains("- Run X"));
+        // PRIOR FINDINGS digests are injected so tracks build on them.
+        let shared = build_turn_prompt(
+            "QA", "id", None, None, "topic", &[], &[], &[], &[],
+            &[("Security Scan".to_string(), "Verdict: SHIP, 0 critical".to_string())],
+        );
+        assert!(shared.contains("PRIOR FINDINGS"));
+        assert!(shared.contains("Security Scan: Verdict: SHIP, 0 critical"));
     }
 
     #[test]

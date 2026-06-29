@@ -3721,6 +3721,31 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Atomic capability claim: one row per (group_root, use_case_id) so only the
+    // FIRST concurrent approval across parallel tracks spawns a capability — the
+    // PRIMARY KEY makes the de-dup race-free (the turn/approval-time scans can't).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "deliberation_capability_claims",
+            description: "Atomic per-group capability claim (race-free de-dup)",
+            already_applied: |conn| has_table(conn, "deliberation_capability_claims"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS deliberation_capability_claims (
+                        group_root      TEXT NOT NULL,
+                        use_case_id     TEXT NOT NULL,
+                        deliberation_id TEXT NOT NULL,
+                        claimed_at      TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (group_root, use_case_id)
+                    );",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

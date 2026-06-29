@@ -23,6 +23,9 @@ const POLL_MS = Number(process.env.POLL_MS || 4000);
 const SPLIT = process.env.SPLIT !== '0'; // exercise parallel tracks by default
 const OUT = process.env.OUT || `scripts/test/.soak/soak-${Date.now()}.jsonl`;
 
+// A fixed multi-area question (TOPIC env) forces a rich agenda → reliable
+// per-item splits; otherwise rotate the varied set below.
+const FIXED_TOPIC = (process.env.TOPIC || '').trim();
 // Rotated production-readiness questions so a 4h run gathers varied data.
 const QUESTIONS = [
   'Is the app ready for production?',
@@ -52,6 +55,11 @@ const metrics = {
   aborted: 0,
   costUsd: 0,
   errors: 0,
+  // Fix 5 — request→output yield (the efficiency signal): how many capability
+  // requests (⏸) actually produced a usable result (🛠) vs. failed (⚠).
+  turnRequests: 0,
+  turnOutputs: 0,
+  turnFailures: 0,
   perDeliberation: [],
 };
 
@@ -69,12 +77,22 @@ function log(line) {
 }
 
 async function bridge(command, params = {}, timeoutSecs = 280) {
-  const res = await fetch(`http://127.0.0.1:${PORT}/bridge-exec`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ method: 'invokeCommand', params: { command, params }, timeout_secs: timeoutSecs }),
-  });
-  const text = await res.text();
+  // Client-side abort so a hung/asleep bridge can never wedge the loop forever
+  // (the call then throws → call() catches → the loop re-checks the deadline).
+  const ctrl = new AbortController();
+  const to = setTimeout(() => ctrl.abort(), (timeoutSecs + 25) * 1000);
+  let text;
+  try {
+    const res = await fetch(`http://127.0.0.1:${PORT}/bridge-exec`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'invokeCommand', params: { command, params }, timeout_secs: timeoutSecs }),
+      signal: ctrl.signal,
+    });
+    text = await res.text();
+  } finally {
+    clearTimeout(to);
+  }
   let env;
   try {
     env = JSON.parse(text);
@@ -106,10 +124,11 @@ async function step(d, perDelib) {
   switch (d.status) {
     case 'open':
     case 'converging': {
-      // Optionally split a rich agenda once, to exercise parallel tracks.
-      if (SPLIT && !perDelib.didSplit && !d.parentId && d.round >= 2) {
+      // Split EARLY into per-item tracks so the team works the whole checklist in
+      // parallel until each item hits a wall.
+      if (SPLIT && !perDelib.didSplit && !d.parentId && d.round >= 1) {
         const agenda = (await call('list_deliberation_agenda', { deliberationId: id })) || [];
-        if (agenda.filter((a) => a.status === 'open').length >= 3) {
+        if (agenda.filter((a) => a.status === 'open').length >= 2) {
           perDelib.didSplit = true;
           log({ event: 'split', deliberationId: id });
           const after = await call('split_team_deliberation', { deliberationId: id }, 180);
@@ -201,25 +220,41 @@ async function runOneDeliberation(topic) {
   while (Date.now() < deadline && ACTIVE.has(d.status)) {
     d = (await step(d, perDelib)) || (await call('get_team_deliberation', { deliberationId: id }));
     if (!d) break;
-    metrics.costUsd = round2(metrics.costUsd + 0); // cost is read from d below
     await sleep(POLL_MS);
   }
   // Final read for outcome + cost.
   const final = (await call('get_team_deliberation', { deliberationId: id })) || d;
-  const turns = (await call('list_deliberation_turns', { deliberationId: id, limit: 500 })) || [];
+  // Pull turns from the parent + any tracks for an honest output-yield count.
+  const ids = [id];
+  for (const t of (await call('list_deliberation_tracks', { deliberationId: id })) || []) ids.push(t.id);
+  let turnsAll = [];
+  let trackCost = 0;
+  for (const tid of ids) turnsAll = turnsAll.concat((await call('list_deliberation_turns', { deliberationId: tid, limit: 500 })) || []);
+  // Sum the tracks' own spend — they're separate deliberations, so the parent's
+  // costSpentUsd alone undercounts a split deliberation's true cost.
+  for (const tr of (await call('list_deliberation_tracks', { deliberationId: id })) || []) trackCost += tr.costSpentUsd || 0;
+  const reqs = turnsAll.filter((t) => (t.body || '').startsWith('⏸')).length;
+  const outs = turnsAll.filter((t) => (t.body || '').startsWith('🛠') && !/no output/.test(t.body)).length;
+  const fails = turnsAll.filter((t) => (t.body || '').startsWith('⚠')).length;
+  metrics.turnRequests += reqs;
+  metrics.turnOutputs += outs;
+  metrics.turnFailures += fails;
   const outcome = {
     id,
     topic,
     status: final?.status,
     rounds: perDelib.rounds,
-    turns: turns.length,
+    turns: turnsAll.length,
+    requests: reqs,
+    outputs: outs,
+    failures: fails,
     actions: perDelib.actions,
     escalations: perDelib.escalations,
     didSplit: perDelib.didSplit,
-    costUsd: final?.costSpentUsd ?? 0,
+    costUsd: round2((final?.costSpentUsd ?? 0) + trackCost),
     wallMin: round2((Date.now() - tStart) / 60_000),
   };
-  metrics.costUsd = round2(metrics.costUsd + (final?.costSpentUsd ?? 0));
+  metrics.costUsd = round2(metrics.costUsd + (final?.costSpentUsd ?? 0) + trackCost);
   if (final?.status === 'resolved') metrics.resolved++;
   if (final?.status === 'aborted') metrics.aborted++;
   metrics.perDeliberation.push(outcome);
@@ -237,6 +272,8 @@ function summary() {
       metrics.perDeliberation.length > 0
         ? round2(metrics.perDeliberation.reduce((a, b) => a + b.rounds, 0) / metrics.perDeliberation.length)
         : 0,
+    // The headline efficiency metric: usable outputs ÷ capability requests.
+    outputYield: metrics.turnRequests ? round2(metrics.turnOutputs / metrics.turnRequests) : 0,
     finishedAt: new Date().toISOString(),
   };
   try {
@@ -269,10 +306,22 @@ async function main() {
   // Periodic heartbeat summary.
   const hb = setInterval(() => log({ event: 'heartbeat', ...summary() }), 60_000);
 
+  // Hard wall-clock kill: fires at the deadline even if the loop is wedged on a
+  // hung await (or the host slept and woke past the cap) — the backstop that the
+  // overnight wave-2 run lacked. Writes the summary and exits.
+  const hardKill = setTimeout(() => {
+    const s = summary();
+    log({ event: 'SOAK_HARD_STOP', ...s });
+    // eslint-disable-next-line no-console
+    console.log('\n=== SOAK SUMMARY (hard stop at deadline) ===\n' + JSON.stringify(s, null, 2));
+    process.exit(0);
+  }, Math.max(1000, deadline - Date.now()));
+
   while (Date.now() < deadline) {
-    await runOneDeliberation(QUESTIONS[qi++ % QUESTIONS.length]);
+    await runOneDeliberation(FIXED_TOPIC || QUESTIONS[qi++ % QUESTIONS.length]);
   }
 
+  clearTimeout(hardKill);
   clearInterval(hb);
   const s = summary();
   log({ event: 'SOAK_COMPLETE', ...s });
