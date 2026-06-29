@@ -2036,14 +2036,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
     )?;
 
     // -- Widen chat_messages role CHECK to include 'system' and 'tool' ----------
-    let needs_role_migration: bool = conn
-        .execute(
-            "INSERT INTO chat_messages (id, persona_id, session_id, role, content, created_at)
-             VALUES ('__role_check__', '__probe__', '__probe__', 'system', '', datetime('now'))",
-            [],
-        )
-        .is_err();
-    let _ = conn.execute("DELETE FROM chat_messages WHERE id = '__role_check__'", []);
+    // Detect support by PARSING the stored DDL (mirroring the persona_triggers /
+    // persona_executions migrations in this file), NEVER by a live INSERT probe.
+    // chat_messages has `persona_id NOT NULL REFERENCES personas(id)` and the
+    // pool runs with `PRAGMA foreign_keys = ON`, so a probe row with a fake
+    // persona ALWAYS fails on the FK -- never on the role CHECK -- which made the
+    // old INSERT-probe a permanent false-positive that rebuilt the whole table
+    // (an O(n) copy of all chat history) on every single launch.
+    let chat_messages_sql: String = conn
+        .prepare("SELECT COALESCE(sql, '') FROM sqlite_master WHERE type='table' AND name='chat_messages'")?
+        .query_row([], |row| row.get::<_, String>(0))
+        .unwrap_or_default();
+
+    // Only rebuild when the table genuinely exists but its stored CHECK lacks
+    // the widened role set. A fresh DB already carries
+    // CHECK(role IN ('user','assistant','system','tool')) -> no-op. An absent
+    // table (empty DDL) must NOT trigger a rebuild of a non-existent table.
+    let needs_role_migration = !chat_messages_sql.is_empty()
+        && !(chat_messages_sql.contains("'system'") && chat_messages_sql.contains("'tool'"));
 
     if needs_role_migration {
         ddl_step(

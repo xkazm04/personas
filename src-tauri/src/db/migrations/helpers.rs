@@ -10,10 +10,16 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
     use crate::engine::crypto;
     use std::collections::HashMap;
 
-    // Find credentials that have no field rows yet
+    // Find credentials that still carry a legacy `encrypted_data` blob. A
+    // credential is "pending" for as long as its blob is present; it is only
+    // "done" once `clear_legacy_credential_blobs` empties the blob, which it
+    // does ONLY after every field is confirmed extracted. This makes the
+    // skip-guard completeness-aware: a partially-extracted credential (e.g. an
+    // earlier crash left only some field rows) still has its blob, so it is
+    // re-processed here and its missing fields are filled in (INSERT OR IGNORE).
     let mut stmt = conn.prepare(
         "SELECT c.id, c.encrypted_data, c.iv FROM persona_credentials c
-         WHERE NOT EXISTS (SELECT 1 FROM credential_fields cf WHERE cf.credential_id = c.id)",
+         WHERE c.encrypted_data <> ''",
     )?;
 
     let rows: Vec<(String, String, String)> = stmt
@@ -26,13 +32,9 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
     }
 
     let now = chrono::Utc::now().to_rfc3339();
-    let mut insert_stmt = conn.prepare(
-        "INSERT OR IGNORE INTO credential_fields
-         (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)"
-    )?;
 
     let mut total_fields = 0usize;
+    let mut migrated_creds = 0usize;
 
     // Classify which field keys are typically non-sensitive (queryable)
     const NON_SENSITIVE_KEYS: &[&str] = &[
@@ -56,7 +58,9 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
     ];
 
     for (cred_id, encrypted_data, iv) in &rows {
-        // Decrypt the blob to get the JSON fields
+        // Decrypt the blob to get the JSON fields. On failure we skip this
+        // credential entirely -- nothing is inserted and the blob is left
+        // intact for a future retry (it is never cleared while undecryptable).
         let plaintext = if crypto::is_plaintext(iv) {
             encrypted_data.clone()
         } else {
@@ -85,6 +89,16 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
             }
         };
 
+        // Extract this credential's FULL field-set atomically: every field
+        // commits together or none does. A crash or an encrypt failure partway
+        // through rolls the whole credential back, so a partial field-set is
+        // never persisted -- and the blob (untouched here) survives intact for
+        // the next attempt. INSERT OR IGNORE means re-processing a credential
+        // that already has some field rows simply fills in the missing ones.
+        let tx = conn.unchecked_transaction()?;
+        let mut credential_ok = true;
+        let mut fields_in_cred = 0usize;
+
         for (key, value) in &fields {
             let field_id = uuid::Uuid::new_v4().to_string();
             let is_sensitive = !NON_SENSITIVE_KEYS.contains(&key.to_lowercase().as_str());
@@ -94,12 +108,13 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
                     Ok((ct, nonce)) => (ct, nonce),
                     Err(e) => {
                         tracing::warn!(
-                            "Failed to encrypt field '{}' for credential {}: {}",
+                            "Failed to encrypt field '{}' for credential {}: {} -- rolling back this credential (blob preserved for retry)",
                             key,
                             cred_id,
                             e
                         );
-                        continue;
+                        credential_ok = false;
+                        break;
                     }
                 }
             } else {
@@ -109,24 +124,40 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
 
             let field_type = classify_field_type(key);
 
-            insert_stmt.execute(rusqlite::params![
-                field_id,
-                cred_id,
-                key,
-                enc_val,
-                field_iv,
-                field_type,
-                is_sensitive as i32,
-                now,
-            ])?;
-            total_fields += 1;
+            tx.execute(
+                "INSERT OR IGNORE INTO credential_fields
+                 (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                rusqlite::params![
+                    field_id,
+                    cred_id,
+                    key,
+                    enc_val,
+                    field_iv,
+                    field_type,
+                    is_sensitive as i32,
+                    now,
+                ],
+            )?;
+            fields_in_cred += 1;
+        }
+
+        if credential_ok {
+            tx.commit()?;
+            total_fields += fields_in_cred;
+            migrated_creds += 1;
+        } else {
+            // Drop without commit -> rollback; nothing persisted for this
+            // credential. Its blob remains the source of truth until a later
+            // run extracts every field successfully.
+            drop(tx);
         }
     }
 
     if total_fields > 0 {
         tracing::info!(
-            "Migrated {} credentials ({} total fields) from blob to field-level storage",
-            rows.len(),
+            "Migrated {} credential(s) ({} total fields) from blob to field-level storage",
+            migrated_creds,
             total_fields
         );
     }
@@ -147,18 +178,75 @@ pub(super) fn migrate_blob_credentials_to_fields(conn: &Connection) -> Result<()
 /// `migrate_blob_credentials_to_fields`) preserves the original blob until
 /// the next attempt succeeds.
 pub(super) fn clear_legacy_credential_blobs(conn: &Connection) -> Result<(), AppError> {
-    let cleared = conn.execute(
-        "UPDATE persona_credentials
-            SET encrypted_data = '', iv = ''
-          WHERE (encrypted_data <> '' OR iv <> '')
-            AND EXISTS (
-                SELECT 1 FROM credential_fields cf WHERE cf.credential_id = persona_credentials.id
-            )",
-        [],
+    use crate::engine::crypto;
+    use std::collections::HashMap;
+
+    // Candidates: rows that still carry a legacy blob. We clear a blob ONLY
+    // once every key it encodes is confirmed present in `credential_fields`, so
+    // a partially-extracted credential keeps its blob as the recoverable source
+    // of truth. This is the safety gate that guarantees no secret is ever
+    // cleared before it has been fully extracted -- even if some earlier path
+    // left an incomplete field-set behind (the bug this fix closes).
+    let mut stmt = conn.prepare(
+        "SELECT id, encrypted_data, iv FROM persona_credentials
+          WHERE encrypted_data <> '' OR iv <> ''",
     )?;
+    let candidates: Vec<(String, String, String)> = stmt
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))?
+        .filter_map(|r| r.ok())
+        .collect();
+    drop(stmt);
+
+    let mut cleared = 0usize;
+    for (cred_id, encrypted_data, iv) in &candidates {
+        // Decrypt to learn the expected key-set. If we can't read the blob we
+        // can't prove completeness, so we conservatively LEAVE it in place
+        // rather than risk clearing fields we never managed to extract.
+        let plaintext = if crypto::is_plaintext(iv) {
+            encrypted_data.clone()
+        } else {
+            match crypto::decrypt_from_db(encrypted_data, iv) {
+                Ok(pt) => pt,
+                Err(_) => continue,
+            }
+        };
+        let expected: HashMap<String, String> = match serde_json::from_str(&plaintext) {
+            Ok(f) => f,
+            Err(_) => continue,
+        };
+
+        // Confirm every key the blob encodes has a corresponding field row.
+        let mut all_present = true;
+        for key in expected.keys() {
+            let has: i64 = conn
+                .prepare(
+                    "SELECT COUNT(*) FROM credential_fields
+                      WHERE credential_id = ?1 AND field_key = ?2",
+                )?
+                .query_row(rusqlite::params![cred_id, key], |row| row.get(0))
+                .unwrap_or(0);
+            if has == 0 {
+                all_present = false;
+                break;
+            }
+        }
+
+        // When `all_present` (vacuously true for an empty `{}` blob, which
+        // carries no secret) every field is safely in `credential_fields`, so
+        // the legacy blob can be emptied. Clearing the empty case also stops it
+        // from being re-scanned on every boot.
+        if all_present {
+            conn.execute(
+                "UPDATE persona_credentials SET encrypted_data = '', iv = '' WHERE id = ?1",
+                rusqlite::params![cred_id],
+            )?;
+            cleared += 1;
+        }
+    }
+
     if cleared > 0 {
         tracing::info!(
-            "Cleared legacy encrypted_data/iv blobs on {cleared} migrated credential row(s)"
+            "Cleared legacy encrypted_data/iv blobs on {cleared} fully-migrated credential row(s)"
         );
     }
     Ok(())
