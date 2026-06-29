@@ -104,11 +104,21 @@ export default function GuidedTour() {
       const step = steps[stepIndex];
       if (!step) return;
 
+      // Defense-in-depth alongside the navigate effect's clear-on-step-change:
+      // each queued side effect also bails if the user has since moved off the
+      // step that scheduled it, so a stale callback can never apply to the new
+      // step even if a clear is somehow missed.
+      const scheduleStepTimeout = (fn: () => void, ms: number) =>
+        scheduleTourTimeout(() => {
+          if (useSystemStore.getState().tourCurrentStepIndex !== stepIndex) return;
+          fn();
+        }, ms);
+
       setSidebarSection(step.nav.sidebarSection as SidebarSection);
 
       // Handle sub-tab setters
       if (step.nav.subTab && step.nav.subTabSetter) {
-        scheduleTourTimeout(() => {
+        scheduleStepTimeout(() => {
           if (step.nav.subTabSetter === 'setSettingsTab') {
             setSettingsTab(step.nav.subTab as Parameters<typeof setSettingsTab>[0]);
           } else if (step.nav.subTabSetter === 'setOverviewTab') {
@@ -141,9 +151,9 @@ export default function GuidedTour() {
         const theme = useThemeStore.getState();
         captureAppearanceBaseline({ themeId: theme.themeId, textScale: theme.textScale, brightness: theme.brightness });
       } else if (step.id === 'credentials-intro') {
-        scheduleTourTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
+        scheduleStepTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
       } else if (step.id === 'persona-creation') {
-        scheduleTourTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
+        scheduleStepTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
       } else if (step.id === 'first-execution') {
         // Open the agent we just built on its Use Cases tab so the user can
         // run it by hand. Prefer the tour-recorded persona; fall back to the
@@ -154,13 +164,13 @@ export default function GuidedTour() {
           ?? useAgentStore.getState().selectedPersona?.id
           ?? null;
         if (createdId) useAgentStore.getState().selectPersona(createdId);
-        scheduleTourTimeout(() => useSystemStore.getState().setEditorTab('use-cases'), 300);
+        scheduleStepTimeout(() => useSystemStore.getState().setEditorTab('use-cases'), 300);
       } else if (step.id === 'obsidian-install') {
         // Probe for the Obsidian desktop binary; when present the step
         // completes itself ("recognize it"). If not installed, the step's
         // copy guides the user to obsidian.md and the acknowledge button is
         // the manual fallback after they install.
-        scheduleTourTimeout(() => {
+        scheduleStepTimeout(() => {
           void import('@/api/obsidianBrain')
             .then(({ obsidianAvailable }) => obsidianAvailable())
             .then((avail) => {
@@ -173,7 +183,7 @@ export default function GuidedTour() {
       } else if (step.id === 'obsidian-vault-connect') {
         // Already-connected vaults complete the step on entry; otherwise the
         // SetupPanel emits the event when Save Configuration succeeds.
-        scheduleTourTimeout(() => {
+        scheduleStepTimeout(() => {
           if (useSystemStore.getState().obsidianConnected) {
             useSystemStore.getState().emitTourEvent('tour:obsidian-vault-connected');
           }
@@ -183,9 +193,9 @@ export default function GuidedTour() {
       // Set initial spotlight
       const firstSubHighlight = step.subSteps[0]?.highlightTestId;
       if (step.highlightTestId) {
-        scheduleTourTimeout(() => setHighlightTestId(step.highlightTestId!), 300);
+        scheduleStepTimeout(() => setHighlightTestId(step.highlightTestId!), 300);
       } else if (firstSubHighlight) {
-        scheduleTourTimeout(() => setHighlightTestId(firstSubHighlight), 300);
+        scheduleStepTimeout(() => setHighlightTestId(firstSubHighlight), 300);
       }
     },
     [tourId, setSidebarSection, setSettingsTab, setEventBusTab, setOverviewTab, captureAppearanceBaseline, setHighlightTestId, scheduleTourTimeout],
@@ -197,7 +207,15 @@ export default function GuidedTour() {
     // user confirms (which clears tourResumePending).
     if (!tourActive || isMinimized || tourResumePending) return;
     navigateToStep(currentIndex);
-  }, [currentIndex, tourActive, navigateToStep, isMinimized, tourResumePending]);
+    // Cancel THIS step's queued side effects on step change. The effect re-runs
+    // (and React fires this cleanup) whenever currentIndex changes, so a rapid
+    // Next/Skip/jump within a step's 100–400 ms timeout window clears the
+    // abandoned step's pending timeouts before the new step queues its own.
+    // Without this the previous step could pop the persona builder, switch a
+    // sub-tab, or spotlight a now-stale element. A normal single-step advance
+    // is unaffected: its own timeouts fire before the next navigation occurs.
+    return () => clearPendingTimeouts();
+  }, [currentIndex, tourActive, navigateToStep, isMinimized, tourResumePending, clearPendingTimeouts]);
 
   const handleNext = () => {
     if (allCompleted) { setShowCompletion(true); return; }
