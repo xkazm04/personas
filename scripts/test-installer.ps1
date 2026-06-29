@@ -89,15 +89,32 @@ Test-Step "binary-size" {
     Write-Host "($([math]::Round($size / 1MB, 1)) MB) " -NoNewline
 }
 
-Test-Step "onnxruntime-dll" {
-    # The ML feature (sqlite-vec + fastembed/ort) needs onnxruntime.dll next to
-    # the exe; ort's copy-dylibs places it in the build dir and NSIS packages it.
-    # verify-onnxruntime-bundling.mjs checks the BUILD dir, but nothing checked
-    # the INSTALLED tree -- if NSIS ever drops it, the build-dir gate passes and
-    # the app boot-crashes ("ONNX Runtime binary not found"). Assert it on disk.
-    $dll = Join-Path $installDir "onnxruntime.dll"
-    if (-not (Test-Path $dll)) { throw "onnxruntime.dll not found at $dll -- ML features will crash at boot" }
-    Write-Host "($([math]::Round((Get-Item $dll).Length / 1MB, 1)) MB) " -NoNewline
+Test-Step "onnxruntime-runtime" {
+    # Linking-aware ONNX Runtime check on the INSTALLED tree. ORT can be linked
+    # two ways here: STATIC (pyke-passthrough) bakes it into the exe (no dll
+    # needed), or DYNAMIC (Microsoft-ORT swap / load-dynamic) where the exe
+    # imports onnxruntime.dll and boot-crashes without it next to the exe.
+    # Delegate to the shared PE-import-aware checker so the installed tree is
+    # judged by the exact rule as the CI release gate -- it exits non-zero iff
+    # the exe imports onnxruntime.dll but the dll is missing beside it (a static
+    # build no longer false-fails for a dll it never needed).
+    # Capture via temp files (the health-check pattern below) so PowerShell 5.1
+    # native-stderr wrapping can't trip $ErrorActionPreference = Stop.
+    $tmpOut = [System.IO.Path]::GetTempFileName()
+    $tmpErr = [System.IO.Path]::GetTempFileName()
+    try {
+        $p = Start-Process -FilePath "node" `
+            -ArgumentList @("scripts\verify-onnxruntime-bundling.mjs", "--dir", $installDir) `
+            -Wait -PassThru -NoNewWindow `
+            -RedirectStandardOutput $tmpOut -RedirectStandardError $tmpErr
+        $code = $p.ExitCode
+        $out = @(Get-Content $tmpOut -ErrorAction SilentlyContinue) + @(Get-Content $tmpErr -ErrorAction SilentlyContinue)
+    } finally {
+        Remove-Item $tmpOut, $tmpErr -ErrorAction SilentlyContinue
+    }
+    if ($code -ne 0) { throw (($out | Where-Object { $_ }) -join '; ') }
+    $summary = $out | Where-Object { $_ -match "ONNX Runtime" } | Select-Object -Last 1
+    if ($summary) { Write-Host "($($summary.Trim())) " -NoNewline }
 }
 
 # -- 3. Registry verification -----------------------------------------
