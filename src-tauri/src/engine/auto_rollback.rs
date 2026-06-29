@@ -259,13 +259,36 @@ pub fn auto_rollback_tick(
             continue;
         }
 
+        // A version's error rate is only statistically meaningful once it has a
+        // minimum number of executions. This floor applies symmetrically to the
+        // current version AND the rollback target: without it we could roll onto
+        // a version whose 0% error rate is a single lucky run.
+        const MIN_EXECUTIONS_FOR_COMPARISON: i64 = 3;
+
         // Need at least a few data points for a meaningful comparison
         let total_current_executions: i64 = current_points.iter().map(|p| p.total_executions).sum();
-        if total_current_executions < 3 {
+        if total_current_executions < MIN_EXECUTIONS_FOR_COMPARISON {
             tracing::debug!(
                 persona_id = %persona.id,
                 total_current_executions,
                 "Auto-rollback: skipping persona — fewer than 3 executions on current version",
+            );
+            skipped += 1;
+            continue;
+        }
+
+        // Apply the SAME execution floor to the rollback TARGET. `previous_points`
+        // being non-empty is not sufficiency: a single day with one lucky success
+        // yields previous_error_rate=0.0, which the threshold/health gates would
+        // then treat as a pristine "known-good" baseline. Skip rolling onto a
+        // target whose sample is too small to be a meaningful track record.
+        let total_previous_executions: i64 =
+            previous_points.iter().map(|p| p.total_executions).sum();
+        if total_previous_executions < MIN_EXECUTIONS_FOR_COMPARISON {
+            tracing::debug!(
+                persona_id = %persona.id,
+                total_previous_executions,
+                "Auto-rollback: skipping persona — rollback target has fewer than 3 executions (no real track record)",
             );
             skipped += 1;
             continue;
