@@ -173,11 +173,25 @@ pub fn persist_blueprint(
         "persist_blueprint: starting compilation"
     );
 
-    // Use the pipeline's validate stage for connection validation.
+    // Validate on a clone, then PERSIST FROM THE VALIDATED CLONE. `validate()`
+    // `retain`s away out-of-bounds / self-loop connections; the number dropped
+    // is the before/after delta. Persisting from the raw `blueprint` instead
+    // would re-introduce those bad edges — panicking on an out-of-bounds index
+    // (member_ids[bc.source_index]) or silently writing a self-loop — and would
+    // report `dropped_connections: 0` with no warnings (success theater).
     let mut blueprint_clone = blueprint.clone();
     WorkflowCompiler
         .validate(&mut blueprint_clone)
         .map_err(AppError::Validation)?;
+
+    let valid_connection_count = blueprint_clone.connections.len();
+    let dropped_connections = connection_count - valid_connection_count;
+    let mut warnings: Vec<String> = Vec::new();
+    if dropped_connections > 0 {
+        warnings.push(format!(
+            "Dropped {dropped_connections} invalid connection(s) (out-of-bounds index or self-loop) from the topology blueprint."
+        ));
+    }
 
     // --- Single connection + transaction for the entire persistence ---
     let mut conn = pool.get()?;
@@ -240,7 +254,7 @@ pub fn persist_blueprint(
     let mut member_ids: Vec<String> = Vec::with_capacity(member_count);
     let mut persisted_members: Vec<PersonaTeamMember> = Vec::with_capacity(member_count);
 
-    for bm in &blueprint.members {
+    for bm in &blueprint_clone.members {
         let mid = uuid::Uuid::new_v4().to_string();
         let mnow = chrono::Utc::now().to_rfc3339();
         let role = bm.role.clone();
@@ -272,12 +286,13 @@ pub fn persist_blueprint(
     );
 
     // 4. Create connections, resolving indices → member IDs.
-    //    Indices are already validated so indexing is safe.
+    //    These come from the validated clone, so every index is in range
+    //    (out-of-bounds / self-loop edges were dropped) and indexing is safe.
     let conns_start = Instant::now();
     let mut persisted_connections: Vec<PersonaTeamConnection> =
-        Vec::with_capacity(connection_count);
+        Vec::with_capacity(valid_connection_count);
 
-    for bc in &blueprint.connections {
+    for bc in &blueprint_clone.connections {
         let source_id = &member_ids[bc.source_index];
         let target_id = &member_ids[bc.target_index];
         let conn_type = bc.connection_type.clone();
@@ -305,7 +320,7 @@ pub fn persist_blueprint(
     let conns_ms = conns_start.elapsed().as_millis();
     tracing::info!(
         team_id = %team.id,
-        count = connection_count,
+        count = valid_connection_count,
         duration_ms = conns_ms,
         "persist_blueprint: connections inserted"
     );
@@ -318,6 +333,8 @@ pub fn persist_blueprint(
         team_id = %team.id,
         member_count,
         connection_count,
+        valid_connection_count,
+        dropped_connections,
         total_duration_ms = total_ms,
         team_write_ms = team_ms,
         members_write_ms = members_ms,
@@ -329,10 +346,12 @@ pub fn persist_blueprint(
         team,
         members: persisted_members,
         connections: persisted_connections,
-        blueprint: blueprint.clone(),
+        // Return the validated blueprint so the canvas mirrors what was
+        // actually persisted (dropped edges are not rendered).
+        blueprint: blueprint_clone,
         source_description: description.to_string(),
-        warnings: Vec::new(),
-        dropped_connections: 0,
+        warnings,
+        dropped_connections,
     })
 }
 
@@ -392,7 +411,7 @@ mod tests {
     }
 
     #[test]
-    fn test_workflow_compiler_validate_self_loop() {
+    fn test_workflow_compiler_validate_drops_self_loop() {
         use crate::engine::topology_types::{BlueprintConnection, BlueprintMember};
 
         let mut bp = TopologyBlueprint {
@@ -410,8 +429,57 @@ mod tests {
                 connection_type: "chain".into(),
             }],
         };
+        // A self-loop is dropped (not an error), enabling graceful degradation.
         let result = WorkflowCompiler.validate(&mut bp);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("self-loop"));
+        assert!(result.is_ok());
+        assert!(
+            bp.connections.is_empty(),
+            "self-loop connection should have been retained out"
+        );
+    }
+
+    #[test]
+    fn test_workflow_compiler_validate_drops_out_of_bounds() {
+        use crate::engine::topology_types::{BlueprintConnection, BlueprintMember};
+
+        let mut bp = TopologyBlueprint {
+            description: "test".into(),
+            members: vec![
+                BlueprintMember {
+                    persona_id: "p1".into(),
+                    persona_name: "A".into(),
+                    role: "worker".into(),
+                    position_x: 0.0,
+                    position_y: 0.0,
+                },
+                BlueprintMember {
+                    persona_id: "p2".into(),
+                    persona_name: "B".into(),
+                    role: "worker".into(),
+                    position_x: 0.0,
+                    position_y: 0.0,
+                },
+            ],
+            connections: vec![
+                // Valid edge 0 -> 1.
+                BlueprintConnection {
+                    source_index: 0,
+                    target_index: 1,
+                    connection_type: "chain".into(),
+                },
+                // Out-of-bounds target (only indices 0,1 exist) — must be dropped
+                // so persist_blueprint never indexes member_ids[5] and panics.
+                BlueprintConnection {
+                    source_index: 1,
+                    target_index: 5,
+                    connection_type: "chain".into(),
+                },
+            ],
+        };
+        let result = WorkflowCompiler.validate(&mut bp);
+        assert!(result.is_ok());
+        assert_eq!(bp.connections.len(), 1, "out-of-bounds edge should be dropped");
+        assert_eq!(bp.connections[0].source_index, 0);
+        assert_eq!(bp.connections[0].target_index, 1);
     }
 }
