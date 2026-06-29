@@ -58,6 +58,14 @@ export function LiveStreamTab() {
   const pendingEventsRef = useRef<PersonaEvent[]>([]);
   const flushScheduledRef = useRef(false);
 
+  // Run-once backfill on mount. The fetch body never reads `personas`
+  // (source-persona resolution consumes it reactively during render via
+  // resolveSourcePersona), so keying this on `personas` only caused spurious
+  // re-runs on every roster mutation (health-score refresh, status poll,
+  // add/rename/enable) — each one hard-reset eventIdIndex and replaced the
+  // buffer with the fresh top-100, discarding up-to-200 already-buffered live
+  // events. useEventBusListener below carries all subsequent updates, so the
+  // backfill genuinely only needs to run once.
   useEffect(() => {
     let stale = false;
     listEvents(100).then((recentEvents) => {
@@ -68,7 +76,7 @@ export function LiveStreamTab() {
       }
     }).catch(() => { if (!stale) setIsLoading(false); });
     return () => { stale = true; };
-  }, [personas]);
+  }, []);
 
   const attached = useEventBusListener((evt: PersonaEvent) => {
     // CDC multiplexes full events with lightweight {action,table,rowid}
