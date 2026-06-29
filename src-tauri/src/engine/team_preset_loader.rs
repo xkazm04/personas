@@ -465,6 +465,64 @@ fn truncate_description(s: &str) -> String {
 /// overlay twice, and the frontend already merges overlays for the
 /// single-template adoption flow, so the same code path picks up
 /// translated question labels when it renders.
+/// The single `maps_to` token that pins a persona to a Dev Tools project
+/// (codebase). Mirrors `commands::design::template_adopt::CODEBASE_PIN_MAPS_TO`,
+/// which is `pub(super)` to `commands::design` and so not reachable from
+/// `engine`. Keep the two literals identical — `apply_codebase_pin_from_design`
+/// is the consumer.
+const CODEBASE_PIN_MAPS_TO: &str = "persona.design_context[dev_project_id]";
+
+/// Whether the preset/instant adoption path actually CONSUMES this adoption
+/// question's answer.
+///
+/// `instant_adopt_template_inner` (the adopter every preset member flows
+/// through) lands questionnaire answers in exactly two places:
+///   1. `populate_persona_parameters_from_design` — questions whose `maps_to`
+///      is `persona.parameters[KEY]` (KEY = `[A-Za-z0-9_]+`).
+///   2. `apply_codebase_pin_from_design` — the single question whose `maps_to`
+///      is `persona.design_context[dev_project_id]` (`CODEBASE_PIN_MAPS_TO`).
+///
+/// Every other question — `{{param.X}}` prompt-substitution questions,
+/// vault-category credential bindings, and plain context questions with no
+/// `maps_to` — is silently dropped, because the preset path never runs the
+/// `adoption_answers` pipeline (`substitute_variables` /
+/// `inject_configuration_section` / `apply_credential_bindings_to_connectors`)
+/// that the build-session/promote path uses. Collecting those answers in the
+/// questionnaire would throw them away. So the schema builder filters to the
+/// consumed set: the UI can only collect answers that take effect.
+///
+/// LOCKSTEP: keep this in sync with the two consumption sites in
+/// `commands::design::template_adopt`. If a third consumed `maps_to` form is
+/// added there (or the `adoption_answers` pipeline is wired into the preset
+/// path), widen this predicate accordingly.
+fn is_consumed_adoption_question(q: &Value) -> bool {
+    // Read `maps_to` verbatim (no trim): both consumers match it exactly — the
+    // codebase pin via `== CODEBASE_PIN_MAPS_TO` and the parameter path via an
+    // anchored regex — so a whitespace-padded token they'd reject must be
+    // dropped here too, not surfaced.
+    let maps_to = match q.get("maps_to").and_then(|v| v.as_str()) {
+        Some(s) => s,
+        None => return false,
+    };
+    maps_to == CODEBASE_PIN_MAPS_TO || is_persona_parameter_maps_to(maps_to)
+}
+
+/// Matches `persona.parameters[KEY]` with `KEY = [A-Za-z0-9_]+`, identical to
+/// the regex `populate_persona_parameters_from_design` uses to decide which
+/// questions become `persona.parameters[]` entries. Done with slicing rather
+/// than the `regex` crate to keep this hot-path-free helper dependency-light.
+fn is_persona_parameter_maps_to(maps_to: &str) -> bool {
+    match maps_to
+        .strip_prefix("persona.parameters[")
+        .and_then(|s| s.strip_suffix(']'))
+    {
+        Some(key) => {
+            !key.is_empty() && key.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_')
+        }
+        None => false,
+    }
+}
+
 pub fn get_adoption_schema(
     preset_id: &str,
     language: Option<&str>,
@@ -511,10 +569,27 @@ pub fn get_adoption_schema(
             .pointer("/payload/persona/identity/description")
             .and_then(|v| v.as_str())
             .map(truncate_description);
+        // Surface ONLY the questions whose answers the preset/instant adoption
+        // path actually consumes. The adopter (`instant_adopt_template_inner`)
+        // lands answers in exactly two places — `populate_persona_parameters_from_design`
+        // (`maps_to: persona.parameters[KEY]`) and `apply_codebase_pin_from_design`
+        // (`maps_to: persona.design_context[dev_project_id]`). It never runs the
+        // `adoption_answers` pipeline (substitute_variables / inject_configuration_section /
+        // apply_credential_bindings_to_connectors) that the build-session/promote path
+        // uses, so `{{param.X}}` substitution questions, vault-category credential
+        // bindings, and plain context questions would be collected from the user and
+        // then silently dropped. Filtering them out here keeps the questionnaire
+        // honest: the UI can only collect answers that take effect. See
+        // `is_consumed_adoption_question` for the lockstep contract with the adopter.
         let questions: Vec<Value> = design
             .pointer("/payload/adoption_questions")
             .and_then(|v| v.as_array())
-            .cloned()
+            .map(|arr| {
+                arr.iter()
+                    .filter(|q| is_consumed_adoption_question(q))
+                    .cloned()
+                    .collect()
+            })
             .unwrap_or_default();
 
         let q_count = questions.len();
@@ -546,6 +621,55 @@ pub fn get_adoption_schema(
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn consumed_question_keeps_parameter_and_codebase_pin() {
+        // persona.parameters[KEY] — consumed by populate_persona_parameters_from_design.
+        assert!(is_consumed_adoption_question(
+            &json!({ "id": "aq1", "maps_to": "persona.parameters[threshold]" })
+        ));
+        assert!(is_consumed_adoption_question(
+            &json!({ "id": "aq2", "maps_to": "persona.parameters[ticker_list_2]" })
+        ));
+        // codebase pin — consumed by apply_codebase_pin_from_design.
+        assert!(is_consumed_adoption_question(
+            &json!({ "id": "aq3", "maps_to": "persona.design_context[dev_project_id]" })
+        ));
+    }
+
+    #[test]
+    fn consumed_question_drops_unmapped_and_credential_and_substitution() {
+        // No maps_to (plain context question) → dropped.
+        assert!(!is_consumed_adoption_question(&json!({ "id": "aq1" })));
+        // Vault-category credential binding (no persona.parameters maps_to) → dropped:
+        // the preset path never runs apply_credential_bindings_to_connectors.
+        assert!(!is_consumed_adoption_question(
+            &json!({ "id": "aq2", "vault_category": "ai", "option_service_types": ["leonardo_ai"] })
+        ));
+        // Substitution-only question mapping somewhere other than the two
+        // consumed sinks → dropped (would stay a literal {{param.X}}).
+        assert!(!is_consumed_adoption_question(
+            &json!({ "id": "aq3", "maps_to": "persona.system_prompt" })
+        ));
+        // Malformed persona.parameters tokens → dropped (must match the
+        // [A-Za-z0-9_]+ key the adopter's regex requires).
+        assert!(!is_consumed_adoption_question(
+            &json!({ "id": "aq4", "maps_to": "persona.parameters[]" })
+        ));
+        assert!(!is_consumed_adoption_question(
+            &json!({ "id": "aq5", "maps_to": "persona.parameters[bad-key]" })
+        ));
+    }
+
+    #[test]
+    fn persona_parameter_maps_to_matches_adopter_regex() {
+        assert!(is_persona_parameter_maps_to("persona.parameters[a]"));
+        assert!(is_persona_parameter_maps_to("persona.parameters[A_1]"));
+        assert!(!is_persona_parameter_maps_to("persona.parameters[ a]"));
+        assert!(!is_persona_parameter_maps_to("persona.parameters[a].x"));
+        assert!(!is_persona_parameter_maps_to("persona.parameter[a]"));
+        assert!(!is_persona_parameter_maps_to("persona.parameters[a"));
+    }
 
     #[test]
     fn merge_overlay_object_keys_override() {
