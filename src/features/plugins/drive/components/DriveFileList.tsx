@@ -1060,7 +1060,11 @@ function AsyncColumnEntries(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.path, props.cachedEntriesFor, props]);
+    // Deps are the path and the stable (useCallback'd in useDrive) cache
+    // function only. `props` itself is a fresh object literal every parent
+    // render — including it here re-fired the effect on EVERY render, and for
+    // an uncached path that spun up a runaway `drive_list` IPC loop.
+  }, [props.path, props.cachedEntriesFor]);
   if (!loaded) {
     return <ColumnLoadingLabel />;
   }
