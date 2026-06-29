@@ -505,7 +505,21 @@ pub fn twin_record_interaction(
     // (typo, garbage) is silently persisted, polluting per-channel tone/memory
     // resolution. Reject unknown values with a clear message here.
     const VALID_DIRECTIONS: &[&str] = &["in", "out"];
-    const VALID_CHANNELS: &[&str] = &["discord", "slack", "email", "sms", "voice", "generic"];
+    // Keep in lock-step with the `TwinChannelKind` union in src/api/enums.ts
+    // (sync test: src/api/__tests__/enums.test.ts). `channel` is stored as an
+    // OPAQUE label — it is only INSERTed and interpolated into the pending-
+    // memory title (`[{channel}] …`); nothing branches on its value — so adding
+    // a value here cannot mishandle channel-specific logic. The set is the
+    // union of deployment channels (discord/slack/email/telegram/sms/teams/
+    // whatsapp — all reachable here via the frontend Reply Outbox), the tone
+    // registers (adds voice/generic), and the `training` pseudo-channel the
+    // Training Studio records Q&A under. Previously this list was a strict
+    // subset, so training/telegram/teams/whatsapp interactions were rejected at
+    // runtime despite being TS-valid.
+    const VALID_CHANNELS: &[&str] = &[
+        "discord", "slack", "email", "sms", "telegram", "teams", "whatsapp", "voice", "generic",
+        "training",
+    ];
     if !VALID_DIRECTIONS.contains(&direction.as_str()) {
         return Err(AppError::Validation(format!(
             "Invalid direction '{direction}' (expected 'in' or 'out')"

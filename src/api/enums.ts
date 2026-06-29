@@ -34,8 +34,19 @@ export const OBSIDIAN_CONFLICT_RESOLUTIONS: readonly ObsidianConflictResolution[
 
 /**
  * Valid `channel` identifiers across twin tone / communication /
- * recordInteraction / createChannel endpoints. The Rust side maps these to a
- * `ChannelKind` enum; unknown values are rejected with a typed error.
+ * recordInteraction / createChannel endpoints.
+ *
+ * MUST equal the Rust-accepted set in `twin_record_interaction`'s
+ * `VALID_CHANNELS` (src-tauri/src/commands/infrastructure/twin.rs) — unknown
+ * values are rejected there at the trust boundary with a typed `Validation`
+ * error, so a value valid here but missing there is runtime-rejected (and
+ * vice-versa). The set is the union of: the deployment channels a twin can be
+ * wired to (`DEPLOYMENT_CHANNELS` — discord/slack/email/telegram/sms/teams/
+ * whatsapp, all reachable by `recordInteraction` via the Reply Outbox), the
+ * per-output tone registers (`TONE_CHANNELS` — adds `voice` + `generic`), and
+ * the `training` pseudo-channel the Training Studio records Q&A under. Kept in
+ * lock-step by the sync test in `src/api/__tests__/enums.test.ts`. Add a value
+ * HERE and to the Rust `VALID_CHANNELS` together.
  */
 export type TwinChannelKind =
   | 'email'
@@ -43,12 +54,11 @@ export type TwinChannelKind =
   | 'slack'
   | 'discord'
   | 'telegram'
-  | 'signal'
   | 'teams'
   | 'whatsapp'
   | 'voice'
   | 'training'
-  | 'other';
+  | 'generic';
 
 export const TWIN_CHANNEL_KINDS: readonly TwinChannelKind[] = [
   'email',
@@ -56,12 +66,11 @@ export const TWIN_CHANNEL_KINDS: readonly TwinChannelKind[] = [
   'slack',
   'discord',
   'telegram',
-  'signal',
   'teams',
   'whatsapp',
   'voice',
   'training',
-  'other',
+  'generic',
 ] as const;
 
 /**
