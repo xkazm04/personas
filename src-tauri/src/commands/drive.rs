@@ -1,4 +1,11 @@
-//! Drive plugin — managed local filesystem for agent exports.
+//! Drive plugin — managed LOCAL filesystem sandbox for agent exports.
+//!
+//! Despite the "Drive" name this is NOT Google Drive (or any cloud account):
+//! there is no Drive API call, no OAuth scope/token, and no remote sync. The
+//! `google_oauth.rs` engine module is unrelated and never invoked by any
+//! `drive_*` command. Durability is local-only — files live solely on this
+//! device and are never backed up off-machine. The real trust boundary here
+//! is the path sandbox (`resolve_safe`), not a cloud authentication layer.
 //!
 //! Provides a sandboxed directory (app_data_dir/drive in release, ./.dev-drive
 //! at the repo root in debug) that agents and the Drive plugin UI share. All

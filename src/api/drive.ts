@@ -1,5 +1,11 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
+// IPC client for the Drive plugin: a managed LOCAL filesystem sandbox, NOT
+// Google Drive cloud. Despite the "Drive" name there is no Drive API, OAuth, or
+// remote sync — every drive_* call reads/writes a folder on this device under a
+// backend-managed root. Durability is local-only: files are never backed up
+// off-machine. See src-tauri/src/commands/drive.rs for the sandbox details.
+//
 // Frontend trust boundary: every drive_* IPC takes a relative path that the
 // Rust backend resolves against a managed root. Without client-side validation,
 // a prompt-injected persona tool call (e.g. `driveRead("../../../.ssh/id_rsa")`)
