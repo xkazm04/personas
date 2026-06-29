@@ -302,6 +302,32 @@ pub(crate) struct MemoryReviewPipeline {
     pub importance_updates: Vec<(String, i32)>,
 }
 
+// Score→importance mapping for the LLM memory review.
+//
+// The curator CLI scores each kept memory 1–10; these constants translate
+// that into the 1–5 `importance` scale (see MEMORY CONTRACT (4) for the
+// bounds). They are only ever used to RAISE a memory's importance
+// (`new = max(existing, mapped)`) and are skipped entirely for user-pinned
+// `core`-tier rows — so an LLM re-score can promote a neglected memory but
+// can never silently erode deliberately-curated importance, which is the
+// PRIMARY injection sort key (`get_for_injection_v2 ORDER BY importance DESC`).
+const REVIEW_IMPORTANCE_SCORE_7: i32 = 3; // "useful context"
+const REVIEW_IMPORTANCE_SCORE_8: i32 = 4; // "meaningfully aids performance"
+const REVIEW_IMPORTANCE_SCORE_9_10: i32 = 5; // "critical operational knowledge"
+const REVIEW_IMPORTANCE_DEFAULT: i32 = 3; // any other kept score (low thresholds)
+
+/// Map a CLI relevance score (1–10) to the proposed 1–5 importance value.
+/// Used only as a *ceiling candidate*: the caller still applies the
+/// only-raise / skip-core rules before writing anything.
+fn score_to_importance(score: i32) -> i32 {
+    match score {
+        7 => REVIEW_IMPORTANCE_SCORE_7,
+        8 => REVIEW_IMPORTANCE_SCORE_8,
+        9..=10 => REVIEW_IMPORTANCE_SCORE_9_10,
+        _ => REVIEW_IMPORTANCE_DEFAULT,
+    }
+}
+
 /// Run the LLM-driven memory review pipeline. See module-level comment
 /// for the contract. Caller responsible for downstream apply / write-
 /// proposal work.
@@ -509,6 +535,13 @@ Memories to review:
         .iter()
         .map(|m| (m.id.as_str(), m.title.as_str()))
         .collect();
+    // Existing (importance, tier) for each fetched memory. Used to enforce
+    // the only-raise rule and to skip user-pinned `core` rows so the review
+    // never lowers a deliberately-curated importance.
+    let meta_map: std::collections::HashMap<&str, (i32, &str)> = memories
+        .iter()
+        .map(|m| (m.id.as_str(), (m.importance, m.tier.as_str())))
+        .collect();
 
     for review in &reviews {
         let id = review.get("id").and_then(|v| v.as_str()).unwrap_or("");
@@ -547,13 +580,16 @@ Memories to review:
                 new_importance: None,
             });
         } else {
-            let new_importance = match score {
-                7 => 3,
-                8 => 4,
-                9..=10 => 5,
-                _ => 3,
-            };
-            importance_updates.push((id.to_string(), new_importance));
+            // The memory is KEPT either way. We only constrain the importance
+            // mutation: never lower a value, and never auto-touch a user-pinned
+            // `core`-tier row. (existing, tier) come from the fetched row.
+            let (existing_importance, tier) =
+                meta_map.get(id).copied().unwrap_or((0, "active"));
+            let mapped = score_to_importance(score);
+            // Only RAISE (new = max(existing, mapped) => write iff mapped >
+            // existing) and skip importance writes entirely for `core`.
+            let should_raise = tier != "core" && mapped > existing_importance;
+
             details.push(MemoryReviewDetail {
                 id: id.to_string(),
                 title: title.clone(),
@@ -562,14 +598,29 @@ Memories to review:
                 action: "kept".to_string(),
                 error: None,
             });
-            entries.push(ProposalEntry {
-                memory_id: id.to_string(),
-                title,
-                score,
-                reason,
-                action: "update_importance".to_string(),
-                new_importance: Some(new_importance),
-            });
+            if should_raise {
+                importance_updates.push((id.to_string(), mapped));
+                entries.push(ProposalEntry {
+                    memory_id: id.to_string(),
+                    title,
+                    score,
+                    reason,
+                    action: "update_importance".to_string(),
+                    new_importance: Some(mapped),
+                });
+            } else {
+                // Keep as-is: no importance write (would lower the value or
+                // touch a core row). Recorded as a no-op so the proposal/apply
+                // path leaves the user's importance untouched.
+                entries.push(ProposalEntry {
+                    memory_id: id.to_string(),
+                    title,
+                    score,
+                    reason,
+                    action: "keep".to_string(),
+                    new_importance: None,
+                });
+            }
         }
     }
 
