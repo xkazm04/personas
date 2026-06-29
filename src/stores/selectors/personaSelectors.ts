@@ -4,10 +4,14 @@
  * These eliminate the need for every component to independently call
  * `parseDesignContext(selectedPersona?.design_context)`.
  *
- * Reference stability is guaranteed by the LRU(1) cache inside
- * `parseDesignContext` — the same `design_context` string always
- * returns the exact same object, so zustand's default `Object.is`
- * equality check prevents unnecessary re-renders.
+ * Reference stability: `parseDesignContext` memoizes results in a bounded
+ * LRU keyed by the raw `design_context` string (and returns one shared frozen
+ * object for the null/empty case). So the same raw string returns the exact
+ * same parsed object reference while it remains in the cache, letting zustand's
+ * default `Object.is` equality skip unnecessary re-renders. This guarantee is
+ * bounded, not unconditional: if more distinct design_context strings than the
+ * cache capacity are parsed between reads, the least-recently-used entry is
+ * evicted and the next parse of that string yields a fresh reference.
  */
 
 import { useAgentStore } from '../agentStore';

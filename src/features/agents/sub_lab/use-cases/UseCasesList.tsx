@@ -20,29 +20,58 @@ export type { UseCaseSuggestedTrigger } from '@/lib/types/frontendTypes';
 
 // -- Parser ----------------------------------------------------------
 
-// LRU(1) cache: avoids re-parsing the same design_context string across
-// multiple hooks/components in the same render cycle.
-let _cachedRaw: string | null | undefined;
-let _cachedResult: DesignContextData = {};
+// Stable shared reference for the null/empty/whitespace case. Returning the
+// SAME frozen object (instead of a fresh `{}` each call) keeps the Object.is
+// based zustand selectors in personaSelectors.ts from re-rendering for personas
+// that have no design_context. Safe to share/freeze: no caller mutates the
+// parsed result (every consumer spreads or reads it; the only in-place writes
+// live inside this parser, on freshly-created objects before they are cached).
+const EMPTY_DESIGN_CONTEXT: DesignContextData = Object.freeze({});
+
+// Bounded LRU cache keyed by the RAW design_context string. The previous
+// single-slot (LRU-1) cache held exactly one entry, so any sibling component
+// parsing a *different* persona's string would immediately evict it and break
+// reference stability. This Map retains up to _PARSE_CACHE_CAPACITY distinct
+// raw strings (evicting the oldest), so the same raw string always returns the
+// exact same parsed object reference until evicted — even when N personas are
+// parsed concurrently during high-churn store ticks (streaming/telemetry).
+const _PARSE_CACHE_CAPACITY = 32;
+const _parseCache = new Map<string, DesignContextData>();
 
 /**
  * Parse a raw `design_context` JSON string into the typed envelope.
  * Handles both the new structured format (with camelCase keys) and
  * the legacy flat format (with snake_case keys like `use_cases`, `credential_links`).
  *
- * Results are cached (LRU-1) so repeated calls with the same string
- * (e.g. from useConnectorStatuses, subscriptionLifecycle, etc.) skip parsing.
+ * Results are memoized in a bounded LRU keyed by the raw string, so repeated
+ * calls with the same string (e.g. from useConnectorStatuses,
+ * subscriptionLifecycle, the personaSelectors hooks, etc.) skip parsing AND
+ * return a reference-stable object. The null/empty case returns one shared
+ * frozen reference.
  */
 export function parseDesignContext(raw: string | null | undefined): DesignContextData {
-  if (raw === _cachedRaw) return _cachedResult;
+  // Null/empty/whitespace -> always the same shared (frozen) empty reference.
+  if (!raw || !raw.trim()) return EMPTY_DESIGN_CONTEXT;
+
+  // Cache hit: return the existing reference and mark it most-recently-used.
+  const cached = _parseCache.get(raw);
+  if (cached !== undefined) {
+    _parseCache.delete(raw);
+    _parseCache.set(raw, cached);
+    return cached;
+  }
 
   const store = (r: DesignContextData): DesignContextData => {
-    _cachedRaw = raw;
-    _cachedResult = r;
+    _parseCache.set(raw, r);
+    // Evict oldest entries (Map preserves insertion order) beyond capacity.
+    while (_parseCache.size > _PARSE_CACHE_CAPACITY) {
+      const oldest = _parseCache.keys().next().value;
+      if (oldest === undefined) break;
+      _parseCache.delete(oldest);
+    }
     return r;
   };
 
-  if (!raw || !raw.trim()) return store({});
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
