@@ -58,8 +58,28 @@ const BLOCKED_ENV_NAMES: &[&str] = &[
     "ZDOTDIR",              // redirect zsh config to attacker-controlled dir
 ];
 
+/// Env var name *prefixes* that re-arm the exact-name code-execution vectors via
+/// runner-config families. Package managers / language runners read whole
+/// tool-prefixed namespaces and map them back onto the blocked knobs — e.g. npm
+/// reads `npm_config_*` case-insensitively and forwards
+/// `npm_config_node_options` as `--node-options`, re-arming NODE_OPTIONS on an
+/// allowlisted runner even though the exact name `NODE_OPTIONS` is denied. The
+/// exact-name denylist can't enumerate these, so block the whole family by
+/// prefix. Each entry maps to a runner that `validate_mcp_command` allowlists
+/// (npx/uv/bun/deno + python/pip + cargo). Keep this list tight — every prefix
+/// here is a code-exec runner namespace, not a benign app config namespace.
+const BLOCKED_ENV_PREFIXES: &[&str] = &[
+    "NPM_CONFIG_", // npm forwards npm_config_* (incl. node-options) to the runtime
+    "UV_",         // uv / uvx config knobs (index/cache/python/runner overrides)
+    "BUN_",        // bun runtime + install config knobs
+    "DENO_",       // deno runtime knobs (DENO_DIR, etc.)
+    "PIP_",        // pip config (index-url / extra args)
+    "CARGO_",      // cargo config knobs (build/runner/rustflags overrides)
+];
+
 /// Sanitize an env var name: strip non-alphanumeric/underscore chars, uppercase,
-/// and check against the denylist. Returns `None` if the name is blocked or empty.
+/// and check against the exact-name denylist AND the blocked prefix families.
+/// Returns `None` if the name is blocked or empty.
 pub(crate) fn sanitize_env_name(name: &str) -> Option<String> {
     let sanitized: String = name
         .to_uppercase()
@@ -77,6 +97,20 @@ pub(crate) fn sanitize_env_name(name: &str) -> Option<String> {
         return None;
     }
 
+    // Reject runner-config families by prefix (checked AFTER uppercasing so
+    // `npm_config_node_options` -> `NPM_CONFIG_NODE_OPTIONS` -> blocked). These
+    // map back onto the exact-name code-exec knobs the denylist already blocks.
+    for &prefix in BLOCKED_ENV_PREFIXES {
+        if sanitized.starts_with(prefix) {
+            tracing::warn!(
+                env_var = %sanitized,
+                blocked_prefix = prefix,
+                "Blocked env var name matching a code-exec runner-config prefix family"
+            );
+            return None;
+        }
+    }
+
     Some(sanitized)
 }
 
@@ -91,4 +125,44 @@ static CREDENTIAL_REFRESH_LOCKS: LazyLock<KeyedResourcePool<String, Arc<Mutex<()
 /// dropped, making the entry eligible for future pruning.
 pub(super) fn credential_refresh_lock(credential_id: &str) -> PoolHandle<String, Arc<Mutex<()>>> {
     CREDENTIAL_REFRESH_LOCKS.acquire(credential_id.to_string(), || Arc::new(Mutex::new(())))
+}
+
+#[cfg(test)]
+mod env_name_sanitization_tests {
+    use super::sanitize_env_name;
+
+    #[test]
+    fn blocks_exact_name_denylist() {
+        assert_eq!(sanitize_env_name("NODE_OPTIONS"), None);
+        assert_eq!(sanitize_env_name("ld_preload"), None); // case-insensitive
+        assert_eq!(sanitize_env_name("PYTHONPATH"), None);
+    }
+
+    #[test]
+    fn blocks_runner_config_prefix_families() {
+        // npm forwards npm_config_node_options -> --node-options, re-arming the
+        // exact-name-blocked NODE_OPTIONS vector on an allowlisted runner.
+        assert_eq!(sanitize_env_name("npm_config_node_options"), None);
+        assert_eq!(sanitize_env_name("NPM_CONFIG_NODE_OPTIONS"), None);
+        // uv / bun / deno / pip / cargo runner-config families.
+        assert_eq!(sanitize_env_name("UV_INDEX_URL"), None);
+        assert_eq!(sanitize_env_name("BUN_INSTALL"), None);
+        assert_eq!(sanitize_env_name("deno_dir"), None);
+        assert_eq!(sanitize_env_name("PIP_INDEX_URL"), None);
+        assert_eq!(sanitize_env_name("CARGO_BUILD_RUSTFLAGS"), None);
+    }
+
+    #[test]
+    fn allows_benign_env_vars() {
+        // Benign credential/app vars that don't hit a blocked name or family.
+        assert_eq!(
+            sanitize_env_name("MY_API_BASE"),
+            Some("MY_API_BASE".to_string())
+        );
+        assert_eq!(sanitize_env_name("api_key"), Some("API_KEY".to_string()));
+        assert_eq!(
+            sanitize_env_name("SLACK_BOT_TOKEN"),
+            Some("SLACK_BOT_TOKEN".to_string())
+        );
+    }
 }

@@ -39,6 +39,14 @@ const MCP_SESSION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(
 /// TTL for cached `tools/list` responses (60 seconds).
 const TOOLS_LIST_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
 
+/// Short TTL for a DEGRADED gateway merge — one where at least one ENABLED
+/// member's `tools/list` errored but other members still returned tools. Caching
+/// that partial set for the full 60s would mask the failed member's tools (and
+/// its recovery) for a whole minute on every `list_tools`. A short TTL lets a
+/// recovered member reappear within seconds while still throttling the fan-out
+/// under a sustained outage. An empty degraded merge is never cached at all.
+const DEGRADED_TOOLS_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(5);
+
 /// Maximum number of `tools/list` pages to follow via `nextCursor` before
 /// stopping — guards against a buggy or hostile server returning an endless
 /// cursor chain. 50 pages is far above any realistic MCP server's tool count.
@@ -135,10 +143,13 @@ pub async fn snapshot_pool_metrics() -> StdioPoolMetrics {
 // tools/list response cache
 // ============================================================================
 
-/// Cached `tools/list` response with timestamp.
+/// Cached `tools/list` response with timestamp and per-entry TTL. The TTL is
+/// per-entry so a fully-successful merge can cache for the normal 60s while a
+/// degraded (partial) gateway merge caches only briefly.
 struct CachedToolsList {
     tools: Vec<McpTool>,
     fetched_at: Instant,
+    ttl: std::time::Duration,
 }
 
 /// Global in-memory cache for `tools/list` responses, keyed by credential_id.
@@ -149,27 +160,37 @@ fn tools_list_cache() -> &'static Mutex<HashMap<String, CachedToolsList>> {
     CACHE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-/// Look up a cached `tools/list` response. Returns `None` if missing or expired.
+/// Look up a cached `tools/list` response. Returns `None` if missing or expired
+/// (each entry expires against its own per-entry TTL).
 fn get_cached_tools(credential_id: &str) -> Option<Vec<McpTool>> {
     let cache = tools_list_cache().lock().ok()?;
     let entry = cache.get(credential_id)?;
-    if entry.fetched_at.elapsed() < TOOLS_LIST_CACHE_TTL {
+    if entry.fetched_at.elapsed() < entry.ttl {
         Some(entry.tools.clone())
     } else {
         None
     }
 }
 
-/// Store a `tools/list` response in the cache.
+/// Store a `tools/list` response in the cache with the normal 60s TTL.
 fn set_cached_tools(credential_id: &str, tools: Vec<McpTool>) {
+    set_cached_tools_with_ttl(credential_id, tools, TOOLS_LIST_CACHE_TTL);
+}
+
+/// Store a `tools/list` response in the cache with an explicit TTL. Used to cache
+/// a degraded (partial) gateway merge for only a few seconds instead of poisoning
+/// the normal 60s cache with an incomplete tool set.
+fn set_cached_tools_with_ttl(credential_id: &str, tools: Vec<McpTool>, ttl: std::time::Duration) {
     if let Ok(mut cache) = tools_list_cache().lock() {
-        // Evict expired entries opportunistically (keep cache bounded)
-        cache.retain(|_, v| v.fetched_at.elapsed() < TOOLS_LIST_CACHE_TTL);
+        // Evict expired entries opportunistically (keep cache bounded). Each
+        // entry expires against its own TTL.
+        cache.retain(|_, v| v.fetched_at.elapsed() < v.ttl);
         cache.insert(
             credential_id.to_string(),
             CachedToolsList {
                 tools,
                 fetched_at: Instant::now(),
+                ttl,
             },
         );
     }
@@ -579,8 +600,14 @@ async fn list_tools_guarded(
             return Ok(Vec::new());
         }
         let members = crate::db::repos::resources::mcp_gateways::list_members(pool, credential_id)?;
+        let enabled_members: Vec<_> = members.into_iter().filter(|m| m.enabled).collect();
+        let has_enabled_members = !enabled_members.is_empty();
         let mut merged: Vec<McpTool> = Vec::new();
-        for member in members.into_iter().filter(|m| m.enabled) {
+        // Track whether any ENABLED member's tools/list errored this round. A
+        // transient member failure must not poison the normal 60s cache with the
+        // (partial) successful-members-only set.
+        let mut any_member_errored = false;
+        for member in enabled_members {
             match Box::pin(list_tools_guarded(
                 pool,
                 &member.member_credential_id,
@@ -601,6 +628,7 @@ async fn list_tools_guarded(
                     }
                 }
                 Err(e) => {
+                    any_member_errored = true;
                     tracing::warn!(
                         gateway_id = %credential_id,
                         member_id = %member.member_credential_id,
@@ -614,7 +642,35 @@ async fn list_tools_guarded(
         // Done expanding this gateway — pop it off the current path so sibling
         // branches (and the cache) treat it as reachable again.
         visited.remove(credential_id);
-        set_cached_tools(credential_id, merged.clone());
+
+        // Cache policy (avoid poisoning the 60s cache with a degraded result):
+        //  · Empty result while >=1 enabled member exists (all members failed, or
+        //    members simply returned nothing this round): DO NOT cache at all --
+        //    the next call re-fans-out immediately rather than serving an empty
+        //    list for any TTL. A recovered/repopulated member then shows up at
+        //    once instead of being hidden behind a cached empty set.
+        //  · Partial success (>=1 enabled member errored but others returned
+        //    tools): cache only briefly (DEGRADED_TOOLS_CACHE_TTL) so a recovered
+        //    member reappears within seconds instead of being masked for 60s.
+        //  · Full success (no enabled member errored, non-empty -- or a genuinely
+        //    empty gateway with zero enabled members): cache normally (60s).
+        if merged.is_empty() && has_enabled_members {
+            tracing::warn!(
+                gateway_id = %credential_id,
+                any_member_errored,
+                "MCP gateway merge produced an empty tool list while it has enabled member(s) -- skipping cache to avoid poisoning the TTL with an empty/degraded result"
+            );
+        } else if any_member_errored {
+            tracing::warn!(
+                gateway_id = %credential_id,
+                cached_tools = merged.len(),
+                ttl_secs = DEGRADED_TOOLS_CACHE_TTL.as_secs(),
+                "MCP gateway merge is degraded (a member errored) -- caching the partial result with a short TTL"
+            );
+            set_cached_tools_with_ttl(credential_id, merged.clone(), DEGRADED_TOOLS_CACHE_TTL);
+        } else {
+            set_cached_tools(credential_id, merged.clone());
+        }
         return Ok(merged);
     }
 
@@ -1650,6 +1706,50 @@ mod mcp_command_validation_tests {
     fn still_blocks_shell_metacharacters() {
         assert!(validate_mcp_command("npx pkg && rm -rf /").is_err());
         assert!(validate_mcp_command("sh -c 'evil'").is_err());
+    }
+}
+
+#[cfg(test)]
+mod tools_cache_ttl_tests {
+    use super::{
+        get_cached_tools, set_cached_tools, set_cached_tools_with_ttl, McpTool,
+        DEGRADED_TOOLS_CACHE_TTL, TOOLS_LIST_CACHE_TTL,
+    };
+
+    fn sample_tools() -> Vec<McpTool> {
+        vec![McpTool {
+            name: "demo".into(),
+            description: None,
+            input_schema: None,
+        }]
+    }
+
+    #[test]
+    fn degraded_ttl_is_shorter_than_default() {
+        // The degraded (partial gateway merge) TTL must be far below the normal
+        // 60s window so a recovered member can't be masked for a full minute.
+        assert!(DEGRADED_TOOLS_CACHE_TTL < TOOLS_LIST_CACHE_TTL);
+    }
+
+    #[test]
+    fn full_success_caches_with_readable_default_ttl() {
+        let cid = "test-cache-default-ttl";
+        set_cached_tools(cid, sample_tools());
+        let cached = get_cached_tools(cid).expect("fresh default-TTL entry should be cached");
+        assert_eq!(cached.len(), 1);
+    }
+
+    #[test]
+    fn per_entry_short_ttl_is_honored_not_the_60s_constant() {
+        let cid = "test-cache-degraded-ttl";
+        // A degraded merge is cached with a short, per-entry TTL. A zero-length
+        // TTL is already expired, proving get_cached_tools honors the entry's own
+        // TTL rather than the 60s constant.
+        set_cached_tools_with_ttl(cid, sample_tools(), std::time::Duration::from_secs(0));
+        assert!(
+            get_cached_tools(cid).is_none(),
+            "a zero-TTL (degraded) entry must not be served"
+        );
     }
 }
 
