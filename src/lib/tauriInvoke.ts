@@ -37,6 +37,50 @@ export type RustArgs<T extends Record<string, unknown>> = {
 const DEFAULT_TIMEOUT_MS = 90_000;
 
 /**
+ * Generous ceiling (30 minutes) for BLOCKING, MUTATING commands that run their
+ * work inline and can legitimately exceed {@link DEFAULT_TIMEOUT_MS}.
+ *
+ * AT-LEAST-ONCE HAZARD: a timeout here does NOT cancel the backend — Tauri
+ * `invoke` has no cancellation, so the Rust command keeps running to completion
+ * (and commits its state) after the wrapper has already rejected. If the
+ * wrapper rejects a MUTATING command and the user/UI retries, the command runs
+ * a SECOND time — the `idempotencyKey`/inflight dedup only collapses CONCURRENT
+ * calls; a post-timeout retry is a brand-new call with no dedup. Letting the
+ * IPC WAIT for the real result removes the common "timeout-fires-while-mutation-
+ * still-running" trigger. This is a safety ceiling, not a tight bound: it only
+ * needs to exceed any realistic local run time.
+ */
+const LONG_MUTATION_TIMEOUT_MS = 30 * 60_000;
+
+/**
+ * Per-command timeout overrides for known long-running BLOCKING + MUTATING
+ * commands. Consulted by {@link invokeWithTimeout} ONLY when the caller did not
+ * pass an explicit `timeoutMs` (an explicit caller value always wins). These
+ * commands run their work inline to completion and would otherwise orphan the
+ * mutation at the 90s default (see {@link LONG_MUTATION_TIMEOUT_MS}).
+ *
+ * Add a command here when it (a) blocks until its work finishes, (b) mutates
+ * state, and (c) can exceed ~90s. Do NOT add fast or read-only commands, and
+ * do NOT treat this as a substitute for backend idempotency. Notably
+ * `execute_persona` stays OFF this list on purpose: it already has server-side
+ * idempotency-key dedup, so a post-timeout retry reuses the key and the backend
+ * returns the already-spawned execution instead of double-spawning.
+ */
+const BLOCKING_MUTATION_TIMEOUTS: Partial<Record<CommandName, number>> = {
+  // Runs a system operation (e.g. context_scan) inline; a full project scan
+  // routinely runs for minutes. No backend dedup — a post-timeout retry would
+  // start a SECOND scan.
+  system_ops_run_now: LONG_MUTATION_TIMEOUT_MS,
+  // Approves a remote run-request by executing the persona LOCALLY to
+  // completion. No backend dedup — a post-timeout retry would run the persona a
+  // second time.
+  remote_command_approve: LONG_MUTATION_TIMEOUT_MS,
+  // First-run backfill tick: scans the last 24h of git/ledger activity and
+  // writes one pulse. Blocking + mutating; can exceed 90s on a large repo.
+  project_tracking_run_now: LONG_MUTATION_TIMEOUT_MS,
+};
+
+/**
  * Wait for the IPC session token AND the __TAURI_INTERNALS__ monkey-patch
  * to become available. Resolves once both are ready or after ~2 s max.
  * The monkey-patch is critical on Windows WebView2 — without it the
@@ -67,8 +111,21 @@ function waitForIpcToken(): Promise<void> {
 export class InvokeTimeoutError extends Error {
   /** The command that timed out. */
   readonly command: string;
+  /**
+   * Always `true`, and a deliberate warning to callers. A timeout does NOT
+   * cancel the backend — Tauri `invoke` has no cancellation, so the Rust
+   * command keeps running to completion (and may commit its state) after this
+   * rejects. Callers MUST NOT blindly auto-retry a MUTATING command on this
+   * error: the original may still be running or already done, so a retry can
+   * execute it a SECOND time (at-least-once). Prefer polling for the result,
+   * surfacing a "still working…" state, or adding the command to
+   * `BLOCKING_MUTATION_TIMEOUTS` so the IPC waits instead of timing out.
+   */
+  readonly backendMayStillBeRunning = true;
   constructor(cmd: string, timeoutMs: number) {
-    super(`Tauri invoke "${cmd}" timed out after ${timeoutMs}ms`);
+    super(
+      `Tauri invoke "${cmd}" timed out after ${timeoutMs}ms — the backend was NOT cancelled and may still be running to completion; do not blindly retry a mutating command (it could execute twice)`,
+    );
     this.name = "InvokeTimeoutError";
     this.command = cmd;
   }
@@ -249,21 +306,27 @@ export function invokeWithTimeout<T>(
 ): Promise<T> {
   // Support both old positional signature and new opts object.
   let resolvedOptions: InvokeOptions | undefined;
-  let resolvedTimeout: number;
+  let explicitTimeout: number | undefined;
   let idempotencyKey: string | undefined;
   let noAutoDedup = false;
 
   if (opts && ("idempotencyKey" in opts || "timeoutMs" in opts || "noAutoDedup" in opts)) {
     // New opts-object form
     resolvedOptions = (opts as InvokeOpts).options;
-    resolvedTimeout = (opts as InvokeOpts).timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    explicitTimeout = (opts as InvokeOpts).timeoutMs;
     idempotencyKey = (opts as InvokeOpts).idempotencyKey;
     noAutoDedup = (opts as InvokeOpts).noAutoDedup ?? false;
   } else {
     // Legacy positional form: (cmd, args, options?, timeoutMs?)
     resolvedOptions = opts as InvokeOptions | undefined;
-    resolvedTimeout = timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    explicitTimeout = timeoutMs;
   }
+
+  // An explicit caller timeout always wins. Otherwise fall back to the
+  // per-command blocking-mutation override (so a long inline MUTATION WAITS for
+  // its real result instead of orphaning at the 90s default — see
+  // BLOCKING_MUTATION_TIMEOUTS), then the global default.
+  const resolvedTimeout = explicitTimeout ?? BLOCKING_MUTATION_TIMEOUTS[cmd] ?? DEFAULT_TIMEOUT_MS;
 
   // --- Idempotency dedup: reuse in-flight promise for same key -----------
   if (idempotencyKey) {
@@ -402,6 +465,16 @@ function _invokeCore<T>(
     timerId = setTimeout(() => {
       if (!settled) {
         settled = true;
+        // AT-LEAST-ONCE HAZARD: rejecting here does NOT cancel the backend.
+        // Tauri `invoke` has no cancellation, so a BLOCKING MUTATING command
+        // (e.g. system_ops_run_now, remote_command_approve) keeps running to
+        // completion and commits its state AFTER we reject. A post-timeout
+        // retry of such a command therefore double-executes — the
+        // idempotencyKey/inflight dedup only collapses CONCURRENT calls, not a
+        // brand-new retry. Long mutations must be on BLOCKING_MUTATION_TIMEOUTS
+        // (so the IPC waits for the real result) or made fire-and-poll — they
+        // must NOT be auto-retried. The error itself carries
+        // `backendMayStillBeRunning` so callers don't blindly retry.
         reject(new InvokeTimeoutError(cmd, timeoutMs));
       }
     }, timeoutMs);
