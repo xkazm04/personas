@@ -16,6 +16,18 @@
 //!    a dispatch arm in [`processor_for_subscription`]).
 //! 5. Advances the watermark to the newest event's `created_at`.
 //!
+//! ## Forward-looking subscriptions (no historical backlog)
+//!
+//! Subscriptions only ever receive events created *after* they are enabled.
+//! Whenever the watermark is unset — a fresh install, or any window in which
+//! every subscription was deleted — each tick seeds it forward to the newest
+//! existing event and dispatches nothing, so the next subscription created
+//! afterward is never flooded with the entire `persona_events` backlog. This
+//! holds for both the first-ever subscription and the delete-last-then-recreate
+//! gap (the zero-subscription branch keeps the watermark moving forward so no
+//! backlog accumulates while nobody is listening). See `tick` and
+//! `seed_watermark_to_newest`.
+//!
 //! ## Why polling, not the in-process event bus
 //!
 //! Tauri's `Emitter` is app→frontend only — there is no in-process backend
@@ -548,6 +560,34 @@ fn breaker_note_skip(sub_id: &str) {
 }
 
 // =============================================================================
+// Watermark seeding — keep subscriptions forward-looking
+// =============================================================================
+
+/// Seed the dispatch watermark to the newest existing event *without* dispatching
+/// anything. This is what keeps notification subscriptions forward-looking: a
+/// freshly created subscription — the first ever, or one created after every
+/// subscription was deleted — receives only events created *after* it is enabled,
+/// never the historical backlog that accumulated while no subscription existed.
+///
+/// If there are no events yet the watermark is left untouched (the first event
+/// produced afterward is genuinely new and should be delivered). The single-row
+/// write is skipped when the watermark already points at the newest event, so an
+/// idle install with no subscriptions isn't rewriting this row every tick.
+fn seed_watermark_to_newest(pool: &DbPool) -> Result<(), AppError> {
+    // `get_recent` orders by `created_at DESC, id DESC`, so the first row is the
+    // newest event; the `id` tiebreaker matches the dispatch cursor's composite.
+    let newest = match event_repo::get_recent(pool, Some(1), None)?.into_iter().next() {
+        Some(e) => e,
+        None => return Ok(()), // no events yet — nothing to seed past
+    };
+    let target = format!("{}|{}", newest.created_at, newest.id);
+    if sub_repo::get_watermark(pool)?.as_deref() != Some(target.as_str()) {
+        sub_repo::set_watermark(pool, &target)?;
+    }
+    Ok(())
+}
+
+// =============================================================================
 // Tick — process all unseen events through all matching subscriptions
 // =============================================================================
 
@@ -555,6 +595,16 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
     let _ = app; // reserved for future per-delivery emit_event
     let subscriptions = sub_repo::list_enabled(pool)?;
     if subscriptions.is_empty() {
+        // No subscriptions to deliver to — but keep the dispatch watermark
+        // moving forward to the newest event so the no-subscription window
+        // doesn't accumulate a backlog. A subscription created later (the first
+        // ever, or one created after every subscription was deleted) is
+        // forward-looking by contract: it must receive only events produced
+        // after it is enabled, never the historical backlog. Without this seed
+        // the watermark stays pinned (or `None`) across the gap and the next
+        // tick after a subscription appears would replay the whole backlog
+        // 200 events at a time.
+        seed_watermark_to_newest(pool)?;
         return Ok(0);
     }
 
@@ -562,6 +612,18 @@ pub async fn tick(pool: &DbPool, app: Option<&AppHandle>) -> Result<usize, AppEr
     // timestamp). Split it so get_recent_after can use the id as a tiebreaker
     // and not drop events that share the boundary timestamp.
     let watermark = sub_repo::get_watermark(pool)?;
+    if watermark.is_none() {
+        // A subscription exists but the watermark was never seeded — e.g. the
+        // very first subscription was created during the dispatcher's startup
+        // delay, before any zero-subscription tick could seed it forward. Seed
+        // to the newest existing event and dispatch nothing this tick so the
+        // subscription is forward-looking; subsequent ticks deliver only events
+        // created strictly after this point. (Without this, get_recent_after
+        // with a None cursor would return the 200 OLDEST events and POST the
+        // entire history as if brand-new.)
+        seed_watermark_to_newest(pool)?;
+        return Ok(0);
+    }
     let (wm_at, wm_id): (Option<&str>, Option<&str>) = match watermark.as_deref() {
         Some(w) => match w.split_once('|') {
             Some((at, id)) => (Some(at), Some(id)),
