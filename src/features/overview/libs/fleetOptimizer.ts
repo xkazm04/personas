@@ -114,12 +114,17 @@ function derivePerPersonaPerformance(
     // Derive success rate: if we have daily points, use overall daily aggregation
     // For a per-persona success rate, use available execution count + healing failure signal
     const totalExecs = tp.total_executions;
-    // healing.total is a LIFETIME issue count while totalExecs is windowed —
-    // subtracting the former from the latter drove the rate sharply negative
-    // (then clamped to 0) for agents with many old healing issues but few recent
-    // runs, producing a false "High Cost, Low Success". Cap the failure estimate
-    // at the windowed execution count so it stays a sane [0,100] approximation.
-    const failedEstimate = Math.min(healing.total, totalExecs);
+    // Estimate failed executions from OPEN healing issues only — not the
+    // lifetime all-status `healing.total`. Resolved / auto-fixed / auto-fix-pending
+    // issues are no longer *current* failures, yet counting them tanked the
+    // success rate of a persona that runs fine today (e.g. 12 long-resolved issues
+    // + 20 windowed execs => a false 40% rate => a wrong "High Cost, Low Success").
+    // Proxy: `healing.open` (status === 'open') == currently-failing signal. It has
+    // no explicit time window, but an open issue is by definition unresolved, so it
+    // tracks "failing now" far better than a lifetime tally and aligns with the
+    // windowed `totalExecs`. Still cap at totalExecs so the rate stays a sane
+    // [0,100] approximation (preserves the prior negative-rate clamp).
+    const failedEstimate = Math.min(healing.open, totalExecs);
     const successRate = totalExecs > 0
       ? Math.max(0, Math.min(100, ((totalExecs - failedEstimate) / totalExecs) * 100))
       : 100;

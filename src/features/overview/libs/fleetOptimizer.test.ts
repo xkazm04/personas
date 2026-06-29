@@ -27,6 +27,25 @@ function topPersona(o: Partial<DashboardTopPersona> = {}): DashboardTopPersona {
   };
 }
 
+function healingIssue(o: Partial<PersonaHealingIssue> = {}): PersonaHealingIssue {
+  return {
+    id: 'h-1',
+    persona_id: 'p-1',
+    execution_id: null,
+    title: 'Timeout',
+    description: 'Execution timed out',
+    is_circuit_breaker: false,
+    severity: 'warning',
+    category: 'timeout',
+    suggested_fix: null,
+    auto_fixed: false,
+    status: 'open',
+    created_at: '2026-06-01T00:00:00Z',
+    resolved_at: null,
+    ...o,
+  };
+}
+
 function dashboard(o: Partial<ExecutionDashboardData> = {}): ExecutionDashboardData {
   return {
     daily_points: [],
@@ -84,5 +103,50 @@ describe('generateFleetRecommendation — overall_success_rate [0,1] convention'
     );
 
     expect(rec).toBeNull();
+  });
+});
+
+describe('generateFleetRecommendation — failure estimate counts OPEN healing only', () => {
+  // A costly persona (avg ≥ $0.10/run) with enough windowed executions to be
+  // optimization-eligible. Whether it surfaces as "High Cost, Low Success"
+  // hinges purely on the derived success rate (i.e. failed-execution estimate).
+  const costlyPersona = topPersona({
+    avg_cost_per_exec: 0.2, // ≥ HIGH_COST_PER_EXEC_USD
+    total_executions: 20,
+    total_cost: 4.0,
+  });
+
+  it('does NOT flag "High Cost, Low Success" when all healing issues are resolved/auto-fixed (none open)', () => {
+    // 12 lifetime issues, ALL resolved/auto-fixed — zero open. Under the old
+    // lifetime-total proxy this gave failedEstimate=12 → 40% → a false warning.
+    const resolved: PersonaHealingIssue[] = Array.from({ length: 12 }, (_, i) =>
+      healingIssue({
+        id: `h-${i}`,
+        status: 'resolved',
+        auto_fixed: true,
+        resolved_at: '2026-06-02T00:00:00Z',
+      }),
+    );
+
+    const rec = generateFleetRecommendation(dashboard({ top_personas: [costlyPersona] }), resolved);
+
+    // The persona runs fine today: 0 open issues → ~100% success → NOT wasteful.
+    expect(rec).not.toBeNull();
+    expect(rec!.title).not.toBe('High Cost, Low Success');
+    // High cost + high (open-based) success surfaces the benign downgrade rec.
+    expect(rec!.type).toBe('downgrade_model');
+  });
+
+  it('still flags "High Cost, Low Success" when the persona has real OPEN failures', () => {
+    const open: PersonaHealingIssue[] = Array.from({ length: 12 }, (_, i) =>
+      healingIssue({ id: `h-${i}`, status: 'open' }),
+    );
+
+    const rec = generateFleetRecommendation(dashboard({ top_personas: [costlyPersona] }), open);
+
+    // 12 open / 20 execs → 40% success → below LOW_SUCCESS_RATE_PCT → warning.
+    expect(rec).not.toBeNull();
+    expect(rec!.type).toBe('investigate_failures');
+    expect(rec!.title).toBe('High Cost, Low Success');
   });
 });
