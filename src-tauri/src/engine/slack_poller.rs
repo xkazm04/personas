@@ -27,9 +27,10 @@
 //! Mode connection (just the bot_token already in the vault), and survives
 //! restarts trivially via the persisted cursor. The upgrade path is to swap
 //! `fetch_new_messages` for a Socket Mode / Events consumer that pushes onto
-//! the same dispatch path. As with Discord, a burst of more than `FETCH_LIMIT`
-//! messages between two ticks can outrun the cursor; the realtime upgrade
-//! removes that ceiling.
+//! the same dispatch path. A burst of more than `FETCH_LIMIT` messages between
+//! two ticks is drained by paging `conversations.history` backward (via
+//! `latest`) before the cursor advances, up to `MAX_DRAIN_PAGES`; the realtime
+//! upgrade removes that per-tick ceiling entirely.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -59,6 +60,14 @@ const HTTP_TIMEOUT: Duration = Duration::from_secs(8);
 /// Max messages fetched per (channel, tick). 50 absorbs a chatty channel
 /// between ticks while staying well inside the rate budget.
 const FETCH_LIMIT: u32 = 50;
+
+/// Max `conversations.history` pages drained in one tick when a burst exceeds
+/// `FETCH_LIMIT`. Bounds the backward walk so a pathological channel can't spin
+/// the tick forever: up to `MAX_DRAIN_PAGES * FETCH_LIMIT` (= 1000) messages are
+/// pulled per tick, beyond which the oldest stragglers fall to the next tick. A
+/// 5s tick draining 1000 messages already far exceeds Slack's rate limits and
+/// any realistic human channel, so this is a safety valve, not an expected path.
+const MAX_DRAIN_PAGES: usize = 20;
 
 /// Max replies attempted per tick. Bounds the outbound burst when a backlog of
 /// finished executions piles up after a restart.
@@ -349,25 +358,36 @@ struct SlackMessage {
     has_subtype: bool,
 }
 
-async fn fetch_new_messages(
+/// Fetch a single `conversations.history` page. `oldest`/`latest` bound the
+/// window as Unix-ts strings; when either is set we pass `inclusive=false` so
+/// both boundary messages are excluded — the cursor (`oldest`) and the previous
+/// page's edge (`latest`) are never re-returned. Messages come back in Slack's
+/// native newest-first order, paired with `has_more`.
+async fn fetch_history_page(
+    client: &reqwest::Client,
     bot_token: &str,
     channel_id: &str,
-    after_ts: Option<&str>,
-) -> Result<Vec<SlackMessage>, AppError> {
+    oldest: Option<&str>,
+    latest: Option<&str>,
+) -> Result<(Vec<SlackMessage>, bool), AppError> {
     let mut url = format!(
         "https://slack.com/api/conversations.history?channel={}&limit={}",
         channel_id, FETCH_LIMIT
     );
-    if let Some(ts) = after_ts.filter(|s| !s.is_empty()) {
-        // `oldest` + `inclusive=false` returns only messages strictly newer
-        // than the cursor.
-        url.push_str(&format!("&oldest={}&inclusive=false", ts));
+    let mut bounded = false;
+    if let Some(ts) = oldest.filter(|s| !s.is_empty()) {
+        url.push_str(&format!("&oldest={}", ts));
+        bounded = true;
     }
-
-    let client = reqwest::Client::builder()
-        .timeout(HTTP_TIMEOUT)
-        .build()
-        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+    if let Some(ts) = latest.filter(|s| !s.is_empty()) {
+        url.push_str(&format!("&latest={}", ts));
+        bounded = true;
+    }
+    if bounded {
+        // Strictly-between semantics: never re-return the cursor (oldest) or the
+        // prior page's oldest message (latest).
+        url.push_str("&inclusive=false");
+    }
 
     let resp = client
         .get(&url)
@@ -406,25 +426,10 @@ async fn fetch_new_messages(
         )));
     }
 
-    // Burst detection: Slack returns the *newest* page within [oldest, now],
-    // so when `has_more` is true a burst exceeded FETCH_LIMIT between ticks and
-    // the messages older than this page are skipped once the cursor jumps to the
-    // newest ts. That used to happen silently. Surface it loudly so the data
-    // loss is diagnosable; the durable fix is the Socket Mode / Events realtime
-    // consumer noted in the module docs.
-    if payload
+    let has_more = payload
         .get("has_more")
         .and_then(JsonValue::as_bool)
-        .unwrap_or(false)
-    {
-        tracing::warn!(
-            channel_id = channel_id,
-            fetch_limit = FETCH_LIMIT,
-            "slack_poller: conversations.history has_more=true — a burst exceeded the per-tick \
-             fetch limit; messages older than this page will be skipped as the cursor advances. \
-             A realtime (Socket Mode / Events) consumer is the durable fix."
-        );
-    }
+        .unwrap_or(false);
 
     let raw = payload
         .get("messages")
@@ -461,7 +466,83 @@ async fn fetch_new_messages(
             has_subtype,
         });
     }
-    Ok(out)
+    Ok((out, has_more))
+}
+
+/// Numerically-oldest `ts` in a page (Slack `ts` ordering is not lexical, so we
+/// compare via `compare_ts`).
+fn page_min_ts(msgs: &[SlackMessage]) -> Option<String> {
+    msgs.iter()
+        .map(|m| m.ts.clone())
+        .min_by(|a, b| compare_ts(a, b))
+}
+
+async fn fetch_new_messages(
+    bot_token: &str,
+    channel_id: &str,
+    after_ts: Option<&str>,
+) -> Result<Vec<SlackMessage>, AppError> {
+    let client = reqwest::Client::builder()
+        .timeout(HTTP_TIMEOUT)
+        .build()
+        .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
+
+    let after_ts = after_ts.filter(|s| !s.is_empty());
+
+    // First page: the newest FETCH_LIMIT messages within (after_ts, now].
+    let (mut all, mut has_more) =
+        fetch_history_page(&client, bot_token, channel_id, after_ts, None).await?;
+
+    // Steady state (<= FETCH_LIMIT new messages this tick) → single page, done.
+    // First poll (no cursor) → take only the newest page and let the cursor jump
+    // to its newest ts, exactly as before: we deliberately do NOT replay the
+    // channel's entire backlog on first connect, which an unbounded drain would.
+    if !has_more || after_ts.is_none() {
+        return Ok(all);
+    }
+
+    // Burst path: a cursor exists and the channel overflowed FETCH_LIMIT between
+    // ticks. `conversations.history` returns the *newest* page within
+    // [oldest, now], so advancing the cursor to that page's newest ts would
+    // strand every message between the cursor and this page — the silent data
+    // loss this fixes. Drain the gap instead: walk `latest` down to each page's
+    // oldest ts (exclusive) until the whole (after_ts, now] range is pulled, then
+    // the caller advances the cursor to the true newest ts of the drained set.
+    // `latest` strictly decreases each iteration so the loop terminates naturally
+    // once the range is exhausted; `MAX_DRAIN_PAGES` is the hard backstop against
+    // an unbounded walk. Any boundary/overlap re-fetch is deduped downstream by
+    // `message_already_logged` + `INSERT OR IGNORE` + the per-message
+    // idempotency_key, so a message is never dispatched twice.
+    let mut pages = 1usize;
+    let mut frontier = page_min_ts(&all);
+    while has_more && pages < MAX_DRAIN_PAGES {
+        let Some(latest) = frontier.clone() else { break };
+        let (page, more) =
+            fetch_history_page(&client, bot_token, channel_id, after_ts, Some(&latest)).await?;
+        has_more = more;
+        if page.is_empty() {
+            break;
+        }
+        frontier = page_min_ts(&page);
+        all.extend(page);
+        pages += 1;
+    }
+
+    // Only reachable for a burst beyond MAX_DRAIN_PAGES * FETCH_LIMIT messages in
+    // a single tick — past Slack's rate limits and any human channel. Surface it
+    // loudly; the durable fix is the Socket Mode / Events realtime consumer.
+    if has_more {
+        tracing::warn!(
+            channel_id = channel_id,
+            drained_pages = pages,
+            drained_messages = all.len(),
+            "slack_poller: conversations.history still has_more after draining the per-tick \
+             page cap; the oldest messages of an extreme burst will be skipped as the cursor \
+             advances. A realtime (Socket Mode / Events) consumer is the durable fix."
+        );
+    }
+
+    Ok(all)
 }
 
 async fn post_reply(
@@ -721,6 +802,31 @@ mod tests {
         assert!(compare_ts("1716981234.000100", "1716981234.000100").is_eq());
         // Whole-second rollover.
         assert!(compare_ts("1716981235.000000", "1716981234.999999").is_gt());
+    }
+
+    fn msg(ts: &str) -> SlackMessage {
+        SlackMessage {
+            ts: ts.to_string(),
+            text: String::new(),
+            user: String::new(),
+            thread_ts: String::new(),
+            is_bot: false,
+            has_subtype: false,
+        }
+    }
+
+    #[test]
+    fn page_min_ts_picks_numerically_oldest_for_backward_drain() {
+        // The drain steps `latest` to each page's oldest ts; that edge must be
+        // the numerically-smallest, not the lexically-smallest, or the next page
+        // would overlap or skip. "1716981234.9" is lexically < "...234.10".
+        let page = vec![
+            msg("1716981234.090000"),
+            msg("1716981234.100000"),
+            msg("1716981234.030000"),
+        ];
+        assert_eq!(page_min_ts(&page).as_deref(), Some("1716981234.030000"));
+        assert_eq!(page_min_ts(&[]), None);
     }
 
     #[test]
