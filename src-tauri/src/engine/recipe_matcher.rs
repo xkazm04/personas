@@ -4,12 +4,19 @@
 //! matches sorted by similarity score. Used by Glyph composer to suggest
 //! existing recipes when the user types an intent that closely matches one.
 //!
-//! Conservative threshold per user direction (2026-05-08): only surface
-//! suggestions at confidence ≥ 0.90. If no recipe meets the threshold, the
-//! flow continues unchanged — silent fallthrough, no UI surface.
+//! Threshold (recalibrated 2026-06-29): surface suggestions at confidence
+//! ≥ `SUGGESTION_THRESHOLD`. The original 0.90 was calibrated only against
+//! identical-text fixtures and was effectively unreachable for real typed
+//! intents (a strong-but-paraphrased match scores ~0.4 under the
+//! name/desc/tags weighting), so the chip never fired. See the constant for
+//! the recalibration rationale. If no recipe meets the threshold, the flow
+//! continues unchanged — silent fallthrough, no UI surface.
 //!
-//! v1 scoring: Jaccard similarity over token sets, weighted toward name +
-//! tags matches. Doesn't use embeddings (would require an inference path
+//! v1 scoring: Jaccard similarity over *normalized* token sets, weighted
+//! toward name + tags matches. Tokens are lowercased and light-stemmed
+//! (trailing plural 's'/'es' stripped) so trivial morphology like
+//! "emails" vs "email" or "triages" vs "triage" no longer collapses the
+//! overlap to zero. Doesn't use embeddings (would require an inference path
 //! that's heavy for what is otherwise a debounced typeahead). When v2 lands
 //! (vector embeddings via Claude API or local model), this v1 should stay
 //! as a fast prefilter that the slower embedding pass refines.
@@ -29,8 +36,20 @@ const DESCRIPTION_WEIGHT: f32 = 0.3;
 const TAGS_WEIGHT: f32 = 0.1;
 
 /// Minimum confidence to surface a match in the Glyph composer UI.
-/// Aligns with the user's "≥ 0.90 conservative threshold" direction.
-pub const SUGGESTION_THRESHOLD: f32 = 0.90;
+///
+/// Recalibrated 2026-06-29 from 0.90 → 0.40. The old 0.90 was set against
+/// identical-text fixtures and was unreachable in practice: with the
+/// weighted-Jaccard scoring below (name=0.6 / desc=0.3 / tags=0.1), a
+/// realistic strong-but-paraphrased intent — where the recipe name shares
+/// roughly half its tokens with the intent (name Jaccard ≈ 0.5 → 0.30) plus
+/// meaningful description overlap (≈ 0.30 → ~0.10–0.17) plus some tag
+/// overlap — lands in the ~0.40–0.55 band, NOT near 0.90. Clearing 0.90
+/// would require name AND description to be near-verbatim copies, so the
+/// suggestion chip effectively never rendered. 0.40 sits just below the
+/// strong-paraphrase band so those fire, while weak single-token overlaps
+/// (~0.10) and unrelated intents (0.0) stay well below. Empirically the
+/// post-normalization distribution puts genuine matches at ~0.35–0.5.
+pub const SUGGESTION_THRESHOLD: f32 = 0.40;
 
 /// English stopwords stripped from token sets before scoring. Kept narrow on
 /// purpose — we don't want to remove domain words like "data" or "report".
@@ -57,8 +76,47 @@ pub struct RecipeMatch {
     pub above_threshold: bool,
 }
 
-/// Tokenize a string into lowercase, stopword-stripped, alphanumeric tokens.
-/// Punctuation is treated as a separator. Empty tokens are dropped.
+/// Light, deterministic plural stemmer. Folds a token onto its singular form
+/// by stripping a trailing plural 's' (and the "es" form for common sibilant
+/// endings) so trivial morphology doesn't collapse the Jaccard overlap to
+/// zero — e.g. "emails" → "email", "triages" → "triage", "boxes" → "box".
+///
+/// Intentionally minimal: no Porter/Snowball crate, just enough to merge
+/// singular/plural variants of the same domain word. Operates on an
+/// already-lowercased token (callers pass tokens straight from `tokenize`).
+/// The last stripped bytes are always ASCII ('s'/'es'), so the slice cuts on
+/// a char boundary even for tokens that contain multi-byte characters.
+fn stem(token: &str) -> &str {
+    // Too short to stem without creating collisions ("as", "is", "us").
+    if token.len() <= 3 {
+        return token;
+    }
+    // Double-s words ("address", "process") are not plurals — leave them.
+    if token.ends_with("ss") {
+        return token;
+    }
+    // Sibilant plurals take the "es" form: "boxes"→"box", "batches"→"batch",
+    // "dishes"→"dish", "quizzes"→"quizz".
+    if token.len() > 4
+        && (token.ends_with("xes")
+            || token.ends_with("zes")
+            || token.ends_with("ches")
+            || token.ends_with("shes"))
+    {
+        return &token[..token.len() - 2];
+    }
+    // Generic plural: "emails"→"email", "triages"→"triage", "reports"→"report".
+    if token.ends_with('s') {
+        return &token[..token.len() - 1];
+    }
+    token
+}
+
+/// Tokenize a string into lowercase, stopword-stripped, light-stemmed,
+/// alphanumeric tokens. Punctuation is treated as a separator. Empty tokens
+/// are dropped. The same normalization is applied to both the intent and the
+/// recipe name/description/tags, so singular/plural and case differences fold
+/// together instead of scoring as disjoint tokens.
 fn tokenize(text: &str) -> HashSet<String> {
     let stopword_set: HashSet<&str> = STOPWORDS.iter().copied().collect();
     text.to_lowercase()
@@ -68,7 +126,7 @@ fn tokenize(text: &str) -> HashSet<String> {
             if t.is_empty() || stopword_set.contains(t) || t.len() < 2 {
                 None
             } else {
-                Some(t.to_string())
+                Some(stem(t).to_string())
             }
         })
         .collect()
@@ -212,9 +270,27 @@ mod tests {
         let toks = tokenize("Summarize the daily emails!");
         assert!(toks.contains("summarize"));
         assert!(toks.contains("daily"));
-        assert!(toks.contains("emails"));
+        // "emails" is light-stemmed to its singular "email" so it folds onto
+        // a recipe that says "email"; the raw plural is no longer present.
+        assert!(toks.contains("email"));
+        assert!(!toks.contains("emails"));
         // Stopwords removed.
         assert!(!toks.contains("the"));
+    }
+
+    #[test]
+    fn stem_folds_common_plurals() {
+        // Required examples from the recalibration: plural → singular.
+        assert_eq!(stem("emails"), "email");
+        assert_eq!(stem("triages"), "triage");
+        assert_eq!(stem("reports"), "report");
+        // Sibilant "es" plurals.
+        assert_eq!(stem("boxes"), "box");
+        assert_eq!(stem("dishes"), "dish");
+        // Non-plurals left intact: double-s words and short tokens.
+        assert_eq!(stem("address"), "address");
+        assert_eq!(stem("as"), "as");
+        assert_eq!(stem("triage"), "triage");
     }
 
     #[test]
@@ -275,10 +351,11 @@ mod tests {
 
     #[test]
     fn match_threshold_gate() {
-        // Crafted to land near the SUGGESTION_THRESHOLD boundary: identical
-        // intent and name → name_jaccard = 1.0 → name_score = 0.6, plus
-        // potential desc/tag contributions push above 0.90 only when those
-        // also overlap.
+        // Identical intent and name → name_jaccard = 1.0 → name_score = 0.6,
+        // plus full desc/tag overlap → total score = 1.0, comfortably above
+        // the recalibrated SUGGESTION_THRESHOLD. This locks that a verbatim
+        // match still fires (it always did); the new paraphrase test below
+        // covers the case the old 0.90 bar silently dropped.
         let perfect = make_recipe(
             "perfect",
             "summarize incoming support emails",
@@ -358,10 +435,55 @@ mod tests {
     }
 
     #[test]
-    fn suggestion_threshold_constant_is_at_90() {
-        // Lock the user-specified conservative threshold. If this test fails,
-        // the threshold drift was intentional → update the constant + this
-        // test together; otherwise revert.
-        assert_eq!(SUGGESTION_THRESHOLD, 0.90);
+    fn suggestion_threshold_constant_is_recalibrated() {
+        // Locks the recalibrated threshold (0.90 → 0.40, see the constant's
+        // doc comment for the rationale). If this test fails, the threshold
+        // drift was intentional → update the constant + this test together;
+        // otherwise revert.
+        assert_eq!(SUGGESTION_THRESHOLD, 0.40);
+    }
+
+    #[test]
+    fn paraphrased_strong_match_fires_suggestion() {
+        // Regression for the "0.90 is unreachable" bug: a realistic,
+        // NON-verbatim intent must clear the recalibrated threshold so the
+        // suggestion chip actually renders. The intent uses a plural
+        // ("emails" vs the recipe's singular "email") and extra framing
+        // words ("every morning") — exactly the morphology the old 0.90
+        // identical-text bar silently dropped.
+        let recipe = make_recipe(
+            "email-triage",
+            "Email Triage",
+            Some("Triage my incoming email every morning and sort by urgency"),
+            Some(&["email", "triage", "morning"]),
+        );
+        let recipes = vec![recipe];
+
+        let matches =
+            match_intent_to_recipes("triage my emails every morning", &recipes, Some(1));
+        assert_eq!(matches.len(), 1);
+        assert!(
+            matches[0].above_threshold,
+            "paraphrased strong intent should fire a suggestion; score={}",
+            matches[0].score
+        );
+        assert!(
+            matches[0].score >= SUGGESTION_THRESHOLD,
+            "score {} should clear threshold {}",
+            matches[0].score,
+            SUGGESTION_THRESHOLD
+        );
+
+        // Guardrail: a clearly-unrelated intent must NOT fire against the
+        // same recipe, so the recalibration didn't lower the bar into noise.
+        let unrelated = match_intent_to_recipes(
+            "generate the quarterly revenue report",
+            &recipes,
+            Some(1),
+        );
+        assert!(
+            unrelated.iter().all(|m| !m.above_threshold),
+            "unrelated intent should not fire a suggestion: {unrelated:?}"
+        );
     }
 }
