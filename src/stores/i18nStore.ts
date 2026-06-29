@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { LocaleCode } from '@/i18n/locales.manifest';
+import { getLocaleDescriptor } from '@/i18n/locales.manifest';
 
 /**
  * Supported UI languages. Driven by the LOCALES manifest —
@@ -55,6 +56,10 @@ function applyLangAttributes(lang: Language) {
   const html = document.documentElement;
   html.setAttribute('data-lang', lang);
   html.setAttribute('lang', lang);
+
+  // Apply writing direction (RTL for Arabic, etc.) from the locale manifest.
+  const dir = getLocaleDescriptor(lang)?.dir ?? 'ltr';
+  html.setAttribute('dir', dir);
 
   // If switching to a language that needs a custom font, mark not ready until loaded
   const needsFont = lang in LANG_FONT_URL && !loadedFonts.has(lang);
