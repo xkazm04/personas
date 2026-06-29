@@ -267,6 +267,10 @@ pub async fn simulate_build_draft(
         pool: state.db.clone(),
         persona_id: persona_id.clone(),
         prior: prior_design_context.clone(),
+        // Remember the EXACT snapshot we just wrote so drop can detect whether
+        // the column was changed underneath us (e.g. a concurrent promote) and
+        // avoid clobbering that newer value. See DesignContextRestore::drop.
+        written: snapshot.clone(),
     };
 
     tracing::info!(
@@ -361,15 +365,54 @@ fn sim_lock_for(persona_id: &str) -> std::sync::Arc<tokio::sync::Mutex<()>> {
 /// that throwaway snapshot (losing live triggers/channels/policies until the
 /// next promote), which other readers (getPersonaDetail, the matrix) consume as
 /// truth.
+///
+/// **Compare-and-restore.** The restore is *conditional*: it only writes `prior`
+/// back if `personas.design_context` still equals the snapshot value this command
+/// wrote (`written`). The `sim_lock_for(persona_id)` serializes simulations, but
+/// `promote_build_draft` takes no such lock — during the long
+/// `execute_persona_inner` window a concurrent promote can commit the REAL
+/// design_context. If that happened the column no longer matches `written`, so
+/// the guard leaves the freshly-promoted value intact (and logs) instead of
+/// blindly clobbering it with the stale `prior`.
 struct DesignContextRestore {
     pool: crate::db::DbPool,
     persona_id: String,
     prior: Option<String>,
+    /// The exact snapshot `simulate_build_draft` wrote onto
+    /// `personas.design_context`. Drop compares the *current* column value
+    /// against this to decide whether the snapshot is still live (safe to
+    /// restore `prior`) or was overwritten underneath us by a concurrent
+    /// promote (must NOT restore).
+    written: String,
 }
 
 impl Drop for DesignContextRestore {
     fn drop(&mut self) {
         if let Ok(conn) = self.pool.get() {
+            // Read the column as it stands now. Only restore `prior` if it still
+            // holds the snapshot WE wrote — otherwise something (almost always a
+            // concurrent promote_build_draft, which takes no sim_lock) committed
+            // a new design_context while the simulation ran, and restoring would
+            // silently revert the just-promoted persona to a stale value.
+            let current: Option<String> = conn
+                .query_row(
+                    "SELECT design_context FROM personas WHERE id = ?1",
+                    rusqlite::params![&self.persona_id],
+                    |row| row.get(0),
+                )
+                .ok()
+                .flatten();
+
+            if current.as_deref() != Some(self.written.as_str()) {
+                tracing::warn!(
+                    persona_id = %self.persona_id,
+                    "simulate_build_draft: design_context changed underneath the simulation \
+                     (likely a concurrent promote) — preserving the new value instead of \
+                     restoring the pre-simulation snapshot"
+                );
+                return;
+            }
+
             let now = chrono::Utc::now().to_rfc3339();
             let _ = conn.execute(
                 "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
