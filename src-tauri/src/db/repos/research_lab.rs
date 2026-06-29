@@ -173,7 +173,7 @@ pub fn create_source(
     pool: &DbPool,
     input: &CreateResearchSource,
 ) -> Result<(ResearchSource, bool), AppError> {
-    let conn = pool.get()?;
+    let mut conn = pool.get()?;
 
     // Dedup guard: a paper added twice (e.g. via DOI lookup then arXiv search)
     // should resolve to the same row instead of silently duplicating. Match
@@ -192,8 +192,17 @@ pub fn create_source(
         .map(|u| u.trim().to_lowercase())
         .filter(|u| !u.is_empty());
 
+    // BEGIN IMMEDIATE so the dedup SELECT and the INSERT are one serialized
+    // write. DbPool hands out independent connections, so without a transaction
+    // two concurrent adds of the same DOI/URL (double-click, two windows, or a
+    // DOI add overlapping a batch arXiv add) both SELECT nothing and both INSERT
+    // a duplicate row. Serializing makes the loser of the race observe the
+    // winner's committed row and return it as a duplicate instead (mirrors
+    // create_experiment_run; combined-scan 2026-06-25 research-lab #1).
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+
     let existing: Option<ResearchSource> = if let Some(doi) = &doi_key {
-        conn.query_row(
+        tx.query_row(
             &format!(
                 "SELECT {SOURCE_COLUMNS} FROM research_sources \
                  WHERE project_id = ?1 AND doi IS NOT NULL AND lower(trim(doi)) = ?2 \
@@ -204,7 +213,7 @@ pub fn create_source(
         )
         .optional()?
     } else if let Some(url) = &url_key {
-        conn.query_row(
+        tx.query_row(
             &format!(
                 "SELECT {SOURCE_COLUMNS} FROM research_sources \
                  WHERE project_id = ?1 AND url IS NOT NULL AND lower(trim(url)) = ?2 \
@@ -219,24 +228,23 @@ pub fn create_source(
     };
 
     if let Some(found) = existing {
+        tx.commit()?;
         return Ok((found, false));
     }
 
     let id = Uuid::new_v4().to_string();
-    conn.execute(
+    tx.execute(
         "INSERT INTO research_sources (id, project_id, source_type, title, authors, year, abstract_text, doi, url, pdf_path, citation_count, metadata)
          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
         params![id, input.project_id, input.source_type, input.title, input.authors, input.year, input.abstract_text, input.doi, input.url, input.pdf_path, input.citation_count, input.metadata],
     )?;
-    let conn2 = pool.get()?;
-    conn2
-        .query_row(
-            &format!("SELECT {SOURCE_COLUMNS} FROM research_sources WHERE id = ?1"),
-            params![id],
-            row_to_source,
-        )
-        .map(|s| (s, true))
-        .map_err(AppError::from)
+    let source = tx.query_row(
+        &format!("SELECT {SOURCE_COLUMNS} FROM research_sources WHERE id = ?1"),
+        params![id],
+        row_to_source,
+    )?;
+    tx.commit()?;
+    Ok((source, true))
 }
 
 /// Strip a now-deleted entity id from every finding's denormalised JSON id-list
