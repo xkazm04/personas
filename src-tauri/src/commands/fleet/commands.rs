@@ -185,7 +185,13 @@ pub async fn fleet_wake_session(
     let new_id = pty::spawn_session(
         app.clone(),
         cwd,
-        vec!["--resume".to_string(), claude_session_id],
+        // The continuation prompt is REQUIRED — a bare `claude --resume <id>`
+        // exits 1 ("provide a prompt to continue"). See RESUME_CONTINUATION_PROMPT.
+        vec![
+            "--resume".to_string(),
+            claude_session_id,
+            pty::RESUME_CONTINUATION_PROMPT.to_string(),
+        ],
         cols,
         rows,
     )?;

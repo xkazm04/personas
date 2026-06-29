@@ -131,7 +131,13 @@ pub async fn fleet_resume_orphan(app: AppHandle, pid: u32, cwd: String) -> Resul
     pty::spawn_session(
         app,
         PathBuf::from(cwd),
-        vec!["--resume".to_string(), session_id],
+        // A bare `claude --resume <id>` exits 1 ("provide a prompt to continue");
+        // the continuation prompt is required. See RESUME_CONTINUATION_PROMPT.
+        vec![
+            "--resume".to_string(),
+            session_id,
+            pty::RESUME_CONTINUATION_PROMPT.to_string(),
+        ],
         120,
         32,
     )

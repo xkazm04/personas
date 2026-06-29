@@ -23,6 +23,21 @@ use crate::engine::event_registry::event_name;
 use super::registry::{now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP};
 use super::types::FleetSessionState;
 
+/// Continuation prompt Fleet supplies when **resuming** a session
+/// (`fleet_wake_session` / `fleet_resume_orphan`).
+///
+/// Claude Code ≥ 2.1 refuses a bare `claude --resume <id>` with no prompt: it
+/// looks for a deferred-tool marker to auto-continue and, finding none (or a
+/// stale one), exits 1 with *"No deferred tool marker found in the resumed
+/// session … Provide a prompt to continue the conversation."* — so every woken /
+/// recovered session died instantly. Supplying a positional prompt is exactly
+/// what the error asks for and resumes cleanly (verified: `--resume <id>
+/// "<prompt>"` → exit 0). Kept short and neutral so the wake costs one cheap
+/// re-orientation turn rather than kicking off unrequested work.
+pub const RESUME_CONTINUATION_PROMPT: &str =
+    "Session resumed by Personas Fleet. In one line, note where things stand and \
+     what's next — then wait for further input.";
+
 /// MCP wiring artefacts created at spawn time. Returned so we can hand
 /// them to the cmd builder and the reaper (which cleans up the temp
 /// file on session exit).
@@ -424,8 +439,14 @@ pub fn spawn_session(
     // P1 — give the session a distinct, meaningful title from its task via a
     // cheap LLM call (the OSC title is just "Claude Code"). Spawn-with-task only;
     // a bare interactive session keeps its project label until it titles itself.
-    if let Some(task) = super::naming::task_from_args(&args) {
-        super::naming::name_session_from_task(app.clone(), id.clone(), task);
+    // Skip LLM naming for resumes: the positional we pass to `claude --resume`
+    // is a continuation nudge (RESUME_CONTINUATION_PROMPT), not a task title —
+    // naming a woken session after it would mislabel it. A resumed session keeps
+    // its prior identity instead.
+    if !args.iter().any(|a| a == "--resume") {
+        if let Some(task) = super::naming::task_from_args(&args) {
+            super::naming::name_session_from_task(app.clone(), id.clone(), task);
+        }
     }
 
     // Reader task — blocking I/O on its own thread. Owns the ring `Arc` so the

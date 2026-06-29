@@ -630,11 +630,28 @@ impl FleetRegistry {
             session.state = FleetSessionState::Exited;
             session.exit_code = exit_code;
             session.last_activity_ms = now_ms();
-            session.state_reason = Some(match exit_code {
+            // For a non-zero exit, fold claude's FINAL on-screen output into the
+            // reason. Claude prints its error (e.g. a refused `--resume`: "No
+            // deferred tool marker found … provide a prompt to continue") then
+            // exits, so the rendered-screen tail still holds it — without this the
+            // UI showed only "Exited with code 1" and the real cause died with the
+            // PTY. (Detection half of the resume-failure fix.)
+            let reason = match exit_code {
                 Some(0) => "Exited cleanly".to_string(),
-                Some(c) => fleet_exit_reason(c),
+                Some(c) => {
+                    let base = fleet_exit_reason(c);
+                    let tail = {
+                        let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+                        ring.render_screen(session.rows, session.cols)
+                    };
+                    match last_meaningful_line(&tail) {
+                        Some(msg) => format!("{base} — claude said: \u{201c}{msg}\u{201d}"),
+                        None => base,
+                    }
+                }
                 None => "Exited (signal or crash)".to_string(),
-            });
+            };
+            session.state_reason = Some(reason);
             if let Ok(mut w) = session.writer.lock() { *w = None; }
             if let Ok(mut m) = session.master.lock() { *m = None; }
             // Confirmed exit: clear the tracked PID now (not on hibernate-intent),
@@ -793,6 +810,31 @@ fn fleet_exit_reason(code: i32) -> String {
     }
 }
 
+/// Pull the most informative line from a session's final rendered screen so a
+/// non-zero exit can name *why* in the UI. Prefers an explicit error line
+/// (claude prints `Error: …` then exits), else the last substantive line;
+/// skips blanks, rule/box-drawing lines, the prompt caret, and the permissions
+/// footer. Capped so a stray wide line can't bloat the reason.
+fn last_meaningful_line(lines: &[String]) -> Option<String> {
+    let clean = |s: &str| -> String { s.trim().chars().take(220).collect() };
+    let is_noise = |s: &str| {
+        let t = s.trim();
+        t.is_empty()
+            || !t.chars().any(|c| c.is_alphanumeric()) // rules / box-drawing
+            || t.starts_with('\u{276f}') // ❯ prompt caret
+            || t.contains("bypass permissions")
+            || t.contains("shift+tab")
+    };
+    // Prefer an explicit error / resume-refusal line.
+    if let Some(err) = lines.iter().rev().find(|l| {
+        let t = l.to_lowercase();
+        t.contains("error") || t.contains("provide a prompt") || t.contains("not found")
+    }) {
+        return Some(clean(err));
+    }
+    lines.iter().rev().find(|l| !is_noise(l)).map(|l| clean(l))
+}
+
 /// True when an OSC terminal title is just Claude Code's bare generic name —
 /// "claude" / "Claude Code", optionally with a leading status glyph (✳, ●, ·)
 /// and surrounding whitespace. A title carrying MORE than the bare word (a real
@@ -831,6 +873,40 @@ mod tests {
         assert!(!is_generic_claude_title("claude — fixing auth"));
         assert!(!is_generic_claude_title("JWT Auth Refactor"));
         assert!(!is_generic_claude_title("Dark Mode Toggle"));
+    }
+
+    #[test]
+    fn last_meaningful_line_surfaces_the_resume_refusal() {
+        // The real failure: claude prints its error, then redraws a blank prompt
+        // region. We must surface the error, not the trailing caret / footer.
+        let screen = vec![
+            "".to_string(),
+            "Error: No deferred tool marker found in the resumed session. Provide a prompt to continue the conversation.".to_string(),
+            "─────────────────────────".to_string(),
+            "❯ ".to_string(),
+            "  ⏵⏵ bypass permissions on (shift+tab to cycle)".to_string(),
+        ];
+        let got = last_meaningful_line(&screen).unwrap();
+        assert!(got.starts_with("Error:"), "got: {got}");
+        assert!(
+            got.to_lowercase().contains("provide a prompt"),
+            "got: {got}"
+        );
+    }
+
+    #[test]
+    fn last_meaningful_line_falls_back_to_last_substantive_line() {
+        let screen = vec![
+            "Done. Files written.".to_string(),
+            "════════════".to_string(),
+            "❯".to_string(),
+        ];
+        assert_eq!(
+            last_meaningful_line(&screen).as_deref(),
+            Some("Done. Files written.")
+        );
+        // All-noise screen → nothing to report.
+        assert_eq!(last_meaningful_line(&["".to_string(), "──".to_string()]), None);
     }
 
     /// Build a minimal session record with no live PTY (master/writer `None`),
