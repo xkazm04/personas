@@ -36,6 +36,7 @@ use crate::db::repos::execution::audit_incidents as incident_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
+use crate::error::AppError;
 use crate::engine::types::Continuation;
 
 /// cfg-gated accessor for the optional ml-feature EmbeddingManager off
@@ -62,6 +63,24 @@ use crate::engine::ExecutionEngine;
 /// on subsequent ticks.
 const MAX_CONTINUATIONS_PER_TICK: i64 = 10;
 
+/// Look up the ids of a parked team assignment's `status='failed'` steps.
+///
+/// Returns a real `Result` (NOT a swallowed empty `Vec`) so the caller can tell
+/// a transient DB error (e.g. SQLITE_BUSY/lock) apart from a genuine zero-
+/// failed-steps outcome. The old inline `.ok() … .unwrap_or_default()` collapsed
+/// both into an empty vec, which — after the continuation claim was already
+/// stamped — permanently mis-classified a transient error as "already resumed"
+/// and stranded the assignment.
+fn failed_assignment_steps(pool: &DbPool, assignment_id: &str) -> Result<Vec<String>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id FROM team_assignment_steps
+         WHERE assignment_id = ?1 AND status = 'failed'",
+    )?;
+    let rows = stmt.query_map([assignment_id], |r| r.get::<_, String>(0))?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 /// Re-run the blocked work for every resolved-but-uncontinued persona incident.
 ///
 /// Best-effort per incident: a candidate whose blocked execution or persona no
@@ -87,6 +106,31 @@ pub async fn continue_resolved_incidents(
 
     let mut started = 0usize;
     for incident in candidates {
+        // For a team_assignments incident the un-park needs a fallible lookup of
+        // the assignment's failed steps. Run that lookup BEFORE taking the
+        // permanent claim: a transient DB error (SQLITE_BUSY/lock) must NOT be
+        // misread as "zero failed steps" and then locked in by the claim. On
+        // Err we skip WITHOUT claiming, so `continued_at` stays NULL and the
+        // next tick retries this incident; a genuine Ok(empty) is claimed-and-
+        // skipped below exactly as before (legitimately already-resumed/done).
+        let team_failed_steps: Option<Vec<String>> =
+            if incident.source_table == "team_assignments" {
+                match failed_assignment_steps(&pool, &incident.source_id) {
+                    Ok(steps) => Some(steps),
+                    Err(e) => {
+                        tracing::warn!(
+                            incident_id = %incident.id,
+                            assignment_id = %incident.source_id,
+                            error = %e,
+                            "incident_continuation: failed-steps lookup errored; leaving incident unclaimed to retry next tick"
+                        );
+                        continue;
+                    }
+                }
+            } else {
+                None
+            };
+
         // Atomic claim — exactly one caller wins. Losers (already claimed by a
         // racing tick/instance) and errors are skipped, never retried.
         match incident_repo::claim_continuation(&pool, &incident.id) {
@@ -107,22 +151,9 @@ pub async fn continue_resolved_incidents(
         // had no machine path back to `running` after the fix.
         if incident.source_table == "team_assignments" {
             let assignment_id = incident.source_id.clone();
-            let failed_steps: Vec<String> = pool
-                .get()
-                .ok()
-                .and_then(|conn| {
-                    conn.prepare(
-                        "SELECT id FROM team_assignment_steps
-                         WHERE assignment_id = ?1 AND status = 'failed'",
-                    )
-                    .ok()
-                    .and_then(|mut stmt| {
-                        stmt.query_map([&assignment_id], |r| r.get::<_, String>(0))
-                            .ok()
-                            .map(|rows| rows.filter_map(Result::ok).collect())
-                    })
-                })
-                .unwrap_or_default();
+            // Computed before the claim above; a query error already `continue`d
+            // (without claiming), so this only ever unwraps a successful lookup.
+            let failed_steps = team_failed_steps.unwrap_or_default();
             if failed_steps.is_empty() {
                 tracing::info!(
                     incident_id = %incident.id,
