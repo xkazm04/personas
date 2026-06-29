@@ -51,11 +51,17 @@ function inferIconId(name: string, description: string | null): string {
 /**
  * Auto-assign agent-icon aliases to all personas without one.
  * Idempotent: tracks completion in localStorage so it only runs once.
+ *
+ * Returns `true` only when it actually persisted icon assignments, so the
+ * caller can decide whether a follow-up re-fetch is warranted. A no-op pass
+ * (already done, or nothing eligible) returns `false` — the caller must NOT
+ * re-fetch/replace the persona store in that case, since that would clobber
+ * decrypted/optimistic rows with redacted list rows.
  */
-export async function autoAssignPersonaIcons(personas: Persona[]): Promise<void> {
+export async function autoAssignPersonaIcons(personas: Persona[]): Promise<boolean> {
   // Skip if already done in this database
   const done = localStorage.getItem(ASSIGNMENT_KEY);
-  if (done) return;
+  if (done) return false;
 
   // An icon is considered "user-preserved" if it's already in the catalog form,
   // a URL, or looks like an emoji (short non-ASCII string) — matches the
@@ -74,7 +80,7 @@ export async function autoAssignPersonaIcons(personas: Persona[]): Promise<void>
 
   if (needsIcon.length === 0) {
     localStorage.setItem(ASSIGNMENT_KEY, new Date().toISOString());
-    return;
+    return false;
   }
 
   // Assign icons in parallel (but throttled to avoid overwhelming the DB)
@@ -100,4 +106,5 @@ export async function autoAssignPersonaIcons(personas: Persona[]): Promise<void>
   }
 
   localStorage.setItem(ASSIGNMENT_KEY, new Date().toISOString());
+  return true;
 }

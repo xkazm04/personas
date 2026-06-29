@@ -134,18 +134,20 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       } else {
         setTimeout(() => get().fetchPersonaSummaries(), 500);
       }
-      // One-time icon assignment for existing personas (idempotent)
-      const needsAssignment = !localStorage.getItem('personas-icon-auto-assigned-v1');
-      if (needsAssignment) {
-        autoAssignPersonaIcons(personas).then(async () => {
-          // Re-fetch to pick up newly assigned icons
-          const updated = await listPersonas();
-          set((s) => ({
-            personas: updated,
-            selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
-          }));
-        }).catch(() => { /* silent */ });
-      }
+      // One-time icon assignment for existing personas. autoAssignPersonaIcons
+      // is internally idempotent (gated on its own localStorage key) and returns
+      // whether it actually persisted any assignments. Only re-fetch + replace
+      // the store when it did — a no-op pass must not run listPersonas()+set(),
+      // since that would overwrite decrypted/optimistic rows with redacted ones.
+      autoAssignPersonaIcons(personas).then(async (assigned) => {
+        if (!assigned) return;
+        // Re-fetch to pick up newly assigned icons
+        const updated = await listPersonas();
+        set((s) => ({
+          personas: updated,
+          selectedPersona: deriveSelectedPersona(updated, s.selectedPersonaId, s.detailCache),
+        }));
+      }).catch(() => { /* silent */ });
     } catch (err) {
       reportError(err, "Failed to fetch personas", set, { stateUpdates: { isLoading: false } });
       throw err;
