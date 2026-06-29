@@ -63,9 +63,11 @@ pub struct GenomeBreedingResult {
     /// Which generation this offspring belongs to.
     #[ts(type = "number")]
     pub generation: i32,
-    /// JSON-serialized FitnessScore (null until evaluated).
+    /// JSON-serialized FitnessScore. This is an *inherited* (mid-parent)
+    /// prediction, NOT a measured evaluation of the offspring; null only if it
+    /// could not be predicted. Direct offspring evaluation is a deferred follow-up.
     pub fitness_json: Option<String>,
-    /// Overall fitness score (for sorting/ranking).
+    /// Overall predicted (inherited) fitness, for sorting/ranking. Not measured.
     pub fitness_overall: Option<f64>,
     /// Whether user adopted this offspring as a new persona.
     pub adopted: bool,

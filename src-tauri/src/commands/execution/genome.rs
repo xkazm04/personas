@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use tauri::State;
@@ -49,8 +49,14 @@ pub fn genome_fitness(
 
 /// Start a new genome breeding run.
 ///
-/// Selects 2-5 parent personas, breeds offspring across generations,
-/// computes fitness, and persists results.
+/// Breeds offspring from 2-5 parent personas across one or more generations.
+/// Parent fitness is *measured* from execution knowledge and used to seed the
+/// first generation (fittest first) and to direct multi-generation selection.
+/// Each offspring is assigned an *inherited* (mid-parent) fitness prediction —
+/// a cheap directed-search prior, NOT a measured evaluation of the offspring
+/// itself. Measuring offspring fitness directly (which requires running each
+/// offspring) is a deferred follow-up. Results are persisted with this
+/// predicted fitness so they can be ranked.
 #[tauri::command]
 pub async fn genome_start_breeding(
     state: State<'_, Arc<AppState>>,
@@ -168,70 +174,86 @@ async fn run_breeding_pipeline(
         }
     }
 
-    // Compute parent fitness scores
-    let mut parent_fitness: Vec<(usize, f64)> = parent_genomes
-        .iter()
+    // Compute parent fitness from real execution knowledge. These are the ONLY
+    // *measured* fitness signals in the pipeline: offspring have no execution
+    // history of their own, so their fitness (below) is a *predicted* inherited
+    // estimate, not a measurement.
+    let mut scored_parents: Vec<(PersonaGenome, FitnessScore)> = parent_genomes
+        .into_iter()
         .enumerate()
-        .map(|(i, _)| {
+        .map(|(i, g)| {
             let score = genome::compute_fitness(&pool, &parent_ids[i], &objective);
-            (i, score.overall)
+            (g, score)
         })
         .collect();
-    // Descending by fitness, but treat NaN as the WORST (sinks to the bottom).
-    // The old unwrap_or(Equal) made a NaN score compare equal to everything, so
-    // a genome whose fitness couldn't be computed could displace the real best.
-    parent_fitness.sort_by(|a, b| match (a.1.is_nan(), b.1.is_nan()) {
-        (true, true) => std::cmp::Ordering::Equal,
-        (true, false) => std::cmp::Ordering::Greater,
-        (false, true) => std::cmp::Ordering::Less,
-        (false, false) => b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal),
-    });
+    // Seed generation 1 from the FITTEST parents first (NaN sinks to the bottom),
+    // so the measured parent fitness actually drives breeding order + the
+    // multi-generation selection below — instead of being computed then discarded.
+    scored_parents.sort_by(|a, b| cmp_fitness_desc(a.1.overall, b.1.overall));
 
-    let mut all_offspring: Vec<BreedingOffspring> = Vec::new();
-    let mut current_genomes = parent_genomes;
+    // Each entry pairs a genome with its fitness (measured for gen-1 parents,
+    // predicted for the parents of later generations).
+    let mut current: Vec<(PersonaGenome, FitnessScore)> = scored_parents;
+    let mut offspring_count: i32 = 0;
 
     for gen in 1..=max_generations {
-        let generation_offspring = genome::breed_generation(&current_genomes, mutation_rate, gen);
+        let gen_parents: Vec<PersonaGenome> = current.iter().map(|(g, _)| g.clone()).collect();
+        // Map each parent's source id -> fitness so every offspring can inherit a
+        // mid-parent fitness prediction from the two parents that produced it.
+        let parent_scores: HashMap<String, FitnessScore> = current
+            .iter()
+            .map(|(g, f)| (g.source_persona_id.clone(), f.clone()))
+            .collect();
 
-        for offspring in generation_offspring {
-            // Persist each offspring
+        let generation_offspring = genome::breed_generation(&gen_parents, mutation_rate, gen);
+
+        // Assign each offspring a PREDICTED (inherited, mid-parent) fitness. This
+        // is a cheap directed-search prior, NOT a measured evaluation of the
+        // offspring — running each offspring to measure real fitness is a deferred
+        // follow-up (see genome_start_breeding).
+        let mut scored_offspring: Vec<(BreedingOffspring, FitnessScore)> = generation_offspring
+            .into_iter()
+            .map(|mut o| {
+                let predicted = predict_offspring_fitness(&parent_scores, &o.parent_ids);
+                o.fitness = Some(predicted.clone());
+                (o, predicted)
+            })
+            .collect();
+
+        // Persist every offspring with its predicted fitness so results can be
+        // ranked (get_results_by_run sorts by fitness_overall).
+        for (offspring, score) in &scored_offspring {
             let genome_json = serde_json::to_string(&offspring.genome).unwrap_or_default();
             let parent_json = serde_json::to_string(&offspring.parent_ids).unwrap_or_default();
+            let fitness_json = serde_json::to_string(score).ok();
 
             let input = CreateBreedingResultInput {
                 run_id: run_id.clone(),
                 genome_json,
                 parent_ids: parent_json,
                 generation: offspring.generation,
-                fitness_json: None,
-                fitness_overall: None,
+                fitness_json,
+                fitness_overall: Some(score.overall),
             };
 
             if let Err(e) = genome_repo::create_result(&pool, &input) {
                 tracing::warn!(error = %e, "Failed to persist breeding offspring");
             }
-
-            all_offspring.push(offspring);
+            offspring_count += 1;
         }
 
-        // For subsequent generations, use top offspring as new parents
-        if gen < max_generations && !all_offspring.is_empty() {
-            // Take top 3-5 offspring by prompt diversity (just use the latest generation)
-            let gen_offspring: Vec<&BreedingOffspring> = all_offspring
-                .iter()
-                .filter(|o| o.generation == gen)
+        // Seed the next generation from THIS generation's fittest offspring (by
+        // predicted fitness), not by emission/index order.
+        if gen < max_generations && scored_offspring.len() >= 2 {
+            scored_offspring.sort_by(|a, b| cmp_fitness_desc(a.1.overall, b.1.overall));
+            current = scored_offspring
+                .into_iter()
+                .take(4)
+                .map(|(o, score)| (o.genome, score))
                 .collect();
-            if gen_offspring.len() >= 2 {
-                current_genomes = gen_offspring
-                    .iter()
-                    .take(4)
-                    .map(|o| o.genome.clone())
-                    .collect();
-            }
         }
     }
 
-    let offspring_count = all_offspring.len() as i32;
     let summary = format!(
         "Bred {} offspring across {} generations from {} parents",
         offspring_count,
@@ -249,6 +271,61 @@ async fn run_breeding_pipeline(
         None,
         Some(&now),
     );
+}
+
+/// Compare two fitness `overall` values descending, treating NaN as the WORST
+/// (it sinks to the bottom). A plain `partial_cmp(...).unwrap_or(Equal)` would
+/// make a NaN score compare equal to everything, letting an uncomputable genome
+/// displace the real best.
+fn cmp_fitness_desc(a: f64, b: f64) -> std::cmp::Ordering {
+    match (a.is_nan(), b.is_nan()) {
+        (true, true) => std::cmp::Ordering::Equal,
+        (true, false) => std::cmp::Ordering::Greater,
+        (false, true) => std::cmp::Ordering::Less,
+        (false, false) => b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal),
+    }
+}
+
+/// Predict an offspring's fitness by inheritance: the mid-parent average of its
+/// parents' fitness scores. This is a cheap, directed-search prior — it is NOT a
+/// measured evaluation of the offspring (measuring that requires running the
+/// offspring, a deferred follow-up). It is used to rank offspring for the next
+/// generation's parent set and to populate `fitness_overall` so results sort.
+/// Falls back to a zero score if no parent fitness is available (e.g. a lookup
+/// miss), so an unrankable offspring sinks rather than crashes the run.
+fn predict_offspring_fitness(
+    parent_scores: &HashMap<String, FitnessScore>,
+    parent_ids: &[String],
+) -> FitnessScore {
+    let parents: Vec<&FitnessScore> = parent_ids
+        .iter()
+        .filter_map(|id| parent_scores.get(id))
+        .collect();
+
+    if parents.is_empty() {
+        return FitnessScore {
+            overall: 0.0,
+            speed: 0.0,
+            quality: 0.0,
+            cost: 0.0,
+        };
+    }
+
+    let n = parents.len() as f64;
+    let (mut overall, mut speed, mut quality, mut cost) = (0.0, 0.0, 0.0, 0.0);
+    for p in &parents {
+        overall += p.overall;
+        speed += p.speed;
+        quality += p.quality;
+        cost += p.cost;
+    }
+
+    FitnessScore {
+        overall: overall / n,
+        speed: speed / n,
+        quality: quality / n,
+        cost: cost / n,
+    }
 }
 
 // ============================================================================

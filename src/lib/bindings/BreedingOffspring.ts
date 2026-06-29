@@ -23,6 +23,8 @@ parentIds: Array<string>,
  */
 generation: number, 
 /**
- * Fitness score (populated after evaluation).
+ * Fitness score. Populated by the breeding pipeline with an *inherited*
+ * (mid-parent) prediction, not a measured evaluation; `breed_generation`
+ * itself leaves this `None`.
  */
 fitness: FitnessScore | null, };

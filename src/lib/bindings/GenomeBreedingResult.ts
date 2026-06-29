@@ -17,11 +17,13 @@ parentIds: string,
  */
 generation: number, 
 /**
- * JSON-serialized FitnessScore (null until evaluated).
+ * JSON-serialized FitnessScore. This is an *inherited* (mid-parent)
+ * prediction, NOT a measured evaluation of the offspring; null only if it
+ * could not be predicted. Direct offspring evaluation is a deferred follow-up.
  */
 fitnessJson: string | null, 
 /**
- * Overall fitness score (for sorting/ranking).
+ * Overall predicted (inherited) fitness, for sorting/ranking. Not measured.
  */
 fitnessOverall: number | null, 
 /**
