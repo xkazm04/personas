@@ -94,7 +94,7 @@ export function AlertHistoryPanel() {
       )}
 
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
-        {alertHistory.slice(0, 50).map((alert) => (
+        {alertHistory.map((alert) => (
             <AlertRow key={alert.id} alert={alert} onDismiss={() => { dismissAlert(alert.id).catch(() => {}); }} />
           ))}
       </div>
