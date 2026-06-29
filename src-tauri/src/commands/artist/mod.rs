@@ -226,10 +226,66 @@ pub fn artist_import_asset(
     repo::insert_asset(pool, &asset)
 }
 
-/// Delete an asset from the database.
+/// Delete an asset: remove the backing file from disk, then the DB row.
+///
+/// Deleting only the row (the previous behavior) left the bytes on disk, so the
+/// next folder scan re-imported the file with a fresh UUID — making "delete" a
+/// hide-until-next-scan rather than a real delete (and leaking orphaned files).
+/// We now unlink the file BEFORE dropping the row, confined to the managed
+/// app-data root (same guard as `artist_read_image_base64`) so a corrupt or
+/// hostile row can never make us remove an arbitrary path. A file that is
+/// already gone is tolerated; a real filesystem error is surfaced before the DB
+/// row is touched, so we never orphan the file by dropping its row.
 #[tauri::command]
 pub fn artist_delete_asset(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     let pool = &state.db;
+
+    // Fetch first so we know which file backs this row.
+    let asset = repo::get_asset(pool, &id)?;
+
+    // 1. Path shape: absolute, no `..` traversal (mirrors the read command).
+    let path = Path::new(&asset.file_path);
+    if !path.is_absolute()
+        || path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(AppError::Validation(
+            "Asset path must be absolute with no `..` segments".into(),
+        ));
+    }
+
+    // 2. Confine the unlink to the managed app-data root (resolving symlinks).
+    let managed_root = dirs::home_dir()
+        .ok_or_else(|| AppError::Internal("Cannot determine home directory".into()))?
+        .join("Personas");
+
+    match std::fs::canonicalize(path) {
+        Ok(canon) => {
+            let root_canon = managed_root.canonicalize().unwrap_or(managed_root);
+            if !canon.starts_with(&root_canon) {
+                return Err(AppError::Forbidden(
+                    "Asset path is outside the managed artist folder".into(),
+                ));
+            }
+            // 3. Remove the bytes. Tolerate a file that vanished between the
+            //    canonicalize and here (a concurrent delete/scan).
+            match std::fs::remove_file(&canon) {
+                Ok(()) => {}
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                // A real fs error (permission, busy, ...): surface it BEFORE the
+                // DB delete so we never orphan the file by dropping its row.
+                Err(e) => return Err(AppError::from(e)),
+            }
+        }
+        // The file is already gone — nothing to unlink. Fall through to remove
+        // the (now truly absent) row so a re-scan can't resurrect it.
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        // Any other canonicalize failure is surfaced before we touch the row.
+        Err(e) => return Err(AppError::from(e)),
+    }
+
+    // 4. Now drop the DB row + tags.
     repo::delete_asset(pool, &id)
 }
 
