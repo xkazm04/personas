@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarClock, ArrowRight } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -46,29 +46,47 @@ export default function UpcomingRoutinesCard() {
   // fired routines lingered as upcoming. Bump on an interval (and on tab
   // re-show) so the memo recomputes against the current time.
   const [nowTick, setNowTick] = useState(() => Date.now());
-  useEffect(() => {
-    const bump = () => {
-      if (!document.hidden) setNowTick(Date.now());
-    };
-    const id = window.setInterval(bump, 30_000);
-    document.addEventListener('visibilitychange', bump);
-    return () => {
-      window.clearInterval(id);
-      document.removeEventListener('visibilitychange', bump);
-    };
-  }, []);
+  // Guards against overlapping in-flight refetches (a slow request must not be
+  // stacked by the next tick).
+  const fetchingRef = useRef(false);
 
+  // Load triggers on mount AND refetch on the same 30s/visibility cadence as
+  // `nowTick`. The clock alone only re-filters the already-fetched list, so as
+  // each `next_trigger_at` elapses its row is dropped (the past-time filter
+  // below) and never rolls forward — after ~1h the card empties while routines
+  // are still scheduled. Re-pulling pulls the scheduler's advanced
+  // `next_trigger_at`, so the list rolls to the next occurrence instead.
   useEffect(() => {
     let cancelled = false;
-    listAllTriggers()
-      .then((rows) => {
-        if (!cancelled) {
-          setTriggers(rows);
-          setLoaded(true);
-        }
-      })
-      .catch(silentCatch('dashboard/UpcomingRoutinesCard'));
-    return () => { cancelled = true; };
+    const refetch = () => {
+      if (fetchingRef.current) return;
+      fetchingRef.current = true;
+      listAllTriggers()
+        .then((rows) => {
+          if (!cancelled) {
+            setTriggers(rows);
+            setLoaded(true);
+          }
+        })
+        .catch(silentCatch('dashboard/UpcomingRoutinesCard'))
+        .finally(() => {
+          fetchingRef.current = false;
+        });
+    };
+    refetch();
+    const tick = () => {
+      if (!document.hidden) {
+        setNowTick(Date.now());
+        refetch();
+      }
+    };
+    const id = window.setInterval(tick, 30_000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', tick);
+    };
   }, []);
 
   const rows = useMemo<UpcomingRow[]>(() => {
