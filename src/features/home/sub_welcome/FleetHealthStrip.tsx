@@ -6,14 +6,16 @@ import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
-import { hasFailureSpike } from './lib/fleetHealth';
+import { hasFailureSpike, fleetSuccessRatePct } from './lib/fleetHealth';
 import type { SidebarSection } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
 
 
 interface FleetMetrics {
   executionsToday: number;
-  successRate: number;
+  // Success rate over TERMINAL runs only (completed / (completed + failed)), or
+  // null when nothing has finished yet (all in-flight) → render neutral "—".
+  successRate: number | null;
   credentialCount: number;
   hasFailureSpike: boolean;
 }
@@ -36,15 +38,15 @@ function useFleetMetrics() {
         ]);
         if (cancelled) return;
 
-        const rate = summary.totalExecutions > 0
-          ? Math.round((summary.successfulExecutions / summary.totalExecutions) * 100)
-          : 100;
-
+        // Rate + spike are computed over TERMINAL executions only (completed +
+        // failed); in-flight/cancelled rows are excluded so the pill isn't
+        // diluted by running work (see lib/fleetHealth.ts). `successfulExecutions`
+        // is the backend's `completed` count.
         setMetrics({
           executionsToday: summary.totalExecutions,
-          successRate: rate,
+          successRate: fleetSuccessRatePct(summary.successfulExecutions, summary.failedExecutions),
           credentialCount: credentials.length,
-          hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
+          hasFailureSpike: hasFailureSpike(summary.successfulExecutions, summary.failedExecutions),
         });
       } catch (err) {
         if (!cancelled) silentCatch("features/home/sub_welcome/FleetHealthStrip:catch1")(err);
@@ -125,9 +127,10 @@ export default function FleetHealthStrip() {
       <MetricPill
         icon={CheckCircle2}
         label={fleet.success_rate}
-        // With zero executions the rate defaults to 100 — show "—" instead of a
-        // misleading confident green "100%" for a fleet that hasn't run anything.
-        value={metrics.executionsToday > 0 ? `${metrics.successRate}%` : '—'}
+        // No finished runs yet (all in-flight / nothing executed) → successRate
+        // is null; show a neutral "—" instead of a misleading confident "0%"/
+        // "100%" for a fleet whose runs haven't terminated.
+        value={metrics.successRate !== null ? `${metrics.successRate}%` : '—'}
         onClick={nav('overview')}
         pulse={metrics.hasFailureSpike}
         accentColor={metrics.hasFailureSpike ? 'bg-red-500/15' : 'bg-emerald-500/15'}
