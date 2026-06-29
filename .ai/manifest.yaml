@@ -5,7 +5,7 @@
 schema: ai-manifest
 schemaVersion: 0.1.0
 spec: docs/AI_MANIFEST_SPEC.md
-generatedAt: "2026-06-10"
+generatedAt: "2026-06-29"
 generatedFrom: [package.json]
 
 repo:
