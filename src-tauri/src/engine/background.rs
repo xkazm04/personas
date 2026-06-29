@@ -868,8 +868,17 @@ pub(crate) async fn event_bus_tick(
             Vec::new()
         }
     };
+    // Listeners: like subscriptions above, fetch the full active set and let
+    // `bus::match_event` / `ParsedTrigger::is_eligible` filter by CANONICAL
+    // event type. The previous `json_extract(...) IN (event_types)` pre-filter
+    // was an EXACT string compare, so a canvas-built listener stored as
+    // `code_review.completed` silently never matched an emitted
+    // `code-review.completed` (subscription-backed listeners were masked by
+    // their dual-written legacy subscription; purely canvas-created ones had no
+    // safety net). The active event_listener set is small; canonical matching
+    // now happens in the bus, exactly mirroring the subscription path.
     let all_listeners =
-        trigger_repo::get_event_listeners_for_event_types(pool, &event_types).unwrap_or_default();
+        trigger_repo::get_enabled_by_type(pool, "event_listener").unwrap_or_default();
 
     tracing::debug!(
         event_count = events.len(),

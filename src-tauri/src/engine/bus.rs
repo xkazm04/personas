@@ -127,10 +127,24 @@ impl MatchableSubscription for ParsedTrigger<'_> {
     fn use_case_id(&self) -> Option<&str> {
         self.trigger.use_case_id.as_deref()
     }
-    fn is_eligible(&self, _event: &PersonaEvent) -> bool {
-        // Event-type filtering is done at the SQL layer for triggers;
-        // we only need to confirm this is actually an EventListener config.
-        matches!(&self.config, TriggerConfig::EventListener { .. })
+    fn is_eligible(&self, event: &PersonaEvent) -> bool {
+        // Canonical (not exact) event-type match, mirroring the subscription
+        // path (`PersonaEventSubscription::is_eligible`). The dispatcher now
+        // fetches ALL active event_listener triggers instead of pre-filtering
+        // with an exact `json_extract(...) IN (...)` SQL compare, which silently
+        // dropped separator-variant listeners (`code_review.completed` vs
+        // `code-review.completed`) that no legacy subscription masked. We
+        // re-check the event type here canonically so a separator variant still
+        // fires while semantically-unrelated event types do not.
+        match &self.config {
+            TriggerConfig::EventListener {
+                listen_event_type, ..
+            } => match listen_event_type {
+                Some(t) => canonical_event_type(t) == canonical_event_type(&event.event_type),
+                None => false,
+            },
+            _ => false,
+        }
     }
 }
 
@@ -500,6 +514,41 @@ mod tests {
         let matches = match_event_listeners(&event, &listeners);
         assert_eq!(matches.len(), 1);
         assert_eq!(matches[0].persona_id, "p1");
+    }
+
+    #[test]
+    fn test_event_listener_match_across_separator_variants() {
+        // Canvas-built listener stored with one separator style must still fire
+        // for an emitted event spelled with a different separator (the bug:
+        // the SQL pre-filter did an exact compare and dropped these silently).
+        let event = make_event("code-review.completed");
+        let listeners = vec![make_listener("p1", "code_review.completed", None)];
+        let matches = match_event_listeners(&event, &listeners);
+        assert_eq!(
+            matches.len(),
+            1,
+            "separator-variant listener must match canonically"
+        );
+        assert_eq!(matches[0].persona_id, "p1");
+
+        // Reverse direction + the dotted form must match too.
+        let event2 = make_event("ux_review.completed");
+        let listeners2 = vec![make_listener("p2", "ux.review.completed", None)];
+        assert_eq!(match_event_listeners(&event2, &listeners2).len(), 1);
+    }
+
+    #[test]
+    fn test_event_listener_unrelated_event_does_not_match() {
+        // A semantically-different event type (different words, not just a
+        // separator) must NOT fire the listener — canonicalization unifies
+        // separators only, it does not merge distinct names.
+        let event = make_event("build.completed");
+        let listeners = vec![make_listener("p1", "code-review.completed", None)];
+        let matches = match_event_listeners(&event, &listeners);
+        assert!(
+            matches.is_empty(),
+            "unrelated event types must not match the listener"
+        );
     }
 
     #[test]
