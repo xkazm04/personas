@@ -466,8 +466,9 @@ async fn process_webhook(
     // 5. Extract event_type from typed config or default
     let event_type = cfg_event_type.unwrap_or_else(|| "webhook_received".to_string());
 
-    // 6+7. Atomically mark trigger as fired AND publish the event in a
-    //       single SQLite transaction to prevent orphan trigger advancements.
+    // 6+7. Publish the event (durable record) and best-effort mark the trigger
+    //       as fired in a single SQLite transaction. The event insert always
+    //       happens; a concurrent trigger-version conflict no longer drops it.
     let input = CreatePersonaEventInput {
         event_type,
         source_type: "webhook".into(),
@@ -541,9 +542,18 @@ pub(crate) fn verify_hmac_sha256(secret: &str, body: &[u8], signature: &str) -> 
     mac.verify_slice(&expected_bytes).is_ok() && hex_valid
 }
 
-/// Atomically mark a trigger as fired and publish the corresponding event
-/// in a single SQLite transaction. Prevents orphan trigger advancements
-/// when the event publish would fail (or vice versa).
+/// Publish a webhook's `persona_event` and best-effort mark its trigger as
+/// fired, in a single SQLite transaction.
+///
+/// The event insert is the durable record of an externally-received webhook
+/// and is committed unconditionally — a genuine DB error on the insert still
+/// aborts and surfaces (so the delivery can be retried / dead-lettered).
+///
+/// The trigger bookkeeping (`last_triggered_at` / `trigger_version` bump) keeps
+/// its optimistic-concurrency guard to avoid racing the scheduler, but a 0-row
+/// CAS result is treated as success-after-publish (logged, not an error): a
+/// concurrent burst delivery or scheduler tick already advanced the version, so
+/// we keep the published event instead of discarding it over a metadata race.
 fn mark_triggered_and_publish(
     pool: &DbPool,
     trigger_id: &str,
@@ -568,22 +578,10 @@ fn mark_triggered_and_publish(
     let mut conn = pool.get()?;
     let tx = conn.transaction().map_err(AppError::Database)?;
 
-    let trigger_rows = tx
-        .execute(
-            "UPDATE persona_triggers
-         SET last_triggered_at = ?1, next_trigger_at = NULL, updated_at = ?1,
-             trigger_version = trigger_version + 1
-         WHERE id = ?2 AND trigger_version = ?3",
-            params![now, trigger_id, expected_version],
-        )
-        .map_err(AppError::Database)?;
-
-    if trigger_rows == 0 {
-        return Err(AppError::Validation(
-            "Trigger version conflict — concurrent update detected".into(),
-        ));
-    }
-
+    // Publish the event FIRST. The persona_event row is the durable "we
+    // received this external webhook" record and must always be persisted.
+    // A genuine DB error here aborts the transaction and surfaces as an
+    // error (HTTP 500 / DLQ) so the delivery is retried rather than lost.
     tx.execute(
         "INSERT INTO persona_events
          (id, project_id, event_type, source_type, source_id, target_persona_id,
@@ -603,6 +601,33 @@ fn mark_triggered_and_publish(
         ],
     )
     .map_err(AppError::Database)?;
+
+    // Best-effort trigger bookkeeping. The optimistic-concurrency (CAS) guard
+    // still prevents this webhook from advancing trigger metadata that a
+    // concurrent scheduler tick (or a sibling burst webhook) already advanced.
+    // But a 0-row result is NOT an error: it just means someone else already
+    // bumped trigger_version, so we skip the metadata bump and keep the
+    // already-inserted event. We must never discard a legitimately-received
+    // external event over a benign metadata race.
+    let trigger_rows = tx
+        .execute(
+            "UPDATE persona_triggers
+         SET last_triggered_at = ?1, next_trigger_at = NULL, updated_at = ?1,
+             trigger_version = trigger_version + 1
+         WHERE id = ?2 AND trigger_version = ?3",
+            params![now, trigger_id, expected_version],
+        )
+        .map_err(AppError::Database)?;
+
+    if trigger_rows == 0 {
+        tracing::warn!(
+            trigger_id = %trigger_id,
+            expected_version = expected_version,
+            "Trigger version conflict during webhook bookkeeping — a concurrent \
+             update already advanced the trigger; event published, skipping \
+             best-effort metadata bump",
+        );
+    }
 
     tx.commit().map_err(AppError::Database)?;
 
