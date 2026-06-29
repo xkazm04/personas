@@ -71,10 +71,19 @@ export function deriveReadiness(
   let tone: MilestoneStatus = 'empty';
   if (toneRows > 0) tone = toneHasSpecific ? 'complete' : 'partial';
 
-  // Brain: KB bound is complete; obsidian-subpath only is partial
+  // Brain: KB bound is complete. The obsidian_subpath alone is NOT progress —
+  // create_profile auto-writes the default `personas/twins/<slug>` for every
+  // backend twin (twin.rs), so a non-empty subpath is the norm, not a user
+  // action. Treat it as 'partial' only when the user has actually changed it
+  // away from that default; the default (or empty) folder name stays 'empty'.
   let brain: MilestoneStatus = 'empty';
-  if (profile?.knowledge_base_id) brain = 'complete';
-  else if (profile?.obsidian_subpath && profile.obsidian_subpath.trim()) brain = 'partial';
+  if (profile?.knowledge_base_id) {
+    brain = 'complete';
+  } else if (profile) {
+    const subpath = profile.obsidian_subpath?.trim() ?? '';
+    const defaultSubpath = `personas/twins/${profile.slug ?? ''}`;
+    if (subpath && subpath !== defaultSubpath) brain = 'partial';
+  }
 
   // Voice: a voice_id is the minimum for "configured"
   const voiceReady = !!voiceProfile?.voice_id && voiceProfile.voice_id.trim().length > 0;

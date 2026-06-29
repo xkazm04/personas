@@ -20,7 +20,10 @@ function makeProfile(over: Partial<TwinProfile> = {}): TwinProfile {
     role: null,
     languages: null,
     pronouns: null,
-    obsidian_subpath: '',
+    // Production rows always carry the auto-derived default `personas/twins/<slug>`
+    // (create_profile in twin.rs), so the fixture mirrors that. The default folder
+    // name is NOT user progress and must read as brain 'empty'.
+    obsidian_subpath: 'personas/twins/test-twin',
     is_active: true,
     knowledge_base_id: null,
     created_at: '2026-01-01T00:00:00Z',
@@ -127,12 +130,29 @@ describe('deriveReadiness', () => {
     expect(specific.tone).toBe('complete');
   });
 
-  it('subpath-only brain is partial; KB-bound is complete', () => {
-    const subpathOnly = deriveReadiness(
-      makeProfile({ obsidian_subpath: 'twins/x' }),
+  it('default/empty subpath is empty; user-changed subpath is partial; KB-bound is complete', () => {
+    // Auto-derived production default `personas/twins/<slug>` is NOT progress.
+    const defaultSubpath = deriveReadiness(
+      makeProfile({ obsidian_subpath: 'personas/twins/test-twin' }),
       [], [], null, [],
     );
-    expect(subpathOnly.brain).toBe('partial');
+    expect(defaultSubpath.brain).toBe('empty');
+
+    // A blank subpath (no brain setup at all) is likewise empty.
+    const blankSubpath = deriveReadiness(
+      makeProfile({ obsidian_subpath: '' }),
+      [], [], null, [],
+    );
+    expect(blankSubpath.brain).toBe('empty');
+
+    // A subpath the user deliberately changed away from the default is a real
+    // brain artifact → partial.
+    const customSubpath = deriveReadiness(
+      makeProfile({ obsidian_subpath: 'my-vault/brains/founder' }),
+      [], [], null, [],
+    );
+    expect(customSubpath.brain).toBe('partial');
+
     const kbBound = deriveReadiness(
       makeProfile({ knowledge_base_id: 'kb-1' }),
       [], [], null, [],
