@@ -155,21 +155,88 @@ pub fn run_assignment(
             .lock()
             .unwrap_or_else(|poisoned| poisoned.into_inner())
             .remove(&assignment_id);
-        if let Err(e) = result {
-            tracing::error!(
-                assignment_id = %assignment_id,
-                error = %e,
-                "Team-assignment orchestrator loop failed",
-            );
-            let _ = assignment_repo::update_assignment_status(
-                &deps.pool,
-                &assignment_id,
-                "failed",
-                Some(&e.to_string()),
-            );
-            emit_progress(&deps.app, &assignment_id, "failed", None);
+        match result {
+            // Normal exit: recover a resume that was dropped in the slot-release
+            // window (see `respawn_if_resume_dropped`). Must run AFTER the slot
+            // is freed above so the recovery spawn can re-acquire it.
+            Ok(()) => respawn_if_resume_dropped(&deps, &assignment_id),
+            Err(e) => {
+                tracing::error!(
+                    assignment_id = %assignment_id,
+                    error = %e,
+                    "Team-assignment orchestrator loop failed",
+                );
+                let _ = assignment_repo::update_assignment_status(
+                    &deps.pool,
+                    &assignment_id,
+                    "failed",
+                    Some(&e.to_string()),
+                );
+                emit_progress(&deps.app, &assignment_id, "failed", None);
+            }
         }
     });
+}
+
+/// Lost-resume recovery for the single-flight slot-release window.
+///
+/// `tick_loop` writes its exit status (`awaiting_review` / `paused` / `done` /
+/// `failed` / `aborted`) and THEN returns; only after it returns does the spawn
+/// wrapper release the `live_assignments()` slot. A resume that lands in that
+/// window — `AssignmentAutoResumeSubscription` resetting a `failed` step to
+/// `pending`, a review action, or an unpause — flips the assignment back to
+/// `running` and calls `run_assignment`, whose single-flight `insert` sees the
+/// slot still held and SKIPS the spawn as a duplicate. The original loop then
+/// releases the slot, leaving the assignment `running` with runnable work and
+/// no live ticker until the next restart's orphan-recovery — the whole
+/// remaining pipeline silently never runs.
+///
+/// Called exactly once, right after the slot is released on a NORMAL loop exit:
+/// re-read the assignment and re-spawn the tick task iff a resume was dropped.
+///
+/// Two guards bound this to at most one recovery per genuine dropped resume and
+/// prevent an infinite respawn:
+/// - **live state required** — only `running`/`queued` indicates a resume
+///   landed. The loop's own normal exits leave `awaiting_review`/`paused`/
+///   `done`/`failed`/`aborted`, none of which respawn, so a genuinely-terminal
+///   or intentionally-paused assignment is never restarted.
+/// - **runnable work required** — at least one non-terminal step
+///   (`pending`/`matching`/`running`) must exist (the dropped resume reset a
+///   step to `pending`). A respawned loop launches/reaps that work and exits to
+///   a terminal status, so it can't re-trigger this check with nothing to do.
+///
+/// `run_assignment`'s own `insert` is the "isn't already live again" guard: a
+/// resume that landed AFTER the release already re-acquired the slot and owns a
+/// live loop, so this recovery spawn no-ops.
+fn respawn_if_resume_dropped(deps: &OrchestratorDeps, assignment_id: &str) {
+    let Ok(assignment) = assignment_repo::get_by_id(&deps.pool, assignment_id) else {
+        return;
+    };
+    if !matches!(assignment.status.as_str(), "running" | "queued") {
+        return;
+    }
+    let has_runnable = assignment_repo::list_steps(&deps.pool, assignment_id)
+        .map(|steps| {
+            steps
+                .iter()
+                .any(|s| matches!(s.status.as_str(), "pending" | "matching" | "running"))
+        })
+        .unwrap_or(false);
+    if !has_runnable {
+        return;
+    }
+    tracing::info!(
+        assignment_id = %assignment_id,
+        status = %assignment.status,
+        "run_assignment: re-spawning tick task — a resume landed in the slot-release window and was dropped",
+    );
+    run_assignment(
+        deps.pool.clone(),
+        deps.app.clone(),
+        deps.engine.clone(),
+        deps.embedding_manager.clone(),
+        assignment_id.to_string(),
+    );
 }
 
 // ----------------------------------------------------------------------------
