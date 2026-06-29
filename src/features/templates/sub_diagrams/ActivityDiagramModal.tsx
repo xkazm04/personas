@@ -30,6 +30,11 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
   const canvasRef = useRef<HTMLDivElement>(null);
 
   const activeFlow = flows[activeFlowIndex] || null;
+  // Mirror FlowDiagram's normalization: the TS type asserts nodes/edges are
+  // arrays, but an LLM-generated flow may omit them. Read defensively so the
+  // footer counts/filter can't throw and blank the whole modal/page.
+  const nodes = activeFlow?.nodes ?? [];
+  const edges = activeFlow?.edges ?? [];
 
   return (
     <BaseModal
@@ -127,10 +132,10 @@ export default function ActivityDiagramModal({ isOpen, onClose, templateName, fl
         <div className={`${CARD_PADDING.modalSection} border-t border-primary/10 bg-secondary/20`}>
           <p className="typo-body text-foreground">{activeFlow.description}</p>
           <div className="flex items-center gap-4 mt-1.5 typo-body text-foreground">
-            <span>{tx(t.templates.diagrams.nodes_count, { count: activeFlow.nodes.length })}</span>
-            <span>{tx(t.templates.diagrams.edges_count, { count: activeFlow.edges.length })}</span>
-            <span>{tx(t.templates.diagrams.connectors_count, { count: activeFlow.nodes.filter(n => n.type === 'connector').length })}</span>
-            <span>{tx(t.templates.diagrams.decisions_count, { count: activeFlow.nodes.filter(n => n.type === 'decision').length })}</span>
+            <span>{tx(t.templates.diagrams.nodes_count, { count: nodes.length })}</span>
+            <span>{tx(t.templates.diagrams.edges_count, { count: edges.length })}</span>
+            <span>{tx(t.templates.diagrams.connectors_count, { count: nodes.filter(n => n.type === 'connector').length })}</span>
+            <span>{tx(t.templates.diagrams.decisions_count, { count: nodes.filter(n => n.type === 'decision').length })}</span>
           </div>
         </div>
       )}

@@ -91,14 +91,23 @@ export default function DesignReviewsPage() {
       </ContentBody>
 
       {/* Activity diagram modal */}
-      {diagramReview && (
-        <ActivityDiagramModal
-          isOpen={!!diagramReview}
-          onClose={() => setDiagramReview(null)}
-          templateName={diagramReview.test_case_name}
-          flows={parseJsonSafe<UseCaseFlow[]>(diagramReview.use_case_flows, [])}
-        />
-      )}
+      {diagramReview && (() => {
+        // parseJsonSafe only falls back to [] on parse error; a stored "null"
+        // or object parses successfully into a non-array, which would crash
+        // flows[0]/flows.length. Guard array-ness here.
+        const parsed = parseJsonSafe<UseCaseFlow[]>(diagramReview.use_case_flows, []);
+        const flows = Array.isArray(parsed) ? parsed : [];
+        return (
+          <ErrorBoundary name="Activity Diagram">
+            <ActivityDiagramModal
+              isOpen={!!diagramReview}
+              onClose={() => setDiagramReview(null)}
+              templateName={diagramReview.test_case_name}
+              flows={flows}
+            />
+          </ErrorBoundary>
+        );
+      })()}
 
     </ContentBox>
   );
