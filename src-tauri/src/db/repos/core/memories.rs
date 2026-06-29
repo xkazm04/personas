@@ -833,6 +833,19 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     })
 }
 
+/// Rank a tier for "keep the stronger one" comparisons: core > active >
+/// working > archive. Unknown values rank as `working` (the mid default) so a
+/// malformed row can never out-rank a real `core`/`active` memory.
+fn tier_rank(tier: &str) -> u8 {
+    match tier {
+        "core" => 3,
+        "active" => 2,
+        "working" => 1,
+        "archive" => 0,
+        _ => 1,
+    }
+}
+
 /// Atomically merge two memories into one.
 ///
 /// Inserts the merged row and deletes the two originals inside a single SQL
@@ -845,6 +858,18 @@ pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
 /// content happens to match `delete_id_a` or `delete_id_b` would otherwise be
 /// returned via the existing row, then deleted by the same transaction —
 /// leaving the caller with a valid id that points at nothing.
+///
+/// Safety guards (MEMORY CONTRACT §1, §2, §5):
+/// - **Refuses** when either original is `tier = 'core'` — a merge hard-deletes
+///   BOTH originals, so without this guard the user's pinned identity memory
+///   would be silently destroyed (`keep_a`/`keep_b` already refuse this; merge
+///   used not to).
+/// - **Refuses** a cross-persona merge (different `persona_id`) rather than
+///   silently reassigning/deleting one agent's memory.
+/// - **Carries forward** the STRONGER tier (core > active > working > archive),
+///   the capability scope (`use_case_id`), team-share anchor (`home_team_id`)
+///   and source-execution provenance instead of defaulting to the DB tier and
+///   dropping attribution.
 pub fn merge(
     pool: &DbPool,
     input: CreatePersonaMemoryInput,
@@ -862,6 +887,24 @@ pub fn merge(
             return Err(AppError::Validation("Content cannot be empty".into()));
         }
 
+        // Load both originals up front so we can enforce the tier/persona guards
+        // and carry their scope forward. `get_by_id` errors if an id is missing.
+        let mem_a = get_by_id(pool, delete_id_a)?;
+        let mem_b = get_by_id(pool, delete_id_b)?;
+
+        // (a) Never destroy a user-pinned core memory via merge.
+        if mem_a.tier == "core" || mem_b.tier == "core" {
+            return Err(AppError::Validation(
+                "Cannot merge a core (pinned) memory — resolve this conflict manually".into(),
+            ));
+        }
+        // (d) Never silently reassign/delete one agent's memory into another.
+        if mem_a.persona_id != mem_b.persona_id {
+            return Err(AppError::Validation(
+                "Cannot merge memories that belong to different personas".into(),
+            ));
+        }
+
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
         let category = input.category.as_deref().unwrap_or(DEFAULT_MEMORY_CATEGORY);
@@ -877,24 +920,62 @@ pub fn merge(
                 .map(|j| serde_json::to_string(&j.0).unwrap_or_default()),
         );
 
+        // The merged row always belongs to the source persona — never trust the
+        // input's persona_id to reassign it (the personas match, asserted above).
+        let persona_id = mem_a.persona_id.clone();
+
+        // (b) Keep the stronger tier rather than letting the merged row fall back
+        // to the column default (which silently promotes/demotes the survivor).
+        let tier = if tier_rank(&mem_a.tier) >= tier_rank(&mem_b.tier) {
+            mem_a.tier.clone()
+        } else {
+            mem_b.tier.clone()
+        };
+
+        // (c) Carry capability attribution: keep it when both agree; if they
+        // diverge, widen to persona-wide (NULL) so the merged memory is never
+        // silently hidden from a capability that previously saw one of them.
+        // An explicit input value (future callers) takes precedence.
+        let use_case_id = if input.use_case_id.is_some() {
+            input.use_case_id.clone()
+        } else if mem_a.use_case_id == mem_b.use_case_id {
+            mem_a.use_case_id.clone()
+        } else {
+            None
+        };
+
+        // Carry source-execution provenance and the team-share anchor forward
+        // (prefer any non-null value) so the merge preserves both.
+        let source_execution_id = input
+            .source_execution_id
+            .clone()
+            .or_else(|| mem_a.source_execution_id.clone())
+            .or_else(|| mem_b.source_execution_id.clone());
+        let home_team_id = mem_a
+            .home_team_id
+            .clone()
+            .or_else(|| mem_b.home_team_id.clone());
+
         let conn = pool.get()?;
         let tx = conn.unchecked_transaction()?;
 
         tx.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, tier, home_team_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12)",
             params![
                 id,
-                input.persona_id,
+                persona_id,
                 title,
                 content,
                 category,
-                input.source_execution_id,
+                source_execution_id,
                 importance,
                 tags,
                 now,
-                input.use_case_id,
+                use_case_id,
+                tier,
+                home_team_id,
             ],
         )?;
 
@@ -2047,5 +2128,101 @@ mod tests {
         assert_eq!(after.len(), 1, "the pinned core memory must survive a clear-all");
         assert_eq!(after[0].id, all[0].id);
         assert_eq!(after[0].tier, "core");
+    }
+
+    // ========================================================================
+    // merge() — tier / scope / persona guards
+    // ========================================================================
+
+    /// Build the merged-row input the way the real call site does (store +
+    /// conflictHelpers): it carries NO tier / use_case_id / source_execution_id
+    /// — the repo derives those from the two originals.
+    fn merge_input(persona_id: &str, importance: i32) -> CreatePersonaMemoryInput {
+        CreatePersonaMemoryInput {
+            persona_id: persona_id.to_string(),
+            title: "merged".into(),
+            content: "merged content".into(),
+            category: Some("fact".into()),
+            source_execution_id: None,
+            importance: Some(importance),
+            tags: None,
+            use_case_id: None,
+        }
+    }
+
+    /// MEMORY CONTRACT (1): a merge hard-deletes BOTH originals, so it must
+    /// refuse when either is the user-pinned `core` tier (the `keep_a`/`keep_b`
+    /// path already refuses this; merge used not to).
+    #[test]
+    fn merge_refuses_core_pinned_memory() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Merge Core Guard");
+        let a = insert_scoped_memory(&pool, &persona_id, "keep core", "core", None);
+        let b = insert_scoped_memory(&pool, &persona_id, "other", "active", None);
+
+        assert!(
+            merge(&pool, merge_input(&persona_id, 4), &a, &b).is_err(),
+            "merge must refuse a core-tier original",
+        );
+        // Both originals survive the refusal (transaction never ran).
+        assert!(get_by_id(&pool, &a).is_ok());
+        assert!(get_by_id(&pool, &b).is_ok());
+    }
+
+    /// A merge must never silently reassign/delete one agent's memory into
+    /// another — cross-persona merges are refused.
+    #[test]
+    fn merge_refuses_cross_persona() {
+        let pool = init_test_db().unwrap();
+        let p1 = make_persona(&pool, "Merge Persona 1");
+        let p2 = make_persona(&pool, "Merge Persona 2");
+        let a = insert_scoped_memory(&pool, &p1, "a", "active", None);
+        let b = insert_scoped_memory(&pool, &p2, "b", "active", None);
+
+        assert!(
+            merge(&pool, merge_input(&p1, 4), &a, &b).is_err(),
+            "merge must refuse a cross-persona merge",
+        );
+        assert!(get_by_id(&pool, &a).is_ok());
+        assert!(get_by_id(&pool, &b).is_ok());
+    }
+
+    /// A normal same-persona, non-core merge still works AND now preserves the
+    /// stronger tier + the shared capability scope instead of dropping them.
+    #[test]
+    fn merge_same_persona_preserves_stronger_tier_and_use_case() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Merge Preserve");
+        // active + working, both attributed to the same capability.
+        let a = insert_scoped_memory(&pool, &persona_id, "a", "active", Some("uc-shared"));
+        let b = insert_scoped_memory(&pool, &persona_id, "b", "working", Some("uc-shared"));
+
+        let merged = merge(&pool, merge_input(&persona_id, 4), &a, &b).unwrap();
+        // Stronger tier wins (active > working) — no demotion.
+        assert_eq!(merged.tier, "active");
+        // Shared capability attribution survives.
+        assert_eq!(merged.use_case_id.as_deref(), Some("uc-shared"));
+        assert_eq!(merged.persona_id, persona_id);
+        // Both originals are gone.
+        assert!(get_by_id(&pool, &a).is_err());
+        assert!(get_by_id(&pool, &b).is_err());
+    }
+
+    /// When the two originals disagree on capability scope, the merge widens to
+    /// persona-wide (use_case_id = NULL) so the result is never hidden from a
+    /// capability that previously saw one of them.
+    #[test]
+    fn merge_widens_diverging_use_case_to_persona_wide() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Merge Diverge");
+        let a = insert_scoped_memory(&pool, &persona_id, "a", "active", Some("uc-a"));
+        let b = insert_scoped_memory(&pool, &persona_id, "b", "active", None);
+
+        let merged = merge(&pool, merge_input(&persona_id, 4), &a, &b).unwrap();
+        assert_eq!(
+            merged.use_case_id, None,
+            "diverging capability scope must widen to persona-wide",
+        );
+        assert_eq!(merged.tier, "active");
     }
 }

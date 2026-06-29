@@ -70,6 +70,26 @@ export function MemoryConflictReview({ onConflictsResolved }: MemoryConflictRevi
           break;
         }
         case 'merge': {
+          // A merge hard-deletes BOTH originals, so mirror the keep_a/keep_b
+          // core guard: refuse if either side is a core (user-pinned) memory.
+          // Also refuse a cross-persona merge, which would silently delete one
+          // agent's memory and reassign it to the other. The backend rejects
+          // both — this just surfaces a clear message instead of a generic
+          // failure.
+          if (conflict.memoryA.tier === 'core' || conflict.memoryB.tier === 'core') {
+            useToastStore.getState().addToast(
+              'Cannot merge a core (pinned) memory — resolve this conflict manually',
+              'error',
+            );
+            return;
+          }
+          if (conflict.memoryA.persona_id !== conflict.memoryB.persona_id) {
+            useToastStore.getState().addToast(
+              'Cannot merge memories from different agents — resolve this conflict manually',
+              'error',
+            );
+            return;
+          }
           const merged = mergeMemories(conflict.memoryA, conflict.memoryB);
           const ok = await mergeMemoriesAction(merged, conflict.memoryA.id, conflict.memoryB.id);
           if (!ok) throw new Error('merge failed');
