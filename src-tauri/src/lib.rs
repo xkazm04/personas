@@ -1342,10 +1342,28 @@ pub fn run() {
                     tracing::info!("test-automation bridge port overridden via PERSONAS_TEST_PORT={}", port);
                 }).unwrap_or(test_automation::DEFAULT_PORT));
 
-                #[cfg(not(feature = "test-automation"))]
+                // Without the compile feature, the env override only works in
+                // DEBUG builds. Release installers must never expose the
+                // bridge: it has no auth and its routes include /eval
+                // (arbitrary JS in the webview) and /list-credentials, so an
+                // env var alone must not be able to open it on an end user's
+                // machine (ship-loop security audit 2026-07-02). Every
+                // harness flow (tauri:dev:test, launchIsolated, e2e) runs
+                // debug builds and keeps working.
+                #[cfg(all(not(feature = "test-automation"), debug_assertions))]
                 let requested_port = test_automation::env_test_port().inspect(|port| {
-                    tracing::info!("Production test mode enabled via PERSONAS_TEST_PORT={}", port);
+                    tracing::info!("Debug test mode enabled via PERSONAS_TEST_PORT={}", port);
                 });
+
+                #[cfg(all(not(feature = "test-automation"), not(debug_assertions)))]
+                let requested_port: Option<u16> = {
+                    if test_automation::env_test_port().is_some() {
+                        tracing::warn!(
+                            "PERSONAS_TEST_PORT is set but ignored: the test-automation bridge is disabled in release builds (build with --features test-automation for a bridged build)"
+                        );
+                    }
+                    None
+                };
 
                 if let Some(port) = requested_port {
                     match tauri::async_runtime::block_on(test_automation::start_server(
