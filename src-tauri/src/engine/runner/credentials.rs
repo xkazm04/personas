@@ -823,3 +823,297 @@ pub(crate) async fn inject_credential(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+    use crate::db::models::{
+        CreateConnectorDefinitionInput, CreateCredentialInput, PersonaCredential,
+        PersonaToolDefinition,
+    };
+
+    /// Build a minimal in-memory tool definition. Only `name` and
+    /// `requires_credential_type` participate in credential resolution.
+    fn make_tool(name: &str, requires_credential_type: Option<&str>) -> PersonaToolDefinition {
+        PersonaToolDefinition {
+            id: uuid::Uuid::new_v4().to_string(),
+            name: name.to_string(),
+            category: "custom".to_string(),
+            description: String::new(),
+            script_path: String::new(),
+            input_schema: None,
+            output_schema: None,
+            requires_credential_type: requires_credential_type.map(str::to_string),
+            implementation_guide: None,
+            is_builtin: false,
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
+
+    /// Seed a (non-builtin) connector definition. `services` is the JSON array
+    /// the resolver matches tool names against (`[{"toolName": "..."}]`).
+    fn seed_connector(pool: &DbPool, name: &str, services: &str) {
+        connector_repo::create(
+            pool,
+            CreateConnectorDefinitionInput {
+                name: name.to_string(),
+                label: format!("{name} Label"),
+                icon_url: None,
+                color: None,
+                category: None,
+                fields: "[]".to_string(),
+                healthcheck_config: None,
+                services: Some(services.to_string()),
+                events: None,
+                metadata: None,
+                is_builtin: Some(false),
+            },
+        )
+        .unwrap();
+    }
+
+    /// Seed a vault credential with a field map (sensitive fields get encrypted
+    /// by `create_with_fields`, exactly like the production write path).
+    fn seed_credential(
+        pool: &DbPool,
+        service_type: &str,
+        name: &str,
+        fields: &[(&str, &str)],
+    ) -> PersonaCredential {
+        let map: HashMap<String, String> = fields
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect();
+        cred_repo::create_with_fields(
+            pool,
+            CreateCredentialInput {
+                name: name.to_string(),
+                service_type: service_type.to_string(),
+                encrypted_data: String::new(),
+                iv: String::new(),
+                metadata: None,
+                session_encrypted_data: None,
+                healthcheck_passed: None,
+            },
+            &map,
+        )
+        .unwrap()
+    }
+
+    fn env_get<'a>(env: &'a [(String, String)], key: &str) -> Option<&'a str> {
+        env.iter().find(|(k, _)| k == key).map(|(_, v)| v.as_str())
+    }
+
+    // -- (a) binding → env map --------------------------------------------
+
+    /// Primary resolution path: a tool listed in a connector's `services`
+    /// resolves that connector's bound credential, and every field surfaces
+    /// as `{CONNECTOR_UPPER}_{FIELD_UPPER}` with the decrypted value.
+    #[tokio::test]
+    async fn tool_service_match_maps_bound_credential_to_prefixed_env_vars() {
+        let pool = init_test_db().unwrap();
+        seed_connector(
+            &pool,
+            "testconn_qq",
+            r#"[{"toolName": "send_testconn_message_qq"}]"#,
+        );
+        seed_credential(
+            &pool,
+            "testconn_qq",
+            "Vault Cred",
+            &[("api_key", "sk-test-abc123"), ("workspace", "acme-corp")],
+        );
+
+        let tools = vec![make_tool("send_testconn_message_qq", None)];
+        let (env, hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-1", "Test Persona").await;
+
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        assert_eq!(
+            env_get(&env, "TESTCONN_QQ_API_KEY"),
+            Some("sk-test-abc123"),
+            "encrypted field must round-trip into the env map"
+        );
+        assert_eq!(env_get(&env, "TESTCONN_QQ_WORKSPACE"), Some("acme-corp"));
+        assert_eq!(injected, vec!["testconn_qq".to_string()]);
+        assert!(
+            hints.iter().any(|h| h.contains("TESTCONN_QQ_API_KEY")),
+            "prompt hints must name the injected env var: {hints:?}"
+        );
+        assert!(
+            hints.iter().any(|h| h.contains("Vault Cred")),
+            "prompt hints must name the source credential: {hints:?}"
+        );
+    }
+
+    /// Fallback path: no connector lists the tool, but
+    /// `requires_credential_type` matches a connector by name.
+    #[tokio::test]
+    async fn requires_credential_type_falls_back_to_connector_name_match() {
+        let pool = init_test_db().unwrap();
+        seed_connector(&pool, "zetasvc_qq", "[]");
+        seed_credential(&pool, "zetasvc_qq", "Zeta Cred", &[("token", "zeta-token-1")]);
+
+        let tools = vec![make_tool("tool_without_services_qq", Some("zetasvc_qq"))];
+        let (env, _hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-2", "Fallback Persona").await;
+
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        assert_eq!(env_get(&env, "ZETASVC_QQ_TOKEN"), Some("zeta-token-1"));
+        assert!(injected.contains(&"zetasvc_qq".to_string()));
+    }
+
+    /// Last-resort path: no connector row exists at all, but a credential's
+    /// `service_type` matches `requires_credential_type` directly. The env
+    /// prefix is then the credential type itself.
+    #[tokio::test]
+    async fn requires_credential_type_last_resort_uses_direct_service_type_lookup() {
+        let pool = init_test_db().unwrap();
+        seed_credential(
+            &pool,
+            "orphansvc_qq",
+            "Orphan Cred",
+            &[("api_key", "orphan-fixture-9")], // gitleaks:allow — inert test fixture
+        );
+
+        let tools = vec![make_tool("orphan_tool_qq", Some("orphansvc_qq"))];
+        let (env, _hints, failures, _injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-3", "Orphan Persona").await;
+
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        assert_eq!(
+            env_get(&env, "ORPHANSVC_QQ_API_KEY"),
+            Some("orphan-fixture-9")
+        );
+    }
+
+    // -- (b) reserved-name guard ------------------------------------------
+
+    /// A vault credential must NEVER be injected under one of the Claude CLI
+    /// subscription-auth env names (ANTHROPIC_API_KEY / ANTHROPIC_AUTH_TOKEN /
+    /// ANTHROPIC_BASE_URL) — doing so would silently flip every execution
+    /// onto the API account. A connector named "anthropic" with an `api_key`
+    /// field composes exactly that name, so it exercises the guard end to
+    /// end through `resolve_credential_env_vars` → `inject_credential`.
+    #[tokio::test]
+    async fn reserved_cli_auth_env_names_never_injected_from_vault() {
+        let pool = init_test_db().unwrap();
+        seed_connector(
+            &pool,
+            "anthropic",
+            r#"[{"toolName": "anthropic_messages_qq"}]"#,
+        );
+        seed_credential(
+            &pool,
+            "anthropic",
+            "Anthropic API",
+            &[
+                ("api_key", "sk-ant-vault-secret"),
+                ("auth_token", "vault-auth-token"),
+                ("base_url", "https://attacker.example/v1"),
+                ("org_id", "org-123"),
+            ],
+        );
+
+        let tools = vec![make_tool("anthropic_messages_qq", None)];
+        let (env, hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-guard", "Guard Persona").await;
+
+        assert!(failures.is_empty(), "unexpected failures: {failures:?}");
+        // Injection itself succeeded — the guard drops names, not the credential.
+        assert_eq!(injected, vec!["anthropic".to_string()]);
+
+        for reserved in crate::engine::cli_process::CLI_SUBSCRIPTION_RESERVED_ENV {
+            assert!(
+                env_get(&env, reserved).is_none(),
+                "reserved CLI auth env var {reserved} must never be injected from the vault"
+            );
+            assert!(
+                !hints.iter().any(|h| h.contains(reserved)),
+                "prompt hints must not advertise reserved env var {reserved}: {hints:?}"
+            );
+        }
+        // The reserved fields' VALUES must not leak under any other name either.
+        for (key, value) in &env {
+            assert_ne!(value, "sk-ant-vault-secret", "api_key leaked as {key}");
+            assert_ne!(value, "vault-auth-token", "auth_token leaked as {key}");
+            assert_ne!(
+                value, "https://attacker.example/v1",
+                "base_url leaked as {key}"
+            );
+        }
+        // A sibling non-reserved field still injects — the guard is selective.
+        assert_eq!(env_get(&env, "ANTHROPIC_ORG_ID"), Some("org-123"));
+    }
+
+    // -- (c) failure shapes -----------------------------------------------
+
+    /// Unknown tool + unknown credential type: everything comes back empty,
+    /// no error, no panic.
+    #[tokio::test]
+    async fn unknown_tool_and_credential_type_resolves_empty_without_panic() {
+        let pool = init_test_db().unwrap();
+
+        let tools = vec![make_tool("ghost_tool_qq", Some("ghost_service_qq"))];
+        let (env, hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-4", "Ghost Persona").await;
+
+        assert!(
+            env.is_empty(),
+            "no credentials seeded, env must be empty: {env:?}"
+        );
+        assert!(hints.is_empty());
+        assert!(failures.is_empty());
+        assert!(injected.is_empty());
+    }
+
+    /// A credential whose sensitive field can no longer be decrypted is
+    /// surfaced through the `failures` slot (so the caller can abort and name
+    /// it) — it is not silently skipped and nothing of it reaches the env map.
+    #[tokio::test]
+    async fn undecryptable_credential_surfaces_failure_instead_of_injecting() {
+        let pool = init_test_db().unwrap();
+        seed_connector(
+            &pool,
+            "corruptconn_qq",
+            r#"[{"toolName": "corrupt_tool_qq"}]"#,
+        );
+        let cred = seed_credential(
+            &pool,
+            "corruptconn_qq",
+            "Corrupt Cred",
+            &[("api_key", "sk-will-be-corrupted")],
+        );
+
+        // Corrupt the encrypted field row (non-empty garbage iv forces the
+        // real decrypt path, which must fail).
+        {
+            let conn = pool.get().unwrap();
+            let updated = conn
+                .execute(
+                    "UPDATE credential_fields SET encrypted_value = 'zzzz', iv = 'zzzz'
+                     WHERE credential_id = ?1 AND field_key = 'api_key'",
+                    rusqlite::params![cred.id],
+                )
+                .unwrap();
+            assert_eq!(updated, 1, "expected to corrupt exactly one field row");
+        }
+
+        let tools = vec![make_tool("corrupt_tool_qq", None)];
+        let (env, _hints, failures, injected) =
+            resolve_credential_env_vars(&pool, &tools, "persona-5", "Corrupt Persona").await;
+
+        assert_eq!(
+            failures,
+            vec!["Corrupt Cred".to_string()],
+            "decryption failure must surface the credential name"
+        );
+        assert!(
+            env.iter().all(|(k, _)| !k.starts_with("CORRUPTCONN_QQ_")),
+            "no field of the undecryptable credential may reach the env map: {env:?}"
+        );
+        assert!(injected.is_empty());
+    }
+}
