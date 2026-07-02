@@ -524,3 +524,100 @@ impl CliProcessDriver {
         Ok(())
     }
 }
+
+// =============================================================================
+// Tests — pin the subscription-auth guarantee (user directive 2026-06-11):
+// no spawned CLI may inherit or be handed API-account auth env vars.
+// =============================================================================
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Explicit env state of a Command: `Some(val)` = set, `None` = removed.
+    fn env_entry(cmd: &Command, key: &str) -> Option<Option<String>> {
+        cmd.as_std()
+            .get_envs()
+            .find(|(k, _)| k.to_string_lossy() == key)
+            .map(|(_, v)| v.map(|v| v.to_string_lossy().into_owned()))
+    }
+
+    #[test]
+    fn force_subscription_auth_strips_every_reserved_var() {
+        let mut cmd = Command::new("claude");
+        force_subscription_auth(&mut cmd);
+        for key in CLI_SUBSCRIPTION_RESERVED_ENV {
+            assert_eq!(
+                env_entry(&cmd, key),
+                Some(None),
+                "{key} must be explicitly removed so an inherited OS value cannot leak"
+            );
+        }
+    }
+
+    #[test]
+    fn force_subscription_auth_wins_over_prior_env_overrides() {
+        // Simulates a vault credential or OS env injecting API auth BEFORE the
+        // strip runs — the documented "call AFTER overrides" contract.
+        let mut cmd = Command::new("claude");
+        cmd.env("ANTHROPIC_API_KEY", "sk-poisoned");
+        cmd.env("ANTHROPIC_AUTH_TOKEN", "tok-poisoned");
+        cmd.env("ANTHROPIC_BASE_URL", "https://api.example.com");
+        force_subscription_auth(&mut cmd);
+        for key in CLI_SUBSCRIPTION_RESERVED_ENV {
+            assert_eq!(
+                env_entry(&cmd, key),
+                Some(None),
+                "{key} survived the strip despite being overridden earlier"
+            );
+        }
+    }
+
+    /// End-to-end: a poisoned `CliArgs.env_overrides` must NOT reach the child.
+    /// Spawns the system shell (not claude) and reads its actual environment.
+    #[tokio::test]
+    async fn spawned_child_env_has_no_api_auth() {
+        #[cfg(windows)]
+        let (program, args) = ("cmd".to_string(), vec!["/C".to_string(), "set".to_string()]);
+        #[cfg(not(windows))]
+        let (program, args) = ("sh".to_string(), vec!["-c".to_string(), "env".to_string()]);
+
+        let cli_args = CliArgs {
+            command: program,
+            args,
+            env_overrides: vec![
+                ("ANTHROPIC_API_KEY".to_string(), "sk-poisoned".to_string()),
+                ("PERSONAS_TEST_CONTROL".to_string(), "1".to_string()),
+            ],
+            env_removals: vec![],
+            cwd: None,
+        };
+
+        let mut driver = CliProcessDriver::spawn(&cli_args, std::env::temp_dir())
+            .expect("failed to spawn system shell");
+        driver.close_stdin().await;
+
+        let mut lines: Vec<String> = Vec::new();
+        driver
+            .collect_lines_with_timeout(std::time::Duration::from_secs(30), |l| {
+                lines.push(l.to_string());
+            })
+            .await
+            .expect("shell env dump timed out");
+        let _ = driver.wait().await;
+
+        // Control var proves overrides reach the child and output was captured.
+        assert!(
+            lines.iter().any(|l| l.starts_with("PERSONAS_TEST_CONTROL=")),
+            "control env var missing — env dump not captured (lines: {})",
+            lines.len()
+        );
+        for key in CLI_SUBSCRIPTION_RESERVED_ENV {
+            let prefix = format!("{key}=");
+            assert!(
+                !lines.iter().any(|l| l.starts_with(&prefix)),
+                "{key} leaked into the spawned child's environment"
+            );
+        }
+    }
+}
