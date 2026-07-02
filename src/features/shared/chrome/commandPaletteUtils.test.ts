@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { settingEntry, entryScore, type PaletteItem } from '../commandPaletteUtils';
+import { settingEntry, entryScore, type PaletteItem } from './commandPaletteUtils';
 
 describe('settingEntry', () => {
   it('builds a togglable entry that flips state and keeps the palette open', () => {

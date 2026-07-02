@@ -51,9 +51,16 @@ describe("useDesignReviews", () => {
     // Initially loading
     expect(result.current.isLoading).toBe(true);
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
+    // The first mount in this file pays the seed-catalog import
+    // (getSeedReviews() dynamically imports the whole template JSON glob),
+    // which can exceed waitFor's 1s default under a loaded full-suite run.
+    // Later tests reuse the warm module cache, so only this one needs slack.
+    await waitFor(
+      () => {
+        expect(result.current.isLoading).toBe(false);
+      },
+      { timeout: 10_000 },
+    );
 
     expect(result.current.reviews).toHaveLength(2);
     expect(result.current.error).toBeNull();

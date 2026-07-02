@@ -26,10 +26,12 @@ const SESSIONS: FleetSession[] = [
   } as unknown as FleetSession,
 ];
 
-// Selector-form store mock — the modal only reads `s.fleetSessions`.
+// Selector-form store mock — the modal reads `s.fleetSessions` plus the
+// `s.fleetRefresh` action it fires on open to sync the live session list.
 vi.mock('@/stores/systemStore', () => ({
-  useSystemStore: (selector: (s: { fleetSessions: FleetSession[] }) => unknown) =>
-    selector({ fleetSessions: SESSIONS }),
+  useSystemStore: (
+    selector: (s: { fleetSessions: FleetSession[]; fleetRefresh: () => Promise<void> }) => unknown,
+  ) => selector({ fleetSessions: SESSIONS, fleetRefresh: async () => {} }),
 }));
 
 vi.mock('@/api/fleet/fleet', () => ({

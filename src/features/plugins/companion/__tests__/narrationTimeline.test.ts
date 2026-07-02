@@ -68,16 +68,16 @@ describe('completeNarrationTool', () => {
 });
 
 describe('isTrailWorthKeeping', () => {
-  it('drops empty and single-fast-tool trails', () => {
+  // The trail now shows only TOOL calls — beats persist as their own aside
+  // messages (Phase A/B), so a beats-only turn has no trail to pin.
+  it('drops empty and beats-only trails', () => {
     expect(isTrailWorthKeeping([])).toBe(false);
-    expect(isTrailWorthKeeping([tool('t1')])).toBe(false);
+    expect(isTrailWorthKeeping([beat('b1')])).toBe(false);
   });
 
-  it('keeps trails with 2+ entries', () => {
+  it('keeps any trail containing at least one tool call', () => {
+    expect(isTrailWorthKeeping([tool('t1')])).toBe(true);
     expect(isTrailWorthKeeping([tool('t1'), tool('t2')])).toBe(true);
-  });
-
-  it('keeps any trail containing a model-authored beat', () => {
-    expect(isTrailWorthKeeping([beat('b1')])).toBe(true);
+    expect(isTrailWorthKeeping([beat('b1'), tool('t1')])).toBe(true);
   });
 });

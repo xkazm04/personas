@@ -234,6 +234,7 @@ describe("useBuild", () => {
         undefined,
         undefined,
         undefined,
+        undefined, // context (7th param added with companion build context)
       );
     });
   });
