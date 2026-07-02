@@ -142,6 +142,11 @@ export default function GuidedTour() {
             const sys = useSystemStore.getState();
             sys.setPluginTab('dev-tools');
             sys.setDevToolsTab(step.nav.subTab as Parameters<typeof sys.setDevToolsTab>[0]);
+          } else if (step.nav.subTabSetter === 'setTemplateTab') {
+            // Templates page tabs (design-reviews section): generated gallery /
+            // n8n importer / recipes / presets.
+            const sys = useSystemStore.getState();
+            sys.setTemplateTab(step.nav.subTab as Parameters<typeof sys.setTemplateTab>[0]);
           }
         }, 100);
       }

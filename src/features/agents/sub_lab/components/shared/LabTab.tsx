@@ -29,7 +29,9 @@ export function LabTab() {
   }, [personaId, hydrateActiveProgress]);
 
   return (
-    <div className="flex flex-col gap-4">
+    // data-testid doubles as the guided tour's spotlight anchor for the
+    // "versions-table" sub-step (see tourSlice `lab-arena`).
+    <div className="flex flex-col gap-4" data-testid="lab-versions-panel">
       <LabVersionsTable />
       {personaId && <LabEconomicsPanel personaId={personaId} />}
     </div>
