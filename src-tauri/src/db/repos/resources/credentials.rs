@@ -1506,6 +1506,100 @@ mod tests {
         assert!(mark_result.is_err());
     }
 
+    /// Pins the secrets-at-rest seam the command layer relies on
+    /// (create_credential → fields transaction → engine decrypt): secret-named
+    /// fields are force-encrypted even with no connector schema seeded,
+    /// non-sensitive fields may pass through as plaintext (the selective
+    /// design), the decrypt roundtrip returns the original map, legacy
+    /// camelCase keys normalize on read, and an update replaces the secret.
+    #[test]
+    fn test_field_storage_encrypts_at_rest_and_roundtrips() {
+        let pool = init_test_db().unwrap();
+
+        let mut fields = HashMap::new();
+        fields.insert("api_key".to_string(), "sk-super-secret-123".to_string());
+        fields.insert("workspace".to_string(), "acme-corp".to_string());
+        fields.insert("refreshToken".to_string(), "rt-legacy-999".to_string());
+
+        let cred = create_with_fields(
+            &pool,
+            CreateCredentialInput {
+                name: "Field Cred".into(),
+                service_type: "notion".into(),
+                encrypted_data: String::new(),
+                iv: String::new(),
+                metadata: None,
+                session_encrypted_data: None,
+                healthcheck_passed: None,
+            },
+            &fields,
+        )
+        .unwrap();
+
+        // Secret-named fields must NEVER appear as plaintext in raw rows —
+        // the is_field_sensitive backstop fires with no connector schema.
+        let rows = get_fields(&pool, &cred.id).unwrap();
+        assert_eq!(rows.len(), 3);
+        for row in &rows {
+            let secret_named = row.field_key == "api_key" || row.field_key == "refreshToken";
+            if secret_named {
+                assert!(row.is_sensitive, "'{}' must be sensitive", row.field_key);
+                for plaintext in fields.values() {
+                    assert_ne!(
+                        &row.encrypted_value, plaintext,
+                        "secret field '{}' stored as plaintext",
+                        row.field_key
+                    );
+                }
+                assert!(!row.iv.is_empty(), "'{}' missing iv", row.field_key);
+            } else {
+                // Selective-encryption design: non-secret fields without a
+                // schema stay plaintext (and carry no iv).
+                assert!(!row.is_sensitive);
+            }
+        }
+
+        // Decrypt roundtrip returns the originals, with legacy camelCase
+        // normalized to snake_case on read.
+        let decrypted = get_decrypted_fields(&pool, &cred).unwrap();
+        assert_eq!(
+            decrypted.get("api_key").map(String::as_str),
+            Some("sk-super-secret-123")
+        );
+        assert_eq!(
+            decrypted.get("workspace").map(String::as_str),
+            Some("acme-corp")
+        );
+        assert_eq!(
+            decrypted.get("refresh_token").map(String::as_str),
+            Some("rt-legacy-999"),
+            "legacy 'refreshToken' key must normalize to 'refresh_token'"
+        );
+
+        // Updating with a new field map replaces the stored secret.
+        let mut new_fields = HashMap::new();
+        new_fields.insert("api_key".to_string(), "sk-rotated-456".to_string());
+        update_with_fields(
+            &pool,
+            &cred.id,
+            UpdateCredentialInput {
+                name: None,
+                service_type: None,
+                encrypted_data: None,
+                iv: None,
+                metadata: None,
+                session_encrypted_data: None,
+            },
+            Some(&new_fields),
+        )
+        .unwrap();
+        let after = get_decrypted_fields(&pool, &cred).unwrap();
+        assert_eq!(
+            after.get("api_key").map(String::as_str),
+            Some("sk-rotated-456")
+        );
+    }
+
     #[test]
     fn test_credential_event_crud() {
         let pool = init_test_db().unwrap();
