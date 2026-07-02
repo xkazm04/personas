@@ -379,6 +379,31 @@ pub fn spawn_session(
         cmd.env_remove(key);
     }
 
+    // Strip Claude Code NESTING markers. When the Personas app itself is
+    // launched from a Claude Code session (the normal dev workflow — `npm run
+    // tauri:dev` from an agent's shell), every fleet PTY child inherits the
+    // parent session's markers (CLAUDECODE, CLAUDE_CODE_CHILD_SESSION,
+    // CLAUDE_CODE_SESSION_ID, …). Claude ≥ 2.1.19x sees them and silently runs
+    // as a NESTED/child session: it never registers in ~/.claude/sessions and —
+    // critically — never persists a `<session-id>.jsonl` transcript, so
+    // Hibernate/Wake and orphan-Resume fail with "No conversation found with
+    // session ID …" even though the session ran fine. Root-caused live 2026-07-02
+    // via A/B console spawns: identical argv, markers present → no session
+    // storage; markers stripped → registers + persists (kind=interactive).
+    // Fleet sessions are first-class top-level sessions — never children.
+    const CLAUDE_NESTING_ENV: &[&str] = &[
+        "CLAUDECODE",
+        "CLAUDE_CODE_CHILD_SESSION",
+        "CLAUDE_CODE_SESSION_ID",
+        "CLAUDE_CODE_ENTRYPOINT",
+        "CLAUDE_CODE_EXECPATH",
+        "CLAUDE_CODE_SSE_PORT",
+        "CLAUDE_EFFORT",
+    ];
+    for &key in CLAUDE_NESTING_ENV {
+        cmd.env_remove(key);
+    }
+
     let child = pair
         .slave
         .spawn_command(cmd)
