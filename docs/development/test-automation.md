@@ -466,16 +466,25 @@ curl -X POST http://127.0.0.1:17320/select-agent -H "Content-Type: application/j
 
 ## Production Build Testing
 
-The test automation server is also available in **production builds** via the `PERSONAS_TEST_PORT` environment variable. This allows smoke testing installed packages without recompiling.
+> **Security gate (2026-07-02):** the `PERSONAS_TEST_PORT` env-var path only works in
+> **debug builds** now. Release builds built *without* `--features test-automation`
+> ignore the variable and log a warning — the bridge has no auth and exposes `/eval`
+> and `/list-credentials`, so an env var alone must not be able to open it on an end
+> user's install. To smoke-test a release-shaped package, build it **with**
+> `--features test-automation` (e.g. a dedicated smoke build); everything below then
+> applies unchanged.
+
+The test automation server is available outside plain dev mode via the `PERSONAS_TEST_PORT` environment variable (debug builds, or any build compiled with `--features test-automation`). This allows smoke testing packaged builds without a Vite dev server.
 
 ### How it works
 
 | Mode | Trigger | Port | Frontend bridge |
 |------|---------|------|----------------|
 | Dev | `--features test-automation` | 17320 (fixed) | Loaded via `import.meta.env.DEV` |
-| Production | `PERSONAS_TEST_PORT=<port>` | Custom (e.g. 17321) | Loaded via `window.__PERSONAS_TEST_MODE__` |
+| Packaged smoke build (`test-automation` feature, or debug build) | `PERSONAS_TEST_PORT=<port>` | Custom (e.g. 17321) | Loaded via `window.__PERSONAS_TEST_MODE__` |
+| Release build without the feature | `PERSONAS_TEST_PORT` **ignored** (warning logged) | — | — |
 
-When `PERSONAS_TEST_PORT` is set, the Rust backend:
+When `PERSONAS_TEST_PORT` is set (and the build allows it), the Rust backend:
 1. Starts the HTTP test server on the specified port
 2. Injects `window.__PERSONAS_TEST_MODE__ = true` via `js_init_script`
 3. The frontend detects the flag and loads `window.__TEST__` bridge
