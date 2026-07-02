@@ -234,6 +234,13 @@ test.describe('Getting Started guided tour — full real build', () => {
     state = await app.tourState();
     expect(state.allCompleted).toBe(true);
     await app.clickTestId('tour-btn-finish');
+    // The completion celebration screen interposes; "Done" finalizes the
+    // tour (same interpose handling as tours-obsidian-brain.spec.ts).
+    await sleep(400);
+    if ((await app.query('[data-testid="tour-completion-done"]')).length > 0) {
+      await app.clickTestId('tour-completion-done');
+      await sleep(300);
+    }
     state = await app.tourState();
     expect(state.completed).toBe(true);
   });
