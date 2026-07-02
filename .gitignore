@@ -11,6 +11,9 @@ dist/
 # Rust build artifacts (any target/ dir, including nested)
 **/target/
 src-tauri/src-tauri/
+# Dedicated cargo target for isolated e2e/tours runs — lets the harness build
+# while a dev app instance holds target/debug/personas-desktop.exe locked
+.personas-e2e-target/
 
 # Local SQLite databases (per-machine app state — never committed)
 *.sqlite3
