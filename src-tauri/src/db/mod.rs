@@ -1278,3 +1278,70 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     drop(conn);
     Ok(pool)
 }
+
+#[cfg(test)]
+mod boot_tests {
+    use super::*;
+
+    /// Reopen smoke test for the REAL boot path (`init_db`) — the function the
+    /// app calls on every launch. First call simulates a fresh install; the
+    /// second call on the same data dir simulates the next app launch on the
+    /// existing database, which is the upgrade-on-boot path (migrations::run +
+    /// run_incremental replayed, FTS ensure, seeds re-upserted, orphan sweep).
+    /// A regression anywhere in that sequence bricks existing user databases,
+    /// so this pins: (1) the second init succeeds, and (2) data written in
+    /// session 1 survives into session 2.
+    #[test]
+    fn init_db_second_launch_reopens_and_preserves_data() {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_boot_test_{}", uuid::Uuid::new_v4()));
+
+        // -- Session 1: fresh install --------------------------------------
+        {
+            let pool = init_db(&data_dir, None).expect("first init_db (fresh install) failed");
+            repos::core::settings::set(&pool, settings_keys::CLI_ENGINE, "claude_code")
+                .expect("writing a settings row in session 1 failed");
+        } // pool dropped here — all connections closed, like an app exit
+
+        // -- Session 2: second launch on the same data dir ------------------
+        {
+            let pool = init_db(&data_dir, None)
+                .expect("second init_db on an existing DB failed — the upgrade-on-boot path would brick user databases");
+
+            let value = repos::core::settings::get(&pool, settings_keys::CLI_ENGINE)
+                .expect("reading the settings row back in session 2 failed");
+            assert_eq!(
+                value.as_deref(),
+                Some("claude_code"),
+                "data written in session 1 was lost across a reopen"
+            );
+
+            // The reopen replayed the full migration chain; spot-check that a
+            // late incremental artifact is (still) present so this test stays
+            // coupled to the migration path and not just file reopening.
+            let conn = pool.get().unwrap();
+            let spend_table: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='dev_llm_spend'",
+                    [],
+                    |r| r.get(0),
+                )
+                .unwrap();
+            assert_eq!(spend_table, 1, "late-migration table missing after reopen");
+
+            // Builtin seeds must still be present after the second boot's
+            // re-upsert (init_db seeds on every launch).
+            let connector_defs: i64 = conn
+                .query_row("SELECT COUNT(*) FROM connector_definitions", [], |r| {
+                    r.get(0)
+                })
+                .unwrap();
+            assert!(
+                connector_defs > 0,
+                "builtin connector seeds missing after reopen"
+            );
+        }
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }
+}

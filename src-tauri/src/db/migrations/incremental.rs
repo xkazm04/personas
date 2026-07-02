@@ -5343,3 +5343,154 @@ fn research_lab_align_columns(conn: &Connection) {
             ON scheduled_retries(retry_at);",
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The boot path (`db::init_db`, db/mod.rs) replays BOTH migration phases
+    /// — `migrations::run` + `run_incremental` — on EVERY app launch against
+    /// whatever database already exists on disk. A single non-idempotent step
+    /// (unguarded `ALTER TABLE ADD COLUMN`, a `CREATE TABLE` without
+    /// `IF NOT EXISTS`, a rebuild that re-fires) therefore bricks every
+    /// existing install on its next launch, not just upgrades.
+    ///
+    /// `init_test_db` runs the exact same chain once (fresh install); this
+    /// test then replays the chain twice more, simulating the second and
+    /// third launches on the same database file.
+    #[test]
+    fn migration_chain_is_idempotent_on_rerun() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        // Second launch on the existing DB — the upgrade-on-boot path.
+        crate::db::migrations::run(&conn)
+            .expect("2nd run of initial migrations failed — every existing install would brick on next launch");
+        run_incremental(&conn)
+            .expect("2nd run of incremental migrations failed — every existing install would brick on next launch");
+
+        // Third launch — catches guards that only survive exactly one replay
+        // (e.g. a step whose first replay mutates the state its own
+        // `already_applied` check reads).
+        crate::db::migrations::run(&conn).expect("3rd run of initial migrations failed");
+        run_incremental(&conn).expect("3rd run of incremental migrations failed");
+
+        // The replays must leave a structurally sound database behind.
+        let integrity: String = conn
+            .query_row("PRAGMA integrity_check", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(integrity, "ok", "integrity_check failed after migration replay");
+
+        let fk_violations: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_foreign_key_check()",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(fk_violations, 0, "foreign_key_check found violations after migration replay");
+
+        // The persona_executions rebuild guard must not re-widen the status
+        // CHECK on replay: exactly one 'incomplete' in the stored DDL. Two
+        // would mean the `already_applied` guard failed and the table was
+        // rebuilt again (dropping/re-copying user execution history on boot).
+        let ddl: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_executions'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(
+            ddl.matches("'incomplete'").count(),
+            1,
+            "persona_executions CHECK was re-widened on replay — rebuild migration is not idempotent"
+        );
+    }
+
+    /// Pins that a fresh database actually receives the artifacts of the
+    /// NEWEST migrations at the tail of `run_incremental`. If a late step is
+    /// accidentally short-circuited (e.g. an early `return`, a mis-keyed
+    /// `already_applied` guard that reads true on a fresh DB, or a reordering
+    /// that moves it behind a failing step), fresh installs silently miss
+    /// tables/columns and every repo touching them errors at runtime.
+    #[test]
+    fn fresh_schema_contains_latest_migration_artifacts() {
+        let pool = crate::db::init_test_db().unwrap();
+        let conn = pool.get().unwrap();
+
+        // Tables created by the newest migrations (tail of run_incremental).
+        for table in [
+            "dev_goal_items",
+            "team_assignment_templates",
+            "dev_kpis",
+            "dev_kpi_measurements",
+            "dev_kpi_bindings",
+            "dev_run_checkpoints",
+            "athena_wake_log",
+            "run_budgets",
+            "dev_llm_spend",
+        ] {
+            assert!(
+                has_table(&conn, table).unwrap(),
+                "table `{table}` missing from a fresh database — its incremental migration did not run"
+            );
+        }
+
+        // Columns ALTERed in by the newest migrations.
+        for (table, column) in [
+            ("persona_executions", "thinking_level"),
+            ("persona_executions", "cache_read_tokens"),
+            ("persona_executions", "cache_creation_tokens"),
+            ("dev_goals", "kpi_id"),
+            ("dev_goal_items", "verify_kind"),
+            ("dev_goal_items", "verify_config"),
+            ("dev_kpis", "metric_type"),
+            ("dev_kpis", "tier"),
+            ("dev_kpis", "context_id"),
+            ("dev_kpis", "warn_at"),
+            ("dev_kpis", "crit_at"),
+            ("dev_kpis", "last_skip_at"),
+            ("team_assignments", "goal_id"),
+            ("dev_contexts", "category"),
+            ("dev_contexts", "business_feature"),
+            ("dev_context_groups", "domain"),
+        ] {
+            assert!(
+                has_column(&conn, table, column).unwrap(),
+                "column `{table}.{column}` missing from a fresh database — its incremental migration did not run"
+            );
+        }
+
+        // Indexes shipped alongside the newest table migrations.
+        for index in [
+            "idx_dev_llm_spend_source",
+            "idx_dev_kpi_bindings_kpi",
+            "idx_athena_wake_log_surface",
+            "idx_run_budgets_kind",
+            "idx_team_assignment_templates_team",
+            "idx_dev_kpis_context",
+        ] {
+            assert!(
+                has_index(&conn, index).unwrap(),
+                "index `{index}` missing from a fresh database — its incremental migration did not run"
+            );
+        }
+
+        // The status CHECK on persona_executions must carry 'incomplete'
+        // (fresh DBs get it from the base schema; legacy DBs from the
+        // rebuild migration). Without it, Incomplete executions fail to
+        // persist and are force-written as `failed`.
+        let ddl: String = conn
+            .query_row(
+                "SELECT sql FROM sqlite_master WHERE type='table' AND name='persona_executions'",
+                [],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert!(
+            ddl.contains("'incomplete'"),
+            "persona_executions status CHECK does not allow 'incomplete'"
+        );
+    }
+}
