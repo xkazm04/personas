@@ -260,10 +260,25 @@ fn apply_hook(
             FleetSessionState::Running,
             "UserPromptSubmit hook".to_string(),
         ),
-        "sessionend" => (
-            FleetSessionState::Exited,
-            "SessionEnd hook".to_string(),
-        ),
+        "sessionend" => {
+            // Slash-command re-exec guard. The in-session `/resume` (and `/clear`)
+            // restart claude IN THE SAME PTY, firing SessionEnd for the OLD session
+            // id while the PTY child stays alive — verified live: after `/resume`
+            // the tile still accepts input and claude keeps responding. Marking it
+            // Exited here would grey out a working session, and the "don't downgrade
+            // Exited" guard just below would then pin it dead forever. For a
+            // PTY-owned session the reaper (actual process death) is authoritative,
+            // so ignore SessionEnd while the child is alive. External (hook-only)
+            // sessions have no child to reap, so SessionEnd stays their exit signal.
+            if session.child_pid.is_some() {
+                tracing::debug!(
+                    session_id,
+                    "fleet: SessionEnd ignored — PTY child still alive (slash-command re-exec); reaper is authoritative"
+                );
+                return;
+            }
+            (FleetSessionState::Exited, "SessionEnd hook".to_string())
+        }
         other => {
             tracing::debug!(event = %other, "fleet hook: unrecognized event kind");
             return;

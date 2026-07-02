@@ -298,6 +298,15 @@ pub fn spawn_session(
         if let Some(sid) = assigned_claude_session_id.as_deref() {
             c.arg("--session-id");
             c.arg(sid);
+            // A session pinned to `--session-id` that later runs the in-session
+            // `/resume` slash command re-execs with `--session-id <this> --resume
+            // <picked>` and, without this, dies instantly with "Error:
+            // --session-id can only be used with --resume if --fork-session is
+            // also specified" (the CLI drops before loading the conversation).
+            // `--fork-session` is a NO-OP on this fresh spawn (the pinned id is
+            // still used — verified) but carries through to that re-exec so
+            // `/resume` forks-and-loads instead of crashing.
+            c.arg("--fork-session");
         }
         for a in &args {
             c.arg(a);
@@ -328,6 +337,9 @@ pub fn spawn_session(
         if let Some(sid) = assigned_claude_session_id.as_deref() {
             c.arg("--session-id");
             c.arg(sid);
+            // See the windows branch: pairs with `--session-id` so a later
+            // in-session `/resume` doesn't crash on the --fork-session guard.
+            c.arg("--fork-session");
         }
         for a in &args {
             c.arg(a);
