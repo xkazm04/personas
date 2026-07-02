@@ -298,15 +298,13 @@ pub fn spawn_session(
         if let Some(sid) = assigned_claude_session_id.as_deref() {
             c.arg("--session-id");
             c.arg(sid);
-            // A session pinned to `--session-id` that later runs the in-session
-            // `/resume` slash command re-execs with `--session-id <this> --resume
-            // <picked>` and, without this, dies instantly with "Error:
-            // --session-id can only be used with --resume if --fork-session is
-            // also specified" (the CLI drops before loading the conversation).
-            // `--fork-session` is a NO-OP on this fresh spawn (the pinned id is
-            // still used — verified) but carries through to that re-exec so
-            // `/resume` forks-and-loads instead of crashing.
-            c.arg("--fork-session");
+            // NOTE: we deliberately do NOT add `--fork-session` here. It would let
+            // the in-session `/resume` slash command re-exec cleanly, BUT it also
+            // diverges a fresh session's persisted conversation from the pinned id
+            // (verified live: the transcript never lands under `<sid>.jsonl`, so
+            // Wake/Recover then fails "No conversation found with session ID …").
+            // Deterministic binding + Wake win; in-session `/resume` stays a known
+            // limitation (use Fleet's Wake/Recover to resume instead).
         }
         for a in &args {
             c.arg(a);
@@ -337,9 +335,7 @@ pub fn spawn_session(
         if let Some(sid) = assigned_claude_session_id.as_deref() {
             c.arg("--session-id");
             c.arg(sid);
-            // See the windows branch: pairs with `--session-id` so a later
-            // in-session `/resume` doesn't crash on the --fork-session guard.
-            c.arg("--fork-session");
+            // No `--fork-session` — see the windows branch: it breaks Wake/Recover.
         }
         for a in &args {
             c.arg(a);
