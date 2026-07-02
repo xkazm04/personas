@@ -26,6 +26,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "postinstall": "node scripts/patches/fix-frozen-intrinsics.mjs",
     "predev": "node scripts/run-codegen.mjs predev",
     "dev": "vite",
     "dev:inspect": "cross-env PERSONAS_INSPECTOR=1 npm run dev",
