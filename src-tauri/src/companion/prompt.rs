@@ -236,7 +236,14 @@ pub async fn build_system_prompt(
         progress_addendum()
     );
     let display_md = display_addendum_if_voice_active(voice_enabled);
-    let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
+    // Dev-mode self-model rides the same "mode addenda" prompt slot as
+    // autonomous mode — both are header-toggle-gated blocks and compose()
+    // treats the slot as opaque markdown.
+    let autonomous_md = format!(
+        "{}{}",
+        autonomous_addendum_if_enabled(autonomous_mode),
+        crate::companion::dev_mode::addendum_if_enabled(sys_db),
+    );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
@@ -325,7 +332,13 @@ pub async fn build_system_prompt(
         progress_addendum()
     );
     let display_md = display_addendum_if_voice_active(voice_enabled);
-    let autonomous_md = autonomous_addendum_if_enabled(autonomous_mode);
+    // Dev-mode self-model rides the "mode addenda" slot — see the ml
+    // variant above for rationale.
+    let autonomous_md = format!(
+        "{}{}",
+        autonomous_addendum_if_enabled(autonomous_mode),
+        crate::companion::dev_mode::addendum_if_enabled(sys_db),
+    );
     let connector_names = connectors::list_enabled_for_prompt(user_db).unwrap_or_default();
     let connectors_md = format_connectors(&connector_names);
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();

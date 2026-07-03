@@ -259,6 +259,11 @@ pub async fn companion_approve_action(
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         "fleet_intervene" => execute_fleet_intervene(&app, &params),
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
+        // DEV MODE — self-development loop. Deliberately NOT on the
+        // autoapprove allowlist: every dev-mode operation is an explicit
+        // user click (see dispatcher.rs ALLOWED_ACTIONS notes).
+        "dev_improve" => execute_dev_improve(&state, &app, &params),
+        "dev_merge" => execute_dev_merge(&state, &params),
         // Phase C3 — Team assignment dispatch.
         "assign_team" => execute_assign_team(&state, &app, &params).await,
         "analyze_fleet" => execute_analyze_fleet(&state, &app, &params).await,
@@ -3675,6 +3680,181 @@ every session in this operation has exited.",
     );
 
     Ok(ExecuteResult::message(msg))
+}
+
+/// DEV MODE — `dev_improve`: dispatch a coding CLI fleet session at the
+/// app's own source checkout (docs/tests/athena/dev-mode-direction.md).
+/// Frontend-only work (`backend: false`) runs in the main checkout so
+/// edits go live via HMR; backend work runs in an isolated git worktree
+/// whose branch is applied later via the `dev_merge` handshake. The task
+/// prompt is assembled Rust-side with the context map's file paths —
+/// never model-recalled ones. Always click-approved (double policy: not
+/// on AUTOAPPROVE_ALLOWLIST, and gated on dev mode + debug build here).
+fn execute_dev_improve(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::dev_mode;
+
+    if !crate::commands::companion::chat::dev_mode_enabled(&state.db) {
+        return Err(AppError::Internal(
+            "dev_improve: dev mode is off — flip the wrench in the companion header \
+             (debug builds only)"
+                .into(),
+        ));
+    }
+    let request = params
+        .get("request")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("dev_improve: missing `request`".into()))?;
+    // Default TRUE — the worktree is the safe side when Athena is unsure
+    // whether Rust is involved (a wrong `false` would hot-edit the live app).
+    let backend = params.get("backend").and_then(|v| v.as_bool()).unwrap_or(true);
+    let context_slug = params
+        .get("context")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+    let files_hint = params.get("files_hint").and_then(|v| v.as_str());
+
+    let resolved = context_slug.and_then(dev_mode::resolve_context);
+    let unknown_context = context_slug.is_some() && resolved.is_none();
+
+    let run_id: String = uuid::Uuid::new_v4().simple().to_string().chars().take(8).collect();
+    let (workspace, branch) = if backend {
+        let (path, branch) = dev_mode::create_dev_worktree(&run_id)
+            .map_err(|e| AppError::Internal(format!("dev_improve: {e}")))?;
+        (path, Some(branch))
+    } else {
+        (dev_mode::repo_root(), None)
+    };
+
+    // Same containment gate as fleet_spawn/fleet_dispatch: the checkout
+    // must be a registered Dev Tools project (claude runs with
+    // --dangerously-skip-permissions there). A fresh worktree lives inside
+    // the repo root, so registering the repo covers both workspaces.
+    if let Err(e) = validate_fleet_cwd(app, &workspace.to_string_lossy()) {
+        if let Some(b) = &branch {
+            // Best-effort cleanup of the just-created (still pristine) worktree.
+            let root = dev_mode::repo_root();
+            let _ = std::process::Command::new("git")
+                .args(["-C", &root.to_string_lossy(), "worktree", "remove", "--force"])
+                .arg(&workspace)
+                .output();
+            let _ = std::process::Command::new("git")
+                .args(["-C", &root.to_string_lossy(), "branch", "-D", b])
+                .output();
+        }
+        return Err(AppError::Validation(format!(
+            "dev_improve: the app's own repo isn't a registered Dev Tools project — register \
+             it first so dispatched sessions are contained. ({e})"
+        )));
+    }
+
+    let task_prompt = dev_mode::build_task_prompt(request, resolved.as_ref(), files_hint, backend);
+    let session_id = crate::commands::fleet::pty::spawn_session(
+        app.clone(),
+        workspace.clone(),
+        vec![task_prompt],
+        140,
+        40,
+    )
+    .map_err(|e| AppError::Internal(format!("dev_improve: spawn failed: {e}")))?;
+
+    // Operative-memory operation — the reflection reconciler keys off this
+    // (fleet_bridge::reconcile_if_dispatched → dev-op registry).
+    let intent_label: String = {
+        let mut s: String = request.chars().take(90).collect();
+        if request.chars().count() > 90 {
+            s.push('…');
+        }
+        format!("dev_improve: {s}")
+    };
+    let op_id = crate::companion::orchestration::operative_memory::memory()
+        .begin_dispatched_operation(intent_label);
+    let _ = crate::companion::orchestration::operative_memory::memory()
+        .attach_session_to_operation(&op_id, &session_id, "dev", &workspace.to_string_lossy());
+    let _ = crate::commands::fleet::registry::registry().rename(
+        &session_id,
+        Some(format!(
+            "{}-dev",
+            crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+        )),
+    );
+    dev_mode::register_dev_op(
+        &op_id,
+        dev_mode::DevOpMeta {
+            request: request.to_string(),
+            backend,
+            workspace: workspace.clone(),
+            branch: branch.clone(),
+            fleet_session_id: session_id.clone(),
+        },
+    );
+    crate::companion::orchestration::emit_digest_changed(app);
+
+    let mut msg = format!(
+        "Dev session `{}` dispatched (op `{}`).\nWorkspace: {}",
+        &session_id[..session_id.len().min(8)],
+        &op_id[..op_id.len().min(8)],
+        if backend {
+            format!(
+                "isolated worktree `{}` — nothing applies to the running app until the \
+                 dev_merge handshake",
+                branch.as_deref().unwrap_or("?")
+            )
+        } else {
+            "main checkout — frontend edits hot-reload as they land".to_string()
+        },
+    );
+    if unknown_context {
+        msg.push_str(&format!(
+            "\n⚠ context `{}` not found in context-map.json — the session starts from the \
+             request + files_hint only.",
+            context_slug.unwrap_or_default()
+        ));
+    }
+    msg.push_str("\nAthena reflects on the result when the session finishes.");
+    Ok(ExecuteResult::message(msg))
+}
+
+/// DEV MODE — `dev_merge`: the explicit handshake that applies a backend
+/// dev run's branch to the live checkout (fast-forward only; a diverged
+/// master refuses rather than auto-resolving) and cleans up the worktree.
+/// The dev-server rebuild — and therefore an app restart — follows.
+fn execute_dev_merge(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::companion::dev_mode;
+
+    if !crate::commands::companion::chat::dev_mode_enabled(&state.db) {
+        return Err(AppError::Internal(
+            "dev_merge: dev mode is off — flip the wrench in the companion header".into(),
+        ));
+    }
+    let op_id = params
+        .get("op_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("dev_merge: missing `op_id`".into()))?;
+    let meta = dev_mode::get_dev_op(op_id).ok_or_else(|| {
+        AppError::Internal(format!(
+            "dev_merge: unknown dev op `{op_id}` — the registry is in-process, so an app \
+             restart since the run loses it. Merge manually: `git merge <athena-dev branch>` \
+             at the repo root, then `git worktree remove` the leftover worktree."
+        ))
+    })?;
+    let merged = dev_mode::merge_dev_branch(&meta).map_err(AppError::Internal)?;
+    dev_mode::remove_dev_op(op_id);
+    Ok(ExecuteResult::message(format!(
+        "{merged}\n\nThe dev server will pick up the merged changes — expect a rebuild and \
+         an app restart."
+    )))
 }
 
 /// D9 — `fleet_intervene`: write a guidance message into a running

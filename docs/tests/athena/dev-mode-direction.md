@@ -105,13 +105,33 @@ kills her PTY sessions** — the fleet registry is in-memory, no DB persistence.
 - Metrics: % dispatches landing a commit; % needing rescue; time-to-outcome; verdict ratio.
   A periodic self-review of this ledger (the `execution_review` pattern) closes the meta-loop.
 
-## Open decisions
-1. **Wrench button** — keep one release as an explicit "force dev" escape hatch that pre-fills a
-   `dev_improve`, then retire.
-2. **Autonomy** — `dev_improve` stays approval-gated through the experiment; code changes to her own
-   runtime are the highest-blast-radius action in the app. Revisit with ledger data.
-3. **Worktree vs main checkout default** — could gate on whether the resolved context touches
-   `src-tauri/**` (worktree) vs frontend-only (main checkout, HMR).
+## Decisions (user, 2026-07-04)
+1. **Wrench button** — retired as a composer send-mode; the wrench is now the **dev-mode toggle**
+   in the panel header next to the autonomous Infinity icon, rendered only in debug builds.
+2. **Autonomy** — `dev_improve` **never auto-fires** (not on `AUTOAPPROVE_ALLOWLIST`, in any mode).
+   Every dev-mode operation gets a **reflection** turn, and every improvement change is
+   **approved by the user first** — the dispatch is a click, and a backend run's apply-step
+   (`dev_merge`) is a second click.
+3. **Checkout policy** — main checkout by default when no Rust change is needed (HMR gratification);
+   **worktree whenever Athena identifies backend adjustments**, so she orchestrates the change in
+   isolation and the **merge handshake** synchronizes update expectations on both sides.
 
 ## Build log
-- **2026-07-03** — historical-feature autopsy + this design. Implementation not started.
+- **2026-07-03** — historical-feature autopsy + this design. (`ec562877f`)
+- **2026-07-04 — Phases 0–3 shipped.**
+  - **Phase 0** (`d73ef4ee2`): `companion_dev_mode` setting (+`companion_set_dev_mode`,
+    `dev_mode_enabled` hard-gated on `cfg!(debug_assertions)`), `companion_beta_flags` →
+    `dev_mode_available`, wrench toggle in the CompanionPanel header (`companion-toggle-dev-mode`),
+    composer wrench-send retired (+state/API cleanup), setup-panel card repurposed, i18n −8/+7 keys
+    ×14 locales.
+  - **Phases 1–3** (this commit): `companion/dev_mode.rs` — repo root, context-map index/resolution,
+    dev-op registry, worktree+merge git helpers, task-prompt builder (workspace policy encoded);
+    DEV MODE prompt addendum (self-model + context index + dev_improve/dev_merge teaching) riding
+    the mode-addenda slot in both `build_system_prompt` variants; `dev_improve` + `dev_merge` in
+    dispatcher `ALLOWED_ACTIONS` + executors in `approvals.rs` (containment via `validate_fleet_cwd`,
+    session named `athena-*-dev`, operative-memory op `dev_improve: <request>`); reflection hook in
+    `reconcile_if_dispatched` → `spawn_dev_reflection` (`dev_improve_review` proactive turn with git
+    evidence; replaces the generic wrap-up card for dev ops). 5 unit tests in `dev_mode.rs`.
+  - **Deliberately deferred:** durable dispatch markers + resume-on-restart (Phase 4 hardening);
+    the `dev_improvement` ledger + verdict chips (Phase 5); auto-registering the repo as a Dev
+    Tools project on toggle-on (executor errors clearly if unregistered).

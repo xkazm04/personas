@@ -10,6 +10,7 @@
 pub mod athena_reaction;
 pub mod brain;
 pub mod connectors;
+pub mod dev_mode;
 pub mod dev_session;
 pub mod disk;
 pub mod dispatcher;

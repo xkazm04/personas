@@ -256,6 +256,17 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // the user's machine). execute_run_browser_test resolves the target URL
     // and spawns the proactive browser_test turn.
     "run_browser_test",
+    // DEV MODE (debug builds + companion_dev_mode only; executors refuse
+    // otherwise) — Athena's self-development loop over the app's own repo
+    // (docs/tests/athena/dev-mode-direction.md). `dev_improve` dispatches a
+    // coding CLI fleet session at the source checkout (frontend → main
+    // checkout/HMR, backend → isolated worktree); `dev_merge` is the
+    // explicit handshake that applies a backend run's branch to the live
+    // checkout. Both are DELIBERATELY absent from AUTOAPPROVE_ALLOWLIST —
+    // per user policy dev-mode operations never auto-fire, every change is
+    // click-approved, and each run ends in a reflection turn.
+    "dev_improve",
+    "dev_merge",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in

@@ -350,6 +350,62 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
     }
 }
 
+/// DEV MODE — reflection turn after a `dev_improve` run (the per-op
+/// reflection the dev-mode policy requires). Feeds Athena the op wrap-up
+/// plus fresh git evidence from the run's workspace and asks for an
+/// honest review; for backend runs she recommends (or argues against)
+/// the `dev_merge` handshake — which itself remains a click-approval.
+/// Chat-visible on purpose (unlike `fleet_orchestration`'s suppress_chat
+/// turns): the reflection IS the user-facing outcome report.
+fn spawn_dev_reflection(
+    app: &tauri::AppHandle,
+    op: &crate::companion::orchestration::operative_memory::Operation,
+    dev: &crate::companion::dev_mode::DevOpMeta,
+    status_token: &str,
+    summary: &str,
+) {
+    use tauri::Manager;
+    let state = app.state::<Arc<crate::AppState>>();
+    let evidence = crate::companion::dev_mode::workspace_evidence(&dev.workspace);
+    let apply_block = if dev.backend {
+        format!(
+            "This was a BACKEND run in an isolated worktree (branch stays unapplied until the \
+             merge handshake). If the work looks right and committed, propose the merge:\n\
+             OP: {{\"op\": \"propose_action\", \"action\": \"dev_merge\", \"params\": \
+             {{\"op_id\": \"{op_id}\", \"rationale\": \"<one line>\"}}}}\n\
+             If it looks wrong, incomplete, or the tree was left dirty — do NOT propose the \
+             merge; say what's off and the next step instead. Merging triggers a dev-server \
+             rebuild, so mention the app will restart.",
+            op_id = op.id
+        )
+    } else {
+        "This was a FRONTEND run in the live checkout — the edits are already hot-reloaded. \
+         Tell Michal concretely what to try in the UI to see the change."
+            .to_string()
+    };
+    let directive = format!(
+        "Dev-mode reflection. Your dev_improve session just finished ({status_token}).\n\n\
+         The request was:\n{request}\n\n\
+         Operation wrap-up:\n{summary}\n\n\
+         Git evidence from the workspace:\n{evidence}\n\n\
+         Review this honestly for Michal: did the change match the request, what actually \
+         changed, and any risk you see. If the run failed or drifted, say so plainly — never \
+         gloss a bad run. {apply_block}\n\
+         Keep it tight: a few sentences plus the OP line if you propose one.",
+        request = dev.request,
+    );
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        Arc::new(state.user_db.clone()),
+        Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "dev_improve_review".to_string(),
+        Some(op.id.clone()),
+        directive,
+    );
+}
+
 /// Surface a fleet-orchestration **defer note** as an orb card instead of a
 /// chat episode. The companion turn for `fleet_orchestration` suppresses every
 /// chat side-effect (see `session::send_turn`'s `suppress_chat`), so when Athena
@@ -475,6 +531,23 @@ fn reconcile_if_dispatched(
     };
     if let Err(e) = app.emit("athena://orchestration/operation-completed", &payload) {
         tracing::warn!(error = %e, op_id = %op.id, "reconcile: emit failed");
+    }
+
+    // DEV MODE — a dev_improve op gets a REFLECTION TURN instead of the
+    // generic wrap-up card: Athena reviews the run's git evidence and
+    // reports what changed vs what was asked, plus (backend runs) the
+    // merge-handshake recommendation. Strictly richer than the
+    // deterministic D6 nudge below, so return once it's spawned. Per
+    // user policy every dev operation ends in this reflection, and any
+    // apply-step (dev_merge) is still a separate click-approval.
+    if let Some(dev) = crate::companion::dev_mode::get_dev_op(&op_id) {
+        spawn_dev_reflection(app, &op, &dev, status_token, &summary);
+        if !dev.backend {
+            // Frontend run — nothing to merge later; the registry entry
+            // has served its purpose. Backend metas stay until dev_merge.
+            crate::companion::dev_mode::remove_dev_op(&op_id);
+        }
+        return;
     }
 
     // D6 — also enqueue a proactive message so Athena surfaces the
