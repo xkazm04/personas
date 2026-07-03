@@ -302,7 +302,11 @@ pub fn build_task_prompt(
          - If the request is unclear or riskier than it looks, implement the smallest safe \
          first step and say what you'd do next — don't guess big.\n\
          - Finish with a 2-4 sentence summary: what changed, which files, anything the \
-         reviewer should look at.\n",
+         reviewer should look at.\n\
+         - Then END THE SESSION: run /exit as your final action. You are an unattended \
+         dispatch — a session left open parks as awaiting-input and stalls the reflection \
+         that reports your work. (Live finding 2026-07-04: the first dispatched session sat \
+         open 10+ minutes after committing.)\n",
     );
     if backend {
         p.push_str(
@@ -378,6 +382,10 @@ mod tests {
         assert!(frontend.contains("src/App.tsx"));
         // Frontend runs must be told to STOP on Rust scope creep.
         assert!(frontend.contains("STOP and report"));
+        // Both must self-terminate — an open interactive session parks as
+        // awaiting-input and stalls the reflection (live finding 2026-07-04).
+        assert!(backend.contains("/exit"));
+        assert!(frontend.contains("/exit"));
     }
 
     #[test]

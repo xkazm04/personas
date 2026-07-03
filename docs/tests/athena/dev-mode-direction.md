@@ -135,3 +135,22 @@ kills her PTY sessions** — the fleet registry is in-memory, no DB persistence.
   - **Deliberately deferred:** durable dispatch markers + resume-on-restart (Phase 4 hardening);
     the `dev_improvement` ledger + verdict chips (Phase 5); auto-registering the repo as a Dev
     Tools project on toggle-on (executor errors clearly if unregistered).
+- **2026-07-04 — LIVE-VERIFIED end-to-end** (real conversation → real code change on the wrench
+  toggle itself): dev mode toggled via the header wrench (persists across restart both sides) →
+  natural-language request → Athena recognized it as a dev request, chose `backend: false`, named a
+  context + files_hint → approval card (click) → `execute_dev_improve` spawned fleet session
+  `athena-*-dev` in the main checkout → the session implemented + committed `76a4d595c` (3-line
+  amber-hover diff in CompanionPanel.tsx, correct commit style) → exit → reconciler → chat-visible
+  reflection: accurate diff summary, an honest hover-only-vs-at-rest caveat, and a meta-finding
+  that the `companion-brain` context-map entry misdirected her (stale paths). Two live findings
+  fixed same-day:
+  - **Op-JSON brace truncation** (`5862ac2ea`): her first 1100-char `dev_improve` op was missing
+    exactly its final closing brace — silently dropped as a parse warning while her prose claimed
+    a dispatch. Fixed with `repair_op_json` (bounded brace-completion fallback at the OpEnvelope
+    parse site; unit + integration tests pin the exact live shape).
+  - **Sessions must self-terminate**: interactive claude never exits, so the first dispatch parked
+    at `awaiting_input` 10+ min after committing (autonomous mode off → nobody answered it).
+    `build_task_prompt` now instructs `/exit` as the final action.
+  - Also observed: `files_touched` telemetry counts inspected files, not just edited ones
+    (cosmetic); the context-map staleness she flagged is a real data-quality input for the
+    Phase-5 experiment loop.
