@@ -6,10 +6,18 @@
 //!
 //!   * `fleet_failed`   — a session exited with a non-zero code
 //!     within the last `FAILURE_WINDOW`.
-//!   * `fleet_awaiting` — a session has been `AwaitingInput` for
-//!     longer than `AWAIT_THRESHOLD`.
 //!   * `fleet_stale`    — a session reached the `Stale` state (no
 //!     activity for the fleet staleness cutoff, currently 5 min).
+//!
+//! `AwaitingInput` sessions are deliberately NOT nudged here. In
+//! autonomous mode — the only mode this evaluator runs in — they are
+//! owned by `fleet_bridge::orchestrate_on_awaiting`, which reads the
+//! session's *real screen* and answers or consults with a recommendation.
+//! A blind "want me to peek?" nudge just shadowed that smarter path (it
+//! asked permission to look at a session Athena can already read). A
+//! session the event-driven path couldn't resolve is re-assessed on the
+//! proactive tick by `fleet_bridge::reassess_stale_awaiting`, not surfaced
+//! as an ask-only card.
 //!
 //! Spawning, transitions to Running/Idle, and short awaiting windows
 //! are silent — they still create episodes via the bridge (so Athena
@@ -31,12 +39,6 @@ use crate::commands::fleet::types::FleetSessionState;
 
 use super::Nudge;
 
-/// How long an `AwaitingInput` session must wait before we surface
-/// a nudge. 2 minutes — short enough that the user notices before
-/// drifting away, long enough that brief permission prompts the
-/// user is actively reading don't fire.
-const AWAIT_THRESHOLD_MS: i64 = 2 * 60 * 1000;
-
 /// How recent an `Exited` failure has to be to nudge. Older failures
 /// are noise (the user has likely moved on). 10 minutes covers a
 /// realistic "I stepped away and came back to a failed run" window.
@@ -54,20 +56,6 @@ pub fn fleet_attention() -> Vec<Nudge> {
             None => s.project_label.clone(),
         };
         match s.state {
-            FleetSessionState::AwaitingInput => {
-                let waited_ms = now_ms - s.last_activity_ms;
-                if waited_ms >= AWAIT_THRESHOLD_MS {
-                    let minutes = waited_ms / 60_000;
-                    out.push(Nudge {
-                        trigger_kind: "fleet_awaiting".into(),
-                        trigger_ref: Some(s.id.clone()),
-                        message: format!(
-                            "Fleet session `{}` ({}) has been awaiting your input for ~{} min. Want me to peek at what it needs?",
-                            id_prefix, label, minutes,
-                        ),
-                    });
-                }
-            }
             FleetSessionState::Stale => {
                 out.push(Nudge {
                     trigger_kind: "fleet_stale".into(),
@@ -96,9 +84,12 @@ pub fn fleet_attention() -> Vec<Nudge> {
                     });
                 }
             }
+            // AwaitingInput is owned by orchestrate_on_awaiting /
+            // reassess_stale_awaiting (see module docs) — no blind nudge.
             FleetSessionState::Spawning
             | FleetSessionState::Running
             | FleetSessionState::Idle
+            | FleetSessionState::AwaitingInput
             | FleetSessionState::Hibernated => {}
         }
     }

@@ -304,6 +304,46 @@ pub fn orchestrate_on_awaiting(
     );
 }
 
+/// How long a session must sit in `AwaitingInput` before the proactive tick
+/// re-assesses it. Below this, the hook-driven `orchestrate_on_awaiting` (fired
+/// on the AwaitingInput transition) is the authoritative handler; this timer
+/// path only catches sessions the event path couldn't resolve — a first screen
+/// render that came back empty (the PTY ring hadn't captured the alt-screen TUI
+/// yet) or a screen that changed without emitting a fresh `Notification` hook.
+const REASSESS_AFTER_MS: i64 = 2 * 60 * 1000;
+
+/// Proactive-tick re-assessment of parked `AwaitingInput` sessions (autonomous
+/// mode only). Replaces the old blind `fleet_awaiting` "want me to peek?" nudge:
+/// rather than asking the user for permission to look at a session Athena can
+/// already read, re-run the real screen-reading orchestration.
+///
+/// Safe to call every tick — it delegates to `orchestrate_on_awaiting`, whose
+/// 60s throttle + screen-hash dedupe skip any session whose *current* screen was
+/// already assessed. So a genuinely-deferred session is NOT re-nagged; only a
+/// session whose screen changed — or whose first render was empty and has since
+/// rendered — is re-reasoned.
+pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    let state = app.state::<AppState>();
+    if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
+        return;
+    }
+    let now = crate::commands::fleet::registry::now_ms();
+    for s in crate::commands::fleet::registry::registry().list_dto() {
+        if !matches!(
+            s.state,
+            crate::commands::fleet::types::FleetSessionState::AwaitingInput
+        ) {
+            continue;
+        }
+        // Fresh transitions were just handled by the hook-driven path.
+        if now - s.last_activity_ms < REASSESS_AFTER_MS {
+            continue;
+        }
+        orchestrate_on_awaiting(app, state.inner(), &s.id, &s.project_label);
+    }
+}
+
 /// Surface a fleet-orchestration **defer note** as an orb card instead of a
 /// chat episode. The companion turn for `fleet_orchestration` suppresses every
 /// chat side-effect (see `session::send_turn`'s `suppress_chat`), so when Athena

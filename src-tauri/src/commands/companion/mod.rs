@@ -126,6 +126,15 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                     // headless triage per tick: digest card + ≤1 deep-dive
                     // turn (see proactive::execution_review module docs).
                     if crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
+                        // Fleet orchestration re-check: re-assess parked
+                        // AwaitingInput sessions from their real screen. Replaces
+                        // the old blind "want me to peek?" nudge — orchestration's
+                        // throttle + screen-hash dedupe make this cheap and
+                        // non-spammy (unchanged screens are skipped).
+                        crate::commands::companion::fleet_bridge::reassess_stale_awaiting(
+                            &app_handle,
+                        );
+
                         let review = crate::companion::proactive::execution_review::review_recent_executions(
                             &pool,
                             &sys_db,
