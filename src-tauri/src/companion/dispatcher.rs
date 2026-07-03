@@ -435,7 +435,22 @@ pub fn dispatch(
             continue;
         };
 
-        match serde_json::from_str::<OpEnvelope>(payload) {
+        // Parse the op JSON — with a bounded brace-completion fallback.
+        // LLMs occasionally drop trailing `}`s on long single-line op JSON
+        // (observed live 2026-07-04: an 1100-char `dev_improve` op missing
+        // exactly its final envelope brace — the assistant prose claimed a
+        // dispatch that never landed, the op vanished as a parse warning).
+        // `repair_op_json` appends only the missing closing braces, only
+        // when the line doesn't end inside a string literal — a syntactic
+        // completion, never a semantic guess. Anything unrepairable keeps
+        // the original parse error.
+        let parsed = serde_json::from_str::<OpEnvelope>(payload).or_else(|orig_err| {
+            match repair_op_json(payload) {
+                Some(fixed) => serde_json::from_str::<OpEnvelope>(&fixed).map_err(|_| orig_err),
+                None => Err(orig_err),
+            }
+        });
+        match parsed {
             // open_route bypasses the approval flow: validate the route
             // and queue a navigation event. No card, no click. The chat
             // panel stays open; the sidebar switches behind it.
@@ -1890,6 +1905,38 @@ fn note_dispatcher_rejection(
     }
 }
 
+/// Bounded repair for op-shaped lines that fail JSON parsing: append the
+/// missing closing braces when (a) the line doesn't end inside a string
+/// literal and (b) the brace deficit is 1..=3. Returns `None` for anything
+/// else — a truncated string value, balanced-but-invalid JSON, or a large
+/// deficit are not safely completable and keep their original parse error.
+fn repair_op_json(raw: &str) -> Option<String> {
+    let mut depth: i32 = 0;
+    let mut in_str = false;
+    let mut esc = false;
+    for c in raw.chars() {
+        if esc {
+            esc = false;
+            continue;
+        }
+        match c {
+            '\\' if in_str => esc = true,
+            '"' => in_str = !in_str,
+            '{' if !in_str => depth += 1,
+            '}' if !in_str => depth -= 1,
+            _ => {}
+        }
+    }
+    if in_str || !(1..=3).contains(&depth) {
+        return None;
+    }
+    let mut fixed = raw.to_string();
+    for _ in 0..depth {
+        fixed.push('}');
+    }
+    Some(fixed)
+}
+
 fn insert_approval(
     pool: &UserDbPool,
     session_id: &str,
@@ -2459,6 +2506,49 @@ mod tests {
         let out = dispatch_op(op);
         assert!(out.composed_walkthroughs.is_empty());
         assert!(!out.warnings.is_empty());
+    }
+
+    // ── op-JSON brace repair (observed live 2026-07-04) ────────────────
+
+    #[test]
+    fn repair_op_json_completes_small_brace_deficits() {
+        assert_eq!(
+            repair_op_json(r#"{"op":"x","params":{"a":"b"}"#).as_deref(),
+            Some(r#"{"op":"x","params":{"a":"b"}}"#)
+        );
+        assert_eq!(
+            repair_op_json(r#"{"op":"x","params":{"a":{"b":"c"}"#).as_deref(),
+            Some(r#"{"op":"x","params":{"a":{"b":"c"}}}"#)
+        );
+        // Balanced JSON → nothing to repair.
+        assert!(repair_op_json(r#"{"op":"x"}"#).is_none());
+        // Ends inside a string literal → unrecoverable, keep the error.
+        assert!(repair_op_json(r#"{"op":"x","params":{"a":"trunc"#).is_none());
+        // Escaped quotes inside a string must not flip the in-string
+        // state — the note string here IS closed, so the single missing
+        // envelope brace is completable. (Escaped regular literals on
+        // purpose: a raw-string literal ending in `\""#` terminates at
+        // the embedded `"#` and silently truncates the test input.)
+        assert_eq!(
+            repair_op_json("{\"op\":\"x\",\"note\":\"say \\\"hi\\\"\"").as_deref(),
+            Some("{\"op\":\"x\",\"note\":\"say \\\"hi\\\"\"}")
+        );
+        // And a genuinely unterminated string stays unrepairable.
+        assert!(repair_op_json("{\"op\":\"x\",\"note\":\"say \\\"hi\\\"").is_none());
+    }
+
+    #[test]
+    fn truncated_dev_improve_op_still_lands_an_approval() {
+        // The exact live failure shape: a long single-line dev_improve op
+        // missing its final envelope brace. The prose around it must
+        // survive; the repaired op must create a pending approval, with
+        // no parse warning.
+        let op = r#"{"op": "propose_action", "action": "dev_improve", "params": {"request": "Give the wrench a subtle amber hover tint in its off state", "context": "companion-chat", "backend": false, "confidence": "high", "rationale": "self-contained styling fix"}"#;
+        let out = dispatch_op(op);
+        assert_eq!(out.approvals.len(), 1, "warnings: {:?}", out.warnings);
+        assert_eq!(out.approvals[0].action, "dev_improve");
+        assert!(out.warnings.is_empty(), "warnings: {:?}", out.warnings);
+        assert!(!out.cleaned_text.contains("OP:"));
     }
 }
 
