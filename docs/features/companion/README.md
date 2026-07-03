@@ -453,9 +453,20 @@ Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layou
 
 **Why subprocess (same rationale as Piper):** users can swap newer whisper.cpp builds without recompiling, and the engine's ggml/BLAS stack stays in its own process.
 
-## Self-improve loop
+## Dev mode — the self-development loop (`dev_improve` / `dev_merge`)
 
-When beta self-improve is enabled, `companion_request_improvement` runs a coding CLI session against user feedback. The result reports success, summary, modified files, critical files, elapsed time, and any error. Startup recovery checks for orphaned runs after Tauri dev reloads.
+> Supersedes the old composer wrench-send self-improve loop (2026-07-04). Full direction + build log: [`docs/tests/athena/dev-mode-direction.md`](../../tests/athena/dev-mode-direction.md).
+
+**Toggle:** the wrench in the chat-panel header, next to the autonomous Infinity icon — rendered only in **debug builds** (`companion_beta_flags → devModeAvailable`) and persisted both in Zustand (`companionDevMode`) and server-side (`companion_dev_mode` row via `companion_set_dev_mode`; `chat::dev_mode_enabled` hard-gates on `cfg!(debug_assertions)` so a release build ignores the row).
+
+**What it does:** with dev mode on, Athena's prompt gains a DEV MODE addendum (`companion/dev_mode.rs::addendum_if_enabled`, riding the mode-addenda slot): the self-model ("you run from your own source checkout — the app, including you, is built from this repo"), the **context-map index** (one line per context from `context-map.json`, so feature-talk resolves to code areas), judgment rules (product action vs code change; ask one clarifying line when ambiguous), and two ops:
+
+- **`dev_improve { request, context, files_hint, backend, confidence, rationale }`** — dispatches **one coding CLI fleet session** at the repo (visible Fleet tile named `athena-*-dev`, operative-memory op, containment via `validate_fleet_cwd` — the repo must be a registered Dev Tools project). The task prompt is assembled **Rust-side** with the resolved context's `file_paths` from the map — never model-recalled paths. Workspace policy: `backend: false` (frontend-only) runs in the **main checkout** and edits hot-reload immediately; `backend: true` (any Rust) runs in an **isolated worktree** (`.claude/worktrees/athena-dev-<id>`) so the running app is undisturbed. Default is `true` — the safe side.
+- **`dev_merge { op_id }`** — the **merge handshake** for backend runs: fast-forwards the live checkout onto the dev branch (refuses a dirty tree or a diverged master rather than auto-resolving) and removes the worktree; the dev-server rebuild + app restart follow. This is the moment user and Athena synchronize update expectations.
+
+**Policy (hard):** neither op is on `AUTOAPPROVE_ALLOWLIST` — **dev-mode operations never auto-fire in any mode**; each dispatch and each merge is an explicit approval click. And **every dev op ends in a reflection**: on session exit, `reconcile_if_dispatched` routes dev ops to `spawn_dev_reflection` — a chat-visible `dev_improve_review` proactive turn carrying the op wrap-up + fresh git evidence (`git log --stat`, tree dirtiness) where Athena reviews what changed vs what was asked, flags risk, and recommends (or argues against) the merge.
+
+The dev-op registry is in-process; an app restart loses it (the worktree + branch survive on disk — merge manually). Durable markers + resume-on-restart are the tracked Phase-4 hardening.
 
 ## Live browser testing (`run_browser_test`)
 

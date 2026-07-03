@@ -45,11 +45,13 @@ via doctrine retrieval.
   button finishes the interrupt.
 - **Reset** wipes the visible transcript and the CLI session pointer.
   The markdown episodes on disk remain — memory is preserved.
-- **Self-improve loop** (beta, gated by `selfImproveEnabled`) — the 🔧
-  wrench-send button forwards the textbox content to a separate coding
-  CLI session that edits Athena's own files (templates, doctrine
-  doc-set, prompt builder). Logs the outcome as a system episode so
-  Athena reads what changed on the next turn.
+- **Dev mode** (debug builds; the 🔧 wrench toggle in the header) — the
+  self-development loop: Athena resolves feature-talk to code via the
+  context map and proposes `dev_improve` coding dispatches (approval-
+  gated, never auto-fired) that run as visible Fleet sessions at the
+  repo; each run ends in a reflection turn, and backend work applies
+  only through the `dev_merge` handshake. Replaces the old wrench-send
+  composer button. See `docs/tests/athena/dev-mode-direction.md`.
 
 ## UI control (auto-fire — no approval card)
 
