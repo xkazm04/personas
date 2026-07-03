@@ -324,7 +324,13 @@ const REASSESS_AFTER_MS: i64 = 2 * 60 * 1000;
 /// rendered — is re-reasoned.
 pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
     use tauri::Manager;
-    let state = app.state::<AppState>();
+    // The app manages `Arc<AppState>`, not `AppState` — `app.state::<AppState>()`
+    // would panic ("state not managed"). Mirror the hook-path lookup
+    // (`hooks.rs` `orchestrate_on_awaiting` caller). `&state` deref-coerces
+    // State<Arc<AppState>> → &AppState for `orchestrate_on_awaiting`.
+    let Some(state) = app.try_state::<std::sync::Arc<AppState>>() else {
+        return;
+    };
     if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
         return;
     }
@@ -340,7 +346,7 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
         if now - s.last_activity_ms < REASSESS_AFTER_MS {
             continue;
         }
-        orchestrate_on_awaiting(app, state.inner(), &s.id, &s.project_label);
+        orchestrate_on_awaiting(app, &state, &s.id, &s.project_label);
     }
 }
 
