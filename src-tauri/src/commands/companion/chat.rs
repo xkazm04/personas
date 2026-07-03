@@ -151,6 +151,35 @@ pub fn autonomous_mode_enabled(db: &crate::db::DbPool) -> bool {
     )
 }
 
+/// Persist the DEV MODE toggle server-side (the wrench in the companion
+/// header). Same split as autonomous mode: the frontend keeps Zustand
+/// state for instant UI feedback; the backend prompt assembler and the
+/// `dev_improve` executor read this row via [`dev_mode_enabled`].
+#[tauri::command]
+pub fn companion_set_dev_mode(
+    state: State<'_, Arc<AppState>>,
+    enabled: bool,
+) -> Result<(), AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::db::repos::core::settings::set(
+        &state.db,
+        crate::db::settings_keys::COMPANION_DEV_MODE,
+        if enabled { "true" } else { "false" },
+    )
+}
+
+/// Read the effective dev-mode flag. Hard-gated on debug builds — a
+/// `true` row in a release build reports `false` (defense in depth,
+/// mirroring the old self-improve gate in `feedback.rs`): Athena must
+/// never treat an end user's installed app as her source workspace.
+pub fn dev_mode_enabled(db: &crate::db::DbPool) -> bool {
+    cfg!(debug_assertions)
+        && matches!(
+            crate::db::repos::core::settings::get(db, crate::db::settings_keys::COMPANION_DEV_MODE),
+            Ok(Some(v)) if v == "true"
+        )
+}
+
 /// Run the execution-review pass on demand, bypassing the 5-min scheduler
 /// cadence. Runs the batched headless triage over qualifying recent
 /// executions (digest card + at most one deep-dive `TurnOrigin::Proactive`

@@ -117,6 +117,7 @@ export const useSystemStore = create<SystemStore>()(
         companionVoiceVolume: state.companionVoiceVolume,
         companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
         companionAutonomousMode: state.companionAutonomousMode,
+        companionDevMode: state.companionDevMode,
         companionHandsFreeDecisions: state.companionHandsFreeDecisions,
         radioEnabled: state.radioEnabled,
         disabledStationIds: state.disabledStationIds,

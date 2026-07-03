@@ -8,6 +8,7 @@ import {
   RotateCcw,
   Search,
   Square,
+  Wrench,
   X,
 } from 'lucide-react';
 import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
@@ -51,8 +52,8 @@ import {
   companionBetaFlags,
   companionCancelAutonomy,
   companionSetAutonomousMode,
+  companionSetDevMode,
   companionInterruptTurn,
-  companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
   companionAnalyzeFleet,
@@ -211,8 +212,7 @@ export default function CompanionPanel() {
   const proactive = useCompanionStore((s) => s.proactive);
   const quickReplies = useCompanionStore((s) => s.quickReplies);
   const brainView = useCompanionStore((s) => s.brainView);
-  const betaSelfImprove = useCompanionStore((s) => s.betaSelfImprove);
-  const improving = useCompanionStore((s) => s.improving);
+  const devModeAvailable = useCompanionStore((s) => s.devModeAvailable);
   // Speaking state: TTS audio synthesized AND not yet finished. Until
   // a `speaking` clip ships, the avatar falls back to the idle loop —
   // the `speaking` value is the signal carrier, not the visual.
@@ -235,8 +235,7 @@ export default function CompanionPanel() {
   const chatCards = useCompanionStore((s) => s.chatCards);
   const setChatCards = useCompanionStore((s) => s.setChatCards);
   const setBrainView = useCompanionStore((s) => s.setBrainView);
-  const setBetaSelfImprove = useCompanionStore((s) => s.setBetaSelfImprove);
-  const setImproving = useCompanionStore((s) => s.setImproving);
+  const setDevModeAvailable = useCompanionStore((s) => s.setDevModeAvailable);
   const setPendingPlayback = useCompanionStore((s) => s.setPendingPlayback);
   const setPlaybackAudioUrl = useCompanionStore((s) => s.setPlaybackAudioUrl);
   const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
@@ -309,6 +308,8 @@ export default function CompanionPanel() {
   const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
   const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
   const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
+  const devMode = useSystemStore((s) => s.companionDevMode);
+  const setDevMode = useSystemStore((s) => s.setCompanionDevMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
   // While the Fleet grid overlay (z-200 portal) is open, the chat must float
@@ -323,12 +324,12 @@ export default function CompanionPanel() {
   const isOpen = state === 'open';
 
   // Fetch the beta flag once on first panel mount. Cheap, returns a
-  // single bool. Decides whether the wrench-send button is rendered.
+  // single bool. Decides whether the dev-mode wrench toggle is rendered.
   useEffect(() => {
     companionBetaFlags()
-      .then((f) => setBetaSelfImprove(f.selfImproveEnabled))
+      .then((f) => setDevModeAvailable(f.devModeAvailable))
       .catch(silentCatch('companion_beta_flags'));
-  }, [setBetaSelfImprove]);
+  }, [setDevModeAvailable]);
 
   // Orb → panel morph. The panel is anchored bottom-left (`left-4 bottom-12`),
   // so its bottom-left corner sits at screen (16, vh-48) regardless of the
@@ -462,6 +463,17 @@ export default function CompanionPanel() {
                 );
               }
             }}
+            devModeAvailable={devModeAvailable}
+            devMode={devMode}
+            onToggleDevMode={() => {
+              const next = !devMode;
+              setDevMode(next);
+              // Persist server-side — the prompt assembler and the
+              // dev_improve executor read the settings row, not Zustand.
+              companionSetDevMode(next).catch(
+                silentCatch('companion_set_dev_mode'),
+              );
+            }}
           />
           {autonomousMode && <WakeCadence />}
           <Body
@@ -476,8 +488,6 @@ export default function CompanionPanel() {
             quickReplies={quickReplies}
             chatCards={chatCards}
             brainView={brainView}
-            betaSelfImprove={betaSelfImprove}
-            improving={improving}
             voiceEnabled={voiceEnabled}
             voiceEngine={voiceEngine}
             voiceCredentialId={voiceCredentialId}
@@ -500,7 +510,6 @@ export default function CompanionPanel() {
             setQuickReplies={setQuickReplies}
             setChatCards={setChatCards}
             setBrainView={setBrainView}
-            setImproving={setImproving}
             setPendingPlayback={setPendingPlayback}
             setPlaybackAudioUrl={setPlaybackAudioUrl}
             markPlaybackPlayed={markPlaybackPlayed}
@@ -518,11 +527,18 @@ function Header({
   onReset,
   autonomousMode,
   onToggleAutonomousMode,
+  devModeAvailable,
+  devMode,
+  onToggleDevMode,
 }: {
   onClose: () => void;
   onReset: () => void;
   autonomousMode: boolean;
   onToggleAutonomousMode: () => void;
+  /** Debug build running from a source checkout — gates the wrench. */
+  devModeAvailable: boolean;
+  devMode: boolean;
+  onToggleDevMode: () => void;
 }) {
   const { t } = useTranslation();
   const searchOpen = useCompanionStore((s) => s.chatSearchOpen);
@@ -587,6 +603,30 @@ function Header({
         >
           <InfinityIcon className="w-4 h-4" />
         </button>
+        {devModeAvailable && (
+          <button
+            onClick={onToggleDevMode}
+            data-testid="companion-toggle-dev-mode"
+            aria-pressed={devMode}
+            className={`p-1.5 rounded-interactive transition-colors focus-ring ${
+              devMode
+                ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20'
+                : 'text-foreground hover:text-foreground hover:bg-foreground/5'
+            }`}
+            aria-label={
+              devMode
+                ? t.plugins.companion.dev_toggle_off
+                : t.plugins.companion.dev_toggle_on
+            }
+            title={
+              devMode
+                ? t.plugins.companion.dev_toggle_off
+                : t.plugins.companion.dev_toggle_on
+            }
+          >
+            <Wrench className="w-4 h-4" />
+          </button>
+        )}
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onReset}
@@ -623,8 +663,6 @@ interface BodyProps {
   quickReplies: string[];
   chatCards: ReturnType<typeof useCompanionStore.getState>['chatCards'];
   brainView: ReturnType<typeof useCompanionStore.getState>['brainView'];
-  betaSelfImprove: boolean;
-  improving: boolean;
   voiceEnabled: boolean;
   voiceEngine: 'elevenlabs' | 'piper';
   voiceCredentialId: string | null;
@@ -647,7 +685,6 @@ interface BodyProps {
   setQuickReplies: (q: string[]) => void;
   setChatCards: (c: ChatCard[]) => void;
   setBrainView: (next: BodyProps['brainView']) => void;
-  setImproving: (v: boolean) => void;
   setPendingPlayback: (
     p: ReturnType<typeof useCompanionStore.getState>['pendingPlayback'],
   ) => void;
@@ -671,8 +708,6 @@ function Body(props: BodyProps) {
     quickReplies,
     chatCards,
     brainView,
-    betaSelfImprove,
-    improving,
     voiceEnabled,
     voiceEngine,
     voiceCredentialId,
@@ -695,7 +730,6 @@ function Body(props: BodyProps) {
     setQuickReplies,
     setChatCards,
     setBrainView,
-    setImproving,
     setPendingPlayback,
     setPlaybackAudioUrl,
     markPlaybackPlayed,
@@ -1631,11 +1665,11 @@ function Body(props: BodyProps) {
   useEffect(() => {
     const was = prevStreamingForQueueRef.current;
     prevStreamingForQueueRef.current = streaming;
-    if (was && !streaming && !improving) {
+    if (was && !streaming) {
       const next = useCompanionStore.getState().shiftQueuedMessage();
       if (next) void send(next.text);
     }
-  }, [streaming, improving, send]);
+  }, [streaming, send]);
 
   // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
   // so a slow turn isn't dead silent. Fast turns (< the delay) never
@@ -1738,39 +1772,6 @@ function Body(props: BodyProps) {
     const rec = useCompanionStore.getState().pendingDecision?.recommendation;
     if (rec) playProgressClip(stripMarkdownForSpeech(rec));
   }, [decisionId, decisionExplained, playProgressClip]);
-
-  // Wrench-send: pipe the textarea content into the self-improve loop.
-  // The improvement runs on a SEPARATE Claude CLI session at repo root
-  // (not Athena's main session), writes to disk, and logs the outcome
-  // as a system episode in Athena's transcript so she sees what
-  // changed in future turns.
-  const requestImprove = useCallback(
-    async (text: string) => {
-      const trimmed = text.trim();
-      if (!trimmed) return;
-      setImproving(true);
-      // Show an optimistic user-style bubble so it's clear what was
-      // submitted, then refetch when the backend logs the outcome.
-      appendMessage({
-        id: `improve_user_${Date.now()}`,
-        role: 'user',
-        content: `🛠 ${trimmed}`,
-        createdAt: new Date().toISOString(),
-      });
-      try {
-        await companionRequestImprovement(trimmed);
-        const fresh = await companionListRecentMessages(50);
-        setMessages(fresh);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        setSendError(msg);
-        silentCatch('companion_request_improvement')(err);
-      } finally {
-        setImproving(false);
-      }
-    },
-    [appendMessage, setImproving, setMessages, setSendError],
-  );
 
   // Quick-action seed for the help button on the right toolbar. Sent
   // verbatim through the same path as a typed user message, so it
@@ -1969,14 +1970,14 @@ function Body(props: BodyProps) {
                       onJump={handleTurnSummaryJump}
                     />
                   )}
-                  {isLastAssistant && priorUser && !streaming && !improving && (
+                  {isLastAssistant && priorUser && !streaming && (
                     <RefineChips
                       priorUserMessage={priorUser}
                       onSend={send}
-                      disabled={!initialized || streaming || improving}
+                      disabled={!initialized || streaming}
                     />
                   )}
-                  {isLastAssistant && !streaming && !improving && m.content.trim() && (
+                  {isLastAssistant && !streaming && m.content.trim() && (
                     <BubbleReadAloud
                       content={m.content}
                       voiceEngine={voiceEngine}
@@ -2117,12 +2118,6 @@ function Body(props: BodyProps) {
               </motion.div>
             )}
           </AnimatePresence>
-          {improving && (
-            <div className="rounded-card border border-amber-500/30 bg-amber-500/5 px-3.5 py-2.5 typo-body text-amber-300/90 flex items-center gap-2">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{t.plugins.companion.improving}</span>
-            </div>
-          )}
           <div ref={approvalsAnchorRef} data-companion-section="approvals">
             <AnimatePresence initial={false}>
               {approvals.map((a) => (
@@ -2220,11 +2215,8 @@ function Body(props: BodyProps) {
           // Async-UX phase 4: the composer is intentionally NOT disabled
           // while streaming — mid-turn input is routed through sendOrQueue
           // (interrupt vs queue) instead of being blocked.
-          disabled={!initialized || brainView.open || improving}
+          disabled={!initialized || brainView.open}
           onSend={sendOrQueue}
-          onImprove={requestImprove}
-          improveEnabled={betaSelfImprove}
-          improving={improving}
         />
         {brainView.open && (
           <BrainViewer

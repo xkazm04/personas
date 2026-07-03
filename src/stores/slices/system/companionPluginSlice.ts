@@ -185,6 +185,16 @@ export interface CompanionPluginSlice {
    */
   companionAutonomousMode: boolean;
   /**
+   * DEV MODE — Athena's self-development loop (debug builds only). When
+   * true, her prompt gains the self-model addendum (this repo is the
+   * app's own source; feature-talk resolves to code via the context map)
+   * and she may propose `dev_improve` dispatches. Toggle is the wrench
+   * in the chat-panel header, rendered only when the backend reports
+   * `devModeAvailable` (debug build). Mirrored server-side via
+   * `companion_set_dev_mode` for the prompt assembler + executor.
+   */
+  companionDevMode: boolean;
+  /**
    * P3 hands-free decision layer: when true, the decision queue
    * (`decision/useDecisionQueue`) aggregates pending approvals / human
    * reviews / blocking incidents and auto-surfaces them one-at-a-time in the
@@ -229,6 +239,7 @@ export interface CompanionPluginSlice {
   setCompanionSttModelId: (id: string | null) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
+  setCompanionDevMode: (v: boolean) => void;
   setCompanionHandsFreeDecisions: (v: boolean) => void;
   setActiveBuildIntent: (intent: string | null) => void;
 }
@@ -264,6 +275,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionSttModelId: null,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
+  companionDevMode: false,
   companionHandsFreeDecisions: false,
   activeBuildIntent: null,
 
@@ -308,6 +320,7 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>
     set({ companionAutonomousMode }),
+  setCompanionDevMode: (companionDevMode) => set({ companionDevMode }),
   setCompanionHandsFreeDecisions: (companionHandsFreeDecisions) =>
     set({ companionHandsFreeDecisions }),
   setActiveBuildIntent: (activeBuildIntent) => set({ activeBuildIntent }),

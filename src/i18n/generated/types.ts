@@ -13210,9 +13210,6 @@ export type Translations = {
       reflection_failed: string;
       decay_done: string;
       decay_none: string;
-      improve_send: string;
-      improve_send_title: string;
-      improving: string;
       page_title: string;
       page_subtitle: string;
       tab_setup: string;
@@ -13249,11 +13246,6 @@ export type Translations = {
       setup_sound_desc: string;
       setup_beta_title: string;
       setup_beta_desc: string;
-      setup_self_improve_label: string;
-      setup_self_improve_on: string;
-      setup_self_improve_off: string;
-      setup_self_improve_active: string;
-      setup_self_improve_inactive: string;
       voice_title: string;
       voice_subtitle: string;
       voice_empty_title: string;
@@ -13376,6 +13368,13 @@ export type Translations = {
       wake_60: string;
       wake_120: string;
       wake_impact_line: string;
+      dev_toggle_on: string;
+      dev_toggle_off: string;
+      setup_dev_mode_label: string;
+      setup_dev_mode_on: string;
+      setup_dev_mode_off: string;
+      setup_dev_mode_active: string;
+      setup_dev_mode_inactive: string;
     };
     ocr: {
       title: string;

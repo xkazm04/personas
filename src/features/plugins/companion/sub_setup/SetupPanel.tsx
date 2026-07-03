@@ -26,8 +26,8 @@ import { SensorySignalsModal } from './SensorySignalsModal';
  * Settings are grouped into SectionCards laid out by the shared
  * SettingsScaffold (left quick-nav rail + scroll-spy). Groups: chrome
  * (footer / orb / sound), memory, desktop awareness (sensory sources),
- * self-improve loop (read-only beta flag), project tracking, and the
- * browser-bridge pairing surface.
+ * dev mode (self-development loop; toggle lives in the chat header),
+ * project tracking, and the browser-bridge pairing surface.
  */
 export default function SetupPanel() {
   const { t } = useTranslation();
@@ -85,12 +85,13 @@ export default function SetupPanel() {
     [],
   );
 
-  const [selfImprove, setSelfImprove] = useState<boolean | null>(null);
+  const [devAvailable, setDevAvailable] = useState<boolean | null>(null);
+  const devMode = useSystemStore((s) => s.companionDevMode);
   useEffect(() => {
     let cancelled = false;
     companionBetaFlags()
       .then((flags) => {
-        if (!cancelled) setSelfImprove(flags.selfImproveEnabled);
+        if (!cancelled) setDevAvailable(flags.devModeAvailable);
       })
       .catch(silentCatch('companion_beta_flags'));
     return () => {
@@ -267,29 +268,29 @@ export default function SetupPanel() {
       icon: <Wrench className="w-4 h-4 text-cyan-400" />,
       content: (
         <div className="flex items-start gap-3 px-1 py-2">
-          <Wrench className={`w-4 h-4 mt-0.5 ${selfImprove ? 'text-emerald-400' : 'text-foreground'}`} />
+          <Wrench className={`w-4 h-4 mt-0.5 ${devAvailable && devMode ? 'text-amber-400' : 'text-foreground'}`} />
           <div className="flex-1 min-w-0">
-            <div className="typo-title">{c.setup_self_improve_label}</div>
+            <div className="typo-title">{c.setup_dev_mode_label}</div>
             <div className="typo-caption mt-1">
-              {selfImprove === null
+              {devAvailable === null
                 ? c.loading
-                : selfImprove
-                  ? c.setup_self_improve_on
-                  : c.setup_self_improve_off}
+                : devAvailable
+                  ? c.setup_dev_mode_on
+                  : c.setup_dev_mode_off}
             </div>
           </div>
           <span
             className={`shrink-0 typo-caption font-medium px-2 py-0.5 rounded-full border ${
-              selfImprove
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400'
+              devAvailable && devMode
+                ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
                 : 'border-foreground/10 bg-foreground/5 text-foreground'
             }`}
           >
-            {selfImprove === null
+            {devAvailable === null
               ? '…'
-              : selfImprove
-                ? c.setup_self_improve_active
-                : c.setup_self_improve_inactive}
+              : devAvailable && devMode
+                ? c.setup_dev_mode_active
+                : c.setup_dev_mode_inactive}
           </span>
         </div>
       ),

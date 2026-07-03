@@ -1,7 +1,12 @@
 /**
- * Composer — the textarea + dictation + send/improve buttons at the
- * bottom of the companion panel. Owns its own draft state; emits send
- * + improve callbacks to the panel orchestrator.
+ * Composer — the textarea + dictation + send buttons at the bottom of
+ * the companion panel. Owns its own draft state; emits the send
+ * callback to the panel orchestrator.
+ *
+ * (The old wrench-send / self-improve button was retired when dev mode
+ * landed — improvement requests now flow through normal conversation
+ * and Athena proposes `dev_improve` dispatches herself; see
+ * docs/tests/athena/dev-mode-direction.md.)
  *
  * Three input paths:
  *   - Direct typing into the textarea (auto-grows up to ~6 lines).
@@ -22,7 +27,7 @@
  * palette and clears the draft.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Loader2, Mic, MicOff, Send, Wrench } from 'lucide-react';
+import { Mic, MicOff, Send } from 'lucide-react';
 
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -37,15 +42,9 @@ import {
 export function Composer({
   disabled,
   onSend,
-  onImprove,
-  improveEnabled,
-  improving,
 }: {
   disabled: boolean;
   onSend: (text: string) => void;
-  onImprove: (text: string) => void;
-  improveEnabled: boolean;
-  improving: boolean;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -146,12 +145,6 @@ export function Composer({
     onSend(draft);
     setDraft('');
   }, [disabled, draft, onSend]);
-
-  const submitImprove = useCallback(() => {
-    if (disabled || improving || !draft.trim()) return;
-    onImprove(draft);
-    setDraft('');
-  }, [disabled, improving, draft, onImprove]);
 
   const pickSlashPreset = useCallback((preset: SlashPreset) => {
     setDraft(preset.message);
@@ -288,21 +281,6 @@ export function Composer({
           <span className="sr-only" aria-live="assertive">
             {dictation.listening ? t.plugins.companion.dictate_listening_hint : ''}
           </span>
-        )}
-        {improveEnabled && (
-          <button
-            onClick={submitImprove}
-            disabled={disabled || improving || !draft.trim()}
-            className="p-2 rounded-interactive bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
-            aria-label={t.plugins.companion.improve_send}
-            title={t.plugins.companion.improve_send_title}
-          >
-            {improving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Wrench className="w-4 h-4" />
-            )}
-          </button>
         )}
         <button
           onClick={submit}

@@ -221,6 +221,17 @@ pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
 /// the scheduler reads it. Stored as `"true"` / `"false"` strings.
 pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
 
+/// Whether Athena's DEV MODE is toggled on — the self-development loop
+/// where she treats the running app's own source checkout as a workspace:
+/// resolves feature-talk to code via the context map and proposes
+/// `dev_improve` dispatches (coding CLI sessions at the repo root). The
+/// runtime toggle is only half the gate: the mode is ONLY effective in
+/// debug builds (`cfg!(debug_assertions)`) — release builds ignore the
+/// row entirely (see `chat::dev_mode_enabled`). Written by the wrench
+/// toggle in the companion header; read by the prompt assembler and the
+/// `dev_improve` executor. Stored `"true"`/`"false"`. Default OFF.
+pub const COMPANION_DEV_MODE: &str = "companion_dev_mode";
+
 /// Whether the autonomous MESSAGE triage leg of the proactive tick may,
 /// unattended, read the Overview → Messages inbox the way Athena resolves
 /// human reviews: a batched headless decision classifies each unread
@@ -539,6 +550,7 @@ const ALLOWED_KEYS: &[&str] = &[
     ONBOARDING_QUEST_STATE,
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
+    COMPANION_DEV_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
     COMPANION_EXEC_REVIEW_RETRY,
     AUTONOMOUS_MESSAGE_TRIAGE,
@@ -670,6 +682,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         }),
         CLI_SESSION_AWARENESS_ENABLED
         | COMPANION_AUTONOMOUS_MODE
+        | COMPANION_DEV_MODE
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_MESSAGE_TRIAGE
         | AUTONOMOUS_GOAL_ADVANCEMENT

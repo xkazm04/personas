@@ -157,11 +157,10 @@ interface CompanionStore {
   brainView: BrainViewState;
   setBrainView: (next: BrainViewState) => void;
 
-  // Phase 4: self-improve loop state
-  betaSelfImprove: boolean;
-  setBetaSelfImprove: (v: boolean) => void;
-  improving: boolean;
-  setImproving: (v: boolean) => void;
+  // Dev mode availability (debug build?) — fetched once from
+  // companion_beta_flags; gates the wrench toggle in the header.
+  devModeAvailable: boolean;
+  setDevModeAvailable: (v: boolean) => void;
   // In-transcript search (header toggle + query bar). Closing clears the query.
   chatSearchOpen: boolean;
   setChatSearchOpen: (v: boolean) => void;
@@ -592,10 +591,8 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),
 
-  betaSelfImprove: false,
-  setBetaSelfImprove: (betaSelfImprove) => set({ betaSelfImprove }),
-  improving: false,
-  setImproving: (improving) => set({ improving }),
+  devModeAvailable: false,
+  setDevModeAvailable: (devModeAvailable) => set({ devModeAvailable }),
   chatSearchOpen: false,
   setChatSearchOpen: (chatSearchOpen) =>
     set(

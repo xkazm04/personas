@@ -16,16 +16,20 @@ use crate::AppState;
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompanionBetaFlags {
-    /// True when the wrench-send / self-improve UI should be exposed.
-    /// Tied to `cfg!(debug_assertions)` for now — flipping requires a
-    /// rebuild. Future: backed by a runtime setting.
-    pub self_improve_enabled: bool,
+    /// True when the DEV MODE toggle (the wrench in the companion header)
+    /// should be exposed at all — i.e. this is a debug build running from
+    /// a source checkout. Whether the mode is *on* is the runtime setting
+    /// `companion_dev_mode` (see `chat::dev_mode_enabled`); this flag only
+    /// gates visibility of the affordance. Replaces the old
+    /// `self_improve_enabled` wrench-send gate (superseded by dev mode —
+    /// docs/tests/athena/dev-mode-direction.md).
+    pub dev_mode_available: bool,
 }
 
 #[tauri::command]
 pub fn companion_beta_flags() -> CompanionBetaFlags {
     CompanionBetaFlags {
-        self_improve_enabled: cfg!(debug_assertions),
+        dev_mode_available: cfg!(debug_assertions),
     }
 }
 

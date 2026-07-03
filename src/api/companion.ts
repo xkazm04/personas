@@ -182,6 +182,15 @@ export async function companionSetAutonomousMode(enabled: boolean): Promise<void
 }
 
 /**
+ * Persist the DEV MODE toggle server-side (the wrench in the panel
+ * header). The backend prompt assembler and the `dev_improve` executor
+ * read this row; it is only effective in debug builds.
+ */
+export async function companionSetDevMode(enabled: boolean): Promise<void> {
+  return invoke<void>('companion_set_dev_mode', { enabled });
+}
+
+/**
  * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
  * vault, calls ElevenLabs, and returns the audio bytes as base64 (which
  * crosses the Tauri IPC boundary cleanly). Frontend wraps the bytes in a
@@ -1471,33 +1480,19 @@ export async function companionGetReflection(id: string): Promise<ReflectionDeta
   return invoke<ReflectionDetail>('companion_get_reflection', { id });
 }
 
-// ── Phase 4: self-improve loop ─────────────────────────────────────────
+// ── Dev mode (self-development loop) ───────────────────────────────────
 
 export interface CompanionBetaFlags {
-  /** True when the wrench-send / self-improve UI should be exposed. */
-  selfImproveEnabled: boolean;
-}
-
-export interface ImprovementOutcome {
-  success: boolean;
-  /** Final assistant summary text from the coding CLI. */
-  summary: string;
-  /** Files Claude touched (Edit/Write tool calls), repo-relative. */
-  filesModified: string[];
-  /** Subset of filesModified that match the critical-files allowlist. */
-  criticalFiles: string[];
-  elapsedSeconds: number;
-  error: string | null;
+  /**
+   * True when the dev-mode wrench toggle should be exposed at all —
+   * i.e. this is a debug build running from a source checkout. Whether
+   * the mode is ON is the runtime `companion_dev_mode` setting.
+   */
+  devModeAvailable: boolean;
 }
 
 export async function companionBetaFlags(): Promise<CompanionBetaFlags> {
   return invoke<CompanionBetaFlags>('companion_beta_flags');
-}
-
-export async function companionRequestImprovement(
-  feedback: string,
-): Promise<ImprovementOutcome> {
-  return invoke<ImprovementOutcome>('companion_request_improvement', { feedback });
 }
 
 /** Tauri event channel for streaming Claude CLI lines into the panel. */
