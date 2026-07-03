@@ -167,4 +167,16 @@ empty and has since rendered — is re-assessed.
 
 ## Build log
 
-- **2026-07-03** — analysis + this direction doc. Phase 1 in progress.
+- **2026-07-03** — analysis + this direction doc.
+- **2026-07-03** — **Phase 1 shipped + live-verified.** Removed the blind `fleet_awaiting` peek
+  nudge; added `reassess_stale_awaiting` on the proactive tick (commits `5e25bf530`, `fbc442362`).
+  Live demo drove a session to `AwaitingInput` via an injected `Notification` hook and confirmed:
+  the PUSH path fires and reads the real screen (`fleet_orchestration: waking Athena to assess the
+  fleet`), **no** blind "peek?" card, and the **timer re-assessment re-fires orchestration on the
+  parked session with no new hook** (observed `waking Athena … session_id=ed4a4bd2` at successive
+  ticks after hook injection stopped). The demo also caught a latent bug: `reassess_stale_awaiting`
+  looked up `AppState` where the app manages `Arc<AppState>` — a runtime panic on every tick that
+  the panic-guard swallowed but which aborted the whole autonomous branch (exec-review + triage +
+  reassess). `cargo check` couldn't see it; the live run did. Fixed in `fbc442362`.
+  **Verification lesson:** ship-blocking runtime bugs in Tauri-state / scheduler wiring only surface
+  when the scheduler actually ticks — drive the live scenario, don't trust `cargo check` alone.
