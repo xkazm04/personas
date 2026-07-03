@@ -611,7 +611,9 @@ function Header({
             className={`p-1.5 rounded-interactive transition-colors focus-ring ${
               devMode
                 ? 'bg-amber-500/15 text-amber-400 hover:bg-amber-500/20'
-                : 'text-foreground hover:text-foreground hover:bg-foreground/5'
+                // Amber hover even when OFF — distinguishes the wrench from
+                // the visually identical infinity toggle next to it.
+                : 'text-foreground hover:text-amber-400 hover:bg-amber-500/10'
             }`}
             aria-label={
               devMode
