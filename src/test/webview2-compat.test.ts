@@ -260,6 +260,26 @@ describe("WebView2 transform: real library files", () => {
   });
 });
 
+describe("WebView2 transform: stays away from minified sequence expressions", () => {
+  // The transform is intentionally scoped to well-formatted (non-minified) deps.
+  // Its value-extent parser assumes `;`/function-body termination, so a minified
+  // sequence-expression assignment like `p.constructor=A,p.render=fn` (value ends
+  // at a comma, no `;`) would be mis-parsed into invalid JS and break the dep
+  // optimizer. The space-required needsTransform gate is what keeps it away from
+  // such code. Lock that contract so nobody "fixes" the gate and re-breaks builds.
+  it("does NOT activate on a no-space minified assignment", () => {
+    expect(needsTransform(`function n(e){e.toString=function(){return 1}}`)).toBe(
+      false,
+    );
+  });
+
+  it("leaves a minified sequence-expression assignment untouched", () => {
+    const input = `x(t,C),p.constructor=A,p.render=q$1,x&&x.sub(p);`;
+    // No space before `=`, so the transform must be a no-op (not mangle it).
+    expect(transformForWebView2(input)).toBe(input);
+  });
+});
+
 describe("WebView2 shim: shim file loads without error", () => {
   it("public/webview2-compat.js is valid JavaScript", () => {
     const shimPath = join(process.cwd(), "public/webview2-compat.js");

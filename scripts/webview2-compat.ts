@@ -16,6 +16,18 @@ export const PROTECTED_PROPS = [
   "toLocaleString",
 ];
 
+// The space before `=` is DELIBERATE and load-bearing — do NOT "fix" it to also
+// match minified `.toString=fn`. This transform's value-extent parser assumes an
+// assignment is a STATEMENT terminated by `;` or a function body. Minified bundles
+// contain sequence-expression assignments like `p.constructor=A,p.render=q$1)` (seen
+// in @sentry-internal/feedback's vendored Preact) where the value ends at a comma
+// with no `;`; the parser runs past it, swallows the rest of the expression, and
+// emits invalid JS → the dep optimizer dies with a PARSE_ERROR and the whole app
+// fails to boot. Requiring a space keeps the transform scoped to well-formatted
+// (non-minified) deps like decimal.js-light / d3-color, where it is reliable.
+// Minified deps that genuinely need this (xterm) are patched by the targeted
+// scripts/patches/fix-frozen-intrinsics.mjs postinstall instead, which matches the
+// exact `IDENT.toString=IDENT;` shape and never touches sequence expressions.
 const QUICK_CHECK = PROTECTED_PROPS.map((p) => `.${p} =`);
 
 const BUILTIN_PREFIXES = [
@@ -192,7 +204,12 @@ export function transformForWebView2(code: string): string {
     )
       continue;
 
-    // Skip if line already contains defineProperty
+    // Skip if line already contains defineProperty. The newline bound is also
+    // deliberately load-bearing (see QUICK_CHECK note above): on a single-line
+    // minified module "the line" is the whole bundle, so this skips every match
+    // and keeps the fragile value-extent parser away from minified code, where
+    // sequence-expression assignments break it. Minified deps are handled by the
+    // fix-frozen-intrinsics postinstall, not here.
     const lineStart = code.lastIndexOf("\n", match.index) + 1;
     if (code.slice(lineStart, match.index).includes("defineProperty"))
       continue;
