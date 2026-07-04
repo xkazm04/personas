@@ -20,6 +20,13 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 
 ### Fixed
 - Removed stray merge conflict markers from `.env.example`.
+- **Release pipeline unbricked** — version files re-aligned with the tag history (0.4.0), tag-collision guard fails fast with an actionable message, releases can be dispatched manually, and the updater manifest hard-fails on missing platform bundles/signatures instead of silently stranding a platform's auto-updater.
+- Updater check failures now surface in Settings instead of reading as "up to date".
+- Onboarding tours no longer narrate retired UI: the Lab step walks the versions-table Lab, and the Recipes/Templates steps actually open their sub-tab.
+
+### Security
+- The test-automation bridge (dev harness HTTP server) can no longer be enabled in release builds via an environment variable.
+- WebView `freezePrototype` hardening enabled (desktop + Android).
 
 ---
 
