@@ -440,9 +440,9 @@ Synthesis spawns piper with `--model voice.onnx --config voice.onnx.json --outpu
 
 ### Kokoro (local, higher quality)
 
-Higher-quality local synthesis via the **Kokoro-82M** model run through the **sherpa-onnx** sidecar (`tts/kokoro.rs` + `tts/kokoro_catalog.rs`). Same subprocess-isolation rationale as Piper — the `win-x64-static` sherpa build statically links its own ONNX Runtime, so it can't collide with our pinned `ort 2.0.0-rc.9`, and it bundles espeak-ng phonemization. Kokoro sounds noticeably more natural than Piper (community consensus rates it near ElevenLabs); it currently ships English voices only. Two preconditions, both surfaced by `companion_tts_kokoro_status` and rendered as a two-part setup card:
+Higher-quality local synthesis via the **Kokoro-82M** model run through the **sherpa-onnx** sidecar (`tts/kokoro.rs` + `tts/kokoro_catalog.rs`). Same subprocess-isolation rationale as Piper — the sherpa build ships its own `onnxruntime.dll` next to the exe and loads it in a separate process, so it can't collide with our pinned in-process `ort 2.0.0-rc.9`, and it bundles espeak-ng phonemization. Kokoro sounds noticeably more natural than Piper (community consensus rates it near ElevenLabs); it currently ships English voices only. Two preconditions, both surfaced by `companion_tts_kokoro_status` and rendered as a two-part setup card:
 
-1. **Engine binary** — `sherpa-onnx-offline-tts(.exe)` in the shared `~/.personas/companion-tts/bin/` dir (or `PERSONAS_KOKORO_BIN`, or PATH). The user downloads the sherpa-onnx `win-x64-static` release and drops the exe in.
+1. **Engine binary** — `sherpa-onnx-offline-tts(.exe)` (plus its sibling `onnxruntime*.dll`) in the shared `~/.personas/companion-tts/bin/` dir (or `PERSONAS_KOKORO_BIN`, or PATH). The user downloads the sherpa-onnx `win-x64-shared-MT-Release` release (there is no `static` build) and drops the exe + DLLs in.
 
 2. **Model package** — extracted into `~/.personas/companion-tts/kokoro/`: `model.onnx` (~310MB) + `voices.bin` + `tokens.txt` + `espeak-ng-data/`, from the sherpa-onnx `kokoro-multi-lang-v1_0` release. Unlike Piper (one `.onnx` per voice), Kokoro is one monolithic model; all voices are selected by an integer `--sid`. Install is manual for now (the package ships as `.tar.bz2`, which we don't yet auto-extract) — no per-voice download step.
 

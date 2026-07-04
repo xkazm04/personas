@@ -13313,7 +13313,7 @@
       "voice_kokoro_setup_title": "Kokoro setup",
       "voice_kokoro_setup_desc": "Kokoro synthesizes locally through the sherpa-onnx sidecar. Two one-time installs: the engine binary and the voice model package.",
       "voice_kokoro_engine_label": "Engine binary",
-      "voice_kokoro_engine_hint": "Download the win-x64-static build of sherpa-onnx and unzip sherpa-onnx-offline-tts.exe (with its sibling files) into the folder below.",
+      "voice_kokoro_engine_hint": "Download the win-x64-shared-MT-Release build of sherpa-onnx and unzip sherpa-onnx-offline-tts.exe (with its onnxruntime DLLs) into the folder below.",
       "voice_kokoro_engine_path_label": "Drop the binary here:",
       "voice_kokoro_model_label": "Voice model",
       "voice_kokoro_model_hint": "Download kokoro-multi-lang-v1_0.tar.bz2, extract it, and put model.onnx + voices.bin + tokens.txt + the espeak-ng-data folder into the folder below.",

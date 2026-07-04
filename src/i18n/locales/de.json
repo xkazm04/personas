@@ -13193,7 +13193,6 @@
       "voice_kokoro_copy_url": "Download-Link kopieren",
       "voice_kokoro_download": "Herunterladen",
       "voice_kokoro_enable_blocked": "Installiere zuerst Engine + Modell und wähle eine Stimme aus",
-      "voice_kokoro_engine_hint": "Lade den win-x64-static-Build von sherpa-onnx herunter und entpacke sherpa-onnx-offline-tts.exe (mit den zugehörigen Dateien) in den unten stehenden Ordner.",
       "voice_kokoro_engine_label": "Engine-Binärdatei",
       "voice_kokoro_engine_path_label": "Binärdatei hier ablegen:",
       "voice_kokoro_installed": "Installiert",
@@ -13208,7 +13207,8 @@
       "voice_kokoro_setup_desc": "Kokoro synthetisiert lokal über den sherpa-onnx-Sidecar. Zwei einmalige Installationen: die Engine-Binärdatei und das Sprachmodell-Paket.",
       "voice_kokoro_setup_title": "Kokoro-Einrichtung",
       "voice_kokoro_voices_desc": "Alle Stimmen sind in einem Modell enthalten – wähle eine aus und drücke Vorschau, um sie zu hören. af_heart ist Kokoros warme, ausdrucksstarke Standardstimme.",
-      "voice_kokoro_voices_title": "Stimmen"
+      "voice_kokoro_voices_title": "Stimmen",
+      "voice_kokoro_engine_hint": "Lade den win-x64-shared-MT-Release-Build von sherpa-onnx herunter und entpacke sherpa-onnx-offline-tts.exe (mit den zugehörigen onnxruntime-DLLs) in den unten stehenden Ordner."
     },
     "ocr": {
       "title": "OCR",

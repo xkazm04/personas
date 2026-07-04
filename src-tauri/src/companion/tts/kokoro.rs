@@ -1,10 +1,12 @@
 //! Kokoro local TTS engine — sherpa-onnx sidecar inference.
 //!
 //! Why sherpa-onnx as the sidecar (vs in-process `ort`):
-//! - The prebuilt `sherpa-onnx-offline-tts` (static build) links its own
-//!   ONNX Runtime, so it can't collide with our pinned `ort 2.0.0-rc.9` —
-//!   the same DLL-version hazard `piper.rs` documents, and the reason both
-//!   local engines run out-of-process.
+//! - The prebuilt `sherpa-onnx-offline-tts` ships its own `onnxruntime.dll`
+//!   alongside the exe and loads it in a separate process, so it can't
+//!   collide with our pinned in-process `ort 2.0.0-rc.9` — the same
+//!   DLL-version hazard `piper.rs` documents, and the reason both local
+//!   engines run out-of-process. (Use the `win-x64-shared-MT-Release`
+//!   build; there is no `static` build on the sherpa-onnx releases page.)
 //! - It bundles espeak-ng phonemization, so we don't reimplement Kokoro's
 //!   text frontend in Rust.
 //! - Mirrors the Piper install model: the user drops the engine binary into
@@ -58,7 +60,7 @@ pub const MODEL_DOWNLOAD_URL: &str =
 
 /// Where to get the sidecar engine binary. Points at the releases index
 /// rather than a pinned version so the copy doesn't rot; the UI tells the
-/// user to grab the `win-x64-static` build.
+/// user to grab the `win-x64-shared-MT-Release` build.
 pub const ENGINE_DOWNLOAD_URL: &str = "https://github.com/k2-fsa/sherpa-onnx/releases";
 
 /// Resolve the model package directory: `~/.personas/companion-tts/kokoro/`.
@@ -201,7 +203,7 @@ pub async fn synthesize(
             .unwrap_or_else(|_| "(no home dir)".into());
         AppError::Validation(format!(
             "Kokoro engine binary not found. Install `{}` at: {} (or set PERSONAS_KOKORO_BIN). \
-             Get the win-x64-static build from {}",
+             Get the win-x64-shared-MT-Release build from {}",
             ENGINE_FILENAME, dir, ENGINE_DOWNLOAD_URL
         ))
     })?;

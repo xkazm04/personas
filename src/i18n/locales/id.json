@@ -13193,7 +13193,6 @@
       "voice_kokoro_copy_url": "Salin link unduhan",
       "voice_kokoro_download": "Unduh",
       "voice_kokoro_enable_blocked": "Pasang mesin + model dan pilih suara terlebih dahulu",
-      "voice_kokoro_engine_hint": "Unduh build win-x64-static dari sherpa-onnx dan ekstrak sherpa-onnx-offline-tts.exe (beserta file pendampingnya) ke folder di bawah ini.",
       "voice_kokoro_engine_label": "Biner mesin",
       "voice_kokoro_engine_path_label": "Letakkan biner di sini:",
       "voice_kokoro_installed": "Terpasang",
@@ -13208,7 +13207,8 @@
       "voice_kokoro_setup_desc": "Kokoro melakukan sintesis secara lokal melalui sidecar sherpa-onnx. Dua pemasangan sekali saja: biner mesin dan paket model suara.",
       "voice_kokoro_setup_title": "Pengaturan Kokoro",
       "voice_kokoro_voices_desc": "Semua suara tersedia dalam satu model — pilih salah satu dan tekan Pratinjau untuk mendengarkannya. af_heart adalah suara default Kokoro yang hangat dan ekspresif.",
-      "voice_kokoro_voices_title": "Suara"
+      "voice_kokoro_voices_title": "Suara",
+      "voice_kokoro_engine_hint": "Unduh build win-x64-shared-MT-Release dari sherpa-onnx dan ekstrak sherpa-onnx-offline-tts.exe (beserta DLL onnxruntime-nya) ke folder di bawah ini."
     },
     "ocr": {
       "title": "OCR",

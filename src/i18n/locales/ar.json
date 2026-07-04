@@ -13193,7 +13193,6 @@
       "voice_kokoro_copy_url": "نسخ رابط التنزيل",
       "voice_kokoro_download": "تنزيل",
       "voice_kokoro_enable_blocked": "ثبّت المحرك والنموذج واختر صوتًا أولاً",
-      "voice_kokoro_engine_hint": "نزّل إصدار win-x64-static من sherpa-onnx وفك ضغط sherpa-onnx-offline-tts.exe (مع الملفات المرافقة له) في المجلد أدناه.",
       "voice_kokoro_engine_label": "الملف التنفيذي للمحرك",
       "voice_kokoro_engine_path_label": "ضع الملف التنفيذي هنا:",
       "voice_kokoro_installed": "مثبّت",
@@ -13208,7 +13207,8 @@
       "voice_kokoro_setup_desc": "يقوم Kokoro بالتوليف محليًا عبر sherpa-onnx المرافق. تثبيتان لمرة واحدة: الملف التنفيذي للمحرك وحزمة نموذج الصوت.",
       "voice_kokoro_setup_title": "إعداد Kokoro",
       "voice_kokoro_voices_desc": "تأتي جميع الأصوات ضمن نموذج واحد — اختر صوتًا واضغط معاينة للاستماع إليه. af_heart هو الصوت الافتراضي الدافئ والمعبّر في Kokoro.",
-      "voice_kokoro_voices_title": "الأصوات"
+      "voice_kokoro_voices_title": "الأصوات",
+      "voice_kokoro_engine_hint": "نزّل نسخة win-x64-shared-MT-Release من sherpa-onnx وفكّ ضغط sherpa-onnx-offline-tts.exe (مع ملفات onnxruntime المرفقة) في المجلد أدناه."
     },
     "ocr": {
       "title": "OCR",

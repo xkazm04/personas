@@ -1988,7 +1988,6 @@
     "voice_kokoro_copy_url": "Sao chép liên kết tải xuống",
     "voice_kokoro_download": "Tải xuống",
     "voice_kokoro_enable_blocked": "Cài đặt engine + model và chọn giọng nói trước",
-    "voice_kokoro_engine_hint": "Tải bản build win-x64-static của sherpa-onnx và giải nén sherpa-onnx-offline-tts.exe (cùng các tệp đi kèm) vào thư mục bên dưới.",
     "voice_kokoro_engine_label": "Tệp thực thi engine",
     "voice_kokoro_engine_path_label": "Đặt tệp thực thi vào đây:",
     "voice_kokoro_installed": "Đã cài đặt",
@@ -2003,7 +2002,8 @@
     "voice_kokoro_setup_desc": "Kokoro tổng hợp giọng nói cục bộ thông qua sherpa-onnx sidecar. Cần cài đặt một lần hai thành phần: tệp thực thi engine và gói model giọng nói.",
     "voice_kokoro_setup_title": "Thiết lập Kokoro",
     "voice_kokoro_voices_desc": "Tất cả giọng nói đều nằm trong một model — chọn một giọng và nhấn Nghe thử để nghe. af_heart là giọng mặc định ấm áp, giàu cảm xúc của Kokoro.",
-    "voice_kokoro_voices_title": "Giọng nói"
+    "voice_kokoro_voices_title": "Giọng nói",
+    "voice_kokoro_engine_hint": "Tải bản dựng win-x64-shared-MT-Release của sherpa-onnx và giải nén sherpa-onnx-offline-tts.exe (cùng các DLL onnxruntime của nó) vào thư mục bên dưới."
   },
   "ocr": {
     "title": "OCR",

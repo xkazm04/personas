@@ -1988,7 +1988,6 @@
     "voice_kokoro_copy_url": "ডাউনলোড লিঙ্ক কপি করুন",
     "voice_kokoro_download": "ডাউনলোড",
     "voice_kokoro_enable_blocked": "প্রথমে ইঞ্জিন + মডেল ইনস্টল করুন এবং একটি ভয়েস বেছে নিন",
-    "voice_kokoro_engine_hint": "sherpa-onnx এর win-x64-static বিল্ড ডাউনলোড করুন এবং sherpa-onnx-offline-tts.exe (এর সহযোগী ফাইলসহ) নিচের ফোল্ডারে আনজিপ করুন।",
     "voice_kokoro_engine_label": "ইঞ্জিন বাইনারি",
     "voice_kokoro_engine_path_label": "বাইনারিটি এখানে রাখুন:",
     "voice_kokoro_installed": "ইনস্টল করা হয়েছে",
@@ -2003,7 +2002,8 @@
     "voice_kokoro_setup_desc": "Kokoro sherpa-onnx সাইডকারের মাধ্যমে স্থানীয়ভাবে সিন্থেসাইজ করে। দুটি একবারের ইনস্টল: ইঞ্জিন বাইনারি এবং ভয়েস মডেল প্যাকেজ।",
     "voice_kokoro_setup_title": "Kokoro সেটআপ",
     "voice_kokoro_voices_desc": "সব ভয়েস একটি মডেলেই থাকে — একটি বেছে নিন এবং শুনতে প্রিভিউ চাপুন। af_heart হল Kokoro-এর উষ্ণ, অভিব্যক্তিপূর্ণ ডিফল্ট।",
-    "voice_kokoro_voices_title": "ভয়েস"
+    "voice_kokoro_voices_title": "ভয়েস",
+    "voice_kokoro_engine_hint": "sherpa-onnx-এর win-x64-shared-MT-Release বিল্ড ডাউনলোড করুন এবং sherpa-onnx-offline-tts.exe (এর onnxruntime DLL সহ) নিচের ফোল্ডারে আনজিপ করুন।"
   },
   "ocr": {
     "title": "OCR",

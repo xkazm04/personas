@@ -1988,7 +1988,6 @@
     "voice_kokoro_copy_url": "다운로드 링크 복사",
     "voice_kokoro_download": "다운로드",
     "voice_kokoro_enable_blocked": "먼저 엔진 + 모델을 설치하고 음성을 선택하세요",
-    "voice_kokoro_engine_hint": "sherpa-onnx의 win-x64-static 빌드를 다운로드하고 sherpa-onnx-offline-tts.exe(관련 파일 포함)를 아래 폴더에 압축 해제하세요.",
     "voice_kokoro_engine_label": "엔진 바이너리",
     "voice_kokoro_engine_path_label": "바이너리를 여기에 놓으세요:",
     "voice_kokoro_installed": "설치됨",
@@ -2003,7 +2002,8 @@
     "voice_kokoro_setup_desc": "Kokoro는 sherpa-onnx 사이드카를 통해 로컬에서 음성을 합성합니다. 최초 1회만 설치하면 됩니다: 엔진 바이너리와 음성 모델 패키지.",
     "voice_kokoro_setup_title": "Kokoro 설정",
     "voice_kokoro_voices_desc": "모든 음성은 하나의 모델에 포함되어 있습니다 — 하나를 선택하고 미리 듣기를 눌러 들어보세요. af_heart는 Kokoro의 따뜻하고 표현력 있는 기본 음성입니다.",
-    "voice_kokoro_voices_title": "음성"
+    "voice_kokoro_voices_title": "음성",
+    "voice_kokoro_engine_hint": "win-x64-shared-MT-Release 빌드의 sherpa-onnx를 다운로드한 후, sherpa-onnx-offline-tts.exe(관련 onnxruntime DLL 포함)를 아래 폴더에 압축 해제하세요."
   },
   "ocr": {
     "title": "OCR",

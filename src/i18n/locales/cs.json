@@ -13193,7 +13193,6 @@
       "voice_kokoro_copy_url": "Kopírovat odkaz ke stažení",
       "voice_kokoro_download": "Stáhnout",
       "voice_kokoro_enable_blocked": "Nejprve nainstalujte engine + model a vyberte hlas",
-      "voice_kokoro_engine_hint": "Stáhněte sestavení win-x64-static nástroje sherpa-onnx a rozbalte sherpa-onnx-offline-tts.exe (spolu s přiloženými soubory) do níže uvedené složky.",
       "voice_kokoro_engine_label": "Binární soubor enginu",
       "voice_kokoro_engine_path_label": "Sem přetáhněte binární soubor:",
       "voice_kokoro_installed": "Nainstalováno",
@@ -13208,7 +13207,8 @@
       "voice_kokoro_setup_desc": "Kokoro syntetizuje řeč lokálně prostřednictvím sidecaru sherpa-onnx. Dvě jednorázové instalace: binární soubor enginu a balíček hlasového modelu.",
       "voice_kokoro_setup_title": "Nastavení Kokoro",
       "voice_kokoro_voices_desc": "Všechny hlasy jsou součástí jednoho modelu — vyberte jeden a stiskněte Náhled, abyste jej slyšeli. af_heart je teplý, výrazný výchozí hlas enginu Kokoro.",
-      "voice_kokoro_voices_title": "Hlasy"
+      "voice_kokoro_voices_title": "Hlasy",
+      "voice_kokoro_engine_hint": "Stáhněte sestavení win-x64-shared-MT-Release nástroje sherpa-onnx a rozbalte sherpa-onnx-offline-tts.exe (s jeho DLL knihovnami onnxruntime) do složky níže."
     },
     "ocr": {
       "title": "OCR",

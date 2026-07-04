@@ -1988,7 +1988,6 @@
     "voice_kokoro_copy_url": "复制下载链接",
     "voice_kokoro_download": "下载",
     "voice_kokoro_enable_blocked": "请先安装引擎和模型并选择一个语音",
-    "voice_kokoro_engine_hint": "下载 sherpa-onnx 的 win-x64-static 版本，并将 sherpa-onnx-offline-tts.exe（及其附带文件）解压到下方文件夹中。",
     "voice_kokoro_engine_label": "引擎可执行文件",
     "voice_kokoro_engine_path_label": "将可执行文件放在此处：",
     "voice_kokoro_installed": "已安装",
@@ -2003,7 +2002,8 @@
     "voice_kokoro_setup_desc": "Kokoro 通过 sherpa-onnx 边车程序在本地合成语音。需要一次性安装两项内容：引擎可执行文件和语音模型包。",
     "voice_kokoro_setup_title": "Kokoro 设置",
     "voice_kokoro_voices_desc": "所有语音均包含在一个模型中——选择一个并点击预览即可试听。af_heart 是 Kokoro 温暖、富有表现力的默认语音。",
-    "voice_kokoro_voices_title": "语音"
+    "voice_kokoro_voices_title": "语音",
+    "voice_kokoro_engine_hint": "下载 sherpa-onnx 的 win-x64-shared-MT-Release 版本，解压 sherpa-onnx-offline-tts.exe（及其 onnxruntime DLL）到下方文件夹。"
   },
   "ocr": {
     "title": "OCR",

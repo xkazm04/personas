@@ -1988,7 +1988,6 @@
     "voice_kokoro_copy_url": "डाउनलोड लिंक कॉपी करें",
     "voice_kokoro_download": "डाउनलोड करें",
     "voice_kokoro_enable_blocked": "पहले इंजन + मॉडल इंस्टॉल करें और एक आवाज़ चुनें",
-    "voice_kokoro_engine_hint": "sherpa-onnx का win-x64-static बिल्ड डाउनलोड करें और sherpa-onnx-offline-tts.exe (इसकी साथी फ़ाइलों सहित) को नीचे दिए गए फ़ोल्डर में अनज़िप करें।",
     "voice_kokoro_engine_label": "इंजन बाइनरी",
     "voice_kokoro_engine_path_label": "बाइनरी यहाँ रखें:",
     "voice_kokoro_installed": "इंस्टॉल हो गया",
@@ -2003,7 +2002,8 @@
     "voice_kokoro_setup_desc": "Kokoro, sherpa-onnx साइडकार के ज़रिए स्थानीय रूप से आवाज़ बनाता है। दो एक-बार की इंस्टॉलेशन: इंजन बाइनरी और आवाज़ मॉडल पैकेज।",
     "voice_kokoro_setup_title": "Kokoro सेटअप",
     "voice_kokoro_voices_desc": "सभी आवाज़ें एक ही मॉडल में शामिल हैं — एक चुनें और सुनने के लिए पूर्वावलोकन दबाएँ। af_heart, Kokoro की गर्मजोशी भरी, अभिव्यंजक डिफ़ॉल्ट आवाज़ है।",
-    "voice_kokoro_voices_title": "आवाज़ें"
+    "voice_kokoro_voices_title": "आवाज़ें",
+    "voice_kokoro_engine_hint": "sherpa-onnx का win-x64-shared-MT-Release बिल्ड डाउनलोड करें और sherpa-onnx-offline-tts.exe (उसकी onnxruntime DLLs सहित) को नीचे दिए गए फ़ोल्डर में अनज़िप करें।"
   },
   "ocr": {
     "title": "OCR",
