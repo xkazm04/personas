@@ -186,6 +186,17 @@ export default function App() {
           .catch((err) => {
             appLogger.error("buildSessionBootstrap failed", { error: err instanceof Error ? err.message : String(err) });
           });
+
+        // Seed the template catalog into the DB once per session so the
+        // onboarding template picker and the gallery are populated on a fresh
+        // install WITHOUT first visiting the Templates page. Idempotent
+        // (upsert) and deferred behind idle + fire-and-forget, so it never
+        // gates first paint. The Templates page hook shares the same runner.
+        import("@/lib/personas/templates/seedTemplates")
+          .then(m => m.seedCatalogTemplatesOnce())
+          .catch((err) => {
+            appLogger.error("template catalog seed failed", { error: err instanceof Error ? err.message : String(err) });
+          });
       };
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
       if (typeof ric === "function") {

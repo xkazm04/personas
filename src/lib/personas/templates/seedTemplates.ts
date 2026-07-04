@@ -6,6 +6,7 @@
  */
 import { getTemplateCatalog } from './templateCatalog';
 import type { TemplateCatalogEntry } from '@/lib/types/templateTypes';
+import { batchImportDesignReviews, deleteStaleSeedTemplates } from '@/api/overview/reviews';
 
 const SEED_RUN_ID = 'seed-category-v1';
 
@@ -100,6 +101,61 @@ export async function getSeedReviews(): Promise<SeedReviewInput[]> {
 export async function getActiveSeedIds(): Promise<string[]> {
   const catalog = await getTemplateCatalog();
   return catalog.map((t) => t.id);
+}
+
+// ---------------------------------------------------------------------------
+// Session-scoped seed runner
+// ---------------------------------------------------------------------------
+
+let _seedOncePromise: Promise<void> | null = null;
+let _seedOnceDone = false;
+
+async function runSeed(): Promise<void> {
+  const seeds = await getSeedReviews();
+  // Upsert ALL seeds (not just missing) to backfill new fields like category.
+  // The backend uses ON CONFLICT DO UPDATE so this is idempotent — it preserves
+  // adoption_count and last_adopted_at while updating changed fields.
+  if (seeds.length === 0) return;
+  await batchImportDesignReviews(seeds);
+  // Prune stale seed rows whose IDs are no longer in the catalog (renamed or
+  // deleted template files). Only affects seed rows.
+  const activeIds = await getActiveSeedIds();
+  if (activeIds.length > 0) {
+    await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
+  }
+}
+
+/**
+ * Seed the template catalog into the DB exactly once per app session.
+ *
+ * Safe to call from multiple mount sites — the Templates page hook, the
+ * app-init bootstrap, onboarding — because concurrent callers share one
+ * in-flight promise and the completed flag short-circuits later calls. The
+ * DB layer is idempotent too (upsert via ON CONFLICT DO UPDATE), so a
+ * duplicate call is harmless even if the guard is bypassed.
+ *
+ * This is what makes the onboarding template picker and the gallery non-empty
+ * on a fresh install without first navigating to the Templates page — the
+ * app-init bootstrap calls it behind requestIdleCallback so it never gates
+ * first paint.
+ *
+ * `force` (dev only) bypasses the session guard so edited template JSON
+ * re-seeds after a hot reload.
+ */
+export async function seedCatalogTemplatesOnce(opts?: { force?: boolean }): Promise<void> {
+  if (opts?.force) {
+    _seedOnceDone = false;
+    _seedOncePromise = null;
+  }
+  if (_seedOnceDone) return;
+  if (_seedOncePromise) return _seedOncePromise;
+  _seedOncePromise = runSeed();
+  try {
+    await _seedOncePromise;
+    _seedOnceDone = true;
+  } finally {
+    _seedOncePromise = null;
+  }
 }
 
 export { SEED_RUN_ID };

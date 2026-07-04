@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
-import { batchImportDesignReviews, cancelDesignReviewRun, deleteDesignReview, deleteStaleSeedTemplates, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
+import { cancelDesignReviewRun, deleteDesignReview, listDesignReviews, startDesignReviewRun } from "@/api/overview/reviews";
 
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
-import { getActiveSeedIds, getSeedReviews, SEED_RUN_ID } from '@/lib/personas/templates/seedTemplates';
+import { seedCatalogTemplatesOnce } from '@/lib/personas/templates/seedTemplates';
 import { invalidateTemplateCatalog } from '@/lib/personas/templates/templateCatalog';
 import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { createSWRFetcher, invalidateSWRCache } from '@/lib/utils/staleWhileRevalidate';
@@ -97,22 +97,13 @@ export function useDesignReviews() {
       invalidateTemplateCatalog();
     }
 
-    const seeds = await getSeedReviews();
-
-    // Upsert ALL seeds (not just missing) to backfill new fields like category.
-    // The backend uses ON CONFLICT DO UPDATE so this is safe -- it preserves
-    // adoption_count and last_adopted_at while updating changed fields.
-    if (seeds.length === 0) return;
-
     try {
-      await batchImportDesignReviews(seeds);
-
-      // Prune stale seed templates whose IDs are no longer in the catalog
-      // (e.g. renamed or deleted template files). Only affects seed rows.
-      const activeIds = await getActiveSeedIds();
-      if (activeIds.length > 0) {
-        await deleteStaleSeedTemplates(SEED_RUN_ID, activeIds);
-      }
+      // Shared session-scoped runner: idempotent upsert + stale-seed prune.
+      // May already have run at app-init (App.tsx bootstrap) — the runner's
+      // own guard short-circuits, and we still re-fetch below to surface the
+      // seeded rows into this hook's local state. `force` in dev re-seeds so
+      // hot-reloaded template JSON flows through.
+      await seedCatalogTemplatesOnce({ force: import.meta.env.DEV });
 
       // Invalidate cache and re-fetch to include seeded records (and reflect deletions)
       invalidateSWRCache(SWR_KEY);
