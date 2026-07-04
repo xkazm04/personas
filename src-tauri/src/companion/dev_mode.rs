@@ -234,6 +234,153 @@ pub fn latest_commit_short(workspace: &std::path::Path) -> Option<String> {
     run_git(workspace, &["log", "-1", "--format=%h"]).ok().filter(|s| !s.is_empty())
 }
 
+// ── experiment harness (Phase 5) ────────────────────────────────────────
+//
+// The same `companion_dev_op` table doubles as the experiment ledger: the
+// UI reads recent rows + aggregate metrics, and the user rates each run
+// (`user_verdict` = "up" | "down"). Over days of use this is the signal
+// that tells whether dev mode is actually earning its keep — dispatch→
+// commit rate, rescue rate, and the thumbs ratio.
+
+/// One row for the ledger UI. Superset of [`DevOpMeta`] with the lifecycle
+/// columns the meta struct omits (status, verdict, timestamps).
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevOpLedgerEntry {
+    pub op_id: String,
+    pub request: String,
+    pub backend: bool,
+    pub status: String,
+    pub commit_sha: Option<String>,
+    pub branch: Option<String>,
+    /// `"up"` | `"down"` | `None` (unrated).
+    pub user_verdict: Option<String>,
+    pub created_at: String,
+    pub finished_at: Option<String>,
+}
+
+/// Aggregate counters over the whole ledger — the experiment scoreboard.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevOpMetrics {
+    /// Every dispatch ever logged.
+    pub total: u32,
+    /// Still `dispatched` (a session in flight, or an unswept orphan).
+    pub in_flight: u32,
+    /// Backend runs applied to the live checkout via the merge handshake.
+    pub merged: u32,
+    /// Frontend runs that finished (main-checkout edits, no merge step).
+    pub closed: u32,
+    /// Runs an app restart killed mid-flight (needed rescue).
+    pub interrupted: u32,
+    /// Rows that landed a commit (`commit_sha` present) — dispatch→commit.
+    pub landed_commit: u32,
+    pub thumbs_up: u32,
+    pub thumbs_down: u32,
+}
+
+/// The combined ledger payload the UI fetches in one call.
+#[derive(Debug, Clone, Default, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevOpLedger {
+    pub entries: Vec<DevOpLedgerEntry>,
+    pub metrics: DevOpMetrics,
+}
+
+/// Recent dev ops, newest first, capped at `limit`. Best-effort — an
+/// empty vec on any DB error.
+pub fn list_dev_ops(pool: &crate::db::UserDbPool, limit: u32) -> Vec<DevOpLedgerEntry> {
+    let Ok(conn) = pool.get() else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT op_id, request, backend, status, commit_sha, branch, user_verdict,
+                created_at, finished_at
+         FROM companion_dev_op ORDER BY created_at DESC, rowid DESC LIMIT ?1",
+    ) else {
+        return Vec::new();
+    };
+    stmt.query_map(rusqlite::params![limit], |row| {
+        Ok(DevOpLedgerEntry {
+            op_id: row.get("op_id")?,
+            request: row.get("request")?,
+            backend: row.get::<_, i32>("backend")? != 0,
+            status: row.get("status")?,
+            commit_sha: row.get("commit_sha")?,
+            branch: row.get("branch")?,
+            user_verdict: row.get("user_verdict")?,
+            created_at: row.get("created_at")?,
+            finished_at: row.get("finished_at")?,
+        })
+    })
+    .map(|rows| rows.flatten().collect())
+    .unwrap_or_default()
+}
+
+/// Aggregate scoreboard over the whole table. Best-effort — a zeroed
+/// [`DevOpMetrics`] on any DB error.
+pub fn dev_op_metrics(pool: &crate::db::UserDbPool) -> DevOpMetrics {
+    let Ok(conn) = pool.get() else {
+        return DevOpMetrics::default();
+    };
+    conn.query_row(
+        "SELECT
+            COUNT(*),
+            SUM(status = 'dispatched'),
+            SUM(status = 'merged'),
+            SUM(status = 'closed'),
+            SUM(status = 'interrupted'),
+            SUM(commit_sha IS NOT NULL),
+            SUM(user_verdict = 'up'),
+            SUM(user_verdict = 'down')
+         FROM companion_dev_op",
+        [],
+        |row| {
+            // SUM over an empty set is NULL → default 0.
+            let g = |i: usize| -> u32 { row.get::<_, Option<i64>>(i).ok().flatten().unwrap_or(0).max(0) as u32 };
+            Ok(DevOpMetrics {
+                total: g(0),
+                in_flight: g(1),
+                merged: g(2),
+                closed: g(3),
+                interrupted: g(4),
+                landed_commit: g(5),
+                thumbs_up: g(6),
+                thumbs_down: g(7),
+            })
+        },
+    )
+    .unwrap_or_default()
+}
+
+/// Record (or clear) the user's verdict on a dev op. `verdict` must be
+/// `"up"`, `"down"`, or `None` to clear. Rejects anything else so the UI
+/// can't write a junk token the metrics query then ignores.
+pub fn set_verdict(
+    pool: &crate::db::UserDbPool,
+    op_id: &str,
+    verdict: Option<&str>,
+) -> Result<(), crate::error::AppError> {
+    if let Some(v) = verdict {
+        if v != "up" && v != "down" {
+            return Err(crate::error::AppError::Validation(format!(
+                "dev op verdict must be \"up\", \"down\", or null (got {v:?})"
+            )));
+        }
+    }
+    let conn = pool.get()?;
+    let n = conn.execute(
+        "UPDATE companion_dev_op SET user_verdict = ?2 WHERE op_id = ?1",
+        rusqlite::params![op_id, verdict],
+    )?;
+    if n == 0 {
+        return Err(crate::error::AppError::Validation(format!(
+            "no dev op row matches `{op_id}`"
+        )));
+    }
+    Ok(())
+}
+
 /// Boot recovery (Phase 4): rows still `dispatched` at startup are
 /// orphans — fleet PTY children die with the app process, so their
 /// sessions are gone but the workspace (and a backend run's branch +
@@ -422,42 +569,133 @@ pub fn workspace_evidence(workspace: &std::path::Path) -> String {
     format!("Recent commits:\n{log}\n\nWorking tree: {dirty}")
 }
 
-/// The merge half of the handshake: fast-forward the main checkout onto
-/// the dev branch, then clean up the worktree. `--ff-only` on purpose —
-/// if master moved since the dispatch, we refuse and tell the user to
-/// merge manually rather than auto-resolving into their live checkout.
+/// Node-tooling lockfiles a dispatched session's `npx`/`npm`/`pnpm` can
+/// rewrite as a side effect — noise, not the change under review. The
+/// merge path restores them to HEAD before judging the tree dirty (live
+/// finding 2026-07-04: a run's `npx` drifted the worktree lockfile and
+/// blocked the handshake).
+const LOCKFILE_NOISE: &[&str] = &["pnpm-lock.yaml", "package-lock.json", "yarn.lock"];
+
+/// Restore any drifted lockfile-noise paths in `workspace` to their
+/// committed HEAD state (index + working tree). Best-effort and idempotent:
+/// `git checkout HEAD -- <f>` is a no-op when the file is unchanged and
+/// errors (ignored) when it doesn't exist. Committed lockfile changes are
+/// untouched — this only discards *uncommitted* drift.
+fn restore_lockfile_noise(workspace: &std::path::Path) {
+    for f in LOCKFILE_NOISE {
+        let _ = run_git(workspace, &["checkout", "HEAD", "--", f]);
+    }
+}
+
+/// How many commits `tip` is ahead of `base` (`git rev-list --count
+/// base..tip`). `None` on any git failure — callers treat that as "don't
+/// know, don't auto-apply".
+fn commits_ahead(cwd: &std::path::Path, base: &str, tip: &str) -> Option<usize> {
+    run_git(cwd, &["rev-list", "--count", &format!("{base}..{tip}")])
+        .ok()
+        .and_then(|s| s.trim().parse().ok())
+}
+
+/// The merge half of the handshake: apply the dev branch to the main
+/// checkout, then clean up the worktree. Thin wrapper over
+/// [`apply_dev_branch`] with the real repo root; kept separate so the
+/// apply logic is testable against a throwaway repo.
 pub fn merge_dev_branch(meta: &DevOpMeta) -> Result<String, String> {
-    let root = repo_root();
     let Some(branch) = meta.branch.as_deref() else {
         return Err("this dev op has no worktree branch (frontend run — nothing to merge)".into());
     };
-    // Refuse while the session left uncommitted work behind.
-    let dirty = run_git(&meta.workspace, &["status", "--porcelain"]).unwrap_or_default();
+    apply_dev_branch(&repo_root(), &meta.workspace, branch)
+}
+
+/// Apply `branch` (checked out in `workspace`, a worktree under `root`)
+/// onto `root`'s live HEAD, then remove the worktree + branch.
+///
+/// Strategy: fast-forward when master hasn't moved since the dispatch
+/// (the clean case). When master has diverged — the COMMON case in this
+/// repo, where parallel sessions move master constantly — fall back to a
+/// **cherry-pick** IFF the branch is exactly one commit ahead of the live
+/// checkout (a focused dev run). Anything larger stays a manual merge so
+/// we never auto-resolve a nontrivial history into the user's tree. A
+/// cherry-pick conflict aborts cleanly and refuses with guidance.
+///
+/// Lockfile-noise drift in the worktree is restored to HEAD first, so a
+/// session's `npx` side effects don't masquerade as uncommitted work.
+pub fn apply_dev_branch(
+    root: &std::path::Path,
+    workspace: &std::path::Path,
+    branch: &str,
+) -> Result<String, String> {
+    // Tolerate node-tooling lockfile drift before judging the tree dirty.
+    restore_lockfile_noise(workspace);
+
+    // Refuse while the session left REAL uncommitted work behind.
+    let dirty = run_git(workspace, &["status", "--porcelain"]).unwrap_or_default();
     if !dirty.trim().is_empty() {
         return Err(format!(
-            "worktree has uncommitted changes ({} path(s)) — resolve or commit them first",
-            dirty.lines().filter(|l| !l.trim().is_empty()).count()
+            "worktree has uncommitted changes ({} path(s)) — resolve or commit them first:\n{}",
+            dirty.lines().filter(|l| !l.trim().is_empty()).count(),
+            dirty.trim(),
         ));
     }
-    run_git(&root, &["merge", "--ff-only", branch]).map_err(|e| {
-        format!(
-            "fast-forward merge of `{branch}` failed ({e}). The main checkout has probably \
-             moved since the dispatch — merge manually (`git merge {branch}`), then remove \
-             the worktree."
-        )
-    })?;
-    let sha = run_git(&root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
+
+    // Fast-forward is the clean case (master unmoved since dispatch).
+    let strategy = match run_git(root, &["merge", "--ff-only", branch]) {
+        Ok(_) => "fast-forward",
+        Err(ff_err) => match commits_ahead(root, "HEAD", branch) {
+            // Focused single-commit run → cherry-pick onto the moved master.
+            Some(1) => {
+                apply_single_commit(root, branch).map_err(|e| {
+                    format!(
+                        "fast-forward failed ({ff_err}) and the cherry-pick fallback also \
+                         failed ({e}). Merge manually at the repo root (`git merge {branch}`, \
+                         or `git cherry-pick <sha>`), then remove the worktree."
+                    )
+                })?;
+                "cherry-pick"
+            }
+            // Zero commits (nothing to apply) or many (too much to auto-apply).
+            other => {
+                let n = other.map(|n| n.to_string()).unwrap_or_else(|| "?".into());
+                return Err(format!(
+                    "fast-forward merge of `{branch}` failed ({ff_err}) and the branch is {n} \
+                     commit(s) ahead of the live checkout — {}. The main checkout moved since \
+                     the dispatch; merge manually (`git merge {branch}`), then remove the \
+                     worktree.",
+                    if other == Some(0) {
+                        "nothing to apply"
+                    } else {
+                        "too much to auto-apply safely"
+                    }
+                ));
+            }
+        },
+    };
+
+    let sha = run_git(root, &["rev-parse", "--short", "HEAD"]).unwrap_or_default();
     // Cleanup is best-effort — a failure leaves a stale worktree, not a
-    // broken merge. Plain remove (no --force): a dirty tree was already
-    // refused above.
+    // broken merge. A cherry-pick leaves the branch un-merged from git's
+    // view (new commit ≠ branch tip), so force-delete in that case only.
     let mut notes = String::new();
-    if let Err(e) = run_git(&root, &["worktree", "remove", &meta.workspace.to_string_lossy()]) {
+    if let Err(e) = run_git(root, &["worktree", "remove", &workspace.to_string_lossy()]) {
         notes.push_str(&format!("\n⚠ worktree remove failed: {e}"));
     }
-    if let Err(e) = run_git(&root, &["branch", "-d", branch]) {
+    let del_flag = if strategy == "cherry-pick" { "-D" } else { "-d" };
+    if let Err(e) = run_git(root, &["branch", del_flag, branch]) {
         notes.push_str(&format!("\n⚠ branch delete failed: {e}"));
     }
-    Ok(format!("merged `{branch}` → `{sha}`{notes}"))
+    Ok(format!("applied `{branch}` → `{sha}` ({strategy}){notes}"))
+}
+
+/// Cherry-pick `branch`'s tip commit onto the live HEAD. On conflict,
+/// abort so the working tree is left clean (no half-applied pick).
+fn apply_single_commit(root: &std::path::Path, branch: &str) -> Result<(), String> {
+    match run_git(root, &["cherry-pick", branch]) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            let _ = run_git(root, &["cherry-pick", "--abort"]);
+            Err(e)
+        }
+    }
 }
 
 /// Task prompt for the dispatched coding session. Assembled Rust-side so
@@ -652,6 +890,214 @@ mod tests {
             .unwrap();
         assert_eq!(status, "merged");
         assert_eq!(sha.as_deref(), Some("abc1234"));
+    }
+
+    #[test]
+    fn ledger_metrics_verdict_and_ordering() {
+        let pool = test_pool();
+        let meta = |backend: bool| DevOpMeta {
+            request: "r".into(),
+            backend,
+            workspace: PathBuf::from("."),
+            branch: backend.then(|| "athena-dev-x".into()),
+            fleet_session_id: "s".into(),
+        };
+        // a: backend, merged w/ commit · b: frontend, closed w/ commit ·
+        // c: backend, still dispatched (in flight, no commit).
+        register_dev_op(&pool, "a", &meta(true)).unwrap();
+        mark_dev_op(&pool, "a", "merged", Some("aaa1111"));
+        register_dev_op(&pool, "b", &meta(false)).unwrap();
+        mark_dev_op(&pool, "b", "closed", Some("bbb2222"));
+        register_dev_op(&pool, "c", &meta(true)).unwrap();
+
+        let m = dev_op_metrics(&pool);
+        assert_eq!(m.total, 3);
+        assert_eq!(m.merged, 1);
+        assert_eq!(m.closed, 1);
+        assert_eq!(m.in_flight, 1);
+        assert_eq!(m.interrupted, 0);
+        assert_eq!(m.landed_commit, 2);
+
+        set_verdict(&pool, "a", Some("up")).unwrap();
+        set_verdict(&pool, "b", Some("down")).unwrap();
+        assert!(set_verdict(&pool, "a", Some("meh")).is_err(), "junk token rejected");
+        assert!(set_verdict(&pool, "ghost", Some("up")).is_err(), "no-row rejected");
+        // Clearing back to null is allowed.
+        set_verdict(&pool, "b", None).unwrap();
+
+        let m = dev_op_metrics(&pool);
+        assert_eq!(m.thumbs_up, 1);
+        assert_eq!(m.thumbs_down, 0);
+
+        // Newest-first, capped; ties broken by insert order (rowid).
+        let list = list_dev_ops(&pool, 2);
+        assert_eq!(list.len(), 2);
+        assert_eq!(list[0].op_id, "c", "most-recent insert leads");
+        let a = list_dev_ops(&pool, 10)
+            .into_iter()
+            .find(|e| e.op_id == "a")
+            .unwrap();
+        assert_eq!(a.user_verdict.as_deref(), Some("up"));
+        assert_eq!(a.status, "merged");
+        assert_eq!(a.commit_sha.as_deref(), Some("aaa1111"));
+        assert!(a.backend);
+    }
+
+    // ── git-backed merge-strategy tests (temp throwaway repos) ──────────
+
+    static SCRATCH_N: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+
+    fn git_available() -> bool {
+        std::process::Command::new("git")
+            .arg("--version")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+    }
+
+    fn t_commit(cwd: &std::path::Path, msg: &str) {
+        run_git(
+            cwd,
+            &[
+                "-c",
+                "user.email=dev@test",
+                "-c",
+                "user.name=dev",
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-m",
+                msg,
+            ],
+        )
+        .expect("commit");
+    }
+
+    /// Fresh repo with an `a.txt` base commit + local identity config.
+    fn t_fresh_repo() -> PathBuf {
+        let n = SCRATCH_N.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!("personas-devmerge-{}-{n}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        std::fs::create_dir_all(&root).unwrap();
+        run_git(&root, &["init"]).unwrap();
+        run_git(&root, &["config", "user.email", "dev@test"]).unwrap();
+        run_git(&root, &["config", "user.name", "dev"]).unwrap();
+        std::fs::write(root.join("a.txt"), "base\n").unwrap();
+        run_git(&root, &["add", "a.txt"]).unwrap();
+        t_commit(&root, "base");
+        root
+    }
+
+    /// Add an `athena-dev-t` worktree + one committed dev change to `a.txt`.
+    fn t_worktree(root: &std::path::Path) -> (PathBuf, String) {
+        let branch = "athena-dev-t".to_string();
+        let wt = root.join(".claude/worktrees/athena-dev-t");
+        run_git(root, &["worktree", "add", &wt.to_string_lossy(), "-b", &branch]).unwrap();
+        std::fs::write(wt.join("a.txt"), "base\ndev-change\n").unwrap();
+        run_git(&wt, &["add", "a.txt"]).unwrap();
+        t_commit(&wt, "dev change");
+        (wt, branch)
+    }
+
+    #[test]
+    fn apply_dev_branch_fast_forwards_when_master_unmoved() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        let out = apply_dev_branch(&root, &wt, &branch).expect("ff applies");
+        assert!(out.contains("fast-forward"), "got: {out}");
+        // `.contains` (not byte-equality) — Windows autocrlf may rewrite \n→\r\n.
+        assert!(
+            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("dev-change"),
+            "dev change landed on master"
+        );
+        assert!(!wt.exists(), "worktree removed");
+        assert!(
+            run_git(&root, &["rev-parse", "--verify", &branch]).is_err(),
+            "branch deleted"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_cherry_picks_when_master_diverged() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        // Diverge master with an independent commit.
+        std::fs::write(root.join("b.txt"), "on-master\n").unwrap();
+        run_git(&root, &["add", "b.txt"]).unwrap();
+        t_commit(&root, "master moves");
+
+        let out = apply_dev_branch(&root, &wt, &branch).expect("cherry-pick applies");
+        assert!(out.contains("cherry-pick"), "got: {out}");
+        // Both the dev change and the divergent master commit are present.
+        assert!(
+            std::fs::read_to_string(root.join("a.txt")).unwrap().contains("dev-change"),
+            "dev change cherry-picked onto master"
+        );
+        assert!(root.join("b.txt").exists());
+        assert!(!wt.exists(), "worktree removed");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_refuses_multi_commit_divergence() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        // Second dev commit → branch is 2 ahead → not auto-applicable.
+        std::fs::write(wt.join("a.txt"), "base\ndev-change\nmore\n").unwrap();
+        run_git(&wt, &["add", "a.txt"]).unwrap();
+        t_commit(&wt, "second dev change");
+        // Diverge master so ff can't apply.
+        std::fs::write(root.join("b.txt"), "on-master\n").unwrap();
+        run_git(&root, &["add", "b.txt"]).unwrap();
+        t_commit(&root, "master moves");
+
+        let err = apply_dev_branch(&root, &wt, &branch).unwrap_err();
+        assert!(err.contains("2 commit"), "got: {err}");
+        assert!(wt.exists(), "worktree preserved for manual merge");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_refuses_real_uncommitted_work() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        let (wt, branch) = t_worktree(&root);
+        std::fs::write(wt.join("a.txt"), "base\ndev-change\nuncommitted\n").unwrap();
+        let err = apply_dev_branch(&root, &wt, &branch).unwrap_err();
+        assert!(err.contains("uncommitted"), "got: {err}");
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn apply_dev_branch_tolerates_lockfile_drift() {
+        if !git_available() {
+            return;
+        }
+        let root = t_fresh_repo();
+        // Track a lockfile at base so it's inherited by the worktree.
+        std::fs::write(root.join("pnpm-lock.yaml"), "v1\n").unwrap();
+        run_git(&root, &["add", "pnpm-lock.yaml"]).unwrap();
+        t_commit(&root, "add lockfile");
+        let (wt, branch) = t_worktree(&root);
+        // A dispatched session's node tooling drifts the lockfile (uncommitted).
+        std::fs::write(wt.join("pnpm-lock.yaml"), "v2-drifted-by-npx\n").unwrap();
+
+        // Drift alone must NOT block the merge — it's restored to HEAD first.
+        let out = apply_dev_branch(&root, &wt, &branch).expect("lockfile drift tolerated");
+        assert!(out.contains("fast-forward"), "got: {out}");
+        let _ = std::fs::remove_dir_all(&root);
     }
 }
 

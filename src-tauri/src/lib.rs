@@ -2586,6 +2586,8 @@ pub fn run() {
             commands::companion::chat::companion_cancel_autonomy,
             commands::companion::chat::companion_set_autonomous_mode,
             commands::companion::chat::companion_set_dev_mode,
+            commands::companion::chat::companion_dev_op_ledger,
+            commands::companion::chat::companion_dev_op_set_verdict,
             commands::companion::chat::companion_set_fleet_boldness,
             commands::companion::chat::companion_get_fleet_boldness,
             commands::companion::chat::companion_wake_stats,

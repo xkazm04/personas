@@ -256,6 +256,37 @@ pub fn dev_mode_enabled(db: &crate::db::DbPool) -> bool {
         )
 }
 
+/// DEV MODE experiment ledger (Phase 5): recent `dev_improve` runs + the
+/// aggregate scoreboard the panel's dev-op strip renders. Returns an empty
+/// ledger when dev mode is off (the strip only shows in dev mode anyway) so
+/// a stray call in a release build can never leak the workspace history.
+#[tauri::command]
+pub fn companion_dev_op_ledger(
+    state: State<'_, Arc<AppState>>,
+) -> Result<crate::companion::dev_mode::DevOpLedger, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    if !dev_mode_enabled(&state.db) {
+        return Ok(crate::companion::dev_mode::DevOpLedger::default());
+    }
+    Ok(crate::companion::dev_mode::DevOpLedger {
+        entries: crate::companion::dev_mode::list_dev_ops(&state.user_db, 20),
+        metrics: crate::companion::dev_mode::dev_op_metrics(&state.user_db),
+    })
+}
+
+/// Record (or clear) the user's 👍/👎 verdict on a dev op — the experiment
+/// signal Phase 5 accumulates. `verdict` is `"up"`, `"down"`, or `None` to
+/// clear; anything else is rejected by [`dev_mode::set_verdict`].
+#[tauri::command]
+pub fn companion_dev_op_set_verdict(
+    state: State<'_, Arc<AppState>>,
+    op_id: String,
+    verdict: Option<String>,
+) -> Result<(), AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::companion::dev_mode::set_verdict(&state.user_db, &op_id, verdict.as_deref())
+}
+
 /// Run the execution-review pass on demand, bypassing the 5-min scheduler
 /// cadence. Runs the batched headless triage over qualifying recent
 /// executions (digest card + at most one deep-dive `TurnOrigin::Proactive`
