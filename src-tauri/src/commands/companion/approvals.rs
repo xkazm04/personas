@@ -412,6 +412,28 @@ pub async fn auto_resolve_if_allowed(
             );
             return Ok(false);
         }
+        // Phase 2.4 execution-time re-check: `confidence` is uncalibrated and a
+        // live CLI screen can move between reasoning and firing. If the session's
+        // screen changed since Athena reasoned on it, defer rather than type into
+        // a now-different prompt. Runs BEFORE the pending→running transition below,
+        // so a deferred row stays a pending consult on the orb.
+        if let Some(sid) = serde_json::from_str::<serde_json::Value>(&approval.params_json)
+            .ok()
+            .as_ref()
+            .and_then(|v| v.get("session_id"))
+            .and_then(|v| v.as_str())
+        {
+            if crate::commands::companion::fleet_bridge::screen_matches_last_decision(sid)
+                == Some(false)
+            {
+                tracing::info!(
+                    approval_id = %approval.id,
+                    session_id = %sid,
+                    "autonomous autoapprove deferred: session screen changed since Athena reasoned — left pending as an orb consult"
+                );
+                return Ok(false);
+            }
+        }
     }
     // Same atomic pending→running transition the manual path uses.
     let (action, params) = load_pending(&state, &approval.id)?;

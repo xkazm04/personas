@@ -309,6 +309,33 @@ pub fn orchestrate_on_awaiting(
     );
 }
 
+/// Phase 2.4 execution-time re-check. `confidence` is uncalibrated self-report
+/// and a live CLI screen can move between the moment Athena reasoned on it and
+/// the moment her auto-fired `fleet_send_input` actually types — so before
+/// applying one, confirm the screen still matches what she decided on. Re-renders
+/// the current screen and compares its hash to the one recorded in
+/// `decision_signatures` when she was last woken for this session. Returns:
+///   `Some(true)`  — screen unchanged since she reasoned (safe to auto-fire),
+///   `Some(false)` — screen changed (defer — the decision may target a stale prompt),
+///   `None`        — no recorded decision hash to compare against (can't verify).
+pub fn screen_matches_last_decision(session_id: &str) -> Option<bool> {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+    let recorded = {
+        let sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+        *sigs.get(session_id)?
+    };
+    // Re-render the same way orchestrate_on_awaiting captured it, so the hashes
+    // are directly comparable (cooked tail strips ANSI/cursor → stable hash).
+    let screen_text = crate::commands::fleet::registry::registry()
+        .render_screen_for(session_id)
+        .map(|(_, lines)| lines.join("\n"))
+        .unwrap_or_default();
+    let mut h = DefaultHasher::new();
+    screen_text.hash(&mut h);
+    Some(h.finish() == recorded)
+}
+
 /// How long a session must sit in `AwaitingInput` before the proactive tick
 /// re-assesses it. Below this, the hook-driven `orchestrate_on_awaiting` (fired
 /// on the AwaitingInput transition) is the authoritative handler; this timer
