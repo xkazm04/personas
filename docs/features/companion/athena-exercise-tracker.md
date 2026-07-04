@@ -31,7 +31,7 @@ date, what we observed, and any change made.
 - [x] Slash-command palette (`/`)
 - [x] Mid-stream Stop (interrupt) + failed-turn retry
 - [x] Autonomous mode toggle + `continue_autonomously` chaining
-- [ ] Reset conversation (transcript vs disk episodes)
+- [x] Reset conversation (transcript vs disk episodes)
 - [ ] Chat polish: search, copy-conversation, day separators, narration trail
 
 ## Phase 1 — Memory & identity (the foundation everything cites)
@@ -213,6 +213,9 @@ date, what we observed, and any change made.
   ~15s reschedule, 20-turn cap, "── continuation #N ──" divider, type-anything-to-cancel) is
   fine for now; its real stress-test is **Phase 9 (Fleet & team orchestration)**, which already
   has test cases — so we defer the deep autonomous exercise there instead of duplicating it now. ✅
+- **0.9 Reset conversation** — CONFIRMED by Michal (ran it successfully before this session: chat
+  cleared, memory preserved). Non-destructive to disk episodes / facts / goals / identity by design;
+  `reset(true)` also wipes the SQL transcript but disk episodes survive (index re-ingests). No fix. ✅
 
 ### Worktree batch (unmerged) as of 0.7
 Branch `worktree-athena-exercise`, stacked on `ebce8a545`:
