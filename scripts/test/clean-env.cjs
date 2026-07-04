@@ -1,6 +1,6 @@
 // scripts/test/clean-env.cjs — reset the local env between autonomy soak runs.
 //
-// Pauses the 4 autonomous_* settings, backs up personas.db (VACUUM INTO, GATED —
+// Pauses the autonomy settings, backs up personas.db (VACUUM INTO, GATED —
 // aborts the clear if the backup fails), clears the operational tables from the
 // last run, and PRESERVES everything structural: teams, members, connections,
 // event subscriptions (the handoff wiring), personas, connectors, credentials,
@@ -9,7 +9,7 @@
 //
 // Aborts if any execution is running/queued. Run with the app idle.
 // Usage:  node scripts/test/clean-env.cjs
-// After:  re-enable the 4 autonomous_* settings (or via the bridge) to start the next run.
+// After:  re-enable the autonomy settings (or via the bridge) to start the next run.
 const D = require('better-sqlite3');
 const { homedir } = require('os');
 const { join } = require('path');
@@ -28,7 +28,10 @@ const running = db.prepare("SELECT COUNT(*) c FROM persona_executions WHERE stat
 if (running > 0) { console.log('ABORT: ' + running + ' executions running/queued — not idle.'); db.close(); process.exit(1); }
 
 // 1. Pause autonomy (settings have no cache — read directly each tick).
-const PAUSE = ['autonomous_goal_advancement', 'autonomous_assignment_retry', 'autonomous_review_triage', 'autonomous_review_triage_high'];
+// companion_autonomous_mode is the master toggle: review + message triage are
+// implied by it now (the legacy autonomous_*_triage keys are no longer read,
+// but stay in the list so old rows land on 'false' too).
+const PAUSE = ['companion_autonomous_mode', 'autonomous_goal_advancement', 'autonomous_assignment_retry', 'autonomous_review_triage', 'autonomous_review_triage_high'];
 const upd = db.prepare("UPDATE app_settings SET value='false', updated_at=? WHERE key=?");
 for (const k of PAUSE) upd.run(new Date().toISOString(), k);
 console.log('paused autonomy: ' + PAUSE.join(', '));
@@ -70,4 +73,4 @@ for (const t of ['persona_teams', 'persona_team_members', 'persona_team_connecti
 console.log('=== autonomy settings (paused = false) ===');
 for (const k of PAUSE) { const r = db.prepare('SELECT value FROM app_settings WHERE key=?').get(k); console.log('  ' + k + ': ' + (r ? r.value : '?')); }
 db.close();
-console.log('CLEAN DONE — backup at ' + bak + '. Re-enable the 4 autonomous_* settings to start the next run.');
+console.log('CLEAN DONE — backup at ' + bak + '. Re-enable the autonomy settings to start the next run.');

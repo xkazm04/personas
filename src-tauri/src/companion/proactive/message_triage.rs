@@ -3,8 +3,10 @@
 //!
 //! Personas write `persona_messages` rows at the user constantly; at
 //! fleet scale most of them are operational confirmations nobody needs
-//! to read. With `autonomous_message_triage` on (a distinct opt-in on
-//! top of autonomous mode), each proactive tick batches the unread
+//! to read. With autonomous mode on (`companion_autonomous_mode` — the
+//! master toggle implies message triage; the legacy
+//! `autonomous_message_triage` key is kept but no longer read), each
+//! proactive tick batches the unread
 //! inbox through ONE headless Athena decision (the same `cli_text`
 //! pattern as channel reactions / review resolution — zero chat
 //! episodes) that classifies every message:
@@ -34,7 +36,7 @@
 use std::sync::LazyLock;
 
 use crate::db::repos::communication::messages as msg_repo;
-use crate::db::settings_keys::{AUTONOMOUS_MESSAGE_TRIAGE, COMPANION_MSG_TRIAGE_CURSOR};
+use crate::db::settings_keys::{COMPANION_AUTONOMOUS_MODE, COMPANION_MSG_TRIAGE_CURSOR};
 use crate::db::DbPool;
 use crate::engine::inflight_guard::InflightGuard;
 use crate::error::AppError;
@@ -60,9 +62,12 @@ const CONTENT_EXCERPT_CHARS: usize = 400;
 /// Most attention/digest lines rendered onto one card.
 const MAX_CARD_LINES: usize = 8;
 
+/// Message triage is implied by the master autonomous toggle — no separate
+/// opt-in. The legacy `autonomous_message_triage` key is retained in
+/// `settings_keys` (harmless, writable) but is no longer consulted.
 fn triage_enabled(sys_db: &DbPool) -> bool {
     matches!(
-        crate::db::repos::core::settings::get(sys_db, AUTONOMOUS_MESSAGE_TRIAGE),
+        crate::db::repos::core::settings::get(sys_db, COMPANION_AUTONOMOUS_MODE),
         Ok(Some(v)) if v == "true"
     )
 }
@@ -230,7 +235,8 @@ fn compose_card(
 
 /// Entry point called from the proactive tick (after the exec-review
 /// leg). The caller has already confirmed autonomous mode is on; this
-/// additionally gates on the `autonomous_message_triage` opt-in. Returns
+/// re-checks the same master toggle as defense-in-depth (message triage
+/// is implied by autonomous mode — there is no separate opt-in). Returns
 /// the number of messages triaged (for telemetry).
 pub async fn triage_unread_messages(
     user_db: &crate::db::UserDbPool,

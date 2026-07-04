@@ -491,8 +491,9 @@ pub fn start_loops(
             app: app.clone(),
             engine: engine.clone(),
         }),
-        // Autonomous manual-review triage — default-OFF; gated on the
-        // AUTONOMOUS_REVIEW_TRIAGE setting inside its tick. Auto-approves routine
+        // Autonomous manual-review triage — implied by the master autonomous
+        // toggle (COMPANION_AUTONOMOUS_MODE, checked inside its tick; the legacy
+        // AUTONOMOUS_REVIEW_TRIAGE key is no longer read). Auto-approves routine
         // (low/medium) pending reviews past a grace window so the accept→memory
         // learning loop keeps turning unattended; high severity stays for a human.
         Box::new(subscription::ManualReviewAutoTriageSubscription {

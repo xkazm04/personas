@@ -251,18 +251,17 @@ pub const COMPANION_FLEET_BOLDNESS: &str = "companion_fleet_boldness";
 /// Default level for [`COMPANION_FLEET_BOLDNESS`] when the row is unset.
 pub const COMPANION_FLEET_BOLDNESS_DEFAULT: &str = "bold";
 
-/// Whether the autonomous MESSAGE triage leg of the proactive tick may,
-/// unattended, read the Overview → Messages inbox the way Athena resolves
-/// human reviews: a batched headless decision classifies each unread
-/// persona message as `done` (routine — marked read with an audit
-/// annotation), `digest` (business value — folded into one aggregated
-/// proactive card, then marked read) or `attention` (stays UNREAD for the
-/// user to read personally + desktop notification). High/urgent-priority
-/// messages can never be auto-`done` (code-level guard). Requires
-/// [`COMPANION_AUTONOMOUS_MODE`] to also be on. Default OFF — opt-in.
-/// Read by `companion::proactive::message_triage`. Stored `"true"`/`"false"`.
+/// LEGACY (no longer read): message triage stopped being an independent
+/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// autonomous toggle is ON, the proactive tick's message-triage leg runs
+/// (batched headless decision classifying each unread persona message as
+/// `done` / `digest` / `attention`; high/urgent priority can never be
+/// auto-`done` — code-level guard). The key stays registered so existing
+/// rows and external writers remain harmless, but
+/// `companion::proactive::message_triage` derives its gate from the
+/// master toggle instead. Stored `"true"`/`"false"`.
 pub const AUTONOMOUS_MESSAGE_TRIAGE: &str = "autonomous_message_triage";
-/// Default for [`AUTONOMOUS_MESSAGE_TRIAGE`] — off (opt-in autonomy).
+/// Default for [`AUTONOMOUS_MESSAGE_TRIAGE`] — off (legacy; inert either way).
 pub const AUTONOMOUS_MESSAGE_TRIAGE_DEFAULT: bool = false;
 
 /// Cursor for the autonomous message-triage leg: the ISO8601 `created_at`
@@ -359,15 +358,18 @@ pub const AUTONOMOUS_ASSIGNMENT_RETRY: &str = "autonomous_assignment_retry";
 /// Default for [`AUTONOMOUS_ASSIGNMENT_RETRY`] — off (opt-in autonomy).
 pub const AUTONOMOUS_ASSIGNMENT_RETRY_DEFAULT: bool = false;
 
-/// Whether the autonomous review-triage tick may, unattended, resolve
-/// `persona_manual_reviews` pending past a grace window — so the accept/reject
-/// learning loop (which writes team/persona memory) keeps turning without a
-/// human in the seat. Conservative policy (auto-approves only below a severity
-/// threshold; leaves critical findings for a human). Default OFF — opt-in. Read
-/// by `engine::subscription::ManualReviewAutoTriageSubscription`. Stored
+/// LEGACY (no longer read): review triage stopped being an independent
+/// knob — it is implied by [`COMPANION_AUTONOMOUS_MODE`]. When the master
+/// autonomous toggle is ON, `ManualReviewAutoTriageSubscription` resolves
+/// `persona_manual_reviews` pending past a grace window unattended
+/// (conservative policy: auto-approves only low/medium severity; leaves
+/// high/critical findings for a human unless
+/// [`AUTONOMOUS_REVIEW_TRIAGE_HIGH`] is also on). The key stays registered
+/// so existing rows and external writers remain harmless, but the
+/// subscription derives its gate from the master toggle instead. Stored
 /// `"true"` / `"false"`.
 pub const AUTONOMOUS_REVIEW_TRIAGE: &str = "autonomous_review_triage";
-/// Default for [`AUTONOMOUS_REVIEW_TRIAGE`] — off (opt-in autonomy).
+/// Default for [`AUTONOMOUS_REVIEW_TRIAGE`] — off (legacy; inert either way).
 pub const AUTONOMOUS_REVIEW_TRIAGE_DEFAULT: bool = false;
 
 /// Whether the autonomous review triager may ALSO auto-approve HIGH/critical
@@ -377,7 +379,8 @@ pub const AUTONOMOUS_REVIEW_TRIAGE_DEFAULT: bool = false;
 /// production, pricing, irreversible/destructive, secrets). Genuine
 /// business/policy decisions are NEVER auto-approved; any unrecognised
 /// high-severity item stays pending for a human. Requires
-/// [`AUTONOMOUS_REVIEW_TRIAGE`] to also be on — a distinct, riskier opt-in beyond
+/// [`COMPANION_AUTONOMOUS_MODE`] to be on (base review triage is implied by the
+/// master autonomous toggle) — a distinct, riskier opt-in beyond
 /// low/medium triage. Read by `ManualReviewAutoTriageSubscription`. Default OFF.
 /// Stored `"true"` / `"false"`.
 pub const AUTONOMOUS_REVIEW_TRIAGE_HIGH: &str = "autonomous_review_triage_high";

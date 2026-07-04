@@ -1755,8 +1755,10 @@ const REVIEW_TRIAGE_MAX_PER_TICK: usize = 10;
 /// grace window, so the accept/reject → memory learning loop keeps turning
 /// unattended. Conservative policy: APPROVES only low/medium severity (which
 /// `manual_reviews::update_status` routes into a `decision` team/persona memory);
-/// HIGH/critical severity is left for a human. Default-OFF
-/// (`AUTONOMOUS_REVIEW_TRIAGE`). Distinct from the command-triggered
+/// HIGH/critical severity is left for a human. Gated on the master autonomous
+/// toggle (`COMPANION_AUTONOMOUS_MODE`) — review triage is implied whenever
+/// autonomy is ON; the legacy `AUTONOMOUS_REVIEW_TRIAGE` key is kept but no
+/// longer read. Distinct from the command-triggered
 /// `gc_stale_pending`, which neutral-resolves (no learning signal).
 pub struct ManualReviewAutoTriageSubscription {
     pub pool: DbPool,
@@ -1858,10 +1860,12 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
     }
 
     async fn tick(&self) {
-        // Default-OFF gate — opt-in only.
+        // Gated on the master autonomous toggle: turning autonomy ON implies
+        // review triage (no separate opt-in; the legacy
+        // `autonomous_review_triage` key is no longer consulted).
         let enabled = crate::db::repos::core::settings::get(
             &self.pool,
-            crate::db::settings_keys::AUTONOMOUS_REVIEW_TRIAGE,
+            crate::db::settings_keys::COMPANION_AUTONOMOUS_MODE,
         )
         .ok()
         .flatten()

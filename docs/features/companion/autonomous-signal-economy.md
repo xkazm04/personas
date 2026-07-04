@@ -65,9 +65,9 @@ ONE headless triage decision per pass        ← cheap, silent, auditable (traci
 The Messages counterpart of Athena's human-review resolution
 (approve/incident/escalate → here done/digest/attention):
 
-- Gated on `autonomous_message_triage` (settings key, default **off**) on top
-  of `companion_autonomous_mode`. Flip live in the DB like the other
-  `autonomous_*` keys.
+- Gated on `companion_autonomous_mode` alone — the master autonomous toggle
+  implies message triage (no separate opt-in; the legacy
+  `autonomous_message_triage` key is kept but no longer read).
 - Cursor `companion_msg_triage_cursor` advances **only past the processed
   batch** (oldest-first, 20/tick ≈ 240/hour) — a backlog drains instead of
   being skipped. First enable seeds to "now": no retroactive mass-read of the
