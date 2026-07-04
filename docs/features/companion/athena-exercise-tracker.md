@@ -26,7 +26,7 @@ date, what we observed, and any change made.
 - [x] Streaming chat + token-level streaming
 - [x] `PROGRESS:` in-turn beats (always-on, text + voice)
 - [x] `TTS:` spoken summary line
-- [ ] `QR:` quick-reply chips
+- [x] `QR:` quick-reply chips
 - [ ] Refine chips (Shorter / More detail / Code only)
 - [ ] Slash-command palette (`/`)
 - [ ] Mid-stream Stop (interrupt) + failed-turn retry
@@ -162,3 +162,9 @@ date, what we observed, and any change made.
   with a "multiple TTS lines, keeping first" warning), stripped from display, grammar
   voice-gated (`voice_addendum_if_needed`). Docs (`athena-usecases.md` A10 + send/arrival-TTS)
   ALREADY accurate — no doc change needed. Michal: good as-is. ✅
+- **0.4 QR chips** — CONFIRMED. Backend hard cap is **6** (`dispatcher.rs:405`,
+  `quick_replies.len() < 6`), frontend renders all + shows `{i+1}` badges, number
+  keys **1–9** fire the matching chip (`QuickReplies.tsx:28`). Michal: good as-is.
+  Docs fix: `athena-usecases.md:25` said "2–5 follow-up prompts" — contradicted its
+  own A10 ("up to 6") and the code; corrected to "up to 6" + noted the 1–9 keys.
+  (`athena-decision-layer-plan.md:18` already said "digits 1-9".) ✅
