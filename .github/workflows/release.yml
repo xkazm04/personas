@@ -1,6 +1,10 @@
 name: Release
 
 on:
+  # Manual dispatch is the PRIMARY release path — development lands directly
+  # on master (no PRs), so the pull_request trigger alone never fires on the
+  # real workflow. Releasing stays a deliberate act.
+  workflow_dispatch:
   pull_request:
     types: [closed]
     branches:
@@ -17,7 +21,7 @@ jobs:
   # ─── Job 1: Bump version, commit, tag, push ───────────────
   bump-version:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     outputs:
       new_version: ${{ steps.bump.outputs.new_version }}
       changelog: ${{ steps.changelog.outputs.body }}
@@ -40,6 +44,22 @@ jobs:
           NEW_VERSION=$(node scripts/bump-version.mjs)
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Bumped to $NEW_VERSION"
+
+      - name: Guard against tag collision
+        # Fail HERE (seconds in) with an actionable message instead of at
+        # `git tag` — or worse, after 45 minutes of platform builds. A
+        # collision means the version files on master lag existing tags
+        # (the 2026 0.1.0-1 rollback stranded every release run this way):
+        # fix by aligning package.json/tauri.conf.json/Cargo.toml to the
+        # highest existing tag so the bump computes a fresh version.
+        run: |
+          TAG="v${{ steps.bump.outputs.new_version }}"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null || \
+             git ls-remote --exit-code --tags origin "${TAG}" >/dev/null 2>&1; then
+            echo "::error::Tag ${TAG} already exists. The version files on master are behind the tag history — align them to the highest existing tag (git tag --sort=-v:refname | head -1) and re-run."
+            exit 1
+          fi
+          echo "Tag ${TAG} is free."
 
       - name: Generate changelog
         id: changelog
@@ -344,14 +364,24 @@ jobs:
           echo "  LINUX_URL=$LINUX_URL"
           echo ""
 
-          # Warn if any platform bundle was not found
+          # HARD-FAIL if any platform bundle or its signature is missing.
+          # A latest.json with an empty url/signature doesn't degrade
+          # gracefully — the updater on that platform errors on every
+          # check, which reads as "updates are broken", silently. Better
+          # to fail the release and fix the asset naming/signing than ship
+          # a manifest that strands a platform (ship-loop Ops audit).
           MISSING=""
-          [ -z "$WIN_X64_URL" ] && MISSING="${MISSING} windows-x86_64"
-          [ -z "$WIN_ARM64_URL" ] && MISSING="${MISSING} windows-aarch64"
-          [ -z "$MACOS_URL" ] && MISSING="${MISSING} darwin"
-          [ -z "$LINUX_URL" ] && MISSING="${MISSING} linux-x86_64"
+          [ -z "$WIN_X64_URL" ]   && MISSING="${MISSING} windows-x86_64(url)"
+          [ -z "$WIN_X64_SIG" ]   && MISSING="${MISSING} windows-x86_64(sig)"
+          [ -z "$WIN_ARM64_URL" ] && MISSING="${MISSING} windows-aarch64(url)"
+          [ -z "$WIN_ARM64_SIG" ] && MISSING="${MISSING} windows-aarch64(sig)"
+          [ -z "$MACOS_URL" ]     && MISSING="${MISSING} darwin(url)"
+          [ -z "$MACOS_SIG" ]     && MISSING="${MISSING} darwin(sig)"
+          [ -z "$LINUX_URL" ]     && MISSING="${MISSING} linux-x86_64(url)"
+          [ -z "$LINUX_SIG" ]     && MISSING="${MISSING} linux-x86_64(sig)"
           if [ -n "$MISSING" ]; then
-            echo "::warning::Missing updater bundles for:${MISSING}. Check asset names above."
+            echo "::error::Missing updater bundles/signatures for:${MISSING}. Check bundle.createUpdaterArtifacts, TAURI_SIGNING_PRIVATE_KEY, and the asset-name patterns above."
+            exit 1
           fi
 
           # Build latest.json

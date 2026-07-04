@@ -62,6 +62,10 @@ export function useAutoUpdater() {
       return "up-to-date";
     } catch (err) {
       silentCatch("useAutoUpdater:check")(err);
+      // Surface the failure in state (Settings shows it next to lastChecked):
+      // a dead/moved updater endpoint must not be indistinguishable from
+      // "up to date" — background checks previously failed invisibly.
+      setError(err instanceof Error ? err.message : String(err));
       return "failed";
     } finally {
       checkingRef.current = false;
