@@ -1,13 +1,13 @@
 /**
- * useStudioComposer — the Chain Studio "compose" brain, lifted out of
- * StudioSwitchboard so the deep-merge variants (which fuse the compose draft
- * with the live routing inventory in one ledger) can share it.
+ * useStudioComposer — the Chain Studio "compose" brain, backing the unified
+ * ledger (`StudioPatchbay`), which fuses the compose draft with the live
+ * routing inventory in one surface.
  *
  * Owns: the localStorage draft, the armed source/target/system-op patch state,
  * the two arming effects (source+target → draft link; source+system-op → commit
  * modal), and the commit path (persona→persona link → real `chain` trigger).
  * Live routing state (existing triggers/events/subscriptions) is NOT here — it
- * stays in `routing/layouts/useRoutingState`; the variants compose both.
+ * stays in `routing/layouts/useRoutingState`; the ledger composes both.
  */
 import { useEffect, useMemo, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';

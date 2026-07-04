@@ -1,5 +1,6 @@
 /**
- * StudioPatchbayVariant — deep-merge variant A: "Patchbay".
+ * StudioPatchbay — the Chain Studio unified ledger (the /prototype winner;
+ * the compose-only Switchboard baseline was retired at consolidation).
  *
  * Connection-centric mental model. Every route — whether a committed live
  * binding or a pending draft — renders as one horizontal patch cable:
@@ -52,7 +53,7 @@ function chainCondLabel(st: StudioStrings, cond?: string | null): string {
   return st.condition_always;
 }
 
-export function StudioPatchbayVariant() {
+export function StudioPatchbay() {
   const personas = useAgentStore((s) => s.personas);
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
@@ -65,7 +66,7 @@ export function StudioPatchbayVariant() {
     let stale = false;
     Promise.all([listAllTriggers(), listEvents(1000).catch(() => [] as PersonaEvent[])])
       .then(([t, e]) => { if (!stale) { setTriggers(t); setEvents(e); } })
-      .catch(silentCatch('features/triggers/sub_studio/StudioPatchbayVariant:load'));
+      .catch(silentCatch('features/triggers/sub_studio/StudioPatchbay:load'));
     return () => { stale = true; };
   }, []);
 
@@ -96,7 +97,9 @@ export function StudioPatchbayVariant() {
     && c.automations.length === 0 && !c.armedSource && !c.armedTarget && !c.armedSystemOp;
 
   return (
-    <div className="flex-1 flex min-h-0">
+    // The testid keeps the historical "switchboard" name — the companion
+    // trigger-creation walkthrough highlights it (guidance/walkthroughs.ts).
+    <div className="flex-1 flex min-h-0" data-testid="studio-switchboard">
       <StudioSourceRail c={c} />
 
       {/* ── Unified ledger ─────────────────────────────────────────────── */}

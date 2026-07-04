@@ -1,7 +1,7 @@
 /**
  * Data layer for the Chain Studio "System events" rail: the catalog of
  * available system operations plus the persisted automations (committed
- * routes), with enable/run/delete actions. Backs {@link StudioSwitchboard}.
+ * routes), with enable/run/delete actions. Consumed via `useStudioComposer`.
  */
 import { useCallback, useEffect, useState } from 'react';
 import {

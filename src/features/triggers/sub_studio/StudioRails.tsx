@@ -1,8 +1,8 @@
 /**
- * StudioRails — the left (source) and right (target) compose rails of Chain
- * Studio, extracted so the deep-merge ledger variants share the exact same
- * arming affordance. Each rail owns only its local tab + search-query UI state;
- * all arming state + persona/system-op data comes from the shared composer.
+ * StudioRails — the left (source) and right (target) compose rails of the
+ * Chain Studio unified ledger (`StudioPatchbay`). Each rail owns only its
+ * local tab + search-query UI state; all arming state + persona/system-op
+ * data comes from the shared composer.
  */
 import { useMemo, useState } from 'react';
 import { Search, Zap, Bot, Cog } from 'lucide-react';

@@ -1,6 +1,6 @@
 /**
- * studioChips — small presentational chips shared by the Chain Studio surface
- * and its deep-merge ledger variants. A source/target chip renders a trigger
+ * studioChips — small presentational chips for the Chain Studio unified
+ * ledger (`StudioPatchbay`). A source/target chip renders a trigger
  * template or a persona; PatchEndChip renders one end of the pending-patch
  * strip (source, persona target, or system-op target).
  */
