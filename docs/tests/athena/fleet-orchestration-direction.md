@@ -180,3 +180,15 @@ empty and has since rendered — is re-assessed.
   reassess). `cargo check` couldn't see it; the live run did. Fixed in `fbc442362`.
   **Verification lesson:** ship-blocking runtime bugs in Tauri-state / scheduler wiring only surface
   when the scheduler actually ticks — drive the live scenario, don't trust `cargo check` alone.
+- **2026-07-04** — **Phase 2 backend shipped (default dial = Bold, user choice).** Commits
+  `02fabd81a` (2.1 — directive asks for `decision_class` drive_forward|choice + honest confidence),
+  `5683f077f` (2.2 — `COMPANION_FLEET_BOLDNESS` setting + `FleetBoldness` enum + set/get commands),
+  `1744ee812` (2.3 — `fleet_send_input_auto_fires` matrix gate replacing the high-only gate, + 8
+  unit tests), `8252e44f0` (2.4 — `screen_matches_last_decision` execution-time re-check: defers an
+  auto-fire whose target screen changed since Athena reasoned on it). Matrix: high always fires; low
+  never; medium fires per dial×class (cautious=none, balanced=drive_forward-only, bold=both); a
+  missing/unknown class is treated as the stricter `choice`. **NOT boot-verified yet** — a concurrent
+  session's uncommitted dev-mode refactor broke the whole-crate compile during this work (HEAD itself
+  compiles; their working tree didn't), so the matrix is unit-tested-in-code + manually traced but
+  not yet run live. **Remaining Phase 2:** the frontend Cautious/Balanced/Bold dial UI + its i18n
+  (blocked while that session owns all 14 locale files), then a live boot-verify of the full gate.
