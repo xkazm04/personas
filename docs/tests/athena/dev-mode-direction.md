@@ -154,3 +154,29 @@ kills her PTY sessions** — the fleet registry is in-memory, no DB persistence.
   - Also observed: `files_touched` telemetry counts inspected files, not just edited ones
     (cosmetic); the context-map staleness she flagged is a real data-quality input for the
     Phase-5 experiment loop.
+- **2026-07-04 — Phase 4 shipped (durable ledger + boot recovery + auto-register).**
+  `companion_dev_op` table (companion user db, ensure-style): status lifecycle
+  `dispatched → completed → merged/closed`, `interrupted` for orphans, `commit_sha` at
+  reflection, `user_verdict` reserved for Phase 5. `dev_merge` + the reflection reconciler
+  read the durable row (`9a60cae53`); boot recovery sweeps orphaned `dispatched` rows to
+  `interrupted` + one `dev_interrupted` proactive card each (what survived on disk + options);
+  `ensure_repo_registered` auto-registers the repo as a Dev Tools project from the addendum
+  path. **Live findings, fixed same-session (`743d173b4`):**
+  - A real interruption happened organically mid-test (a parallel session restarted the shared
+    dev app while a backend run was mid-edit) — the worktree preserved the finished-but-
+    uncommitted diff exactly as designed, and the card fired with the right survival info.
+  - But the sweep had ALSO run 5 s after dispatch and mislabeled the still-working op:
+    `companion_init` re-runs on panel mounts/page reloads and only the schedulers were
+    OnceLock-guarded. Fixed: registry liveness check in the sweep + a `DEV_OP_RECOVERY`
+    once-per-process guard.
+  - **Known follow-up (Phase 5 candidate):** `dev_merge` is deliberately ff-only, but in this
+    repo master moves constantly (parallel sessions), so the refusal path will be the common
+    case for backend runs. Consider a cherry-pick/rebase apply mode for single-commit dev
+    branches, keeping the refusal for anything non-trivial.
+  - **Merge handshake verified post-restart:** she proposed `dev_merge {op_0e94b16e}` from the
+    durable row across TWO app restarts; the executor correctly refused first on a dirty tree
+    (the run's `npx` had drifted the worktree lockfile — guard working), then on the diverged
+    master with the manual-merge guidance, which was followed: `c68e1006f` merged the run's
+    commit, worktree + branch cleaned up, ledger row finalized `merged`. Second lockfile
+    note: dev sessions running node tooling can dirty the worktree — a task-prompt hint or a
+    lockfile-restore in the merge path is a small Phase-5 hardening.
