@@ -92,6 +92,14 @@ Tour/onboarding state is split between local hook state and system slices:
 
 Onboarding can route users into Templates, Connections, Appearance, and execution-related surfaces; docs for those features should remain authoritative for the target workflow.
 
+## First-run template loading
+
+The onboarding template picker must never be empty on a fresh install, and it should steer a brand-new user toward a template they can run with zero setup.
+
+- **Seed at app-init, not on Templates-page mount.** The template catalog is seeded into the DB by `seedCatalogTemplatesOnce()` (`src/lib/personas/templates/seedTemplates.ts`), a session-scoped idempotent runner. It's called from `App.tsx`'s idle bootstrap (fire-and-forget behind `requestIdleCallback`, so it never gates first paint) **and** from the Templates-page hook (`useDesignReviews`), which share the same guard. Previously seeding ran only inside the Templates-page mount effect, so a user who reached onboarding (or the gallery) before ever opening Templates saw an empty picker.
+- **Load path** (`useOnboardingState.ts`): try `getTrendingTemplates` first (empty until the community has adoptions), then fall back to `listDesignReviews`. Both pull a `STARTER_POOL` (12) rather than the 3 shown.
+- **Zero-credential quick-wins first.** `prioritizeZeroCredential()` stable-partitions the pool so templates with no connector bindings (`connectors_used` empty) lead, before trimming to 3. A new user's first suggestion is therefore something they can run without configuring the vault — value before configuration. Ordering within each group is preserved, so trending/recency still breaks ties.
+
 ## Persona-side onboarding affordances
 
 A second cluster of onboarding pieces lives under `src/features/agents/components/onboarding/` rather than `src/features/onboarding/`. These are scoped to the persona/agent creation flow and are reused outside the first-run tour:

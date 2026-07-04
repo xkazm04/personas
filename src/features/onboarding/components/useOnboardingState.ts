@@ -11,8 +11,33 @@ import {
   type DiscoveredApp,
 } from '@/api/system/desktop';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { parseJsonOrDefault } from '@/lib/utils/parseJson';
 import { trackInteraction } from '@/lib/sentry';
 import * as Sentry from '@sentry/react';
+
+/**
+ * Pull more than the 3 we display so zero-credential quick-wins can be lifted
+ * to the front even when they aren't the newest / most-adopted rows.
+ */
+const STARTER_POOL = 12;
+
+/**
+ * Stable-partition a review list so zero-credential templates come first.
+ *
+ * A brand-new user can RUN a zero-connector template and get their first
+ * artifact with no vault setup at all — value before configuration (ship-loop
+ * M7, item 44 friction #4). Order within each group is preserved, so the
+ * backend's trending / recency ordering still breaks ties.
+ */
+function prioritizeZeroCredential(reviews: PersonaDesignReview[]): PersonaDesignReview[] {
+  const zeroCred: PersonaDesignReview[] = [];
+  const rest: PersonaDesignReview[] = [];
+  for (const r of reviews) {
+    const connectors = parseJsonOrDefault<string[]>(r.connectors_used, []);
+    (connectors.length === 0 ? zeroCred : rest).push(r);
+  }
+  return [...zeroCred, ...rest];
+}
 
 /** Observable load state for the onboarding template list. */
 export type TemplateLoadPhase = 'loading' | 'loaded' | 'empty' | 'error';
@@ -178,7 +203,7 @@ export function useOnboardingState() {
       let fallbackErr: unknown = null;
 
       try {
-        reviews = await getTrendingTemplates(3);
+        reviews = await getTrendingTemplates(STARTER_POOL);
         source = 'trending';
       } catch (err) {
         trendingErr = err;
@@ -187,7 +212,7 @@ export function useOnboardingState() {
 
       if (reviews.length === 0) {
         try {
-          reviews = await listDesignReviews(undefined, 3);
+          reviews = await listDesignReviews(undefined, STARTER_POOL);
           source = 'fallback';
         } catch (err) {
           fallbackErr = err;
@@ -198,7 +223,8 @@ export function useOnboardingState() {
       if (cancelled) return;
 
       if (reviews.length > 0) {
-        setTemplates(reviews);
+        // Zero-credential quick-wins first, then trim to the 3 we show.
+        setTemplates(prioritizeZeroCredential(reviews).slice(0, 3));
         setTemplateLoadState({ phase: 'loaded', source, error: null });
         countTemplateLoad('loaded', source);
         return;
