@@ -161,11 +161,6 @@ interface CompanionStore {
   // companion_beta_flags; gates the wrench toggle in the header.
   devModeAvailable: boolean;
   setDevModeAvailable: (v: boolean) => void;
-  // In-transcript search (header toggle + query bar). Closing clears the query.
-  chatSearchOpen: boolean;
-  setChatSearchOpen: (v: boolean) => void;
-  chatSearchQuery: string;
-  setChatSearchQuery: (q: string) => void;
 
   // Phase E: proactive messages awaiting engagement (delivered or queued).
   proactive: ProactiveMessage[];
@@ -593,15 +588,6 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   devModeAvailable: false,
   setDevModeAvailable: (devModeAvailable) => set({ devModeAvailable }),
-  chatSearchOpen: false,
-  setChatSearchOpen: (chatSearchOpen) =>
-    set(
-      chatSearchOpen
-        ? { chatSearchOpen }
-        : { chatSearchOpen: false, chatSearchQuery: '' },
-    ),
-  chatSearchQuery: '',
-  setChatSearchQuery: (chatSearchQuery) => set({ chatSearchQuery }),
 
   connectors: [],
   setConnectors: (connectors) => set({ connectors }),
