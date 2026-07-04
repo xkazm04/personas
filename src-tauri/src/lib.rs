@@ -2620,6 +2620,8 @@ pub fn run() {
             commands::companion::voice::companion_tts_download_piper_voice,
             commands::companion::voice::companion_tts_delete_piper_voice,
             commands::companion::voice::companion_tts_piper_engine_status,
+            commands::companion::voice::companion_tts_list_kokoro_voices,
+            commands::companion::voice::companion_tts_kokoro_status,
             commands::companion::stt::companion_stt_transcribe,
             commands::companion::stt::companion_stt_list_models,
             commands::companion::stt::companion_stt_download_model,
