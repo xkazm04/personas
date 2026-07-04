@@ -179,6 +179,8 @@ desktop also surfaces the public **agent directory** at `personas.ai/gallery`
 
 The **Activity** tab opens with a GitHub-style 365-day execution heatmap (component: `ExecutionHeatmap`, sourced from `sub_analytics`) above the unified activity list. Hovering a cell reveals run count + cost; clicking a cell sets a date hash for downstream filtering.
 
+An execution's cost inspector (`CostBreakdownBar`, `sub_executions/detail/inspector`) shows the input/output/total token cost at Anthropic API list prices. For **Claude models** — which run on the user's Claude subscription via the Claude Code CLI (`isSubscriptionModel`, `force_subscription_auth`) — it adds a note reframing that figure: "≈{cost} if billed to the Anthropic API — included on your Claude subscription." This is a reframe of the same estimate, not a second computation (so it never double-counts), and it is suppressed for external-API models (`gpt-*`, `gemini-*`), which are real per-token spend.
+
 **Design is a hub, not a single view.** It exposes horizontal sub-tabs (plus
 the inline health badge in `EditorTabBar`):
 
