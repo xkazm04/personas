@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "Tidak tersedia — memerlukan build pengembangan yang dijalankan dari sumber kode.",
       "setup_dev_mode_active": "Aktif",
       "setup_dev_mode_inactive": "Mati",
-      "proactive_kind_dev_interrupted": "proses dev terputus"
+      "proactive_kind_dev_interrupted": "proses dev terputus",
+      "boldness_balanced": "Seimbang",
+      "boldness_bold": "Berani",
+      "boldness_cautious": "Hati-hati",
+      "boldness_hint": "Seberapa jauh Athena bertindak sendiri pada CLI yang dijeda sebelum bertanya kepada Anda. Hati-hati = hanya tindakan yang jelas-jelas tepat ; Seimbang = ia melanjutkan langkah yang bisa dibatalkan dan bertanya pada pilihan nyata ; Berani = ia melanjutkan keduanya kecuali benar-benar tidak yakin. Kepercayaan rendah selalu bertanya.",
+      "boldness_label": "Keberanian"
     },
     "ocr": {
       "title": "OCR",

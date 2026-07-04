@@ -1964,7 +1964,12 @@
     "setup_dev_mode_off": "Nicht verfügbar — erfordert einen Entwicklungs-Build aus einem Quell-Checkout.",
     "setup_dev_mode_active": "Aktiv",
     "setup_dev_mode_inactive": "Aus",
-    "proactive_kind_dev_interrupted": "Dev-Lauf unterbrochen"
+    "proactive_kind_dev_interrupted": "Dev-Lauf unterbrochen",
+    "boldness_balanced": "Ausgewogen",
+    "boldness_bold": "Mutig",
+    "boldness_cautious": "Vorsichtig",
+    "boldness_hint": "Wie eigenständig Athena bei einem pausierten CLI handelt, bevor sie dich fragt. Vorsichtig = nur die offensichtlich richtige Entscheidung; Ausgewogen = geht bei umkehrbaren Schritten vor und fragt bei echten Entscheidungen; Mutig = geht in beiden Fällen vor, es sei denn, sie ist wirklich unsicher. Bei geringem Vertrauen wird immer gefragt.",
+    "boldness_label": "Entschlossenheit"
   },
   "ocr": {
     "title": "OCR",

@@ -13368,6 +13368,11 @@ export type Translations = {
       wake_60: string;
       wake_120: string;
       wake_impact_line: string;
+      boldness_label: string;
+      boldness_hint: string;
+      boldness_cautious: string;
+      boldness_balanced: string;
+      boldness_bold: string;
       dev_toggle_on: string;
       dev_toggle_off: string;
       setup_dev_mode_label: string;

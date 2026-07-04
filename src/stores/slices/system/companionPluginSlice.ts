@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { SystemStore } from '../../storeTypes';
+import type { FleetBoldnessLevel } from '@/api/companion';
 
 export type CompanionPluginTab =
   | 'setup'
@@ -185,6 +186,14 @@ export interface CompanionPluginSlice {
    */
   companionAutonomousMode: boolean;
   /**
+   * Fleet-orchestration BOLDNESS dial (Phase 2) — how aggressively Athena
+   * auto-fires a `fleet_send_input` into a live CLI vs. surfacing it as an orb
+   * consult, combined with her per-decision `decision_class` + `confidence`.
+   * Only meaningful when autonomous mode is on. Mirrored server-side via
+   * `companion_set_fleet_boldness`; the autoapprove gate reads it.
+   */
+  companionFleetBoldness: FleetBoldnessLevel;
+  /**
    * DEV MODE — Athena's self-development loop (debug builds only). When
    * true, her prompt gains the self-model addendum (this repo is the
    * app's own source; feature-talk resolves to code via the context map)
@@ -239,6 +248,7 @@ export interface CompanionPluginSlice {
   setCompanionSttModelId: (id: string | null) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
+  setCompanionFleetBoldness: (v: FleetBoldnessLevel) => void;
   setCompanionDevMode: (v: boolean) => void;
   setCompanionHandsFreeDecisions: (v: boolean) => void;
   setActiveBuildIntent: (intent: string | null) => void;
@@ -275,6 +285,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionSttModelId: null,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
+  companionFleetBoldness: 'bold',
   companionDevMode: false,
   companionHandsFreeDecisions: false,
   activeBuildIntent: null,
@@ -320,6 +331,8 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>
     set({ companionAutonomousMode }),
+  setCompanionFleetBoldness: (companionFleetBoldness) =>
+    set({ companionFleetBoldness }),
   setCompanionDevMode: (companionDevMode) => set({ companionDevMode }),
   setCompanionHandsFreeDecisions: (companionHandsFreeDecisions) =>
     set({ companionHandsFreeDecisions }),

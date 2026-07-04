@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "غير متاح — يتطلب إصدار تطوير يعمل من الكود المصدري.",
       "setup_dev_mode_active": "نشط",
       "setup_dev_mode_inactive": "متوقف",
-      "proactive_kind_dev_interrupted": "تشغيل التطوير توقف"
+      "proactive_kind_dev_interrupted": "تشغيل التطوير توقف",
+      "boldness_balanced": "متوازن",
+      "boldness_bold": "جريء",
+      "boldness_cautious": "حذر",
+      "boldness_hint": "كيف بعيدًا تتصرف Athena من تلقاء نفسها على CLI متوقف قبل أن تسألك. حذر = الخيار الواضح تمامًا فقط؛ متوازن = تتابع الخطوات القابلة للتراجع وتسأل عند الخيارات الحقيقية؛ جريء = تتابع في كلا الحالتين إلا إذا كانت غير متأكدة حقًا. انخفاض الثقة دائمًا يستدعي السؤال.",
+      "boldness_label": "الجرأة"
     },
     "ocr": {
       "title": "OCR",

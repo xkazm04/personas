@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "利用不可 — ソースチェックアウトから起動した開発ビルドが必要です。",
       "setup_dev_mode_active": "有効",
       "setup_dev_mode_inactive": "オフ",
-      "proactive_kind_dev_interrupted": "開発実行が中断"
+      "proactive_kind_dev_interrupted": "開発実行が中断",
+      "boldness_balanced": "バランス",
+      "boldness_bold": "積極的",
+      "boldness_cautious": "慎重",
+      "boldness_hint": "一時停止中のCLIでAthinaがあなたに確認する前にどこまで自律的に行動するかを設定します。慎重 = 明らかに正しい操作のみ実行 ; バランス = 元に戻せる次のステップは進め、重要な選択は確認 ; 積極的 = 本当に不確かな場合を除き両方進める。確信度が低い場合は常に確認します。",
+      "boldness_label": "自律度"
     },
     "ocr": {
       "title": "OCR",

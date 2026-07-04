@@ -1964,7 +1964,12 @@
     "setup_dev_mode_off": "不可用 — 需要从源码运行的开发构建。",
     "setup_dev_mode_active": "已启用",
     "setup_dev_mode_inactive": "已关闭",
-    "proactive_kind_dev_interrupted": "开发任务被中断"
+    "proactive_kind_dev_interrupted": "开发任务被中断",
+    "boldness_balanced": "均衡",
+    "boldness_bold": "大胆",
+    "boldness_cautious": "谨慎",
+    "boldness_hint": "Athena 在暂停的 CLI 中自主行动的程度，超出此程度则向你询问。谨慎 = 仅执行明显正确的操作；均衡 = 推进可撤销的步骤，在真正的决策点上询问；大胆 = 两种情况都推进，除非确实不确定。置信度低时始终询问。",
+    "boldness_label": "主动程度"
   },
   "ocr": {
     "title": "OCR",

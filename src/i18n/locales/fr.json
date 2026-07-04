@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "Indisponible — nécessite une version de développement lancée depuis les sources.",
       "setup_dev_mode_active": "Actif",
       "setup_dev_mode_inactive": "Inactif",
-      "proactive_kind_dev_interrupted": "exécution dev interrompue"
+      "proactive_kind_dev_interrupted": "exécution dev interrompue",
+      "boldness_balanced": "Équilibré",
+      "boldness_bold": "Audacieux",
+      "boldness_cautious": "Prudent",
+      "boldness_hint": "À quel point Athena agit de manière autonome sur un CLI en pause avant de vous consulter. Prudent = seulement les actions évidentes ; Équilibré = elle avance sur les étapes réversibles et demande pour les vrais choix ; Audacieux = elle avance dans les deux cas sauf si elle est vraiment incertaine. En cas de faible confiance, elle demande toujours.",
+      "boldness_label": "Autonomie"
     },
     "ocr": {
       "title": "OCR",

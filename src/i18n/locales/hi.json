@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "अनुपलब्ध — सोर्स चेकआउट से चल रहा डेवलपमेंट बिल्ड चाहिए।",
       "setup_dev_mode_active": "सक्रिय",
       "setup_dev_mode_inactive": "बंद",
-      "proactive_kind_dev_interrupted": "डेव रन बाधित"
+      "proactive_kind_dev_interrupted": "डेव रन बाधित",
+      "boldness_balanced": "संतुलित",
+      "boldness_bold": "साहसी",
+      "boldness_cautious": "सतर्क",
+      "boldness_hint": "Athena रुके हुए CLI पर आपसे पूछे बिना कितना स्वतंत्र रूप से काम करती है। सतर्क = केवल स्पष्ट रूप से सही कदम ; संतुलित = वह उलटे जा सकने वाले अगले कदम उठाती है और असली विकल्पों पर पूछती है ; साहसी = वह दोनों स्थितियों में आगे बढ़ती है जब तक वह वाकई अनिश्चित न हो। कम आत्मविश्वास पर हमेशा पूछती है।",
+      "boldness_label": "स्वायत्तता"
     },
     "ocr": {
       "title": "OCR",

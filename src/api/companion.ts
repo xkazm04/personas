@@ -190,6 +190,25 @@ export async function companionSetDevMode(enabled: boolean): Promise<void> {
   return invoke<void>('companion_set_dev_mode', { enabled });
 }
 
+/** Athena's fleet-orchestration boldness dial (Phase 2). */
+export type FleetBoldnessLevel = 'cautious' | 'balanced' | 'bold';
+
+/**
+ * Persist the fleet-boldness dial server-side. The autoapprove gate reads
+ * this row to decide, per Athena's `decision_class` + `confidence`, whether
+ * to auto-fire a `fleet_send_input` into a live CLI or surface it as an orb
+ * consult. Cautious = high-only; Balanced = drive_forward at high|medium,
+ * choice high-only; Bold = both at high|medium.
+ */
+export async function companionSetFleetBoldness(level: FleetBoldnessLevel): Promise<void> {
+  return invoke<void>('companion_set_fleet_boldness', { level });
+}
+
+/** Read the persisted fleet-boldness dial (defaults to `bold`) to hydrate the UI. */
+export async function companionGetFleetBoldness(): Promise<FleetBoldnessLevel> {
+  return invoke<FleetBoldnessLevel>('companion_get_fleet_boldness');
+}
+
 /**
  * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
  * vault, calls ElevenLabs, and returns the audio bytes as base64 (which

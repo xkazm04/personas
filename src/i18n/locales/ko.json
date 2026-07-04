@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "사용 불가 — 소스 체크아웃에서 실행된 개발 빌드가 필요합니다.",
       "setup_dev_mode_active": "활성",
       "setup_dev_mode_inactive": "꺼짐",
-      "proactive_kind_dev_interrupted": "개발 실행 중단됨"
+      "proactive_kind_dev_interrupted": "개발 실행 중단됨",
+      "boldness_balanced": "균형",
+      "boldness_bold": "적극적",
+      "boldness_cautious": "신중",
+      "boldness_hint": "일시 중지된 CLI에서 Athena가 당신에게 묻기 전에 얼마나 자율적으로 행동할지 설정합니다. 신중 = 명확히 올바른 작업만 실행 ; 균형 = 되돌릴 수 있는 다음 단계는 진행하고 실제 선택사항은 확인 ; 적극적 = 진짜로 불확실하지 않는 한 양쪽 모두 진행. 확신도가 낮으면 항상 확인합니다.",
+      "boldness_label": "자율성"
     },
     "ocr": {
       "title": "OCR",

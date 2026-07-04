@@ -1964,7 +1964,12 @@
     "setup_dev_mode_off": "Không khả dụng — cần bản dựng phát triển chạy từ mã nguồn.",
     "setup_dev_mode_active": "Đang bật",
     "setup_dev_mode_inactive": "Tắt",
-    "proactive_kind_dev_interrupted": "phiên dev bị gián đoạn"
+    "proactive_kind_dev_interrupted": "phiên dev bị gián đoạn",
+    "boldness_balanced": "Cân bằng",
+    "boldness_bold": "Mạnh dạn",
+    "boldness_cautious": "Thận trọng",
+    "boldness_hint": "Mức độ Athena tự hành động trong CLI bị tạm dừng trước khi hỏi bạn. Thận trọng = chỉ thực hiện những bước rõ ràng đúng; Cân bằng = tiến hành các bước có thể hoàn tác và hỏi khi phải chọn; Mạnh dạn = tiến hành cả hai trừ khi thực sự không chắc. Độ tin cậy thấp luôn hỏi.",
+    "boldness_label": "Mức độ chủ động"
   },
   "ocr": {
     "title": "OCR",

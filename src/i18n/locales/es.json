@@ -13156,7 +13156,12 @@
       "setup_dev_mode_off": "No disponible — requiere una compilación de desarrollo desde el código fuente.",
       "setup_dev_mode_active": "Activo",
       "setup_dev_mode_inactive": "Apagado",
-      "proactive_kind_dev_interrupted": "ejecución dev interrumpida"
+      "proactive_kind_dev_interrupted": "ejecución dev interrumpida",
+      "boldness_balanced": "Equilibrado",
+      "boldness_bold": "Audaz",
+      "boldness_cautious": "Cauteloso",
+      "boldness_hint": "Cuánto actúa Athena por su cuenta en un CLI pausado antes de preguntarte. Cauteloso = solo la opción claramente correcta; Equilibrado = avanza en pasos reversibles y pregunta ante decisiones reales; Audaz = avanza en ambos casos salvo que esté genuinamente insegura. Con baja confianza siempre pregunta.",
+      "boldness_label": "Determinación"
     },
     "ocr": {
       "title": "OCR",

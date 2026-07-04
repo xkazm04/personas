@@ -1964,7 +1964,12 @@
     "setup_dev_mode_off": "Nedostupné — vyžaduje vývojové sestavení spuštěné ze zdrojového kódu.",
     "setup_dev_mode_active": "Aktivní",
     "setup_dev_mode_inactive": "Vypnuto",
-    "proactive_kind_dev_interrupted": "vývojový běh přerušen"
+    "proactive_kind_dev_interrupted": "vývojový běh přerušen",
+    "boldness_balanced": "Vyvážený",
+    "boldness_bold": "Odvážný",
+    "boldness_cautious": "Opatrný",
+    "boldness_hint": "Jak samostatně jedná Athena při pozastaveném CLI, než se vás zeptá. Opatrný = jen jednoznačně správná volba; Vyvážený = pokračuje na reverzibilních krocích a ptá se na skutečná rozhodnutí; Odvážný = pokračuje v obou případech, pokud si není skutečně jistá. Nízká jistota se vždy ptá.",
+    "boldness_label": "Odvaha"
   },
   "ocr": {
     "title": "OCR",
