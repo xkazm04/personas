@@ -243,6 +243,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // is enforced in operative_memory::record_intervention.
     "fleet_intervene",
     "fleet_redirect_op",
+    // Phase 4 — autonomous session recovery. `fleet_wake` revives a hibernated
+    // session (resume via `--resume`); `fleet_resume` adopts an orphaned CLI
+    // process the registry lost. Confidence-gated on the autonomous autoapprove
+    // path (approvals::AUTOAPPROVE_ALLOWLIST); both fail closed on a bad target.
+    "fleet_wake",
+    "fleet_resume",
     // Fleet/team analysis — a manually-requested "how are the teams doing?"
     // review. Spawns a proactive Athena reasoning turn over the fleet
     // (executions, outcomes, Director verdicts, goal progress) using the

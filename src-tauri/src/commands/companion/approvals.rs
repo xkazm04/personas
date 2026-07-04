@@ -259,6 +259,8 @@ pub async fn companion_approve_action(
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         "fleet_intervene" => execute_fleet_intervene(&app, &params),
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
+        "fleet_wake" => execute_fleet_wake(&app, &params).await,
+        "fleet_resume" => execute_fleet_resume(&app, &params).await,
         // DEV MODE — self-development loop. Deliberately NOT on the
         // autoapprove allowlist: every dev-mode operation is an explicit
         // user click (see dispatcher.rs ALLOWED_ACTIONS notes).
@@ -365,6 +367,14 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // second auto-fire on the same session even if the confidence gate misjudges
     // — so a stuck session can be nudged at most once without a human.
     "fleet_intervene",
+    // Phase 4 — autonomous session recovery. `fleet_wake` revives a hibernated
+    // session; `fleet_resume` adopts an orphaned CLI process. Same boldness ×
+    // class × confidence gate as the send-input path, but no screen re-check
+    // (the target is asleep/gone, so there's no live prompt to drift). Both fail
+    // closed: the underlying command `Err`s on a non-resumable id / missing
+    // transcript, so a hallucinated target revives nothing.
+    "fleet_wake",
+    "fleet_resume",
 ];
 
 /// If `approval.action` is on the conservative autoapprove allowlist,
@@ -448,6 +458,20 @@ pub async fn auto_resolve_if_allowed(
                 return Ok(false);
             }
         }
+    } else if matches!(approval.action.as_str(), "fleet_wake" | "fleet_resume") {
+        // Recovery actions (Phase 4): same boldness × class × confidence bar, but
+        // NO screen re-check — the target is hibernated/orphaned, so there's no
+        // live prompt that could have drifted since Athena reasoned on it.
+        let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
+        if !fleet_action_auto_fires(&approval.params_json, boldness) {
+            tracing::info!(
+                approval_id = %approval.id,
+                action = %approval.action,
+                boldness = boldness.as_str(),
+                "autonomous autoapprove deferred: recovery action below the boldness × class × confidence bar — left pending as an orb consult"
+            );
+            return Ok(false);
+        }
     }
     // Same atomic pending→running transition the manual path uses.
     let (action, params) = load_pending(&state, &approval.id)?;
@@ -471,6 +495,8 @@ pub async fn auto_resolve_if_allowed(
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         "fleet_send_input" => execute_fleet_send_input(&params),
         "fleet_intervene" => execute_fleet_intervene(app, &params),
+        "fleet_wake" => execute_fleet_wake(app, &params).await,
+        "fleet_resume" => execute_fleet_resume(app, &params).await,
         _ => unreachable!("allowlist mismatch"),
     };
     let (status_text, embedder_log) = match exec_result {
@@ -4156,6 +4182,76 @@ fn execute_fleet_redirect_op(
         }
     }
     Ok(ExecuteResult::message(msg))
+}
+
+/// Phase 4 — `fleet_wake`: revive a hibernated session. Wraps the
+/// `fleet_wake_session` command (resume_target → spawn `claude --resume` in the
+/// original cwd → drop the sleeping placeholder). Auto-approvable under the
+/// confidence gate; a hallucinated or non-resumable id fails closed — the command
+/// returns `Err` unless the session is `Hibernated` with a bound claude_session_id.
+///
+/// `params`: `{ session_id: string }` (+ optional `confidence`/`decision_class`
+/// consumed by the gate, ignored here).
+async fn execute_fleet_wake(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let session_id = params
+        .get("session_id")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_wake: missing `session_id`".into()))?;
+    let new_id = crate::commands::fleet::commands::fleet_wake_session(
+        app.clone(),
+        session_id.to_string(),
+        None,
+        None,
+    )
+    .await
+    .map_err(|e| AppError::Internal(format!("fleet_wake: {e}")))?;
+    Ok(ExecuteResult::message(format!(
+        "Revived hibernated session `{}` → resumed as `{}`.",
+        &session_id[..session_id.len().min(8)],
+        &new_id[..new_id.len().min(8)],
+    )))
+}
+
+/// Phase 4 — `fleet_resume`: adopt an orphaned `claude` process (one the
+/// in-memory registry lost, e.g. after an app restart while the CLI kept
+/// running). Wraps the `fleet_resume_orphan` command (derive the conversation id
+/// from the newest transcript for the cwd → kill the orphan → spawn a fresh
+/// tracked `claude --resume`). Auto-approvable under the confidence gate.
+///
+/// `params`: `{ pid: number, cwd: string }` (+ optional gate fields). Inherits the
+/// command's known sharp edge: cwd is not a unique conversation key, so a repo
+/// with multiple past sessions may adopt the wrong transcript.
+async fn execute_fleet_resume(
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let pid = params
+        .get("pid")
+        .and_then(|v| v.as_u64().or_else(|| v.as_str().and_then(|s| s.trim().parse::<u64>().ok())))
+        .and_then(|n| u32::try_from(n).ok())
+        .ok_or_else(|| AppError::Internal("fleet_resume: missing/invalid `pid`".into()))?;
+    let cwd = params
+        .get("cwd")
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Internal("fleet_resume: missing `cwd`".into()))?;
+    let new_id = crate::commands::fleet::process_scan::fleet_resume_orphan(
+        app.clone(),
+        pid,
+        cwd.to_string(),
+    )
+    .await
+    .map_err(|e| AppError::Internal(format!("fleet_resume: {e}")))?;
+    Ok(ExecuteResult::message(format!(
+        "Adopted orphaned process {pid} in `{cwd}` → resumed as `{}`.",
+        &new_id[..new_id.len().min(8)],
+    )))
 }
 
 // ----------------------------------------------------------------------------

@@ -316,4 +316,9 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// user asks to set up/configure a KPI, Athena gathers its shape conversationally
 /// and proposes ONE specific KPI (created proposed + background measurement
 /// setup) for the user to verify in Teams › KPIs.
-pub const CONSTITUTION_VERSION: u32 = 41;
+///
+/// v42 (fleet recovery — Phase 4) teaches the `fleet_wake` / `fleet_resume` ops:
+/// user-requestable session recovery (revive a hibernated session; adopt an
+/// orphaned CLI process after a restart), confidence-gated on the autonomous
+/// path like `fleet_send_input`.
+pub const CONSTITUTION_VERSION: u32 = 42;
