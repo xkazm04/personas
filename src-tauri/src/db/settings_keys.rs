@@ -232,6 +232,25 @@ pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
 /// `dev_improve` executor. Stored `"true"`/`"false"`. Default OFF.
 pub const COMPANION_DEV_MODE: &str = "companion_dev_mode";
 
+/// Athena's fleet-orchestration BOLDNESS dial — how aggressively she
+/// auto-fires a `fleet_send_input` into a live CLI vs. surfacing it as an
+/// orb consult. Three levels combine with the self-reported `confidence`
+/// and the `decision_class` (`drive_forward` vs `choice`) she attaches to
+/// each proposal (see `approvals::fleet_send_input_auto_fires`):
+///   • `"cautious"` — high-confidence only, both classes (the pre-Phase-2
+///     behaviour).
+///   • `"balanced"` — `drive_forward` auto-fires at high OR medium; a
+///     `choice` stays high-only.
+///   • `"bold"` (default) — both classes auto-fire at high OR medium.
+/// `"low"` confidence NEVER auto-fires at any level. Requires
+/// [`COMPANION_AUTONOMOUS_MODE`] to be on (the whole auto-fire path is
+/// gated on it). Written by the dial in the companion autonomy UI; read by
+/// the autoapprove gate. Stored as the level string; unknown/missing →
+/// default. Default `"bold"` (user policy 2026-07-04).
+pub const COMPANION_FLEET_BOLDNESS: &str = "companion_fleet_boldness";
+/// Default level for [`COMPANION_FLEET_BOLDNESS`] when the row is unset.
+pub const COMPANION_FLEET_BOLDNESS_DEFAULT: &str = "bold";
+
 /// Whether the autonomous MESSAGE triage leg of the proactive tick may,
 /// unattended, read the Overview → Messages inbox the way Athena resolves
 /// human reviews: a batched headless decision classifies each unread

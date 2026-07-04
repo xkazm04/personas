@@ -151,6 +151,82 @@ pub fn autonomous_mode_enabled(db: &crate::db::DbPool) -> bool {
     )
 }
 
+/// Athena's fleet-orchestration boldness dial (Phase 2). Combines with the
+/// self-reported `confidence` and `decision_class` on each `fleet_send_input`
+/// proposal to decide auto-fire vs orb consult — see
+/// `approvals::fleet_send_input_auto_fires`. `low` confidence never auto-fires
+/// at any level. See [`crate::db::settings_keys::COMPANION_FLEET_BOLDNESS`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FleetBoldness {
+    /// High-confidence only, both classes (the pre-Phase-2 behaviour).
+    Cautious,
+    /// `drive_forward` at high|medium; `choice` stays high-only.
+    Balanced,
+    /// Both classes at high|medium (default).
+    Bold,
+}
+
+impl FleetBoldness {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            FleetBoldness::Cautious => "cautious",
+            FleetBoldness::Balanced => "balanced",
+            FleetBoldness::Bold => "bold",
+        }
+    }
+
+    /// Parse a stored/incoming level string; unknown → the default (Bold).
+    pub fn from_setting(s: &str) -> Self {
+        match s.trim().to_ascii_lowercase().as_str() {
+            "cautious" => FleetBoldness::Cautious,
+            "balanced" => FleetBoldness::Balanced,
+            _ => FleetBoldness::Bold,
+        }
+    }
+}
+
+/// Read the persisted fleet-boldness dial; defaults to Bold when unset.
+/// Autoapprove-gate read path (not the UI's authoritative state).
+pub fn fleet_boldness(db: &crate::db::DbPool) -> FleetBoldness {
+    match crate::db::repos::core::settings::get(
+        db,
+        crate::db::settings_keys::COMPANION_FLEET_BOLDNESS,
+    ) {
+        Ok(Some(v)) => FleetBoldness::from_setting(&v),
+        _ => FleetBoldness::from_setting(crate::db::settings_keys::COMPANION_FLEET_BOLDNESS_DEFAULT),
+    }
+}
+
+/// Persist the fleet-boldness dial server-side. The frontend keeps its own
+/// state for instant UI feedback; the autoapprove gate reads this row. Rejects
+/// an unknown level rather than silently coercing it, so the UI can't drift.
+#[tauri::command]
+pub fn companion_set_fleet_boldness(
+    state: State<'_, Arc<AppState>>,
+    level: String,
+) -> Result<(), AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    let lvl = level.trim().to_ascii_lowercase();
+    let normalized = FleetBoldness::from_setting(&lvl);
+    if normalized.as_str() != lvl.as_str() {
+        return Err(AppError::Validation(format!(
+            "unknown fleet boldness level: {level:?} (expected cautious|balanced|bold)"
+        )));
+    }
+    crate::db::repos::core::settings::set(
+        &state.db,
+        crate::db::settings_keys::COMPANION_FLEET_BOLDNESS,
+        normalized.as_str(),
+    )
+}
+
+/// Read the persisted fleet-boldness dial so the UI can hydrate on mount.
+#[tauri::command]
+pub fn companion_get_fleet_boldness(state: State<'_, Arc<AppState>>) -> Result<String, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    Ok(fleet_boldness(&state.db).as_str().to_string())
+}
+
 /// Persist the DEV MODE toggle server-side (the wrench in the companion
 /// header). Same split as autonomous mode: the frontend keeps Zustand
 /// state for instant UI feedback; the backend prompt assembler and the
