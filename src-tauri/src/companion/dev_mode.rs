@@ -364,6 +364,12 @@ pub fn ensure_repo_registered(sys_db: &DbPool) {
 
 // ── git helpers (worktree + merge handshake) ────────────────────────────
 
+/// Run `git -C <cwd>` with the given args and capture its output.
+///
+/// On success (zero exit status) returns the trimmed stdout. On failure
+/// returns an `Err` whose string prefers the trimmed stderr, falling back
+/// to the trimmed stdout when stderr is empty. A failure to spawn `git`
+/// itself surfaces as an `Err` describing the spawn error.
 fn run_git(cwd: &std::path::Path, args: &[&str]) -> Result<String, String> {
     let out = std::process::Command::new("git")
         .arg("-C")
