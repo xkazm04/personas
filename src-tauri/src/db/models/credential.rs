@@ -69,6 +69,13 @@ pub struct CreateCredentialInput {
     /// (used by catalog flows where the credential was tested before saving).
     #[serde(default)]
     pub healthcheck_passed: Option<bool>,
+    /// One-time reference to a completed in-memory OAuth session (the session
+    /// id returned by the OAuth status polls). When present, the command layer
+    /// decrypts the session's tokens and merges them into the credential's
+    /// field map server-side — token material never crosses the IPC boundary.
+    #[serde(default)]
+    #[ts(optional)]
+    pub oauth_session_ref: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -85,6 +92,12 @@ pub struct UpdateCredentialInput {
     pub iv: Option<String>,
     pub metadata: Option<Option<String>>,
     pub session_encrypted_data: Option<String>,
+    /// One-time reference to a completed in-memory OAuth session — see
+    /// `CreateCredentialInput::oauth_session_ref`. Tokens are merged into the
+    /// updated field map server-side.
+    #[serde(default)]
+    #[ts(optional)]
+    pub oauth_session_ref: Option<String>,
 }
 
 // ============================================================================

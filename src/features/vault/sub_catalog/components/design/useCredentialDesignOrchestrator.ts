@@ -3,7 +3,7 @@ import { useCredentialDesign, type CredentialDesignResult } from '@/hooks/design
 import { useOAuthConsent } from '@/hooks/design/oauth/useOAuthConsent';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
-import { extractFirstUrl } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
+import { extractFirstUrl, OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import { detectAuthenticatedServices } from '@/api/auth/authDetect';
 import type { AuthDetectionInfo } from '@/hooks/design/credential/useCredentialNegotiator';
 import type { CredentialDesignContextValue } from '@/features/vault/sub_catalog/components/design/CredentialDesignContext';
@@ -116,7 +116,9 @@ export function useCredentialDesignOrchestrator(): CredentialDesignOrchestrator 
       const fallback = tx(t.vault.credential_forms.credential_suffix, {
         name: design.result?.connector.label ?? '',
       });
-      if (flow.kind === 'google_oauth' && values.refresh_token?.trim()) {
+      // The session ref stands in for "refresh token captured" — the backend
+      // redeems it into the real token at save time.
+      if (flow.kind === 'google_oauth' && values[OAUTH_FIELD.SESSION_REF]?.trim()) {
         const name = credentialName.trim() || fallback;
         design.save(name, values, hcConfig);
         return;

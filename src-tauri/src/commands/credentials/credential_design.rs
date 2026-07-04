@@ -128,8 +128,20 @@ pub async fn test_credential_design_healthcheck(
     connector: serde_json::Value,
     field_values: serde_json::Value,
 ) -> Result<serde_json::Value, AppError> {
-    let values_map: HashMap<String, String> = serde_json::from_value(field_values)
+    let mut values_map: HashMap<String, String> = serde_json::from_value(field_values)
         .map_err(|e| AppError::Validation(format!("Invalid field values: {e}")))?;
+
+    // Server-side OAuth token binding: after an OAuth consent the renderer
+    // only holds a session ref — resolve it (without consuming the session)
+    // so the design-flow healthcheck can substitute real tokens into its
+    // endpoint/header templates.
+    if let Some(session_ref) = values_map.remove("oauth_session_ref") {
+        crate::commands::credentials::oauth::redeem_oauth_session_into_fields(
+            &session_ref,
+            &mut values_map,
+            false,
+        )?;
+    }
 
     let field_keys: Vec<String> = values_map.keys().cloned().collect();
     let prompt_text = credential_design::build_credential_healthcheck_prompt(

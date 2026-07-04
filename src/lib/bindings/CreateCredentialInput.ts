@@ -5,4 +5,11 @@ export type CreateCredentialInput = { name: string, serviceType: string, encrypt
  * When true, persist an initial healthcheck_last_success=true on creation
  * (used by catalog flows where the credential was tested before saving).
  */
-healthcheckPassed: boolean | null, };
+healthcheckPassed: boolean | null, 
+/**
+ * One-time reference to a completed in-memory OAuth session (the session
+ * id returned by the OAuth status polls). When present, the command layer
+ * decrypts the session's tokens and merges them into the credential's
+ * field map server-side — token material never crosses the IPC boundary.
+ */
+oauthSessionRef?: string, };

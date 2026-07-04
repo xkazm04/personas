@@ -31,6 +31,13 @@ export const OAUTH_FIELD = {
   COMPLETED_AT: 'oauth_completed_at',
   CLIENT_MODE: 'oauth_client_mode',
   PROVIDER: 'oauth_provider',
+  /**
+   * Transport-only key: a one-time reference to the completed server-side
+   * OAuth session. The backend redeems it into real token fields at
+   * credential save / preview-healthcheck time — the tokens themselves never
+   * cross IPC. Never persisted as a credential field (the backend strips it).
+   */
+  SESSION_REF: 'oauth_session_ref',
 } as const;
 
 // -- Credential flow discriminated union -------------------------
@@ -155,9 +162,11 @@ export function isSaveReady(
 ): boolean {
   switch (flow.kind) {
     case 'google_oauth':
-      return Boolean(oauthValues.refresh_token);
+      // The session ref is only set once the backend captured a refresh
+      // token, so its presence means "token captured server-side".
+      return Boolean(oauthValues[OAUTH_FIELD.SESSION_REF]);
     case 'provider_oauth': {
-      if (!oauthValues.access_token) return false;
+      if (!oauthValues[OAUTH_FIELD.SESSION_REF]) return false;
       // If this provider has a healthcheck endpoint, require it to pass
       if (PROVIDERS_WITH_HEALTHCHECK.has(flow.providerId.toLowerCase())) {
         return healthcheckSuccess;

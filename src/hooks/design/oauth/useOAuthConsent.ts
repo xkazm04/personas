@@ -35,7 +35,9 @@ export function useOAuthConsent(): OAuthConsentState {
       const effectiveScope = poll.scope ?? scopeRef.current ?? '';
       return {
         ...prev,
-        refresh_token: poll.refresh_token ?? prev.refresh_token ?? '',
+        // Tokens stay server-side: the ref is redeemed by the backend at
+        // credential save / preview-healthcheck time.
+        [OAUTH_FIELD.SESSION_REF]: poll.oauth_session_ref ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
         scopes: effectiveScope,
         [OAUTH_FIELD.SCOPE]: effectiveScope,
         [OAUTH_FIELD.COMPLETED_AT]: new Date().toISOString(),

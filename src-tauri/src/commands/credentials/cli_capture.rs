@@ -1031,6 +1031,7 @@ pub async fn cli_capture_save(
         metadata: Some(metadata_json),
         session_encrypted_data: None,
         healthcheck_passed: Some(true),
+        oauth_session_ref: None,
     };
 
     let cred = cred_repo::create_with_fields(&state.db, create_input, &result.fields)?;

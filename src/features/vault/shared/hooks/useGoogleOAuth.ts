@@ -4,11 +4,16 @@ import { getGoogleCredentialOAuthStatus, startGoogleCredentialOAuth } from "@/ap
 import type { GoogleCredentialOAuthStatusResult } from "@/api/vault/oauthGatewayApi";
 
 import { useOAuthProtocol } from '@/hooks/design/oauth/useOAuthProtocol';
+import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 
 export interface GoogleOAuthTokenData {
-  refresh_token: string;
+  /**
+   * One-time reference to the completed server-side OAuth session. Submit it
+   * as `oauthSessionRef` with create/update credential — the backend redeems
+   * it into the real refresh token. Token material never crosses IPC.
+   */
+  oauth_session_ref: string;
   scope: string | null;
-  access_token: string | null;
 }
 
 export interface GoogleOAuthState {
@@ -36,16 +41,15 @@ export function useGoogleOAuth(options: UseGoogleOAuthOptions = {}): GoogleOAuth
     pollFn: (sessionId) => getGoogleCredentialOAuthStatus(sessionId),
     extractValues: (poll, prev) => ({
       ...prev,
-      refresh_token: poll.refresh_token ?? prev.refresh_token ?? '',
+      [OAUTH_FIELD.SESSION_REF]: poll.oauth_session_ref ?? prev[OAUTH_FIELD.SESSION_REF] ?? '',
       scopes: poll.scope ?? prev.scopes ?? '',
     }),
     label: 'Google',
     startTimeoutMs: 0,
     onComplete: (values) => {
       options.onSuccess?.({
-        refresh_token: values.refresh_token ?? '',
+        oauth_session_ref: values[OAUTH_FIELD.SESSION_REF] ?? '',
         scope: values.scopes || null,
-        access_token: values.access_token || null,
       });
     },
     onError: (msg) => {

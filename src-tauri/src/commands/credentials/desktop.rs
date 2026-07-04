@@ -156,6 +156,7 @@ pub async fn register_imported_mcp_server(
         metadata: Some(serde_json::to_string(&metadata).unwrap_or_default()),
         session_encrypted_data: None,
         healthcheck_passed: None,
+        oauth_session_ref: None,
     };
 
     let credential = credentials::create_with_fields(&state.db, input, &fields)?;

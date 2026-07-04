@@ -27,6 +27,15 @@ use std::sync::Arc;
 const OAUTH_SESSION_TTL_SECS: u64 = 10 * 60;
 const CLEANUP_THROTTLE: Duration = Duration::from_secs(30);
 
+/// Grace window after a credential save has redeemed a session's tokens.
+/// A redeemed session is kept briefly (instead of being removed immediately)
+/// because one consent can legitimately be redeemed several times in quick
+/// succession — e.g. the Google Workspace connect flow provisions one
+/// credential per selected service from a single authorization. After the
+/// grace window `cleanup_oauth_sessions` evicts the session even if its
+/// 10-minute TTL has not elapsed yet.
+const OAUTH_SESSION_REDEEMED_GRACE_SECS: u64 = 120;
+
 /// Hard cap on concurrent OAuth sessions per map. When exceeded, the oldest
 /// sessions are evicted to prevent unbounded memory growth from abandoned flows.
 const MAX_OAUTH_SESSIONS: usize = 50;
@@ -315,10 +324,6 @@ impl OAuthSessionStatus {
     fn fail() -> Self {
         Self::Error
     }
-    /// Whether the session has reached a final state and should be cleaned up.
-    fn is_terminal(self) -> bool {
-        matches!(self, Self::Success | Self::Error)
-    }
 }
 
 impl Zeroize for OAuthSessionStatus {
@@ -464,6 +469,8 @@ pub async fn start_google_credential_oauth(
                 extra: None,
                 error: None,
                 created_at: now_unix_secs(),
+                persist_access_token: false,
+                redeemed_at: None,
             },
         );
     }
@@ -1199,6 +1206,16 @@ struct OAuthSession {
     extra: Option<serde_json::Value>,
     error: Option<String>,
     created_at: u64,
+    /// Whether a redeem persists the access_token as a credential field.
+    /// Universal-gateway flows historically stored access_token (plus
+    /// token_type/expires_in submitted by the renderer); Google connector
+    /// flows store only the refresh_token. Keeping the distinction preserves
+    /// the stored credential shape each connector's strategy expects.
+    persist_access_token: bool,
+    /// Unix timestamp of the first credential save that redeemed this
+    /// session's tokens. `None` until redeemed. Redeemed sessions are evicted
+    /// by `cleanup_oauth_sessions` after `OAUTH_SESSION_REDEEMED_GRACE_SECS`.
+    redeemed_at: Option<u64>,
 }
 
 static OAUTH_SESSIONS: OnceLock<Mutex<HashMap<String, OAuthSession>>> = OnceLock::new();
@@ -1208,6 +1225,19 @@ fn oauth_sessions() -> &'static Mutex<HashMap<String, OAuthSession>> {
 }
 
 static OAUTH_CLEANUP_LAST_RUN: OnceLock<Mutex<Option<Instant>>> = OnceLock::new();
+
+/// Whether a session should be evicted at time `now`: either its absolute TTL
+/// elapsed, or it was redeemed by a credential save more than
+/// `OAUTH_SESSION_REDEEMED_GRACE_SECS` ago.
+fn session_expired(session: &OAuthSession, now: u64) -> bool {
+    if now.saturating_sub(session.created_at) > OAUTH_SESSION_TTL_SECS {
+        return true;
+    }
+    match session.redeemed_at {
+        Some(redeemed) => now.saturating_sub(redeemed) > OAUTH_SESSION_REDEEMED_GRACE_SECS,
+        None => false,
+    }
+}
 
 fn cleanup_oauth_sessions() {
     let last_run = OAUTH_CLEANUP_LAST_RUN.get_or_init(|| Mutex::new(None));
@@ -1221,8 +1251,8 @@ fn cleanup_oauth_sessions() {
     }
     let now = now_unix_secs();
     let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
-    // Remove expired sessions
-    sessions.retain(|_, s| now.saturating_sub(s.created_at) <= OAUTH_SESSION_TTL_SECS);
+    // Remove expired sessions (TTL) and redeemed sessions past their grace window
+    sessions.retain(|_, s| !session_expired(s, now));
     // Evict oldest sessions if over the hard cap
     evict_oldest_sessions(&mut sessions, MAX_OAUTH_SESSIONS, |s| s.created_at);
     drop(sessions);
@@ -1319,33 +1349,116 @@ fn apply_oauth_outcome(
 
 /// Read session status as a JSON value. Shared implementation backing both
 /// `get_google_credential_oauth_status` and `get_oauth_status`.
+///
+/// SECURITY: returns token *metadata* only — the actual access/refresh tokens
+/// never cross the IPC boundary. The renderer receives `has_access_token` /
+/// `has_refresh_token` booleans plus an `oauth_session_ref` it can hand back
+/// to `create_credential` / `update_credential`, which redeem the tokens
+/// server-side (see `redeem_oauth_session_into_fields`).
+///
+/// The session is intentionally NOT removed on a terminal read anymore: it
+/// must survive until a credential save redeems it. Abandoned sessions are
+/// still evicted by `cleanup_oauth_sessions` (10-minute TTL + post-redeem
+/// grace + hard cap).
 fn get_session_status(session_id: &str) -> serde_json::Value {
     cleanup_oauth_sessions();
-    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    let sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
     if let Some(s) = sessions.get(session_id) {
-        let decrypted_access = decrypt_token(&s.access_token);
-        let decrypted_refresh = decrypt_token(&s.refresh_token);
-        let result = json!({
+        let session_ref = if s.status == OAuthSessionStatus::Success {
+            Some(session_id)
+        } else {
+            None
+        };
+        return json!({
             "status": s.status,
             "provider_id": s.provider_id,
-            "access_token": decrypted_access.as_ref().map(|t| t.expose_secret()),
-            "refresh_token": decrypted_refresh.as_ref().map(|t| t.expose_secret()),
+            "has_access_token": s.access_token.is_some(),
+            "has_refresh_token": s.refresh_token.is_some(),
+            "oauth_session_ref": session_ref,
             "scope": s.scope,
             "token_type": s.token_type,
             "expires_in": s.expires_in,
-            "extra": s.extra,
             "error": s.error,
         });
-        if s.status.is_terminal() {
-            sessions.remove(session_id);
-        }
-        return result;
     }
 
     json!({
         "status": OAuthSessionStatus::NotFound,
         "error": "OAuth session not found or expired",
     })
+}
+
+/// Redeem a completed OAuth session's tokens into a credential field map,
+/// entirely server-side.
+///
+/// Called by `create_credential` / `update_credential` (with `consume: true`)
+/// when the input carries an `oauth_session_ref`, and by the preview
+/// healthcheck paths (with `consume: false`) so "Test connection" can probe
+/// with the freshly-granted tokens before the credential is saved.
+///
+/// Merged keys mirror what the pre-binding frontend used to submit:
+/// - `refresh_token` — always, when the session captured one.
+/// - `access_token` — only for universal-gateway sessions
+///   (`persist_access_token`); Google connector credentials never stored it.
+/// - `scopes` / `oauth_scope` — filled only when the caller didn't provide
+///   them (the renderer still receives `scope` as metadata and keeps its
+///   historical precedence logic).
+///
+/// `consume: true` stamps `redeemed_at`; the session then survives only for
+/// `OAUTH_SESSION_REDEEMED_GRACE_SECS` (multi-credential provisioning like
+/// Google Workspace redeems one consent several times back-to-back) before
+/// `cleanup_oauth_sessions` evicts it.
+///
+/// A missing/expired/incomplete session yields `AppError::Validation` so the
+/// caller fails cleanly before any write.
+pub(crate) fn redeem_oauth_session_into_fields(
+    session_ref: &str,
+    fields: &mut HashMap<String, String>,
+    consume: bool,
+) -> Result<(), AppError> {
+    cleanup_oauth_sessions();
+    let mut sessions = oauth_sessions().lock().unwrap_or_else(|e| e.into_inner());
+    let s = sessions.get_mut(session_ref).ok_or_else(|| {
+        AppError::Validation(
+            "OAuth session not found or expired. Re-run the authorization and try again.".into(),
+        )
+    })?;
+    // Enforce expiry even when the throttled cleanup hasn't swept yet.
+    if session_expired(s, now_unix_secs()) {
+        return Err(AppError::Validation(
+            "OAuth session expired. Re-run the authorization and try again.".into(),
+        ));
+    }
+    if s.status != OAuthSessionStatus::Success {
+        return Err(AppError::Validation(
+            "OAuth authorization has not completed successfully. Finish the consent flow in your browser and try again.".into(),
+        ));
+    }
+
+    if let Some(token) = decrypt_token(&s.refresh_token) {
+        fields.insert("refresh_token".into(), token.expose_secret().to_string());
+    }
+    if s.persist_access_token {
+        if let Some(token) = decrypt_token(&s.access_token) {
+            fields.insert("access_token".into(), token.expose_secret().to_string());
+        }
+    }
+    if let Some(scope) = s.scope.as_deref().filter(|v| !v.is_empty()) {
+        // Defensive fill only — the renderer already sets these from the
+        // status metadata and may intentionally narrow `scopes` per service
+        // (e.g. the Workspace flow), so an existing value wins.
+        fields
+            .entry("scopes".into())
+            .or_insert_with(|| scope.to_string());
+        fields
+            .entry("oauth_scope".into())
+            .or_insert_with(|| scope.to_string());
+    }
+
+    if consume {
+        s.redeemed_at = Some(now_unix_secs());
+    }
+    Ok(())
 }
 
 // -- Universal OAuth Commands -------------------------------------
@@ -1551,6 +1664,8 @@ pub async fn start_oauth(
                 extra: None,
                 error: None,
                 created_at: now_unix_secs(),
+                persist_access_token: true,
+                redeemed_at: None,
             },
         );
     }
@@ -1789,7 +1904,270 @@ async fn exchange_oauth_code(
 #[cfg(test)]
 mod tests {
     use super::parse_expires_in;
+    use crate::engine::crypto::SecureString;
     use serde_json::json;
+    use std::collections::HashMap;
+
+    /// Seed an in-memory OAuth session directly (the callback server is not
+    /// exercised here) and return its id. Tokens are sealed exactly like
+    /// `apply_oauth_outcome` does.
+    fn seed_session(
+        prefix: &str,
+        status: super::OAuthSessionStatus,
+        persist_access_token: bool,
+        scope: Option<&str>,
+    ) -> String {
+        let id = format!("{prefix}_{}", uuid::Uuid::new_v4());
+        let mut sessions = super::oauth_sessions()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        sessions.insert(
+            id.clone(),
+            super::OAuthSession {
+                status,
+                provider_id: if persist_access_token {
+                    "github".into()
+                } else {
+                    "google".into()
+                },
+                access_token: super::encrypt_token(Some(SecureString::new(
+                    "at-secret-123".into(),
+                ))),
+                refresh_token: super::encrypt_token(Some(SecureString::new(
+                    "rt-secret-456".into(),
+                ))),
+                scope: scope.map(|s| s.to_string()),
+                token_type: Some("Bearer".into()),
+                expires_in: Some(3599),
+                extra: None,
+                error: None,
+                created_at: super::now_unix_secs(),
+                persist_access_token,
+                redeemed_at: None,
+            },
+        );
+        id
+    }
+
+    fn drop_session(id: &str) {
+        super::oauth_sessions()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(id);
+    }
+
+    #[test]
+    fn status_response_never_contains_token_material() {
+        let id = seed_session(
+            "goauth_test_status",
+            super::OAuthSessionStatus::complete(),
+            false,
+            Some("scope.a scope.b"),
+        );
+
+        let value = super::get_session_status(&id);
+
+        // The serialized payload must not carry the plaintext tokens or even
+        // the token field names — metadata booleans + session ref only.
+        let text = value.to_string();
+        assert!(!text.contains("at-secret-123"), "status leaked access token");
+        assert!(
+            !text.contains("rt-secret-456"),
+            "status leaked refresh token"
+        );
+        let obj = value.as_object().expect("status is an object");
+        assert!(!obj.contains_key("access_token"));
+        assert!(!obj.contains_key("refresh_token"));
+
+        assert_eq!(value["status"], "success");
+        assert_eq!(value["has_access_token"], true);
+        assert_eq!(value["has_refresh_token"], true);
+        assert_eq!(value["oauth_session_ref"], id.as_str());
+        assert_eq!(value["scope"], "scope.a scope.b");
+
+        // A terminal read must NOT consume the session anymore — the
+        // credential save is what redeems it.
+        let again = super::get_session_status(&id);
+        assert_eq!(again["oauth_session_ref"], id.as_str());
+
+        drop_session(&id);
+    }
+
+    #[test]
+    fn pending_status_exposes_no_session_ref() {
+        let id = seed_session(
+            "goauth_test_pending",
+            super::OAuthSessionStatus::Pending,
+            false,
+            None,
+        );
+        let value = super::get_session_status(&id);
+        assert_eq!(value["status"], "pending");
+        assert_eq!(value["oauth_session_ref"], serde_json::Value::Null);
+        drop_session(&id);
+    }
+
+    #[test]
+    fn redeem_merges_google_tokens_and_keeps_caller_scope() {
+        let id = seed_session(
+            "goauth_test_redeem",
+            super::OAuthSessionStatus::complete(),
+            false,
+            Some("granted.scope"),
+        );
+
+        let mut fields: HashMap<String, String> = HashMap::new();
+        fields.insert("scopes".into(), "user-typed.scope".into());
+        super::redeem_oauth_session_into_fields(&id, &mut fields, true)
+            .expect("redeem succeeds");
+
+        assert_eq!(
+            fields.get("refresh_token").map(String::as_str),
+            Some("rt-secret-456")
+        );
+        // Google connector credentials never stored the access token.
+        assert!(!fields.contains_key("access_token"));
+        // Caller-provided scope keys win; missing ones are filled.
+        assert_eq!(fields["scopes"], "user-typed.scope");
+        assert_eq!(fields["oauth_scope"], "granted.scope");
+
+        // The consent stays redeemable within the grace window so one
+        // authorization can provision several credentials (Workspace flow).
+        let mut fields2: HashMap<String, String> = HashMap::new();
+        super::redeem_oauth_session_into_fields(&id, &mut fields2, true)
+            .expect("second redeem within grace window succeeds");
+        assert_eq!(
+            fields2.get("refresh_token").map(String::as_str),
+            Some("rt-secret-456")
+        );
+
+        {
+            let sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            let s = sessions.get(&id).expect("session kept during grace");
+            assert!(s.redeemed_at.is_some(), "consume stamps redeemed_at");
+        }
+
+        drop_session(&id);
+    }
+
+    #[test]
+    fn redeem_universal_session_includes_access_token() {
+        let id = seed_session(
+            "oauth_test_universal",
+            super::OAuthSessionStatus::complete(),
+            true,
+            Some("repo read:user"),
+        );
+
+        let mut fields: HashMap<String, String> = HashMap::new();
+        super::redeem_oauth_session_into_fields(&id, &mut fields, false)
+            .expect("redeem succeeds");
+
+        assert_eq!(
+            fields.get("access_token").map(String::as_str),
+            Some("at-secret-123")
+        );
+        assert_eq!(
+            fields.get("refresh_token").map(String::as_str),
+            Some("rt-secret-456")
+        );
+        assert_eq!(fields["scopes"], "repo read:user");
+
+        // Non-consuming (preview healthcheck) must not start the grace timer.
+        {
+            let sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            assert!(sessions.get(&id).expect("session kept").redeemed_at.is_none());
+        }
+
+        drop_session(&id);
+    }
+
+    #[test]
+    fn redeem_rejects_missing_pending_and_expired_sessions() {
+        // Missing ref → clean validation error, no fields written.
+        let mut fields: HashMap<String, String> = HashMap::new();
+        let err = super::redeem_oauth_session_into_fields("goauth_no_such_ref", &mut fields, true)
+            .expect_err("missing session must fail");
+        assert!(matches!(err, crate::error::AppError::Validation(_)));
+        assert!(fields.is_empty());
+
+        // Pending session → validation error.
+        let pending = seed_session(
+            "goauth_test_notdone",
+            super::OAuthSessionStatus::Pending,
+            false,
+            None,
+        );
+        let err = super::redeem_oauth_session_into_fields(&pending, &mut fields, true)
+            .expect_err("pending session must fail");
+        assert!(matches!(err, crate::error::AppError::Validation(_)));
+        assert!(fields.is_empty());
+        drop_session(&pending);
+
+        // TTL-expired session → validation error even if the throttled
+        // cleanup hasn't swept it yet.
+        let expired = seed_session(
+            "goauth_test_expired",
+            super::OAuthSessionStatus::complete(),
+            false,
+            None,
+        );
+        {
+            let mut sessions = super::oauth_sessions()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            if let Some(s) = sessions.get_mut(&expired) {
+                s.created_at = super::now_unix_secs()
+                    .saturating_sub(super::OAUTH_SESSION_TTL_SECS + 60);
+            }
+        }
+        let err = super::redeem_oauth_session_into_fields(&expired, &mut fields, true)
+            .expect_err("expired session must fail");
+        assert!(matches!(err, crate::error::AppError::Validation(_)));
+        assert!(fields.is_empty());
+        drop_session(&expired);
+    }
+
+    #[test]
+    fn session_expiry_honors_ttl_and_redeem_grace() {
+        let now = super::now_unix_secs();
+        let mk = |created_at: u64, redeemed_at: Option<u64>| super::OAuthSession {
+            status: super::OAuthSessionStatus::complete(),
+            provider_id: "google".into(),
+            access_token: None,
+            refresh_token: None,
+            scope: None,
+            token_type: None,
+            expires_in: None,
+            extra: None,
+            error: None,
+            created_at,
+            persist_access_token: false,
+            redeemed_at,
+        };
+
+        // Fresh, unredeemed → kept.
+        assert!(!super::session_expired(&mk(now, None), now));
+        // Past the absolute TTL → evicted.
+        assert!(super::session_expired(
+            &mk(now.saturating_sub(super::OAUTH_SESSION_TTL_SECS + 1), None),
+            now
+        ));
+        // Recently redeemed → kept for the grace window.
+        assert!(!super::session_expired(&mk(now, Some(now)), now));
+        // Redeemed past the grace window → evicted before the TTL.
+        assert!(super::session_expired(
+            &mk(
+                now,
+                Some(now.saturating_sub(super::OAUTH_SESSION_REDEEMED_GRACE_SECS + 1))
+            ),
+            now
+        ));
+    }
 
     #[test]
     fn parses_numeric_expires_in() {

@@ -44,7 +44,9 @@ export function useCredentialOAuth({ onSuccess, onError }: UseCredentialOAuthOpt
 
       const credentialData = {
         ...safePendingValues,
-        refresh_token: data.refresh_token,
+        // The backend redeems the ref into the real refresh token at save /
+        // preview-healthcheck time — no token material in the renderer.
+        [OAUTH_FIELD.SESSION_REF]: data.oauth_session_ref,
         scopes: effectiveScopes,
         [OAUTH_FIELD.SCOPE]: data.scope ?? effectiveScopes,
         [OAUTH_FIELD.COMPLETED_AT]: nowIso,

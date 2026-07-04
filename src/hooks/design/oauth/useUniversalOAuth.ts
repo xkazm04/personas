@@ -37,8 +37,11 @@ export function useUniversalOAuth(): UniversalOAuthState {
     pollFn: (sessionId) => getOAuthStatus(sessionId),
     extractValues: (poll, prev) => {
       const values: Record<string, string> = { ...prev };
-      if (poll.access_token) values.access_token = poll.access_token;
-      if (poll.refresh_token) values.refresh_token = poll.refresh_token;
+      // Tokens stay server-side: only the one-time session ref crosses IPC,
+      // and only once the backend actually captured a token.
+      if (poll.oauth_session_ref && (poll.has_access_token || poll.has_refresh_token)) {
+        values[OAUTH_FIELD.SESSION_REF] = poll.oauth_session_ref;
+      }
       if (poll.scope) {
         values.scopes = poll.scope;
         values[OAUTH_FIELD.SCOPE] = poll.scope;

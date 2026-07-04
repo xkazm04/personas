@@ -55,7 +55,7 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
   selectedRef.current = selectedServices;
 
   const provisionCredentials = useCallback(
-    async (refreshToken: string, scope: string | null) => {
+    async (oauthSessionRef: string, scope: string | null) => {
       setIsProvisioning(true);
       setPhase('provisioning');
 
@@ -68,6 +68,10 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
 
       const nowIso = new Date().toISOString();
 
+      // Create ALL credentials first, without interactive pauses: the backend
+      // redeems the one-time OAuth session ref per create, and a redeemed
+      // session only survives a short grace window. Waiting on the resource
+      // picker between creates could let the ref expire mid-provisioning.
       for (let i = 0; i < services.length; i++) {
         const svc = services[i]!;
         const state = states[i]!;
@@ -76,7 +80,9 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
             name: `${svc.label} (Workspace)`,
             service_type: svc.serviceType,
             data: {
-              refresh_token: refreshToken,
+              // Redeemed server-side into the real refresh token — the token
+              // itself never crosses IPC.
+              [OAUTH_FIELD.SESSION_REF]: oauthSessionRef,
               scopes: svc.scopes.join(' '),
               [OAUTH_FIELD.SCOPE]: scope ?? svc.scopes.join(' '),
               [OAUTH_FIELD.COMPLETED_AT]: nowIso,
@@ -85,9 +91,6 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
             },
           });
           states[i] = { ...state, status: 'created', credentialId: credId };
-          // Prompt for scope if this connector has resources[]. Global host
-          // outlives this hook's caller unmount.
-          await promptIfScoped({ credentialId: credId, serviceType: svc.serviceType });
         } catch (err) {
           states[i] = {
             ...state,
@@ -96,6 +99,14 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
           };
         }
         setProvisionStates([...states]);
+      }
+
+      // Then prompt for resource scope where applicable. Global host
+      // outlives this hook's caller unmount.
+      for (const s of states) {
+        if (s.status === 'created' && s.credentialId) {
+          await promptIfScoped({ credentialId: s.credentialId, serviceType: s.service.serviceType });
+        }
       }
 
       setIsProvisioning(false);
@@ -111,7 +122,7 @@ export function useWorkspaceConnect(provider: WorkspaceProvider): WorkspaceConne
 
   const googleOAuth = useGoogleOAuth({
     onSuccess: (data) => {
-      void provisionRef.current(data.refresh_token, data.scope);
+      void provisionRef.current(data.oauth_session_ref, data.scope);
     },
     onError: (msg) => {
       setError(msg);

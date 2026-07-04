@@ -44,11 +44,16 @@ pub struct LlmSpendInsert {
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct LlmSpendTotals {
+    #[ts(type = "number")]
     pub calls: i64,
     pub cost_usd: f64,
+    #[ts(type = "number")]
     pub input_tokens: i64,
+    #[ts(type = "number")]
     pub output_tokens: i64,
+    #[ts(type = "number")]
     pub cache_read_tokens: i64,
+    #[ts(type = "number")]
     pub error_calls: i64,
 }
 
@@ -57,6 +62,7 @@ pub struct LlmSpendTotals {
 pub struct LlmSpendDay {
     // `YYYY-MM-DD` (UTC).
     pub day: String,
+    #[ts(type = "number")]
     pub calls: i64,
     pub cost_usd: f64,
 }
@@ -66,9 +72,12 @@ pub struct LlmSpendDay {
 #[ts(export)]
 pub struct LlmSpendGroup {
     pub key: String,
+    #[ts(type = "number")]
     pub calls: i64,
     pub cost_usd: f64,
+    #[ts(type = "number")]
     pub input_tokens: i64,
+    #[ts(type = "number")]
     pub output_tokens: i64,
 }
 
@@ -76,6 +85,7 @@ pub struct LlmSpendGroup {
 #[ts(export)]
 pub struct LlmSpendDashboard {
     // Window the rollups cover, in days (echoed back for the UI).
+    #[ts(type = "number")]
     pub window_days: i64,
     pub totals: LlmSpendTotals,
     pub daily: Vec<LlmSpendDay>,

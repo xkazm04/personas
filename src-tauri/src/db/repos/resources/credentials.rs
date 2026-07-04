@@ -1449,6 +1449,7 @@ mod tests {
                 metadata: Some("{\"email\": \"test@gmail.com\"}".into()),
                 session_encrypted_data: None,
                 healthcheck_passed: None,
+                oauth_session_ref: None,
             },
             &HashMap::new(),
         )
@@ -1486,6 +1487,7 @@ mod tests {
                 iv: Some("iv_456".into()),
                 metadata: Some(None),
                 session_encrypted_data: None,
+                oauth_session_ref: None,
             },
         )
         .unwrap();
@@ -1531,6 +1533,7 @@ mod tests {
                 metadata: None,
                 session_encrypted_data: None,
                 healthcheck_passed: None,
+                oauth_session_ref: None,
             },
             &fields,
         )
@@ -1589,6 +1592,7 @@ mod tests {
                 iv: None,
                 metadata: None,
                 session_encrypted_data: None,
+                oauth_session_ref: None,
             },
             Some(&new_fields),
         )
@@ -1615,6 +1619,7 @@ mod tests {
                 metadata: None,
                 session_encrypted_data: None,
                 healthcheck_passed: None,
+                oauth_session_ref: None,
             },
             &HashMap::new(),
         )

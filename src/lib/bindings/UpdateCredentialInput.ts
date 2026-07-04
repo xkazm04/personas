@@ -6,4 +6,10 @@ export type UpdateCredentialInput = { name: string | null, serviceType: string |
  * skip_deserializing ensures this is always None from IPC input;
  * the command layer sets it from the encryption result.
  */
-iv: string | null, metadata: string | null | null, sessionEncryptedData: string | null, };
+iv: string | null, metadata: string | null | null, sessionEncryptedData: string | null, 
+/**
+ * One-time reference to a completed in-memory OAuth session — see
+ * `CreateCredentialInput::oauth_session_ref`. Tokens are merged into the
+ * updated field map server-side.
+ */
+oauthSessionRef?: string, };

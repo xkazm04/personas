@@ -49,8 +49,18 @@ pub fn create_credential(
     }
 
     // Parse plaintext JSON into field-level rows (the canonical storage path).
-    let field_map: HashMap<String, String> = serde_json::from_str(&input.encrypted_data)
+    let mut field_map: HashMap<String, String> = serde_json::from_str(&input.encrypted_data)
         .map_err(|e| AppError::Validation(format!("Invalid credential field data: {}", e)))?;
+
+    // Server-side OAuth token binding: when the renderer completed an OAuth
+    // flow it only holds a session ref — decrypt the session's tokens here
+    // and merge them into the field map so they never crossed IPC. A missing
+    // or expired ref fails validation before anything is written.
+    // The transport-only ref key must never be persisted as a field.
+    field_map.remove("oauth_session_ref");
+    if let Some(session_ref) = input.oauth_session_ref.take() {
+        super::oauth::redeem_oauth_session_into_fields(&session_ref, &mut field_map, true)?;
+    }
 
     // Store an empty blob -- all secrets live in credential_fields now.
     let name = input.name.clone();
@@ -135,16 +145,27 @@ pub fn update_credential(
         }
     }
 
-    let has_data_change = input.encrypted_data.is_some();
+    let has_data_change = input.encrypted_data.is_some() || input.oauth_session_ref.is_some();
 
     // Parse plaintext fields for field-level storage
-    let field_map: Option<HashMap<String, String>> =
+    let mut field_map: Option<HashMap<String, String>> =
         match input.encrypted_data.as_ref() {
             Some(data) => Some(serde_json::from_str(data).map_err(|e| {
                 AppError::Validation(format!("Invalid credential field data: {}", e))
             })?),
             None => None,
         };
+
+    // Server-side OAuth token binding (see create_credential): redeem the
+    // session ref into the merged field map; the ref itself is never stored.
+    if let Some(fm) = field_map.as_mut() {
+        fm.remove("oauth_session_ref");
+    }
+    if let Some(session_ref) = input.oauth_session_ref.take() {
+        let mut fm = field_map.take().unwrap_or_default();
+        super::oauth::redeem_oauth_session_into_fields(&session_ref, &mut fm, true)?;
+        field_map = Some(fm);
+    }
 
     // Strip blob columns -- all secrets live in credential_fields now.
     // Update metadata + fields in a single transaction to prevent inconsistent state.
@@ -323,7 +344,7 @@ pub async fn healthcheck_credential_preview(
     session_encrypted_data: String,
 ) -> Result<HealthcheckResult, AppError> {
     // Decrypt mandatory session-encrypted field values (RSA-OAEP + AES-GCM transit encryption)
-    let field_values: HashMap<String, String> =
+    let mut field_values: HashMap<String, String> =
         match state.session_key.decrypt(&session_encrypted_data) {
             Ok(decrypted) => serde_json::from_str(&decrypted).map_err(|e| {
                 AppError::Validation(format!("Invalid decrypted field data: {}", e))
@@ -333,6 +354,14 @@ pub async fn healthcheck_credential_preview(
                 return Err(AppError::Internal("Decryption failed".into()));
             }
         };
+
+    // Server-side OAuth token binding: the renderer only holds a session ref
+    // after an OAuth consent — resolve it (without consuming the session) so
+    // "Test connection" can probe with the freshly-granted tokens before the
+    // credential is saved.
+    if let Some(session_ref) = field_values.remove("oauth_session_ref") {
+        super::oauth::redeem_oauth_session_into_fields(&session_ref, &mut field_values, false)?;
+    }
 
     let result = crate::engine::healthcheck::run_healthcheck_with_fields(
         &state.db,

@@ -896,6 +896,7 @@ mod tests {
                 metadata: None,
                 session_encrypted_data: None,
                 healthcheck_passed: None,
+                oauth_session_ref: None,
             },
             &map,
         )

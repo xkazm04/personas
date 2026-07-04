@@ -673,6 +673,7 @@ pub fn import_foraged_credential(
         metadata: None,
         session_encrypted_data: None,
         healthcheck_passed: None,
+        oauth_session_ref: None,
     };
 
     let mut conn = state

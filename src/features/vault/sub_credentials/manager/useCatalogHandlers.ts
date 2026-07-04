@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { useCredentialOAuth } from '@/features/vault/shared/hooks/useCredentialOAuth';
 import { useUniversalOAuth } from '@/hooks/design/oauth/useUniversalOAuth';
+import { OAUTH_FIELD } from '@/features/vault/sub_catalog/components/design/CredentialDesignHelpers';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
 import { isUniversalOAuthConnector, getOAuthProviderId, getOAuthScopes } from '@/lib/utils/platform/connectors';
 import type { ConnectorDefinition } from '@/lib/types/types';
@@ -49,7 +50,8 @@ export function useCatalogHandlers({
 
   const handleOAuthSuccess = useCallback(async ({ credentialData }: { credentialData: Record<string, string> }) => {
     if (!catalogFormData) return;
-    // Populate the form with OAuth tokens so the user can test and confirm before saving.
+    // Populate the form with the OAuth session ref + scope metadata so the
+    // user can test and confirm before saving (tokens stay server-side).
     dispatch({ type: 'SET_OAUTH_VALUES', values: credentialData });
   }, [catalogFormData, dispatch]);
 
@@ -64,11 +66,12 @@ export function useCatalogHandlers({
 
   const universalOAuth = useUniversalOAuth();
 
-  // Populate form with universal OAuth tokens for healthcheck/confirmation
+  // Populate form with the universal OAuth session ref for
+  // healthcheck/confirmation (tokens are redeemed server-side at save time)
   useEffect(() => {
     if (!universalOAuth.completedAt || !catalogFormData) return;
     const values = universalOAuth.getValues();
-    if (!values.access_token) return;
+    if (!values[OAUTH_FIELD.SESSION_REF]) return;
     dispatch({ type: 'SET_OAUTH_VALUES', values });
   }, [catalogFormData, dispatch, universalOAuth, universalOAuth.completedAt]);
 

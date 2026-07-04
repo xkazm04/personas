@@ -32,6 +32,20 @@ import { createCachedFetch } from "@/lib/async/createCachedFetch";
 const CREDENTIALS_CACHE_TTL_MS = 30_000;
 const credentialsFetch = createCachedFetch({ ttlMs: CREDENTIALS_CACHE_TTL_MS, rethrow: true });
 
+/**
+ * Server-side OAuth token binding: OAuth flows put a one-time
+ * `oauth_session_ref` into the credential data instead of token material.
+ * Split it out of the encrypted payload so it rides as the dedicated
+ * `oauthSessionRef` input field — the backend redeems it into real token
+ * fields and never persists the ref itself.
+ */
+function splitOAuthSessionRef(data: object): { fields: Record<string, unknown>; oauthSessionRef?: string } {
+  const { oauth_session_ref, ...fields } = { ...(data as Record<string, unknown>) };
+  return typeof oauth_session_ref === 'string' && oauth_session_ref.length > 0
+    ? { fields, oauthSessionRef: oauth_session_ref }
+    : { fields };
+}
+
 export interface CredentialSlice {
   // State
   credentials: CredentialMetadata[];
@@ -123,8 +137,9 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
 
   createCredential: async (input) => {
     try {
+      const { fields, oauthSessionRef } = splitOAuthSessionRef(input.data);
       // Encrypt the sensitive data payload before sending over IPC
-      const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
+      const session_encrypted_data = await encryptWithSessionKey(JSON.stringify(fields));
 
       const created = await createCredential({
         name: input.name,
@@ -134,6 +149,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         metadata: null,
         sessionEncryptedData: session_encrypted_data,
         healthcheckPassed: input.healthcheck_passed ?? null,
+        oauthSessionRef,
       });
       // Optimistic: append the returned credential instead of re-fetching the full list
       const credMeta = toCredMeta(created);
@@ -151,8 +167,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   updateCredential: async (id, input) => {
     try {
       let session_encrypted_data: string | undefined = undefined;
+      let oauthSessionRef: string | undefined = undefined;
       if (input.data) {
-        session_encrypted_data = await encryptWithSessionKey(JSON.stringify(input.data));
+        const split = splitOAuthSessionRef(input.data);
+        oauthSessionRef = split.oauthSessionRef;
+        session_encrypted_data = await encryptWithSessionKey(JSON.stringify(split.fields));
       }
 
       const updated = await updateCredential(id, {
@@ -162,6 +181,7 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         iv: null,
         metadata: null,
         sessionEncryptedData: session_encrypted_data ?? null,
+        oauthSessionRef,
       });
       // Optimistic: replace the updated credential in-place instead of re-fetching
       const credMeta = toCredMeta(updated);
