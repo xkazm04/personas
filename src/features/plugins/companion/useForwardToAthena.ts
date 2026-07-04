@@ -4,6 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useCompanionStore } from './companionStore';
 import { useTtsSettings } from './useTtsSettings';
+import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 import { synthesize, play } from './voicePlayback';
 
 /**
@@ -29,10 +30,7 @@ export function useForwardToAthena(): (message: string) => void {
   const voiceSettings = useTtsSettings();
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
-  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
-  const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
+  const voice = useTtsVoiceSelection();
   const ackSpeech = t.plugins.companion.forward_ack_speech;
 
   return useCallback(
@@ -46,12 +44,8 @@ export function useForwardToAthena(): (message: string) => void {
       store.setVoiceTurnRequest(message);
 
       // Immediate spoken acknowledgement — the turn itself can take a while.
-      const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
-      const voiceConfigured =
-        voiceEngine === 'piper' ? !!piperVoiceId : !!voiceCredentialId && !!voiceId;
-      if (voiceEnabled && voiceConfigured && synthesisVoiceId) {
-        const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
-        void synthesize(ackSpeech, synthesisCredentialId, synthesisVoiceId, voiceSettings, voiceEngine)
+      if (voiceEnabled && voice.configured && voice.voiceId) {
+        void synthesize(ackSpeech, voice.credentialId, voice.voiceId, voiceSettings, voice.engine)
           .then((url) => {
             const { done } = play(url);
             done
@@ -61,6 +55,6 @@ export function useForwardToAthena(): (message: string) => void {
           .catch(silentCatch('forward_to_athena_ack_synthesize'));
       }
     },
-    [orbEnabled, voiceEnabled, voiceEngine, voiceCredentialId, voiceId, piperVoiceId, voiceSettings, ackSpeech],
+    [orbEnabled, voiceEnabled, voice.engine, voice.voiceId, voice.credentialId, voice.configured, voiceSettings, ackSpeech],
   );
 }

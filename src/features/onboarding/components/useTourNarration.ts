@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { synthesize, play } from '@/features/plugins/companion/voicePlayback';
 import { useTtsSettings } from '@/features/plugins/companion/useTtsSettings';
+import { useTtsVoiceSelection } from '@/features/plugins/companion/useTtsVoiceSelection';
 
 /**
  * Athena-narrated guided tour (prototype).
@@ -62,22 +62,11 @@ export function useTourNarration({
   stepId,
   narration,
 }: UseTourNarrationParams): TourNarrationControl {
-  const voice = useSystemStore(
-    useShallow((s) => ({
-      enabled: s.companionVoiceEnabled,
-      engine: s.companionVoiceEngine,
-      credentialId: s.companionVoiceCredentialId,
-      elevenVoiceId: s.companionVoiceId,
-      piperVoiceId: s.companionPiperVoiceId,
-    })),
-  );
+  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
+  const voice = useTtsVoiceSelection();
   const settings = useTtsSettings();
 
-  const voiceConfigured =
-    voice.enabled &&
-    (voice.engine === 'elevenlabs'
-      ? Boolean(voice.credentialId && voice.elevenVoiceId)
-      : Boolean(voice.piperVoiceId));
+  const voiceConfigured = voiceEnabled && voice.configured;
 
   const available = voiceConfigured && Boolean(narration);
 
@@ -135,10 +124,8 @@ export function useTourNarration({
         return;
       }
 
-      const credentialId =
-        voice.engine === 'elevenlabs' ? voice.credentialId : null;
-      const voiceId =
-        voice.engine === 'elevenlabs' ? voice.elevenVoiceId : voice.piperVoiceId;
+      const credentialId = voice.credentialId;
+      const voiceId = voice.voiceId;
       if (!voiceId) {
         setStatus('idle');
         return;
@@ -154,14 +141,7 @@ export function useTourNarration({
           if (gen === genRef.current) setStatus('error');
         });
     },
-    [
-      stopCurrent,
-      settings,
-      voice.engine,
-      voice.credentialId,
-      voice.elevenVoiceId,
-      voice.piperVoiceId,
-    ],
+    [stopCurrent, settings, voice.engine, voice.credentialId, voice.voiceId],
   );
 
   // Auto-speak once per step activation, when conditions allow.

@@ -10,7 +10,6 @@ import {
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import {
@@ -26,6 +25,7 @@ import { ComposerBrandIcon } from '@/features/agents/sub_glyph/commandPanel/comp
 import { getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { useCompanionStore } from './companionStore';
 import { VoiceControlPopover } from './VoiceControlPopover';
+import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
 /**
  * Right-edge sidebar with three groups:
@@ -70,12 +70,7 @@ export function CompanionToolbar({
   onToggleCompact: () => void;
 }) {
   const { t } = useTranslation();
-  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
-  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
-  const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
-  const voiceConfigured =
-    voiceEngine === 'piper' ? Boolean(piperVoiceId) : Boolean(voiceCredentialId && voiceId);
+  const voiceConfigured = useTtsVoiceSelection().configured;
 
   const connectors = useCompanionStore((s) => s.connectors);
   const setConnectors = useCompanionStore((s) => s.setConnectors);

@@ -9,6 +9,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { playReplyChime } from './chime';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
+import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 import { AthenaAvatar, type AthenaState } from './AthenaAvatar';
 import { useHoldToTalk } from './useHoldToTalk';
 
@@ -64,10 +65,7 @@ export default function CompanionFooterIcon() {
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
-  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
-  const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
+  const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 
   useEffect(() => {
@@ -85,16 +83,11 @@ export default function CompanionFooterIcon() {
 
   const isOpen = state === 'open';
 
-  // Per-engine readiness check — same shape as CompanionPanel's
-  // `voiceActive` predicate. Piper needs only a voice id (engine binary
-  // missing-ness surfaces at synth time); ElevenLabs needs both the
-  // credential and the voice id.
-  const voiceConfigured =
-    voiceEngine === 'piper'
-      ? Boolean(piperVoiceId)
-      : Boolean(voiceCredentialId && voiceId);
-  const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
-  const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
+  // Per-engine readiness check — resolved upstream by `useTtsVoiceSelection`
+  // (same predicate CompanionPanel's `voiceActive` uses).
+  const voiceConfigured = voice.configured;
+  const synthesisCredentialId = voice.credentialId;
+  const synthesisVoiceId = voice.voiceId;
   const hasUnreadPlayback =
     pendingPlayback != null && !pendingPlayback.played;
   const replyPlaybackInFlight =
@@ -203,7 +196,7 @@ export default function CompanionFooterIcon() {
       synthesisCredentialId,
       synthesisVoiceId,
       voiceSettings,
-      voiceEngine,
+      voice.engine,
     )
       .then((url) => {
         if (cancelled) {
@@ -226,7 +219,7 @@ export default function CompanionFooterIcon() {
     synthesisCredentialId,
     synthesisVoiceId,
     voiceSettings,
-    voiceEngine,
+    voice.engine,
     replyPlaybackInFlight,
     markFooterNoticeSpoken,
   ]);
@@ -312,7 +305,7 @@ export default function CompanionFooterIcon() {
           synthesisCredentialId,
           synthesisVoiceId,
           voiceSettings,
-          voiceEngine,
+          voice.engine,
         ));
       if (!pendingPlayback.audioUrl) setPlaybackAudioUrl(url);
       const { done } = playAudio(url);

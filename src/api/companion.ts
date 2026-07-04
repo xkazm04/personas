@@ -289,7 +289,7 @@ export interface TtsAudio {
  *   needed). Requires a Piper voice model previously downloaded through
  *   the companion voice manager.
  */
-export type TtsEngineId = 'elevenlabs' | 'piper';
+export type TtsEngineId = 'elevenlabs' | 'piper' | 'kokoro';
 
 /**
  * Per-call voice tuning. All fields optional; `undefined` falls back to
@@ -410,6 +410,51 @@ export interface PiperEngineStatus {
 
 export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus> {
   return invoke<PiperEngineStatus>('companion_tts_piper_engine_status');
+}
+
+// ── Kokoro voice catalog + engine/model status ──────────────────────────
+
+/**
+ * One curated Kokoro voice. Mirrors the Rust `KokoroVoiceEntry`. Unlike
+ * Piper there is no per-voice download state — Kokoro is a single monolithic
+ * model whose voices are chosen by `sid`; `KokoroStatus.modelInstalled`
+ * gates all of them at once.
+ */
+export interface KokoroVoiceEntry {
+  voiceId: string;
+  /** Speaker id passed to the sidecar's `--sid`. */
+  sid: number;
+  speaker: string;
+  gender: 'female' | 'male';
+  languageCode: string;
+  languageLabel: string;
+  /** Kokoro VOICES.md quality grade (A / A- / B- / …). */
+  grade: string;
+  description: string;
+}
+
+/**
+ * Install status for the Kokoro engine — reports the sidecar binary and the
+ * (shared, monolithic) model package independently so the setup card can
+ * guide the user through each half.
+ */
+export interface KokoroStatus {
+  engineInstalled: boolean;
+  engineBinaryPath: string | null;
+  expectedBinaryPath: string;
+  expectedFilename: string;
+  modelInstalled: boolean;
+  modelDir: string;
+  modelDownloadUrl: string;
+  engineDownloadUrl: string;
+}
+
+export async function companionTtsListKokoroVoices(): Promise<KokoroVoiceEntry[]> {
+  return invoke<KokoroVoiceEntry[]>('companion_tts_list_kokoro_voices');
+}
+
+export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
+  return invoke<KokoroStatus>('companion_tts_kokoro_status');
 }
 
 // ── Speech-to-text (voice input) ────────────────────────────────────────
