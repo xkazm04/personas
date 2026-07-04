@@ -200,8 +200,15 @@ function ElevenLabsVoicePanel() {
     }
   }, [credentialId, elevenlabsCreds, setCredentialId]);
 
-  // Drop the picked id if the credential is gone.
+  // Drop the picked id if the credential is gone. Guard on `credLoading`:
+  // until the initial `fetchCredentials` resolves, the (unpersisted) vault
+  // list is momentarily empty, so `elevenlabsCreds` is `[]` and this would
+  // wrongly conclude the persisted credential is "gone" — clobbering
+  // `companionVoiceCredentialId` + the master `companionVoiceEnabled` on
+  // every mount, which is exactly why the selection never survived a restart.
+  // Only prune once the list has actually loaded.
   useEffect(() => {
+    if (credLoading) return;
     if (
       credentialId &&
       !elevenlabsCreds.some((c) => c.id === credentialId)
@@ -209,7 +216,7 @@ function ElevenLabsVoicePanel() {
       setCredentialId(null);
       if (enabled) setEnabled(false);
     }
-  }, [credentialId, elevenlabsCreds, setCredentialId, enabled, setEnabled]);
+  }, [credLoading, credentialId, elevenlabsCreds, setCredentialId, enabled, setEnabled]);
 
   const selectedCred = useMemo(
     () => elevenlabsCreds.find((c) => c.id === credentialId) ?? null,
