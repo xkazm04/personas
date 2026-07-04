@@ -42,9 +42,13 @@ import {
 export function Composer({
   disabled,
   onSend,
+  onDailyBrief,
+  onAnalyzeFleet,
 }: {
   disabled: boolean;
   onSend: (text: string) => void;
+  onDailyBrief: () => void;
+  onAnalyzeFleet: () => void;
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState('');
@@ -89,8 +93,18 @@ export function Composer({
         label: t.plugins.companion.slash_label_capabilities,
         message: t.plugins.companion.slash_message_capabilities,
       },
+      {
+        key: 'daily_brief',
+        label: t.plugins.companion.daily_brief,
+        action: onDailyBrief,
+      },
+      {
+        key: 'analyze_fleet',
+        label: t.plugins.companion.analyze_fleet,
+        action: onAnalyzeFleet,
+      },
     ].sort((a, b) => a.label.localeCompare(b.label)),
-    [t.plugins.companion],
+    [t.plugins.companion, onDailyBrief, onAnalyzeFleet],
   );
 
   // Palette is open whenever the draft begins with `/`. Subsequent chars
@@ -147,14 +161,24 @@ export function Composer({
   }, [disabled, draft, onSend]);
 
   const pickSlashPreset = useCallback((preset: SlashPreset) => {
-    setDraft(preset.message);
+    // Deterministic command entries (Daily Brief / Analyze Fleet) run their
+    // action on pick instead of seeding the textarea — routing them through a
+    // chat message would change their behavior.
+    if (preset.action) {
+      preset.action();
+      setDraft('');
+      setSlashIndex(0);
+      return;
+    }
+    const message = preset.message ?? '';
+    setDraft(message);
     setSlashIndex(0);
     // Defer focus so the textarea cursor lands at the end of the inserted text.
     requestAnimationFrame(() => {
       const el = taRef.current;
       if (el) {
         el.focus();
-        el.setSelectionRange(preset.message.length, preset.message.length);
+        el.setSelectionRange(message.length, message.length);
       }
     });
   }, []);

@@ -153,17 +153,6 @@ function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: stri
   });
 }
 
-// Fallback follow-ups for the "What can Athena do?" toolbar preset —
-// only used when the turn returns no QR chips, so this preset is never
-// a dead-end. Each entry is the literal user message that will be sent
-// on click (first-person voice, matching Athena's QR contract).
-const CAPABILITY_FALLBACK_REPLIES: string[] = [
-  'Show me what you know about my agents',
-  'Walk me through recent execution failures',
-  'List my pending Human Reviews',
-  'Read back what you remember about me',
-];
-
 // Mirrors the backend `ALLOWED_ROUTES` allow-list in
 // src-tauri/src/companion/dispatcher.rs. Defensive: backend already
 // filtered, but a stale frontend or future-protocol mismatch shouldn't
@@ -1779,25 +1768,6 @@ function Body(props: BodyProps) {
     if (rec) playProgressClip(stripMarkdownForSpeech(rec));
   }, [decisionId, decisionExplained, playProgressClip]);
 
-  // Quick-action seed for the help button on the right toolbar. Sent
-  // verbatim through the same path as a typed user message, so it
-  // produces a real episode + assistant reply (and respects the
-  // turn-in-flight guard via `disabled`).
-  //
-  // After the turn lands, if Athena didn't emit her own QR chips, we
-  // seed a deterministic follow-up set so this preset is never a
-  // dead-end. The user kept hitting this button looking for "what
-  // next" and getting only prose — the chips convert the abstract
-  // capability list into a concrete next click.
-  const askCapabilities = useCallback(async () => {
-    await send(
-      'What can you do? Walk me through your concrete capabilities — what data you see in the app right now, what actions you can propose for me to approve, and what you remember.',
-    );
-    if (useCompanionStore.getState().quickReplies.length === 0) {
-      setQuickReplies(CAPABILITY_FALLBACK_REPLIES);
-    }
-  }, [send, setQuickReplies]);
-
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
@@ -2223,6 +2193,21 @@ function Body(props: BodyProps) {
           // (interrupt vs queue) instead of being blocked.
           disabled={!initialized || brainView.open}
           onSend={sendOrQueue}
+          onAnalyzeFleet={() => {
+            // Deterministic trigger — bypasses the chat turn so Athena can't
+            // shortcut to an inline read; spawns the rubric-graded analysis turn
+            // (which streams back into this panel) + writes the timeline note.
+            void companionAnalyzeFleet().catch(silentCatch('companion_analyze_fleet'));
+            useToastStore.getState().addToast(t.plugins.companion.analyze_fleet_started, 'success');
+          }}
+          onDailyBrief={() => {
+            // Deterministic trigger — pre-gathers the three operational inboxes
+            // (Messages / Human Review / Incidents) from the execution store and
+            // spawns a proactive turn that summarizes them in this panel. Bypasses
+            // chat so Athena can't shortcut past her wrong-DB connector.
+            void companionDailyBrief().catch(silentCatch('companion_daily_brief'));
+            useToastStore.getState().addToast(t.plugins.companion.daily_brief_started, 'success');
+          }}
         />
         {brainView.open && (
           <BrainViewer
@@ -2233,22 +2218,6 @@ function Body(props: BodyProps) {
         )}
       </div>
       <CompanionToolbar
-        onAskCapabilities={askCapabilities}
-        onAnalyzeFleet={() => {
-          // Deterministic trigger — bypasses the chat turn so Athena can't
-          // shortcut to an inline read; spawns the rubric-graded analysis turn
-          // (which streams back into this panel) + writes the timeline note.
-          void companionAnalyzeFleet().catch(silentCatch('companion_analyze_fleet'));
-          useToastStore.getState().addToast(t.plugins.companion.analyze_fleet_started, 'success');
-        }}
-        onDailyBrief={() => {
-          // Deterministic trigger — pre-gathers the three operational inboxes
-          // (Messages / Human Review / Incidents) from the execution store and
-          // spawns a proactive turn that summarizes them in this panel. Bypasses
-          // chat so Athena can't shortcut past her wrong-DB connector.
-          void companionDailyBrief().catch(silentCatch('companion_daily_brief'));
-          useToastStore.getState().addToast(t.plugins.companion.daily_brief_started, 'success');
-        }}
         onOpenBrain={() =>
           setBrainView({
             open: !brainView.open,

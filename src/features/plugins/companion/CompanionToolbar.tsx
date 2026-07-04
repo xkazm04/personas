@@ -3,10 +3,7 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  HelpCircle,
   Plus,
-  Radar,
-  Sunrise,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,20 +46,19 @@ import { VoiceControlPopover } from './VoiceControlPopover';
  * a flex spacer pushing connectors to the bottom edge.
  */
 export function CompanionToolbar({
-  onAskCapabilities,
-  onAnalyzeFleet,
-  onDailyBrief,
   onOpenBrain,
   brainOpen,
-  disabled,
   compact,
   onToggleCompact,
 }: {
-  onAskCapabilities: () => void;
-  onAnalyzeFleet: () => void;
-  onDailyBrief: () => void;
   onOpenBrain: () => void;
   brainOpen: boolean;
+  /**
+   * Turn-in-flight gate, still passed by CompanionPanel. No longer consumed
+   * by any button here (the deterministic action buttons that used it moved
+   * to the slash-command palette), but kept on the contract so the caller
+   * doesn't need to change.
+   */
   disabled: boolean;
   /** Panel minimize (compact) state, driven from CompanionPanel. */
   compact: boolean;
@@ -168,26 +164,6 @@ export function CompanionToolbar({
       <Divider />
 
       {/* Assist group (existing) */}
-      <ToolbarButton
-        icon={<HelpCircle className="w-4 h-4" />}
-        label={t.plugins.companion.help_capabilities}
-        onClick={onAskCapabilities}
-        disabled={disabled}
-      />
-      <ToolbarButton
-        icon={<Radar className="w-4 h-4" />}
-        label={t.plugins.companion.analyze_fleet}
-        onClick={onAnalyzeFleet}
-        disabled={disabled}
-        testId="companion-analyze-fleet"
-      />
-      <ToolbarButton
-        icon={<Sunrise className="w-4 h-4" />}
-        label={t.plugins.companion.daily_brief}
-        onClick={onDailyBrief}
-        disabled={disabled}
-        testId="companion-daily-brief"
-      />
       <ToolbarButton
         icon={<Brain className="w-4 h-4" />}
         label={t.plugins.companion.brain_open}

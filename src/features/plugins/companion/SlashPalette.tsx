@@ -17,7 +17,12 @@ export interface SlashPreset {
   /** Localized label shown in the palette. */
   label: string;
   /** Localized message that gets pushed into the composer draft on pick. */
-  message: string;
+  message?: string;
+  /**
+   * If set, picking runs this instead of filling the composer —
+   * deterministic command entries like Daily Brief / Analyze Fleet.
+   */
+  action?: () => void;
 }
 
 interface Props {
