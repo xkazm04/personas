@@ -30,7 +30,7 @@ date, what we observed, and any change made.
 - [x] Refine chips (Shorter / More detail / Code only)
 - [x] Slash-command palette (`/`)
 - [x] Mid-stream Stop (interrupt) + failed-turn retry
-- [ ] Autonomous mode toggle + `continue_autonomously` chaining
+- [x] Autonomous mode toggle + `continue_autonomously` chaining
 - [ ] Reset conversation (transcript vs disk episodes)
 - [ ] Chat polish: search, copy-conversation, day separators, narration trail
 
@@ -209,6 +209,10 @@ date, what we observed, and any change made.
   over the good values. Fix: `if (credLoading) return;` guard on that effect (`VoicePanel.tsx`,
   +9/−2). Built via subagent; tsc + eslint clean; static-only (a live restart confirms). Worktree
   commit `07cb8af58`. ✅
+- **0.8 Autonomous mode** — ACCEPTED as-is per Michal. The loop (`continue_autonomously`,
+  ~15s reschedule, 20-turn cap, "── continuation #N ──" divider, type-anything-to-cancel) is
+  fine for now; its real stress-test is **Phase 9 (Fleet & team orchestration)**, which already
+  has test cases — so we defer the deep autonomous exercise there instead of duplicating it now. ✅
 
 ### Worktree batch (unmerged) as of 0.7
 Branch `worktree-athena-exercise`, stacked on `ebce8a545`:
