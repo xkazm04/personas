@@ -713,7 +713,16 @@
     "routes_committed": "Uloženo {count} tras",
     "tab_compose": "Skládat",
     "tab_routes": "Trasy",
-    "proto_chain_route": "Řetězová trasa — spustí se po dokončení zdrojové persony; událost nelze přejmenovat"
+    "proto_chain_route": "Řetězová trasa — spustí se po dokončení zdrojové persony; událost nelze přejmenovat",
+    "configure_commit_route": "Nakonfigurovat a uložit tuto trasu",
+    "form_commit_title": "Uložit trasu",
+    "form_commit_subtitle": "Nakonfigurujte spouštěč, který spustí {persona}",
+    "om_path_placeholder": "$.result.status",
+    "om_path_label": "JSONPath do výstupu zdroje",
+    "om_expected_label": "Očekávaná hodnota",
+    "om_expected_placeholder": "očekávaná hodnota",
+    "commit_blocked_source_type": "Tento zdroj nelze uložit ze Studia — pro řetězce dokončení použijte zdrojovou personu",
+    "commit_needs_output_match": "Pro uložení této trasy zadejte JSONPath a očekávanou hodnotu"
   },
   "trigger_configured": "trigger nakonfigurován",
   "secret_label": "Tajný klíč",

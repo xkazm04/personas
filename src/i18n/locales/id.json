@@ -9319,7 +9319,16 @@
       "routes_committed": "Menyimpan {count} rute",
       "tab_compose": "Kompos",
       "tab_routes": "Rute",
-      "proto_chain_route": "Rute rantai — terpicu saat persona sumber selesai; nama event tidak dapat diubah"
+      "proto_chain_route": "Rute rantai — terpicu saat persona sumber selesai; nama event tidak dapat diubah",
+      "configure_commit_route": "Konfigurasikan & simpan rute ini",
+      "form_commit_title": "Simpan rute",
+      "form_commit_subtitle": "Konfigurasikan pemicu yang akan menjalankan {persona}",
+      "om_path_placeholder": "$.result.status",
+      "om_path_label": "JSONPath ke keluaran sumber",
+      "om_expected_label": "Nilai yang diharapkan",
+      "om_expected_placeholder": "nilai yang diharapkan",
+      "commit_blocked_source_type": "Sumber ini tidak dapat disimpan dari Studio — untuk rantai penyelesaian, pilih persona sumber",
+      "commit_needs_output_match": "Masukkan JSONPath dan nilai yang diharapkan untuk menyimpan rute ini"
     },
     "trigger_configured": "pemicu dikonfigurasi",
     "secret_label": "Rahasia",

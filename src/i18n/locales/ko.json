@@ -9319,7 +9319,16 @@
       "routes_committed": "{count}개의 경로 저장됨",
       "tab_compose": "작성",
       "tab_routes": "경로",
-      "proto_chain_route": "체인 경로 — 소스 페르소나가 완료되면 실행됩니다. 이벤트 이름은 변경할 수 없습니다"
+      "proto_chain_route": "체인 경로 — 소스 페르소나가 완료되면 실행됩니다. 이벤트 이름은 변경할 수 없습니다",
+      "configure_commit_route": "이 경로 구성 및 저장",
+      "form_commit_title": "경로 저장",
+      "form_commit_subtitle": "{persona}을(를) 실행할 트리거를 구성하세요",
+      "om_path_placeholder": "$.result.status",
+      "om_path_label": "소스 출력에 대한 JSONPath",
+      "om_expected_label": "예상 값",
+      "om_expected_placeholder": "예상 값",
+      "commit_blocked_source_type": "이 소스는 Studio에서 저장할 수 없습니다. 완료 체인에는 소스 페르소나를 선택하세요",
+      "commit_needs_output_match": "이 경로를 저장하려면 JSONPath와 예상 값을 입력하세요"
     },
     "trigger_configured": "트리거 설정됨",
     "secret_label": "시크릿",

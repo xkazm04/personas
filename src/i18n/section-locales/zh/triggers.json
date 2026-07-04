@@ -713,7 +713,16 @@
     "routes_committed": "已保存 {count} 条路由",
     "tab_compose": "编排",
     "tab_routes": "路由",
-    "proto_chain_route": "链式路由 — 当源 persona 完成时触发；该事件无法重命名"
+    "proto_chain_route": "链式路由 — 当源 persona 完成时触发；该事件无法重命名",
+    "configure_commit_route": "配置并保存此路由",
+    "form_commit_title": "保存路由",
+    "form_commit_subtitle": "配置将运行 {persona} 的触发器",
+    "om_path_placeholder": "$.result.status",
+    "om_path_label": "指向源输出的 JSONPath",
+    "om_expected_label": "期望值",
+    "om_expected_placeholder": "期望值",
+    "commit_blocked_source_type": "此来源无法从工作室保存——如需完成链，请改为选择来源角色",
+    "commit_needs_output_match": "输入 JSONPath 和期望值以保存此路由"
   },
   "trigger_configured": "触发器已配置",
   "secret_label": "密钥",

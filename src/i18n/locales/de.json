@@ -9319,7 +9319,16 @@
       "routes_committed": "{count} Routen gespeichert",
       "tab_compose": "Komponieren",
       "tab_routes": "Routen",
-      "proto_chain_route": "Chain-Route — wird ausgelöst, wenn die Quell-Persona abgeschlossen ist; das Event kann nicht umbenannt werden"
+      "proto_chain_route": "Chain-Route — wird ausgelöst, wenn die Quell-Persona abgeschlossen ist; das Event kann nicht umbenannt werden",
+      "configure_commit_route": "Route konfigurieren & speichern",
+      "form_commit_title": "Route speichern",
+      "form_commit_subtitle": "Konfiguriere den Trigger, der {persona} ausführt",
+      "om_path_placeholder": "$.result.status",
+      "om_path_label": "JSONPath in die Quellausgabe",
+      "om_expected_label": "Erwarteter Wert",
+      "om_expected_placeholder": "erwarteter Wert",
+      "commit_blocked_source_type": "Diese Quelle kann nicht aus dem Studio gespeichert werden — für Abschlussketten die Quell-Persona wählen",
+      "commit_needs_output_match": "Gib einen JSONPath und einen erwarteten Wert ein, um diese Route zu speichern"
     },
     "trigger_configured": "Trigger konfiguriert",
     "secret_label": "Geheimnis",

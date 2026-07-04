@@ -713,7 +713,16 @@
     "routes_committed": "Đã lưu {count} tuyến",
     "tab_compose": "Soạn",
     "tab_routes": "Tuyến",
-    "proto_chain_route": "Tuyến chuỗi — kích hoạt khi persona nguồn hoàn tất; không thể đổi tên sự kiện"
+    "proto_chain_route": "Tuyến chuỗi — kích hoạt khi persona nguồn hoàn tất; không thể đổi tên sự kiện",
+    "configure_commit_route": "Cấu hình & lưu tuyến này",
+    "form_commit_title": "Lưu tuyến",
+    "form_commit_subtitle": "Cấu hình trình kích hoạt sẽ chạy {persona}",
+    "om_path_placeholder": "$.result.status",
+    "om_path_label": "JSONPath vào đầu ra nguồn",
+    "om_expected_label": "Giá trị mong đợi",
+    "om_expected_placeholder": "giá trị mong đợi",
+    "commit_blocked_source_type": "Không thể lưu nguồn này từ Studio — với chuỗi hoàn thành, hãy chọn persona nguồn",
+    "commit_needs_output_match": "Nhập JSONPath và giá trị mong đợi để lưu tuyến này"
   },
   "trigger_configured": "trigger đã cấu hình",
   "secret_label": "Bí mật",

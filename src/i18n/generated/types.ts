@@ -8916,6 +8916,15 @@ export type Translations = {
       no_sources_match: string;
       no_targets_match: string;
       agent_fallback: string;
+      configure_commit_route: string;
+      form_commit_title: string;
+      form_commit_subtitle: string;
+      om_path_placeholder: string;
+      om_path_label: string;
+      om_expected_label: string;
+      om_expected_placeholder: string;
+      commit_blocked_source_type: string;
+      commit_needs_output_match: string;
     };
     subscription_list: {
       active: string;

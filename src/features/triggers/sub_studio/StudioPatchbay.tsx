@@ -32,7 +32,8 @@ import { findTemplateByEventType } from '@/features/triggers/lib/eventSourceTemp
 import { useStudioComposer } from './useStudioComposer';
 import { StudioSourceRail, StudioTargetRail } from './StudioRails';
 import { SourceChip, TargetChip, PatchEndChip } from './studioChips';
-import { commitBlocker } from './libs/studioCommit';
+import { commitBlocker, linkCommitsViaForm } from './libs/studioCommit';
+import { StudioTriggerCommitModal } from './StudioTriggerCommitModal';
 import { conditionLabel } from './libs/studioLabels';
 import { useRoutingState } from './routing/layouts/useRoutingState';
 import { resolveIcon, type EventRow, type Connection } from './routing/layouts/routingHelpers';
@@ -155,7 +156,9 @@ export function StudioPatchbay() {
           {/* Draft cables (pending, unsaved) */}
           {c.draft.links.map((link) => {
             const blocker = commitBlocker(link);
+            const viaForm = linkCommitsViaForm(link);
             const busy = c.committing.has(link.id);
+            const showOutputMatch = link.condition === 'output_match' && link.source.kind === 'persona';
             return (
               <div key={link.id} className="group flex items-center gap-3 px-4 py-2.5 rounded-card border border-dashed border-status-warning/40 bg-status-warning/5">
                 <SourceChip source={link.source} personas={personas} completesLabel={st.persona_completes} />
@@ -165,14 +168,27 @@ export function StudioPatchbay() {
                     className={`typo-body opacity-80 px-2 py-0.5 rounded-input border transition-colors ${link.condition ? 'border-status-warning/40 text-status-warning bg-status-warning/10' : 'border-border text-foreground hover:border-foreground/30'}`}>
                     {conditionLabel(t, link.condition)}
                   </button>
+                  {showOutputMatch && (
+                    <span className="flex items-center gap-1">
+                      <input value={link.outputMatch?.path ?? ''}
+                        onChange={(e) => c.setLinkOutputMatch(link.id, e.target.value, link.outputMatch?.expected ?? '')}
+                        placeholder={st.om_path_placeholder} aria-label={st.om_path_label}
+                        className="w-32 px-2 py-0.5 typo-body bg-background/60 border border-border rounded-input focus:border-primary/50 outline-none placeholder:text-foreground/40" />
+                      <span className="typo-caption text-foreground">=</span>
+                      <input value={link.outputMatch?.expected ?? ''}
+                        onChange={(e) => c.setLinkOutputMatch(link.id, link.outputMatch?.path ?? '', e.target.value)}
+                        placeholder={st.om_expected_placeholder} aria-label={st.om_expected_label}
+                        className="w-24 px-2 py-0.5 typo-body bg-background/60 border border-border rounded-input focus:border-primary/50 outline-none placeholder:text-foreground/40" />
+                    </span>
+                  )}
                   <div className="h-px w-4 bg-border" />
                   <ArrowRight className="w-3.5 h-3.5 text-foreground" />
                 </div>
                 <TargetChip targetId={link.targetPersonaId} personas={personas} />
                 <div className="ml-auto flex items-center gap-1">
                   <button type="button" onClick={() => { if (!blocker) void c.commitLink(link); }} disabled={!!blocker || busy}
-                    title={blocker === 'signal_source' ? st.commit_blocked_signal : blocker === 'output_match' ? st.commit_blocked_output_match : st.commit_route}
-                    aria-label={st.commit_route}
+                    title={blocker === 'signal_source' ? st.commit_blocked_source_type : blocker === 'output_match' ? st.commit_needs_output_match : viaForm ? st.configure_commit_route : st.commit_route}
+                    aria-label={viaForm ? st.configure_commit_route : st.commit_route}
                     className={`p-1.5 rounded-interactive transition-colors disabled:cursor-not-allowed ${blocker ? 'text-foreground opacity-40' : 'text-status-success/80 hover:text-status-success hover:bg-status-success/10 disabled:opacity-50'}`}>
                     {busy ? <LoadingSpinner size="sm" /> : <Check className="w-3.5 h-3.5" />}
                   </button>
@@ -211,7 +227,14 @@ export function StudioPatchbay() {
 
       <StudioTargetRail c={c} />
 
-      {/* Modals — composer (system-op) + live-route management */}
+      {/* Modals — composer (signal-source + system-op) + live-route management */}
+      <StudioTriggerCommitModal
+        open={c.formCommit !== null}
+        link={c.formCommit}
+        personas={personas}
+        onCreate={c.commitFormLink}
+        onClose={() => c.setFormCommit(null)}
+      />
       <SystemEventCommitModal
         open={c.commit !== null}
         onClose={() => c.setCommit(null)}

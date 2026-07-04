@@ -713,7 +713,16 @@
     "routes_committed": "تم حفظ {count} مسارات",
     "tab_compose": "تأليف",
     "tab_routes": "المسارات",
-    "proto_chain_route": "مسار السلسلة — يُطلَق عند اكتمال البيرسونا المصدر؛ لا يمكن إعادة تسمية الحدث"
+    "proto_chain_route": "مسار السلسلة — يُطلَق عند اكتمال البيرسونا المصدر؛ لا يمكن إعادة تسمية الحدث",
+    "configure_commit_route": "قم بالتكوين واحفظ هذا المسار",
+    "form_commit_title": "حفظ المسار",
+    "form_commit_subtitle": "قم بتكوين المشغّل الذي سيشغّل {persona}",
+    "om_path_placeholder": "$.result.status",
+    "om_path_label": "مسار JSONPath في مخرجات المصدر",
+    "om_expected_label": "القيمة المتوقعة",
+    "om_expected_placeholder": "القيمة المتوقعة",
+    "commit_blocked_source_type": "لا يمكن حفظ هذا المصدر من الاستوديو — لسلاسل الإكمال، اختر شخصية المصدر بدلاً من ذلك",
+    "commit_needs_output_match": "أدخل JSONPath وقيمة متوقعة لحفظ هذا المسار"
   },
   "trigger_configured": "تم ضبط المحفّز",
   "secret_label": "سري",

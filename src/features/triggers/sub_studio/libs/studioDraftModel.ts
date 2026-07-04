@@ -31,6 +31,12 @@ export interface DraftLink {
   source: DraftSource;
   targetPersonaId: string;
   condition: LinkCondition;
+  /**
+   * Params backing the `output_match` condition — maps to the backend chain
+   * `jsonpath` condition (path evaluated against the upstream output, compared
+   * to `expected`). Only meaningful for persona sources; absent on old drafts.
+   */
+  outputMatch?: { path: string; expected: string };
 }
 
 export interface ChainDraft {

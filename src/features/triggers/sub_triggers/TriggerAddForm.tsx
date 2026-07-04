@@ -28,12 +28,23 @@ export interface TriggerAddFormProps {
   credentialEventsList: { id: string; name: string }[];
   onCreateTrigger: (triggerType: string, config: Record<string, unknown>) => Promise<string | undefined>;
   onCancel: () => void;
+  /**
+   * Fix the form to one trigger type: preseeds the type and hides the NL
+   * input / templates / category+type pickers, leaving only the per-type
+   * config + actions. Used by Chain Studio's configure-&-commit modal, where
+   * the route's source already determines the type.
+   */
+  lockedTriggerType?: string;
 }
 
-export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel }: TriggerAddFormProps) {
+export function TriggerAddForm({
+  credentialEventsList, onCreateTrigger, onCancel, lockedTriggerType,
+}: TriggerAddFormProps) {
   const { t } = useTranslation();
-  const [selectedCategory, setSelectedCategory] = useState<TriggerCategory | null>(null);
-  const [triggerType, setTriggerType] = useState<string>('manual');
+  const [selectedCategory, setSelectedCategory] = useState<TriggerCategory | null>(
+    () => (lockedTriggerType ? getTriggerCategory(lockedTriggerType) : null),
+  );
+  const [triggerType, setTriggerType] = useState<string>(lockedTriggerType ?? 'manual');
   const [scheduleMode, setScheduleMode] = useState<'interval' | 'cron'>('interval');
   const [interval, setInterval] = useState('3600');
   const [customInterval, setCustomInterval] = useState(false);
@@ -179,17 +190,21 @@ export function TriggerAddForm({ credentialEventsList, onCreateTrigger, onCancel
     <div
       className="animate-fade-slide-in bg-secondary/40 backdrop-blur-sm border border-primary/15 rounded-modal p-4 space-y-4"
     >
-      <NlTriggerInput onApplyResult={applyNlResult} />
+      {!lockedTriggerType && (
+        <>
+          <NlTriggerInput onApplyResult={applyNlResult} />
 
-      <div className="relative flex items-center gap-3 py-0.5">
-        <div className="flex-1 border-t border-border/20" />
-        <span className="typo-caption text-foreground shrink-0">{t.triggers.or_use_templates}</span>
-        <div className="flex-1 border-t border-border/20" />
-      </div>
+          <div className="relative flex items-center gap-3 py-0.5">
+            <div className="flex-1 border-t border-border/20" />
+            <span className="typo-caption text-foreground shrink-0">{t.triggers.or_use_templates}</span>
+            <div className="flex-1 border-t border-border/20" />
+          </div>
 
-      <TriggerQuickTemplates onApplyTemplate={applyTemplate} />
-      <TriggerCategorySelector selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectTriggerType={setTriggerType} />
-      <TriggerTypeSelector selectedCategory={selectedCategory} triggerType={triggerType} setTriggerType={setTriggerType} />
+          <TriggerQuickTemplates onApplyTemplate={applyTemplate} />
+          <TriggerCategorySelector selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} onSelectTriggerType={setTriggerType} />
+          <TriggerTypeSelector selectedCategory={selectedCategory} triggerType={triggerType} setTriggerType={setTriggerType} />
+        </>
+      )}
 
       {triggerType === 'schedule' && (
         <div className="space-y-3">

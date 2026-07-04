@@ -20,7 +20,9 @@ import {
   loadDraft, saveDraft, newLinkId, LINK_CONDITION_PRESETS,
   type ChainDraft, type DraftSource, type DraftLink,
 } from './libs/studioDraftModel';
-import { commitBlocker, draftLinkToTriggerInput } from './libs/studioCommit';
+import {
+  commitBlocker, draftLinkToTriggerInput, formConfigToTriggerInput, linkCommitsViaForm,
+} from './libs/studioCommit';
 import { useSystemOpStudio } from './system_ops/useSystemOpStudio';
 
 export function useStudioComposer(onRouteCommitted?: () => void) {
@@ -35,6 +37,9 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
   const [armedTarget, setArmedTarget] = useState<string | null>(null);
   const [armedSystemOp, setArmedSystemOp] = useState<string | null>(null);
   const [commit, setCommit] = useState<{ opKind: string; triggerType: string } | null>(null);
+  // Signal-source link being committed through the configure-&-commit modal
+  // (the full trigger form, locked to the source's type).
+  const [formCommit, setFormCommit] = useState<DraftLink | null>(null);
   const [committing, setCommitting] = useState<Set<string>>(new Set());
 
   useEffect(() => { saveDraft(draft); }, [draft]);
@@ -82,6 +87,12 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     }));
 
   const commitLink = async (link: DraftLink, opts?: { silent?: boolean }): Promise<boolean> => {
+    // Signal-source links need per-type config — route to the
+    // configure-&-commit modal instead of committing directly.
+    if (linkCommitsViaForm(link)) {
+      setFormCommit(link);
+      return false;
+    }
     const input = draftLinkToTriggerInput(link);
     if (!input) return false;
     setCommitting((s) => new Set(s).add(link.id));
@@ -98,7 +109,42 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     }
   };
 
-  const committableLinks = draft.links.filter((l) => commitBlocker(l) === null);
+  /**
+   * Create the trigger for the modal-hosted signal-source commit. Returns an
+   * error string for the form's inline error slot (undefined = success), so
+   * failures render where the user is looking instead of as a toast behind
+   * the modal.
+   */
+  const commitFormLink = async (
+    triggerType: string,
+    config: Record<string, unknown>,
+  ): Promise<string | undefined> => {
+    const link = formCommit;
+    if (!link) return undefined;
+    try {
+      await createTrigger(formConfigToTriggerInput(link, triggerType, config));
+      setDraft((d) => ({ ...d, links: d.links.filter((l) => l.id !== link.id) }));
+      setFormCommit(null);
+      addToast(st.route_committed, 'success');
+      onRouteCommitted?.();
+      return undefined;
+    } catch (e) {
+      return e instanceof Error ? e.message : String(e);
+    }
+  };
+
+  /** Update the JSONPath params backing a link's `output_match` condition. */
+  const setLinkOutputMatch = (id: string, path: string, expected: string) =>
+    setDraft((d) => ({
+      ...d,
+      links: d.links.map((l) => (l.id === id ? { ...l, outputMatch: { path, expected } } : l)),
+    }));
+
+  // Direct-committable links only (persona sources) — signal-source links
+  // need the interactive modal, so "Save all" can't include them.
+  const committableLinks = draft.links.filter(
+    (l) => commitBlocker(l) === null && !linkCommitsViaForm(l),
+  );
 
   const commitAll = async () => {
     let n = 0;
@@ -117,6 +163,7 @@ export function useStudioComposer(onRouteCommitted?: () => void) {
     armedSystemOp, setArmedSystemOp,
     committing, commitLink, commitAll, committableLinks,
     commit, setCommit,
+    formCommit, setFormCommit, commitFormLink, setLinkOutputMatch,
     systemOpKinds: systemOps.kinds,
     automations: systemOps.automations,
     refreshAutomations: systemOps.refresh,

@@ -8909,7 +8909,16 @@
       "filter_placeholder": "Filter…",
       "no_sources_match": "No sources match \"{query}\"",
       "no_targets_match": "No personas match \"{query}\"",
-      "agent_fallback": "Agent"
+      "agent_fallback": "Agent",
+      "configure_commit_route": "Configure & save this route",
+      "form_commit_title": "Save route",
+      "form_commit_subtitle": "Configure the trigger that will run {persona}",
+      "om_path_placeholder": "$.result.status",
+      "om_path_label": "JSONPath into the source output",
+      "om_expected_label": "Expected value",
+      "om_expected_placeholder": "expected value",
+      "commit_blocked_source_type": "This source can't be saved from the Studio — for completion chains, arm the source persona instead",
+      "commit_needs_output_match": "Enter a JSONPath and expected value to save this route"
     },
     "subscription_list": {
       "active": "Active",
