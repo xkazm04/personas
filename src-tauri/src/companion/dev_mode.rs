@@ -246,8 +246,24 @@ pub fn recover_interrupted_dev_ops(
     app: &tauri::AppHandle,
 ) -> usize {
     let orphans = list_dispatched_dev_ops(pool);
+    if orphans.is_empty() {
+        return 0;
+    }
+    // Liveness check — live-caught defect 2026-07-04: companion_init can
+    // re-run while a dispatched session is STILL WORKING (panel remount /
+    // page reload re-invokes it), and the first sweep marked a 5-second-old
+    // op `interrupted` mid-run. A session present in the fleet registry is
+    // not an orphan, whatever the ledger row says.
+    let live: std::collections::HashSet<String> = crate::commands::fleet::registry::registry()
+        .list_dto()
+        .into_iter()
+        .map(|s| s.id)
+        .collect();
     let mut swept = 0;
     for (op_id, meta) in orphans {
+        if live.contains(&meta.fleet_session_id) {
+            continue;
+        }
         // Capture what survived before flipping the status.
         let commit = latest_commit_short(&meta.workspace);
         mark_dev_op(pool, &op_id, "interrupted", commit.as_deref());

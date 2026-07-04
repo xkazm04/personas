@@ -58,6 +58,11 @@ static JOB_WORKER: OnceLock<()> = OnceLock::new();
 /// that turns engine execution-finished signals into review turns).
 static EXEC_REVIEW_DEBOUNCER: OnceLock<()> = OnceLock::new();
 
+/// One-shot guard for the Phase-4 dev-op boot-recovery sweep — a re-run
+/// mid-process could race sessions dispatched after boot (see the call
+/// site note; the sweep's registry liveness check is the second guard).
+static DEV_OP_RECOVERY: OnceLock<()> = OnceLock::new();
+
 /// How often the background scheduler wakes to evaluate triggers. Five
 /// minutes is a sweet spot — short enough that a goal hitting its 24h
 /// window fires within minutes of the threshold, long enough that the
@@ -158,7 +163,7 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                         // routine ones are read-and-done, business value is
                         // summarized onto one digest card, and items that
                         // need the user personally stay unread + escalate.
-                        // Distinct opt-in beyond autonomous mode.
+                        // Implied by autonomous mode (no separate opt-in).
                         match crate::companion::proactive::message_triage::triage_unread_messages(
                             &pool,
                             &sys_db,
@@ -320,14 +325,17 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     // process (typically the dev-server restart that backend work causes).
     // Sweep them to `interrupted` + one proactive card each describing what
     // survived on disk (worktree/branch/commits) and the options. Cheap
-    // no-op when the ledger has no dispatched rows.
-    {
+    // no-op when the ledger has no dispatched rows. Once per process —
+    // companion_init re-runs on panel mounts/page reloads, and a mid-run
+    // re-sweep mislabeled a live 5-second-old op on 2026-07-04 (the sweep
+    // also liveness-checks against the fleet registry as the second guard).
+    DEV_OP_RECOVERY.get_or_init(|| {
         let pool = state.user_db.clone();
         let app_handle = app.clone();
         tauri::async_runtime::spawn(async move {
             let _ = crate::companion::dev_mode::recover_interrupted_dev_ops(&pool, &app_handle);
         });
-    }
+    });
 
     Ok(root.display().to_string())
 }
