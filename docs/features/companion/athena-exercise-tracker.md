@@ -28,7 +28,7 @@ date, what we observed, and any change made.
 - [x] `TTS:` spoken summary line
 - [x] `QR:` quick-reply chips
 - [x] Refine chips (Shorter / More detail / Code only)
-- [~] Slash-command palette (`/`)
+- [x] Slash-command palette (`/`)
 - [ ] Mid-stream Stop (interrupt) + failed-turn retry
 - [ ] Autonomous mode toggle + `continue_autonomously` chaining
 - [ ] Reset conversation (transcript vs disk episodes)
@@ -189,4 +189,16 @@ date, what we observed, and any change made.
   migrate as ACTION presets (run the command on pick), NOT message presets, to keep the
   dedicated-turn behavior. Plan: extend `SlashPreset` with optional `action`; thread the two
   handlers from `CompanionPanel` → `Composer`; remove the 3 toolbar buttons + their props.
-  Awaiting Michal's OK on the action-preset approach. ⏳
+  DONE (`25163baef`) — went with the action-preset approach (behavior-preserving). Built via a
+  subagent in the worktree; `tsc --noEmit` + eslint clean on all 4 files (+54/−80). Capabilities
+  button removed (already a preset) + orphaned `askCapabilities` cleaned up; Daily Brief +
+  Analyze Fleet now action presets that run the command on pick; 3 toolbar buttons + unused
+  HelpCircle/Radar/Sunrise imports removed. Michal never re-confirmed (resets kept eating the
+  ask) so I made the safe, non-lossy call. ✅
+
+### Worktree batch (unmerged) as of 0.6
+Branch `worktree-athena-exercise`, 3 increments stacked on `ebce8a545`:
+1. `75de0a5d3` — chip plain-language rule (constitution v43) · BACKEND
+2. `fe75f84d0` — slash palette restyle + sort · frontend
+3. `25163baef` — toolbar → slash consolidation · frontend
+Merging the batch triggers a **cargo rebuild + app restart** (because of #1). Awaiting Michal.
