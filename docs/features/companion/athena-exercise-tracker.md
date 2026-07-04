@@ -28,7 +28,7 @@ date, what we observed, and any change made.
 - [x] `TTS:` spoken summary line
 - [x] `QR:` quick-reply chips
 - [x] Refine chips (Shorter / More detail / Code only)
-- [ ] Slash-command palette (`/`)
+- [~] Slash-command palette (`/`)
 - [ ] Mid-stream Stop (interrupt) + failed-turn retry
 - [ ] Autonomous mode toggle + `continue_autonomously` chaining
 - [ ] Reset conversation (transcript vs disk episodes)
@@ -177,3 +177,16 @@ date, what we observed, and any change made.
   section + bumped CONSTITUTION_VERSION 42→43. Staged in the worktree as commit `75de0a5d3`
   (1 commit ahead of `ebce8a545`, clean cherry-pick). NOT merged — awaiting Michal's merge,
   which is a backend rebuild + app restart. ⏳
+- **0.6 Slash palette (CODE increment #2)** — Restyled: dropped the per-item description,
+  render just the label in normal weight; sorted presets A–Z by label at the source
+  (Composer) so palette + keyboard-nav stay aligned; `filterSlashPresets` stays pure (tests
+  unaffected). Worktree commit `fe75f84d0`. Not merged. Frontend-only, so hot-reload on merge.
+- **Toolbar consolidation (CODE increment #3, PENDING decision)** — Michal wants "What can
+  Athena do", Daily Brief, Analyze Fleet moved out of `CompanionToolbar` into the slash menu.
+  Finding: capabilities is ALREADY a slash preset (message) → its toolbar button is a pure
+  duplicate to remove. Daily Brief + Analyze Fleet are DETERMINISTIC command calls
+  (`companion_daily_brief` / `companion_analyze_fleet`), not chat prompts — so they must
+  migrate as ACTION presets (run the command on pick), NOT message presets, to keep the
+  dedicated-turn behavior. Plan: extend `SlashPreset` with optional `action`; thread the two
+  handlers from `CompanionPanel` → `Composer`; remove the 3 toolbar buttons + their props.
+  Awaiting Michal's OK on the action-preset approach. ⏳
