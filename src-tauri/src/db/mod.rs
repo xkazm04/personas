@@ -1,5 +1,6 @@
 #[macro_use]
 pub mod macros;
+mod backup;
 pub(crate) mod builtin_connectors;
 pub mod cdc;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
@@ -197,6 +198,13 @@ pub fn init_db(
     let _ = PRIMARY_DB_PATH.set(db_path.clone());
 
     tracing::info!(path = %db_path.display(), "Initializing database");
+
+    // Safety net for the migration chain below: snapshot an existing DB
+    // before ANY connection opens it, so a bad boot migration can't strand
+    // the user's data inside a half-migrated file. Best-effort — never
+    // blocks boot. Fresh installs are skipped inside the helper. Policy
+    // (every-boot backup, keep newest 3 sets) is documented in db/backup.rs.
+    backup::backup_before_migrations(app_data_dir, &db_path);
 
     let manager = SqliteConnectionManager::file(&db_path);
     let customizer: Box<dyn CustomizeConnection<rusqlite::Connection, rusqlite::Error>> =
@@ -1359,6 +1367,147 @@ mod boot_tests {
             assert!(
                 connector_defs > 0,
                 "builtin connector seeds missing after reopen"
+            );
+        }
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// List `*.db` files in a backup dir, sorted ascending (lexicographic ==
+    /// chronological for the `personas-<stamp>-<nn>.db` naming scheme).
+    fn list_backup_dbs(backup_dir: &Path) -> Vec<PathBuf> {
+        let mut dbs: Vec<PathBuf> = std::fs::read_dir(backup_dir)
+            .map(|entries| {
+                entries
+                    .filter_map(|e| e.ok())
+                    .map(|e| e.path())
+                    .filter(|p| p.extension().is_some_and(|x| x == "db"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        dbs.sort();
+        dbs
+    }
+
+    /// The pre-migration safety net: booting on an EXISTING database must
+    /// snapshot it into `<data_dir>/backups/` before the migration chain
+    /// runs, and the snapshot must itself be an openable SQLite file that
+    /// still contains the previous session's data — i.e. it is actually
+    /// restorable, not just a file that exists.
+    #[test]
+    fn init_db_second_launch_backs_up_existing_db_before_migrations() {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_boot_test_{}", uuid::Uuid::new_v4()));
+        let backup_dir = data_dir.join("backups");
+
+        // -- Session 1: fresh install — no pre-existing DB, so NO backup ----
+        {
+            let pool = init_db(&data_dir, None).expect("first init_db (fresh install) failed");
+            repos::core::settings::set(&pool, settings_keys::CLI_ENGINE, "claude_code")
+                .expect("writing a settings row in session 1 failed");
+        }
+        assert!(
+            !backup_dir.exists(),
+            "fresh install must not create a backup dir"
+        );
+
+        // -- Session 2: boot on the existing DB — exactly one backup --------
+        {
+            let _pool = init_db(&data_dir, None).expect("second init_db failed");
+        }
+        let backups = list_backup_dbs(&backup_dir);
+        assert_eq!(
+            backups.len(),
+            1,
+            "second launch must create exactly one backup, found: {backups:?}"
+        );
+        let name = backups[0].file_name().unwrap().to_string_lossy().into_owned();
+        assert!(
+            name.starts_with("personas-") && name.ends_with(".db"),
+            "unexpected backup file name: {name}"
+        );
+
+        // The snapshot was taken BEFORE session 2's migrations touched the
+        // file, and it must hold session 1's data.
+        let conn = rusqlite::Connection::open(&backups[0])
+            .expect("backup is not an openable SQLite database");
+        let value: String = conn
+            .query_row(
+                "SELECT value FROM app_settings WHERE key = ?1",
+                params![settings_keys::CLI_ENGINE],
+                |r| r.get(0),
+            )
+            .expect("session-1 settings row missing from the backup");
+        assert_eq!(value, "claude_code", "backup does not carry session-1 data");
+        drop(conn);
+
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// Fresh create must make NO backup: there is no user data to protect,
+    /// and an empty `backups/` dir on a brand-new install would be litter.
+    #[test]
+    fn init_db_fresh_create_makes_no_backup() {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_boot_test_{}", uuid::Uuid::new_v4()));
+        {
+            let _pool = init_db(&data_dir, None).expect("fresh init_db failed");
+        }
+        assert!(
+            !data_dir.join("backups").exists(),
+            "fresh install must not create any backup"
+        );
+        let _ = std::fs::remove_dir_all(&data_dir);
+    }
+
+    /// Rotation: only the newest 3 backup sets survive, and WAL/SHM siblings
+    /// of rotated-out sets are deleted with them. Exercises the helper
+    /// directly (a dummy file stands in for the DB — the copy path doesn't
+    /// parse SQLite) so five "boots" don't need five full migration replays.
+    #[test]
+    fn backup_rotation_keeps_only_newest_three() {
+        let data_dir =
+            std::env::temp_dir().join(format!("personas_boot_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&data_dir).unwrap();
+        let db_path = data_dir.join("personas.db");
+        std::fs::write(&db_path, b"stand-in db bytes").unwrap();
+        // Sidecar present → every backup set gets a -wal sibling too.
+        std::fs::write(db_path.with_extension("db-wal"), b"wal bytes").unwrap();
+
+        let mut created: Vec<PathBuf> = Vec::new();
+        for _ in 0..5 {
+            created.push(
+                backup::backup_before_migrations(&data_dir, &db_path)
+                    .expect("backup helper returned None for an existing DB"),
+            );
+        }
+
+        let backup_dir = data_dir.join("backups");
+        let survivors = list_backup_dbs(&backup_dir);
+        assert_eq!(
+            survivors.len(),
+            3,
+            "rotation must keep exactly 3 backups, found: {survivors:?}"
+        );
+        // The survivors are the three NEWEST (creation order == name order).
+        assert_eq!(
+            survivors,
+            created[2..].to_vec(),
+            "rotation kept the wrong backups"
+        );
+
+        for old in &created[..2] {
+            assert!(!old.exists(), "rotated-out backup still on disk: {old:?}");
+            assert!(
+                !old.with_extension("db-wal").exists(),
+                "rotated-out backup left its WAL sibling behind: {old:?}"
+            );
+        }
+        for kept in &created[2..] {
+            assert!(kept.exists(), "surviving backup missing: {kept:?}");
+            assert!(
+                kept.with_extension("db-wal").exists(),
+                "surviving backup missing its WAL sibling: {kept:?}"
             );
         }
 
