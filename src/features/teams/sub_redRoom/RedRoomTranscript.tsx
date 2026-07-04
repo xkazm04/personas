@@ -6,7 +6,7 @@ import { eventFamily, memberColor, type RedRoomItem } from './useRedRoomFeed';
 import { RedRoomDetailModal } from './RedRoomDetailModal';
 
 /**
- * TRANSCRIPT variant — "mission radio log".
+ * TRANSCRIPT — "mission radio log" (the Red Room /prototype winner).
  *
  * Metaphor: an air-traffic transcript. Dense monospace lines, one per
  * transmission (newest first): timestamp · CALLSIGN · event channel ·

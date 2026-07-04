@@ -211,7 +211,7 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
   }, [projectId, teamId, memberSet]);
 
   // Subscriptions change rarely — fetch once per member set; re-fetchable on
-  // demand (the Relay's wire-a-listener action creates new subscriptions).
+  // demand (e.g. after new subscriptions are wired elsewhere).
   const refreshSubscriptions = useCallback(() => {
     if (memberPersonaIds.length === 0) return;
     Promise.all(
@@ -277,7 +277,7 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
       importance: m.importance,
     }));
     // Channel-native messages → event items (eventType encodes the author),
-    // so the Transcript/Relay render them with the shared row + detail modal.
+    // so the Transcript renders them with the shared row + detail modal.
     const chanItems: RedRoomItem[] = channelMsgs.map((c) => ({
       kind: 'event' as const,
       id: c.id,
