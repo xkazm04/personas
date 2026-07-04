@@ -86,7 +86,7 @@ export function SlashPalette({
                 type="button"
                 onClick={() => onSelect(preset)}
                 onMouseEnter={() => onHoverIndex(idx)}
-                className={`w-full text-left px-3 py-1.5 typo-caption transition-colors flex flex-col gap-0.5 ${
+                className={`w-full text-left px-3 py-1.5 typo-caption font-normal transition-colors ${
                   active
                     ? 'bg-primary/10 text-foreground'
                     : 'text-foreground hover:bg-foreground/[0.04]'
@@ -95,10 +95,7 @@ export function SlashPalette({
                 data-key={preset.key}
                 data-active={active ? 'true' : 'false'}
               >
-                <span className="font-medium">{preset.label}</span>
-                <span className="text-foreground typo-caption line-clamp-1">
-                  {preset.message}
-                </span>
+                {preset.label}
               </button>
             </li>
           );

@@ -89,7 +89,7 @@ export function Composer({
         label: t.plugins.companion.slash_label_capabilities,
         message: t.plugins.companion.slash_message_capabilities,
       },
-    ],
+    ].sort((a, b) => a.label.localeCompare(b.label)),
     [t.plugins.companion],
   );
 
