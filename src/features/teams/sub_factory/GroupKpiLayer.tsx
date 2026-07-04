@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 
-import { DOMAIN_LABEL, type MockGroup, type MockProject, type MockKpi } from './factoryMock';
+import { DOMAIN_LABEL, type MockGroup, type MockProject, type MockKpi } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
 import { KpiTable } from './KpiTable';
 import { AddKpiModal } from './AddKpiModal';

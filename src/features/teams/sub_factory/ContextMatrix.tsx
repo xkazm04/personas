@@ -17,7 +17,7 @@ import {
   groupKpis,
   type MockKpi,
   type MockProject,
-} from './factoryMock';
+} from './factoryModel';
 import { Sparkline, TrafficTally } from './factoryPrimitives';
 
 const COLS = 'minmax(140px,1.5fr) repeat(4, minmax(76px,1fr)) 46px';

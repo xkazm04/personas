@@ -13,7 +13,7 @@ import { Sparkles, Check, X, SlidersHorizontal, Loader2, Lightbulb } from 'lucid
 import { listKpis, updateKpi, scanKpis, getKpiScanStatus } from '@/api/devTools/kpis';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 
-import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, type KpiCategory } from './factoryMock';
+import { CATEGORY_LABEL, CADENCE_LABEL, fmtUnit, type KpiCategory } from './factoryModel';
 
 /** Cadence token → label, tolerant of any stored string. */
 const cadenceLabel = (c: string) => CADENCE_LABEL[c as 'daily' | 'weekly' | 'manual'] ?? c;

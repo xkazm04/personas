@@ -15,7 +15,7 @@ import * as kpiApi from '@/api/devTools/kpis';
 import type { DevKpi } from '@/lib/bindings/DevKpi';
 import { KPIConnectWizard } from '@/features/teams/sub_kpis/KPIConnectWizard';
 
-import { CATEGORY_LABEL, KIND_LABEL, fmtUnit, type MeasureKind, type MockKpi } from './factoryMock';
+import { CATEGORY_LABEL, KIND_LABEL, fmtUnit, type MeasureKind, type MockKpi } from './factoryModel';
 import { useFactoryData } from './factoryData';
 import { useComposeTask, CATEGORY_DEFAULT_KIND, DERIVED_METRICS, errMsg } from './composeTask';
 

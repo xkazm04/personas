@@ -13,7 +13,7 @@ import { listCredentials } from '@/api/vault/credentials';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
 import type { ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 
-import { type KpiCategory, type KpiTier, type MeasureKind } from './factoryMock';
+import { type KpiCategory, type KpiTier, type MeasureKind } from './factoryModel';
 import { useFactoryData } from './factoryData';
 import { CATEGORY_DEFAULT_KIND, DERIVED_METRICS, errMsg } from './composeTask';
 import { num, type Measured } from './addKpiPrimitives';

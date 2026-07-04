@@ -3,7 +3,7 @@
 // metaphor. These are the "extractable" pieces a winning variant would graft
 // back into the real KPI surface.
 import { Star, ChevronLeft } from 'lucide-react';
-import { STATUS_COLOR, STATUS_LABEL, TRAFFIC_COLOR, trafficCounts, progressPct, fmtUnit, type Traffic, type KpiStatus, type MockKpi, kpiStatus } from './factoryMock';
+import { STATUS_COLOR, STATUS_LABEL, TRAFFIC_COLOR, trafficCounts, progressPct, fmtUnit, type Traffic, type KpiStatus, type MockKpi, kpiStatus } from './factoryModel';
 
 /** Compact measurement sparkline (oldest → newest). */
 export function Sparkline({

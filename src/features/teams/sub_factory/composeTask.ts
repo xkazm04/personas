@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { getKpiComposeStatus, type KpiComposeStatus } from '@/api/devTools/kpis';
 
-import type { KpiCategory, MeasureKind } from './factoryMock';
+import type { KpiCategory, MeasureKind } from './factoryModel';
 
 /** Robustly stringify a Tauri/AppError so the UI never shows "[object Object]". */
 export function errMsg(e: unknown): string {

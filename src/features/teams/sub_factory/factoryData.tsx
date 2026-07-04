@@ -25,7 +25,7 @@ import type {
   MeasureKind,
   GroupDomain,
   ContextCategory,
-} from './factoryMock';
+} from './factoryModel';
 
 // -- mapping ------------------------------------------------------------------
 

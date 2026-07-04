@@ -13,7 +13,7 @@ import { BaseModal } from '@/lib/ui/BaseModal';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
-import { type KpiCategory, type KpiTier } from './factoryMock';
+import { type KpiCategory, type KpiTier } from './factoryModel';
 import { useAddKpi } from './useAddKpi';
 import { CATEGORY_OPTS, TIER_OPTS, DIRECTION_OPTS, INPUT, Label, MeasurementFields } from './addKpiPrimitives';
 

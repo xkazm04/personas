@@ -6,7 +6,7 @@ import { Hand } from 'lucide-react';
 
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 
-import { CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, type KpiCategory, type MeasureKind } from './factoryMock';
+import { CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, type KpiCategory, type MeasureKind } from './factoryModel';
 
 export type Measured = 'manual' | 'auto';
 

@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { Clock, SlidersHorizontal, Activity, Play, Settings2, Loader2, Hand } from 'lucide-react';
 
 import { evaluateKpi } from '@/api/devTools/kpis';
-import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryMock';
+import { STATUS_COLOR, TRAFFIC_COLOR, CATEGORY_LABEL, KIND_LABEL, CADENCE_LABEL, TIER_LABEL, kpiStatus, progressPct, fmtUnit, type MockKpi, type KpiEdit, type KpiStatus } from './factoryModel';
 import { Sparkline, CalibrationTrack, StatusPill, ThresholdSlider, AssessmentEditor } from './factoryPrimitives';
 import { errMsg } from './composeTask';
 import { MeasureSetupModal } from './MeasureSetupModal';

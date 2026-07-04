@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { saveKpiAssessment } from '@/api/devTools/kpis';
 
-import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryMock';
+import { projectKpis, applyEdit, type KpiEdit, type MockKpi, type MockProject } from './factoryModel';
 import { Breadcrumb } from './factoryPrimitives';
 import { KpiProposalsPanel } from './KpiProposalsPanel';
 import { ProjectsLayer } from './ProjectsLayer';

@@ -21,7 +21,7 @@ import { ImproveProvider, type ImproveEngine } from './passport/improve/ImproveC
 import { ImprovePlanPanel } from './passport/improve/ImprovePlanPanel';
 import { usePassportData } from './passport/usePassportData';
 import { useFactoryData } from './factoryData';
-import { groupKpis, kpiStatus } from './factoryMock';
+import { groupKpis, kpiStatus } from './factoryModel';
 
 export function ProjectsLayer({
   onOpen,

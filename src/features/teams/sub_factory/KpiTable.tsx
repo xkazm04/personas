@@ -12,7 +12,7 @@ import {
   progressPct,
   type KpiStatus,
   type MockKpi,
-} from './factoryMock';
+} from './factoryModel';
 import { Sparkline, StatusDot, StatusPill, KpiBarRating } from './factoryPrimitives';
 
 const SEV: Record<KpiStatus, number> = { crit: 0, warn: 1, ok: 2, met: 3, unmeasured: 4 };
