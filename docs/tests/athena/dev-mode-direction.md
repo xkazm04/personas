@@ -180,3 +180,37 @@ kills her PTY sessions** — the fleet registry is in-memory, no DB persistence.
     commit, worktree + branch cleaned up, ledger row finalized `merged`. Second lockfile
     note: dev sessions running node tooling can dirty the worktree — a task-prompt hint or a
     lockfile-restore in the merge path is a small Phase-5 hardening.
+- **2026-07-04 — Phase 5 shipped (the experiment harness).** Two commits:
+  - **Backend** (`d4db53c7c`): **merge ergonomics + ledger API**.
+    - *Cherry-pick apply mode.* `merge_dev_branch` now delegates to a testable
+      `apply_dev_branch(root, workspace, branch)`: fast-forward when master is unmoved; else
+      **cherry-pick IFF the branch is exactly one commit ahead** of the live checkout (the
+      focused-dev-run case — the ff-only refusal was the *common* case here since parallel
+      sessions move master constantly). Multi-commit / zero-commit divergence still refuses
+      with the manual-merge guidance; a cherry-pick conflict aborts cleanly and refuses. A
+      cherry-pick force-deletes the branch (git sees it as unmerged: new commit ≠ branch tip).
+    - *Lockfile-drift tolerance.* `restore_lockfile_noise` reverts `pnpm-lock.yaml` /
+      `package-lock.json` / `yarn.lock` to HEAD (index + working tree) before the dirty-tree
+      check — a run's `npx` side effects no longer masquerade as uncommitted work (the exact
+      Phase-4 live finding). Committed lockfile changes are untouched; only uncommitted drift.
+    - *Experiment ledger.* The `companion_dev_op` table doubles as the scoreboard:
+      `list_dev_ops` (recent, newest-first, ties broken by rowid) + `dev_op_metrics` (total /
+      in-flight / merged / closed / interrupted / landed-commit / thumbs) + `set_verdict`
+      (`"up"` | `"down"` | null, validated), surfaced via `companion_dev_op_ledger` /
+      `companion_dev_op_set_verdict` (empty ledger when dev mode is off — a stray release-build
+      call can't leak workspace history). 10 `dev_mode` unit tests pass, incl. **git-backed**
+      ff / cherry-pick / multi-commit-refusal / dirty-refusal / lockfile-tolerance cases
+      against throwaway repos.
+  - **Frontend** (`7d36744b4`): **`DevOpLedger.tsx`** — a compact, collapsible strip rendered
+    under the panel header while the wrench is ON (mirrors WakeCadence / FleetBoldnessDial).
+    Header line = the aggregate scoreboard (`{total} runs · {landed} committed · {merged}
+    merged`) + thumbs ratio; expands to recent runs, each a status dot + request + commit sha +
+    relative time + **👍/👎 verdict chips** (toggle-off on re-tap, optimistic). Refetches on a
+    new proactive card (a reflection / interrupt = a dev op changed state) — no polling. Verdict
+    is the experiment signal accumulated over days of use. 12 `dev_ledger_*` / `dev_status_*`
+    i18n keys across all 14 locales; tsc + eslint clean.
+  - **Still open (future):** a periodic self-review of the ledger (the `execution_review`
+    pattern) to close the meta-loop — "dev mode landed 8/10 dispatches this week, 2 needed
+    rescue, your thumbs ran 6👍/1👎"; and the oversized-request → `dev_ideas` graceful degrade
+    (Athena files a backlog entry instead of dispatching an open-ended rewrite). The ledger +
+    verdict column those would read now exist.
