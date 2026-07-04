@@ -15,6 +15,7 @@ pub mod downloader;
 pub mod elevenlabs;
 pub mod kokoro;
 pub mod kokoro_catalog;
+pub mod kokoro_installer;
 pub mod piper;
 
 use std::time::Duration;

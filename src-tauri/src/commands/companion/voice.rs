@@ -186,3 +186,16 @@ pub async fn companion_tts_kokoro_status(
     require_auth(&state).await?;
     tts::kokoro::status()
 }
+
+/// One-click download + extract of the Kokoro sidecar binary + model package
+/// into `~/.personas/companion-tts/`. Progress streams on the
+/// `companion://kokoro-install` event channel; resolves once both are in place
+/// (and verified) or errors. Windows-only (the prebuilt sidecar is win-x64).
+#[tauri::command]
+pub async fn companion_tts_kokoro_download(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    tts::kokoro_installer::install(&app).await
+}

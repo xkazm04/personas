@@ -12,10 +12,11 @@
 //! reorders speakers, re-verify against
 //! <https://k2-fsa.github.io/sherpa/onnx/tts/pretrained_models/kokoro.html>.
 //!
-//! We intentionally surface only a small English-voice subset (the strongest
-//! female voices + one British + one male reference) rather than all 53 —
-//! the model download is monolithic, so every voice is available once the
-//! package is installed; the catalog is just the curated picker.
+//! We intentionally surface a single curated voice (`af_heart`) rather than
+//! all 53 — the model download is monolithic (every voice is baked into the
+//! one `voices.bin` regardless), so this catalog is purely the picker, not a
+//! size lever. Trimming to one voice keeps the UI focused on the voice we've
+//! judged worth shipping; add rows here (with verified sids) to expose more.
 
 use serde::Serialize;
 
@@ -48,8 +49,8 @@ pub struct KokoroVoiceEntry {
     pub description: &'static str,
 }
 
-/// Curated Kokoro voice catalog. Order is the order users see in the picker;
-/// `af_heart` (the default) leads.
+/// Curated Kokoro voice catalog — currently just `af_heart`, the voice we've
+/// judged worth shipping. Add rows (with verified sids) to expose more.
 pub const KOKORO_VOICES: &[KokoroVoiceEntry] = &[
     KokoroVoiceEntry {
         voice_id: "af_heart",
@@ -60,56 +61,6 @@ pub const KOKORO_VOICES: &[KokoroVoiceEntry] = &[
         language_label: "English (US)",
         grade: "A",
         description: "Warm, expressive US female — Kokoro's flagship voice.",
-    },
-    KokoroVoiceEntry {
-        voice_id: "af_bella",
-        sid: 2,
-        speaker: "Bella",
-        gender: "female",
-        language_code: "en-US",
-        language_label: "English (US)",
-        grade: "A-",
-        description: "Bright, natural US female.",
-    },
-    KokoroVoiceEntry {
-        voice_id: "af_nicole",
-        sid: 6,
-        speaker: "Nicole",
-        gender: "female",
-        language_code: "en-US",
-        language_label: "English (US)",
-        grade: "B-",
-        description: "Softer US female with an intimate tone.",
-    },
-    KokoroVoiceEntry {
-        voice_id: "af_sky",
-        sid: 10,
-        speaker: "Sky",
-        gender: "female",
-        language_code: "en-US",
-        language_label: "English (US)",
-        grade: "C-",
-        description: "Light, airy US female.",
-    },
-    KokoroVoiceEntry {
-        voice_id: "bf_emma",
-        sid: 21,
-        speaker: "Emma",
-        gender: "female",
-        language_code: "en-GB",
-        language_label: "English (UK)",
-        grade: "B-",
-        description: "Warm British female.",
-    },
-    KokoroVoiceEntry {
-        voice_id: "am_michael",
-        sid: 16,
-        speaker: "Michael",
-        gender: "male",
-        language_code: "en-US",
-        language_label: "English (US)",
-        grade: "C+",
-        description: "Natural US male reference voice.",
     },
 ];
 

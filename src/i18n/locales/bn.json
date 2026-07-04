@@ -13208,7 +13208,15 @@
       "voice_kokoro_setup_title": "Kokoro সেটআপ",
       "voice_kokoro_voices_desc": "সব ভয়েস একটি মডেলেই থাকে — একটি বেছে নিন এবং শুনতে প্রিভিউ চাপুন। af_heart হল Kokoro-এর উষ্ণ, অভিব্যক্তিপূর্ণ ডিফল্ট।",
       "voice_kokoro_voices_title": "ভয়েস",
-      "voice_kokoro_engine_hint": "sherpa-onnx-এর win-x64-shared-MT-Release বিল্ড ডাউনলোড করুন এবং sherpa-onnx-offline-tts.exe (এর onnxruntime DLL সহ) নিচের ফোল্ডারে আনজিপ করুন।"
+      "voice_kokoro_engine_hint": "sherpa-onnx-এর win-x64-shared-MT-Release বিল্ড ডাউনলোড করুন এবং sherpa-onnx-offline-tts.exe (এর onnxruntime DLL সহ) নিচের ফোল্ডারে আনজিপ করুন।",
+      "voice_kokoro_install_button": "ডাউনলোড ও ইনস্টল করুন",
+      "voice_kokoro_install_desc": "Kokoro স্বয়ংক্রিয়ভাবে ডাউনলোড ও সেটআপ করুন — প্রায় 400 MB (af_heart ইংরেজি ভয়েস)।",
+      "voice_kokoro_install_engine": "ইঞ্জিন ডাউনলোড হচ্ছে…",
+      "voice_kokoro_install_extract": "এক্সট্র্যাক্ট করা হচ্ছে…",
+      "voice_kokoro_install_failed": "ইনস্টল ব্যর্থ হয়েছে",
+      "voice_kokoro_install_manual": "অথবা ম্যানুয়ালি সেটআপ করুন:",
+      "voice_kokoro_install_model": "ভয়েস মডেল ডাউনলোড হচ্ছে…",
+      "voice_kokoro_install_title": "এক-ক্লিক ইনস্টল"
     },
     "ocr": {
       "title": "OCR",

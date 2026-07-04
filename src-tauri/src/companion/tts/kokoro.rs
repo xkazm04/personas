@@ -161,6 +161,10 @@ pub struct KokoroStatus {
     pub model_download_url: &'static str,
     /// Copy-paste URL for the engine binary releases.
     pub engine_download_url: &'static str,
+    /// Whether one-click auto-install is supported on this platform (the
+    /// prebuilt sidecar asset is win-x64 only). Windows → true; other OSes
+    /// fall back to the manual setup instructions.
+    pub can_auto_install: bool,
 }
 
 pub fn status() -> Result<KokoroStatus, AppError> {
@@ -175,6 +179,7 @@ pub fn status() -> Result<KokoroStatus, AppError> {
         model_dir: model_dir()?.display().to_string(),
         model_download_url: MODEL_DOWNLOAD_URL,
         engine_download_url: ENGINE_DOWNLOAD_URL,
+        can_auto_install: cfg!(target_os = "windows"),
     })
 }
 

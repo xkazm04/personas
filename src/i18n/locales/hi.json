@@ -13208,7 +13208,15 @@
       "voice_kokoro_setup_title": "Kokoro सेटअप",
       "voice_kokoro_voices_desc": "सभी आवाज़ें एक ही मॉडल में शामिल हैं — एक चुनें और सुनने के लिए पूर्वावलोकन दबाएँ। af_heart, Kokoro की गर्मजोशी भरी, अभिव्यंजक डिफ़ॉल्ट आवाज़ है।",
       "voice_kokoro_voices_title": "आवाज़ें",
-      "voice_kokoro_engine_hint": "sherpa-onnx का win-x64-shared-MT-Release बिल्ड डाउनलोड करें और sherpa-onnx-offline-tts.exe (उसकी onnxruntime DLLs सहित) को नीचे दिए गए फ़ोल्डर में अनज़िप करें।"
+      "voice_kokoro_engine_hint": "sherpa-onnx का win-x64-shared-MT-Release बिल्ड डाउनलोड करें और sherpa-onnx-offline-tts.exe (उसकी onnxruntime DLLs सहित) को नीचे दिए गए फ़ोल्डर में अनज़िप करें।",
+      "voice_kokoro_install_button": "डाउनलोड करें और इंस्टॉल करें",
+      "voice_kokoro_install_desc": "Kokoro को स्वचालित रूप से डाउनलोड और सेट अप करें — लगभग 400 MB (af_heart अंग्रेज़ी आवाज़)।",
+      "voice_kokoro_install_engine": "इंजन डाउनलोड हो रहा है…",
+      "voice_kokoro_install_extract": "एक्सट्रैक्ट हो रहा है…",
+      "voice_kokoro_install_failed": "इंस्टॉल विफल",
+      "voice_kokoro_install_manual": "या इसे मैन्युअल रूप से सेट अप करें:",
+      "voice_kokoro_install_model": "वॉइस मॉडल डाउनलोड हो रहा है…",
+      "voice_kokoro_install_title": "वन-क्लिक इंस्टॉल"
     },
     "ocr": {
       "title": "OCR",

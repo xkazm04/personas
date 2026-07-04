@@ -2003,7 +2003,15 @@
     "voice_kokoro_setup_title": "Kokoroのセットアップ",
     "voice_kokoro_voices_desc": "すべての音声は1つのモデルに含まれています。選択してプレビューを押すと聞くことができます。af_heartはKokoroの温かみのある表現豊かなデフォルト音声です。",
     "voice_kokoro_voices_title": "音声",
-    "voice_kokoro_engine_hint": "sherpa-onnx の win-x64-shared-MT-Release ビルドをダウンロードし、sherpa-onnx-offline-tts.exe（onnxruntime の DLL 一式を含む）を下記フォルダに解凍してください。"
+    "voice_kokoro_engine_hint": "sherpa-onnx の win-x64-shared-MT-Release ビルドをダウンロードし、sherpa-onnx-offline-tts.exe（onnxruntime の DLL 一式を含む）を下記フォルダに解凍してください。",
+    "voice_kokoro_install_button": "ダウンロードしてインストール",
+    "voice_kokoro_install_desc": "Kokoroを自動的にダウンロードして設定します — 約400 MB（af_heart英語音声）。",
+    "voice_kokoro_install_engine": "エンジンをダウンロード中…",
+    "voice_kokoro_install_extract": "展開中…",
+    "voice_kokoro_install_failed": "インストールに失敗しました",
+    "voice_kokoro_install_manual": "または手動で設定：",
+    "voice_kokoro_install_model": "音声モデルをダウンロード中…",
+    "voice_kokoro_install_title": "ワンクリックインストール"
   },
   "ocr": {
     "title": "OCR",

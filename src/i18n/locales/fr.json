@@ -13208,7 +13208,15 @@
       "voice_kokoro_setup_title": "Configuration de Kokoro",
       "voice_kokoro_voices_desc": "Toutes les voix sont incluses dans un seul modèle — choisissez-en une et appuyez sur Aperçu pour l'écouter. af_heart est la voix par défaut de Kokoro, chaleureuse et expressive.",
       "voice_kokoro_voices_title": "Voix",
-      "voice_kokoro_engine_hint": "Téléchargez la version win-x64-shared-MT-Release de sherpa-onnx et décompressez sherpa-onnx-offline-tts.exe (avec ses DLL onnxruntime) dans le dossier ci-dessous."
+      "voice_kokoro_engine_hint": "Téléchargez la version win-x64-shared-MT-Release de sherpa-onnx et décompressez sherpa-onnx-offline-tts.exe (avec ses DLL onnxruntime) dans le dossier ci-dessous.",
+      "voice_kokoro_install_button": "Télécharger et installer",
+      "voice_kokoro_install_desc": "Télécharge et configure Kokoro automatiquement — environ 400 MB (la voix anglaise af_heart).",
+      "voice_kokoro_install_engine": "Téléchargement du moteur…",
+      "voice_kokoro_install_extract": "Extraction…",
+      "voice_kokoro_install_failed": "Échec de l'installation",
+      "voice_kokoro_install_manual": "Ou configurez-le manuellement :",
+      "voice_kokoro_install_model": "Téléchargement du modèle vocal…",
+      "voice_kokoro_install_title": "Installation en un clic"
     },
     "ocr": {
       "title": "OCR",

@@ -13208,7 +13208,15 @@
       "voice_kokoro_setup_title": "Thiết lập Kokoro",
       "voice_kokoro_voices_desc": "Tất cả giọng nói đều nằm trong một model — chọn một giọng và nhấn Nghe thử để nghe. af_heart là giọng mặc định ấm áp, giàu cảm xúc của Kokoro.",
       "voice_kokoro_voices_title": "Giọng nói",
-      "voice_kokoro_engine_hint": "Tải bản dựng win-x64-shared-MT-Release của sherpa-onnx và giải nén sherpa-onnx-offline-tts.exe (cùng các DLL onnxruntime của nó) vào thư mục bên dưới."
+      "voice_kokoro_engine_hint": "Tải bản dựng win-x64-shared-MT-Release của sherpa-onnx và giải nén sherpa-onnx-offline-tts.exe (cùng các DLL onnxruntime của nó) vào thư mục bên dưới.",
+      "voice_kokoro_install_button": "Tải xuống & cài đặt",
+      "voice_kokoro_install_desc": "Tự động tải xuống và thiết lập Kokoro — khoảng 400 MB (giọng đọc tiếng Anh af_heart).",
+      "voice_kokoro_install_engine": "Đang tải công cụ…",
+      "voice_kokoro_install_extract": "Đang giải nén…",
+      "voice_kokoro_install_failed": "Cài đặt thất bại",
+      "voice_kokoro_install_manual": "Hoặc tự thiết lập:",
+      "voice_kokoro_install_model": "Đang tải mô hình giọng nói…",
+      "voice_kokoro_install_title": "Cài đặt một chạm"
     },
     "ocr": {
       "title": "OCR",

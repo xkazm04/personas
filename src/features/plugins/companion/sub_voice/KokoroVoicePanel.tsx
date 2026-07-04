@@ -1,24 +1,31 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import {
   CheckCircle2,
   Cpu,
+  Download,
   ExternalLink,
   Loader2,
   Package,
   Play,
   RefreshCw,
+  Sparkles,
   Square,
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import {
+  KOKORO_INSTALL_EVENT,
+  companionTtsKokoroDownload,
   companionTtsKokoroStatus,
   companionTtsListKokoroVoices,
+  type KokoroInstallProgress,
   type KokoroStatus,
   type KokoroVoiceEntry,
 } from '@/api/companion';
@@ -139,6 +146,9 @@ interface SetupCardProps {
 
 function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
   const { t } = useTranslation();
+  const fullyInstalled = !!status?.engineInstalled && !!status?.modelInstalled;
+  const showAutoInstall = !!status?.canAutoInstall && !fullyInstalled;
+
   return (
     <SectionCard
       title={t.plugins.companion.voice_kokoro_setup_title}
@@ -153,6 +163,10 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
           </div>
         ) : (
           <>
+            {showAutoInstall && <InstallBlock onDone={onRecheck} />}
+            {showAutoInstall && (
+              <p className="typo-caption pt-0.5">{t.plugins.companion.voice_kokoro_install_manual}</p>
+            )}
             <SetupRow
               icon={<Cpu className="w-4 h-4" />}
               label={t.plugins.companion.voice_kokoro_engine_label}
@@ -186,6 +200,132 @@ function SetupCard({ status, loading, onRecheck }: SetupCardProps) {
         </button>
       </div>
     </SectionCard>
+  );
+}
+
+/**
+ * One-click install affordance — downloads + extracts the sidecar + model via
+ * the backend, streaming progress on `KOKORO_INSTALL_EVENT`. On completion it
+ * calls `onDone` (the parent's status refresh) so the Installed badges + voice
+ * picker flip live without a manual re-check.
+ */
+function InstallBlock({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation();
+  const [installing, setInstalling] = useState(false);
+  const [progress, setProgress] = useState<KokoroInstallProgress | null>(null);
+  const unlistenRef = useRef<UnlistenFn | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listen<KokoroInstallProgress>(KOKORO_INSTALL_EVENT, (evt) => {
+      if (cancelled) return;
+      setProgress(evt.payload);
+      if (evt.payload.phase === 'completed') {
+        setInstalling(false);
+        onDone();
+      } else if (evt.payload.phase === 'failed') {
+        setInstalling(false);
+      }
+    })
+      .then((u) => {
+        if (cancelled) u();
+        else unlistenRef.current = u;
+      })
+      .catch(silentCatch('kokoro.install.subscribe'));
+    return () => {
+      cancelled = true;
+      unlistenRef.current?.();
+      unlistenRef.current = null;
+    };
+  }, [onDone]);
+
+  const onInstall = useCallback(async () => {
+    setInstalling(true);
+    setProgress({ phase: 'downloading_engine', bytesDownloaded: 0, bytesTotal: null, error: null });
+    try {
+      await companionTtsKokoroDownload();
+    } catch (e) {
+      setInstalling(false);
+      setProgress({
+        phase: 'failed',
+        bytesDownloaded: 0,
+        bytesTotal: null,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      silentCatch('kokoro.install')(e);
+    }
+  }, []);
+
+  const phaseLabel = (p: KokoroInstallProgress['phase']): string => {
+    switch (p) {
+      case 'downloading_engine':
+        return t.plugins.companion.voice_kokoro_install_engine;
+      case 'downloading_model':
+        return t.plugins.companion.voice_kokoro_install_model;
+      case 'extracting':
+        return t.plugins.companion.voice_kokoro_install_extract;
+      case 'failed':
+        return t.plugins.companion.voice_kokoro_install_failed;
+      default:
+        return '';
+    }
+  };
+
+  const pct =
+    progress?.bytesTotal && progress.bytesTotal > 0
+      ? Math.round((progress.bytesDownloaded / progress.bytesTotal) * 100)
+      : null;
+  const isDownloading =
+    progress?.phase === 'downloading_engine' || progress?.phase === 'downloading_model';
+  const failed = progress?.phase === 'failed';
+
+  return (
+    <div className="rounded-card border border-primary/25 bg-primary/[0.06] p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-primary" />
+        <span className="typo-title text-primary">
+          {t.plugins.companion.voice_kokoro_install_title}
+        </span>
+      </div>
+      <p className="typo-caption">{t.plugins.companion.voice_kokoro_install_desc}</p>
+      {installing ? (
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2 typo-caption text-foreground">
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <span>{phaseLabel(progress?.phase ?? 'downloading_engine')}</span>
+            {isDownloading && (
+              <span className="ml-auto typo-code text-[11px]">
+                {pct !== null ? (
+                  `${pct}%`
+                ) : (
+                  <>
+                    <Numeric value={progress!.bytesDownloaded / (1024 * 1024)} precision={0} /> MB
+                  </>
+                )}
+              </span>
+            )}
+          </div>
+          <div className="h-1 rounded-full bg-secondary/60 overflow-hidden">
+            <div
+              className={`h-full bg-primary transition-[width] ${pct === null ? 'animate-pulse w-1/3' : ''}`}
+              style={pct !== null ? { width: `${pct}%` } : undefined}
+            />
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onInstall}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary/15 hover:bg-primary/25 text-primary typo-caption font-medium transition-colors focus-ring"
+        >
+          <Download className="w-3.5 h-3.5" />
+          {t.plugins.companion.voice_kokoro_install_button}
+        </button>
+      )}
+      {failed && progress?.error && (
+        <p className="typo-caption text-status-warning break-words">{progress.error}</p>
+      )}
+    </div>
   );
 }
 

@@ -13330,6 +13330,14 @@ export type Translations = {
       voice_kokoro_copy_url: string;
       voice_kokoro_copy_path: string;
       voice_kokoro_recheck: string;
+      voice_kokoro_install_title: string;
+      voice_kokoro_install_desc: string;
+      voice_kokoro_install_button: string;
+      voice_kokoro_install_engine: string;
+      voice_kokoro_install_model: string;
+      voice_kokoro_install_extract: string;
+      voice_kokoro_install_failed: string;
+      voice_kokoro_install_manual: string;
       voice_kokoro_voices_title: string;
       voice_kokoro_voices_desc: string;
       voice_kokoro_preview: string;

@@ -447,7 +447,24 @@ export interface KokoroStatus {
   modelDir: string;
   modelDownloadUrl: string;
   engineDownloadUrl: string;
+  /** True when one-click auto-install is supported (win-x64 sidecar only). */
+  canAutoInstall: boolean;
 }
+
+/**
+ * Streaming progress for the one-click Kokoro install. The frontend subscribes
+ * to `KOKORO_INSTALL_EVENT` and matches on `phase`. `bytesTotal` is null when
+ * the upstream didn't send Content-Length.
+ */
+export interface KokoroInstallProgress {
+  phase: 'downloading_engine' | 'downloading_model' | 'extracting' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+/** Tauri event channel for Kokoro install progress + terminal states. */
+export const KOKORO_INSTALL_EVENT = 'companion://kokoro-install';
 
 export async function companionTtsListKokoroVoices(): Promise<KokoroVoiceEntry[]> {
   return invoke<KokoroVoiceEntry[]>('companion_tts_list_kokoro_voices');
@@ -455,6 +472,15 @@ export async function companionTtsListKokoroVoices(): Promise<KokoroVoiceEntry[]
 
 export async function companionTtsKokoroStatus(): Promise<KokoroStatus> {
   return invoke<KokoroStatus>('companion_tts_kokoro_status');
+}
+
+/**
+ * Kick off the one-click Kokoro install (download + extract the sidecar +
+ * model). Resolves when both are in place; progress streams on
+ * `KOKORO_INSTALL_EVENT` — subscribe before calling. Windows-only.
+ */
+export async function companionTtsKokoroDownload(): Promise<void> {
+  return invoke<void>('companion_tts_kokoro_download');
 }
 
 // ── Speech-to-text (voice input) ────────────────────────────────────────

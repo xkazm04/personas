@@ -2003,7 +2003,15 @@
     "voice_kokoro_setup_title": "Kokoro 设置",
     "voice_kokoro_voices_desc": "所有语音均包含在一个模型中——选择一个并点击预览即可试听。af_heart 是 Kokoro 温暖、富有表现力的默认语音。",
     "voice_kokoro_voices_title": "语音",
-    "voice_kokoro_engine_hint": "下载 sherpa-onnx 的 win-x64-shared-MT-Release 版本，解压 sherpa-onnx-offline-tts.exe（及其 onnxruntime DLL）到下方文件夹。"
+    "voice_kokoro_engine_hint": "下载 sherpa-onnx 的 win-x64-shared-MT-Release 版本，解压 sherpa-onnx-offline-tts.exe（及其 onnxruntime DLL）到下方文件夹。",
+    "voice_kokoro_install_button": "下载并安装",
+    "voice_kokoro_install_desc": "自动下载并设置 Kokoro——约 400 MB（af_heart 英语语音）。",
+    "voice_kokoro_install_engine": "正在下载引擎…",
+    "voice_kokoro_install_extract": "正在解压…",
+    "voice_kokoro_install_failed": "安装失败",
+    "voice_kokoro_install_manual": "或手动设置：",
+    "voice_kokoro_install_model": "正在下载语音模型…",
+    "voice_kokoro_install_title": "一键安装"
   },
   "ocr": {
     "title": "OCR",
