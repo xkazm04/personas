@@ -1,4 +1,4 @@
-import { estimateCost } from '@/lib/utils/platform/pricing';
+import { estimateCost, isSubscriptionModel } from '@/lib/utils/platform/pricing';
 import { formatCost } from './inspectorTypes';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -40,6 +40,16 @@ export function CostBreakdownBar({ model, inputTokens, outputTokens }: { model: 
         <span>{tx(e.input_pct, { percent: inputPct.toFixed(0) })}</span>
         <span>{tx(e.output_pct, { percent: outputPct.toFixed(0) })}</span>
       </div>
+      {/* Subscription-vs-API reframe: this run's cost is the Anthropic API list
+          price for the same tokens — on the user's Claude subscription it's
+          included, not billed. Shown only for Claude models (external-API
+          models are real per-token spend). This is a reframe of the SAME
+          number, not a second computation — so it can't double-count. */}
+      {isSubscriptionModel(model) && totalCost > 0 && !estimated && (
+        <div className="typo-caption text-emerald-400" data-testid="subscription-cost-note">
+          {tx(e.subscription_cost_note, { cost: formatCost(totalCost) })}
+        </div>
+      )}
     </div>
   );
 }

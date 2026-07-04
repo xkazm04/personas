@@ -547,7 +547,8 @@
     "deep_fanout": "Phân nhánh sâu",
     "deep_fanout_hint": "Giao các tác vụ con độc lập song song cho các subagent. Đặt giới hạn ngân sách.",
     "deep_fanout_unavailable": "Không khả dụng ở gói này — cần công cụ Workflow/Task (Max/Team).",
-    "subagents": "Subagent"
+    "subagents": "Subagent",
+    "subscription_cost_note": "≈{cost} nếu tính phí qua Anthropic API — đã bao gồm trong gói đăng ký Claude của bạn"
   },
   "lab": {
     "mode_arena": "Đấu trường",

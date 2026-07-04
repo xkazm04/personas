@@ -547,7 +547,8 @@
     "deep_fanout": "تفرّع عميق",
     "deep_fanout_hint": "تفويض مهام فرعية مستقلة ومتوازية إلى وكلاء فرعيين. حدّد حداً للميزانية.",
     "deep_fanout_unavailable": "غير متاح في هذه الخطة — يتطلب أدوات Workflow/Task (Max/Team).",
-    "subagents": "وكلاء فرعيون"
+    "subagents": "وكلاء فرعيون",
+    "subscription_cost_note": "≈{cost} إذا تمت الفوترة على Anthropic API — مشمول في اشتراك Claude الخاص بك"
   },
   "lab": {
     "mode_arena": "الساحة",

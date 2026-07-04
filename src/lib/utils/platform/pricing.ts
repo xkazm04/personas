@@ -81,6 +81,20 @@ export function estimateCost(
   return { inputCost: 0, outputCost: 0, totalCost: 0, estimated: true };
 }
 
+/**
+ * True when the model runs on the user's Claude subscription via the Claude Code
+ * CLI. In Personas every `claude-*` model executes through the CLI on the
+ * subscription (`force_subscription_auth` strips API keys at every spawn site),
+ * so its {@link estimateCost} total is what the SAME work would cost billed
+ * against the Anthropic API — on the subscription it's included, not billed per
+ * token. External models (`gpt-*`, `gemini-*`) are real per-token API spend, so
+ * this returns false and no "included" reframe applies.
+ */
+export function isSubscriptionModel(model: string | null | undefined): boolean {
+  if (!model) return false;
+  return model.toLowerCase().startsWith('claude');
+}
+
 /** Returns true when the model string matches a known pricing entry or a free-model prefix. */
 export function isModelRecognized(model: string | null | undefined): boolean {
   if (!model) return true; // no model configured -- nothing to warn about

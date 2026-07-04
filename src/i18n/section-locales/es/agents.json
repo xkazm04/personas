@@ -547,7 +547,8 @@
     "deep_fanout": "Ramificación profunda",
     "deep_fanout_hint": "Delega subtareas paralelas independientes a subagentes. Establece un límite de presupuesto.",
     "deep_fanout_unavailable": "No disponible en este plan — requiere las herramientas Workflow/Task (Max/Team).",
-    "subagents": "Subagentes"
+    "subagents": "Subagentes",
+    "subscription_cost_note": "≈{cost} si se factura a la Anthropic API — incluido en tu suscripción de Claude"
   },
   "lab": {
     "mode_arena": "Arena",

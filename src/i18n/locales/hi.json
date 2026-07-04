@@ -1318,7 +1318,8 @@
       "deep_fanout": "गहरा फैन-आउट",
       "deep_fanout_hint": "स्वतंत्र समानांतर उप-कार्य सबएजेंट्स को सौंपें। एक बजट सीमा निर्धारित करें।",
       "deep_fanout_unavailable": "इस प्लान पर उपलब्ध नहीं — Workflow/Task टूल (Max/Team) आवश्यक है।",
-      "subagents": "सबएजेंट्स"
+      "subagents": "सबएजेंट्स",
+      "subscription_cost_note": "≈{cost} यदि Anthropic API पर बिल किया जाए — आपकी Claude सदस्यता में शामिल"
     },
     "lab": {
       "mode_arena": "एरेना",

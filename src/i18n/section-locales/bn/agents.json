@@ -547,7 +547,8 @@
     "deep_fanout": "ডিপ ফ্যান-আউট",
     "deep_fanout_hint": "স্বাধীন সমান্তরাল সাব-টাস্কগুলো সাবএজেন্টে ডেলিগেট করুন। একটি বাজেট ক্যাপ সেট করুন।",
     "deep_fanout_unavailable": "এই প্ল্যানে অনুপলব্ধ — Workflow/Task টুলস প্রয়োজন (Max/Team)।",
-    "subagents": "সাবএজেন্ট"
+    "subagents": "সাবএজেন্ট",
+    "subscription_cost_note": "≈{cost} যদি Anthropic API-তে বিল করা হয় — আপনার Claude সাবস্ক্রিপশনে অন্তর্ভুক্ত"
   },
   "lab": {
     "mode_arena": "আরেনা",

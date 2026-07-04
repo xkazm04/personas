@@ -1318,7 +1318,8 @@
       "deep_fanout": "Fan-out mendalam",
       "deep_fanout_hint": "Delegasikan sub-tugas paralel independen ke subagen. Tetapkan batas anggaran.",
       "deep_fanout_unavailable": "Tidak tersedia di paket ini — membutuhkan alat Workflow/Task (Max/Team).",
-      "subagents": "Subagen"
+      "subagents": "Subagen",
+      "subscription_cost_note": "≈{cost} jika ditagih ke Anthropic API — termasuk dalam langganan Claude Anda"
     },
     "lab": {
       "mode_arena": "Arena",

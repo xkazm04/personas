@@ -1318,7 +1318,8 @@
       "deep_fanout": "Глубокое ветвление",
       "deep_fanout_hint": "Делегируйте независимые параллельные подзадачи субагентам. Установите бюджетный лимит.",
       "deep_fanout_unavailable": "Недоступно на этом плане — требуются инструменты Workflow/Task (Max/Team).",
-      "subagents": "Субагенты"
+      "subagents": "Субагенты",
+      "subscription_cost_note": "≈{cost} при оплате через Anthropic API — включено в вашу подписку Claude"
     },
     "lab": {
       "mode_arena": "Арена",

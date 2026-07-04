@@ -547,7 +547,8 @@
     "deep_fanout": "深度扇出",
     "deep_fanout_hint": "将独立并行子任务委派给子代理，并设置预算上限。",
     "deep_fanout_unavailable": "当前计划不可用 — 需要工作流/任务工具（Max/Team）。",
-    "subagents": "子代理"
+    "subagents": "子代理",
+    "subscription_cost_note": "≈{cost} 如果按 Anthropic API 计费 — 已包含在您的 Claude 订阅中"
   },
   "lab": {
     "mode_arena": "竞技场",

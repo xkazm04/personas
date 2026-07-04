@@ -547,7 +547,8 @@
     "deep_fanout": "Hluboké větvení",
     "deep_fanout_hint": "Delegujte nezávislé paralelní podúkoly na dílčí agenty. Nastavte limit rozpočtu.",
     "deep_fanout_unavailable": "Nedostupné v tomto plánu — vyžaduje nástroje Workflow/Task (Max/Team).",
-    "subagents": "Dílčí agenti"
+    "subagents": "Dílčí agenti",
+    "subscription_cost_note": "≈{cost} při účtování přes Anthropic API — zahrnuto ve vašem předplatném Claude"
   },
   "lab": {
     "mode_arena": "Aréna",

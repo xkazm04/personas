@@ -547,7 +547,8 @@
     "deep_fanout": "Déploiement étendu",
     "deep_fanout_hint": "Déléguer des sous-tâches parallèles indépendantes à des sous-agents. Définissez un plafond budgétaire.",
     "deep_fanout_unavailable": "Indisponible sur ce forfait — nécessite les outils Workflow/Task (Max/Team).",
-    "subagents": "Sous-agents"
+    "subagents": "Sous-agents",
+    "subscription_cost_note": "≈{cost} en cas de facturation sur l'Anthropic API — inclus dans votre abonnement Claude"
   },
   "lab": {
     "mode_arena": "Arène",

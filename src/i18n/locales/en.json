@@ -1177,6 +1177,7 @@
       "total_label": "Total: {cost}",
       "input_pct": "Input ({percent}%)",
       "output_pct": "Output ({percent}%)",
+      "subscription_cost_note": "≈{cost} if billed to the Anthropic API — included on your Claude subscription",
       "input": "Input",
       "output": "Output",
       "pending": "pending",

@@ -547,7 +547,8 @@
     "deep_fanout": "Tiefes Fan-out",
     "deep_fanout_hint": "Unabhängige parallele Teilaufgaben an Subagenten delegieren. Budget-Limit festlegen.",
     "deep_fanout_unavailable": "In diesem Plan nicht verfügbar — benötigt Workflow/Task-Tools (Max/Team).",
-    "subagents": "Subagenten"
+    "subagents": "Subagenten",
+    "subscription_cost_note": "≈{cost} bei Abrechnung über die Anthropic API — in Ihrem Claude-Abonnement enthalten"
   },
   "lab": {
     "mode_arena": "Arena",

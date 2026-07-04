@@ -1318,7 +1318,8 @@
       "deep_fanout": "딥 팬아웃",
       "deep_fanout_hint": "독립적인 병렬 하위 작업을 서브에이전트에 위임합니다. 예산 한도를 설정하세요.",
       "deep_fanout_unavailable": "이 플랜에서는 사용 불가 — Workflow/Task 도구 필요 (Max/Team).",
-      "subagents": "서브에이전트"
+      "subagents": "서브에이전트",
+      "subscription_cost_note": "≈{cost} Anthropic API로 청구되는 경우 — Claude 구독에 포함됨"
     },
     "lab": {
       "mode_arena": "아레나",

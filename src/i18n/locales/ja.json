@@ -1318,7 +1318,8 @@
       "deep_fanout": "ディープファンアウト",
       "deep_fanout_hint": "独立した並列サブタスクをサブエージェントに委譲します。予算上限を設定してください。",
       "deep_fanout_unavailable": "このプランでは利用不可 — Workflow/Task ツール (Max/Team) が必要です。",
-      "subagents": "サブエージェント"
+      "subagents": "サブエージェント",
+      "subscription_cost_note": "≈{cost} Anthropic API で課金された場合 — お使いの Claude サブスクリプションに含まれます"
     },
     "lab": {
       "mode_arena": "アリーナ",

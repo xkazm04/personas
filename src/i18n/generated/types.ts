@@ -1183,6 +1183,7 @@ export type Translations = {
       total_label: string;
       input_pct: string;
       output_pct: string;
+      subscription_cost_note: string;
       input: string;
       output: string;
       pending: string;
