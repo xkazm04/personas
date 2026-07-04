@@ -599,6 +599,7 @@ pub async fn send_turn(
             None,
             None,
             &[],
+            !suppress_chat,
         ),
     )
     .await
@@ -635,6 +636,7 @@ pub async fn send_turn(
                     None,
                     None,
                     &[],
+                    !suppress_chat,
                 ),
             )
             .await
@@ -692,48 +694,28 @@ pub async fn send_turn(
             }
         };
 
-    // Persist each conversational PROGRESS beat as its own lightweight
-    // assistant episode BEFORE the final reply, so the transcript reads as
-    // a progressive back-and-forth (the user chose "persist as messages").
-    // The `PROGRESS:` sentinel prefix is how the frontend renders them as
-    // asides; they're append-only (no embedding) — ephemeral conversational
-    // texture, not memory-worthy facts.
-    if !suppress_chat {
-        for beat in &dispatched.progress_beats {
-            if let Err(e) = episodic::append_episode(
-                &user_db,
-                &session_id,
-                EpisodeRole::Assistant,
-                &format!("PROGRESS: {beat}"),
-            ) {
-                tracing::warn!(error = %e, "failed to persist progress beat episode");
-            }
-        }
-    }
-
+    // NOTE: conversational `PROGRESS:` beats and non-final prose segments are
+    // no longer flushed here in an end-of-turn loop. `run_cli` persists each one
+    // INCREMENTALLY as it streams in (see `persist_stream_progress`), so the
+    // transcript fills in as the work happens — with each episode carrying its
+    // real emission time instead of a shared turn-end timestamp. This block only
+    // still SELECTS the considered final reply; it persists nothing extra.
+    //
     // Phase B — progressive prose segments. In a multi-step (tool-using) turn
     // the CLI emits one `assistant` message per agentic step; each carries the
-    // prose Athena "said" at that step. Surface every NON-FINAL step's prose as
-    // its own interim message (persisted before the reply, non-embedded — it's
-    // the journey, not a memory-worthy fact), and let the LAST step be the
-    // considered final reply. A single-segment turn (a quick answer, no tool
-    // loop) produces no interim messages — quick answers stay one-shot. Ops
-    // were already dispatched from the full blob above, so nothing is dropped.
+    // prose Athena "said" at that step. Every NON-FINAL step's prose was already
+    // surfaced as its own interim message by `run_cli`; the LAST step is the
+    // considered final reply, selected here (and persisted below, embedded). A
+    // single-segment turn (a quick answer, no tool loop) produced no interim
+    // messages. Ops were dispatched from the full blob above, so nothing is
+    // dropped. The `seg_clean` split MUST match `run_cli`'s so the last segment
+    // isn't double-persisted: interim = all-but-last, final = last.
     let seg_clean: Vec<String> = segments
         .iter()
         .map(|s| clean_segment_for_display(s))
         .filter(|s| !s.trim().is_empty())
         .collect();
     let reply_text: String = if seg_clean.len() >= 2 {
-        if !suppress_chat {
-            for interim in &seg_clean[..seg_clean.len() - 1] {
-                if let Err(e) =
-                    episodic::append_episode(&user_db, &session_id, EpisodeRole::Assistant, interim)
-                {
-                    tracing::warn!(error = %e, "failed to persist interim segment episode");
-                }
-            }
-        }
         seg_clean[seg_clean.len() - 1].clone()
     } else {
         // 0–1 prose segments: keep today's behavior (full cleaned blob).
@@ -1239,6 +1221,70 @@ fn clean_segment_for_display(seg: &str) -> String {
     kept.join("\n").trim().to_string()
 }
 
+/// Continuous informing (Variant B): persist one just-arrived assistant
+/// message's `PROGRESS:` beats and the PRIOR step's prose as their own
+/// lightweight (non-embedded) assistant episodes, at their real emission time.
+///
+/// Called once per streamed `assistant` message from `run_cli`'s loop when
+/// progress persistence is enabled. This replaces the old end-of-turn flush in
+/// `send_turn` that appended every beat/segment in a tight loop — which stamped
+/// them all within the same millisecond ("big bang" on reload). Now each write
+/// lands as the turn actually progresses.
+///
+/// Ordering: the prior step's prose is flushed BEFORE this step's beats, so the
+/// transcript reads chronologically. `pending` holds the last non-empty cleaned
+/// prose that has NOT yet been confirmed non-final; it's only replaced by a
+/// newer non-empty prose (so a beat-only step never promotes it). Whatever
+/// remains in `pending` at EOF is the considered final reply and is persisted by
+/// `send_turn`, never here — matching the prior `seg_clean[..last]` interim /
+/// `seg_clean[last]` final split exactly, just at real time.
+fn persist_stream_progress(
+    pool: &UserDbPool,
+    session_id: &str,
+    msg_text: &str,
+    pending: &mut Option<String>,
+) {
+    let cleaned = clean_segment_for_display(msg_text);
+    let has_prose = !cleaned.trim().is_empty();
+
+    // A newer prose step confirms the prior one is non-final — flush it as an
+    // interim message before this step's beats so ordering stays chronological.
+    if has_prose {
+        if let Some(prev) = pending.take() {
+            if let Err(e) =
+                episodic::append_episode(pool, session_id, EpisodeRole::Assistant, &prev)
+            {
+                tracing::warn!(error = %e, "failed to persist interim segment episode (live)");
+            }
+        }
+    }
+
+    // Progress beats are always asides (stripped from the final reply), so each
+    // is safe to persist the instant its line completes — including the last
+    // step's beats.
+    for line in msg_text.lines() {
+        if let Some(beat) = line.trim_start().strip_prefix("PROGRESS:") {
+            let beat = beat.trim();
+            if beat.is_empty() {
+                continue;
+            }
+            if let Err(e) = episodic::append_episode(
+                pool,
+                session_id,
+                EpisodeRole::Assistant,
+                &format!("PROGRESS: {beat}"),
+            ) {
+                tracing::warn!(error = %e, "failed to persist progress beat episode (live)");
+            }
+        }
+    }
+
+    // Hold this step's prose as the new candidate final reply.
+    if has_prose {
+        *pending = Some(cleaned);
+    }
+}
+
 /// Concise coding-agent system prompt for a web-build session. Kept lean for
 /// v0 — the full web-build doctrine + Vision/checklist machinery land in P3.
 /// The full web-build doctrine, embedded so a build session carries the whole
@@ -1349,6 +1395,7 @@ pub async fn run_build_turn(
             Some(project_path),
             effort,
             mcp,
+            false,
         ),
     )
     .await
@@ -1372,6 +1419,7 @@ pub async fn run_build_turn(
                     Some(project_path),
                     effort,
                     mcp,
+                    false,
                 ),
             )
             .await
@@ -1416,6 +1464,15 @@ async fn run_cli(
     build_effort: Option<&str>,
     // Per-project MCP connectors to load on a build turn (C8). Empty = none.
     mcp: &[String],
+    // Continuous informing (Variant B). When true, each `PROGRESS:` beat and
+    // each confirmed-non-final prose segment is persisted as its own assistant
+    // episode the instant it streams in — at its REAL emission time — instead
+    // of being buffered for one end-of-turn flush (which stamped every beat /
+    // segment within the same millisecond → the "long-pause-then-big-bang"). The
+    // LAST prose segment is left un-persisted and returned so `send_turn` can
+    // store it as the considered final reply. False for build turns and
+    // fleet-orchestration (suppress_chat), which keep the prior behavior.
+    persist_progress: bool,
 ) -> Result<CliRunOutput, AppError> {
     let (cmd_program, mut argv) = base_cli_invocation();
 
@@ -1584,6 +1641,12 @@ async fn run_cli(
     let mut assistant_text = String::new();
     // Per-assistant-message text, in emission order (Phase B interim segments).
     let mut segments: Vec<String> = Vec::new();
+    // Continuous informing: the most recent non-empty cleaned prose segment
+    // that hasn't been confirmed non-final yet. Flushed as an interim episode
+    // the moment a LATER prose segment arrives; whatever remains here at EOF is
+    // the final reply (persisted by `send_turn`), so it's never flushed here.
+    // Only used when `persist_progress` is set.
+    let mut pending_interim: Option<String> = None;
     let mut new_claude_session_id: Option<String> = None;
     // The CLI's terminal `result` event carries this turn's real cost / token
     // usage / duration; captured here for the companion_turn ledger.
@@ -1648,6 +1711,20 @@ async fn run_cli(
                                             assistant_text.push('\n');
                                         }
                                         assistant_text.push_str(&msg_text);
+
+                                        // Continuous informing (Variant B): flush
+                                        // this step's progress + prior prose NOW,
+                                        // at their real emission time, rather than
+                                        // batching every beat/segment at turn-end.
+                                        if persist_progress {
+                                            persist_stream_progress(
+                                                pool,
+                                                session_id,
+                                                &msg_text,
+                                                &mut pending_interim,
+                                            );
+                                        }
+
                                         segments.push(msg_text);
                                     }
                                 }
