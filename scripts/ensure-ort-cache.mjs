@@ -32,6 +32,7 @@
 //   picks the DLL up from target/release/ for installers.
 
 import { execFileSync, spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import {
   copyFileSync,
   createWriteStream,
@@ -75,6 +76,16 @@ const HOST_TO_EXPECTED_MACHINE = {
 
 const msReleaseUrl = (arch) =>
   `https://github.com/microsoft/onnxruntime/releases/download/v${ORT_ONNXRUNTIME_VERSION}/onnxruntime-win-${arch}-${ORT_ONNXRUNTIME_VERSION}.zip`;
+
+// SHA256 of Microsoft's official release zips, computed from the assets at
+// microsoft/onnxruntime v1.20.0 (2026-07-04). This script swaps a library
+// that gets STATICALLY LINKED into the shipped exe — an unverified download
+// is a supply-chain injection point. Bumping ORT_ONNXRUNTIME_VERSION requires
+// recomputing these (`sha256sum <zip>` on the new release assets).
+const MS_ZIP_SHA256 = {
+  x64:   "b372de85cedd9387a0d4386b982265e8420e5bcc2f29394317e76525b832942e",
+  arm64: "0a8461e3f58867bc5ee16067449a80b6d9dd0cec74fc9733f9cf9a2e62f6122d",
+};
 
 const SENTINEL_NAME = ".personas-ort-fix-applied";
 const SENTINEL_VERSION = 1;
@@ -381,8 +392,19 @@ const zipUrl = msReleaseUrl(msArch);
 const zipPath = join(tmpdir(), `onnxruntime-win-${msArch}-${ORT_ONNXRUNTIME_VERSION}.zip`);
 log(`downloading ${zipUrl}`);
 await downloadToFile(zipUrl, zipPath);
-const zipSize = readFileSync(zipPath).length;
-log(`downloaded ${(zipSize / 1024 / 1024).toFixed(1)} MB`);
+const zipBytes = readFileSync(zipPath);
+log(`downloaded ${(zipBytes.length / 1024 / 1024).toFixed(1)} MB`);
+
+const expectedSha = MS_ZIP_SHA256[msArch];
+const actualSha = createHash("sha256").update(zipBytes).digest("hex");
+if (actualSha !== expectedSha) {
+  try { rmSync(zipPath); } catch { /* best-effort */ }
+  fatal(
+    `SHA256 mismatch for ${zipUrl}\n  expected ${expectedSha}\n  got      ${actualSha}\n` +
+    `Refusing to populate the cache — the library would be statically linked into the shipped exe.`,
+  );
+}
+log(`sha256 verified (${actualSha.slice(0, 12)}…)`);
 
 const stagingDir = join(targetCacheRoot, "_staging");
 extractZipWithSystemTar(zipPath, stagingDir);
