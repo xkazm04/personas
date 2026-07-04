@@ -1,6 +1,12 @@
 name: CI
 
 on:
+  # push:master is the PRIMARY trigger — development lands directly on
+  # master (no PRs), so a pull_request-only CI never ran on the real flow
+  # (last runs were stale sync-merge PRs). Keep pull_request for the rare
+  # branch that does go through one.
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
 
