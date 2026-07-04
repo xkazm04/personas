@@ -196,3 +196,33 @@ empty and has since rendered — is re-assessed.
   `boldness_*` i18n keys across all 14 locales shipped `718f749fb` (tsc+eslint clean). All on origin
   (`b3c79725b`). The one deferred live check is the full LLM e2e (Athena emitting `decision_class`
   → the gate firing on a real parked session), flaky/LLM-dependent; the foundations are verified.
+- **2026-07-04** — **Phases 3–5 COMPLETE (backend).** The whole arc is now shipped.
+  - **Phase 3b** (`03a7aff53`) — autonomous stuck-session recovery. Generalized
+    `orchestrate_on_awaiting` → `orchestrate_session(situation)` (shared gate/throttle/screen-dedupe/
+    spawn); a `Stuck` situation wakes Athena on a dispatched session that failed + stalled and asks
+    for a `fleet_intervene`. Promoted `fleet_intervene` onto the confidence-gated path (allowlist +
+    gate branch + inner match; the one-intervention cap is the runaway backstop). Replaced the
+    ask-only `fleet_session_stuck` nudge with `reassess_stuck_sessions` on the tick.
+  - **Phase 3a + 5b** (`e31c87fbb`) — idle-needs-next + per-session objective. `reassess_idle_needs_next`
+    wakes Athena on a dispatched Idle session (`Stop → Idle`, no prior trigger) to judge
+    done-vs-needs-next against the session's objective (threaded into the directive from
+    `operative_memory` intent/role + op user_intent) and send the next step, or leave a finished
+    session alone. Scoped to `dispatched_by_athena` (never the user's own CLIs); the throttle + dedupe
+    bound the loop to real progress.
+  - **Phase 4** (`199ec75fa`) — recovery actions `fleet_wake` / `fleet_resume` wrapping
+    `fleet_wake_session` / `fleet_resume_orphan`, wired through all five gate lists (boldness bar, no
+    screen re-check). Vocabulary taught in the constitution (v41 → v42) for chat-driven revival.
+    Deliberately no timer-auto-reviver — with idle-needs-next driving live sessions to completion, a
+    hibernated dispatched session is one she already judged done, and orphan recovery needs a process
+    scan; a timer would just fight the auto-hibernator.
+  - **Phase 5a** (`7aa4ffff2`) — durable `fleet_decisions` ledger (migration + repo). The gate stamps
+    every fleet verdict (defer w/ reason, or auto_fired/auto_failed); `orchestrate_session` skips
+    re-waking on a screen she already AUTO-FIRED on, keyed on the STABLE claude_session_id +
+    screen_hash so it survives a restart the in-memory map can't.
+  - **Verified:** cargo check clean; gate matrix 6/6; migration tests 14/14 (idempotent + fresh-schema
+    on a real conn); and the Phase 5a migration **applied cleanly on a real app boot** (observed in the
+    live dev instance's log — `Applied incremental migration … "fleet_decisions"`), with no scheduler
+    panic. The 3 new tick triggers reuse the exact `app.try_state::<Arc<AppState>>()` pattern that
+    fixed the Phase-1 panic. Deferred: watching the tick fire the triggers with autonomous ON end-to-end
+    (blocked by a concurrent dev instance holding the ports; low residual risk given the migration is
+    live-verified + the safe pattern).
