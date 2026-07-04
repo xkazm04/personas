@@ -13161,7 +13161,19 @@
       "boldness_bold": "積極的",
       "boldness_cautious": "慎重",
       "boldness_hint": "一時停止中のCLIでAthinaがあなたに確認する前にどこまで自律的に行動するかを設定します。慎重 = 明らかに正しい操作のみ実行 ; バランス = 元に戻せる次のステップは進め、重要な選択は確認 ; 積極的 = 本当に不確かな場合を除き両方進める。確信度が低い場合は常に確認します。",
-      "boldness_label": "自律度"
+      "boldness_label": "自律度",
+      "dev_ledger_empty": "まだ開発実行はありません — Athenaがここに各ディスパッチを記録します。",
+      "dev_ledger_hint": "Athenaがディスパッチしたすべてのdev_improve実行と、あなたの評価。このスコアボードは、dev modeが働きに見合っているかを示します — コミットに至ったディスパッチ数、マージされた数、あなたの評価比率。",
+      "dev_ledger_label": "開発台帳",
+      "dev_ledger_none": "まだ開発実行はありません",
+      "dev_ledger_summary": "{total}件の実行 · {landed}件コミット済み · {merged}件マージ済み",
+      "dev_ledger_verdict_down": "失敗した実行",
+      "dev_ledger_verdict_up": "成功した実行",
+      "dev_status_closed": "適用済み",
+      "dev_status_completed": "マージ待ち",
+      "dev_status_dispatched": "実行中",
+      "dev_status_interrupted": "中断",
+      "dev_status_merged": "マージ済み"
     },
     "ocr": {
       "title": "OCR",

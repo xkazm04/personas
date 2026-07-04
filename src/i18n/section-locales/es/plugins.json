@@ -1969,7 +1969,19 @@
     "boldness_bold": "Audaz",
     "boldness_cautious": "Cauteloso",
     "boldness_hint": "Cuánto actúa Athena por su cuenta en un CLI pausado antes de preguntarte. Cauteloso = solo la opción claramente correcta; Equilibrado = avanza en pasos reversibles y pregunta ante decisiones reales; Audaz = avanza en ambos casos salvo que esté genuinamente insegura. Con baja confianza siempre pregunta.",
-    "boldness_label": "Determinación"
+    "boldness_label": "Determinación",
+    "dev_ledger_empty": "Aún no hay ejecuciones de dev — Athena registra aquí cada despacho.",
+    "dev_ledger_hint": "Cada ejecución de dev_improve que Athena despachó, con tu veredicto. El marcador te dice si el modo dev vale la pena — cuántos despachos logran un commit, cuántos se fusionan, y tu ratio de pulgares.",
+    "dev_ledger_label": "Registro de dev",
+    "dev_ledger_none": "Aún no hay ejecuciones de dev",
+    "dev_ledger_summary": "{total} ejecuciones · {landed} confirmadas · {merged} fusionadas",
+    "dev_ledger_verdict_down": "Ejecución mala",
+    "dev_ledger_verdict_up": "Ejecución buena",
+    "dev_status_closed": "Aplicado",
+    "dev_status_completed": "Esperando fusión",
+    "dev_status_dispatched": "En curso",
+    "dev_status_interrupted": "Interrumpido",
+    "dev_status_merged": "Fusionado"
   },
   "ocr": {
     "title": "OCR",

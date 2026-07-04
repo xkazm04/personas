@@ -1969,7 +1969,19 @@
     "boldness_bold": "جريء",
     "boldness_cautious": "حذر",
     "boldness_hint": "كيف بعيدًا تتصرف Athena من تلقاء نفسها على CLI متوقف قبل أن تسألك. حذر = الخيار الواضح تمامًا فقط؛ متوازن = تتابع الخطوات القابلة للتراجع وتسأل عند الخيارات الحقيقية؛ جريء = تتابع في كلا الحالتين إلا إذا كانت غير متأكدة حقًا. انخفاض الثقة دائمًا يستدعي السؤال.",
-    "boldness_label": "الجرأة"
+    "boldness_label": "الجرأة",
+    "dev_ledger_empty": "لا توجد عمليات تشغيل تطويرية بعد — تسجّل أثينا كل عملية هنا.",
+    "dev_ledger_hint": "كل عملية dev_improve أرسلتها أثينا، مع تقييمك. توضح لوحة النتائج ما إذا كان وضع التطوير يستحق العناء — كم عدد العمليات التي أدت إلى commit، وكم منها تم دمجه، ونسبة إعجابك بها.",
+    "dev_ledger_label": "سجل التطوير",
+    "dev_ledger_none": "لا توجد عمليات تشغيل تطويرية بعد",
+    "dev_ledger_summary": "{total} عملية تشغيل · {landed} تم الالتزام بها · {merged} تم دمجها",
+    "dev_ledger_verdict_down": "تشغيل سيئ",
+    "dev_ledger_verdict_up": "تشغيل جيد",
+    "dev_status_closed": "مطبَّق",
+    "dev_status_completed": "بانتظار الدمج",
+    "dev_status_dispatched": "قيد التنفيذ",
+    "dev_status_interrupted": "متوقف",
+    "dev_status_merged": "مدموج"
   },
   "ocr": {
     "title": "OCR",

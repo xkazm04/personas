@@ -1969,7 +1969,19 @@
     "boldness_bold": "Odvážný",
     "boldness_cautious": "Opatrný",
     "boldness_hint": "Jak samostatně jedná Athena při pozastaveném CLI, než se vás zeptá. Opatrný = jen jednoznačně správná volba; Vyvážený = pokračuje na reverzibilních krocích a ptá se na skutečná rozhodnutí; Odvážný = pokračuje v obou případech, pokud si není skutečně jistá. Nízká jistota se vždy ptá.",
-    "boldness_label": "Odvaha"
+    "boldness_label": "Odvaha",
+    "dev_ledger_empty": "Zatím žádné běhy dev módu — Athena sem zaznamenává každé spuštění.",
+    "dev_ledger_hint": "Každé spuštění dev_improve, které Athena odeslala, s vaším hodnocením. Tabulka ukazuje, jestli se dev mode vyplácí — kolik spuštění skončí commitem, kolik se sloučí a jaký je poměr vašich hodnocení.",
+    "dev_ledger_label": "Deník dev módu",
+    "dev_ledger_none": "Zatím žádné běhy dev módu",
+    "dev_ledger_summary": "{total} běhů · {landed} commitnuto · {merged} sloučeno",
+    "dev_ledger_verdict_down": "Špatný běh",
+    "dev_ledger_verdict_up": "Dobrý běh",
+    "dev_status_closed": "Použito",
+    "dev_status_completed": "Čeká na sloučení",
+    "dev_status_dispatched": "Probíhá",
+    "dev_status_interrupted": "Přerušeno",
+    "dev_status_merged": "Sloučeno"
   },
   "ocr": {
     "title": "OCR",

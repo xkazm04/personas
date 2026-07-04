@@ -209,6 +209,60 @@ export async function companionGetFleetBoldness(): Promise<FleetBoldnessLevel> {
   return invoke<FleetBoldnessLevel>('companion_get_fleet_boldness');
 }
 
+/** A dev-op verdict — the user's 👍/👎 on a `dev_improve` run, or unrated. */
+export type DevOpVerdict = 'up' | 'down' | null;
+
+/**
+ * One `dev_improve` run in the DEV MODE experiment ledger (Phase 5).
+ * Mirrors the Rust `DevOpLedgerEntry` (serde camelCase). `status` is a
+ * backend token: dispatched | completed | merged | closed | interrupted.
+ */
+export interface DevOpLedgerEntry {
+  opId: string;
+  request: string;
+  backend: boolean;
+  status: string;
+  commitSha: string | null;
+  branch: string | null;
+  userVerdict: DevOpVerdict;
+  createdAt: string;
+  finishedAt: string | null;
+}
+
+/** Aggregate scoreboard over the whole dev-op ledger. Mirrors Rust `DevOpMetrics`. */
+export interface DevOpMetrics {
+  total: number;
+  inFlight: number;
+  merged: number;
+  closed: number;
+  interrupted: number;
+  landedCommit: number;
+  thumbsUp: number;
+  thumbsDown: number;
+}
+
+/** Combined ledger payload — recent entries + the aggregate scoreboard. */
+export interface DevOpLedger {
+  entries: DevOpLedgerEntry[];
+  metrics: DevOpMetrics;
+}
+
+/**
+ * Fetch the DEV MODE experiment ledger: recent `dev_improve` runs + the
+ * aggregate scoreboard. Returns an empty ledger when dev mode is off.
+ */
+export async function companionDevOpLedger(): Promise<DevOpLedger> {
+  return invoke<DevOpLedger>('companion_dev_op_ledger');
+}
+
+/** Record (or clear) the user's 👍/👎 verdict on a dev op. */
+export async function companionDevOpSetVerdict(
+  opId: string,
+  verdict: DevOpVerdict,
+): Promise<void> {
+  return invoke<void>('companion_dev_op_set_verdict', { opId, verdict });
+}
+
 /**
  * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
  * vault, calls ElevenLabs, and returns the audio bytes as base64 (which

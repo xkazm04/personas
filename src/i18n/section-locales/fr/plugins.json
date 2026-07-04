@@ -1969,7 +1969,19 @@
     "boldness_bold": "Audacieux",
     "boldness_cautious": "Prudent",
     "boldness_hint": "À quel point Athena agit de manière autonome sur un CLI en pause avant de vous consulter. Prudent = seulement les actions évidentes ; Équilibré = elle avance sur les étapes réversibles et demande pour les vrais choix ; Audacieux = elle avance dans les deux cas sauf si elle est vraiment incertaine. En cas de faible confiance, elle demande toujours.",
-    "boldness_label": "Autonomie"
+    "boldness_label": "Autonomie",
+    "dev_ledger_empty": "Aucune exécution dev pour l'instant — Athena consigne ici chaque dispatch.",
+    "dev_ledger_hint": "Chaque exécution dev_improve dispatchée par Athena, avec votre verdict. Le tableau de bord indique si le mode dev est rentable — combien de dispatches aboutissent à un commit, combien sont mergés, et votre ratio de pouces.",
+    "dev_ledger_label": "Journal dev",
+    "dev_ledger_none": "Aucune exécution dev pour l'instant",
+    "dev_ledger_summary": "{total} exécutions · {landed} commitées · {merged} mergées",
+    "dev_ledger_verdict_down": "Mauvaise exécution",
+    "dev_ledger_verdict_up": "Bonne exécution",
+    "dev_status_closed": "Appliqué",
+    "dev_status_completed": "En attente de merge",
+    "dev_status_dispatched": "En cours",
+    "dev_status_interrupted": "Interrompu",
+    "dev_status_merged": "Mergé"
   },
   "ocr": {
     "title": "OCR",

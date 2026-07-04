@@ -13161,7 +13161,19 @@
       "boldness_bold": "大胆",
       "boldness_cautious": "谨慎",
       "boldness_hint": "Athena 在暂停的 CLI 中自主行动的程度，超出此程度则向你询问。谨慎 = 仅执行明显正确的操作；均衡 = 推进可撤销的步骤，在真正的决策点上询问；大胆 = 两种情况都推进，除非确实不确定。置信度低时始终询问。",
-      "boldness_label": "主动程度"
+      "boldness_label": "主动程度",
+      "dev_ledger_empty": "暂无开发运行记录 — Athena 会在此处记录每次任务。",
+      "dev_ledger_hint": "Athena 派发的每次 dev_improve 运行及您的评价。此记分板显示 dev mode 是否物有所值 — 有多少次派发落地为 commit、有多少次合并，以及您的点赞比例。",
+      "dev_ledger_label": "开发记录",
+      "dev_ledger_none": "暂无开发运行记录",
+      "dev_ledger_summary": "{total} 次运行 · {landed} 次已提交 · {merged} 次已合并",
+      "dev_ledger_verdict_down": "运行不佳",
+      "dev_ledger_verdict_up": "运行良好",
+      "dev_status_closed": "已应用",
+      "dev_status_completed": "等待合并",
+      "dev_status_dispatched": "进行中",
+      "dev_status_interrupted": "已中断",
+      "dev_status_merged": "已合并"
     },
     "ocr": {
       "title": "OCR",

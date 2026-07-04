@@ -78,6 +78,7 @@ import { ProactiveCard } from './ProactiveCard';
 import { AthenaAvatar } from './AthenaAvatar';
 import { WakeCadence } from './WakeCadence';
 import { FleetBoldnessDial } from './FleetBoldnessDial';
+import { DevOpLedger } from './DevOpLedger';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
@@ -478,6 +479,7 @@ export default function CompanionPanel() {
           />
           {autonomousMode && <WakeCadence />}
           {autonomousMode && <FleetBoldnessDial />}
+          {devModeAvailable && devMode && <DevOpLedger />}
           <Body
             initialized={initialized}
             initError={initError}

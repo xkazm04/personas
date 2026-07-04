@@ -13375,6 +13375,18 @@ export type Translations = {
       boldness_bold: string;
       dev_toggle_on: string;
       dev_toggle_off: string;
+      dev_ledger_label: string;
+      dev_ledger_hint: string;
+      dev_ledger_summary: string;
+      dev_ledger_none: string;
+      dev_ledger_empty: string;
+      dev_ledger_verdict_up: string;
+      dev_ledger_verdict_down: string;
+      dev_status_dispatched: string;
+      dev_status_completed: string;
+      dev_status_merged: string;
+      dev_status_closed: string;
+      dev_status_interrupted: string;
       setup_dev_mode_label: string;
       setup_dev_mode_on: string;
       setup_dev_mode_off: string;

@@ -1969,7 +1969,19 @@
     "boldness_bold": "Mutig",
     "boldness_cautious": "Vorsichtig",
     "boldness_hint": "Wie eigenständig Athena bei einem pausierten CLI handelt, bevor sie dich fragt. Vorsichtig = nur die offensichtlich richtige Entscheidung; Ausgewogen = geht bei umkehrbaren Schritten vor und fragt bei echten Entscheidungen; Mutig = geht in beiden Fällen vor, es sei denn, sie ist wirklich unsicher. Bei geringem Vertrauen wird immer gefragt.",
-    "boldness_label": "Entschlossenheit"
+    "boldness_label": "Entschlossenheit",
+    "dev_ledger_empty": "Noch keine Dev-Läufe — Athena protokolliert hier jeden Einsatz.",
+    "dev_ledger_hint": "Jeder von Athena gestartete dev_improve-Lauf, inklusive deiner Bewertung. Die Übersicht zeigt, ob sich dev mode lohnt — wie viele Einsätze zu einem commit führen, wie viele gemerged werden, und deine Daumen-Quote.",
+    "dev_ledger_label": "Dev-Protokoll",
+    "dev_ledger_none": "Noch keine Dev-Läufe",
+    "dev_ledger_summary": "{total} Läufe · {landed} committed · {merged} gemerged",
+    "dev_ledger_verdict_down": "Schlechter Lauf",
+    "dev_ledger_verdict_up": "Guter Lauf",
+    "dev_status_closed": "Angewendet",
+    "dev_status_completed": "Merge ausstehend",
+    "dev_status_dispatched": "Unterwegs",
+    "dev_status_interrupted": "Unterbrochen",
+    "dev_status_merged": "Gemerged"
   },
   "ocr": {
     "title": "OCR",

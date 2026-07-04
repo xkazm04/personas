@@ -13161,7 +13161,19 @@
       "boldness_bold": "Berani",
       "boldness_cautious": "Hati-hati",
       "boldness_hint": "Seberapa jauh Athena bertindak sendiri pada CLI yang dijeda sebelum bertanya kepada Anda. Hati-hati = hanya tindakan yang jelas-jelas tepat ; Seimbang = ia melanjutkan langkah yang bisa dibatalkan dan bertanya pada pilihan nyata ; Berani = ia melanjutkan keduanya kecuali benar-benar tidak yakin. Kepercayaan rendah selalu bertanya.",
-      "boldness_label": "Keberanian"
+      "boldness_label": "Keberanian",
+      "dev_ledger_empty": "Belum ada proses dev — Athena akan mencatat setiap pengiriman di sini.",
+      "dev_ledger_hint": "Setiap proses dev_improve yang dikirim Athena, beserta penilaian Anda. Skor ini menunjukkan apakah mode dev sepadan — berapa banyak pengiriman yang menghasilkan commit, berapa yang di-merge, dan rasio jempol Anda.",
+      "dev_ledger_label": "Log dev",
+      "dev_ledger_none": "Belum ada proses dev",
+      "dev_ledger_summary": "{total} proses · {landed} di-commit · {merged} di-merge",
+      "dev_ledger_verdict_down": "Proses buruk",
+      "dev_ledger_verdict_up": "Proses baik",
+      "dev_status_closed": "Diterapkan",
+      "dev_status_completed": "Menunggu merge",
+      "dev_status_dispatched": "Sedang berjalan",
+      "dev_status_interrupted": "Terhenti",
+      "dev_status_merged": "Sudah di-merge"
     },
     "ocr": {
       "title": "OCR",

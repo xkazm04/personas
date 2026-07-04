@@ -1969,7 +1969,19 @@
     "boldness_bold": "সাহসী",
     "boldness_cautious": "সতর্ক",
     "boldness_hint": "একটি বিরামযুক্ত CLI-তে আপনাকে জিজ্ঞেস করার আগে Athena নিজে থেকে কতটা পদক্ষেপ নেয়। সতর্ক = শুধুমাত্র স্পষ্ট সঠিক পদক্ষেপ; ভারসাম্যপূর্ণ = বিপরীতযোগ্য পদক্ষেপে এগিয়ে যায় এবং আসল পছন্দে জিজ্ঞেস করে; সাহসী = উভয় ক্ষেত্রেই এগিয়ে যায় যদি না সত্যিই অনিশ্চিত হয়। কম আত্মবিশ্বাসে সবসময় জিজ্ঞেস করে।",
-    "boldness_label": "সাহসিকতা"
+    "boldness_label": "সাহসিকতা",
+    "dev_ledger_empty": "এখনও কোনো ডেভ রান নেই — Athena প্রতিটি ডিসপ্যাচ এখানে লগ করে।",
+    "dev_ledger_hint": "Athena যে প্রতিটি dev_improve রান ডিসপ্যাচ করেছে, তার সাথে আপনার রায়ও। স্কোরবোর্ড বলে দেয় dev mode তার মূল্য প্রমাণ করছে কিনা — কতগুলো ডিসপ্যাচ একটি commit-এ পরিণত হয়, কতগুলো মার্জ হয়, এবং আপনার থাম্বস অনুপাত।",
+    "dev_ledger_label": "ডেভ লেজার",
+    "dev_ledger_none": "এখনও কোনো ডেভ রান নেই",
+    "dev_ledger_summary": "{total} রান · {landed} কমিট হয়েছে · {merged} মার্জ হয়েছে",
+    "dev_ledger_verdict_down": "খারাপ রান",
+    "dev_ledger_verdict_up": "ভালো রান",
+    "dev_status_closed": "প্রয়োগ করা হয়েছে",
+    "dev_status_completed": "মার্জের অপেক্ষায়",
+    "dev_status_dispatched": "চলমান",
+    "dev_status_interrupted": "বাধাপ্রাপ্ত",
+    "dev_status_merged": "মার্জ হয়েছে"
   },
   "ocr": {
     "title": "OCR",

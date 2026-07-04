@@ -1969,7 +1969,19 @@
     "boldness_bold": "साहसी",
     "boldness_cautious": "सतर्क",
     "boldness_hint": "Athena रुके हुए CLI पर आपसे पूछे बिना कितना स्वतंत्र रूप से काम करती है। सतर्क = केवल स्पष्ट रूप से सही कदम ; संतुलित = वह उलटे जा सकने वाले अगले कदम उठाती है और असली विकल्पों पर पूछती है ; साहसी = वह दोनों स्थितियों में आगे बढ़ती है जब तक वह वाकई अनिश्चित न हो। कम आत्मविश्वास पर हमेशा पूछती है।",
-    "boldness_label": "स्वायत्तता"
+    "boldness_label": "स्वायत्तता",
+    "dev_ledger_empty": "अभी तक कोई dev run नहीं — Athena हर dispatch यहाँ लॉग करती है।",
+    "dev_ledger_hint": "Athena द्वारा भेजा गया हर dev_improve run, आपके फैसले के साथ। यह स्कोरबोर्ड बताता है कि dev mode अपनी उपयोगिता साबित कर रहा है या नहीं — कितने dispatch एक commit तक पहुँचते हैं, कितने merge होते हैं, और आपका thumbs अनुपात।",
+    "dev_ledger_label": "Dev लेजर",
+    "dev_ledger_none": "अभी तक कोई dev run नहीं",
+    "dev_ledger_summary": "{total} रन · {landed} commit · {merged} मर्ज",
+    "dev_ledger_verdict_down": "खराब रन",
+    "dev_ledger_verdict_up": "अच्छा रन",
+    "dev_status_closed": "लागू किया गया",
+    "dev_status_completed": "मर्ज की प्रतीक्षा",
+    "dev_status_dispatched": "प्रगति में",
+    "dev_status_interrupted": "बाधित",
+    "dev_status_merged": "मर्ज किया गया"
   },
   "ocr": {
     "title": "OCR",
