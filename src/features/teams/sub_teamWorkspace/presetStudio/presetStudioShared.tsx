@@ -10,10 +10,9 @@ import {
 import type { PresetAdoptionController, PresetMemberRowState } from '@/features/templates/sub_presets/usePresetAdoption';
 
 /**
- * Shared leaf components for the in-app preset-adoption variants. Each
- * variant owns its own layout but reuses these so the live status, the
- * stage-aware action buttons, and the customize panel behave identically
- * across Baseline / Blueprint / Pipeline / Split.
+ * Shared leaf components for the in-app preset-adoption flow — the live
+ * status badge, the stage-aware action buttons, and the customize panel
+ * used by `PresetProcessBlueprint` and `PresetProcessHost`.
  */
 
 /** role → friendly template name (from the adoption schema), memoised. */

@@ -2,11 +2,11 @@ import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import type { PresetAdoptionController } from '@/features/templates/sub_presets/usePresetAdoption';
 
 /**
- * Shared prop contract for every in-app preset-adoption variant
- * (Baseline / Blueprint / Pipeline / Split). The adoption controller +
- * customize state live in the host (`PresetProcessHost`) so switching
- * variant tabs preserves the in-flight selection, overrides, and any
- * adoption already underway.
+ * Prop contract for the in-app preset-adoption process view
+ * (`PresetProcessBlueprint`, the /prototype winner). The adoption controller +
+ * customize state live in the host (`PresetProcessHost`) so the view stays
+ * presentational and the in-flight selection, overrides, and any adoption
+ * already underway survive re-renders.
  */
 export interface PresetVariantProps {
   preset: TeamPreset;
@@ -15,7 +15,7 @@ export interface PresetVariantProps {
   setCustomizing: (next: boolean) => void;
 }
 
-/** Prop contract for the preset-gallery variants (how the offer is presented). */
+/** Prop contract for the preset gallery (`PresetGalleryShowcase`). */
 export interface PresetGalleryVariantProps {
   presets: TeamPreset[];
   onPick: (preset: TeamPreset) => void;

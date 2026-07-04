@@ -17,9 +17,9 @@ import { PresetGalleryShowcase } from './PresetGalleryShowcase';
  * the old `TeamPresetPickerModal` + `PresetPreviewModal` pair into full
  * content space. Two stages:
  *
- *   gallery  → best-practice presets as cards (reuses `PresetCard`).
+ *   gallery  → best-practice presets as poster cards (`PresetGalleryShowcase`).
  *   process  → the chosen preset's adoption process (`PresetProcessHost`),
- *              currently A/B-ing directional variants behind a tab strip.
+ *              rendering the Blueprint schematic — the /prototype winner.
  *
  * Rendered by `TeamCanvas` when `pipelineStore.presetFlowOpen` is true.
  */
