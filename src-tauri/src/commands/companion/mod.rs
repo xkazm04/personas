@@ -147,6 +147,14 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                         crate::commands::companion::fleet_bridge::reassess_stuck_sessions(
                             &app_handle,
                         );
+                        // Phase 3a — idle-needs-next: a dispatched session that
+                        // finished its turn and idles at the prompt has no
+                        // event-driven trigger; wake Athena to judge done-vs-next
+                        // against its objective and send the next step (gated) or
+                        // leave a finished session alone.
+                        crate::commands::companion::fleet_bridge::reassess_idle_needs_next(
+                            &app_handle,
+                        );
 
                         let review = crate::companion::proactive::execution_review::review_recent_executions(
                             &pool,

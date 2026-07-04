@@ -193,6 +193,11 @@ enum FleetSituation {
     /// Session entered `AwaitingInput` — it finished its turn or is blocked on a
     /// prompt/decision. She answers with a `fleet_send_input`, or defers.
     AwaitingInput,
+    /// Phase 3a — a dispatched session finished its turn and is idling at the
+    /// prompt (`Stop → Idle`) with a live objective. She judges done-vs-needs-next
+    /// and, if work remains, sends the next step via `fleet_send_input`; if the
+    /// objective looks complete she leaves it alone.
+    IdleNeedsNext,
     /// Phase 3b — a dispatched session looks stuck: its last action failed and it
     /// has made no progress for a few minutes. She proposes a `fleet_intervene`
     /// to unblock it, or defers. Carries the truncated failure tail so she reasons
@@ -204,6 +209,7 @@ impl FleetSituation {
     fn label(&self) -> &'static str {
         match self {
             FleetSituation::AwaitingInput => "awaiting_input",
+            FleetSituation::IdleNeedsNext => "idle_needs_next",
             FleetSituation::Stuck { .. } => "stuck",
         }
     }
@@ -305,11 +311,20 @@ fn orchestrate_session(
         )
     };
 
+    // (B.1) Phase 5b — the session's objective (from operative memory), so she
+    // judges the next step against what this session is actually FOR — done vs
+    // needs-next — instead of reasoning only from the current screen. Empty for a
+    // session with no tracked goal (an ad-hoc user spawn).
+    let objective_block = match session_objective(session_id) {
+        Some(obj) => format!("\nThis session's objective: {obj}\n"),
+        None => String::new(),
+    };
+
     let directive = match &situation {
         FleetSituation::AwaitingInput => format!(
         "Fleet orchestration check. Session \"{project_label}\" (project {project_label}) just entered \
          AwaitingInput — it finished its turn, or it's blocked on a prompt/decision (a single- or \
-         multiple-select question, a permission, or free-text input).{screen_block}\n\
+         multiple-select question, a permission, or free-text input).{screen_block}{objective_block}\n\
          Fleet (brief background only):\n\n{digest}\n\n\
          Focus on THIS session only and decide its single next step. This is a quick orchestration \
          check, NOT a fleet status report — do NOT summarize, list, or re-flag the other sessions.\n\
@@ -338,10 +353,34 @@ fn orchestrate_session(
          Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay; \
          no preamble, no fleet-wide recap.",
         ),
+        FleetSituation::IdleNeedsNext => format!(
+        "Fleet orchestration — idle session. Session \"{project_label}\" (project {project_label}) \
+         finished its last turn and is idling at the prompt.{screen_block}{objective_block}\n\
+         Fleet (brief background only):\n\n{digest}\n\n\
+         Focus on THIS session only. Against its objective above, judge whether it's DONE or has a \
+         clear next step. This is a quick orchestration check, NOT a fleet status report — do NOT \
+         summarize the other sessions.\n\
+         • If concrete work remains toward the objective, propose a fleet_send_input whose `text` is \
+         exactly the next instruction to type to advance it — one focused step, not a re-plan.\n\
+         • Every fleet_send_input MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
+         verbatim; it's THIS session, and the action can't run without it — plus the exact `text`, a \
+         one-line `rationale`, a `confidence` (\"high\" | \"medium\" | \"low\"), and a `decision_class`.\n\
+         • `decision_class` = \"drive_forward\" when the next step is the obvious or only sensible \
+         continuation. = \"choice\" when advancing means picking between materially different \
+         directions, or it's really the user's call.\n\
+         • `confidence` is your honest read: \"high\" = the next step is unambiguous; \"medium\" = a \
+         sound call but a wrong move costs rework; \"low\" = real doubt. The system — not you — decides \
+         auto-apply vs orb consult from your class + confidence + the user's autonomy setting (\"low\" \
+         is never auto-applied).\n\
+         • If the objective looks COMPLETE, or the next move is genuinely the USER's call, do NOT send \
+         input. If it's done, do nothing at all; if it's their call, surface a concise one-line note \
+         on the orb with your read.\n\
+         Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay.",
+        ),
         FleetSituation::Stuck { failure } => format!(
         "Fleet orchestration — stuck session. Session \"{project_label}\" (project {project_label}) is \
          in one of your dispatched operations and looks STUCK: its last action failed and it's made no \
-         progress for a few minutes. The failure was:\n\n{failure}\n{screen_block}\n\
+         progress for a few minutes. The failure was:\n\n{failure}\n{screen_block}{objective_block}\n\
          Fleet (brief background only):\n\n{digest}\n\n\
          Focus on THIS session only. Judge whether one concrete nudge can get it moving again. This is \
          a quick orchestration check, NOT a fleet status report — do NOT summarize the other sessions.\n\
@@ -530,6 +569,89 @@ pub fn reassess_stuck_sessions(app: &tauri::AppHandle) {
                 },
             );
         }
+    }
+}
+
+/// How long a dispatched session must sit `Idle` before the proactive tick asks
+/// Athena whether it needs its next step — long enough that a session genuinely
+/// between turns isn't poked mid-thought (the hook path owns fresh transitions).
+const IDLE_REASSESS_AFTER_MS: i64 = 90 * 1000;
+
+/// Phase 3a — proactive-tick idle-needs-next (autonomous mode only). A session
+/// that finished its turn and idles at the prompt (`Stop → Idle`) had no
+/// event-driven trigger — orchestration only fired on `AwaitingInput`. This wakes
+/// Athena on an Idle session that (a) is part of one of HER dispatched operations
+/// (never a user's own ad-hoc CLI — she must not drive those), and (b) has idled
+/// past `IDLE_REASSESS_AFTER_MS`, so she judges done-vs-needs-next against the
+/// session's objective and either sends the next step via a confidence-gated
+/// `fleet_send_input` or leaves a finished session alone.
+///
+/// Safe every tick: the shared 60 s throttle + screen-hash dedupe skip a session
+/// whose idle screen is unchanged (a genuinely-done session is woken at most
+/// once), and a session only re-triggers once real work has moved its screen — so
+/// the loop is bounded by actual progress, not the timer.
+pub fn reassess_idle_needs_next(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    // App manages `Arc<AppState>` (see `reassess_stale_awaiting`).
+    let Some(state) = app.try_state::<std::sync::Arc<AppState>>() else {
+        return;
+    };
+    if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
+        return;
+    }
+    let now = crate::commands::fleet::registry::now_ms();
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    for s in crate::commands::fleet::registry::registry().list_dto() {
+        if !matches!(
+            s.state,
+            crate::commands::fleet::types::FleetSessionState::Idle
+        ) {
+            continue;
+        }
+        if now - s.last_activity_ms < IDLE_REASSESS_AFTER_MS {
+            continue; // fresh idle — leave it a moment before poking
+        }
+        // Only auto-continue sessions Athena herself dispatched — never the user's
+        // own ad-hoc CLIs (they're driving those). Membership in a
+        // `dispatched_by_athena` op is the gate.
+        let Some(op_id) = mem.find_operation_for_session(&s.id) else {
+            continue;
+        };
+        let dispatched = mem
+            .snapshot_operation(&op_id)
+            .map(|op| op.dispatched_by_athena)
+            .unwrap_or(false);
+        if !dispatched {
+            continue;
+        }
+        orchestrate_session(
+            app,
+            &state,
+            &s.id,
+            &s.project_label,
+            FleetSituation::IdleNeedsNext,
+        );
+    }
+}
+
+/// Phase 5b — the objective for a fleet session, pulled from operative memory for
+/// the orchestration directive. Prefers the session's self-reported `intent` (set
+/// via the MCP `athena.report_intent` path), falls back to its `role`, always
+/// paired with the owning operation's `user_intent` for context. `None` when the
+/// session isn't part of a tracked operation (an ad-hoc user spawn with no
+/// recorded goal) — the directive then omits the objective line.
+fn session_objective(session_id: &str) -> Option<String> {
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    let op_id = mem.find_operation_for_session(session_id)?;
+    let op = mem.snapshot_operation(&op_id)?;
+    let session_goal = op
+        .sessions
+        .iter()
+        .find(|s| s.fleet_session_id == session_id)
+        .and_then(|s| s.intent.clone().or_else(|| s.role.clone()));
+    match session_goal {
+        Some(goal) => Some(format!("{goal} — part of the operation: {}", op.user_intent)),
+        None => Some(op.user_intent.clone()),
     }
 }
 
