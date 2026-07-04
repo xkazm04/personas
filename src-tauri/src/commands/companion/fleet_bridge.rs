@@ -295,6 +295,18 @@ fn orchestrate_session(
         let mut h = DefaultHasher::new();
         screen_text.hash(&mut h);
         let sig = h.finish();
+        // Phase 5a — durable cross-restart dedupe: if she already AUTO-FIRED on
+        // this exact screen (same STABLE conversation id), don't re-wake her. The
+        // in-memory map below is lost on restart; this ledger check isn't. Only
+        // auto-fires suppress — a prior defer can still get a fresh look.
+        if let Some(csid) = claude_session_id_for(session_id) {
+            let hex = format!("{sig:016x}");
+            if crate::db::repos::fleet_decisions::has_prior_autofire(&state.db, &csid, &hex)
+                .unwrap_or(false)
+            {
+                return;
+            }
+        }
         let mut sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
         if sigs.insert(session_id.to_string(), sig) == Some(sig) {
             return; // same decision as last assessment — nothing new to decide
@@ -451,6 +463,26 @@ pub fn screen_matches_last_decision(session_id: &str) -> Option<bool> {
     let mut h = DefaultHasher::new();
     screen_text.hash(&mut h);
     Some(h.finish() == recorded)
+}
+
+/// Phase 5a — the screen-hash (hex) Athena last reasoned on for a session, from
+/// the in-memory decision signatures. Used to stamp the durable decision ledger
+/// with the exact screen a decision was made on. `None` if she hasn't been woken
+/// for this session yet.
+pub fn recorded_decision_hash_hex(session_id: &str) -> Option<String> {
+    let sigs = decision_signatures().lock().unwrap_or_else(|e| e.into_inner());
+    sigs.get(session_id).map(|h| format!("{h:016x}"))
+}
+
+/// Phase 5a — the stable Claude conversation id for a live fleet session, if
+/// bound. Unlike the ephemeral registry `id` (regenerated each launch), this
+/// survives restarts, so it's the durable dedupe key for the decision ledger.
+pub fn claude_session_id_for(session_id: &str) -> Option<String> {
+    crate::commands::fleet::registry::registry()
+        .list_dto()
+        .into_iter()
+        .find(|s| s.id == session_id)
+        .and_then(|s| s.claude_session_id)
 }
 
 /// How long a session must sit in `AwaitingInput` before the proactive tick

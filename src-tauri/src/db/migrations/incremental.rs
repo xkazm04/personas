@@ -5009,6 +5009,47 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    run_step(
+        conn,
+        IncrementalMigration {
+            // Phase 5a — durable fleet-decision ledger. Athena's per-session
+            // orchestration verdicts (auto-fired action vs deferred consult) were
+            // in-memory only (the screen-hash map in fleet_bridge), lost on
+            // restart. This persists each decision so (a) she can skip re-asking a
+            // screen she already decided — keyed on the STABLE claude_session_id +
+            // screen_hash, since the registry id is regenerated each launch — and
+            // (b) the user can see WHY she stopped/acted on a session. Append-only;
+            // soft refs (no FK); free-text action/outcome/confidence/defer_reason.
+            id: "fleet_decisions",
+            description: "Durable Athena fleet-orchestration decision ledger",
+            already_applied: |conn| has_table(conn, "fleet_decisions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS fleet_decisions (
+                        id                 TEXT PRIMARY KEY,
+                        session_id         TEXT NOT NULL,
+                        claude_session_id  TEXT,
+                        screen_hash        TEXT NOT NULL,
+                        action             TEXT NOT NULL,
+                        outcome            TEXT NOT NULL,
+                        confidence         TEXT,
+                        decision_class     TEXT,
+                        defer_reason       TEXT,
+                        rationale          TEXT,
+                        created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_fleet_decisions_created
+                        ON fleet_decisions(created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_decisions_session
+                        ON fleet_decisions(session_id, created_at DESC);
+                    CREATE INDEX IF NOT EXISTS idx_fleet_decisions_dedupe
+                        ON fleet_decisions(claude_session_id, screen_hash);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
 
     Ok(())
 }

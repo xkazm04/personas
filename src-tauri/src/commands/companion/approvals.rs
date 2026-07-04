@@ -434,6 +434,13 @@ pub async fn auto_resolve_if_allowed(
                 boldness = boldness.as_str(),
                 "autonomous autoapprove deferred: fleet action below the boldness × class × confidence bar — left pending as an orb consult"
             );
+            record_fleet_decision(
+                &state.db,
+                &approval.action,
+                &approval.params_json,
+                "deferred",
+                Some("below_confidence_bar"),
+            );
             return Ok(false);
         }
         // Phase 2.4 execution-time re-check: `confidence` is uncalibrated and a
@@ -455,6 +462,13 @@ pub async fn auto_resolve_if_allowed(
                     session_id = %sid,
                     "autonomous autoapprove deferred: session screen changed since Athena reasoned — left pending as an orb consult"
                 );
+                record_fleet_decision(
+                    &state.db,
+                    &approval.action,
+                    &approval.params_json,
+                    "deferred",
+                    Some("screen_changed"),
+                );
                 return Ok(false);
             }
         }
@@ -469,6 +483,13 @@ pub async fn auto_resolve_if_allowed(
                 action = %approval.action,
                 boldness = boldness.as_str(),
                 "autonomous autoapprove deferred: recovery action below the boldness × class × confidence bar — left pending as an orb consult"
+            );
+            record_fleet_decision(
+                &state.db,
+                &approval.action,
+                &approval.params_json,
+                "deferred",
+                Some("below_confidence_bar"),
             );
             return Ok(false);
         }
@@ -517,6 +538,18 @@ pub async fn auto_resolve_if_allowed(
     finalize_approval(&state, &approval.id, status_text)?;
     log_action_episode(&state, &action, &embedder_log).await;
 
+    // Phase 5a — stamp the durable decision ledger for fleet actions (audit + the
+    // cross-restart auto-fire dedupe read by `orchestrate_session`). Guarded to
+    // `fleet_` so non-fleet auto-approvals (write_fact, …) don't land in it.
+    if action.starts_with("fleet_") {
+        let outcome = if status_text == APPROVAL_STATUS_APPROVED {
+            "auto_fired"
+        } else {
+            "auto_failed"
+        };
+        record_fleet_decision(&state.db, &action, &approval.params_json, outcome, None);
+    }
+
     // Notify-only orb indicator (user policy "safety net" = Notify only): when a
     // fleet action auto-fired successfully, tell the orb what Athena just did so
     // the user sees the hands-off action without having to watch the grid. Purely
@@ -527,6 +560,49 @@ pub async fn auto_resolve_if_allowed(
         emit_fleet_auto_decided(app, &params);
     }
     Ok(true)
+}
+
+/// Phase 5a — stamp the durable fleet-decision ledger for a fleet action.
+/// Best-effort: a ledger miss never affects the decision. Pulls session_id /
+/// confidence / decision_class / rationale from the approval params, and the
+/// screen-hash + stable conversation id from `fleet_bridge` / the registry.
+/// `outcome` is `"auto_fired"` | `"auto_failed"` | `"deferred"`; `defer_reason`
+/// explains a defer.
+fn record_fleet_decision(
+    db: &crate::db::DbPool,
+    action: &str,
+    params_json: &str,
+    outcome: &str,
+    defer_reason: Option<&str>,
+) {
+    let v: serde_json::Value =
+        serde_json::from_str(params_json).unwrap_or(serde_json::Value::Null);
+    let get = |k: &str| {
+        v.get(k)
+            .and_then(|x| x.as_str())
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+    let session_id = get("session_id").unwrap_or_default();
+    let screen_hash =
+        crate::commands::companion::fleet_bridge::recorded_decision_hash_hex(&session_id)
+            .unwrap_or_default();
+    let claude_session_id =
+        crate::commands::companion::fleet_bridge::claude_session_id_for(&session_id);
+    crate::db::repos::fleet_decisions::record(
+        db,
+        &crate::db::repos::fleet_decisions::FleetDecisionInsert {
+            session_id,
+            claude_session_id,
+            screen_hash,
+            action: action.to_string(),
+            outcome: outcome.to_string(),
+            confidence: get("confidence"),
+            decision_class: get("decision_class"),
+            defer_reason: defer_reason.map(str::to_string),
+            rationale: get("rationale"),
+        },
+    );
 }
 
 /// Emit the `athena://fleet/auto-decided` event the orb listens for to flash a
