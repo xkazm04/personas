@@ -342,21 +342,30 @@ export default function App() {
                   <BackgroundServices />
                 </Suspense>
               </SilentErrorBoundary>
-              <Suspense fallback={null}>
-                <HealingToast />
-                <AlertToastContainer />
-                <GuidedTour />
-                <TourSpotlight />
-                <OnboardingOverlay />
-                <ExecutionMiniPlayer />
-                <CommandPalette />
-                <NotificationCenter />
-                <ShareLinkHandler />
-                <CompanionPanel />
-                <AthenaOrbLayer />
-                <AthenaGuideLayer />
-                {import.meta.env.DEV && <StudioAttention />}
-              </Suspense>
+              {/* The always-mounted global overlays share a boundary so a render
+                  crash in any one of them (tour, command palette, companion,
+                  orb, notifications…) degrades to "overlays gone" instead of
+                  propagating to the app-root boundary and unmounting the WHOLE
+                  app to the static Sentry fallback (ship-loop item 27). Per-
+                  overlay isolation is a follow-up; the group boundary already
+                  removes the whole-app-crash blast radius. */}
+              <SilentErrorBoundary name="GlobalOverlays">
+                <Suspense fallback={null}>
+                  <HealingToast />
+                  <AlertToastContainer />
+                  <GuidedTour />
+                  <TourSpotlight />
+                  <OnboardingOverlay />
+                  <ExecutionMiniPlayer />
+                  <CommandPalette />
+                  <NotificationCenter />
+                  <ShareLinkHandler />
+                  <CompanionPanel />
+                  <AthenaOrbLayer />
+                  <AthenaGuideLayer />
+                  {import.meta.env.DEV && <StudioAttention />}
+                </Suspense>
+              </SilentErrorBoundary>
             </>
           )}
           <ChartGradientDefs />
