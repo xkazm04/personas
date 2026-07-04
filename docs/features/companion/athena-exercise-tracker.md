@@ -25,7 +25,7 @@ date, what we observed, and any change made.
 ## Phase 0 — Conversation substrate (everything rides on this)
 - [x] Streaming chat + token-level streaming
 - [x] `PROGRESS:` in-turn beats (always-on, text + voice)
-- [ ] `TTS:` spoken summary line
+- [x] `TTS:` spoken summary line
 - [ ] `QR:` quick-reply chips
 - [ ] Refine chips (Shorter / More detail / Code only)
 - [ ] Slash-command palette (`/`)
@@ -153,3 +153,12 @@ date, what we observed, and any change made.
   (`beatFiredRef` suppresses the generic ack/heartbeat). Michal: good as-is (2–4/turn).
   Docs fix: README L419 said only "stripped from the persisted reply" — completed it
   to reflect the re-persist-as-aside path. `athena-usecases.md` A10 was already right. ✅
+- **Worktree set up** — `worktree-athena-exercise` at `.claude/worktrees/athena-exercise`
+  (off master `ebce8a545`). Workflow: CODE changes go in the worktree; a merge to master
+  is the deliberate app-refresh/reset point. This tracker stays on master as the
+  cross-reset recovery ledger (docs don't HMR-refresh the app). Not registered in
+  `.claude/active-runs.md` — another session has it checked out dirty.
+- **0.3 TTS line** — CONFIRMED. First `TTS:` wins (`dispatcher.rs:387`; extra ones dropped
+  with a "multiple TTS lines, keeping first" warning), stripped from display, grammar
+  voice-gated (`voice_addendum_if_needed`). Docs (`athena-usecases.md` A10 + send/arrival-TTS)
+  ALREADY accurate — no doc change needed. Michal: good as-is. ✅
