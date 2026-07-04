@@ -13375,6 +13375,7 @@ export type Translations = {
       setup_dev_mode_off: string;
       setup_dev_mode_active: string;
       setup_dev_mode_inactive: string;
+      proactive_kind_dev_interrupted: string;
     };
     ocr: {
       title: string;

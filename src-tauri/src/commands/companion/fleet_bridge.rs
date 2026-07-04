@@ -572,13 +572,15 @@ fn reconcile_if_dispatched(
     // deterministic D6 nudge below, so return once it's spawned. Per
     // user policy every dev operation ends in this reflection, and any
     // apply-step (dev_merge) is still a separate click-approval.
-    if let Some(dev) = crate::companion::dev_mode::get_dev_op(&op_id) {
+    if let Some(dev) = crate::companion::dev_mode::get_dev_op(pool, &op_id) {
         spawn_dev_reflection(app, &op, &dev, status_token, &summary);
-        if !dev.backend {
-            // Frontend run — nothing to merge later; the registry entry
-            // has served its purpose. Backend metas stay until dev_merge.
-            crate::companion::dev_mode::remove_dev_op(&op_id);
-        }
+        // Ledger transition (Phase 4): record the run's resulting commit
+        // and move the row out of the boot-recovery sweep. Frontend runs
+        // are terminal here (`closed` — nothing to merge); backend rows
+        // stay `completed` until the dev_merge handshake consumes them.
+        let commit = crate::companion::dev_mode::latest_commit_short(&dev.workspace);
+        let next = if dev.backend { "completed" } else { "closed" };
+        crate::companion::dev_mode::mark_dev_op(pool, &op_id, next, commit.as_deref());
         return;
     }
 

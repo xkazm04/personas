@@ -3917,16 +3917,23 @@ fn execute_dev_improve(
             crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
         )),
     );
-    dev_mode::register_dev_op(
+    // Durable ledger row (Phase 4) — the reflection reconciler, the
+    // dev_merge handshake, and boot recovery all read this across app
+    // restarts. Best-effort: the session is already running, so a ledger
+    // failure degrades to the generic wrap-up card rather than aborting.
+    if let Err(e) = dev_mode::register_dev_op(
+        &state.user_db,
         &op_id,
-        dev_mode::DevOpMeta {
+        &dev_mode::DevOpMeta {
             request: request.to_string(),
             backend,
             workspace: workspace.clone(),
             branch: branch.clone(),
             fleet_session_id: session_id.clone(),
         },
-    );
+    ) {
+        tracing::warn!(op_id = %op_id, error = %e, "dev_improve: ledger insert failed — reflection/merge lookups will miss this op");
+    }
     crate::companion::orchestration::emit_digest_changed(app);
 
     let mut msg = format!(
@@ -3975,15 +3982,16 @@ fn execute_dev_merge(
         .map(str::trim)
         .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Internal("dev_merge: missing `op_id`".into()))?;
-    let meta = dev_mode::get_dev_op(op_id).ok_or_else(|| {
+    let meta = dev_mode::get_dev_op(&state.user_db, op_id).ok_or_else(|| {
         AppError::Internal(format!(
-            "dev_merge: unknown dev op `{op_id}` — the registry is in-process, so an app \
-             restart since the run loses it. Merge manually: `git merge <athena-dev branch>` \
-             at the repo root, then `git worktree remove` the leftover worktree."
+            "dev_merge: no ledger row matches dev op `{op_id}` — check the reflection \
+             message for the exact op_id. Last resort: merge manually (`git merge \
+             <athena-dev branch>` at the repo root, then `git worktree remove` the \
+             leftover worktree)."
         ))
     })?;
     let merged = dev_mode::merge_dev_branch(&meta).map_err(AppError::Internal)?;
-    dev_mode::remove_dev_op(op_id);
+    dev_mode::mark_dev_op(&state.user_db, op_id, "merged", None);
     Ok(ExecuteResult::message(format!(
         "{merged}\n\nThe dev server will pick up the merged changes — expect a rebuild and \
          an app restart."

@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "In diesem Build verfügbar. Der Schraubenschlüssel in der Chat-Kopfzeile schaltet ihn um — wenn aktiv, übersetzt Athena Feature-Gespräche in Code und schlägt Verbesserungen vor, die Sie genehmigen.",
     "setup_dev_mode_off": "Nicht verfügbar — erfordert einen Entwicklungs-Build aus einem Quell-Checkout.",
     "setup_dev_mode_active": "Aktiv",
-    "setup_dev_mode_inactive": "Aus"
+    "setup_dev_mode_inactive": "Aus",
+    "proactive_kind_dev_interrupted": "Dev-Lauf unterbrochen"
   },
   "ocr": {
     "title": "OCR",

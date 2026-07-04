@@ -13368,7 +13368,8 @@
       "setup_dev_mode_on": "Available in this build. The wrench in the chat header toggles it — when on, Athena resolves feature talk to code and proposes improvement dispatches you approve.",
       "setup_dev_mode_off": "Unavailable — requires a development build running from a source checkout.",
       "setup_dev_mode_active": "Active",
-      "setup_dev_mode_inactive": "Off"
+      "setup_dev_mode_inactive": "Off",
+      "proactive_kind_dev_interrupted": "dev run interrupted"
     },
     "ocr": {
       "title": "OCR",

@@ -13155,7 +13155,8 @@
       "setup_dev_mode_on": "Dostupné v tomto sestavení. Přepíná se klíčem v záhlaví chatu — po zapnutí Athena překládá řeč o funkcích na kód a navrhuje úpravy, které schvalujete.",
       "setup_dev_mode_off": "Nedostupné — vyžaduje vývojové sestavení spuštěné ze zdrojového kódu.",
       "setup_dev_mode_active": "Aktivní",
-      "setup_dev_mode_inactive": "Vypnuto"
+      "setup_dev_mode_inactive": "Vypnuto",
+      "proactive_kind_dev_interrupted": "vývojový běh přerušen"
     },
     "ocr": {
       "title": "OCR",

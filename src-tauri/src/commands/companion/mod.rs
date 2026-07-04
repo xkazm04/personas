@@ -315,6 +315,20 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
         });
     }
 
+    // DEV MODE boot recovery (Phase 4): dev_improve rows still `dispatched`
+    // are orphans — their fleet PTY sessions died with the previous app
+    // process (typically the dev-server restart that backend work causes).
+    // Sweep them to `interrupted` + one proactive card each describing what
+    // survived on disk (worktree/branch/commits) and the options. Cheap
+    // no-op when the ledger has no dispatched rows.
+    {
+        let pool = state.user_db.clone();
+        let app_handle = app.clone();
+        tauri::async_runtime::spawn(async move {
+            let _ = crate::companion::dev_mode::recover_interrupted_dev_ops(&pool, &app_handle);
+        });
+    }
+
     Ok(root.display().to_string())
 }
 

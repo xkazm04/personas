@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "このビルドで利用可能。チャットヘッダーのレンチアイコンで切り替えます — オンにすると Athena が機能の話をコードに対応付け、承認制の改善タスクを提案します。",
     "setup_dev_mode_off": "利用不可 — ソースチェックアウトから起動した開発ビルドが必要です。",
     "setup_dev_mode_active": "有効",
-    "setup_dev_mode_inactive": "オフ"
+    "setup_dev_mode_inactive": "オフ",
+    "proactive_kind_dev_interrupted": "開発実行が中断"
   },
   "ocr": {
     "title": "OCR",

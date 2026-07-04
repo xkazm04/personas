@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "متاح في هذا الإصدار. يُبدّل بمفتاح الربط في رأس الدردشة — عند التفعيل، تربط Athena الحديث عن الميزات بالكود وتقترح تحسينات توافق عليها أنت.",
     "setup_dev_mode_off": "غير متاح — يتطلب إصدار تطوير يعمل من الكود المصدري.",
     "setup_dev_mode_active": "نشط",
-    "setup_dev_mode_inactive": "متوقف"
+    "setup_dev_mode_inactive": "متوقف",
+    "proactive_kind_dev_interrupted": "تشغيل التطوير توقف"
   },
   "ocr": {
     "title": "OCR",

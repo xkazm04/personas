@@ -14,9 +14,7 @@
 //! the paths Athena is *taught* and the paths the executor *resolves*
 //! can't drift apart.
 
-use std::collections::HashMap;
 use std::path::PathBuf;
-use std::sync::{Mutex, OnceLock};
 
 use crate::db::DbPool;
 
@@ -113,15 +111,20 @@ pub fn context_map_index() -> Option<String> {
     }
 }
 
-// ── dev-op registry ─────────────────────────────────────────────────────
+// ── dev-op ledger (durable, Phase 4) ────────────────────────────────────
 //
-// In-process metadata for in-flight dev_improve operations, keyed by the
-// operative-memory op id. The reflection reconciler reads it on op
-// completion (workspace to diff, backend → merge handshake) and the
-// dev_merge executor consumes it. In-process only: an app restart loses
-// the map, matching operative memory itself — the worktree + branch
-// survive on disk and can be merged manually, which the reflection card
-// mentions. Durable markers are the documented Phase-4 hardening.
+// One `companion_dev_op` row per dev_improve operation, keyed by the
+// operative-memory op id. Durable on purpose: backend work inherently
+// causes an app restart (merge → dev-server rebuild), and the in-process
+// registry this replaced lost the merge handshake across exactly that
+// restart. The reflection reconciler reads a row on op completion, the
+// dev_merge executor consumes it, boot recovery sweeps orphaned rows,
+// and Phase 5 reads the same table as the experiment ledger.
+//
+// Status lifecycle: dispatched → completed (session exited, reflection
+// spawned; backend rows await the merge handshake) → merged | closed;
+// `interrupted` marks a dispatched row whose session died with an app
+// restart (workspace + branch survive on disk).
 
 #[derive(Debug, Clone)]
 pub struct DevOpMeta {
@@ -137,31 +140,210 @@ pub struct DevOpMeta {
     pub fleet_session_id: String,
 }
 
-fn dev_ops() -> &'static Mutex<HashMap<String, DevOpMeta>> {
-    static M: OnceLock<Mutex<HashMap<String, DevOpMeta>>> = OnceLock::new();
-    M.get_or_init(|| Mutex::new(HashMap::new()))
+pub fn register_dev_op(
+    pool: &crate::db::UserDbPool,
+    op_id: &str,
+    meta: &DevOpMeta,
+) -> Result<(), crate::error::AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "INSERT INTO companion_dev_op (op_id, request, backend, workspace, branch, fleet_session_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        rusqlite::params![
+            op_id,
+            meta.request,
+            meta.backend as i32,
+            meta.workspace.to_string_lossy(),
+            meta.branch,
+            meta.fleet_session_id,
+        ],
+    )?;
+    Ok(())
 }
 
-pub fn register_dev_op(op_id: &str, meta: DevOpMeta) {
-    dev_ops()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .insert(op_id.to_string(), meta);
+fn row_to_meta(row: &rusqlite::Row<'_>) -> rusqlite::Result<DevOpMeta> {
+    Ok(DevOpMeta {
+        request: row.get("request")?,
+        backend: row.get::<_, i32>("backend")? != 0,
+        workspace: PathBuf::from(row.get::<_, String>("workspace")?),
+        branch: row.get("branch")?,
+        fleet_session_id: row.get("fleet_session_id")?,
+    })
 }
 
-pub fn get_dev_op(op_id: &str) -> Option<DevOpMeta> {
-    dev_ops()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .get(op_id)
-        .cloned()
+/// Fetch a dev op regardless of status (callers gate on their own
+/// preconditions — dev_merge's real guards are the dirty-tree check and
+/// the ff-only merge, not the status token). Best-effort `None` on any
+/// DB error.
+pub fn get_dev_op(pool: &crate::db::UserDbPool, op_id: &str) -> Option<DevOpMeta> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT request, backend, workspace, branch, fleet_session_id
+         FROM companion_dev_op WHERE op_id = ?1",
+        rusqlite::params![op_id],
+        |row| row_to_meta(row),
+    )
+    .ok()
 }
 
-pub fn remove_dev_op(op_id: &str) -> Option<DevOpMeta> {
-    dev_ops()
-        .lock()
-        .unwrap_or_else(|e| e.into_inner())
-        .remove(op_id)
+/// Advance a dev op's status (best-effort — a miss is a warn, never a
+/// blocker). Terminal statuses stamp `finished_at`; a Some(commit) also
+/// records the run's resulting commit for the ledger.
+pub fn mark_dev_op(
+    pool: &crate::db::UserDbPool,
+    op_id: &str,
+    status: &str,
+    commit_sha: Option<&str>,
+) {
+    let Ok(conn) = pool.get() else { return };
+    let finished = matches!(status, "completed" | "merged" | "closed" | "interrupted");
+    let res = conn.execute(
+        "UPDATE companion_dev_op
+         SET status = ?2,
+             commit_sha = COALESCE(?3, commit_sha),
+             finished_at = CASE WHEN ?4 THEN datetime('now') ELSE finished_at END
+         WHERE op_id = ?1",
+        rusqlite::params![op_id, status, commit_sha, finished],
+    );
+    if let Err(e) = res {
+        tracing::warn!(op_id, status, error = %e, "dev_mode: mark_dev_op failed");
+    }
+}
+
+/// All rows still in `dispatched` — after an app restart these are
+/// orphans (fleet PTY children die with the process). Boot recovery
+/// sweeps them into `interrupted` + a proactive card.
+pub fn list_dispatched_dev_ops(pool: &crate::db::UserDbPool) -> Vec<(String, DevOpMeta)> {
+    let Ok(conn) = pool.get() else {
+        return Vec::new();
+    };
+    let Ok(mut stmt) = conn.prepare(
+        "SELECT op_id, request, backend, workspace, branch, fleet_session_id
+         FROM companion_dev_op WHERE status = 'dispatched' ORDER BY created_at ASC",
+    ) else {
+        return Vec::new();
+    };
+    stmt.query_map([], |row| Ok((row.get::<_, String>("op_id")?, row_to_meta(row)?)))
+        .map(|rows| rows.flatten().collect())
+        .unwrap_or_default()
+}
+
+/// The workspace's current HEAD short SHA — the run's resulting commit
+/// for the ledger. Best-effort.
+pub fn latest_commit_short(workspace: &std::path::Path) -> Option<String> {
+    run_git(workspace, &["log", "-1", "--format=%h"]).ok().filter(|s| !s.is_empty())
+}
+
+/// Boot recovery (Phase 4): rows still `dispatched` at startup are
+/// orphans — fleet PTY children die with the app process, so their
+/// sessions are gone but the workspace (and a backend run's branch +
+/// commits) survive on disk. Mark them `interrupted` and surface one
+/// proactive card per op telling the user what survived and what their
+/// options are. The `(kind, ref=op_id)` dedupe makes a re-fire across
+/// boots harmless. Returns the number of ops swept.
+pub fn recover_interrupted_dev_ops(
+    pool: &crate::db::UserDbPool,
+    app: &tauri::AppHandle,
+) -> usize {
+    let orphans = list_dispatched_dev_ops(pool);
+    let mut swept = 0;
+    for (op_id, meta) in orphans {
+        // Capture what survived before flipping the status.
+        let commit = latest_commit_short(&meta.workspace);
+        mark_dev_op(pool, &op_id, "interrupted", commit.as_deref());
+        swept += 1;
+
+        let req_clip: String = {
+            let mut s: String = meta.request.chars().take(90).collect();
+            if meta.request.chars().count() > 90 {
+                s.push('…');
+            }
+            s
+        };
+        let survives = if meta.backend {
+            format!(
+                "Its worktree survives at `{}` (branch `{}`{}) — if the work was committed, \
+                 the dev_merge handshake still applies it (op_id `{op_id}`); otherwise \
+                 redispatch or remove the worktree.",
+                meta.workspace.to_string_lossy(),
+                meta.branch.as_deref().unwrap_or("?"),
+                match &commit {
+                    Some(c) => format!(", HEAD `{c}`"),
+                    None => String::new(),
+                },
+            )
+        } else {
+            "It ran in the main checkout — any edits it made are still in the working tree \
+             (uncommitted work shows in `git status`); redispatch if the change didn't land."
+                .to_string()
+        };
+        let nudge = crate::companion::proactive::Nudge {
+            trigger_kind: "dev_interrupted".to_string(),
+            trigger_ref: Some(op_id.clone()),
+            message: format!(
+                "Dev run “{req_clip}” was interrupted by an app restart — its coding session \
+                 died with the process. {survives}"
+            ),
+        };
+        match crate::companion::proactive::enqueue_external(pool, &nudge) {
+            Ok(Some(msg)) => {
+                if let Err(e) = crate::companion::proactive::mark_delivered(pool, &msg.id) {
+                    tracing::warn!(id = %msg.id, error = %e, "dev recovery: mark_delivered failed");
+                }
+                let delivered = crate::companion::proactive::ProactiveMessage {
+                    status: "delivered".into(),
+                    ..msg
+                };
+                let payload = crate::commands::companion::proactive::ProactiveDelivery {
+                    messages: vec![delivered],
+                };
+                use tauri::Emitter;
+                if let Err(e) = app.emit(
+                    crate::commands::companion::proactive::PROACTIVE_EVENT,
+                    payload,
+                ) {
+                    tracing::warn!(error = %e, op_id = %op_id, "dev recovery: proactive emit failed");
+                }
+            }
+            Ok(None) => {} // deduped — already surfaced for this op
+            Err(e) => tracing::warn!(error = %e, op_id = %op_id, "dev recovery: enqueue failed"),
+        }
+    }
+    if swept > 0 {
+        tracing::info!(swept, "dev_mode: swept interrupted dev op(s) at boot");
+    }
+    swept
+}
+
+/// Containment prerequisite, self-healing: `validate_fleet_cwd` requires
+/// the repo to be a registered Dev Tools project before a dev session may
+/// be dispatched into it. Called from the addendum path (i.e. whenever
+/// dev mode is actually in use) so the user never hits the unregistered
+/// footgun mid-conversation. Idempotent — one SELECT when already
+/// registered. Best-effort: registration failure only warns; the
+/// executor's validate still errors clearly at dispatch time.
+pub fn ensure_repo_registered(sys_db: &DbPool) {
+    let root = repo_root();
+    let root_str = root.to_string_lossy().to_string();
+    match crate::db::repos::dev_tools::get_project_by_path(sys_db, &root_str) {
+        Ok(Some(_)) => {}
+        Ok(None) => {
+            match crate::db::repos::dev_tools::create_project(
+                sys_db,
+                "personas",
+                &root_str,
+                Some("Personas desktop app — auto-registered by Athena dev mode (containment for dev_improve dispatches)"),
+                None,
+                None,
+                None,
+                None,
+            ) {
+                Ok(p) => tracing::info!(project_id = %p.id, "dev_mode: auto-registered the app repo as a Dev Tools project"),
+                Err(e) => tracing::warn!(error = %e, "dev_mode: repo auto-registration failed"),
+            }
+        }
+        Err(e) => tracing::warn!(error = %e, "dev_mode: project lookup failed"),
+    }
 }
 
 // ── git helpers (worktree + merge handshake) ────────────────────────────
@@ -388,8 +570,34 @@ mod tests {
         assert!(frontend.contains("/exit"));
     }
 
+    fn test_pool() -> crate::db::UserDbPool {
+        use r2d2_sqlite::SqliteConnectionManager;
+        let manager = SqliteConnectionManager::memory();
+        let pool = r2d2::Pool::builder().max_size(1).build(manager).unwrap();
+        pool.get()
+            .unwrap()
+            .execute_batch(
+                "CREATE TABLE companion_dev_op (
+                    op_id            TEXT PRIMARY KEY,
+                    request          TEXT NOT NULL,
+                    backend          INTEGER NOT NULL DEFAULT 1,
+                    workspace        TEXT NOT NULL,
+                    branch           TEXT,
+                    fleet_session_id TEXT NOT NULL,
+                    status           TEXT NOT NULL DEFAULT 'dispatched',
+                    commit_sha       TEXT,
+                    user_verdict     TEXT,
+                    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+                    finished_at      TEXT
+                );",
+            )
+            .unwrap();
+        pool
+    }
+
     #[test]
-    fn dev_op_registry_roundtrip() {
+    fn dev_op_ledger_roundtrip_and_lifecycle() {
+        let pool = test_pool();
         let meta = DevOpMeta {
             request: "r".into(),
             backend: true,
@@ -397,10 +605,31 @@ mod tests {
             branch: Some("athena-dev-x".into()),
             fleet_session_id: "s".into(),
         };
-        register_dev_op("op-test-roundtrip", meta);
-        assert!(get_dev_op("op-test-roundtrip").is_some());
-        assert!(remove_dev_op("op-test-roundtrip").is_some());
-        assert!(get_dev_op("op-test-roundtrip").is_none());
+        register_dev_op(&pool, "op-1", &meta).unwrap();
+        let got = get_dev_op(&pool, "op-1").expect("row lands");
+        assert!(got.backend);
+        assert_eq!(got.branch.as_deref(), Some("athena-dev-x"));
+
+        // dispatched rows show up for boot recovery…
+        assert_eq!(list_dispatched_dev_ops(&pool).len(), 1);
+        // …until a status transition takes them out of the sweep.
+        mark_dev_op(&pool, "op-1", "completed", Some("abc1234"));
+        assert!(list_dispatched_dev_ops(&pool).is_empty());
+        // Meta stays fetchable after completion — dev_merge reads it
+        // across the restart window.
+        assert!(get_dev_op(&pool, "op-1").is_some());
+        // COALESCE keeps the recorded commit when a later mark passes None.
+        mark_dev_op(&pool, "op-1", "merged", None);
+        let conn = pool.get().unwrap();
+        let (status, sha): (String, Option<String>) = conn
+            .query_row(
+                "SELECT status, commit_sha FROM companion_dev_op WHERE op_id='op-1'",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(status, "merged");
+        assert_eq!(sha.as_deref(), Some("abc1234"));
     }
 }
 
@@ -413,6 +642,9 @@ pub fn addendum_if_enabled(sys_db: &DbPool) -> String {
     if !crate::commands::companion::chat::dev_mode_enabled(sys_db) {
         return String::new();
     }
+    // Self-healing containment: dev mode in use → the repo must be a
+    // registered Dev Tools project or dispatches will bounce.
+    ensure_repo_registered(sys_db);
     let root = repo_root();
     let root_str = root.to_string_lossy().replace('\\', "/");
     let index_block = context_map_index()

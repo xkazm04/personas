@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "Disponible dans cette version. La clé à molette dans l’en-tête du chat l’active — une fois actif, Athena traduit les discussions produit en code et propose des améliorations que vous approuvez.",
     "setup_dev_mode_off": "Indisponible — nécessite une version de développement lancée depuis les sources.",
     "setup_dev_mode_active": "Actif",
-    "setup_dev_mode_inactive": "Inactif"
+    "setup_dev_mode_inactive": "Inactif",
+    "proactive_kind_dev_interrupted": "exécution dev interrompue"
   },
   "ocr": {
     "title": "OCR",

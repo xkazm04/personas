@@ -13155,7 +13155,8 @@
       "setup_dev_mode_on": "Tersedia di build ini. Ikon kunci pas di header obrolan mengalihkannya — saat aktif, Athena memetakan pembicaraan fitur ke kode dan mengusulkan perbaikan yang Anda setujui.",
       "setup_dev_mode_off": "Tidak tersedia — memerlukan build pengembangan yang dijalankan dari sumber kode.",
       "setup_dev_mode_active": "Aktif",
-      "setup_dev_mode_inactive": "Mati"
+      "setup_dev_mode_inactive": "Mati",
+      "proactive_kind_dev_interrupted": "proses dev terputus"
     },
     "ocr": {
       "title": "OCR",

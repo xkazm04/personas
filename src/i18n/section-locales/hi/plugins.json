@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "इस बिल्ड में उपलब्ध। चैट हेडर का रिंच आइकन इसे टॉगल करता है — चालू होने पर Athena फीचर चर्चा को कोड से जोड़ती है और आपकी स्वीकृति वाले सुधार प्रस्तावित करती है।",
     "setup_dev_mode_off": "अनुपलब्ध — सोर्स चेकआउट से चल रहा डेवलपमेंट बिल्ड चाहिए।",
     "setup_dev_mode_active": "सक्रिय",
-    "setup_dev_mode_inactive": "बंद"
+    "setup_dev_mode_inactive": "बंद",
+    "proactive_kind_dev_interrupted": "डेव रन बाधित"
   },
   "ocr": {
     "title": "OCR",

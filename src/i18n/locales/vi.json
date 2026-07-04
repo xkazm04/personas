@@ -13155,7 +13155,8 @@
       "setup_dev_mode_on": "Khả dụng trong bản dựng này. Biểu tượng cờ lê ở đầu khung chat dùng để bật/tắt — khi bật, Athena ánh xạ trao đổi về tính năng sang mã và đề xuất cải tiến để bạn phê duyệt.",
       "setup_dev_mode_off": "Không khả dụng — cần bản dựng phát triển chạy từ mã nguồn.",
       "setup_dev_mode_active": "Đang bật",
-      "setup_dev_mode_inactive": "Tắt"
+      "setup_dev_mode_inactive": "Tắt",
+      "proactive_kind_dev_interrupted": "phiên dev bị gián đoạn"
     },
     "ocr": {
       "title": "OCR",

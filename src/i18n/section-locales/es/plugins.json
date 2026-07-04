@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "Disponible en esta compilación. La llave inglesa en la cabecera del chat lo activa — cuando está activo, Athena traduce las conversaciones sobre funciones a código y propone mejoras que tú apruebas.",
     "setup_dev_mode_off": "No disponible — requiere una compilación de desarrollo desde el código fuente.",
     "setup_dev_mode_active": "Activo",
-    "setup_dev_mode_inactive": "Apagado"
+    "setup_dev_mode_inactive": "Apagado",
+    "proactive_kind_dev_interrupted": "ejecución dev interrumpida"
   },
   "ocr": {
     "title": "OCR",

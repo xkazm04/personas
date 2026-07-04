@@ -588,6 +588,26 @@ CREATE TABLE IF NOT EXISTS companion_dev_feedback (
 );
 CREATE INDEX IF NOT EXISTS idx_companion_dev_feedback_status ON companion_dev_feedback(status, created_at DESC);
 
+-- DEV MODE dispatch ledger (docs/tests/athena/dev-mode-direction.md, Phase 4).
+-- One row per dev_improve operation. Durable so the dev_merge handshake and
+-- boot recovery survive the app restart that backend work inherently causes;
+-- doubles as the Phase-5 experiment ledger (user_verdict + metrics queries).
+-- status: dispatched | completed | merged | closed | interrupted
+CREATE TABLE IF NOT EXISTS companion_dev_op (
+    op_id            TEXT PRIMARY KEY,
+    request          TEXT NOT NULL,
+    backend          INTEGER NOT NULL DEFAULT 1,
+    workspace        TEXT NOT NULL,
+    branch           TEXT,
+    fleet_session_id TEXT NOT NULL,
+    status           TEXT NOT NULL DEFAULT 'dispatched',
+    commit_sha       TEXT,
+    user_verdict     TEXT,
+    created_at       TEXT NOT NULL DEFAULT (datetime('now')),
+    finished_at      TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_companion_dev_op_status ON companion_dev_op(status, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS companion_session (
     id                   TEXT PRIMARY KEY,
     claude_session_id    TEXT,

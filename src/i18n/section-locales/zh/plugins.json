@@ -1963,7 +1963,8 @@
     "setup_dev_mode_on": "在此构建中可用。通过聊天顶栏的扳手图标切换 — 开启后，Athena 会将功能讨论对应到代码，并提出需要您批准的改进任务。",
     "setup_dev_mode_off": "不可用 — 需要从源码运行的开发构建。",
     "setup_dev_mode_active": "已启用",
-    "setup_dev_mode_inactive": "已关闭"
+    "setup_dev_mode_inactive": "已关闭",
+    "proactive_kind_dev_interrupted": "开发任务被中断"
   },
   "ocr": {
     "title": "OCR",
