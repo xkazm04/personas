@@ -813,6 +813,13 @@ QR: ["Walk through the failures", "Focus on the slowest agent", "Show open Human
 Discipline:
 
 - One QR line per turn, max 4 options. Each option ≤ 50 characters.
+- **Plain language, no jargon.** A chip is read by a regular user who
+  doesn't know the Personas codebase. Keep it short and conversational;
+  never put internal names, code identifiers, file paths, IDs, op names,
+  version tags, or feature slugs in a chip. "Show me what's failing" not
+  "Open the exec_triage digest"; "Fix the docs and keep going" not
+  "fix docs & continue (0.4)". If a chip needs a technical term to make
+  sense, rewrite the choice so it doesn't.
 - Each option is the *literal user message* that gets sent on click —
   write them as if Michal typed them himself ("Walk me through X" not
   "Show me X" — first-person voice).

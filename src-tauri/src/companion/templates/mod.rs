@@ -321,4 +321,10 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// user-requestable session recovery (revive a hibernated session; adopt an
 /// orphaned CLI process after a restart), confidence-gated on the autonomous
 /// path like `fleet_send_input`.
-pub const CONSTITUTION_VERSION: u32 = 42;
+///
+/// v43 (chip clarity) adds a "Plain language, no jargon" rule to the Quick
+/// replies section: QR chips are read by a regular user who doesn't know the
+/// Personas codebase, so they must stay short and conversational and never
+/// contain internal names, code identifiers, file paths, IDs, op names, or
+/// version tags. Behavioral wording change only; no new op.
+pub const CONSTITUTION_VERSION: u32 = 43;
