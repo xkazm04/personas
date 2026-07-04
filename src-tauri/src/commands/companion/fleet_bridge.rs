@@ -183,17 +183,64 @@ fn decision_signatures() -> &'static Mutex<HashMap<String, u64>> {
     S.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+/// What prompted a per-session orchestration wake — selects the decision framing
+/// Athena receives. The surrounding machinery (autonomous gate, 60 s throttle,
+/// screen render + hash dedupe, "Athena's on it" tile, suppress_chat spawn) is
+/// identical across every situation; only the directive's framing and the action
+/// she's asked to propose differ. So the screen-hash dedupe still guarantees an
+/// unchanged screen never re-wakes her, whichever situation surfaced the session.
+enum FleetSituation {
+    /// Session entered `AwaitingInput` — it finished its turn or is blocked on a
+    /// prompt/decision. She answers with a `fleet_send_input`, or defers.
+    AwaitingInput,
+    /// Phase 3b — a dispatched session looks stuck: its last action failed and it
+    /// has made no progress for a few minutes. She proposes a `fleet_intervene`
+    /// to unblock it, or defers. Carries the truncated failure tail so she reasons
+    /// from the concrete error, not a blind "it's stuck".
+    Stuck { failure: String },
+}
+
+impl FleetSituation {
+    fn label(&self) -> &'static str {
+        match self {
+            FleetSituation::AwaitingInput => "awaiting_input",
+            FleetSituation::Stuck { .. } => "stuck",
+        }
+    }
+}
+
 /// Active fleet orchestration (autonomous mode only): when a session enters
 /// `AwaitingInput` — it finished its turn / is paused waiting for the next
 /// instruction — wake Athena with the live fleet digest so she decides the
 /// next step. She either proposes a `fleet_send_input` (auto-applied via the
-/// autonomous allowlist) or surfaces a decision to the user via the orb. Gated
-/// on autonomous mode + throttled per session so it can't spam or loop.
+/// autonomous allowlist) or surfaces a decision to the user via the orb. Thin
+/// wrapper over [`orchestrate_session`]; see there for the shared machinery.
 pub fn orchestrate_on_awaiting(
     app: &tauri::AppHandle,
     state: &AppState,
     session_id: &str,
     project_label: &str,
+) {
+    orchestrate_session(
+        app,
+        state,
+        session_id,
+        project_label,
+        FleetSituation::AwaitingInput,
+    );
+}
+
+/// Shared per-session orchestration wake used by every fleet trigger — the
+/// hook-path + timer re-check pass `AwaitingInput`, the proactive tick's
+/// stuck-recovery passes `Stuck`. Gated on autonomous mode + a 60 s per-session
+/// throttle + a screen-hash dedupe so it can't spam or loop, whichever situation
+/// surfaced the session.
+fn orchestrate_session(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    session_id: &str,
+    project_label: &str,
+    situation: FleetSituation,
 ) {
     if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
         return;
@@ -215,7 +262,8 @@ pub fn orchestrate_on_awaiting(
         target: "fleet_orchestration",
         session_id = %session_id,
         project = %project_label,
-        "waking Athena to assess the fleet (session entered AwaitingInput)"
+        situation = situation.label(),
+        "waking Athena to assess the fleet"
     );
     let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
 
@@ -257,7 +305,8 @@ pub fn orchestrate_on_awaiting(
         )
     };
 
-    let directive = format!(
+    let directive = match &situation {
+        FleetSituation::AwaitingInput => format!(
         "Fleet orchestration check. Session \"{project_label}\" (project {project_label}) just entered \
          AwaitingInput — it finished its turn, or it's blocked on a prompt/decision (a single- or \
          multiple-select question, a permission, or free-text input).{screen_block}\n\
@@ -288,7 +337,36 @@ pub fn orchestrate_on_awaiting(
          • If this session is just progressing fine, do nothing at all.\n\
          Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay; \
          no preamble, no fleet-wide recap.",
-    );
+        ),
+        FleetSituation::Stuck { failure } => format!(
+        "Fleet orchestration — stuck session. Session \"{project_label}\" (project {project_label}) is \
+         in one of your dispatched operations and looks STUCK: its last action failed and it's made no \
+         progress for a few minutes. The failure was:\n\n{failure}\n{screen_block}\n\
+         Fleet (brief background only):\n\n{digest}\n\n\
+         Focus on THIS session only. Judge whether one concrete nudge can get it moving again. This is \
+         a quick orchestration check, NOT a fleet status report — do NOT summarize the other sessions.\n\
+         • If you can see a concrete unblock — a corrected command, an answer to what it's stuck on, a \
+         \"try X instead\" — propose a fleet_intervene whose `message` is exactly the one-line \
+         instruction to type into the session to get it moving.\n\
+         • Every fleet_intervene MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
+         verbatim; the action can't run without it — plus the exact `message`, a one-line `rationale`, \
+         a `confidence` (\"high\" | \"medium\" | \"low\"), and a `decision_class`.\n\
+         • `decision_class` = \"drive_forward\" when your nudge just gets it un-stuck along the path it \
+         was already on — a retry, correcting an obvious mistake, the clear next step. = \"choice\" \
+         when unblocking means picking between materially different directions, or it's really the \
+         user's call.\n\
+         • `confidence` is your honest read: \"high\" = you're confident this unblocks it; \"medium\" = \
+         a sound guess that might not land; \"low\" = real doubt. The system — not you — decides \
+         auto-apply vs orb consult from your class + confidence + the user's autonomy setting (\"low\" \
+         is never auto-applied). You get ONE intervention per session — don't spend it on a guess you \
+         don't believe in.\n\
+         • If it genuinely needs the USER — a real fork, a risk you shouldn't take on their behalf, or \
+         you can't tell what's wrong — do NOT propose an intervene. Surface a concise one-line note on \
+         the orb with your best read so they can step in.\n\
+         • If the session actually looks like it's recovering on its own, do nothing at all.\n\
+         Keep your reply to AT MOST two short sentences — it's a brief orb note, not a chat essay.",
+        ),
+    };
 
     // P3 — show the operator that Athena has TAKEN this ticket and is reasoning:
     // flip the tile to the light-blue "Athena's on it" state for her work window.
@@ -379,6 +457,92 @@ pub fn reassess_stale_awaiting(app: &tauri::AppHandle) {
             continue;
         }
         orchestrate_on_awaiting(app, &state, &s.id, &s.project_label);
+    }
+}
+
+/// How long a dispatched session must sit failed + event-silent before the
+/// proactive tick routes it through stuck-orchestration. Matches the 4-minute
+/// threshold of the retired `fleet_session_stuck` nudge it replaces.
+const STUCK_REASSESS_AFTER_MS: i64 = 4 * 60 * 1000;
+
+/// Phase 3b — proactive-tick stuck-session recovery (autonomous mode only).
+/// Replaces the old informational `fleet_session_stuck` "want me to propose a
+/// fleet_intervene?" nudge: instead of asking the user to green-light a look,
+/// wake Athena on the stuck session's real screen + failure so she proposes a
+/// confidence-gated `fleet_intervene` (auto-applied per the boldness dial) or
+/// defers to the user with a one-line read.
+///
+/// Detection mirrors the retired nudge exactly — a session in a
+/// `dispatched_by_athena` op that (a) is still live (not Exited/Idle), (b) has a
+/// stamped `recent_failure`, (c) hasn't been intervened on yet (operative memory
+/// caps interventions at one per session), and (d) has been event-silent for
+/// `STUCK_REASSESS_AFTER_MS`. Safe to call every tick: the shared 60 s throttle +
+/// screen-hash dedupe inside `orchestrate_session` skip a session whose screen was
+/// already assessed, and the one-intervention cap stops any loop.
+pub fn reassess_stuck_sessions(app: &tauri::AppHandle) {
+    use tauri::Manager;
+    // App manages `Arc<AppState>` (see `reassess_stale_awaiting`).
+    let Some(state) = app.try_state::<std::sync::Arc<AppState>>() else {
+        return;
+    };
+    if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
+        return;
+    }
+    // Operative-memory timestamps (`last_event_at_ms`) are chrono epoch millis,
+    // so compare against the same clock rather than `registry::now_ms()`.
+    let now = chrono::Utc::now().timestamp_millis();
+    let mem = crate::companion::orchestration::operative_memory::memory();
+    for op in mem.snapshot_all_operations() {
+        if !op.dispatched_by_athena {
+            continue;
+        }
+        for s in &op.sessions {
+            if matches!(
+                s.last_state,
+                crate::commands::fleet::types::FleetSessionState::Exited
+                    | crate::commands::fleet::types::FleetSessionState::Idle
+            ) {
+                continue; // not a live, working session
+            }
+            let Some(failure) = s.recent_failure.as_ref() else {
+                continue;
+            };
+            if s.interventions > 0 {
+                continue; // already spent this session's one intervention
+            }
+            if now - s.last_event_at_ms < STUCK_REASSESS_AFTER_MS {
+                continue;
+            }
+            // Human-facing label: prefer the live registry's project label, fall
+            // back to the session's operative-memory role.
+            let project_label = crate::commands::fleet::registry::registry()
+                .lookup_meta(&s.fleet_session_id)
+                .map(|(label, _cwd)| label)
+                .or_else(|| s.role.clone())
+                .unwrap_or_else(|| "session".to_string());
+            orchestrate_session(
+                app,
+                &state,
+                &s.fleet_session_id,
+                &project_label,
+                FleetSituation::Stuck {
+                    failure: truncate_failure_tail(failure, 400),
+                },
+            );
+        }
+    }
+}
+
+/// One-line, length-bounded rendering of a failure tail for the stuck-session
+/// directive (a multi-line stack trace would bloat the orchestration prompt).
+fn truncate_failure_tail(s: &str, max: usize) -> String {
+    let one_line = s.replace('\n', " / ").replace('\r', "");
+    if one_line.chars().count() <= max {
+        one_line
+    } else {
+        let mut out: String = one_line.chars().take(max).collect();
+        out.push('…');
+        out
     }
 }
 

@@ -82,9 +82,11 @@ pub fn collect_all(pool: &UserDbPool, autonomous: bool) -> Result<Vec<Nudge>, Ap
         // Fleet attention — failed / long-waiting / stale sessions.
         // No DB lookup (reads the in-process fleet registry); no error path.
         out.extend(super::fleet_triggers::fleet_attention());
-        // D9 — stuck sessions inside dispatched_by_athena ops, suggesting
-        // a `fleet_intervene` proposal.
-        out.extend(super::fleet_triggers::stuck_dispatched_sessions());
+        // NB: stuck dispatched sessions are no longer surfaced as an ask-only
+        // `fleet_session_stuck` nudge here. Phase 3b routes them through
+        // `fleet_bridge::reassess_stuck_sessions` on the proactive tick instead,
+        // so Athena reasons on the real screen + failure and proposes a
+        // confidence-gated `fleet_intervene` rather than asking permission to look.
     }
     Ok(out)
 }

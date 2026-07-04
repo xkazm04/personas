@@ -139,6 +139,14 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                         crate::commands::companion::fleet_bridge::reassess_stale_awaiting(
                             &app_handle,
                         );
+                        // Phase 3b — stuck-session recovery: wake Athena on a
+                        // dispatched session that failed and stalled so she
+                        // proposes a confidence-gated `fleet_intervene` (or
+                        // defers). Replaces the old ask-only `fleet_session_stuck`
+                        // nudge; same throttle/dedupe + one-intervention cap.
+                        crate::commands::companion::fleet_bridge::reassess_stuck_sessions(
+                            &app_handle,
+                        );
 
                         let review = crate::companion::proactive::execution_review::review_recent_executions(
                             &pool,

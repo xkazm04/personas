@@ -357,6 +357,14 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     // click instead of auto-firing; writes are also gated by the autonomous-
     // mode toggle in the first place.
     "fleet_send_input",
+    // Phase 3b — autonomous stuck-session recovery. `fleet_intervene` types a
+    // one-line unblock into a session that's stalled after a failure. Same
+    // boldness × class × confidence gate as `fleet_send_input` (below), plus a
+    // hard structural backstop the send-input path lacks: the operative-memory
+    // cap of ONE intervention per session (`record_intervention`) refuses a
+    // second auto-fire on the same session even if the confidence gate misjudges
+    // — so a stuck session can be nudged at most once without a human.
+    "fleet_intervene",
 ];
 
 /// If `approval.action` is on the conservative autoapprove allowlist,
@@ -400,15 +408,21 @@ pub async fn auto_resolve_if_allowed(
     // with the owner guard relaxed, confidence is now the sole gate on what
     // auto-fires vs. what surfaces as an orb consult.
     let state = app.state::<Arc<AppState>>();
-    if approval.action == "fleet_send_input" {
+    // Both the screen-driving fleet actions share the confidence gate: they carry
+    // `session_id` / `confidence` / `decision_class` and type into a live PTY, so
+    // the boldness dial + execution-time screen re-check apply identically.
+    // `fleet_send_input` (answer an AwaitingInput prompt) and `fleet_intervene`
+    // (Phase 3b — unblock a stuck session) go through the same bar.
+    if matches!(approval.action.as_str(), "fleet_send_input" | "fleet_intervene") {
         // Phase 2: the boldness dial + Athena's `decision_class` + `confidence`
         // together decide auto-fire vs orb consult (was: high-confidence only).
         let boldness = crate::commands::companion::chat::fleet_boldness(&state.db);
-        if !fleet_send_input_auto_fires(&approval.params_json, boldness) {
+        if !fleet_action_auto_fires(&approval.params_json, boldness) {
             tracing::info!(
                 approval_id = %approval.id,
+                action = %approval.action,
                 boldness = boldness.as_str(),
-                "autonomous autoapprove deferred: fleet_send_input below the boldness × class × confidence bar — left pending as an orb consult"
+                "autonomous autoapprove deferred: fleet action below the boldness × class × confidence bar — left pending as an orb consult"
             );
             return Ok(false);
         }
@@ -456,6 +470,7 @@ pub async fn auto_resolve_if_allowed(
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         "fleet_send_input" => execute_fleet_send_input(&params),
+        "fleet_intervene" => execute_fleet_intervene(app, &params),
         _ => unreachable!("allowlist mismatch"),
     };
     let (status_text, embedder_log) = match exec_result {
@@ -477,10 +492,12 @@ pub async fn auto_resolve_if_allowed(
     log_action_episode(&state, &action, &embedder_log).await;
 
     // Notify-only orb indicator (user policy "safety net" = Notify only): when a
-    // fleet_send_input auto-fired successfully, tell the orb what Athena just did
-    // so the user sees the hands-off action without having to watch the grid.
-    // Purely informational — no undo (the user opted out of an undo window).
-    if action == "fleet_send_input" && status_text == APPROVAL_STATUS_APPROVED {
+    // fleet action auto-fired successfully, tell the orb what Athena just did so
+    // the user sees the hands-off action without having to watch the grid. Purely
+    // informational — no undo (the user opted out of an undo window).
+    if matches!(action.as_str(), "fleet_send_input" | "fleet_intervene")
+        && status_text == APPROVAL_STATUS_APPROVED
+    {
         emit_fleet_auto_decided(app, &params);
     }
     Ok(true)
@@ -492,7 +509,13 @@ pub async fn auto_resolve_if_allowed(
 /// from the live registry so the notice names the project, not a raw UUID.
 fn emit_fleet_auto_decided(app: &tauri::AppHandle, params: &serde_json::Value) {
     let session_id = params.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
-    let text = params.get("text").and_then(|v| v.as_str()).unwrap_or("");
+    // `fleet_send_input` carries `text`; `fleet_intervene` carries `message` —
+    // surface whichever is present so both auto-fires flash on the orb.
+    let text = params
+        .get("text")
+        .or_else(|| params.get("message"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     if session_id.is_empty() {
         return;
     }
@@ -3116,12 +3139,12 @@ fn execute_schedule_proactive(
 // roundtrip. Each returns a human-readable message that lands as a
 // system episode so Athena can quote it on the next turn.
 
-/// Whether a `fleet_send_input` proposal self-reports HIGH confidence — the
-/// cautious-mode gate for the autonomous autoapprove path. Only an explicit
-/// `"high"` lets Athena act unsupervised; `"medium"` / `"low"` / missing /
-/// unrecognized all defer to a user consult on the orb (return `false`).
-/// Case-insensitive and whitespace-tolerant; fails safe to `false`.
-fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
+/// Whether a screen-driving fleet proposal (`fleet_send_input` / `fleet_intervene`)
+/// self-reports HIGH confidence — the strictest rung of the autonomous autoapprove
+/// gate. Only an explicit `"high"` lets Athena act unsupervised at every dial;
+/// `"medium"` / `"low"` / missing / unrecognized defer to the dial×class matrix or
+/// a user consult. Case-insensitive and whitespace-tolerant; fails safe to `false`.
+fn fleet_action_is_high_confidence(params_json: &str) -> bool {
     serde_json::from_str::<serde_json::Value>(params_json)
         .ok()
         .as_ref()
@@ -3131,8 +3154,10 @@ fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Phase 2 gate — whether a `fleet_send_input` proposal auto-fires under the
-/// current boldness dial, from its self-reported `confidence` + `decision_class`.
+/// Phase 2 gate — whether a screen-driving fleet proposal (`fleet_send_input` or,
+/// since Phase 3b, `fleet_intervene`) auto-fires under the current boldness dial,
+/// from its self-reported `confidence` + `decision_class`. The logic is
+/// action-agnostic: both carry the same params and the same auto-fire semantics.
 /// `high` always fires; `low` / missing / unknown never fire; `medium` fires
 /// only for the class/dial combinations below. A missing/unknown
 /// `decision_class` is treated as the stricter `choice` (fail safe → consult).
@@ -3143,13 +3168,13 @@ fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
 ///   balanced   high|medium      high
 ///   bold       high|medium      high|medium
 /// ```
-fn fleet_send_input_auto_fires(
+fn fleet_action_auto_fires(
     params_json: &str,
     boldness: crate::commands::companion::chat::FleetBoldness,
 ) -> bool {
     use crate::commands::companion::chat::FleetBoldness;
     // High confidence auto-fires at every dial, both classes.
-    if fleet_send_input_is_high_confidence(params_json) {
+    if fleet_action_is_high_confidence(params_json) {
         return true;
     }
     let Ok(v) = serde_json::from_str::<serde_json::Value>(params_json) else {
@@ -3242,42 +3267,42 @@ mod multiselect_tests {
 
 #[cfg(test)]
 mod confidence_gate_tests {
-    use super::fleet_send_input_is_high_confidence;
+    use super::fleet_action_is_high_confidence;
 
     #[test]
     fn only_explicit_high_passes() {
-        assert!(fleet_send_input_is_high_confidence(
+        assert!(fleet_action_is_high_confidence(
             r#"{"session_id":"s","text":"go","confidence":"high"}"#
         ));
-        assert!(fleet_send_input_is_high_confidence(
+        assert!(fleet_action_is_high_confidence(
             r#"{"confidence":"HIGH"}"#
         ));
-        assert!(fleet_send_input_is_high_confidence(
+        assert!(fleet_action_is_high_confidence(
             r#"{"confidence":" High "}"#
         ));
     }
 
     #[test]
     fn medium_low_missing_and_garbage_defer() {
-        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"medium"}"#));
-        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"low"}"#));
-        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"very"}"#));
+        assert!(!fleet_action_is_high_confidence(r#"{"confidence":"medium"}"#));
+        assert!(!fleet_action_is_high_confidence(r#"{"confidence":"low"}"#));
+        assert!(!fleet_action_is_high_confidence(r#"{"confidence":"very"}"#));
         // Missing field, wrong type, and unparseable all fail safe.
-        assert!(!fleet_send_input_is_high_confidence(r#"{"session_id":"s","text":"go"}"#));
-        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":0.9}"#));
-        assert!(!fleet_send_input_is_high_confidence("not json"));
+        assert!(!fleet_action_is_high_confidence(r#"{"session_id":"s","text":"go"}"#));
+        assert!(!fleet_action_is_high_confidence(r#"{"confidence":0.9}"#));
+        assert!(!fleet_action_is_high_confidence("not json"));
     }
 
     #[test]
     fn matrix_high_always_fires() {
-        use super::fleet_send_input_auto_fires;
+        use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
         for b in [FleetBoldness::Cautious, FleetBoldness::Balanced, FleetBoldness::Bold] {
-            assert!(fleet_send_input_auto_fires(
+            assert!(fleet_action_auto_fires(
                 r#"{"confidence":"high","decision_class":"choice"}"#,
                 b
             ));
-            assert!(fleet_send_input_auto_fires(
+            assert!(fleet_action_auto_fires(
                 r#"{"confidence":"high","decision_class":"drive_forward"}"#,
                 b
             ));
@@ -3286,47 +3311,47 @@ mod confidence_gate_tests {
 
     #[test]
     fn matrix_low_and_missing_never_fire() {
-        use super::fleet_send_input_auto_fires;
+        use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
         for b in [FleetBoldness::Cautious, FleetBoldness::Balanced, FleetBoldness::Bold] {
-            assert!(!fleet_send_input_auto_fires(
+            assert!(!fleet_action_auto_fires(
                 r#"{"confidence":"low","decision_class":"drive_forward"}"#,
                 b
             ));
             // missing confidence + unparseable → never fire.
-            assert!(!fleet_send_input_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
-            assert!(!fleet_send_input_auto_fires("not json", b));
+            assert!(!fleet_action_auto_fires(r#"{"decision_class":"drive_forward"}"#, b));
+            assert!(!fleet_action_auto_fires("not json", b));
         }
     }
 
     #[test]
     fn matrix_medium_depends_on_dial_and_class() {
-        use super::fleet_send_input_auto_fires;
+        use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
         let df = r#"{"confidence":"medium","decision_class":"drive_forward"}"#;
         let choice = r#"{"confidence":"medium","decision_class":"choice"}"#;
         // Cautious: medium never fires.
-        assert!(!fleet_send_input_auto_fires(df, FleetBoldness::Cautious));
-        assert!(!fleet_send_input_auto_fires(choice, FleetBoldness::Cautious));
+        assert!(!fleet_action_auto_fires(df, FleetBoldness::Cautious));
+        assert!(!fleet_action_auto_fires(choice, FleetBoldness::Cautious));
         // Balanced: medium fires for drive_forward only.
-        assert!(fleet_send_input_auto_fires(df, FleetBoldness::Balanced));
-        assert!(!fleet_send_input_auto_fires(choice, FleetBoldness::Balanced));
+        assert!(fleet_action_auto_fires(df, FleetBoldness::Balanced));
+        assert!(!fleet_action_auto_fires(choice, FleetBoldness::Balanced));
         // Bold: medium fires for both classes.
-        assert!(fleet_send_input_auto_fires(df, FleetBoldness::Bold));
-        assert!(fleet_send_input_auto_fires(choice, FleetBoldness::Bold));
+        assert!(fleet_action_auto_fires(df, FleetBoldness::Bold));
+        assert!(fleet_action_auto_fires(choice, FleetBoldness::Bold));
     }
 
     #[test]
     fn matrix_missing_or_unknown_class_treated_as_choice() {
-        use super::fleet_send_input_auto_fires;
+        use super::fleet_action_auto_fires;
         use crate::commands::companion::chat::FleetBoldness;
         // medium + unknown/missing class → stricter "choice": only Bold fires.
         let no_class = r#"{"confidence":"medium"}"#;
         let bad_class = r#"{"confidence":"medium","decision_class":"whatever"}"#;
-        assert!(!fleet_send_input_auto_fires(no_class, FleetBoldness::Balanced));
-        assert!(!fleet_send_input_auto_fires(bad_class, FleetBoldness::Balanced));
-        assert!(fleet_send_input_auto_fires(no_class, FleetBoldness::Bold));
-        assert!(fleet_send_input_auto_fires(bad_class, FleetBoldness::Bold));
+        assert!(!fleet_action_auto_fires(no_class, FleetBoldness::Balanced));
+        assert!(!fleet_action_auto_fires(bad_class, FleetBoldness::Balanced));
+        assert!(fleet_action_auto_fires(no_class, FleetBoldness::Bold));
+        assert!(fleet_action_auto_fires(bad_class, FleetBoldness::Bold));
     }
 }
 
