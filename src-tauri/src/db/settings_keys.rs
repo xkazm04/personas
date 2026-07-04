@@ -570,6 +570,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_DEV_MODE,
+    COMPANION_FLEET_BOLDNESS,
     COMPANION_EXEC_REVIEW_CURSOR,
     COMPANION_EXEC_REVIEW_RETRY,
     AUTONOMOUS_MESSAGE_TRIAGE,
@@ -674,6 +675,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         };
     }
     match key {
+        COMPANION_FLEET_BOLDNESS => match value {
+            "cautious" | "balanced" | "bold" => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be one of cautious|balanced|bold, got {value:?}"
+            )),
+        },
         EVENT_RETENTION_DAYS | EXECUTION_RETENTION_DAYS => {
             value.parse::<u32>().map(|_| ()).map_err(|_| {
                 format!("value for '{key}' must be a non-negative integer (days), got {value:?}")
