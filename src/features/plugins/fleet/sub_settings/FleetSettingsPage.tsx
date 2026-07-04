@@ -203,8 +203,10 @@ export default function FleetSettingsPage() {
           {/* Terminal appearance + behaviour (font, copy-on-select, theme) */}
           <FleetTerminalSettings />
 
-          {/* Pair a device — stage-1 scaffold for the mobile companion */}
-          <FleetPairDevice />
+          {/* Pair a device — stage-1 scaffold for the mobile companion.
+              Inert (no backend handshake yet), so it only mounts in dev
+              builds until the pairing flow is real. */}
+          {import.meta.env.DEV && <FleetPairDevice />}
 
           {/* Mobile companion glance preview — read-only, fed by live data */}
           <FleetMobilePreview />

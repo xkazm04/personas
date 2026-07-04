@@ -118,7 +118,7 @@ The "Needs you" banner does more than list — it's the desktop stand-in for the
 
 ### Pair a device (stage 1)
 
-Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pairing a phone. It mints an ephemeral local pairing code, shows the endpoint a phone would dial, and renders a QR placeholder with explainer copy (credentials never leave the desktop). It's UI only: no new dependency, no backend call. The secure handshake (relay/P2P), live QR encoding, and the mobile client are architect-scale and tracked for a later stage.
+Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pairing a phone, mounted **only in dev builds** (`import.meta.env.DEV`) while the flow is inert. It mints an ephemeral local pairing code, shows the endpoint a phone would dial, and renders a QR placeholder with explainer copy (credentials never leave the desktop). It's UI only: no new dependency, no backend call. The secure handshake (relay/P2P), live QR encoding, and the mobile client are architect-scale and tracked for a later stage.
 
 All of the above are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview/reply/alert/pairing strings).
 
