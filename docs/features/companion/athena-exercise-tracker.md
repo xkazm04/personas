@@ -27,7 +27,7 @@ date, what we observed, and any change made.
 - [x] `PROGRESS:` in-turn beats (always-on, text + voice)
 - [x] `TTS:` spoken summary line
 - [x] `QR:` quick-reply chips
-- [ ] Refine chips (Shorter / More detail / Code only)
+- [x] Refine chips (Shorter / More detail / Code only)
 - [ ] Slash-command palette (`/`)
 - [ ] Mid-stream Stop (interrupt) + failed-turn retry
 - [ ] Autonomous mode toggle + `continue_autonomously` chaining
@@ -168,3 +168,12 @@ date, what we observed, and any change made.
   Docs fix: `athena-usecases.md:25` said "2–5 follow-up prompts" — contradicted its
   own A10 ("up to 6") and the code; corrected to "up to 6" + noted the 1–9 keys.
   (`athena-decision-layer-plan.md:18` already said "digits 1-9".) ✅
+- **0.5 Refine chips** — CONFIRMED by Michal ("resending the prior message works well").
+  Below the latest completed reply, Shorter / More detail / Code only re-send the prior
+  user message with a localized steering suffix through the same send() path. No doc fix.
+- **Chip plain-language rule (CODE increment #1)** — Michal: keep chips short, no internal
+  jargon/IDs, assume regular users don't know the codebase. Adopted immediately + made
+  durable: added a "Plain language, no jargon" bullet to the constitution's Quick replies
+  section + bumped CONSTITUTION_VERSION 42→43. Staged in the worktree as commit `75de0a5d3`
+  (1 commit ahead of `ebce8a545`, clean cherry-pick). NOT merged — awaiting Michal's merge,
+  which is a backend rebuild + app restart. ⏳
