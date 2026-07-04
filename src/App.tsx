@@ -2,6 +2,7 @@ import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, us
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/chrome/UpdateBanner";
+import CliReadinessBanner from "@/features/shared/chrome/CliReadinessBanner";
 import { ToastContainer } from "@/features/shared/chrome/ToastContainer";
 import { LiveChannelOverlay } from "@/features/fleet/monitor/live/LiveChannelOverlay";
 import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
@@ -321,6 +322,7 @@ export default function App() {
           <FleetActivityStrip />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} isVersionBump={isVersionBump} />}
           <UpdateBanner />
+          <CliReadinessBanner />
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={language}

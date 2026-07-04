@@ -494,7 +494,10 @@
       "headroom_red": "Na hranici kapacity — zvažte zpomalení"
     },
     "tray_acceptance": "Cíle k přijetí",
-    "tray_acceptance_pending": "{count} cílů čeká na vaše přijetí"
+    "tray_acceptance_pending": "{count} cílů čeká na vaše přijetí",
+    "cli_not_ready_detail": "Personas spouští vaše agenty na vašem předplatném Claude. Nepodařilo se nám spustit relaci Claude — ujistěte se, že je Claude Code CLI nainstalováno a přihlášeno, a zkuste to znovu.",
+    "cli_not_ready_retry": "Zkusit znovu",
+    "cli_not_ready_title": "Claude CLI není připraveno"
   },
   "sidebar": {
     "home": "Domů",

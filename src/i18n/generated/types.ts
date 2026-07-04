@@ -462,6 +462,9 @@ export type Translations = {
     update_install_when_idle: string;
     update_install_when_idle_status: string;
     update_keep_working: string;
+    cli_not_ready_title: string;
+    cli_not_ready_detail: string;
+    cli_not_ready_retry: string;
     expand_sidebar: string;
     collapse_sidebar: string;
     network_settings: string;

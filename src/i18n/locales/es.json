@@ -494,7 +494,10 @@
       "headroom_red": "Al límite de capacidad — considera ralentizar"
     },
     "tray_acceptance": "Objetivos por aceptar",
-    "tray_acceptance_pending": "{count} objetivos pendientes de aceptación"
+    "tray_acceptance_pending": "{count} objetivos pendientes de aceptación",
+    "cli_not_ready_detail": "Personas ejecuta tus agentes con tu suscripción de Claude. No pudimos iniciar una sesión de Claude — asegúrate de que Claude Code CLI esté instalado y con la sesión iniciada, y vuelve a intentarlo.",
+    "cli_not_ready_retry": "Reintentar",
+    "cli_not_ready_title": "Claude CLI no está listo"
   },
   "sidebar": {
     "home": "Inicio",

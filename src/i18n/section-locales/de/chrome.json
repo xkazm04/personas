@@ -69,5 +69,8 @@
     "headroom_red": "Kapazitätsgrenze erreicht — Verlangsamung empfohlen"
   },
   "tray_acceptance": "Ziele zur Annahme",
-  "tray_acceptance_pending": "{count} Ziele warten auf deine Annahme"
+  "tray_acceptance_pending": "{count} Ziele warten auf deine Annahme",
+  "cli_not_ready_detail": "Personas führt Ihre Agenten über Ihr Claude-Abonnement aus. Wir konnten keine Claude-Sitzung starten — stellen Sie sicher, dass die Claude Code CLI installiert und angemeldet ist, und versuchen Sie es dann erneut.",
+  "cli_not_ready_retry": "Erneut versuchen",
+  "cli_not_ready_title": "Claude CLI nicht bereit"
 }

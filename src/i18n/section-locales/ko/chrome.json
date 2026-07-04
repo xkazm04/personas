@@ -69,5 +69,8 @@
     "headroom_red": "한계에 도달했습니다 — 속도를 늦추는 것을 고려하세요"
   },
   "tray_acceptance": "수락할 목표",
-  "tray_acceptance_pending": "{count}개의 목표가 수락을 기다리고 있습니다"
+  "tray_acceptance_pending": "{count}개의 목표가 수락을 기다리고 있습니다",
+  "cli_not_ready_detail": "Personas는 사용자의 Claude 구독으로 에이전트를 실행합니다. Claude 세션을 시작할 수 없습니다 — Claude Code CLI가 설치되어 있고 로그인되어 있는지 확인한 후 다시 시도하세요.",
+  "cli_not_ready_retry": "다시 시도",
+  "cli_not_ready_title": "Claude CLI가 준비되지 않았습니다"
 }

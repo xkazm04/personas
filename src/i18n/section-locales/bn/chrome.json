@@ -69,5 +69,8 @@
     "headroom_red": "সর্বোচ্চ সক্ষমতায় — গতি কমানোর কথা ভাবুন"
   },
   "tray_acceptance": "গ্রহণের জন্য লক্ষ্য",
-  "tray_acceptance_pending": "{count}টি লক্ষ্য আপনার গ্রহণের অপেক্ষায়"
+  "tray_acceptance_pending": "{count}টি লক্ষ্য আপনার গ্রহণের অপেক্ষায়",
+  "cli_not_ready_detail": "Personas আপনার এজেন্টগুলিকে আপনার Claude সাবস্ক্রিপশনে চালায়। আমরা একটি Claude সেশন শুরু করতে পারিনি — নিশ্চিত করুন যে Claude Code CLI ইনস্টল করা এবং সাইন ইন করা আছে, তারপর আবার চেষ্টা করুন।",
+  "cli_not_ready_retry": "আবার চেষ্টা করুন",
+  "cli_not_ready_title": "Claude CLI প্রস্তুত নয়"
 }

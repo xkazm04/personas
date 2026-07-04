@@ -69,5 +69,8 @@
     "headroom_red": "Ресурсы исчерпаны — рекомендуется замедлиться"
   },
   "tray_acceptance": "Цели к принятию",
-  "tray_acceptance_pending": "{count} целей ожидают вашего принятия"
+  "tray_acceptance_pending": "{count} целей ожидают вашего принятия",
+  "cli_not_ready_detail": "Personas запускает ваших агентов через вашу подписку Claude. Не удалось запустить сессию Claude — убедитесь, что Claude Code CLI установлен и выполнен вход, затем повторите попытку.",
+  "cli_not_ready_retry": "Повторить",
+  "cli_not_ready_title": "Claude CLI не готов"
 }

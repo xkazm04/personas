@@ -69,5 +69,8 @@
     "headroom_red": "Đã đầy tải — cân nhắc chạy chậm lại"
   },
   "tray_acceptance": "Mục tiêu cần chấp thuận",
-  "tray_acceptance_pending": "{count} mục tiêu đang chờ chấp thuận"
+  "tray_acceptance_pending": "{count} mục tiêu đang chờ chấp thuận",
+  "cli_not_ready_detail": "Personas chạy các tác nhân của bạn trên gói đăng ký Claude của bạn. Chúng tôi không thể bắt đầu phiên Claude — hãy đảm bảo rằng Claude Code CLI đã được cài đặt và đăng nhập, sau đó thử lại.",
+  "cli_not_ready_retry": "Thử lại",
+  "cli_not_ready_title": "Claude CLI chưa sẵn sàng"
 }

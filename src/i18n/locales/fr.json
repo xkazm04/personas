@@ -494,7 +494,10 @@
       "headroom_red": "À pleine capacité — envisagez de ralentir"
     },
     "tray_acceptance": "Objectifs à accepter",
-    "tray_acceptance_pending": "{count} objectifs en attente d'acceptation"
+    "tray_acceptance_pending": "{count} objectifs en attente d'acceptation",
+    "cli_not_ready_detail": "Personas exécute vos agents sur votre abonnement Claude. Nous n'avons pas pu démarrer une session Claude — assurez-vous que Claude Code CLI est installé et connecté, puis réessayez.",
+    "cli_not_ready_retry": "Réessayer",
+    "cli_not_ready_title": "Claude CLI n'est pas prêt"
   },
   "sidebar": {
     "home": "Accueil",

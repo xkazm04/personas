@@ -494,7 +494,10 @@
       "headroom_red": "عند الطاقة القصوى — فكّر في التباطؤ"
     },
     "tray_acceptance": "الأهداف للقبول",
-    "tray_acceptance_pending": "{count} هدف بانتظار قبولك"
+    "tray_acceptance_pending": "{count} هدف بانتظار قبولك",
+    "cli_not_ready_detail": "يشغّل Personas وكلاءك على اشتراكك في Claude. تعذّر علينا بدء جلسة Claude — تأكّد من تثبيت Claude Code CLI وتسجيل الدخول، ثم أعد المحاولة.",
+    "cli_not_ready_retry": "إعادة المحاولة",
+    "cli_not_ready_title": "Claude CLI غير جاهز"
   },
   "sidebar": {
     "home": "الرئيسية",

@@ -69,5 +69,8 @@
     "headroom_red": "已达上限，建议放缓节奏"
   },
   "tray_acceptance": "待接受目标",
-  "tray_acceptance_pending": "{count} 个目标等待您接受"
+  "tray_acceptance_pending": "{count} 个目标等待您接受",
+  "cli_not_ready_detail": "Personas 使用您的 Claude 订阅运行您的代理。我们无法启动 Claude 会话 — 请确保已安装并登录 Claude Code CLI，然后重试。",
+  "cli_not_ready_retry": "重试",
+  "cli_not_ready_title": "Claude CLI 未就绪"
 }

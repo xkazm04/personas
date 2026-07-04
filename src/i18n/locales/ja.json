@@ -494,7 +494,10 @@
       "headroom_red": "容量に達しました — 処理を減らすことを検討してください"
     },
     "tray_acceptance": "承認待ちのゴール",
-    "tray_acceptance_pending": "{count} 件のゴールが承認待ちです"
+    "tray_acceptance_pending": "{count} 件のゴールが承認待ちです",
+    "cli_not_ready_detail": "Personas はお使いの Claude サブスクリプションでエージェントを実行します。Claude セッションを開始できませんでした — Claude Code CLI がインストールされ、サインインされていることを確認してから、再試行してください。",
+    "cli_not_ready_retry": "再試行",
+    "cli_not_ready_title": "Claude CLI の準備ができていません"
   },
   "sidebar": {
     "home": "ホーム",

@@ -69,5 +69,8 @@
     "headroom_red": "क्षमता पर है — धीमा करने पर विचार करें"
   },
   "tray_acceptance": "स्वीकार करने के लिए लक्ष्य",
-  "tray_acceptance_pending": "{count} लक्ष्य आपकी स्वीकृति की प्रतीक्षा में"
+  "tray_acceptance_pending": "{count} लक्ष्य आपकी स्वीकृति की प्रतीक्षा में",
+  "cli_not_ready_detail": "Personas आपके एजेंट्स को आपकी Claude सदस्यता पर चलाता है। हम एक Claude सत्र शुरू नहीं कर सके — सुनिश्चित करें कि Claude Code CLI इंस्टॉल और साइन इन है, फिर पुनः प्रयास करें।",
+  "cli_not_ready_retry": "पुनः प्रयास करें",
+  "cli_not_ready_title": "Claude CLI तैयार नहीं है"
 }
