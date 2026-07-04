@@ -269,13 +269,18 @@ pub fn orchestrate_on_awaiting(
          exactly what to type to choose that option — the option's number, or its text — with \
          press_enter true.\n\
          • Every fleet_send_input MUST set `session_id` to EXACTLY \"{session_id}\" — copy that id \
-         verbatim; it's THIS session, and the action can't run without it — and carry a `confidence` \
-         param (\"high\", \"medium\", or \"low\"), the exact `text`, and a one-line `rationale`.\n\
-         • \"high\" = obvious, safe, you'd stake your judgment on it with no second opinion — applied \
-         automatically with no human check, so reserve it for the genuinely unambiguous.\n\
-         • \"medium\"/\"low\" = any real doubt, a judgment call, or a wrong move would cost rework. \
-         NOT auto-applied: they surface to the user as a decision on the orb, so make `rationale` a \
-         crisp one-liner and still include your recommended `text`.\n\
+         verbatim; it's THIS session, and the action can't run without it — plus the exact `text`, a \
+         one-line `rationale`, a `confidence` (\"high\" | \"medium\" | \"low\"), and a `decision_class`.\n\
+         • `decision_class` = \"drive_forward\" when your answer just moves the session along a path \
+         already set — continue, proceed, the obvious or only next step, a reversible tweak. = \
+         \"choice\" when it's irreversible, a real fork between materially different directions, or \
+         genuinely the user's preference to make.\n\
+         • `confidence` is your honest read, independent of class: \"high\" = obvious, you'd stake \
+         your judgment on it with no second opinion; \"medium\" = a sound call but a wrong move would \
+         cost some rework; \"low\" = real doubt. The system — not you — decides whether to apply it \
+         automatically or surface it as an orb consult, from your class + confidence + the user's \
+         autonomy setting (\"low\" is never auto-applied). Rate confidence honestly; don't inflate it \
+         to force an action through.\n\
          • (D) If it's genuinely the USER's call — a personal preference, a risk you shouldn't take on \
          their behalf, or the work looks finished — do NOT propose a send-input. Instead surface a \
          concise decision on the orb telling them you're leaving this one to them; and if you have a \
