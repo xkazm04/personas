@@ -29,7 +29,7 @@ date, what we observed, and any change made.
 - [x] `QR:` quick-reply chips
 - [x] Refine chips (Shorter / More detail / Code only)
 - [x] Slash-command palette (`/`)
-- [ ] Mid-stream Stop (interrupt) + failed-turn retry
+- [x] Mid-stream Stop (interrupt) + failed-turn retry
 - [ ] Autonomous mode toggle + `continue_autonomously` chaining
 - [ ] Reset conversation (transcript vs disk episodes)
 - [ ] Chat polish: search, copy-conversation, day separators, narration trail
@@ -196,9 +196,26 @@ date, what we observed, and any change made.
   HelpCircle/Radar/Sunrise imports removed. Michal never re-confirmed (resets kept eating the
   ask) so I made the safe, non-lossy call. ✅
 
-### Worktree batch (unmerged) as of 0.6
-Branch `worktree-athena-exercise`, 3 increments stacked on `ebce8a545`:
+- **0.7 Stop + retry** — CONFIRMED by Michal ("both looking good"). Mid-stream Stop button →
+  `companion_interrupt_turn` kills the CLI child, partial saved `[interrupted]`, resumes via
+  `--resume`; typing anything cancels a pending autonomous tick; failed-send error chip offers
+  Retry (re-sends last message). No doc fix needed. ✅
+- **Voice-settings persistence bug (CODE increment #4)** — Michal reported VoicePanel selections
+  don't survive restart. ROOT CAUSE is NOT the persistence layer (that's correct — all 11 voice
+  fields are in systemStore's localStorage partialize): `ElevenLabsVoicePanel`'s "prune credential
+  if gone" effect fired during the async credential-load window (the vault store starts `[]`, filled
+  by an async fetch), so on cold start it wrongly concluded the saved credential was deleted →
+  nulled `companionVoiceCredentialId` + flipped `companionVoiceEnabled` off → persisted the blanks
+  over the good values. Fix: `if (credLoading) return;` guard on that effect (`VoicePanel.tsx`,
+  +9/−2). Built via subagent; tsc + eslint clean; static-only (a live restart confirms). Worktree
+  commit `07cb8af58`. ✅
+
+### Worktree batch (unmerged) as of 0.7
+Branch `worktree-athena-exercise`, stacked on `ebce8a545`:
 1. `75de0a5d3` — chip plain-language rule (constitution v43) · BACKEND
 2. `fe75f84d0` — slash palette restyle + sort · frontend
 3. `25163baef` — toolbar → slash consolidation · frontend
-Merging the batch triggers a **cargo rebuild + app restart** (because of #1). Awaiting Michal.
+4. `285b4b708` — move tracker into the worktree · docs
+5. `07cb8af58` — voice-settings persistence fix · frontend
+Merging the batch triggers a **cargo rebuild + app restart** (because of the #1 backend change).
+Awaiting Michal.
