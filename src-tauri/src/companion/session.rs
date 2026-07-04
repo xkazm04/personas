@@ -320,10 +320,10 @@ pub struct TurnResult {
 
 /// Hard ceiling per turn — Athena is designed to run long background
 /// tasks (codebase scans, idea generation, multi-step reasoning).
-/// 15 minutes is enough for the longest realistic flow without
-/// holding a stuck CLI forever. Mirrors the frontend's
+/// 25 minutes gives heavy multi-step / subagent-driven flows plenty of
+/// headroom without holding a stuck CLI forever. Mirrors the frontend's
 /// `COMPANION_TURN_TIMEOUT_MS`; if you change one, change the other.
-const TURN_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+const TURN_TIMEOUT: Duration = Duration::from_secs(25 * 60);
 
 /// One streamed event sent to the frontend. The JSON `payload` is the raw
 /// stream-json line so the UI can render thinking/tool-use/text indicators
@@ -647,7 +647,7 @@ pub async fn send_turn(
                     return Err(e2);
                 }
                 Err(_) => {
-                    let msg = "Turn exceeded 5-minute timeout (after session reset)";
+                    let msg = "Turn exceeded 25-minute timeout (after session reset)";
                     emit_error(app, &session_id, &turn_id, msg);
                     return Err(AppError::Internal(msg.into()));
                 }
@@ -658,7 +658,7 @@ pub async fn send_turn(
             return Err(e);
         }
         Err(_) => {
-            let msg = "Turn exceeded 5-minute timeout";
+            let msg = "Turn exceeded 25-minute timeout";
             emit_error(app, &session_id, &turn_id, msg);
             return Err(AppError::Internal(msg.into()));
         }

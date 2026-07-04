@@ -75,10 +75,10 @@ export interface SendTurnResult {
  * background tasks (codebase scans, idea generation, multi-step
  * reasoning); the default 90s invoke timeout is too short and surfaces
  * as a confusing "Tauri invoke timed out" error even though the
- * backend is still working. 15 minutes matches the backend's own
+ * backend is still working. 25 minutes matches the backend's own
  * `TURN_TIMEOUT` so the frontend never gives up before the CLI does.
  */
-const COMPANION_TURN_TIMEOUT_MS = 15 * 60 * 1000;
+const COMPANION_TURN_TIMEOUT_MS = 25 * 60 * 1000;
 
 export async function companionSendMessage(
   message: string,
