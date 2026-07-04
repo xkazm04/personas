@@ -25,10 +25,10 @@ date, what we observed, and any change made.
 ## Phase 0 — Conversation substrate (everything rides on this)
 - [x] Streaming chat + token-level streaming
 - [x] `PROGRESS:` in-turn beats (always-on, text + voice)
-- [ ] `TTS:` spoken summary line
-- [ ] `QR:` quick-reply chips
-- [ ] Refine chips (Shorter / More detail / Code only)
-- [ ] Slash-command palette (`/`)
+- [x] `TTS:` spoken summary line
+- [x] `QR:` quick-reply chips
+- [x] Refine chips (Shorter / More detail / Code only)
+- [x] Slash-command palette (`/`)
 - [ ] Mid-stream Stop (interrupt) + failed-turn retry
 - [ ] Autonomous mode toggle + `continue_autonomously` chaining
 - [ ] Reset conversation (transcript vs disk episodes)
@@ -153,3 +153,52 @@ date, what we observed, and any change made.
   (`beatFiredRef` suppresses the generic ack/heartbeat). Michal: good as-is (2–4/turn).
   Docs fix: README L419 said only "stripped from the persisted reply" — completed it
   to reflect the re-persist-as-aside path. `athena-usecases.md` A10 was already right. ✅
+- **Worktree set up** — `worktree-athena-exercise` at `.claude/worktrees/athena-exercise`
+  (off master `ebce8a545`). Workflow: CODE changes go in the worktree; a merge to master
+  is the deliberate app-refresh/reset point. This tracker stays on master as the
+  cross-reset recovery ledger (docs don't HMR-refresh the app). Not registered in
+  `.claude/active-runs.md` — another session has it checked out dirty.
+- **0.3 TTS line** — CONFIRMED. First `TTS:` wins (`dispatcher.rs:387`; extra ones dropped
+  with a "multiple TTS lines, keeping first" warning), stripped from display, grammar
+  voice-gated (`voice_addendum_if_needed`). Docs (`athena-usecases.md` A10 + send/arrival-TTS)
+  ALREADY accurate — no doc change needed. Michal: good as-is. ✅
+- **0.4 QR chips** — CONFIRMED. Backend hard cap is **6** (`dispatcher.rs:405`,
+  `quick_replies.len() < 6`), frontend renders all + shows `{i+1}` badges, number
+  keys **1–9** fire the matching chip (`QuickReplies.tsx:28`). Michal: good as-is.
+  Docs fix: `athena-usecases.md:25` said "2–5 follow-up prompts" — contradicted its
+  own A10 ("up to 6") and the code; corrected to "up to 6" + noted the 1–9 keys.
+  (`athena-decision-layer-plan.md:18` already said "digits 1-9".) ✅
+- **0.5 Refine chips** — CONFIRMED by Michal ("resending the prior message works well").
+  Below the latest completed reply, Shorter / More detail / Code only re-send the prior
+  user message with a localized steering suffix through the same send() path. No doc fix.
+- **Chip plain-language rule (CODE increment #1)** — Michal: keep chips short, no internal
+  jargon/IDs, assume regular users don't know the codebase. Adopted immediately + made
+  durable: added a "Plain language, no jargon" bullet to the constitution's Quick replies
+  section + bumped CONSTITUTION_VERSION 42→43. Staged in the worktree as commit `75de0a5d3`
+  (1 commit ahead of `ebce8a545`, clean cherry-pick). NOT merged — awaiting Michal's merge,
+  which is a backend rebuild + app restart. ⏳
+- **0.6 Slash palette (CODE increment #2)** — Restyled: dropped the per-item description,
+  render just the label in normal weight; sorted presets A–Z by label at the source
+  (Composer) so palette + keyboard-nav stay aligned; `filterSlashPresets` stays pure (tests
+  unaffected). Worktree commit `fe75f84d0`. Not merged. Frontend-only, so hot-reload on merge.
+- **Toolbar consolidation (CODE increment #3, PENDING decision)** — Michal wants "What can
+  Athena do", Daily Brief, Analyze Fleet moved out of `CompanionToolbar` into the slash menu.
+  Finding: capabilities is ALREADY a slash preset (message) → its toolbar button is a pure
+  duplicate to remove. Daily Brief + Analyze Fleet are DETERMINISTIC command calls
+  (`companion_daily_brief` / `companion_analyze_fleet`), not chat prompts — so they must
+  migrate as ACTION presets (run the command on pick), NOT message presets, to keep the
+  dedicated-turn behavior. Plan: extend `SlashPreset` with optional `action`; thread the two
+  handlers from `CompanionPanel` → `Composer`; remove the 3 toolbar buttons + their props.
+  DONE (`25163baef`) — went with the action-preset approach (behavior-preserving). Built via a
+  subagent in the worktree; `tsc --noEmit` + eslint clean on all 4 files (+54/−80). Capabilities
+  button removed (already a preset) + orphaned `askCapabilities` cleaned up; Daily Brief +
+  Analyze Fleet now action presets that run the command on pick; 3 toolbar buttons + unused
+  HelpCircle/Radar/Sunrise imports removed. Michal never re-confirmed (resets kept eating the
+  ask) so I made the safe, non-lossy call. ✅
+
+### Worktree batch (unmerged) as of 0.6
+Branch `worktree-athena-exercise`, 3 increments stacked on `ebce8a545`:
+1. `75de0a5d3` — chip plain-language rule (constitution v43) · BACKEND
+2. `fe75f84d0` — slash palette restyle + sort · frontend
+3. `25163baef` — toolbar → slash consolidation · frontend
+Merging the batch triggers a **cargo rebuild + app restart** (because of #1). Awaiting Michal.
