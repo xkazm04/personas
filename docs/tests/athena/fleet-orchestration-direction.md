@@ -187,8 +187,12 @@ empty and has since rendered — is re-assessed.
   unit tests), `8252e44f0` (2.4 — `screen_matches_last_decision` execution-time re-check: defers an
   auto-fire whose target screen changed since Athena reasoned on it). Matrix: high always fires; low
   never; medium fires per dial×class (cautious=none, balanced=drive_forward-only, bold=both); a
-  missing/unknown class is treated as the stricter `choice`. **NOT boot-verified yet** — a concurrent
-  session's uncommitted dev-mode refactor broke the whole-crate compile during this work (HEAD itself
-  compiles; their working tree didn't), so the matrix is unit-tested-in-code + manually traced but
-  not yet run live. **Remaining Phase 2:** the frontend Cautious/Balanced/Bold dial UI + its i18n
-  (blocked while that session owns all 14 locale files), then a live boot-verify of the full gate.
+  missing/unknown class is treated as the stricter `choice`.
+- **2026-07-04** — **Phase 2 COMPLETE + verified.** P2.2 boot-verified live (get/set/validate
+  round-trip; the boot-verify caught a settings-allowlist bug — a new key needs `ALLOWED_KEYS` +
+  `validate_value` registration, not just the const — fixed `abb87be33`). P2.3 matrix unit tests
+  pass 6/6. Frontend `FleetBoldnessDial` (Cautious/Balanced/Bold radiogroup next to WakeCadence,
+  shown while autonomous mode is on) + `companionFleetBoldness` store state + api wrappers + 5
+  `boldness_*` i18n keys across all 14 locales shipped `718f749fb` (tsc+eslint clean). All on origin
+  (`b3c79725b`). The one deferred live check is the full LLM e2e (Athena emitting `decision_class`
+  → the gate firing on a real parked session), flaky/LLM-dependent; the foundations are verified.
