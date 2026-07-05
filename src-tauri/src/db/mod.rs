@@ -398,9 +398,35 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
             // Athena async-UX milestone — Task model fields on background jobs.
             "ALTER TABLE companion_background_job ADD COLUMN short_title TEXT;",
             "ALTER TABLE companion_background_job ADD COLUMN parent_turn_id TEXT;",
+            // Athena multi-conversation — see docs/features/companion/athena-multiconversation.md.
+            // companion_session generalizes from the single 'default' row into the
+            // conversation table (one row per user thread). Additive columns:
+            "ALTER TABLE companion_session ADD COLUMN title TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN status TEXT NOT NULL DEFAULT 'active';",
+            "ALTER TABLE companion_session ADD COLUMN last_read_at TEXT;",
+            "ALTER TABLE companion_session ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;",
+            "ALTER TABLE companion_session ADD COLUMN origin TEXT NOT NULL DEFAULT 'user';",
+            // Scope episodes by conversation. Only kind='episode' rows use it; all
+            // other brain tiers (fact/goal/procedural/doctrine/…) leave it NULL and
+            // stay GLOBAL — that is the singular-Athena property, keep it.
+            "ALTER TABLE companion_node ADD COLUMN session_id TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
+
+        // Per-conversation episode-recency lane: index episodes by (kind, session,
+        // recency) so list_recent(session_id) is a scan of one thread, not the whole
+        // brain. IF NOT EXISTS + runs after the session_id ALTER above.
+        let _ = conn.execute_batch(
+            "CREATE INDEX IF NOT EXISTS idx_companion_node_session \
+             ON companion_node(kind, session_id, created_at DESC);",
+        );
+        // Backfill: every pre-existing episode belongs to the migrated 'default'
+        // conversation. Idempotent (only touches NULLs).
+        let _ = conn.execute_batch(
+            "UPDATE companion_node SET session_id = 'default' \
+             WHERE kind = 'episode' AND session_id IS NULL;",
+        );
     }
 
     // One-time backfill of kb_chunks_fts for installs that already have chunks
