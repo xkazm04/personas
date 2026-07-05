@@ -93,3 +93,19 @@ Settings also contains `AmbientContextPanel.tsx`, backed by `src/api/system/ambi
 Most Settings state is stored in `uiSlice.ts`, `setupSlice.ts`, `ambientContextSlice.ts`, `cloudSlice.ts`, and plugin-specific system slices. Backend commands are spread across `commands/infrastructure/settings.rs`, `byom.rs`, `tier_usage.rs`, `network`, `core/import_export.rs`, `commands/credentials/external_api_keys.rs`, and notification helpers.
 
 > **API Keys vs Custom Models** — these tabs solve opposite problems. *Custom Models* (BYOM) configures **outbound** keys Personas uses to call third-party model providers. *API Keys* configures **inbound** tokens external MCP clients (and other HTTP callers) use to authenticate against Personas' own management API on `127.0.0.1:9420`.
+
+### API-key capability model (scopes, expiry, audit)
+
+Inbound keys (`pk_<32hex>`, stored SHA-256, plaintext shown once) are **capability tokens** — least-privilege, time-boxed, and auditable. The create dialog (`sub_api_keys/`) mints:
+
+- **Read** (`personas:read`) — list/read personas + executions.
+- **Build** (`personas:build`) — drive a build session end-to-end.
+- **Execute specific agents** — the user picks each agent, minting one `personas:execute:persona:<id>` scope per pick. **There is no blanket "execute all" in the UI** (force-explicit-per-persona posture). The broad `personas:execute` still exists as a backend primitive (the internal "system" key holds it) but is not offered for user-minted keys.
+- The **credential proxy** (`POST /api/proxy/{credential_id}`, injects stored secrets server-side) is gated on its own `proxy` / `proxy:credential:<id>` scope — **not** `personas:execute`. A paired/external key never gets it unless the user grants a specific credential.
+
+Authorization is enforced request-time in `engine/management_api.rs::authorize` (resource-aware: a route naming a persona/credential is satisfied by the broad scope **or** the matching per-resource grant). Every key also carries:
+
+- **Expiry** — never / 7 / 30 / 90 days. The command stamps a server-authoritative absolute `expires_at`; `find_by_token` refuses expired keys (fail-closed parser). The row shows an "expires in Nd" / "Expired" chip.
+- **Per-key audit** — every management-API request the key makes (method / path / status / persona / origin) is recorded in `api_key_audit` (capped 500/key) and surfaced in the row's **Activity** drawer. Plus a per-key sliding-window rate limit (120 req/60 s → 429 + `Retry-After`).
+
+Backend: `commands/credentials/external_api_keys.rs` (`create_external_api_key` takes `expires_in_days`; `list_api_key_audit`), `db/repos/resources/{external_api_keys,api_key_audit}.rs`, `engine/management_api.rs`. Design: [`docs/architecture/cloud-integration-bridge.md`](../../architecture/cloud-integration-bridge.md). Origin-binding + the browser pairing ceremony are a later phase (P5–P7).

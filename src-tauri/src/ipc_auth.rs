@@ -280,6 +280,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "revoke_external_api_key",
     "delete_external_api_key",
     "get_system_api_key",
+    "list_api_key_audit",
     // Signing
     "sign_document",
     "verify_document",

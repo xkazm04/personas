@@ -1996,6 +1996,7 @@ pub fn run() {
             commands::credentials::external_api_keys::revoke_external_api_key,
             commands::credentials::external_api_keys::delete_external_api_key,
             commands::credentials::external_api_keys::get_system_api_key,
+            commands::credentials::external_api_keys::list_api_key_audit,
             // Credentials -- Audit Log (registered via intelligence module)
             // Credentials -- Connectors
             commands::credentials::connectors::list_connectors,

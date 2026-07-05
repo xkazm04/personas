@@ -6,7 +6,8 @@
 use std::sync::Arc;
 use tauri::State;
 
-use crate::db::models::{CreateApiKeyResponse, ExternalApiKey};
+use crate::db::models::{ApiKeyAuditEntry, CreateApiKeyResponse, ExternalApiKey};
+use crate::db::repos::resources::api_key_audit;
 use crate::db::repos::resources::external_api_keys as repo;
 use crate::db::repos::resources::settings_audit_log;
 use crate::error::AppError;
@@ -19,9 +20,14 @@ pub fn create_external_api_key(
     state: State<'_, Arc<AppState>>,
     name: String,
     scopes: Vec<String>,
+    expires_in_days: Option<u32>,
 ) -> Result<CreateApiKeyResponse, AppError> {
-    // P1: expiry / origin-binding are threaded in P4 (UI) and P6 (pairing).
-    let resp = repo::create(&state.db, &name, scopes, None, None, None)?;
+    // Server-authoritative expiry: the UI picks a window (7/30/90 days or
+    // never); we stamp the absolute timestamp here rather than trust the client
+    // clock. Origin-binding stays None until the pairing ceremony (P6).
+    let expires_at = expires_in_days
+        .map(|days| (chrono::Utc::now() + chrono::Duration::days(days as i64)).to_rfc3339());
+    let resp = repo::create(&state.db, &name, scopes, expires_at, None, None)?;
     tracing::info!(
         api_key_id = %resp.record.id,
         prefix = %resp.record.key_prefix,
@@ -108,4 +114,17 @@ pub fn get_system_api_key(state: State<'_, Arc<AppState>>) -> Result<String, App
     let key = crate::engine::management_api::get_or_create_system_api_key(&state.db)?;
     tracing::info!("system_api_key issued to privileged caller");
     Ok(key)
+}
+
+/// List the recent management-API request audit trail for one key (newest
+/// first, capped). Powers the per-key audit drawer in Settings → API Keys so a
+/// user can see exactly what each key has done.
+#[tauri::command]
+#[requires(privileged)]
+pub fn list_api_key_audit(
+    state: State<'_, Arc<AppState>>,
+    key_id: String,
+    limit: Option<u32>,
+) -> Result<Vec<ApiKeyAuditEntry>, AppError> {
+    api_key_audit::list_for_key(&state.db, &key_id, limit.unwrap_or(100))
 }

@@ -18,7 +18,7 @@
  *     user-facing list — it isn't theirs to manage.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3 } from 'lucide-react';
+import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3, History, CalendarClock } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -54,9 +54,19 @@ function isStaleKey(key: ExternalApiKey): boolean {
   if (isNaN(lastUsed)) return false;
   return now - lastUsed >= STALE_INACTIVE_DAYS * DAY_MS;
 }
+
+// Expiry display for a key. `null` = never expires; otherwise the whole-days
+// delta (negative once expired).
+function expiryInfo(key: ExternalApiKey): { expired: boolean; days: number } | null {
+  if (!key.expires_at) return null;
+  const exp = new Date(key.expires_at).getTime();
+  if (isNaN(exp)) return null;
+  return { expired: exp <= Date.now(), days: Math.ceil((exp - Date.now()) / DAY_MS) };
+}
 import { McpServerInfoPanel } from './McpServerInfoPanel';
 import { CreateApiKeyDialog } from './CreateApiKeyDialog';
 import { CreatedKeyDialog } from './CreatedKeyDialog';
+import { ApiKeyAuditDrawer } from './ApiKeyAuditDrawer';
 
 const HIDDEN_KEY_NAMES = new Set(['system']);
 
@@ -70,6 +80,7 @@ export default function ApiKeysSettings() {
   const [showCreate, setShowCreate] = useState(false);
   const [createdKey, setCreatedKey] = useState<CreateApiKeyResponse | null>(null);
   const [actioning, setActioning] = useState<string | null>(null);
+  const [auditTarget, setAuditTarget] = useState<ExternalApiKey | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,8 +100,8 @@ export default function ApiKeysSettings() {
   }, [load]);
 
   const handleCreate = useCallback(
-    async (name: string, scopes: string[]) => {
-      const resp = await createExternalApiKey(name, scopes);
+    async (name: string, scopes: string[], expiresInDays?: number) => {
+      const resp = await createExternalApiKey(name, scopes, expiresInDays);
       setCreatedKey(resp);
       setShowCreate(false);
       void load();
@@ -194,6 +205,7 @@ export default function ApiKeysSettings() {
                   actioning={actioning === key.id}
                   onRevoke={() => handleRevoke(key.id)}
                   onDelete={() => handleDelete(key.id)}
+                  onAudit={() => setAuditTarget(key)}
                 />
               ))}
             </div>
@@ -213,6 +225,13 @@ export default function ApiKeysSettings() {
           onClose={() => setCreatedKey(null)}
         />
       )}
+      {auditTarget && (
+        <ApiKeyAuditDrawer
+          keyId={auditTarget.id}
+          keyName={auditTarget.name}
+          onClose={() => setAuditTarget(null)}
+        />
+      )}
     </ContentBox>
   );
 }
@@ -222,14 +241,16 @@ interface ApiKeyRowProps {
   actioning: boolean;
   onRevoke: () => void;
   onDelete: () => void;
+  onAudit: () => void;
 }
 
-function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
-  const { t } = useTranslation();
+function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRowProps) {
+  const { t, tx } = useTranslation();
   const s = t.settings.api_keys;
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const isRevoked = apiKey.revoked_at !== null || !apiKey.enabled;
+  const expiry = expiryInfo(apiKey);
   const scopes: string[] = (() => {
     try {
       return JSON.parse(apiKey.scopes) as string[];
@@ -274,6 +295,19 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
               {s.stale_chip}
             </span>
           )}
+          {!isRevoked && expiry && (
+            <span
+              className={`typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
+                expiry.expired
+                  ? 'text-red-400 bg-red-400/10 border border-red-400/30'
+                  : 'text-foreground bg-secondary/40'
+              }`}
+              title={apiKey.expires_at ? formatTimestamp(apiKey.expires_at) : undefined}
+            >
+              <CalendarClock size={10} />
+              {expiry.expired ? s.expired_chip : tx(s.expires_in, { days: expiry.days })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-3 mt-1">
           <code className="typo-code text-foreground">{apiKey.key_prefix}…</code>
@@ -295,6 +329,15 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onAudit}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          title={s.audit_tooltip}
+        >
+          <History size={12} />
+          {s.audit}
+        </button>
         {!isRevoked && (
           <button
             type="button"
