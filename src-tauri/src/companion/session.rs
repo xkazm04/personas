@@ -351,14 +351,28 @@ pub enum StreamEventKind {
     Error,
 }
 
-/// Single process-wide turn lock. `send_turn` must be the unit of mutual
-/// exclusion: the user path (`companion_send_message`) and the background
-/// spawners (`schedule_autonomous_tick`, `spawn_proactive_turn`) have independent
-/// entry points, and two turns running at once both `--resume` the same Claude
-/// session id (clobbering each other's session-id write) and interleave brain
-/// reads/writes (decisions on half-updated state). Sessions are currently always
-/// DEFAULT_SESSION_ID, so one lock suffices; key by session id if that changes.
-static TURN_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+/// Per-conversation turn lock. `send_turn` is the unit of mutual exclusion
+/// WITHIN a conversation: two turns on the same conversation both `--resume`
+/// the same Claude session id (clobbering each other's session-id write) and
+/// interleave that thread's brain reads/writes. ACROSS conversations there is
+/// no serialization — multi-conversation runs turns concurrently (the design's
+/// unbounded-concurrency decision, affordable because every Athena spawn is
+/// subscription-auth, not metered API). Keyed by conversation id, created
+/// lazily; the map itself is guarded by a std Mutex held only for the O(1)
+/// lookup, never across a turn.
+static TURN_LOCKS: std::sync::LazyLock<
+    std::sync::Mutex<std::collections::HashMap<String, Arc<tokio::sync::Mutex<()>>>>,
+> = std::sync::LazyLock::new(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+
+/// Get (or lazily create) the turn lock for one conversation.
+fn turn_lock_for(conversation_id: &str) -> Arc<tokio::sync::Mutex<()>> {
+    let mut map = TURN_LOCKS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    map.entry(conversation_id.to_string())
+        .or_insert_with(|| Arc::new(tokio::sync::Mutex::new(())))
+        .clone()
+}
 
 /// Run one full turn: persist the user message, call Claude, stream events,
 /// persist the assistant reply. Returns (user_episode_id, assistant_episode_id).
@@ -376,8 +390,12 @@ pub async fn send_turn(
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
     autonomous_mode: bool,
+    // Which conversation (thread) this turn belongs to. Its own transcript,
+    // its own Claude `--resume` continuity, its own recency lane, its own turn
+    // lock. Callers pass DEFAULT_SESSION_ID for the migrated 'General' thread.
+    conversation_id: String,
 ) -> Result<TurnResult, AppError> {
-    let session_id = DEFAULT_SESSION_ID.to_string();
+    let session_id = conversation_id;
     let turn_id = format!("turn_{}", short_random());
 
     // Serialize turns (see TURN_LOCK). User-initiated paths wait for any
@@ -399,9 +417,10 @@ pub async fn send_turn(
     // Background origins (`Autonomous` ticks, `Proactive` turns) keep
     // `try_lock` and self-skip when busy: a missed autonomous tick self-heals
     // on the next one, and queuing them would let machine work pile up.
+    let turn_lock = turn_lock_for(&session_id);
     let _turn_guard = match &origin {
-        TurnOrigin::User | TurnOrigin::External { .. } => TURN_LOCK.lock().await,
-        _ => match TURN_LOCK.try_lock() {
+        TurnOrigin::User | TurnOrigin::External { .. } => turn_lock.lock().await,
+        _ => match turn_lock.try_lock() {
             Ok(g) => g,
             Err(_) => {
                 tracing::info!(
@@ -1031,6 +1050,8 @@ pub async fn send_turn(
                 next_chain,
                 voice_enabled,
                 recall_synthesis_enabled,
+                // The chain stays in the conversation that spawned it.
+                session_id.clone(),
             );
         }
     }
@@ -1065,6 +1086,7 @@ fn schedule_autonomous_tick(
     chain_index: u32,
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
+    conversation_id: String,
 ) {
     // Capture the generation this tick belongs to. A user "stop" (or any newer
     // schedule) advances the global generation, after which this tick aborts —
@@ -1112,6 +1134,7 @@ fn schedule_autonomous_tick(
                 voice_enabled,
                 recall_synthesis_enabled,
                 true, // autonomous_mode — by definition true for a tick
+                conversation_id,
             )
             .await;
             if let Err(e) = res {
@@ -1169,6 +1192,10 @@ pub fn spawn_proactive_turn(
                 false, // voice off for machine-initiated turns
                 false, // no recall synthesis budget on background turns
                 true,  // autonomous_mode on — caller gated on this
+                // Ownerless proactive nudges land in the system "Athena / Notices"
+                // thread (design §4.3). Owned nudges (e.g. fleet_op_completed → the
+                // dispatching thread) can route here explicitly in a later phase.
+                crate::companion::conversation::NOTICES_CONVERSATION_ID.to_string(),
             )
             .await;
             if let Err(e) = res {

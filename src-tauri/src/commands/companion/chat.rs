@@ -60,6 +60,10 @@ pub async fn companion_send_message(
     // words. It persists as a `System` turn tagged with this source label
     // instead of impersonating a user turn. Omitted/empty → a normal user turn.
     system_source: Option<String>,
+    // Which conversation (thread) this message belongs to. Omitted → the
+    // migrated 'default' ("General") thread, so pre-multiconv callers keep
+    // working unchanged.
+    conversation_id: Option<String>,
 ) -> Result<SendTurnResult, AppError> {
     require_auth(&state).await?;
     let user_db = Arc::new(state.user_db.clone());
@@ -88,6 +92,7 @@ pub async fn companion_send_message(
         voice_enabled.unwrap_or(false),
         recall_synthesis_enabled.unwrap_or(false),
         autonomous_mode.unwrap_or(false),
+        conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string()),
     )
     .await?;
     Ok(SendTurnResult {
@@ -315,10 +320,12 @@ pub async fn companion_review_recent_executions_now(
 pub fn companion_list_recent_messages(
     state: State<'_, Arc<AppState>>,
     limit: Option<u32>,
+    conversation_id: Option<String>,
 ) -> Result<Vec<CompanionMessage>, AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
     let limit = limit.unwrap_or(50).min(500);
-    let episodes = episodic::list_recent(&state.user_db, DEFAULT_SESSION_ID, limit)?;
+    let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
+    let episodes = episodic::list_recent(&state.user_db, &session_id, limit)?;
     Ok(episodes
         .into_iter()
         // Fleet lifecycle events are written as System episodes here purely so
@@ -364,10 +371,16 @@ pub async fn companion_interrupt_turn(
 pub fn companion_reset_conversation(
     state: State<'_, Arc<AppState>>,
     wipe_transcript: Option<bool>,
+    conversation_id: Option<String>,
 ) -> Result<(), AppError> {
     crate::ipc_auth::require_auth_sync(&state)?;
-    crate::companion::session::clear_claude_session_id(&state.user_db, DEFAULT_SESSION_ID)?;
+    let session_id = conversation_id.unwrap_or_else(|| DEFAULT_SESSION_ID.to_string());
+    crate::companion::session::clear_claude_session_id(&state.user_db, &session_id)?;
     if wipe_transcript.unwrap_or(false) {
+        // TODO(multiconv Phase 1): scope the wipe to `session_id` (delete only
+        // this conversation's episode nodes). Today it still wipes the whole
+        // transcript — safe while the UI drives a single conversation; the
+        // per-conversation wipe lands with the frontend thread UI.
         crate::companion::session::wipe_transcript(&state.user_db)?;
     }
     Ok(())
