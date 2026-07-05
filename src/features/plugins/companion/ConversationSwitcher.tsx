@@ -5,7 +5,6 @@ import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   companionArchiveConversation,
   companionCreateConversation,
-  companionListConversations,
   companionMarkConversationRead,
 } from '@/api/companion';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
@@ -45,12 +44,8 @@ export function ConversationSwitcher() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  // Hydrate the thread registry once on mount.
-  useEffect(() => {
-    companionListConversations()
-      .then(setConversations)
-      .catch(silentCatch('companion_list_conversations'));
-  }, [setConversations]);
+  // The roster (hydration + live unread) is kept by useConversationRoster(),
+  // mounted on the always-present footer orb — so this just reads the store.
 
   // Close on outside click.
   useEffect(() => {

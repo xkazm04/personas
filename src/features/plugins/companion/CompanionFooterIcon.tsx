@@ -12,6 +12,7 @@ import { useTtsSettings } from './useTtsSettings';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 import { AthenaAvatar, type AthenaState } from './AthenaAvatar';
 import { useHoldToTalk } from './useHoldToTalk';
+import { useConversationRoster, useThreadAttentionCount } from './useConversationRoster';
 
 /**
  * Athena's footer cluster. Lives in DesktopFooter's right cluster.
@@ -46,6 +47,10 @@ import { useHoldToTalk } from './useHoldToTalk';
  */
 export default function CompanionFooterIcon() {
   const { t } = useTranslation();
+  // Keep the multi-conversation roster live (hydrate + refresh on turn-summary)
+  // from here, since the footer orb is always mounted — the chat panel isn't.
+  useConversationRoster();
+  const attentionCount = useThreadAttentionCount();
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const initialized = useCompanionStore((s) => s.initialized);
@@ -385,6 +390,17 @@ export default function CompanionFooterIcon() {
         {talking && (
           <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary flex items-center justify-center ring-1 ring-background">
             <Mic className="w-2 h-2 text-background" />
+          </span>
+        )}
+        {/* Multi-conversation: how many OTHER threads are awaiting the user.
+            Top-right, so it never collides with the talking mic (bottom-right). */}
+        {attentionCount > 0 && (
+          <span
+            data-testid="companion-thread-attention"
+            className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-status-success text-background typo-caption font-semibold inline-flex items-center justify-center ring-1 ring-background tabular-nums"
+            aria-label={`${attentionCount} ${t.plugins.companion.thread_status_awaiting}`}
+          >
+            {attentionCount}
           </span>
         )}
       </button>
