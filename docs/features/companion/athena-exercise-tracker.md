@@ -226,3 +226,24 @@ Branch `worktree-athena-exercise`, stacked on `ebce8a545`:
 5. `07cb8af58` — voice-settings persistence fix · frontend
 Merging the batch triggers a **cargo rebuild + app restart** (because of the #1 backend change).
 Awaiting Michal.
+
+### Phase 1 — Memory & identity (in progress)
+- **1.1 `write_fact` / `delete_fact`** — IN PROGRESS. Exercised the write path live: proposed a
+  disposable `user/phase1_write_delete_smoke` fact; it auto-approved & executed (`fact_1f365da7`),
+  confirming `write_fact` works end-to-end and the OP dispatcher is live post-reset. Michal couldn't
+  tell what to delete because the confirmation was machine-jargon → drove the copy fix below, then
+  proposed `delete_fact {fact_1f365da7}` to close the write→delete loop. Supersede + full delete
+  semantics still to verify.
+- **Humanize action-confirmations (CODE increment, BACKEND)** — Michal: action-result messages leak
+  internal ids (`fact_1f365da7`), scope/key slugs (`user/phase1_write_delete_smoke`), and jargon
+  ("auto-approved & executed — conservative policy", "importance 1, 1 source(s)") — unusable, he
+  couldn't act on them. Fixed at source in `src-tauri/src/commands/companion/approvals.rs`: rewrote
+  every brain/memory result string to plain language (e.g. write_fact → `Saved that to memory: "…"`,
+  delete_fact → `Removed that from memory.`, update_goal_status → `Marked that goal as done.`), and
+  removed the `[Athena action … conservative policy] <op>` prefix from BOTH the auto-approve and
+  manual-approve paths. All dropped ids/counts/paths move to `tracing::` (developer logs only).
+  Behavior unchanged — only display strings differ. Built via subagent; string-literal swaps, types
+  preserved; `cargo check` skipped (cold ml/p2p compile) → merge rebuild is the compile gate. Worktree
+  commit `218bd0289`. NOT merged — backend, so merge = rebuild + restart. Follow-up: backend
+  result-string i18n (these are Rust-side English, not routed through the frontend i18n system);
+  optional cleanup of remaining ids in `run_persona` / `resolve_human_review` result strings. ⏳

@@ -277,24 +277,19 @@ pub async fn companion_approve_action(
         ))),
     };
 
+    // Both the outcome shown on the approval card (`message`) and the persisted
+    // chat episode (`embedder_log`) carry the plain, humanized result — no
+    // `[Athena action ...] <op>` machine prefix, no raw op name. Developer detail
+    // (op name, error) goes to the trace, not to the user.
     let (status_text, message, client_action, embedder_log) = match exec_result {
-        Ok(r) => (
-            APPROVAL_STATUS_APPROVED,
-            r.message.clone(),
-            r.client_action,
-            format!(
-                "[Athena action approved & executed] {action}\n\n{}",
-                r.message
-            ),
-        ),
+        Ok(r) => {
+            let m = r.message;
+            (APPROVAL_STATUS_APPROVED, m.clone(), r.client_action, m)
+        }
         Err(e) => {
-            let m = format!("Execution failed: {e}");
-            (
-                APPROVAL_STATUS_APPROVED_FAILED,
-                m.clone(),
-                None,
-                format!("[Athena action approved but failed] {action}\n\n{m}"),
-            )
+            tracing::warn!(action = %action, error = %e, "companion: approved action failed");
+            let m = format!("Sorry, I couldn't finish that. ({e})");
+            (APPROVAL_STATUS_APPROVED_FAILED, m.clone(), None, m)
         }
     };
 
@@ -520,20 +515,19 @@ pub async fn auto_resolve_if_allowed(
         "fleet_resume" => execute_fleet_resume(app, &params).await,
         _ => unreachable!("allowlist mismatch"),
     };
+    // The persisted episode is what renders in the companion chat, so it carries
+    // the plain, humanized result on its own — no `[... conservative policy] <op>`
+    // machine prefix, no raw op name. Developer detail (op name, error) goes to the
+    // trace below, not to the user.
     let (status_text, embedder_log) = match exec_result {
-        Ok(r) => (
-            APPROVAL_STATUS_APPROVED,
-            format!(
-                "[Athena action auto-approved & executed — conservative policy] {action}\n\n{}",
-                r.message
-            ),
-        ),
-        Err(e) => (
-            APPROVAL_STATUS_APPROVED_FAILED,
-            format!(
-                "[Athena action auto-approved but failed — conservative policy] {action}\n\nExecution failed: {e}"
-            ),
-        ),
+        Ok(r) => (APPROVAL_STATUS_APPROVED, r.message),
+        Err(e) => {
+            tracing::warn!(action = %action, error = %e, "companion: auto-approved action failed");
+            (
+                APPROVAL_STATUS_APPROVED_FAILED,
+                format!("Sorry, I couldn't finish that automatically. ({e})"),
+            )
+        }
     };
     finalize_approval(&state, &approval.id, status_text)?;
     log_action_episode(&state, &action, &embedder_log).await;
@@ -843,30 +837,17 @@ fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, 
         }
         let (applied, mut skipped, backup) = identity::apply_diffs_on_disk(&diffs)?;
         skipped.extend(parse_failures);
-        let mut msg = format!(
-            "Identity updated — {} change(s) applied:\n{}",
-            applied.len(),
-            applied
-                .iter()
-                .map(|a| format!("- {a}"))
-                .collect::<Vec<_>>()
-                .join("\n")
+        // Applied/skipped change list + backup path are developer detail — trace
+        // them; the user just gets a plain confirmation.
+        tracing::debug!(
+            applied = applied.len(),
+            skipped = skipped.len(),
+            backup = %backup,
+            "companion: updated identity (anchored diffs)"
         );
-        if !skipped.is_empty() {
-            msg.push_str(&format!(
-                "\n\n{} skipped:\n{}",
-                skipped.len(),
-                skipped
-                    .iter()
-                    .map(|f| format!("- {f}"))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            ));
-        }
-        if !backup.is_empty() {
-            msg.push_str(&format!("\n\nPrevious version backed up to {backup}."));
-        }
-        return Ok(ExecuteResult::message(msg));
+        return Ok(ExecuteResult::message(
+            "Updated what I know about you.".to_string(),
+        ));
     }
 
     // Full-content mode (intake first draft).
@@ -877,15 +858,14 @@ fn execute_update_identity(params: &serde_json::Value) -> Result<ExecuteResult, 
             AppError::Internal("update_identity: need `diffs` (anchored) or `content` (full)".into())
         })?;
     let backup = identity::write_full(content)?;
-    let backup_note = if backup.is_empty() {
-        String::new()
-    } else {
-        format!(" Previous version backed up to {backup}.")
-    };
-    Ok(ExecuteResult::message(format!(
-        "identity.md updated ({} bytes).{backup_note}",
-        content.len(),
-    )))
+    tracing::debug!(
+        bytes = content.len(),
+        backup = %backup,
+        "companion: updated identity (full content)"
+    );
+    Ok(ExecuteResult::message(
+        "Updated what I know about you.".to_string(),
+    ))
 }
 
 async fn execute_resolve_human_review(
@@ -1036,10 +1016,21 @@ async fn execute_write_fact(
         }
     };
 
+    // Developer detail (id, scope/key, importance, source count) stays in the log;
+    // the user just sees a plain confirmation with the saved content.
+    tracing::debug!(
+        fact_id = %id,
+        scope = %scope.as_str(),
+        key,
+        importance,
+        sources = sources.len(),
+        "companion: wrote fact"
+    );
+    let trimmed = value.trim();
+    let preview: String = trimmed.chars().take(100).collect();
+    let ellipsis = if trimmed.chars().count() > 100 { "…" } else { "" };
     Ok(ExecuteResult::message(format!(
-        "Fact `{id}` written to `{}/{key}` (importance {importance}, {n} source(s)).",
-        scope.as_str(),
-        n = sources.len()
+        "Saved that to memory: \"{preview}{ellipsis}\"."
     )))
 }
 
@@ -1054,9 +1045,8 @@ fn execute_delete_fact(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("delete_fact: missing `id`".into()))?;
     crate::companion::brain::semantic::delete_fact(&state.user_db, id)?;
-    Ok(ExecuteResult::message(format!(
-        "Fact `{id}` archived to `semantic/_deleted/`."
-    )))
+    tracing::debug!(fact_id = %id, "companion: deleted fact");
+    Ok(ExecuteResult::message("Removed that from memory.".to_string()))
 }
 
 // ── Phase D executors ───────────────────────────────────────────────────
@@ -1125,12 +1115,17 @@ async fn execute_write_procedural(
             procedural::write_rule(&state.user_db, &input)?
         }
     };
-    Ok(ExecuteResult::message(format!(
-        "Procedural rule `{id}` written under `{}/{}` (importance {}, {} source(s)).",
-        scope.as_str(),
+    tracing::debug!(
+        rule_id = %id,
+        scope = %scope.as_str(),
         trigger,
         importance,
-        sources.len()
+        sources = sources.len(),
+        "companion: wrote procedural rule"
+    );
+    Ok(ExecuteResult::message(format!(
+        "Got it — I'll {}.",
+        behavior.trim().trim_end_matches('.')
     )))
 }
 
@@ -1143,9 +1138,10 @@ fn execute_delete_procedural(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("delete_procedural: missing `id`".into()))?;
     crate::companion::brain::procedural::delete_rule(&state.user_db, id)?;
-    Ok(ExecuteResult::message(format!(
-        "Procedural `{id}` archived to `procedurals/_deleted/`."
-    )))
+    tracing::debug!(rule_id = %id, "companion: deleted procedural rule");
+    Ok(ExecuteResult::message(
+        "Okay — I'll stop doing that.".to_string(),
+    ))
 }
 
 fn execute_write_goal(
@@ -1182,9 +1178,10 @@ fn execute_write_goal(
             sources: &sources,
         },
     )?;
+    tracing::debug!(goal_id = %id, priority, "companion: wrote goal");
     Ok(ExecuteResult::message(format!(
-        "Goal `{id}` recorded: \"{}\" (priority {}).",
-        title, priority
+        "Added a goal: \"{}\".",
+        title.trim()
     )))
 }
 
@@ -2266,9 +2263,15 @@ fn execute_update_goal_status(
         .ok_or_else(|| AppError::Internal("update_goal_status: missing `status`".into()))?;
     let status = goals::GoalStatus::parse(status_str)?;
     goals::update_status(&state.user_db, id, status)?;
+    tracing::debug!(goal_id = %id, status = %status.as_str(), "companion: updated goal status");
+    let plain = match status {
+        goals::GoalStatus::Active => "in progress",
+        goals::GoalStatus::Paused => "paused",
+        goals::GoalStatus::Completed => "done",
+        goals::GoalStatus::Abandoned => "dropped",
+    };
     Ok(ExecuteResult::message(format!(
-        "Goal `{id}` → `{}`.",
-        status.as_str()
+        "Marked that goal as {plain}."
     )))
 }
 
@@ -2281,9 +2284,8 @@ fn execute_delete_goal(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("delete_goal: missing `id`".into()))?;
     crate::companion::brain::goals::delete_goal(&state.user_db, id)?;
-    Ok(ExecuteResult::message(format!(
-        "Goal `{id}` archived to `goals/_deleted/`."
-    )))
+    tracing::debug!(goal_id = %id, "companion: deleted goal");
+    Ok(ExecuteResult::message("Removed that goal.".to_string()))
 }
 
 fn execute_write_ritual(
@@ -2329,10 +2331,8 @@ fn execute_write_ritual(
             sources: &sources,
         },
     )?;
-    Ok(ExecuteResult::message(format!(
-        "Ritual `{id}` (`{}`) recorded.",
-        kind.as_str()
-    )))
+    tracing::debug!(ritual_id = %id, kind = %kind.as_str(), "companion: wrote ritual");
+    Ok(ExecuteResult::message("Saved that routine.".to_string()))
 }
 
 fn execute_set_ritual_active(
@@ -2348,10 +2348,14 @@ fn execute_set_ritual_active(
         .and_then(|v| v.as_bool())
         .ok_or_else(|| AppError::Internal("set_ritual_active: missing `active` (bool)".into()))?;
     crate::companion::brain::rituals::set_active(&state.user_db, id, active)?;
-    Ok(ExecuteResult::message(format!(
-        "Ritual `{id}` {}.",
-        if active { "enabled" } else { "paused" }
-    )))
+    tracing::debug!(ritual_id = %id, active, "companion: set ritual active");
+    Ok(ExecuteResult::message(
+        if active {
+            "Turned that routine back on.".to_string()
+        } else {
+            "Paused that routine.".to_string()
+        },
+    ))
 }
 
 fn execute_delete_ritual(
@@ -2363,9 +2367,8 @@ fn execute_delete_ritual(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("delete_ritual: missing `id`".into()))?;
     crate::companion::brain::rituals::delete_ritual(&state.user_db, id)?;
-    Ok(ExecuteResult::message(format!(
-        "Ritual `{id}` archived to `rituals/_deleted/`."
-    )))
+    tracing::debug!(ritual_id = %id, "companion: deleted ritual");
+    Ok(ExecuteResult::message("Removed that routine.".to_string()))
 }
 
 fn execute_write_backlog_item(
@@ -2392,10 +2395,10 @@ fn execute_write_backlog_item(
             source_episode_id,
         },
     )?;
-    Ok(ExecuteResult::message(format!(
-        "Backlog item `{id}` (`{}`) recorded.",
-        kind.as_str()
-    )))
+    tracing::debug!(item_id = %id, kind = %kind.as_str(), "companion: wrote backlog item");
+    Ok(ExecuteResult::message(
+        "Noted — I'll follow up on that.".to_string(),
+    ))
 }
 
 fn execute_resolve_backlog_item(
@@ -2411,10 +2414,14 @@ fn execute_resolve_backlog_item(
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
     crate::companion::brain::backlog::resolve_item(&state.user_db, id, dropped)?;
-    Ok(ExecuteResult::message(format!(
-        "Backlog item `{id}` → `{}`.",
-        if dropped { "dropped" } else { "done" }
-    )))
+    tracing::debug!(item_id = %id, dropped, "companion: resolved backlog item");
+    Ok(ExecuteResult::message(
+        if dropped {
+            "Dropped that follow-up.".to_string()
+        } else {
+            "Marked that follow-up as done.".to_string()
+        },
+    ))
 }
 
 // ── Phase F executors ───────────────────────────────────────────────────
@@ -3221,17 +3228,14 @@ fn execute_schedule_proactive(
         .with_timezone(&chrono::Utc)
         .to_rfc3339_opts(chrono::SecondsFormat::Secs, true);
     let msg = crate::companion::proactive::insert_scheduled(&state.user_db, message, &canonical)?;
+    tracing::debug!(scheduled_id = %msg.id, when = %canonical, "companion: scheduled proactive check-in");
+    let preview = if message.chars().count() > 80 {
+        format!("{}…", message.chars().take(79).collect::<String>())
+    } else {
+        message.to_string()
+    };
     Ok(ExecuteResult::message(format!(
-        "Scheduled check-in `{id}` for {canonical}: \"{preview}\"",
-        id = msg.id,
-        preview = if message.chars().count() > 80 {
-            format!(
-                "{}…",
-                message.chars().take(79).collect::<String>()
-            )
-        } else {
-            message.to_string()
-        }
+        "Scheduled a check-in for {canonical}: \"{preview}\""
     )))
 }
 
