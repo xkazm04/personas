@@ -23,6 +23,7 @@ import type {
   PluginToggle,
   ProactiveMessage,
 } from '@/api/companion';
+import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 
 /**
  * Stored per-turn dispatcher rollup, keyed by assistant episode id. Same
@@ -35,6 +36,13 @@ export type StoredTurnSummary = Omit<
 >;
 
 export type { CompanionMessage };
+
+/**
+ * The migrated default ("General") conversation. Matches the backend's
+ * `DEFAULT_SESSION_ID` / `DEFAULT_CONVERSATION_ID` so pre-multiconv history
+ * belongs to it, and any call that omits a conversation id targets it.
+ */
+export const DEFAULT_CONVERSATION_ID = 'default';
 
 /**
  * Brain Viewer mode: hidden when null, otherwise a 3-step wizard:
@@ -136,6 +144,18 @@ interface CompanionStore {
   setStreamingPhase: (phase: StreamPhase | null) => void;
   setStreamingBeat: (beat: string | null) => void;
   setSendError: (err: string | null) => void;
+
+  // ── Conversations (multi-conversation threads) ──
+  // The registry of threads + which one is active. The transcript above
+  // (`messages`) is the ACTIVE conversation's slice — switching
+  // `activeConversationId` reloads it; the brain/identity stay global.
+  // See docs/features/companion/athena-multiconversation.md.
+  conversations: ConversationRow[];
+  activeConversationId: string;
+  setConversations: (conversations: ConversationRow[]) => void;
+  setActiveConversationId: (id: string) => void;
+  /** Insert or replace one row after a create / rename / status change. */
+  upsertConversation: (row: ConversationRow) => void;
 
   // Phase 3: approvals
   approvals: PendingApproval[];
@@ -570,6 +590,19 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   chatCards: [],
   setChatCards: (chatCards) => set({ chatCards }),
 
+  conversations: [],
+  activeConversationId: DEFAULT_CONVERSATION_ID,
+  setConversations: (conversations) => set({ conversations }),
+  setActiveConversationId: (activeConversationId) => set({ activeConversationId }),
+  upsertConversation: (row) =>
+    set((s) => {
+      const idx = s.conversations.findIndex((c) => c.id === row.id);
+      if (idx === -1) return { conversations: [row, ...s.conversations] };
+      const next = s.conversations.slice();
+      next[idx] = row;
+      return { conversations: next };
+    }),
+
   athenaAssignments: [],
   upsertAthenaAssignment: (ref) =>
     set((s) => {
@@ -956,6 +989,17 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setFleetAutoNotice: (fleetAutoNotice) => set({ fleetAutoNotice }),
   clearFleetAutoNotice: () => set({ fleetAutoNotice: null }),
 }));
+
+/**
+ * The currently-focused conversation row (or `undefined` before the registry
+ * has loaded). Reactive — components re-render when the active thread or its
+ * row (title / unread / status) changes.
+ */
+export function useActiveConversation(): ConversationRow | undefined {
+  return useCompanionStore((s) =>
+    s.conversations.find((c) => c.id === s.activeConversationId),
+  );
+}
 
 // Dev-only: expose for the test-automation bridge (e.g. verifying the orb-fly
 // target during Studio orb-pointer runs). Absent from production builds.
