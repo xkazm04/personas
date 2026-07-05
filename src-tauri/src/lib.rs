@@ -1447,6 +1447,16 @@ pub fn run() {
                                 event_name::REFERRAL_RECEIVED,
                                 serde_json::json!({ "code": code }),
                             );
+                        } else if url_str.starts_with("personas://pair") {
+                            // Pairing deep link (Direction 1): register a pending
+                            // pairing and surface the approval modal to the user.
+                            match crate::engine::pairing::register_from_deep_link(&url_str) {
+                                Ok(view) => {
+                                    tracing::info!(origin = %view.origin, "pairing deep link received");
+                                    let _ = dl_handle.emit(event_name::PAIRING_REQUESTED, &view);
+                                }
+                                Err(e) => tracing::warn!("bad pairing deep link: {}", e),
+                            }
                         }
                     }
                 });
@@ -1997,6 +2007,10 @@ pub fn run() {
             commands::credentials::external_api_keys::delete_external_api_key,
             commands::credentials::external_api_keys::get_system_api_key,
             commands::credentials::external_api_keys::list_api_key_audit,
+            commands::credentials::external_api_keys::list_pending_pairings,
+            commands::credentials::external_api_keys::approve_pairing,
+            commands::credentials::external_api_keys::reject_pairing,
+            commands::credentials::external_api_keys::revoke_pairing,
             // Credentials -- Audit Log (registered via intelligence module)
             // Credentials -- Connectors
             commands::credentials::connectors::list_connectors,

@@ -10115,7 +10115,20 @@
       "expiry_90d": "90日",
       "expiry_never": "なし",
       "field_expiry_label": "有効期限",
-      "scope_execute_label": "特定のエージェントを実行"
+      "scope_execute_label": "特定のエージェントを実行",
+      "connected_apps_desc": "このデバイスとペアリングされたクラウドアプリです。各アプリにはオリジンに紐付いた有効期限付きのキーがあります。",
+      "connected_apps_revoke": "切断",
+      "connected_apps_revoke_tooltip": "このアプリのアクセスを取り消す",
+      "connected_apps_title": "接続済みアプリ",
+      "pair_approve": "承認",
+      "pair_body": "このアプリはローカルのPersonasへの接続を要求しています。できることを確認してから、承認または拒否してください。",
+      "pair_insecure_origin": "このオリジンはHTTPSではありません。信頼できる場合のみ承認してください。",
+      "pair_later": "後で",
+      "pair_no_scopes": "読み取り専用（エージェントと実行の一覧表示）。",
+      "pair_reject": "拒否",
+      "pair_safety_note": "キーはこのオリジンに紐付けられ、有効期限があり、完全に監査可能です。接続済みアプリからいつでも切断できます。",
+      "pair_scopes_label": "要求されたアクセス",
+      "pair_title": "クラウドアプリを接続"
     },
     "search": {
       "placeholder": "設定を検索…",

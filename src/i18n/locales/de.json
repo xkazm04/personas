@@ -10115,7 +10115,20 @@
       "expiry_90d": "90 Tage",
       "expiry_never": "Niemals",
       "field_expiry_label": "Läuft ab",
-      "scope_execute_label": "Bestimmte Agenten ausführen"
+      "scope_execute_label": "Bestimmte Agenten ausführen",
+      "connected_apps_desc": "Cloud-Apps, die mit diesem Gerät gekoppelt sind. Jede hat einen ursprungsgebundenen, ablaufenden Schlüssel.",
+      "connected_apps_revoke": "Trennen",
+      "connected_apps_revoke_tooltip": "Zugriff dieser App widerrufen",
+      "connected_apps_title": "Verbundene Apps",
+      "pair_approve": "Genehmigen",
+      "pair_body": "Diese App möchte sich mit Ihrem lokalen Personas verbinden. Prüfen Sie die Berechtigungen und genehmigen oder lehnen Sie ab.",
+      "pair_insecure_origin": "Dieser Ursprung ist kein HTTPS — nur genehmigen, wenn Sie ihm vertrauen.",
+      "pair_later": "Später",
+      "pair_no_scopes": "Nur lesen (Agenten und Ausführungen auflisten).",
+      "pair_reject": "Ablehnen",
+      "pair_safety_note": "Der Schlüssel ist an diesen Ursprung gebunden, läuft ab und ist vollständig nachvollziehbar. Jederzeit unter Verbundene Apps trennen.",
+      "pair_scopes_label": "Angeforderter Zugriff",
+      "pair_title": "Cloud-App verbinden"
     },
     "search": {
       "placeholder": "Einstellungen suchen…",

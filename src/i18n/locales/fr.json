@@ -10089,7 +10089,20 @@
       "expiry_90d": "90 jours",
       "expiry_never": "Jamais",
       "field_expiry_label": "Expiration",
-      "scope_execute_label": "Exécuter des agents spécifiques"
+      "scope_execute_label": "Exécuter des agents spécifiques",
+      "connected_apps_desc": "Applications cloud associées à cet appareil. Chacune dispose d'une clé liée à son origine et à durée limitée.",
+      "connected_apps_revoke": "Déconnecter",
+      "connected_apps_revoke_tooltip": "Révoquer l'accès de cette application",
+      "connected_apps_title": "Applications connectées",
+      "pair_approve": "Approuver",
+      "pair_body": "Cette application demande à se connecter à votre Personas local. Vérifiez ce qu'elle peut faire, puis approuvez ou refusez.",
+      "pair_insecure_origin": "Cette origine n'est pas HTTPS — approuvez uniquement si vous lui faites confiance.",
+      "pair_later": "Plus tard",
+      "pair_no_scopes": "Lecture seule (liste des agents et exécutions).",
+      "pair_reject": "Refuser",
+      "pair_safety_note": "La clé est liée à cette origine, expire et est entièrement auditable. Déconnectez-la à tout moment depuis Applications connectées.",
+      "pair_scopes_label": "Accès demandé",
+      "pair_title": "Connecter une application cloud"
     },
     "limits": {
       "title": "Limites de dépense",

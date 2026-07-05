@@ -10115,7 +10115,20 @@
       "expiry_90d": "90 hari",
       "expiry_never": "Tidak pernah",
       "field_expiry_label": "Kedaluwarsa",
-      "scope_execute_label": "Jalankan agen tertentu"
+      "scope_execute_label": "Jalankan agen tertentu",
+      "connected_apps_desc": "Aplikasi cloud yang telah dipasangkan dengan perangkat ini. Setiap aplikasi memiliki kunci terikat-origin yang akan kedaluwarsa.",
+      "connected_apps_revoke": "Putuskan",
+      "connected_apps_revoke_tooltip": "Cabut akses aplikasi ini",
+      "connected_apps_title": "Aplikasi terhubung",
+      "pair_approve": "Setujui",
+      "pair_body": "Aplikasi ini meminta untuk terhubung ke Personas lokal Anda. Tinjau apa yang dapat dilakukannya, lalu setujui atau tolak.",
+      "pair_insecure_origin": "Origin ini bukan HTTPS — setujui hanya jika Anda mempercayainya.",
+      "pair_later": "Nanti",
+      "pair_no_scopes": "Hanya baca (daftar agen dan eksekusi).",
+      "pair_reject": "Tolak",
+      "pair_safety_note": "Kunci terikat pada origin ini, akan kedaluwarsa, dan dapat diaudit sepenuhnya. Putuskan kapan saja di Aplikasi terhubung.",
+      "pair_scopes_label": "Akses yang diminta",
+      "pair_title": "Hubungkan aplikasi cloud"
     },
     "search": {
       "placeholder": "Cari pengaturan…",

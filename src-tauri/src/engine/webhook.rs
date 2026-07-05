@@ -115,7 +115,7 @@ pub async fn start_webhook_server_with_management(
 
     let mgmt_state = super::management_api::ManagementState {
         pool,
-        app: app_handle,
+        app: app_handle.clone(),
         process_registry,
         // Share the webhook server's limiter so per-key management-API limits
         // and webhook-trigger limits draw from one instance.
@@ -130,7 +130,10 @@ pub async fn start_webhook_server_with_management(
         .route("/health", get(health))
         .layer(DefaultBodyLimit::max(MAX_BODY_BYTES))
         .with_state(Arc::new(webhook_state))
-        .merge(super::management_api::management_router(mgmt_state));
+        .merge(super::management_api::management_router(mgmt_state))
+        // Pairing entry points (/pair/request, /pair/claim) — permissive CORS,
+        // no api-key middleware; the nonce + user approval are the gate (Dir 1).
+        .merge(super::pairing::pairing_router(app_handle));
     #[cfg(feature = "p2p")]
     let app = app.merge(super::share_link::share_link_router());
 

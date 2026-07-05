@@ -281,6 +281,10 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "delete_external_api_key",
     "get_system_api_key",
     "list_api_key_audit",
+    "list_pending_pairings",
+    "approve_pairing",
+    "reject_pairing",
+    "revoke_pairing",
     // Signing
     "sign_document",
     "verify_document",

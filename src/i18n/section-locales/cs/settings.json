@@ -748,7 +748,20 @@
     "expiry_90d": "90 dní",
     "expiry_never": "Nikdy",
     "field_expiry_label": "Platnost do",
-    "scope_execute_label": "Spustit konkrétní agenty"
+    "scope_execute_label": "Spustit konkrétní agenty",
+    "connected_apps_desc": "Cloudové aplikace spárované s tímto zařízením. Každá má klíč vázaný na původ s omezenou platností.",
+    "connected_apps_revoke": "Odpojit",
+    "connected_apps_revoke_tooltip": "Odvolat přístup této aplikaci",
+    "connected_apps_title": "Připojené aplikace",
+    "pair_approve": "Schválit",
+    "pair_body": "Tato aplikace žádá o připojení k místním Personas. Zkontrolujte, co může dělat, a poté schvalte nebo odmítněte.",
+    "pair_insecure_origin": "Tento původ není HTTPS — schvalte pouze pokud mu důvěřujete.",
+    "pair_later": "Později",
+    "pair_no_scopes": "Pouze čtení (seznam agentů a spuštění).",
+    "pair_reject": "Odmítnout",
+    "pair_safety_note": "Klíč je vázán na tento původ, vyprší a je plně auditovatelný. Kdykoli ho odpojte v části Připojené aplikace.",
+    "pair_scopes_label": "Požadovaný přístup",
+    "pair_title": "Připojit cloudovou aplikaci"
   },
   "search": {
     "placeholder": "Hledat nastavení…",

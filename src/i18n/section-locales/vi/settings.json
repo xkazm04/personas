@@ -748,7 +748,20 @@
     "expiry_90d": "90 ngày",
     "expiry_never": "Không bao giờ",
     "field_expiry_label": "Hết hạn",
-    "scope_execute_label": "Thực thi agent cụ thể"
+    "scope_execute_label": "Thực thi agent cụ thể",
+    "connected_apps_desc": "Các ứng dụng đám mây đã ghép nối với thiết bị này. Mỗi ứng dụng có khóa gắn với origin và có thời hạn.",
+    "connected_apps_revoke": "Ngắt kết nối",
+    "connected_apps_revoke_tooltip": "Thu hồi quyền truy cập của ứng dụng này",
+    "connected_apps_title": "Ứng dụng đã kết nối",
+    "pair_approve": "Phê duyệt",
+    "pair_body": "Ứng dụng này đang yêu cầu kết nối với Personas cục bộ của bạn. Xem xét những gì nó có thể làm, sau đó phê duyệt hoặc từ chối.",
+    "pair_insecure_origin": "Origin này không dùng HTTPS — chỉ phê duyệt nếu bạn tin tưởng nó.",
+    "pair_later": "Để sau",
+    "pair_no_scopes": "Chỉ đọc (liệt kê agent và lần thực thi).",
+    "pair_reject": "Từ chối",
+    "pair_safety_note": "Khóa được gắn với origin này, có thời hạn và có thể kiểm tra đầy đủ. Ngắt kết nối bất kỳ lúc nào trong mục Ứng dụng đã kết nối.",
+    "pair_scopes_label": "Quyền truy cập được yêu cầu",
+    "pair_title": "Kết nối ứng dụng đám mây"
   },
   "search": {
     "placeholder": "Tìm kiếm cài đặt…",

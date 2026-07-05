@@ -119,6 +119,7 @@ pub mod llm_topology;
 pub mod logger;
 pub mod management_api;
 pub mod mcp_tools;
+pub mod pairing;
 pub mod model_routing;
 pub mod oauth_refresh;
 pub mod oauth_refresh_lock;

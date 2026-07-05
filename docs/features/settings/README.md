@@ -108,4 +108,34 @@ Authorization is enforced request-time in `engine/management_api.rs::authorize` 
 - **Expiry** — never / 7 / 30 / 90 days. The command stamps a server-authoritative absolute `expires_at`; `find_by_token` refuses expired keys (fail-closed parser). The row shows an "expires in Nd" / "Expired" chip.
 - **Per-key audit** — every management-API request the key makes (method / path / status / persona / origin) is recorded in `api_key_audit` (capped 500/key) and surfaced in the row's **Activity** drawer. Plus a per-key sliding-window rate limit (120 req/60 s → 429 + `Retry-After`).
 
-Backend: `commands/credentials/external_api_keys.rs` (`create_external_api_key` takes `expires_in_days`; `list_api_key_audit`), `db/repos/resources/{external_api_keys,api_key_audit}.rs`, `engine/management_api.rs`. Design: [`docs/architecture/cloud-integration-bridge.md`](../../architecture/cloud-integration-bridge.md). Origin-binding + the browser pairing ceremony are a later phase (P5–P7).
+Backend: `commands/credentials/external_api_keys.rs` (`create_external_api_key` takes `expires_in_days`; `list_api_key_audit`), `db/repos/resources/{external_api_keys,api_key_audit}.rs`, `engine/management_api.rs`. Design: [`docs/architecture/cloud-integration-bridge.md`](../../architecture/cloud-integration-bridge.md).
+
+### Pairing a cloud app (Connected apps)
+
+A cloud web app running in the user's browser (e.g. `https://app.example`) can drive
+the local management API only after the user **pairs** it — nothing is exposed by
+default. Two triggers, one flow (`engine/pairing.rs`):
+
+1. The cloud app opens `personas://pair?origin=…&scopes=…&nonce=…&name=…` (deep
+   link), **or** it `POST`s to `http://127.0.0.1:9420/pair/request` (the
+   authoritative origin is the request's `Origin` header — a page can only pair
+   itself). Both register a pending pairing keyed by the cloud-app-supplied nonce
+   and raise the **PairApprovalModal** (mounted at the app root).
+2. The user reviews the requesting origin (a non-HTTPS origin is flagged), narrows
+   the requested scopes, picks an expiry (7/30/90 d), and approves. `approve_pairing`
+   mints an **origin-bound** key (`external_api_keys.bound_origin`), adds the origin
+   to the live CORS allowlist (`add_paired_origin`), and stashes the plaintext.
+3. The cloud app claims its token exactly once at `GET /pair/claim?nonce=…` — only
+   from the approved `Origin`; the token itself is origin-bound and expiring, so it's
+   useless anywhere else. The token is never sent through the deep-link query string.
+
+Transport: the management-API CORS layer allows trusted loopback origins **plus**
+paired origins, and emits `Access-Control-Allow-Private-Network: true` so Chrome's
+public→loopback preflight passes. The `/pair/*` endpoints use permissive CORS (the
+nonce + user approval are the gate, not CORS). Paired origins persist as
+`bound_origin` and are re-warmed into the allowlist at server start.
+
+Paired apps appear under **Connected apps** in Settings → API Keys, each with its
+origin, expiry, and last-used; **Disconnect** (`revoke_pairing`) revokes the key and
+drops the origin from the allowlist. Commands: `list_pending_pairings` /
+`approve_pairing` / `reject_pairing` / `revoke_pairing`.

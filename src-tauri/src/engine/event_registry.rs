@@ -241,6 +241,9 @@ event_names! {
     // Referral (personas://ref/<code> deep link received from OS)
     REFERRAL_RECEIVED          => "referral-received",
 
+    // Cloud-app pairing request (personas://pair deep link or POST /pair/request)
+    PAIRING_REQUESTED          => "pairing-requested",
+
     // Engine fallback (unrecognized engine setting)
     ENGINE_FALLBACK            => "engine-fallback",
 

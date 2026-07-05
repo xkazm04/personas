@@ -10089,7 +10089,20 @@
       "expiry_90d": "90 يوماً",
       "expiry_never": "أبداً",
       "field_expiry_label": "ينتهي في",
-      "scope_execute_label": "تنفيذ وكلاء محددين"
+      "scope_execute_label": "تنفيذ وكلاء محددين",
+      "connected_apps_desc": "التطبيقات السحابية التي قمت بإقرانها بهذا الجهاز. لكل منها مفتاح مرتبط بالمصدر وينتهي صلاحيته.",
+      "connected_apps_revoke": "قطع الاتصال",
+      "connected_apps_revoke_tooltip": "إلغاء صلاحية وصول هذا التطبيق",
+      "connected_apps_title": "التطبيقات المتصلة",
+      "pair_approve": "موافقة",
+      "pair_body": "يطلب هذا التطبيق الاتصال بـ Personas المحلي. راجع ما يمكنه فعله، ثم وافق أو ارفض.",
+      "pair_insecure_origin": "هذا المصدر ليس HTTPS — وافق فقط إذا كنت تثق به.",
+      "pair_later": "لاحقاً",
+      "pair_no_scopes": "للقراءة فقط (عرض الوكلاء والتنفيذات).",
+      "pair_reject": "رفض",
+      "pair_safety_note": "المفتاح مرتبط بهذا المصدر، وله تاريخ انتهاء، وقابل للتدقيق الكامل. يمكنك قطع اتصاله في أي وقت من التطبيقات المتصلة.",
+      "pair_scopes_label": "الصلاحيات المطلوبة",
+      "pair_title": "ربط تطبيق سحابي"
     },
     "limits": {
       "title": "حدود الإنفاق",

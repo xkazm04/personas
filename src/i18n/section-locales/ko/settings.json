@@ -748,7 +748,20 @@
     "expiry_90d": "90일",
     "expiry_never": "없음",
     "field_expiry_label": "만료",
-    "scope_execute_label": "특정 에이전트 실행"
+    "scope_execute_label": "특정 에이전트 실행",
+    "connected_apps_desc": "이 기기와 연결된 클라우드 앱입니다. 각 앱은 출처에 바인딩된 만료되는 키를 가집니다.",
+    "connected_apps_revoke": "연결 해제",
+    "connected_apps_revoke_tooltip": "이 앱의 접근 권한을 취소합니다",
+    "connected_apps_title": "연결된 앱",
+    "pair_approve": "승인",
+    "pair_body": "이 앱이 로컬 Personas에 연결을 요청하고 있습니다. 가능한 작업을 검토한 후 승인 또는 거부하세요.",
+    "pair_insecure_origin": "이 출처는 HTTPS가 아닙니다 — 신뢰하는 경우에만 승인하세요.",
+    "pair_later": "나중에",
+    "pair_no_scopes": "읽기 전용 (에이전트 및 실행 목록 조회).",
+    "pair_reject": "거부",
+    "pair_safety_note": "키는 이 출처에 바인딩되고 만료되며 완전히 감사 가능합니다. 연결된 앱에서 언제든지 연결을 해제할 수 있습니다.",
+    "pair_scopes_label": "요청된 접근 권한",
+    "pair_title": "클라우드 앱 연결"
   },
   "search": {
     "placeholder": "설정 검색…",

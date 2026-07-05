@@ -10089,7 +10089,20 @@
       "expiry_90d": "90天",
       "expiry_never": "永不",
       "field_expiry_label": "过期时间",
-      "scope_execute_label": "执行特定代理"
+      "scope_execute_label": "执行特定代理",
+      "connected_apps_desc": "已与此设备配对的云端应用。每个应用拥有绑定来源且有过期时间的密钥。",
+      "connected_apps_revoke": "断开连接",
+      "connected_apps_revoke_tooltip": "撤销此应用的访问权限",
+      "connected_apps_title": "已连接的应用",
+      "pair_approve": "批准",
+      "pair_body": "此应用请求连接到您本地的 Personas。请查看它的权限，然后批准或拒绝。",
+      "pair_insecure_origin": "此来源不是 HTTPS — 仅在信任时批准。",
+      "pair_later": "稍后",
+      "pair_no_scopes": "只读（列出代理和执行记录）。",
+      "pair_reject": "拒绝",
+      "pair_safety_note": "密钥绑定到此来源，有过期时间，且完全可审计。随时可在“已连接的应用”中断开连接。",
+      "pair_scopes_label": "请求的访问权限",
+      "pair_title": "连接云端应用"
     },
     "limits": {
       "title": "Spending Limits",

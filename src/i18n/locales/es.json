@@ -10115,7 +10115,20 @@
       "expiry_90d": "90 días",
       "expiry_never": "Nunca",
       "field_expiry_label": "Expira",
-      "scope_execute_label": "Ejecutar agentes específicos"
+      "scope_execute_label": "Ejecutar agentes específicos",
+      "connected_apps_desc": "Apps en la nube que has vinculado con este dispositivo. Cada una tiene una clave de origen vinculada y con expiración.",
+      "connected_apps_revoke": "Desconectar",
+      "connected_apps_revoke_tooltip": "Revocar el acceso de esta app",
+      "connected_apps_title": "Apps conectadas",
+      "pair_approve": "Aprobar",
+      "pair_body": "Esta app solicita conectarse a tu Personas local. Revisa lo que puede hacer y aprueba o rechaza.",
+      "pair_insecure_origin": "Este origen no es HTTPS — aprueba solo si confías en él.",
+      "pair_later": "Más tarde",
+      "pair_no_scopes": "Solo lectura (listar agentes y ejecuciones).",
+      "pair_reject": "Rechazar",
+      "pair_safety_note": "La clave está vinculada a este origen, expira y es completamente auditable. Desconéctala en cualquier momento en Apps conectadas.",
+      "pair_scopes_label": "Acceso solicitado",
+      "pair_title": "Conectar una app en la nube"
     },
     "search": {
       "placeholder": "Buscar configuración…",

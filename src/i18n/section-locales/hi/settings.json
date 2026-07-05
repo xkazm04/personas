@@ -748,7 +748,20 @@
     "expiry_90d": "90 दिन",
     "expiry_never": "कभी नहीं",
     "field_expiry_label": "समाप्ति",
-    "scope_execute_label": "विशिष्ट agents चलाएं"
+    "scope_execute_label": "विशिष्ट agents चलाएं",
+    "connected_apps_desc": "क्लाउड ऐप्स जो इस डिवाइस से जुड़े हैं। प्रत्येक में मूल-बद्ध, समाप्त होने वाली कुंजी है।",
+    "connected_apps_revoke": "डिस्कनेक्ट करें",
+    "connected_apps_revoke_tooltip": "इस ऐप की पहुँच रद्द करें",
+    "connected_apps_title": "जुड़े ऐप्स",
+    "pair_approve": "स्वीकृत करें",
+    "pair_body": "यह ऐप आपके स्थानीय Personas से जुड़ना चाहता है। यह क्या कर सकता है देखें, फिर स्वीकृत या अस्वीकार करें।",
+    "pair_insecure_origin": "यह मूल HTTPS नहीं है — केवल तभी स्वीकृत करें जब आप इस पर भरोसा करते हों।",
+    "pair_later": "बाद में",
+    "pair_no_scopes": "केवल पढ़ने योग्य (एजेंट और निष्पादन सूचीबद्ध करें)।",
+    "pair_reject": "अस्वीकार करें",
+    "pair_safety_note": "कुंजी इस मूल से बंधी है, समाप्त होती है, और पूरी तरह ऑडिट योग्य है। जुड़े ऐप्स में कभी भी डिस्कनेक्ट करें।",
+    "pair_scopes_label": "अनुरोधित पहुँच",
+    "pair_title": "क्लाउड ऐप कनेक्ट करें"
   },
   "search": {
     "placeholder": "सेटिंग्स खोजें…",

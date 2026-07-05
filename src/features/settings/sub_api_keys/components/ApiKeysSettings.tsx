@@ -18,7 +18,7 @@
  *     user-facing list — it isn't theirs to manage.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3, History, CalendarClock } from 'lucide-react';
+import { Key, Plus, Check, AlertTriangle, Trash2, ShieldOff, RefreshCw, Clock3, History, CalendarClock, Globe, Unplug } from 'lucide-react';
 import {
   ContentBox,
   ContentHeader,
@@ -33,6 +33,7 @@ import {
   type ExternalApiKey,
   type CreateApiKeyResponse,
 } from '@/api/auth/externalApiKeys';
+import { revokePairing } from '@/api/auth/pairing';
 import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
@@ -140,7 +141,26 @@ export default function ApiKeysSettings() {
   );
 
   const visibleKeys = keys ?? [];
+  // Paired cloud-app keys (origin-bound) get their own "Connected apps" section;
+  // everything else is a regular key.
+  const regularKeys = visibleKeys.filter((k) => !k.bound_origin);
+  const pairedKeys = visibleKeys.filter((k) => !!k.bound_origin && !k.revoked_at);
   const activeCount = visibleKeys.filter((k) => k.enabled && !k.revoked_at).length;
+
+  const handleDisconnect = useCallback(
+    async (id: string) => {
+      setActioning(id);
+      try {
+        await revokePairing(id);
+        await load();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setActioning(null);
+      }
+    },
+    [load],
+  );
 
   return (
     <ContentBox>
@@ -192,13 +212,13 @@ export default function ApiKeysSettings() {
                 </div>
               )}
 
-              {!loading && visibleKeys.length === 0 && (
+              {!loading && regularKeys.length === 0 && (
                 <div className="typo-caption text-foreground py-6 text-center bg-secondary/20 rounded">
                   {s.empty}
                 </div>
               )}
 
-              {visibleKeys.map((key) => (
+              {regularKeys.map((key) => (
                 <ApiKeyRow
                   key={key.id}
                   apiKey={key}
@@ -211,6 +231,29 @@ export default function ApiKeysSettings() {
             </div>
           </SectionCard>
         </div>
+
+        {pairedKeys.length > 0 && (
+          <div className="mt-6">
+            <SectionCard
+              title={s.connected_apps_title}
+              icon={<Globe className="w-4 h-4 text-sky-400" />}
+              titleClassName="text-primary"
+            >
+              <p className="typo-caption text-foreground mb-2">{s.connected_apps_desc}</p>
+              <div className="space-y-2">
+                {pairedKeys.map((key) => (
+                  <PairedAppRow
+                    key={key.id}
+                    apiKey={key}
+                    actioning={actioning === key.id}
+                    onDisconnect={() => handleDisconnect(key.id)}
+                    onAudit={() => setAuditTarget(key)}
+                  />
+                ))}
+              </div>
+            </SectionCard>
+          </div>
+        )}
       </ContentBody>
 
       {showCreate && (
@@ -378,6 +421,99 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete, onAudit }: ApiKeyRow
             <>
               <Trash2 size={12} />
               {s.delete}
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+interface PairedAppRowProps {
+  apiKey: ExternalApiKey;
+  actioning: boolean;
+  onDisconnect: () => void;
+  onAudit: () => void;
+}
+
+/** A cloud app the user paired (origin-bound key) — shown in "Connected apps". */
+function PairedAppRow({ apiKey, actioning, onDisconnect, onAudit }: PairedAppRowProps) {
+  const { t, tx } = useTranslation();
+  const s = t.settings.api_keys;
+  const [confirm, setConfirm] = useState(false);
+  const expiry = expiryInfo(apiKey);
+  const lastUsed = formatRelativeTime(apiKey.last_used_at, s.never_used, { dateFallbackDays: 30 });
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-card border border-border/30 bg-secondary/20">
+      <Globe className="w-4 h-4 text-sky-400 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="typo-body font-medium text-foreground truncate">{apiKey.name}</span>
+          {expiry && (
+            <span
+              className={`typo-caption px-1.5 py-0.5 rounded inline-flex items-center gap-1 ${
+                expiry.expired
+                  ? 'text-red-400 bg-red-400/10 border border-red-400/30'
+                  : 'text-foreground bg-secondary/40'
+              }`}
+            >
+              <CalendarClock size={10} />
+              {expiry.expired ? s.expired_chip : tx(s.expires_in, { days: expiry.days })}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 mt-1">
+          <code
+            className="typo-code text-foreground truncate max-w-[16rem]"
+            title={apiKey.bound_origin ?? undefined}
+          >
+            {apiKey.bound_origin}
+          </code>
+          <span className="typo-caption text-foreground">·</span>
+          <span className="typo-caption text-foreground">
+            {s.last_used}: {lastUsed}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onAudit}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+          title={s.audit_tooltip}
+        >
+          <History size={12} />
+          {s.audit}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!confirm) {
+              setConfirm(true);
+              setTimeout(() => setConfirm(false), 3000);
+              return;
+            }
+            setConfirm(false);
+            onDisconnect();
+          }}
+          disabled={actioning}
+          className={`inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption transition-colors disabled:opacity-50 ${
+            confirm
+              ? 'text-red-400 bg-red-400/10 hover:bg-red-400/20'
+              : 'text-foreground hover:text-red-400 hover:bg-red-400/10'
+          }`}
+          title={s.connected_apps_revoke_tooltip}
+        >
+          {confirm ? (
+            <>
+              <Check size={12} />
+              {s.confirm_delete}
+            </>
+          ) : (
+            <>
+              <Unplug size={12} />
+              {s.connected_apps_revoke}
             </>
           )}
         </button>
