@@ -170,9 +170,13 @@ pub async fn build_system_prompt(
     // the older flat fleet-state digest with an operation-grouped
     // narrative tied to user intent.
     let observability_md = format!(
-        "{}{}",
+        "{}{}{}",
         observability_md,
         crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
+        // Multi-conversation: the roster of the user's OTHER open threads, so one
+        // Athena stays aware of all her conversations (design §2). Empty when
+        // there's only this thread.
+        crate::companion::conversation::roster_digest_for_prompt(user_db, session_id),
     );
 
     let recall = match embedder {
@@ -301,9 +305,13 @@ pub async fn build_system_prompt(
     // the older flat fleet-state digest with an operation-grouped
     // narrative tied to user intent.
     let observability_md = format!(
-        "{}{}",
+        "{}{}{}",
         observability_md,
         crate::companion::orchestration::operative_memory::memory().digest_for_prompt(),
+        // Multi-conversation: the roster of the user's OTHER open threads, so one
+        // Athena stays aware of all her conversations (design §2). Empty when
+        // there's only this thread.
+        crate::companion::conversation::roster_digest_for_prompt(user_db, session_id),
     );
 
     let recall = Recall {

@@ -177,3 +177,58 @@ pub fn mark_read(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
     )?;
     Ok(())
 }
+
+/// A compact digest of the user's OTHER open conversations, injected into every
+/// turn's system prompt so a single Athena is aware of all her threads — the
+/// "singular Athena" control plane (design §2). Excludes the current thread and
+/// archived threads; returns "" when there are none so nothing is injected.
+///
+/// Read-only + best-effort: a query error yields an empty digest rather than
+/// failing the turn. Reuses the same shape as the fleet operative-memory
+/// digest that already rides in the prompt.
+pub fn roster_digest_for_prompt(pool: &UserDbPool, current_id: &str) -> String {
+    let rows = match list_active(pool) {
+        Ok(r) => r,
+        Err(_) => return String::new(),
+    };
+    let others: Vec<&ConversationRow> = rows.iter().filter(|c| c.id != current_id).collect();
+    if others.is_empty() {
+        return String::new();
+    }
+    let mut out = String::from(
+        "\n## Your other open conversations\n\
+         You are one Athena across all of these — same memory, same identity. The user is in a \
+         different thread right now; reference these only when relevant (e.g. \"I've got that \
+         running in your other conversation\").\n",
+    );
+    for c in others.iter().take(6) {
+        let title = c.title.as_deref().unwrap_or("(untitled)");
+        let state = if c.unread_count > 0 {
+            "awaiting the user"
+        } else {
+            "idle"
+        };
+        out.push_str(&format!(
+            "- \"{title}\" — {state}, last active {}\n",
+            c.last_active_at
+        ));
+    }
+    out
+}
+
+/// Read-only list of active conversations (no `ensure_system_conversations`
+/// write side-effect) — for the per-turn roster digest, which must not write on
+/// every prompt build.
+fn list_active(pool: &UserDbPool) -> Result<Vec<ConversationRow>, AppError> {
+    let conn = pool.get()?;
+    let sql = format!(
+        "SELECT {SELECT_COLS} FROM companion_session s \
+         WHERE s.status = 'active' \
+         ORDER BY s.pinned DESC, s.last_active_at DESC"
+    );
+    let mut stmt = conn.prepare(&sql)?;
+    let rows = stmt
+        .query_map([], map_row)?
+        .collect::<rusqlite::Result<Vec<_>>>()?;
+    Ok(rows)
+}
