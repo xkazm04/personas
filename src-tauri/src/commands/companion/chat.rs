@@ -47,6 +47,9 @@ pub struct CompanionMessage {
 /// retrieval is folded through a one-shot Claude call into a focused
 /// briefing when raw recall exceeds the budget threshold. Adds runtime
 /// Claude-call cost on dense-recall turns; off by default.
+// Threading param (conversation_id) pushed this one arg over clippy's default;
+// bundling the flags into a struct is a larger refactor than this warrants.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn companion_send_message(
     state: State<'_, Arc<AppState>>,

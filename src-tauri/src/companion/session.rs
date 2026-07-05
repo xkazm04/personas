@@ -380,6 +380,7 @@ fn turn_lock_for(conversation_id: &str) -> Arc<tokio::sync::Mutex<()>> {
 /// Streams progress via Tauri events on `STREAM_EVENT` so the UI updates
 /// incrementally. The final returned ids let the caller link UI state to
 /// persisted episodes.
+#[allow(clippy::too_many_arguments)] // +conversation_id; a params struct is more churn than it's worth
 pub async fn send_turn(
     app: &AppHandle,
     user_db: Arc<UserDbPool>,
@@ -1078,6 +1079,7 @@ pub async fn send_turn(
 /// sets the flag (`cancel_pending_autonomy`) so the tick aborts before
 /// spinning up CLI work. Once `send_turn` is in flight, `A5`'s mid-
 /// stream interrupt handles cancellation of the CLI process itself.
+#[allow(clippy::too_many_arguments)] // +conversation_id; mirrors send_turn's param list
 fn schedule_autonomous_tick(
     app: AppHandle,
     user_db: Arc<UserDbPool>,
