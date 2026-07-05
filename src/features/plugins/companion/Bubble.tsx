@@ -130,10 +130,12 @@ export function Bubble({
   const showBrainLinks =
     !isUser && displayIsString && !streaming && !!onOpenInBrain;
 
-  // Hover meta row (copy + relative time). Collapsed to zero height via a
-  // grid-rows 0fr→1fr trick so it adds no vertical bloat across a long
-  // transcript and never shifts layout — it expands smoothly only while the
-  // message row is hovered/focused. Skipped for the streaming bubble.
+  // Hover/focus meta controls (copy + live relative time). Rendered BESIDE the
+  // bubble — overlaid in the gutter via absolute positioning — so they never
+  // shift layout or add vertical bloat across a long transcript. They fade in
+  // only while the message row is hovered or keyboard-focused (group-hover /
+  // group-focus-within), on the side away from the text: to the right of an
+  // assistant bubble, to the left of a user bubble. Skipped while streaming.
   const showMeta = !streaming && displayIsString;
 
   return (
@@ -162,21 +164,44 @@ export function Bubble({
           <div className="w-7 shrink-0" aria-hidden />
         ))}
       <div className={`min-w-0 max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
-        <div
-          className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
-            isUser
-              ? 'bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap'
-              : 'bg-background/80 border border-foreground/12 text-foreground shadow-elevation-1'
-          } ${streaming ? 'opacity-90' : ''}`}
-        >
-          {isUser || !displayIsString ? (
-            displayText
-          ) : (
-            <MarkdownRenderer
-              content={displayText as string}
-              className="athena-chat-md"
-              codeBlockActions
-            />
+        {/*
+          Bubble + side controls. This wrapper shrink-wraps the bubble (it's a
+          flex child of an items-start/end column), so the absolutely-positioned
+          meta anchors to the bubble's own edge — not the 85% column — and floats
+          in the empty gutter beside even a short message.
+        */}
+        <div className="relative min-w-0">
+          <div
+            className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
+              isUser
+                ? 'bg-primary/20 border border-primary/30 text-foreground whitespace-pre-wrap'
+                : 'bg-background/80 border border-foreground/12 text-foreground shadow-elevation-1'
+            } ${streaming ? 'opacity-90' : ''}`}
+          >
+            {isUser || !displayIsString ? (
+              displayText
+            ) : (
+              <MarkdownRenderer
+                content={displayText as string}
+                className="athena-chat-md"
+                codeBlockActions
+              />
+            )}
+          </div>
+          {showMeta && (
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 whitespace-nowrap opacity-0 pointer-events-none transition-opacity duration-150 ease-out group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto ${
+                isUser ? 'right-full pr-1.5 flex-row-reverse' : 'left-full pl-1.5'
+              }`}
+            >
+              <CopyButton text={displayText as string} iconSize="w-3 h-3" />
+              {createdAt && (
+                <RelativeTime
+                  timestamp={createdAt}
+                  className="typo-caption text-foreground/60 tabular-nums"
+                />
+              )}
+            </div>
           )}
         </div>
         {showBrainLinks && (
@@ -185,23 +210,6 @@ export function Bubble({
             onOpen={onOpenInBrain}
             variant="inline"
           />
-        )}
-        {showMeta && (
-          <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-150 ease-out group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr]">
-            <div className="overflow-hidden">
-              <div
-                className={`flex items-center gap-1 ${isUser ? 'flex-row-reverse' : ''}`}
-              >
-                <CopyButton text={displayText as string} iconSize="w-3 h-3" />
-                {createdAt && (
-                  <RelativeTime
-                    timestamp={createdAt}
-                    className="typo-caption text-foreground px-1"
-                  />
-                )}
-              </div>
-            </div>
-          </div>
         )}
       </div>
     </div>

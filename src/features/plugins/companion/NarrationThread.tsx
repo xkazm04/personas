@@ -16,8 +16,10 @@
  */
 
 import { useState } from 'react';
-import { CheckCircle2, ChevronDown, ChevronRight, Loader2, Sparkles } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, ChevronRight, Loader2, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { formatDuration } from '@/lib/utils/formatters';
 import { phaseLabel } from './extractStreamPhase';
 import type { NarrationEntry, StoredNarration } from './narrationTimeline';
@@ -93,6 +95,7 @@ export function NarrationLiveLog({ entries }: { entries: NarrationEntry[] }) {
 
 export function NarrationTrail({ narration }: { narration: StoredNarration }) {
   const { t, tx } = useTranslation();
+  const { shouldAnimate } = useMotion();
   const [open, setOpen] = useState(false);
   // Beats now persist as their own conversational aside messages (Phase A/B),
   // so the collapsed trail keeps only the tool-call history with durations —
@@ -107,31 +110,62 @@ export function NarrationTrail({ narration }: { narration: StoredNarration }) {
   const duration = formatDuration(
     Math.max(0, narration.endedAt - narration.startedAt),
   );
+
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  // Gentle appear when the trail is first promoted under a finished reply —
+  // fires once on mount, so it never re-plays on transcript re-renders. Under
+  // reduced motion it snaps in with no fade/slide.
+  const appear = shouldAnimate
+    ? { initial: { opacity: 0, y: 3 }, animate: { opacity: 1, y: 0 } }
+    : { initial: false as const, animate: { opacity: 1, y: 0 } };
+
   return (
-    <div data-testid="companion-narration-trail">
+    <motion.div
+      {...appear}
+      transition={{ duration: shouldAnimate ? 0.24 : 0, ease }}
+      data-testid="companion-narration-trail"
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={open ? c.narration_hide : c.narration_show}
-        className="inline-flex items-center gap-1.5 rounded-interactive px-1.5 py-0.5 typo-caption text-foreground hover:bg-foreground/[0.06] transition-colors"
+        className={`group/trail inline-flex max-w-full items-center gap-1.5 rounded-interactive px-2 py-1 typo-caption transition-colors hover:bg-foreground/[0.06] ${
+          open ? 'bg-foreground/[0.05]' : ''
+        }`}
       >
-        {open ? (
-          <ChevronDown className="w-3 h-3 shrink-0" aria-hidden />
-        ) : (
-          <ChevronRight className="w-3 h-3 shrink-0" aria-hidden />
-        )}
-        <span>
-          {c.narration_trail_label} — {steps} · {duration}
+        <motion.span
+          className="flex shrink-0 text-foreground/45 group-hover/trail:text-foreground/70"
+          aria-hidden
+          initial={false}
+          animate={{ rotate: open ? 90 : 0 }}
+          transition={{ duration: shouldAnimate ? 0.2 : 0, ease }}
+        >
+          <ChevronRight className="w-3 h-3" />
+        </motion.span>
+        <span className="truncate">
+          <span className="font-medium text-foreground/85">{c.narration_trail_label}</span>
+          <span className="text-foreground/45"> — {steps} · {duration}</span>
         </span>
       </button>
-      {open && (
-        <ul className="mt-1 space-y-1 rounded-card border border-foreground/10 bg-foreground/[0.04] px-3 py-2">
-          {toolEntries.map((e) => (
-            <EntryRow key={e.id} entry={e} />
-          ))}
-        </ul>
-      )}
-    </div>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="trail-details"
+            initial={shouldAnimate ? { height: 0, opacity: 0 } : false}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={shouldAnimate ? { height: 0, opacity: 0 } : { opacity: 0 }}
+            transition={{ duration: shouldAnimate ? 0.22 : 0, ease }}
+            className="overflow-hidden"
+          >
+            <ul className="mt-1 space-y-1.5 rounded-card border border-foreground/10 bg-foreground/[0.04] px-3 py-2">
+              {toolEntries.map((e) => (
+                <EntryRow key={e.id} entry={e} />
+              ))}
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }
