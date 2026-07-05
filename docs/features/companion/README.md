@@ -102,6 +102,18 @@ Manual re-ingest uses `companion_reingest_doctrine`. It is idempotent: unchanged
 4. The panel appends messages to `companionStore.ts`; pending playback is stored globally so the footer Play button and chat panel coordinate.
 5. `companion_reset_conversation` clears the persistent Claude CLI session and can optionally wipe the SQL transcript. Markdown episodes remain on disk.
 
+## Multiple conversations (threads)
+
+Athena runs **many conversations at once — one mind, many threads.** Each conversation has its own transcript, its own Claude `--resume` continuity, its own turn lock, and its own recency lane; the brain (facts/goals/procedurals/doctrine/identity), the Task pool, and the proactive economy stay **global**, which is what keeps her a single Athena across every thread. Full design: [`athena-multiconversation.md`](./athena-multiconversation.md).
+
+**Switcher (chat window).** The header shows the **active thread's title as a dropdown** (beside Athena's avatar, which carries the identity). The menu lists every conversation with a status dot — ● *awaiting you* (unread reply), ◐ *working* (a turn is live), ○ *idle* — plus its unread count, an **archive-on-hover** affordance for non-system threads, and **New conversation**. Switching a thread swaps the transcript to that thread's slice and marks it read; the brain stays shared. Rendered by `ConversationSwitcher.tsx`; the active thread + registry live in `companionStore.ts` (`conversations`, `activeConversationId`, `useActiveConversation()`).
+
+**System threads.** Two are always present and can't be deleted (only archived): **General** (`default` — the migrated pre-multiconv history) and **Athena / Notices** (`athena-notices`, pinned) — the single home for ownerless proactive nudges (daily brief, incident/blocker nudges), so proactive messages never scatter across threads.
+
+**Backend.** `companion_session` is generalized into the conversation registry (title / status / pinned / origin / last-read); `companion_node.session_id` scopes episodes per thread. Commands: `companion_list_conversations`, `companion_create_conversation`, `companion_rename_conversation`, `companion_archive_conversation`, `companion_mark_conversation_read`; `companion_send_message` / `companion_list_recent_messages` / `companion_reset_conversation` all take an optional `conversationId` (omit → `default`). Turns **serialize within a conversation** (a per-thread lock protects that thread's `--resume` + brain writes) but **run concurrently across conversations** — unbounded, because every Athena spawn uses Claude subscription auth, not metered API. Every turn's system prompt also carries a **roster digest** of the user's other open threads, so one Athena stays aware of all of them.
+
+**Not yet wired:** the orb's thread-attention badge and live *background-reply → unread* routing (a background thread finishing a turn bumping its switcher badge in real time) are the remaining pieces — until then, unread counts refresh on hydration / thread-switch / actions.
+
 ## Approvals and navigation
 
 Athena actions can create pending approvals. The panel lists them through `companion_list_pending_approvals` and resolves them through `companion_approve_action` or `companion_reject_action`.
