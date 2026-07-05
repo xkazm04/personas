@@ -87,6 +87,14 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     require_auth_sync(&state)?;
     let root = disk::ensure_initialized(&state.db)?;
 
+    // Multi-conversation: make sure the always-present system threads
+    // (default "General" + "athena-notices") exist from boot, not just on the
+    // first list. Best-effort — `conversation::list` also creates them lazily,
+    // so a failure here doesn't block init.
+    if let Err(e) = crate::companion::conversation::ensure_system_conversations(&state.user_db) {
+        tracing::warn!(error = %e, "ensure_system_conversations failed at init (will retry lazily)");
+    }
+
     // Phase E: spawn the proactive scheduler exactly once. Subsequent
     // companion_init calls (re-mount, HMR) hit the OnceLock guard and
     // skip — without it we'd queue up a tick every refresh.
