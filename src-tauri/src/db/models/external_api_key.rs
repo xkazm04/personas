@@ -65,3 +65,22 @@ pub struct CreateApiKeyResponse {
     pub record: ExternalApiKey,
     pub plaintext_token: String,
 }
+
+/// One recorded management-API request an external API key made. Written
+/// best-effort by the `require_api_key` middleware after the route resolves, so
+/// the key's owner has a per-key action trail (not just `last_used_at`).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ApiKeyAuditEntry {
+    pub id: String,
+    pub key_id: String,
+    pub at: String,
+    pub method: String,
+    pub path: String,
+    /// HTTP status the request returned.
+    pub status: i64,
+    /// Target persona id if the route named one (execute / a2a / agent-card).
+    pub persona_id: Option<String>,
+    /// Request `Origin` header, if any (browser callers).
+    pub origin: Option<String>,
+}

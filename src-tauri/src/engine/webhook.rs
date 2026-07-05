@@ -105,7 +105,7 @@ pub async fn start_webhook_server_with_management(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let webhook_state = WebhookState {
         pool: pool.clone(),
-        rate_limiter,
+        rate_limiter: rate_limiter.clone(),
         tier_config,
     };
 
@@ -113,6 +113,9 @@ pub async fn start_webhook_server_with_management(
         pool,
         app: app_handle,
         process_registry,
+        // Share the webhook server's limiter so per-key management-API limits
+        // and webhook-trigger limits draw from one instance.
+        rate_limiter,
     };
 
     const MAX_BODY_BYTES: usize = 1024 * 1024;

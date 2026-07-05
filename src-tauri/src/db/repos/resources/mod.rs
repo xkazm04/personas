@@ -1,3 +1,4 @@
+pub mod api_key_audit;
 pub mod artist;
 pub mod audit_log;
 pub mod automations;

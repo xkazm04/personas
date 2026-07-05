@@ -329,6 +329,25 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_external_api_keys_prefix ON external_api_keys(key_prefix);",
     )?;
 
+    // -- Per-key action audit log (Direction 5, P3) ---------------------------
+    // Every management-API request an authenticated key makes is recorded here
+    // (method/path/status/persona/origin). `key_id` is a soft reference to
+    // external_api_keys (no FK — audit survives independently and is capped per
+    // key by the repo). See docs/architecture/cloud-integration-bridge.md §3.1.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS api_key_audit (
+            id          TEXT PRIMARY KEY,
+            key_id      TEXT NOT NULL,
+            at          TEXT NOT NULL DEFAULT (datetime('now')),
+            method      TEXT NOT NULL,
+            path        TEXT NOT NULL,
+            status      INTEGER NOT NULL,
+            persona_id  TEXT,
+            origin      TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_api_key_audit_key ON api_key_audit(key_id, at DESC);",
+    )?;
+
     // -- A2A Gateway: gateway_exposure column on personas (default local_only) -
     let _ = conn.execute_batch(
         "ALTER TABLE personas ADD COLUMN gateway_exposure TEXT NOT NULL DEFAULT 'local_only';",

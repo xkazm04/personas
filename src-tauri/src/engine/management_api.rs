@@ -14,9 +14,11 @@ use std::sync::Mutex;
 use std::sync::{Arc, OnceLock};
 use tauri::Manager;
 
+use std::time::Duration;
+
 use axum::{
     extract::{Path, Query, Request, State as AxumState},
-    http::{header, Method, StatusCode},
+    http::{header, HeaderValue, Method, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -34,6 +36,7 @@ use crate::db::repos::lab::ab as ab_repo;
 use crate::db::repos::lab::arena as arena_repo;
 use crate::db::repos::lab::eval as eval_repo;
 use crate::db::repos::lab::matrix as matrix_repo;
+use crate::db::repos::resources::api_key_audit as api_key_audit_repo;
 use crate::db::repos::resources::external_api_keys as api_key_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
@@ -56,6 +59,9 @@ pub struct ManagementState {
     pub pool: DbPool,
     pub app: AppHandle,
     pub process_registry: Arc<ActiveProcessRegistry>,
+    /// Per-key sliding-window limiter shared with the webhook server. Keyed by
+    /// `apikey:<key_id>` in the `require_api_key` middleware.
+    pub rate_limiter: Arc<crate::engine::rate_limiter::RateLimiter>,
 }
 
 // =============================================================================
@@ -177,6 +183,11 @@ const SCOPE_PROXY: &str = "proxy";
 const SCOPE_EXECUTE_PERSONA_PREFIX: &str = "personas:execute:persona:";
 const SCOPE_PROXY_CREDENTIAL_PREFIX: &str = "proxy:credential:";
 
+/// Per-key rate limit: max requests per window, keyed by the API key's id.
+/// Generous for interactive/dashboard use — the loopback API is single-user.
+const API_KEY_RATE_MAX: usize = 120;
+const API_KEY_RATE_WINDOW: Duration = Duration::from_secs(60);
+
 /// Authorize a request given the API key's scopes. Returns `Ok(())` if the key
 /// may proceed, or `Err(reason)` (→ 403) if it lacks the required scope.
 ///
@@ -261,23 +272,58 @@ async fn require_api_key(
 
     match api_key_repo::find_by_token(&state.pool, &token) {
         Ok(Some(key)) => {
+            // Capture request metadata before `next.run` consumes `req`.
+            let method = req.method().clone();
+            let path = req.uri().path().to_string();
+            let origin = req
+                .headers()
+                .get(header::ORIGIN)
+                .and_then(|v| v.to_str().ok())
+                .map(str::to_string);
+
             // Authorization: enforce the per-route (and per-resource) scope. A
             // token that authenticates but lacks the scope a route demands (e.g.
             // a read-only key hitting the credential proxy, a persona-scoped key
             // executing a different persona, or a build) is denied with 403.
             let scopes = key.parsed_scopes();
-            if let Err(reason) = authorize(req.method(), req.uri().path(), &scopes) {
+            if let Err(reason) = authorize(&method, &path, &scopes) {
                 tracing::warn!(
                     prefix = %key.key_prefix,
-                    method = %req.method(),
-                    path = %req.uri().path(),
+                    method = %method,
+                    path = %path,
                     reason,
                     "external api key denied: insufficient scope"
                 );
+                record_audit(&state.pool, &key.id, &method, &path, 403, origin.as_deref());
                 return Err(err_json_tuple(StatusCode::FORBIDDEN, reason));
             }
+
+            // Per-key sliding-window rate limit.
+            if let Err(retry_after) = state.rate_limiter.check(
+                &format!("apikey:{}", key.id),
+                API_KEY_RATE_MAX,
+                API_KEY_RATE_WINDOW,
+            ) {
+                tracing::warn!(
+                    prefix = %key.key_prefix,
+                    retry_after_secs = retry_after,
+                    "external api key rate-limited"
+                );
+                record_audit(&state.pool, &key.id, &method, &path, 429, origin.as_deref());
+                return Ok(rate_limited_response(retry_after));
+            }
+
             tracing::debug!(prefix = %key.key_prefix, "external api key accepted");
-            Ok(next.run(req).await)
+            let resp = next.run(req).await;
+            record_audit(
+                &state.pool,
+                &key.id,
+                &method,
+                &path,
+                resp.status().as_u16(),
+                origin.as_deref(),
+            );
+            Ok(resp)
         }
         Ok(None) => Err(err_json_tuple(StatusCode::UNAUTHORIZED, "invalid api key")),
         Err(e) => {
@@ -288,6 +334,56 @@ async fn require_api_key(
             ))
         }
     }
+}
+
+/// Best-effort per-key audit write. Never fails the request — a broken audit
+/// table (e.g. the test-harness migration issue documented in the ADR) must not
+/// take the API down.
+fn record_audit(
+    pool: &DbPool,
+    key_id: &str,
+    method: &Method,
+    path: &str,
+    status: u16,
+    origin: Option<&str>,
+) {
+    let persona_id = audit_persona_id(path);
+    if let Err(e) = api_key_audit_repo::insert(
+        pool,
+        key_id,
+        method.as_str(),
+        path,
+        status as i64,
+        persona_id.as_deref(),
+        origin,
+    ) {
+        tracing::debug!(error = %e, "api_key_audit insert failed (non-fatal)");
+    }
+}
+
+/// Extract the target persona id from routes that name one, for the audit row.
+fn audit_persona_id(path: &str) -> Option<String> {
+    for prefix in ["/api/execute/", "/a2a/", "/agent-card/", "/api/personas/"] {
+        if let Some(rest) = path.strip_prefix(prefix) {
+            let id = rest.split('/').next().unwrap_or("");
+            if !id.is_empty() {
+                return Some(id.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Build a 429 response carrying `Retry-After`. Returned as `Ok` because the
+/// middleware's `Err` variant (a `(StatusCode, Json)` tuple) can't attach
+/// headers.
+fn rate_limited_response(retry_after_secs: u64) -> Response {
+    let mut resp =
+        err_json_tuple(StatusCode::TOO_MANY_REQUESTS, "rate limit exceeded").into_response();
+    if let Ok(value) = HeaderValue::from_str(&retry_after_secs.to_string()) {
+        resp.headers_mut().insert(header::RETRY_AFTER, value);
+    }
+    resp
 }
 
 // =============================================================================
@@ -2082,6 +2178,18 @@ mod tests {
         // Per-credential grant works only for the matching credential.
         assert!(authorize(&Method::POST, "/api/proxy/cred-1", &scopes(&["proxy:credential:cred-1"])).is_ok());
         assert!(authorize(&Method::POST, "/api/proxy/cred-2", &scopes(&["proxy:credential:cred-1"])).is_err());
+    }
+
+    #[test]
+    fn audit_persona_id_extracts_from_named_routes() {
+        assert_eq!(audit_persona_id("/api/execute/p1").as_deref(), Some("p1"));
+        assert_eq!(audit_persona_id("/a2a/persona-xyz").as_deref(), Some("persona-xyz"));
+        assert_eq!(audit_persona_id("/agent-card/p2").as_deref(), Some("p2"));
+        assert_eq!(audit_persona_id("/api/personas/p3").as_deref(), Some("p3"));
+        // Routes that don't name a persona.
+        assert_eq!(audit_persona_id("/api/personas"), None);
+        assert_eq!(audit_persona_id("/api/executions"), None);
+        assert_eq!(audit_persona_id("/api/build/sess-1"), None);
     }
 
     #[test]
