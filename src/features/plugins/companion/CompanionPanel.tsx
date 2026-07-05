@@ -91,6 +91,7 @@ import { useChatScroll } from './useChatScroll';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
+import { useTtsVoiceSelection, type ResolvedTtsVoice } from './useTtsVoiceSelection';
 import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -289,10 +290,7 @@ export default function CompanionPanel() {
   );
 
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
-  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
-  const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
+  const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
   const recallSynthesisEnabled = useSystemStore((s) => s.companionRecallSynthesisEnabled);
   const autonomousMode = useSystemStore((s) => s.companionAutonomousMode);
@@ -480,10 +478,7 @@ export default function CompanionPanel() {
             chatCards={chatCards}
             brainView={brainView}
             voiceEnabled={voiceEnabled}
-            voiceEngine={voiceEngine}
-            voiceCredentialId={voiceCredentialId}
-            voiceId={voiceId}
-            piperVoiceId={piperVoiceId}
+            voice={voice}
             voiceSettings={voiceSettings}
             recallSynthesisEnabled={recallSynthesisEnabled}
             autonomousMode={autonomousMode}
@@ -640,10 +635,7 @@ interface BodyProps {
   chatCards: ReturnType<typeof useCompanionStore.getState>['chatCards'];
   brainView: ReturnType<typeof useCompanionStore.getState>['brainView'];
   voiceEnabled: boolean;
-  voiceEngine: 'elevenlabs' | 'piper';
-  voiceCredentialId: string | null;
-  voiceId: string | null;
-  piperVoiceId: string | null;
+  voice: ResolvedTtsVoice;
   voiceSettings: ReturnType<typeof useTtsSettings>;
   recallSynthesisEnabled: boolean;
   autonomousMode: boolean;
@@ -685,10 +677,7 @@ function Body(props: BodyProps) {
     chatCards,
     brainView,
     voiceEnabled,
-    voiceEngine,
-    voiceCredentialId,
-    voiceId,
-    piperVoiceId,
+    voice,
     voiceSettings,
     recallSynthesisEnabled,
     autonomousMode,
@@ -1384,15 +1373,11 @@ function Body(props: BodyProps) {
   // and surfaces a clear install hint if missing). The send pipeline
   // checks this before asking the backend to emit a TTS line — there's
   // no point generating a spoken summary we can't synthesize.
-  const voiceActive =
-    voiceEnabled &&
-    (voiceEngine === 'piper'
-      ? Boolean(piperVoiceId)
-      : Boolean(voiceCredentialId && voiceId));
-  // Resolve the engine-specific identifiers for synthesis. Piper passes
-  // null credentialId; ElevenLabs passes null where Piper voice id would go.
-  const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
-  const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
+  const voiceActive = voiceEnabled && voice.configured;
+  // Engine-specific identifiers for synthesis, resolved upstream by
+  // `useTtsVoiceSelection` (credentialId is null for the local engines).
+  const synthesisCredentialId = voice.credentialId;
+  const synthesisVoiceId = voice.voiceId;
 
   // Stop + release any in-flight spoken-progress clip (ack / heartbeat).
   const stopProgressAudio = useCallback(() => {
@@ -1423,7 +1408,7 @@ function Body(props: BodyProps) {
       if (!voiceActive || !synthesisVoiceId) return;
       if (useCompanionStore.getState().pendingPlayback) return;
       stopProgressAudio();
-      synthesizeTts(text, synthesisCredentialId, synthesisVoiceId, voiceSettings, voiceEngine)
+      synthesizeTts(text, synthesisCredentialId, synthesisVoiceId, voiceSettings, voice.engine)
         .then((url) => {
           // Re-check: the reply may have landed while we were synthesizing.
           if (useCompanionStore.getState().pendingPlayback) {
@@ -1443,7 +1428,7 @@ function Body(props: BodyProps) {
         })
         .catch(silentCatch('companion_voice_progress_synthesize'));
     },
-    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voiceEngine, stopProgressAudio],
+    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voice.engine, stopProgressAudio],
   );
 
   // Generic ack / heartbeat (Variant C). Each tier speaks at most once per
@@ -1552,7 +1537,7 @@ function Body(props: BodyProps) {
             synthesisCredentialId,
             synthesisVoiceId,
             voiceSettings,
-            voiceEngine,
+            voice.engine,
           )
             .then((url) => {
               setPlaybackAudioUrl(url);
@@ -1605,7 +1590,7 @@ function Body(props: BodyProps) {
         sendingRef.current = false;
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode, clearToolTimers],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, stopMainAudio, voiceActive, voice.engine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode, clearToolTimers],
   );
 
   // Async-UX phase 4 — non-blocking send. The composer is never disabled;
@@ -1936,10 +1921,7 @@ function Body(props: BodyProps) {
                   {isLastAssistant && !streaming && m.content.trim() && (
                     <BubbleReadAloud
                       content={m.content}
-                      voiceEngine={voiceEngine}
-                      voiceCredentialId={voiceCredentialId}
-                      voiceId={voiceId}
-                      piperVoiceId={piperVoiceId}
+                      voice={voice}
                       voiceSettings={voiceSettings}
                     />
                   )}

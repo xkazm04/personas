@@ -23,7 +23,9 @@ pub use crate::companion::tts::{TtsAudio, TtsEngineId, TtsSettings};
 use crate::companion::tts::{
     self,
     catalog::{PiperVoiceEntry, PIPER_VOICES},
-    downloader, validate_text, validate_voice_id, TtsSynthesisRequest,
+    downloader,
+    kokoro_catalog::{KokoroVoiceEntry, KOKORO_VOICES},
+    validate_text, validate_voice_id, TtsSynthesisRequest,
 };
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -75,6 +77,19 @@ pub async fn companion_tts(
                     AppError::Internal("companion_tts: synthesis semaphore closed".into())
                 })?;
             tts::piper::synthesize(&state, &request).await
+        }
+        TtsEngineId::Kokoro => {
+            // Same local-sidecar backpressure as Piper — one Kokoro subprocess
+            // reloads the ~310MB model, so unbounded concurrency would thrash.
+            let _permit = state
+                .companion_tts_semaphore
+                .clone()
+                .acquire_owned()
+                .await
+                .map_err(|_| {
+                    AppError::Internal("companion_tts: synthesis semaphore closed".into())
+                })?;
+            tts::kokoro::synthesize(&state, &request).await
         }
     }
 }
@@ -148,4 +163,39 @@ pub async fn companion_tts_piper_engine_status(
 ) -> Result<tts::piper::EngineStatus, AppError> {
     require_auth(&state).await?;
     tts::piper::engine_status()
+}
+
+/// Return the curated Kokoro voice catalog. Unlike Piper there is no
+/// per-voice download status — the model is monolithic, so `companion_tts_
+/// kokoro_status` reports whether the (single) model package is installed.
+#[tauri::command]
+pub async fn companion_tts_list_kokoro_voices(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<KokoroVoiceEntry>, AppError> {
+    require_auth(&state).await?;
+    Ok(KOKORO_VOICES.to_vec())
+}
+
+/// Report whether the Kokoro sidecar binary and model package are installed,
+/// plus the expected install paths + download URLs. The Voice tab uses this
+/// to render a two-step setup card (engine binary, then model package).
+#[tauri::command]
+pub async fn companion_tts_kokoro_status(
+    state: State<'_, Arc<AppState>>,
+) -> Result<tts::kokoro::KokoroStatus, AppError> {
+    require_auth(&state).await?;
+    tts::kokoro::status()
+}
+
+/// One-click download + extract of the Kokoro sidecar binary + model package
+/// into `~/.personas/companion-tts/`. Progress streams on the
+/// `companion://kokoro-install` event channel; resolves once both are in place
+/// (and verified) or errors. Windows-only (the prebuilt sidecar is win-x64).
+#[tauri::command]
+pub async fn companion_tts_kokoro_download(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    tts::kokoro_installer::install(&app).await
 }

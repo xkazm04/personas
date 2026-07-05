@@ -2,14 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { AlertCircle, Loader2, Volume2, VolumeX } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
-import type { TtsEngineId, TtsSettings } from '@/api/companion';
+import type { TtsSettings } from '@/api/companion';
 import { synthesize, play } from './voicePlayback';
+import type { ResolvedTtsVoice } from './useTtsVoiceSelection';
 
 /**
  * On-demand read-aloud affordance below the latest completed assistant
  * bubble. Renders only when voice is configured for the user's chosen
- * engine (ElevenLabs needs a credential + voice id; Piper needs a piper
- * voice id; otherwise we'd hit the backend just to surface an error).
+ * engine (resolved upstream via `useTtsVoiceSelection` and passed in as
+ * `voice` — ElevenLabs needs a credential + voice id; the local engines
+ * need their own voice id; otherwise we'd hit the backend just to error).
  *
  * Local state machine:
  *   idle → synthesizing (await companion_tts) → playing (driving an
@@ -22,17 +24,11 @@ import { synthesize, play } from './voicePlayback';
  */
 export function BubbleReadAloud({
   content,
-  voiceEngine,
-  voiceCredentialId,
-  voiceId,
-  piperVoiceId,
+  voice,
   voiceSettings,
 }: {
   content: string;
-  voiceEngine: TtsEngineId;
-  voiceCredentialId: string | null;
-  voiceId: string | null;
-  piperVoiceId: string | null;
+  voice: ResolvedTtsVoice;
   voiceSettings: TtsSettings | undefined;
 }) {
   const { t } = useTranslation();
@@ -55,14 +51,10 @@ export function BubbleReadAloud({
     };
   }, []);
 
-  // Both engines need at least one identity field set. Skip rendering
-  // entirely when nothing's configured — a tooltip "configure voice
-  // first" would be friendlier but takes a real config UX cycle.
-  const configured =
-    voiceEngine === 'elevenlabs'
-      ? !!voiceCredentialId && !!voiceId
-      : !!piperVoiceId;
-  if (!configured || !content.trim()) return null;
+  // Skip rendering entirely when the selected engine isn't configured — a
+  // tooltip "configure voice first" would be friendlier but takes a real
+  // config UX cycle.
+  if (!voice.configured || !content.trim()) return null;
 
   const handlePlay = async () => {
     if (state !== 'idle' && !(typeof state === 'object' && state.kind === 'error')) {
@@ -70,14 +62,12 @@ export function BubbleReadAloud({
     }
     setState('synthesizing');
     try {
-      const targetVoiceId =
-        voiceEngine === 'elevenlabs' ? (voiceId ?? '') : (piperVoiceId ?? '');
       const url = await synthesize(
         content,
-        voiceCredentialId,
-        targetVoiceId,
+        voice.credentialId,
+        voice.voiceId ?? '',
         voiceSettings,
-        voiceEngine,
+        voice.engine,
       );
       objectUrlRef.current = url;
       const { audio, done } = play(url);

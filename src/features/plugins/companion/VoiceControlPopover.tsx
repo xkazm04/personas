@@ -7,6 +7,7 @@ import { Slider } from '@/features/shared/components/forms/Slider';
 import { silentCatch } from '@/lib/silentCatch';
 import { synthesize, play } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
+import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 
 /**
  * Voice control for the chat toolbar — replaces the plain enable/disable
@@ -32,10 +33,7 @@ export function VoiceControlPopover() {
   const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
   const volume = useSystemStore((s) => s.companionVoiceVolume);
   const setVolume = useSystemStore((s) => s.setCompanionVoiceVolume);
-  const engine = useSystemStore((s) => s.companionVoiceEngine);
-  const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
-  const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
+  const voice = useTtsVoiceSelection();
   const voiceSettings = useTtsSettings();
 
   const [open, setOpen] = useState(false);
@@ -77,16 +75,16 @@ export function VoiceControlPopover() {
       stopTest();
       return;
     }
-    const targetVoiceId = engine === 'piper' ? piperVoiceId : voiceId;
+    const targetVoiceId = voice.voiceId;
     if (!targetVoiceId) return;
     setTestState('synthesizing');
     try {
       const url = await synthesize(
         c.voice_test_sentence,
-        engine === 'piper' ? null : voiceCredentialId,
+        voice.credentialId,
         targetVoiceId,
         voiceSettings,
-        engine,
+        voice.engine,
       );
       urlRef.current = url;
       const { audio, done } = play(url);
@@ -103,10 +101,9 @@ export function VoiceControlPopover() {
       silentCatch('companion_voice_test_synthesize')(err);
       setTestState('idle');
     }
-  }, [testState, stopTest, engine, piperVoiceId, voiceId, voiceCredentialId, voiceSettings, c.voice_test_sentence]);
+  }, [testState, stopTest, voice.engine, voice.voiceId, voice.credentialId, voiceSettings, c.voice_test_sentence]);
 
-  const voiceConfigured =
-    engine === 'piper' ? Boolean(piperVoiceId) : Boolean(voiceCredentialId && voiceId);
+  const voiceConfigured = voice.configured;
 
   const VolumeIcon = !voiceEnabled || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
 

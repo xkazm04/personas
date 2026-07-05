@@ -141,6 +141,12 @@ regex = "1"
 glob = "0.3"
 tempfile = "3"
 zip = { version = "2", default-features = false, features = ["deflate"] }
+# Kokoro one-click install: the sherpa-onnx sidecar + model ship as .tar.bz2,
+# which `zip` can't read. `bzip2` pulls `bzip2-sys` (bundles its own libbz2 C
+# source — no system lib, and MSVC is already required here for ORT), `tar` is
+# pure Rust. Decompress-only in our use.
+bzip2 = "0.5"
+tar = "0.4"
 jsonschema = { version = "0.28", default-features = false }
 ammonia = "4"
 bytemuck = "1"

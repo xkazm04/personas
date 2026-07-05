@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
+import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck, Sparkles } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { Slider } from '@/features/shared/components/forms/Slider';
@@ -18,6 +18,7 @@ import {
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
+import KokoroVoicePanel from './KokoroVoicePanel';
 import SttPanel from './SttPanel';
 import { debtText } from '@/i18n/DebtText';
 
@@ -34,7 +35,13 @@ export default function VoicePanel() {
   return (
     <div className="space-y-4 max-w-2xl">
       <EngineSelectorCard />
-      {engine === 'piper' ? <PiperVoicePanel /> : <ElevenLabsVoicePanel />}
+      {engine === 'piper' ? (
+        <PiperVoicePanel />
+      ) : engine === 'kokoro' ? (
+        <KokoroVoicePanel />
+      ) : (
+        <ElevenLabsVoicePanel />
+      )}
       <SttPanel />
     </div>
   );
@@ -64,13 +71,20 @@ function EngineSelectorCard() {
       subtitle={t.plugins.companion.voice_engine_desc}
       titleClassName="text-primary"
     >
-      <div className="grid grid-cols-2 gap-2 px-1 py-2">
+      <div className="grid grid-cols-3 gap-2 px-1 py-2">
         <EngineButton
           active={engine === 'elevenlabs'}
           onClick={() => onSwitch('elevenlabs')}
           icon={<Cloud className="w-4 h-4" />}
           label={t.plugins.companion.voice_engine_elevenlabs}
           caption={t.plugins.companion.voice_engine_elevenlabs_caption}
+        />
+        <EngineButton
+          active={engine === 'kokoro'}
+          onClick={() => onSwitch('kokoro')}
+          icon={<Sparkles className="w-4 h-4" />}
+          label={t.plugins.companion.voice_engine_kokoro}
+          caption={t.plugins.companion.voice_engine_kokoro_caption}
         />
         <EngineButton
           active={engine === 'piper'}

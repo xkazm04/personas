@@ -22,8 +22,10 @@ via doctrine retrieval.
 - **Streaming chat** over a long-lived Claude CLI session at the repo
   root. Markdown reply + optional spoken summary + optional quick-reply
   chips in a single turn.
-- **Quick-reply chips** (`QR:`) — Athena offers 2–5 follow-up prompts;
-  clicking sends them back through `send()` as the next user turn.
+- **Quick-reply chips** (`QR:`) — Athena offers up to **6** follow-up
+  prompts (hard cap in `dispatcher.rs`; see A10); clicking sends one back
+  through `send()` as the next user turn, and number keys 1–9 fire the
+  matching chip (`QuickReplies.tsx`).
 - **Mid-stream Stop** (A5) — the streaming bubble shows a hoverable
   Stop button (`Square` icon, top-right). Click → `companion_interrupt_turn`
   fires → backend's cooperative cancellation registry kills the CLI

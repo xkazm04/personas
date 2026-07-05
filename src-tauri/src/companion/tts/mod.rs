@@ -13,6 +13,9 @@
 pub mod catalog;
 pub mod downloader;
 pub mod elevenlabs;
+pub mod kokoro;
+pub mod kokoro_catalog;
+pub mod kokoro_installer;
 pub mod piper;
 
 use std::time::Duration;
@@ -41,6 +44,9 @@ pub enum TtsEngineId {
     Elevenlabs,
     /// Local Piper TTS via ONNX. Requires a downloaded voice model.
     Piper,
+    /// Local Kokoro TTS via the sherpa-onnx sidecar. Requires the engine
+    /// binary + the (shared) Kokoro model package. Higher quality than Piper.
+    Kokoro,
 }
 
 impl TtsEngineId {
@@ -48,6 +54,7 @@ impl TtsEngineId {
         match self {
             TtsEngineId::Elevenlabs => "elevenlabs",
             TtsEngineId::Piper => "piper",
+            TtsEngineId::Kokoro => "kokoro",
         }
     }
 }

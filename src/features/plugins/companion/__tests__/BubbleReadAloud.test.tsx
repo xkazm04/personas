@@ -19,10 +19,12 @@ beforeEach(() => {
 function elevenLabsProps(over: Partial<Record<string, unknown>> = {}) {
   return {
     content: 'Hello from Athena.',
-    voiceEngine: 'elevenlabs' as const,
-    voiceCredentialId: 'cred_aaa',
-    voiceId: 'voice_bbb',
-    piperVoiceId: null,
+    voice: {
+      engine: 'elevenlabs' as const,
+      voiceId: 'voice_bbb',
+      credentialId: 'cred_aaa',
+      configured: true,
+    },
     voiceSettings: undefined,
     ...over,
   };
@@ -33,10 +35,7 @@ describe('BubbleReadAloud', () => {
     render(
       <BubbleReadAloud
         content="hi"
-        voiceEngine="elevenlabs"
-        voiceCredentialId={null}
-        voiceId={null}
-        piperVoiceId={null}
+        voice={{ engine: 'elevenlabs', voiceId: null, credentialId: null, configured: false }}
         voiceSettings={undefined}
       />,
     );
@@ -47,10 +46,7 @@ describe('BubbleReadAloud', () => {
     render(
       <BubbleReadAloud
         content="hi"
-        voiceEngine="piper"
-        voiceCredentialId={null}
-        voiceId={null}
-        piperVoiceId={null}
+        voice={{ engine: 'piper', voiceId: null, credentialId: null, configured: false }}
         voiceSettings={undefined}
       />,
     );
@@ -160,10 +156,7 @@ describe('BubbleReadAloud', () => {
     render(
       <BubbleReadAloud
         content="piper test"
-        voiceEngine="piper"
-        voiceCredentialId={null}
-        voiceId={null}
-        piperVoiceId="piper_en_us"
+        voice={{ engine: 'piper', voiceId: 'piper_en_us', credentialId: null, configured: true }}
         voiceSettings={undefined}
       />,
     );
@@ -175,6 +168,32 @@ describe('BubbleReadAloud', () => {
         'piper_en_us',
         undefined,
         'piper',
+      );
+    });
+  });
+
+  it('routes kokoro engine to the kokoro voice id with a null credential', async () => {
+    const audio = {} as HTMLAudioElement;
+    synthesize.mockResolvedValueOnce('blob:url-4');
+    play.mockImplementationOnce(() => ({
+      audio,
+      done: new Promise<void>((res) => res()),
+    }));
+    render(
+      <BubbleReadAloud
+        content="kokoro test"
+        voice={{ engine: 'kokoro', voiceId: 'af_heart', credentialId: null, configured: true }}
+        voiceSettings={undefined}
+      />,
+    );
+    fireEvent.click(screen.getByTestId('companion-read-aloud'));
+    await waitFor(() => {
+      expect(synthesize).toHaveBeenCalledWith(
+        'kokoro test',
+        null,
+        'af_heart',
+        undefined,
+        'kokoro',
       );
     });
   });

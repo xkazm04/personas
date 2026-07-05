@@ -82,9 +82,10 @@ export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
  *
  * Defaults to `'elevenlabs'` for back-compat with existing users — the
  * Piper engine requires a separate one-time install of the `piper`
- * binary, so we never quietly route users through it.
+ * binary, so we never quietly route users through it. `'kokoro'` is the
+ * higher-quality local engine (sherpa-onnx sidecar + a shared model pack).
  */
-export type CompanionTtsEngine = 'elevenlabs' | 'piper';
+export type CompanionTtsEngine = 'elevenlabs' | 'piper' | 'kokoro';
 
 /**
  * STT engine for Athena's voice input. Mirrors `SttEngineId` in
@@ -124,6 +125,9 @@ export interface CompanionPluginSlice {
    *  Independent of `companionVoiceId` so switching engines doesn't
    *  clobber either side's last selection. */
   companionPiperVoiceId: string | null;
+  /** Currently-selected Kokoro voice id (e.g. `af_heart`). Independent of
+   *  the ElevenLabs / Piper selections for the same reason. */
+  companionKokoroVoiceId: string | null;
   /**
    * Per-call voice tuning. All five are nullable: `null` means "let the
    * backend apply its default". The Voice tab exposes these as a Settings
@@ -230,6 +234,7 @@ export interface CompanionPluginSlice {
   setCompanionVoiceCredentialId: (id: string | null) => void;
   setCompanionVoiceId: (id: string | null) => void;
   setCompanionPiperVoiceId: (id: string | null) => void;
+  setCompanionKokoroVoiceId: (id: string | null) => void;
   setCompanionVoiceModel: (m: CompanionVoiceModel | null) => void;
   setCompanionVoiceStability: (v: number | null) => void;
   setCompanionVoiceSimilarity: (v: number | null) => void;
@@ -268,6 +273,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceCredentialId: null,
   companionVoiceId: null,
   companionPiperVoiceId: null,
+  companionKokoroVoiceId: null,
   companionVoiceModel: null,
   // Tuned defaults (vs the engine's own): a touch more stability +
   // similarity than ElevenLabs' baseline, with a hint of style.
@@ -304,6 +310,8 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionVoiceId: (companionVoiceId) => set({ companionVoiceId }),
   setCompanionPiperVoiceId: (companionPiperVoiceId) =>
     set({ companionPiperVoiceId }),
+  setCompanionKokoroVoiceId: (companionKokoroVoiceId) =>
+    set({ companionKokoroVoiceId }),
   setCompanionVoiceModel: (companionVoiceModel) => set({ companionVoiceModel }),
   setCompanionVoiceStability: (companionVoiceStability) =>
     set({ companionVoiceStability }),
