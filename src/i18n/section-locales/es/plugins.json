@@ -2014,7 +2014,8 @@
     "switch_conversation": "Cambiar conversación",
     "thread_status_awaiting": "esperando tu respuesta",
     "thread_status_idle": "inactivo",
-    "thread_status_working": "en curso"
+    "thread_status_working": "en curso",
+    "rename_conversation": "Renombrar conversación"
   },
   "ocr": {
     "title": "OCR",

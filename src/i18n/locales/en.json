@@ -12653,6 +12653,7 @@
       "conversations": "Conversations",
       "new_conversation": "New conversation",
       "archive_conversation": "Archive conversation",
+      "rename_conversation": "Rename conversation",
       "switch_conversation": "Switch conversation",
       "thread_status_awaiting": "awaiting you",
       "thread_status_working": "working",

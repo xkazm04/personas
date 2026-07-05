@@ -13248,7 +13248,8 @@
       "switch_conversation": "Přepnout konverzaci",
       "thread_status_awaiting": "čeká na vás",
       "thread_status_idle": "nečinné",
-      "thread_status_working": "pracuje"
+      "thread_status_working": "pracuje",
+      "rename_conversation": "Přejmenovat konverzaci"
     },
     "ocr": {
       "title": "OCR",

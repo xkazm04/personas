@@ -13248,7 +13248,8 @@
       "switch_conversation": "Переключить беседу",
       "thread_status_awaiting": "ждёт вас",
       "thread_status_idle": "неактивно",
-      "thread_status_working": "выполняется"
+      "thread_status_working": "выполняется",
+      "rename_conversation": "Переименовать беседу"
     },
     "ocr": {
       "title": "OCR",

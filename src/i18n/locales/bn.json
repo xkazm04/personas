@@ -13248,7 +13248,8 @@
       "switch_conversation": "কথোপকথন পরিবর্তন করুন",
       "thread_status_awaiting": "আপনার অপেক্ষায়",
       "thread_status_idle": "নিষ্ক্রিয়",
-      "thread_status_working": "চলছে"
+      "thread_status_working": "চলছে",
+      "rename_conversation": "কথোপকথনের নাম পরিবর্তন করুন"
     },
     "ocr": {
       "title": "OCR",

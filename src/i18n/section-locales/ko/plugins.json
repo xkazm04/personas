@@ -2014,7 +2014,8 @@
     "switch_conversation": "대화 전환",
     "thread_status_awaiting": "응답 대기 중",
     "thread_status_idle": "유휴",
-    "thread_status_working": "진행 중"
+    "thread_status_working": "진행 중",
+    "rename_conversation": "대화 이름 변경"
   },
   "ocr": {
     "title": "OCR",

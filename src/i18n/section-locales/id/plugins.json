@@ -2014,7 +2014,8 @@
     "switch_conversation": "Ganti percakapan",
     "thread_status_awaiting": "menunggu Anda",
     "thread_status_idle": "nonaktif",
-    "thread_status_working": "sedang berjalan"
+    "thread_status_working": "sedang berjalan",
+    "rename_conversation": "Ganti nama percakapan"
   },
   "ocr": {
     "title": "OCR",

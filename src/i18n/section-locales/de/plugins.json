@@ -2014,7 +2014,8 @@
     "switch_conversation": "Unterhaltung wechseln",
     "thread_status_awaiting": "wartet auf dich",
     "thread_status_idle": "inaktiv",
-    "thread_status_working": "läuft"
+    "thread_status_working": "läuft",
+    "rename_conversation": "Unterhaltung umbenennen"
   },
   "ocr": {
     "title": "OCR",

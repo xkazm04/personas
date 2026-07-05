@@ -13248,7 +13248,8 @@
       "switch_conversation": "تبديل المحادثة",
       "thread_status_awaiting": "بانتظارك",
       "thread_status_idle": "خامل",
-      "thread_status_working": "قيد التنفيذ"
+      "thread_status_working": "قيد التنفيذ",
+      "rename_conversation": "إعادة تسمية المحادثة"
     },
     "ocr": {
       "title": "OCR",

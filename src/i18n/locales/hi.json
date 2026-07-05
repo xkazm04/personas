@@ -13248,7 +13248,8 @@
       "switch_conversation": "बातचीत बदलें",
       "thread_status_awaiting": "आपका इंतज़ार है",
       "thread_status_idle": "निष्क्रिय",
-      "thread_status_working": "चल रहा है"
+      "thread_status_working": "चल रहा है",
+      "rename_conversation": "बातचीत का नाम बदलें"
     },
     "ocr": {
       "title": "OCR",
