@@ -10,6 +10,7 @@ pub mod browser_test;
 pub mod chat;
 pub mod connectors;
 pub mod consolidate;
+pub mod conversation;
 pub mod decisions;
 pub mod feedback;
 pub mod fleet_bridge;
