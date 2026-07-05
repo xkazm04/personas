@@ -115,6 +115,24 @@ pub fn list(pool: &DbPool) -> Result<Vec<ExternalApiKey>, AppError> {
     })
 }
 
+/// Distinct paired browser origins across active (enabled, non-revoked) keys —
+/// the set the CORS layer treats as allowed. Used to warm the in-memory
+/// paired-origin cache at server start (Direction 1). Expiry is intentionally
+/// NOT filtered here: an expired key's origin lingering in the CORS allowlist is
+/// harmless (the key itself still fails `find_by_token`, so the request 401s).
+pub fn list_paired_origins(pool: &DbPool) -> Result<Vec<String>, AppError> {
+    timed_query!("external_api_keys", "external_api_keys::list_paired_origins", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT bound_origin FROM external_api_keys
+             WHERE bound_origin IS NOT NULL AND enabled = 1 AND revoked_at IS NULL",
+        )?;
+        let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// Look up a key by its plaintext token. Hashes the input, queries the indexed
 /// `key_hash` column, and filters out disabled/revoked/**expired** rows.
 /// Updates `last_used_at` on a successful hit.
@@ -392,5 +410,22 @@ mod tests {
             found.bound_origin.as_deref(),
             Some("https://app.personas.example")
         );
+    }
+
+    #[test]
+    fn list_paired_origins_only_active_with_origin() {
+        let pool = test_pool();
+        create(&pool, "paired-a", vec![], None, Some("https://a.example".into()), None)
+            .expect("create a");
+        // A revoked paired key — its origin must NOT appear.
+        let revoked =
+            create(&pool, "paired-b", vec![], None, Some("https://b.example".into()), None)
+                .expect("create b");
+        revoke(&pool, &revoked.record.id).expect("revoke");
+        // A non-paired key (no origin) — must not appear.
+        create(&pool, "cli", vec![], None, None, None).expect("create cli");
+
+        let origins = list_paired_origins(&pool).expect("list_paired_origins");
+        assert_eq!(origins, vec!["https://a.example".to_string()]);
     }
 }

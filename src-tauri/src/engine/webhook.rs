@@ -103,6 +103,10 @@ pub async fn start_webhook_server_with_management(
     process_registry: Arc<crate::ActiveProcessRegistry>,
     mut shutdown_rx: watch::Receiver<bool>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Warm the paired-origin CORS allowlist from persisted keys so approvals
+    // survive restarts (Direction 1).
+    super::management_api::load_paired_origins(&pool);
+
     let webhook_state = WebhookState {
         pool: pool.clone(),
         rate_limiter: rate_limiter.clone(),

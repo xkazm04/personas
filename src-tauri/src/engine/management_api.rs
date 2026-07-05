@@ -9,9 +9,8 @@
 //! uses a process-scoped "system" key created on first call to
 //! [`get_or_create_system_api_key`].
 
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::sync::{Arc, OnceLock};
+use std::collections::{HashMap, HashSet};
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
 use tauri::Manager;
 
 use std::time::Duration;
@@ -135,12 +134,21 @@ pub fn management_router(state: ManagementState) -> Router {
                 // weaponizable from a random browser tab. Restrict to the app's own
                 // webview / loopback dev origins; non-browser clients (MCP/CLI) send
                 // no Origin and are unaffected by CORS.
+                // Also allow user-PAIRED origins (Direction 1): a cloud origin the
+                // user explicitly approved via the pairing ceremony is added to
+                // PAIRED_ORIGINS, so its browser fetches pass CORS. Arbitrary
+                // websites are still rejected.
                 .allow_origin(AllowOrigin::predicate(|origin, _parts| {
                     origin
                         .to_str()
-                        .map(is_trusted_management_origin)
+                        .map(|o| is_trusted_management_origin(o) || is_paired_origin(o))
                         .unwrap_or(false)
                 }))
+                // Private Network Access: Chrome gates public→loopback requests
+                // behind a preflight carrying `Access-Control-Request-Private-Network`.
+                // Echo the grant so paired browser origins can reach 127.0.0.1.
+                // Non-browser clients (MCP/CLI) send no PNA header and are unaffected.
+                .allow_private_network(true)
                 .allow_methods([Method::GET, Method::POST, Method::OPTIONS])
                 .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]),
         )
@@ -161,6 +169,76 @@ fn is_trusted_management_origin(origin: &str) -> bool {
         || origin == "http://127.0.0.1"
         || origin.starts_with("http://localhost:")
         || origin.starts_with("http://127.0.0.1:")
+}
+
+// =============================================================================
+// Paired-origin allowlist (Direction 1)
+// =============================================================================
+
+/// Process-global set of cloud origins the user has PAIRED (approved via the
+/// pairing ceremony). Populated at server start from `external_api_keys`
+/// (distinct `bound_origin` of active keys) and mutated by the pairing commands.
+/// The CORS predicate reads it so a paired origin's browser fetches pass;
+/// nothing else does. Mirrors the `SYSTEM_API_KEY` global-cache pattern.
+static PAIRED_ORIGINS: OnceLock<RwLock<HashSet<String>>> = OnceLock::new();
+
+fn paired_origins() -> &'static RwLock<HashSet<String>> {
+    PAIRED_ORIGINS.get_or_init(|| RwLock::new(HashSet::new()))
+}
+
+/// True if `origin` is a currently-paired cloud origin.
+fn is_paired_origin(origin: &str) -> bool {
+    paired_origins()
+        .read()
+        .map(|set| set.contains(origin))
+        .unwrap_or(false)
+}
+
+/// Add a paired origin to the live CORS allowlist (on pairing approval).
+pub fn add_paired_origin(origin: &str) {
+    if let Ok(mut set) = paired_origins().write() {
+        set.insert(origin.to_string());
+    }
+}
+
+/// Remove a paired origin from the live CORS allowlist (on revoke).
+pub fn remove_paired_origin(origin: &str) {
+    if let Ok(mut set) = paired_origins().write() {
+        set.remove(origin);
+    }
+}
+
+/// Repopulate the cache from the DB. Called once at server start so approvals
+/// survive a restart (they persist as `external_api_keys.bound_origin`).
+pub fn load_paired_origins(pool: &DbPool) {
+    match api_key_repo::list_paired_origins(pool) {
+        Ok(origins) => {
+            if let Ok(mut set) = paired_origins().write() {
+                set.clear();
+                set.extend(origins);
+                tracing::info!(count = set.len(), "loaded paired origins into CORS allowlist");
+            }
+        }
+        Err(e) => tracing::warn!(error = %e, "failed to load paired origins (starting empty)"),
+    }
+}
+
+#[cfg(test)]
+mod paired_origin_tests {
+    use super::*;
+
+    #[test]
+    fn add_remove_and_membership() {
+        let o = "https://pairtest.example";
+        assert!(!is_paired_origin(o));
+        add_paired_origin(o);
+        assert!(is_paired_origin(o));
+        // Trusted-origin check is independent and still works.
+        assert!(is_trusted_management_origin("http://localhost:1420"));
+        assert!(!is_trusted_management_origin(o));
+        remove_paired_origin(o);
+        assert!(!is_paired_origin(o));
+    }
 }
 
 // =============================================================================
