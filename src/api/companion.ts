@@ -4,6 +4,7 @@ import type { BrowserBridgeStatus } from '@/lib/bindings/BrowserBridgeStatus';
 import type { AthenaAdaptation } from '@/lib/bindings/AthenaAdaptation';
 import type { AthenaUsageDashboard } from '@/lib/bindings/AthenaUsageDashboard';
 import type { AthenaHealth } from '@/lib/bindings/AthenaHealth';
+import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 
 /**
  * Initialize the companion-brain disk layout (idempotent).
@@ -92,10 +93,22 @@ export async function companionSendMessage(
    * impersonating the user. Omit for normal user input.
    */
   systemSource?: string,
+  /**
+   * Which conversation (thread) this message belongs to. Omit → the migrated
+   * `'default'` ("General") thread, so pre-multiconv callers keep working.
+   */
+  conversationId?: string,
 ): Promise<SendTurnResult> {
   return invoke<SendTurnResult>(
     'companion_send_message',
-    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode, systemSource: systemSource ?? null },
+    {
+      message,
+      voiceEnabled,
+      recallSynthesisEnabled,
+      autonomousMode,
+      systemSource: systemSource ?? null,
+      conversationId: conversationId ?? null,
+    },
     { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
   );
 }
@@ -754,8 +767,10 @@ export interface CompanionMessage {
 
 export async function companionListRecentMessages(
   limit?: number,
+  /** Which conversation's transcript to read. Omit → the `'default'` thread. */
+  conversationId?: string,
 ): Promise<CompanionMessage[]> {
-  return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit });
+  return invoke<CompanionMessage[]>('companion_list_recent_messages', { limit, conversationId });
 }
 
 /**
@@ -766,8 +781,53 @@ export async function companionListRecentMessages(
  */
 export async function companionResetConversation(
   wipeTranscript?: boolean,
+  /** Which conversation to reset. Omit → the `'default'` thread. */
+  conversationId?: string,
 ): Promise<void> {
-  return invoke<void>('companion_reset_conversation', { wipeTranscript });
+  return invoke<void>('companion_reset_conversation', { wipeTranscript, conversationId });
+}
+
+// ── Conversations (multi-conversation thread registry) ──────────────────────
+//
+// Athena runs many conversations (threads), each with its own transcript +
+// Claude --resume continuity, while the brain/identity stay global. These wrap
+// the conversation-registry commands. See
+// docs/features/companion/athena-multiconversation.md.
+
+/** List conversations, pinned first then most-recently-active. */
+export async function companionListConversations(
+  includeArchived?: boolean,
+): Promise<ConversationRow[]> {
+  return invoke<ConversationRow[]>('companion_list_conversations', { includeArchived });
+}
+
+/** Create a fresh conversation. `origin` is `user | forwarded | proactive` (default `user`). */
+export async function companionCreateConversation(
+  title?: string,
+  origin?: string,
+): Promise<ConversationRow> {
+  return invoke<ConversationRow>('companion_create_conversation', {
+    title: title ?? null,
+    origin: origin ?? null,
+  });
+}
+
+/** Rename a conversation (user edit or Athena auto-title). */
+export async function companionRenameConversation(
+  conversationId: string,
+  title: string,
+): Promise<void> {
+  return invoke<void>('companion_rename_conversation', { conversationId, title });
+}
+
+/** Archive a conversation (soft — transcript stays on disk). System threads refuse. */
+export async function companionArchiveConversation(conversationId: string): Promise<void> {
+  return invoke<void>('companion_archive_conversation', { conversationId });
+}
+
+/** Clear a conversation's unread badge as of now. */
+export async function companionMarkConversationRead(conversationId: string): Promise<void> {
+  return invoke<void>('companion_mark_conversation_read', { conversationId });
 }
 
 /**
