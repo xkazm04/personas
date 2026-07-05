@@ -32,7 +32,7 @@ date, what we observed, and any change made.
 - [x] Mid-stream Stop (interrupt) + failed-turn retry
 - [x] Autonomous mode toggle + `continue_autonomously` chaining
 - [x] Reset conversation (transcript vs disk episodes)
-- [ ] Chat polish: search, copy-conversation, day separators, narration trail
+- [x] Chat polish: search removed · copy-beside-message · day separators · narration-trail polish (all merged)
 
 ## Phase 1 — Memory & identity (the foundation everything cites)
 - [ ] `write_fact` / `delete_fact` (+ supersede)
