@@ -317,6 +317,16 @@
       "marketingModule": "settings"
     },
     {
+      "doc": "docs/features/integrations/README.md",
+      "sourceGlobs": [
+        "src-tauri/src/engine/pairing.rs",
+        "src-tauri/src/mcp_bin.rs",
+        "src-tauri/src/mcp_server/**",
+        "sdk/**",
+        "docs/api/**"
+      ]
+    },
+    {
       "doc": "docs/features/home.md",
       "sourceGlobs": [
         "src/features/home/**"
