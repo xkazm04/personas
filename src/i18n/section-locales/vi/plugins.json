@@ -2015,7 +2015,8 @@
     "thread_status_awaiting": "đang chờ bạn",
     "thread_status_idle": "không hoạt động",
     "thread_status_working": "đang xử lý",
-    "rename_conversation": "Đổi tên cuộc trò chuyện"
+    "rename_conversation": "Đổi tên cuộc trò chuyện",
+    "replied_in_thread": "Athena đã trả lời trong {thread}"
   },
   "ocr": {
     "title": "OCR",

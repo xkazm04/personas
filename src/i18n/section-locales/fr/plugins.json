@@ -2015,7 +2015,8 @@
     "thread_status_awaiting": "en attente de vous",
     "thread_status_idle": "inactif",
     "thread_status_working": "en cours",
-    "rename_conversation": "Renommer la conversation"
+    "rename_conversation": "Renommer la conversation",
+    "replied_in_thread": "Athena a répondu dans {thread}"
   },
   "ocr": {
     "title": "OCR",

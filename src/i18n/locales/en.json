@@ -12655,6 +12655,7 @@
       "archive_conversation": "Archive conversation",
       "rename_conversation": "Rename conversation",
       "switch_conversation": "Switch conversation",
+      "replied_in_thread": "Athena replied in {thread}",
       "thread_status_awaiting": "awaiting you",
       "thread_status_working": "working",
       "thread_status_idle": "idle",

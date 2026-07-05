@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "等待您回复",
       "thread_status_idle": "空闲",
       "thread_status_working": "进行中",
-      "rename_conversation": "重命名对话"
+      "rename_conversation": "重命名对话",
+      "replied_in_thread": "Athena在{thread}中回复了"
     },
     "ocr": {
       "title": "OCR",

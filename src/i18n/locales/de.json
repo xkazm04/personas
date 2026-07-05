@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "wartet auf dich",
       "thread_status_idle": "inaktiv",
       "thread_status_working": "läuft",
-      "rename_conversation": "Unterhaltung umbenennen"
+      "rename_conversation": "Unterhaltung umbenennen",
+      "replied_in_thread": "Athena hat in {thread} geantwortet"
     },
     "ocr": {
       "title": "OCR",

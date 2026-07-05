@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "menunggu Anda",
       "thread_status_idle": "nonaktif",
       "thread_status_working": "sedang berjalan",
-      "rename_conversation": "Ganti nama percakapan"
+      "rename_conversation": "Ganti nama percakapan",
+      "replied_in_thread": "Athena membalas di {thread}"
     },
     "ocr": {
       "title": "OCR",

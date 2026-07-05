@@ -2015,7 +2015,8 @@
     "thread_status_awaiting": "返信待ち",
     "thread_status_idle": "待機中",
     "thread_status_working": "実行中",
-    "rename_conversation": "会話の名前を変更"
+    "rename_conversation": "会話の名前を変更",
+    "replied_in_thread": "Athenaが{thread}で返信しました"
   },
   "ocr": {
     "title": "OCR",

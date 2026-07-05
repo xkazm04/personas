@@ -46,13 +46,14 @@ import { useConversationRoster, useThreadAttentionCount } from './useConversatio
  *   - Render the popover + drive optional subject TTS.
  */
 export default function CompanionFooterIcon() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   // Keep the multi-conversation roster live (hydrate + refresh on turn-summary)
   // from here, since the footer orb is always mounted — the chat panel isn't.
   useConversationRoster();
   const attentionCount = useThreadAttentionCount();
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
+  const setActiveConversationId = useCompanionStore((s) => s.setActiveConversationId);
   const initialized = useCompanionStore((s) => s.initialized);
   const setInitialized = useCompanionStore((s) => s.setInitialized);
   const setBrainPath = useCompanionStore((s) => s.setBrainPath);
@@ -109,16 +110,28 @@ export default function CompanionFooterIcon() {
     const prev = prevStreamingRef.current;
     if (prev === true && streaming === false) {
       if (soundEnabled) playReplyChime();
+      // Name the thread when more than one exists — so a reply spoken while the
+      // panel is minimized carries a visual "which conversation" (audio only
+      // ever speaks the focused thread; naming closes the identity gap). With a
+      // single thread the generic label stays, and clicking it opens that thread.
+      const convs = useCompanionStore.getState().conversations;
+      const active = convs.find(
+        (c) => c.id === useCompanionStore.getState().activeConversationId,
+      );
+      const nameThread = convs.length > 1 && !!active?.title;
       setFooterNotice({
         id: `analysis_${Date.now()}`,
         kind: 'analysis_complete',
-        subject: t.plugins.companion.footer_notice_analysis_completed,
+        subject: nameThread
+          ? tx(t.plugins.companion.replied_in_thread, { thread: active!.title! })
+          : t.plugins.companion.footer_notice_analysis_completed,
         ttsSpoken: false,
         createdAt: Date.now(),
+        conversationId: nameThread ? active?.id : undefined,
       });
     }
     prevStreamingRef.current = streaming;
-  }, [streaming, soundEnabled, setFooterNotice, t]);
+  }, [streaming, soundEnabled, setFooterNotice, t, tx]);
 
   // Proactive arrivals — surface the freshest one as a popover. We
   // track the latest seen id so reordering / list refetches do not
@@ -329,7 +342,16 @@ export default function CompanionFooterIcon() {
           <motion.button
             key={footerNotice.id}
             type="button"
-            onClick={() => clearFooterNotice()}
+            onClick={() => {
+              // A thread-scoped notice jumps to (and opens) that conversation;
+              // a thread-agnostic one just dismisses. Either way it clears.
+              const n = useCompanionStore.getState().footerNotice;
+              if (n?.conversationId) {
+                setActiveConversationId(n.conversationId);
+                setState('open');
+              }
+              clearFooterNotice();
+            }}
             initial={{ opacity: 0, y: 4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
@@ -337,8 +359,16 @@ export default function CompanionFooterIcon() {
             data-testid="footer-companion-notice"
             data-companion-notice-kind={footerNotice.kind}
             className="absolute bottom-full left-0 mb-2 inline-flex items-center gap-2 max-w-[320px] px-3 py-1.5 rounded-card border border-primary/30 bg-background shadow-elevation-3 text-left focus-ring hover:bg-secondary/60 transition-colors z-50"
-            title={t.plugins.companion.footer_notice_dismiss}
-            aria-label={`${footerNotice.subject} — ${t.plugins.companion.footer_notice_dismiss}`}
+            title={
+              footerNotice.conversationId
+                ? t.plugins.companion.switch_conversation
+                : t.plugins.companion.footer_notice_dismiss
+            }
+            aria-label={`${footerNotice.subject} — ${
+              footerNotice.conversationId
+                ? t.plugins.companion.switch_conversation
+                : t.plugins.companion.footer_notice_dismiss
+            }`}
           >
             <span className="typo-caption text-foreground/90 truncate">
               {footerNotice.subject}

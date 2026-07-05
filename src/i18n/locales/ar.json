@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "بانتظارك",
       "thread_status_idle": "خامل",
       "thread_status_working": "قيد التنفيذ",
-      "rename_conversation": "إعادة تسمية المحادثة"
+      "rename_conversation": "إعادة تسمية المحادثة",
+      "replied_in_thread": "ردت Athena في {thread}"
     },
     "ocr": {
       "title": "OCR",

@@ -2015,7 +2015,8 @@
     "thread_status_awaiting": "ждёт вас",
     "thread_status_idle": "неактивно",
     "thread_status_working": "выполняется",
-    "rename_conversation": "Переименовать беседу"
+    "rename_conversation": "Переименовать беседу",
+    "replied_in_thread": "Athena ответила в {thread}"
   },
   "ocr": {
     "title": "OCR",

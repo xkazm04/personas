@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "esperando tu respuesta",
       "thread_status_idle": "inactivo",
       "thread_status_working": "en curso",
-      "rename_conversation": "Renombrar conversación"
+      "rename_conversation": "Renombrar conversación",
+      "replied_in_thread": "Athena respondió en {thread}"
     },
     "ocr": {
       "title": "OCR",

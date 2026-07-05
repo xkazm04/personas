@@ -13249,7 +13249,8 @@
       "thread_status_awaiting": "आपका इंतज़ार है",
       "thread_status_idle": "निष्क्रिय",
       "thread_status_working": "चल रहा है",
-      "rename_conversation": "बातचीत का नाम बदलें"
+      "rename_conversation": "बातचीत का नाम बदलें",
+      "replied_in_thread": "Athena ने {thread} में जवाब दिया"
     },
     "ocr": {
       "title": "OCR",

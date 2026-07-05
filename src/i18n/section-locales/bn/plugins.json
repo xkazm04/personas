@@ -2015,7 +2015,8 @@
     "thread_status_awaiting": "আপনার অপেক্ষায়",
     "thread_status_idle": "নিষ্ক্রিয়",
     "thread_status_working": "চলছে",
-    "rename_conversation": "কথোপকথনের নাম পরিবর্তন করুন"
+    "rename_conversation": "কথোপকথনের নাম পরিবর্তন করুন",
+    "replied_in_thread": "Athena {thread}-এ উত্তর দিয়েছে"
   },
   "ocr": {
     "title": "OCR",

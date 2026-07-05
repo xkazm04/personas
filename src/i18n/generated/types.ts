@@ -12661,6 +12661,7 @@ export type Translations = {
       archive_conversation: string;
       rename_conversation: string;
       switch_conversation: string;
+      replied_in_thread: string;
       thread_status_awaiting: string;
       thread_status_working: string;
       thread_status_idle: string;
