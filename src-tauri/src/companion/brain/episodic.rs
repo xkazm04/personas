@@ -89,9 +89,9 @@ pub fn append_episode(
 
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO companion_node (id, kind, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
-         VALUES (?1, 'episode', ?2, ?3, 3, ?4, ?5, ?5)",
-        params![id, rel_path, hash, excerpt, now_str],
+        "INSERT INTO companion_node (id, kind, session_id, file_path, content_hash, importance, body_excerpt, created_at, updated_at)
+         VALUES (?1, 'episode', ?6, ?2, ?3, 3, ?4, ?5, ?5)",
+        params![id, rel_path, hash, excerpt, now_str, session_id],
     )?;
 
     // Mirror into FTS for keyword fallback retrieval (Phase 2 retrieval will
@@ -141,17 +141,22 @@ pub fn list_recent(
     limit: u32,
 ) -> Result<Vec<Episode>, AppError> {
     let conn = pool.get()?;
+    // Scoped to one conversation via the indexed session_id column (added in
+    // the multi-conversation migration). Pre-multiconv episodes were backfilled
+    // to session_id='default', so the migrated 'General' thread keeps its full
+    // history. Replaces the old read-every-episode-then-match-frontmatter path.
     let mut stmt = conn.prepare(
         "SELECT id, file_path, body_excerpt, created_at
          FROM companion_node
          WHERE kind = 'episode'
+           AND session_id = ?1
            AND body_excerpt IS NOT NULL
          ORDER BY created_at DESC
-         LIMIT ?1",
+         LIMIT ?2",
     )?;
 
     let rows = stmt
-        .query_map([limit], |row| {
+        .query_map(params![session_id, limit], |row| {
             let id: String = row.get(0)?;
             let file_path: String = row.get(1)?;
             let excerpt: String = row.get(2)?;
@@ -169,12 +174,6 @@ pub fn list_recent(
             Err(_) => continue, // file missing on disk — skip, don't fail the whole list
         };
         let (role, content) = parse_episode_body(&full);
-        // Filter to the requested session by reading the frontmatter. Simple
-        // for now; if it gets hot, add a session_id column to companion_node.
-        let session_match = full.contains(&format!("session: \"{session_id}\""));
-        if !session_match {
-            continue;
-        }
         out.push(Episode {
             id,
             session_id: session_id.to_string(),
