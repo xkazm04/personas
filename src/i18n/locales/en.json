@@ -12650,6 +12650,13 @@
     },
     "companion": {
       "name": "Athena",
+      "conversations": "Conversations",
+      "new_conversation": "New conversation",
+      "archive_conversation": "Archive conversation",
+      "switch_conversation": "Switch conversation",
+      "thread_status_awaiting": "awaiting you",
+      "thread_status_working": "working",
+      "thread_status_idle": "idle",
       "role": "thinking partner",
       "athena_assignments_title": "Team assignments in flight",
       "tracking_title": "Project tracking",

@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "Cài đặt thất bại",
       "voice_kokoro_install_manual": "Hoặc tự thiết lập:",
       "voice_kokoro_install_model": "Đang tải mô hình giọng nói…",
-      "voice_kokoro_install_title": "Cài đặt một chạm"
+      "voice_kokoro_install_title": "Cài đặt một chạm",
+      "archive_conversation": "Lưu trữ cuộc trò chuyện",
+      "conversations": "Cuộc trò chuyện",
+      "new_conversation": "Cuộc trò chuyện mới",
+      "switch_conversation": "Chuyển cuộc trò chuyện",
+      "thread_status_awaiting": "đang chờ bạn",
+      "thread_status_idle": "không hoạt động",
+      "thread_status_working": "đang xử lý"
     },
     "ocr": {
       "title": "OCR",

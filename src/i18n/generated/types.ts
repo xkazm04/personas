@@ -12656,6 +12656,13 @@ export type Translations = {
     };
     companion: {
       name: string;
+      conversations: string;
+      new_conversation: string;
+      archive_conversation: string;
+      switch_conversation: string;
+      thread_status_awaiting: string;
+      thread_status_working: string;
+      thread_status_idle: string;
       role: string;
       athena_assignments_title: string;
       tracking_title: string;

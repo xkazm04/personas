@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "Instalasi gagal",
       "voice_kokoro_install_manual": "Atau siapkan secara manual:",
       "voice_kokoro_install_model": "Mengunduh model suara…",
-      "voice_kokoro_install_title": "Instalasi sekali klik"
+      "voice_kokoro_install_title": "Instalasi sekali klik",
+      "archive_conversation": "Arsipkan percakapan",
+      "conversations": "Percakapan",
+      "new_conversation": "Percakapan baru",
+      "switch_conversation": "Ganti percakapan",
+      "thread_status_awaiting": "menunggu Anda",
+      "thread_status_idle": "nonaktif",
+      "thread_status_working": "sedang berjalan"
     },
     "ocr": {
       "title": "OCR",

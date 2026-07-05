@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "Ошибка установки",
       "voice_kokoro_install_manual": "Или настройте вручную:",
       "voice_kokoro_install_model": "Загрузка голосовой модели…",
-      "voice_kokoro_install_title": "Установка в один клик"
+      "voice_kokoro_install_title": "Установка в один клик",
+      "archive_conversation": "Архивировать беседу",
+      "conversations": "Беседы",
+      "new_conversation": "Новая беседа",
+      "switch_conversation": "Переключить беседу",
+      "thread_status_awaiting": "ждёт вас",
+      "thread_status_idle": "неактивно",
+      "thread_status_working": "выполняется"
     },
     "ocr": {
       "title": "OCR",

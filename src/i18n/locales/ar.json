@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "فشل التثبيت",
       "voice_kokoro_install_manual": "أو قم بإعداده يدويًا:",
       "voice_kokoro_install_model": "جارٍ تنزيل نموذج الصوت…",
-      "voice_kokoro_install_title": "تثبيت بنقرة واحدة"
+      "voice_kokoro_install_title": "تثبيت بنقرة واحدة",
+      "archive_conversation": "أرشفة المحادثة",
+      "conversations": "المحادثات",
+      "new_conversation": "محادثة جديدة",
+      "switch_conversation": "تبديل المحادثة",
+      "thread_status_awaiting": "بانتظارك",
+      "thread_status_idle": "خامل",
+      "thread_status_working": "قيد التنفيذ"
     },
     "ocr": {
       "title": "OCR",

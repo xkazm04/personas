@@ -86,6 +86,7 @@ import { ActivityTray } from './ActivityTray';
 import { TaskTag } from './TaskTag';
 import { QueuedMessages } from './QueuedMessages';
 import { WelcomeHero } from './WelcomeHero';
+import { ConversationSwitcher } from './ConversationSwitcher';
 import { TypingDots } from './TypingDots';
 import { useChatScroll } from './useChatScroll';
 import { classifyMidTurnIntent } from './midTurnIntent';
@@ -422,10 +423,10 @@ export default function CompanionPanel() {
               useCompanionStore.getState().clearAllSteps();
               useCompanionStore.getState().clearAllNarration();
               try {
-                await companionResetConversation(true);
+                await companionResetConversation(true, useCompanionStore.getState().activeConversationId);
               } catch (err: unknown) {
                 // Refetch so UI reflects whatever stuck on the backend.
-                companionListRecentMessages(50)
+                companionListRecentMessages(50, useCompanionStore.getState().activeConversationId)
                   .then((msgs) => setMessages(msgs))
                   .catch(silentCatch('companion_list_recent_messages'));
                 silentCatch('companion_reset_conversation')(err);
@@ -543,11 +544,7 @@ function Header({
         >
           <Bot className="w-3.5 h-3.5" />
         </span>
-        <div className="min-w-0">
-          <div className="typo-body font-medium leading-tight truncate">
-            {t.plugins.companion.name}
-          </div>
-        </div>
+        <ConversationSwitcher />
       </div>
       <div className="flex items-center gap-1">
         <button
@@ -732,14 +729,23 @@ function Body(props: BodyProps) {
   const streamingNarration = useCompanionStore((s) => s.streamingNarration);
   const narrationByEpisodeId = useCompanionStore((s) => s.narrationByEpisodeId);
 
-  // Initial transcript + pending approvals fetch — once init is done.
+  // Transcript = the ACTIVE conversation's slice. Reload it whenever the
+  // active thread changes (and once on init). Switching threads swaps the
+  // message list; the brain/identity stay global.
+  const activeConversationId = useCompanionStore((s) => s.activeConversationId);
+  useEffect(() => {
+    if (!initialized) return;
+    companionListRecentMessages(50, activeConversationId)
+      .then((msgs) => setMessages(msgs))
+      .catch(silentCatch('companion_list_recent_messages'));
+  }, [initialized, activeConversationId, setMessages]);
+
+  // Initial pending-approvals + proactive fetch — once init is done. (The
+  // transcript itself is loaded by the active-conversation effect above.)
   const fetchedRef = useRef(false);
   useEffect(() => {
     if (!initialized || fetchedRef.current) return;
     fetchedRef.current = true;
-    companionListRecentMessages(50)
-      .then((msgs) => setMessages(msgs))
-      .catch(silentCatch('companion_list_recent_messages'));
     companionListPendingApprovals()
       .then((list) => setApprovals(list))
       .catch(silentCatch('companion_list_pending_approvals'));
@@ -1076,7 +1082,7 @@ function Body(props: BodyProps) {
           if (backendTurnActiveRef.current) {
             backendTurnActiveRef.current = false;
             setStreaming(false);
-            companionListRecentMessages(50)
+            companionListRecentMessages(50, useCompanionStore.getState().activeConversationId)
               .then((msgs) => setMessages(msgs))
               .catch(silentCatch('companion_list_recent_messages'));
           }
@@ -1504,10 +1510,12 @@ function Body(props: BodyProps) {
           voiceActive,
           recallSynthesisEnabled,
           autonomousMode,
+          undefined,
+          useCompanionStore.getState().activeConversationId,
         );
         // Refresh canonical transcript from backend (replaces the optimistic
         // user bubble with the persisted episode + adds the assistant turn).
-        const fresh = await companionListRecentMessages(50);
+        const fresh = await companionListRecentMessages(50, useCompanionStore.getState().activeConversationId);
         setMessages(fresh);
         if (result.quickReplies && result.quickReplies.length > 0) {
           setQuickReplies(result.quickReplies);
@@ -2072,7 +2080,7 @@ function Body(props: BodyProps) {
                       removeApproval(id);
                       // Pull the canonical transcript so the system episode the
                       // backend just logged (action outcome) shows up.
-                      companionListRecentMessages(50)
+                      companionListRecentMessages(50, useCompanionStore.getState().activeConversationId)
                         .then((msgs) => setMessages(msgs))
                         .catch(silentCatch('companion_list_recent_messages'));
                     }}

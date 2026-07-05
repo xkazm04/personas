@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "Error de instalación",
       "voice_kokoro_install_manual": "O configúralo manualmente:",
       "voice_kokoro_install_model": "Descargando modelo de voz…",
-      "voice_kokoro_install_title": "Instalación con un clic"
+      "voice_kokoro_install_title": "Instalación con un clic",
+      "archive_conversation": "Archivar conversación",
+      "conversations": "Conversaciones",
+      "new_conversation": "Nueva conversación",
+      "switch_conversation": "Cambiar conversación",
+      "thread_status_awaiting": "esperando tu respuesta",
+      "thread_status_idle": "inactivo",
+      "thread_status_working": "en curso"
     },
     "ocr": {
       "title": "OCR",

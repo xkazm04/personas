@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "インストールに失敗しました",
       "voice_kokoro_install_manual": "または手動で設定：",
       "voice_kokoro_install_model": "音声モデルをダウンロード中…",
-      "voice_kokoro_install_title": "ワンクリックインストール"
+      "voice_kokoro_install_title": "ワンクリックインストール",
+      "archive_conversation": "会話をアーカイブ",
+      "conversations": "会話",
+      "new_conversation": "新しい会話",
+      "switch_conversation": "会話を切り替え",
+      "thread_status_awaiting": "返信待ち",
+      "thread_status_idle": "待機中",
+      "thread_status_working": "実行中"
     },
     "ocr": {
       "title": "OCR",

@@ -2007,7 +2007,14 @@
     "voice_kokoro_install_failed": "安装失败",
     "voice_kokoro_install_manual": "或手动设置：",
     "voice_kokoro_install_model": "正在下载语音模型…",
-    "voice_kokoro_install_title": "一键安装"
+    "voice_kokoro_install_title": "一键安装",
+    "archive_conversation": "归档对话",
+    "conversations": "对话",
+    "new_conversation": "新对话",
+    "switch_conversation": "切换对话",
+    "thread_status_awaiting": "等待您回复",
+    "thread_status_idle": "空闲",
+    "thread_status_working": "进行中"
   },
   "ocr": {
     "title": "OCR",

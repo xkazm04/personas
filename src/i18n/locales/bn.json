@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "ইনস্টল ব্যর্থ হয়েছে",
       "voice_kokoro_install_manual": "অথবা ম্যানুয়ালি সেটআপ করুন:",
       "voice_kokoro_install_model": "ভয়েস মডেল ডাউনলোড হচ্ছে…",
-      "voice_kokoro_install_title": "এক-ক্লিক ইনস্টল"
+      "voice_kokoro_install_title": "এক-ক্লিক ইনস্টল",
+      "archive_conversation": "কথোপকথন সংরক্ষণাগারে রাখুন",
+      "conversations": "কথোপকথনসমূহ",
+      "new_conversation": "নতুন কথোপকথন",
+      "switch_conversation": "কথোপকথন পরিবর্তন করুন",
+      "thread_status_awaiting": "আপনার অপেক্ষায়",
+      "thread_status_idle": "নিষ্ক্রিয়",
+      "thread_status_working": "চলছে"
     },
     "ocr": {
       "title": "OCR",

@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "설치 실패",
       "voice_kokoro_install_manual": "또는 수동으로 설정하기:",
       "voice_kokoro_install_model": "음성 모델 다운로드 중…",
-      "voice_kokoro_install_title": "원클릭 설치"
+      "voice_kokoro_install_title": "원클릭 설치",
+      "archive_conversation": "대화 보관",
+      "conversations": "대화",
+      "new_conversation": "새 대화",
+      "switch_conversation": "대화 전환",
+      "thread_status_awaiting": "응답 대기 중",
+      "thread_status_idle": "유휴",
+      "thread_status_working": "진행 중"
     },
     "ocr": {
       "title": "OCR",

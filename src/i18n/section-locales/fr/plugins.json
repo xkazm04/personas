@@ -2007,7 +2007,14 @@
     "voice_kokoro_install_failed": "Échec de l'installation",
     "voice_kokoro_install_manual": "Ou configurez-le manuellement :",
     "voice_kokoro_install_model": "Téléchargement du modèle vocal…",
-    "voice_kokoro_install_title": "Installation en un clic"
+    "voice_kokoro_install_title": "Installation en un clic",
+    "archive_conversation": "Archiver la conversation",
+    "conversations": "Conversations",
+    "new_conversation": "Nouvelle conversation",
+    "switch_conversation": "Changer de conversation",
+    "thread_status_awaiting": "en attente de vous",
+    "thread_status_idle": "inactif",
+    "thread_status_working": "en cours"
   },
   "ocr": {
     "title": "OCR",

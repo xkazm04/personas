@@ -13241,7 +13241,14 @@
       "voice_kokoro_install_failed": "Instalace se nezdařila",
       "voice_kokoro_install_manual": "Nebo nastavte ručně:",
       "voice_kokoro_install_model": "Stahování hlasového modelu…",
-      "voice_kokoro_install_title": "Instalace na jedno kliknutí"
+      "voice_kokoro_install_title": "Instalace na jedno kliknutí",
+      "archive_conversation": "Archivovat konverzaci",
+      "conversations": "Konverzace",
+      "new_conversation": "Nová konverzace",
+      "switch_conversation": "Přepnout konverzaci",
+      "thread_status_awaiting": "čeká na vás",
+      "thread_status_idle": "nečinné",
+      "thread_status_working": "pracuje"
     },
     "ocr": {
       "title": "OCR",

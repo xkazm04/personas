@@ -2007,7 +2007,14 @@
     "voice_kokoro_install_failed": "इंस्टॉल विफल",
     "voice_kokoro_install_manual": "या इसे मैन्युअल रूप से सेट अप करें:",
     "voice_kokoro_install_model": "वॉइस मॉडल डाउनलोड हो रहा है…",
-    "voice_kokoro_install_title": "वन-क्लिक इंस्टॉल"
+    "voice_kokoro_install_title": "वन-क्लिक इंस्टॉल",
+    "archive_conversation": "बातचीत संग्रहित करें",
+    "conversations": "बातचीत",
+    "new_conversation": "नई बातचीत",
+    "switch_conversation": "बातचीत बदलें",
+    "thread_status_awaiting": "आपका इंतज़ार है",
+    "thread_status_idle": "निष्क्रिय",
+    "thread_status_working": "चल रहा है"
   },
   "ocr": {
     "title": "OCR",
