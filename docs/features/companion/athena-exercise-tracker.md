@@ -247,3 +247,18 @@ Awaiting Michal.
   commit `218bd0289`. NOT merged — backend, so merge = rebuild + restart. Follow-up: backend
   result-string i18n (these are Rust-side English, not routed through the frontend i18n system);
   optional cleanup of remaining ids in `run_persona` / `resolve_human_review` result strings. ⏳
+- **MERGED to master (`371cf5cfb`)** — humanization + chat/approval-styling (notes 1+3) + Phase 1
+  tracker landed via a clean merge (disjoint file sets with master's multi-conversation work). So the
+  plain-language confirmations + badge/approval polish are live on master.
+- **Auto-react after approval (note 2, CODE increment, BACKEND)** — the reported gap: after a manual
+  Approve the action ran and logged a flat outcome line, but Athena never reacted — Michal had to send
+  a new message to get a reply. Fix: `companion_approve_action` now spawns ONE brief system-initiated
+  reaction turn into the main thread on success. Mechanism: `session::spawn_proactive_turn` split into
+  `spawn_proactive_turn_in(…conversation_id)` + a zero-churn wrapper (Notices thread); the reaction
+  routes into `DEFAULT_SESSION_ID`. Frontend hides the `[proactive:]` opener (Bubble.tsx). Skip filter
+  = fleet_* + explicit navigation-only (open_route/open_lab/prefill) + self-narrating (analyze_fleet/
+  run_browser_test). Per Michal ("better one more message than none") the earlier blanket
+  "any `client_action` → stay silent" was REMOVED — real-work actions that also nudge the UI now react.
+  Auto-approve path intentionally excluded (its originating turn already spoke). Built by subagent,
+  leniency + doc edits by me; call matches the proven existing `spawn_proactive_turn` pattern exactly.
+  ⏳ committing + merging now.

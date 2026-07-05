@@ -1159,7 +1159,13 @@ fn schedule_autonomous_tick(
 /// so the turn can chain via `continue_autonomously` if it needs more
 /// than one pass — by the time we call this, the caller has already
 /// confirmed autonomous mode is on.
-pub fn spawn_proactive_turn(
+///
+/// `conversation_id` routes the turn into a specific thread. Ownerless
+/// proactive nudges use the system "Athena / Notices" thread (see the
+/// [`spawn_proactive_turn`] convenience wrapper); an owned follow-up (e.g. an
+/// action-reaction that must land next to the outcome the user just saw) passes
+/// the originating thread explicitly.
+pub fn spawn_proactive_turn_in(
     app: AppHandle,
     user_db: Arc<UserDbPool>,
     sys_db: Arc<DbPool>,
@@ -1167,6 +1173,7 @@ pub fn spawn_proactive_turn(
     trigger_kind: String,
     trigger_ref: Option<String>,
     directive: String,
+    conversation_id: String,
 ) {
     let _ = tauri::async_runtime::spawn_blocking(move || {
         let rt = match tokio::runtime::Builder::new_current_thread()
@@ -1194,10 +1201,7 @@ pub fn spawn_proactive_turn(
                 false, // voice off for machine-initiated turns
                 false, // no recall synthesis budget on background turns
                 true,  // autonomous_mode on — caller gated on this
-                // Ownerless proactive nudges land in the system "Athena / Notices"
-                // thread (design §4.3). Owned nudges (e.g. fleet_op_completed → the
-                // dispatching thread) can route here explicitly in a later phase.
-                crate::companion::conversation::NOTICES_CONVERSATION_ID.to_string(),
+                conversation_id,
             )
             .await;
             if let Err(e) = res {
@@ -1205,6 +1209,31 @@ pub fn spawn_proactive_turn(
             }
         });
     });
+}
+
+/// Convenience wrapper: spawn an ownerless proactive turn into the system
+/// "Athena / Notices" thread (design §4.3) — the scheduler / exec-review /
+/// daily-brief entry point. Delegates to [`spawn_proactive_turn_in`].
+pub fn spawn_proactive_turn(
+    app: AppHandle,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
+    trigger_kind: String,
+    trigger_ref: Option<String>,
+    directive: String,
+) {
+    spawn_proactive_turn_in(
+        app,
+        user_db,
+        sys_db,
+        #[cfg(feature = "ml")]
+        embedder,
+        trigger_kind,
+        trigger_ref,
+        directive,
+        crate::companion::conversation::NOTICES_CONVERSATION_ID.to_string(),
+    );
 }
 
 /// The model every full companion turn runs on. Recorded into the turn ledger
