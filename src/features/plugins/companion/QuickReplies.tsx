@@ -48,7 +48,7 @@ export function QuickReplies({
           title={opt}
         >
           <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-primary/25"
+            className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-medium bg-primary/25"
             aria-hidden
           >
             {i + 1}

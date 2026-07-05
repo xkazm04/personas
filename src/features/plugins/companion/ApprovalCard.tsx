@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X } from 'lucide-react';
+import Button from '@/features/shared/components/buttons/Button';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -131,7 +132,7 @@ export function ApprovalCard({
 
   return (
     <div
-      className="rounded-card border border-primary/30 bg-primary/5 p-3.5 space-y-3 typo-body"
+      className="rounded-card border border-primary/40 bg-background/60 [[data-theme^='light']_&]:bg-primary/[0.06] p-3.5 space-y-3 typo-body shadow-elevation-1"
       data-companion-approval
       data-companion-approval-id={approval.id}
       data-companion-approval-action={approval.action}
@@ -141,7 +142,7 @@ export function ApprovalCard({
           {t.plugins.companion.proposed_action}
         </span>
         <span
-          className="typo-caption font-medium text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
+          className="typo-caption text-foreground/85 px-2 py-0.5 rounded-input bg-foreground/5"
           title={approval.action}
         >
           {actionLabel(t, approval.action)}
@@ -181,32 +182,28 @@ export function ApprovalCard({
       )}
 
       <div className="flex items-center gap-2">
-        <button
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => handle('approve')}
           disabled={busy !== null}
+          loading={busy === 'approve'}
+          icon={<Check className="w-3.5 h-3.5" />}
           data-testid="companion-approve"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-opacity focus-ring"
         >
-          {busy === 'approve' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <Check className="w-3.5 h-3.5" />
-          )}
           {t.plugins.companion.approve}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
           onClick={() => handle('reject')}
           disabled={busy !== null}
+          loading={busy === 'reject'}
+          icon={<X className="w-3.5 h-3.5" />}
           data-testid="companion-reject"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-foreground/5 text-foreground typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-foreground/10 transition-colors focus-ring"
         >
-          {busy === 'reject' ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-          ) : (
-            <X className="w-3.5 h-3.5" />
-          )}
           {t.plugins.companion.reject}
-        </button>
+        </Button>
       </div>
     </div>
   );
