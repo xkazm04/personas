@@ -1,0 +1,249 @@
+openapi: 3.1.0
+info:
+  title: Personas Management API
+  version: "1.0.0"
+  description: |
+    Local HTTP API exposed by the Personas desktop app on `127.0.0.1:9420` for
+    external integrations (MCP servers, CLI scripts, A2A clients, and — after a
+    user-approved pairing — cloud web apps).
+
+    ## Authentication
+    Every `/api/*`, `/a2a/*`, and `/agent-card/*` request needs
+    `Authorization: Bearer <pk_...>`. Keys are minted in the desktop app
+    (Settings → API Keys) or via the pairing ceremony (see `/pair/*`). The
+    `/pair/*` endpoints and `/health` are unauthenticated.
+
+    ## Scopes (least-privilege)
+    Keys carry a JSON array of scopes; routes are authorized against them:
+    - `personas:read` — list/read personas + executions (implicit for GET).
+    - `personas:execute` — execute any persona (mutating `/api/*`).
+    - `personas:execute:persona:<id>` — execute only persona `<id>`.
+    - `personas:build` — the `/api/build*` flow.
+    - `proxy` / `proxy:credential:<id>` — the credential proxy (NOT covered by
+      `personas:execute`).
+
+    A route naming a persona/credential is satisfied by the broad scope OR the
+    matching per-resource grant. Keys may be origin-bound (paired) and expiring;
+    per-key rate limit 120 req/60 s (→ 429 + `Retry-After`).
+
+    See docs/architecture/cloud-integration-bridge.md for the full design.
+servers:
+  - url: http://127.0.0.1:9420
+    description: Loopback management server (plain HTTP; a secure context for browsers)
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      security: []
+      responses:
+        "200": { description: Server is up }
+
+  /api/personas:
+    get:
+      summary: List personas
+      description: Any valid key (no scope required).
+      responses:
+        "200":
+          description: Persona summaries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/personas/{personaId}:
+    get:
+      summary: Get a persona
+      parameters: [{ $ref: "#/components/parameters/PersonaId" }]
+      responses:
+        "200":
+          content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/execute/{personaId}:
+    post:
+      summary: Execute a persona (non-blocking)
+      description: |
+        Requires `personas:execute` OR `personas:execute:persona:{personaId}`.
+        Returns immediately with an `executionId`; poll `/api/executions/{id}`.
+      parameters: [{ $ref: "#/components/parameters/PersonaId" }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExecuteInput" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExecuteResult" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "429": { $ref: "#/components/responses/RateLimited" }
+
+  /api/executions:
+    get:
+      summary: List executions
+      parameters:
+        - { name: limit, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: persona_id, in: query, schema: { type: string } }
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /api/executions/{executionId}:
+    get:
+      summary: Get one execution (poll for terminal status + output)
+      parameters:
+        - { name: executionId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: |
+            Execution record. `status` is one of `queued|running|completed|failed|incomplete|cancelled`;
+            read `output` / `log_file_path` once terminal.
+          content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+
+  /api/build:
+    post:
+      summary: Start an LLM-driven persona build session
+      description: Requires `personas:build`. Poll `/api/build/{sessionId}`; answer/test/promote as needed.
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/BuildStart" } } }
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/build/{sessionId}:
+    get:
+      summary: Build session status
+      parameters: [{ $ref: "#/components/parameters/SessionId" }]
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/build/{sessionId}/promote:
+    post:
+      summary: Promote a build draft to a live persona
+      parameters: [{ $ref: "#/components/parameters/SessionId" }]
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /api/proxy/{credentialId}:
+    post:
+      summary: Proxy an HTTP request through a stored credential
+      description: |
+        Requires `proxy` OR `proxy:credential:{credentialId}` — NOT `personas:execute`.
+        Injects the stored secret server-side.
+      parameters:
+        - { name: credentialId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/ApiResult" } } } }
+        "403": { $ref: "#/components/responses/Forbidden" }
+
+  /agent-card/{personaId}:
+    get:
+      summary: A2A agent card (capability discovery)
+      description: Authenticated only; gated per-persona by `gateway_exposure`.
+      parameters: [{ $ref: "#/components/parameters/PersonaId" }]
+      responses:
+        "200": { description: A2A AgentCard JSON }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /a2a/{personaId}:
+    post:
+      summary: A2A JSON-RPC entry point (message/send, tasks/get, tasks/cancel)
+      parameters: [{ $ref: "#/components/parameters/PersonaId" }]
+      responses:
+        "200": { description: JSON-RPC 2.0 response envelope }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  /pair/request:
+    post:
+      summary: Initiate pairing from a cloud app
+      security: []
+      description: |
+        The authoritative origin is the request's `Origin` header. Creates a pending
+        pairing (keyed by `nonce`) and raises an in-app approval modal. Nothing is
+        minted here. Poll `/pair/claim` after the user approves.
+      requestBody:
+        content: { application/json: { schema: { $ref: "#/components/schemas/PairRequest" } } }
+      responses:
+        "202": { description: Pending — await user approval, then claim }
+        "400": { description: Missing Origin / bad nonce }
+
+  /pair/claim:
+    get:
+      summary: Claim the paired key (single-use)
+      security: []
+      description: |
+        Returns the minted token exactly once, only to the approved `Origin`. The
+        token is origin-bound + expiring. Poll until 200 (or 403 on rejection).
+      parameters:
+        - { name: nonce, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The paired key
+          content: { application/json: { schema: { type: object, properties: { token: { type: string } } } } }
+        "202": { description: Still pending }
+        "403": { description: Rejected or origin mismatch }
+        "404": { description: Unknown or expired nonce }
+        "410": { description: Already claimed }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "A `pk_<32hex>` external API key."
+  parameters:
+    PersonaId: { name: personaId, in: path, required: true, schema: { type: string } }
+    SessionId: { name: sessionId, in: path, required: true, schema: { type: string } }
+  responses:
+    Unauthorized: { description: Missing / invalid / expired / origin-mismatched key }
+    Forbidden: { description: Key lacks the scope required for this route }
+    NotFound: { description: Resource not found }
+    RateLimited:
+      description: Per-key rate limit exceeded
+      headers: { Retry-After: { schema: { type: integer }, description: Seconds until retry } }
+  schemas:
+    ApiResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data: {}
+        error: { type: string }
+      required: [success]
+    ExecuteInput:
+      type: object
+      properties:
+        input_data: { description: JSON value or string used as the user message }
+    ExecuteResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        data:
+          type: object
+          properties:
+            execution_id: { type: string }
+            status: { type: string, example: queued }
+    BuildStart:
+      type: object
+      properties:
+        persona_id: { type: string }
+        intent: { type: string }
+        mode: { type: string, enum: [interactive, one_shot] }
+      required: [persona_id, intent]
+    PairRequest:
+      type: object
+      properties:
+        nonce: { type: string, description: "High-entropy (≥16 chars), client-generated, single-use." }
+        scopes: { type: array, items: { type: string } }
+        name: { type: string, description: "Human label for the approval modal." }
+      required: [nonce]

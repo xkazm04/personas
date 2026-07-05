@@ -139,3 +139,8 @@ Paired apps appear under **Connected apps** in Settings → API Keys, each with 
 origin, expiry, and last-used; **Disconnect** (`revoke_pairing`) revokes the key and
 drops the origin from the allowlist. Commands: `list_pending_pairings` /
 `approve_pairing` / `reject_pairing` / `revoke_pairing`.
+
+**Developer contract.** The HTTP surface is documented as an OpenAPI 3.1 spec at
+[`docs/api/management-api.openapi.yaml`](../../api/management-api.openapi.yaml), and a
+zero-dependency reference TypeScript client (with a `pair()` helper) lives at
+[`sdk/personas-sdk.ts`](../../../sdk/personas-sdk.ts).
