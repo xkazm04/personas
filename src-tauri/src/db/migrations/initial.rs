@@ -316,7 +316,14 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
             enabled       INTEGER NOT NULL DEFAULT 1,
             created_at    TEXT NOT NULL DEFAULT (datetime('now')),
             last_used_at  TEXT,
-            revoked_at    TEXT
+            revoked_at    TEXT,
+            -- Capability-token columns (Direction 5). Fresh DBs are born with
+            -- them; existing DBs get them via the guarded ALTER in
+            -- run_incremental (external_api_keys.capability_columns). See
+            -- docs/architecture/cloud-integration-bridge.md.
+            expires_at    TEXT,
+            bound_origin  TEXT,
+            label         TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_external_api_keys_hash ON external_api_keys(key_hash);
         CREATE INDEX IF NOT EXISTS idx_external_api_keys_prefix ON external_api_keys(key_prefix);",

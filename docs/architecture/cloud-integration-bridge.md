@@ -334,3 +334,38 @@ UI). Pairing (P5–P7) is a follow-up session.
 - Pairing: nonce single-use; token never in deep-link; approval required; revoke drops
   origin from allowlist.
 - Human security review of: proxy lockdown, pairing token delivery, CORS predicate.
+
+## 9. P1 implementation notes — pre-existing migration-harness bug (discovered 2026-07-05)
+
+While adding the `run_incremental` migration for the capability-token columns, the
+build surfaced a **pre-existing, unrelated** defect in the test-DB harness:
+`db::init_test_db()` (which runs `migrations::run` + `run_incremental`) does **not**
+leave `external_api_keys` present in the test binary. A full table dump at the
+migration point shows it — along with `healing_audit_log`, `skills`,
+`skill_components`, `persona_skills`, `settings_audit_log`, `team_deliberations`,
+`deliberation_agenda` — **absent** from an otherwise ~127-table schema. These are all
+created by `initial::run` (or an early `run_incremental` step) and then dropped/lost
+during `run_incremental` in the test path. The pre-existing `migration_chain_is_idempotent_on_rerun`
+and `fresh_schema_contains_latest_migration_artifacts` tests never caught it because
+neither asserts those specific tables. This is almost certainly among the "18
+pre-existing cargo test failures" noted in the ship-loop M4 ledger entry.
+
+**Production is unaffected:** the real boot path (`db::init_db`) clearly leaves
+`external_api_keys` present — the entire management API depends on it and works. The
+loss is specific to the `init_test_db` chain in the test binary.
+
+**Consequences for P1 (all scoped to not touch the deep migration bug):**
+- The capability-token columns are defined **directly in `initial.rs`'s `CREATE TABLE
+  external_api_keys`** (fresh DBs are born with them) **and** added by a guarded
+  `run_incremental` ALTER (upgrade path for existing prod DBs).
+- That ALTER migration is guarded on `has_table` (no-op if the table is absent) so it
+  can never abort the migration chain — which also **restores** the two migration
+  tests above to green (my migration no longer crashes them).
+- Repo tests (`external_api_keys.rs`) use a **self-contained** temp-file pool that
+  creates just the one table; the management API tests use a temp-file **run-only**
+  pool (`initial::run`, no `run_incremental`) so both the base schema and
+  `external_api_keys` are present.
+
+**Follow-up (not in this session):** root-cause and fix the `run_incremental` table
+loss in the test harness — likely restores several of the pre-existing failures. Track
+separately from the cloud-integration work.

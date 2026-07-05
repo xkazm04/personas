@@ -20,7 +20,8 @@ pub fn create_external_api_key(
     name: String,
     scopes: Vec<String>,
 ) -> Result<CreateApiKeyResponse, AppError> {
-    let resp = repo::create(&state.db, &name, scopes)?;
+    // P1: expiry / origin-binding are threaded in P4 (UI) and P6 (pairing).
+    let resp = repo::create(&state.db, &name, scopes, None, None, None)?;
     tracing::info!(
         api_key_id = %resp.record.id,
         prefix = %resp.record.key_prefix,

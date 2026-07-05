@@ -302,10 +302,15 @@ pub fn get_or_create_system_api_key(pool: &DbPool) -> Result<String, AppError> {
         }
     }
 
+    // The system key never expires and is not origin-bound (it authenticates
+    // the desktop's own in-process fetches + the MCP sidecar bridge).
     let resp = api_key_repo::create(
         pool,
         "system",
         vec!["personas:read".into(), "personas:execute".into()],
+        None,
+        None,
+        None,
     )?;
 
     let mut guard = cache.lock().expect("system api key mutex poisoned");
@@ -1969,17 +1974,25 @@ async fn build_cancel(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::atomic::{AtomicU64, Ordering};
 
-    /// Build a fresh in-memory pool with full schema. Mirrors the helper used
-    /// by `external_api_keys.rs`'s tests.
+    /// Temp-file pool with the initial schema applied (no `run_incremental`).
+    ///
+    /// The management API tests need both the base persona/design tables (A2A
+    /// agent-card) and `external_api_keys` (system key). `initial::run` creates
+    /// both. We deliberately skip `run_incremental`: it drops `external_api_keys`
+    /// in the test binary — a pre-existing, unrelated migration-harness issue
+    /// (see docs/architecture/cloud-integration-bridge.md, P1 notes). Because the
+    /// capability-token columns are now defined directly in initial.rs's
+    /// `CREATE TABLE`, `external_api_keys` here has the shape
+    /// `get_or_create_system_api_key`'s INSERT writes.
     fn test_pool() -> DbPool {
-        static COUNTER: AtomicU64 = AtomicU64::new(0);
-        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let uri = format!("file:mgmt_api_testdb_{id}?mode=memory&cache=shared");
-        let manager = r2d2_sqlite::SqliteConnectionManager::file(&uri);
+        use std::time::Duration;
+        let tmp =
+            std::env::temp_dir().join(format!("mgmt_api_test_{}.db", uuid::Uuid::new_v4()));
+        let manager = r2d2_sqlite::SqliteConnectionManager::file(&tmp);
         let pool = r2d2::Pool::builder()
-            .max_size(4)
+            .max_size(2)
+            .connection_timeout(Duration::from_secs(5))
             .build(manager)
             .expect("test pool build");
         {

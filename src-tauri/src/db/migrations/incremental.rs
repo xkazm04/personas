@@ -5051,6 +5051,43 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // -- External API keys: capability-token columns (Direction 5, P1) --------
+    // Upgrade path for EXISTING DBs whose `external_api_keys` predates the
+    // capability-token columns. Fresh DBs are already born with these columns
+    // (see initial.rs), so this is a pure upgrade step. Adds hard expiry,
+    // browser-origin binding, and a human label so the key-creation UI and
+    // (later) the pairing ceremony can mint time-boxed, origin-bound,
+    // least-privilege keys. All nullable, so existing keys and the process
+    // "system" key are unaffected: NULL expires_at = non-expiring, NULL
+    // bound_origin = no origin restriction.
+    //
+    // Guarded on `has_table` first: some code paths reach run_incremental with
+    // `external_api_keys` not yet present, and an unguarded ALTER would abort
+    // the whole chain. `already_applied` (has_column) then makes the ALTER
+    // itself idempotent. See docs/architecture/cloud-integration-bridge.md.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "external_api_keys.capability_columns",
+            description: "external_api_keys: expires_at + bound_origin + label",
+            already_applied: |conn| {
+                // No-op if the table is absent (nothing to alter yet) or the
+                // first column already exists.
+                Ok(!has_table(conn, "external_api_keys")?
+                    || has_column(conn, "external_api_keys", "expires_at")?)
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE external_api_keys ADD COLUMN expires_at TEXT;
+                     ALTER TABLE external_api_keys ADD COLUMN bound_origin TEXT;
+                     ALTER TABLE external_api_keys ADD COLUMN label TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

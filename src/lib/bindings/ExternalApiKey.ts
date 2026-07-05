@@ -13,4 +13,19 @@ key_prefix: string,
 /**
  * JSON-encoded array of scope strings (e.g. ["personas:read","personas:execute"]).
  */
-scopes: string, enabled: boolean, created_at: string, last_used_at: string | null, revoked_at: string | null, };
+scopes: string, enabled: boolean, created_at: string, last_used_at: string | null, revoked_at: string | null, 
+/**
+ * Hard expiry (ISO 8601). `None` = never expires (legacy keys + the
+ * process "system" key). Enforced at lookup in `find_by_token`.
+ */
+expires_at: string | null, 
+/**
+ * If set, the key is only accepted when the request's `Origin` header
+ * equals this value (browser callers). `None` = no origin restriction
+ * (CLI / MCP keys that send no Origin). Set by the pairing ceremony.
+ */
+bound_origin: string | null, 
+/**
+ * Optional human note surfaced in the UI (e.g. the paired app's name).
+ */
+label: string | null, };

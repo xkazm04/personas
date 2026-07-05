@@ -25,6 +25,15 @@ pub struct ExternalApiKey {
     pub created_at: String,
     pub last_used_at: Option<String>,
     pub revoked_at: Option<String>,
+    /// Hard expiry (ISO 8601). `None` = never expires (legacy keys + the
+    /// process "system" key). Enforced at lookup in `find_by_token`.
+    pub expires_at: Option<String>,
+    /// If set, the key is only accepted when the request's `Origin` header
+    /// equals this value (browser callers). `None` = no origin restriction
+    /// (CLI / MCP keys that send no Origin). Set by the pairing ceremony.
+    pub bound_origin: Option<String>,
+    /// Optional human note surfaced in the UI (e.g. the paired app's name).
+    pub label: Option<String>,
 }
 
 impl ExternalApiKey {
@@ -32,6 +41,18 @@ impl ExternalApiKey {
     /// Returns an empty vec on parse failure.
     pub fn parsed_scopes(&self) -> Vec<String> {
         serde_json::from_str(&self.scopes).unwrap_or_default()
+    }
+
+    /// True when the key has a hard expiry that is at or before `now`.
+    /// A malformed `expires_at` is treated as **expired** (fail closed).
+    pub fn is_expired_at(&self, now: chrono::DateTime<chrono::Utc>) -> bool {
+        match self.expires_at.as_deref() {
+            None => false,
+            Some(raw) => match chrono::DateTime::parse_from_rfc3339(raw) {
+                Ok(ts) => ts.with_timezone(&chrono::Utc) <= now,
+                Err(_) => true,
+            },
+        }
     }
 }
 
