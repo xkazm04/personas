@@ -64,6 +64,17 @@ export function Bubble({
     isString &&
     (children as string).startsWith('[autonomous continuation');
   const isFleetMarker = isSystem && isString && /^\[fleet\b/i.test((children as string).trim());
+
+  // Machine-initiated turn opener (proactive scheduler / action-reaction). The
+  // backend persists a `[proactive: <kind>]` System episode purely to mark the
+  // turn as self-initiated — it carries no user-facing prose, so hide it; the
+  // assistant reply that follows IS what the user reads. Previously these only
+  // landed in the hidden "Notices" thread; an action-reaction lands in the main
+  // thread (right after the action outcome), so it now needs suppressing here.
+  const isProactiveMarker =
+    isSystem && isString && /^\[proactive:/i.test((children as string).trim());
+  if (isProactiveMarker) return null;
+
   if (isAutonomousMarker || isFleetMarker) {
     const raw = (children as string).trim();
     // Fleet markers are a bare "[Fleet]" tag — strip the brackets for display.
