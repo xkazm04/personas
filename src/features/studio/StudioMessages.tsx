@@ -119,7 +119,11 @@ export default function StudioMessages() {
           ) : (
             <div className="min-w-0">
               {latest && (
-                <MarkdownRenderer content={latest.text} className="athena-chat-md" codeBlockActions />
+                // Scroll long completed replies instead of overflowing the bubble;
+                // the decision (below) stays pinned + visible.
+                <div className="max-h-[40vh] overflow-y-auto overscroll-contain">
+                  <MarkdownRenderer content={latest.text} className="athena-chat-md" codeBlockActions />
+                </div>
               )}
               {question && (
                 <StudioDecision

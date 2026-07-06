@@ -77,6 +77,33 @@ const planFirstSeed = (vision: string) =>
 const AUTO_INSTRUCTION =
   'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. Decide the order yourself and keep going; do NOT ask which feature to build next or for permission to continue. Only use NEEDS_INPUT for real content or a business/data decision you genuinely cannot make. If everything is built and polished, say so and mark all phases done.';
 
+// A turn's reply is Athena's whole step-by-step narration, which reads as one
+// giant bubble. Split it into paragraph-level "beats" so the log becomes a
+// history of shorter messages (a real conversation), while keeping fenced code
+// blocks intact so we never split mid-snippet. One-paragraph replies stay one.
+function splitReply(text: string): string[] {
+  const t = text.trim();
+  if (!t) return [];
+  const parts: string[] = [];
+  let buf: string[] = [];
+  let inFence = false;
+  const flush = () => {
+    const s = buf.join('\n').trim();
+    if (s) parts.push(s);
+    buf = [];
+  };
+  for (const line of t.split('\n')) {
+    if (/^\s*```/.test(line)) inFence = !inFence;
+    if (!inFence && line.trim() === '') {
+      flush();
+      continue;
+    }
+    buf.push(line);
+  }
+  flush();
+  return parts.length ? parts : [t];
+}
+
 // Non-serializable per-project handles kept outside store state.
 const pollTimers = new Map<string, number>();
 const autoTimers = new Map<string, number>();
@@ -280,11 +307,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
       const reply = result.reply.trim() || 'Done.';
+      const beats = splitReply(reply);
       patch(id, {
         reply,
         messages: [
           ...(get().runtimes[id]?.messages ?? []),
-          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+          ...beats.map((text, i) => ({
+            id: `${crypto.randomUUID()}-${i}`,
+            text,
+            ts: Date.now(),
+          })),
         ],
         question: q,
         options: q ? (result.options ?? []) : [],
