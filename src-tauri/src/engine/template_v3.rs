@@ -141,6 +141,21 @@ where
             apply_bindings(&mut hydrated, &bindings)?;
         }
 
+        // Stamp catalog provenance onto the hydrated UC (Foundry arc,
+        // 2026-07-06). Flows through the typed AgentIr round-trip into
+        // `design_context.useCases[].source_recipe_id`, so recipes attached
+        // via templates or the Foundry light the catalog's "Adopted" badge
+        // and anchor future staleness checks — exactly like catalog-UI
+        // adoptions (which stamp provenance TS-side).
+        if let Some(h) = hydrated.as_object_mut() {
+            h.entry("source_recipe_id")
+                .or_insert_with(|| Value::String(recipe_id.clone()));
+            if let Some(v) = recipe_ref.get("version").and_then(|v| v.as_str()) {
+                h.entry("source_recipe_version")
+                    .or_insert_with(|| Value::String(v.to_string()));
+            }
+        }
+
         // Replace the recipe_ref UC with the hydrated inline shape.
         *uc = hydrated;
     }
@@ -1758,11 +1773,36 @@ mod tests {
         let lookup = |_id: &str| Ok(recipe_fixture("recipe-empty", &stored_uc_json));
         hydrate_recipe_refs(&mut payload, lookup).expect("hydrate ok");
 
-        let hydrated_uc = payload
+        let mut hydrated_uc = payload
             .pointer("/use_cases/0")
             .expect("first UC present")
             .clone();
-        assert_eq!(hydrated_uc, stored_uc, "empty bindings = exact passthrough");
+        // Hydration deliberately stamps catalog provenance (Foundry arc) —
+        // assert it, then strip it for the passthrough comparison.
+        assert_eq!(
+            hydrated_uc.get("source_recipe_id").and_then(|v| v.as_str()),
+            Some("recipe-empty"),
+            "hydration must stamp source_recipe_id"
+        );
+        strip_provenance_uc(&mut hydrated_uc);
+        assert_eq!(hydrated_uc, stored_uc, "empty bindings = exact passthrough (modulo provenance)");
+    }
+
+    /// Remove the provenance keys hydration injects — used by the parity
+    /// tests, whose contract is "hydration adds NOTHING except provenance".
+    fn strip_provenance_uc(uc: &mut Value) {
+        if let Some(o) = uc.as_object_mut() {
+            o.remove("source_recipe_id");
+            o.remove("source_recipe_version");
+        }
+    }
+
+    fn strip_provenance_all(payload: &mut Value) {
+        if let Some(ucs) = payload.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
+            for uc in ucs {
+                strip_provenance_uc(uc);
+            }
+        }
     }
 
     #[test]
@@ -1845,9 +1885,18 @@ mod tests {
         };
         hydrate_recipe_refs(&mut converted, lookup).expect("hydrate ok");
 
+        // Every hydrated UC must carry provenance…
+        for uc in converted["use_cases"].as_array().unwrap() {
+            assert!(
+                uc.get("source_recipe_id").is_some(),
+                "hydrated UC must be stamped with source_recipe_id"
+            );
+        }
+        // …and adds NOTHING else beyond it.
+        strip_provenance_all(&mut converted);
         assert_eq!(
             converted["use_cases"], original_ucs,
-            "post-hydrate use_cases must equal pre-conversion inline use_cases"
+            "post-hydrate use_cases must equal pre-conversion inline use_cases (modulo provenance)"
         );
     }
 
@@ -1873,10 +1922,13 @@ mod tests {
         hydrate_recipe_refs(&mut path_recipe_ref, lookup).expect("hydrate ok");
         normalize_v3_to_flat(&mut path_recipe_ref);
 
-        // Both paths must produce identical flat output.
+        // Both paths must produce identical flat output — modulo the catalog
+        // provenance hydration deliberately stamps (the recipe_ref path
+        // KNOWS its source recipes; the inline path never had any).
+        strip_provenance_all(&mut path_recipe_ref);
         assert_eq!(
             path_inline, path_recipe_ref,
-            "normalize-after-hydrate must equal normalize-of-inline"
+            "normalize-after-hydrate must equal normalize-of-inline (modulo provenance)"
         );
     }
 

@@ -1145,24 +1145,33 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         // (auto_triage.rs). Without these fields the runtime falls back
         // to permissive defaults regardless of what the build LLM
         // declared per build prompt rules 16d / 21.
-        let (model_override, model_rationale, review_policy, generation_settings, memory_policy) =
-            match uc {
-                crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
-                    d.model_override.clone(),
-                    // Normalize empty rationale strings to None so the UI never
-                    // renders an empty tooltip just because the LLM emitted "".
-                    d.model_rationale
-                        .as_ref()
-                        .map(|s| s.trim().to_string())
-                        .filter(|s| !s.is_empty()),
-                    d.review_policy.clone(),
-                    d.generation_settings.clone(),
-                    d.memory_policy.clone(),
-                ),
-                crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
-                    (None, None, None, None, None)
-                }
-            };
+        let (
+            model_override,
+            model_rationale,
+            review_policy,
+            generation_settings,
+            memory_policy,
+            source_recipe_id,
+            source_recipe_version,
+        ) = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                d.model_override.clone(),
+                // Normalize empty rationale strings to None so the UI never
+                // renders an empty tooltip just because the LLM emitted "".
+                d.model_rationale
+                    .as_ref()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+                d.review_policy.clone(),
+                d.generation_settings.clone(),
+                d.memory_policy.clone(),
+                d.source_recipe_id.clone(),
+                d.source_recipe_version.clone(),
+            ),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
+                (None, None, None, None, None, None, None)
+            }
+        };
 
         structured.push(serde_json::json!({
             "id": uc_id,
@@ -1178,6 +1187,12 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             "review_policy": review_policy,
             "generation_settings": generation_settings,
             "memory_policy": memory_policy,
+            // Catalog provenance (Foundry arc) — lights the "Adopted" badge
+            // for template-/Foundry-attached recipes; adopted_at marks the
+            // promote moment (catalog-UI adoptions stamp their own).
+            "source_recipe_id": source_recipe_id,
+            "source_recipe_version": source_recipe_version,
+            "adopted_at": source_recipe_id.as_ref().map(|_| chrono::Utc::now().to_rfc3339()),
         }));
         ids.push(uc_id);
     }
