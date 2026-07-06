@@ -14,6 +14,7 @@ const logger = createLogger("template-adoption");
 import { type UseCaseOption } from "./ucPicker";
 import { PersonaLayoutAdoption } from "./persona-layout";
 import { PersonaLayoutBuild } from "./persona-layout/PersonaLayoutBuild";
+import { CompositionXray } from "./CompositionXray";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { useAgentStore } from "@/stores/agentStore";
@@ -1487,6 +1488,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       // container, the inner scroll container's parent never had a bounded
       // height, and the main content (sigil + rows) wasn't scrollable.
       <div className="flex-1 min-h-0 flex flex-col">
+        {/* Composition x-ray — shows the template as mentality + catalog
+            recipes (same vocabulary the Foundry composes by hand). */}
+        <CompositionXray designResult={designResult as Record<string, unknown>} />
         <div className="flex-1 min-h-0 flex flex-col">
           {personaLayoutBranch}
         </div>
