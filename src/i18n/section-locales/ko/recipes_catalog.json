@@ -226,5 +226,9 @@
   "remove_label": "제거",
   "remove_tooltip": "선택한 에이전트에서 이 기능 분리",
   "removed_toast": "\"{title}\" 제거됨",
-  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "업데이트",
+  "update_badge_detail_tooltip": "v{from}에서 적용됨; 현재 카탈로그 버전은 v{to}입니다. 업데이트하려면 제거 후 다시 적용하세요.",
+  "update_badge_tooltip": "이 기능의 최신 버전을 사용할 수 있습니다 — 업데이트하려면 제거 후 다시 적용하세요",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

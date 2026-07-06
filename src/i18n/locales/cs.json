@@ -10920,7 +10920,11 @@
     "remove_label": "Odstranit",
     "remove_tooltip": "Odpojit tuto schopnost od vybraného agenta",
     "removed_toast": "Odstraněno \"{title}\"",
-    "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "Aktualizace",
+    "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
+    "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "Žádné odpovídající recepty",

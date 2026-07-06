@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../types';
 import { useRecipeEligibility } from '../useEligibility';
 import { useAdoption } from '../libs/useAdoption';
+import { findAdoptedUseCase, isRecipeStale } from '../libs/recipeStaleness';
 import { RecipeDetailHeader } from './detail/RecipeDetailHeader';
 import { RecipeHowItRuns } from './detail/RecipeHowItRuns';
 import { RecipeNeedsCard } from './detail/RecipeNeedsCard';
@@ -38,10 +39,12 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibility = useRecipeEligibility(recipe);
   const selectedUseCases = useSelectedUseCases();
-  const adopted = useMemo(
-    () => selectedUseCases.some((uc) => uc.source_recipe_id === recipe.id),
+  const adoptedUseCase = useMemo(
+    () => findAdoptedUseCase(selectedUseCases, recipe.id),
     [selectedUseCases, recipe.id],
   );
+  const adopted = !!adoptedUseCase;
+  const stale = useMemo(() => isRecipeStale(recipe, adoptedUseCase), [recipe, adoptedUseCase]);
   // Adopted recipes swap the CTA to Remove — re-adopting would only be
   // refused by the hook's dedupe guard, so don't offer it at all.
   const canAdopt = !!selectedPersona && eligibility.state !== 'incompatible' && !adopted;
@@ -56,6 +59,8 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
         canAdopt={canAdopt}
         hasPersona={!!selectedPersona}
         adopted={adopted}
+        stale={stale}
+        adoptedVersion={adoptedUseCase?.source_recipe_version}
         removePending={removePending}
         onBack={onBack}
         onAdopt={onAdopt}

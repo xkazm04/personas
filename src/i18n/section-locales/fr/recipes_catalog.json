@@ -226,5 +226,9 @@
   "remove_label": "Supprimer",
   "remove_tooltip": "Détacher cette capacité de l'agent sélectionné",
   "removed_toast": "\"{title}\" supprimé",
-  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "Mise à jour",
+  "update_badge_detail_tooltip": "Adopté en v{from} ; le catalogue est maintenant en v{to}. Supprimez puis réadoptez pour mettre à jour.",
+  "update_badge_tooltip": "Une nouvelle version de cette capacité est disponible — supprimez puis réadoptez pour mettre à jour",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

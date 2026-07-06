@@ -226,5 +226,9 @@
   "remove_label": "हटाएं",
   "remove_tooltip": "चयनित एजेंट से इस क्षमता को अलग करें",
   "removed_toast": "\"{title}\" हटाई गई",
-  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "अपडेट",
+  "update_badge_detail_tooltip": "v{from} में अपनाया गया; कैटलॉग अब v{to} है। अपडेट के लिए हटाएं और फिर से अपनाएं।",
+  "update_badge_tooltip": "इस क्षमता का नया संस्करण उपलब्ध है — अपडेट के लिए हटाएं और फिर से अपनाएं",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

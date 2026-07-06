@@ -10920,7 +10920,11 @@
     "remove_label": "Eliminar",
     "remove_tooltip": "Desvincular esta capacidad del agente seleccionado",
     "removed_toast": "Se eliminó \"{title}\"",
-    "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "Actualizar",
+    "update_badge_detail_tooltip": "Adoptado en v{from}; el catálogo ahora está en v{to}. Elimina y vuelve a adoptar para actualizar.",
+    "update_badge_tooltip": "Hay una versión más reciente de esta capacidad disponible — elimina y vuelve a adoptar para actualizar",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "No hay recetas coincidentes",

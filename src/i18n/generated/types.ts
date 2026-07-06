@@ -10944,6 +10944,10 @@ export type Translations = {
     adopted_badge: string;
     _comment_adopted_badge_tooltip: string;
     adopted_badge_tooltip: string;
+    _comment_update_badge: string;
+    update_badge: string;
+    update_badge_tooltip: string;
+    update_badge_detail_tooltip: string;
     _comment_no_results_heading: string;
     no_results_heading: string;
     _comment_no_results_body: string;

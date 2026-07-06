@@ -226,5 +226,9 @@
   "remove_label": "Gỡ bỏ",
   "remove_tooltip": "Gỡ năng lực này khỏi tác nhân đã chọn",
   "removed_toast": "Đã gỡ \"{title}\"",
-  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "Cập nhật",
+  "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
+  "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

@@ -226,5 +226,9 @@
   "remove_label": "移除",
   "remove_tooltip": "将此能力从所选智能体中分离",
   "removed_toast": "已移除 \"{title}\"",
-  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "更新",
+  "update_badge_detail_tooltip": "采用时为 v{from}；目录现为 v{to}。请移除并重新采用以更新。",
+  "update_badge_tooltip": "此功能有可用的新版本 — 移除并重新采用以更新",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }
