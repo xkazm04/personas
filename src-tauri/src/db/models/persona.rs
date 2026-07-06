@@ -368,6 +368,16 @@ pub struct DesignUseCase {
     /// catalog's "Adopted" badge and future staleness checks keep working.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_recipe_id: Option<String>,
+    /// Recipe version pinned at adoption time (Foundry Phase 4). Together
+    /// with `source_recipe_id` this powers the "recipe republished since
+    /// you adopted" staleness badge — compare against the catalog's
+    /// current version for the same recipe id.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_recipe_version: Option<String>,
+    /// ISO-8601 adoption timestamp (Foundry Phase 4). Display + audit
+    /// provenance for capabilities attached from the recipe catalog.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub adopted_at: Option<String>,
     /// Tool names the LLM should prefer when this capability is in focus.
     /// Advisory only — all persona tools remain available at runtime.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -431,6 +441,19 @@ pub struct DesignContextData {
     /// Mirrors `twin_id`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dev_project_id: Option<String>,
+    /// Foundry foundation provenance — which mentality archetype this
+    /// persona was composed from (`scripts/templates/_archetypes.json`
+    /// id, e.g. `guardian`). Display + analytics only; the archetype's
+    /// content was compiled into the prompt at creation, so a stale or
+    /// deleted archetype id never breaks anything.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archetype_id: Option<String>,
+    /// Foundry memory-strategy intent (`focused` | `learner` |
+    /// `team-player` | `grounded-expert` | `second-brain`). v1 records
+    /// the intent and drives setup guidance chips; the subsystems it
+    /// names are wired through their own existing surfaces.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_strategy_id: Option<String>,
 }
 
 impl DesignContextData {

@@ -2520,6 +2520,13 @@ pub async fn promote_build_draft_inner(
     // CLI build-from-scratch sessions bypass create_adoption_session, so their
     // agent_ir may still be v3-shaped when we hit this promote path. Run the
     // same normalizer here — no-op if already flat.
+    //
+    // Persona core dials (`payload.persona.core` — motivation/stance/risk
+    // dials) are captured here because the typed `AgentIr` deserialization
+    // below drops the persona object; stamped into `personas.core_profile`
+    // after the promote transaction (Design-D parity with instant adopt —
+    // until 2026-07-06 the mainline promote path silently lost the dials).
+    let mut promoted_core: Option<String> = None;
     let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
         None => {
             return Err(AppError::Validation(
@@ -2552,6 +2559,10 @@ pub async fn promote_build_draft_inner(
                     "Recipe hydration failed during promotion: {e}"
                 )));
             }
+            promoted_core = payload
+                .pointer("/persona/core")
+                .filter(|c| !c.is_null())
+                .map(|c| c.to_string());
             if crate::engine::template_v3::is_v3_shape(&payload) {
                 crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
                 tracing::info!(
@@ -2751,6 +2762,19 @@ pub async fn promote_build_draft_inner(
     // COMMIT — all entities are persisted atomically
     // ================================================================
     tx.commit().map_err(AppError::Database)?;
+
+    // Design D — stamp the authored core dials into `core_profile` (the
+    // deliberation moderator routes by it; persona turns speak from it).
+    // Best-effort post-commit, mirroring instant adopt (template_adopt.rs).
+    if let Some(core) = &promoted_core {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET core_profile = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![core, chrono::Utc::now().to_rfc3339(), persona_id],
+            );
+            tracing::info!(persona_id = %persona_id, "promote: stamped persona core_profile");
+        }
+    }
 
     // C1 (Glyph side) — if any connector still needs setup, mark
     // setup_status='needs_credentials' so the dashboard surfaces a warning.

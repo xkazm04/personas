@@ -1,4 +1,5 @@
 pub mod analysis;
+pub mod archetypes;
 pub mod build_sessions;
 pub mod build_simulate;
 pub mod connector_explorer;

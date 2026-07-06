@@ -392,9 +392,16 @@ pub fn instant_adopt_template_inner(
     // Design D: the persona's authored `core` (motivation/stance/dials — its
     // distinct deliberation viewpoint). Applied post-create to `core_profile`,
     // same pattern as timeout_ms (the n8n draft doesn't carry it).
+    // `persona_meta.core` was the original Design-D contract, but no template
+    // on disk ever carried it there — the authored dials live at
+    // `payload.persona.core` (9 SDLC templates + every Foundry archetype).
+    // The persona object survives `normalize_v3_to_flat`, so read it as the
+    // fallback; without this the stamp below was dead code on every adoption
+    // (found in the 2026-07-06 Foundry audit).
     let template_core: Option<String> = persona_meta
         .and_then(|m| m.get("core"))
         .filter(|c| !c.is_null())
+        .or_else(|| design.pointer("/persona/core").filter(|c| !c.is_null()))
         .map(|c| c.to_string());
     let persona_name = persona_meta
         .and_then(|m| m.get("name"))

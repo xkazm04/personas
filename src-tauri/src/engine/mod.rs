@@ -1,5 +1,6 @@
 pub mod a2a;
 pub mod adoption_answers;
+pub mod archetype_catalog;
 pub mod ai_healing;
 pub mod ai_helpers;
 #[cfg(feature = "desktop")]
