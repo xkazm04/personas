@@ -706,11 +706,16 @@ pub fn instant_adopt_template_inner(
                     })
                     .collect()
             });
+        // Recipe-derived params (from input_schema) are seeded only on the
+        // promote path today (Foundry + the ChronologyAdoptionView adoption).
+        // instant_adopt is the Dev-Clone / completion-notifier path; wiring its
+        // section injection is deferred (see recipe-parameterization-roadmap.md).
         if let Err(e) = populate_persona_parameters_from_design(
             &state.db,
             pid,
             &design,
             answers.as_ref(),
+            &[],
         ) {
             tracing::warn!(
                 persona_id = %pid,
@@ -1160,6 +1165,10 @@ pub(super) fn populate_persona_parameters_from_design(
     persona_id: &str,
     design: &serde_json::Value,
     answers: Option<&std::collections::HashMap<String, String>>,
+    // Params derived from recipe `input_schema` (Foundry arc, 2026-07). Lowest
+    // precedence: seeded first so a template's own `suggested_parameters` /
+    // `adoption_questions` with the same KEY override them.
+    recipe_params: &[serde_json::Value],
 ) -> Result<(), AppError> {
     // Two authoring paths converge here:
     //   1. `suggested_parameters[]` — direct PersonaParameter array on the
@@ -1175,6 +1184,14 @@ pub(super) fn populate_persona_parameters_from_design(
     // answer baked in) wins.
     let mut params_by_key: std::collections::HashMap<String, serde_json::Value> =
         std::collections::HashMap::new();
+
+    // Recipe-derived params first (lowest precedence) — overridden below by any
+    // template-authored suggested_parameters / adoption_questions of the same key.
+    for p in recipe_params {
+        if let Some(k) = p.get("key").and_then(|v| v.as_str()) {
+            params_by_key.insert(k.to_string(), p.clone());
+        }
+    }
 
     if let Some(arr) = design.get("suggested_parameters").and_then(|v| v.as_array()) {
         for p in arr {

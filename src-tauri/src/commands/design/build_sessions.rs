@@ -1108,6 +1108,21 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         let category = uc.category().to_string();
         let execution_mode = uc.execution_mode().to_string();
 
+        // Curated one-liner (feeds the runtime Active Capabilities section,
+        // which prefers it over description) + advisory tool preferences.
+        // Both live on the source UC and the target DesignUseCase but were
+        // silently dropped by this projection until 2026-07.
+        let (capability_summary, tool_hints) = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                d.capability_summary
+                    .as_ref()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+                d.tool_hints.clone().filter(|h| !h.is_empty()),
+            ),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None),
+        };
+
         let suggested_trigger = ir.triggers.get(idx).map(|t| {
             serde_json::json!({
                 "type": t.trigger_type.as_deref().unwrap_or("manual"),
@@ -1187,6 +1202,10 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             "review_policy": review_policy,
             "generation_settings": generation_settings,
             "memory_policy": memory_policy,
+            // Curated one-liner + advisory tools (restored 2026-07 — the Active
+            // Capabilities renderer prefers capability_summary over description).
+            "capability_summary": capability_summary,
+            "tool_hints": tool_hints,
             // Catalog provenance (Foundry arc) — lights the "Adopted" badge
             // for template-/Foundry-attached recipes; adopted_at marks the
             // promote moment (catalog-UI adoptions stamp their own).
@@ -2619,6 +2638,20 @@ pub async fn promote_build_draft_inner(
         }
     }
 
+    // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
+    // each capability's `input_schema` and synthesize a `## Capability
+    // Parameters` section into structured_prompt.instructions so the
+    // `{{param.*}}` refs resolve at runtime. The persona.parameters rows that
+    // back these refs are written post-transaction below (merged under any
+    // template-authored params). Computed here, before the section is baked
+    // into the IR that the transaction persists.
+    let recipe_capability_params =
+        crate::engine::recipe_parameters::derive_capability_params(&ir.use_cases);
+    crate::engine::recipe_parameters::inject_capability_parameters_section(
+        &mut ir,
+        &recipe_capability_params,
+    );
+
     // Auto-generate webhook_secret for webhook triggers that lack one.
     // Templates and adoption flows produce webhook triggers without a secret
     // since the user has no UI to set one before promotion.
@@ -2865,11 +2898,14 @@ pub async fn promote_build_draft_inner(
                 serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw).ok()
             })
             .map(|a| a.answers);
+        let recipe_param_values =
+            crate::engine::recipe_parameters::to_parameter_values(&recipe_capability_params);
         if let Err(e) = super::template_adopt::populate_persona_parameters_from_design(
             &state.db,
             &persona_id,
             &design_json,
             answers_map.as_ref(),
+            &recipe_param_values,
         ) {
             tracing::warn!(
                 persona_id = %persona_id,
