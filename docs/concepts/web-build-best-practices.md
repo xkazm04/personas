@@ -275,6 +275,28 @@ confuses the user and rots the tree. On every material change of direction:
 
 Coherence is itself a quality bar: one product, one story, top to bottom.
 
+## Engineering hygiene — always-on (cross-cutting)
+
+Craft is more than pixels. These general engineering disciplines apply to every
+build, on top of the visual/UX bars above. They are directions to think with, not
+recipes — pick the concrete tool that fits the stack you chose.
+
+- **Simplicity & YAGNI.** Build the simplest thing that meets the goal. Don't add
+  abstraction, configuration, or structure for a need that doesn't exist yet;
+  complexity is earned by a real requirement, not anticipated. When a file, layer,
+  or option stops pulling its weight, cut it. This is the antidote to sprawl — a
+  pile of speculative structure is as much a quality failure as a missing feature.
+- **Security & data hygiene.** Secrets live in env / gitignored config, NEVER in
+  source or logs. Distrust every external input — user, third-party API, chain,
+  uploaded file — and validate/shape it at the boundary before use; parameterize
+  queries, never string-concatenate them. Keep user-facing errors generic; stack
+  traces, SQL, and raw upstream errors go to the server log, not the screen. Never
+  log a secret, token, or personal datum.
+- **Verify by exercising, not asserting.** "Done" means you ran the behavior and
+  read the diff: the thing works end-to-end, no unintended change slipped in, and no
+  secret or leftover debug logging (console.log) shipped. A typecheck is necessary,
+  not sufficient.
+
 ## TAIL PLAYBOOK — Portfolio (freelancer)
 
 > This is an *example of generation*, written the way you'd compose a tail. Use it
