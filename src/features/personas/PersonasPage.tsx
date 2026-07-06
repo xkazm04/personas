@@ -27,6 +27,9 @@ import { lazyRetry } from '@/lib/lazyRetry';
 const HomePage = lazyRetry(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazyRetry(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazyRetry(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
+const CreatePersonaEntry = lazyRetry(() => import('@/features/personas/sub_foundry').then(m => ({ default: m.CreatePersonaEntry })));
+// Mid-build resume renders the build progress surface directly (not the
+// create-mode chooser) — a session in flight already picked its path.
 const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
 const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
@@ -225,11 +228,14 @@ export default function PersonasPage() {
       // Groups→Teams consolidation (Phase 4): the standalone Groups manager
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
+      // Foundry-first create surface (compose from archetype + recipes,
+      // describe-it chat, or jump to templates) — the two-layer
+      // architecture made visible at the front door.
       if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={SectionFallback}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
       if (isCreatingPersona) {
-        return <ErrorBoundary onGoHome={goHome} name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+        return <ErrorBoundary onGoHome={goHome} name="CreatePersonaEntry"><Suspense fallback={SectionFallback}><CreatePersonaEntry /></Suspense></ErrorBoundary>;
       }
     }
 
