@@ -75,7 +75,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/appointment-orchestrator.json", "0004c3b3b1f0199e");
     m.insert("productivity/daily-standup-compiler.json", "000a211bd3d97a56");
     m.insert("productivity/digital-clone.json", "00048ec76b518ee2");
-    m.insert("productivity/email-intelligence-operator.json", "0008d70e8875e54b");
+    m.insert("productivity/email-intelligence-operator.json", "000c282542434490");
     m.insert("productivity/email-morning-digest.json", "0019c09408fb1bd0");
     m.insert("productivity/idea-harvester.json", "00024d0acab85e27");
     m.insert("productivity/meeting-lifecycle-manager.json", "0018b276807eb6f4");
@@ -111,7 +111,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("sales/local-business-lead-prospector.json", "001f6adb149859d6");
     m.insert("sales/outbound-sales-intelligence-pipeline.json", "00157d90e851d599");
     m.insert("sales/personality-enriched-sales-prep.json", "001a97bc90d62d4e");
-    m.insert("sales/sales-deal-intelligence.json", "00058e4a258caf0f");
+    m.insert("sales/sales-deal-intelligence.json", "000d8b832226590b");
     m.insert("sales/sales-pipeline-autopilot.json", "0004f24f11ab6504");
     m.insert("sales/sales-proposal-generator.json", "001a2dc727bf4e51");
     m.insert("sales/sheets-e-commerce-command-center.json", "00004e89b5e6d541");
@@ -120,7 +120,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("security/security-sentinel.json", "0018d42e921f2a73");
     m.insert("security/security-vulnerability-pipeline.json", "0011dd811434cdb9");
     m.insert("support/customer-feedback-router.json", "001eb7a4156477f9");
-    m.insert("support/email-support-operator.json", "001a8e227f3d710e");
+    m.insert("support/email-support-operator.json", "00157cf6033105b8");
     m.insert("support/knowledge-base-review-cycle-manager.json", "00177fc9bf8b0866");
     m.insert("support/support-escalation-engine.json", "0009ee193db1997c");
     m.insert("support/support-intelligence-use-case.json", "001c39e1696c0ba4");

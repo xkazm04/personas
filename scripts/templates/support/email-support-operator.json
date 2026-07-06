@@ -149,35 +149,35 @@
     "use_cases": [
       {
         "recipe_ref": {
-          "id": "f8ff431a-12c9-5f46-920c-7737a6372198",
+          "id": "10a9bac8-581e-5e55-875a-997428016656",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "ca297774-7bfd-592b-b71d-0bac7bcc77ec",
+          "id": "6dbde915-d3ad-515b-bfa1-a9f951d70c51",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "9a558941-eb7f-51cd-b1d7-f4c4eda03381",
+          "id": "aeb4d1d4-0bc5-545a-83f1-60d0a8ba996e",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "7fc6a438-d677-58c5-9d4b-6aac8036adb4",
+          "id": "088b826e-981e-52b6-b871-5458c625c8a4",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "23684b5c-aa7a-5fb2-a726-2fab9087128b",
+          "id": "dc0f0f1c-b657-594e-b9b7-9d670164442a",
           "version": "1.0.0",
           "bindings": {}
         }

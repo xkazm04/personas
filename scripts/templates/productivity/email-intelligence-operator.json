@@ -188,49 +188,49 @@
     "use_cases": [
       {
         "recipe_ref": {
-          "id": "698fe298-5710-54d3-9d4b-796b0af3cd7e",
+          "id": "4810f244-cfb6-53d4-98bb-1a710ddc39ea",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "78df8662-0964-54c1-b353-1730f6de3185",
+          "id": "a90716fa-f0c0-51d1-983f-25cc047032aa",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "9de4e0b9-026c-5d93-b56c-fe5a711ca26a",
+          "id": "76fb3252-633e-56b7-8002-16ee006cf1e8",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "fd182e6d-dec7-55e3-b130-43270a5df4c6",
+          "id": "fb0e8a6e-47f8-59b6-92c4-0428d6458039",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "5224824b-5ab7-5380-9957-d77d31fbdbf7",
+          "id": "2e1c3383-d083-5971-a703-23f478f8cb89",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "9af11e96-6c3d-5124-8445-2f6ec7bac270",
+          "id": "657d3914-b610-5304-9940-a469e20d2b20",
           "version": "1.0.0",
           "bindings": {}
         }
       },
       {
         "recipe_ref": {
-          "id": "f7b82e12-5dbe-5bfc-9c31-093905c1b55d",
+          "id": "3da43c82-0a28-58fd-bdad-fb03fb2e8872",
           "version": "1.0.0",
           "bindings": {}
         }
