@@ -122,9 +122,19 @@ User picked "harden Studio broadly." All three shipped + verified live via the h
   never reports "failed" while the backend is still building. Files:
   `companion/session.rs`, `api/webbuild.ts`, `scripts/studio-chain.mjs` (wait budget).
 
-**Pre-commit gates remaining:** `cargo clippy`/`cargo test` on the Rust changes (deferred —
-can't run cleanly while `tauri dev` holds the target lock); Studio strings are hardcoded
-English, consistent with the rest of this dev-only surface (not i18n'd).
+**Committed (2026-07-06):** `5ee5408e8` (Studio hardening code) + `b8e1c4b3a` (dual-dev
+tooling/docs). Gate check before commit: tsc clean; eslint clean on changed files; `cargo
+clippy` assessed — my edits land on no findings (the crate carries ~452 pre-existing clippy
+warnings + `check:contracts` event-registry drift, both pre-existing and out of scope per
+"don't fix unless asked"). Studio strings are hardcoded English, consistent with the rest of
+this dev-only surface (not i18n'd).
+
+**Outcome:** ChainSonar v1 shipped — all 8 plan phases done (lookup → safety → signal →
+watchlist → rules+paper+backtest → charts → ship), honest throughout (unknowns never faked,
+low-confidence labeled, RPC-error surfaced not nulled, "not financial advice" always visible).
+The Studio build loop went from "a normal-length turn silently wipes your project + can leave
+a zombie racing the next turn" to persistent, race-safe, and legible. H1–H7 remain watch-items
+for a future data/analytics-doctrine pass.
 
 ## Per-turn observation table
 

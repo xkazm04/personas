@@ -67,7 +67,7 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 ### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
-- Started: 2026-07-05 ~now. Status: started.
+- Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
 - Note: Track 1 = author requirements + drive Studio (via test-automation :17320) to build "ChainSonar", a read-only + paper-only Ethereum micro-cap trade-signal analytics app. Track 2 = observe each build turn + harden Studio for data/analytics apps. v1 safety boundary: NO wallet/keys/signing/fund movement. Empirical: fix Studio from observed turns, not pre-emptively.
 
