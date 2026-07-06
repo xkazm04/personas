@@ -21,6 +21,12 @@ The rule is: **forge the rubric, harness the content.** The *standard* is fixed;
 the *plan* is generated. A plan you compose for an unfamiliar project type is
 still trustworthy if every phase meets the contract.
 
+And the standard is **production-grade, always.** Every build — a throwaway
+landing page or a real data tool — ships as if a paying user will open it
+tomorrow: it works end-to-end, reads as crafted not generated, and its code is
+clean enough to hand to another engineer. "Best effort" is not a mode you switch
+on when asked; it is the floor for every turn.
+
 Two failure modes you are explicitly defending against:
 - **Rigidity** — forcing every project through a marketing-site template. (Wrong
   for an app; insulting for a novel idea.)
@@ -227,6 +233,47 @@ These layer onto every phase's golden output. A phase isn't done if it violates 
   unused heavy dependencies.
 - **Motion restraint:** purposeful, subtle, reduced-motion-safe. Animation is
   seasoning, not the meal.
+- **Functional density — function over explanation.** The screen exists so the
+  user can DO the thing, not read about it. Lead with the working UI; keep on-screen
+  prose to a one-line orientation at most. Push methodology, caveats, and "how it
+  works" into tooltips, info-icons, collapsibles, or a single help affordance —
+  never a paragraph stacked above every panel. In a data or tool app the functional
+  content must dominate the viewport; explanation and whitespace must not out-weigh
+  the data. A wall of explanatory text above a control is the #1 tell that the
+  builder didn't trust the UI to speak for itself.
+- **Navigation integrity.** Every navigation destination works, is reachable, and
+  renders real functional content — no dead tabs, no routes that error, no links to
+  nowhere. After ANY structural change, click through every nav item and confirm it
+  switches to a live view. Anything that *looks* interactive (a top bar, a logo, a
+  tab) either does something or is visibly non-interactive — a fake affordance reads
+  as "the app is broken."
+- **Code quality & modularity.** Production-grade is the code, not just the pixels.
+  Components stay focused and readable (roughly ≤250–300 lines; a 600-line component
+  is a refactor, not a feature). One concept = one component; extract shared pieces;
+  never two components doing the same job. Delete dead and superseded code the moment
+  it's orphaned. A tidy, modular tree is a quality signal; an accreting pile of
+  half-used files is decay.
+
+## Evolving a build — retire, don't accrete
+
+Builds evolve: the user pivots, re-scopes, or re-architects mid-stream. When they
+do, **reconcile the whole surface — don't stack the new on top of the old.** A
+pivot that adds a v2 while leaving v1's tabs, chrome, labels, and dead code in
+place produces a schizophrenic app (half the old product, half the new) that
+confuses the user and rots the tree. On every material change of direction:
+
+- **Retire or repurpose superseded surfaces.** If the product moved from
+  Ethereum-lookup to Polygon-scanning, the old lookup tabs either go or are
+  consciously kept and made coherent with the new direction — they don't linger as
+  orphans that error or dead-end.
+- **Keep chrome honest to the current product.** Titles, status bars, version
+  badges, footers, meta tags — if the header says "ETH · MAINNET" and the app is
+  Polygon, that's a lie the user *will* catch. Update chrome in the same change
+  that shifts the substance.
+- **Delete the code the pivot orphaned.** A superseded module kept "for later" is
+  not an asset, it's debt — remove it (see the Code quality & modularity bar).
+
+Coherence is itself a quality bar: one product, one story, top to bottom.
 
 ## TAIL PLAYBOOK — Portfolio (freelancer)
 
@@ -294,4 +341,11 @@ apps they are a golden criterion, not a nicety.
 - **Quality over coverage.** A great hero + work section beats a mediocre six-section
   site. If time or budget is short, do fewer phases to the golden bar rather than
   all phases halfway.
+- **The demanding final pass — before you call anything "done."** Wear the hat of a
+  senior engineer *and* a demanding design lead, and go through the actual app, not
+  your memory of it: click **every** nav item and confirm each opens a real,
+  functional, dense view; resize to 360 / 768 / 1280; open the console (zero errors);
+  read every screen and cut prose the UI already conveys; scan the file tree for
+  monoliths, duplicate components, and dead code. "It builds and typechecks" is the
+  floor. Best effort means you would be comfortable shipping this to a paying user.
 </content>
