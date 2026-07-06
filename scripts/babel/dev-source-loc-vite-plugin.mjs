@@ -13,9 +13,9 @@ import injectSourceLoc from "./inject-source-loc.mjs";
  *
  * Cost-aware: Babel-per-file is slower than oxc, and this repo is dev-speed
  * sensitive, so injection is OPT-IN. It runs only on the dev server AND only
- * when `PERSONAS_INSPECTOR=1` (set by `npm run dev:inspect` / the inspect Tauri
- * variants). A normal `npm run dev` pays nothing; the overlay still toggles but
- * tells you to relaunch in inspect mode.
+ * when `PERSONAS_INSPECTOR=1` (set by `npm run dev:inspect` and the
+ * `tauri:dev:test` / `tauri:dev:test:full` variants). A normal `npm run dev`
+ * pays nothing; the overlay still toggles but tells you to relaunch in inspect mode.
  */
 export function devSourceLocPlugin() {
   let enabled = false;

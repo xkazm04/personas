@@ -6,7 +6,7 @@ it straight into the Claude Code CLI. Off by default; never present in productio
 ## Use it
 
 ```bash
-npm run tauri:dev:inspect     # full app (lite features) with source mapping on
+npm run tauri:dev:test        # full app (lite features) + test bridge (:17320), source mapping on
 # or, frontend-only / faster iteration:
 npm run dev:inspect
 ```
