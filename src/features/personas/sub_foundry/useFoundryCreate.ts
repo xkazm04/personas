@@ -85,14 +85,31 @@ export function useFoundryCreate() {
         // and a Foundry composition has no questionnaire or LLM test step.
         await promoteBuildDraft(sessionId, persona.id, []);
 
-        // 4. Foundation provenance — archetype + memory-strategy intent onto
-        // design_context (typed fields on DesignContextData; the queued
-        // mutator serializes against promote's fresh design_context).
+        // 4. Foundation provenance + memory wiring onto design_context.
+        // - archetypeId / memoryStrategyId: provenance (typed DesignContextData
+        //   fields), drives the setup chips.
+        // - generation_settings.memories: the ONE memory dimension we can wire
+        //   without an external entity — Focused turns per-capability memory
+        //   generation off, every other strategy turns it on (overriding any
+        //   recipe-level memory_policy). The team-pool / KB / vault dimensions
+        //   need entities that may not exist yet, so those stay guided intent
+        //   (the review step's setup chips).
+        const memories = comp.memoryStrategy.config.memories; // 'on' | 'off'
         await useAgentStore.getState().fetchDetail(persona.id);
         await applyDesignContextMutation(persona.id, (ctx) => {
           const data = ctx ? (JSON.parse(ctx) as Record<string, unknown>) : {};
+          const useCases = Array.isArray(data.useCases)
+            ? (data.useCases as Array<Record<string, unknown>>).map((uc) => ({
+                ...uc,
+                generation_settings: {
+                  ...(uc.generation_settings as Record<string, unknown> | undefined),
+                  memories,
+                },
+              }))
+            : data.useCases;
           return JSON.stringify({
             ...data,
+            useCases,
             archetypeId: comp.archetype.id,
             memoryStrategyId: comp.memoryStrategy.id,
           });

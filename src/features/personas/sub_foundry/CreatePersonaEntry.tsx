@@ -2,6 +2,7 @@ import { lazy, Suspense, useState } from 'react';
 import { Hammer, MessageSquareText, LayoutGrid } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTier } from '@/hooks/utility/interaction/useTier';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { FoundryPage } from './FoundryPage';
 
@@ -27,12 +28,25 @@ type EntryMode = 'foundry' | 'describe';
  */
 export function CreatePersonaEntry() {
   const { t } = useTranslation();
+  // Simple mode gates out Templates + Recipes; the Foundry is built ON the
+  // recipe catalog, so it's Power-only too. Simple users get the guided
+  // chat build (UnifiedBuildEntry) directly — the same path Simple mode has
+  // always used — with no mode chooser to reason about.
+  const { isStarter: isSimple } = useTier();
   const [mode, setMode] = useState<EntryMode>('foundry');
 
   const goTemplates = () => {
     useSystemStore.getState().setIsCreatingPersona(false);
     useSystemStore.getState().setSidebarSection('design-reviews');
   };
+
+  if (isSimple) {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-full"><LoadingSpinner /></div>}>
+        <UnifiedBuildEntry />
+      </Suspense>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full min-h-0" data-testid="create-persona-entry">
