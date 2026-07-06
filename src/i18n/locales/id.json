@@ -10913,7 +10913,14 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" sudah diadopsi oleh agen ini",
+    "remove_confirm_body": "Ini melepas \"{title}\" dari {persona}. Pemicu dan konfigurasinya akan dihapus; resep tetap ada di katalog dan dapat diadopsi kembali kapan saja.",
+    "remove_confirm_title": "Hapus kemampuan ini?",
+    "remove_label": "Hapus",
+    "remove_tooltip": "Lepas kemampuan ini dari agen yang dipilih",
+    "removed_toast": "\"{title}\" telah dihapus",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──"
   },
   "recipes": {
     "no_match": "Tidak ada resep yang cocok",

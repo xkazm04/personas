@@ -1,4 +1,4 @@
-import { ArrowLeft, Sparkles, AlertTriangle, Lock, Check } from 'lucide-react';
+import { ArrowLeft, Sparkles, AlertTriangle, Lock, Check, Trash2 } from 'lucide-react';
 import { CONNECTOR_META, ConnectorIcon, getConnectorMeta } from '@/lib/connectors/connectorMeta';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -13,8 +13,12 @@ interface RecipeDetailHeaderProps {
   hasPersona: boolean;
   /** The selected persona already adopted this recipe. */
   adopted: boolean;
+  /** Remove mutation in flight — disables the Remove CTA. */
+  removePending: boolean;
   onBack: () => void;
   onAdopt: () => void;
+  /** Opens the remove confirmation (rendered by the panel). */
+  onRemove: () => void;
 }
 
 /**
@@ -23,7 +27,7 @@ interface RecipeDetailHeaderProps {
  * Includes the contextual eligibility banner so the orchestrator stays slim.
  */
 export function RecipeDetailHeader({
-  recipe, eligibility, canAdopt, hasPersona, adopted, onBack, onAdopt,
+  recipe, eligibility, canAdopt, hasPersona, adopted, removePending, onBack, onAdopt, onRemove,
 }: RecipeDetailHeaderProps) {
   const { t, tx } = useTranslation();
   const iconKey = recipe.iconConnector ?? recipe.requiredConnectors[0] ?? null;
@@ -100,28 +104,45 @@ export function RecipeDetailHeader({
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onAdopt}
-          disabled={!canAdopt}
-          className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-            canAdopt
-              ? 'border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 shadow-elevation-1'
-              : 'border-card-border bg-secondary/40 text-foreground'
-          }`}
-          title={
-            !hasPersona
-              ? t.recipes_catalog.adopt_tooltip_no_persona
-              : eligibility.state === 'incompatible'
-                ? eligibility.reason
-                : eligibility.state === 'adoptable-with-setup'
-                  ? tx(t.recipes_catalog.adopt_tooltip_needs_setup, { count: eligibility.missingConnectors.length })
-                  : t.recipes_catalog.adopt_tooltip_ready
-          }
-        >
-          <Sparkles className="w-4 h-4" />
-          {eligibility.state === 'adoptable-with-setup' ? t.recipes_catalog.adopt_with_setup_label : t.recipes_catalog.adopt_label}
-        </button>
+        {hasPersona && adopted ? (
+          // Adopted → the CTA becomes the symmetric detach. Destructive
+          // tone; confirmation dialog is owned by the panel.
+          <button
+            type="button"
+            onClick={onRemove}
+            disabled={removePending}
+            data-testid="recipe-remove-cta"
+            className="relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20"
+            title={t.recipes_catalog.remove_tooltip}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t.recipes_catalog.remove_label}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={onAdopt}
+            disabled={!canAdopt}
+            data-testid="recipe-adopt-cta"
+            className={`relative shrink-0 self-center inline-flex items-center gap-2 px-4 py-2 rounded-interactive border typo-body font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
+              canAdopt
+                ? 'border-primary/45 bg-primary/15 text-primary hover:bg-primary/25 shadow-elevation-1'
+                : 'border-card-border bg-secondary/40 text-foreground'
+            }`}
+            title={
+              !hasPersona
+                ? t.recipes_catalog.adopt_tooltip_no_persona
+                : eligibility.state === 'incompatible'
+                  ? eligibility.reason
+                  : eligibility.state === 'adoptable-with-setup'
+                    ? tx(t.recipes_catalog.adopt_tooltip_needs_setup, { count: eligibility.missingConnectors.length })
+                    : t.recipes_catalog.adopt_tooltip_ready
+            }
+          >
+            <Sparkles className="w-4 h-4" />
+            {eligibility.state === 'adoptable-with-setup' ? t.recipes_catalog.adopt_with_setup_label : t.recipes_catalog.adopt_label}
+          </button>
+        )}
       </div>
 
       {eligibility.state === 'adoptable-with-setup' && (

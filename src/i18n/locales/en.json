@@ -11114,7 +11114,14 @@
     "placeholder_cron": "* * * * *",
     "_comment_section_useAdoption": "── useAdoption.ts ──",
     "_comment_adopted_toast": "Toast shown after a recipe is successfully adopted",
-    "adopted_toast": "Adopted \"{title}\" into your persona"
+    "adopted_toast": "Adopted \"{title}\" into your persona",
+    "already_adopted_toast": "\"{title}\" is already adopted by this agent",
+    "removed_toast": "Removed \"{title}\"",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "remove_label": "Remove",
+    "remove_tooltip": "Detach this capability from the selected agent",
+    "remove_confirm_title": "Remove this capability?",
+    "remove_confirm_body": "This detaches \"{title}\" from {persona}. Its trigger and configuration are removed; the recipe stays in the catalog and can be re-adopted anytime."
   },
   "recipes": {
     "no_match": "No matching recipes",

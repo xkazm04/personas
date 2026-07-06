@@ -10913,7 +10913,14 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "«{title}» уже подключён к этому агенту",
+    "remove_confirm_body": "Это отключит «{title}» от {persona}. Триггер и настройки будут удалены; рецепт останется в каталоге, и его можно будет подключить снова в любое время.",
+    "remove_confirm_title": "Удалить эту возможность?",
+    "remove_label": "Удалить",
+    "remove_tooltip": "Отключить эту возможность от выбранного агента",
+    "removed_toast": "«{title}» удалено",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──"
   },
   "recipes": {
     "no_match": "Подходящих рецептов нет",

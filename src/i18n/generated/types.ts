@@ -11121,6 +11121,13 @@ export type Translations = {
     _comment_section_useAdoption: string;
     _comment_adopted_toast: string;
     adopted_toast: string;
+    already_adopted_toast: string;
+    removed_toast: string;
+    _comment_remove: string;
+    remove_label: string;
+    remove_tooltip: string;
+    remove_confirm_title: string;
+    remove_confirm_body: string;
   };
   recipes: {
     no_match: string;

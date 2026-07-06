@@ -219,5 +219,12 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" पहले से ही इस एजेंट द्वारा अपनाई जा चुकी है",
+  "remove_confirm_body": "यह \"{title}\" को {persona} से अलग कर देगा। इसका ट्रिगर और कॉन्फ़िगरेशन हटा दिया जाएगा; रेसिपी कैटलॉग में बनी रहेगी और इसे कभी भी दोबारा अपनाया जा सकता है।",
+  "remove_confirm_title": "यह क्षमता हटाएं?",
+  "remove_label": "हटाएं",
+  "remove_tooltip": "चयनित एजेंट से इस क्षमता को अलग करें",
+  "removed_toast": "\"{title}\" हटाई गई",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
 }

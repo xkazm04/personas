@@ -10913,7 +10913,14 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" est déjà adopté par cet agent",
+    "remove_confirm_body": "Cette action détache \"{title}\" de {persona}. Son déclencheur et sa configuration sont supprimés ; la recette reste dans le catalogue et peut être adoptée à nouveau à tout moment.",
+    "remove_confirm_title": "Supprimer cette capacité ?",
+    "remove_label": "Supprimer",
+    "remove_tooltip": "Détacher cette capacité de l'agent sélectionné",
+    "removed_toast": "\"{title}\" supprimé",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──"
   },
   "recipes": {
     "no_match": "Aucune recette correspondante",

@@ -219,5 +219,12 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "「{title}」はすでにこのエージェントに追加されています",
+  "remove_confirm_body": "「{title}」を{persona}から切り離します。トリガーと設定は削除されますが、レシピはカタログに残り、いつでも再追加できます。",
+  "remove_confirm_title": "この機能を削除しますか？",
+  "remove_label": "削除",
+  "remove_tooltip": "選択したエージェントからこの機能を切り離す",
+  "removed_toast": "「{title}」を削除しました",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
 }

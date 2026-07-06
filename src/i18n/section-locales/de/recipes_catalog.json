@@ -219,5 +219,12 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" wurde bereits von diesem Agenten übernommen",
+  "remove_confirm_body": "Dadurch wird \"{title}\" von {persona} getrennt. Trigger und Konfiguration werden entfernt; das Rezept bleibt im Katalog und kann jederzeit erneut übernommen werden.",
+  "remove_confirm_title": "Diese Fähigkeit entfernen?",
+  "remove_label": "Entfernen",
+  "remove_tooltip": "Diese Fähigkeit vom ausgewählten Agenten trennen",
+  "removed_toast": "\"{title}\" entfernt",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
 }

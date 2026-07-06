@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe } from '../types';
 import { useRecipeEligibility } from '../useEligibility';
+import { useAdoption } from '../libs/useAdoption';
 import { RecipeDetailHeader } from './detail/RecipeDetailHeader';
 import { RecipeHowItRuns } from './detail/RecipeHowItRuns';
 import { RecipeNeedsCard } from './detail/RecipeNeedsCard';
@@ -32,15 +34,19 @@ interface RecipeDetailPanelProps {
  *   └───────────────────────────────────────────────────────────────────┘
  */
 export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: RecipeDetailPanelProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const eligibility = useRecipeEligibility(recipe);
-  const canAdopt = !!selectedPersona && eligibility.state !== 'incompatible';
   const selectedUseCases = useSelectedUseCases();
   const adopted = useMemo(
     () => selectedUseCases.some((uc) => uc.source_recipe_id === recipe.id),
     [selectedUseCases, recipe.id],
   );
+  // Adopted recipes swap the CTA to Remove — re-adopting would only be
+  // refused by the hook's dedupe guard, so don't offer it at all.
+  const canAdopt = !!selectedPersona && eligibility.state !== 'incompatible' && !adopted;
+  const { remove, pending: removePending } = useAdoption();
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
     <div className="flex flex-col h-full">
@@ -50,9 +56,27 @@ export function RecipeDetailPanel({ recipe, onBack, onAdopt, onTagClick }: Recip
         canAdopt={canAdopt}
         hasPersona={!!selectedPersona}
         adopted={adopted}
+        removePending={removePending}
         onBack={onBack}
         onAdopt={onAdopt}
+        onRemove={() => setConfirmingRemove(true)}
       />
+      {confirmingRemove && selectedPersona && (
+        <ConfirmDialog
+          danger
+          title={t.recipes_catalog.remove_confirm_title}
+          body={tx(t.recipes_catalog.remove_confirm_body, {
+            title: recipe.name,
+            persona: selectedPersona.name,
+          })}
+          confirmLabel={t.recipes_catalog.remove_label}
+          onConfirm={async () => {
+            await remove(selectedPersona.id, recipe);
+            setConfirmingRemove(false);
+          }}
+          onCancel={() => setConfirmingRemove(false)}
+        />
+      )}
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
         {/* About */}

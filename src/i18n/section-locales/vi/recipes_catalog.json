@@ -219,5 +219,12 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" đã được tác nhân này áp dụng",
+  "remove_confirm_body": "Thao tác này sẽ gỡ \"{title}\" khỏi {persona}. Trigger và cấu hình của nó sẽ bị xóa; công thức vẫn còn trong danh mục và có thể được áp dụng lại bất cứ lúc nào.",
+  "remove_confirm_title": "Gỡ bỏ năng lực này?",
+  "remove_label": "Gỡ bỏ",
+  "remove_tooltip": "Gỡ năng lực này khỏi tác nhân đã chọn",
+  "removed_toast": "Đã gỡ \"{title}\"",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
 }

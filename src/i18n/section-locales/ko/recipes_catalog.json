@@ -219,5 +219,12 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\"은(는) 이미 이 에이전트에 적용되어 있습니다",
+  "remove_confirm_body": "이 작업은 \"{title}\"을(를) {persona}에서 분리합니다. 트리거와 설정은 제거되지만 레시피는 카탈로그에 남아 언제든 다시 적용할 수 있습니다.",
+  "remove_confirm_title": "이 기능을 제거하시겠습니까?",
+  "remove_label": "제거",
+  "remove_tooltip": "선택한 에이전트에서 이 기능 분리",
+  "removed_toast": "\"{title}\" 제거됨",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──"
 }

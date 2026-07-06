@@ -14,18 +14,25 @@ interface AdoptionResult {
 }
 
 /**
- * Hook owning the recipe-adoption side effect. Caller passes:
+ * Hook owning the recipe adopt/remove side effects. Caller passes:
  *   - target persona id
- *   - recipe to adopt
+ *   - recipe to adopt (or its id to remove)
  *   - filled binding values
  *
- * The hook substitutes bindings into `recipe.template`, materialises a
+ * `adopt` substitutes bindings into `recipe.template`, materialises a
  * `DesignUseCase`, appends it to the persona's `design_context.useCases`,
  * and refreshes the persona detail so SigilGrid (or Grid/Glyph) reflects
- * the new capability immediately.
+ * the new capability immediately. It is IDEMPOTENT per recipe: the dedupe
+ * check runs inside the queued mutator (against the freshest use-case
+ * list), so a double-click or a stale UI can never append the same recipe
+ * twice (pre-hardening, every re-adopt silently created a duplicate UC).
  *
- * `pending` tracks the in-flight state so the modal can disable its
- * adopt button while the mutation runs.
+ * `remove` is the symmetric detach: it drops every use case whose
+ * `source_recipe_id` matches, which also un-lights the "Adopted" badge
+ * derived from that provenance.
+ *
+ * `pending` tracks the in-flight state so callers can disable their
+ * buttons while a mutation runs.
  *
  * NOTE: provenance via `AdoptionMetadata` is *not* persisted in v1 — the
  * `DesignUseCase` shape doesn't carry it yet. That extension lands once
@@ -45,7 +52,24 @@ export function useAdoption() {
       setPending(true);
       try {
         const newUseCase = recipeToUseCase(recipe, values);
-        await mutateUseCases(personaId, (existing) => [...existing, newUseCase]);
+        // Dedupe INSIDE the queued mutator: it sees the latest use-case
+        // list (after any prior queued writes), so this is the race-safe
+        // spot — not a pre-flight check against possibly-stale UI state.
+        let alreadyAdopted = false;
+        await mutateUseCases(personaId, (existing) => {
+          if (existing.some((uc) => uc.source_recipe_id === recipe.id)) {
+            alreadyAdopted = true;
+            return existing;
+          }
+          return [...existing, newUseCase];
+        });
+        if (alreadyAdopted) {
+          useToastStore.getState().addToast(
+            tx(t.recipes_catalog.already_adopted_toast, { title: recipe.name }),
+            'warning',
+          );
+          return null;
+        }
         await fetchDetail(personaId);
         useToastStore.getState().addToast(
           tx(t.recipes_catalog.adopted_toast, { title: newUseCase.title }),
@@ -62,7 +86,34 @@ export function useAdoption() {
     [fetchDetail, t, tx],
   );
 
-  return { adopt, pending };
+  const remove = useCallback(
+    async (personaId: string, recipe: Pick<Recipe, 'id' | 'name'>): Promise<boolean> => {
+      setPending(true);
+      try {
+        let removedAny = false;
+        await mutateUseCases(personaId, (existing) => {
+          const kept = existing.filter((uc) => uc.source_recipe_id !== recipe.id);
+          removedAny = kept.length !== existing.length;
+          return kept;
+        });
+        if (!removedAny) return false; // nothing to detach — stale UI, no-op
+        await fetchDetail(personaId);
+        useToastStore.getState().addToast(
+          tx(t.recipes_catalog.removed_toast, { title: recipe.name }),
+          'success',
+        );
+        return true;
+      } catch (err) {
+        toastCatch('useAdoption:remove')(err);
+        return false;
+      } finally {
+        setPending(false);
+      }
+    },
+    [fetchDetail, t, tx],
+  );
+
+  return { adopt, remove, pending };
 }
 
 /** Project a `Recipe` + filled bindings into a `DesignUseCase` ready to
