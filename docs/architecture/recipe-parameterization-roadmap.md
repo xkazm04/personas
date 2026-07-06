@@ -7,7 +7,28 @@ are baked literals, not parameters. This doc scopes the unlock and the two
 large follow-ups so they can be picked up deliberately — **not started here**;
 each needs its own arc + product calls.
 
-## ⚠️ 2026-07 investigation correction (read this first)
+## ✅ 2026-07 — Phase 1 LANDED (input_schema → live persona params)
+
+The unlock below (the "real unlock is bigger than an adapter change" conclusion)
+has shipped via **Option 1**: bridge `input_schema` into the already-working
+persona-level parameter mechanism instead of inventing a new runtime.
+`engine/recipe_parameters.rs` (new) derives `persona.parameters` from each
+capability's `input_schema`, merges them under any template-authored params
+(template wins), and injects a synthesized `## Capability Parameters` block —
+referencing `{{param.<key>}}` — into `structured_prompt.instructions`, which the
+runtime `replace_variables` already substitutes every execution. The promote
+projection was also fixed to keep `capability_summary` + `tool_hints`. So
+recipe-declared knobs now affect runtime behavior AND are editable without a
+rebuild (via the existing parameters editor). This is approach **1's spirit**
+(runtime-resolved capability params) achieved **without** a new `DesignUseCase`
+field or a `capabilities.rs` signature change — the persona-prose fields
+substitute for free. Feature notes: `docs/features/recipes/README.md`
+("Recipe parameterization"). Known gaps: catalog quick-adopt and `instant_adopt`
+don't inject yet; unsupported types (`source_definition`/`connector_ref`/
+`list[string]`) skipped in v1. The historical investigation that motivated this
+approach follows.
+
+## ⚠️ 2026-07 investigation correction (motivated the Phase 1 design above)
 
 An attempt to start "step 1" (bindings-from-input_schema) instead **disproved
 its premise**. Measured facts across all 299 seeded recipes:

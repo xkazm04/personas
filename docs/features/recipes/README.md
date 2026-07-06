@@ -73,6 +73,47 @@ vendor-specific tool guidance, connector sets tied to the source template).
 True dedup requires recipe parameterization (the designed-but-unused bindings
 system) first. See `docs/architecture/recipe-catalog-audit-2026-07.md`.
 
+## Recipe parameterization — input_schema → live persona params (2026-07)
+
+Recipes declare tunable knobs per capability via each use-case's `input_schema`
+(264/299 seeded recipes carry one). Until 2026-07 these were **inert**: the
+placeholders that consume them lived only in `sample_input`, which the promote
+projection drops — so an adopted recipe's declared parameters reached nothing at
+runtime. **Now they are bridged into the working persona-level parameter
+mechanism** (the same one templates use for `{{param.KEY}}`), so they take effect
+and stay editable without a rebuild.
+
+On promote (build-session → persona), `engine/recipe_parameters.rs`:
+
+1. **Derives** `persona.parameters` from each capability's `input_schema`
+   (`number→Number`, `boolean→Boolean`, `enum/select→Select`,
+   `text/textarea/string→String`; `source_definition`/`connector_ref`/
+   `list[string]` are skipped in v1). Field default → the param's default+value;
+   null and multi-select values are coerced so `{{param}}` never renders `null`.
+2. **Merges** them **under** any template-authored `suggested_parameters` /
+   `adoption_questions` of the same key (template wins; across recipes, first
+   wins). Keys are flat `<field>` — a key shared by two capabilities is one
+   shared knob.
+3. **Injects** a synthesized `## Capability Parameters` block (grouped by
+   capability, `- <label>: {{param.<key>}}`) into
+   `structured_prompt.instructions`, which the runtime resolver
+   (`engine/prompt/variables.rs::replace_variables`) already substitutes every
+   execution. So the model sees each capability's configured knobs, and editing a
+   value via the persona parameters editor (`update_persona_parameters`) changes
+   behavior with no rebuild.
+
+The promote projection also now **keeps** `capability_summary` + `tool_hints`
+(previously dropped), restoring the curated one-liner the Active Capabilities
+renderer prefers.
+
+**Known gaps (documented, not silently skipped):** the catalog quick-adopt path
+(`sub_recipes/libs/useAdoption.ts`) is lossy by design — thin use-case, no
+promote, no `persona.parameters` write — so parameterization only applies to the
+promote/Foundry path today. `instant_adopt` (Dev-Clone) does not yet inject the
+section. Params remain prompt-level directives (LLM-adherence, not code-gated),
+consistent with every persona-level param. Design notes in
+`docs/architecture/recipe-parameterization-roadmap.md`.
+
 ## Relationship to templates and personas
 
 Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow. **Promotion is reachable from the UI** (UAT F-CLIENT-OPERATOR-VIEW): the capability detail view (`UseCaseDetailExpanded`, in the persona Use Cases tab) has a **"Save as recipe"** action that calls `promote_use_case_to_recipe` (no credential baked in — the adopter resolves credentials), closing the build-once → reusable-recipe loop. Previously the command existed but had no caller, so a built capability couldn't be turned into a shareable recipe without rebuilding from scratch.
