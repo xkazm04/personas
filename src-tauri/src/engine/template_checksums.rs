@@ -65,9 +65,9 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("hr/recruiting-pipeline-use-case.json", "001cff27e5b4eff5");
     m.insert("legal/ai-contract-reviewer.json", "00182fc8863bdfc6");
     m.insert("legal/contract-lifecycle-use-case.json", "0016a022e45d1544");
-    m.insert("legal/editorial-calendar-manager.json", "0007e0ea3dec27bd");
     m.insert("marketing/autonomous-cro-experiment-runner.json", "0002c936960b8b79");
     m.insert("marketing/content-cascade.json", "00195007050c9198");
+    m.insert("marketing/editorial-calendar-manager.json", "000c60eba47f7fc0");
     m.insert("marketing/reddit-trend-digest.json", "0010924564b1d74e");
     m.insert("marketing/visual-brand-asset-factory.json", "0016c39067c63b23");
     m.insert("marketing/web-marketing.json", "0002a86ddd9d4d86");
@@ -87,7 +87,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("project-management/agency-client-retainer-manager.json", "001599eb798465f2");
     m.insert("project-management/client-portal-orchestrator.json", "0004b770b1f0f464");
     m.insert("project-management/deadline-synchronizer.json", "001a734fd4e4b972");
-    m.insert("project-management/product-strategist.json", "000c1c4d2258a1ee");
+    m.insert("project-management/product-strategist.json", "0000d3872e3b697d");
     m.insert("project-management/technical-decision-tracker.json", "0008e9728d4820f5");
     m.insert("research/ai-research-report-generator.json", "0018e81100ace703");
     m.insert("research/ai-weekly-research.json", "000d9090e9be795b");
