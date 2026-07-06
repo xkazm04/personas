@@ -7,6 +7,57 @@ are baked literals, not parameters. This doc scopes the unlock and the two
 large follow-ups so they can be picked up deliberately — **not started here**;
 each needs its own arc + product calls.
 
+## ⚠️ 2026-07 investigation correction (read this first)
+
+An attempt to start "step 1" (bindings-from-input_schema) instead **disproved
+its premise**. Measured facts across all 299 seeded recipes:
+
+- 264 recipes carry a populated `input_schema` (the declaration). ✓
+- But the `{{param.aq_<field>}}` placeholders that would consume those inputs
+  live **exclusively in `sample_input`** (243 recipes) — an example payload,
+  not the capability's runtime prompt. **Zero** recipes reference a param in
+  any field that survives promotion.
+- The promote path builds a **thin** `DesignUseCase` (title, description,
+  category, trigger, policies, provenance) and **drops** `sample_input`,
+  `input_schema`, `capability_summary`, `connectors`, `tool_hints`, and
+  `use_case_flow`. Verified live: a Foundry persona adopting a parameterized
+  recipe stored **zero** `{{param.*}}` placeholders and **empty**
+  `persona.parameters`.
+
+**Conclusion:** recipe-level `input_schema` parameterization has **no runtime
+effect today**. A binding form derived from it would collect values that reach
+nothing. The working `{{param.aq_*}}` parameterization that DOES exist is
+**persona/template-level** — placeholders in a template's persona
+`operating_instructions` / `tool_guidance`, populated by the template's
+`adoption_questions` → `persona.parameters`. Recipes never carry that layer;
+their capability projects into the persona as a one-line `capability_summary`
+plus title/description, losing the parameterized prompt body entirely.
+
+**So the real unlock is bigger than an adapter change** — it requires changing
+how a recipe capability projects into a persona so its parameterized prompt
+(a) survives promotion and (b) resolves params at runtime. Concretely, one of:
+
+1. **Carry a runtime capability prompt.** Give `DesignUseCase` a persisted
+   `capability_prompt` field, have promote keep it, and have the runtime
+   capability section render it (with `{{param.*}}` resolved). Then wire
+   input_schema → `persona.parameters` on adoption so the placeholders bind.
+   This is the honest foundation; it touches the persona schema, the promote
+   projection, the runtime prompt assembler, AND the adoption param-write —
+   a real arc, not a one-file change.
+2. **Move params into a surviving field.** Re-author recipes so their
+   `capability_summary`/`description` (which survive) reference `{{param.*}}`,
+   then populate `persona.parameters` from input_schema on adoption. Cheaper
+   on the pipeline but a 264-recipe re-authoring pass, and summaries aren't
+   really where behavioral parameters belong.
+
+Either way: **do not build the input_schema→bindings form until one of the
+above lands** — without it the form is inert. The original "step 1" below is
+retained for history but is superseded by this correction.
+
+---
+
+## (superseded) Original step-1 plan
+
 ## Item 1 — Recipe parameterization (the real dedup unlock)
 
 **Current state (measured):** all 299 seeded recipes ship `bindings: []`
