@@ -396,6 +396,79 @@ const bridge: TestBridge = {
     });
   },
 
+  /**
+   * Studio (Athena web-dev companion) observer — returns the ACTIVE project's
+   * full build runtime so the dual-dev harness can watch each turn without the
+   * 300-char DOM truncation: untruncated reply, the pending decision (question +
+   * options + orb selector/area), the plan checklist, phase, stream tail, and any
+   * page-level errors. DEV-only + read-only. Called over `/bridge-exec` by
+   * `scripts/studio-chain.mjs`. Reads `window.__studioStore` (exposed by
+   * `studioStore.ts` under `import.meta.env.DEV`).
+   */
+  studioState() {
+    const w = window as unknown as {
+      __studioStore?: { getState: () => Record<string, unknown> };
+    };
+    const store = w.__studioStore?.getState?.();
+    if (!store) {
+      return { success: false, error: 'Studio store not exposed (DEV builds only)' };
+    }
+    const runtimes = (store.runtimes ?? {}) as Record<string, Record<string, unknown>>;
+    const tabOrder = (store.tabOrder ?? []) as string[];
+    const activeId = (store.activeId ?? null) as string | null;
+    const rt = activeId ? runtimes[activeId] : undefined;
+    const status = (rt?.status ?? null) as { url?: string; healthy?: boolean } | null;
+    const phases = (rt?.phases ?? []) as Array<Record<string, unknown>>;
+    const messages = (rt?.messages ?? []) as Array<{ text?: string; ts?: number }>;
+    const pageErrors = Array.from(
+      document.querySelectorAll("[role='alert'], .text-destructive, .text-red-500"),
+    )
+      .filter((el) => (el as HTMLElement).offsetParent !== null)
+      .map((el) => (el as HTMLElement).innerText?.slice(0, 200)?.trim())
+      .filter(Boolean)
+      .slice(0, 6);
+    return {
+      success: true,
+      activeId,
+      lastCreateError: (store.lastCreateError ?? null) as string | null,
+      tabs: tabOrder.map((id) => {
+        const r = runtimes[id] ?? {};
+        return { id, name: r.name, phase: r.phase, busy: r.busy, autonomous: r.autonomous };
+      }),
+      active: rt
+        ? {
+            id: rt.id,
+            name: rt.name,
+            phase: rt.phase,
+            busy: rt.busy,
+            autonomous: rt.autonomous,
+            url: status?.url ?? null,
+            healthy: status?.healthy ?? false,
+            reply: rt.reply ?? null,
+            question: rt.question ?? null,
+            options: rt.options ?? [],
+            decisionArea: rt.decisionArea ?? null,
+            decisionSelector: rt.decisionSelector ?? null,
+            phases: phases.map((p) => ({
+              id: p.id,
+              title: p.title,
+              status: p.status,
+              note: p.note,
+            })),
+            messageCount: messages.length,
+            lastMessages: messages.slice(-4).map((m) => ({ text: m.text, ts: m.ts })),
+            streamTail: (((rt.stream as string) ?? '') || '').slice(-800),
+            effort: rt.effort,
+            style: rt.style,
+            gatePlan: rt.gatePlan,
+            mcp: rt.mcp ?? [],
+            autoTurns: rt.autoTurns ?? 0,
+          }
+        : null,
+      pageErrors,
+    };
+  },
+
   findText(text: string) {
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const matches: Array<Record<string, unknown>> = [];

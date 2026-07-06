@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Bot, Sparkles } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { AlertTriangle, Bot, Sparkles } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { webbuildBunStatus } from '@/api/webbuild';
 
 // Vision-phase project init — the "Build with Athena" from-zero start. The user
 // describes what they want; the parent scaffolds + starts the dev server, then
@@ -13,13 +14,28 @@ export default function StudioVisionStart({
   onSubmit,
   busy,
   statusLabel,
+  error,
 }: {
   onSubmit: (name: string, vision: string) => void;
   busy: boolean;
   statusLabel?: string;
+  /** Last scaffold/create failure (H9) — shown so a failed start isn't silent. */
+  error?: string | null;
 }) {
   const [name, setName] = useState('');
   const [vision, setVision] = useState('');
+  // H8 preflight — Studio's scaffold + dev server require Bun. Check up front so
+  // a missing runtime shows install guidance instead of a mid-scaffold failure.
+  const [bunMissing, setBunMissing] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    webbuildBunStatus()
+      .then((path) => alive && setBunMissing(!path))
+      .catch(() => alive && setBunMissing(false));
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   if (busy) {
     return (
@@ -71,12 +87,35 @@ export default function StudioVisionStart({
           className="mb-5 w-full resize-none rounded-input border border-border bg-secondary/40 px-3 py-2 text-md leading-relaxed outline-none focus:border-primary/50"
         />
 
+        {bunMissing && (
+          <div
+            data-testid="studio-vision-bun-missing"
+            className="mb-4 flex items-start gap-2 rounded-input border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="leading-relaxed">
+              Bun isn&apos;t installed — Studio needs it to scaffold and run projects. Install it
+              from bun.sh (or set PERSONAS_BUN_BIN), then restart the app.
+            </span>
+          </div>
+        )}
+
+        {error && (
+          <div
+            data-testid="studio-vision-error"
+            className="mb-4 flex items-start gap-2 rounded-input border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="leading-relaxed">{error}</span>
+          </div>
+        )}
+
         <Button
           data-testid="studio-vision-submit"
           variant="primary"
           className="w-full"
           icon={<Sparkles className="h-4 w-4" />}
-          disabled={!canSubmit}
+          disabled={!canSubmit || bunMissing}
           onClick={() => onSubmit(name.trim(), vision.trim())}
         >
           Build with Athena

@@ -137,6 +137,19 @@ pub fn webbuild_next_ready(
     Ok(ready)
 }
 
+/// Preflight (H8): the resolved Bun binary path, or `None` when Bun isn't found.
+/// Studio's scaffold + dev server hard-depend on Bun (`webbuild::bun::resolve_bun`
+/// = `PERSONAS_BUN_BIN` → PATH). The vision-start screen checks this up front so a
+/// missing runtime shows clear install guidance instead of failing mid-scaffold
+/// with only a toast.
+#[tauri::command]
+pub fn webbuild_bun_status(state: State<'_, Arc<AppState>>) -> Result<Option<String>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(webbuild::bun::resolve_bun()
+        .ok()
+        .map(|p| p.to_string_lossy().to_string()))
+}
+
 /// Live status of a project's dev server, or `None` when not running.
 #[tauri::command]
 pub fn webbuild_status(

@@ -1400,6 +1400,19 @@ pub async fn run_build_turn(
     mcp: &[String],
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
+    // H11 — one build turn per project at a time. A prior turn that "timed out"
+    // in the UI (the frontend IPC gives up at 900s, before the backend's 25-min
+    // TURN_TIMEOUT) can still be running here; without this guard a second turn
+    // races it, with two claude CLIs editing the same files. `try_lock` (not
+    // `lock`) rejects fast instead of queueing behind a possibly-stuck turn — the
+    // caller must Stop the running turn first (which interrupts it and frees this
+    // lock). Held for the whole turn.
+    let turn_lock = turn_lock_for(&session_id);
+    let _session_lock = turn_lock.try_lock().map_err(|_| {
+        AppError::Validation(
+            "A build turn is already running for this project — stop it (or wait for it to finish) before starting another.".into(),
+        )
+    })?;
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
     // Register so the Studio Stop button can interrupt this turn by project id
     // (the frontend never learns the turn id). Cleared on every exit by the guard.
@@ -1625,6 +1638,15 @@ async fn run_cli(
     // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
     // and eventually dies on spawn with 0xC0000142.
     apply_no_console_window(&mut cmd);
+    // H11 — for build turns, tie the CLI's lifetime to this future. On the
+    // backend TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
+    // drops `child`; without kill_on_drop tokio DETACHES it and claude keeps
+    // editing the project's files unattended (a real zombie seen live). With it,
+    // a timed-out/cancelled turn actually dies. Scoped to build turns
+    // (cwd_override) so companion-chat behavior is unchanged.
+    if cwd_override.is_some() {
+        cmd.kill_on_drop(true);
+    }
     let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
@@ -1842,6 +1864,19 @@ async fn run_cli(
     }
 
     if !status.success() {
+        // The copy of this error that reaches the frontend/log is path-redacted
+        // by `sanitize_error_message`, which hides the real failing command —
+        // e.g. a Windows build-turn "'<path>' is not recognized" cmd.exe error
+        // whose path is exactly what you need to fix it. Rust tracing is not
+        // redacted, so log the RAW stderr here (build-turn spawn observability).
+        tracing::warn!(
+            target: "webbuild_cli",
+            exit = %status,
+            cwd = %cwd.display(),
+            is_build = cwd_override.is_some(),
+            stderr_raw = %stderr_text,
+            "CLI turn exited non-zero"
+        );
         let trimmed = if stderr_text.len() > 600 {
             format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr_text, 600))
         } else {

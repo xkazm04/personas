@@ -46,6 +46,7 @@ export default function StudioPage() {
   const activeId = useStudioStore((s) => s.activeId);
   const runtimes = useStudioStore((s) => s.runtimes);
   const tabOrder = useStudioStore((s) => s.tabOrder);
+  const lastCreateError = useStudioStore((s) => s.lastCreateError);
 
   const active = activeId ? runtimes[activeId] : undefined;
   const tabCount = tabOrder.length;
@@ -163,7 +164,7 @@ export default function StudioPage() {
 
       <div className="relative min-h-0 w-full min-w-0 flex-1 bg-black/20">
         {showVision ? (
-          <StudioVisionStart onSubmit={onCreate} busy={submitting} />
+          <StudioVisionStart onSubmit={onCreate} busy={submitting} error={lastCreateError} />
         ) : (
           <>
             {/* Warm previews — every live tab stays mounted; only active is shown. */}

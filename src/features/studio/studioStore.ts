@@ -7,6 +7,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
   webbuildDevStop,
+  webbuildListProjects,
   webbuildNextReady,
   webbuildRegisterExisting,
   webbuildScaffold,
@@ -85,7 +86,14 @@ interface StudioStore {
   runtimes: Record<string, ProjectRuntime>;
   tabOrder: string[];
   activeId: string | null;
+  /** Last scaffold/create failure (H9) — surfaced on the vision-start screen so
+   *  a failed "Build with Athena" isn't just a transient toast (e.g. missing Bun). */
+  lastCreateError: string | null;
   initStream: () => void;
+  /** Re-open the tabs that were open before a WebView reload (H10), re-attaching
+   *  to their still-running dev servers instead of showing a blank Studio. */
+  rehydrate: () => void;
+  clearCreateError: () => void;
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
@@ -109,6 +117,26 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (!rt) return s;
       return { runtimes: { ...s.runtimes, [id]: { ...rt, ...p } } };
     });
+
+  // H10 — mirror the open-tab set into persisted history so a WebView reload can
+  // re-hydrate them. Called after every tab add/remove/activate.
+  const persistTabs = () => {
+    const { tabOrder, activeId } = get();
+    useStudioHistory.getState().setOpenTabs(tabOrder, activeId);
+  };
+
+  // Best-effort human message from a Tauri/JS error (AppError serializes to a
+  // plain object like {Validation:"…"} that String()s to "[object Object]").
+  const readErr = (e: unknown): string => {
+    if (e instanceof Error) return e.message;
+    if (typeof e === 'string') return e;
+    if (e && typeof e === 'object') {
+      const o = e as Record<string, unknown>;
+      const v = o.message ?? o.error ?? Object.values(o)[0];
+      if (typeof v === 'string') return v;
+    }
+    return 'Something went wrong creating the project.';
+  };
 
   const ensure = (id: string, name: string) => {
     // Restore the checklist + message log from the persisted snapshot if we have
@@ -148,6 +176,23 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         activeId: id,
       };
     });
+    persistTabs();
+  };
+
+  // H10 — re-attach to a project's dev server WITHOUT restarting it when it's
+  // already healthy (the Rust process survives a WebView reload); only cold-start
+  // when it isn't running. Used by `rehydrate`.
+  const attachOrStart = async (id: string) => {
+    try {
+      const status = await webbuildStatus(id);
+      if (status?.healthy) {
+        patch(id, { status, phase: 'live' });
+        return;
+      }
+    } catch {
+      /* not running / transient — fall through to a cold start */
+    }
+    await start(id);
   };
 
   // Persist the project's checklist + message log so it survives an app restart.
@@ -290,10 +335,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     runtimes: {},
     tabOrder: [],
     activeId: null,
+    lastCreateError: null,
 
     initStream: () => {
       if (streamUnlisten) return;
       streamUnlisten = () => {};
+      // H10 — after a fresh module load (incl. a WebView reload), re-open the
+      // tabs that were open before, re-attaching to their live dev servers.
+      get().rehydrate();
       void listen<CompanionStreamEvent>(COMPANION_STREAM_EVENT, (e) => {
         const ev = e.payload;
         const id = /^webbuild:(.+)$/.exec(ev.sessionId)?.[1];
@@ -310,7 +359,37 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       });
     },
 
-    setActive: (id) => set({ activeId: id }),
+    setActive: (id) => {
+      set({ activeId: id });
+      persistTabs();
+    },
+
+    rehydrate: () => {
+      // Only when we have nothing open (a fresh load); never disturb live tabs.
+      if (get().tabOrder.length > 0) return;
+      const { openTabIds, activeTabId } = useStudioHistory.getState();
+      if (!openTabIds || openTabIds.length === 0) return;
+      void (async () => {
+        try {
+          const projects = await webbuildListProjects();
+          const byId = new Map(projects.map((p) => [p.id, p] as const));
+          for (const id of openTabIds) {
+            const proj = byId.get(id);
+            if (!proj || get().runtimes[id]) continue; // project deleted, or already open
+            ensure(id, proj.name); // restores checklist/messages from history
+            void attachOrStart(id); // re-attach to the still-running dev server
+          }
+          if (activeTabId && get().runtimes[activeTabId]) {
+            set({ activeId: activeTabId });
+            persistTabs();
+          }
+        } catch {
+          /* projects list unavailable — leave Studio blank rather than crash */
+        }
+      })();
+    },
+
+    clearCreateError: () => set({ lastCreateError: null }),
 
     setBuildSettings: (id, p) => patch(id, p),
 
@@ -324,6 +403,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         const activeId = s.activeId === id ? (order[order.length - 1] ?? null) : s.activeId;
         return { runtimes: rest, tabOrder: order, activeId };
       });
+      persistTabs();
     },
 
     startExisting: async (id, name) => {
@@ -353,10 +433,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     },
 
     createWithVision: async (name, vision) => {
+      set({ lastCreateError: null });
       let project;
       try {
         project = await webbuildScaffold(name);
       } catch (e) {
+        // H9 — scaffold failure was previously a transient toast only; the
+        // vision-start screen shows nothing about WHY (e.g. missing Bun). Keep it.
+        set({ lastCreateError: readErr(e) });
         toastCatch('scaffold project')(e);
         return;
       }
