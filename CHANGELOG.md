@@ -9,6 +9,13 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 ## [Unreleased]
 
 ### Added
+- **Persona Foundry** — a compose-from-parts creation surface at Agents → create: pick a mentality **archetype** (9 curated presets with core dials, voice, and principles, distilled from the template corpus), a **memory strategy** (Focused / Learner / Team player / Grounded expert / Second brain), and attach **capabilities** from the recipe catalog — then create through the same pipeline template adoption uses. "Describe it" (chat build) and "Browse templates" remain one click away on the same screen.
+- **Recipe removal** — adopted capabilities can now be detached from an agent (Remove button + confirmation on the recipe detail page); re-adopting an already-adopted recipe is refused instead of silently duplicating it.
+- **Composition x-ray** — template adoption now opens with a strip showing the template's parts (mentality + its catalog recipes), the same vocabulary the Foundry composes by hand.
+
+### Fixed
+- **Adoption stamps mentality dials** — the persona core profile (risk tolerance, conflict style, …) authored in templates is now applied on the standard adoption path; previously it was silently dropped (only the dev-tools instant-adopt path ever read it, from a field no template carried).
+- **Recipe catalog repairs** — the three 2026 consolidated templates (email intelligence/support, sales deal intelligence) had incoherent recipe provenance and one silently-orphaned adoption question (`uc_email_triage` id collision); re-keyed with a corpus-wide integrity test so the bug class can't return. Also: two recipes upgraded to Opus (code review, PR test+merge), two downgraded to Sonnet, one 6-field cron fixed, the last schema-v1 template migrated, and a misfiled template moved to its real category.
 - **gcloud CLI auth for Google Cloud Platform** — the GCP connector's add-credential form now offers a "gcloud CLI" tab that imports your active `gcloud` session (no service-account key file needed). Captured tokens auto-refresh while the session is valid; persona API calls resolve the captured token as Bearer auth (`GcpCloudStrategy`) and recover mid-run expiry via the 401 retry path.
 - **CLI session re-auth recovery** — when a CLI-captured credential's underlying session dies (e.g. `gcloud` re-login required), the credential is flagged for re-auth, an OS notification fires, and the Vault banner shows the terminal login instruction with a "Retry capture" button instead of failing silently with backoff.
 - First public release of OSS contribution documentation: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, issue and PR templates, `CODEOWNERS`.

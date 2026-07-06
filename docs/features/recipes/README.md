@@ -44,6 +44,35 @@ Stage D Phase 4 instruments the chip with append-only telemetry. Every visible c
 
 Stage D Phase 5 adds the mode-2 affordance. When the chip first surfaces, the composer fetches stats once via `useRecipeSuggestionEligibility` and only renders the "Run now" button if `mode_2_eligible` is true. The handler stashes the recipe id in `pipelineStore.pendingPlaygroundRecipeId`, switches the sidebar to `design-reviews`, and shows a toast. The recipes panel's `RecipeManager` reads `consumePendingPlayground` on mount and dispatches `GO_PLAYGROUND` for that id, jumping the user straight into the recipe's playground modal — bypassing the entire Glyph build flow. The button stays dormant on fresh installs until ~20 decisive events have crossed the gate, so first-time users see only the conservative mode-1 chip.
 
+## Capability catalog — adopt and remove (2026-07)
+
+The catalog surface (Templates → Recipes tab, `sub_recipes/`) adopts a recipe
+onto the selected persona by substituting bindings into the recipe template
+and appending a `DesignUseCase` into `design_context.useCases[]` with
+provenance (`source_recipe_id`, `source_recipe_version`, `adopted_at`). Since
+2026-07-06 the path is **idempotent** (the dedupe check runs inside the queued
+design_context mutator, so double-clicks and stale UI can't duplicate) and
+**symmetric**: adopted recipes show a Remove CTA (confirmation dialog) that
+detaches every use case carrying that `source_recipe_id`. The Foundry
+(`docs/features/personas/README.md`) attaches the same catalog recipes at
+creation time via `recipe_ref`s instead.
+
+**Dead code, deliberately unwired:** `commands/recipes/recipe_adoption.rs`
+(`adopt_recipe_for_persona` / `unadopt_recipe_from_persona`),
+`recipe_eligibility.rs` (tool-hint scoring) and the `PersonaRecipeLink` table
+are a fully-built parallel adoption pipeline with **zero frontend callers**.
+The shipped spine is the design_context path above; the frontend
+connector-based eligibility (`sub_recipes/eligibility.ts`) is the one in use.
+Do not half-wire the Rust pipeline — either converge onto it wholesale
+(future work) or leave it be.
+
+**Catalog audit (2026-07-06):** an 11-agent audit + adversarial verification
+of all 299 seeded recipes concluded that apparent near-duplicates are NOT
+mergeable — recipes remain template-bound (hardcoded event-listener names,
+vendor-specific tool guidance, connector sets tied to the source template).
+True dedup requires recipe parameterization (the designed-but-unused bindings
+system) first. See `docs/architecture/recipe-catalog-audit-2026-07.md`.
+
 ## Relationship to templates and personas
 
 Templates create personas; recipes are reusable operational workflows. A persona can be linked to multiple recipes, and use cases can be promoted into recipes when a repeated workflow emerges from a design/use-case flow. **Promotion is reachable from the UI** (UAT F-CLIENT-OPERATOR-VIEW): the capability detail view (`UseCaseDetailExpanded`, in the persona Use Cases tab) has a **"Save as recipe"** action that calls `promote_use_case_to_recipe` (no credential baked in — the adopter resolves credentials), closing the build-once → reusable-recipe loop. Previously the command existed but had no caller, so a built capability couldn't be turned into a shareable recipe without rebuilding from scratch.
