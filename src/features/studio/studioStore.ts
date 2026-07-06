@@ -214,6 +214,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const status = await webbuildStatus(id);
       if (status?.healthy) {
         patch(id, { status, phase: 'live' });
+        beginLivenessWatch(id);
         return;
       }
     } catch {
@@ -253,6 +254,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
           if (status?.healthy) {
             patch(id, { phase: 'live' });
             stopPoll(id);
+            beginLivenessWatch(id);
             // Auto-send the vision seed once the preview is live.
             const rt = get().runtimes[id];
             if (rt?.seedPending) {
@@ -269,7 +271,48 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     pollTimers.set(id, timer);
   };
 
+  // H13 — a "live" dev server can die mid-session: a big structural change can
+  // crash Turbopack, leaving nothing on the port. The boot poll stops once live,
+  // so nothing notices and the tab shows a stale-live blank preview. Keep a slow
+  // heartbeat on live tabs; if the server stops serving (two consecutive misses,
+  // and we're not mid-build), cold-start it so the preview self-heals. `healthy`
+  // is a real HTTP check in Rust (http_responds), so a dead-but-bound port fails.
+  const livenessTimers = new Map<string, number>();
+  const livenessMisses = new Map<string, number>();
+  const stopLiveness = (id: string) => {
+    const t = livenessTimers.get(id);
+    if (t) window.clearInterval(t);
+    livenessTimers.delete(id);
+    livenessMisses.delete(id);
+  };
+  const beginLivenessWatch = (id: string) => {
+    stopLiveness(id);
+    const timer = window.setInterval(() => {
+      const rt = get().runtimes[id];
+      if (!rt || rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
+      webbuildStatus(id)
+        .then((status) => {
+          if (status?.healthy) {
+            livenessMisses.set(id, 0);
+            return;
+          }
+          const misses = (livenessMisses.get(id) ?? 0) + 1;
+          livenessMisses.set(id, misses);
+          if (misses >= 2) {
+            stopLiveness(id); // dead-but-adopted → self-heal with a cold start
+            patch(id, { phase: 'starting', status: null });
+            void start(id);
+          }
+        })
+        .catch(() => {
+          /* transient IPC error — don't count it as a miss */
+        });
+    }, 6000);
+    livenessTimers.set(id, timer);
+  };
+
   const start = async (id: string) => {
+    stopLiveness(id);
     patch(id, { phase: 'starting', status: null });
     try {
       const status = await webbuildDevStart(id);
@@ -427,6 +470,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
 
     closeTab: (id) => {
       stopPoll(id);
+      stopLiveness(id);
       stopAuto(id);
       void webbuildDevStop(id).catch(() => {});
       set((s) => {
