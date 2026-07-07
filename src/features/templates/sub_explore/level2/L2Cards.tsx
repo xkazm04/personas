@@ -16,7 +16,7 @@ export function L2TemplateCard({ item, accent, onSelect, onSelectRecipe }: {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/10 p-4 flex flex-col gap-2" style={{ boxShadow: `inset 3px 0 0 0 ${accent}` }}>
       <button onClick={() => onSelect?.(item)} className="group/card text-left flex items-start justify-between gap-2">
-        <span className="typo-body font-medium template-name-themed leading-snug">{item.name}</span>
+        <span className="typo-heading template-name-themed leading-snug">{item.name}</span>
         <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-60 flex-shrink-0 mt-0.5">
           <FileStack className="w-3 h-3" /> Template
         </span>
@@ -60,7 +60,7 @@ export function L2RecipeCard({ recipe, accent, onSelect }: {
       style={{ boxShadow: `inset 3px 0 0 0 ${accent}66` }}
     >
       <div className="flex items-start justify-between gap-2">
-        <span className="typo-body font-medium template-name-themed leading-snug">{recipe.name}</span>
+        <span className="typo-heading template-name-themed leading-snug">{recipe.name}</span>
         <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-60 flex-shrink-0 mt-0.5">
           <Blocks className="w-3 h-3" /> Recipe
         </span>

@@ -53,7 +53,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
         <img src={domainArt(d, isDark)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--background) 32%, ${d.color}22)` }} />
         <div className="relative">
-          <div className="typo-heading-lg font-semibold text-foreground">{domainLabel(d, t.explore)}</div>
+          <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
           <div className="typo-caption text-foreground opacity-80">
             {loading ? 'Loading…' : `${templates.length} templates · ${recipes.length} recipes`}
           </div>

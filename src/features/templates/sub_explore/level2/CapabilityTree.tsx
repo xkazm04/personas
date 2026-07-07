@@ -38,7 +38,7 @@ export function CapabilityTree({ templates, recipes, accent, onSelect, onSelectR
 
       {orphanRecipes.length > 0 && (
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-1.5 typo-body font-medium text-foreground">
+          <div className="inline-flex items-center gap-1.5 typo-heading text-foreground">
             <Blocks className="w-4 h-4" style={{ color: accent }} />
             More capabilities
             <span className="typo-caption text-foreground opacity-60">{orphanRecipes.length}</span>
