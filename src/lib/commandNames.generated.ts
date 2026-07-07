@@ -1249,6 +1249,8 @@ export type CommandName =
   | "set_use_case_generation_settings"
   | "shared_events_browse_catalog"
   | "shared_events_list_subscriptions"
+  | "shared_events_list_firings"
+  | "shared_events_change_activity"
   | "shared_events_refresh_catalog"
   | "shared_events_subscribe"
   | "shared_events_unsubscribe"

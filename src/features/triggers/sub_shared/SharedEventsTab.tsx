@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { RefreshCw, Store, Search, X, Rss, RssIcon } from 'lucide-react';
+import { RefreshCw, Store, Search, X, Rss, RssIcon, LayoutGrid, Table2, RadioTower } from 'lucide-react';
 import * as api from '@/api/events/sharedEvents';
 import { createLogger } from "@/lib/log";
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
@@ -12,11 +12,60 @@ import { SubscriptionList } from './SubscriptionList';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { SharedEventsRegistryVariant } from './SharedEventsRegistryVariant';
+import { SharedEventsWatchtowerVariant } from './SharedEventsWatchtowerVariant';
 
 
 type View = 'browse' | 'subscriptions';
 
+// --- Prototype variant switcher (throwaway scaffold) -----------------------
+// A/B the current card grid against two directional TABLE variants without
+// forking the call site. Baseline (Cards) stays default so nothing changes on
+// load. Consolidation will collapse this to the winning variant.
+type MarketplaceVariant = 'cards' | 'registry' | 'watchtower';
+
 export function SharedEventsTab() {
+  const { t } = useTranslation();
+  const [variant, setVariant] = useState<MarketplaceVariant>('cards');
+  const m = t.triggers.marketplace;
+
+  const tabs: { id: MarketplaceVariant; label: string; sub: string; icon: typeof Store }[] = [
+    { id: 'cards', label: m.view_cards, sub: m.view_cards_sub, icon: LayoutGrid },
+    { id: 'registry', label: m.view_registry, sub: m.view_registry_sub, icon: Table2 },
+    { id: 'watchtower', label: m.view_watchtower, sub: m.view_watchtower_sub, icon: RadioTower },
+  ];
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex items-center gap-1.5 px-4 py-2 border-b border-primary/5">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = variant === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setVariant(tab.id)}
+              title={tab.sub}
+              className={`flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-input transition-colors ${
+                active ? 'bg-primary/10 text-primary' : 'text-foreground/70 hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+      <div key={variant} className="animate-fade-slide-in flex-1 flex flex-col min-h-0 overflow-hidden">
+        {variant === 'cards' && <SharedEventsCardsBaseline />}
+        {variant === 'registry' && <SharedEventsRegistryVariant />}
+        {variant === 'watchtower' && <SharedEventsWatchtowerVariant />}
+      </div>
+    </div>
+  );
+}
+
+function SharedEventsCardsBaseline() {
   const { t } = useTranslation();
   const [view, setView] = useState<View>('browse');
   const [catalog, setCatalog] = useState<SharedEventCatalogEntry[]>([]);
