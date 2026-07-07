@@ -8,7 +8,7 @@ import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscrip
 
 /**
  * Shared subscribe/watch/history row controls for the Marketplace table
- * variants. The busy-guard mirrors CatalogCard: subscribe/unsubscribe are async
+ * variants. The busy-guard: subscribe/unsubscribe are async
  * and the control stays interactive, so without an in-flight lock a double-click
  * races two mutations into a wrong final state.
  */

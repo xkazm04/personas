@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { ThemedConnectorIcon } from '@/lib/connectors/connectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/generated/types';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
@@ -35,33 +35,35 @@ export function parseChangePayload(payload: string | null | undefined): ChangePa
 
 /**
  * Renders a feed's icon. Connector feeds carry an SVG asset path (`/icons/...`);
- * other feeds may carry an emoji. Falls back to 📡. Sized by the parent box.
+ * other feeds may carry an emoji. Falls back to 📡.
+ *
+ * Uses the app's `ThemedConnectorIcon` (CSS-mask fill with a contrast-adjusted
+ * brand color) so monochrome / black-stroke connector logos stay visible on the
+ * dark theme instead of disappearing. The container carries a stronger brand
+ * tint + border than a bare card so the icon reads at table scale.
  */
 export function FeedIcon({
   entry,
   className = '',
+  iconSize = 'w-5 h-5',
 }: {
   entry: Pick<SharedEventCatalogEntry, 'icon' | 'color' | 'name'>;
   className?: string;
+  /** Tailwind size for the inner glyph (should fit the container in `className`). */
+  iconSize?: string;
 }) {
-  const [broken, setBroken] = useState(false);
   const icon = entry.icon;
+  const color = entry.color ?? '#3b82f6';
   const isAsset = typeof icon === 'string' && icon.startsWith('/');
   return (
     <div
-      className={`flex items-center justify-center rounded-card flex-shrink-0 ${className}`}
-      style={{ backgroundColor: `${entry.color ?? '#3b82f6'}1f` }}
-      aria-hidden
+      className={`flex items-center justify-center rounded-card flex-shrink-0 border border-primary/15 ${className}`}
+      style={{ backgroundColor: `${color}2e` }}
     >
-      {isAsset && !broken ? (
-        <img
-          src={icon}
-          alt=""
-          className="w-2/3 h-2/3 object-contain"
-          onError={() => setBroken(true)}
-        />
+      {isAsset ? (
+        <ThemedConnectorIcon url={icon!} label={entry.name} color={color} size={iconSize} />
       ) : (
-        <span className="typo-caption leading-none">{!isAsset && icon ? icon : '📡'}</span>
+        <span className="typo-caption leading-none" aria-hidden>{!isAsset && icon ? icon : '📡'}</span>
       )}
     </div>
   );
