@@ -352,6 +352,7 @@ const bridge: TestBridge = {
       buildResolvedCellCount: Object.values(agent.buildCellStates ?? {}).filter(
         (v) => v === "resolved" || v === "updated" || v === "highlighted",
       ).length,
+      buildOutputTail: (agent.buildOutputLines ?? []).slice(-16),
       buildTestPassed: agent.buildTestPassed ?? null,
       buildTestError: agent.buildTestError ?? null,
       buildTestOutputLines: agent.buildTestOutputLines,
