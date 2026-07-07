@@ -596,6 +596,9 @@ export interface ContextAuditTotals {
   uncategorized_contexts: number;
   groups_missing_domain: number;
   overlapping_files: number;
+  dangling_files: number;
+  unresolved_cross_refs: number;
+  stale_contexts: number;
 }
 export interface ContextAuditReport {
   project_id: string;
@@ -616,6 +619,9 @@ const EMPTY_AUDIT: ContextAuditReport = {
     uncategorized_contexts: 0,
     groups_missing_domain: 0,
     overlapping_files: 0,
+    dangling_files: 0,
+    unresolved_cross_refs: 0,
+    stale_contexts: 0,
   },
   findings: [],
 };
