@@ -8,10 +8,11 @@
  *  streamed behavior_core) syncing into a header above the brief. The plain
  *  Dialogue variant only ever renders it unlocked.
  */
-import { useState, type KeyboardEvent } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Loader2, ChevronRight } from "lucide-react";
+import { Send, Sparkles, Loader2, ChevronRight, Check } from "lucide-react";
 import { InteractiveSigil } from "@/features/shared/glyph";
+import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
@@ -35,13 +36,17 @@ export interface DialogueComposePanelProps {
   /** Build in flight — lock the inputs, swap the launch row for a loading bar,
    *  hide the compose rail, and surface the syncing persona identity. */
   locked?: boolean;
+  /** True only during the reel/loading sub-phase — shows the indeterminate
+   *  progress bar. Once questions or the ready state take over below, it's false
+   *  (the enrichment carries the live status; a spinning bar there would lie). */
+  composing?: boolean;
   /** Streamed-in real identity (behavior_core) — populates the sync header when locked. */
   syncRole?: string | null;
   syncMission?: string | null;
 }
 
 export function DialogueComposePanel({
-  intentText, onIntentChange, onLaunch, launchDisabled, cfg, starters, locked = false, syncRole = null, syncMission = null,
+  intentText, onIntentChange, onLaunch, launchDisabled, cfg, starters, locked = false, composing = false, syncRole = null, syncMission = null,
 }: DialogueComposePanelProps) {
   const { t } = useTranslation();
   const [openRecipe, setOpenRecipe] = useState<RecipeMatch | null>(null);
@@ -70,6 +75,16 @@ export function DialogueComposePanel({
   const shownStarters = selectedRecipeId ? starters.filter((s) => s.recipe_id !== selectedRecipeId) : starters;
   const topStarter = shownStarters[0] ?? null;
   const hasSync = locked && !!(syncRole || syncMission);
+
+  // The blueprint card ENRICHES into live capabilities once the build produces
+  // them — the initial state persists, its content just deepens (no layout swap).
+  const buildCapabilities = useAgentStore((s) => s.buildCapabilities);
+  const buildCapabilityOrder = useAgentStore((s) => s.buildCapabilityOrder);
+  const caps = useMemo(
+    () => buildCapabilityOrder.map((id) => buildCapabilities[id]).filter((c): c is NonNullable<typeof c> => !!c?.title),
+    [buildCapabilityOrder, buildCapabilities],
+  );
+  const showCaps = locked && caps.length > 0;
 
   return (
     <>
@@ -162,7 +177,7 @@ export function DialogueComposePanel({
               )}
             </AnimatePresence>
 
-            {locked ? (
+            {locked && composing ? (
               <div className="flex items-center gap-2 pt-1" data-testid="dialoguecinema-loadingbar">
                 <Loader2 className="w-3.5 h-3.5 text-primary animate-spin shrink-0" />
                 <span className="relative h-1.5 flex-1 rounded-full bg-foreground/10 overflow-hidden">
@@ -173,6 +188,11 @@ export function DialogueComposePanel({
                   />
                 </span>
                 <span className="typo-caption shrink-0">composing…</span>
+              </div>
+            ) : locked ? (
+              <div className="flex items-center gap-2 pt-1 typo-caption" data-testid="dialoguecinema-loadingbar">
+                <Check className="w-3.5 h-3.5 shrink-0" style={{ color: ACCENT }} />
+                <span>Brief locked — continue below.</span>
               </div>
             ) : (
               <div className="flex items-center justify-between pt-1">
@@ -226,8 +246,38 @@ export function DialogueComposePanel({
           />
         </div>
         <div className="w-full rounded-card border border-border/20 bg-foreground/[0.03] p-3">
-          <span className="typo-label text-foreground">{locked ? "Blueprint · view" : "Blueprint"}</span>
-            <div className="mt-2 flex flex-col gap-2 min-h-[2rem]">
+          <span className="typo-label text-foreground">
+            {showCaps ? `Capabilities · ${caps.length}` : locked ? "Blueprint · view" : "Blueprint"}
+          </span>
+          <div className="mt-2 flex flex-col gap-2 min-h-[2rem]">
+            {showCaps ? (
+              <AnimatePresence initial={false}>
+                {caps.map((cap, i) => (
+                  <motion.div
+                    key={cap.id ?? cap.title ?? i}
+                    layout
+                    initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, ease: EASE, delay: Math.min(i * 0.04, 0.2) }}
+                    className="flex flex-col gap-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Check className="w-3.5 h-3.5 shrink-0" style={{ color: ACCENT }} />
+                      <span className="typo-caption text-foreground">{cap.title}</span>
+                    </div>
+                    {(cap.connectors?.length ?? 0) > 0 && (
+                      <div className="flex flex-wrap gap-1 pl-5.5">
+                        {cap.connectors!.map((name) => {
+                          const meta = getConnectorMeta(name);
+                          return (
+                            <span key={name} className="w-4 h-4 rounded-full flex items-center justify-center" title={meta.label}><ConnectorIcon meta={meta} /></span>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            ) : (
               <AnimatePresence mode="popLayout">
                 {activeItems.length === 0 ? (
                   <motion.span key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="typo-caption italic">
@@ -271,8 +321,9 @@ export function DialogueComposePanel({
                   })
                 )}
               </AnimatePresence>
-            </div>
+            )}
           </div>
+        </div>
         </div>
     </motion.div>
     {openRecipe && (

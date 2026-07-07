@@ -92,7 +92,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
             editLocked={hasPending}
           />
 
-          {isCompose && (
+          {isCompose ? (
             <DialogueComposePanel
               intentText={intentText}
               onIntentChange={onIntentChange}
@@ -101,11 +101,14 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
               cfg={cfg}
               starters={starters}
             />
-          )}
-
-          {loading && (
+          ) : (
+            /* The compose panel PERSISTS through the entire build — the brief,
+               glyph, and the blueprint card (enriching into live capabilities)
+               stay on top the whole time. Only the content BELOW swaps: the
+               loading reel first, then the dialogue enrichment (questions →
+               test → promote). No layout switch, so the initial state never
+               disappears out from under the user. */
             <div className="w-full flex flex-col items-center gap-4">
-              {/* combined core on top — the brief, locked, persona syncing in */}
               <DialogueComposePanel
                 intentText={intentText}
                 onIntentChange={onIntentChange}
@@ -114,15 +117,17 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
                 cfg={cfg}
                 starters={starters}
                 locked
+                composing={loading}
                 syncRole={role}
                 syncMission={mission}
               />
-              {/* animated addition below */}
-              <CinemaReel fastForward={hasPending} />
+              {loading ? (
+                <CinemaReel fastForward={hasPending} />
+              ) : (
+                <DialogueStageSurface {...props} />
+              )}
             </div>
           )}
-
-          {postCompose && !loading && <DialogueStageSurface {...props} />}
         </div>
       </div>
 
