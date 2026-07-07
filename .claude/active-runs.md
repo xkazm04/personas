@@ -37,6 +37,13 @@ materially edits the working tree should touch this file twice:
 - Paths: src-tauri/src/engine/{types,parser,dispatch,protocol}.rs, src-tauri/src/engine/runner/team_context.rs, src-tauri/src/db/repos/execution/audit_incidents.rs, docs/features/execution/README.md. Live DB: 14 devProjectId pins + incident backlog cleanup (98→54).
 - Note: resolve_incident protocol + injected incident ids/discipline + promote() open-dup guard + GIT DISCIPLINE policy section.
 
+### research-ecc-code — /research ECC (Everything Claude Code) harvest, focus=code (session opus-4-8[1m])
+- Started: 2026-07-06. Completed: 2026-07-06.
+- Source: local repo C:\Users\mkdol\dolla\ECC (Claude Code plugin: 30 agents / 135 skills / 60 commands / native hook graph).
+- Outcome: 6 extracted → 1 real gap + 5 already-existed catches (peer-comparison run). Finding [1] = in-flight tool-loop detector on the execution stream (personas has none; only --max-turns + zombie-reap + crash-healing). User chose Option D (record-only) → no code, logged in Research note. Phase 10e: fixed a stale `codebase-stack.md` §2 claim (parser DOES capture cache tokens, parser.rs:257-279).
+- Paths: Obsidian Research/Lessons (outside repo), .claude/codebase-stack.md (committed), .claude/active-runs.md (this, unstaged — 590KB concurrent-write hazard, per local convention).
+- Status: completed (commit: codebase-stack.md doc fix; ledger unstaged)
+
 ### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
 - Started: 2026-06-10 09:30. Completed: 2026-06-10 11:05. Commits: bcd293f05, 50281ce2d, 273b1782d. Live-verified (Athena resolved 4/6 parked; fleet resumed).
 - Paths: src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/loop-certify.mjs(new), docs/tests/autonomy-eval/*.
