@@ -1,0 +1,8593 @@
+{
+  "generatedAt": "2026-07-07T15:10:34.709Z",
+  "bridge": "http://127.0.0.1:17320",
+  "pollMs": 1200,
+  "results": [
+    {
+      "id": "s01-memory-log",
+      "title": "Remember-notes memory log",
+      "complexity": "trivial",
+      "intent": "Whenever I give you a note to remember, save it to my local database so I can search and recall it later.",
+      "expectedTools": [
+        "personas_database"
+      ],
+      "ok": true,
+      "sessionId": "8da60d97-9bee-48c0-babc-4548f4fd317d",
+      "stopReason": "first-question",
+      "totalMs": 154830,
+      "marks": {
+        "analyzing": 1217,
+        "core": 154830,
+        "firstCapability": 154830,
+        "lastCapabilityGrowth": 154830,
+        "lastCellResolve": 154830,
+        "firstQuestion": 154830
+      },
+      "capabilityCount": 2,
+      "connectorCount": 0,
+      "resolvedCells": 9,
+      "role": "You are a personal note-keeping assistant.",
+      "mission": null,
+      "capabilityTitles": [
+        "Save Note",
+        "Search & Recall"
+      ],
+      "connectors": [],
+      "pendingCells": [
+        "connectors",
+        "human-review",
+        "memory"
+      ],
+      "timeline": [
+        {
+          "t": 1217,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2420,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3625,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4829,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6031,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7250,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8458,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9662,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10871,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12078,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13284,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14499,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15704,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16916,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18129,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19332,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20540,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21744,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22947,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24152,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25360,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26567,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27773,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 28983,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30197,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31402,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32609,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33825,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35041,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36259,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37465,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38671,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39880,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41093,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42301,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43518,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44735,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45944,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47157,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48373,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49576,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50792,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51995,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53199,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54413,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55626,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56836,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 58042,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59247,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60459,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61676,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62890,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64094,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65302,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66506,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67721,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68932,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70141,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71357,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72573,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73789,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 75006,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 76211,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 77428,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 78632,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 79848,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 81054,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 82260,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 83475,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 84678,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 85893,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 87097,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 88301,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 89504,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 90718,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 91928,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 93143,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 94360,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 95577,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 96790,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 97995,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 99211,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 100416,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 101617,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 102836,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 104051,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 105263,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 106477,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 107687,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 108896,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 110110,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 111312,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 112519,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 113726,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 114931,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 116143,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 117359,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 118573,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 119786,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 120997,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 122200,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 123416,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 124635,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 125837,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 127046,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 128263,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 129472,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 130678,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 131893,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 133100,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 134311,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 135515,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 136721,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 137939,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 139143,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 140346,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 141553,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 142759,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 143966,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 145171,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 146379,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 147594,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 148805,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 150008,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 151217,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 152423,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 153625,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 154830,
+          "phase": "awaiting_input",
+          "core": true,
+          "caps": 2,
+          "conns": 0,
+          "cells": 9,
+          "pending": 3
+        }
+      ]
+    },
+    {
+      "id": "s02-db-digest",
+      "title": "Morning database digest",
+      "complexity": "simple",
+      "intent": "Every morning at 8am, read the newest entries from my local database and give me a short digest of what changed.",
+      "expectedTools": [
+        "personas_database"
+      ],
+      "ok": false,
+      "error": "intent input not visible after 15s (probed [data-testid=\"agent-intent-input\"], [data-testid=\"composer-row-task\"], also tried summon button)",
+      "launch": {
+        "success": false,
+        "error": "intent input not visible after 15s (probed [data-testid=\"agent-intent-input\"], [data-testid=\"composer-row-task\"], also tried summon button)"
+      }
+    },
+    {
+      "id": "s03-github-discord",
+      "title": "GitHub issue to Discord ping",
+      "complexity": "medium",
+      "intent": "When a new GitHub issue is assigned to me, send me a Discord message with the issue title and a link.",
+      "expectedTools": [
+        "github",
+        "discord"
+      ],
+      "ok": true,
+      "sessionId": "565148fa-a86b-4395-9b96-80fe3f2e8793",
+      "stopReason": "first-question",
+      "totalMs": 49611,
+      "marks": {
+        "analyzing": 1217,
+        "core": 49611,
+        "firstCapability": 49611,
+        "lastCapabilityGrowth": 49611,
+        "lastCellResolve": 49611,
+        "firstQuestion": 49611
+      },
+      "capabilityCount": 1,
+      "connectorCount": 0,
+      "resolvedCells": 2,
+      "role": "You are a GitHub assignment watchdog.",
+      "mission": null,
+      "capabilityTitles": [
+        "Issue Assignment Notifier"
+      ],
+      "connectors": [],
+      "pendingCells": [
+        "use-cases"
+      ],
+      "timeline": [
+        {
+          "t": 1217,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2421,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3633,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4851,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6057,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7261,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8475,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9680,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10889,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12104,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13320,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14525,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15733,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16940,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18145,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19350,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20553,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21764,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22969,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24182,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25397,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26603,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27818,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29031,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30248,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31453,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32669,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33875,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35082,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36287,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37503,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38720,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39936,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41151,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42355,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43572,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44778,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45983,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47201,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48404,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49611,
+          "phase": "awaiting_input",
+          "core": true,
+          "caps": 1,
+          "conns": 0,
+          "cells": 2,
+          "pending": 1
+        }
+      ]
+    },
+    {
+      "id": "s04-gmail-triage",
+      "title": "Unread Gmail triage",
+      "complexity": "medium",
+      "intent": "Read my unread Gmail, sort the messages by urgency, and log a one-line summary of each to my local database.",
+      "expectedTools": [
+        "gmail",
+        "personas_database"
+      ],
+      "ok": true,
+      "sessionId": "b61ebd21-ae22-4b3f-a3b6-5db8b0d2d3da",
+      "stopReason": "first-question",
+      "totalMs": 49560,
+      "marks": {
+        "analyzing": 1204,
+        "core": 49560,
+        "firstCapability": 49560,
+        "lastCapabilityGrowth": 49560,
+        "lastCellResolve": 49560,
+        "firstQuestion": 49560
+      },
+      "capabilityCount": 1,
+      "connectorCount": 0,
+      "resolvedCells": 3,
+      "role": "You are a disciplined email triage recorder.",
+      "mission": null,
+      "capabilityTitles": [
+        "Inbox Urgency Triage"
+      ],
+      "connectors": [],
+      "pendingCells": [
+        "triggers"
+      ],
+      "timeline": [
+        {
+          "t": 1204,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2408,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3623,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4834,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6044,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7251,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8454,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9657,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10867,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12070,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13286,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14508,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15719,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16930,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18132,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19335,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20545,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21754,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22970,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24177,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25381,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26585,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27791,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29005,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30219,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31423,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32639,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33842,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35047,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36261,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37466,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38670,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39886,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41089,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42293,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43511,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44714,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45918,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47134,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48352,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49560,
+          "phase": "awaiting_input",
+          "core": true,
+          "caps": 1,
+          "conns": 0,
+          "cells": 3,
+          "pending": 1
+        }
+      ]
+    },
+    {
+      "id": "s05-finance-alert",
+      "title": "Stock movement alerter",
+      "complexity": "medium",
+      "intent": "Every hour, fetch AAPL and TSLA prices from Alpha Vantage and alert me on Discord if either moves more than 3 percent.",
+      "expectedTools": [
+        "alpha_vantage",
+        "discord"
+      ],
+      "ok": true,
+      "sessionId": "b9dc55d3-504e-4481-ba13-b8898638d44c",
+      "stopReason": "timeout",
+      "totalMs": 180195,
+      "marks": {
+        "analyzing": 1207
+      },
+      "capabilityCount": 0,
+      "connectorCount": 0,
+      "resolvedCells": 0,
+      "role": null,
+      "mission": null,
+      "capabilityTitles": [],
+      "connectors": [],
+      "pendingCells": [],
+      "timeline": [
+        {
+          "t": 1207,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2413,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3619,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4823,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6027,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7231,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8433,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9638,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10852,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12069,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13272,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14490,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15693,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16897,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18111,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19318,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20533,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21746,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22952,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24158,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25375,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26591,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27804,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29008,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30215,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31426,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32637,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33855,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35071,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36284,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37486,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38693,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39898,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41107,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42311,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43518,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44724,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45932,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47137,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48340,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49556,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50762,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51975,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53184,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54387,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55602,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56807,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 58020,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59238,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60441,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61654,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62856,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64063,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65270,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66480,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67689,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68896,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70111,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71329,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72541,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73751,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 74954,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 76168,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 77385,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 78588,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 79802,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 81018,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 82221,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 83439,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 84651,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 85866,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 87069,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 88284,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 89487,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 90691,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 91905,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 93109,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 94312,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 95525,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 96731,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 97934,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 99147,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 100355,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 101572,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 102778,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 103991,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 105196,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 106399,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 107616,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 108821,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 110024,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 111238,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 112459,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 113666,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 114879,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 116083,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 117286,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 118503,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 119706,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 120923,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 122126,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 123334,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 124551,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 125766,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 126973,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 128178,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 129392,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 130596,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 131814,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 133018,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 134221,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 135433,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 136648,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 137863,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 139070,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 140286,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 141489,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 142697,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 143906,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 145123,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 146340,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 147559,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 148766,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 149984,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 151191,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 152408,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 153613,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 154818,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 156029,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 157235,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 158437,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 159649,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 160856,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 162062,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 163266,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 164477,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 165694,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 166902,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 168107,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 169316,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 170523,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 171740,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 172943,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 174159,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 175365,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 176572,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 177778,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 178988,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 180195,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        }
+      ]
+    },
+    {
+      "id": "s06-linear-notion-sync",
+      "title": "Linear-done to Notion + Discord",
+      "complexity": "multi-tool",
+      "intent": "When a Linear issue is marked Done, write a summary of it to Notion and post a short note in Discord for the team.",
+      "expectedTools": [
+        "linear",
+        "notion",
+        "discord"
+      ],
+      "ok": true,
+      "sessionId": "d9f388fe-a346-4dde-9f99-8dc2b0c5fe2f",
+      "stopReason": "first-question",
+      "totalMs": 74944,
+      "marks": {
+        "analyzing": 1205,
+        "core": 74944,
+        "firstCapability": 74944,
+        "lastCapabilityGrowth": 74944,
+        "lastCellResolve": 74944,
+        "firstQuestion": 74944
+      },
+      "capabilityCount": 3,
+      "connectorCount": 0,
+      "resolvedCells": 2,
+      "role": "You are an automated issue-completion chronicler that bridges Linear, Notion, and Discord.",
+      "mission": null,
+      "capabilityTitles": [
+        "Linear Done Watcher",
+        "Notion Issue Summary",
+        "Discord Completion Note"
+      ],
+      "connectors": [],
+      "pendingCells": [
+        "use-cases"
+      ],
+      "timeline": [
+        {
+          "t": 1205,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2407,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3623,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4826,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6029,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7235,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8438,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9641,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10845,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12056,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13270,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14483,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15690,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16894,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18108,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19324,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20542,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21747,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22949,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24165,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25380,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26592,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27800,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29009,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30215,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31423,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32626,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33834,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35047,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36252,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37456,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38659,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39874,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41078,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42283,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43488,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44694,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45900,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47116,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48330,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49548,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50756,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51960,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53168,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54376,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55592,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56798,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 58004,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59211,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60414,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61622,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62840,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64058,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65262,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66478,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67690,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68897,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70102,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71309,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72515,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73731,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 74944,
+          "phase": "awaiting_input",
+          "core": true,
+          "caps": 3,
+          "conns": 0,
+          "cells": 2,
+          "pending": 1
+        }
+      ]
+    },
+    {
+      "id": "s07-drive-knowledge",
+      "title": "Drive-watching knowledge base",
+      "complexity": "multi-tool",
+      "intent": "Watch my local Drive folder for new documents, embed them into my vector database, and let me search across them by asking questions in plain language.",
+      "expectedTools": [
+        "local_drive",
+        "personas_vector_db"
+      ],
+      "ok": true,
+      "sessionId": "8a881855-a9bc-43a2-b5ac-2e46ff3a5e30",
+      "stopReason": "timeout",
+      "totalMs": 180181,
+      "marks": {
+        "analyzing": 1210
+      },
+      "capabilityCount": 0,
+      "connectorCount": 0,
+      "resolvedCells": 0,
+      "role": null,
+      "mission": null,
+      "capabilityTitles": [],
+      "connectors": [],
+      "pendingCells": [],
+      "timeline": [
+        {
+          "t": 1210,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2411,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3618,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4834,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6039,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7244,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8460,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9673,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10883,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12092,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13309,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14525,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15733,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16937,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18143,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19348,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20550,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21765,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22970,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24180,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25385,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26594,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27796,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29004,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30215,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31423,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32628,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33833,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35042,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36252,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37469,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38676,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39884,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41093,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42302,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43508,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44715,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45922,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47129,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48334,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49541,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50743,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51947,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53152,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54360,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55568,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56784,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 57995,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59202,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60410,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61617,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62830,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64046,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65252,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66456,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67673,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68888,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70099,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71304,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72514,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73718,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 74926,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 76135,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 77352,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 78557,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 79774,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 80978,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 82180,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 83387,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 84596,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 85802,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 87012,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 88216,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 89424,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 90640,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 91845,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 93051,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 94256,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 95471,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 96689,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 97906,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 99123,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 100333,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 101545,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 102748,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 103964,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 105168,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 106384,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 107588,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 108803,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 110019,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 111229,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 112433,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 113640,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 114857,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 116074,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 117292,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 118508,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 119721,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 120931,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 122143,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 123359,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 124563,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 125769,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 126974,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 128179,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 129395,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 130600,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 131813,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 133018,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 134222,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 135438,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 136653,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 137870,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 139077,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 140284,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 141501,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 142717,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 143920,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 145133,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 146337,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 147551,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 148756,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 149962,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 151167,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 152385,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 153590,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 154797,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 156012,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 157223,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 158440,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 159649,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 160857,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 162065,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 163274,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 164480,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 165683,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 166890,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 168093,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 169306,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 170514,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 171722,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 172930,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 174137,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 175349,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 176558,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 177764,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 178968,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 180181,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        }
+      ]
+    },
+    {
+      "id": "s08-sentry-responder",
+      "title": "Sentry incident responder",
+      "complexity": "complex",
+      "intent": "When Sentry reports a new unresolved error, pull the referenced file from GitHub, draft a root-cause summary, and open a Discord thread for the team to triage.",
+      "expectedTools": [
+        "sentry",
+        "github",
+        "discord"
+      ],
+      "ok": true,
+      "sessionId": "9f177ebb-ee97-4e56-846f-36aa68d966e3",
+      "stopReason": "first-question",
+      "totalMs": 61618,
+      "marks": {
+        "analyzing": 1217,
+        "core": 61618,
+        "firstCapability": 61618,
+        "lastCapabilityGrowth": 61618,
+        "lastCellResolve": 61618,
+        "firstQuestion": 61618
+      },
+      "capabilityCount": 2,
+      "connectorCount": 0,
+      "resolvedCells": 5,
+      "role": "You are a senior on-call error triage assistant.",
+      "mission": null,
+      "capabilityTitles": [
+        "Sentry Error Analyzer",
+        "Discord Triage Thread Opener"
+      ],
+      "connectors": [],
+      "pendingCells": [
+        "triggers",
+        "human-review",
+        "memory"
+      ],
+      "timeline": [
+        {
+          "t": 1217,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2433,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3641,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4846,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6052,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7261,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8469,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9676,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10885,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12092,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13301,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14508,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15718,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16935,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18149,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19353,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20558,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21764,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22971,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24179,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25388,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26595,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27805,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 29010,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30216,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31430,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32639,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33846,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35054,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36266,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37469,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38676,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39882,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41089,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42296,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43501,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44710,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45915,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47120,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48327,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49535,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50742,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51949,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53153,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54358,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55566,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56770,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 57983,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59198,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60411,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61618,
+          "phase": "awaiting_input",
+          "core": true,
+          "caps": 2,
+          "conns": 0,
+          "cells": 5,
+          "pending": 3
+        }
+      ]
+    },
+    {
+      "id": "s09-meeting-concierge",
+      "title": "Pre-meeting briefing concierge",
+      "complexity": "complex",
+      "intent": "Before each Cal.com meeting, look up the attendee in Attio and email me a one-page briefing through Gmail so I walk in prepared.",
+      "expectedTools": [
+        "cal_com",
+        "attio",
+        "gmail"
+      ],
+      "ok": true,
+      "sessionId": "64bed7b7-1e31-45b4-b562-5361aaac7b6d",
+      "stopReason": "timeout",
+      "totalMs": 180053,
+      "marks": {
+        "analyzing": 1204
+      },
+      "capabilityCount": 0,
+      "connectorCount": 0,
+      "resolvedCells": 0,
+      "role": null,
+      "mission": null,
+      "capabilityTitles": [],
+      "connectors": [],
+      "pendingCells": [],
+      "timeline": [
+        {
+          "t": 1204,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2409,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3621,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4827,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6035,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7238,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8443,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9654,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10861,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12070,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13274,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14488,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15693,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16896,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18102,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19306,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20510,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21728,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22935,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24138,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25340,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26546,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27759,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 28962,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30174,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31381,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32591,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33800,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35005,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36210,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37427,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38642,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39851,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41067,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42274,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43481,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44686,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45893,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47101,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48317,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49521,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50727,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51933,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53138,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54355,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55570,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56781,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 57989,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59194,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60396,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61611,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62817,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64024,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65234,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66439,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67645,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68849,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70058,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71271,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72477,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73693,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 74898,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 76112,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 77325,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 78529,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 79739,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 80948,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 82150,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 83361,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 84563,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 85770,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 86972,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 88181,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 89386,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 90595,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 91802,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 93019,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 94225,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 95430,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 96633,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 97836,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 99051,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 100255,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 101461,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 102671,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 103876,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 105087,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 106295,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 107513,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 108731,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 109947,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 111150,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 112359,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 113566,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 114772,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 115986,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 117196,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 118400,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 119608,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 120823,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 122027,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 123242,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 124450,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 125655,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 126858,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 128075,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 129277,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 130485,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 131703,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 132907,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 134124,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 135339,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 136544,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 137747,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 138951,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 140157,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 141373,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 142578,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 143782,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 144986,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 146193,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 147402,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 148618,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 149828,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 151033,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 152239,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 153446,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 154660,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 155877,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 157083,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 158297,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 159501,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 160718,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 161919,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 163126,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 164329,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 165545,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 166751,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 167958,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 169164,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 170369,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 171573,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 172788,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 174000,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 175217,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 176420,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 177624,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 178838,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 180053,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        }
+      ]
+    },
+    {
+      "id": "s10-daily-ops-brief",
+      "title": "Weekday operations brief pipeline",
+      "complexity": "pipeline",
+      "intent": "Every weekday at 8am, pull my Asana tasks due today, cross-check my Google Calendar for conflicts, summarize the top priorities, log the brief to my local database, and send it to me on Discord.",
+      "expectedTools": [
+        "asana",
+        "google_calendar",
+        "personas_database",
+        "discord"
+      ],
+      "ok": true,
+      "sessionId": "535509ba-c75b-48f2-8b79-637e4d41c5ad",
+      "stopReason": "timeout",
+      "totalMs": 180151,
+      "marks": {
+        "analyzing": 1209
+      },
+      "capabilityCount": 0,
+      "connectorCount": 0,
+      "resolvedCells": 0,
+      "role": null,
+      "mission": null,
+      "capabilityTitles": [],
+      "connectors": [],
+      "pendingCells": [],
+      "timeline": [
+        {
+          "t": 1209,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 2416,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 3629,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 4845,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 6060,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 7268,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 8473,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 9688,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 10893,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 12097,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 13301,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 14512,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 15716,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 16930,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 18134,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 19336,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 20548,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 21763,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 22970,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 24175,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 25380,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 26584,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 27785,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 28990,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 30195,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 31411,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 32625,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 33837,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 35042,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 36258,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 37465,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 38680,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 39882,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 41087,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 42291,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 43497,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 44712,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 45916,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 47119,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 48324,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 49527,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 50742,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 51955,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 53158,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 54363,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 55578,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 56793,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 57998,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 59208,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 60417,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 61621,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 62834,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 64050,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 65253,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 66458,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 67674,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 68890,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 70107,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 71318,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 72524,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 73728,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 74934,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 76140,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 77357,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 78574,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 79790,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 80993,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 82196,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 83398,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 84612,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 85825,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 87041,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 88242,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 89448,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 90665,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 91867,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 93070,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 94275,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 95482,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 96686,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 97894,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 99110,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 100312,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 101518,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 102722,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 103927,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 105144,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 106354,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 107566,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 108785,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 109987,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 111200,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 112415,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 113631,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 114836,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 116043,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 117257,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 118470,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 119684,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 120887,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 122104,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 123319,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 124537,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 125739,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 126951,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 128154,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 129361,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 130567,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 131772,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 132976,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 134190,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 135397,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 136613,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 137827,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 139044,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 140251,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 141465,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 142673,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 143876,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 145088,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 146303,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 147515,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 148719,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 149923,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 151128,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 152343,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 153546,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 154762,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 155965,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 157174,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 158378,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 159583,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 160794,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 162008,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 163225,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 164433,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 165636,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 166841,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 168050,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 169252,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 170456,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 171673,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 172889,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 174093,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 175299,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 176509,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 177724,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 178938,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        },
+        {
+          "t": 180151,
+          "phase": "analyzing",
+          "core": false,
+          "caps": 0,
+          "conns": 0,
+          "cells": 0,
+          "pending": 0
+        }
+      ]
+    }
+  ]
+}
