@@ -20,6 +20,7 @@ import type { GlyphDimension } from "@/features/shared/glyph";
 import { GlyphRowStrip } from "./GlyphRowStrip";
 import { GlyphSigilFace } from "./GlyphSigilFace";
 import { GlyphAnswerCard } from "./GlyphAnswerCard";
+import { GlyphMetadataPanel } from "./GlyphMetadataPanel";
 import { useGlyphLayoutState } from "./useGlyphLayoutState";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
 
@@ -27,7 +28,7 @@ const SIZE = 640;
 
 export function GlyphStageSurface(props: GlyphFullLayoutProps) {
   const {
-    onIntentChange, onLaunch,
+    onIntentChange, onLaunch, agentName,
     isBuilding, buildPhase, completeness, cellStates,
     pendingQuestions, onAnswer,
     hasDesignResult, glyphRows,
@@ -170,6 +171,7 @@ export function GlyphStageSurface(props: GlyphFullLayoutProps) {
             onClearRefinePrefill={() => setRefinePrefill(null)}
           />
         </div>
+        <GlyphMetadataPanel agentName={agentName} />
       </div>
 
       {buildError && (
