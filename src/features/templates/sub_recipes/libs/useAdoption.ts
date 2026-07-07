@@ -2,7 +2,8 @@ import { useCallback, useState } from 'react';
 import { mutateUseCases } from '@/hooks/design/core/useDesignContextMutator';
 import { useAgentStore } from '@/stores/agentStore';
 import { useToastStore } from '@/stores/toastStore';
-import { toastCatch } from '@/lib/silentCatch';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
+import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DesignUseCase, NotificationChannel } from '@/lib/types/frontendTypes';
 import type { Recipe, BindingValue } from '../types';
@@ -70,6 +71,12 @@ export function useAdoption() {
           );
           return null;
         }
+        // Reconcile persona.parameters + the injected `## Capability Parameters`
+        // section from the recipe's input_schema (Gap 2). Idempotent and
+        // best-effort — a parameterization failure must not fail the adopt.
+        await invokeWithTimeout('sync_capability_parameters', { personaId }).catch(
+          silentCatch('useAdoption:adopt:syncParams'),
+        );
         await fetchDetail(personaId);
         useToastStore.getState().addToast(
           tx(t.recipes_catalog.adopted_toast, { title: newUseCase.title }),
@@ -97,6 +104,11 @@ export function useAdoption() {
           return kept;
         });
         if (!removedAny) return false; // nothing to detach — stale UI, no-op
+        // Re-sync so the removed capability's parameter lines drop out of the
+        // injected section (its params stay, inert, per the documented contract).
+        await invokeWithTimeout('sync_capability_parameters', { personaId }).catch(
+          silentCatch('useAdoption:remove:syncParams'),
+        );
         await fetchDetail(personaId);
         useToastStore.getState().addToast(
           tx(t.recipes_catalog.removed_toast, { title: recipe.name }),
