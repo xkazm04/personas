@@ -2251,6 +2251,8 @@ pub fn run() {
             commands::communication::shared_events::shared_events_subscribe,
             commands::communication::shared_events::shared_events_unsubscribe,
             commands::communication::shared_events::shared_events_list_subscriptions,
+            commands::communication::shared_events::shared_events_list_firings,
+            commands::communication::shared_events::shared_events_change_activity,
             // Communication -- Messages
             commands::communication::messages::list_messages,
             commands::communication::messages::get_message,

@@ -2,7 +2,8 @@ use rusqlite::params;
 use uuid::Uuid;
 
 use crate::db::models::{
-    CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventSubscription,
+    CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
+    SharedEventFeedActivity, SharedEventSubscription,
 };
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -131,26 +132,15 @@ pub fn get_catalog_entry(pool: &DbPool, id: &str) -> Result<SharedEventCatalogEn
 // Baked firing operations (local-first curated connector-API-change events)
 // ---------------------------------------------------------------------------
 
-/// A baked firing seeded from `db/builtin_shared_events.rs`. Delivered to
-/// subscribers by the local relay as a `shared:<slug>` bus event.
-#[derive(Debug, Clone)]
-pub struct SharedEventFiring {
-    pub id: String,
-    pub slug: String,
-    pub seq: i64,
-    pub title: String,
-    pub fired_at: String,
-    pub payload: String,
-}
-
-fn row_to_firing(row: &rusqlite::Row) -> rusqlite::Result<SharedEventFiring> {
-    Ok(SharedEventFiring {
+fn row_to_firing(row: &rusqlite::Row) -> rusqlite::Result<SharedEventChange> {
+    Ok(SharedEventChange {
         id: row.get("id")?,
         slug: row.get("slug")?,
         seq: row.get("seq")?,
         title: row.get("title")?,
         fired_at: row.get("fired_at")?,
         payload: row.get("payload")?,
+        release_version: row.get("release_version")?,
     })
 }
 
@@ -176,17 +166,65 @@ pub fn list_firings_after(
     slug: &str,
     after_seq: i64,
     limit: i64,
-) -> Result<Vec<SharedEventFiring>, AppError> {
+) -> Result<Vec<SharedEventChange>, AppError> {
     timed_query!("shared_events", "shared_events::list_firings_after", {
         let conn = pool.get()?;
         let mut stmt = conn.prepare(
-            "SELECT id, slug, seq, title, fired_at, payload
+            "SELECT id, slug, seq, title, fired_at, payload, release_version
              FROM shared_event_firings
              WHERE slug = ?1 AND seq > ?2
              ORDER BY seq ASC
              LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![slug, after_seq, limit], row_to_firing)?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
+}
+
+/// Full firing history for a slug, newest change first — powers the per-feed
+/// event-history modal in the Marketplace.
+pub fn list_firings(
+    pool: &DbPool,
+    slug: &str,
+    limit: i64,
+) -> Result<Vec<SharedEventChange>, AppError> {
+    timed_query!("shared_events", "shared_events::list_firings", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT id, slug, seq, title, fired_at, payload, release_version
+             FROM shared_event_firings
+             WHERE slug = ?1
+             ORDER BY seq DESC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![slug, limit], row_to_firing)?;
+        Ok(rows.filter_map(|r| r.ok()).collect())
+    })
+}
+
+/// Per-feed change-activity rollup: the newest change (payload + time) and total
+/// change count for every slug that has at least one firing. One query; feeds
+/// with no firings are simply absent (the UI shows "no changes yet").
+pub fn change_activity(pool: &DbPool) -> Result<Vec<SharedEventFeedActivity>, AppError> {
+    timed_query!("shared_events", "shared_events::change_activity", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT f.slug AS slug, agg.change_count AS change_count,
+                    f.fired_at AS last_fired_at, f.payload AS last_payload
+             FROM shared_event_firings f
+             JOIN (
+                 SELECT slug, MAX(seq) AS max_seq, COUNT(*) AS change_count
+                 FROM shared_event_firings GROUP BY slug
+             ) agg ON f.slug = agg.slug AND f.seq = agg.max_seq",
+        )?;
+        let rows = stmt.query_map([], |row| {
+            Ok(SharedEventFeedActivity {
+                slug: row.get("slug")?,
+                change_count: row.get("change_count")?,
+                last_fired_at: row.get("last_fired_at")?,
+                last_payload: row.get("last_payload")?,
+            })
+        })?;
         Ok(rows.filter_map(|r| r.ok()).collect())
     })
 }

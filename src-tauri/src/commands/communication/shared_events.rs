@@ -2,7 +2,8 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::db::models::{
-    CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventSubscription,
+    CreateSharedEventSubscriptionInput, SharedEventCatalogEntry, SharedEventChange,
+    SharedEventFeedActivity, SharedEventSubscription,
 };
 use crate::db::repos::communication::shared_events as repo;
 use crate::error::AppError;
@@ -99,4 +100,26 @@ pub fn shared_events_list_subscriptions(
 ) -> Result<Vec<SharedEventSubscription>, AppError> {
     require_auth_sync(&state)?;
     repo::list_subscriptions(&state.db)
+}
+
+/// List the change history (baked firings) for one shared-event feed, newest
+/// first. Powers the per-feed event-history modal in the Marketplace.
+#[tauri::command]
+pub fn shared_events_list_firings(
+    state: State<'_, Arc<AppState>>,
+    slug: String,
+    limit: Option<i64>,
+) -> Result<Vec<SharedEventChange>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_firings(&state.db, &slug, limit.unwrap_or(100))
+}
+
+/// Per-feed change-activity rollup (latest change + count per slug). Powers the
+/// "Latest change" column + Watchtower ordering in the Marketplace tables.
+#[tauri::command]
+pub fn shared_events_change_activity(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SharedEventFeedActivity>, AppError> {
+    require_auth_sync(&state)?;
+    repo::change_activity(&state.db)
 }
