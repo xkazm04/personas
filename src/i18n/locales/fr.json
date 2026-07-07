@@ -17340,5 +17340,15 @@
     "xray_label": "Composé de {count} capacités",
     "xray_tooltip": "Ce modèle associe une mentalité et des capacités issues du catalogue de recettes — les mêmes éléments que vous pouvez composer manuellement dans la Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "agents",
+    "domain_content": "Studio de contenu",
+    "domain_engineering": "Ingénierie",
+    "domain_finance": "Finance",
+    "domain_operations": "Opérations",
+    "domain_people": "Clients et RH",
+    "domain_research": "Recherche et veille",
+    "domain_revenue": "Ventes et marketing"
   }
 }

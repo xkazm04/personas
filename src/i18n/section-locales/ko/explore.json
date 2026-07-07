@@ -1,0 +1,10 @@
+{
+  "agents": "에이전트",
+  "domain_content": "콘텐츠 스튜디오",
+  "domain_engineering": "엔지니어링",
+  "domain_finance": "재무",
+  "domain_operations": "운영",
+  "domain_people": "고객 및 인사",
+  "domain_research": "리서치 및 인텔리전스",
+  "domain_revenue": "영업 및 마케팅"
+}

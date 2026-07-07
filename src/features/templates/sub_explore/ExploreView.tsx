@@ -1,69 +1,34 @@
 /**
- * Explore — 2nd-level "Templates → Explore" view (round 2).
+ * Explore — 2nd-level "Templates → Explore" view.
  *
- * Baseline chosen: the Industry/Domain ATLAS. The real template corpus is
- * department-organized (not industry), so the top level is 7 data-grounded
- * DOMAINS with Leonardo symbolic illustrations, wired to the REAL template
- * catalog (getTemplateCatalog). Three treatments of that baseline, switchable:
- *   1. Illustrated Tiles — classic drill-down into a per-domain cluster map
- *   2. Bento Mosaic      — tile size ∝ template count (balance made visible)
- *   3. Split Explorer    — one screen, illustrated rail + live cluster map
- *
- * i18n deferred until a treatment is locked.
+ * Level 1 (locked): the data-weighted Bento Mosaic of 7 domains, wired to the
+ * real template + recipe catalog, with theme-aware Leonardo illustrations.
+ * Level 2 (prototype): a domain's templates + recipes, with an in-place switcher
+ * between two layout approaches (Capability Tree vs Unified Shelf).
  */
 import { useState } from 'react';
-import { LayoutGrid, LayoutDashboard, Columns3, FlaskConical, X } from 'lucide-react';
-import { AtlasIllustratedTiles } from './atlas/AtlasIllustratedTiles';
-import { AtlasBentoMosaic } from './atlas/AtlasBentoMosaic';
-import { AtlasSplitExplorer } from './atlas/AtlasSplitExplorer';
-import type { ExploreItem } from './useExploreCatalog';
-
-type VariantId = 'tiles' | 'bento' | 'split';
-
-const VARIANTS: { id: VariantId; label: string; icon: typeof LayoutGrid; hint: string }[] = [
-  { id: 'tiles', label: 'Illustrated Tiles', icon: LayoutGrid,      hint: 'Classic drill-down — pick a domain, then explore its cluster map.' },
-  { id: 'bento', label: 'Bento Mosaic',      icon: LayoutDashboard, hint: 'Tile size scales with template count — the data structure, made visible.' },
-  { id: 'split', label: 'Split Explorer',    icon: Columns3,        hint: 'One screen — illustrated domain rail + a live cluster map that swaps instantly.' },
-];
+import { X } from 'lucide-react';
+import { BentoGrid } from './atlas/BentoGrid';
+import { DomainLevel2 } from './level2/DomainLevel2';
+import type { ExploreItem, ExploreRecipe } from './useExploreCatalog';
 
 export default function ExploreView() {
-  const [variant, setVariant] = useState<VariantId>('tiles');
-  const [picked, setPicked] = useState<ExploreItem | null>(null);
-  const active = VARIANTS.find((v) => v.id === variant)!;
+  const [domain, setDomain] = useState<string | null>(null);
+  const [picked, setPicked] = useState<{ name: string } | null>(null);
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-5 2xl:px-8">
-      <div className="max-w-6xl 3xl:max-w-[1800px] mx-auto space-y-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="inline-flex items-center gap-2 typo-caption text-foreground opacity-70">
-            <FlaskConical className="w-3.5 h-3.5" />
-            Prototype · Domain Atlas · real template catalog · 3 treatments
-          </div>
-          <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40 self-start">
-            {VARIANTS.map((v) => {
-              const Icon = v.icon;
-              const on = v.id === variant;
-              return (
-                <button
-                  key={v.id}
-                  onClick={() => setVariant(v.id)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption transition-colors ${
-                    on ? 'bg-primary/15 text-primary' : 'text-foreground opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {v.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <p className="typo-caption text-foreground opacity-60">{active.hint}</p>
-
-        {variant === 'tiles' && <AtlasIllustratedTiles onSelect={setPicked} />}
-        {variant === 'bento' && <AtlasBentoMosaic onSelect={setPicked} />}
-        {variant === 'split' && <AtlasSplitExplorer onSelect={setPicked} />}
+      <div className="max-w-6xl 3xl:max-w-[1800px] mx-auto">
+        {domain ? (
+          <DomainLevel2
+            domainId={domain}
+            onBack={() => setDomain(null)}
+            onSelect={(i: ExploreItem) => setPicked(i)}
+            onSelectRecipe={(r: ExploreRecipe) => setPicked(r)}
+          />
+        ) : (
+          <BentoGrid onPick={setDomain} />
+        )}
       </div>
 
       {picked && (

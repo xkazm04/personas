@@ -1,0 +1,10 @@
+{
+  "agents": "agenti",
+  "domain_content": "Tvorba obsahu",
+  "domain_engineering": "Vývoj",
+  "domain_finance": "Finance",
+  "domain_operations": "Provoz",
+  "domain_people": "Zákazníci a lidé",
+  "domain_research": "Výzkum a analýzy",
+  "domain_revenue": "Prodej a marketing"
+}

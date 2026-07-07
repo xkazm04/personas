@@ -17340,5 +17340,15 @@
     "xray_label": "Složeno z {count} schopností",
     "xray_tooltip": "Tato šablona je mentalita plus schopnosti z katalogu receptů — stejné součásti, které lze ručně sestavit ve Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "agenti",
+    "domain_content": "Tvorba obsahu",
+    "domain_engineering": "Vývoj",
+    "domain_finance": "Finance",
+    "domain_operations": "Provoz",
+    "domain_people": "Zákazníci a lidé",
+    "domain_research": "Výzkum a analýzy",
+    "domain_revenue": "Prodej a marketing"
   }
 }

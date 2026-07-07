@@ -11133,6 +11133,16 @@ export type Translations = {
     remove_confirm_title: string;
     remove_confirm_body: string;
   };
+  explore: {
+    agents: string;
+    domain_engineering: string;
+    domain_research: string;
+    domain_content: string;
+    domain_revenue: string;
+    domain_finance: string;
+    domain_operations: string;
+    domain_people: string;
+  };
   foundry: {
     _comment: string;
     entry_mode_aria: string;

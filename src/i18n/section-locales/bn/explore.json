@@ -1,0 +1,10 @@
+{
+  "agents": "এজেন্ট",
+  "domain_content": "কনটেন্ট স্টুডিও",
+  "domain_engineering": "ইঞ্জিনিয়ারিং",
+  "domain_finance": "অর্থ",
+  "domain_operations": "কার্যক্রম",
+  "domain_people": "গ্রাহক ও কর্মী",
+  "domain_research": "গবেষণা ও ইন্টেলিজেন্স",
+  "domain_revenue": "বিক্রয় ও বিপণন"
+}

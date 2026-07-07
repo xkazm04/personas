@@ -17340,5 +17340,15 @@
     "xray_label": "{count} 件の能力で構成",
     "xray_tooltip": "このテンプレートはメンタリティとレシピカタログの能力で構成されています — Foundryで手動でコンポーズするのと同じ要素です。",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "エージェント",
+    "domain_content": "コンテンツスタジオ",
+    "domain_engineering": "エンジニアリング",
+    "domain_finance": "財務",
+    "domain_operations": "オペレーション",
+    "domain_people": "顧客・人事",
+    "domain_research": "リサーチ・インテリジェンス",
+    "domain_revenue": "営業・マーケティング"
   }
 }

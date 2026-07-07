@@ -1,0 +1,10 @@
+{
+  "agents": "Agenten",
+  "domain_content": "Content-Studio",
+  "domain_engineering": "Entwicklung",
+  "domain_finance": "Finanzen",
+  "domain_operations": "Betrieb",
+  "domain_people": "Kunden & Personal",
+  "domain_research": "Forschung & Analyse",
+  "domain_revenue": "Vertrieb & Marketing"
+}

@@ -17340,5 +17340,15 @@
     "xray_label": "{count}টি সক্ষমতা দিয়ে গঠিত",
     "xray_tooltip": "এই টেমপ্লেটটি একটি মানসিকতা এবং রেসিপি ক্যাটালগ থেকে নেওয়া সক্ষমতার সমন্বয় — একই উপাদান যা আপনি Foundry-তে হাতে কম্পোজ করতে পারেন।",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "এজেন্ট",
+    "domain_content": "কনটেন্ট স্টুডিও",
+    "domain_engineering": "ইঞ্জিনিয়ারিং",
+    "domain_finance": "অর্থ",
+    "domain_operations": "কার্যক্রম",
+    "domain_people": "গ্রাহক ও কর্মী",
+    "domain_research": "গবেষণা ও ইন্টেলিজেন্স",
+    "domain_revenue": "বিক্রয় ও বিপণন"
   }
 }

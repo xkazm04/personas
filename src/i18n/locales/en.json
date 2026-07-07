@@ -11127,6 +11127,16 @@
     "remove_confirm_title": "Remove this capability?",
     "remove_confirm_body": "This detaches \"{title}\" from {persona}. Its trigger and configuration are removed; the recipe stays in the catalog and can be re-adopted anytime."
   },
+  "explore": {
+    "agents": "agents",
+    "domain_engineering": "Engineering",
+    "domain_research": "Research & Intelligence",
+    "domain_content": "Content Studio",
+    "domain_revenue": "Sales & Marketing",
+    "domain_finance": "Finance",
+    "domain_operations": "Operations",
+    "domain_people": "Customer & People"
+  },
   "foundry": {
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n.",
     "entry_mode_aria": "Persona creation mode",

@@ -17340,5 +17340,15 @@
     "xray_label": "Состоит из {count} возможностей",
     "xray_tooltip": "Этот шаблон — мышление плюс возможности из каталога рецептов, те же элементы, которые можно собрать вручную в Foundry.",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "агенты",
+    "domain_content": "Контент-студия",
+    "domain_engineering": "Инженерия",
+    "domain_finance": "Финансы",
+    "domain_operations": "Операции",
+    "domain_people": "Клиенты и персонал",
+    "domain_research": "Исследования и аналитика",
+    "domain_revenue": "Продажи и маркетинг"
   }
 }

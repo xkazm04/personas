@@ -17340,5 +17340,15 @@
     "xray_label": "{count} क्षमताओं से बना",
     "xray_tooltip": "यह टेम्पलेट एक मानसिकता और रेसिपी कैटलॉग की क्षमताओं से बना है — वही हिस्से जिन्हें आप Foundry में स्वयं जोड़ सकते हैं।",
     "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
+  },
+  "explore": {
+    "agents": "एजेंट",
+    "domain_content": "कंटेंट स्टूडियो",
+    "domain_engineering": "इंजीनियरिंग",
+    "domain_finance": "वित्त",
+    "domain_operations": "संचालन",
+    "domain_people": "ग्राहक और लोग",
+    "domain_research": "रिसर्च और इंटेलिजेंस",
+    "domain_revenue": "बिक्री और मार्केटिंग"
   }
 }
