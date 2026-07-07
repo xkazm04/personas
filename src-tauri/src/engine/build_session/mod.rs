@@ -199,6 +199,15 @@ impl BuildSessionManager {
         let mut cli_args = prompt::build_cli_args(None, None);
         cli_args.args.push("--model".to_string());
         cli_args.args.push("claude-sonnet-4-6".to_string());
+        // B2 streaming (interactive only): ask the CLI to emit incremental
+        // content_block_delta events so the runner can surface the persona's
+        // behavior_core to the Cinema loading view the moment the LLM finishes
+        // writing it (~15-20s), instead of at the end of the ~50-155s turn.
+        // Additive — the authoritative post-turn parse is unchanged. Skipped for
+        // one-shot/headless builds (no UI watches, so the extra stream is waste).
+        if !is_one_shot {
+            cli_args.args.push("--include-partial-messages".to_string());
+        }
 
         // Query available credentials and connectors for context-aware prompt
         let credentials = credential_repo::get_all(&pool).unwrap_or_default();

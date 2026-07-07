@@ -107,6 +107,88 @@ async fn wait_for_cancel_flag(cancel_flag: Arc<AtomicBool>) {
     }
 }
 
+// ── B2 streaming helpers ────────────────────────────────────────────────────
+//
+// With `--include-partial-messages` the CLI interleaves `stream_event` envelopes
+// carrying incremental `content_block_delta` text. These two helpers let the read
+// loop surface the `behavior_core` object to the frontend the moment it finishes
+// streaming, without waiting for the whole ~50-155s turn. Everything else stays on
+// the authoritative post-turn parse path.
+
+/// Pull the incremental text out of one CLI stream line, if it is a
+/// `content_block_delta` inside a `stream_event` envelope. Returns None for every
+/// other line type (system/assistant/result/etc.) — those go through the normal
+/// post-turn parse.
+fn stream_delta_text(line: &str) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_str(line.trim()).ok()?;
+    if v.get("type").and_then(|t| t.as_str())? != "stream_event" {
+        return None;
+    }
+    let event = v.get("event")?;
+    if event.get("type").and_then(|t| t.as_str())? != "content_block_delta" {
+        return None;
+    }
+    let text = event.get("delta")?.get("text")?.as_str()?;
+    if text.is_empty() {
+        None
+    } else {
+        Some(text.to_string())
+    }
+}
+
+/// Scan the accumulated delta buffer for a complete top-level JSON object that
+/// carries a `behavior_core` key, and if found, parse it into BuildEvents via the
+/// same path the post-turn parser uses. Returns None until the object's braces
+/// balance (still streaming) or if no behavior_core is present yet. String-aware
+/// brace matching so braces inside JSON string values don't fool the scan.
+fn extract_early_behavior_core(buf: &str, session_id: &str) -> Option<Vec<BuildEvent>> {
+    let key_at = buf.find("\"behavior_core\"")?;
+    // The object opens at the last `{` before the key.
+    let open = buf[..key_at].rfind('{')?;
+    let bytes = buf.as_bytes();
+    let mut depth = 0usize;
+    let mut in_str = false;
+    let mut esc = false;
+    let mut end = None;
+    for i in open..buf.len() {
+        let c = bytes[i];
+        if in_str {
+            if esc {
+                esc = false;
+            } else if c == b'\\' {
+                esc = true;
+            } else if c == b'"' {
+                in_str = false;
+            }
+        } else {
+            match c {
+                b'"' => in_str = true,
+                b'{' => depth += 1,
+                b'}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    let end = end?; // braces not balanced yet — wait for more deltas
+    let obj = &buf[open..=end];
+    let events = parse_build_line(obj, session_id);
+    let has_core = events.iter().any(|e| {
+        matches!(e, BuildEvent::BehaviorCoreUpdate { .. })
+            || matches!(e, BuildEvent::CellUpdate { cell_key, .. } if cell_key == "behavior_core")
+    });
+    if has_core {
+        Some(events)
+    } else {
+        None
+    }
+}
+
 async fn kill_cancelled_turn(
     driver: &mut CliProcessDriver,
     registry: &ActiveProcessRegistry,
@@ -491,6 +573,18 @@ pub(super) async fn run_session(
         let mut turn_events: Vec<BuildEvent> = Vec::new();
         let mut turn_raw = String::new();
 
+        // B2 streaming: with --include-partial-messages the CLI emits
+        // content_block_delta events as the LLM types. We accumulate that delta
+        // text and, the moment a complete `behavior_core` object closes, emit it
+        // to the frontend mid-turn — so the Cinema loading view gets the real
+        // persona identity ~15-20s in instead of at the end of a 50-155s turn.
+        // Scoped to behavior_core ONLY (it's identity, not part of the capability
+        // gate state machine, so early emit can't corrupt gate logic). Purely
+        // additive: turn_raw still accumulates every line and the authoritative
+        // parse + gate-pass below is unchanged; dedup drops the duplicate core.
+        let mut early_delta_buf = String::new();
+        let mut early_core_emitted = false;
+
         if let Some(mut reader) = driver.take_stdout_reader() {
             let cancel_wait = wait_for_cancel_flag(cancel_flag.clone());
             tokio::pin!(cancel_wait);
@@ -507,6 +601,31 @@ pub(super) async fn run_session(
                                 turn_raw.push_str(&line);
                                 turn_raw.push('\n');
                                 turn_events.extend(parse_build_line(&line, &session_id));
+
+                                // Mid-turn: surface behavior_core the instant it completes.
+                                if !early_core_emitted {
+                                    if let Some(txt) = stream_delta_text(&line) {
+                                        early_delta_buf.push_str(&txt);
+                                        if let Some(core_events) =
+                                            extract_early_behavior_core(&early_delta_buf, &session_id)
+                                        {
+                                            for ev in core_events {
+                                                cancel_if_emit_dropped!(dual_emit(
+                                                    &pool,
+                                                    &channel,
+                                                    &app_handle,
+                                                    &ev
+                                                ));
+                                            }
+                                            early_core_emitted = true;
+                                            tracing::info!(
+                                                session_id = %session_id,
+                                                turn = turn + 1,
+                                                "B2: streamed behavior_core to UI mid-turn"
+                                            );
+                                        }
+                                    }
+                                }
                             }
                             Ok(None) => break,
                             Err(_) => break,
