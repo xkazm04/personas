@@ -188,36 +188,41 @@ export default function StudioPage() {
 
             {live && activeId && active?.status ? (
               <>
-                <button
-                  type="button"
-                  onClick={reloadActive}
-                  aria-label="Reload preview"
-                  className="absolute left-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/85 text-foreground/70 shadow-elevation-2 backdrop-blur hover:text-foreground"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </button>
-                <div className="absolute right-3 top-3 z-20">
+                {/* Unified preview toolbar — reload · routes · versions in one bar
+                    instead of three overlays scattered around the preview edges. */}
+                <div className="absolute left-1/2 top-3 z-20 flex max-w-[82%] -translate-x-1/2 items-center gap-0.5 rounded-full border border-border bg-background/85 px-1.5 py-1 shadow-elevation-2 backdrop-blur">
+                  <button
+                    type="button"
+                    onClick={reloadActive}
+                    aria-label="Reload preview"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </button>
+                  {navRoutes.length > 1 && (
+                    <>
+                      <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
+                      <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+                        {navRoutes.map((r) => (
+                          <button
+                            key={r}
+                            type="button"
+                            onClick={() => goToRoute(r)}
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
+                              activeRoute === r
+                                ? 'bg-primary/20 text-primary'
+                                : 'text-foreground/60 hover:text-foreground'
+                            }`}
+                          >
+                            {r}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                  <span className="mx-0.5 h-4 w-px shrink-0 bg-border" />
                   <StudioVersions id={activeId} onRestored={reloadActive} />
                 </div>
-                {/* Cross-page nav: click a route to jump the active preview to it. */}
-                {navRoutes.length > 1 && (
-                  <div className="absolute left-1/2 top-3 z-20 flex max-w-[60%] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-full border border-border bg-background/85 px-2 py-1 shadow-elevation-2 backdrop-blur">
-                    {navRoutes.map((r) => (
-                      <button
-                        key={r}
-                        type="button"
-                        onClick={() => goToRoute(r)}
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-xs transition-colors ${
-                          activeRoute === r
-                            ? 'bg-primary/20 text-primary'
-                            : 'text-foreground/60 hover:text-foreground'
-                        }`}
-                      >
-                        {r}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 {/* A3 — orb pointer: precise ring around the element when the preview
                     agent returned a rect, else the coarse top/middle/bottom region. */}
                 {active.question && pointerRect ? (

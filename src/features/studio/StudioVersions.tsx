@@ -44,14 +44,14 @@ export default function StudioVersions({ id, onRestored }: { id: string; onResto
         data-testid="studio-versions"
         onClick={() => void toggle()}
         aria-label="Version history"
-        className="flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/85 text-foreground/70 shadow-elevation-2 backdrop-blur hover:text-foreground"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-foreground/65 transition-colors hover:bg-secondary/60 hover:text-foreground"
       >
         <History className="h-4 w-4" />
       </button>
       {open && (
         <div
           data-testid="studio-versions-panel"
-          className="absolute right-0 top-10 z-30 max-h-72 w-64 overflow-y-auto rounded-modal border border-border bg-background/95 p-1.5 shadow-elevation-4 backdrop-blur"
+          className="absolute right-0 top-9 z-30 max-h-72 w-64 overflow-y-auto rounded-modal border border-border bg-background/95 p-1.5 shadow-elevation-4 backdrop-blur"
         >
           {loading ? (
             <p className="px-2 py-1.5 typo-caption">Loading…</p>

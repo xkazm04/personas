@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useStudioStore } from './studioStore';
 import StudioDecision from './StudioDecision';
 
@@ -81,6 +82,11 @@ export default function StudioMessages({ expanded = false }: { expanded?: boolea
           <div key={m.id} className="flex items-start gap-2">
             <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
             <div className="min-w-0 flex-1">
+              <div className="mb-0.5 flex items-center gap-1.5 typo-caption text-foreground/40">
+                <span className="font-medium text-foreground/65">Athena</span>
+                <span>·</span>
+                <RelativeTime timestamp={m.ts} />
+              </div>
               <MarkdownRenderer content={m.text} className="athena-chat-md" codeBlockActions />
             </div>
           </div>
