@@ -54,6 +54,34 @@ function parseTags(raw: string | null): string[] {
   }
 }
 
+/** The recipe's tunable "dimensions" — the fields declared in input_schema.
+ *  Shape varies (array of {name,label}, or an object keyed by field name), so
+ *  extract a de-duped label list defensively. */
+function parseDimensions(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const v = JSON.parse(raw);
+    const fields = Array.isArray(v) ? v : Array.isArray(v?.fields) ? v.fields : v && typeof v === "object" ? Object.entries(v).map(([k, def]) => ({ name: k, ...(def as object) })) : [];
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const f of fields) {
+      const label = String(f?.label || f?.title || f?.name || f || "").replace(/_/g, " ").trim();
+      const key = label.toLowerCase();
+      if (!label || seen.has(key)) continue;
+      seen.add(key);
+      out.push(label);
+    }
+    return out.slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
+/** Emoji test — recipe.icon is sometimes an emoji, sometimes an icon-name slug. */
+function isEmoji(s: string | null): boolean {
+  return !!s && /\p{Extended_Pictographic}/u.test(s);
+}
+
 interface Props {
   recipeId: string;
   recipeName: string;
@@ -80,15 +108,20 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
     ? Array.from(new Set([...parseConnectorNames(recipe.credential_requirements), ...parseConnectorNames(recipe.tool_requirements)]))
     : [];
   const tags = recipe ? parseTags(recipe.tags) : [];
-  const promptPeek = recipe?.prompt_template?.trim().slice(0, 320) ?? "";
+  const dimensions = recipe ? parseDimensions(recipe.input_schema) : [];
+  const sigilColor = recipe?.color || ACCENT;
 
   return (
     <BaseModal isOpen onClose={onClose} titleId="recipe-alternative-modal" size="lg">
       <div className="flex flex-col gap-4 p-5" data-testid="recipe-alternative-modal">
-        {/* header */}
+        {/* header — with a sigil preview built from the recipe's own icon/color */}
         <div className="flex items-start gap-3">
-          <span className="w-9 h-9 rounded-input flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(ACCENT, 0.16) }}>
-            <Sparkles className="w-4 h-4" style={{ color: ACCENT }} />
+          <span
+            className="w-11 h-11 rounded-full flex items-center justify-center shrink-0 text-lg"
+            style={{ background: `radial-gradient(circle at 50% 35%, ${colorWithAlpha(sigilColor, 0.32)}, transparent 72%)`, border: `1px solid ${colorWithAlpha(sigilColor, 0.5)}` }}
+            aria-hidden
+          >
+            {isEmoji(recipe?.icon ?? null) ? recipe!.icon : <Sparkles className="w-5 h-5" style={{ color: sigilColor }} />}
           </span>
           <div className="flex flex-col gap-0.5 min-w-0">
             <span className="typo-label" style={{ color: ACCENT }}>Faster path · {pct}% match</span>
@@ -133,10 +166,14 @@ export function RecipeAlternativeModal({ recipeId, recipeName, matchScore, onClo
               ))}
             </div>
 
-            {promptPeek && (
+            {dimensions.length > 0 && (
               <div className="flex flex-col gap-1.5">
-                <span className="typo-label text-foreground">What it does</span>
-                <pre className="typo-caption text-foreground whitespace-pre-wrap rounded-card border border-border/20 bg-foreground/[0.03] p-3 max-h-32 overflow-y-auto">{promptPeek}{recipe.prompt_template && recipe.prompt_template.length > 320 ? "…" : ""}</pre>
+                <span className="typo-label text-foreground">Dimensions you can tune · {dimensions.length}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {dimensions.map((d) => (
+                    <span key={d} className="typo-caption px-2.5 py-1 rounded-full border capitalize" style={{ borderColor: colorWithAlpha(sigilColor, 0.3), background: colorWithAlpha(sigilColor, 0.08), color: "var(--color-foreground)" }}>{d}</span>
+                  ))}
+                </div>
               </div>
             )}
 

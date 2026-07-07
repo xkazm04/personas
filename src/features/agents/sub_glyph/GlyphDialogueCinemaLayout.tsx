@@ -34,6 +34,9 @@ const ACCENT = "#60A5FA";
 const REEL_COUNT = 14;             // silhouettes in the below-content reel
 const REEL_FINALISTS = 3;
 const REEL_CAST_MS = 22000;
+const REEL_FASTFWD_MS = 1500;      // when the build finishes early, sprint the
+                                   // remaining eliminations over this window
+const FINALIST_HOLD_MS = 450;      // brief pause on the finalists before crowning
 
 export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
   const {
@@ -59,7 +62,9 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
   useEffect(() => { setFirstQuestionSeen(false); }, [buildSessionId]);
   useEffect(() => {
     if (hasPending && !firstQuestionSeen) {
-      const h = window.setTimeout(() => setFirstQuestionSeen(true), 2600);
+      // Give the reel time to fast-forward + crown + reveal capabilities before
+      // handing off, so a fast build finishes the animation rather than cutting.
+      const h = window.setTimeout(() => setFirstQuestionSeen(true), 3400);
       return () => clearTimeout(h);
     }
   }, [hasPending, firstQuestionSeen]);
@@ -148,21 +153,33 @@ function Silhouette({ form, color, size, dead }: { form: number; color: string; 
   );
 }
 
-/** Narrow to REEL_FINALISTS over REEL_CAST_MS, hold, then crown on coronation. */
+/** Narrow to REEL_FINALISTS over REEL_CAST_MS, hold at the finalists, then crown.
+ *  When `coronation` flips true early, the animation is NOT cut — it fast-forwards
+ *  the remaining eliminations over REEL_FASTFWD_MS and crowns after a short hold,
+ *  so a quick build still gets a complete (just sped-up) reel. */
 function useReelCasting(ids: string[], coronation: boolean) {
   const maxToFloor = Math.max(0, ids.length - REEL_FINALISTS);
-  const step = REEL_CAST_MS / Math.max(1, maxToFloor);
   const [discarded, setDiscarded] = useState(0);
-  useEffect(() => { setDiscarded(0); }, [ids]);
+  const [crowned, setCrowned] = useState(false);
+  useEffect(() => { setDiscarded(0); setCrowned(false); }, [ids]);
   useEffect(() => {
-    if (coronation || discarded >= maxToFloor) return;
+    if (crowned) return;
+    if (discarded >= maxToFloor) {
+      // At the finalist floor — hold until coronation, then crown.
+      if (!coronation) return;
+      const h = window.setTimeout(() => setCrowned(true), FINALIST_HOLD_MS);
+      return () => clearTimeout(h);
+    }
+    // Still eliminating: normal cadence, or sprint the remainder when finishing early.
+    const remaining = maxToFloor - discarded;
+    const step = coronation ? REEL_FASTFWD_MS / remaining : REEL_CAST_MS / Math.max(1, maxToFloor);
     const h = window.setTimeout(() => setDiscarded((d) => d + 1), step);
     return () => clearTimeout(h);
-  }, [discarded, maxToFloor, step, coronation]);
-  const keep = coronation ? 1 : ids.length - discarded;
+  }, [discarded, crowned, coronation, maxToFloor]);
+  const keep = crowned ? 1 : ids.length - discarded;
   return {
-    crowned: coronation,
-    deliberating: !coronation && discarded >= maxToFloor,
+    crowned,
+    deliberating: !crowned && discarded >= maxToFloor,
     eliminated: ids.slice(keep),
     finalists: ids.slice(0, Math.max(keep, 1)),
     winner: ids[0]!,

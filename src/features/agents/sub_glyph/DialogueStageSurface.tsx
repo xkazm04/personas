@@ -80,6 +80,7 @@ export function DialogueStageSurface(props: GlyphFullLayoutProps) {
               question={activeQuestion}
               onAnswer={onAnswer}
               onClose={() => {}}
+              variant="dialogue"
             />
           ) : (
             <div

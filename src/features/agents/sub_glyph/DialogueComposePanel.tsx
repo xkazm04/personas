@@ -10,14 +10,15 @@
  */
 import { useState, type KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Check, Loader2, ChevronRight } from "lucide-react";
+import { Send, Sparkles, Loader2, ChevronRight } from "lucide-react";
 import { InteractiveSigil } from "@/features/shared/glyph";
 import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
+import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
 import { RecipeAlternativeModal } from "./RecipeAlternativeModal";
-import type { useComposeConfig, ComposeConfigItem } from "./useComposeConfig";
+import type { useComposeConfig } from "./useComposeConfig";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 const ACCENT = "#60A5FA";
@@ -44,6 +45,7 @@ export function DialogueComposePanel({
 }: DialogueComposePanelProps) {
   const { t } = useTranslation();
   const [openRecipe, setOpenRecipe] = useState<RecipeMatch | null>(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -57,11 +59,16 @@ export function DialogueComposePanel({
   const selectRecipeAlternative = (recipe: RecipeDefinition) => {
     const seed = (recipe.description?.trim() || recipe.name).trim();
     if (seed) onIntentChange(seed);
+    // Remember it so it doesn't re-surface as its own "faster path": the intent
+    // is now the recipe's description, and the name-weighted matcher scores that
+    // same recipe low (~35%), which reads as a bug rather than a match.
+    setSelectedRecipeId(recipe.id);
   };
 
-  const chips = cfg.items.filter((i) => i.kind !== "input");
   const activeItems = cfg.items.filter((i) => i.active && i.dim !== "task");
-  const topStarter = starters[0] ?? null;
+  // Drop the already-selected recipe from the suggestions (see selectRecipeAlternative).
+  const shownStarters = selectedRecipeId ? starters.filter((s) => s.recipe_id !== selectedRecipeId) : starters;
+  const topStarter = shownStarters[0] ?? null;
   const hasSync = locked && !!(syncRole || syncMission);
 
   return (
@@ -134,7 +141,7 @@ export function DialogueComposePanel({
             />
 
             <AnimatePresence>
-              {(starters.length > 0) && (locked ? !!topStarter : true) && (
+              {(shownStarters.length > 0) && (locked ? !!topStarter : true) && (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
@@ -147,7 +154,7 @@ export function DialogueComposePanel({
                     {locked ? "Building on recipe" : "Faster path — tap a recipe to start from it"}
                   </span>
                   <div className="flex flex-col gap-1.5">
-                    {(locked ? starters.slice(0, 1) : starters.slice(0, 3)).map((m) => (
+                    {(locked ? shownStarters.slice(0, 1) : shownStarters.slice(0, 3)).map((m) => (
                       <StarterRow key={m.recipe_id} match={m} onOpen={locked ? undefined : () => setOpenRecipe(m)} />
                     ))}
                   </div>
@@ -189,31 +196,15 @@ export function DialogueComposePanel({
           </div>
         </motion.div>
 
+        {/* Dimension "tags" removed (2026-07-07) — the activated dimensions are
+            shown once, in the Blueprint card beside the glyph. Set them by
+            clicking the glyph petals. */}
         {!locked && (
-          <>
-            <ThreadLine delay={0.2}>
-              <span className="typo-body text-foreground">
-                Want to steer it before it runs? Tap any dimension.
-              </span>
-            </ThreadLine>
-            <div className="flex flex-wrap gap-2">
-              {chips.map((item, i) => (
-                <DialogueChip key={item.dim} item={item} index={i} />
-              ))}
-            </div>
-          </>
-        )}
-        {/* Locked: the dimensions stay on screen in view mode — visible but not
-            interactive while the build runs. */}
-        {locked && (
-          <div className="flex flex-col gap-2">
-            <span className="typo-label text-foreground">Dimensions · view only while building</span>
-            <div className="flex flex-wrap gap-2 pointer-events-none">
-              {chips.map((item, i) => (
-                <DialogueChip key={item.dim} item={item} index={i} disabled />
-              ))}
-            </div>
-          </div>
+          <ThreadLine delay={0.2}>
+            <span className="typo-caption block">
+              Steer it before it runs — click a petal on the glyph to set a dimension.
+            </span>
+          </ThreadLine>
         )}
       </div>
 
@@ -236,28 +227,48 @@ export function DialogueComposePanel({
         </div>
         <div className="w-full rounded-card border border-border/20 bg-foreground/[0.03] p-3">
           <span className="typo-label text-foreground">{locked ? "Blueprint · view" : "Blueprint"}</span>
-            <div className="mt-2 flex flex-col gap-1.5 min-h-[2rem]">
+            <div className="mt-2 flex flex-col gap-2 min-h-[2rem]">
               <AnimatePresence mode="popLayout">
                 {activeItems.length === 0 ? (
                   <motion.span key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="typo-caption italic">
                     Nothing set yet — smart defaults will fill the gaps.
                   </motion.span>
                 ) : (
-                  activeItems.map((item) => (
-                    <motion.div
-                      key={item.dim}
-                      layout
-                      initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
-                      transition={{ duration: 0.2, ease: EASE }}
-                      className="flex items-start gap-2"
-                    >
-                      <Check className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: item.color }} />
-                      <span className="typo-caption text-foreground">
-                        <span className="font-semibold" style={{ color: item.color }}>{item.label}:</span>{" "}
-                        {item.summary[0] ?? "on"}
-                      </span>
-                    </motion.div>
-                  ))
+                  activeItems.map((item) => {
+                    const Icon = item.icon;
+                    // Connector/channel dimensions render their values as tool
+                    // icons; everything else shows the value in normal weight.
+                    const iconable = item.dim === "connector" || item.dim === "message";
+                    return (
+                      <motion.div
+                        key={item.dim}
+                        layout
+                        initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                        transition={{ duration: 0.2, ease: EASE }}
+                        className="flex items-start gap-2"
+                      >
+                        <Icon className="w-3.5 h-3.5 mt-0.5 shrink-0" style={{ color: item.color }} />
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <span className="typo-caption text-foreground">{item.label}</span>
+                          {iconable && item.summary.length > 0 ? (
+                            <div className="flex flex-wrap gap-1">
+                              {item.summary.map((name) => {
+                                const meta = getConnectorMeta(name);
+                                return (
+                                  <span key={name} className="inline-flex items-center gap-1 pl-0.5 pr-1.5 py-0.5 rounded-full border" style={{ borderColor: colorWithAlpha(meta.color, 0.35), background: colorWithAlpha(meta.color, 0.1) }}>
+                                    <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center"><ConnectorIcon meta={meta} /></span>
+                                    <span className="typo-caption text-foreground">{meta.label}</span>
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <span className="typo-caption text-foreground">{item.summary.join(", ") || "on"}</span>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })
                 )}
               </AnimatePresence>
             </div>
@@ -289,37 +300,6 @@ export function ThreadLine({ children, delay = 0 }: { children: React.ReactNode;
       <span className="w-1 rounded-full bg-primary/40 shrink-0" />
       <div>{children}</div>
     </motion.div>
-  );
-}
-
-function DialogueChip({ item, index, disabled = false }: { item: ComposeConfigItem; index: number; disabled?: boolean }) {
-  const Icon = item.icon;
-  return (
-    <motion.button
-      type="button"
-      onClick={disabled ? undefined : item.onClick}
-      disabled={disabled}
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22, ease: EASE, delay: 0.24 + index * 0.03 }}
-      className={`group inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-interactive border transition-colors ${disabled ? "cursor-default" : "cursor-pointer"}`}
-      style={{
-        borderColor: item.active ? `${item.color}66` : "rgba(255,255,255,0.12)",
-        background: item.active ? `${item.color}22` : "rgba(255,255,255,0.03)",
-        boxShadow: item.active ? `0 0 12px ${item.color}22` : undefined,
-      }}
-      data-testid={`dialogue-chip-${item.dim}`}
-    >
-      <span className="w-6 h-6 rounded-input flex items-center justify-center shrink-0" style={{ background: item.active ? `${item.color}2e` : "rgba(255,255,255,0.05)" }}>
-        <Icon className="w-3.5 h-3.5" style={{ color: item.active ? item.color : undefined }} />
-      </span>
-      <span className="flex flex-col items-start leading-tight">
-        <span className="typo-caption font-semibold text-foreground">{item.label}</span>
-        {item.active && item.summary[0] && (
-          <span className="typo-caption max-w-[180px] truncate" style={{ color: item.color }}>{item.summary[0]}</span>
-        )}
-      </span>
-    </motion.button>
   );
 }
 
