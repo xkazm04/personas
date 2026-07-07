@@ -4,7 +4,6 @@ import { toastCatch } from '@/lib/silentCatch';
 import { webbuildListProjects, webbuildListRoutes } from '@/api/webbuild';
 import type { DevProject } from '@/lib/bindings/DevProject';
 import StudioTabBar from './StudioTabBar';
-import StudioChecklist from './StudioChecklist';
 import StudioChatInput from './StudioChatInput';
 import StudioVisionStart from './StudioVisionStart';
 import StudioVersions from './StudioVersions';
@@ -257,7 +256,6 @@ export default function StudioPage() {
                     </span>
                   </div>
                 ) : null}
-                <StudioChecklist phases={active.phases} />
                 <StudioChatInput />
               </>
             ) : active ? (
