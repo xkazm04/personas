@@ -1112,15 +1112,20 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         // which prefers it over description) + advisory tool preferences.
         // Both live on the source UC and the target DesignUseCase but were
         // silently dropped by this projection until 2026-07.
-        let (capability_summary, tool_hints) = match uc {
+        let (capability_summary, tool_hints, input_schema) = match uc {
             crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
                 d.capability_summary
                     .as_ref()
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty()),
                 d.tool_hints.clone().filter(|h| !h.is_empty()),
+                // Preserve input_schema so design_context.useCases universally
+                // carries the recipe's declared params — this is what lets the
+                // catalog `sync_capability_parameters` command re-derive on a
+                // later adopt/remove without losing the promote-time params.
+                d.input_schema.clone(),
             ),
-            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None),
         };
 
         let suggested_trigger = ir.triggers.get(idx).map(|t| {
@@ -1206,6 +1211,8 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             // Capabilities renderer prefers capability_summary over description).
             "capability_summary": capability_summary,
             "tool_hints": tool_hints,
+            // Declared recipe params — kept so a later catalog sync can re-derive.
+            "input_schema": input_schema,
             // Catalog provenance (Foundry arc) — lights the "Adopted" badge
             // for template-/Foundry-attached recipes; adopted_at marks the
             // promote moment (catalog-UI adoptions stamp their own).
