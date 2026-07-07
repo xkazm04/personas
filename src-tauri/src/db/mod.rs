@@ -2,6 +2,7 @@
 pub mod macros;
 mod backup;
 pub(crate) mod builtin_connectors;
+pub(crate) mod builtin_shared_events;
 pub mod cdc;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;
@@ -251,6 +252,7 @@ pub fn init_db(
         let conn = pool.get()?;
         seed_builtin_tools(&conn)?;
         seed_builtin_connectors(&conn)?;
+        seed_builtin_shared_events(&conn)?;
     }
 
     // Defense-in-depth: scrub orphan rows whose parent persona is gone.
@@ -1311,6 +1313,64 @@ fn seed_builtin_connectors(conn: &rusqlite::Connection) -> Result<(), AppError> 
     Ok(())
 }
 
+/// Seed the curated shared-event catalog + baked firings that ship with this
+/// release. Definitions are auto-generated from scripts/connectors/builtin/*.json
+/// (catalog) and scripts/events/connector-events.ledger.json (firings) into
+/// `db/builtin_shared_events.rs`. Regenerate with:
+///   node scripts/events/generate-connector-events.mjs
+///
+/// Catalog rows upsert like connectors (INSERT OR IGNORE + UPDATE-on-upgrade to
+/// refresh copy/icon while preserving subscriber_count). Firings are append-only
+/// (INSERT OR IGNORE by id); the local relay delivers unseen firings to
+/// subscribers offline.
+fn seed_builtin_shared_events(conn: &rusqlite::Connection) -> Result<(), AppError> {
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let catalog = builtin_shared_events::BUILTIN_SHARED_EVENTS;
+    for e in catalog {
+        conn.execute(
+            "INSERT OR IGNORE INTO shared_event_catalog
+             (id, slug, name, description, category, publisher, icon, color,
+              sample_payload, event_schema, subscriber_count, is_featured, status, cached_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, 0, 0, 'active', ?11)",
+            params![
+                e.id, e.slug, e.name, e.description, e.category, e.publisher,
+                e.icon, e.color, e.sample_payload, e.event_schema, now,
+            ],
+        )?;
+        // Refresh presentation fields on upgrade; preserve subscriber_count/status.
+        conn.execute(
+            "UPDATE shared_event_catalog
+             SET name = ?1, description = ?2, category = ?3, publisher = ?4,
+                 icon = ?5, color = ?6, sample_payload = ?7, event_schema = ?8, cached_at = ?9
+             WHERE id = ?10",
+            params![
+                e.name, e.description, e.category, e.publisher, e.icon, e.color,
+                e.sample_payload, e.event_schema, now, e.id,
+            ],
+        )?;
+    }
+
+    let firings = builtin_shared_events::BUILTIN_SHARED_EVENT_FIRINGS;
+    for f in firings {
+        conn.execute(
+            "INSERT OR IGNORE INTO shared_event_firings
+             (id, slug, seq, title, fired_at, payload, release_version, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            params![
+                f.id, f.slug, f.seq, f.title, f.fired_at, f.payload, f.release_version, now,
+            ],
+        )?;
+    }
+
+    tracing::debug!(
+        "Seeded {} shared-event catalog feeds, {} baked firings",
+        catalog.len(),
+        firings.len()
+    );
+    Ok(())
+}
+
 #[cfg(test)]
 pub fn init_test_db() -> Result<DbPool, AppError> {
     use std::time::Duration;
@@ -1329,6 +1389,7 @@ pub fn init_test_db() -> Result<DbPool, AppError> {
     migrations::run_incremental(&conn)?;
     seed_builtin_tools(&conn)?;
     seed_builtin_connectors(&conn)?;
+    seed_builtin_shared_events(&conn)?;
     drop(conn);
     Ok(pool)
 }

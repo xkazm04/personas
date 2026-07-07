@@ -189,6 +189,25 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
         CREATE INDEX IF NOT EXISTS idx_shared_subs_enabled ON shared_event_subscriptions(enabled);"
     )?;
 
+    // -- Baked shared-event firings (curated connector-API-change events) --------
+    // Local-first delivery: firings are code-generated into db/builtin_shared_events.rs
+    // from scripts/events/connector-events.ledger.json and seeded on startup. The
+    // local relay (engine/shared_event_local_relay.rs) delivers unseen firings
+    // (seq > subscription cursor) onto the bus as `shared:<slug>` — no cloud needed.
+    conn.execute_batch(
+        "CREATE TABLE IF NOT EXISTS shared_event_firings (
+            id               TEXT PRIMARY KEY,
+            slug             TEXT NOT NULL,
+            seq              INTEGER NOT NULL,
+            title            TEXT NOT NULL,
+            fired_at         TEXT NOT NULL,
+            payload          TEXT NOT NULL,
+            release_version  TEXT,
+            created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_shared_firings_slug_seq ON shared_event_firings(slug, seq);"
+    )?;
+
     // -- Shared Event Analytics --------------------------------------------------
     conn.execute_batch(
         "CREATE TABLE IF NOT EXISTS shared_event_analytics (

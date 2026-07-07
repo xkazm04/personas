@@ -102,7 +102,7 @@ export const eventBusItems: SubNavItem[] = [
   { id: 'cloud-webhooks', label: 'Cloud Events', icon: Webhook, devOnly: true },
   { id: 'dead-letter', label: 'Dead Letter Queue', icon: Archive, devOnly: true },
   { id: 'studio', label: 'Chain Studio', icon: GitBranch },
-  { id: 'shared', label: 'Marketplace', icon: Store, devOnly: true },
+  { id: 'shared', label: 'Marketplace', icon: Store },
 ];
 
 export const templateItems: SubNavItem[] = [

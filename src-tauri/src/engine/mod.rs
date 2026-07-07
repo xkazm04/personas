@@ -180,6 +180,7 @@ pub mod scope_enforcement;
 pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;
+pub mod shared_event_local_relay;
 pub mod shared_event_relay;
 pub mod slack_poller;
 pub mod smee_relay;

@@ -110,7 +110,7 @@ export function SharedEventsTab() {
           className="flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
+          {t.common.refresh}
         </button>
       </div>
 

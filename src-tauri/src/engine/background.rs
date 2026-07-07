@@ -27,8 +27,8 @@ use crate::engine::scheduler as sched_logic;
 use crate::engine::subscription::{
     self, CleanupSubscription, CloudWebhookRelaySubscription, CompositeSubscription,
     CredentialHealthcheckSubscription, EventBusSubscription, OAuthRefreshSubscription,
-    PollingSubscription, RotationSubscription, SharedEventRelaySubscription,
-    TriggerSchedulerSubscription,
+    PollingSubscription, RotationSubscription, SharedEventLocalRelaySubscription,
+    SharedEventRelaySubscription, TriggerSchedulerSubscription,
 };
 #[cfg(feature = "desktop")]
 use crate::engine::subscription::{
@@ -469,6 +469,12 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
             state: shared_event_relay_state,
+        }),
+        // Local-first delivery of baked curated firings (connector API-change
+        // events). Runs independently of the cloud relay above; no cloud client.
+        Box::new(SharedEventLocalRelaySubscription {
+            pool: pool.clone(),
+            app: app.clone(),
         }),
         Box::new(subscription::DigestSubscription {
             pool: pool.clone(),

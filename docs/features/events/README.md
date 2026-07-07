@@ -20,7 +20,7 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 | Dead Letter Queue | Dev-only failed event review with checkbox multi-select, bulk retry/discard, event-type/source/error/age filters, and a Group-by-error view that clusters rows by Jaccard similarity so an operator can retry-or-discard an entire failure mode at once | `sub_dead_letter/DeadLetterTab.tsx` |
 | Chain Studio | Switchboard for composing trigger chains without a canvas: a sources rail (9 signal types + persona completions), a targets rail, and a routes ledger in between. The targets rail has two tabs: **Personas** (compact name + description cards — persona routes stage into a localStorage draft) and **System events** (built-in operations, first one being **Context Scan Update**). Arm a Schedule or Event Listener source + a System event target and a commit modal captures the op params (project) + trigger config (cadence cron, or the event type to listen for) and persists a real **`SystemOpAutomation`** — a trigger → built-in-op binding the backend scheduler runs (no persona involved). Committed automations show in an "Active system events" panel with enable / run-now / delete. Persona→persona routes carry a cyclable run condition and, via a per-route **Save** (or **Save all**), commit to a real `chain` trigger on the target persona (condition any / success / failure / output-match). Picking the **output match** condition reveals inline JSONPath + expected-value fields and commits as the backend `jsonpath` chain condition. Signal-source routes (schedule / webhook / polling / event listener / file watcher / clipboard / app focus / composite) save through a **configure-&-commit modal** that hosts the full trigger form locked to the source's type — same per-type config and validation as the classic form (cron preview, timezone, secrets) — and creates the trigger on the route's target persona. **Save all** covers direct-committable routes only (signal-source routes need the interactive config step). Below the switchboard, a collapsible **Existing routes** section embeds the live, event-centric inventory of all current routing with inline management (add-listener, disconnect, rename event) — the routing view under `sub_studio/routing/` (formerly the standalone Builder tab, then a "Routes" sub-tab; both retired). It's **one surface** now — no Compose/Routes sub-tab switcher — and committing a route in the switchboard refreshes the inventory immediately, with a live route-count shown in the section header. | `sub_studio/TriggerStudioCanvas.tsx`, `sub_studio/StudioPatchbay.tsx`, `sub_studio/StudioTriggerCommitModal.tsx`, `sub_studio/routing/`, `sub_studio/system_ops/`, `sub_studio/libs/` |
 | — System operations | A `SystemOpAutomation` (`system_op_automations` table) binds a trigger to a registered backend op that is **not** a persona execution. The catalog + runner live in `engine/system_ops.rs` (`run_op`, `run_due_schedule_automations`, `dispatch_event_automations`); the background event-bus tick runs due **schedule** rows (cron) and matches **event** rows against live bus events. IPC: `system_ops_list_kinds` / `_list_automations` / `_create_automation` / `_set_enabled` / `_delete_automation` / `_run_now`. The first op, `context_scan`, calls the existing `launch_context_scan` (incremental). | `commands/infrastructure/system_ops.rs`, `db/repos/system_ops.rs` |
-| Marketplace | Dev-only shared event catalog and subscriptions | `sub_shared/SharedEventsTab.tsx` |
+| Marketplace | Curated shared-event catalog and subscriptions. Ships **curated connector API-update feeds** — one subscribable entry per connector with public API docs (e.g. *"ElevenLabs API updates"*). Browse/search/filter by category, subscribe, and the change fires into your triggers/chains as a `shared:<slug>` event. | `sub_shared/SharedEventsTab.tsx` |
 
 > **Chain output forwarding.** A persona→persona route committed from Chain Studio sets `payload_forward: true` in the `chain` trigger config (`sub_studio/libs/studioCommit.ts`), so the target step receives the source step's output as `source_output`. The engine only injects it when the flag is true (`engine/chain.rs`); earlier Studio-built chains advanced control flow but dropped the upstream payload (UAT L1 F-CHAIN-NO-PAYLOAD-FORWARD). Intra-team handoff wiring (`engine/team_handoff.rs`) already set the flag.
 
@@ -50,6 +50,38 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 > fire-mode is also surfaced on the row via the shared `TriggerModeBadge`
 > (dry_run / approval), so both the global list and per-persona rows describe
 > "armed to do what" identically.
+
+## Curated connector-API-change events (local-first)
+
+The Marketplace ships **curated global events** for connector API changes,
+distributed inside each release with **no cloud dependency**. Three stages:
+
+1. **Detection (dev side, `pumper` repo).** A monthly `connector-api-watch`
+   pumper app fetches each connector's public `docs_url` (watch list generated
+   from `scripts/connectors/builtin/*.json`), converts to Markdown, and uses
+   pumper's change-detected Datasets to flag docs that changed. A Claude pass
+   diffs old-vs-new and produces a `{ summary, tags[], severity }`. Output:
+   `pumper/data/artifacts/connector-api-watch/<job>/changes.json`.
+2. **Distribution (dev side, this repo).**
+   `node scripts/events/generate-connector-events.mjs [--changes changes.json]`
+   emits the watch-list manifest (`scripts/events/connector-docs.manifest.json`,
+   copied into `pumper/catalog/connector-docs.json`), merges detected changes
+   into the durable ledger `scripts/events/connector-events.ledger.json`, and
+   code-generates `src-tauri/src/db/builtin_shared_events.rs` (one catalog feed
+   per public-docs connector + the baked firings). The dev reviews the ledger +
+   `.rs` diff and commits → it ships in the next release.
+3. **Consumption (shipped app).** On startup `db/mod.rs::seed_builtin_shared_events`
+   seeds `shared_event_catalog` (feeds) + `shared_event_firings` (baked changes).
+   A user subscribes to *"ElevenLabs API updates"* in the Marketplace;
+   `engine/shared_event_local_relay.rs` delivers unseen firings (`seq` >
+   subscription cursor) onto the bus as `shared:<slug>`, deduped by `source_id`.
+   The subscription cursor is seeded at the current MAX(`seq`) so a new
+   subscriber gets only *future-release* firings — no historical backfill flood.
+
+The firing payload is `{ connector, label, docs_url, detected_at, summary,
+tags[], severity, release_version }`. This is independent of the cloud relay
+(`engine/shared_event_relay.rs`), which remains as a secondary path for
+cloud-fed feeds. Full design: [`docs/plans/curated-connector-events.md`](../../plans/curated-connector-events.md).
 
 ## Trigger editor mechanics
 

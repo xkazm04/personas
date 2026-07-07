@@ -9,6 +9,7 @@ Until a stable **1.0** release, minor versions may contain breaking changes to I
 ## [Unreleased]
 
 ### Added
+- **Curated connector API-update events** — the Events → Marketplace tab now ships a subscribable feed per connector with public API docs (e.g. *"ElevenLabs API updates"*). A monthly dev-side watcher (the `connector-api-watch` pumper app) diffs each connector's public docs and Claude-summarizes what changed; detected changes are baked into the release and delivered to subscribers **fully locally** (no cloud) as `shared:<slug>` events they can route into their own triggers and chains. The Marketplace tab is no longer dev-only.
 - **Persona Foundry** — a compose-from-parts creation surface at Agents → create: pick a mentality **archetype** (9 curated presets with core dials, voice, and principles, distilled from the template corpus), a **memory strategy** (Focused / Learner / Team player / Grounded expert / Second brain), and attach **capabilities** from the recipe catalog — then create through the same pipeline template adoption uses. "Describe it" (chat build) and "Browse templates" remain one click away on the same screen.
 - **Recipe removal** — adopted capabilities can now be detached from an agent (Remove button + confirmation on the recipe detail page); re-adopting an already-adopted recipe is refused instead of silently duplicating it.
 - **Composition x-ray** — template adoption now opens with a strip showing the template's parts (mentality + its catalog recipes), the same vocabulary the Foundry composes by hand.

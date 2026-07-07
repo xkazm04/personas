@@ -27,6 +27,12 @@ const TASKS = {
   // src/i18n/generated/enSectionStrings.ts.
   "i18n-split": "scripts/i18n/split-locales.mjs",
   connectors:"scripts/generate-connector-seed.mjs",
+  // Regenerates the curated connector-update event seed
+  // (src-tauri/src/db/builtin_shared_events.rs) + watch manifest from the
+  // connector list, preserving the firings ledger. Argless = catalog-only
+  // refresh (a new connector auto-gets a Marketplace feed); firings are only
+  // added via the manual --changes ingest. See docs/plans/curated-connector-events.md.
+  "shared-events": "scripts/events/generate-connector-events.mjs",
   checksums: "scripts/generate-template-checksums.mjs",
   "n8n-limits": "scripts/generate-n8n-limits.mjs",
   "host-check": "scripts/check-build-cache.mjs",
@@ -51,8 +57,8 @@ const TASKS = {
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "guidance-anchors"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "guidance-anchors"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog", "guidance-anchors"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "shared-events", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog", "guidance-anchors"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;
