@@ -1,19 +1,15 @@
 /**
- * Explore level 2 — a domain's templates + recipes. Prototype host: an
- * illustrated header + a switcher between two approaches to the templates/recipes
- * UI (Capability Tree vs Unified Shelf). Level 2 is still being explored, so its
- * copy is hardcoded; level 1 (Bento) is the locked, i18n'd surface.
+ * Explore level 2 — a domain's templates + recipes as a sub-domain-filtered,
+ * sortable table (the chosen direction for volume/orientation). Illustrated
+ * header + DomainTable. Level-1 (Bento) is the locked, i18n'd surface; this
+ * level's copy is still hardcoded until finalized.
  */
-import { useState } from 'react';
-import { ChevronLeft, ListTree, LayoutGrid, FlaskConical } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { domainById, domainArt, domainLabel } from '../exploreDomains';
 import { useExploreCatalog, recipesForDomain, type ExploreItem, type ExploreRecipe } from '../useExploreCatalog';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CapabilityTree } from './CapabilityTree';
-import { UnifiedShelf } from './UnifiedShelf';
-
-type L2Variant = 'tree' | 'shelf';
+import { DomainTable } from './DomainTable';
 
 interface Props {
   domainId: string;
@@ -26,7 +22,6 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
   const { byDomain, loading } = useExploreCatalog();
   const isDark = useIsDarkTheme();
   const { t } = useTranslation();
-  const [variant, setVariant] = useState<L2Variant>('tree');
 
   const d = domainById(domainId)!;
   const templates = byDomain[domainId] ?? [];
@@ -34,19 +29,9 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <button onClick={onBack} className="inline-flex items-center gap-1.5 typo-body text-foreground opacity-70 hover:opacity-100">
-          <ChevronLeft className="w-4 h-4" /> All domains
-        </button>
-        <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40">
-          {([['tree', 'Capability Tree', ListTree], ['shelf', 'Unified Shelf', LayoutGrid]] as const).map(([id, label, Icon]) => (
-            <button key={id} onClick={() => setVariant(id)}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption transition-colors ${variant === id ? 'bg-primary/15 text-primary' : 'text-foreground opacity-70 hover:opacity-100'}`}>
-              <Icon className="w-3.5 h-3.5" /> {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <button onClick={onBack} className="inline-flex items-center gap-1.5 typo-body text-foreground opacity-70 hover:opacity-100">
+        <ChevronLeft className="w-4 h-4" /> All domains
+      </button>
 
       {/* Illustrated header */}
       <div className="relative rounded-modal border border-primary/10 overflow-hidden p-5 flex items-center" style={{ minHeight: 92 }}>
@@ -60,13 +45,7 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
         </div>
       </div>
 
-      <div className="inline-flex items-center gap-2 typo-caption text-foreground opacity-55">
-        <FlaskConical className="w-3 h-3" /> Level-2 prototype — comparing two templates/recipes layouts
-      </div>
-
-      {variant === 'tree'
-        ? <CapabilityTree templates={templates} recipes={recipes} accent={d.color} onSelect={onSelect} onSelectRecipe={onSelectRecipe} />
-        : <UnifiedShelf templates={templates} recipes={recipes} accent={d.color} onSelect={onSelect} onSelectRecipe={onSelectRecipe} />}
+      <DomainTable templates={templates} recipes={recipes} accent={d.color} onSelect={onSelect} onSelectRecipe={onSelectRecipe} />
     </div>
   );
 }
