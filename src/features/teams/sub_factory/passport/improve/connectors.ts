@@ -4,6 +4,7 @@
 // serviceTypes mirror the connector catalog categories; kept as explicit lists so
 // it works offline. `bindField` says which DevProject credential slot to set.
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import { BUILTIN_CONNECTORS } from '@/lib/credentials/builtinConnectors';
 import type { AppPassport } from '../passportModel';
 
 export interface ConnectorSpec {
@@ -27,7 +28,7 @@ const MONITORING_SERVICE_TYPES = [
 // LLM-observability / tracing platforms — distinct vault category from app
 // monitoring (bound to its own DevProject slot).
 const LLM_TRACKING_SERVICE_TYPES = [
-  'langfuse', 'helicone', 'langsmith', 'arize', 'phoenix', 'braintrust',
+  'langfuse', 'helicone', 'langsmith', 'tracklight', 'arize', 'phoenix', 'braintrust',
   'portkey', 'wandb', 'weights_and_biases', 'lunary', 'langwatch', 'openllmetry',
   'posthog_llm', 'traceloop', 'baseten',
 ];
@@ -97,4 +98,32 @@ export function connectorSpecFor(rowKey: string): ConnectorSpec | null {
 export function candidateCredentials(creds: PersonaCredential[], spec: ConnectorSpec): PersonaCredential[] {
   const set = new Set(spec.serviceTypes);
   return creds.filter((c) => set.has(c.serviceType.toLowerCase()));
+}
+
+/** A catalog tool the row can wire — a builtin connector whose name the spec accepts. */
+export interface CatalogTool {
+  /** Connector name — also the credential serviceType we match on. */
+  name: string;
+  label: string;
+  color: string;
+  iconUrl: string | null;
+}
+
+/**
+ * The supported tools for a row, drawn from the builtin connector catalog:
+ * every connector whose `name` is one of the spec's accepted serviceTypes.
+ * Drives the icon grid in ConnectorSection — deduped, catalog order preserved.
+ * Because we match on `name`, an icon here is always an actually-addable tool.
+ */
+export function catalogToolsFor(spec: ConnectorSpec): CatalogTool[] {
+  const set = new Set(spec.serviceTypes.map((s) => s.toLowerCase()));
+  const seen = new Set<string>();
+  const tools: CatalogTool[] = [];
+  for (const c of BUILTIN_CONNECTORS) {
+    const key = c.name.toLowerCase();
+    if (!set.has(key) || seen.has(key)) continue;
+    seen.add(key);
+    tools.push({ name: c.name, label: c.label ?? c.name, color: c.color ?? '#6B7280', iconUrl: c.icon_url ?? null });
+  }
+  return tools;
 }

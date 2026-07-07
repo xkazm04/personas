@@ -1,0 +1,61 @@
+{
+  "id": "builtin-langfuse",
+  "name": "langfuse",
+  "label": "Langfuse",
+  "color": "#0A60FF",
+  "icon_url": "/icons/connectors/langfuse.svg",
+  "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "ai"
+  ],
+  "fields": [
+    {
+      "key": "public_key",
+      "label": "Public Key",
+      "type": "text",
+      "required": true,
+      "placeholder": "pk-lf-...",
+      "helpText": "From Langfuse -> Settings -> API Keys. The pk-lf-... value.",
+      "sensitive": false
+    },
+    {
+      "key": "secret_key",
+      "label": "Secret Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "sk-lf-...",
+      "helpText": "From Langfuse -> Settings -> API Keys, paired with the public key. The sk-lf-... value.",
+      "sensitive": true
+    },
+    {
+      "key": "host",
+      "label": "Host",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://cloud.langfuse.com",
+      "helpText": "Defaults to EU cloud (cloud.langfuse.com). Use https://us.cloud.langfuse.com for US, or your self-hosted URL.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{host|https://cloud.langfuse.com}}/api/public/projects",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Basic {{base64(public_key:secret_key)}}"
+    },
+    "description": "Validates the public/secret key pair via the projects endpoint (Basic auth)"
+  },
+  "services": [],
+  "events": [],
+  "resources": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Langfuse open-source LLM engineering platform — tracing, evals, prompt management, and cost/latency analytics for LLM apps.",
+    "auth_type": "basic_api_token",
+    "auth_type_label": "Key Pair",
+    "docs_url": "https://langfuse.com/docs/api",
+    "setup_guide": "1. Open Langfuse (cloud.langfuse.com or your self-hosted instance) and select your project\n2. Go to Settings -> API Keys\n3. Click 'Create new API keys'\n4. Copy the Public Key (pk-lf-...) and Secret Key (sk-lf-...)\n5. Paste both here, and set Host if you use US cloud or self-hosting",
+    "pricing_tier": "freemium"
+  }
+}

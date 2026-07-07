@@ -145,6 +145,12 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   uptime_robot:       { label: 'Uptime Robot',       color: '#3BD671', iconUrl: '/icons/connectors/uptimerobot.svg',                    Icon: MonitorCheck },
   snyk:               { label: 'Snyk',               color: '#4C4A73', iconUrl: 'https://cdn.simpleicons.org/snyk/f0f0f0',             Icon: Shield },
 
+  // -- LLM Observability -----------------------------------------
+  langfuse:           { label: 'Langfuse',           color: '#0A60FF', iconUrl: '/icons/connectors/langfuse.svg',                     Icon: Activity },
+  helicone:           { label: 'Helicone',           color: '#F1A208', iconUrl: '/icons/connectors/helicone.svg',                     Icon: Activity },
+  langsmith:          { label: 'LangSmith',          color: '#1C3C3C', iconUrl: '/icons/connectors/langsmith.svg',                    Icon: Activity },
+  tracklight:         { label: 'LightTrack',         color: '#0EA5E9', iconUrl: '/icons/connectors/tracklight.svg',                   Icon: Activity },
+
   // -- Analytics -------------------------------------------------
   mixpanel:           { label: 'Mixpanel',           color: '#7856FF', iconUrl: 'https://cdn.simpleicons.org/mixpanel/7856FF',         Icon: BarChart3 },
   posthog:            { label: 'PostHog',            color: '#1D4AFF', iconUrl: 'https://cdn.simpleicons.org/posthog/1D4AFF',          Icon: BarChart },

@@ -1,0 +1,52 @@
+{
+  "id": "builtin-langsmith",
+  "name": "langsmith",
+  "label": "LangSmith",
+  "color": "#1C3C3C",
+  "icon_url": "/icons/connectors/langsmith.svg",
+  "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "ai"
+  ],
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "lsv2_pt_...",
+      "helpText": "From LangSmith -> Settings -> API Keys. The lsv2_... value. Sent as the x-api-key header.",
+      "sensitive": true
+    },
+    {
+      "key": "base_url",
+      "label": "API URL",
+      "type": "url",
+      "required": false,
+      "placeholder": "https://api.smith.langchain.com",
+      "helpText": "Defaults to US (api.smith.langchain.com). Use https://eu.api.smith.langchain.com for the EU region, or your self-hosted URL.",
+      "sensitive": false
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|https://api.smith.langchain.com}}/sessions?limit=1",
+    "method": "GET",
+    "headers": {
+      "x-api-key": "{{api_key}}"
+    },
+    "description": "Validates the API key via the tracing projects (sessions) endpoint"
+  },
+  "services": [],
+  "events": [],
+  "resources": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "LangSmith (by LangChain) LLM tracing, evaluation, and monitoring — inspect runs, datasets, and prompts for LLM and agent apps.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.smith.langchain.com/reference/api",
+    "setup_guide": "1. Sign in at smith.langchain.com\n2. Click your profile -> Settings -> API Keys\n3. Click 'Create API Key' (Personal Access Token) and copy the lsv2_... value\n4. Paste it here; set API URL if you use the EU region or self-hosting",
+    "pricing_tier": "freemium"
+  }
+}

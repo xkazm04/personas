@@ -1,0 +1,52 @@
+{
+  "id": "builtin-tracklight",
+  "name": "tracklight",
+  "label": "LightTrack",
+  "color": "#0EA5E9",
+  "icon_url": "/icons/connectors/tracklight.svg",
+  "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "ai"
+  ],
+  "fields": [
+    {
+      "key": "base_url",
+      "label": "Server URL",
+      "type": "url",
+      "required": true,
+      "placeholder": "http://localhost:8787",
+      "helpText": "Where your self-hosted LightTrack API is reachable. Defaults to http://localhost:8787 (override with LIGHTTRACK_BIND). Use your Cloud Run / server URL for a hosted deployment.",
+      "sensitive": false
+    },
+    {
+      "key": "api_key",
+      "label": "Project API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "lt_...",
+      "helpText": "A per-project ingest/query key (lt_<prefix>_<secret>). Create one with `lt keys create` or the admin key. Sent as an Authorization: Bearer header.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "{{base_url|http://localhost:8787}}/health",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}"
+    },
+    "description": "Validates the server is reachable via the /health endpoint (returns ok)"
+  },
+  "services": [],
+  "events": [],
+  "resources": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "LightTrack self-hosted LLM observability + scoring — track calls, cost, and profit across OpenAI/Anthropic/Gemini, with LLM-as-judge benchmarks and per-project limits.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://github.com/xkazm04/tracklight",
+    "setup_guide": "1. Run the LightTrack API (docker run -p 8787:8787 ghcr.io/xkazm04/tracklight, or cargo build --release && lighttrack-api)\n2. Confirm it is up: curl localhost:8787/health -> ok\n3. Create a project API key (lt keys create, or the /onboard flow) — it looks like lt_<prefix>_<secret>\n4. Paste your server URL and the API key here",
+    "pricing_tier": "free"
+  }
+}
