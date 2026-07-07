@@ -94,6 +94,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype-shared-events — /prototype: table variants of Marketplace + per-row event-history modal (session opus-4-8[1m])
+- Started: 2026-07-07. Status: started. Branch: worktree-prototype-shared-events (worktree `.claude/worktrees/prototype-shared-events`, node_modules junctioned).
+- Paths: src/features/triggers/sub_shared/SharedEventsTab.tsx + SharedEventsTab*Variant*.tsx (variant siblings) + sub_shared/EventHistoryModal.tsx (NEW), src-tauri/src/commands/communication/shared_events.rs + db/repos/communication/shared_events.rs + db/models/shared_event.rs (read-only shared_events_list_firings command), src-tauri/src/lib.rs (handler), src/api/events/sharedEvents.ts, src/lib/bindings/** (regen), .claude/active-runs.md.
+- Note: /prototype workflow — two directional TABLE variants of the Marketplace (UnifiedTable-based, mirrors EventLogList quality bar) behind a tab switcher; per-row action icon opens a DetailModal event-history log (baked firings via new read-only command). Scoped to sub_shared + a small read command; does NOT touch the local-relay/seed pipeline shipped in eed70db98.
+
 ### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
 - Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
