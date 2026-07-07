@@ -28,6 +28,19 @@ don't inject yet; unsupported types (`source_definition`/`connector_ref`/
 `list[string]`) skipped in v1. The historical investigation that motivated this
 approach follows.
 
+## Deferred items
+
+- **Seed-data mojibake in recipe `input_schema` descriptions.** Several recipes'
+  `input_schema[].description` fields carry a mis-encoded em-dash (UTF-8 `E2 80 94`
+  stored as the cp1252 `â€"` triple) — e.g. *Contract Intake and Analysis*'s
+  `contract_types` description. The parameterization code copies descriptions
+  verbatim, so the mojibake surfaces in the derived `persona.parameters` and the
+  synthesized `## Capability Parameters` block. This is a **source seed-data**
+  issue (present in the stored recipe rows, not introduced by the bridge). Fix is
+  a one-off scrub pass over `scripts/**` recipe seeds + a re-seed, ideally with a
+  guard in the seed loader that rejects cp1252-mangled UTF-8. Tracked separately;
+  low urgency (cosmetic, descriptions only).
+
 ## ⚠️ 2026-07 investigation correction (motivated the Phase 1 design above)
 
 An attempt to start "step 1" (bindings-from-input_schema) instead **disproved

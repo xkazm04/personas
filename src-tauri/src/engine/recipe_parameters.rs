@@ -67,8 +67,47 @@ fn humanize(name: &str) -> String {
     }
 }
 
-/// Derive tunable params from every use case's `input_schema`, grouped by
-/// capability. Unsupported field types are skipped (logged at debug).
+/// Parse an `input_schema` array (`[{name,type,default,options,min,max,description}]`)
+/// into `DerivedParam`s, skipping unsupported field types. Shared by the typed
+/// (promote) and raw-JSON (instant_adopt / catalog sync) derive entrypoints.
+fn params_from_schema(schema: &[serde_json::Value]) -> Vec<DerivedParam> {
+    let mut params = Vec::new();
+    for f in schema {
+        let Some(name) = f.get("name").and_then(|v| v.as_str()) else {
+            continue;
+        };
+        let raw_type = f.get("type").and_then(|v| v.as_str()).unwrap_or("string");
+        let Some(pt) = map_param_type(raw_type) else {
+            tracing::debug!(
+                field = name,
+                ty = raw_type,
+                "recipe_parameters: skipping unsupported input_schema type"
+            );
+            continue;
+        };
+        params.push(DerivedParam {
+            key: name.to_string(),
+            label: humanize(name),
+            param_type: pt.to_string(),
+            default: f.get("default").cloned().unwrap_or(serde_json::Value::Null),
+            description: f
+                .get("description")
+                .and_then(|v| v.as_str())
+                .map(str::to_string),
+            options: f.get("options").and_then(|v| v.as_array()).map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(str::to_string))
+                    .collect()
+            }),
+            min: f.get("min").and_then(|v| v.as_f64()),
+            max: f.get("max").and_then(|v| v.as_f64()),
+        });
+    }
+    params
+}
+
+/// Derive tunable params from every typed use case's `input_schema`, grouped by
+/// capability. Used on the promote path where use cases are `AgentIrUseCase`.
 pub fn derive_capability_params(use_cases: &[AgentIrUseCase]) -> Vec<CapabilityParams> {
     let mut out = Vec::new();
     for uc in use_cases {
@@ -78,41 +117,39 @@ pub fn derive_capability_params(use_cases: &[AgentIrUseCase]) -> Vec<CapabilityP
         let Some(schema) = d.input_schema.as_ref().and_then(|v| v.as_array()) else {
             continue;
         };
-        let mut params = Vec::new();
-        for f in schema {
-            let Some(name) = f.get("name").and_then(|v| v.as_str()) else {
-                continue;
-            };
-            let raw_type = f.get("type").and_then(|v| v.as_str()).unwrap_or("string");
-            let Some(pt) = map_param_type(raw_type) else {
-                tracing::debug!(
-                    field = name,
-                    ty = raw_type,
-                    "recipe_parameters: skipping unsupported input_schema type"
-                );
-                continue;
-            };
-            params.push(DerivedParam {
-                key: name.to_string(),
-                label: humanize(name),
-                param_type: pt.to_string(),
-                default: f.get("default").cloned().unwrap_or(serde_json::Value::Null),
-                description: f
-                    .get("description")
-                    .and_then(|v| v.as_str())
-                    .map(str::to_string),
-                options: f.get("options").and_then(|v| v.as_array()).map(|a| {
-                    a.iter()
-                        .filter_map(|v| v.as_str().map(str::to_string))
-                        .collect()
-                }),
-                min: f.get("min").and_then(|v| v.as_f64()),
-                max: f.get("max").and_then(|v| v.as_f64()),
-            });
-        }
+        let params = params_from_schema(schema);
         if !params.is_empty() {
             out.push(CapabilityParams {
                 capability_title: d.title.clone().unwrap_or_else(|| "Capability".to_string()),
+                params,
+            });
+        }
+    }
+    out
+}
+
+/// Derive tunable params from raw-JSON use-case values, grouped by capability.
+/// Used where use cases live as untyped `serde_json::Value` — the instant_adopt
+/// `design["use_cases"]` array and a persona's persisted
+/// `design_context.useCases`. Reads each object's `title`/`name` + `input_schema`.
+pub fn derive_capability_params_from_values(
+    use_cases: &[serde_json::Value],
+) -> Vec<CapabilityParams> {
+    let mut out = Vec::new();
+    for uc in use_cases {
+        let Some(schema) = uc.get("input_schema").and_then(|v| v.as_array()) else {
+            continue;
+        };
+        let params = params_from_schema(schema);
+        if !params.is_empty() {
+            let title = uc
+                .get("title")
+                .or_else(|| uc.get("name"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("Capability")
+                .to_string();
+            out.push(CapabilityParams {
+                capability_title: title,
                 params,
             });
         }
@@ -178,6 +215,66 @@ pub fn to_parameter_values(caps: &[CapabilityParams]) -> Vec<serde_json::Value> 
     out
 }
 
+/// The H2 marker that opens the synthesized section. Used both to render and to
+/// strip a prior copy so re-injection is idempotent.
+const SECTION_MARKER: &str = "## Capability Parameters";
+
+/// Merge derived recipe params UNDER an existing `persona.parameters` set:
+/// existing keys win (template-authored or user-tuned), new derived keys are
+/// appended in order. Idempotent — re-deriving the same recipe adds nothing.
+pub fn merge_persona_parameters(
+    existing: &[serde_json::Value],
+    derived: &[serde_json::Value],
+) -> Vec<serde_json::Value> {
+    let mut keys: std::collections::HashSet<String> = existing
+        .iter()
+        .filter_map(|p| p.get("key").and_then(|v| v.as_str()).map(str::to_string))
+        .collect();
+    let mut out = existing.to_vec();
+    for d in derived {
+        if let Some(k) = d.get("key").and_then(|v| v.as_str()) {
+            if keys.insert(k.to_string()) {
+                out.push(d.clone());
+            }
+        }
+    }
+    out
+}
+
+/// Remove any previously-injected `## Capability Parameters` block from an
+/// instructions string (from its H2 marker to the next H2 or end of string),
+/// so a fresh section can be appended without stacking duplicates.
+fn strip_parameters_section(instructions: &str) -> String {
+    let Some(pos) = instructions.find(SECTION_MARKER) else {
+        return instructions.to_string();
+    };
+    let after = pos + SECTION_MARKER.len();
+    // The block runs until the next markdown H2 (`\n## `) or the end.
+    let tail = instructions[after..]
+        .find("\n## ")
+        .map(|rel| &instructions[after + rel + 1..])
+        .unwrap_or("");
+    let head = instructions[..pos].trim_end();
+    if tail.is_empty() {
+        head.to_string()
+    } else if head.is_empty() {
+        tail.to_string()
+    } else {
+        format!("{head}\n\n{tail}")
+    }
+}
+
+/// Idempotently apply the capability-parameters section to an instructions
+/// string: strip any prior copy, then append the freshly-rendered block. With
+/// no params it just strips (used when a capability was removed).
+pub fn apply_to_instructions(instructions: &str, caps: &[CapabilityParams]) -> String {
+    let base = strip_parameters_section(instructions);
+    match render_parameters_section(caps) {
+        Some(section) => format!("{}{}", base.trim_end(), section),
+        None => base,
+    }
+}
+
 /// Build the `## Capability Parameters` markdown block that references
 /// `{{param.<key>}}`, grouped by capability. `None` when there are no params.
 pub fn render_parameters_section(caps: &[CapabilityParams]) -> Option<String> {
@@ -213,25 +310,37 @@ pub fn render_parameters_section(caps: &[CapabilityParams]) -> Option<String> {
 /// `system_prompt` only when there is no structured prompt. No-op when there
 /// are no derived params.
 pub fn inject_capability_parameters_section(ir: &mut AgentIr, caps: &[CapabilityParams]) {
-    let Some(section) = render_parameters_section(caps) else {
+    if caps.iter().all(|c| c.params.is_empty()) {
+        return;
+    }
+    if let Some(obj) = ir.structured_prompt.as_mut().and_then(|v| v.as_object_mut()) {
+        let existing = obj.get("instructions").and_then(|v| v.as_str()).unwrap_or("");
+        let updated = apply_to_instructions(existing, caps);
+        obj.insert("instructions".to_string(), serde_json::Value::String(updated));
+        return;
+    }
+    let existing = ir.system_prompt.as_deref().unwrap_or("");
+    ir.system_prompt = Some(apply_to_instructions(existing, caps));
+}
+
+/// Inject the section into a bare `structured_prompt` JSON value's
+/// `instructions` field (idempotently). For paths that hold the persona's
+/// structured prompt as untyped JSON rather than a typed `AgentIr` — the
+/// instant_adopt pipeline and the catalog `sync_capability_parameters` command.
+/// No-op if the value isn't a JSON object. When `caps` is empty this strips any
+/// prior section (so removing a capability drops its lines).
+pub fn inject_into_structured_prompt(sp: &mut serde_json::Value, caps: &[CapabilityParams]) {
+    let Some(obj) = sp.as_object_mut() else {
         return;
     };
-    if let Some(obj) = ir.structured_prompt.as_mut().and_then(|v| v.as_object_mut()) {
-        let existing = obj
-            .get("instructions")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        obj.insert(
-            "instructions".to_string(),
-            serde_json::Value::String(format!("{existing}{section}")),
-        );
+    let existing = obj.get("instructions").and_then(|v| v.as_str()).unwrap_or("");
+    // Skip a pure no-op (no params and nothing to strip) so we don't add an
+    // empty `instructions` key to a structured prompt that lacked one.
+    if caps.iter().all(|c| c.params.is_empty()) && !existing.contains(SECTION_MARKER) {
         return;
     }
-    match ir.system_prompt.as_mut() {
-        Some(p) => p.push_str(&section),
-        None => ir.system_prompt = Some(section),
-    }
+    let updated = apply_to_instructions(existing, caps);
+    obj.insert("instructions".to_string(), serde_json::Value::String(updated));
 }
 
 #[cfg(test)]
@@ -347,5 +456,79 @@ mod tests {
         .unwrap();
         inject_capability_parameters_section(&mut ir, &[]);
         assert_eq!(ir.system_prompt.as_deref(), Some("sp"));
+    }
+
+    #[test]
+    fn derives_from_raw_json_use_cases() {
+        let ucs = vec![
+            json!({"title": "Contract Intake", "input_schema": [
+                {"name": "risk_tolerance", "type": "enum", "options": ["low", "high"], "default": "low"}
+            ]}),
+            json!({"name": "No Schema Cap"}), // no input_schema → skipped
+        ];
+        let caps = derive_capability_params_from_values(&ucs);
+        assert_eq!(caps.len(), 1);
+        assert_eq!(caps[0].capability_title, "Contract Intake");
+        assert_eq!(caps[0].params[0].key, "risk_tolerance");
+        assert_eq!(caps[0].params[0].param_type, "select");
+    }
+
+    #[test]
+    fn reinjection_is_idempotent_no_duplicate_block() {
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Cap", "input_schema": [{"name": "k", "type": "number", "default": 1}]
+        })]);
+        let once = apply_to_instructions("Base.", &caps);
+        let twice = apply_to_instructions(&once, &caps);
+        assert_eq!(once, twice, "re-applying must not stack a second block");
+        assert_eq!(twice.matches(SECTION_MARKER).count(), 1);
+        assert!(twice.starts_with("Base."));
+        assert!(twice.contains("{{param.k}}"));
+    }
+
+    #[test]
+    fn strip_removes_block_and_preserves_following_heading() {
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Cap", "input_schema": [{"name": "k", "type": "number", "default": 1}]
+        })]);
+        let with = apply_to_instructions("Intro text.\n\n## Examples\nfoo", &caps);
+        // Section was inserted at end (after the Examples heading in this input);
+        // stripping it must leave the Examples heading intact.
+        let stripped = apply_to_instructions(&with, &[]);
+        assert!(!stripped.contains(SECTION_MARKER));
+        assert!(stripped.contains("## Examples"));
+        assert!(stripped.contains("Intro text."));
+    }
+
+    #[test]
+    fn merge_existing_wins_and_appends_new() {
+        let existing = vec![json!({"key": "risk_tolerance", "label": "Template Risk", "type": "string", "value": "high"})];
+        let derived = vec![
+            json!({"key": "risk_tolerance", "label": "Derived Risk", "type": "select", "value": "low"}),
+            json!({"key": "contract_types", "label": "Contract types", "type": "string", "value": ""}),
+        ];
+        let merged = merge_persona_parameters(&existing, &derived);
+        assert_eq!(merged.len(), 2);
+        // Existing key preserved verbatim (template wins).
+        assert_eq!(merged[0]["label"], json!("Template Risk"));
+        assert_eq!(merged[0]["value"], json!("high"));
+        // New derived key appended.
+        assert_eq!(merged[1]["key"], json!("contract_types"));
+    }
+
+    #[test]
+    fn inject_into_structured_prompt_value_is_idempotent() {
+        let caps = derive_capability_params_from_values(&[json!({
+            "title": "Cap", "input_schema": [{"name": "k", "type": "string", "default": "v"}]
+        })]);
+        let mut sp = json!({"identity": "id", "instructions": "Do the thing."});
+        inject_into_structured_prompt(&mut sp, &caps);
+        inject_into_structured_prompt(&mut sp, &caps);
+        let instr = sp["instructions"].as_str().unwrap();
+        assert_eq!(instr.matches(SECTION_MARKER).count(), 1);
+        assert!(instr.starts_with("Do the thing."));
+        // Empty caps strips it back out.
+        inject_into_structured_prompt(&mut sp, &[]);
+        assert!(!sp["instructions"].as_str().unwrap().contains(SECTION_MARKER));
     }
 }
