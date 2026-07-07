@@ -382,32 +382,7 @@ pub(super) async fn run_session(
         // Turn 0: send the full system prompt.
         // Turn 1+: send only a concise follow-up — session context is preserved via --continue.
         let turn_prompt: Arc<str> = if turn == 0 {
-            // B1 identity-first (interactive only): the LLM otherwise front-loads
-            // behavior_core + capabilities + the clarifying question into a single
-            // ~50-155s turn, so the frontend (Cinema loading experience) sees NO
-            // real data until it all bursts at the end. Scoping turn 0 to Phase A
-            // makes the LLM return after ~15s with just the behavior_core, which
-            // the runner's existing per-turn emission streams to the UI early —
-            // capabilities + questions then follow in turn 1. Best case the real
-            // persona identity (mission/role/voice) lands ~15s in; worst case the
-            // LLM ignores the scope and emits everything anyway (== today, no
-            // regression). Skipped for one-shot/headless builds — no UI is
-            // watching, so the extra round would only add latency.
-            if one_shot {
-                Arc::clone(&initial_prompt)
-            } else {
-                format!(
-                    "{initial_prompt}\n\n## THIS TURN — PHASE A ONLY (identity first)\n\
-                     Emit ONLY the `behavior_core` event for this intent right now \
-                     (or, if the intent is too vague to commit to a mission, exactly \
-                     ONE mission-scope `clarifying_question`). Do NOT enumerate or \
-                     resolve capabilities yet, and do NOT emit `agent_ir`. Emit that \
-                     one JSON object, then STOP — you will be asked to continue with \
-                     capability enumeration next turn.",
-                    initial_prompt = initial_prompt,
-                )
-                .into()
-            }
+            Arc::clone(&initial_prompt)
         } else {
             // v3 capability-framework follow-up: --continue preserves the full
             // prior conversation, so the LLM already knows its progress. We
