@@ -9,6 +9,7 @@ import { GeneratedReviewsTab } from '@/features/templates/sub_generated';
 import N8nImportTab from '@/features/templates/sub_n8n/steps/N8nImportTab';
 import { RecipesPage } from '@/features/templates/sub_recipes';
 import { PresetLibraryPage } from '@/features/templates/sub_presets';
+import ExploreView from '@/features/templates/sub_explore/ExploreView';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import ActivityDiagramModal from '@/features/templates/sub_diagrams/ActivityDiagramModal';
 import type { PersonaDesignReview } from '@/lib/bindings/PersonaDesignReview';
@@ -76,6 +77,11 @@ export default function DesignReviewsPage() {
               onViewFlows={setDiagramReview}
               onTotalChange={setGalleryTotal}
             />
+          )}
+          {activeTab === 'explore' && (
+            <ErrorBoundary name="Explore">
+              <ExploreView />
+            </ErrorBoundary>
           )}
           {activeTab === 'recipes' && (
             <ErrorBoundary name="Recipes">
