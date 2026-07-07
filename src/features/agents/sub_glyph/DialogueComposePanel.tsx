@@ -8,13 +8,15 @@
  *  streamed behavior_core) syncing into a header above the brief. The plain
  *  Dialogue variant only ever renders it unlocked.
  */
-import type { KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Sparkles, Check, Loader2 } from "lucide-react";
+import { Send, Sparkles, Check, Loader2, ChevronRight } from "lucide-react";
 import { InteractiveSigil } from "@/features/shared/glyph";
 import { useTranslation } from "@/i18n/useTranslation";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
+import type { RecipeDefinition } from "@/lib/bindings/RecipeDefinition";
+import { RecipeAlternativeModal } from "./RecipeAlternativeModal";
 import type { useComposeConfig, ComposeConfigItem } from "./useComposeConfig";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -41,6 +43,7 @@ export function DialogueComposePanel({
   intentText, onIntentChange, onLaunch, launchDisabled, cfg, starters, locked = false, syncRole = null, syncMission = null,
 }: DialogueComposePanelProps) {
   const { t } = useTranslation();
+  const [openRecipe, setOpenRecipe] = useState<RecipeMatch | null>(null);
 
   const onKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -49,12 +52,20 @@ export function DialogueComposePanel({
     }
   };
 
+  // Select-as-alternative: seed the intent from the chosen recipe so the build
+  // starts from its proven shape. Prefer the description; fall back to the name.
+  const selectRecipeAlternative = (recipe: RecipeDefinition) => {
+    const seed = (recipe.description?.trim() || recipe.name).trim();
+    if (seed) onIntentChange(seed);
+  };
+
   const chips = cfg.items.filter((i) => i.kind !== "input");
   const activeItems = cfg.items.filter((i) => i.active && i.dim !== "task");
   const topStarter = starters[0] ?? null;
   const hasSync = locked && !!(syncRole || syncMission);
 
   return (
+    <>
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
@@ -133,11 +144,11 @@ export function DialogueComposePanel({
                 >
                   <span className="typo-label text-foreground flex items-center gap-1.5">
                     <Sparkles className="w-3 h-3 text-primary" />
-                    {locked ? "Building on recipe" : "Closest existing recipes"}
+                    {locked ? "Building on recipe" : "Closest existing recipes — tap for a faster path"}
                   </span>
                   <div className="flex flex-col gap-1.5">
                     {(locked ? starters.slice(0, 1) : starters.slice(0, 3)).map((m) => (
-                      <StarterRow key={m.recipe_id} match={m} />
+                      <StarterRow key={m.recipe_id} match={m} onOpen={locked ? undefined : () => setOpenRecipe(m)} />
                     ))}
                   </div>
                 </motion.div>
@@ -192,42 +203,39 @@ export function DialogueComposePanel({
             </div>
           </>
         )}
-        {/* Locked: chips collapse to a static summary of what's set. */}
-        {locked && activeItems.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {activeItems.map((item) => (
-              <span
-                key={item.dim}
-                className="inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-interactive border"
-                style={{ borderColor: colorWithAlpha(item.color, 0.4), background: colorWithAlpha(item.color, 0.13) }}
-              >
-                <Check className="w-3 h-3" style={{ color: item.color }} />
-                <span className="typo-caption text-foreground">{item.label}</span>
-              </span>
-            ))}
+        {/* Locked: the dimensions stay on screen in view mode — visible but not
+            interactive while the build runs. */}
+        {locked && (
+          <div className="flex flex-col gap-2">
+            <span className="typo-label text-foreground">Dimensions · view only while building</span>
+            <div className="flex flex-wrap gap-2 pointer-events-none">
+              {chips.map((item, i) => (
+                <DialogueChip key={item.dim} item={item} index={i} disabled />
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Forming-persona rail (compose only) ─────────────────────── */}
-      {!locked && (
-        <div className="hidden lg:flex w-[300px] shrink-0 flex-col items-center gap-3">
-          <div className="relative" style={{ width: 260, height: 260 }}>
-            <InteractiveSigil
-              row={cfg.formingRow}
-              rowIndex={0}
-              hoveredDim={null}
-              activeDim={null}
-              onHover={() => {}}
-              onClick={(dim) => {
-                const it = cfg.items.find((x) => x.dim === dim);
-                if (it && it.kind !== "input") it.onClick();
-              }}
-              size={260}
-            />
-          </div>
-          <div className="w-full rounded-card border border-border/20 bg-foreground/[0.03] p-3">
-            <span className="typo-label text-foreground">Blueprint</span>
+      {/* ── Forming-persona rail — interactive in compose, view-only while
+          building (the sigil + blueprint stay on screen, just not clickable). ── */}
+      <div className={`hidden lg:flex w-[300px] shrink-0 flex-col items-center gap-3 ${locked ? "opacity-95" : ""}`}>
+        <div className={`relative ${locked ? "pointer-events-none" : ""}`} style={{ width: 260, height: 260 }}>
+          <InteractiveSigil
+            row={cfg.formingRow}
+            rowIndex={0}
+            hoveredDim={null}
+            activeDim={null}
+            onHover={() => {}}
+            onClick={locked ? () => {} : (dim) => {
+              const it = cfg.items.find((x) => x.dim === dim);
+              if (it && it.kind !== "input") it.onClick();
+            }}
+            size={260}
+          />
+        </div>
+        <div className="w-full rounded-card border border-border/20 bg-foreground/[0.03] p-3">
+          <span className="typo-label text-foreground">{locked ? "Blueprint · view" : "Blueprint"}</span>
             <div className="mt-2 flex flex-col gap-1.5 min-h-[2rem]">
               <AnimatePresence mode="popLayout">
                 {activeItems.length === 0 ? (
@@ -255,8 +263,17 @@ export function DialogueComposePanel({
             </div>
           </div>
         </div>
-      )}
     </motion.div>
+    {openRecipe && (
+      <RecipeAlternativeModal
+        recipeId={openRecipe.recipe_id}
+        recipeName={openRecipe.recipe_name}
+        matchScore={openRecipe.score}
+        onClose={() => setOpenRecipe(null)}
+        onSelect={selectRecipeAlternative}
+      />
+    )}
+    </>
   );
 }
 
@@ -275,16 +292,17 @@ export function ThreadLine({ children, delay = 0 }: { children: React.ReactNode;
   );
 }
 
-function DialogueChip({ item, index }: { item: ComposeConfigItem; index: number }) {
+function DialogueChip({ item, index, disabled = false }: { item: ComposeConfigItem; index: number; disabled?: boolean }) {
   const Icon = item.icon;
   return (
     <motion.button
       type="button"
-      onClick={item.onClick}
+      onClick={disabled ? undefined : item.onClick}
+      disabled={disabled}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, ease: EASE, delay: 0.24 + index * 0.03 }}
-      className="group inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-interactive border transition-colors cursor-pointer"
+      className={`group inline-flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-interactive border transition-colors ${disabled ? "cursor-default" : "cursor-pointer"}`}
       style={{
         borderColor: item.active ? `${item.color}66` : "rgba(255,255,255,0.12)",
         background: item.active ? `${item.color}22` : "rgba(255,255,255,0.03)",
@@ -305,15 +323,29 @@ function DialogueChip({ item, index }: { item: ComposeConfigItem; index: number 
   );
 }
 
-function StarterRow({ match }: { match: RecipeMatch }) {
+function StarterRow({ match, onOpen }: { match: RecipeMatch; onOpen?: () => void }) {
   const pct = Math.round(match.score * 100);
-  return (
-    <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-border/20 bg-foreground/[0.02]">
-      <span className="typo-body text-foreground flex-1 truncate">{match.recipe_name}</span>
+  const inner = (
+    <>
+      <span className="typo-body text-foreground flex-1 truncate text-left">{match.recipe_name}</span>
       <span className="w-16 h-1.5 rounded-full bg-foreground/10 overflow-hidden shrink-0">
         <span className="block h-full rounded-full" style={{ width: `${pct}%`, background: match.above_threshold ? "var(--color-primary,#60a5fa)" : "rgba(255,255,255,0.3)" }} />
       </span>
       <span className="typo-data text-foreground tabular-nums w-9 text-right shrink-0">{pct}%</span>
-    </div>
+      {onOpen && <ChevronRight className="w-3.5 h-3.5 text-foreground shrink-0" />}
+    </>
+  );
+  if (!onOpen) {
+    return <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-border/20 bg-foreground/[0.02]">{inner}</div>;
+  }
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-border/20 bg-foreground/[0.02] hover:bg-foreground/[0.05] hover:border-primary/40 transition-colors cursor-pointer"
+      data-testid={`recipe-starter-${match.recipe_id}`}
+    >
+      {inner}
+    </button>
   );
 }

@@ -56,17 +56,18 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // conversation) and "constellation" (spatial option field) explore the
 // "combine prompt + click-config across multi-round cycles" direction against
 // the "composer-prototype" baseline. All share GlyphFullLayoutProps.
-type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "cinema" | "dialogue-cinema";
+// "glyph-full" retired as a selectable toggle (2026-07-07) — the component stays
+// as GlyphCinemaLayout's compose delegate + a safe render fallback, but it's no
+// longer offered in the switcher. "dialogue-cinema" is now the default.
+type BuildLayout = "composer-prototype" | "dialogue" | "cinema" | "dialogue-cinema";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "cinema", "dialogue-cinema"];
+const BUILD_LAYOUTS: BuildLayout[] = ["composer-prototype", "dialogue", "cinema", "dialogue-cinema"];
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
     if (raw && (BUILD_LAYOUTS as string[]).includes(raw)) return raw as BuildLayout;
-    // Migrate retired values so users don't land on a stale preference.
-    if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
   } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch1")(err); }
-  return "glyph-full";
+  return "dialogue-cinema";
 }
 function writeLayoutPreference(value: BuildLayout): void {
   try { localStorage.setItem(LAYOUT_STORAGE_KEY, value); } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch2")(err); }
@@ -770,19 +771,6 @@ export function UnifiedBuildEntry() {
           {oneShotEnabled ? "One-shot: on" : "Let AI decide everything"}
         </button>
         <div className="inline-flex rounded-full border border-border/30 bg-secondary/20 p-0.5">
-          <button
-            type="button"
-            onClick={() => handleLayoutChange("glyph-full")}
-            className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "glyph-full"
-                ? "bg-primary/20 text-primary"
-                : "text-foreground hover:text-foreground"
-            }`}
-            title={debtText("auto_glyph_full_sigil_first_flagship_build_surf_61b25b83")}
-            data-testid="build-layout-toggle-glyph-full"
-          >
-            <DebtText k="auto_glyph_full_a4abca63" />
-          </button>
           <button
             type="button"
             onClick={() => handleLayoutChange("composer-prototype")}
