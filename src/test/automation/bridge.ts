@@ -336,6 +336,23 @@ const bridge: TestBridge = {
       buildCellStates: agent.buildCellStates,
       buildActivity: agent.buildActivity,
       buildOutputLineCount: agent.buildOutputLines.length,
+      // Intermediate build signals — for the Cinema loading-timing harness.
+      // These stream in before the first question; the harness timestamps
+      // when each first appears to tune the cinema's pacing to reality.
+      buildHasCore: agent.buildBehaviorCore != null,
+      buildRole: agent.buildBehaviorCore?.identity?.role ?? null,
+      buildCapabilityCount: agent.buildCapabilityOrder?.length ?? 0,
+      buildCapabilityTitles: (agent.buildCapabilityOrder ?? [])
+        .map((id) => agent.buildCapabilities?.[id]?.title)
+        .filter((t): t is string => !!t),
+      buildConnectorCount: agent.buildPersonaResolution?.connectors?.length ?? 0,
+      buildConnectors: (agent.buildPersonaResolution?.connectors ?? []).map((c) => c.service_type || c.name),
+      buildPendingCount: agent.buildPendingQuestions?.length ?? 0,
+      buildPendingCells: (agent.buildPendingQuestions ?? []).map((q) => q.cellKey),
+      buildResolvedCellCount: Object.values(agent.buildCellStates ?? {}).filter(
+        (v) => v === "resolved" || v === "updated" || v === "highlighted",
+      ).length,
+      buildOutputTail: (agent.buildOutputLines ?? []).slice(-16),
       buildTestPassed: agent.buildTestPassed ?? null,
       buildTestError: agent.buildTestError ?? null,
       buildTestOutputLines: agent.buildTestOutputLines,

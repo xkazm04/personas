@@ -1,8 +1,14 @@
 # Refresh Codebase Context
 
-Export the `personas` project's context map from the runtime SQLite DB to a static markdown snapshot at `.claude/codebase-context.md`. This snapshot is consumed by `/research` (and other skills) for fast relevance scoring without re-scanning the codebase.
+Render the `personas` project's context map from `context-map.json` (the
+machine-readable map the app writes to the repo root on each scan) into a static
+markdown snapshot at `.claude/codebase-context.md`, then regenerate the catalogs
+file. The snapshot is consumed by `/research` (and other skills) for fast
+relevance scoring without re-scanning the codebase. Because the snapshot is a
+deterministic projection of `context-map.json`, the two cannot drift.
 
-**This skill is hardcoded to the `personas` project.** The dev_tools DB stores contexts for many codebases — this skill must never export contexts from other projects.
+**This skill is hardcoded to the `personas` project.** It reads only the repo-root
+`context-map.json`, never another project's contexts.
 
 ## When to Use
 
@@ -17,10 +23,12 @@ Export the `personas` project's context map from the runtime SQLite DB to a stat
 
 ## Constants
 
-- **DB path:** `C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db`
-- **Personas root:** `C:\Users\mkdol\dolla\personas`
+- **Source of truth:** `context-map.json` (repo root) — written by the Personas
+  app's context scan; this skill renders from it (no direct DB access).
+- **Renderer:** `scripts/context/render-codebase-context.mjs` (Node ≥20)
+- **Overrides:** `.claude/codebase-context-overrides.md` (hand-curated groups,
+  appended verbatim by the renderer)
 - **Output:** `.claude/codebase-context.md` (relative to personas repo root)
-- **SQLite CLI:** `sqlite3` (already in PATH via Android SDK platform-tools)
 
 ---
 
@@ -54,198 +62,56 @@ Per [`CLAUDE.md` → Parallel-safety primitives](../../CLAUDE.md), every CLI ses
 
 ---
 
-## Phase 1: Verify Personas Project is Registered
+## Phase 1: Verify the context map exists
 
-Run:
-```bash
-sqlite3 "C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db" \
-  "SELECT id, name FROM dev_projects WHERE root_path = 'C:\Users\mkdol\dolla\personas';"
-```
+`.claude/codebase-context.md` is now a **deterministic projection of
+`context-map.json`** — the machine-readable map the Personas app writes into
+the repo root on every scan. This skill no longer reads the SQLite DB directly
+(that path had gone stale, pointing at a different machine's home dir).
 
-**Three outcomes:**
-
-### 1a. No row returned
-The personas project has not been registered yet. Print this and stop:
-
-```
-The personas project is not yet registered in the dev_tools DB.
-
-To register and scan it:
-  1. Open the Personas app
-  2. Navigate to Plugins → Dev Tools → Codebases
-  3. Click "Add Project" and point to: C:\Users\mkdol\dolla\personas
-  4. Open the project and click "Scan Codebase"
-  5. Wait for the scan to finish (you'll see progress lines)
-  6. Re-run /refresh-context
-
-You can also use any other context-grouping flow in the app — this skill
-just needs at least one row in dev_contexts for the personas project.
-```
-
-Do not attempt to insert the project via SQL — scanning is what generates the contexts, and scanning runs via the app's Tauri command.
-
-### 1b. Row returned but no contexts exist
-Run:
-```bash
-sqlite3 "C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db" \
-  "SELECT COUNT(*) FROM dev_contexts WHERE project_id = '<id>';"
-```
-
-If `0`: print:
-```
-The personas project is registered but has no contexts yet.
-Open the app → Plugins → Dev Tools → Codebases → personas → Scan Codebase.
-Re-run /refresh-context after the scan completes.
-```
-Stop.
-
-### 1c. Row returned and contexts exist
-Continue to Phase 2.
-
----
-
-## Phase 2: Export Contexts to Markdown
-
-Query everything in one shot. Use `-separator` and structured output to keep parsing trivial.
+Check the source of truth is present:
 
 ```bash
-sqlite3 -json "C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db" "
-  SELECT
-    COALESCE(cg.name, 'Ungrouped') AS group_name,
-    COALESCE(cg.color, '#888888')   AS group_color,
-    COALESCE(cg.group_type, '')     AS group_type,
-    COALESCE(cg.position, 9999)     AS group_position,
-    c.name        AS context_name,
-    c.description AS context_description,
-    c.file_paths  AS file_paths_json,
-    c.entry_points AS entry_points_json,
-    c.keywords    AS keywords_json,
-    c.api_surface AS api_surface_json,
-    c.tech_stack  AS tech_stack_json
-  FROM dev_contexts c
-  LEFT JOIN dev_context_groups cg ON c.group_id = cg.id
-  WHERE c.project_id = '<personas_project_id>'
-  ORDER BY group_position, group_name, c.name;
-"
+test -f context-map.json && echo "ok" || echo "missing"
 ```
 
-Parse the JSON output. For each row, the `*_json` columns are JSON strings (arrays) that need a second parse.
+If missing, the personas project hasn't been scanned yet. Print this and stop:
 
----
+```
+context-map.json not found at the repo root.
 
-## Phase 3: Render the Snapshot
-
-Write `.claude/codebase-context.md` with this structure:
-
-```markdown
-# Codebase Context Snapshot — personas
-
-> Generated: {ISO-8601 UTC timestamp}
-> Source: dev_contexts table for project_id={id}
-> Total groups: {N}, Total contexts: {M}
-> Git HEAD at generation: {short-sha} ({commit-message-first-line})
->
-> **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
-> Consumed by `/research` for relevance scoring.
-
----
-
-## How to Use This File
-
-Each section below describes a feature area of the personas codebase, with:
-- **Description** — what it does
-- **Files** — paths under `personas/` that implement it
-- **Entry points** — key functions/components/routes
-- **Keywords** — searchable terms for relevance matching
-- **API surface** — external endpoints/IPC commands exposed
-- **Tech stack** — frameworks/libs used in this area
-
-When `/research` extracts an idea, it scores the idea against the keywords
-and descriptions here to find the most likely attachment point. If no group
-matches, the idea is dropped as out-of-scope.
-
----
-
-{For each group, render:}
-
-## {group_name}
-
-> **Group type:** {group_type or "—"}
-> **Color:** {group_color}
-
-### {context_name}
-
-{context_description}
-
-**Files:**
-{For each path in file_paths_json, render as: `- \`{path}\``}
-
-**Entry points:**
-{Comma-separated list from entry_points_json, or "—" if empty}
-
-**Keywords:** {comma-separated from keywords_json, or "—"}
-
-**API surface:** {from api_surface_json, or "—"}
-
-**Tech stack:** {from tech_stack_json, or "—"}
-
----
-
-{...next context...}
+To generate it:
+  1. Open the Personas app -> Plugins -> Dev Tools -> Context Map
+  2. Add/open the personas project and click "Scan Codebase" (or "Re-scan")
+  3. The scan writes context-map.json into the repo root
+  4. Re-run /refresh-context
 ```
 
-Notes:
-- Skip empty fields (don't render `**Keywords:** —` if empty — just omit the line).
-- If `file_paths_json` is empty, skip the context entirely (it has no anchor in the codebase).
-- Sort contexts within each group alphabetically by name.
-- The "Ungrouped" group always comes last regardless of position.
+Do not hand-author context-map.json — scanning is what generates it.
 
 ---
 
-## Phase 3.5: Append Hand-Curated Overrides
+## Phase 2: Render the Snapshot from context-map.json
 
-After the DB-derived groups are written and before the snapshot-meta footer is appended, check for `.claude/codebase-context-overrides.md` and append its content verbatim if present.
-
-The override file is git-tracked and contains context groups that must survive DB regeneration but are not (yet, or ever) populated by the Personas app's "Scan Codebase" feature. Examples: hand-authored taxonomy for shared/ primitives, cross-cutting layer descriptions, anything an LLM scanner would miss.
+Run the deterministic renderer. It reads `context-map.json`, renders every
+group + context to markdown, appends `.claude/codebase-context-overrides.md`
+verbatim (hand-curated groups that survive DB regeneration), and writes the
+`<!-- snapshot-meta -->` footer `/research` reads for staleness — using the
+provenance commit stamped in the JSON (falling back to live `git HEAD` when the
+JSON predates provenance stamping):
 
 ```bash
-OVERRIDES=".claude/codebase-context-overrides.md"
-if [ -f "$OVERRIDES" ]; then
-  # Append a separator + the file contents to codebase-context.md.
-  printf '\n---\n\n' >> .claude/codebase-context.md
-  cat "$OVERRIDES" >> .claude/codebase-context.md
-fi
+node scripts/context/render-codebase-context.mjs
 ```
 
-Behaviour notes:
-- If the file is missing, skip silently — overrides are optional.
-- The file content is appended **as-is**; the override file owns its own headings, banners, and HTML comments. Do not rewrite, normalize, or strip its content.
-- The leading `---` separator above mirrors the separator the renderer puts between groups in Phase 3, so the appended sections look native in `codebase-context.md`.
-- The override file's HTML comment documenting its role does not render in markdown, so it is safe to leave in the appended output.
+That single command replaces the previous hand-rendered `sqlite3` pipeline
+(old Phases 2-4). Because the markdown is a pure function of `context-map.json`,
+the two can no longer drift — the 8-vs-9-groups drift that motivated this was
+exactly two generators of the same data. Overrides are preserved: the renderer
+appends the override file as-is (it owns its own headings/HTML comments).
 
----
-
-## Phase 4: Capture Git State for Staleness Detection
-
-Append a footer to the file with git state, used by `/research` to detect drift:
-
-```bash
-git -C "C:/Users/mkdol/dolla/personas" rev-parse HEAD
-git -C "C:/Users/mkdol/dolla/personas" rev-list --count HEAD
-```
-
-Footer format:
-```markdown
----
-
-<!-- snapshot-meta
-git_head: {full-sha}
-git_commit_count: {N}
-generated_at: {ISO-8601}
--->
-```
-
-`/research` reads this footer and warns if the current `rev-list --count HEAD` exceeds `git_commit_count + 200`.
+To refresh the underlying data first, run a scan in the app (Phase 1) so
+`context-map.json` is current, then run the renderer.
 
 ---
 
@@ -413,7 +279,7 @@ Print:
 ```
 Codebase context refreshed.
 
-  Source DB:       C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db
+  Source:          context-map.json (rendered by render-codebase-context.mjs)
   Project:         personas ({project_id})
   Groups:          {N}
   Contexts:        {M} (skipped {K} with no file paths)

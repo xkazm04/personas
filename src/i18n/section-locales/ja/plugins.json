@@ -952,7 +952,11 @@
     "context_last_scanned": "最終スキャン",
     "context_plan_created": "週次コンテキストスキャンをスケジュールしました",
     "context_plan_failed": "コンテキストスキャンのスケジュール設定に失敗しました",
-    "competition_title": "競合"
+    "competition_title": "競合",
+    "context_detail_pin": "コンテキストをピン留め",
+    "context_detail_pin_failed": "ピン留めを更新できませんでした",
+    "context_detail_pin_tooltip": "ピン留めしたコンテキストは、完全な再スキャン時に再作成されずに保持されます",
+    "context_detail_unpin": "コンテキストのピン留めを解除"
   },
   "doc_signing": {
     "title": "ドキュメント署名",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "会話を切り替え",
     "thread_status_awaiting": "返信待ち",
     "thread_status_idle": "待機中",
-    "thread_status_working": "実行中"
+    "thread_status_working": "実行中",
+    "rename_conversation": "会話の名前を変更",
+    "replied_in_thread": "Athenaが{thread}で返信しました"
   },
   "ocr": {
     "title": "OCR",

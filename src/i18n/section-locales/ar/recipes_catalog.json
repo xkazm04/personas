@@ -219,5 +219,16 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" معتمدة بالفعل لدى هذا الوكيل",
+  "remove_confirm_body": "سيؤدي هذا إلى فصل \"{title}\" عن {persona}. سيتم إزالة المشغّل والإعدادات الخاصة به؛ تبقى الوصفة في الكتالوج ويمكن اعتمادها مجددًا في أي وقت.",
+  "remove_confirm_title": "إزالة هذه القدرة؟",
+  "remove_label": "إزالة",
+  "remove_tooltip": "فصل هذه القدرة عن الوكيل المحدد",
+  "removed_toast": "تمت إزالة \"{title}\"",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "تحديث",
+  "update_badge_detail_tooltip": "تم الاعتماد على الإصدار v{from}؛ الكتالوج الآن في الإصدار v{to}. أزل وأعد الاعتماد للتحديث.",
+  "update_badge_tooltip": "تتوفر نسخة أحدث من هذه القدرة — أزل وأعد الاعتماد للتحديث",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

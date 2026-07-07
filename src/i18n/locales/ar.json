@@ -10913,7 +10913,18 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" معتمدة بالفعل لدى هذا الوكيل",
+    "remove_confirm_body": "سيؤدي هذا إلى فصل \"{title}\" عن {persona}. سيتم إزالة المشغّل والإعدادات الخاصة به؛ تبقى الوصفة في الكتالوج ويمكن اعتمادها مجددًا في أي وقت.",
+    "remove_confirm_title": "إزالة هذه القدرة؟",
+    "remove_label": "إزالة",
+    "remove_tooltip": "فصل هذه القدرة عن الوكيل المحدد",
+    "removed_toast": "تمت إزالة \"{title}\"",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "تحديث",
+    "update_badge_detail_tooltip": "تم الاعتماد على الإصدار v{from}؛ الكتالوج الآن في الإصدار v{to}. أزل وأعد الاعتماد للتحديث.",
+    "update_badge_tooltip": "تتوفر نسخة أحدث من هذه القدرة — أزل وأعد الاعتماد للتحديث",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "لا توجد وصفات مطابقة",
@@ -12186,7 +12197,11 @@
       "context_last_scanned": "آخر فحص",
       "context_plan_created": "جُدول فحص السياق الأسبوعي",
       "context_plan_failed": "تعذّر جدولة فحص السياق",
-      "competition_title": "المنافسة"
+      "competition_title": "المنافسة",
+      "context_detail_pin": "تثبيت السياق",
+      "context_detail_pin_failed": "تعذّر تحديث التثبيت",
+      "context_detail_pin_tooltip": "السياقات المثبّتة تُحفظ أثناء إعادة الفحص الكامل بدلاً من إعادة إنشائها",
+      "context_detail_unpin": "إلغاء تثبيت السياق"
     },
     "doc_signing": {
       "title": "توقيع المستندات",
@@ -13248,7 +13263,9 @@
       "switch_conversation": "تبديل المحادثة",
       "thread_status_awaiting": "بانتظارك",
       "thread_status_idle": "خامل",
-      "thread_status_working": "قيد التنفيذ"
+      "thread_status_working": "قيد التنفيذ",
+      "rename_conversation": "إعادة تسمية المحادثة",
+      "replied_in_thread": "ردت Athena في {thread}"
     },
     "ocr": {
       "title": "OCR",
@@ -17281,5 +17298,47 @@
     "status_tracking": "تتبع",
     "tracks_title": "مسارات متوازية",
     "status_action_running": "جارٍ العمل…"
+  },
+  "foundry": {
+    "archetype_group_aria": "الأنماط العقلية",
+    "capabilities_heading": "إرفاق القدرات",
+    "capabilities_subheading": "كل قدرة هي وصفة من الكتالوج — مهمة آلية ينفذها وكيلك. ابدأ بالقدرات المقترحة، أو تصفح الكل.",
+    "create_button": "إنشاء وكيل",
+    "create_in_progress": "جارٍ التركيب…",
+    "created_toast": "\"{name}\" جاهز — تم إرفاق القدرات وتركيب التوجيه.",
+    "dial_risk": "درجة تقبّل المخاطر",
+    "dial_speed": "السرعة مقابل الجودة",
+    "entry_compose": "التركيب",
+    "entry_describe": "صفه",
+    "entry_mode_aria": "وضع إنشاء الشخصية",
+    "entry_templates": "تصفح القوالب",
+    "foundation_heading": "اختر عقلية",
+    "foundation_subheading": "يحدد النمط كيفية تفكير وكيلك — درجة تقبّله للمخاطر ونبرته ومبادئه. القدرات تأتي لاحقًا؛ هذا هو من يقوم بالعمل.",
+    "memory_group_aria": "استراتيجيات الذاكرة",
+    "memory_heading": "استراتيجية الذاكرة",
+    "memory_subheading": "ما يتذكره وكيلك بين عمليات التشغيل. يمكنك تغيير هذا لاحقًا.",
+    "next_step": "التالي",
+    "rack_affinity_filter": "مقترح لهذا النمط",
+    "rack_empty": "لا توجد قدرات مطابقة — امسح الفلاتر أو جرّب بحثًا آخر.",
+    "rack_search_placeholder": "البحث عن القدرات…",
+    "rack_selected_count": "{count} محدد",
+    "requires_home_team": "يحتاج إلى فريق",
+    "requires_knowledge_base": "يحتاج إلى قاعدة معرفة",
+    "requires_obsidian_vault": "يحتاج إلى خزنة Obsidian",
+    "review_capabilities_label": "القدرات ({count})",
+    "review_connectors_hint": "يمكنك ربط بيانات الاعتماد بعد الإنشاء — سيوضح الوكيل بالضبط ما هو مفقود.",
+    "review_connectors_label": "سيحتاج إلى هذه الاتصالات",
+    "review_foundation_label": "الأساس",
+    "review_memory_label": "الذاكرة",
+    "review_memory_setup_hint": "تحتاج استراتيجية الذاكرة المختارة إلى إعداد إضافي بعد الإنشاء — سيرشدك الوكيل خلال ذلك.",
+    "review_name_label": "اسم الوكيل",
+    "review_name_placeholder": "مثال: {archetype} الخاص بي",
+    "review_no_capabilities": "لا شيء بعد — يبدأ الوكيل بعقليته فقط؛ يمكنك إرفاق القدرات في أي وقت من كتالوج الوصفات.",
+    "step_capabilities": "القدرات",
+    "step_foundation": "الأساس",
+    "step_review": "المراجعة",
+    "xray_label": "مكوّن من {count} قدرات",
+    "xray_tooltip": "هذا القالب عبارة عن عقلية بالإضافة إلى قدرات من كتالوج الوصفات — نفس الأجزاء التي يمكنك تركيبها يدويًا في Foundry.",
+    "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
   }
 }

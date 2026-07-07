@@ -13,6 +13,46 @@ A persona is the **design-time entity** — static configuration. At
 runtime it spawns an **execution** (see [execution](../execution/README.md)),
 which is the dynamic thing you see running in the process drawer.
 
+## Creating personas — the Foundry (2026-07)
+
+The create surface (Agents → create, and the zero-personas first run) is
+`CreatePersonaEntry` (`src/features/personas/sub_foundry/`) with three entry
+speeds that all resolve to the **same adoption pipeline**:
+
+1. **Compose (Foundry, default)** — the two-layer architecture made
+   hand-composable: `Persona = Foundation (mentality archetype + memory
+   strategy) + Capabilities (recipes) + Wiring (connectors)`.
+   - **Archetypes** (9: Guardian, Analyst, Scout, Operator, Sentinel,
+     Curator, Craftsman, Shipper, Chief of Staff) live in
+     `scripts/templates/_archetypes.json`, embedded via
+     `engine/archetype_catalog.rs` and served by `list_archetypes`. Each is
+     a mini schema-v3 template persona — full 7-dial `core`
+     (motivation/stance/northStar/riskTolerance/speedVsQuality/
+     conflictStyle/deference), identity, voice, principles — distilled from
+     a corpus audit of all 111 templates' mentality prose (only 9 of 111
+     templates carry core dials; Foundry personas always do).
+   - **Memory strategies** (Focused / Learner / Team player / Grounded
+     expert / Second brain) name the intent of the app's disjoint memory
+     subsystems as one choice. v1 records the intent
+     (`design_context.memoryStrategyId`) and shows setup chips; the
+     subsystems themselves wire through their existing surfaces.
+   - **Capability rack** — the recipe catalog with an archetype-affinity
+     pre-filter; selection attaches recipes as `recipe_ref`s.
+   - **Create** synthesizes a v3 template payload and drives
+     `createPersona` → `create_adoption_session` (hydrate + normalize) →
+     `promote_build_draft`. No parallel compile path exists; a Foundry
+     persona is a template adoption of a template that never lived on disk.
+     Foundation provenance lands on `design_context.archetypeId`.
+2. **Describe it** — the intent-chat build (`UnifiedBuildEntry`), unchanged.
+   Mid-build resume (a persona with an in-flight session) renders this
+   surface directly.
+3. **Browse templates** — the gallery's fully pre-composed path.
+
+`core_profile` (the deliberation dials) is stamped on BOTH adoption paths
+since 2026-07-06 — previously the stamp read `persona_meta.core`, a field no
+template on disk ever carried, making it dead code everywhere (the dials
+actually live at `payload.persona.core`).
+
 The system has three layers worth documenting separately:
 
 | Doc | Scope | Read when… |

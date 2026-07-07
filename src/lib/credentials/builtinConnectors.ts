@@ -103,6 +103,10 @@ import harvest from '../../../scripts/connectors/builtin/harvest.json';
 import metaAds from '../../../scripts/connectors/builtin/meta-ads.json';
 import linkedinAds from '../../../scripts/connectors/builtin/linkedin-ads.json';
 import googleDrive from '../../../scripts/connectors/builtin/google-drive.json';
+import langfuse from '../../../scripts/connectors/builtin/langfuse.json';
+import helicone from '../../../scripts/connectors/builtin/helicone.json';
+import langsmith from '../../../scripts/connectors/builtin/langsmith.json';
+import tracklight from '../../../scripts/connectors/builtin/tracklight.json';
 
 /**
  * Builtin connector shape -- extends the shared ConnectorDefinitionBase.
@@ -207,6 +211,10 @@ export const BUILTIN_CONNECTORS: BuiltinConnectorDef[] = [
   metaAds,
   linkedinAds,
   googleDrive,
+  langfuse,
+  helicone,
+  langsmith,
+  tracklight,
 ] as BuiltinConnectorDef[];
 
 /**

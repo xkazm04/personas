@@ -1614,6 +1614,7 @@ pub fn run() {
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::update_persona_parameters,
+            commands::core::personas::sync_capability_parameters,
             commands::core::personas::duplicate_persona,
             commands::core::personas::persona_blast_radius,
             commands::core::personas::delete_persona,
@@ -1864,6 +1865,7 @@ pub fn run() {
             commands::design::build_sessions::get_build_status,
             commands::design::build_sessions::test_build_draft,
             commands::design::build_sessions::promote_build_draft,
+            commands::design::archetypes::list_archetypes,
             commands::design::build_sessions::create_adoption_session,
             commands::design::build_sessions::save_adoption_answers,
             commands::design::build_sessions::update_build_session_disabled_dims,
@@ -2962,6 +2964,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_context,
             commands::infrastructure::dev_tools::dev_tools_delete_context,
             commands::infrastructure::dev_tools::dev_tools_move_context_to_group,
+            commands::infrastructure::dev_tools::dev_tools_set_context_pinned,
             // Dev Tools -- Context Generation (LLM-powered codebase scan)
             commands::infrastructure::context_generation::dev_tools_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,

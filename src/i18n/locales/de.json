@@ -10913,7 +10913,18 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" wurde bereits von diesem Agenten übernommen",
+    "remove_confirm_body": "Dadurch wird \"{title}\" von {persona} getrennt. Trigger und Konfiguration werden entfernt; das Rezept bleibt im Katalog und kann jederzeit erneut übernommen werden.",
+    "remove_confirm_title": "Diese Fähigkeit entfernen?",
+    "remove_label": "Entfernen",
+    "remove_tooltip": "Diese Fähigkeit vom ausgewählten Agenten trennen",
+    "removed_toast": "\"{title}\" entfernt",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "Update",
+    "update_badge_detail_tooltip": "Übernommen mit v{from}; Katalog ist jetzt v{to}. Entfernen und neu übernehmen, um zu aktualisieren.",
+    "update_badge_tooltip": "Eine neuere Version dieser Fähigkeit ist verfügbar — entfernen und neu übernehmen, um zu aktualisieren",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "Keine passenden Rezepte",
@@ -12186,7 +12197,11 @@
       "context_last_scanned": "Letzter Scan",
       "context_plan_created": "Wöchentlicher Kontext-Scan geplant",
       "context_plan_failed": "Kontext-Scan konnte nicht geplant werden",
-      "competition_title": "Wettbewerb"
+      "competition_title": "Wettbewerb",
+      "context_detail_pin": "Kontext anheften",
+      "context_detail_pin_failed": "Anheftung konnte nicht aktualisiert werden",
+      "context_detail_pin_tooltip": "Angeheftete Kontexte bleiben bei einem vollständigen Neuscan erhalten, statt neu erstellt zu werden",
+      "context_detail_unpin": "Kontext lösen"
     },
     "doc_signing": {
       "title": "Dokument-Signierung",
@@ -13248,7 +13263,9 @@
       "switch_conversation": "Unterhaltung wechseln",
       "thread_status_awaiting": "wartet auf dich",
       "thread_status_idle": "inaktiv",
-      "thread_status_working": "läuft"
+      "thread_status_working": "läuft",
+      "rename_conversation": "Unterhaltung umbenennen",
+      "replied_in_thread": "Athena hat in {thread} geantwortet"
     },
     "ocr": {
       "title": "OCR",
@@ -17281,5 +17298,47 @@
     "status_tracking": "Wird verfolgt",
     "tracks_title": "Parallele Tracks",
     "status_action_running": "Wird ausgeführt…"
+  },
+  "foundry": {
+    "archetype_group_aria": "Mentalitätsarchetypen",
+    "capabilities_heading": "Fähigkeiten hinzufügen",
+    "capabilities_subheading": "Jede Fähigkeit ist ein Rezept aus dem Katalog — ein automatisierter Job, den dein Agent ausführt. Beginne mit den vorgeschlagenen oder durchsuche alle.",
+    "create_button": "Agent erstellen",
+    "create_in_progress": "Wird zusammengestellt…",
+    "created_toast": "\"{name}\" ist bereit — Fähigkeiten verknüpft und Prompt zusammengestellt.",
+    "dial_risk": "Risikobereitschaft",
+    "dial_speed": "Geschwindigkeit vs. Qualität",
+    "entry_compose": "Zusammenstellen",
+    "entry_describe": "Beschreiben",
+    "entry_mode_aria": "Persona-Erstellungsmodus",
+    "entry_templates": "Vorlagen durchsuchen",
+    "foundation_heading": "Mentalität wählen",
+    "foundation_subheading": "Der Archetyp bestimmt, wie dein Agent denkt — seine Risikobereitschaft, Stimme und Prinzipien. Fähigkeiten kommen als Nächstes; hier legst du fest, wer die Arbeit macht.",
+    "memory_group_aria": "Gedächtnisstrategien",
+    "memory_heading": "Gedächtnisstrategie",
+    "memory_subheading": "Was sich dein Agent zwischen den Läufen merkt. Du kannst das später ändern.",
+    "next_step": "Weiter",
+    "rack_affinity_filter": "Vorgeschlagen für diesen Archetyp",
+    "rack_empty": "Keine passenden Fähigkeiten — Filter zurücksetzen oder anders suchen.",
+    "rack_search_placeholder": "Fähigkeiten durchsuchen…",
+    "rack_selected_count": "{count} ausgewählt",
+    "requires_home_team": "Benötigt ein Team",
+    "requires_knowledge_base": "Benötigt eine Wissensdatenbank",
+    "requires_obsidian_vault": "Benötigt einen Obsidian-Vault",
+    "review_capabilities_label": "Fähigkeiten ({count})",
+    "review_connectors_hint": "Du kannst Zugangsdaten nach der Erstellung verknüpfen — der Agent zeigt dir genau, was noch fehlt.",
+    "review_connectors_label": "Benötigt diese Verbindungen",
+    "review_foundation_label": "Grundlage",
+    "review_memory_label": "Gedächtnis",
+    "review_memory_setup_hint": "Die gewählte Gedächtnisstrategie benötigt nach der Erstellung weitere Einrichtung — der Agent führt dich dabei durch.",
+    "review_name_label": "Agentenname",
+    "review_name_placeholder": "z. B. Mein {archetype}",
+    "review_no_capabilities": "Noch keine — der Agent startet nur mit seiner Mentalität; Fähigkeiten kannst du jederzeit über den Rezeptkatalog hinzufügen.",
+    "step_capabilities": "Fähigkeiten",
+    "step_foundation": "Grundlage",
+    "step_review": "Überprüfen",
+    "xray_label": "Zusammengesetzt aus {count} Fähigkeiten",
+    "xray_tooltip": "Diese Vorlage besteht aus einer Mentalität plus Fähigkeiten aus dem Rezeptkatalog — denselben Teilen, die du in der Foundry auch manuell zusammenstellen kannst.",
+    "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
   }
 }

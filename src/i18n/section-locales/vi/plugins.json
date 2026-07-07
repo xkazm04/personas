@@ -952,7 +952,11 @@
     "context_last_scanned": "Lần quét cuối",
     "context_plan_created": "Đã lên lịch quét ngữ cảnh hàng tuần",
     "context_plan_failed": "Không thể lên lịch quét ngữ cảnh",
-    "competition_title": "Cạnh tranh"
+    "competition_title": "Cạnh tranh",
+    "context_detail_pin": "Ghim ngữ cảnh",
+    "context_detail_pin_failed": "Không thể cập nhật ghim",
+    "context_detail_pin_tooltip": "Các ngữ cảnh được ghim sẽ được giữ lại khi quét lại toàn bộ thay vì bị tạo lại",
+    "context_detail_unpin": "Bỏ ghim ngữ cảnh"
   },
   "doc_signing": {
     "title": "Ký tài liệu",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "Chuyển cuộc trò chuyện",
     "thread_status_awaiting": "đang chờ bạn",
     "thread_status_idle": "không hoạt động",
-    "thread_status_working": "đang xử lý"
+    "thread_status_working": "đang xử lý",
+    "rename_conversation": "Đổi tên cuộc trò chuyện",
+    "replied_in_thread": "Athena đã trả lời trong {thread}"
   },
   "ocr": {
     "title": "OCR",

@@ -215,6 +215,7 @@ export default function ContextMapPage() {
       filePaths: parseJsonArray(c.file_paths),
       keywords: parseJsonArray(c.keywords),
       entryPoints: parseJsonArray(c.entry_points),
+      pinned: c.pinned,
     });
 
     const result: ContextGroup[] = storeGroups.map((g) => ({

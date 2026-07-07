@@ -952,7 +952,11 @@
     "context_last_scanned": "अंतिम स्कैन",
     "context_plan_created": "साप्ताहिक संदर्भ स्कैन निर्धारित",
     "context_plan_failed": "संदर्भ स्कैन निर्धारित नहीं हो सका",
-    "competition_title": "प्रतिस्पर्धा"
+    "competition_title": "प्रतिस्पर्धा",
+    "context_detail_pin": "कॉन्टेक्स्ट पिन करें",
+    "context_detail_pin_failed": "पिन अपडेट नहीं हो सका",
+    "context_detail_pin_tooltip": "पिन किए गए कॉन्टेक्स्ट पूर्ण री-स्कैन के दौरान फिर से बनाए जाने के बजाय सुरक्षित रहते हैं",
+    "context_detail_unpin": "कॉन्टेक्स्ट अनपिन करें"
   },
   "doc_signing": {
     "title": "दस्तावेज़ हस्ताक्षर",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "बातचीत बदलें",
     "thread_status_awaiting": "आपका इंतज़ार है",
     "thread_status_idle": "निष्क्रिय",
-    "thread_status_working": "चल रहा है"
+    "thread_status_working": "चल रहा है",
+    "rename_conversation": "बातचीत का नाम बदलें",
+    "replied_in_thread": "Athena ने {thread} में जवाब दिया"
   },
   "ocr": {
     "title": "OCR",

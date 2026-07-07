@@ -952,7 +952,11 @@
     "context_last_scanned": "Последнее сканирование",
     "context_plan_created": "Запланировано еженедельное сканирование контекста",
     "context_plan_failed": "Не удалось запланировать сканирование контекста",
-    "competition_title": "Конкуренты"
+    "competition_title": "Конкуренты",
+    "context_detail_pin": "Закрепить контекст",
+    "context_detail_pin_failed": "Не удалось обновить закрепление",
+    "context_detail_pin_tooltip": "Закреплённые контексты сохраняются при полном повторном сканировании, а не создаются заново",
+    "context_detail_unpin": "Открепить контекст"
   },
   "doc_signing": {
     "title": "Подписание документов",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "Переключить беседу",
     "thread_status_awaiting": "ждёт вас",
     "thread_status_idle": "неактивно",
-    "thread_status_working": "выполняется"
+    "thread_status_working": "выполняется",
+    "rename_conversation": "Переименовать беседу",
+    "replied_in_thread": "Athena ответила в {thread}"
   },
   "ocr": {
     "title": "OCR",

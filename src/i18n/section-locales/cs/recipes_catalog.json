@@ -219,5 +219,16 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" už tento agent má osvojeno",
+  "remove_confirm_body": "Tímto se \"{title}\" odpojí od {persona}. Jeho spouštěč a konfigurace budou odstraněny; recept zůstává v katalogu a lze ho kdykoli znovu osvojit.",
+  "remove_confirm_title": "Odstranit tuto schopnost?",
+  "remove_label": "Odstranit",
+  "remove_tooltip": "Odpojit tuto schopnost od vybraného agenta",
+  "removed_toast": "Odstraněno \"{title}\"",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "Aktualizace",
+  "update_badge_detail_tooltip": "Adoptováno ve verzi v{from}; katalog je nyní ve verzi v{to}. Pro aktualizaci odeberte a znovu adoptujte.",
+  "update_badge_tooltip": "Je k dispozici novější verze této schopnosti — odeberte a znovu adoptujte pro aktualizaci",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

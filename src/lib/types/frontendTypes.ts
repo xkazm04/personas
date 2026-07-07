@@ -145,6 +145,11 @@ export interface DesignUseCase {
    *  recipe. Drives the catalog's "Adopted" badge and future staleness
    *  reconciliation when the source recipe is republished. */
   source_recipe_id?: string;
+  /** Recipe version pinned at adoption. Compared against the catalog
+   *  recipe's current `version` to surface an "update available" badge. */
+  source_recipe_version?: string;
+  /** ISO-8601 adoption timestamp (display + audit provenance). */
+  adopted_at?: string;
   /** Tool names to prefer when this capability is in focus. Advisory only. */
   tool_hints?: string[];
   /** Phase C5b — per-capability generation policy. */

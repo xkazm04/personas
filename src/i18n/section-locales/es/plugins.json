@@ -952,7 +952,11 @@
     "context_last_scanned": "Último análisis",
     "context_plan_created": "Análisis de contexto semanal programado",
     "context_plan_failed": "No se pudo programar el análisis de contexto",
-    "competition_title": "Competencia"
+    "competition_title": "Competencia",
+    "context_detail_pin": "Fijar contexto",
+    "context_detail_pin_failed": "No se pudo actualizar la fijación",
+    "context_detail_pin_tooltip": "Los contextos fijados se conservan durante un reescaneo completo en lugar de recrearse",
+    "context_detail_unpin": "Dejar de fijar contexto"
   },
   "doc_signing": {
     "title": "Firma de Documentos",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "Cambiar conversación",
     "thread_status_awaiting": "esperando tu respuesta",
     "thread_status_idle": "inactivo",
-    "thread_status_working": "en curso"
+    "thread_status_working": "en curso",
+    "rename_conversation": "Renombrar conversación",
+    "replied_in_thread": "Athena respondió en {thread}"
   },
   "ocr": {
     "title": "OCR",

@@ -9,6 +9,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, RecipeCategory } from '../types';
 import { useRecipeEligibilityMap } from '../useEligibility';
 import { getCategoryLabels } from '../libs/categoryLabels';
+import { computeStaleRecipeIds } from '../libs/recipeStaleness';
 import { RecipesTableResults } from './RecipesTableResults';
 
 interface RecipesBrowseListProps {
@@ -48,6 +49,10 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
   const adoptedRecipeIds = useMemo(
     () => new Set(selectedUseCases.map((uc) => uc.source_recipe_id).filter((id): id is string => !!id)),
     [selectedUseCases],
+  );
+  const staleRecipeIds = useMemo(
+    () => computeStaleRecipeIds(recipes, selectedUseCases),
+    [recipes, selectedUseCases],
   );
 
   const [category, setCategory] = useState<RecipeCategory | 'all'>('all');
@@ -193,6 +198,7 @@ export function RecipesBrowseList({ recipes, search, onSearchChange, onOpenDetai
               highlight={search}
               personaSelected={!!selectedPersona}
               adoptedRecipeIds={adoptedRecipeIds}
+              staleRecipeIds={staleRecipeIds}
               onOpenDetail={onOpenDetail}
             />
           )}

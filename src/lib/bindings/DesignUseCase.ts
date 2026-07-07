@@ -22,6 +22,18 @@ capabilitySummary: string | null,
  */
 sourceRecipeId: string | null, 
 /**
+ * Recipe version pinned at adoption time (Foundry Phase 4). Together
+ * with `source_recipe_id` this powers the "recipe republished since
+ * you adopted" staleness badge — compare against the catalog's
+ * current version for the same recipe id.
+ */
+sourceRecipeVersion: string | null, 
+/**
+ * ISO-8601 adoption timestamp (Foundry Phase 4). Display + audit
+ * provenance for capabilities attached from the recipe catalog.
+ */
+adoptedAt: string | null, 
+/**
  * Tool names the LLM should prefer when this capability is in focus.
  * Advisory only — all persona tools remain available at runtime.
  */

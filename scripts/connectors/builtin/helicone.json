@@ -1,0 +1,45 @@
+{
+  "id": "builtin-helicone",
+  "name": "helicone",
+  "label": "Helicone",
+  "color": "#F1A208",
+  "icon_url": "/icons/connectors/helicone.svg",
+  "category": "monitoring",
+  "categories": [
+    "monitoring",
+    "ai"
+  ],
+  "fields": [
+    {
+      "key": "api_key",
+      "label": "API Key",
+      "type": "password",
+      "required": true,
+      "placeholder": "sk-helicone-...",
+      "helpText": "From Helicone -> Settings -> API Keys. The sk-helicone-... value. Sent as a Bearer token.",
+      "sensitive": true
+    }
+  ],
+  "healthcheck_config": {
+    "endpoint": "https://api.helicone.ai/v1/request/query",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {{api_key}}",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"filter\":\"all\",\"limit\":1,\"offset\":0}",
+    "description": "Validates the API key via the request query endpoint"
+  },
+  "services": [],
+  "events": [],
+  "resources": [],
+  "metadata": {
+    "template_enabled": true,
+    "summary": "Helicone LLM observability — one-line proxy for logging, cost tracking, caching, and analytics across OpenAI, Anthropic, and more.",
+    "auth_type": "api_key",
+    "auth_type_label": "API Key",
+    "docs_url": "https://docs.helicone.ai/rest/request/post-v1requestquery",
+    "setup_guide": "1. Sign in at helicone.ai\n2. Go to Settings -> API Keys\n3. Click 'Generate New Key' and copy the sk-helicone-... value\n4. Paste it here",
+    "pricing_tier": "freemium"
+  }
+}

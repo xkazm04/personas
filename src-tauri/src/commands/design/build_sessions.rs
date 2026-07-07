@@ -1108,6 +1108,26 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         let category = uc.category().to_string();
         let execution_mode = uc.execution_mode().to_string();
 
+        // Curated one-liner (feeds the runtime Active Capabilities section,
+        // which prefers it over description) + advisory tool preferences.
+        // Both live on the source UC and the target DesignUseCase but were
+        // silently dropped by this projection until 2026-07.
+        let (capability_summary, tool_hints, input_schema) = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                d.capability_summary
+                    .as_ref()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+                d.tool_hints.clone().filter(|h| !h.is_empty()),
+                // Preserve input_schema so design_context.useCases universally
+                // carries the recipe's declared params — this is what lets the
+                // catalog `sync_capability_parameters` command re-derive on a
+                // later adopt/remove without losing the promote-time params.
+                d.input_schema.clone(),
+            ),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => (None, None, None),
+        };
+
         let suggested_trigger = ir.triggers.get(idx).map(|t| {
             serde_json::json!({
                 "type": t.trigger_type.as_deref().unwrap_or("manual"),
@@ -1145,24 +1165,33 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
         // (auto_triage.rs). Without these fields the runtime falls back
         // to permissive defaults regardless of what the build LLM
         // declared per build prompt rules 16d / 21.
-        let (model_override, model_rationale, review_policy, generation_settings, memory_policy) =
-            match uc {
-                crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
-                    d.model_override.clone(),
-                    // Normalize empty rationale strings to None so the UI never
-                    // renders an empty tooltip just because the LLM emitted "".
-                    d.model_rationale
-                        .as_ref()
-                        .map(|s| s.trim().to_string())
-                        .filter(|s| !s.is_empty()),
-                    d.review_policy.clone(),
-                    d.generation_settings.clone(),
-                    d.memory_policy.clone(),
-                ),
-                crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
-                    (None, None, None, None, None)
-                }
-            };
+        let (
+            model_override,
+            model_rationale,
+            review_policy,
+            generation_settings,
+            memory_policy,
+            source_recipe_id,
+            source_recipe_version,
+        ) = match uc {
+            crate::db::models::agent_ir::AgentIrUseCase::Structured(d) => (
+                d.model_override.clone(),
+                // Normalize empty rationale strings to None so the UI never
+                // renders an empty tooltip just because the LLM emitted "".
+                d.model_rationale
+                    .as_ref()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty()),
+                d.review_policy.clone(),
+                d.generation_settings.clone(),
+                d.memory_policy.clone(),
+                d.source_recipe_id.clone(),
+                d.source_recipe_version.clone(),
+            ),
+            crate::db::models::agent_ir::AgentIrUseCase::Simple(_) => {
+                (None, None, None, None, None, None, None)
+            }
+        };
 
         structured.push(serde_json::json!({
             "id": uc_id,
@@ -1178,6 +1207,18 @@ fn build_structured_use_cases(ir: &crate::db::models::AgentIr) -> UseCaseData {
             "review_policy": review_policy,
             "generation_settings": generation_settings,
             "memory_policy": memory_policy,
+            // Curated one-liner + advisory tools (restored 2026-07 — the Active
+            // Capabilities renderer prefers capability_summary over description).
+            "capability_summary": capability_summary,
+            "tool_hints": tool_hints,
+            // Declared recipe params — kept so a later catalog sync can re-derive.
+            "input_schema": input_schema,
+            // Catalog provenance (Foundry arc) — lights the "Adopted" badge
+            // for template-/Foundry-attached recipes; adopted_at marks the
+            // promote moment (catalog-UI adoptions stamp their own).
+            "source_recipe_id": source_recipe_id,
+            "source_recipe_version": source_recipe_version,
+            "adopted_at": source_recipe_id.as_ref().map(|_| chrono::Utc::now().to_rfc3339()),
         }));
         ids.push(uc_id);
     }
@@ -2520,6 +2561,13 @@ pub async fn promote_build_draft_inner(
     // CLI build-from-scratch sessions bypass create_adoption_session, so their
     // agent_ir may still be v3-shaped when we hit this promote path. Run the
     // same normalizer here — no-op if already flat.
+    //
+    // Persona core dials (`payload.persona.core` — motivation/stance/risk
+    // dials) are captured here because the typed `AgentIr` deserialization
+    // below drops the persona object; stamped into `personas.core_profile`
+    // after the promote transaction (Design-D parity with instant adopt —
+    // until 2026-07-06 the mainline promote path silently lost the dials).
+    let mut promoted_core: Option<String> = None;
     let mut ir: crate::db::models::AgentIr = match &session.agent_ir {
         None => {
             return Err(AppError::Validation(
@@ -2552,6 +2600,10 @@ pub async fn promote_build_draft_inner(
                     "Recipe hydration failed during promotion: {e}"
                 )));
             }
+            promoted_core = payload
+                .pointer("/persona/core")
+                .filter(|c| !c.is_null())
+                .map(|c| c.to_string());
             if crate::engine::template_v3::is_v3_shape(&payload) {
                 crate::engine::template_v3::normalize_v3_to_flat(&mut payload);
                 tracing::info!(
@@ -2592,6 +2644,20 @@ pub async fn promote_build_draft_inner(
             tracing::info!(persona_id = %persona_id, answer_count = answers.answers.len(), binding_count = answers.credential_bindings.len(), "Applied adoption answers to agent_ir for promotion");
         }
     }
+
+    // Recipe parameterization (Foundry arc, 2026-07): derive tunable params from
+    // each capability's `input_schema` and synthesize a `## Capability
+    // Parameters` section into structured_prompt.instructions so the
+    // `{{param.*}}` refs resolve at runtime. The persona.parameters rows that
+    // back these refs are written post-transaction below (merged under any
+    // template-authored params). Computed here, before the section is baked
+    // into the IR that the transaction persists.
+    let recipe_capability_params =
+        crate::engine::recipe_parameters::derive_capability_params(&ir.use_cases);
+    crate::engine::recipe_parameters::inject_capability_parameters_section(
+        &mut ir,
+        &recipe_capability_params,
+    );
 
     // Auto-generate webhook_secret for webhook triggers that lack one.
     // Templates and adoption flows produce webhook triggers without a secret
@@ -2752,6 +2818,19 @@ pub async fn promote_build_draft_inner(
     // ================================================================
     tx.commit().map_err(AppError::Database)?;
 
+    // Design D — stamp the authored core dials into `core_profile` (the
+    // deliberation moderator routes by it; persona turns speak from it).
+    // Best-effort post-commit, mirroring instant adopt (template_adopt.rs).
+    if let Some(core) = &promoted_core {
+        if let Ok(conn) = state.db.get() {
+            let _ = conn.execute(
+                "UPDATE personas SET core_profile = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![core, chrono::Utc::now().to_rfc3339(), persona_id],
+            );
+            tracing::info!(persona_id = %persona_id, "promote: stamped persona core_profile");
+        }
+    }
+
     // C1 (Glyph side) — if any connector still needs setup, mark
     // setup_status='needs_credentials' so the dashboard surfaces a warning.
     // The IR's `has_credential` flag is the primary pre-filter (carried
@@ -2826,11 +2905,14 @@ pub async fn promote_build_draft_inner(
                 serde_json::from_str::<crate::engine::adoption_answers::AdoptionAnswers>(raw).ok()
             })
             .map(|a| a.answers);
+        let recipe_param_values =
+            crate::engine::recipe_parameters::to_parameter_values(&recipe_capability_params);
         if let Err(e) = super::template_adopt::populate_persona_parameters_from_design(
             &state.db,
             &persona_id,
             &design_json,
             answers_map.as_ref(),
+            &recipe_param_values,
         ) {
             tracing::warn!(
                 persona_id = %persona_id,

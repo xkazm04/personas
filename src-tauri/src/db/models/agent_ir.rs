@@ -337,6 +337,18 @@ pub struct AgentIrUseCaseData {
     #[serde(default)]
     pub capability_summary: Option<String>,
 
+    /// Catalog provenance (Foundry arc, 2026-07-06): the recipe this UC was
+    /// hydrated from (`hydrate_recipe_refs` stamps it). Carried through the
+    /// promote path into `design_context.useCases[].source_recipe_id`, so
+    /// template- and Foundry-attached recipes light the catalog's "Adopted"
+    /// badge exactly like catalog-UI adoptions.
+    #[serde(default)]
+    pub source_recipe_id: Option<String>,
+
+    /// Recipe version pinned at hydration — the staleness-check anchor.
+    #[serde(default)]
+    pub source_recipe_version: Option<String>,
+
     /// Runtime toggle. Absent = enabled. Set to Some(false) to disable
     /// without rebuilding the persona.
     #[serde(default)]

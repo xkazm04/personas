@@ -358,6 +358,165 @@ mod tests {
         }
     }
 
+    /// Recipe ids that predate the UUIDv5 derivation convention — the 9
+    /// hand-minted SDLC rows appended after ref `34f483f1f^` (see the
+    /// module-header warning about blind regeneration). Frozen: new refs
+    /// must use `derive_recipe_id`; this list must only ever shrink.
+    const HAND_MINTED_RECIPE_IDS: &[&str] = &[
+        "5dc1a001-a5c0-4a01-9e01-5dc1a0010001", // solution-architect:uc_architecture_review
+        "5dc1a002-a5c0-4a02-9e02-5dc1a0020002", // solution-architect:uc_idea_architecture_analysis
+        "5dc1a003-a5c0-4a03-9e03-5dc1a0030003", // code-reviewer:uc_code_review
+        "5dc1a004-a5c0-4a04-9e04-5dc1a0040004", // release-manager:uc_release_automation
+        "5dc1a005-a5c0-4a05-9e05-5dc1a0050005", // security-sentinel:uc_security_scan
+        "5dc1a006-a5c0-4a06-9e06-5dc1a0060006", // docs-steward:uc_docs_sync
+        "c0a5e100-4b1d-4c0a-9e10-71a5c0a5e100", // qa-guardian:uc_coverage_scan
+        "b0a5e200-4b1d-4b09-9e20-72a5b0a5e200", // qa-guardian:uc_bug_hunt
+        "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300", // qa-guardian:uc_pr_review
+    ];
+
+    const LOCALE_SUFFIXES: &[&str] = &[
+        "ar", "bn", "cs", "de", "es", "fr", "hi", "id", "ja", "ko", "ru", "vi", "zh",
+    ];
+
+    /// Canary (2026-07-06): every template's `recipe_ref` graph must stay
+    /// coherent with the seed bundle. Guards the bug class found during the
+    /// Foundry research — the 2026 email/sales consolidation re-pointed 3
+    /// templates at rows derived from DELETED templates, which left
+    /// `email-support-operator` hydrating two UCs with the same embedded id
+    /// (`uc_email_triage`) and an adoption question bound to an id
+    /// (`uc_email_triage_assistant`) that existed nowhere — silently
+    /// orphaning the questionnaire. Asserts, corpus-wide:
+    ///   1. every `recipe_ref.id` resolves to a bundle row
+    ///   2. that row's provenance names THIS template (re-derivable)
+    ///   3. `source_use_case_id` == the id embedded in `prompt_template`
+    ///   4. embedded ids are unique within a template (hydration identity)
+    ///   5. every adoption question's use-case binding hits an embedded id
+    ///   6. ref ids follow `derive_recipe_id` (or are on the frozen
+    ///      hand-minted allowlist)
+    /// Dev-checkout test: walks `scripts/templates/` relative to the
+    /// manifest dir (same pattern as `companion::dev_mode` context tests).
+    #[test]
+    fn template_recipe_refs_are_coherent_corpus_wide() {
+        use crate::commands::recipes::recipe_derivation::derive_recipe_id;
+        use std::collections::{HashMap, HashSet};
+
+        let bundle: SeedBundle = serde_json::from_str(SEEDS_JSON).unwrap();
+        let by_id: HashMap<&str, &SeedRecipe> =
+            bundle.recipes.iter().map(|r| (r.id.as_str(), r)).collect();
+        let hand_minted: HashSet<&str> = HAND_MINTED_RECIPE_IDS.iter().copied().collect();
+
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../scripts/templates");
+        let mut checked_templates = 0usize;
+        let mut checked_refs = 0usize;
+
+        let category_dirs = std::fs::read_dir(&root).expect("scripts/templates readable");
+        for dir in category_dirs.flatten() {
+            let dir_path = dir.path();
+            let dir_name = dir.file_name().to_string_lossy().to_string();
+            if !dir_path.is_dir() || dir_name.starts_with('_') {
+                continue;
+            }
+            for file in std::fs::read_dir(&dir_path).expect("category dir readable").flatten() {
+                let name = file.file_name().to_string_lossy().to_string();
+                if !name.ends_with(".json") {
+                    continue;
+                }
+                // Skip per-locale siblings (name.<locale>.json).
+                let parts: Vec<&str> = name.split('.').collect();
+                if parts.len() == 3 && LOCALE_SUFFIXES.contains(&parts[1]) {
+                    continue;
+                }
+                let raw = std::fs::read_to_string(file.path()).expect("template readable");
+                let doc: serde_json::Value =
+                    serde_json::from_str(&raw).unwrap_or_else(|e| {
+                        panic!("template {name} must parse as JSON: {e}")
+                    });
+                let template_id = doc["id"].as_str().unwrap_or_default().to_string();
+                assert!(!template_id.is_empty(), "{name}: template id missing");
+                checked_templates += 1;
+
+                let use_cases = doc
+                    .pointer("/payload/use_cases")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+                let mut embedded_ids: Vec<String> = Vec::new();
+                for uc in &use_cases {
+                    let Some(ref_id) = uc.pointer("/recipe_ref/id").and_then(|v| v.as_str())
+                    else {
+                        continue; // inline UC (pre-v3) — out of scope here
+                    };
+                    checked_refs += 1;
+                    let row = by_id.get(ref_id).unwrap_or_else(|| {
+                        panic!("{template_id}: recipe_ref {ref_id} has no seed row (adoption would fail-closed)")
+                    });
+                    assert_eq!(
+                        row.source_template_id, template_id,
+                        "{template_id}: ref {ref_id} provenance names a different template ({}) — not re-derivable",
+                        row.source_template_id
+                    );
+                    let embedded: serde_json::Value =
+                        serde_json::from_str(&row.prompt_template).unwrap_or_else(|e| {
+                            panic!("{template_id}: ref {ref_id} prompt_template unparseable: {e}")
+                        });
+                    let emb_id = embedded["id"].as_str().unwrap_or_default().to_string();
+                    assert_eq!(
+                        row.source_use_case_id, emb_id,
+                        "{template_id}: ref {ref_id} source_use_case_id drifts from embedded UC id"
+                    );
+                    if !hand_minted.contains(ref_id) {
+                        assert_eq!(
+                            ref_id,
+                            derive_recipe_id(&template_id, &emb_id),
+                            "{template_id}: ref {ref_id} is neither derive_recipe_id({template_id}, {emb_id}) nor hand-minted"
+                        );
+                    }
+                    embedded_ids.push(emb_id);
+                }
+
+                // 4. hydration identity: no two UCs may share an embedded id.
+                let unique: HashSet<&String> = embedded_ids.iter().collect();
+                assert_eq!(
+                    unique.len(),
+                    embedded_ids.len(),
+                    "{template_id}: duplicate embedded UC ids after hydration: {embedded_ids:?}"
+                );
+
+                // 5. adoption questions bind to real (embedded) UC ids.
+                if let Some(questions) = doc
+                    .pointer("/payload/adoption_questions")
+                    .and_then(|v| v.as_array())
+                {
+                    for q in questions {
+                        let mut bound: Vec<String> = Vec::new();
+                        if let Some(s) = q["use_case_id"].as_str() {
+                            bound.push(s.to_string());
+                        }
+                        if let Some(arr) = q["use_case_ids"].as_array() {
+                            bound.extend(
+                                arr.iter().filter_map(|v| v.as_str().map(String::from)),
+                            );
+                        }
+                        for b in bound.into_iter().filter(|b| !b.is_empty()) {
+                            // Only enforce when the template composes via
+                            // recipe_refs (inline templates keep their own ids).
+                            if !embedded_ids.is_empty() {
+                                assert!(
+                                    embedded_ids.contains(&b),
+                                    "{template_id}: adoption question binds use case `{b}` which no hydrated UC carries (question would be silently orphaned)"
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(checked_templates >= 100, "expected the full corpus, saw {checked_templates}");
+        assert!(checked_refs >= 250, "expected recipe_ref coverage, saw {checked_refs}");
+    }
+
     #[test]
     fn seed_into_empty_db_creates_all_rows() {
         let pool = test_pool();

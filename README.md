@@ -327,7 +327,6 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 |---------|-------------|
 | `npm run dev` | Vite dev server only (port 1420) — frontend without Tauri |
 | `npm run dev:inspect` | `npm run dev` with the DevInspector source-mapping flag (see below) |
-| `npm run tauri:dev:inspect` | `tauri:dev:lite` with the DevInspector flag — click a component to copy its source path |
 | `npm run build` | TypeScript check + Vite production build (builder tier) |
 | `npm run build:{starter,team,builder}` | Tier-specific frontend bundle |
 | `npm run lint` | ESLint on `src/` |
@@ -336,7 +335,7 @@ When `VITE_APP_TIER` is not set, the build includes all tiers and users can swit
 | `npm run check:tauri-configs` | Validate `tauri.conf.json` and overlay configs |
 | `npm run tauri:dev` | Launch Tauri in dev mode (canonical config) |
 | `npm run tauri:dev:lite` | Dev mode with `desktop` features only — fast iteration |
-| `npm run tauri:dev:test` | Dev mode with `--features test-automation` (HTTP server on :17320) |
+| `npm run tauri:dev:test` | Dev mode with `--features test-automation` (HTTP server on :17320) **and** the DevInspector source-mapping flag — one build with both the test bridge and click-to-copy source paths |
 | `npm run tauri:build` | Build full installer (all targets, `desktop-full`) |
 | `npm run tauri:build:lite` | Build NSIS-only installer with `desktop` features |
 | `npm run tauri:build:stable` | Build NSIS + MSI installer for Windows release |
@@ -357,7 +356,7 @@ it straight into an AI coding CLI (Claude Code, etc.). Off by default and never
 present in production builds.
 
 ```bash
-npm run tauri:dev:inspect     # full app with source mapping on
+npm run tauri:dev:test        # full app + test bridge (:17320), source mapping on
 npm run dev:inspect           # frontend-only / faster iteration
 ```
 

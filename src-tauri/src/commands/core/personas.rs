@@ -297,6 +297,113 @@ pub fn update_persona_parameters(
     Ok(result)
 }
 
+/// Reconcile a persona's `persona.parameters` + injected `## Capability Parameters`
+/// section against the recipe params declared by its current
+/// `design_context.useCases`. Idempotent — safe to call after any catalog adopt
+/// or remove (Gap 2). Derives params from every use case's `input_schema`,
+/// merges them UNDER the existing param set (existing/template/user-tuned keys
+/// win; new keys appended), and re-injects the section into
+/// `structured_prompt.instructions` (stripping any prior copy). Params for a
+/// removed capability are left in place (inert) but its section lines drop out.
+#[tauri::command]
+#[requires(auth)]
+pub fn sync_capability_parameters(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Persona, AppError> {
+    use crate::engine::recipe_parameters as rp;
+
+    let persona = repo::get_by_id(&state.db, &persona_id)?;
+
+    // Collect the use cases from design_context.
+    let use_cases: Vec<serde_json::Value> = persona
+        .design_context
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .and_then(|ctx| ctx.get("useCases").and_then(|v| v.as_array()).cloned())
+        .unwrap_or_default();
+
+    // Resolve each use case's input_schema to the AUTHORITATIVE recipe source.
+    // A catalog-adopted UC may carry only a lossy display projection (or no
+    // input_schema at all), so prefer the recipe row's schema via
+    // `source_recipe_id`; fall back to an inline `input_schema` (Foundry /
+    // promote / instant_adopt UCs carry the full array).
+    let enriched: Vec<serde_json::Value> = use_cases
+        .iter()
+        .filter_map(|uc| {
+            let title = uc
+                .get("title")
+                .or_else(|| uc.get("name"))
+                .cloned()
+                .unwrap_or_else(|| serde_json::Value::String("Capability".into()));
+            let schema = uc
+                .get("source_recipe_id")
+                .and_then(|v| v.as_str())
+                .and_then(|rid| {
+                    crate::db::repos::resources::recipes::get_by_id(&state.db, rid).ok()
+                })
+                .and_then(|recipe| {
+                    serde_json::from_str::<serde_json::Value>(&recipe.prompt_template).ok()
+                })
+                .and_then(|tpl| tpl.get("input_schema").cloned())
+                .filter(|s| s.is_array())
+                .or_else(|| uc.get("input_schema").cloned().filter(|s| s.is_array()))?;
+            Some(serde_json::json!({ "title": title, "input_schema": schema }))
+        })
+        .collect();
+
+    let caps = rp::derive_capability_params_from_values(&enriched);
+
+    // Merge derived params under the existing set (existing wins).
+    let existing_params: Vec<serde_json::Value> = persona
+        .parameters
+        .as_deref()
+        .filter(|s| !s.is_empty())
+        .and_then(|s| serde_json::from_str::<Vec<serde_json::Value>>(s).ok())
+        .unwrap_or_default();
+    let derived = rp::to_parameter_values(&caps);
+    let merged = rp::merge_persona_parameters(&existing_params, &derived);
+    let parameters_json = serde_json::to_string(&merged)
+        .map_err(|e| AppError::Validation(format!("failed to serialize parameters: {e}")))?;
+
+    // Re-inject the section into structured_prompt.instructions (idempotent).
+    let structured_prompt_json = match persona.structured_prompt.as_deref() {
+        Some(s) if !s.is_empty() => {
+            let mut sp: serde_json::Value = serde_json::from_str(s)
+                .map_err(|e| AppError::Validation(format!("invalid structured_prompt JSON: {e}")))?;
+            rp::inject_into_structured_prompt(&mut sp, &caps);
+            Some(
+                serde_json::to_string(&sp).map_err(|e| {
+                    AppError::Validation(format!("failed to serialize structured_prompt: {e}"))
+                })?,
+            )
+        }
+        // No structured prompt to inject into — params still seeded so the
+        // parameters editor surfaces them; the section lands if a structured
+        // prompt is later created.
+        _ => None,
+    };
+
+    let result = repo::update(
+        &state.db,
+        &persona_id,
+        UpdatePersonaInput {
+            parameters: Some(Some(parameters_json)),
+            structured_prompt: structured_prompt_json.map(Some),
+            ..Default::default()
+        },
+    )?;
+
+    // Invalidate cached session so the engine picks up the new params/prompt.
+    let pool = state.session_pool.clone();
+    let pid = persona_id.clone();
+    tauri::async_runtime::spawn(async move {
+        pool.invalidate(&pid).await;
+    });
+
+    Ok(result)
+}
+
 #[tauri::command]
 #[requires(auth)]
 pub fn duplicate_persona(

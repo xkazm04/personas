@@ -19,7 +19,7 @@ import { LevelLadder } from './LevelLadder';
 import { ladderFor } from './levels';
 import { dimensionReason } from './provenance';
 
-const WIDTH = 340;
+const WIDTH = 442; // 340 +30% — roomier body for the icon-grid connector section
 
 export function DeployPopover({
   slug, rowKey, anchor, onClose,

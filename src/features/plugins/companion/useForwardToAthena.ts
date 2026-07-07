@@ -2,10 +2,17 @@ import { useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { companionCreateConversation } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 import { useTtsSettings } from './useTtsSettings';
 import { useTtsVoiceSelection } from './useTtsVoiceSelection';
 import { synthesize, play } from './voicePlayback';
+
+/** A concise thread title from the forwarded prompt's first line. */
+function titleFromMessage(message: string): string {
+  const firstLine = (message.trim().split('\n')[0] ?? '').trim();
+  return firstLine.length > 48 ? `${firstLine.slice(0, 47)}…` : firstLine;
+}
 
 /**
  * Forward a pre-composed message to Athena via the floating **orb** (not the
@@ -41,7 +48,24 @@ export function useForwardToAthena(): (message: string) => void {
       // the forwarded message is never invisible), then ack + send.
       store.setState(orbEnabled ? 'minimized' : 'open');
       store.pulseForwardAck();
-      store.setVoiceTurnRequest(message);
+
+      // Forwarded asks open their OWN conversation so they never collide with
+      // whatever thread is current (design §5 — that collision is the confusion
+      // we're fixing). Create → focus → send into it; the panel's voiceTurnRequest
+      // consumer reads the active conversation id when it fires the turn.
+      companionCreateConversation(titleFromMessage(message), 'forwarded')
+        .then((row) => {
+          const s = useCompanionStore.getState();
+          s.upsertConversation(row);
+          s.setActiveConversationId(row.id);
+          s.setVoiceTurnRequest(message);
+        })
+        .catch((err) => {
+          // Never drop the message: if the thread couldn't be created, fall back
+          // to sending it into the current conversation.
+          silentCatch('companion_create_conversation')(err);
+          useCompanionStore.getState().setVoiceTurnRequest(message);
+        });
 
       // Immediate spoken acknowledgement — the turn itself can take a while.
       if (voiceEnabled && voice.configured && voice.voiceId) {

@@ -564,6 +564,10 @@ export const deleteContext = (id: string) =>
 export const moveContext = (id: string, targetGroupId: string | null) =>
   safeInvoke<DevContext>({} as DevContext, "dev_tools_move_context", { id, targetGroupId });
 
+// Pin/unpin a context so a full re-scan preserves it instead of recreating it.
+export const setContextPinned = (id: string, pinned: boolean) =>
+  invoke<DevContext>("dev_tools_set_context_pinned", { id, pinned });
+
 export const scanCodebase = (projectId: string, rootPath: string, deltaMode?: boolean) =>
   invoke<{ scan_id: string }>("dev_tools_scan_codebase", { projectId, rootPath, deltaMode });
 
@@ -596,6 +600,9 @@ export interface ContextAuditTotals {
   uncategorized_contexts: number;
   groups_missing_domain: number;
   overlapping_files: number;
+  dangling_files: number;
+  unresolved_cross_refs: number;
+  stale_contexts: number;
 }
 export interface ContextAuditReport {
   project_id: string;
@@ -616,6 +623,9 @@ const EMPTY_AUDIT: ContextAuditReport = {
     uncategorized_contexts: 0,
     groups_missing_domain: 0,
     overlapping_files: 0,
+    dangling_files: 0,
+    unresolved_cross_refs: 0,
+    stale_contexts: 0,
   },
   findings: [],
 };

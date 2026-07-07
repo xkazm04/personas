@@ -10913,7 +10913,18 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" đã được tác nhân này áp dụng",
+    "remove_confirm_body": "Thao tác này sẽ gỡ \"{title}\" khỏi {persona}. Trigger và cấu hình của nó sẽ bị xóa; công thức vẫn còn trong danh mục và có thể được áp dụng lại bất cứ lúc nào.",
+    "remove_confirm_title": "Gỡ bỏ năng lực này?",
+    "remove_label": "Gỡ bỏ",
+    "remove_tooltip": "Gỡ năng lực này khỏi tác nhân đã chọn",
+    "removed_toast": "Đã gỡ \"{title}\"",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "Cập nhật",
+    "update_badge_detail_tooltip": "Đã áp dụng ở phiên bản v{from}; danh mục hiện là v{to}. Xóa và áp dụng lại để cập nhật.",
+    "update_badge_tooltip": "Đã có phiên bản mới hơn của tính năng này — xóa và áp dụng lại để cập nhật",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "Không có công thức khớp",
@@ -12186,7 +12197,11 @@
       "context_last_scanned": "Lần quét cuối",
       "context_plan_created": "Đã lên lịch quét ngữ cảnh hàng tuần",
       "context_plan_failed": "Không thể lên lịch quét ngữ cảnh",
-      "competition_title": "Cạnh tranh"
+      "competition_title": "Cạnh tranh",
+      "context_detail_pin": "Ghim ngữ cảnh",
+      "context_detail_pin_failed": "Không thể cập nhật ghim",
+      "context_detail_pin_tooltip": "Các ngữ cảnh được ghim sẽ được giữ lại khi quét lại toàn bộ thay vì bị tạo lại",
+      "context_detail_unpin": "Bỏ ghim ngữ cảnh"
     },
     "doc_signing": {
       "title": "Ký tài liệu",
@@ -13248,7 +13263,9 @@
       "switch_conversation": "Chuyển cuộc trò chuyện",
       "thread_status_awaiting": "đang chờ bạn",
       "thread_status_idle": "không hoạt động",
-      "thread_status_working": "đang xử lý"
+      "thread_status_working": "đang xử lý",
+      "rename_conversation": "Đổi tên cuộc trò chuyện",
+      "replied_in_thread": "Athena đã trả lời trong {thread}"
     },
     "ocr": {
       "title": "OCR",
@@ -17281,5 +17298,47 @@
     "status_tracking": "Đang theo dõi",
     "tracks_title": "Các nhánh song song",
     "status_action_running": "Đang xử lý…"
+  },
+  "foundry": {
+    "archetype_group_aria": "Nguyên mẫu tính cách",
+    "capabilities_heading": "Gắn năng lực",
+    "capabilities_subheading": "Mỗi năng lực là một công thức từ danh mục — một tác vụ tự động mà agent của bạn chạy. Bắt đầu với các gợi ý, hoặc duyệt qua tất cả.",
+    "create_button": "Tạo agent",
+    "create_in_progress": "Đang soạn…",
+    "created_toast": "\"{name}\" đã sẵn sàng — năng lực đã gắn và prompt đã được soạn.",
+    "dial_risk": "Mức độ chấp nhận rủi ro",
+    "dial_speed": "Tốc độ so với chất lượng",
+    "entry_compose": "Soạn thảo",
+    "entry_describe": "Mô tả",
+    "entry_mode_aria": "Chế độ tạo persona",
+    "entry_templates": "Duyệt mẫu",
+    "foundation_heading": "Chọn một tính cách",
+    "foundation_subheading": "Nguyên mẫu quyết định cách agent của bạn suy nghĩ — mức độ chấp nhận rủi ro, giọng điệu và nguyên tắc. Năng lực sẽ đến sau; đây là ai sẽ thực hiện công việc.",
+    "memory_group_aria": "Chiến lược bộ nhớ",
+    "memory_heading": "Chiến lược bộ nhớ",
+    "memory_subheading": "Những gì agent của bạn ghi nhớ giữa các lần chạy. Bạn có thể thay đổi điều này sau.",
+    "next_step": "Tiếp theo",
+    "rack_affinity_filter": "Gợi ý cho nguyên mẫu này",
+    "rack_empty": "Không có năng lực nào phù hợp — xóa bộ lọc hoặc thử tìm kiếm khác.",
+    "rack_search_placeholder": "Tìm kiếm năng lực…",
+    "rack_selected_count": "Đã chọn {count}",
+    "requires_home_team": "Cần một nhóm",
+    "requires_knowledge_base": "Cần cơ sở tri thức",
+    "requires_obsidian_vault": "Cần một Obsidian vault",
+    "review_capabilities_label": "Năng lực ({count})",
+    "review_connectors_hint": "Bạn có thể kết nối thông tin xác thực sau khi tạo — agent sẽ hiển thị chính xác những gì còn thiếu.",
+    "review_connectors_label": "Sẽ cần các kết nối sau",
+    "review_foundation_label": "Nền tảng",
+    "review_memory_label": "Bộ nhớ",
+    "review_memory_setup_hint": "Chiến lược bộ nhớ đã chọn cần thiết lập thêm sau khi tạo — agent sẽ hướng dẫn bạn.",
+    "review_name_label": "Tên agent",
+    "review_name_placeholder": "vd: {archetype} của tôi",
+    "review_no_capabilities": "Chưa có — agent bắt đầu chỉ với tính cách của nó; gắn năng lực bất cứ lúc nào từ danh mục Công thức.",
+    "step_capabilities": "Năng lực",
+    "step_foundation": "Nền tảng",
+    "step_review": "Xem lại",
+    "xray_label": "Được tạo từ {count} năng lực",
+    "xray_tooltip": "Mẫu này là sự kết hợp giữa tính cách và năng lực từ danh mục công thức — cùng những thành phần bạn có thể tự soạn trong Foundry.",
+    "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
   }
 }

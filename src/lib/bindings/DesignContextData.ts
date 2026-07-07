@@ -32,4 +32,19 @@ twinId: string | null,
  * back to the global probe so the connector never errors on stale entries.
  * Mirrors `twin_id`.
  */
-devProjectId: string | null, };
+devProjectId: string | null, 
+/**
+ * Foundry foundation provenance — which mentality archetype this
+ * persona was composed from (`scripts/templates/_archetypes.json`
+ * id, e.g. `guardian`). Display + analytics only; the archetype's
+ * content was compiled into the prompt at creation, so a stale or
+ * deleted archetype id never breaks anything.
+ */
+archetypeId: string | null, 
+/**
+ * Foundry memory-strategy intent (`focused` | `learner` |
+ * `team-player` | `grounded-expert` | `second-brain`). v1 records
+ * the intent and drives setup guidance chips; the subsystems it
+ * names are wired through their own existing surfaces.
+ */
+memoryStrategyId: string | null, };

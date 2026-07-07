@@ -219,5 +219,16 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" ইতিমধ্যে এই এজেন্ট দ্বারা গৃহীত হয়েছে",
+  "remove_confirm_body": "এটি \"{title}\" কে {persona} থেকে বিচ্ছিন্ন করবে। এর ট্রিগার ও কনফিগারেশন সরিয়ে ফেলা হবে; রেসিপিটি ক্যাটালগে থেকে যাবে এবং যেকোনো সময় পুনরায় গ্রহণ করা যাবে।",
+  "remove_confirm_title": "এই সক্ষমতা সরাবেন?",
+  "remove_label": "সরান",
+  "remove_tooltip": "নির্বাচিত এজেন্ট থেকে এই সক্ষমতা বিচ্ছিন্ন করুন",
+  "removed_toast": "\"{title}\" সরানো হয়েছে",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "আপডেট",
+  "update_badge_detail_tooltip": "v{from} সংস্করণে গ্রহণ করা হয়েছে; ক্যাটালগ এখন v{to}। আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন।",
+  "update_badge_tooltip": "এই ক্ষমতার একটি নতুন সংস্করণ উপলব্ধ — আপডেট করতে সরিয়ে পুনরায় গ্রহণ করুন",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

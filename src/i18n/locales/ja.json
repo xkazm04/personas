@@ -10913,7 +10913,18 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "「{title}」はすでにこのエージェントに追加されています",
+    "remove_confirm_body": "「{title}」を{persona}から切り離します。トリガーと設定は削除されますが、レシピはカタログに残り、いつでも再追加できます。",
+    "remove_confirm_title": "この機能を削除しますか？",
+    "remove_label": "削除",
+    "remove_tooltip": "選択したエージェントからこの機能を切り離す",
+    "removed_toast": "「{title}」を削除しました",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "更新",
+    "update_badge_detail_tooltip": "v{from}で導入済み。カタログは現在v{to}です。更新するには削除して再導入してください。",
+    "update_badge_tooltip": "この機能の新しいバージョンが利用可能です — 削除して再導入すると更新されます",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "一致するレシピがありません",
@@ -12186,7 +12197,11 @@
       "context_last_scanned": "最終スキャン",
       "context_plan_created": "週次コンテキストスキャンをスケジュールしました",
       "context_plan_failed": "コンテキストスキャンのスケジュール設定に失敗しました",
-      "competition_title": "競合"
+      "competition_title": "競合",
+      "context_detail_pin": "コンテキストをピン留め",
+      "context_detail_pin_failed": "ピン留めを更新できませんでした",
+      "context_detail_pin_tooltip": "ピン留めしたコンテキストは、完全な再スキャン時に再作成されずに保持されます",
+      "context_detail_unpin": "コンテキストのピン留めを解除"
     },
     "doc_signing": {
       "title": "ドキュメント署名",
@@ -13248,7 +13263,9 @@
       "switch_conversation": "会話を切り替え",
       "thread_status_awaiting": "返信待ち",
       "thread_status_idle": "待機中",
-      "thread_status_working": "実行中"
+      "thread_status_working": "実行中",
+      "rename_conversation": "会話の名前を変更",
+      "replied_in_thread": "Athenaが{thread}で返信しました"
     },
     "ocr": {
       "title": "OCR",
@@ -17281,5 +17298,47 @@
     "status_tracking": "追跡中",
     "tracks_title": "並列トラック",
     "status_action_running": "処理中…"
+  },
+  "foundry": {
+    "archetype_group_aria": "メンタリティ・アーキタイプ",
+    "capabilities_heading": "能力をアタッチ",
+    "capabilities_subheading": "各能力はカタログ内のレシピ — エージェントが実行する自動化されたジョブです。おすすめから始めるか、すべてを閲覧してください。",
+    "create_button": "エージェントを作成",
+    "create_in_progress": "作成中…",
+    "created_toast": "「{name}」の準備が整いました — 能力がアタッチされ、プロンプトが構成されました。",
+    "dial_risk": "リスク許容度",
+    "dial_speed": "速度 vs 品質",
+    "entry_compose": "コンポーズ",
+    "entry_describe": "説明する",
+    "entry_mode_aria": "ペルソナ作成モード",
+    "entry_templates": "テンプレートを閲覧",
+    "foundation_heading": "メンタリティを選択",
+    "foundation_subheading": "アーキタイプはエージェントの思考方法 — リスク許容度、口調、原則を決定します。能力は次のステップで、これは「誰が作業するか」を決めるものです。",
+    "memory_group_aria": "メモリ戦略",
+    "memory_heading": "メモリ戦略",
+    "memory_subheading": "実行間でエージェントが記憶する内容です。後で変更できます。",
+    "next_step": "次へ",
+    "rack_affinity_filter": "このアーキタイプへのおすすめ",
+    "rack_empty": "該当する能力がありません — フィルターをクリアするか、別のキーワードで検索してください。",
+    "rack_search_placeholder": "能力を検索…",
+    "rack_selected_count": "{count} 件選択中",
+    "requires_home_team": "チームが必要です",
+    "requires_knowledge_base": "ナレッジベースが必要です",
+    "requires_obsidian_vault": "Obsidian Vaultが必要です",
+    "review_capabilities_label": "能力（{count}）",
+    "review_connectors_hint": "認証情報は作成後に接続できます — 不足している項目はエージェントが正確に表示します。",
+    "review_connectors_label": "必要になる接続",
+    "review_foundation_label": "ファウンデーション",
+    "review_memory_label": "メモリ",
+    "review_memory_setup_hint": "選択したメモリ戦略には作成後に追加の設定が必要です — エージェントが案内します。",
+    "review_name_label": "エージェント名",
+    "review_name_placeholder": "例：My {archetype}",
+    "review_no_capabilities": "まだありません — エージェントはメンタリティのみで開始します。能力はいつでもレシピカタログからアタッチできます。",
+    "step_capabilities": "能力",
+    "step_foundation": "ファウンデーション",
+    "step_review": "レビュー",
+    "xray_label": "{count} 件の能力で構成",
+    "xray_tooltip": "このテンプレートはメンタリティとレシピカタログの能力で構成されています — Foundryで手動でコンポーズするのと同じ要素です。",
+    "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
   }
 }

@@ -8,4 +8,9 @@ category: string | null,
 /**
  * Human-readable business feature name (often equals the context name).
  */
-business_feature: string | null, created_at: string, updated_at: string, };
+business_feature: string | null, 
+/**
+ * Canonical pin: when true, a full rescan preserves this hand-curated
+ * context instead of DELETE-and-recreate. See dev_contexts.pinned migration.
+ */
+pinned: boolean, created_at: string, updated_at: string, };

@@ -219,5 +219,16 @@
   "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
   "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
   "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+  "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+  "already_adopted_toast": "\"{title}\" ya está adoptada por este agente",
+  "remove_confirm_body": "Esto desvincula \"{title}\" de {persona}. Se eliminan su disparador y configuración; la receta permanece en el catálogo y puede volver a adoptarse en cualquier momento.",
+  "remove_confirm_title": "¿Eliminar esta capacidad?",
+  "remove_label": "Eliminar",
+  "remove_tooltip": "Desvincular esta capacidad del agente seleccionado",
+  "removed_toast": "Se eliminó \"{title}\"",
+  "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+  "update_badge": "Actualizar",
+  "update_badge_detail_tooltip": "Adoptado en v{from}; el catálogo ahora está en v{to}. Elimina y vuelve a adoptar para actualizar.",
+  "update_badge_tooltip": "Hay una versión más reciente de esta capacidad disponible — elimina y vuelve a adoptar para actualizar",
+  "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
 }

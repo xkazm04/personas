@@ -163,7 +163,7 @@ export function InspectorHud({
       ) : !mappingOn ? (
         <div style={{ color: "#fca5a5", lineHeight: 1.6 }}>
           Source mapping is OFF. Relaunch with:
-          <div style={{ color: ACCENT, marginTop: 2 }}>npm run tauri:dev:inspect</div>
+          <div style={{ color: ACCENT, marginTop: 2 }}>npm run tauri:dev:test</div>
         </div>
       ) : crumbs.length ? (
         crumbs.map((c, i) => (

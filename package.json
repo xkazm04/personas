@@ -85,10 +85,9 @@
     "tauri:build:stable": "tauri build --config src-tauri/tauri.stable.conf.json",
     "tauri:dev": "tauri dev",
     "tauri:dev:lite": "tauri dev --config src-tauri/tauri.lite.conf.json",
-    "tauri:dev:inspect": "cross-env PERSONAS_INSPECTOR=1 npm run tauri:dev:lite",
     "tauri:dev:stable": "tauri dev --config src-tauri/tauri.stable.conf.json",
-    "tauri:dev:test": "node scripts/dev/tauri-dev-test.mjs",
-    "tauri:dev:test:full": "tauri dev -- --features test-automation",
+    "tauri:dev:test": "cross-env PERSONAS_INSPECTOR=1 node scripts/dev/tauri-dev-test.mjs",
+    "tauri:dev:test:full": "cross-env PERSONAS_INSPECTOR=1 tauri dev -- --features test-automation",
     "prepare": "lefthook install || true"
   },
   "dependencies": {

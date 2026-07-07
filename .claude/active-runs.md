@@ -6,6 +6,13 @@ materially edits the working tree should touch this file twice:
 
 1. **At session start (Phase 0):** read this file, scan `## Active
 
+### /research — claude-code-2-1-182-to-200
+- Started: 2026-07-05
+- Status: completed (commit: df493b983) — floor 2.1.181 → 2.1.199; Sonnet 5 = catch (alias resolves); 0 descoped-reopens
+- Branch: master (main checkout — scope disjoint; single-file version-floor edit)
+- Paths: src-tauri/src/engine/provider/claude.rs (version floor), possibly src-tauri/src/engine/prompt/cli_args.rs (build_cli_args flags); Obsidian vault (outside repo); .claude/active-runs.md
+- Note: 10th CLI-release-log run; range v2.1.182 → v2.1.200 (last floor in code = 2.1.181, set 2026-06-18). Catch-dominant source type. active-runs.md NOT staged in commit (610KB concurrent-write hazard).
+
 ### byom-mixed-engine — mixed engine (Claude orchestrator + local Ollama llm_delegate tool) (session 7c484b45)
 - Started: 2026-06-11 ~17:15. Completed: 2026-06-11 ~18:50. Commits: 428718b05 (backend), d758e2900 (frontend toggle + lfm2.5 catalog), 2d3d8eb87 (feature doc) + findings commit.
 - Paths: mcp_server/tools.rs (llm_delegate), engine/cli_mcp_config.rs, engine/runner/mod.rs, settings_keys.rs, sub_use_cases detail panel, en.json, docs/plans/mixed-engine-byom.md.
@@ -19,6 +26,20 @@ materially edits the working tree should touch this file twice:
    your own entry under `## Active`.
 2. **At session end (Phase 11/13):** move your `## Active` entry to the
    top of `## Recently completed
+
+### ship-loop-M5 — Ship Loop Milestone 5: Chain Studio commit path (session fable-5 fa9818da) — completed
+- 2026-07-04: commit 874628340 — signal-source routes commit via configure-&-commit modal hosting TriggerAddForm locked to the source type (additive lockedTriggerType prop); output_match commits as backend jsonpath condition via inline path+expected inputs; Save-all stays direct-only; 9 i18n keys ×14; 7 unit tests. Gate: vitest 2029/2029, tours 6/6, tsc/eslint/i18n-strict clean. Events feature doc updated.
+- Paths: sub_studio (studioCommit/studioDraftModel/useStudioComposer/StudioPatchbay/StudioTriggerCommitModal), sub_triggers/TriggerAddForm.tsx, locales ×14 + generated, docs/features/events/README.md.
+- Note: live modal drive-through pending user's next dev session (unit+tour verified; the modal flow itself needs a hand or bridge run). Ledger NOT staged.
+
+### ship-loop-M4 — Ship Loop Milestone 4: product decisions + security designs (session fable-5 fa9818da) — completed
+- 2026-07-04: 12 commits d24cb45e1..b3c79725b — assetProtocol scoped to app+media roots; 4 A/B switchers consolidated (Patchbay/Transcript/Correspondence; PresetStudio comments); triage sub-flags folded into master (read-path); FleetPairDevice dev-flagged; factoryMock deleted (types→factoryModel.ts, 14 rewires); OAuth server-side token binding (status=metadata+ref, backend redeems; 120s grace deviation flagged); pre-migration DB backup w/ rotation. Gate: frontend green, tours 6/6, M4 Rust modules green. FULL cargo suite surfaced 18 PRE-EXISTING failures (no file touched since Jul 1) → ship-loop item 45.
+- Paths: as declared at start. Ledger NOT staged.
+
+### ship-loop-M3 — Ship Loop Milestone 3: Ops unbrick (session fable-5 fa9818da) — completed
+- 2026-07-04: commits 13e39bb98 (release pipeline unbrick: versions→0.4.0, tag-collision guard, workflow_dispatch, createUpdaterArtifacts, manifest hard-fail, updater-check visibility), 54f52d5d4 (CI push:master), 50afb63bb (changelog + docs/development/release.md), 1e8cd1378 (ORT SHA256 pin). Gate: vitest 2022/2022, cargo check, tauri-configs, tsc. Item 38 deferred (db/mod.rs foreign-dirty), 36 (signing) awaits decision. Live verification = first dispatched release run.
+- Paths: package.json, package-lock.json, src-tauri/{Cargo.toml,Cargo.lock,tauri.conf.json}, .github/workflows/{release,ci}.yml, useAutoUpdater.ts, CHANGELOG.md, docs/development/release.md, scripts/ensure-ort-cache.mjs, .claude/ship-loop/**.
+- Note: coexisted with live fleet-Phase-2 session (interleaved commits, zero conflicts). Ledger NOT staged.
 
 ### prototype-kpi-card — /prototype directional variants for the KPI card (session 2c665603)
 - Started: 2026-06-11 ~12:30. Completed: 2026-06-11 (user redirect: cards → recharts command center; all card variants deleted, switcher removed). Main checkout (NOT a worktree — deliberate: variants must render in the live dev app for A/B, and a second app instance is impossible (data-dir singleton); sub_kpis/ is exclusively this session's surface).
@@ -77,6 +98,31 @@ timestamp — the next session can recognize it as abandoned.
 - Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
 - Note: Track 1 = author requirements + drive Studio (via test-automation :17320) to build "ChainSonar", a read-only + paper-only Ethereum micro-cap trade-signal analytics app. Track 2 = observe each build turn + harden Studio for data/analytics apps. v1 safety boundary: NO wallet/keys/signing/fund movement. Empirical: fix Studio from observed turns, not pre-emptively.
+
+### cloud-pairing — Direction 1 pairing bridge P5–P7 (session opus-4-8[1m]) — COMPLETED + MERGED + PUSHED
+- 2026-07-05: MERGED to master (FF) + PUSHED (origin/master 5f6d722fd). P5 0efd906d7 / P6 37e482a16 / P7 4bac91b81 + docs 5f6d722fd (docs/features/integrations/README.md = authoritative inbound-connectivity state + backlog). App relaunched from master (killed day-old orphaned Vite pid45096; personas-desktop.exe live on :9420 + Vite :1420). WORKTREE .claude/worktrees/cloud-pairing NOT removed — node_modules is a REAL pnpm dir (not junction); recursive delete risks symlink-follow into main .bin — use `npm run clean:worktrees --force`.
+- Started: 2026-07-05 ~now. WORKTREE .claude/worktrees/cloud-pairing (branch worktree-cloud-pairing, off master e7f895066). Continues the merged Direction-5 work (capability tokens). ADR docs/architecture/cloud-integration-bridge.md.
+- Status: P5–P7 ALL DONE on worktree-cloud-pairing (UNMERGED, awaiting user review). Commits: P5 0efd906d7 (PNA header + PAIRED_ORIGINS RwLock cache + CORS predicate + list_paired_origins), P6 37e482a16 (engine/pairing.rs: /pair/request + /pair/claim single-use origin-checked rendezvous, personas://pair deep-link branch, approve/reject/list/revoke commands minting origin-bound keys + add_paired_origin, PairApprovalModal at app root + Connected-apps section + i18n 13 keys×14, PendingPairingView binding), P7 4bac91b81 (docs/api/management-api.openapi.yaml OpenAPI 3.1 + sdk/personas-sdk.ts zero-dep client with pair() + sdk/README). Decisions: HTTP-on-loopback v1 (no TLS), derive paired origins from bound_origin (in-memory cache), localhost /pair/request + deep-link triggers, single-file in-repo SDK (published pkg = follow-up). Gate: tsc 0, eslint clean, i18n strict clean, ~28 rust tests green (18 P5 + 5 pairing + regression). NOT live-verified end-to-end (needs a real browser+cloud origin; backend unit-tested).
+- Paths: src-tauri/src/engine/{management_api.rs,webhook.rs,pairing.rs NEW}, src-tauri/src/lib.rs (deep-link branch + commands), src-tauri/src/commands/credentials/external_api_keys.rs, src/features/settings/sub_api_keys/**, src/api/auth/**, src/i18n/locales/*.json, docs/api/**, packages/personas-sdk/** OR personas-web, docs/features/settings/README.md.
+- Note: worktree isolation, shared cargo target, node_modules JUNCTION added before frontend commits (rmdir before removal). No overlap w/ other active entries (all stale). Ledger NOT staged.
+
+### cloud-bridge — Direction 1+5 cloud→local integration: capability tokens + pairing (session opus-4-8[1m]) — COMPLETED
+- Started: 2026-07-05 ~now. Completed 2026-07-05: MERGED to master (fast-forward) + PUSHED to origin (origin/master = e7f895066); worktree + branch removed (junction rmdir'd first, main .bin intact). Pre-push gate green (typecheck 82s, i18n-coverage, evals, conformance).
+- Status: P1–P4 ALL DONE + MERGED + PUSHED (commit e7f895066). Was: worktree-cloud-bridge off master cd1baf80e; ADR docs/architecture/cloud-integration-bridge.md. Commits: P1 e20f80da7 (external_api_keys expiry/bound_origin/label + find_by_token expiry enforcement), P2 81a3cc7e3 (resource-scoped authorize() per-persona-execute + per-credential-proxy, credential-proxy lockdown off personas:execute, system key gains `proxy`), P3 e85193731 (api_key_audit table+repo+middleware write, per-key rate limit 120/60s → 429), P4 e7f895066 (create expires_in_days + list_api_key_audit cmd; CreateApiKeyDialog per-agent execute picker + expiry picker; ApiKeysSettings expiry chip + Activity audit drawer; i18n 16 keys ×14 strict-clean; settings doc). Gate: tsc 0, eslint 0, i18n strict clean, ~30 rust tests green, backend cargo check clean. Pairing (P5–P7) DEFERRED. FOUND pre-existing migration-harness bug (ADR §9): run_incremental drops external_api_keys + healing_audit_log + skills + settings_audit_log + team_deliberations in the TEST binary (prod unaffected); guarded my migration on has_table so it doesn't abort → restored 2 pre-existing red migration tests to green. Worktree .claude/worktrees/cloud-bridge (node_modules JUNCTION — `cmd /c rmdir` it BEFORE `git worktree remove`). Ledger NOT staged.
+- Paths: src-tauri/src/db/migrations/incremental.rs (APPEND end of run_incremental), src-tauri/src/db/{models/external_api_key.rs, repos/resources/external_api_keys.rs}, src-tauri/src/engine/management_api.rs (authorize/middleware), src-tauri/src/commands/credentials/external_api_keys.rs, src-tauri/src/lib.rs, src/features/settings/sub_api_keys/**, src/api/auth/externalApiKeys.ts, src/lib/bindings/ (regen), src/i18n/locales/*.json, docs/features/settings/README.md.
+- Note: worktree isolation, shared cargo target. No overlap with active entries (all completed/stale). Ledger NOT staged (concurrent-write hazard).
+
+### ship-loop-M7 — Ship Loop Milestone 7: cold-start fixes (session fable-5 fa9818da) — completed
+- Started: 2026-07-04 ~now
+- Status: COMPLETE — 4 fixes shipped, atomic commits: Fix#1 foreground-zero-cred dd6c24ebd · Fix#2 seed-at-app-init 82e7a1451 · Fix#3 CLI/login gate 40c222018 · Fix#4 subscription-cost reframe 35fa6be38. Gate green (tsc/lint/vitest 2029/build/tours 6/6). All frontend, i18n 4 keys ×14 strict-clean. Dim 9 🟡→🟢; board zero-red.
+- Paths: src/hooks/design/template/useDesignReviews.ts, src/lib/personas/templates/seedTemplates.ts, src/App.tsx, src/features/onboarding/**, src-tauri/src/engine/cli_capabilities.rs (+probe wiring), src/features/agents/sub_executions/**/CostBreakdownBar.tsx, i18n locales, docs/features/onboarding.md, .claude/ship-loop/**. Disjoint from fleet/pty.rs (concurrent session).
+- Note: Ledger NOT staged.
+
+### ship-loop-M6 — Ship Loop Milestone 6: value & market lens (session fable-5 fa9818da) — completed
+- Started: 2026-07-04 ~now
+- Status: COMPLETE — items 43+44 → .claude/ship-loop/value-case.md. Analysis-only (no code; verdicts = CP6 product decisions). Verdict: ship narrower beta; moat is economic (subscription-CLI 3-10× vs API); existential risk = Anthropic first-party scheduling → ship now. Dim 9 🔴→🟡. No commit (ship-loop files untracked). CP6 pending user.
+- Paths: .claude/ship-loop/** (untracked). Read-only elsewhere.
+- Note: Ledger NOT staged.
 
 ### deliberation-d1 — Design D D1: schema + ts-rs bindings (session opus-4-8[1m])
 - Started: 2026-06-25 ~now

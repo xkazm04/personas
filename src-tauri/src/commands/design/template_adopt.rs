@@ -358,8 +358,26 @@ pub fn instant_adopt_template_inner(
         })
         .or_else(|| Some(format!("Adopted from template: {template_name}")));
 
-    // Normalize structured_prompt
-    let structured_prompt = design.get("structured_prompt").cloned();
+    // Recipe parameterization (Gap 1): derive tunable params from the hydrated
+    // use_cases' input_schema (input_schema survives normalize_v3_to_flat), then
+    // inject the `## Capability Parameters` section into structured_prompt.instructions
+    // so `{{param.*}}` resolves at runtime — the same bridge the promote path uses.
+    let recipe_caps = design
+        .get("use_cases")
+        .and_then(|v| v.as_array())
+        .map(|ucs| crate::engine::recipe_parameters::derive_capability_params_from_values(ucs))
+        .unwrap_or_default();
+    let recipe_param_values =
+        crate::engine::recipe_parameters::to_parameter_values(&recipe_caps);
+
+    // Normalize structured_prompt, injecting the capability-parameters section.
+    let structured_prompt = {
+        let mut sp = design.get("structured_prompt").cloned();
+        if let Some(ref mut spv) = sp {
+            crate::engine::recipe_parameters::inject_into_structured_prompt(spv, &recipe_caps);
+        }
+        sp
+    };
 
     let persona_meta = design.get("persona_meta");
     let icon = persona_meta
@@ -392,9 +410,16 @@ pub fn instant_adopt_template_inner(
     // Design D: the persona's authored `core` (motivation/stance/dials — its
     // distinct deliberation viewpoint). Applied post-create to `core_profile`,
     // same pattern as timeout_ms (the n8n draft doesn't carry it).
+    // `persona_meta.core` was the original Design-D contract, but no template
+    // on disk ever carried it there — the authored dials live at
+    // `payload.persona.core` (9 SDLC templates + every Foundry archetype).
+    // The persona object survives `normalize_v3_to_flat`, so read it as the
+    // fallback; without this the stamp below was dead code on every adoption
+    // (found in the 2026-07-06 Foundry audit).
     let template_core: Option<String> = persona_meta
         .and_then(|m| m.get("core"))
         .filter(|c| !c.is_null())
+        .or_else(|| design.pointer("/persona/core").filter(|c| !c.is_null()))
         .map(|c| c.to_string());
     let persona_name = persona_meta
         .and_then(|m| m.get("name"))
@@ -699,11 +724,16 @@ pub fn instant_adopt_template_inner(
                     })
                     .collect()
             });
+        // Recipe-derived params (from input_schema) — seeded here too (Gap 1),
+        // merged UNDER any template-authored suggested_parameters/adoption_questions
+        // of the same key. The matching section was injected into structured_prompt
+        // above, so the seeded params resolve at runtime.
         if let Err(e) = populate_persona_parameters_from_design(
             &state.db,
             pid,
             &design,
             answers.as_ref(),
+            &recipe_param_values,
         ) {
             tracing::warn!(
                 persona_id = %pid,
@@ -1153,6 +1183,10 @@ pub(super) fn populate_persona_parameters_from_design(
     persona_id: &str,
     design: &serde_json::Value,
     answers: Option<&std::collections::HashMap<String, String>>,
+    // Params derived from recipe `input_schema` (Foundry arc, 2026-07). Lowest
+    // precedence: seeded first so a template's own `suggested_parameters` /
+    // `adoption_questions` with the same KEY override them.
+    recipe_params: &[serde_json::Value],
 ) -> Result<(), AppError> {
     // Two authoring paths converge here:
     //   1. `suggested_parameters[]` — direct PersonaParameter array on the
@@ -1168,6 +1202,14 @@ pub(super) fn populate_persona_parameters_from_design(
     // answer baked in) wins.
     let mut params_by_key: std::collections::HashMap<String, serde_json::Value> =
         std::collections::HashMap::new();
+
+    // Recipe-derived params first (lowest precedence) — overridden below by any
+    // template-authored suggested_parameters / adoption_questions of the same key.
+    for p in recipe_params {
+        if let Some(k) = p.get("key").and_then(|v| v.as_str()) {
+            params_by_key.insert(k.to_string(), p.clone());
+        }
+    }
 
     if let Some(arr) = design.get("suggested_parameters").and_then(|v| v.as_array()) {
         for p in arr {
@@ -2973,6 +3015,14 @@ fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_jso
             "capability_summary".into(),
             serde_json::Value::String(cs.into()),
         );
+    }
+    // Preserve input_schema so design_context.useCases carries the recipe's
+    // declared params — keeps the catalog `sync_capability_parameters` command
+    // consistent on instant-adopted personas.
+    if let Some(schema) = obj.get("input_schema") {
+        if !schema.is_null() {
+            out.insert("input_schema".into(), schema.clone());
+        }
     }
     if let Some(arr) = obj.get("tool_hints").and_then(|v| v.as_array()) {
         out.insert("tool_hints".into(), serde_json::Value::Array(arr.clone()));

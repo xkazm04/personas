@@ -10913,7 +10913,18 @@
     "_comment_review_mode_always": "Badge: every run is human-reviewed — keep 1 word",
     "_comment_review_mode_conditional": "Badge: review depends on confidence/conditions — keep 1 word",
     "_comment_review_mode_never": "Badge: output ships without human review — keep 1 word",
-    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail"
+    "_comment_tag_filter_tooltip": "Tooltip on clickable tag chips in recipe detail",
+    "already_adopted_toast": "\"{title}\" sudah diadopsi oleh agen ini",
+    "remove_confirm_body": "Ini melepas \"{title}\" dari {persona}. Pemicu dan konfigurasinya akan dihapus; resep tetap ada di katalog dan dapat diadopsi kembali kapan saja.",
+    "remove_confirm_title": "Hapus kemampuan ini?",
+    "remove_label": "Hapus",
+    "remove_tooltip": "Lepas kemampuan ini dari agen yang dipilih",
+    "removed_toast": "\"{title}\" telah dihapus",
+    "_comment_remove": "── recipe removal (detach an adopted capability) ──",
+    "update_badge": "Perbarui",
+    "update_badge_detail_tooltip": "Diadopsi pada v{from}; katalog sekarang v{to}. Hapus dan adopsi ulang untuk memperbarui.",
+    "update_badge_tooltip": "Versi terbaru dari kemampuan ini tersedia — hapus dan adopsi ulang untuk memperbarui",
+    "_comment_update_badge": "Chip when an adopted recipe's catalog version moved ahead — keep 1 word"
   },
   "recipes": {
     "no_match": "Tidak ada resep yang cocok",
@@ -12186,7 +12197,11 @@
       "context_last_scanned": "Pemindaian terakhir",
       "context_plan_created": "Pemindaian konteks mingguan dijadwalkan",
       "context_plan_failed": "Gagal menjadwalkan pemindaian konteks",
-      "competition_title": "Kompetisi"
+      "competition_title": "Kompetisi",
+      "context_detail_pin": "Sematkan konteks",
+      "context_detail_pin_failed": "Tidak dapat memperbarui sematan",
+      "context_detail_pin_tooltip": "Konteks yang disematkan dipertahankan saat pemindaian ulang penuh alih-alih dibuat ulang",
+      "context_detail_unpin": "Lepas sematan konteks"
     },
     "doc_signing": {
       "title": "Penandatanganan Dokumen",
@@ -13248,7 +13263,9 @@
       "switch_conversation": "Ganti percakapan",
       "thread_status_awaiting": "menunggu Anda",
       "thread_status_idle": "nonaktif",
-      "thread_status_working": "sedang berjalan"
+      "thread_status_working": "sedang berjalan",
+      "rename_conversation": "Ganti nama percakapan",
+      "replied_in_thread": "Athena membalas di {thread}"
     },
     "ocr": {
       "title": "OCR",
@@ -17281,5 +17298,47 @@
     "status_tracking": "Melacak",
     "tracks_title": "Jalur paralel",
     "status_action_running": "Memproses…"
+  },
+  "foundry": {
+    "archetype_group_aria": "Arketipe mentalitas",
+    "capabilities_heading": "Lampirkan kapabilitas",
+    "capabilities_subheading": "Setiap kapabilitas adalah resep dari katalog — tugas otomatis yang dijalankan agen Anda. Mulai dengan yang disarankan, atau jelajahi semuanya.",
+    "create_button": "Buat agen",
+    "create_in_progress": "Menyusun…",
+    "created_toast": "\"{name}\" sudah siap — kapabilitas terpasang dan prompt tersusun.",
+    "dial_risk": "Selera risiko",
+    "dial_speed": "Kecepatan vs kualitas",
+    "entry_compose": "Susun",
+    "entry_describe": "Deskripsikan",
+    "entry_mode_aria": "Mode pembuatan persona",
+    "entry_templates": "Jelajahi templat",
+    "foundation_heading": "Pilih mentalitas",
+    "foundation_subheading": "Arketipe menentukan cara berpikir agen Anda — selera risiko, gaya bicara, dan prinsipnya. Kapabilitas menyusul; ini menentukan siapa yang mengerjakan tugasnya.",
+    "memory_group_aria": "Strategi memori",
+    "memory_heading": "Strategi memori",
+    "memory_subheading": "Apa yang diingat agen Anda antar-eksekusi. Anda bisa mengubahnya nanti.",
+    "next_step": "Berikutnya",
+    "rack_affinity_filter": "Disarankan untuk arketipe ini",
+    "rack_empty": "Tidak ada kapabilitas yang cocok — hapus filter atau coba pencarian lain.",
+    "rack_search_placeholder": "Cari kapabilitas…",
+    "rack_selected_count": "{count} dipilih",
+    "requires_home_team": "Butuh tim",
+    "requires_knowledge_base": "Butuh basis pengetahuan",
+    "requires_obsidian_vault": "Butuh vault Obsidian",
+    "review_capabilities_label": "Kapabilitas ({count})",
+    "review_connectors_hint": "Anda bisa menghubungkan kredensial setelah pembuatan — agen akan menunjukkan persis apa yang kurang.",
+    "review_connectors_label": "Akan membutuhkan koneksi berikut",
+    "review_foundation_label": "Fondasi",
+    "review_memory_label": "Memori",
+    "review_memory_setup_hint": "Strategi memori yang dipilih butuh pengaturan tambahan setelah pembuatan — agen akan memandu Anda.",
+    "review_name_label": "Nama agen",
+    "review_name_placeholder": "mis. {archetype} Saya",
+    "review_no_capabilities": "Belum ada — agen mulai hanya dengan mentalitasnya; lampirkan kapabilitas kapan saja dari katalog Resep.",
+    "step_capabilities": "Kapabilitas",
+    "step_foundation": "Fondasi",
+    "step_review": "Tinjau",
+    "xray_label": "Tersusun dari {count} kapabilitas",
+    "xray_tooltip": "Templat ini adalah gabungan mentalitas dan kapabilitas dari katalog resep — bagian yang sama yang bisa Anda susun sendiri di Foundry.",
+    "_comment": "Persona Foundry — the compose-from-parts creation surface (mentality archetype + memory strategy + recipe capabilities). Archetype/strategy NAMES and taglines come from the catalog data, not i18n."
   }
 }

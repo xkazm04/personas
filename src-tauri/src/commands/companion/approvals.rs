@@ -296,6 +296,23 @@ pub async fn companion_approve_action(
     finalize_approval(&state, &approval_id, status_text)?;
     log_action_episode(&state, &action, &embedder_log).await;
 
+    // The reported gap: after a manual Approve the action ran and a flat outcome
+    // line was appended, but Athena never reacted — the user had to send a NEW
+    // message to get any response. Spawn ONE brief system-initiated reaction turn
+    // so she responds automatically. Success only: a failed action keeps its
+    // inline error on the still-open card (the frontend doesn't resolve it), and
+    // the skip filter keeps fleet / navigation-only actions quiet.
+    //
+    // NOTE (auto-approve path): `auto_resolve_if_allowed` deliberately does NOT
+    // call this. That path is autonomous-mode-only and fires when Athena's own
+    // reasoning turn just proposed the action — her originating reply already
+    // spoke to the user, so a second "I saved that" turn would be redundant
+    // chatter, exactly what autonomous mode's restraint design avoids. The manual
+    // path is the genuine silence gap. Documented follow-up if that changes.
+    if status_text == APPROVAL_STATUS_APPROVED {
+        spawn_action_reaction(&app, &state, &action, &message, client_action.as_ref());
+    }
+
     Ok(ApprovalOutcome {
         id: approval_id,
         status: status_text.into(),
@@ -757,6 +774,95 @@ async fn log_action_episode(state: &State<'_, Arc<AppState>>, action: &str, cont
     if let Err(e) = log_result {
         tracing::warn!(error = %e, "companion: failed to log action episode");
     }
+}
+
+// ── auto-reaction after an approved action ───────────────────────────────
+
+/// Actions whose entire effect is opening a screen / prefilling a form — a
+/// spoken reaction would just be noise. `open_route` / `open_lab` are auto-fired
+/// by the dispatcher and never reach this executor, but naming them documents
+/// the contract; `prefill_persona_create` reaches here (the user approves it),
+/// so it's listed explicitly to stay quiet.
+const NAVIGATION_ONLY_ACTIONS: &[&str] = &["open_route", "open_lab", "prefill_persona_create"];
+
+/// Actions that ALREADY spawn their OWN follow-up reasoning turn into the chat
+/// (`analyze_fleet` → fleet analysis, `run_browser_test` → the browser-test
+/// turn). Their `ExecuteResult` message is just a "started — I'll report back
+/// here" acknowledgment; the substantive reply arrives as the turn they spawned,
+/// so a canned reaction on top would double up.
+const SELF_NARRATING_ACTIONS: &[&str] = &["analyze_fleet", "run_browser_test"];
+
+/// Whether an approved action should get an automatic Athena reaction turn.
+/// Lenient by design — the rule is "better one more message than none", so the
+/// default is to react. Skips ONLY: (1) `fleet_*` — already excluded from the
+/// companion chat entirely (see `log_action_episode`'s early return); (2) the
+/// explicit navigation-only / prefill list (opening a screen isn't chat-worthy);
+/// (3) self-narrating actions that spawn their own reply turn (reacting would
+/// double up). Everything else — memory writes, `resolve_human_review`,
+/// `use_connector`, `run_arena`, and actions that merely also carry a
+/// `client_action` — reacts.
+fn should_react_to_action(action: &str, client_action: Option<&ClientAction>) -> bool {
+    if action.starts_with("fleet_") {
+        return false;
+    }
+    if NAVIGATION_ONLY_ACTIONS.contains(&action) || SELF_NARRATING_ACTIONS.contains(&action) {
+        return false;
+    }
+    // Lenient on purpose (Michal: "better one more message than none"): an action
+    // that also carries a `client_action` still did real work — a run started, a
+    // persona prefilled — so a brief reply beats silence. Only the explicit
+    // fleet / navigation / self-narrating lists above stay quiet.
+    let _ = client_action;
+    true
+}
+
+/// After an approved action executes successfully, spawn ONE brief
+/// system-initiated Athena turn into the MAIN chat thread so the user gets a
+/// response without re-initiating (the reported gap: clicking Approve executed
+/// the action + logged a flat "Saved that to memory." line, but Athena never
+/// reacted). Rides the same fire-and-forget proactive-turn machinery the
+/// scheduler uses — it streams into the panel via `companion://stream` and
+/// persists as a hidden `[proactive: action_reaction]` System opener + one
+/// assistant reply, landing right after the outcome episode in
+/// `DEFAULT_SESSION_ID`.
+///
+/// Loop-safe: the reaction is a normal assistant turn, NOT an approval, so it
+/// can't re-enter `companion_approve_action`; and if its reply proposes a new
+/// action, that surfaces as a fresh approval card (a deliberate new user
+/// decision), never an auto-reaction. The skip filter keeps it off fleet /
+/// navigation / self-narrating actions.
+fn spawn_action_reaction(
+    app: &tauri::AppHandle,
+    state: &State<'_, Arc<AppState>>,
+    action: &str,
+    outcome_message: &str,
+    client_action: Option<&ClientAction>,
+) {
+    if !should_react_to_action(action, client_action) {
+        return;
+    }
+    // Internal directive to Athena (not UI chrome) — no i18n needed.
+    let directive = format!(
+        "You just carried out an action the user approved: `{action}`.\n\
+         Outcome: {outcome}\n\n\
+         Respond with ONE short reaction (1–2 sentences), in your own voice, acknowledging what \
+         just happened — and offer a next step ONLY if one is genuinely useful. Don't restate the \
+         outcome verbatim, don't propose or take another action, and don't ask the user to do \
+         anything unless it clearly helps. This is just so they get a reply instead of silence.",
+        action = action,
+        outcome = outcome_message.trim(),
+    );
+    crate::companion::session::spawn_proactive_turn_in(
+        app.clone(),
+        Arc::new(state.user_db.clone()),
+        Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "action_reaction".to_string(),
+        Some(action.to_string()),
+        directive,
+        DEFAULT_SESSION_ID.to_string(),
+    );
 }
 
 // ── action executors ────────────────────────────────────────────────────

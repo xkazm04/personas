@@ -1,0 +1,85 @@
+{
+  "_comment": "Persona-build scenarios for the Cinema loading-timing harness. Grounded in the 25 connectors actually credentialed in this machine's vault (persona_credentials). Ordered roughly short -> long / 1 tool -> 5 tools, to span the range of process-automation needs so we can measure how the >60s first-question wait varies with intent complexity and tune the cinema pacing to reality. `expectedTools` = service_types we expect the resolver to bind; `complexity` = our a-priori guess (validated against measured timing).",
+  "scenarios": [
+    {
+      "id": "s01-memory-log",
+      "title": "Remember-notes memory log",
+      "intent": "Whenever I give you a note to remember, save it to my local database so I can search and recall it later.",
+      "expectedTools": ["personas_database"],
+      "complexity": "trivial",
+      "dims": ["task", "connector", "memory"]
+    },
+    {
+      "id": "s02-db-digest",
+      "title": "Morning database digest",
+      "intent": "Every morning at 8am, read the newest entries from my local database and give me a short digest of what changed.",
+      "expectedTools": ["personas_database"],
+      "complexity": "simple",
+      "dims": ["trigger", "task", "connector", "message"]
+    },
+    {
+      "id": "s03-github-discord",
+      "title": "GitHub issue to Discord ping",
+      "intent": "When a new GitHub issue is assigned to me, send me a Discord message with the issue title and a link.",
+      "expectedTools": ["github", "discord"],
+      "complexity": "medium",
+      "dims": ["event", "task", "connector", "message"]
+    },
+    {
+      "id": "s04-gmail-triage",
+      "title": "Unread Gmail triage",
+      "intent": "Read my unread Gmail, sort the messages by urgency, and log a one-line summary of each to my local database.",
+      "expectedTools": ["gmail", "personas_database"],
+      "complexity": "medium",
+      "dims": ["task", "connector", "memory"]
+    },
+    {
+      "id": "s05-finance-alert",
+      "title": "Stock movement alerter",
+      "intent": "Every hour, fetch AAPL and TSLA prices from Alpha Vantage and alert me on Discord if either moves more than 3 percent.",
+      "expectedTools": ["alpha_vantage", "discord"],
+      "complexity": "medium",
+      "dims": ["trigger", "task", "connector", "message"]
+    },
+    {
+      "id": "s06-linear-notion-sync",
+      "title": "Linear-done to Notion + Discord",
+      "intent": "When a Linear issue is marked Done, write a summary of it to Notion and post a short note in Discord for the team.",
+      "expectedTools": ["linear", "notion", "discord"],
+      "complexity": "multi-tool",
+      "dims": ["event", "task", "connector", "message"]
+    },
+    {
+      "id": "s07-drive-knowledge",
+      "title": "Drive-watching knowledge base",
+      "intent": "Watch my local Drive folder for new documents, embed them into my vector database, and let me search across them by asking questions in plain language.",
+      "expectedTools": ["local_drive", "personas_vector_db"],
+      "complexity": "multi-tool",
+      "dims": ["event", "task", "connector", "memory"]
+    },
+    {
+      "id": "s08-sentry-responder",
+      "title": "Sentry incident responder",
+      "intent": "When Sentry reports a new unresolved error, pull the referenced file from GitHub, draft a root-cause summary, and open a Discord thread for the team to triage.",
+      "expectedTools": ["sentry", "github", "discord"],
+      "complexity": "complex",
+      "dims": ["event", "task", "connector", "message", "review"]
+    },
+    {
+      "id": "s09-meeting-concierge",
+      "title": "Pre-meeting briefing concierge",
+      "intent": "Before each Cal.com meeting, look up the attendee in Attio and email me a one-page briefing through Gmail so I walk in prepared.",
+      "expectedTools": ["cal_com", "attio", "gmail"],
+      "complexity": "complex",
+      "dims": ["trigger", "task", "connector", "message"]
+    },
+    {
+      "id": "s10-daily-ops-brief",
+      "title": "Weekday operations brief pipeline",
+      "intent": "Every weekday at 8am, pull my Asana tasks due today, cross-check my Google Calendar for conflicts, summarize the top priorities, log the brief to my local database, and send it to me on Discord.",
+      "expectedTools": ["asana", "google_calendar", "personas_database", "discord"],
+      "complexity": "pipeline",
+      "dims": ["trigger", "task", "connector", "message", "memory"]
+    }
+  ]
+}

@@ -110,6 +110,7 @@ fn row_to_context(row: &Row) -> rusqlite::Result<DevContext> {
         tech_stack: row.get("tech_stack")?,
         category: row.get("category").unwrap_or(None),
         business_feature: row.get("business_feature").unwrap_or(None),
+        pinned: row.get::<_, i64>("pinned").map(|v| v != 0).unwrap_or(false),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -2109,8 +2110,11 @@ pub fn clear_project_context_map(
         "dev_context_groups::clear_project_context_map",
         {
             let conn = pool.get()?;
+            // Canonical pins survive a full rescan: delete only unpinned
+            // contexts. This is the fix for the documented near-miss where a
+            // full rescan destroyed a hand-curated map.
             let ctx_rows = conn.execute(
-                "DELETE FROM dev_contexts WHERE project_id = ?1",
+                "DELETE FROM dev_contexts WHERE project_id = ?1 AND pinned = 0",
                 params![project_id],
             )?;
             let rel_rows = conn.execute(
@@ -2118,13 +2122,39 @@ pub fn clear_project_context_map(
                 params![project_id],
             );
             let _ = rel_rows; // ok if table is empty
+            // Delete only groups that no longer own any (surviving/pinned)
+            // context, so a pinned context keeps its group.
             let grp_rows = conn.execute(
-                "DELETE FROM dev_context_groups WHERE project_id = ?1",
+                "DELETE FROM dev_context_groups WHERE project_id = ?1 \
+                 AND id NOT IN (\
+                   SELECT DISTINCT group_id FROM dev_contexts \
+                   WHERE project_id = ?1 AND group_id IS NOT NULL\
+                 )",
                 params![project_id],
             )?;
             Ok((grp_rows, ctx_rows))
         }
     )
+}
+
+/// Set (or clear) the canonical-pin flag on a single context. A pinned context
+/// survives a full rescan's DELETE-and-recreate. Returns the updated row.
+pub fn set_context_pinned(
+    pool: &DbPool,
+    id: &str,
+    pinned: bool,
+) -> Result<DevContext, AppError> {
+    timed_query!("dev_contexts", "dev_contexts::set_context_pinned", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "UPDATE dev_contexts SET pinned = ?1, updated_at = ?2 WHERE id = ?3",
+            params![pinned as i64, chrono::Utc::now().to_rfc3339(), id],
+        )?;
+        if n == 0 {
+            return Err(AppError::NotFound(format!("Dev context {id}")));
+        }
+        get_context_by_id(pool, id)
+    })
 }
 
 pub fn reorder_context_groups(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {

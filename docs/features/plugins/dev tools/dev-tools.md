@@ -50,6 +50,15 @@ The eight tabs are sequenced so a new project can walk top-to-bottom exactly onc
 4. Completion fires an **in-app notification** (TitleBar bell) with the counts — groups created, contexts created, files mapped — and a redirect link.
 5. **Re-scan + scheduling** — once a project has been mapped, the action row swaps the single "Scan Codebase" button for **Re-scan (incremental)** (passes `delta_mode=true` → `dev_tools_scan_codebase` diffs the live tree against `dev_context_file_hashes` and feeds the LLM only changed files, short-circuiting when nothing changed), a **Full re-scan** fallback, and a **Plan update** button. A "Last scan" relative-time tag shows recency. **Plan update** creates a weekly **system-op automation** (`planWeeklyContextScan` → `system_ops_create_automation`, `0 3 * * 1`) for the active project — the same `SystemOpAutomation` the Chain Studio commits; the background scheduler then re-derives the context map weekly and each run surfaces in the **Live Stream** via `dev_tools.context_scan_*` bus events. (Context scans are always scoped to one project.)
 
+#### Integrity, freshness & canonical pins
+
+The map is treated as a self-validating artifact, not a fire-and-forget snapshot (the design borrows from the `ktx` context-layer's referential-integrity posture):
+
+- **Self-heal on scan** — before publishing `context-map.json`, every context's `file_paths` is checked against the real filesystem and any entry that no longer exists is pruned (`prune_dangling_file_paths` in `context_generation.rs`). The pruned count is surfaced on the scan stream. A scan never *fails* on drift — it tidies.
+- **Provenance** — the exported `context-map.json` stamps a top-level `provenance` block (`git_commit`, `git_commit_count`) and each context carries `last_written_at`, so a reader (a CLI, `/research`) can judge staleness against the current HEAD instead of a bare timestamp.
+- **On-demand audit** — `dev_tools_audit_contexts` reports referential integrity and freshness: `dangling_file_path` (mapped file gone), `unresolved_cross_ref` (a `cross_refs` entry naming no real context), and `stale_context` (a mapped file whose content changed since the last scan, by content-hash comparison against the cache). It never mutates state.
+- **Canonical pins** — a context can be pinned (`dev_tools_set_context_pinned`; exported as `pinned` in the JSON). A **full re-scan preserves pinned contexts** instead of DELETE-and-recreate, and the re-scan prompt tells the LLM not to re-emit them — so hand-curation survives a rebuild.
+
 ### 3. Idea Scanner — run 21 specialized agents
 
 1. Open **Idea Scanner**. Agents are grouped into four categories: **Technical, User Experience, Business, Mastermind**.

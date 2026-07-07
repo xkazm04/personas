@@ -54,8 +54,51 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.181 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.199 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.182–2.1.200: floor advanced to 2.1.199 — a cluster of streaming /
+        //   retry reliability fixes lands on personas's exact `-p`/stream-json
+        //   spawn surface. 2.1.199 (a) preserves the partial stream-json response
+        //   when the API emits a mid-stream overloaded/500 AFTER partial output
+        //   (extends the 2.1.179 fix, which was connection-drop only, to server
+        //   errors) → fewer false `timeout_ms`/`healing` aborts; (b) auto-retries
+        //   transient 429s unrelated to the usage limit with backoff FOR
+        //   SUBSCRIBERS instead of failing the turn — personas is always
+        //   subscription (never API), so this directly cuts execution failures.
+        //   2.1.198 retries brief mid-response network drops (ECONNRESET) with
+        //   backoff instead of aborting the turn. 2.1.186 fixes streaming requests
+        //   failing with "Content block not found" / JSON parse errors after the
+        //   machine wakes from sleep (desktop-relevant — laptops sleep). 2.1.196
+        //   turns the streaming idle-watchdog ON BY DEFAULT for all providers
+        //   (aborts+retries a stream with no events for 5 min; non-spurious since
+        //   the 2.1.139 clear-on-cancel fix) — cleaner than waiting for personas's
+        //   own `timeout_ms`; `CLAUDE_ENABLE_STREAM_WATCHDOG=0` exists to defer
+        //   fully to `engine/healing.rs` but default-on is beneficial, NOT
+        //   disabled. 2.1.187 fixes `--resume` failing "No conversation found"
+        //   when the original `-p` run produced no model turns (helps the
+        //   `build_resume_cli_args` chat path). CEILING = 2.1.199, not 2.1.200:
+        //   2.1.200 is entirely background-agent-daemon / TUI / permission-mode-
+        //   default / screen-reader — nothing on the `-p`/stream-json wire.
+        //   Model note (passive, no code change): 2.1.197 makes Claude Sonnet 5
+        //   (1M ctx, GA) the CLI DEFAULT — personas's catalog uses bare aliases
+        //   (`haiku`/`sonnet`/`opus` in `modelCatalog.ts`), so `sonnet` already
+        //   resolves to Sonnet 5 on ≥2.1.197 and no-model-profile spawns inherit
+        //   it as the CLI default (`--effort` is pinned in `cli_args.rs` but
+        //   `--model` is only pushed when a profile sets one). NOT adopted:
+        //   2.1.200 permission-mode default→"manual" (personas passes
+        //   `--dangerously-skip-permissions`, which overrides it); 2.1.187
+        //   `sandbox.credentials` (personas's `-p` spawn is unsandboxed by
+        //   design); 2.1.193 OTEL `assistant_response` log event (blocked by the
+        //   no-exporter descope). Catch near-misses: 2.1.196 PowerShell
+        //   `git diff`/`grep` exit-1-no-longer-a-failure (passive Windows tool-
+        //   persona win, same family as 2.1.166/2.1.148); 2.1.187/2.1.186
+        //   `--json-schema`/Workflow `agent({schema})` structured-output fixes
+        //   (near-miss for a future structured-extraction path; Workflow tool
+        //   exposed-but-unused). Everything else in the range is interactive-TUI /
+        //   `claude agents` daemon / subagent panel / Claude-in-Chrome GA / voice
+        //   / Remote Control / plugins / IDE surface personas never reaches in
+        //   headless `-p`. 2.1.184/2.1.188/2.1.189/2.1.192/2.1.194 absent upstream;
+        //   2.1.190 is a generic "bug fixes" bump. /research run 2026-07-05.
         // - 2.1.177–2.1.181: floor advanced to 2.1.181 — several fixes land on
         //   personas's exact `-p` spawn surface. 2.1.181 fixes a ~120ms-per-
         //   launch startup stall (the first prompt waited on the managed-
@@ -248,7 +291,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.181")
+        Some("2.1.199")
     }
 }
 
@@ -335,6 +378,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.181");
+        assert_eq!(min.unwrap(), "2.1.199");
     }
 }

@@ -45,6 +45,14 @@ export type { CompanionMessage };
 export const DEFAULT_CONVERSATION_ID = 'default';
 
 /**
+ * The system "Athena / Notices" thread. Mirrors the backend
+ * `NOTICES_CONVERSATION_ID` — ownerless proactive nudges land here, and the
+ * proactive footer-notice path owns its popover, so the roster's background
+ * "replied in <thread>" cue skips it to avoid a double notice.
+ */
+export const NOTICES_CONVERSATION_ID = 'athena-notices';
+
+/**
  * Brain Viewer mode: hidden when null, otherwise a 3-step wizard:
  *   types → list → detail
  * The current cursor = (kind, id?). When `kind` is set but `id` is null,
@@ -95,6 +103,13 @@ export interface FooterNotice {
   subject: string;
   ttsSpoken: boolean;
   createdAt: number;
+  /**
+   * Multi-conversation: which thread this notice is about. When set, clicking
+   * the orb notice **jumps to that conversation** (and opens the panel) instead
+   * of just dismissing — so a background reply names its thread and is one click
+   * away. Absent for thread-agnostic notices (e.g. fleet analysis complete).
+   */
+  conversationId?: string;
 }
 
 interface CompanionStore {

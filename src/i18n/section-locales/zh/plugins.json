@@ -952,7 +952,11 @@
     "context_last_scanned": "上次扫描",
     "context_plan_created": "已计划每周上下文扫描",
     "context_plan_failed": "无法计划上下文扫描",
-    "competition_title": "竞品分析"
+    "competition_title": "竞品分析",
+    "context_detail_pin": "固定上下文",
+    "context_detail_pin_failed": "无法更新固定状态",
+    "context_detail_pin_tooltip": "固定的上下文在完整重新扫描时会被保留，而不是重新创建",
+    "context_detail_unpin": "取消固定上下文"
   },
   "doc_signing": {
     "title": "文档签署",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "切换对话",
     "thread_status_awaiting": "等待您回复",
     "thread_status_idle": "空闲",
-    "thread_status_working": "进行中"
+    "thread_status_working": "进行中",
+    "rename_conversation": "重命名对话",
+    "replied_in_thread": "Athena在{thread}中回复了"
   },
   "ocr": {
     "title": "OCR",

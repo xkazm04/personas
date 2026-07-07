@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Plus, Archive } from 'lucide-react';
+import { ChevronDown, Plus, Archive, Pencil } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   companionArchiveConversation,
   companionCreateConversation,
   companionMarkConversationRead,
+  companionRenameConversation,
 } from '@/api/companion';
 import type { ConversationRow } from '@/lib/bindings/ConversationRow';
 import { DEFAULT_CONVERSATION_ID, useCompanionStore } from './companionStore';
@@ -42,6 +43,9 @@ export function ConversationSwitcher() {
   const upsertConversation = useCompanionStore((s) => s.upsertConversation);
 
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draftTitle, setDraftTitle] = useState('');
+  const cancelledRef = useRef(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
   // The roster (hydration + live unread) is kept by useConversationRoster(),
@@ -79,6 +83,28 @@ export function ConversationSwitcher() {
       setActiveConversationId(row.id);
     } catch (err) {
       toastCatch('companion_create_conversation')(err);
+    }
+  }
+
+  function startRename(e: React.MouseEvent, c: ConversationRow) {
+    e.stopPropagation();
+    setDraftTitle(c.title ?? '');
+    setEditingId(c.id);
+  }
+
+  // Single commit path: Enter / click-away blurs the input → onBlur saves;
+  // Escape flags a cancel so the same blur skips the save.
+  async function commitRename(c: ConversationRow) {
+    const cancelled = cancelledRef.current;
+    cancelledRef.current = false;
+    setEditingId(null);
+    const next = draftTitle.trim();
+    if (cancelled || !next || next === (c.title ?? '')) return;
+    upsertConversation({ ...c, title: next });
+    try {
+      await companionRenameConversation(c.id, next);
+    } catch (err) {
+      toastCatch('companion_rename_conversation')(err);
     }
   }
 
@@ -129,6 +155,29 @@ export function ConversationSwitcher() {
             {conversations.map((c) => {
               const status = statusOf(c, c.id === activeId, streaming);
               const canArchive = !c.pinned && c.id !== DEFAULT_CONVERSATION_ID;
+              if (editingId === c.id) {
+                return (
+                  <div key={c.id} className="flex items-center gap-2 px-2 py-1.5">
+                    <StatusDot status={status} />
+                    <input
+                      autoFocus
+                      value={draftTitle}
+                      onChange={(e) => setDraftTitle(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                        else if (e.key === 'Escape') {
+                          cancelledRef.current = true;
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={() => commitRename(c)}
+                      aria-label={t.plugins.companion.rename_conversation}
+                      className="flex-1 min-w-0 bg-transparent border-b border-primary/50 typo-body focus:outline-none"
+                    />
+                  </div>
+                );
+              }
               return (
                 <div key={c.id} className="group relative flex items-center">
                   <button
@@ -148,17 +197,28 @@ export function ConversationSwitcher() {
                       </span>
                     )}
                   </button>
-                  {canArchive && (
+                  <div className="absolute right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       type="button"
-                      onClick={(e) => archive(e, c)}
-                      aria-label={t.plugins.companion.archive_conversation}
-                      title={t.plugins.companion.archive_conversation}
-                      className="absolute right-1.5 p-1 rounded-interactive text-foreground opacity-0 group-hover:opacity-100 hover:bg-foreground/10 transition-opacity focus-ring"
+                      onClick={(e) => startRename(e, c)}
+                      aria-label={t.plugins.companion.rename_conversation}
+                      title={t.plugins.companion.rename_conversation}
+                      className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
                     >
-                      <Archive className="w-3.5 h-3.5" />
+                      <Pencil className="w-3.5 h-3.5" />
                     </button>
-                  )}
+                    {canArchive && (
+                      <button
+                        type="button"
+                        onClick={(e) => archive(e, c)}
+                        aria-label={t.plugins.companion.archive_conversation}
+                        title={t.plugins.companion.archive_conversation}
+                        className="p-1 rounded-interactive text-foreground hover:bg-foreground/10 focus-ring"
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}

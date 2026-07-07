@@ -224,7 +224,7 @@ pub async fn run_tool_tests(
     // Step 3: Spawn CLI and get test plan
     let mut cli_args = prompt::build_cli_args(None, None);
     cli_args.args.push("--model".to_string());
-    cli_args.args.push("claude-sonnet-4-20250514".to_string());
+    cli_args.args.push("claude-sonnet-4-6".to_string());
 
     let mut driver = CliProcessDriver::spawn_temp(&cli_args, "build-test")
         .map_err(|e| AppError::ProcessSpawn(format!("Failed to spawn test CLI: {e}")))?;

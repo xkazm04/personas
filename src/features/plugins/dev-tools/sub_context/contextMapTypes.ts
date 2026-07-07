@@ -10,6 +10,7 @@ export interface ContextItem {
   filePaths: string[];
   keywords: string[];
   entryPoints: string[];
+  pinned: boolean;
 }
 
 export interface ContextGroup {

@@ -952,7 +952,11 @@
     "context_last_scanned": "Dernier scan",
     "context_plan_created": "Scan de contexte hebdomadaire planifié",
     "context_plan_failed": "Impossible de planifier le scan de contexte",
-    "competition_title": "Concurrence"
+    "competition_title": "Concurrence",
+    "context_detail_pin": "Épingler le contexte",
+    "context_detail_pin_failed": "Impossible de mettre à jour l'épinglage",
+    "context_detail_pin_tooltip": "Les contextes épinglés sont conservés lors d’un rescan complet au lieu d’être recréés",
+    "context_detail_unpin": "Détacher le contexte"
   },
   "doc_signing": {
     "title": "Signature de documents",
@@ -2014,7 +2018,9 @@
     "switch_conversation": "Changer de conversation",
     "thread_status_awaiting": "en attente de vous",
     "thread_status_idle": "inactif",
-    "thread_status_working": "en cours"
+    "thread_status_working": "en cours",
+    "rename_conversation": "Renommer la conversation",
+    "replied_in_thread": "Athena a répondu dans {thread}"
   },
   "ocr": {
     "title": "OCR",

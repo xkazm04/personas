@@ -43,6 +43,7 @@ function makeCtx(overrides: Partial<ContextItem> = {}): ContextItem {
     filePaths: ['src/auth/login.ts', 'src/auth/session.ts'],
     keywords: ['auth', 'jwt'],
     entryPoints: [],
+    pinned: false,
     ...overrides,
   };
 }
