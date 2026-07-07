@@ -15,7 +15,7 @@
  */
 import { useAgentStore } from "@/stores/agentStore";
 import { GlyphTopBar } from "./GlyphTopBar";
-import { GlyphStageSurface } from "./GlyphStageSurface";
+import { DialogueStageSurface } from "./DialogueStageSurface";
 import { DialogueComposePanel } from "./DialogueComposePanel";
 import { useComposeConfig } from "./useComposeConfig";
 import { useRecipeStarters } from "./useRecipeStarters";
@@ -64,7 +64,7 @@ export function GlyphDialogueLayout(props: GlyphFullLayoutProps) {
               starters={starters}
             />
           ) : (
-            <GlyphStageSurface {...props} />
+            <DialogueStageSurface {...props} />
           )}
         </div>
       </div>

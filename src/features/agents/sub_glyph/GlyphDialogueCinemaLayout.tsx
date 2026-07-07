@@ -23,7 +23,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { getConnectorMeta, ConnectorIcon } from "@/lib/connectors/connectorMeta";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { GlyphTopBar } from "./GlyphTopBar";
-import { GlyphStageSurface } from "./GlyphStageSurface";
+import { DialogueStageSurface } from "./DialogueStageSurface";
 import { DialogueComposePanel } from "./DialogueComposePanel";
 import { useComposeConfig } from "./useComposeConfig";
 import { useRecipeStarters } from "./useRecipeStarters";
@@ -47,7 +47,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
   const behaviorCore = useAgentStore((s) => s.buildBehaviorCore);
   const isCompose = buildSessionId === null && !hasDesignResult;
   const hasPending = (pendingQuestions?.length ?? 0) > 0;
-  const inBuild = buildSessionId !== null && !hasDesignResult;
+  const postCompose = !isCompose;
 
   const cfg = useComposeConfig({
     intentText, onIntentChange, onLaunch, onQuickConfigChange,
@@ -64,7 +64,11 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
     }
   }, [hasPending, firstQuestionSeen]);
 
-  const loading = inBuild && !firstQuestionSeen;
+  // The cinema plays only during the initial build burst — before the first
+  // question lands and before any draft is ready. Everything after (questions,
+  // draft_ready, test, promote) is the dialogue stage, so the user never lands
+  // in the glyph sigil UI.
+  const loading = postCompose && !firstQuestionSeen && !hasDesignResult;
   const role = behaviorCore?.identity?.role ?? null;
   const mission = behaviorCore?.mission ?? null;
 
@@ -113,7 +117,7 @@ export function GlyphDialogueCinemaLayout(props: GlyphFullLayoutProps) {
             </div>
           )}
 
-          {inBuild && firstQuestionSeen && <GlyphStageSurface {...props} />}
+          {postCompose && !loading && <DialogueStageSurface {...props} />}
         </div>
       </div>
 

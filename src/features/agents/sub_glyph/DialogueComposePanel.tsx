@@ -144,7 +144,7 @@ export function DialogueComposePanel({
                 >
                   <span className="typo-label text-foreground flex items-center gap-1.5">
                     <Sparkles className="w-3 h-3 text-primary" />
-                    {locked ? "Building on recipe" : "Closest existing recipes — tap for a faster path"}
+                    {locked ? "Building on recipe" : "Faster path — tap a recipe to start from it"}
                   </span>
                   <div className="flex flex-col gap-1.5">
                     {(locked ? starters.slice(0, 1) : starters.slice(0, 3)).map((m) => (

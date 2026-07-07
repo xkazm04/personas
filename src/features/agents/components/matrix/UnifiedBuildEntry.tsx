@@ -826,15 +826,21 @@ export function UnifiedBuildEntry() {
         </div>
       </div>
 
-      <BuildTemplateSuggestion
-        intent={intentText}
-        active={
-          (build.pendingQuestions?.length ?? 0) > 0 &&
-          !templateSuggestionDismissed
-        }
-        onAccept={handleAcceptTemplate}
-        onDismiss={() => setTemplateSuggestionDismissed(true)}
-      />
+      {/* The "Faster path" template alert floats at the container level for the
+          glyph-style layouts. The dialogue variants surface the faster path
+          INSIDE their intent component (recipe starters), so suppress the
+          floating alert there to avoid a competing above-the-fold banner. */}
+      {layout !== "dialogue" && layout !== "dialogue-cinema" && (
+        <BuildTemplateSuggestion
+          intent={intentText}
+          active={
+            (build.pendingQuestions?.length ?? 0) > 0 &&
+            !templateSuggestionDismissed
+          }
+          onAccept={handleAcceptTemplate}
+          onDismiss={() => setTemplateSuggestionDismissed(true)}
+        />
+      )}
 
       {!build.isBuilding && !hasDesignResult && (
         <BuildContextField
