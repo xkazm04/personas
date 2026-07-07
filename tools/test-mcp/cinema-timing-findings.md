@@ -92,3 +92,51 @@ timing is a product problem the cinema can't paper over. Worth its own pass
 
 Recommendation: **A now** (make the cinema robust to the real, long, data-less
 wait), and scope **B** as the follow-up that would make it truly "semi-real."
+
+---
+
+## B investigation + B1 result (2026-07-07, tried and REVERTED)
+
+Chose to pursue B ("B1 now, B2 later"). Investigation established the real
+mechanism behind the end-of-wait burst:
+
+- **The build front-loads into a SINGLE turn.** A simple build reached its
+  question in `turn=1`, which emitted `BehaviorCore + CapEnum + ClarifyingV3`
+  **together**. The prompt already says "behavior_core FIRST" — but that's
+  ordering *within the text*; the whole text arrives in one assistant envelope,
+  and the runner buffers the turn until its CLI process exits (emit is per-turn,
+  post-exit). So the batching is the LLM's single-turn cadence, not our
+  plumbing. → **B is a protocol change, not a flag.**
+
+- **B1 attempt (`f64df0e97`, reverted in `e9753b6dd`):** scope turn 0 to Phase A
+  ("emit ONLY behavior_core, then stop"), gated to interactive builds; let
+  capabilities + question follow in turn 1 via `--continue`.
+
+**B1 measured result — the identity-early goal WORKS, but the extra turn is a
+net regression:**
+
+| scenario | pre-B1 first-Q | B1 core@ | B1 outcome |
+|---|---|---|---|
+| s03 github-discord | 49.6s | **10.9s** | **timeout >200s** |
+| s06 linear-notion | 74.9s | **15.7s** | **timeout >200s** |
+| s08 sentry-responder | 61.6s | **21.8s** | **timeout >200s** |
+
+The LLM **honored** the split cleanly (turn 1 = `[BehaviorCore]` only, landing
+at 10–22s — the real role/mission reaches the frontend early, exactly the
+vision). **But turn 2 then balloons and stalls**: the per-turn log shows turn 2
+emitting **56 events** with *duplicate* `CapEnum` and 27 `CapRes` — the split
+disrupts the LLM's single-pass flow, and the "resolve everything NOW"
+continue-prompt makes it churn far longer than the equivalent work took in one
+turn. **3/3 clean runs timed out** (baselines were 50–75s), which would worsen
+the already-40% timeout rate. Reverted.
+
+**Conclusion:** the identity-early *value* is real and reachable (core at
+10–22s), but **not via an extra turn** — the extra CLI round + turn-2 ballooning
+costs 150s+/timeout, not the "+~10s" estimated. To get identity early *without*
+the extra-turn cost, the only path is **B2: stream `behavior_core` out of the
+SINGLE turn** (`--include-partial-messages` + parse/emit the first complete JSON
+object mid-read-loop, before the turn's process exits). No extra turn, no turn-2
+regression — but invasive (partial-JSON accumulation, mid-turn emit) with real
+per-build regression risk. That's the decision now open: **B2, or fall back to
+A** (abstract-until-handoff, which needs no backend change and can't regress
+build reliability).
