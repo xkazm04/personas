@@ -12197,7 +12197,11 @@
       "context_last_scanned": "Letzter Scan",
       "context_plan_created": "Wöchentlicher Kontext-Scan geplant",
       "context_plan_failed": "Kontext-Scan konnte nicht geplant werden",
-      "competition_title": "Wettbewerb"
+      "competition_title": "Wettbewerb",
+      "context_detail_pin": "Kontext anheften",
+      "context_detail_pin_failed": "Anheftung konnte nicht aktualisiert werden",
+      "context_detail_pin_tooltip": "Angeheftete Kontexte bleiben bei einem vollständigen Neuscan erhalten, statt neu erstellt zu werden",
+      "context_detail_unpin": "Kontext lösen"
     },
     "doc_signing": {
       "title": "Dokument-Signierung",

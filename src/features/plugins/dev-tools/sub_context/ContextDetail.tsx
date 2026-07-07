@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from 'react';
-import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus } from 'lucide-react';
+import { X, File, ArrowUpRight, Target, ListChecks, Gauge, Plus, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -17,6 +17,13 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
   const createKpi = useSystemStore((s) => s.createKpi);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
+  const setContextPinned = useSystemStore((s) => s.setContextPinned);
+
+  const handleTogglePin = () => {
+    void setContextPinned(ctx.id, !ctx.pinned).catch(
+      toastCatch('ContextDetail:setPinned', t.plugins.dev_tools.context_detail_pin_failed),
+    );
+  };
 
   // KPIs scoped to this context (Part 3 context-level KPIs).
   const linkedKpis = useMemo(
@@ -75,10 +82,29 @@ export default function ContextDetail({ ctx, onClose }: { ctx: ContextItem; onCl
       className="animate-fade-slide-in w-80 flex-shrink-0 border-l border-primary/10 pl-5 overflow-y-auto"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="typo-section-title">{ctx.name}</h3>
-        <Button variant="ghost" size="icon-sm" onClick={onClose}>
-          <X className="w-3.5 h-3.5" />
-        </Button>
+        <h3 className="typo-section-title flex items-center gap-1.5">
+          {ctx.pinned && <Pin className="w-3.5 h-3.5 text-amber-400 fill-amber-400/30 shrink-0" />}
+          <span className="truncate">{ctx.name}</span>
+        </h3>
+        <div className="flex items-center gap-0.5 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={handleTogglePin}
+            aria-pressed={ctx.pinned}
+            aria-label={ctx.pinned ? t.plugins.dev_tools.context_detail_unpin : t.plugins.dev_tools.context_detail_pin}
+            title={t.plugins.dev_tools.context_detail_pin_tooltip}
+          >
+            {ctx.pinned ? (
+              <PinOff className="w-3.5 h-3.5" />
+            ) : (
+              <Pin className="w-3.5 h-3.5" />
+            )}
+          </Button>
+          <Button variant="ghost" size="icon-sm" onClick={onClose}>
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
       </div>
 
       <p className="text-md text-foreground mb-4">{ctx.description}</p>

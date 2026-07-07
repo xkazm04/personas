@@ -952,7 +952,11 @@
     "context_last_scanned": "Pemindaian terakhir",
     "context_plan_created": "Pemindaian konteks mingguan dijadwalkan",
     "context_plan_failed": "Gagal menjadwalkan pemindaian konteks",
-    "competition_title": "Kompetisi"
+    "competition_title": "Kompetisi",
+    "context_detail_pin": "Sematkan konteks",
+    "context_detail_pin_failed": "Tidak dapat memperbarui sematan",
+    "context_detail_pin_tooltip": "Konteks yang disematkan dipertahankan saat pemindaian ulang penuh alih-alih dibuat ulang",
+    "context_detail_unpin": "Lepas sematan konteks"
   },
   "doc_signing": {
     "title": "Penandatanganan Dokumen",

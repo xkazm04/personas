@@ -12197,7 +12197,11 @@
       "context_last_scanned": "آخر فحص",
       "context_plan_created": "جُدول فحص السياق الأسبوعي",
       "context_plan_failed": "تعذّر جدولة فحص السياق",
-      "competition_title": "المنافسة"
+      "competition_title": "المنافسة",
+      "context_detail_pin": "تثبيت السياق",
+      "context_detail_pin_failed": "تعذّر تحديث التثبيت",
+      "context_detail_pin_tooltip": "السياقات المثبّتة تُحفظ أثناء إعادة الفحص الكامل بدلاً من إعادة إنشائها",
+      "context_detail_unpin": "إلغاء تثبيت السياق"
     },
     "doc_signing": {
       "title": "توقيع المستندات",

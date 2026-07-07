@@ -12074,6 +12074,10 @@ export type Translations = {
       context_detail_no_goals: string;
       context_detail_task_summary: string;
       context_detail_goal_jump_tooltip: string;
+      context_detail_pin: string;
+      context_detail_unpin: string;
+      context_detail_pin_tooltip: string;
+      context_detail_pin_failed: string;
       slot_compare_checkbox_tooltip: string;
       add_group: string;
       group_name_placeholder: string;

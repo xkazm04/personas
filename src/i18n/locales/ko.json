@@ -12197,7 +12197,11 @@
       "context_last_scanned": "마지막 스캔",
       "context_plan_created": "주간 컨텍스트 스캔 예약됨",
       "context_plan_failed": "컨텍스트 스캔을 예약할 수 없습니다",
-      "competition_title": "경쟁사"
+      "competition_title": "경쟁사",
+      "context_detail_pin": "컨텍스트 고정",
+      "context_detail_pin_failed": "고정을 업데이트하지 못했습니다",
+      "context_detail_pin_tooltip": "고정된 컨텍스트는 전체 재스캔 시 다시 생성되지 않고 유지됩니다",
+      "context_detail_unpin": "컨텍스트 고정 해제"
     },
     "doc_signing": {
       "title": "Document Signing",

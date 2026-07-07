@@ -26,6 +26,7 @@ export interface DevToolsContextSlice {
   updateContext: (id: string, updates: { name?: string; description?: string; filePaths?: string; entryPoints?: string; dbTables?: string; keywords?: string; apiSurface?: string; crossRefs?: string; techStack?: string; groupId?: string }) => Promise<void>;
   deleteContext: (id: string) => Promise<void>;
   moveContext: (id: string, targetGroupId: string | null) => Promise<void>;
+  setContextPinned: (id: string, pinned: boolean) => Promise<void>;
   scanCodebase: (projectId: string, rootPath: string, deltaMode?: boolean) => Promise<void>;
   generateContextDescription: (contextId: string) => Promise<DevContext>;
 
@@ -154,6 +155,18 @@ export const createDevToolsContextSlice: StateCreator<SystemStore, [], [], DevTo
       }));
     } catch (err) {
       reportError(err, "Failed to move context", set);
+    }
+  },
+
+  setContextPinned: async (id, pinned) => {
+    try {
+      const updated = await devApi.setContextPinned(id, pinned);
+      set((state) => ({
+        contexts: state.contexts.map((c) => (c.id === id ? updated : c)),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to pin context", set);
     }
   },
 

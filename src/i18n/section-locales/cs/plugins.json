@@ -952,7 +952,11 @@
     "context_last_scanned": "Poslední skenování",
     "context_plan_created": "Týdenní skenování kontextu naplánováno",
     "context_plan_failed": "Nepodařilo se naplánovat skenování kontextu",
-    "competition_title": "Konkurence"
+    "competition_title": "Konkurence",
+    "context_detail_pin": "Připnout kontext",
+    "context_detail_pin_failed": "Připnutí se nepodařilo aktualizovat",
+    "context_detail_pin_tooltip": "Připnuté kontexty se při úplném znovunačtení zachovají, místo aby se znovu vytvořily",
+    "context_detail_unpin": "Odepnout kontext"
   },
   "doc_signing": {
     "title": "Podpis dokumentů",
