@@ -1,45 +1,43 @@
 /**
- * Explore — 2nd-level "Templates → Explore" view.
+ * Explore — 2nd-level "Templates → Explore" view (round 2).
  *
- * PROTOTYPE HOST. Renders three competing approaches to "pick from hundreds of
- * templates/recipes/personas without drowning", switchable via the segmented
- * control so we can compare them side by side and iterate:
- *   1. Industry Atlas       — industry-first, drill into a function-clustered map
- *   2. Task Flow            — job-to-be-done first, qualifiers → ranked shortlist
- *   3. Persona Constellation— characteristics-first, one trait-space map, archetype-lit
+ * Baseline chosen: the Industry/Domain ATLAS. The real template corpus is
+ * department-organized (not industry), so the top level is 7 data-grounded
+ * DOMAINS with Leonardo symbolic illustrations, wired to the REAL template
+ * catalog (getTemplateCatalog). Three treatments of that baseline, switchable:
+ *   1. Illustrated Tiles — classic drill-down into a per-domain cluster map
+ *   2. Bento Mosaic      — tile size ∝ template count (balance made visible)
+ *   3. Split Explorer    — one screen, illustrated rail + live cluster map
  *
- * All three read the SAME mock catalog (exploreMockData.ts) so the comparison
- * is about hierarchy/UX, not content. Real data wiring (gallery hook +
- * archetypes + recipes) follows once a direction is chosen. i18n deferred.
+ * i18n deferred until a treatment is locked.
  */
 import { useState } from 'react';
-import { Map as MapIcon, ListChecks, Sparkles, FlaskConical, X } from 'lucide-react';
-import { IndustryAtlas } from './variants/IndustryAtlas';
-import { TaskFlow } from './variants/TaskFlow';
-import { PersonaConstellation } from './variants/PersonaConstellation';
-import type { ExploreItem } from './exploreMockData';
+import { LayoutGrid, LayoutDashboard, Columns3, FlaskConical, X } from 'lucide-react';
+import { AtlasIllustratedTiles } from './atlas/AtlasIllustratedTiles';
+import { AtlasBentoMosaic } from './atlas/AtlasBentoMosaic';
+import { AtlasSplitExplorer } from './atlas/AtlasSplitExplorer';
+import type { ExploreItem } from './useExploreCatalog';
 
-type VariantId = 'atlas' | 'flow' | 'constellation';
+type VariantId = 'tiles' | 'bento' | 'split';
 
-const VARIANTS: { id: VariantId; label: string; icon: typeof MapIcon; hint: string }[] = [
-  { id: 'atlas',         label: 'Industry Atlas',        icon: MapIcon,    hint: 'Start from your vertical → a map of that industry, clustered by function.' },
-  { id: 'flow',          label: 'Task Flow',             icon: ListChecks, hint: 'Start from the job to be done → two quick qualifiers → a ranked shortlist.' },
-  { id: 'constellation', label: 'Persona Constellation', icon: Sparkles,   hint: 'The whole catalog as one trait-space map — pick a character to light it up.' },
+const VARIANTS: { id: VariantId; label: string; icon: typeof LayoutGrid; hint: string }[] = [
+  { id: 'tiles', label: 'Illustrated Tiles', icon: LayoutGrid,      hint: 'Classic drill-down — pick a domain, then explore its cluster map.' },
+  { id: 'bento', label: 'Bento Mosaic',      icon: LayoutDashboard, hint: 'Tile size scales with template count — the data structure, made visible.' },
+  { id: 'split', label: 'Split Explorer',    icon: Columns3,        hint: 'One screen — illustrated domain rail + a live cluster map that swaps instantly.' },
 ];
 
 export default function ExploreView() {
-  const [variant, setVariant] = useState<VariantId>('atlas');
+  const [variant, setVariant] = useState<VariantId>('tiles');
   const [picked, setPicked] = useState<ExploreItem | null>(null);
   const active = VARIANTS.find((v) => v.id === variant)!;
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-5 2xl:px-8">
       <div className="max-w-6xl 3xl:max-w-[1800px] mx-auto space-y-5">
-        {/* Prototype banner + variant switcher */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="inline-flex items-center gap-2 typo-caption text-foreground opacity-70">
             <FlaskConical className="w-3.5 h-3.5" />
-            Prototype · comparing 3 approaches on the same mock catalog
+            Prototype · Domain Atlas · real template catalog · 3 treatments
           </div>
           <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40 self-start">
             {VARIANTS.map((v) => {
@@ -48,7 +46,7 @@ export default function ExploreView() {
               return (
                 <button
                   key={v.id}
-                  onClick={() => { setVariant(v.id); setPicked(null); }}
+                  onClick={() => setVariant(v.id)}
                   className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-caption transition-colors ${
                     on ? 'bg-primary/15 text-primary' : 'text-foreground opacity-70 hover:opacity-100'
                   }`}
@@ -63,13 +61,11 @@ export default function ExploreView() {
 
         <p className="typo-caption text-foreground opacity-60">{active.hint}</p>
 
-        {/* Active variant */}
-        {variant === 'atlas' && <IndustryAtlas onSelect={setPicked} />}
-        {variant === 'flow' && <TaskFlow onSelect={setPicked} />}
-        {variant === 'constellation' && <PersonaConstellation onSelect={setPicked} />}
+        {variant === 'tiles' && <AtlasIllustratedTiles onSelect={setPicked} />}
+        {variant === 'bento' && <AtlasBentoMosaic onSelect={setPicked} />}
+        {variant === 'split' && <AtlasSplitExplorer onSelect={setPicked} />}
       </div>
 
-      {/* Mock "picked" toast so selections feel live in the prototype */}
       {picked && (
         <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-4 py-2.5 rounded-modal border border-primary/20 bg-background/95 shadow-elevation-3">
           <span className="typo-body text-foreground">
