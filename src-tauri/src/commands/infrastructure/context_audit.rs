@@ -419,6 +419,7 @@ mod tests {
             tech_stack: None,
             category: Some("lib".into()),
             business_feature: None,
+            pinned: false,
             created_at: "t".into(),
             updated_at: "t".into(),
         }

@@ -2964,6 +2964,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_update_context,
             commands::infrastructure::dev_tools::dev_tools_delete_context,
             commands::infrastructure::dev_tools::dev_tools_move_context_to_group,
+            commands::infrastructure::dev_tools::dev_tools_set_context_pinned,
             // Dev Tools -- Context Generation (LLM-powered codebase scan)
             commands::infrastructure::context_generation::dev_tools_scan_codebase,
             commands::infrastructure::context_generation::dev_tools_cancel_scan_codebase,

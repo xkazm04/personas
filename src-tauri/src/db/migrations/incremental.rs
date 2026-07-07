@@ -4965,6 +4965,26 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             },
         },
     )?;
+    // Canonical pin: a human-curated context that a full rescan must preserve
+    // rather than DELETE-and-recreate. Adopts ktx's "canonical pins" idea (prior
+    // human tie-breaks are protected across re-ingest) to fix the documented
+    // near-miss where a full rescan silently destroyed a hand-curated map.
+    // Boolean stored as INTEGER; existing rows default to unpinned.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_contexts.pinned",
+            description: "Add canonical-pin flag to dev_contexts",
+            already_applied: |conn| has_column(conn, "dev_contexts", "pinned"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_contexts ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
     run_step(
         conn,
         IncrementalMigration {

@@ -397,7 +397,33 @@ fn build_existing_context_summary(pool: &crate::db::DbPool, project_id: &str) ->
         return None;
     }
 
+    // A pinned context is human-curated and preserved verbatim across a full
+    // rescan (the DB never deletes it). Tell the model NOT to recreate or rename
+    // pinned contexts — doing so would duplicate them alongside the surviving row.
+    let line = |ctx: &crate::db::models::DevContext| -> String {
+        let pin = if ctx.pinned {
+            " [📌 PINNED — preserved verbatim; do NOT recreate, rename, or re-emit this context]"
+        } else {
+            ""
+        };
+        format!(
+            "- **{}** (id: {}): {} | files: {}{}\n",
+            ctx.name,
+            ctx.id,
+            ctx.description.as_deref().unwrap_or("no description"),
+            ctx.file_paths,
+            pin,
+        )
+    };
+
     let mut summary = String::new();
+    if contexts.iter().any(|c| c.pinned) {
+        summary.push_str(
+            "\n> NOTE: contexts marked 📌 PINNED are human-curated and already \
+preserved in the map. Do NOT re-emit, rename, or split them; leave their files \
+to them and organize only the remaining, unpinned surface.\n",
+        );
+    }
     for group in &groups {
         summary.push_str(&format!(
             "\n### Group: {} (id: {}, color: {})\n",
@@ -408,13 +434,7 @@ fn build_existing_context_summary(pool: &crate::db::DbPool, project_id: &str) ->
             .filter(|c| c.group_id.as_deref() == Some(&group.id))
             .collect();
         for ctx in group_ctxs {
-            summary.push_str(&format!(
-                "- **{}** (id: {}): {} | files: {}\n",
-                ctx.name,
-                ctx.id,
-                ctx.description.as_deref().unwrap_or("no description"),
-                ctx.file_paths,
-            ));
+            summary.push_str(&line(ctx));
         }
     }
 
@@ -422,13 +442,7 @@ fn build_existing_context_summary(pool: &crate::db::DbPool, project_id: &str) ->
     if !ungrouped.is_empty() {
         summary.push_str("\n### Ungrouped Contexts\n");
         for ctx in ungrouped {
-            summary.push_str(&format!(
-                "- **{}** (id: {}): {} | files: {}\n",
-                ctx.name,
-                ctx.id,
-                ctx.description.as_deref().unwrap_or("no description"),
-                ctx.file_paths,
-            ));
+            summary.push_str(&line(ctx));
         }
     }
 

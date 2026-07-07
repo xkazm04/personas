@@ -978,6 +978,18 @@ pub fn dev_tools_move_context_to_group(
     repo::move_context_to_group(&state.db, &id, group_id.as_deref())
 }
 
+/// Pin (or unpin) a context so a full rescan preserves it instead of
+/// DELETE-and-recreate. Pinning is how a maintainer protects hand-curation.
+#[tauri::command]
+pub fn dev_tools_set_context_pinned(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    pinned: bool,
+) -> Result<DevContext, AppError> {
+    require_auth_sync(&state)?;
+    repo::set_context_pinned(&state.db, &id, pinned)
+}
+
 // ============================================================================
 // Context Group Relationships
 // ============================================================================

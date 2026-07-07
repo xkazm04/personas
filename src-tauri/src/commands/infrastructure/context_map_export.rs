@@ -112,6 +112,10 @@ fn build_map(
                 "api_surface": c.api_surface,
                 "cross_refs": parse_json_array(c.cross_refs.as_deref()),
                 "tech_stack": parse_json_array(c.tech_stack.as_deref()),
+                // Canonical pin: this context is human-curated and preserved
+                // across full rescans (only emitted when true keeps the JSON lean
+                // for the common unpinned case).
+                "pinned": c.pinned,
                 // Per-context lineage: when this context row was last (re)written
                 // by a scan. Combined with the top-level provenance commit, a
                 // reader can tell how far the code has moved since a context was

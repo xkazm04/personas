@@ -478,6 +478,10 @@ pub struct DevContext {
     pub category: Option<String>,
     /// Human-readable business feature name (often equals the context name).
     pub business_feature: Option<String>,
+    /// Canonical pin: when true, a full rescan preserves this hand-curated
+    /// context instead of DELETE-and-recreate. See dev_contexts.pinned migration.
+    #[serde(default)]
+    pub pinned: bool,
     pub created_at: String,
     pub updated_at: String,
 }
