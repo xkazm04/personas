@@ -15,7 +15,7 @@ import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { GlyphFullLayout } from "@/features/agents/sub_glyph/GlyphFullLayout";
 import { GlyphPrototypeLayout } from "@/features/agents/sub_glyph/GlyphPrototypeLayout";
 import { GlyphDialogueLayout } from "@/features/agents/sub_glyph/GlyphDialogueLayout";
-import { GlyphConstellationLayout } from "@/features/agents/sub_glyph/GlyphConstellationLayout";
+import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
@@ -55,9 +55,9 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // conversation) and "constellation" (spatial option field) explore the
 // "combine prompt + click-config across multi-round cycles" direction against
 // the "composer-prototype" baseline. All share GlyphFullLayoutProps.
-type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "constellation";
+type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "cinema";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "constellation"];
+const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "cinema"];
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
@@ -810,16 +810,16 @@ export function UnifiedBuildEntry() {
           </button>
           <button
             type="button"
-            onClick={() => handleLayoutChange("constellation")}
+            onClick={() => handleLayoutChange("cinema")}
             className={`rounded-full px-3 py-1 typo-caption transition ${
-              layout === "constellation"
+              layout === "cinema"
                 ? "bg-primary/20 text-primary"
                 : "text-foreground hover:text-foreground"
             }`}
-            title="Constellation — spatial option field compose (prototype)"
-            data-testid="build-layout-toggle-constellation"
+            title="Cinema — sigil compose + cinematic build loading (prototype)"
+            data-testid="build-layout-toggle-cinema"
           >
-            Field
+            Cinema
           </button>
         </div>
       </div>
@@ -879,7 +879,7 @@ export function UnifiedBuildEntry() {
         const LayoutComponent =
           layout === "composer-prototype" ? GlyphPrototypeLayout
           : layout === "dialogue" ? GlyphDialogueLayout
-          : layout === "constellation" ? GlyphConstellationLayout
+          : layout === "cinema" ? GlyphCinemaLayout
           : GlyphFullLayout;
         return <LayoutComponent {...layoutProps} />;
       })()}
