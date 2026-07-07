@@ -67,6 +67,7 @@ fn build_map(
     contexts: &[crate::db::models::DevContext],
 ) -> Value {
     let mut file_total = 0usize;
+    let (git_commit, git_commit_count) = git_provenance(root_path);
 
     let groups_json: Vec<Value> = groups
         .iter()
@@ -111,6 +112,11 @@ fn build_map(
                 "api_surface": c.api_surface,
                 "cross_refs": parse_json_array(c.cross_refs.as_deref()),
                 "tech_stack": parse_json_array(c.tech_stack.as_deref()),
+                // Per-context lineage: when this context row was last (re)written
+                // by a scan. Combined with the top-level provenance commit, a
+                // reader can tell how far the code has moved since a context was
+                // last derived — per-context freshness, not one global number.
+                "last_written_at": c.updated_at,
             })
         })
         .collect();
@@ -119,6 +125,13 @@ fn build_map(
         "version": 2,
         "generated_at": chrono::Utc::now().to_rfc3339(),
         "generator": "personas-context-scan",
+        // Lineage of this map: the exact commit it was derived at. A later reader
+        // (a CLI, /research, Vibeman) can compare against the current HEAD to
+        // judge staleness precisely instead of guessing from a timestamp.
+        "provenance": {
+            "git_commit": git_commit,
+            "git_commit_count": git_commit_count,
+        },
         "project": {
             "id": project_id,
             "name": project_name,
@@ -136,6 +149,26 @@ fn build_map(
         "groups": groups_json,
         "contexts": contexts_json,
     })
+}
+
+/// Best-effort git provenance for the managed project root: the HEAD commit sha
+/// and the total commit count. Returns `(None, None)` when the root isn't a git
+/// checkout (git absent, detached, or not a repo) — the map still publishes,
+/// just without lineage. Bounded to two short `git` invocations.
+fn git_provenance(root_path: &str) -> (Option<String>, Option<i64>) {
+    let run = |args: &[&str]| -> Option<String> {
+        std::process::Command::new("git")
+            .args(args)
+            .current_dir(root_path)
+            .output()
+            .ok()
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .filter(|s| !s.is_empty())
+    };
+    let commit = run(&["rev-parse", "HEAD"]);
+    let count = run(&["rev-list", "--count", "HEAD"]).and_then(|s| s.parse::<i64>().ok());
+    (commit, count)
 }
 
 /// Parse a stored JSON-array string field into a `Value::Array`, falling back
