@@ -80,13 +80,19 @@ async function ping() {
   return s !== null;
 }
 
-async function ensureCinemaLayout() {
-  // Best-effort: open the create surface and select the Cinema layout so the
-  // operator can watch the loading experience against the measured timeline.
+async function enterDescribeCinema() {
+  // The create surface opens on a mode chooser (Compose vs "Describe it").
+  // startBuildFromIntent probes the intent input directly and can't get past
+  // the chooser, so we must click "Describe it" first — which also reveals the
+  // layout toggles. Selecting Cinema (localStorage-persisted) lets the operator
+  // watch the loading experience against the measured timeline. Idempotent —
+  // run before every scenario so a prior build's reset can't strand us.
   await bridgeExec("startCreateAgent", {}).catch(() => {});
-  await sleep(600);
-  await bridgeExec("clickTestId", { testId: "build-layout-toggle-cinema" }).catch(() => {});
+  await sleep(500);
+  await bridgeExec("clickTestId", { testId: "create-mode-describe" }).catch(() => {});
   await sleep(400);
+  await bridgeExec("clickTestId", { testId: "build-layout-toggle-cinema" }).catch(() => {});
+  await sleep(300);
 }
 
 function firstSeen(marks, key, elapsed) {
@@ -97,6 +103,7 @@ async function runScenario(sc) {
   console.log(`\n▶ ${sc.id} — ${sc.title}  [${sc.complexity}]`);
   console.log(`  intent: ${sc.intent}`);
 
+  await enterDescribeCinema(); // get past the mode chooser into Describe/Cinema
   const launch = await bridgeExec("startBuildFromIntent", { intent: sc.intent, timeoutMs: LAUNCH_TIMEOUT }, LAUNCH_TIMEOUT + 8000);
   const t0 = Date.now();
   if (!launch?.success) {
@@ -219,7 +226,6 @@ async function main() {
     process.exit(2);
   }
   console.log(`Bridge OK. Running ${chosen.length} scenario(s), poll=${POLL_MS}ms, ceiling=${MAX_MS / 1000}s each.`);
-  await ensureCinemaLayout();
 
   const results = [];
   for (const sc of chosen) {
