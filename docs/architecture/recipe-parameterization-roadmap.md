@@ -23,10 +23,19 @@ rebuild (via the existing parameters editor). This is approach **1's spirit**
 (runtime-resolved capability params) achieved **without** a new `DesignUseCase`
 field or a `capabilities.rs` signature change — the persona-prose fields
 substitute for free. Feature notes: `docs/features/recipes/README.md`
-("Recipe parameterization"). Known gaps: catalog quick-adopt and `instant_adopt`
-don't inject yet; unsupported types (`source_definition`/`connector_ref`/
-`list[string]`) skipped in v1. The historical investigation that motivated this
-approach follows.
+("Recipe parameterization").
+
+**Phase 1b (2026-07) — all three adoption paths now parameterize.** The two
+gaps from the first pass are closed: `instant_adopt` derives + injects + seeds
+inline (mirroring promote), and catalog quick-adopt calls a new idempotent
+`sync_capability_parameters` command that reconciles `persona.parameters` + the
+injected section from each use case's authoritative recipe `input_schema`
+(resolved via `source_recipe_id`). Injection is now strip-then-append so
+re-adopt / remove / stale UI can't stack duplicates; the promote projection
+keeps `input_schema` in `design_context.useCases` for cross-path consistency.
+Remaining: unsupported types (`source_definition`/`connector_ref`/`list[string]`)
+still skipped in v1; removing a capability leaves its params inert rather than
+GC'ing them. The historical investigation that motivated this approach follows.
 
 ## Deferred items
 

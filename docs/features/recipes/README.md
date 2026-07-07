@@ -106,13 +106,28 @@ The promote projection also now **keeps** `capability_summary` + `tool_hints`
 (previously dropped), restoring the curated one-liner the Active Capabilities
 renderer prefers.
 
-**Known gaps (documented, not silently skipped):** the catalog quick-adopt path
-(`sub_recipes/libs/useAdoption.ts`) is lossy by design — thin use-case, no
-promote, no `persona.parameters` write — so parameterization only applies to the
-promote/Foundry path today. `instant_adopt` (Dev-Clone) does not yet inject the
-section. Params remain prompt-level directives (LLM-adherence, not code-gated),
-consistent with every persona-level param. Design notes in
-`docs/architecture/recipe-parameterization-roadmap.md`.
+All three adoption paths now parameterize:
+
+- **Promote / Foundry** (`build_sessions.rs`) — derives inline from the IR's
+  `use_cases` before persist (above). Also keeps `input_schema` in
+  `design_context.useCases` so a later catalog sync stays consistent.
+- **`instant_adopt`** (Dev-Clone / completion-notifier) — derives from the
+  hydrated `design["use_cases"]`, injects the section, and seeds params inline,
+  mirroring promote.
+- **Catalog quick-adopt** (`sub_recipes/libs/useAdoption.ts`) — after appending
+  the `DesignUseCase`, calls the `sync_capability_parameters` command, which
+  resolves each use case's **authoritative** `input_schema` from the recipe row
+  (via `source_recipe_id`, falling back to inline), merges params under the
+  persona's existing set (existing/template/user-tuned keys win), and
+  idempotently re-injects the section. `remove` re-syncs so the detached
+  capability's section lines drop out (its params stay, inert). The command is
+  idempotent, so re-adopt / stale UI can't stack duplicates.
+
+**Contract:** params remain prompt-level directives (LLM-adherence, not
+code-gated), consistent with every persona-level param. Removing a capability
+does **not** garbage-collect its `persona.parameters` entries — they go inert
+(no section references them) and are user-removable via the parameters editor.
+Design notes in `docs/architecture/recipe-parameterization-roadmap.md`.
 
 ## Relationship to templates and personas
 
