@@ -136,6 +136,44 @@ The Studio build loop went from "a normal-length turn silently wipes your projec
 a zombie racing the next turn" to persistent, race-safe, and legible. H1–H7 remain watch-items
 for a future data/analytics-doctrine pass.
 
+## H12–H13 — v2 production-grade pass (2026-07-06/07)
+
+The ChainSonar re-architecture (v1 Ethereum lookup → v2 Polygon insider-hunting) and
+the deep quality pass that followed surfaced two more hardening items.
+
+- **H12 — don't drive a long resumable loop to completion inside a turn (doctrine
+  lesson, watch-item).** A build turn that itself drove a rate-limited, resumable
+  pricing loop to the finish blew the 25-min `TURN_TIMEOUT` and reported a misleading
+  "timed out / Failed to load data" even though the work had succeeded and was fully
+  resumable. The fix is behavioural, not code: kick off resumable jobs and **hand off
+  to the UI/user** — don't block the turn on the loop. Athena's resumable design saved
+  the data (the loop was finished out-of-band via `POST /api/watch/backtest`); the
+  lesson is to not sit on it in-turn. No code change.
+
+- **H13 — self-heal a dev server that dies mid-session (FIXED + VERIFIED).** The quality
+  pass's large file-deletions crashed Turbopack; ChainSonar's dev server died and never
+  came back, yet the tab stayed **stale-live** (blank preview, no recovery). Root cause:
+  H10's boot poll (`studioStore.ts` `beginPoll`) **stops once a tab is "live"**, so
+  nothing re-checks afterward — a mid-session death is invisible. (The Rust `healthy` is
+  already a real HTTP check — `http_responds` in `webbuild/devserver.rs` sends
+  `GET / HTTP/1.0` and requires an `HTTP` response line — so a dead-but-bound port
+  already reports unhealthy; the gap was purely the frontend not re-verifying after
+  "live".) Fix: a 6-second **liveness heartbeat** (`beginLivenessWatch`) on live tabs —
+  two consecutive non-healthy checks while idle (never mid-build, guarded on `rt.busy`)
+  cold-start the dev server so the preview self-heals. Armed on both live paths
+  (`attachOrStart` re-attach + `beginPoll` boot), cleared on `start()` / `closeTab`.
+  **Verified:** app restart → re-attach detected the dead port → cold-started a fresh
+  dev server (the port *changed*, proving a genuine cold-start not a stale re-attach) →
+  HTTP 200 serving. Frontend-only (`src/features/studio/studioStore.ts`), HMR, no Rust
+  rebuild. Committed `960dcadaf`.
+
+**Also committed this pass:** the production-grade doctrine upgrade
+(`docs/concepts/web-build-best-practices.md` + `session.rs` `BUILD_PLAN_INSTRUCTION`,
+`5d74f5ca7`) — functional-density, navigation-integrity, code-quality/modularity bars, a
+"retire-don't-accrete" section for pivots, and a demanding final pass; plus the Studio
+chat-loop fixes (`fe75eff78`: completed-bubble scroll, message history, plan-derived
+contextual chips, decision-frequency doctrine).
+
 ## Per-turn observation table
 
 Filled as the loop runs. `Studio issue?` names the surface + hypothesis id.
