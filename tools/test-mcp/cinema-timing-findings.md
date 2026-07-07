@@ -134,9 +134,54 @@ the already-40% timeout rate. Reverted.
 10–22s), but **not via an extra turn** — the extra CLI round + turn-2 ballooning
 costs 150s+/timeout, not the "+~10s" estimated. To get identity early *without*
 the extra-turn cost, the only path is **B2: stream `behavior_core` out of the
-SINGLE turn** (`--include-partial-messages` + parse/emit the first complete JSON
-object mid-read-loop, before the turn's process exits). No extra turn, no turn-2
-regression — but invasive (partial-JSON accumulation, mid-turn emit) with real
-per-build regression risk. That's the decision now open: **B2, or fall back to
-A** (abstract-until-handoff, which needs no backend change and can't regress
-build reliability).
+SINGLE turn**.
+
+## B2 result — SHIPPED (`e74640a41`)
+
+Constraint update from the user: **long builds (>3 min) are acceptable; the goal
+is to extract intermediate results from long processes where possible, keeping
+final quality high via the clarifying-question round.** That reframes B1's
+"slowness" as a non-issue — but B1's real failure wasn't slowness, it was
+*destabilization* (turn 2 stalled 7+ min, no completion). So B1 stays reverted.
+
+**B2 implementation** (`--include-partial-messages` + a read-loop hook):
+- Interactive build CLI args add `--include-partial-messages` so the CLI streams
+  `content_block_delta` events (skipped for one-shot/headless).
+- The runner accumulates delta text and emits `behavior_core` the instant its
+  JSON object closes (string-aware brace matcher). Scoped to behavior_core ONLY
+  (identity, gate-independent). **Purely additive** — turn structure, prompt, and
+  the authoritative post-turn parse/gate-pass are all unchanged; dedup drops the
+  duplicate. So the build runs its natural single-turn flow and **completes
+  normally** — the B1 destabilization is structurally impossible here.
+
+**B2 measured (n=3, all completed normally — no destabilization):**
+
+| scenario | core streams @ | first question @ | early window |
+|---|---|---|---|
+| s01 memory-log | 48.4s | 152.5s | **104s early** |
+| s03 github-discord | 76.3s | 78.7s | 2.4s early |
+| s08 sentry-responder | 70.2s | 75.0s | 4.8s early |
+
+avg core@65s vs firstQ@102s → **~37s average early window, range 2–104s.**
+
+**Read:** B2 surfaces the real persona identity **as early as the LLM produces
+it** — a big win when the model front-loads behavior_core well before the rest
+(s01: 104s early), negligible when it bursts everything together at the end
+(s03/s08). This is exactly "extract intermediate results *where possible*": no
+quality or stability cost, always ≥ as early as before (which was never/at-the-
+very-end), and sometimes dramatically early. It cannot beat the model's own
+think-then-burst cadence — pushing identity earlier than the model writes it
+would require cutting `--effort` (a quality tradeoff, rejected).
+
+## Remaining options (capabilities + connectors)
+
+B2 currently streams behavior_core only. The same mechanism *could* be extended
+to stream `capability_enumeration` titles mid-turn (also gate-light) — but
+`capability_resolution`/`persona_resolution` go through the post-turn gate pass
+(suppression/synthesis), so those must stay batched. And connectors never
+resolve before the first question at all (0/10, all runs). So the cinema's real-
+data ceiling is: **identity (B2, early-when-possible) + capability titles
+(possible extension) at the wait; full populate at the handoff.** The Cinema
+itself should still be built as **abstract-until-handoff (direction A)** that
+*opportunistically* fills in whatever B2 has surfaced — abstract when nothing's
+streamed yet, real identity the moment B2 emits it.
