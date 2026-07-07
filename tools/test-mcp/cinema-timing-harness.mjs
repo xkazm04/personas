@@ -93,11 +93,19 @@ async function enterDescribeCinema() {
   // A lingering build session from a prior scenario (or a manual run) leaves
   // the surface on the post-build stage with no chooser, so we reset FIRST and
   // verify the summon/composer is actually reachable before returning.
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    // A timed-out scenario leaves the BACKEND build loop still running (the
+    // frontend gave up but the runner keeps turning), so the create surface
+    // stays on the post-build stage. Cancel any live session first, then reset.
+    const s = await getState(6000);
+    if (s?.buildSessionId) {
+      await bridgeExec("invokeCommand", { command: "cancel_build_session", params: { sessionId: s.buildSessionId } }).catch(() => {});
+      await sleep(600);
+    }
     await bridgeExec("__reset__", {}).catch(() => {});
-    await sleep(400);
+    await sleep(700);
     await bridgeExec("startCreateAgent", {}).catch(() => {});
-    await sleep(500);
+    await sleep(600);
     await bridgeExec("clickTestId", { testId: "create-mode-describe" }).catch(() => {});
     await sleep(500);
     await bridgeExec("clickTestId", { testId: "build-layout-toggle-cinema" }).catch(() => {});
