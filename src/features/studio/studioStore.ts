@@ -7,6 +7,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import {
   webbuildDevStart,
   webbuildDevStop,
+  webbuildListProjects,
   webbuildNextReady,
   webbuildRegisterExisting,
   webbuildScaffold,
@@ -76,6 +77,33 @@ const planFirstSeed = (vision: string) =>
 const AUTO_INSTRUCTION =
   'Continue building — take the next phase of your plan to a solid, real state, then update your BUILD_PLAN. Decide the order yourself and keep going; do NOT ask which feature to build next or for permission to continue. Only use NEEDS_INPUT for real content or a business/data decision you genuinely cannot make. If everything is built and polished, say so and mark all phases done.';
 
+// A turn's reply is Athena's whole step-by-step narration, which reads as one
+// giant bubble. Split it into paragraph-level "beats" so the log becomes a
+// history of shorter messages (a real conversation), while keeping fenced code
+// blocks intact so we never split mid-snippet. One-paragraph replies stay one.
+function splitReply(text: string): string[] {
+  const t = text.trim();
+  if (!t) return [];
+  const parts: string[] = [];
+  let buf: string[] = [];
+  let inFence = false;
+  const flush = () => {
+    const s = buf.join('\n').trim();
+    if (s) parts.push(s);
+    buf = [];
+  };
+  for (const line of t.split('\n')) {
+    if (/^\s*```/.test(line)) inFence = !inFence;
+    if (!inFence && line.trim() === '') {
+      flush();
+      continue;
+    }
+    buf.push(line);
+  }
+  flush();
+  return parts.length ? parts : [t];
+}
+
 // Non-serializable per-project handles kept outside store state.
 const pollTimers = new Map<string, number>();
 const autoTimers = new Map<string, number>();
@@ -85,7 +113,14 @@ interface StudioStore {
   runtimes: Record<string, ProjectRuntime>;
   tabOrder: string[];
   activeId: string | null;
+  /** Last scaffold/create failure (H9) — surfaced on the vision-start screen so
+   *  a failed "Build with Athena" isn't just a transient toast (e.g. missing Bun). */
+  lastCreateError: string | null;
   initStream: () => void;
+  /** Re-open the tabs that were open before a WebView reload (H10), re-attaching
+   *  to their still-running dev servers instead of showing a blank Studio. */
+  rehydrate: () => void;
+  clearCreateError: () => void;
   setActive: (id: string) => void;
   closeTab: (id: string) => void;
   startExisting: (id: string, name: string) => Promise<void>;
@@ -109,6 +144,26 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       if (!rt) return s;
       return { runtimes: { ...s.runtimes, [id]: { ...rt, ...p } } };
     });
+
+  // H10 — mirror the open-tab set into persisted history so a WebView reload can
+  // re-hydrate them. Called after every tab add/remove/activate.
+  const persistTabs = () => {
+    const { tabOrder, activeId } = get();
+    useStudioHistory.getState().setOpenTabs(tabOrder, activeId);
+  };
+
+  // Best-effort human message from a Tauri/JS error (AppError serializes to a
+  // plain object like {Validation:"…"} that String()s to "[object Object]").
+  const readErr = (e: unknown): string => {
+    if (e instanceof Error) return e.message;
+    if (typeof e === 'string') return e;
+    if (e && typeof e === 'object') {
+      const o = e as Record<string, unknown>;
+      const v = o.message ?? o.error ?? Object.values(o)[0];
+      if (typeof v === 'string') return v;
+    }
+    return 'Something went wrong creating the project.';
+  };
 
   const ensure = (id: string, name: string) => {
     // Restore the checklist + message log from the persisted snapshot if we have
@@ -148,6 +203,24 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         activeId: id,
       };
     });
+    persistTabs();
+  };
+
+  // H10 — re-attach to a project's dev server WITHOUT restarting it when it's
+  // already healthy (the Rust process survives a WebView reload); only cold-start
+  // when it isn't running. Used by `rehydrate`.
+  const attachOrStart = async (id: string) => {
+    try {
+      const status = await webbuildStatus(id);
+      if (status?.healthy) {
+        patch(id, { status, phase: 'live' });
+        beginLivenessWatch(id);
+        return;
+      }
+    } catch {
+      /* not running / transient — fall through to a cold start */
+    }
+    await start(id);
   };
 
   // Persist the project's checklist + message log so it survives an app restart.
@@ -181,6 +254,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
           if (status?.healthy) {
             patch(id, { phase: 'live' });
             stopPoll(id);
+            beginLivenessWatch(id);
             // Auto-send the vision seed once the preview is live.
             const rt = get().runtimes[id];
             if (rt?.seedPending) {
@@ -197,7 +271,48 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     pollTimers.set(id, timer);
   };
 
+  // H13 — a "live" dev server can die mid-session: a big structural change can
+  // crash Turbopack, leaving nothing on the port. The boot poll stops once live,
+  // so nothing notices and the tab shows a stale-live blank preview. Keep a slow
+  // heartbeat on live tabs; if the server stops serving (two consecutive misses,
+  // and we're not mid-build), cold-start it so the preview self-heals. `healthy`
+  // is a real HTTP check in Rust (http_responds), so a dead-but-bound port fails.
+  const livenessTimers = new Map<string, number>();
+  const livenessMisses = new Map<string, number>();
+  const stopLiveness = (id: string) => {
+    const t = livenessTimers.get(id);
+    if (t) window.clearInterval(t);
+    livenessTimers.delete(id);
+    livenessMisses.delete(id);
+  };
+  const beginLivenessWatch = (id: string) => {
+    stopLiveness(id);
+    const timer = window.setInterval(() => {
+      const rt = get().runtimes[id];
+      if (!rt || rt.phase !== 'live' || rt.busy) return; // idle only, never mid-build
+      webbuildStatus(id)
+        .then((status) => {
+          if (status?.healthy) {
+            livenessMisses.set(id, 0);
+            return;
+          }
+          const misses = (livenessMisses.get(id) ?? 0) + 1;
+          livenessMisses.set(id, misses);
+          if (misses >= 2) {
+            stopLiveness(id); // dead-but-adopted → self-heal with a cold start
+            patch(id, { phase: 'starting', status: null });
+            void start(id);
+          }
+        })
+        .catch(() => {
+          /* transient IPC error — don't count it as a miss */
+        });
+    }, 6000);
+    livenessTimers.set(id, timer);
+  };
+
   const start = async (id: string) => {
+    stopLiveness(id);
     patch(id, { phase: 'starting', status: null });
     try {
       const status = await webbuildDevStart(id);
@@ -235,11 +350,16 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       const result = await webbuildSessionSend(id, text, rt.effort, rt.style, rt.mcp);
       const q = result.question?.trim() || null;
       const reply = result.reply.trim() || 'Done.';
+      const beats = splitReply(reply);
       patch(id, {
         reply,
         messages: [
           ...(get().runtimes[id]?.messages ?? []),
-          { id: crypto.randomUUID(), text: reply, ts: Date.now() },
+          ...beats.map((text, i) => ({
+            id: `${crypto.randomUUID()}-${i}`,
+            text,
+            ts: Date.now(),
+          })),
         ],
         question: q,
         options: q ? (result.options ?? []) : [],
@@ -290,10 +410,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     runtimes: {},
     tabOrder: [],
     activeId: null,
+    lastCreateError: null,
 
     initStream: () => {
       if (streamUnlisten) return;
       streamUnlisten = () => {};
+      // H10 — after a fresh module load (incl. a WebView reload), re-open the
+      // tabs that were open before, re-attaching to their live dev servers.
+      get().rehydrate();
       void listen<CompanionStreamEvent>(COMPANION_STREAM_EVENT, (e) => {
         const ev = e.payload;
         const id = /^webbuild:(.+)$/.exec(ev.sessionId)?.[1];
@@ -310,12 +434,43 @@ export const useStudioStore = create<StudioStore>((set, get) => {
       });
     },
 
-    setActive: (id) => set({ activeId: id }),
+    setActive: (id) => {
+      set({ activeId: id });
+      persistTabs();
+    },
+
+    rehydrate: () => {
+      // Only when we have nothing open (a fresh load); never disturb live tabs.
+      if (get().tabOrder.length > 0) return;
+      const { openTabIds, activeTabId } = useStudioHistory.getState();
+      if (!openTabIds || openTabIds.length === 0) return;
+      void (async () => {
+        try {
+          const projects = await webbuildListProjects();
+          const byId = new Map(projects.map((p) => [p.id, p] as const));
+          for (const id of openTabIds) {
+            const proj = byId.get(id);
+            if (!proj || get().runtimes[id]) continue; // project deleted, or already open
+            ensure(id, proj.name); // restores checklist/messages from history
+            void attachOrStart(id); // re-attach to the still-running dev server
+          }
+          if (activeTabId && get().runtimes[activeTabId]) {
+            set({ activeId: activeTabId });
+            persistTabs();
+          }
+        } catch {
+          /* projects list unavailable — leave Studio blank rather than crash */
+        }
+      })();
+    },
+
+    clearCreateError: () => set({ lastCreateError: null }),
 
     setBuildSettings: (id, p) => patch(id, p),
 
     closeTab: (id) => {
       stopPoll(id);
+      stopLiveness(id);
       stopAuto(id);
       void webbuildDevStop(id).catch(() => {});
       set((s) => {
@@ -324,6 +479,7 @@ export const useStudioStore = create<StudioStore>((set, get) => {
         const activeId = s.activeId === id ? (order[order.length - 1] ?? null) : s.activeId;
         return { runtimes: rest, tabOrder: order, activeId };
       });
+      persistTabs();
     },
 
     startExisting: async (id, name) => {
@@ -353,10 +509,14 @@ export const useStudioStore = create<StudioStore>((set, get) => {
     },
 
     createWithVision: async (name, vision) => {
+      set({ lastCreateError: null });
       let project;
       try {
         project = await webbuildScaffold(name);
       } catch (e) {
+        // H9 — scaffold failure was previously a transient toast only; the
+        // vision-start screen shows nothing about WHY (e.g. missing Bun). Keep it.
+        set({ lastCreateError: readErr(e) });
         toastCatch('scaffold project')(e);
         return;
       }

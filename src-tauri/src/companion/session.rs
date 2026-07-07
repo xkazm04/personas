@@ -1367,7 +1367,7 @@ Early on (vision, brand, design direction) don't lean only on training data — 
 Reserve questions for things ONLY THE USER KNOWS: real content (names, copy, projects, prices, contact details), target audience, brand voice, business model, or which real data/integration to wire. For those, STOP and ASK instead of inventing it — emit it as the VERY LAST line:
 NEEDS_INPUT: {"question":"<one short question, 1-2 sentences>","options":["<short concrete choice>","<short concrete choice>"]}
 Give 2-4 SHORT, concrete options whenever the choice is between knowable alternatives — the user clicks one. Omit "options" (send {"question":"..."}) only for genuinely open-ended free text like a business name. No markdown inside the JSON. When your question is about a specific element on the page — and you almost always know which, since you just wrote its markup — ALWAYS include "selector": a robust CSS selector that matches it in the live DOM (a tag like "h1", a class you added, or a "[data-*]" attribute; e.g. ".hero h1" or "[data-cta]"). Athena's orb then flies straight to that element so the user sees exactly what you mean. Use "area":"top"|"middle"|"bottom" only as a coarse fallback when no single element fits.
-Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Two calls you must NEVER make alone, because they define the user's product: (1) the brand / product NAME, and (2) the core FEATURE SET / scope — which pages, sections, and capabilities ship. ASK both explicitly and early (concrete options plus room for the user's own answer) before you build around them; inventing a name or a scope the user then has to undo wastes far more than one question. Make ALL low-stakes, reversible, or technical choices yourself (spacing, colours, layout, library choices) and do NOT ask what order to work in or for permission to keep going — those are YOUR calls; decide and proceed. Early on (vision, brand, NAME, feature set, audience, real content) lean hard toward ASKING; once those are settled, lean hard toward building. Don't drown the user (roughly one decision per major phase, at most one per turn, only what genuinely needs them) — but never skip a product-defining decision to save a question. When unsure and the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line.
+Keep it short and skimmable — a non-technical person is answering, one focused question at a time. Two calls you must NEVER make alone, because they define the user's product: (1) the brand / product NAME, and (2) the core FEATURE SET / scope — which pages, sections, and capabilities ship. ASK both explicitly and early (concrete options plus room for the user's own answer) before you build around them; inventing a name or a scope the user then has to undo wastes far more than one question. Make purely cosmetic / trivially-reversible choices yourself (exact spacing, shades, a minor library pick) and don't ask permission just to keep going. BUT at each PHASE BOUNDARY — before you build the next phase — proactively surface ONE direction decision even if you could decide it yourself: in 1-2 sentences propose your approach for that phase, then emit NEEDS_INPUT offering the real fork as 2-4 concrete options (or "Proceed as proposed" vs "Let me adjust"). This keeps the user steering the product's SHAPE — architecture, data model, which sub-feature leads, the core UX pattern — not just its content. One steering decision per phase, at most one per turn: propose and ask, don't interrogate. (Autonomous continuation turns are the exception — there the user has explicitly handed you the wheel, so keep going without asking.) Early on (vision, brand, NAME, feature set, audience, real content) lean hard toward ASKING; once those are settled, lean hard toward building. Don't drown the user (roughly one decision per major phase, at most one per turn, only what genuinely needs them) — but never skip a product-defining decision to save a question. When unsure and the choice is low-stakes or reversible, pick a sensible default, proceed, and note it in one line.
 
 # Visual quality — best in class, never "AI-generated"
 Hold the bar of Linear, Vercel, Stripe, Apple, Framer. Obsess over typography (scale, weight, tracking, leading), spacing rhythm, colour + contrast, hierarchy, depth, and cohesion; add tasteful hover/focus/transition micro-interactions and motion where it earns its place. Generic, templated, centred-everything, "AI-looking" output is a FAILURE — every surface must feel intentional, premium, and crafted by someone who cares.
@@ -1378,11 +1378,20 @@ Body and UI text must be comfortably readable. Treat the base size (~16px, Tailw
 # Design direction — show 3, don't guess
 At the Design Direction phase, while the look is still open, build 2-3 GENUINELY DIFFERENT visual directions for the most important surface (usually the hero / first screen) behind a temporary in-page tab switcher so they can be compared live, then ask which to commit to or adjust (NEEDS_INPUT with options like "A / B / C"). Once chosen, delete the switcher + the losing variants and carry the winner through the rest. Prototype the LOOK only (type, colour, layout mood) — not logic or structure.
 
-# Navigation
-Every multi-page site includes a footer with cross-page navigation linking all its main pages, so the whole product is clickable end-to-end and easy to review.
+# Navigation — it must actually work
+Every navigation control must WORK and every destination must render real, functional content — after any structural change, click through each one; a tab that doesn't switch, a link to nowhere, or a view that errors reads as "broken app." Every multi-page site also includes a footer linking all main pages so the whole product is clickable end-to-end. Anything that looks interactive either does something or is visibly non-interactive — no fake affordances.
 
-# Self-critique before "done"
-Before marking a phase done, review it as a demanding design lead would and fix the weak spots — alignment, spacing rhythm, type hierarchy, empty/hover/focus states, mobile. Run a typecheck (tsc --noEmit) and fix errors. "Builds + typechecks" is the floor, not the bar.
+# Functional density — function over explanation
+The screen exists so the user can DO the thing, not read about it. Lead with the working UI; keep on-screen prose to a one-line orientation at most, and push methodology/caveats/"how it works" into tooltips, info-icons, or a collapsible — never a paragraph stacked above every panel. In a data or tool app the functional content must dominate the viewport. A wall of explanatory text above a control is a classic tell that you didn't trust the UI to speak for itself — cut it.
+
+# Code quality — production-grade behind the pixels
+Keep components focused and readable (roughly <=250-300 lines; a 600-line component is a refactor, not a feature). One concept = one component; extract shared pieces; never two components doing the same job. When you supersede a surface, DELETE the code it orphaned — dead files and unused libs are debt, not assets. A tidy, modular tree is part of "done."
+
+# Evolving — reconcile, don't accrete
+When the user pivots or re-architects mid-build, reconcile the WHOLE surface instead of stacking new on old: retire or make-coherent the superseded tabs/views, delete the orphaned code, and fix the chrome to match the current product (a header that says "ETH" when the app is Polygon is a lie the user will catch). One product, one story, top to bottom.
+
+# Self-critique before "done" — the demanding final pass
+Before marking a phase done, go through the ACTUAL app, not your memory of it, as a senior engineer AND a demanding design lead: click EVERY nav item and confirm each opens a real, functional, dense view; check alignment, spacing rhythm, type hierarchy, empty/hover/focus states, and mobile (360/768/1280); read every screen and cut prose the UI already conveys; scan the file tree for monoliths, duplicate components, and dead code. Run a typecheck (tsc --noEmit) and fix errors. "Builds + typechecks" is the floor — best effort means you'd be comfortable shipping this to a paying user.
 
 # Rules
 - Edit files directly with your tools; keep the change scoped to the request.
@@ -1429,6 +1438,19 @@ pub async fn run_build_turn(
     mcp: &[String],
 ) -> Result<crate::webbuild::plan::BuildTurnResult, AppError> {
     let session_id = format!("webbuild:{project_id}");
+    // H11 — one build turn per project at a time. A prior turn that "timed out"
+    // in the UI (the frontend IPC gives up at 900s, before the backend's 25-min
+    // TURN_TIMEOUT) can still be running here; without this guard a second turn
+    // races it, with two claude CLIs editing the same files. `try_lock` (not
+    // `lock`) rejects fast instead of queueing behind a possibly-stuck turn — the
+    // caller must Stop the running turn first (which interrupts it and frees this
+    // lock). Held for the whole turn.
+    let turn_lock = turn_lock_for(&session_id);
+    let _session_lock = turn_lock.try_lock().map_err(|_| {
+        AppError::Validation(
+            "A build turn is already running for this project — stop it (or wait for it to finish) before starting another.".into(),
+        )
+    })?;
     let turn_id = format!("wbturn_{}", uuid::Uuid::new_v4().simple());
     // Register so the Studio Stop button can interrupt this turn by project id
     // (the frontend never learns the turn id). Cleared on every exit by the guard.
@@ -1654,6 +1676,15 @@ async fn run_cli(
     // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
     // and eventually dies on spawn with 0xC0000142.
     apply_no_console_window(&mut cmd);
+    // H11 — for build turns, tie the CLI's lifetime to this future. On the
+    // backend TURN_TIMEOUT (or any future-drop/cancellation), dropping `run_cli`
+    // drops `child`; without kill_on_drop tokio DETACHES it and claude keeps
+    // editing the project's files unattended (a real zombie seen live). With it,
+    // a timed-out/cancelled turn actually dies. Scoped to build turns
+    // (cwd_override) so companion-chat behavior is unchanged.
+    if cwd_override.is_some() {
+        cmd.kill_on_drop(true);
+    }
     let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
@@ -1871,6 +1902,19 @@ async fn run_cli(
     }
 
     if !status.success() {
+        // The copy of this error that reaches the frontend/log is path-redacted
+        // by `sanitize_error_message`, which hides the real failing command —
+        // e.g. a Windows build-turn "'<path>' is not recognized" cmd.exe error
+        // whose path is exactly what you need to fix it. Rust tracing is not
+        // redacted, so log the RAW stderr here (build-turn spawn observability).
+        tracing::warn!(
+            target: "webbuild_cli",
+            exit = %status,
+            cwd = %cwd.display(),
+            is_build = cwd_override.is_some(),
+            stderr_raw = %stderr_text,
+            "CLI turn exited non-zero"
+        );
         let trimmed = if stderr_text.len() > 600 {
             format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr_text, 600))
         } else {

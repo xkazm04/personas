@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Bot, History } from 'lucide-react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useStudioStore } from './studioStore';
 import StudioDecision from './StudioDecision';
 
@@ -28,38 +29,90 @@ function useTypewriter(target: string): string {
 const BUBBLE =
   'pointer-events-auto flex max-w-full items-start gap-2 self-start rounded-modal border border-border bg-background/95 px-3 py-2 shadow-elevation-4 backdrop-blur';
 
-// Athena's responses as a chat log (1a): each completed turn is its own bubble.
-// By default only the latest is shown; an icon button reveals the earlier ones.
-// While a turn streams, the live reply types in letter-by-letter (1b).
-export default function StudioMessages() {
+const Working = ({ autonomous, name }: { autonomous: boolean; name: string }) => (
+  <span className="flex items-center gap-1.5 text-md text-foreground/80">
+    {autonomous ? `Building ${name} autonomously` : 'Athena is working'}
+    <span className="flex gap-0.5">
+      <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
+      <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
+      <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:300ms]" />
+    </span>
+  </span>
+);
+
+// Athena's responses. Two modes:
+// - default (dock, collapsed): only the latest turn as a floating bubble, with an
+//   icon button to reveal earlier ones — keeps the preview immersive.
+// - expanded: a full, readable conversation column (all turns + live stream +
+//   decision), meant to fill the dock's scrollable panel body.
+export default function StudioMessages({ expanded = false }: { expanded?: boolean }) {
   const activeId = useStudioStore((s) => s.activeId);
   const rt = useStudioStore((s) => (s.activeId ? s.runtimes[s.activeId] : undefined));
   const sendTurn = useStudioStore((s) => s.sendTurn);
   const [showAll, setShowAll] = useState(false);
+  const endRef = useRef<HTMLDivElement | null>(null);
 
   const streamRaw = rt
     ? (rt.stream.split('BUILD_PLAN:')[0]?.split('NEEDS_INPUT:')[0] ?? '').trimEnd()
     : '';
   const typed = useTypewriter(rt?.busy ? streamRaw : '');
 
+  // Keep the expanded conversation pinned to the newest content as it streams.
+  useEffect(() => {
+    if (expanded) endRef.current?.scrollIntoView({ block: 'end' });
+  }, [expanded, typed, rt?.messages.length, rt?.question]);
+
   if (!activeId || !rt) return null;
   const { busy, question, options, messages, autonomous, name } = rt;
   if (!busy && messages.length === 0 && question === null) return null;
 
+  const decision = question ? (
+    <StudioDecision
+      question={question}
+      options={options}
+      onAnswer={(a) => void sendTurn(activeId, a)}
+    />
+  ) : null;
+
+  // ── Expanded: the full conversation as a readable column ──────────────────
+  if (expanded) {
+    return (
+      <div className="flex flex-col gap-2.5">
+        {messages.map((m) => (
+          <div key={m.id} className="flex items-start gap-2">
+            <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary/70" />
+            <div className="min-w-0 flex-1">
+              <div className="mb-0.5 flex items-center gap-1.5 typo-caption text-foreground/40">
+                <span className="font-medium text-foreground/65">Athena</span>
+                <span>·</span>
+                <RelativeTime timestamp={m.ts} />
+              </div>
+              <MarkdownRenderer content={m.text} className="athena-chat-md" codeBlockActions />
+            </div>
+          </div>
+        ))}
+        {busy && (
+          <div className="flex items-start gap-2">
+            <Bot className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            {typed ? (
+              <div className="min-w-0 flex-1">
+                <MarkdownRenderer content={typed} className="athena-chat-md" />
+              </div>
+            ) : (
+              <Working autonomous={autonomous} name={name} />
+            )}
+          </div>
+        )}
+        {decision && <div className="pl-6">{decision}</div>}
+        <div ref={endRef} />
+      </div>
+    );
+  }
+
+  // ── Collapsed: latest bubble only, with a reveal-earlier affordance ───────
   const history = messages.slice(0, -1);
   const latest = messages[messages.length - 1];
   const canExpand = history.length > 0;
-
-  const working = (
-    <span className="flex items-center gap-1.5 text-md text-foreground/80">
-      {autonomous ? `Building ${name} autonomously` : 'Athena is working'}
-      <span className="flex gap-0.5">
-        <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70" />
-        <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:150ms]" />
-        <span className="h-1 w-1 animate-pulse rounded-full bg-primary/70 [animation-delay:300ms]" />
-      </span>
-    </span>
-  );
 
   return (
     <div className="pointer-events-none flex flex-col items-start gap-1.5">
@@ -114,20 +167,18 @@ export default function StudioMessages() {
                 <MarkdownRenderer content={typed} className="athena-chat-md" />
               </div>
             ) : (
-              working
+              <Working autonomous={autonomous} name={name} />
             )
           ) : (
             <div className="min-w-0">
               {latest && (
-                <MarkdownRenderer content={latest.text} className="athena-chat-md" codeBlockActions />
+                // Scroll long completed replies instead of overflowing the bubble;
+                // the decision (below) stays pinned + visible.
+                <div className="max-h-[40vh] overflow-y-auto overscroll-contain">
+                  <MarkdownRenderer content={latest.text} className="athena-chat-md" codeBlockActions />
+                </div>
               )}
-              {question && (
-                <StudioDecision
-                  question={question}
-                  options={options}
-                  onAnswer={(a) => void sendTurn(activeId, a)}
-                />
-              )}
+              {decision}
             </div>
           )}
         </motion.div>

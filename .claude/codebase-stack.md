@@ -188,9 +188,13 @@ Personas orchestrates multi-step / multi-agent work by spawning a **separate
 - **Budget/turns are PER-PROCESS** (`prompt/cli_args.rs:132-145`) — no aggregate
   ceiling across a pipeline/chain/team run. This is the prerequisite gap behind the
   `Patterns/descoped-reopenable.md` budget-ceiling entries.
-- **Cost tracking reads TOTALS ONLY** (`engine/parser.rs:~225-260`:
-  total_cost/input/output) — `cache_read_input_tokens` / `cache_creation_input_tokens`
-  are NOT captured, so prompt-cache effectiveness is currently invisible.
+- **Cost tracking now captures cache tokens** (`engine/parser.rs:~257-279`,
+  the `"result"` arm): `total_cost/input/output` PLUS `cache_read_input_tokens`
+  and `cache_creation_input_tokens` (read from the `usage` object, with a
+  top-level fallback and, per CLI 2.1.152, a nested `cache_creation` ephemeral
+  fallback). Corrected in `/research` run 2026-07-06 (ECC compare) — earlier
+  copies of this doc said these were "NOT captured, prompt-cache effectiveness
+  invisible"; that predates the cache-token capture and is no longer true.
 - **Global concurrency cap = 4** (`engine/queue.rs:92` `GLOBAL_MAX_CONCURRENT`).
 - **The in-CLI `Workflow`/`Task` fan-out is exposed but UNUSED** — no `agent_id` /
   `parent_agent_id` parsing anywhere; OTEL sub-agent spans are wired

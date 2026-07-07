@@ -1,39 +1,58 @@
 import { useStudioStore } from './studioStore';
 
-// C3 — one-click build actions: common edits as buttons that fire a templated
-// build instruction, so a non-technical user doesn't have to phrase the prompt.
-// Athena may still ask a clarifying decision (A1) when an action is ambiguous.
-const QUICK_ACTIONS: { label: string; prompt: string }[] = [
-  {
-    label: 'Add a page',
-    prompt: 'Add a new page to the site and link it in the shared navigation.',
-  },
-  {
-    label: 'Make responsive',
-    prompt:
-      'Review every page at mobile and tablet widths and fix layout, spacing, and overflow so it looks great on small screens.',
-  },
-  {
-    label: 'Dark mode',
-    prompt:
-      'Add a polished dark mode with a header toggle that persists the choice, and make sure every page looks great in both themes.',
-  },
-  {
-    label: 'Polish visuals',
-    prompt:
-      'Do a visual polish pass like a demanding design lead — typography, spacing rhythm, hierarchy, hover/focus states, and motion. Fix the weakest surfaces.',
-  },
-  {
-    label: 'SEO & meta',
-    prompt: 'Add metadata, Open Graph tags, a sitemap, and semantic HTML across the site.',
-  },
-];
-
+// C3 — one-click next steps. NOT hardcoded generic actions: these are derived
+// from the project's live BUILD_PLAN — refine the active phase, build the next
+// pending phases, or ask Athena to recommend + surface a direction decision. The
+// prompts deliberately ask her to propose + confirm before building, so the user
+// stays in control of direction (addresses the "decisions were non-existent"
+// feedback at the chip level too).
 export default function StudioQuickActions({ id }: { id: string }) {
   const sendTurn = useStudioStore((s) => s.sendTurn);
+  const phases = useStudioStore((s) => s.runtimes[id]?.phases);
+
+  const list = phases ?? [];
+  const active = list.find((p) => p.status === 'active');
+  const pending = list.filter((p) => p.status === 'pending').slice(0, 2);
+
+  const chips: { label: string; prompt: string }[] = [];
+
+  if (list.length === 0) {
+    // Pre-plan: help the user get a plan + a starting decision on the table.
+    chips.push(
+      {
+        label: 'Plan it out',
+        prompt:
+          'Lay out your build plan (emit BUILD_PLAN) and propose where to start — then ask me to confirm the direction before you build anything.',
+      },
+      {
+        label: 'What should we build?',
+        prompt:
+          'Give me 2-3 concrete options for what to build first, with a recommendation, and ask me to pick.',
+      },
+    );
+  } else {
+    if (active) {
+      chips.push({
+        label: `Refine "${active.title}"`,
+        prompt: `Refine the current phase ("${active.title}") — review it as a demanding design lead and fix the weakest spots (empty/loading/error states, edge cases, polish). Keep it honest.`,
+      });
+    }
+    for (const p of pending) {
+      chips.push({
+        label: `Build "${p.title}"`,
+        prompt: `Build the "${p.title}" phase next. Before writing any code, briefly propose your approach (2-3 sentences, and any real fork as options) and confirm the direction with me — then build it to a solid, honest state.`,
+      });
+    }
+    chips.push({
+      label: "What's next?",
+      prompt:
+        "What's the highest-value next step? Recommend one, lay out 2-3 concrete options, and ask me to pick before building — I want to steer direction.",
+    });
+  }
+
   return (
     <div className="pointer-events-auto flex flex-wrap gap-1.5 self-start">
-      {QUICK_ACTIONS.map((a) => (
+      {chips.map((a) => (
         <button
           key={a.label}
           type="button"

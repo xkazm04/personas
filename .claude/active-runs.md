@@ -58,6 +58,13 @@ materially edits the working tree should touch this file twice:
 - Paths: src-tauri/src/engine/{types,parser,dispatch,protocol}.rs, src-tauri/src/engine/runner/team_context.rs, src-tauri/src/db/repos/execution/audit_incidents.rs, docs/features/execution/README.md. Live DB: 14 devProjectId pins + incident backlog cleanup (98→54).
 - Note: resolve_incident protocol + injected incident ids/discipline + promote() open-dup guard + GIT DISCIPLINE policy section.
 
+### research-ecc-code — /research ECC (Everything Claude Code) harvest, focus=code (session opus-4-8[1m])
+- Started: 2026-07-06. Completed: 2026-07-06.
+- Source: local repo C:\Users\mkdol\dolla\ECC (Claude Code plugin: 30 agents / 135 skills / 60 commands / native hook graph).
+- Outcome: 6 extracted → 1 real gap + 5 already-existed catches (peer-comparison run). Finding [1] = in-flight tool-loop detector on the execution stream (personas has none; only --max-turns + zombie-reap + crash-healing). User chose Option D (record-only) → no code, logged in Research note. Phase 10e: fixed a stale `codebase-stack.md` §2 claim (parser DOES capture cache tokens, parser.rs:257-279).
+- Paths: Obsidian Research/Lessons (outside repo), .claude/codebase-stack.md (committed), .claude/active-runs.md (this, unstaged — 590KB concurrent-write hazard, per local convention).
+- Status: completed (commit: codebase-stack.md doc fix; ledger unstaged)
+
 ### cert-prep-liveness — A/B/C/D cert+orchestration fixes before next run (session 2c665603)
 - Started: 2026-06-10 09:30. Completed: 2026-06-10 11:05. Commits: bcd293f05, 50281ce2d, 273b1782d. Live-verified (Athena resolved 4/6 parked; fleet resumed).
 - Paths: src-tauri/src/engine/{subscription.rs,background.rs}, src-tauri/src/companion/athena_reaction.rs, src-tauri/src/db/settings_keys.rs, scripts/test/loop-certify.mjs(new), docs/tests/autonomy-eval/*.
@@ -86,6 +93,11 @@ timestamp — the next session can recognize it as abandoned.
   silent clobbers.
 
 ## Active
+
+### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
+- Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
+- Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
+- Note: Track 1 = author requirements + drive Studio (via test-automation :17320) to build "ChainSonar", a read-only + paper-only Ethereum micro-cap trade-signal analytics app. Track 2 = observe each build turn + harden Studio for data/analytics apps. v1 safety boundary: NO wallet/keys/signing/fund movement. Empirical: fix Studio from observed turns, not pre-emptively.
 
 ### cloud-pairing — Direction 1 pairing bridge P5–P7 (session opus-4-8[1m]) — COMPLETED + MERGED + PUSHED
 - 2026-07-05: MERGED to master (FF) + PUSHED (origin/master 5f6d722fd). P5 0efd906d7 / P6 37e482a16 / P7 4bac91b81 + docs 5f6d722fd (docs/features/integrations/README.md = authoritative inbound-connectivity state + backlog). App relaunched from master (killed day-old orphaned Vite pid45096; personas-desktop.exe live on :9420 + Vite :1420). WORKTREE .claude/worktrees/cloud-pairing NOT removed — node_modules is a REAL pnpm dir (not junction); recursive delete risks symlink-follow into main .bin — use `npm run clean:worktrees --force`.

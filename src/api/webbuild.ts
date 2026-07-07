@@ -27,6 +27,13 @@ export const webbuildSessionStop = (projectId: string) =>
 export const webbuildStatus = (projectId: string) =>
   invokeWithTimeout<DevServerStatus | null>('webbuild_status', { projectId });
 
+/** H8 preflight — the resolved Bun binary path, or null if Bun isn't installed.
+ *  Studio's scaffold + dev server require Bun; the vision-start screen checks
+ *  this up front so a missing runtime shows install guidance, not a mid-scaffold
+ *  toast. */
+export const webbuildBunStatus = () =>
+  invokeWithTimeout<string | null>('webbuild_bun_status');
+
 /** Status of every running dev server. */
 export const webbuildListServers = () =>
   invokeWithTimeout<DevServerStatus[]>('webbuild_list_servers');
@@ -67,7 +74,10 @@ export const webbuildSessionSend = (
     'webbuild_session_send',
     { projectId, message, effort, style, mcp },
     undefined,
-    900_000,
+    // H11 — must exceed the backend TURN_TIMEOUT (25 min in session.rs) so the
+    // UI never reports "failed" while the backend is still legitimately building
+    // (which left a CLI running unattended). 26 min = backend timeout + buffer.
+    1_560_000,
   );
 
 /** The generated project's app-router routes (for the preview route switcher). */
