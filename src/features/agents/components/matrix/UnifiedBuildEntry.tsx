@@ -14,6 +14,9 @@ import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
 import { GlyphFullLayout } from "@/features/agents/sub_glyph/GlyphFullLayout";
 import { GlyphPrototypeLayout } from "@/features/agents/sub_glyph/GlyphPrototypeLayout";
+import { GlyphDialogueLayout } from "@/features/agents/sub_glyph/GlyphDialogueLayout";
+import { GlyphConstellationLayout } from "@/features/agents/sub_glyph/GlyphConstellationLayout";
+import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
   serializeQuickConfig,
@@ -48,12 +51,17 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // "composer-prototype" (center-prompt surface with sigil quick-setup).
 // The legacy 8-dimension matrix ("legacy-dimensions") was retired —
 // stored values for it migrate to "glyph-full" on read.
-type BuildLayout = "glyph-full" | "composer-prototype";
+// Prototype variants (2026-07-07, /prototype arc): "dialogue" (guided
+// conversation) and "constellation" (spatial option field) explore the
+// "combine prompt + click-config across multi-round cycles" direction against
+// the "composer-prototype" baseline. All share GlyphFullLayoutProps.
+type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "constellation";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
+const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "constellation"];
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    if (raw === "glyph-full" || raw === "composer-prototype") return raw;
+    if (raw && (BUILD_LAYOUTS as string[]).includes(raw)) return raw as BuildLayout;
     // Migrate retired values so users don't land on a stale preference.
     if (raw === "legacy-dimensions" || raw === "v3-capabilities" || raw === "glyph") return "glyph-full";
   } catch (err) { silentCatch("features/agents/components/matrix/UnifiedBuildEntry:catch1")(err); }
@@ -787,6 +795,32 @@ export function UnifiedBuildEntry() {
           >
             <DebtText k="auto_composer_prototype_9b50c4fd" />
           </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("dialogue")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "dialogue"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground hover:text-foreground"
+            }`}
+            title="Dialogue — guided conversation compose (prototype)"
+            data-testid="build-layout-toggle-dialogue"
+          >
+            Dialogue
+          </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("constellation")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "constellation"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground hover:text-foreground"
+            }`}
+            title="Constellation — spatial option field compose (prototype)"
+            data-testid="build-layout-toggle-constellation"
+          >
+            Field
+          </button>
         </div>
       </div>
 
@@ -808,71 +842,47 @@ export function UnifiedBuildEntry() {
         />
       )}
 
-      {layout === "composer-prototype" ? (
-        <GlyphPrototypeLayout
-          intentText={intentText}
-          onIntentChange={setIntentText}
-          onLaunch={handleLaunchGlyph}
-          launchDisabled={launchDisabled}
-          isBuilding={build.isBuilding}
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          cellStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswer={build.handleAnswer}
-          agentName={agentName}
-          onAgentNameChange={setAgentName}
-          hasDesignResult={hasDesignResult}
-          glyphRows={glyphRows}
-          onStartTest={lifecycle.handleStartTest}
-          onPromote={() => { void lifecycle.handlePromote(); }}
-          onPromoteForce={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          cliOutputLines={build.outputLines}
-          onQuickConfigChange={handleQuickConfigChange}
-          onViewAgent={handleViewPromotedAgent}
-          buildError={build.buildError}
-          initialNotificationChannels={initialNotificationChannels ?? undefined}
-        />
-      ) : (
-        <GlyphFullLayout
-          intentText={intentText}
-          onIntentChange={setIntentText}
-          onLaunch={handleLaunchGlyph}
-          launchDisabled={launchDisabled}
-          isBuilding={build.isBuilding}
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          cellStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswer={build.handleAnswer}
-          agentName={agentName}
-          onAgentNameChange={setAgentName}
-          hasDesignResult={hasDesignResult}
-          glyphRows={glyphRows}
-          onStartTest={lifecycle.handleStartTest}
-          onPromote={() => { void lifecycle.handlePromote(); }}
-          onPromoteForce={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          cliOutputLines={build.outputLines}
-          onQuickConfigChange={handleQuickConfigChange}
-          onViewAgent={handleViewPromotedAgent}
-          buildError={build.buildError}
-          initialNotificationChannels={initialNotificationChannels ?? undefined}
-        />
-      )}
+      {(() => {
+        // All build layouts consume the identical GlyphFullLayoutProps bundle —
+        // assemble once and pick the component (baseline + 2 prototype variants).
+        const layoutProps: GlyphFullLayoutProps = {
+          intentText,
+          onIntentChange: setIntentText,
+          onLaunch: handleLaunchGlyph,
+          launchDisabled,
+          isBuilding: build.isBuilding,
+          buildPhase: build.buildPhase,
+          completeness: build.completeness,
+          cellStates: build.cellStates,
+          pendingQuestions: build.pendingQuestions,
+          onAnswer: build.handleAnswer,
+          agentName,
+          onAgentNameChange: setAgentName,
+          hasDesignResult,
+          glyphRows,
+          onStartTest: lifecycle.handleStartTest,
+          onPromote: () => { void lifecycle.handlePromote(); },
+          onPromoteForce: () => { void lifecycle.handlePromote({ force: true }); },
+          onRejectTest: lifecycle.handleRejectTest,
+          onRefine: lifecycle.handleRefine,
+          testOutputLines: build.buildTestOutputLines,
+          testPassed: build.buildTestPassed,
+          testError: build.buildTestError,
+          toolTestResults: lifecycle.buildToolTestResults,
+          testSummary: lifecycle.buildTestSummary,
+          cliOutputLines: build.outputLines,
+          onQuickConfigChange: handleQuickConfigChange,
+          onViewAgent: handleViewPromotedAgent,
+          buildError: build.buildError,
+          initialNotificationChannels: initialNotificationChannels ?? undefined,
+        };
+        const LayoutComponent =
+          layout === "composer-prototype" ? GlyphPrototypeLayout
+          : layout === "dialogue" ? GlyphDialogueLayout
+          : layout === "constellation" ? GlyphConstellationLayout
+          : GlyphFullLayout;
+        return <LayoutComponent {...layoutProps} />;
+      })()}
 
       {/* Error banner */}
       {(launchError || build.buildError) && (
