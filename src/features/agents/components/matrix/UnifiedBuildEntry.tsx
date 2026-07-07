@@ -16,6 +16,7 @@ import { GlyphFullLayout } from "@/features/agents/sub_glyph/GlyphFullLayout";
 import { GlyphPrototypeLayout } from "@/features/agents/sub_glyph/GlyphPrototypeLayout";
 import { GlyphDialogueLayout } from "@/features/agents/sub_glyph/GlyphDialogueLayout";
 import { GlyphCinemaLayout } from "@/features/agents/sub_glyph/GlyphCinemaLayout";
+import { GlyphDialogueCinemaLayout } from "@/features/agents/sub_glyph/GlyphDialogueCinemaLayout";
 import type { GlyphFullLayoutProps } from "@/features/agents/sub_glyph/glyphLayoutTypes";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
@@ -55,9 +56,9 @@ import type { CompanionTemplateMatch } from "@/api/companion";
 // conversation) and "constellation" (spatial option field) explore the
 // "combine prompt + click-config across multi-round cycles" direction against
 // the "composer-prototype" baseline. All share GlyphFullLayoutProps.
-type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "cinema";
+type BuildLayout = "glyph-full" | "composer-prototype" | "dialogue" | "cinema" | "dialogue-cinema";
 const LAYOUT_STORAGE_KEY = "personas:build-layout";
-const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "cinema"];
+const BUILD_LAYOUTS: BuildLayout[] = ["glyph-full", "composer-prototype", "dialogue", "cinema", "dialogue-cinema"];
 function readLayoutPreference(): BuildLayout {
   try {
     const raw = localStorage.getItem(LAYOUT_STORAGE_KEY);
@@ -821,6 +822,19 @@ export function UnifiedBuildEntry() {
           >
             Cinema
           </button>
+          <button
+            type="button"
+            onClick={() => handleLayoutChange("dialogue-cinema")}
+            className={`rounded-full px-3 py-1 typo-caption transition ${
+              layout === "dialogue-cinema"
+                ? "bg-primary/20 text-primary"
+                : "text-foreground hover:text-foreground"
+            }`}
+            title="Dialogue+Cinema — brief stays on top, cinema plays below while loading (prototype)"
+            data-testid="build-layout-toggle-dialogue-cinema"
+          >
+            Dialogue+Cinema
+          </button>
         </div>
       </div>
 
@@ -880,6 +894,7 @@ export function UnifiedBuildEntry() {
           layout === "composer-prototype" ? GlyphPrototypeLayout
           : layout === "dialogue" ? GlyphDialogueLayout
           : layout === "cinema" ? GlyphCinemaLayout
+          : layout === "dialogue-cinema" ? GlyphDialogueCinemaLayout
           : GlyphFullLayout;
         return <LayoutComponent {...layoutProps} />;
       })()}
