@@ -9332,7 +9332,10 @@
       "om_expected_label": "Erwarteter Wert",
       "om_expected_placeholder": "erwarteter Wert",
       "commit_blocked_source_type": "Diese Quelle kann nicht aus dem Studio gespeichert werden — für Abschlussketten die Quell-Persona wählen",
-      "commit_needs_output_match": "Gib einen JSONPath und einen erwarteten Wert ein, um diese Route zu speichern"
+      "commit_needs_output_match": "Gib einen JSONPath und einen erwarteten Wert ein, um diese Route zu speichern",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "Noch keine abonnierten Feeds — abonniere im Marketplace, um sie mit Personas zu verknüpfen.",
+      "marketplace_source_hint": "Führt die Persona aus, wenn dieser Feed eine Änderung meldet"
     },
     "trigger_configured": "Trigger konfiguriert",
     "secret_label": "Geheimnis",

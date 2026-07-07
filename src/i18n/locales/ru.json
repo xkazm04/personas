@@ -9332,7 +9332,10 @@
       "om_expected_label": "Ожидаемое значение",
       "om_expected_placeholder": "ожидаемое значение",
       "commit_blocked_source_type": "Этот источник нельзя сохранить из Студии — для цепочек завершения выберите персону-источник",
-      "commit_needs_output_match": "Введите JSONPath и ожидаемое значение, чтобы сохранить маршрут"
+      "commit_needs_output_match": "Введите JSONPath и ожидаемое значение, чтобы сохранить маршрут",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "Пока нет подписанных лент — оформите подписку в Marketplace, чтобы связать их с персонами.",
+      "marketplace_source_hint": "Запускает персону, когда эта лента сообщает об изменении"
     },
     "trigger_configured": "триггер настроен",
     "secret_label": "Секрет",

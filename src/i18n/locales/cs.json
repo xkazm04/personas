@@ -9332,7 +9332,10 @@
       "om_expected_label": "Očekávaná hodnota",
       "om_expected_placeholder": "očekávaná hodnota",
       "commit_blocked_source_type": "Tento zdroj nelze uložit ze Studia — pro řetězce dokončení použijte zdrojovou personu",
-      "commit_needs_output_match": "Pro uložení této trasy zadejte JSONPath a očekávanou hodnotu"
+      "commit_needs_output_match": "Pro uložení této trasy zadejte JSONPath a očekávanou hodnotu",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "Zatím nemáte odebírané kanály — přihlaste se k odběru v Marketplace a propojte je s personami.",
+      "marketplace_source_hint": "Spustí personu, když tento kanál nahlásí změnu"
     },
     "trigger_configured": "trigger nakonfigurován",
     "secret_label": "Tajný klíč",

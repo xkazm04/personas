@@ -8929,6 +8929,9 @@ export type Translations = {
       om_expected_placeholder: string;
       commit_blocked_source_type: string;
       commit_needs_output_match: string;
+      group_marketplace: string;
+      marketplace_source_hint: string;
+      marketplace_empty: string;
     };
     subscription_list: {
       active: string;

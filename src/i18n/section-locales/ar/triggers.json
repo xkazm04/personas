@@ -722,7 +722,10 @@
     "om_expected_label": "القيمة المتوقعة",
     "om_expected_placeholder": "القيمة المتوقعة",
     "commit_blocked_source_type": "لا يمكن حفظ هذا المصدر من الاستوديو — لسلاسل الإكمال، اختر شخصية المصدر بدلاً من ذلك",
-    "commit_needs_output_match": "أدخل JSONPath وقيمة متوقعة لحفظ هذا المسار"
+    "commit_needs_output_match": "أدخل JSONPath وقيمة متوقعة لحفظ هذا المسار",
+    "group_marketplace": "Marketplace",
+    "marketplace_empty": "لا توجد خلاصات مشترك بها بعد — اشترك في Marketplace لربطها بالشخصيات.",
+    "marketplace_source_hint": "يشغّل الشخصية عندما تُبلّغ هذه الخلاصة عن تغيير"
   },
   "trigger_configured": "تم ضبط المحفّز",
   "secret_label": "سري",

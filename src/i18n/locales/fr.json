@@ -9332,7 +9332,10 @@
       "om_expected_label": "Valeur attendue",
       "om_expected_placeholder": "valeur attendue",
       "commit_blocked_source_type": "Cette source ne peut pas être enregistrée depuis le Studio — pour les chaînes d'achèvement, armez la persona source",
-      "commit_needs_output_match": "Saisissez un JSONPath et une valeur attendue pour enregistrer cette route"
+      "commit_needs_output_match": "Saisissez un JSONPath et une valeur attendue pour enregistrer cette route",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "Aucun flux abonné pour l'instant — abonnez-vous dans le Marketplace pour les relier aux personas.",
+      "marketplace_source_hint": "Exécute le persona lorsque ce flux signale un changement"
     },
     "trigger_configured": "déclencheur configuré",
     "secret_label": "Secret",

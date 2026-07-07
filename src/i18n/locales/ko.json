@@ -9332,7 +9332,10 @@
       "om_expected_label": "예상 값",
       "om_expected_placeholder": "예상 값",
       "commit_blocked_source_type": "이 소스는 Studio에서 저장할 수 없습니다. 완료 체인에는 소스 페르소나를 선택하세요",
-      "commit_needs_output_match": "이 경로를 저장하려면 JSONPath와 예상 값을 입력하세요"
+      "commit_needs_output_match": "이 경로를 저장하려면 JSONPath와 예상 값을 입력하세요",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "구독한 피드가 아직 없습니다 — Marketplace에서 구독하여 페르소나에 연결하세요.",
+      "marketplace_source_hint": "이 피드에 변경 사항이 보고되면 페르소나를 실행합니다"
     },
     "trigger_configured": "트리거 설정됨",
     "secret_label": "시크릿",

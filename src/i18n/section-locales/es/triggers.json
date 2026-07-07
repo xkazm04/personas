@@ -722,7 +722,10 @@
     "om_expected_label": "Valor esperado",
     "om_expected_placeholder": "valor esperado",
     "commit_blocked_source_type": "Esta fuente no se puede guardar desde el Studio — para cadenas de finalización, usa la persona de origen",
-    "commit_needs_output_match": "Introduce un JSONPath y un valor esperado para guardar esta ruta"
+    "commit_needs_output_match": "Introduce un JSONPath y un valor esperado para guardar esta ruta",
+    "group_marketplace": "Marketplace",
+    "marketplace_empty": "Aún no hay feeds suscritos: suscríbete en el Marketplace para conectarlos a las personas.",
+    "marketplace_source_hint": "Ejecuta la persona cuando este feed informa de un cambio"
   },
   "trigger_configured": "disparador configurado",
   "secret_label": "Secreto",

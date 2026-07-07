@@ -82,6 +82,43 @@ MAX(seq) for that slug → the subscriber gets only firings added in **future**
 releases, delivered exactly once (seq strictly greater than cursor; dedup by
 `source_id` is the backstop). No historical flood, no missed future change.
 
+## Baseline + monthly cadence (operational)
+
+The detection side is stateful: it can only report a *change* against a prior
+snapshot. So bring it up in two steps.
+
+1. **Establish the baseline (once, now).** Start the pumper server
+   (`cd ../pumper && cargo run -p pumper-server`), make sure its watch list is
+   current (`node scripts/events/generate-connector-events.mjs` → copy
+   `scripts/events/connector-docs.manifest.json` to `pumper/catalog/connector-docs.json`),
+   then run `node scripts/events/run-connector-baseline.mjs`. Every doc is *New*
+   on this first pass, so it emits **zero** firings — it just records the snapshot
+   in pumper's `connector_docs` dataset (`data/pumper.db`). Connectors whose docs
+   are auth-walled / JS-heavy / offline show up in `errors` and are simply not
+   watched; that's fine.
+2. **Let the monthly cron run from then on.** The app declares
+   `schedule() = "0 0 6 1 * *"`, so while the pumper server is up it re-scans on
+   the 1st of each month and diffs against the baseline. A run that finds changes
+   writes `data/artifacts/connector-api-watch/<job>/changes.json`; feed it to
+   `node scripts/events/generate-connector-events.mjs --changes <that file>`,
+   review the ledger + `builtin_shared_events.rs` diff, and ship it in the next
+   release. (If the dev box isn't always on, running the baseline script by hand
+   monthly is an equivalent manual cadence — the diff is snapshot-based, not
+   wall-clock-based.)
+
+Because the baseline emits no firings, the shipped Marketplace correctly shows
+"no changes yet" for every feed until the first monthly diff lands real changes —
+no fabricated history.
+
+## Consuming a subscription — Chain Studio
+
+A subscription isn't just a notification: subscribed feeds surface in Chain
+Studio's **Signals** rail under a **Marketplace** category, and committing a
+feed→persona route creates an `event_listener` trigger on the persona
+(`listen_event_type: shared:<slug>`). So "subscribe to ElevenLabs API updates"
+becomes "run my persona whenever ElevenLabs changes" with two clicks. See
+`sub_studio/StudioRails.tsx` + `sub_studio/libs/studioCommit.ts`.
+
 ## Files
 
 See the active-runs ledger entry `curated-connector-events` for the full path

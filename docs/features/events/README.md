@@ -53,6 +53,23 @@ The Live Stream header includes a shortcut into `Overview -> Events` for the ful
 
 ## Curated connector-API-change events (local-first)
 
+> **Wiring a subscribed feed into a persona (Chain Studio).** Once you subscribe
+> to a Marketplace feed, it appears in Chain Studio's **Signals** source rail
+> under a **Marketplace** category (`sub_studio/StudioRails.tsx`). Arm a feed +
+> a target persona and commit — it creates an **`event_listener`** trigger on the
+> persona with `listen_event_type: shared:<slug>`, so the persona runs whenever
+> that feed reports a change. The mapping lives in `sub_studio/libs/studioCommit.ts`
+> (`draftLinkToTriggerInput`, the `marketplace` `DraftSource` kind); it commits
+> directly (no config form) because the subscription fully specifies the event.
+
+> **Baseline + monthly cadence.** The pumper `connector-api-watch` app diffs each
+> connector's docs against the snapshot in its change-detected `connector_docs`
+> dataset. The **first** run is a baseline (every doc is *New*, so it emits **zero**
+> firings — it just records what future runs diff against). Establish it once with
+> `node scripts/events/run-connector-baseline.mjs` (needs the pumper server running);
+> after that the app's monthly cron (`0 0 6 1 * *`) surfaces real changes as
+> `changes.json`, which the bridge bakes into the next release.
+
 The Marketplace ships **curated global events** for connector API changes,
 distributed inside each release with **no cloud dependency**. Three stages:
 

@@ -722,7 +722,10 @@
     "om_expected_label": "Giá trị mong đợi",
     "om_expected_placeholder": "giá trị mong đợi",
     "commit_blocked_source_type": "Không thể lưu nguồn này từ Studio — với chuỗi hoàn thành, hãy chọn persona nguồn",
-    "commit_needs_output_match": "Nhập JSONPath và giá trị mong đợi để lưu tuyến này"
+    "commit_needs_output_match": "Nhập JSONPath và giá trị mong đợi để lưu tuyến này",
+    "group_marketplace": "Marketplace",
+    "marketplace_empty": "Chưa có nguồn cấp nào được đăng ký — hãy đăng ký trong Marketplace để kết nối chúng vào persona.",
+    "marketplace_source_hint": "Chạy persona khi nguồn cấp này báo có thay đổi"
   },
   "trigger_configured": "trigger đã cấu hình",
   "secret_label": "Bí mật",

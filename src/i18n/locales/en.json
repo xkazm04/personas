@@ -8922,7 +8922,10 @@
       "om_expected_label": "Expected value",
       "om_expected_placeholder": "expected value",
       "commit_blocked_source_type": "This source can't be saved from the Studio — for completion chains, arm the source persona instead",
-      "commit_needs_output_match": "Enter a JSONPath and expected value to save this route"
+      "commit_needs_output_match": "Enter a JSONPath and expected value to save this route",
+      "group_marketplace": "Marketplace",
+      "marketplace_source_hint": "Runs the persona when this feed reports a change",
+      "marketplace_empty": "No subscribed feeds yet — subscribe in the Marketplace to wire them into personas."
     },
     "subscription_list": {
       "active": "Active",

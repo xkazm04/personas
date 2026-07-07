@@ -9332,7 +9332,10 @@
       "om_expected_label": "期望值",
       "om_expected_placeholder": "期望值",
       "commit_blocked_source_type": "此来源无法从工作室保存——如需完成链，请改为选择来源角色",
-      "commit_needs_output_match": "输入 JSONPath 和期望值以保存此路由"
+      "commit_needs_output_match": "输入 JSONPath 和期望值以保存此路由",
+      "group_marketplace": "Marketplace",
+      "marketplace_empty": "暂无已订阅的信息源 — 请在 Marketplace 中订阅，将其接入角色。",
+      "marketplace_source_hint": "当此信息源报告变化时运行该角色"
     },
     "trigger_configured": "触发器已配置",
     "secret_label": "密钥",

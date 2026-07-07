@@ -722,7 +722,10 @@
     "om_expected_label": "Nilai yang diharapkan",
     "om_expected_placeholder": "nilai yang diharapkan",
     "commit_blocked_source_type": "Sumber ini tidak dapat disimpan dari Studio — untuk rantai penyelesaian, pilih persona sumber",
-    "commit_needs_output_match": "Masukkan JSONPath dan nilai yang diharapkan untuk menyimpan rute ini"
+    "commit_needs_output_match": "Masukkan JSONPath dan nilai yang diharapkan untuk menyimpan rute ini",
+    "group_marketplace": "Marketplace",
+    "marketplace_empty": "Belum ada feed berlangganan — berlanggananlah di Marketplace untuk menghubungkannya ke persona.",
+    "marketplace_source_hint": "Menjalankan persona saat feed ini melaporkan perubahan"
   },
   "trigger_configured": "pemicu dikonfigurasi",
   "secret_label": "Rahasia",

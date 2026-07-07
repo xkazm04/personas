@@ -722,7 +722,10 @@
     "om_expected_label": "期待値",
     "om_expected_placeholder": "期待値",
     "commit_blocked_source_type": "このソースは Studio から保存できません。完了チェーンにはソースのペルソナを選択してください",
-    "commit_needs_output_match": "このルートを保存するには JSONPath と期待値を入力してください"
+    "commit_needs_output_match": "このルートを保存するには JSONPath と期待値を入力してください",
+    "group_marketplace": "Marketplace",
+    "marketplace_empty": "購読中のフィードはまだありません。Marketplace で購読してペルソナに接続してください。",
+    "marketplace_source_hint": "このフィードが変更を報告するとペルソナを実行します"
   },
   "trigger_configured": "トリガー設定済み",
   "secret_label": "シークレット",
