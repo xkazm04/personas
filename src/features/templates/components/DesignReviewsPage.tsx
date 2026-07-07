@@ -43,6 +43,9 @@ export default function DesignReviewsPage() {
         iconColor="violet"
         title={t.templates.page.title}
         subtitle={(() => {
+          // Explore has its own domain structure — a flat template count is
+          // misleading there, so the header shows title-only on that tab.
+          if (activeTab === 'explore') return undefined;
           // Don't flash a misleading "0 templates" while the reviews fetch is in
           // flight (the hook exposes isLoading; the page previously dropped it).
           if (isLoading && reviews.length === 0 && !(activeTab === 'generated' && galleryTotal > 0)) {

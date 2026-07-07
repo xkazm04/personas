@@ -1,8 +1,8 @@
 /**
  * Explore level 2 — the chosen direction: a sub-domain pre-filter + a dense,
  * sortable, type-to-filter table of a domain's templates AND recipes. Solves the
- * "impossible to orient" volume problem: narrow by focus (category), scan a
- * compact table, sort by any column. PROTOTYPE: hardcoded English.
+ * "impossible to orient" volume problem: narrow by focus (category), toggle
+ * templates/recipes, scan a compact table, sort by any column. PROTOTYPE.
  */
 import { useMemo, useState } from 'react';
 import { FileStack, Blocks, Search, ChevronUp, ChevronDown } from 'lucide-react';
@@ -16,6 +16,7 @@ interface Row {
   item?: ExploreItem; recipe?: ExploreRecipe;
 }
 type SortCol = 'name' | 'kind' | 'category' | 'tools' | 'recipes';
+type TypeFilter = 'all' | 'template' | 'recipe';
 
 interface Props {
   templates: ExploreItem[];
@@ -27,8 +28,9 @@ interface Props {
 
 export function DomainTable({ templates, recipes, accent, onSelect, onSelectRecipe }: Props) {
   const [cat, setCat] = useState<string | null>(null);
+  const [type, setType] = useState<TypeFilter>('all');
   const [query, setQuery] = useState('');
-  const [sort, setSort] = useState<{ col: SortCol; dir: 1 | -1 }>({ col: 'recipes', dir: -1 });
+  const [sort, setSort] = useState<{ col: SortCol; dir: 1 | -1 }>({ col: 'name', dir: 1 });
 
   const allRows = useMemo<Row[]>(() => [
     ...templates.map((t): Row => ({ kind: 'template', id: t.id, name: t.name, category: t.category, tools: t.serviceFlow.length, recipes: recipesForTemplate(t.id).length, item: t })),
@@ -37,20 +39,21 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
 
   const cats = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const r of allRows) m[r.category] = (m[r.category] ?? 0) + 1;
+    for (const r of allRows) if (type === 'all' || r.kind === type) m[r.category] = (m[r.category] ?? 0) + 1;
     return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  }, [allRows]);
+  }, [allRows, type]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = allRows.filter((r) => (!cat || r.category === cat) && (!q || r.name.toLowerCase().includes(q)));
+    const filtered = allRows.filter((r) =>
+      (type === 'all' || r.kind === type) && (!cat || r.category === cat) && (!q || r.name.toLowerCase().includes(q)));
     const { col, dir } = sort;
     return filtered.sort((a, b) => {
       const av = a[col], bv = b[col];
       const cmp = typeof av === 'number' && typeof bv === 'number' ? av - bv : String(av).localeCompare(String(bv));
       return cmp * dir;
     });
-  }, [allRows, cat, query, sort]);
+  }, [allRows, cat, type, query, sort]);
 
   const toggleSort = (col: SortCol) =>
     setSort((s) => (s.col === col ? { col, dir: (s.dir * -1) as 1 | -1 } : { col, dir: col === 'name' || col === 'category' ? 1 : -1 }));
@@ -59,13 +62,26 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
 
   return (
     <div className="space-y-3">
-      {/* Sub-domain pre-filter + search */}
+      {/* Sub-domain pre-filter */}
       <div className="flex flex-wrap items-center gap-2">
-        <FilterChip label="All" count={allRows.length} active={cat === null} accent={accent} onClick={() => setCat(null)} />
+        <FilterChip label="All" count={allRows.filter((r) => type === 'all' || r.kind === type).length} active={cat === null} accent={accent} onClick={() => setCat(null)} />
         {cats.map(([c, n]) => (
           <FilterChip key={c} label={categoryLabel(c)} count={n} active={cat === c} accent={accent} onClick={() => setCat(c)} />
         ))}
-        <div className="ml-auto relative">
+      </div>
+
+      {/* Type switcher + name filter (left-aligned) */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="inline-flex rounded-input border border-primary/10 p-0.5 bg-background/40">
+          {([['all', 'All'], ['template', 'Templates'], ['recipe', 'Recipes']] as [TypeFilter, string][]).map(([id, label]) => (
+            <button key={id} onClick={() => setType(id)}
+              className="px-3 py-1 rounded-input typo-caption transition-colors"
+              style={type === id ? { backgroundColor: `${accent}22`, color: accent } : undefined}>
+              <span className={type === id ? '' : 'text-foreground opacity-70'}>{label}</span>
+            </button>
+          ))}
+        </div>
+        <div className="relative">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground opacity-50" />
           <input
             value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Filter by name…"
@@ -74,14 +90,14 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table — all columns left-aligned */}
       <div className="overflow-x-auto rounded-modal border border-primary/10">
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-primary/10">
-              <Th col="name" label="Name" sort={sort} onSort={toggleSort} className="text-left" />
+              <Th col="name" label="Name" sort={sort} onSort={toggleSort} />
               <Th col="kind" label="Type" sort={sort} onSort={toggleSort} />
-              <Th col="category" label="Focus" sort={sort} onSort={toggleSort} className="text-left" />
+              <Th col="category" label="Focus" sort={sort} onSort={toggleSort} />
               <Th col="tools" label="Tools" sort={sort} onSort={toggleSort} />
               <Th col="recipes" label="Capabilities" sort={sort} onSort={toggleSort} />
             </tr>
@@ -91,7 +107,7 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
               <tr key={`${r.kind}-${r.id}`} onClick={() => clickRow(r)}
                 className="border-b border-primary/5 last:border-0 hover:bg-secondary/20 cursor-pointer">
                 <td className="px-3 py-2 typo-body template-name-themed">{r.name}</td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 py-2">
                   <span className="inline-flex items-center gap-1 typo-caption text-foreground opacity-70">
                     {r.kind === 'template' ? <FileStack className="w-3 h-3" /> : <Blocks className="w-3 h-3" />}
                     {r.kind === 'template' ? 'Template' : 'Recipe'}
@@ -100,8 +116,8 @@ export function DomainTable({ templates, recipes, accent, onSelect, onSelectReci
                 <td className="px-3 py-2">
                   <span className="typo-caption px-1.5 py-0.5 rounded-input" style={{ color: accent, backgroundColor: `${accent}18` }}>{categoryLabel(r.category)}</span>
                 </td>
-                <td className="px-3 py-2 text-center typo-data text-foreground opacity-80">{r.tools || '–'}</td>
-                <td className="px-3 py-2 text-center typo-data text-foreground opacity-80">{r.kind === 'template' ? (r.recipes || '–') : '–'}</td>
+                <td className="px-3 py-2 typo-data text-foreground opacity-80">{r.tools || '–'}</td>
+                <td className="px-3 py-2 typo-data text-foreground opacity-80">{r.kind === 'template' ? (r.recipes || '–') : '–'}</td>
               </tr>
             ))}
             {rows.length === 0 && (
@@ -127,12 +143,12 @@ function FilterChip({ label, count, active, accent, onClick }: {
   );
 }
 
-function Th({ col, label, sort, onSort, className = 'text-center' }: {
-  col: SortCol; label: string; sort: { col: SortCol; dir: 1 | -1 }; onSort: (c: SortCol) => void; className?: string;
+function Th({ col, label, sort, onSort }: {
+  col: SortCol; label: string; sort: { col: SortCol; dir: 1 | -1 }; onSort: (c: SortCol) => void;
 }) {
   const on = sort.col === col;
   return (
-    <th className={`px-3 py-2 ${className}`}>
+    <th className="px-3 py-2 text-left">
       <button onClick={() => onSort(col)} className={`inline-flex items-center gap-1 typo-label ${on ? 'text-foreground' : 'text-foreground opacity-55 hover:opacity-80'}`}>
         {label}
         {on && (sort.dir === 1 ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)}

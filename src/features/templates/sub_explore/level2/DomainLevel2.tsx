@@ -29,14 +29,16 @@ export function DomainLevel2({ domainId, onBack, onSelect, onSelectRecipe }: Pro
 
   return (
     <div className="space-y-5">
-      <button onClick={onBack} className="inline-flex items-center gap-1.5 typo-body text-foreground opacity-70 hover:opacity-100">
-        <ChevronLeft className="w-4 h-4" /> All domains
-      </button>
-
-      {/* Illustrated header */}
-      <div className="relative rounded-modal border border-primary/10 overflow-hidden p-5 flex items-center" style={{ minHeight: 92 }}>
+      {/* Illustrated header with the back control inside it */}
+      <div className="relative rounded-modal border border-primary/10 overflow-hidden p-5 flex flex-col justify-center gap-2" style={{ minHeight: 104 }}>
         <img src={domainArt(d, isDark)} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
         <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, var(--background) 32%, ${d.color}22)` }} />
+        <button
+          onClick={onBack}
+          className="relative self-start inline-flex items-center gap-1 typo-caption text-foreground opacity-70 hover:opacity-100 -mt-1"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" /> All domains
+        </button>
         <div className="relative">
           <div className="typo-heading-lg text-foreground">{domainLabel(d, t.explore)}</div>
           <div className="typo-caption text-foreground opacity-80">
