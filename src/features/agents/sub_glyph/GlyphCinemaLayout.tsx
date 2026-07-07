@@ -212,12 +212,12 @@ function CinemaStage({ agentName, fastForward }: CinemaStageProps) {
 
       <AnimatePresence mode="wait">
         {!winner ? (
-          <motion.div key="casting" exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="relative z-10 w-full flex flex-col items-center gap-5">
+          <motion.div key="casting" data-testid="cinema-casting" exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="relative z-10 w-full flex flex-col items-center gap-5">
             <CastingBar fastForward={fastForward} />
             <EliminationCrowd candidates={candidates} eliminated={eliminated} />
           </motion.div>
         ) : (
-          <motion.div key="capability" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE }} className="relative z-10 w-full">
+          <motion.div key="capability" data-testid="cinema-capability" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: EASE }} className="relative z-10 w-full">
             <CapabilityAct
               winner={winnerCand}
               agentName={agentName}
@@ -298,15 +298,15 @@ function CapabilityAct({
         >
           <Silhouette form={winner.form} color={accent} size={48} />
         </motion.span>
-        <span className="typo-title-lg text-foreground">{agentName?.trim() || "Your agent"}</span>
-        {role && <span className="typo-caption" style={{ color: accent }}>{role}</span>}
+        <span className="typo-title-lg text-foreground" data-testid="cinema-winner">{agentName?.trim() || "Your agent"}</span>
+        {role && <span className="typo-caption" style={{ color: accent }} data-testid="cinema-role">{role}</span>}
         {mission && <span className="typo-caption text-foreground/80 max-w-[420px] text-center line-clamp-2">{mission}</span>}
       </div>
 
       {/* capabilities assembling */}
       <div className="w-full flex flex-col items-center gap-2">
         <span className="typo-label text-foreground">Capabilities</span>
-        <div className="w-full flex flex-col items-stretch gap-2 max-w-[460px]">
+        <div className="w-full flex flex-col items-stretch gap-2 max-w-[460px]" data-testid="cinema-cap-list">
           <AnimatePresence initial={false}>
             {shownCaps.map((title, i) => (
               <motion.div
