@@ -358,8 +358,26 @@ pub fn instant_adopt_template_inner(
         })
         .or_else(|| Some(format!("Adopted from template: {template_name}")));
 
-    // Normalize structured_prompt
-    let structured_prompt = design.get("structured_prompt").cloned();
+    // Recipe parameterization (Gap 1): derive tunable params from the hydrated
+    // use_cases' input_schema (input_schema survives normalize_v3_to_flat), then
+    // inject the `## Capability Parameters` section into structured_prompt.instructions
+    // so `{{param.*}}` resolves at runtime — the same bridge the promote path uses.
+    let recipe_caps = design
+        .get("use_cases")
+        .and_then(|v| v.as_array())
+        .map(|ucs| crate::engine::recipe_parameters::derive_capability_params_from_values(ucs))
+        .unwrap_or_default();
+    let recipe_param_values =
+        crate::engine::recipe_parameters::to_parameter_values(&recipe_caps);
+
+    // Normalize structured_prompt, injecting the capability-parameters section.
+    let structured_prompt = {
+        let mut sp = design.get("structured_prompt").cloned();
+        if let Some(ref mut spv) = sp {
+            crate::engine::recipe_parameters::inject_into_structured_prompt(spv, &recipe_caps);
+        }
+        sp
+    };
 
     let persona_meta = design.get("persona_meta");
     let icon = persona_meta
@@ -706,16 +724,16 @@ pub fn instant_adopt_template_inner(
                     })
                     .collect()
             });
-        // Recipe-derived params (from input_schema) are seeded only on the
-        // promote path today (Foundry + the ChronologyAdoptionView adoption).
-        // instant_adopt is the Dev-Clone / completion-notifier path; wiring its
-        // section injection is deferred (see recipe-parameterization-roadmap.md).
+        // Recipe-derived params (from input_schema) — seeded here too (Gap 1),
+        // merged UNDER any template-authored suggested_parameters/adoption_questions
+        // of the same key. The matching section was injected into structured_prompt
+        // above, so the seeded params resolve at runtime.
         if let Err(e) = populate_persona_parameters_from_design(
             &state.db,
             pid,
             &design,
             answers.as_ref(),
-            &[],
+            &recipe_param_values,
         ) {
             tracing::warn!(
                 persona_id = %pid,
@@ -2997,6 +3015,14 @@ fn map_template_use_case_to_design_use_case(uc: &serde_json::Value) -> serde_jso
             "capability_summary".into(),
             serde_json::Value::String(cs.into()),
         );
+    }
+    // Preserve input_schema so design_context.useCases carries the recipe's
+    // declared params — keeps the catalog `sync_capability_parameters` command
+    // consistent on instant-adopted personas.
+    if let Some(schema) = obj.get("input_schema") {
+        if !schema.is_null() {
+            out.insert("input_schema".into(), schema.clone());
+        }
     }
     if let Some(arr) = obj.get("tool_hints").and_then(|v| v.as_array()) {
         out.insert("tool_hints".into(), serde_json::Value::Array(arr.clone()));
