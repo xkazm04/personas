@@ -80,19 +80,37 @@ async function ping() {
   return s !== null;
 }
 
+async function visibleCount(selector) {
+  const r = await bridgeExec("query", { selector }, 8000).catch(() => null);
+  return Array.isArray(r) ? r.length : 0;
+}
+
 async function enterDescribeCinema() {
   // The create surface opens on a mode chooser (Compose vs "Describe it").
   // startBuildFromIntent probes the intent input directly and can't get past
-  // the chooser, so we must click "Describe it" first — which also reveals the
-  // layout toggles. Selecting Cinema (localStorage-persisted) lets the operator
-  // watch the loading experience against the measured timeline. Idempotent —
-  // run before every scenario so a prior build's reset can't strand us.
-  await bridgeExec("startCreateAgent", {}).catch(() => {});
-  await sleep(500);
-  await bridgeExec("clickTestId", { testId: "create-mode-describe" }).catch(() => {});
-  await sleep(400);
-  await bridgeExec("clickTestId", { testId: "build-layout-toggle-cinema" }).catch(() => {});
-  await sleep(300);
+  // the chooser, so we must click "Describe it" first — which reveals the
+  // layout toggles + the glyph-compose summon that hosts the intent form.
+  // A lingering build session from a prior scenario (or a manual run) leaves
+  // the surface on the post-build stage with no chooser, so we reset FIRST and
+  // verify the summon/composer is actually reachable before returning.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await bridgeExec("__reset__", {}).catch(() => {});
+    await sleep(400);
+    await bridgeExec("startCreateAgent", {}).catch(() => {});
+    await sleep(500);
+    await bridgeExec("clickTestId", { testId: "create-mode-describe" }).catch(() => {});
+    await sleep(500);
+    await bridgeExec("clickTestId", { testId: "build-layout-toggle-cinema" }).catch(() => {});
+    await sleep(300);
+    // Ready when the summon button or an intent input is on screen.
+    if ((await visibleCount('[data-testid="glyph-compose-summon"]')) > 0 ||
+        (await visibleCount('[data-testid="composer-row-task"]')) > 0 ||
+        (await visibleCount('[data-testid="agent-intent-input"]')) > 0) {
+      return true;
+    }
+    console.log(`    (describe surface not ready, retry ${attempt + 1})`);
+  }
+  return false;
 }
 
 function firstSeen(marks, key, elapsed) {
