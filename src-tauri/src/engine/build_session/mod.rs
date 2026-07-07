@@ -198,7 +198,7 @@ impl BuildSessionManager {
         // Build CLI args — force Sonnet for build sessions
         let mut cli_args = prompt::build_cli_args(None, None);
         cli_args.args.push("--model".to_string());
-        cli_args.args.push("claude-sonnet-4-20250514".to_string());
+        cli_args.args.push("claude-sonnet-4-6".to_string());
 
         // Query available credentials and connectors for context-aware prompt
         let credentials = credential_repo::get_all(&pool).unwrap_or_default();

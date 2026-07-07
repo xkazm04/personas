@@ -177,7 +177,7 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        "claude-sonnet-4-20250514".into(),
+        "claude-sonnet-4-6".into(),
     ]);
 
     let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
