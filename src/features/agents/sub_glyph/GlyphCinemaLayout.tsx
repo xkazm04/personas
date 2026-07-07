@@ -1,29 +1,27 @@
-/** GlyphCinemaLayout — compose-surface prototype "Cinema" (2026-07-07).
+/** GlyphCinemaLayout — "Cinema": the Glyph baseline + a build-loading cinema.
  *
- *  The build between a submitted intent and the first clarifying question takes
- *  >60s. Every other surface shows a spinner. This one turns that dead time
- *  into a videogame-grade loading cinema that is SEMI-REAL: it choreographs
- *  over the ACTUAL build event stream — the persona's decided role/mission
- *  (behaviorCore), the real capability titles as they enumerate, and the real
- *  connectors as they resolve — not a fake progress bar.
+ *  Compose is the baseline Glyph sigil surface (petals configure; center prompt
+ *  launches) — Cinema adds ON TOP of it. The differentiator is what plays during
+ *  the >60s build between launch and the first clarifying question: instead of a
+ *  spinner, a two-movement, semi-real loading cinema choreographed over the
+ *  ACTUAL build event stream.
  *
- *  Three acts play while `isBuildingOnly`, gated by real signal arrival:
- *    1. Casting  — four real archetype cards fan in with a calibration sweep;
- *       the instant the LLM's behaviorCore lands, the chosen card reveals the
- *       agent's REAL decided role + mission.
- *    2. Wiring   — the real capability titles stream in as they're enumerated;
- *       real connectors dock as brand-icon chips; sigil petals light per the
- *       real cellStates being resolved.
- *    3. Converge — everything collapses into the sigil; the ring fills to real
- *       completeness until the first question arrives and the parent hands off
- *       to GlyphStageSurface.
+ *  Movement 1 — Casting (elimination): a field of abstract persona candidates is
+ *  narrowed one-by-one (discarded → greyed out), paced to the real wait, and the
+ *  survivor is crowned the moment the LLM commits the persona's identity
+ *  (behaviorCore). No sparks/waves — the drama is card movement + colour draining
+ *  from the discarded.
  *
- *  Compose reuses the sigil surface (baseline Glyph); post-build delegates to
- *  the shared GlyphStageSurface.
+ *  Movement 2 — Population: the winner moves into the view and its content fills
+ *  in LINEARLY from real data as it streams — decided role + mission, then the
+ *  real capability titles row-by-row, then the real connectors; the Glyph sigil
+ *  petals light per the live cellStates and a linear bar tracks real completeness.
+ *
+ *  Post-build delegates to the shared GlyphStageSurface.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Check, Sparkles, Cpu } from "lucide-react";
+import { Send, Check } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { InteractiveSigil, GLYPH_DIMENSIONS } from "@/features/shared/glyph";
 import type { GlyphRow, GlyphPresence, GlyphDimension } from "@/features/shared/glyph";
@@ -36,7 +34,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { DIM_TO_CELL_KEY } from "./glyphLayoutHelpers";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphStageSurface } from "./GlyphStageSurface";
-import { useComposeConfig, type ComposeConfigItem } from "./useComposeConfig";
+import { useComposeConfig } from "./useComposeConfig";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
@@ -84,71 +82,57 @@ export function GlyphCinemaLayout(props: GlyphFullLayoutProps) {
           />
 
           {isBuildingOnly ? (
-            <CinemaStage
-              agentName={agentName}
-              completeness={completeness}
-              cellStates={cellStates}
-              items={cfg.items}
-              formingRow={cfg.formingRow}
-            />
+            <CinemaStage agentName={agentName} completeness={completeness} cellStates={cellStates} formingRow={cfg.formingRow} />
           ) : isCompose ? (
+            /* Baseline Glyph compose — sigil petals configure, centre prompt launches. */
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.35, ease: EASE }}
-              className="flex flex-col items-center gap-4 w-full"
+              className="relative"
+              style={{ width: SIGIL, height: SIGIL }}
             >
-              <div className="relative" style={{ width: SIGIL, height: SIGIL }}>
-                <InteractiveSigil
-                  row={cfg.formingRow}
-                  rowIndex={0}
-                  hoveredDim={null}
-                  activeDim={null}
-                  onHover={() => {}}
-                  onClick={(dim) => {
-                    const it = cfg.items.find((x) => x.dim === dim);
-                    if (it && it.kind !== "input") it.onClick();
-                  }}
-                  size={SIGIL}
-                />
-                {cfg.showInput && (
+              <InteractiveSigil
+                row={cfg.formingRow}
+                rowIndex={0}
+                hoveredDim={null}
+                activeDim={null}
+                onHover={() => {}}
+                onClick={(dim) => {
+                  const it = cfg.items.find((x) => x.dim === dim);
+                  if (it && it.kind !== "input") it.onClick();
+                }}
+                size={SIGIL}
+              />
+              {cfg.showInput && (
+                <div className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: SIGIL * 0.36, width: SIGIL * 0.74 }}>
                   <div
-                    className="absolute left-1/2 -translate-x-1/2 z-20"
-                    style={{ top: SIGIL * 0.36, width: SIGIL * 0.74 }}
+                    className="rounded-modal bg-card-bg/85 backdrop-blur-md border border-card-border p-3 flex flex-col gap-2 shadow-elevation-2"
+                    style={{ boxShadow: "0 0 22px rgba(96,165,250,0.22), 0 4px 18px rgba(0,0,0,0.35)" }}
                   >
-                    <div
-                      className="rounded-modal bg-card-bg/85 backdrop-blur-md border border-card-border p-3 flex flex-col gap-2 shadow-elevation-2"
-                      style={{ boxShadow: "0 0 22px rgba(96,165,250,0.22), 0 4px 18px rgba(0,0,0,0.35)" }}
+                    <textarea
+                      value={intentText}
+                      onChange={(e) => onIntentChange(e.target.value)}
+                      onKeyDown={onKey}
+                      placeholder={t.agents.glyph_intent_placeholder}
+                      rows={3}
+                      autoFocus
+                      className="w-full px-3 py-2 rounded-card bg-secondary/30 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none resize-none"
+                      data-testid="agent-intent-input"
+                    />
+                    <button
+                      type="button"
+                      onClick={cfg.launch}
+                      disabled={launchDisabled}
+                      className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/40 bg-primary/15 text-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer typo-body transition-colors"
+                      data-testid="agent-launch-btn"
                     >
-                      <textarea
-                        value={intentText}
-                        onChange={(e) => onIntentChange(e.target.value)}
-                        onKeyDown={onKey}
-                        placeholder={t.agents.glyph_intent_placeholder}
-                        rows={3}
-                        autoFocus
-                        className="w-full px-3 py-2 rounded-card bg-secondary/30 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none resize-none"
-                        data-testid="agent-intent-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={cfg.launch}
-                        disabled={launchDisabled}
-                        className="self-end inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card border border-primary/40 bg-primary/15 text-foreground hover:bg-primary/25 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer typo-body transition-colors"
-                        data-testid="agent-launch-btn"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        {t.agents.glyph_launch}
-                      </button>
-                    </div>
+                      <Send className="w-3.5 h-3.5" />
+                      {t.agents.glyph_launch}
+                    </button>
                   </div>
-                )}
-              </div>
-              <div className="flex flex-wrap justify-center gap-2 max-w-[720px]">
-                {cfg.items.filter((i) => i.kind !== "input").map((item) => (
-                  <CinemaChip key={item.dim} item={item} />
-                ))}
-              </div>
+                </div>
+              )}
             </motion.div>
           ) : (
             <GlyphStageSurface {...props} />
@@ -163,29 +147,27 @@ export function GlyphCinemaLayout(props: GlyphFullLayoutProps) {
 
 /* ─── The loading cinema ────────────────────────────────────────────── */
 
-type Act = "ignition" | "casting" | "wiring" | "converge";
-
-const ACT_CAPTION: Record<Act, string> = {
-  ignition: "Igniting",
-  casting: "Casting a persona",
-  wiring: "Wiring capabilities",
-  converge: "Assembling",
-};
-
-// Graceful fallback so the cinema always has cards even before list_archetypes
-// resolves (or in a test/offline run). Real archetypes replace these on mount.
-const FALLBACK_ARCHETYPES: Archetype[] = [
-  { id: "analyst", name: "Analyst", tagline: "Every claim cited", icon: "LineChart", color: "#60A5FA", recipeAffinity: [], persona: {} },
-  { id: "operator", name: "Operator", tagline: "Never lose an event", icon: "Workflow", color: "#818CF8", recipeAffinity: [], persona: {} },
-  { id: "scout", name: "Scout", tagline: "Signal over volume", icon: "Radar", color: "#F59E0B", recipeAffinity: [], persona: {} },
-  { id: "guardian", name: "Guardian", tagline: "Nothing ships unverified", icon: "ShieldCheck", color: "#10B981", recipeAffinity: [], persona: {} },
+// Abstract persona candidate pool. Real archetypes replace this on mount; the
+// fallback keeps the elimination rich even offline / in tests. Represented
+// abstractly (colour + glyph + codename) — not detailed cards.
+const CANDIDATE_POOL: Archetype[] = [
+  { id: "analyst", name: "Analyst", tagline: "", icon: "LineChart", color: "#60A5FA", recipeAffinity: [], persona: {} },
+  { id: "operator", name: "Operator", tagline: "", icon: "Workflow", color: "#818CF8", recipeAffinity: [], persona: {} },
+  { id: "scout", name: "Scout", tagline: "", icon: "Radar", color: "#F59E0B", recipeAffinity: [], persona: {} },
+  { id: "guardian", name: "Guardian", tagline: "", icon: "ShieldCheck", color: "#10B981", recipeAffinity: [], persona: {} },
+  { id: "sentinel", name: "Sentinel", tagline: "", icon: "Activity", color: "#F87171", recipeAffinity: [], persona: {} },
+  { id: "curator", name: "Curator", tagline: "", icon: "LibraryBig", color: "#A78BFA", recipeAffinity: [], persona: {} },
+  { id: "shipper", name: "Shipper", tagline: "", icon: "Rocket", color: "#FB923C", recipeAffinity: [], persona: {} },
+  { id: "chief-of-staff", name: "Chief of Staff", tagline: "", icon: "ConciergeBell", color: "#2DD4BF", recipeAffinity: [], persona: {} },
 ];
+
+const ELIMINATION_INTERVAL_MS = 5200; // one candidate discarded per beat
+const CROWN_DEADLINE_MS = 46000;      // crown even if identity is slow to land
 
 interface CinemaStageProps {
   agentName: string;
   completeness: number;
   cellStates: Record<string, string>;
-  items: ComposeConfigItem[];
   formingRow: GlyphRow;
 }
 
@@ -207,30 +189,59 @@ function useSigilRow(cellStates: Record<string, string>, fallback: GlyphRow): Gl
   }, [cellStates, fallback]);
 }
 
+/** Narrow a candidate list one-by-one on a timed beat, holding at 2 until
+ *  `canCrown` (real identity landed, or deadline), then cutting to the winner.
+ *  Winner is the first pool entry — abstract; it gains the real identity next. */
+function useElimination(ids: string[], canCrown: boolean) {
+  const [eliminated, setEliminated] = useState<string[]>([]);
+  const crownRef = useRef(false);
+  useEffect(() => { if (canCrown) crownRef.current = true; }, [canCrown]);
+  useEffect(() => {
+    setEliminated([]);
+    crownRef.current = false;
+    const iv = window.setInterval(() => {
+      setEliminated((prev) => {
+        const remaining = ids.filter((i) => !prev.includes(i));
+        if (remaining.length <= 1) return prev;
+        // Hold the field at two finalists until the identity is committed.
+        if (remaining.length <= 2 && !crownRef.current) return prev;
+        const last = remaining[remaining.length - 1];
+        return last ? [...prev, last] : prev;
+      });
+    }, ELIMINATION_INTERVAL_MS);
+    return () => clearInterval(iv);
+  }, [ids]);
+  const survivors = ids.filter((i) => !eliminated.includes(i));
+  return { eliminated, survivors, winner: survivors.length === 1 ? survivors[0] : null };
+}
+
 function CinemaStage({ agentName, completeness, cellStates, formingRow }: CinemaStageProps) {
-  // Live decided signals from the build stream (semi-real choreography source).
   const behaviorCore = useAgentStore((s) => s.buildBehaviorCore);
   const capabilities = useAgentStore((s) => s.buildCapabilities);
   const capabilityOrder = useAgentStore((s) => s.buildCapabilityOrder);
   const personaResolution = useAgentStore((s) => s.buildPersonaResolution);
   const activity = useAgentStore((s) => s.buildActivity);
 
-  const [archetypes, setArchetypes] = useState<Archetype[]>(FALLBACK_ARCHETYPES);
-  const [booted, setBooted] = useState(false);
+  const [pool, setPool] = useState<Archetype[]>(CANDIDATE_POOL);
+  const [deadlineHit, setDeadlineHit] = useState(false);
 
   useEffect(() => {
     listArchetypes()
-      .then((cat) => { if (cat?.archetypes?.length) setArchetypes(cat.archetypes.slice(0, 4)); })
+      .then((cat) => { if (cat?.archetypes?.length) setPool(cat.archetypes.slice(0, 8)); })
       .catch(silentCatch("cinema:list_archetypes"));
   }, []);
   useEffect(() => {
-    const h = window.setTimeout(() => setBooted(true), 1600);
+    const h = window.setTimeout(() => setDeadlineHit(true), CROWN_DEADLINE_MS);
     return () => clearTimeout(h);
   }, []);
 
+  const ids = useMemo(() => pool.map((p) => p.id), [pool]);
+  const hasCore = behaviorCore != null;
+  const { eliminated, winner } = useElimination(ids, hasCore || deadlineHit);
+  const winnerArch: Archetype = (pool.find((p) => p.id === winner) ?? pool[0])!;
+
   const role = behaviorCore?.identity?.role ?? null;
   const mission = behaviorCore?.mission ?? null;
-
   const capTitles = useMemo(
     () => capabilityOrder.map((id) => capabilities[id]?.title).filter((x): x is string => !!x),
     [capabilityOrder, capabilities],
@@ -247,67 +258,27 @@ function CinemaStage({ agentName, completeness, cellStates, formingRow }: Cinema
     return out;
   }, [personaResolution]);
 
-  // Act derives from real signal arrival, with a timer only to leave ignition
-  // if the build is slow to emit its first decided field.
-  const act: Act =
-    completeness >= 78 ? "converge"
-    : capTitles.length > 0 ? "wiring"
-    : (role || booted) ? "casting"
-    : "ignition";
-
-  // Choose the archetype whose id/name best matches the decided role text, else
-  // a stable pick — so the "cast" feels caused by the real persona.
-  const chosenIdx = useMemo(() => {
-    const cast = archetypes.slice(0, 4);
-    if (role) {
-      const r = role.toLowerCase();
-      const hit = cast.findIndex((a) => r.includes(a.id) || r.includes(a.name.toLowerCase()));
-      if (hit >= 0) return hit;
-    }
-    const s = (mission || agentName || "agent").toLowerCase();
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    return h % Math.max(1, Math.min(4, cast.length));
-  }, [archetypes, role, mission, agentName]);
-
   const sigilRow = useSigilRow(cellStates, formingRow);
-  const cast = archetypes.slice(0, 4);
 
   return (
-    <div
-      className="relative w-full flex flex-col items-center justify-center overflow-hidden rounded-modal"
-      style={{ minHeight: 560 }}
-      data-testid="cinema-stage"
-    >
-      {/* ambient field */}
-      <div aria-hidden className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
-          style={{ width: 620, height: 620, background: "radial-gradient(circle, rgba(96,165,250,0.10), transparent 62%)" }}
-        />
-        <motion.div
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-primary/15"
-          style={{ width: 460, height: 460 }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 44, repeat: Infinity, ease: "linear" }}
-        />
-      </div>
+    <div className="relative w-full flex flex-col items-center overflow-hidden rounded-modal" style={{ minHeight: 560 }} data-testid="cinema-stage">
+      {/* subtle static field — no spin, no sparks */}
+      <div
+        aria-hidden
+        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        style={{ width: 620, height: 620, background: `radial-gradient(circle, ${colorWithAlpha(winnerArch.color, 0.10)}, transparent 62%)` }}
+      />
 
-      {/* phase caption + live activity from the real stream */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 z-10 text-center px-4">
-        <span className="typo-label text-foreground flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-primary" />
-          {ACT_CAPTION[act]}
-        </span>
+      {/* caption + real streaming activity */}
+      <div className="relative z-10 mt-4 mb-2 flex flex-col items-center gap-0.5 text-center px-4">
+        <span className="typo-label text-foreground">{winner ? "Assembling your agent" : "Casting a persona"}</span>
         <AnimatePresence mode="wait">
           {activity && (
             <motion.span
               key={activity}
-              initial={{ opacity: 0, y: -3 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 3 }}
+              initial={{ opacity: 0, y: -3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 3 }}
               transition={{ duration: 0.25 }}
-              className="typo-caption max-w-[420px] truncate"
+              className="typo-caption max-w-[440px] truncate"
             >
               {activity}
             </motion.span>
@@ -316,56 +287,27 @@ function CinemaStage({ agentName, completeness, cellStates, formingRow }: Cinema
       </div>
 
       <AnimatePresence mode="wait">
-        {act === "casting" || act === "ignition" ? (
-          <motion.div key="casting" className="w-full flex justify-center" exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.4, ease: EASE }}>
-            <CastingAct cast={cast} chosenIdx={chosenIdx} role={role} mission={mission} />
+        {!winner ? (
+          <motion.div key="casting" exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="relative z-10 w-full">
+            <EliminationField pool={pool} eliminated={eliminated} />
           </motion.div>
         ) : (
           <motion.div
-            key="wiring-converge"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            key="populate"
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: EASE }}
-            className="relative flex flex-col items-center gap-5"
+            className="relative z-10 w-full"
           >
-            <div className="relative" style={{ width: SIGIL, height: SIGIL }}>
-              <InteractiveSigil
-                row={sigilRow}
-                rowIndex={0}
-                hoveredDim={null}
-                activeDim={null}
-                onHover={() => {}}
-                onClick={() => {}}
-                size={SIGIL}
-              />
-              {/* progress ring keyed to real completeness */}
-              <svg className="absolute inset-0 pointer-events-none -rotate-90" width={SIGIL} height={SIGIL}>
-                <circle
-                  cx={SIGIL / 2} cy={SIGIL / 2} r={SIGIL / 2 - 8}
-                  fill="none" stroke="var(--color-primary,#60a5fa)" strokeWidth={3} strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * (SIGIL / 2 - 8)}
-                  strokeDashoffset={2 * Math.PI * (SIGIL / 2 - 8) * (1 - Math.max(0.04, completeness / 100))}
-                  style={{ transition: "stroke-dashoffset 0.8s cubic-bezier(0.16,1,0.3,1)", filter: "drop-shadow(0 0 6px rgba(96,165,250,0.5))" }}
-                />
-              </svg>
-              {role && (
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex flex-col items-center px-8 text-center pointer-events-none">
-                  <span className="typo-label text-primary">{role}</span>
-                </div>
-              )}
-            </div>
-
-            <WiringAct capTitles={capTitles} connectors={connectorNames} />
-
-            <div className="flex flex-col items-center gap-1">
-              <span className="typo-heading-lg font-semibold text-foreground">
-                {agentName?.trim() || "Assembling your agent"}
-              </span>
-              <span className="typo-caption tabular-nums">
-                {Math.round(completeness)}% · {capTitles.length} capabilit{capTitles.length === 1 ? "y" : "ies"}
-                {connectorNames.length > 0 ? ` · ${connectorNames.length} connector${connectorNames.length === 1 ? "" : "s"}` : ""}
-              </span>
-            </div>
+            <PopulationView
+              winner={winnerArch}
+              agentName={agentName}
+              role={role}
+              mission={mission}
+              capTitles={capTitles}
+              connectors={connectorNames}
+              completeness={completeness}
+              sigilRow={sigilRow}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -373,184 +315,206 @@ function CinemaStage({ agentName, completeness, cellStates, formingRow }: Cinema
   );
 }
 
-/** Four archetype cards fan in; a calibration sweep runs; one is selected and,
- *  once the LLM's behaviorCore lands, reveals the agent's REAL role + mission. */
-function CastingAct({
-  cast, chosenIdx, role, mission,
-}: { cast: Archetype[]; chosenIdx: number; role: string | null; mission: string | null }) {
-  // Selection lands either when the real role arrives, or after a short beat so
-  // the animation reads even on a fast build.
-  const [timedSelect, setTimedSelect] = useState(false);
-  useEffect(() => {
-    const h = window.setTimeout(() => setTimedSelect(true), 4200);
-    return () => clearTimeout(h);
-  }, []);
-  const selected = timedSelect || role != null;
-
+/** The candidate field — abstract orbs discarded one-by-one (colour drains, dims). */
+function EliminationField({ pool, eliminated }: { pool: Archetype[]; eliminated: string[] }) {
   return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="flex items-stretch gap-3 flex-wrap justify-center max-w-[900px] px-4">
-        {cast.map((a, i) => {
-          const Icon = foundryIcon(a.icon);
-          const isChosen = i === chosenIdx;
-          const dimmed = selected && !isChosen;
-          return (
-            <motion.div
-              key={a.id}
-              initial={{ opacity: 0, y: 24, rotateY: -18 }}
-              animate={{
-                opacity: dimmed ? 0.22 : 1,
-                y: 0, rotateY: 0,
-                scale: selected && isChosen ? 1.06 : 1,
-                filter: dimmed ? "grayscale(0.7)" : "none",
-              }}
-              transition={{ duration: 0.5, ease: EASE, delay: i * 0.12 }}
-              className="relative w-[190px] p-4 rounded-card border bg-card-bg shadow-elevation-2"
+    <div className="flex flex-wrap items-center justify-center gap-5 max-w-[820px] mx-auto px-4 py-6">
+      {pool.map((a) => {
+        const Icon = foundryIcon(a.icon);
+        const dead = eliminated.includes(a.id);
+        return (
+          <motion.div
+            key={a.id}
+            layout
+            layoutId={`cand-${a.id}`}
+            initial={{ opacity: 0, y: 18, scale: 0.85 }}
+            animate={{
+              opacity: dead ? 0.22 : 1,
+              y: 0,
+              scale: dead ? 0.82 : 1,
+              filter: dead ? "grayscale(1)" : "grayscale(0)",
+            }}
+            transition={{ duration: 0.55, ease: EASE }}
+            className="flex flex-col items-center gap-2"
+          >
+            <span
+              className="flex items-center justify-center rounded-full"
               style={{
-                borderColor: selected && isChosen ? colorWithAlpha(a.color, 0.6) : "var(--card-border, rgba(255,255,255,0.1))",
-                boxShadow: selected && isChosen ? `0 0 26px ${colorWithAlpha(a.color, 0.35)}` : undefined,
+                width: 76, height: 76,
+                background: `radial-gradient(circle at 50% 35%, ${colorWithAlpha(a.color, dead ? 0.05 : 0.28)}, ${colorWithAlpha(a.color, dead ? 0.02 : 0.08)} 70%)`,
+                border: `1px solid ${colorWithAlpha(a.color, dead ? 0.15 : 0.5)}`,
+                boxShadow: dead ? "none" : `0 0 20px ${colorWithAlpha(a.color, 0.22)}`,
               }}
             >
-              <AnimatePresence>
-                {selected && isChosen && (
-                  <motion.span
-                    initial={{ scale: 0 }} animate={{ scale: 1 }}
-                    className="absolute top-2.5 right-2.5 inline-flex items-center justify-center w-5 h-5 rounded-full"
-                    style={{ background: a.color }}
-                  >
-                    <Check className="w-3 h-3 text-background" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-              <span
-                className="flex items-center justify-center rounded-card mb-2"
-                style={{ width: 38, height: 38, background: colorWithAlpha(a.color, 0.14), border: `1px solid ${colorWithAlpha(a.color, 0.4)}` }}
-              >
-                <Icon className="w-4.5 h-4.5" style={{ color: a.color }} />
-              </span>
-              <div className="typo-body font-semibold text-foreground">{a.name}</div>
-              <div className="typo-caption mb-3" style={{ color: a.color }}>{a.tagline}</div>
-              <div className="flex flex-col gap-1.5">
-                {[0.72, 0.48].map((v, di) => (
-                  <span key={di} className="h-1.5 rounded-full bg-foreground/10 overflow-hidden">
-                    <motion.span
-                      className="block h-full rounded-full"
-                      style={{ background: a.color }}
-                      initial={{ width: 0 }}
-                      animate={{ width: `${Math.round(v * 100)}%` }}
-                      transition={{ duration: 1.1, ease: EASE, delay: 0.4 + i * 0.12 + di * 0.15 }}
-                    />
-                  </span>
-                ))}
-              </div>
-              {!selected && (
-                <motion.span
-                  aria-hidden
-                  className="absolute inset-0 rounded-card pointer-events-none"
-                  style={{ background: `linear-gradient(105deg, transparent 40%, ${colorWithAlpha(a.color, 0.18)} 50%, transparent 60%)` }}
-                  initial={{ x: "-120%" }}
-                  animate={{ x: "120%" }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "linear", delay: i * 0.12 }}
-                />
-              )}
-            </motion.div>
-          );
-        })}
+              <Icon className="w-6 h-6" style={{ color: dead ? "var(--muted-foreground)" : a.color }} />
+            </span>
+            <span className="typo-caption font-medium" style={{ color: dead ? "var(--muted-foreground)" : "var(--foreground)" }}>
+              {a.name}
+            </span>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Winner moves in; content fills LINEARLY from real streamed data. */
+function PopulationView({
+  winner, agentName, role, mission, capTitles, connectors, completeness, sigilRow,
+}: {
+  winner: Archetype;
+  agentName: string;
+  role: string | null;
+  mission: string | null;
+  capTitles: string[];
+  connectors: string[];
+  completeness: number;
+  sigilRow: GlyphRow;
+}) {
+  const Icon = foundryIcon(winner.icon);
+  const accent = winner.color;
+  return (
+    <div className="w-full max-w-[860px] mx-auto rounded-modal border bg-card-bg shadow-elevation-2 overflow-hidden"
+      style={{ borderColor: colorWithAlpha(accent, 0.35) }}>
+      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
+
+      {/* header — winner avatar flies in from its elimination slot */}
+      <div className="flex items-center gap-3 px-5 pt-4 pb-3">
+        <motion.span
+          layoutId={`cand-${winner.id}`}
+          className="flex items-center justify-center rounded-full shrink-0"
+          style={{
+            width: 48, height: 48,
+            background: `radial-gradient(circle at 50% 35%, ${colorWithAlpha(accent, 0.3)}, ${colorWithAlpha(accent, 0.08)} 70%)`,
+            border: `1px solid ${colorWithAlpha(accent, 0.5)}`,
+          }}
+        >
+          <Icon className="w-5 h-5" style={{ color: accent }} />
+        </motion.span>
+        <div className="min-w-0">
+          <div className="typo-title-lg text-foreground truncate">{agentName?.trim() || "Your agent"}</div>
+          <TextOrSkeleton value={role} className="typo-caption" style={{ color: accent }} w={160} />
+        </div>
       </div>
 
-      {/* Real decided identity, revealed as the LLM commits to it. */}
-      <AnimatePresence>
-        {(role || mission) && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: EASE }}
-            className="max-w-[560px] text-center flex flex-col items-center gap-1"
-          >
-            {role && <span className="typo-title-lg text-foreground">{role}</span>}
-            {mission && <span className="typo-body text-foreground/90 line-clamp-2">{mission}</span>}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+      <div className="flex gap-5 px-5 pb-5">
+        {/* sigil — petals light per live cellStates */}
+        <div className="relative shrink-0 hidden md:block" style={{ width: 220, height: 220 }}>
+          <InteractiveSigil row={sigilRow} rowIndex={0} hoveredDim={null} activeDim={null} onHover={() => {}} onClick={() => {}} size={220} />
+        </div>
 
-/** Real capability titles + connectors dock into the forming persona. */
-function WiringAct({ capTitles, connectors }: { capTitles: string[]; connectors: string[] }) {
-  return (
-    <div className="flex flex-col items-center gap-2 min-h-[3.5rem] w-full max-w-[620px]">
-      {capTitles.length === 0 && connectors.length === 0 ? (
-        <span className="inline-flex items-center gap-1.5 typo-caption">
-          <Cpu className="w-3.5 h-3.5 text-primary" />
-          Selecting capabilities & connectors…
-        </span>
-      ) : (
-        <>
-          <div className="flex flex-wrap justify-center gap-1.5">
-            <AnimatePresence>
-              {capTitles.map((title) => (
-                <motion.span
-                  key={title}
-                  initial={{ opacity: 0, y: 8, scale: 0.85 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 260, damping: 24 }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/40 bg-primary/15"
-                >
-                  <Check className="w-3 h-3 text-primary" />
-                  <span className="typo-caption text-foreground max-w-[220px] truncate">{title}</span>
-                </motion.span>
-              ))}
-            </AnimatePresence>
+        {/* linearly-populating content */}
+        <div className="flex-1 min-w-0 flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <span className="typo-label text-foreground">Mission</span>
+            <TextOrSkeleton value={mission} className="typo-body text-foreground" w={280} lines={2} />
           </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="typo-label text-foreground">Capabilities</span>
+            <PopulatingList items={capTitles} accent={accent} placeholders={3} icon="check" />
+          </div>
+
           {connectors.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-1.5">
-              <AnimatePresence>
-                {connectors.map((name) => {
-                  const meta = getConnectorMeta(name);
-                  return (
-                    <motion.span
-                      key={name}
-                      initial={{ opacity: 0, x: 24, scale: 0.7 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 240, damping: 22 }}
-                      className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border"
-                      style={{ borderColor: colorWithAlpha(meta.color, 0.4), background: colorWithAlpha(meta.color, 0.12) }}
-                    >
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: colorWithAlpha(meta.color, 0.15) }}>
-                        <ConnectorIcon meta={meta} />
-                      </span>
-                      <span className="typo-caption text-foreground">{meta.label}</span>
-                    </motion.span>
-                  );
-                })}
-              </AnimatePresence>
+            <div className="flex flex-col gap-1.5">
+              <span className="typo-label text-foreground">Connectors</span>
+              <div className="flex flex-wrap gap-1.5">
+                <AnimatePresence>
+                  {connectors.map((name) => {
+                    const meta = getConnectorMeta(name);
+                    return (
+                      <motion.span
+                        key={name}
+                        layout
+                        initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, ease: EASE }}
+                        className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full border"
+                        style={{ borderColor: colorWithAlpha(meta.color, 0.4), background: colorWithAlpha(meta.color, 0.12) }}
+                      >
+                        <span className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: colorWithAlpha(meta.color, 0.15) }}>
+                          <ConnectorIcon meta={meta} />
+                        </span>
+                        <span className="typo-caption text-foreground">{meta.label}</span>
+                      </motion.span>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
             </div>
           )}
-        </>
-      )}
+        </div>
+      </div>
+
+      {/* linear completeness bar */}
+      <div className="px-5 pb-4">
+        <div className="h-1.5 w-full rounded-full bg-foreground/10 overflow-hidden">
+          <motion.span
+            className="block h-full rounded-full"
+            style={{ background: accent }}
+            animate={{ width: `${Math.max(4, Math.round(completeness))}%` }}
+            transition={{ duration: 0.8, ease: EASE }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
 
-/** Compact dimension chip for the compose sigil surface. */
-function CinemaChip({ item }: { item: ComposeConfigItem }) {
-  const Icon = item.icon;
+/** A list that fills row-by-row as real items stream in; shows skeleton rows
+ *  for the not-yet-arrived slots so the population reads as linear progress. */
+function PopulatingList({ items, accent, placeholders, icon }: { items: string[]; accent: string; placeholders: number; icon: "check" }) {
+  const pending = Math.max(0, placeholders - items.length);
   return (
-    <button
-      type="button"
-      onClick={item.onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border transition-colors cursor-pointer"
-      style={{
-        borderColor: item.active ? `${item.color}66` : "rgba(255,255,255,0.12)",
-        background: item.active ? `${item.color}22` : "rgba(255,255,255,0.03)",
-        boxShadow: item.active ? `0 0 12px ${item.color}22` : undefined,
-      }}
-      title={item.summary[0] ?? item.label}
-      data-testid={`cinema-chip-${item.dim}`}
-    >
-      <Icon className="w-3.5 h-3.5" style={{ color: item.active ? item.color : undefined }} />
-      <span className="typo-caption font-medium text-foreground">{item.label}</span>
-    </button>
+    <div className="flex flex-col gap-1.5">
+      <AnimatePresence initial={false}>
+        {items.map((title) => (
+          <motion.div
+            key={title}
+            layout
+            initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, ease: EASE }}
+            className="flex items-center gap-2"
+          >
+            <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0" style={{ background: colorWithAlpha(accent, 0.2) }}>
+              {icon === "check" && <Check className="w-2.5 h-2.5" style={{ color: accent }} />}
+            </span>
+            <span className="typo-body text-foreground truncate">{title}</span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      {Array.from({ length: pending }).map((_, i) => (
+        <div key={`sk-${i}`} className="flex items-center gap-2">
+          <span className="w-4 h-4 rounded-full bg-foreground/10 shrink-0" />
+          <motion.span
+            className="h-3 rounded bg-foreground/10"
+            style={{ width: `${60 - i * 10}%` }}
+            animate={{ opacity: [0.4, 0.7, 0.4] }}
+            transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Real text once it lands; a shimmering skeleton line until then. */
+function TextOrSkeleton({
+  value, className, style, w, lines = 1,
+}: { value: string | null; className?: string; style?: React.CSSProperties; w: number; lines?: number }) {
+  if (value) {
+    return <span className={className} style={style}>{value}</span>;
+  }
+  return (
+    <span className="flex flex-col gap-1">
+      {Array.from({ length: lines }).map((_, i) => (
+        <motion.span
+          key={i}
+          className="h-3 rounded bg-foreground/10"
+          style={{ width: i === lines - 1 ? w * 0.7 : w }}
+          animate={{ opacity: [0.4, 0.7, 0.4] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.2 }}
+        />
+      ))}
+    </span>
   );
 }
