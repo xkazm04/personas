@@ -1145,6 +1145,12 @@ async fn run_context_generation(
     // the live snapshot is dropped (deleted files don't accumulate).
     persist_scan_hashes(app, scan_id, pool, project_id, root_path).await;
 
+    // Bounded self-heal: drop file_paths that no longer exist on disk so the
+    // exported map can't route a CLI to a deleted file. This is ktx's
+    // referential-integrity auto-prune, minus the hard abort — a scan must
+    // never fail here; it just tidies before publishing.
+    prune_dangling_file_paths(app, scan_id, pool, project_id, root_path);
+
     // Write the server-free harness docs (context-map.json + managed CLAUDE.md
     // section) into the managed project so a CLI opened there sees the map.
     write_harness_docs(app, scan_id, pool, project_id, root_path);
@@ -1217,6 +1223,80 @@ async fn persist_scan_hashes(
                 ),
             );
         }
+    }
+}
+
+/// Bounded self-heal run at scan completion: for each context, drop any
+/// `file_paths` entry that no longer exists on disk, then persist the pruned
+/// list. Files are checked by real filesystem existence (not walk membership)
+/// so a legitimately-mapped non-source file is never falsely pruned. Never
+/// fails the scan — every error is logged and swallowed. The pruned-count is
+/// surfaced on the live stream so the maintainer sees the map was tidied.
+///
+/// Portable methodics note (phase 2 / Vibeman): the contract is "a published
+/// context map contains no reference to a path that isn't on disk." Any scanner
+/// can honor it with this same post-scan prune.
+fn prune_dangling_file_paths(
+    app: &tauri::AppHandle,
+    scan_id: &str,
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    root_path: &str,
+) {
+    let contexts = match repo::list_contexts_by_project(pool, project_id, None) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(error = %e, "self-heal: list contexts failed; skipping prune");
+            return;
+        }
+    };
+    let root = std::path::PathBuf::from(root_path);
+    let mut files_pruned = 0usize;
+    let mut contexts_touched = 0usize;
+
+    for c in &contexts {
+        let files: Vec<String> = serde_json::from_str(&c.file_paths).unwrap_or_default();
+        if files.is_empty() {
+            continue;
+        }
+        let kept: Vec<String> = files
+            .iter()
+            .filter(|f| root.join(f).exists())
+            .cloned()
+            .collect();
+        if kept.len() == files.len() {
+            continue;
+        }
+        files_pruned += files.len() - kept.len();
+        contexts_touched += 1;
+        let kept_json = serde_json::to_string(&kept).unwrap_or_else(|_| "[]".into());
+        if let Err(e) = repo::update_context(
+            pool,
+            &c.id,
+            None,
+            None,
+            Some(&kept_json),
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ) {
+            tracing::warn!(error = %e, context = %c.name, "self-heal: prune update failed");
+        }
+    }
+
+    if files_pruned > 0 {
+        CONTEXT_GEN_JOBS.emit_line(
+            app,
+            scan_id,
+            format!(
+                "[Heal] Pruned {files_pruned} dangling file path(s) from {contexts_touched} context(s) before publishing."
+            ),
+        );
     }
 }
 
