@@ -94,12 +94,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### curated-connector-events — pumper monthly connector-API-doc watcher → baked global marketplace events (session opus-4-8[1m])
-- Started: 2026-07-07. Status: started. Branch: worktree-curated-connector-events (worktree `.claude/worktrees/curated-connector-events`, node_modules junctioned).
-- Paths (personas): src-tauri/src/db/migrations/initial.rs (shared_event_firings table), src-tauri/src/db/builtin_shared_events.rs (GENERATED), src-tauri/src/db/mod.rs (seed hook), src-tauri/src/engine/shared_event_local_relay.rs (NEW), src-tauri/src/engine/shared_event_relay.rs, src-tauri/src/commands/communication/shared_events.rs, src-tauri/src/db/repos/communication/shared_events.rs, src/features/triggers/sub_shared/**, scripts/events/** (NEW bridge + ledger), src/i18n/locales/*.json, docs/features/events/README.md, docs/plans/curated-connector-events.md.
-- Paths (pumper repo, separate git): crates/apps/connector-api-watch/** (NEW), Cargo.toml, crates/server/{Cargo.toml,src/registry.rs}, catalog/{data-sources.toml,connector-docs.json}.
-- Note: Detection = pumper ScrapeApp (monthly cron) diffs each connector's public docs_url via change-detected Datasets + Claude-summarized diff. Distribution = bridge script bakes catalog(one feed/connector)+firings into builtin_shared_events.rs, shipped in release. Consumption = fully-local relay tick delivers baked firings to subscribers as `shared:<slug>` (no cloud). Cloud relay left untouched as secondary.
-
 ### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
 - Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
@@ -889,6 +883,9 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### curated-connector-events — pumper connector-API-doc watcher → local-first marketplace events (session opus-4-8[1m]) — completed + merged
+- 2026-07-07: MERGED to master (eed70db98; feature fbe0a9bcf). Two repos. **personas**: shared_event_firings table + generated db/builtin_shared_events.rs (122 catalog feeds, 0 firings shipped) seeded on startup; engine/shared_event_local_relay.rs delivers baked firings offline as `shared:<slug>` (cursor=MAX(seq) on subscribe → future-release-only, 2 tests green); Marketplace un-gated from dev-only; scripts/events/generate-connector-events.mjs bridge (manifest + durable ledger + codegen) wired into predev/prebuild. **pumper** (separate git, commit 85ff669): crates/apps/connector-api-watch — monthly ScrapeApp diffing each connector's public docs_url via change-detected Datasets + Claude-summarized diff → changes.json. Verified: personas cargo check + tsc + eslint + i18n(0 gaps) + 2 cursor tests; pumper watcher + server cargo check. Worktree removed, node_modules junction deleted safely. Cloud relay (shared_event_relay.rs) left untouched as secondary. Design: docs/plans/curated-connector-events.md.
 
 ### ship-loop-boot+M1+M2 — Ship Loop boot + Milestones 1-2 on personas (session fable-5 fa9818da) — completed
 - 2026-07-02: Boot (gate + 5 audit lenses → 44-item backlog + 9-dim scorecard in .claude/ship-loop/) then M1 correctness+security (9 commits 30b695427..516806c64: 8 drifted tests fixed, 2 tour-drift bugs, auth-strip + field-crypto pins, bridge gated out of release, freezePrototype on + live-smoked, tour-completion spec drift fixed → 6/6 tours) then M2 test-pins (3 commits 3e97655fb/4deffa811/5344cefc7: errorRegistry 17 tests, migrations idempotency + boot reopen, credential-injection 6 tests). Final: vitest 2020/2020, cargo new-module sweep 15/15.
