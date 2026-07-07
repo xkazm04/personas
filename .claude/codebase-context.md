@@ -1,20 +1,21 @@
 # Codebase Context Snapshot — personas
 
-> Generated: 2026-06-20T08:03:57.785Z
-> Source: dev_contexts table for project_id=b0c1541f-af08-4912-818e-19ca94f7b6e9
-> Total groups: 9, Total contexts: 49
-> Git HEAD at generation: 76b820539 (feat(studio): wire checklist to Athena's real build plan (P3 FE))
+> Generated: 2026-06-16T21:59:05.259222+00:00
+> Source: context-map.json (single source of truth; rendered by scripts/context/render-codebase-context.mjs)
+> Git HEAD at generation: be44f4a6f (feat(glyph): replace Field variant with Cinema — semi-real build loading (round 2))
+> Total groups: 8 (DB) + hand-curated overrides · Total contexts: 49
 >
-> **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
+> **DO NOT EDIT MANUALLY.** Re-run `node scripts/context/render-codebase-context.mjs`
+> (or `/refresh-context`) to regenerate from context-map.json.
 > Consumed by `/research` for relevance scoring.
 
 ---
 
 ## How to Use This File
 
-Each section below describes a feature area of the personas codebase, with:
+Each section below describes a feature area of the codebase, with:
 - **Description** — what it does
-- **Files** — paths under `personas/` that implement it
+- **Files** — paths that implement it
 - **Entry points** — key functions/components/routes
 - **Keywords** — searchable terms for relevance matching
 - **API surface** — external endpoints/IPC commands exposed
@@ -28,7 +29,7 @@ matches, the idea is dropped as out-of-scope.
 
 ## Agent Platform
 
-> **Group type:** —
+> **Group type:** feature
 > **Color:** violet
 
 ### agent-connectors
@@ -193,7 +194,7 @@ Template library for bootstrapping new personas from pre-built seeds. Covers tem
 
 ## Execution Engine
 
-> **Group type:** —
+> **Group type:** feature
 > **Color:** emerald
 
 ### director-meta-persona
@@ -361,7 +362,7 @@ Executes tool calls emitted by LLM outputs — built-in tools (filesystem, web, 
 
 ## Observability
 
-> **Group type:** —
+> **Group type:** feature
 > **Color:** blue
 
 ### health-checks
@@ -503,7 +504,7 @@ Service-level agreement monitoring for persona executions — defines SLA target
 
 ## Automation & Pipelines
 
-> **Group type:** —
+> **Group type:** feature
 > **Color:** amber
 
 ### fleet-management
@@ -601,7 +602,7 @@ Visual workflow / n8n-style pipeline builder for connecting multiple personas an
 
 ## Team Collaboration
 
-> **Group type:** —
+> **Group type:** feature
 > **Color:** orange
 
 ### companion-brain
@@ -723,7 +724,7 @@ Teams feature enabling multi-user grouping of personas, shared goals, and collab
 
 ## Security & Credentials
 
-> **Group type:** —
+> **Group type:** infrastructure
 > **Color:** red
 
 ### credential-negotiator
@@ -797,7 +798,7 @@ OAuth 2.0 PKCE flow implementation for connecting third-party services. Manages 
 
 ## Plugin Ecosystem
 
-> **Group type:** —
+> **Group type:** integration
 > **Color:** pink
 
 ### artist-plugin
@@ -961,7 +962,7 @@ Reusable skill definitions that agents can invoke — discrete capabilities like
 
 ## Platform Infrastructure
 
-> **Group type:** —
+> **Group type:** infrastructure
 > **Color:** indigo
 
 ### app-layout-navigation
@@ -1194,10 +1195,8 @@ Frontend-to-backend IPC bridge using Tauri's typed command system. All frontend 
 
 ---
 
-## Ungrouped
+## Ungrouped Contexts
 
-> **Group type:** —
-> **Color:** #888888
 
 ### dev-inspector
 
@@ -1242,8 +1241,6 @@ Viral growth loop that lets users publish individual personas to a public web ga
 **API surface:** POST personas.ai/api/personas/publish, GET personas.ai/api/personas/<slug>, POST personas.ai/api/presets/publish, POST personas.ai/api/referrals, GET personas.ai/api/referrals?referrer=<code>
 
 **Tech stack:** Rust, TypeScript, React, reqwest, ts-rs
-
----
 
 ---
 
@@ -1483,7 +1480,7 @@ Persona capability-dimension visualization kit (domain-specific, not a generic p
 ---
 
 <!-- snapshot-meta
-git_head: 76b820539966652a16e0e6e0999c74af8d5187a3
-git_commit_count: 4655
-generated_at: 2026-06-20T08:03:57.785Z
+git_head: be44f4a6f989e6c8c1a0eac176cc9a11e6a24a69
+git_commit_count: 5125
+generated_at: 2026-06-16T21:59:05.259222+00:00
 -->
