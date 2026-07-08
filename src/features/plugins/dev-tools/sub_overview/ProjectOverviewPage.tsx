@@ -22,6 +22,9 @@ import { useOverviewData } from './useOverviewData';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { EditableProjectPipeline } from './EditableProjectPipeline';
 import { StandardsScanCard } from './StandardsScanCard';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import ProjectOverviewBriefing from './ProjectOverviewBriefing';
+import ProjectOverviewConsole from './ProjectOverviewConsole';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
@@ -84,7 +87,49 @@ function writeTileOrder(projectId: string, order: TileId[]): void {
  *     hidden behind a per-row cog so it's available without dominating
  *     the layout.
  */
+type OverviewVariant = 'baseline' | 'briefing' | 'console';
+
+/**
+ * PROTOTYPE scaffold (throwaway). A/B-switch between the current Overview and
+ * two directional recompositions — "Briefing" (narrative status report) and
+ * "Console" (dense bento command-center). Baseline stays the default so nothing
+ * changes on load; the whole switcher is removed at consolidation once a
+ * direction wins.
+ */
 export default function ProjectOverviewPage() {
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const [variant, setVariant] = useState<OverviewVariant>('baseline');
+
+  // No active project → show the baseline's empty state; nothing to A/B yet.
+  if (!activeProjectId) return <ProjectOverviewBaseline />;
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      <div className="flex items-center gap-3 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-primary/[0.03] flex-shrink-0">
+        <span className="typo-label text-foreground">Prototype</span>
+        <SegmentedTabs<OverviewVariant>
+          variant="segment"
+          fullWidth={false}
+          activeTab={variant}
+          onTabChange={setVariant}
+          ariaLabel="Overview layout variant"
+          tabs={[
+            { id: 'baseline', label: 'Baseline' },
+            { id: 'briefing', label: 'Briefing' },
+            { id: 'console', label: 'Console' },
+          ]}
+        />
+      </div>
+      <div className="flex-1 min-h-0 flex flex-col">
+        {variant === 'baseline' && <ProjectOverviewBaseline />}
+        {variant === 'briefing' && <ProjectOverviewBriefing />}
+        {variant === 'console' && <ProjectOverviewConsole />}
+      </div>
+    </div>
+  );
+}
+
+function ProjectOverviewBaseline() {
   const { t } = useTranslation();
   const po = t.project_overview;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
