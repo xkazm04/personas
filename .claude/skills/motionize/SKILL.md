@@ -66,6 +66,26 @@ Hand the SVG's paths to **Motion (framer-motion, already in the app)**:
 - Keep it a self-contained component (e.g. `<name>Glyph.tsx`) that renders inline
   SVG — no runtime tracing, the SVG is baked at authoring time.
 
+## Gotchas (learned)
+
+- **VTracer traces FILLED regions, and the background is one of them.** The white
+  canvas becomes its own path, and interior negative space (holes, the gaps that
+  make links read as *thin lines*) becomes separate white paths too. For a
+  background-less icon: **drop the full-canvas bg path, but RECOLOR interior white
+  paths to the surface colour** (`fill="var(--background)"`) — don't drop them, or
+  connective lines/holes fill solid. Verify by rendering the composed SVG on the
+  target surface (`sharp(Buffer.from(svg)).png()`) *before* wiring the component.
+- **Filled paths don't "stroke-draw."** `pathLength` reveals a *stroke*; on a
+  filled region it traces the boundary (messy). Reveal filled art with staggered
+  opacity/scale/clip per element instead. Use `pathLength` only on genuinely
+  line-based traces (`--mono` outlines).
+- **Noise → path explosion.** Anti-aliased edges yield hundreds of micro-paths.
+  Push `--filter-speckle` (10–40) and lower `--color-precision` (3–4) until the
+  path count matches the number of *real* regions; sweep a couple values and check.
+- **More content = more control.** A richer flat scene (a network, a small cast,
+  accent nodes) traces into many addressable paths — group them by role and
+  orchestrate the reveal (hub → links → figures → accents) for creative results.
+
 ## Conventions
 - Scratch art + SVGs live in `.claude/skills/motionize/out/` (git-ignored working
   area). The FINAL committed artifact is the React component (inline SVG) in the
