@@ -1,31 +1,50 @@
-/** SnapshotColumn — the mentality presets as a vertical medallion list (the right
- *  column). Icon-forward: one glyph + name per row, so the column scans without
- *  reading. Picking one seeds disposition + conflict + dominant traits (applyPreset). */
-import { motion } from "framer-motion";
+/** SnapshotColumn — the mentality presets as a vertical card list (the right
+ *  column). Each archetype is a card with a traced, self-drawing AVATAR (via the
+ *  /motionize skill — see archetypeGlyphData.ts), its name + tagline. Picking one
+ *  seeds disposition + conflict + dominant traits (applyPreset). Falls back to the
+ *  lucide glyph for any archetype whose avatar hasn't been traced yet. */
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
+import { MotionizedGlyph } from "@/features/teams/sub_teamWorkspace/MotionizedGlyph";
 import { coreIcon } from "./catalog";
+import { ARCHETYPE_GLYPHS } from "./archetypeGlyphData";
 import type { PersonaCore } from "./types";
 
 export function SnapshotColumn({ core }: { core: PersonaCore }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       {core.archetypes.map((a) => {
-        const Icon = coreIcon(a.icon);
         const on = core.state.archetypeId === a.id;
+        const glyph = ARCHETYPE_GLYPHS[a.id];
+        const Icon = coreIcon(a.icon);
         return (
-          <motion.button
-            key={a.id} type="button" whileTap={{ scale: 0.97 }}
+          <button
+            key={a.id}
+            type="button"
             onClick={() => core.applyPreset(a)}
             data-testid={`core-snapshot-${a.id}`}
             aria-pressed={on}
-            className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-interactive text-left transition-colors cursor-pointer ${on ? "" : "hover:bg-secondary/40"}`}
+            className={`group relative flex items-center gap-3 p-2 rounded-card border text-left transition-colors cursor-pointer ${
+              on ? "" : "border-card-border/60 hover:bg-secondary/30 hover:border-card-border"
+            }`}
+            style={on ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.1) } : undefined}
           >
-            {on && <span className="absolute inset-0 rounded-interactive" style={{ background: colorWithAlpha(a.color, 0.14), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(a.color, 0.45)}` }} />}
-            <span className="relative z-10 w-7 h-7 rounded-input flex items-center justify-center shrink-0" style={{ background: on ? colorWithAlpha(a.color, 0.24) : "rgba(255,255,255,0.05)" }}>
-              <Icon className="w-4 h-4" style={{ color: a.color }} />
+            {/* Avatar */}
+            <span
+              className="relative shrink-0 w-12 h-12 rounded-input flex items-center justify-center overflow-hidden"
+              style={{ background: colorWithAlpha(a.color, on ? 0.18 : 0.08), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(a.color, 0.25)}` }}
+            >
+              {glyph ? (
+                <MotionizedGlyph data={glyph.data} viewBox={glyph.viewBox} spread={0.8} className="w-11 h-11" />
+              ) : (
+                <Icon className="w-5 h-5" style={{ color: a.color }} />
+              )}
             </span>
-            <span className="relative z-10 typo-body text-foreground truncate">{a.name}</span>
-          </motion.button>
+            {/* Name + tagline */}
+            <span className="min-w-0 flex flex-col">
+              <span className="typo-body text-foreground truncate" style={on ? { color: a.color } : undefined}>{a.name}</span>
+              {a.tagline && <span className="typo-caption text-foreground opacity-70 line-clamp-2 leading-tight">{a.tagline}</span>}
+            </span>
+          </button>
         );
       })}
     </div>

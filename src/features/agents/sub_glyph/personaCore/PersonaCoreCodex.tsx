@@ -37,7 +37,7 @@ export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
       </div>
 
       {/* Mentality */}
-      <div className="w-full lg:w-[210px] shrink-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50">
+      <div className="w-full lg:w-[248px] shrink-0 flex flex-col gap-3 lg:pl-6 lg:border-l border-card-border/50">
         <SectionHeader>Mentality</SectionHeader>
         <SnapshotColumn core={core} />
       </div>
