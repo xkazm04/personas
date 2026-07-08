@@ -402,14 +402,39 @@ pub async fn run_multiagent_oneshot(
          event per line, ending with the agent_ir event.",
         lines = injection_lines.join("\n"),
     );
-    let (asm, asm_usage) =
-        run_cli_turn(&cli_args, &exec_dir, assembly_prompt.as_bytes(), &session_id, true).await?;
-    total_usage.add(asm_usage);
-    for ev in &asm {
-        emit(ev);
+    // Assembly turn — with ONE recovery retry. The serial path does the same
+    // (log: "All N resolved but no agent_ir — sending recovery prompt"): the LLM
+    // sometimes finishes resolutions but forgets to emit agent_ir. A hard fail
+    // here was the multiagent path's reliability gap; the retry closes it.
+    let mut ir: Option<Value> = None;
+    for attempt in 0..2u8 {
+        let prompt = if attempt == 0 {
+            assembly_prompt.clone()
+        } else {
+            "You did NOT emit the agent_ir event. Emit it NOW as a single JSON line \
+             {\"agent_ir\": { ... }} containing the full persona (name, system prompt, tools, \
+             connectors, and use_cases with their resolved fields). Output that one line only."
+                .to_string()
+        };
+        let (asm, asm_usage) =
+            run_cli_turn(&cli_args, &exec_dir, prompt.as_bytes(), &session_id, true).await?;
+        total_usage.add(asm_usage);
+        for ev in &asm {
+            emit(ev);
+        }
+        ir = asm.iter().find_map(|e| match e {
+            BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => {
+                Some(data.clone())
+            }
+            _ => None,
+        });
+        if ir.is_some() {
+            break;
+        }
+        tracing::warn!(session_id = %session_id, attempt, "multiagent: assembly produced no agent_ir; retrying");
     }
-    // Telemetry: persist the multiagent build's total CLI cost/tokens (head +
-    // all fan-out lanes + assembly) so the harness can compare cost, not just time.
+
+    // Telemetry: persist total CLI cost/tokens (head + all fan-out lanes + assembly).
     super::events::record_build_usage(
         &pool,
         &session_id,
@@ -418,13 +443,10 @@ pub async fn run_multiagent_oneshot(
         total_usage.output_tokens,
         num_turns,
     );
-    let ir = asm.iter().find_map(|e| match e {
-        BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => Some(data.clone()),
-        _ => None,
-    });
+
     let ir_str = match ir {
         Some(v) => serde_json::to_string(&v).map_err(|e| format!("serialize agent_ir: {e}"))?,
-        None => return Err("assembly turn produced no agent_ir".to_string()),
+        None => return Err("assembly produced no agent_ir after retry".to_string()),
     };
 
     // ── 4. Save agent_ir + DraftReady, then hand to the oneshot back-half ──

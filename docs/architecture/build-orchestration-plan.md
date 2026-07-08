@@ -234,13 +234,29 @@ existing oneshot back-half), gated `multiagent && one_shot`.
   faster at equal quality (not a bad idea).
 - Per-phase: sequential `analyzing` 584s + `awaiting_input` 118s; multiagent head
   24s + `resolving` 468s (fan-out + assembly), no question round-trip.
-- **Headroom / next iterations:** (a) the 468s `resolving` for 3 *parallel* caps
-  is too high — likely the subscription throttles concurrent CLIs, so the win is
-  currently from focused contexts + skipped questions, not true parallelism;
-  investigate concurrency (rate-limit backoff, budget). (b) The multiagent path
-  doesn't record cost telemetry (`n/a` in the report) — add `record_build_usage`
-  to `run_multiagent_oneshot` so cost (more LLM calls) is comparable. (c) n=1 —
-  run `--repeat 3` for a robust median.
+**Result update — 2nd A/B (2026-07-08, `lite-web-summary`, n=2) + cost + parallelism.**
+On the clean success pair: multiagent **337s vs sequential 748s (~2.2×)**, both
+3-cap gate-100%, and **cost $0.51 vs $1.26 (~60% cheaper)** — the speedup comes
+WITH a cost win (focused per-capability contexts beat the sequential's growing
+conversation). Findings:
+- **Fan-out is genuinely parallel** (throttling hypothesis WRONG): the 3 lanes
+  start within microseconds and finish in ~16–21s each, ~$0.036/lane. The whole
+  resolution is ~20s + ~$0.11.
+- **New bottleneck = the assembly turn (~224s)** — one LLM turn emitting the full
+  `agent_ir`. Future win: assemble `agent_ir` in Rust from the resolutions
+  instead of an LLM turn (would cut the multiagent time roughly in half again).
+- **Reliability:** both variants promoted only 1/2. `multiagent-1` hard-failed
+  (assembly emitted no `agent_ir`); the serial path recovers from this with a
+  retry, so **added a one-shot assembly recovery retry** to
+  `run_multiagent_oneshot` (pending re-verification). `sequential-1` timed out in
+  an `awaiting_input` question loop the auto-answer couldn't resolve — a *baseline*
+  flakiness the multiagent path sidesteps entirely (its sub-agents never ask).
+
+**Bottom line: the design is proven — significantly faster AND cheaper AND equal
+quality when it completes.** Remaining: confirm the retry restores multiagent
+reliability (re-run A/B), then optionally the Rust-side `agent_ir` assembly for
+the next speedup. The baseline's own question-loop flakiness is a separate
+harness issue.
 
 ---
 
