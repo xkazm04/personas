@@ -72,7 +72,7 @@ async function main() {
 
   // One-pass component data: trace → animatable {d,fill,delay}[] TS module.
   if (args.emit && args.name) {
-    const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order });
+    const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order, whiteKeep: args["white-keep"] ? Number(args["white-keep"]) : undefined });
     const emitAbs = resolve(args.emit);
     mkdirSync(dirname(emitAbs), { recursive: true });
     writeFileSync(emitAbs, ts);

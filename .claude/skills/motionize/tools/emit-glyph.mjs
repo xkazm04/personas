@@ -25,10 +25,12 @@ function parseArgs(argv) {
   }
   return a;
 }
+// "Light" = high luminance (catches white AND light lavender/panel highlights)
+// without touching saturated neon accents (amber/cyan/violet sit well below 0.82).
 const nearWhite = (hex) => {
   const m = /^#([0-9a-f]{6})$/i.exec(hex); if (!m) return false;
   const n = parseInt(m[1], 16), r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return r >= 240 && g >= 240 && b >= 240;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.82;
 };
 // rough bbox from all numbers in a path (exact enough to spot the full-canvas rect)
 function roughBox(d) {
@@ -50,7 +52,7 @@ function anchor(d) {
  * Core: SVG string → { ts, elements, dropped }. Exported so trace.mjs can emit
  * the component data in one pass (--emit) as well as this standalone CLI.
  */
-export function svgToGlyphData(svg, { name, order = "radial" } = {}) {
+export function svgToGlyphData(svg, { name, order = "radial", whiteKeep = 0.1 } = {}) {
   const vb = /viewBox="([^"]+)"/.exec(svg);
   const wh = /width="(\d+)"\s+height="(\d+)"/.exec(svg);
   const [W, H] = vb ? vb[1].split(/\s+/).slice(2).map(Number) : wh ? [+wh[1], +wh[2]] : [1024, 1024];
@@ -65,10 +67,12 @@ export function svgToGlyphData(svg, { name, order = "radial" } = {}) {
     const box = roughBox(p.d);
     const coversCanvas = box.minX <= 2 && box.minY <= 2 && box.maxX >= W - 2 && box.maxY >= H - 2;
     if (nearWhite(p.fill) && coversCanvas) continue; // drop full-canvas bg
-    // Only LARGE near-white regions are background negative-space → recolor to the
-    // surface. Small near-white paths are FOREGROUND details (sparks, highlights).
+    // Near-white regions ABOVE `whiteKeep` area are treated as surface negative-
+    // space → recolored to `var(--background)`. Below it they're FOREGROUND details
+    // (sparks, highlights) → kept light. Lower whiteKeep (e.g. 0.02) for wireframe
+    // art where mid-size white facets should read as dark (edges-only look).
     const areaFrac = ((box.maxX - box.minX) * (box.maxY - box.minY)) / canvasArea;
-    const fill = nearWhite(p.fill) && areaFrac > 0.1 ? "var(--background)" : p.fill;
+    const fill = nearWhite(p.fill) && areaFrac > whiteKeep ? "var(--background)" : p.fill;
     const a = anchor(p.d);
     const dist = Math.hypot(a.x - cx, a.y - cy) / maxR; // 0 (center) .. 1 (corner)
     const ang = (Math.atan2(a.y - cy, a.x - cx) + Math.PI) / (2 * Math.PI); // 0..1 clockwise
@@ -86,7 +90,7 @@ function main() {
   const args = parseArgs(process.argv);
   if (!args.input || !args.output || !args.name) { console.error("Usage: --input svg --output data.ts --name NAME"); process.exit(1); }
   const svg = readFileSync(args.input, "utf8");
-  const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order });
+  const { ts, elements, dropped } = svgToGlyphData(svg, { name: args.name, order: args.order, whiteKeep: args["white-keep"] ? Number(args["white-keep"]) : undefined });
   const abs = resolve(args.output);
   mkdirSync(dirname(abs), { recursive: true });
   writeFileSync(abs, ts);

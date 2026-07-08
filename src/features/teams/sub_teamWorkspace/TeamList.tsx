@@ -4,8 +4,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { MotionizedGlyph, type GlyphElement } from './MotionizedGlyph';
 import { NETWORK_GLYPH, NETWORK_GLYPH_VIEWBOX } from './networkGlyphData';
-import { CINEMATIC_GLYPH, CINEMATIC_GLYPH_VIEWBOX } from './cinematicGlyphData';
-import { BLOOM_GLYPH, BLOOM_GLYPH_VIEWBOX } from './bloomGlyphData';
+import { HUD_GLYPH, HUD_GLYPH_VIEWBOX } from './hudGlyphData';
+import { WIRE_GLYPH, WIRE_GLYPH_VIEWBOX } from './wireGlyphData';
 import { PersonaIcon } from '@/features/agents/components/PersonaIcon';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { hasUnsentDraft } from '../sub_collab/useTeamChannel';
@@ -402,11 +402,11 @@ function MembersHoverPreview({ teamId, memberCount, personaIndex }: {
   );
 }
 
-type GlyphKind = 'cinematic' | 'network' | 'bloom';
+type GlyphKind = 'network' | 'hud' | 'wire';
 const GLYPH_VARIANTS: { id: GlyphKind; label: string; data: GlyphElement[]; viewBox: string; glow?: boolean; spread: number }[] = [
-  { id: 'cinematic', label: 'Cinematic', data: CINEMATIC_GLYPH, viewBox: CINEMATIC_GLYPH_VIEWBOX, glow: true, spread: 1.1 },
   { id: 'network', label: 'Network', data: NETWORK_GLYPH, viewBox: NETWORK_GLYPH_VIEWBOX, spread: 1.1 },
-  { id: 'bloom', label: 'Bloom', data: BLOOM_GLYPH, viewBox: BLOOM_GLYPH_VIEWBOX, spread: 1.4 },
+  { id: 'hud', label: 'HUD', data: HUD_GLYPH, viewBox: HUD_GLYPH_VIEWBOX, glow: true, spread: 1.2 },
+  { id: 'wire', label: 'Wireframe', data: WIRE_GLYPH, viewBox: WIRE_GLYPH_VIEWBOX, glow: true, spread: 1.3 },
 ];
 
 function EmptyState({
@@ -420,7 +420,7 @@ function EmptyState({
   onPreset: () => void;
   t: ReturnType<typeof useTranslation>['t'];
 }) {
-  const [glyph, setGlyph] = useState<GlyphKind>('cinematic');
+  const [glyph, setGlyph] = useState<GlyphKind>('network');
   const v = GLYPH_VARIANTS.find((g) => g.id === glyph)!;
   return (
     <div className="animate-fade-slide-in text-center py-12">
