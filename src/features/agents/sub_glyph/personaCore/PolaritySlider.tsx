@@ -1,31 +1,10 @@
-/** coreBits — shared primitives for the persona-core configurator.
- *
- *  The lucide icon resolver (carried over from the retired Foundry) plus the
- *  labeled-pole polarity slider the configurator composes for disposition — it
- *  springs to preset values but tracks instantly under a drag.
- */
+/** PolaritySlider — a 0…1 slider with named poles (e.g. Cautious ↔ Bold).
+ *  Keyboard-accessible via the underlying range input; the fill + handle spring to
+ *  new values when a preset loads them, but track instantly while dragging (no
+ *  rubber-band under the thumb). */
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Activity, BookOpenCheck, Brain, ConciergeBell, LibraryBig, LineChart,
-  NotebookPen, Palette, Radar, Rocket, ShieldCheck, Sparkles, Target, Users,
-  Workflow, type LucideIcon,
-} from "lucide-react";
 
-const CORE_ICONS: Record<string, LucideIcon> = {
-  ShieldCheck, LineChart, Radar, Workflow, Activity, LibraryBig, Palette,
-  Rocket, ConciergeBell, Target, Brain, Users, BookOpenCheck, NotebookPen,
-};
-
-export function coreIcon(name: string): LucideIcon {
-  return CORE_ICONS[name] ?? Sparkles;
-}
-
-export const ACCENT = "#60A5FA";
-
-/** A 0…1 slider with named poles (e.g. Cautious ↔ Bold). Keyboard-accessible via
- *  the underlying range input; the fill + handle spring to new values when a preset
- *  loads them, but track instantly while dragging (no rubber-band under the thumb). */
 export function PolaritySlider({
   label, lowLabel, highLabel, value, color, onChange,
 }: {

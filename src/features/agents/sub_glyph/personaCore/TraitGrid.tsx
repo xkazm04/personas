@@ -4,8 +4,8 @@
 import { motion } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
-import { TRAIT_AXES, TRAIT_CATALOG } from "./coreTraits";
-import type { PersonaCore } from "./usePersonaCore";
+import { TRAIT_AXES, TRAIT_CATALOG } from "./catalog";
+import type { PersonaCore } from "./types";
 
 const byAxis = (id: string) => TRAIT_CATALOG.filter((t) => t.axis === id).sort((a, b) => b.count - a.count);
 

@@ -1,16 +1,18 @@
-/** CoreCodex — visualization-forward take on the 3-column skeleton. The mental
- *  model is a well-ordered SPEC SHEET: every trait, conflict style, and model is
- *  an icon in an aligned grid, grouped by axis with a colour rail, so the eye
- *  lands where it expects and you scan symbols instead of reading rows of text.
+/** PersonaCoreCodex — the configurator body (the "Codex" layout that won the
+ *  /prototype round). A well-ordered, icon-forward 3-column spec sheet: every
+ *  trait, conflict style, and model is a symbol in an aligned grid, so the eye
+ *  lands where it expects and you scan rather than read.
  *  Character (icon grid) · Configuration (icon tiles + effort meter) · Mentality.
  */
-import { SectionHeader, FieldLabel, SnapshotColumn } from "./coreSections";
+import { SectionHeader, FieldLabel } from "./SectionLabels";
+import { SnapshotColumn } from "./SnapshotColumn";
 import { AxisTraitGrid } from "./TraitGrid";
-import { ConflictTiles, ModelTiles, EffortMeter } from "./coreVisuals";
-import { PolaritySlider, ACCENT } from "./coreBits";
-import type { PersonaCore } from "./usePersonaCore";
+import { ConflictTiles, ModelTiles, EffortMeter } from "./ConfigTiles";
+import { PolaritySlider } from "./PolaritySlider";
+import { ACCENT } from "./catalog";
+import type { PersonaCore } from "./types";
 
-export function CoreCodex({ core }: { core: PersonaCore }) {
+export function PersonaCoreCodex({ core }: { core: PersonaCore }) {
   const { state } = core;
   return (
     <div className="flex flex-col lg:flex-row gap-6 max-h-[64vh] overflow-y-auto scrollbar-thin pr-1">

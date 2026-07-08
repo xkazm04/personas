@@ -1,35 +1,36 @@
-/** coreTraits — the persona-character vocabulary, distilled from the real
- *  template + archetype corpus (120 personas). Character in the library lives in
- *  PROSE (principles / decision_principles / voice / stance), not numeric dials —
- *  only 18 of 120 personas carry `core` dials at all. So the configurator drives
- *  personality mainly through these discrete, clickable traits; the disposition
- *  slider is the one collapsed numeric axis (risk + speed were near-collinear).
+/** catalog — the static persona-core data + resolvers.
  *
- *  The `count` on each trait is how many of the 120 corpus personas embody it —
- *  it drives ordering (the corpus's dominant DNA floats to the top of each axis).
- *  Each trait + axis + conflict style also carries a lucide `icon` so the visual
- *  layout variants can render symbols instead of walls of text.
+ *  Everything about "what can be configured" lives here: the 20-trait vocabulary
+ *  (distilled from the 120-persona corpus; each trait carries a lucide icon + a
+ *  directive), the five axes, the conflict styles, the archetype→dominant-traits
+ *  presets, and the model / reasoning-effort tiers. usePersonaCore owns "what is
+ *  selected"; the components render this data. Character in the library lives in
+ *  PROSE, not dials — only 18 of 120 personas carry numeric `core` — so discrete
+ *  traits (not sliders) carry most of the personality.
  */
 import {
   Microscope, Gauge, Anchor, Shield, Siren, UserCheck, Lock, Layers, Minimize2,
   VolumeX, ListTree, Zap, Repeat, Flag, Database, BellOff, GraduationCap,
-  ShieldCheck, Swords, Rocket, Flame, Scale, Wrench, Handshake,
-  ScanSearch, ShieldHalf, MessagesSquare, Sparkles, type LucideIcon,
+  ShieldCheck, Swords, Rocket, Flame, Scale, Wrench, Handshake, ScanSearch,
+  ShieldHalf, MessagesSquare, Sparkles, LineChart, Radar, Workflow, Activity,
+  LibraryBig, Palette, ConciergeBell, Target, Brain, Users, BookOpenCheck,
+  NotebookPen, type LucideIcon,
 } from "lucide-react";
+import type { CharacterTrait, TraitAxis, ModelTier, EffortLevel } from "./types";
 
-export type TraitAxis = "rigor" | "autonomy" | "communication" | "reliability" | "temperament";
+/** The persona-core accent (also the model-tier accent). */
+export const ACCENT = "#60A5FA";
 
-export interface CharacterTrait {
-  id: string;
-  label: string;
-  axis: TraitAxis;
-  blurb: string;
-  count: number;
-  icon: LucideIcon;
-  /** Directive line injected into the build intent when the trait is chosen. */
-  directive: string;
+// -- Archetype icon resolver (carried over from the retired Foundry) ---------
+const CORE_ICONS: Record<string, LucideIcon> = {
+  ShieldCheck, LineChart, Radar, Workflow, Activity, LibraryBig, Palette,
+  Rocket, ConciergeBell, Target, Brain, Users, BookOpenCheck, NotebookPen,
+};
+export function coreIcon(name: string): LucideIcon {
+  return CORE_ICONS[name] ?? Sparkles;
 }
 
+// -- Character axes + trait vocabulary ---------------------------------------
 export const TRAIT_AXES: { id: TraitAxis; label: string; short: string; color: string; icon: LucideIcon }[] = [
   { id: "rigor", label: "Rigor & evidence", short: "Rigor", color: "#60a5fa", icon: ScanSearch },
   { id: "autonomy", label: "Autonomy & deference", short: "Autonomy", color: "#fb7185", icon: ShieldHalf },
@@ -66,9 +67,11 @@ export const TRAIT_CATALOG: CharacterTrait[] = [
   { id: "ships-fast", axis: "temperament", label: "Ships fast", count: 5, icon: Rocket, blurb: "Perfect is the enemy of shipped — smallest working thing, iterate on reality.", directive: "Favour momentum — ship the smallest working thing and iterate on real feedback." },
 ];
 
-/** How the persona carries itself in disagreement — a discrete temperament from
- *  the archetype `conflictStyle` field. This is what makes two personas with the
- *  same model and traits still deliberate differently. */
+export function traitById(id: string): CharacterTrait | undefined {
+  return TRAIT_CATALOG.find((t) => t.id === id);
+}
+
+// -- Conflict styles (temperament in disagreement) ---------------------------
 export const CONFLICT_STYLES: { id: string; label: string; blurb: string; icon: LucideIcon }[] = [
   { id: "challenger", label: "Challenger", icon: Flame, blurb: "Pushes back and blocks when needed — will not rubber-stamp." },
   { id: "analyst", label: "Analyst", icon: Scale, blurb: "Lets the evidence settle it — argues from data, not stance." },
@@ -83,15 +86,7 @@ export const CONFLICT_DIRECTIVE: Record<string, string> = {
   harmonizer: "In disagreement, smooth friction and keep things moving toward consensus.",
 };
 
-export function traitById(id: string): CharacterTrait | undefined {
-  return TRAIT_CATALOG.find((t) => t.id === id);
-}
-
-/** Dominant traits per archetype — loading a snapshot preloads these so a preset
- *  arrives as a complete character rather than a blank slate. Hand-mapped from
- *  each archetype's `stance` / `principles` / `conflictStyle` against the palette;
- *  the distinctive sets are what make two snapshots feel like different people.
- */
+// -- Archetype presets: dominant traits preloaded when a snapshot loads -------
 export const ARCHETYPE_TRAITS: Record<string, string[]> = {
   guardian: ["quality-gate", "evidence-first", "escalates", "human-closure", "no-destructive"],
   analyst: ["evidence-first", "baseline-anchor", "states-confidence", "no-hype", "structured"],
@@ -103,3 +98,17 @@ export const ARCHETYPE_TRAITS: Record<string, string[]> = {
   shipper: ["ships-fast", "tiered-autonomy", "challenges", "actionable"],
   "chief-of-staff": ["terse", "learns", "escalates", "human-closure", "silent-when-healthy"],
 };
+
+// -- Engine tiers ------------------------------------------------------------
+export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string }[] = [
+  { id: "haiku", label: "Haiku", blurb: "Fastest & cheapest — great for high-volume, well-scoped work" },
+  { id: "sonnet", label: "Sonnet", blurb: "The everyday default — strong reasoning at moderate cost" },
+  { id: "opus", label: "Opus", blurb: "Deepest reasoning for hard, high-stakes work" },
+];
+
+export const EFFORT_TIERS: { id: EffortLevel; label: string; blurb: string }[] = [
+  { id: "low", label: "Low", blurb: "Minimal deliberation — quickest, cheapest responses" },
+  { id: "medium", label: "Medium", blurb: "Balanced reasoning — the default" },
+  { id: "high", label: "High", blurb: "Extended reasoning for tricky problems" },
+  { id: "xhigh", label: "Max", blurb: "Maximum reasoning depth — slowest, most thorough" },
+];

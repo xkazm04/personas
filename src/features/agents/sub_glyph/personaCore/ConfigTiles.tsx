@@ -1,16 +1,12 @@
-/** coreVisuals — icon-forward, low-text configuration controls shared by the
- *  visual layout variants (Codex, Wheel). Conflict / model become icon TILES,
- *  effort becomes a stepped METER — symbols and alignment instead of segmented
- *  rows of words. Disposition keeps the existing PolaritySlider (already minimal).
- */
+/** ConfigTiles — icon-forward, low-text configuration controls. Conflict / model
+ *  are icon TILES, effort is an ascending stepped METER — symbols and alignment
+ *  instead of segmented rows of words. (Disposition uses PolaritySlider.) */
 import { Feather, Sparkles, Brain, type LucideIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
-import { ACCENT } from "./coreBits";
-import { CONFLICT_STYLES } from "./coreTraits";
-import { EFFORT_TIERS, MODEL_TIERS, type PersonaCore, type ModelTier } from "./usePersonaCore";
-import type { EffortLevel } from "@/lib/models/modelCatalog";
+import { ACCENT, CONFLICT_STYLES, EFFORT_TIERS, MODEL_TIERS } from "./catalog";
+import type { EffortLevel, ModelTier, PersonaCore } from "./types";
 
 const MODEL_ICON: Record<ModelTier, LucideIcon> = { haiku: Feather, sonnet: Sparkles, opus: Brain };
 

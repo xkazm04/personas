@@ -10,8 +10,8 @@ import { BaseModal } from "@/features/shared/components/modals";
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
 import Button from "@/features/shared/components/buttons/Button";
 import { RotateCcw } from "lucide-react";
-import type { PersonaCore } from "./usePersonaCore";
-import { CoreCodex } from "./CoreCodex";
+import type { PersonaCore } from "./types";
+import { PersonaCoreCodex } from "./PersonaCoreCodex";
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
   return (
@@ -25,7 +25,7 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
         {core.loading ? (
           <div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>
         ) : (
-          <CoreCodex core={core} />
+          <PersonaCoreCodex core={core} />
         )}
 
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-card-border/50">
