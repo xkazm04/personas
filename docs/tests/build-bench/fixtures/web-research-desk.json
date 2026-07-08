@@ -1,0 +1,61 @@
+{
+  "id": "web-research-desk",
+  "name": "Research Desk",
+  "description": "3 web-research capabilities + 2 connector tool-reactions (Airtable, Notion). Exercises fan-out #1 (5 independent capability resolutions) and fan-out #2 (2 real connector tool-tests). The web-research caps are native (no credential); the two reactions bind to healthy Airtable + Notion vault credentials.",
+  "mode": "one_shot",
+
+  "intent": "Build me a Web Research Desk agent. It has FIVE capabilities:\n\n(1) Topic sweep — given a research topic or question, use web search and web fetch to gather the most relevant recent sources, extract the key facts from each page, and return a ranked, de-duplicated source list with a one-paragraph synthesis. Always cite each source URL.\n\n(2) Scheduled feed scan — on a daily schedule, re-run the tracked topics, pull new items from RSS/Atom feeds and fresh web searches, drop anything already seen, and summarise only what is new.\n\n(3) Deep-dive synthesis — given a set of URLs, fetch and extract each one, then produce a structured briefing (background, key findings, open questions, sources).\n\n(4) Log findings to Airtable — whenever a vetted finding is produced, append it as a row to an Airtable base that tracks research (fields: title, url, topic, summary, captured_at). Use the Airtable connector.\n\n(5) Publish digest to Notion — when a digest or briefing is ready, write it as a page/database entry in Notion so the team can read it. Use the Notion connector.\n\nWeb search and web fetch are native tools — do NOT install SerpAPI/Tavily or any external search connector. No human review needed for reads; the Airtable and Notion writes are the only side-effecting steps.",
+
+  "expected": {
+    "min_capabilities": 5,
+    "web_research_capabilities": {
+      "count": 3,
+      "tool_hints_any_of": ["web_search", "web_fetch", "http_request", "web_scraping", "rss"],
+      "must_not_require_credential": true
+    },
+    "connector_reactions": [
+      {
+        "label": "Log findings to Airtable",
+        "connector_name": "airtable",
+        "service_type": "airtable",
+        "connector_class": "credential",
+        "expect_credential_link": true,
+        "expect_tool_test": "pass"
+      },
+      {
+        "label": "Publish digest to Notion",
+        "connector_name": "notion",
+        "service_type": "notion",
+        "connector_class": "credential",
+        "expect_credential_link": true,
+        "expect_tool_test": "pass"
+      }
+    ],
+    "setup_status": "ready",
+    "hard_assertions": [
+      "capabilities_count >= 5",
+      "web_research_caps >= 3",
+      "required_connectors includes service_type 'airtable'",
+      "required_connectors includes service_type 'notion'",
+      "credentialLinks resolves 'airtable' to a vault credential id",
+      "credentialLinks resolves 'notion' to a vault credential id",
+      "no capability requires a credential for web search/fetch (native only)",
+      "no hallucinated external search connector (serpapi/tavily/google_search) present"
+    ]
+  },
+
+  "rubric": {
+    "note": "0-3 per dimension, judged by a Claude-Code-as-judge pass (athena style). Not a substitute for the hard_assertions above — this scores QUALITY, the assertions gate CORRECTNESS.",
+    "dimensions": [
+      { "key": "coverage", "weight": 2.0, "prompt": "Do the resolved capabilities cover all five requested jobs (sweep, scheduled scan, deep-dive, Airtable log, Notion publish) without collapsing distinct jobs into one or padding with invented ones?" },
+      { "key": "capability_distinctness", "weight": 1.0, "prompt": "Are the 5 capabilities genuinely distinct (different triggers/inputs/outputs), or near-duplicates?" },
+      { "key": "connector_binding_correctness", "weight": 2.0, "prompt": "Do the Airtable and Notion capabilities reference the CORRECT connector (service_type airtable / notion), name the right tool in tool_hints, and carry a resolved credentialLink? Penalise if a write is described in prose but no connector tool is bound." },
+      { "key": "trigger_sensibility", "weight": 1.5, "prompt": "Are triggers sensible per capability — scheduled scan is a schedule; the two writes are event/reaction or chained off a finding; sweep/deep-dive are manual? Penalise a scheduled trigger on the interactive sweep, etc." },
+      { "key": "groundedness", "weight": 1.5, "prompt": "Are all tools real (native web tools + http_request + the two connectors)? Penalise any hallucinated tool, invented connector, or a web-search step that wrongly requires a credential." }
+    ]
+  },
+
+  "variants": ["sequential", "multiagent"],
+  "repeat": 3,
+  "notes": "Requires healthy Airtable + Notion credentials in the vault (service_type 'airtable' and 'notion', one non-empty non-last-failed row each) for the connector tool-tests to go green and credentialLinks to resolve. Without them the build still promotes but the two reactions report credential_missing and expect_tool_test flips to 'credential_missing' — the harness records that state rather than failing, so structure/quality are still comparable across variants."
+}

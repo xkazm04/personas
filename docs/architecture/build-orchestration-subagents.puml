@@ -1,0 +1,151 @@
+@startuml build-orchestration-subagents
+title Persona Build — Sub-agent Assignment (dependency-gated DAG, NOT load-spreading)
+
+' ============================================================================
+'  DESIGN INTENT — read before the diagram
+'  Sub-agents are assigned by the build's REAL data dependencies, never to
+'  "spread load across whatever is idle". Parallelism is OPENED only where the
+'  work is provably independent (capabilities do not depend on each other; tool
+'  tests do not depend on each other) and CLOSED at barriers where cross-item
+'  context is genuinely required (identity, IR assembly, promote).
+'
+'  There are exactly TWO fan-out points, each falling on a natural independence
+'  seam that already exists in the v3 build chronology:
+'    behavior_core -> capability_enumeration -> [per-capability resolution] -> agent_ir
+'  Fan-out #1 = per-capability resolution.  Fan-out #2 = per-tool test.
+'  Everything else is a single serial "lead" session.
+'
+'  See the legend at the bottom: "Why this is not managed chaos" plus the
+'  explicitly REJECTED pool-of-generic-workers model.
+' ============================================================================
+
+skinparam maxMessageSize 260
+skinparam ConditionEndStyle hline
+skinparam shadowing false
+
+start
+
+partition "Serial spine — single lead session (claude-sonnet-4-6, subscription auth)" {
+  :behavior_core;
+  note right
+    Persona identity: motivation / stance / northStar / risk / speed.
+    EVERY downstream step depends on it -> cannot parallelize.
+    Already streams early via --include-partial-messages (runner.rs:576-628).
+  end note
+
+  :capability_enumeration;
+  note right
+    Produces the fan-out SET = the list of capabilities,
+    plus the UNION of the connectors/APIs they reference.
+    This is what makes fan-out #1 knowable up front.
+  end note
+
+  :resolve SHARED connectors ONCE;
+  note right
+    The "reasonable engineering" step: research each DISTINCT
+    connector/API a single time here, not once per capability.
+    Output = a connector-context blob injected into every
+    capability sub-agent below -> parallel agents never
+    redundantly re-research the same GitHub/Slack/etc.
+  end note
+}
+
+:assign ONE sub-agent per capability;
+note right
+  Assignment rule (fan-out #1): exactly one sub-agent per enumerated capability.
+  Concurrency budget = min(build_budget, |capabilities|), build_budget ~ 2-3,
+  governed by run_budget.rs / rate_limiter.rs / resource_governor.rs.
+  Scheduler pattern copied from engine/team_assignment_orchestrator.rs:665-711
+  (budget = max_parallel - running; tokio::spawn + catch_unwind isolation).
+  Each sub-agent:
+    * own CLI session dir + own conversation (NO --continue; the shared
+      research context is PASSED IN, not resumed)
+    * prompt = behavior_core + enumeration + shared-connector blob
+    * resolves: trigger, model_override, tool spec, sample I/O, memory policy
+    * tags every BuildEvent with agent_id / lane  (the Events-first prerequisite)
+end note
+
+partition "Fan-out #1 — per-capability resolution (BOUNDED parallel)" {
+  fork
+    :resolve capability A;
+  fork again
+    :resolve capability B;
+  fork again
+    :resolve capability C ... N;
+  end fork
+}
+
+partition "Barrier — back to single lead session" {
+  :assemble agent_ir;
+  note right
+    Needs ALL resolved capabilities at once:
+      * dedup tool definitions across capabilities
+      * reconcile shared connectors + credentialLinks
+      * resolve persona-wide fields
+      * detect cross-capability conflicts (clashing triggers, dup tool names)
+    This cross-item reconciliation is exactly why the fan-out MUST join here
+    (a genuine barrier, not a convenience sync).
+  end note
+  :checkpoint DraftReady -> build_sessions row;
+}
+
+if (mode?) then (interactive)
+  :park on user test / refine;
+  note right
+    The clarifying-question gate state machine is SERIAL by design
+    (mpsc park/resume, gates.rs Rule 16/17). Multi-agent build is
+    scoped to one_shot; interactive resolution stays single-lead.
+  end note
+else (one_shot)
+  :assign ONE sub-agent per tool/connector test;
+  note right
+    Fan-out #2: tool tests are independent by construction.
+    Deterministic option (scripted-tests direction): SKIP the LLM and call
+    engine::api_proxy::execute_api_request / healthcheck::run_healthcheck
+    per bound connector -> faster, cheaper, non-flaky.
+    Same bounded budget + scheduler as fan-out #1.
+  end note
+
+  repeat
+    fork
+      :test tool 1;
+    fork again
+      :test tool 2;
+    fork again
+      :test tool 3 ... M;
+    end fork
+    :aggregate tool-test report;
+  backward:fix-pass — LLM corrects agent_ir\nfor each FAILING capability (bounded parallel per failure);
+  repeat while (failing tools remain\nAND attempt < MAX_TEST_RETRIES (3)?) is (retry) not (all green / budget exhausted)
+endif
+
+partition "Serial — single lead session" {
+  :promote_build_draft;
+  :materialize initial_state + run Phase-3b verification gate;
+}
+
+stop
+
+legend right
+  == Why this is NOT managed chaos ==
+  * Sub-agents are typed to a UNIT OF WORK (a capability, a tool test),
+    not handed arbitrary slices off a queue "just to keep cores busy".
+  * The DAG's edges are REAL data dependencies, so a parallel branch can
+    never read another branch's half-finished state.
+  * Parallelism degree is small + bounded (2-3), matched to how many
+    independent units actually exist — not "as many workers as we can spawn".
+  * Shared work (connector research) is de-duplicated ONCE up front.
+  ....
+  == REJECTED model: pool of generic workers ==
+  A pool of N identical CLIs pulling "anything" off a work queue to spread
+  load. Rejected because:
+    * no dependency gating -> a worker could start capability resolution
+      before behavior_core exists, or assemble IR before all capabilities are in;
+    * redundant research (every worker re-derives shared connectors);
+    * non-deterministic ordering -> irreproducible builds + racey checkpoints;
+    * unbounded fan-out fights the subscription rate limiter.
+  The DAG above gets the SAME parallel speed-up on the genuinely-independent
+  parts, without any of these failure modes.
+endlegend
+
+@enduml
