@@ -48,6 +48,7 @@ pub struct CapabilityResolution {
     pub capability_id: String,
     pub events: Vec<BuildEvent>,
     pub error: Option<String>,
+    pub usage: TurnUsage,
 }
 
 /// Build the focused prompt for one capability's sub-agent. It carries the
@@ -97,6 +98,9 @@ async fn resolve_one_capability(
     capability_id: String,
 ) -> CapabilityResolution {
     let lane_id = format!("cap-{capability_id}");
+    // Timing markers: the log timestamps of these across lanes reveal whether
+    // the fan-out is truly concurrent or serializing (subscription throttling).
+    tracing::info!(cap = %capability_id, "fan-out lane: start");
     let mut driver = match CliProcessDriver::spawn_temp(&cli_args, "build-cap") {
         Ok(d) => d,
         Err(e) => {
@@ -104,6 +108,7 @@ async fn resolve_one_capability(
                 capability_id,
                 events: vec![],
                 error: Some(format!("spawn failed: {e}")),
+                usage: TurnUsage::default(),
             }
         }
     };
@@ -113,15 +118,26 @@ async fn resolve_one_capability(
             capability_id,
             events: vec![],
             error: Some(format!("write failed: {e}")),
+            usage: TurnUsage::default(),
         };
     }
     driver.close_stdin().await;
 
     let mut raw_events: Vec<BuildEvent> = Vec::new();
+    let mut usage = TurnUsage::default();
     if let Some(mut reader) = driver.take_stdout_reader() {
         loop {
             match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => raw_events.extend(parse_build_line(&line, &session_id)),
+                Ok(Some(line)) => {
+                    if let Some(u) = super::parser::extract_result_usage(&line) {
+                        usage.add(TurnUsage {
+                            cost_usd: u.cost_usd,
+                            input_tokens: u.input_tokens,
+                            output_tokens: u.output_tokens,
+                        });
+                    }
+                    raw_events.extend(parse_build_line(&line, &session_id));
+                }
                 Ok(None) | Err(_) => break,
             }
         }
@@ -143,10 +159,12 @@ async fn resolve_one_capability(
             }
         }
     }
+    tracing::info!(cap = %capability_id, events = events.len(), cost = usage.cost_usd, "fan-out lane: done");
     CapabilityResolution {
         capability_id,
         events,
         error: None,
+        usage,
     }
 }
 
@@ -188,21 +206,38 @@ pub async fn fan_out_resolution(
                 capability_id: o.lane,
                 events: vec![],
                 error: Some(e),
+                usage: TurnUsage::default(),
             },
         })
         .collect()
 }
 
+/// Cost/token usage summed from a run's stream-json `result` lines.
+#[derive(Default, Clone, Copy)]
+pub struct TurnUsage {
+    pub cost_usd: f64,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+}
+
+impl TurnUsage {
+    fn add(&mut self, other: TurnUsage) {
+        self.cost_usd += other.cost_usd;
+        self.input_tokens += other.input_tokens;
+        self.output_tokens += other.output_tokens;
+    }
+}
+
 /// Run one serial CLI turn in the shared session dir, returning the parsed
-/// events. `continue_session` adds `--continue` so the assembly turn resumes
-/// the head turn's conversation (behavior_core + enumeration context).
+/// events + the turn's CLI usage. `continue_session` adds `--continue` so the
+/// assembly turn resumes the head turn's conversation (behavior_core + enum).
 async fn run_cli_turn(
     cli_args: &CliArgs,
     exec_dir: &Path,
     prompt: &[u8],
     session_id: &str,
     continue_session: bool,
-) -> Result<Vec<BuildEvent>, String> {
+) -> Result<(Vec<BuildEvent>, TurnUsage), String> {
     let mut args = cli_args.clone();
     if continue_session {
         args.args.push("--continue".to_string());
@@ -215,16 +250,26 @@ async fn run_cli_turn(
         .map_err(|e| format!("write failed: {e}"))?;
     driver.close_stdin().await;
     let mut events = Vec::new();
+    let mut usage = TurnUsage::default();
     if let Some(mut reader) = driver.take_stdout_reader() {
         loop {
             match read_line_limited(&mut reader).await {
-                Ok(Some(line)) => events.extend(parse_build_line(&line, session_id)),
+                Ok(Some(line)) => {
+                    if let Some(u) = super::parser::extract_result_usage(&line) {
+                        usage.add(TurnUsage {
+                            cost_usd: u.cost_usd,
+                            input_tokens: u.input_tokens,
+                            output_tokens: u.output_tokens,
+                        });
+                    }
+                    events.extend(parse_build_line(&line, session_id));
+                }
                 Ok(None) | Err(_) => break,
             }
         }
     }
     let _ = driver.wait().await;
-    Ok(events)
+    Ok((events, usage))
 }
 
 /// Pull the capability list out of a `capability_enumeration` payload, tolerant
@@ -277,7 +322,8 @@ pub async fn run_multiagent_oneshot(
          Output raw JSON only, one event per line.",
         initial = initial_prompt,
     );
-    let head = run_cli_turn(&cli_args, &exec_dir, head_prompt.as_bytes(), &session_id, false).await?;
+    let (head, head_usage) =
+        run_cli_turn(&cli_args, &exec_dir, head_prompt.as_bytes(), &session_id, false).await?;
     for ev in &head {
         emit(ev);
     }
@@ -321,7 +367,9 @@ pub async fn run_multiagent_oneshot(
     .await;
 
     let mut injection_lines: Vec<String> = Vec::new();
+    let mut total_usage = head_usage;
     for res in &resolutions {
+        total_usage.add(res.usage);
         for ev in &res.events {
             emit(ev);
             if let BuildEvent::CapabilityResolutionUpdate {
@@ -340,6 +388,7 @@ pub async fn run_multiagent_oneshot(
             tracing::warn!(session_id = %session_id, cap = %res.capability_id, error = %err, "multiagent: lane error");
         }
     }
+    let num_turns = 2 + resolutions.len() as i64; // head + N caps + assembly
     if cancel_flag.load(std::sync::atomic::Ordering::Acquire) {
         return Err("cancelled".to_string());
     }
@@ -353,10 +402,22 @@ pub async fn run_multiagent_oneshot(
          event per line, ending with the agent_ir event.",
         lines = injection_lines.join("\n"),
     );
-    let asm = run_cli_turn(&cli_args, &exec_dir, assembly_prompt.as_bytes(), &session_id, true).await?;
+    let (asm, asm_usage) =
+        run_cli_turn(&cli_args, &exec_dir, assembly_prompt.as_bytes(), &session_id, true).await?;
+    total_usage.add(asm_usage);
     for ev in &asm {
         emit(ev);
     }
+    // Telemetry: persist the multiagent build's total CLI cost/tokens (head +
+    // all fan-out lanes + assembly) so the harness can compare cost, not just time.
+    super::events::record_build_usage(
+        &pool,
+        &session_id,
+        total_usage.cost_usd,
+        total_usage.input_tokens,
+        total_usage.output_tokens,
+        num_turns,
+    );
     let ir = asm.iter().find_map(|e| match e {
         BuildEvent::CellUpdate { cell_key, data, .. } if cell_key == "agent_ir" => Some(data.clone()),
         _ => None,
