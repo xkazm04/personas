@@ -10,6 +10,13 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 import { goalAccentEdgeStyle, GoalProjectBadge } from './goalsTheme';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import GoalCardLedger from './GoalCardLedger';
+import GoalCardFill from './GoalCardFill';
+
+// PROTOTYPE scaffold (throwaway) — A/B the goal-card density (see the switcher
+// in GoalKanban's render). Removed at consolidation once a direction wins.
+type GoalCardVariant = 'baseline' | 'ledger' | 'fill';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -275,6 +282,7 @@ export default function GoalKanban({
   const goals = useSystemStore((s) => s.goals);
   const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const [cardVariant, setCardVariant] = useState<GoalCardVariant>('baseline');
 
   // project id → name, for the cross-project origin chip.
   const projectNameById = useMemo(
@@ -396,30 +404,53 @@ export default function GoalKanban({
     );
   }
 
+  const renderGoalCard = (g: DevGoal) => {
+    const cardProps = {
+      goal: g,
+      items: itemsByGoal.get(g.id) ?? [],
+      projectName: showProject ? projectNameById.get(g.project_id) : undefined,
+      onOpen: onOpenGoal ? () => onOpenGoal(g.id) : undefined,
+      onToggleItem: (itemId: string, done: boolean) => handleToggleItem(g, itemId, done),
+    };
+    if (cardVariant === 'ledger') return <GoalCardLedger {...cardProps} />;
+    if (cardVariant === 'fill') return <GoalCardFill {...cardProps} />;
+    return <GoalCard {...cardProps} />;
+  };
+
   return (
-    <KanbanBoard<DevGoal>
-      columns={columns}
-      items={visibleGoals}
-      getItemId={(g) => g.id}
-      getItemStatus={(g) => normalizeGoalStatus(g.status)}
-      onItemMove={handleMove}
-      dragMimeType={DRAG_MIME}
-      columnsClassName={showDone ? undefined : 'grid grid-cols-2 gap-4'}
-      fallbackColumnId="your_turn"
-      renderCard={(g) => (
-        <GoalCard
-          goal={g}
-          items={itemsByGoal.get(g.id) ?? []}
-          projectName={showProject ? projectNameById.get(g.project_id) : undefined}
-          onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
-          onToggleItem={(itemId, done) => handleToggleItem(g, itemId, done)}
+    <div className="space-y-3">
+      {/* PROTOTYPE scaffold (throwaway) — A/B the goal-card density. */}
+      <div className="flex items-center gap-3">
+        <span className="typo-label text-foreground">Prototype</span>
+        <SegmentedTabs<GoalCardVariant>
+          variant="segment"
+          fullWidth={false}
+          activeTab={cardVariant}
+          onTabChange={setCardVariant}
+          ariaLabel="Goal card density"
+          tabs={[
+            { id: 'baseline', label: 'Baseline' },
+            { id: 'ledger', label: 'Ledger' },
+            { id: 'fill', label: 'Fill' },
+          ]}
         />
-      )}
-      renderEmptyColumn={(_columnId, isDropTarget) => (
-        <p className="text-[11px] text-foreground text-center py-6">
-          {isDropTarget ? t.plugins.dev_lifecycle.kanban_drop_here : dt.no_goals_here}
-        </p>
-      )}
-    />
+      </div>
+      <KanbanBoard<DevGoal>
+        columns={columns}
+        items={visibleGoals}
+        getItemId={(g) => g.id}
+        getItemStatus={(g) => normalizeGoalStatus(g.status)}
+        onItemMove={handleMove}
+        dragMimeType={DRAG_MIME}
+        columnsClassName={showDone ? undefined : 'grid grid-cols-2 gap-4'}
+        fallbackColumnId="your_turn"
+        renderCard={renderGoalCard}
+        renderEmptyColumn={(_columnId, isDropTarget) => (
+          <p className="text-[11px] text-foreground text-center py-6">
+            {isDropTarget ? t.plugins.dev_lifecycle.kanban_drop_here : dt.no_goals_here}
+          </p>
+        )}
+      />
+    </div>
   );
 }
