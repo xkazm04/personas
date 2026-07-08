@@ -61,6 +61,22 @@ pub(crate) static SHARED_HTTP: LazyLock<reqwest::Client> = LazyLock::new(|| {
 pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
     LazyLock::new(|| engine::ssrf_safe_dns::build_ssrf_safe_client());
 
+/// HTTP client WITHOUT the SSRF-safe DNS resolver — it can reach private/loopback
+/// targets by design. Used ONLY for connector requests whose connector metadata
+/// declares `allow_private_network: true` (inherently self-hosted tools such as a
+/// local LightTrack or a self-hosted Langfuse/LangSmith). The API proxy gates this
+/// strictly behind that flag; every other path keeps using [`SSRF_SAFE_HTTP`].
+///
+/// SECURITY: routing an untrusted / non-allow-private request through this client
+/// re-opens the SSRF hole `SSRF_SAFE_HTTP` closes. Only the flag-gated branch in
+/// `engine::api_proxy::execute_api_request` may use it.
+pub(crate) static HTTP_ALLOW_PRIVATE: LazyLock<reqwest::Client> = LazyLock::new(|| {
+    reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to build allow-private HTTP client")
+});
+
 /// Tracks an active CLI-backed process: its task ID and optional child PID.
 pub struct ActiveProcess {
     /// The ID of the currently-running task (e.g. design_id, negotiation_id).

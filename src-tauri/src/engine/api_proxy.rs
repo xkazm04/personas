@@ -256,6 +256,19 @@ fn parse_rate_limit_from_metadata(metadata_json: Option<&str>) -> u32 {
         .unwrap_or(DEFAULT_RATE_LIMIT)
 }
 
+/// Whether a connector's metadata opts into private/loopback network access via
+/// `allow_private_network: true`. Set on connectors that are inherently
+/// self-hosted (a local LightTrack, a self-hosted Langfuse/LangSmith) so the
+/// proxy may reach a private/localhost instance for THAT connector only. When
+/// true, `execute_api_request` skips the SSRF field/URL validators and routes
+/// through `HTTP_ALLOW_PRIVATE` (no connect-time private-IP filter).
+pub(crate) fn connector_allows_private_network(metadata: Option<&str>) -> bool {
+    metadata
+        .and_then(|m| serde_json::from_str::<serde_json::Value>(m).ok())
+        .and_then(|v| v.get("allow_private_network").and_then(|b| b.as_bool()))
+        .unwrap_or(false)
+}
+
 /// Check the per-credential rate limit. Returns `Ok(())` if allowed, or an
 /// `AppError::RateLimited` with retry-after information when the bucket is empty.
 async fn check_rate_limit(
@@ -689,16 +702,27 @@ pub async fn execute_api_request(
         format!("{trimmed_base}/{trimmed_path}")
     };
 
-    // SSRF protection (reuse healthcheck infrastructure)
-    validate_field_values(&fields)?;
-    validate_healthcheck_url(&full_url)?;
-
-    // Resolve auth via connector strategy (uses short-lived cache to avoid DB hit per request)
+    // Resolve the connector definition up front — its metadata decides both the
+    // auth strategy (below) and whether this connector may target a private /
+    // loopback address (self-hosted tools). Uses a short-lived cache to avoid a
+    // DB hit per request.
     let connectors = get_all_connectors_cached(pool)?;
     let connector = connectors
         .iter()
         .find(|c| c.name == credential.service_type);
     let connector_metadata = connector.and_then(|c| c.metadata.as_deref());
+    let allow_private = connector_allows_private_network(connector_metadata);
+
+    // SSRF protection (reuse healthcheck infrastructure). Skipped ONLY for
+    // connectors that explicitly opted into private-network access; those route
+    // through `HTTP_ALLOW_PRIVATE` below (no connect-time private-IP filter) so
+    // they can reach a self-hosted instance on localhost/LAN. Every other
+    // connector stays fully SSRF-guarded (field values + resolved URL + the
+    // connect-time DNS/redirect filters in SSRF_SAFE_HTTP).
+    if !allow_private {
+        validate_field_values(&fields)?;
+        validate_healthcheck_url(&full_url)?;
+    }
 
     // §5 — runtime scope enforcement. Block (or warn) if the request operates
     // on a resource the user did not pick during scoping. Pure pass-through
@@ -795,9 +819,16 @@ pub async fn execute_api_request(
         }
     }
 
-    // Use the SSRF-safe HTTP client which validates resolved IPs at
-    // connection time, preventing DNS rebinding attacks.
-    let client = crate::SSRF_SAFE_HTTP.clone();
+    // Use the SSRF-safe HTTP client which validates resolved IPs at connection
+    // time, preventing DNS rebinding attacks. Connectors that opted into private
+    // network access (see `allow_private` above) use the non-filtered client so
+    // they can reach a self-hosted instance on localhost/LAN — a scoped, explicit
+    // relaxation for those connectors only.
+    let client = if allow_private {
+        crate::HTTP_ALLOW_PRIVATE.clone()
+    } else {
+        crate::SSRF_SAFE_HTTP.clone()
+    };
     let upper_method = method.to_uppercase();
 
     // Build a fresh request for the given token. Re-buildable so we can retry
@@ -946,4 +977,26 @@ pub async fn execute_api_request(
         content_type,
         truncated,
     })
+}
+
+#[cfg(test)]
+mod allow_private_tests {
+    use super::*;
+
+    #[test]
+    fn allow_private_network_parses_flag() {
+        // A connector that opts in → true (skips SSRF validators + uses the
+        // non-filtered client).
+        assert!(connector_allows_private_network(Some(
+            r#"{"template_enabled":true,"allow_private_network":true,"summary":"x"}"#
+        )));
+        // Everything else stays SSRF-strict: explicit false, absent flag,
+        // unparseable metadata, and no metadata at all.
+        assert!(!connector_allows_private_network(Some(
+            r#"{"allow_private_network":false}"#
+        )));
+        assert!(!connector_allows_private_network(Some(r#"{"summary":"github"}"#)));
+        assert!(!connector_allows_private_network(Some("not json")));
+        assert!(!connector_allows_private_network(None));
+    }
 }

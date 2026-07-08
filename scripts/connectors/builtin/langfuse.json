@@ -51,6 +51,7 @@
   "resources": [],
   "metadata": {
     "template_enabled": true,
+    "allow_private_network": true,
     "summary": "Langfuse open-source LLM engineering platform — tracing, evals, prompt management, and cost/latency analytics for LLM apps.",
     "auth_type": "basic_api_token",
     "auth_type_label": "Key Pair",
