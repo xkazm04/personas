@@ -18,8 +18,8 @@ which is the dynamic thing you see running in the process drawer.
 The create surface (Agents → create, and the zero-personas first run) is
 `CreatePersonaEntry` (`src/features/personas/sub_foundry/`). The three-step
 **Compose (Foundry)** wizard was **retired 2026-07-07** — its one durable idea,
-foundation selection (mentality archetype + memory strategy), folded into the
-Describe surface as a **persona-core configurator**, so creation is one flow:
+foundation selection (the mentality archetype), folded into the Describe surface
+as a **persona-core configurator**, so creation is one flow:
 
 1. **Describe it (default)** — the intent build (`UnifiedBuildEntry` →
    Dialogue+Cinema). Type what you want; the LLM resolves the spec with
@@ -35,7 +35,7 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
    - **Character traits** — a clickable 20-trait palette in 5 axes (Rigor /
      Autonomy / Communication / Reliability / Temperament), distilled from the
      `principles`/`decision_principles`/`voice`/`stance` prose of all 120
-     personas and ordered by corpus frequency (`coreTraits.ts`). This carries
+     personas and ordered by corpus frequency (`catalog.ts`). This carries
      most of the character — 102/111 base templates have no numeric `core` at
      all. Plus a **conflict style** (challenger/analyst/pragmatist/harmonizer):
      same model + traits, different conflict style = different deliberation.
@@ -46,7 +46,7 @@ Describe surface as a **persona-core configurator**, so creation is one flow:
    - **Mentality** — the 9 archetypes (`scripts/templates/_archetypes.json`,
      served by `list_archetypes`) as a snapshot column; picking one seeds
      disposition + conflict style **and preloads that archetype's dominant traits**
-     (`ARCHETYPE_TRAITS` in `coreTraits.ts`) so a preset lands as a complete
+     (`ARCHETYPE_TRAITS` in `catalog.ts`) so a preset lands as a complete
      character.
    - The chosen core is appended to the launch intent as a directive block (same
      mechanism as the review toggles) — **prototype scope**: it does not yet write
