@@ -42,7 +42,7 @@ export function PolaritySlider({
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
-        <span className="typo-label uppercase tracking-wider text-foreground">{label}</span>
+        <span className="typo-heading text-foreground">{label}</span>
         <span className="typo-caption font-mono" style={{ color }}>{pct}</span>
       </div>
       <div className="relative h-6 flex items-center">
@@ -86,7 +86,7 @@ export function Segment<T extends string>({
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="typo-label uppercase tracking-wider text-foreground">{label}</span>
+      {label && <span className="typo-heading text-foreground">{label}</span>}
       <div className="flex gap-1 p-1 rounded-interactive bg-secondary/60">
         {options.map((o) => {
           const active = o.id === value;
@@ -94,7 +94,7 @@ export function Segment<T extends string>({
             <button
               type="button"
               onClick={() => onChange(o.id)}
-              className={`relative flex-1 w-full px-2 py-1.5 rounded-input typo-caption transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/70 hover:text-foreground"}`}
+              className={`relative flex-1 w-full px-2 py-1.5 rounded-input typo-body transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/85 hover:text-foreground"}`}
               aria-pressed={active}
             >
               {active && (

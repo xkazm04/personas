@@ -38,7 +38,7 @@ export function MemorySection({ core }: { core: PersonaCore }) {
         onChange={() => core.setMemory({ team: !m.team })}
       />
       <div className="flex flex-col gap-1.5 pt-0.5">
-        <span className="inline-flex items-center gap-2 typo-caption text-foreground">
+        <span className="inline-flex items-center gap-2 typo-body text-foreground">
           <NotebookPen className="w-3.5 h-3.5" style={{ color: "#c084fc" }} /> Obsidian vault
         </span>
         <Segment<ObsidianMode>
@@ -71,7 +71,7 @@ function ToggleRow({
     <div className={`flex items-center gap-3 ${disabled ? "opacity-45" : ""}`}>
       <Icon className="w-4 h-4 shrink-0" style={{ color: "#c084fc" }} />
       <span className="flex flex-col min-w-0 flex-1">
-        <span className="typo-caption text-foreground">{title}</span>
+        <span className="typo-body text-foreground leading-tight">{title}</span>
         <span className="typo-caption">{sub}</span>
       </span>
       <AccessibleToggle checked={checked} onChange={disabled ? () => {} : onChange} label={title} disabled={disabled} size="sm" />

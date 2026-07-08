@@ -19,7 +19,7 @@ export function TraitPalette({ core }: { core: PersonaCore }) {
         const traits = TRAIT_CATALOG.filter((t) => t.axis === axis.id).sort((a, b) => b.count - a.count);
         return (
           <div key={axis.id} className="flex flex-col gap-1.5">
-            <span className="typo-label uppercase tracking-wider" style={{ color: axis.color }}>{axis.label}</span>
+            <span className="typo-label uppercase tracking-[0.15em]" style={{ color: axis.color }}>{axis.label}</span>
             <div className="flex flex-wrap gap-1.5">
               {traits.map((t) => {
                 const active = selected.has(t.id);
@@ -31,7 +31,7 @@ export function TraitPalette({ core }: { core: PersonaCore }) {
                       onClick={() => core.toggleTrait(t.id)}
                       data-testid={`core-trait-${t.id}`}
                       aria-pressed={active}
-                      className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/80 border-card-border hover:border-foreground/30"}`}
+                      className={`inline-flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-full border typo-body transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/85 border-card-border hover:border-foreground/30"}`}
                       style={active ? { borderColor: colorWithAlpha(axis.color, 0.55), background: colorWithAlpha(axis.color, 0.14) } : undefined}
                     >
                       <span
