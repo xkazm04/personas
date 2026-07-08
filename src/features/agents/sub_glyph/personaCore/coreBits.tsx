@@ -1,12 +1,12 @@
-/** coreBits — shared primitives for the persona-core configurator variants.
+/** coreBits — shared primitives for the persona-core Console configurator.
  *
- *  Carried over from the retired Foundry: the lucide icon resolver + the
- *  DialMeter risk/speed bar. Plus the interactive knobs the modal variants
- *  share — a labeled-pole polarity slider, the model-tier segment, and a
- *  compact memory-strategy picker. Preset rendering (archetype cards / chips /
- *  plotted points) is deliberately NOT here — each variant owns that, since the
- *  preset presentation is the whole point of the directional difference.
+ *  The lucide icon resolver (carried over from the retired Foundry) plus the
+ *  interactive knobs the Console composes: a labeled-pole polarity slider that
+ *  springs to preset values (but tracks instantly under a drag), the model-tier
+ *  segment with a sliding highlight, and a compact memory-strategy picker.
  */
+import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   Activity, BookOpenCheck, Brain, ConciergeBell, LibraryBig, LineChart,
   NotebookPen, Palette, Radar, Rocket, ShieldCheck, Sparkles, Target, Users,
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { Tooltip } from "@/features/shared/components/display/Tooltip";
-import { MODEL_TIERS, type ModelTier, type PersonaCore } from "./usePersonaCore";
+import { MODEL_TIERS, type ModelTier } from "./usePersonaCore";
 import type { MemoryStrategy } from "@/api/archetypes";
 
 const CORE_ICONS: Record<string, LucideIcon> = {
@@ -28,30 +28,19 @@ export function coreIcon(name: string): LucideIcon {
 
 export const ACCENT = "#60A5FA";
 
-/** Read-only risk/speed bar (also used in the badge preview). */
-export function DialMeter({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center justify-between typo-label uppercase tracking-wider text-foreground">
-        <span>{label}</span>
-        <span className="font-mono">{Math.round(value * 100)}</span>
-      </div>
-      <div className="h-1 rounded-full bg-secondary/80 mt-0.5 overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${Math.round(value * 100)}%`, background: color }} />
-      </div>
-    </div>
-  );
-}
-
 /** A 0…1 slider with named poles (e.g. Cautious ↔ Bold). Keyboard-accessible
- *  via the underlying range input; the track is styled over it. */
+ *  via the underlying range input; the track is styled over it. The fill + handle
+ *  spring to new values when a preset snapshot loads them, but track instantly
+ *  while the user is dragging (so the thumb never rubber-bands under the finger). */
 export function PolaritySlider({
   label, lowLabel, highLabel, value, color, onChange,
 }: {
   label: string; lowLabel: string; highLabel: string; value: number; color: string;
   onChange: (v: number) => void;
 }) {
+  const [dragging, setDragging] = useState(false);
   const pct = Math.round(value * 100);
+  const tr = dragging ? { duration: 0 } : { type: "spring" as const, stiffness: 260, damping: 28 };
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex items-center justify-between">
@@ -60,15 +49,20 @@ export function PolaritySlider({
       </div>
       <div className="relative h-6 flex items-center">
         <div className="absolute inset-x-0 h-1.5 rounded-full bg-secondary/80 overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+          <motion.div className="h-full rounded-full" style={{ background: color }} animate={{ width: `${pct}%` }} transition={tr} />
         </div>
-        <div
+        <motion.div
           className="absolute w-3.5 h-3.5 rounded-full border-2 border-background shadow -translate-x-1/2 pointer-events-none"
-          style={{ left: `${pct}%`, background: color }}
+          style={{ background: color }}
+          animate={{ left: `${pct}%` }}
+          transition={tr}
         />
         <input
           type="range" min={0} max={100} value={pct}
           onChange={(e) => onChange(Number(e.target.value) / 100)}
+          onPointerDown={() => setDragging(true)}
+          onPointerUp={() => setDragging(false)}
+          onBlur={() => setDragging(false)}
           className="absolute inset-0 w-full opacity-0 cursor-pointer"
           aria-label={label}
         />
@@ -94,11 +88,18 @@ export function ModelSegment({ value, color, onChange }: { value: ModelTier; col
               <button
                 type="button"
                 onClick={() => onChange(tier.id)}
-                className={`flex-1 px-2 py-1.5 rounded-input typo-caption transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/70 hover:text-foreground"}`}
-                style={active ? { background: colorWithAlpha(color, 0.22), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(color, 0.5)}` } : undefined}
+                className={`relative flex-1 px-2 py-1.5 rounded-input typo-caption transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/70 hover:text-foreground"}`}
                 aria-pressed={active}
               >
-                {tier.label}
+                {active && (
+                  <motion.span
+                    layoutId="model-seg-active"
+                    className="absolute inset-0 rounded-input"
+                    style={{ background: colorWithAlpha(color, 0.22), boxShadow: `inset 0 0 0 1px ${colorWithAlpha(color, 0.5)}` }}
+                    transition={{ type: "spring", stiffness: 320, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{tier.label}</span>
               </button>
             </Tooltip>
           );
@@ -143,18 +144,6 @@ export function MemoryPicker({
           );
         })}
       </div>
-    </div>
-  );
-}
-
-/** The four-knob refinement block shared by the Atelier + Console variants. */
-export function KnobStack({ core }: { core: PersonaCore }) {
-  return (
-    <div className="flex flex-col gap-4">
-      <PolaritySlider label="Risk" lowLabel="Cautious" highLabel="Bold" value={core.state.risk} color="#fb7185" onChange={core.setRisk} />
-      <PolaritySlider label="Speed" lowLabel="Thorough" highLabel="Fast" value={core.state.speed} color="#fbbf24" onChange={core.setSpeed} />
-      <ModelSegment value={core.state.model} color={ACCENT} onChange={core.setModel} />
-      <MemoryPicker strategies={core.memoryStrategies} value={core.state.memoryId} color="#c084fc" onChange={core.setMemory} />
     </div>
   );
 }

@@ -6,6 +6,7 @@
  *  read of the current settings sits at the bottom so the abstract numbers stay
  *  legible.
  */
+import { motion, AnimatePresence } from "framer-motion";
 import { colorWithAlpha } from "@/lib/utils/colorWithAlpha";
 import { coreIcon, PolaritySlider, ModelSegment, MemoryPicker, ACCENT } from "./coreBits";
 import { MODEL_TIERS, type PersonaCore } from "./usePersonaCore";
@@ -21,24 +22,40 @@ export function CoreConsole({ core }: { core: PersonaCore }) {
             const Icon = coreIcon(a.icon);
             const active = core.state.archetypeId === a.id;
             return (
-              <button
+              <motion.button
                 key={a.id}
                 type="button"
                 onClick={() => core.applyPreset(a)}
+                whileTap={{ scale: 0.95 }}
+                data-testid={`core-snapshot-${a.id}`}
                 className={`inline-flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full border typo-caption transition-colors cursor-pointer ${active ? "text-foreground" : "text-foreground/80 border-card-border hover:border-foreground/30"}`}
                 style={active ? { borderColor: colorWithAlpha(a.color, 0.55), background: colorWithAlpha(a.color, 0.12) } : undefined}
                 aria-pressed={active}
               >
                 <Icon className="w-3.5 h-3.5" style={{ color: a.color }} />
                 {a.name}
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </div>
 
-      {/* Knob console */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4 rounded-card border border-card-border bg-secondary/20">
+      {/* Knob console — a snapshot load flashes the panel in the preset's colour
+          while the risk/speed sliders spring to their new positions. */}
+      <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 p-4 rounded-card border border-card-border bg-secondary/20 overflow-hidden">
+        <AnimatePresence>
+          {core.preset && (
+            <motion.div
+              key={core.state.archetypeId}
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.7, ease: "easeOut" }}
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: colorWithAlpha(core.preset.color, 0.16) }}
+            />
+          )}
+        </AnimatePresence>
         <PolaritySlider label="Risk" lowLabel="Cautious" highLabel="Bold" value={core.state.risk} color="#fb7185" onChange={core.setRisk} />
         <PolaritySlider label="Speed" lowLabel="Thorough" highLabel="Fast" value={core.state.speed} color="#fbbf24" onChange={core.setSpeed} />
         <ModelSegment value={core.state.model} color={ACCENT} onChange={core.setModel} />
