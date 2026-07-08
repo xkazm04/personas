@@ -13,6 +13,7 @@ Dev Tools treats each linked repository as a *Dev Project* with its own lifecycl
 | Domain | Direction | Storage / artifact |
 |---|---|---|
 | **Overview** (GitHub / GitLab / Sentry stats) | External → App | Read-through cache of open issues, PRs, commits, unresolved errors |
+| **LLM Overview** (where the codebase calls an LLM) | External → App | `dev_projects.llm_tracking_credential_id` binding; live use-case rollups from Langfuse / LangSmith / Helicone / LightTrack |
 | **Projects** (CRUD + GitHub linking + goals) | App | `dev_projects` table, 1 active project at a time |
 | **Context Map** (semantic code domains) | App ↔ Codebase | `dev_context_groups` + `dev_contexts`, generated from a filesystem walk |
 | **Idea Scanner** (21 LLM agents) | App → LLM → App | `dev_ideas` rows tagged with `scan_type` + per-scan history |
@@ -96,6 +97,30 @@ The map is treated as a self-validating artifact, not a fire-and-forget snapshot
 4. A **TODAY** activity feed sits between the vital signs strip and the connections rail when the store has anything to show. `buildTodayActivity` (in `overviewHelpers.ts`) selects today's scan runs, task created / completed / failed events, and goal signals from the existing Zustand store slices — no new query — then sorts chronologically (capped at 30 entries). Each row is click-jumpable to its source surface via the established `pendingTaskFocusId` / `pendingGoalSpotlightId` handoffs; scan rows jump to the Idea Scanner tab. The "what happened today" story now lives in one panel instead of five.
 3. Connecting Sentry uses an inline form (`MonitoringLinkForm`) that writes the credential ID + project slug back to `dev_projects.monitoring_*`.
 4. Stat tiles use a static color token table — dynamic Tailwind classes (`bg-${color}-500/15`) are banned here because the JIT can't see them.
+
+### 6a. LLM Overview — where the codebase calls an LLM
+
+A cross-cutting observability surface: for each Dev Project, see *every place the codebase calls an LLM* — the use-case name, provider, model, usage (calls + tokens) and estimated cost — read live from whichever LLM-observability tool the project is wired to.
+
+**Two layers:**
+
+1. **Assignment matrix** (Layer 1) — a `projects × connector` grid. Each project row carries a picker of the connected LLM-observability credentials; choosing one writes `dev_projects.llm_tracking_credential_id` via `dev_tools_update_project` (mirroring the Sentry monitoring binding). Shown whenever a project exists; if the vault has no LLM-observability credential yet it prompts to add one under Vault → Connectors.
+2. **Pinpoints table** (Layer 2) — for the active project, a `UnifiedTable` of use-case rollups over a rolling **24h / 7d / 30d** window (columns: Use case · Provider · Model · Calls · Tokens · Est. $). One row per distinct use-case name, showing its *default* (most-called) provider+model with summed usage; un-named calls roll up under their model (rendered "unnamed"). The five connection states (empty / unmapped / unsupported / loading / connected / error) mirror the Overview cards. Costs are labelled **estimates** (token×price, not billed amounts).
+
+**Supported tools** — four builtin connectors, all behind one normalized `LlmPinpoint` contract + `foldByUseCase`:
+
+| Tool | Endpoint | Auth | Notes |
+|---|---|---|---|
+| **LightTrack** (self-hosted; `github.com/xkazm04/tracklight`) | `GET /v1/usecases?since=` | Bearer | Server-side rollup; **live-verified**. The `name` field + endpoint were added to LightTrack itself |
+| **Langfuse** | `GET /api/public/v2/observations` | Basic (public/secret key) | Provider inferred from the model (Langfuse doesn't report it) |
+| **LangSmith** | `POST /runs/query` | `x-api-key` | Model/provider from `extra.metadata.ls_*` |
+| **Helicone** | `POST /v1/request/query` | Bearer | Provider reported directly; `request_path` as the use-case name |
+
+The three SaaS mappers are derived from each tool's public API docs; their adapters normalize raw per-call records that a bounded pager (`fetchPaged`) + `foldByUseCase` aggregate into the rollup.
+
+**Reaching a self-hosted instance.** Self-hosted tools run on localhost/LAN, which the credential API proxy's SSRF guard normally blocks. The LLM-observability connectors that can be self-hosted declare `allow_private_network: true` in their connector metadata; the proxy **and** the healthcheck then route *their* requests through a non-filtered HTTP client (`HTTP_ALLOW_PRIVATE`) — scoped to those connectors only. Every other connector stays fully SSRF-guarded (field/URL validators + the SSRF-safe DNS/redirect client).
+
+Frontend lives in `sub_llm_overview/` (`LlmOverviewPage`, `useLlmPinpoints`, `llmTracingAdapters`); auth is handled by `LangfuseBasicAuthStrategy` / `LangSmithStrategy` in `engine/connector_strategy.rs`, and per-connector private-network gating by `engine/api_proxy.rs::connector_allows_private_network`.
 
 ### 7. Lifecycle, Goals & Competition
 
@@ -291,6 +316,10 @@ src/features/plugins/dev-tools/
 ├── sub_overview/
 │   ├── ProjectOverviewPage.tsx   # GitHub / GitLab / Sentry stat tiles
 │   └── adapters.ts               # provider detection + API adapters
+├── sub_llm_overview/             # LLM Overview tab (LLM-observability rollups)
+│   ├── LlmOverviewPage.tsx       # Layer 1 assignment matrix + Layer 2 pinpoints table
+│   ├── useLlmPinpoints.ts        # active-project binding + 5-state data layer
+│   └── llmTracingAdapters.ts     # LlmPinpoint contract + per-tool adapters + foldByUseCase
 ├── sub_projects/
 │   ├── ProjectManagerPage.tsx    # CRUD + GitHub repo selector
 │   ├── GitHubRepoSelector.tsx    # live repo list from token
