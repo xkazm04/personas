@@ -31,7 +31,6 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   plugins: ['plugins', 'media_studio', 'research_lab', 'gitlab', 'pipeline'],
   // Studio uses a local COPY constant (i18n deferred); only BASE_SECTIONS needed.
   studio: [],
-  scraper: [],
   schedules: ['schedules', 'triggers', 'event_types'],
   settings: ['settings', 'models', 'tiers', 'auth'],
 };

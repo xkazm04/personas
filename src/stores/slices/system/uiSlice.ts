@@ -456,7 +456,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   setCanvasEdgeFocus: (focus) => set({ canvasEdgeFocus: focus }),
   setLiveStreamHighlightEventId: (id) => set({ liveStreamHighlightEventId: id }),
   enabledPlugins: new Set<PluginTab>([
-    'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion',
+    'dev-tools', 'artist', 'obsidian-brain', 'research-lab', 'drive', 'twin', 'companion', 'scraper',
   ]),
   togglePlugin: (plugin) => set((state) => {
     const next = new Set(state.enabledPlugins);

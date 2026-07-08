@@ -282,11 +282,13 @@ export default function PersonasPage() {
       if (pluginTab === 'companion') {
         return <ErrorBoundary onGoHome={goHome} name="Companion"><Suspense fallback={SectionFallback}><CompanionPluginPage /></Suspense></ErrorBoundary>;
       }
+      if (pluginTab === 'scraper' && import.meta.env.DEV) {
+        return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
+      }
       // Browse view — plugin cards with enable/disable toggles
       return <ErrorBoundary onGoHome={goHome} name="PluginBrowse"><Suspense fallback={SectionFallback}><PluginBrowsePage /></Suspense></ErrorBoundary>;
     }
     if (sidebarSection === 'studio' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Studio"><Suspense fallback={SectionFallback}><StudioPage /></Suspense></ErrorBoundary>;
-    if (sidebarSection === 'scraper' && import.meta.env.DEV) return <ErrorBoundary onGoHome={goHome} name="Scraper"><Suspense fallback={SectionFallback}><ScraperPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'schedules') return <ErrorBoundary onGoHome={goHome} name="Schedules"><Suspense fallback={SectionFallback}><SchedulesPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'settings') return <ErrorBoundary onGoHome={goHome} name="Settings"><Suspense fallback={SectionFallback}><SettingsPage /></Suspense></ErrorBoundary>;
     if (selectedPersonaId && buildPersonaId === selectedPersonaId && buildPhase && buildPhase !== 'promoted') {

@@ -31,6 +31,11 @@ const PLUGIN_ACCENTS: Record<Exclude<PluginTab, 'browse'>, PluginAccent> = {
     gradientTo: 'rgb(16 185 129 / 0.2)',
     glow: '16 185 129',
   },
+  scraper: {
+    gradientFrom: 'rgb(45 212 191)',
+    gradientTo: 'rgb(45 212 191 / 0.2)',
+    glow: '45 212 191',
+  },
   drive: {
     gradientFrom: 'rgb(14 165 233)',
     gradientTo: 'rgb(14 165 233 / 0.2)',
