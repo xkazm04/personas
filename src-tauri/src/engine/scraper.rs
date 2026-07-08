@@ -483,7 +483,13 @@ pub fn config_save(pool: &DbPool, input: &Value) -> Result<ScraperConfig, String
         ],
     )
     .map_err(|e| e.to_string())?;
-    config_get(pool, &id)?.ok_or_else(|| "config not found after save".to_string())
+    let saved = config_get(pool, &id)?.ok_or_else(|| "config not found after save".to_string())?;
+    // Register/refresh this pipeline's two Signal feeds (best-effort — a catalog
+    // hiccup must not fail the save).
+    if let Err(e) = register_signal_feeds(pool, &saved) {
+        tracing::warn!(config_id = %saved.id, "scrape signal feed registration failed: {e}");
+    }
+    Ok(saved)
 }
 
 pub fn config_get(pool: &DbPool, id: &str) -> Result<Option<ScraperConfig>, String> {
@@ -509,9 +515,15 @@ pub fn config_list(pool: &DbPool) -> Result<Vec<ScraperConfig>, String> {
 }
 
 pub fn config_delete(pool: &DbPool, id: &str) -> Result<(), String> {
-    let conn = pool.get().map_err(|e| e.to_string())?;
-    conn.execute("DELETE FROM scraper_configs WHERE id = ?1", rusqlite::params![id])
-        .map_err(|e| e.to_string())?;
+    {
+        let conn = pool.get().map_err(|e| e.to_string())?;
+        conn.execute("DELETE FROM scraper_configs WHERE id = ?1", rusqlite::params![id])
+            .map_err(|e| e.to_string())?;
+    }
+    // Remove the pipeline's Signal feeds so they drop out of Chain Studio.
+    if let Err(e) = deregister_signal_feeds(pool, id) {
+        tracing::warn!(config_id = %id, "scrape signal feed removal failed: {e}");
+    }
     Ok(())
 }
 
@@ -539,6 +551,7 @@ pub async fn config_run(pool: &DbPool, id: &str) -> Result<ExtractSummary, Strin
         key_field: cfg.key_field.clone(),
     };
     let result = run_extract(pool, ecfg).await;
+    emit_run_signal(pool, &cfg, &result);
     let next = if cfg.enabled {
         cfg.cron.as_deref().and_then(compute_next_run)
     } else {
@@ -572,6 +585,170 @@ fn list_due(pool: &DbPool) -> Result<Vec<String>, String> {
         .query_map(rusqlite::params![now], |r| r.get::<_, String>(0))
         .map_err(|e| e.to_string())?;
     Ok(rows.filter_map(|r| r.ok()).collect())
+}
+
+// ---------------------------------------------------------------------------
+// Signal emission — the scraper as an event producer (Phase 1c)
+// ---------------------------------------------------------------------------
+//
+// A pipeline communicates with the rest of the app ONLY through the persona
+// event bus: each run emits `shared:scrape.<configId>.<polarity>` on the bus,
+// which `event_listener` triggers can react to. The two feeds are registered in
+// the shared-event catalog + auto-subscribed on save so they appear as Signal
+// cards in Chain Studio (mirrors the marketplace `shared:<slug>` pattern).
+
+/// `scrape.<configId>.<polarity>` — the catalog slug; the bus event name is
+/// `shared:<slug>`. `:` is the pipeline delimiter (canonical matching does not
+/// collapse it), so pipelines never collide.
+fn signal_slug(config_id: &str, polarity: &str) -> String {
+    format!("scrape.{config_id}.{polarity}")
+}
+
+fn signal_catalog_id(config_id: &str, polarity: &str) -> String {
+    format!("scrape-{config_id}-{polarity}")
+}
+
+/// Publish one scrape Signal on the persona event bus (broadcast). Best-effort:
+/// a failed publish must never fail the run.
+fn emit_signal(pool: &DbPool, cfg: &ScraperConfig, polarity: &str, payload: Value) {
+    let input = crate::db::models::CreatePersonaEventInput {
+        event_type: format!("shared:{}", signal_slug(&cfg.id, polarity)),
+        source_type: "scraper".to_string(),
+        project_id: None,
+        source_id: Some(uuid::Uuid::new_v4().to_string()),
+        target_persona_id: None,
+        payload: Some(payload.to_string()),
+        use_case_id: None,
+    };
+    if let Err(e) = crate::db::repos::communication::events::publish(pool, input) {
+        tracing::warn!(config_id = %cfg.id, "scrape signal publish failed: {e}");
+    }
+}
+
+/// Emit the appropriate Signal for a completed run: `.changed` only when there's
+/// something new/changed, `.error` on failure, silence on a clean no-op run.
+fn emit_run_signal(pool: &DbPool, cfg: &ScraperConfig, result: &Result<ExtractSummary, String>) {
+    match result {
+        Ok(s) if s.new + s.changed > 0 => {
+            let sample_keys: Vec<&Value> = s
+                .records
+                .iter()
+                .filter_map(|r| r.get("_key"))
+                .take(5)
+                .collect();
+            emit_signal(
+                pool,
+                cfg,
+                "changed",
+                serde_json::json!({
+                    "pipelineId": cfg.id,
+                    "name": cfg.name,
+                    "dataset": cfg.dataset,
+                    "new": s.new,
+                    "changed": s.changed,
+                    "unchanged": s.unchanged,
+                    "sampleKeys": sample_keys,
+                    "status": "changed",
+                }),
+            );
+        }
+        Err(e) => emit_signal(
+            pool,
+            cfg,
+            "error",
+            serde_json::json!({
+                "pipelineId": cfg.id,
+                "name": cfg.name,
+                "dataset": cfg.dataset,
+                "error": e,
+                "status": "error",
+            }),
+        ),
+        Ok(_) => {} // clean no-op run — stay quiet
+    }
+}
+
+fn signal_catalog_entry(
+    cfg: &ScraperConfig,
+    polarity: &str,
+    name: String,
+    description: &str,
+) -> crate::db::models::SharedEventCatalogEntry {
+    crate::db::models::SharedEventCatalogEntry {
+        id: signal_catalog_id(&cfg.id, polarity),
+        slug: signal_slug(&cfg.id, polarity),
+        name,
+        description: Some(description.to_string()),
+        category: "scraper".to_string(),
+        publisher: Some("Local Scraper".to_string()),
+        icon: None,
+        color: None,
+        sample_payload: None,
+        event_schema: None,
+        subscriber_count: 0,
+        is_featured: false,
+        status: "active".to_string(),
+        cloud_updated_at: None,
+        cached_at: chrono::Utc::now().to_rfc3339(),
+    }
+}
+
+/// Register a pipeline's two Signal feeds in the shared-event catalog and
+/// auto-subscribe them, so they surface as Signal cards in Chain Studio. Called
+/// on save; idempotent (catalog upsert by id, subscribe only if absent).
+fn register_signal_feeds(pool: &DbPool, cfg: &ScraperConfig) -> Result<(), String> {
+    use crate::db::models::CreateSharedEventSubscriptionInput;
+    use crate::db::repos::communication::shared_events;
+
+    let entries = [
+        signal_catalog_entry(
+            cfg,
+            "changed",
+            format!("{} — changed", cfg.name),
+            "Fires when a scrape run detects new or changed records.",
+        ),
+        signal_catalog_entry(
+            cfg,
+            "error",
+            format!("{} — error", cfg.name),
+            "Fires when a scrape run fails to fetch or extract.",
+        ),
+    ];
+    shared_events::upsert_catalog_batch(pool, &entries).map_err(|e| e.to_string())?;
+
+    let subscribed: std::collections::HashSet<String> = shared_events::list_subscriptions(pool)
+        .map_err(|e| e.to_string())?
+        .into_iter()
+        .map(|s| s.slug)
+        .collect();
+    for e in &entries {
+        if !subscribed.contains(&e.slug) {
+            let _ = shared_events::subscribe(
+                pool,
+                CreateSharedEventSubscriptionInput { catalog_entry_id: e.id.clone() },
+            );
+        }
+    }
+    Ok(())
+}
+
+/// Remove a pipeline's Signal feeds (catalog rows + subscriptions) on delete.
+fn deregister_signal_feeds(pool: &DbPool, config_id: &str) -> Result<(), String> {
+    let conn = pool.get().map_err(|e| e.to_string())?;
+    for polarity in ["changed", "error"] {
+        let slug = signal_slug(config_id, polarity);
+        conn.execute(
+            "DELETE FROM shared_event_subscriptions WHERE slug = ?1",
+            rusqlite::params![slug],
+        )
+        .map_err(|e| e.to_string())?;
+        conn.execute(
+            "DELETE FROM shared_event_catalog WHERE id = ?1",
+            rusqlite::params![signal_catalog_id(config_id, polarity)],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Scheduler tick: run every due config. Called by ScraperScheduleSubscription.

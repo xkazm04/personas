@@ -12,6 +12,51 @@ update each phase's **Status** line as we land it.
 
 ---
 
+## Phase 1c — event-driven pivot: scraper as a Signal producer (2026-07-08)
+
+**Status:** in progress. **Reframe:** the scraper stops being a persona-invoked
+*connector* and becomes a **standalone Signal producer**. It keeps owning its own
+SQLite tables (`scraper_configs`, `scraper_records`); it communicates with the rest
+of the app **only through the persona event bus** (`docs/features/events`), so users
+wire automations natively in Chain Studio → Signals rather than a persona calling an
+MCP tool.
+
+**Architecture facts that make this cheap:**
+- The persona event bus accepts **free-form `event_type` strings** — emitting a new
+  event name needs no registration. `events::publish(pool, CreatePersonaEventInput)`
+  is the one emit call; the `background.rs` dispatch loop routes any pending event to
+  matching `event_listener` triggers.
+- Canonical matching (`engine/bus.rs`) collapses `- _ .` but **not `:`** → use `:` as
+  the per-pipeline delimiter so pipelines never collide.
+- Studio Signals only surfaces (a) 9 generic trigger types + (b) **subscribed**
+  shared-catalog feeds ("Marketplace"). So discoverability = mirror the `shared:<slug>`
+  marketplace catalog pattern.
+
+**Decisions (locked 2026-07-08):**
+1. **Two events per pipeline** — `shared:scrape.<configId>.changed` (positive) +
+   `shared:scrape.<configId>.error` (negative). Distinct names = distinct Signal cards.
+2. **Reuse Marketplace catalog infra** — on pipeline save, upsert two
+   `shared_event_catalog` feeds (category `scraper`) + auto-subscribe
+   (`shared_event_subscriptions`) so they appear as Signal cards with the existing
+   commit path (`listen_event_type: shared:<slug>`); on delete, remove them.
+3. **Retire the connector + MCP tools** — drop the `local-scraper` connector and the
+   `fetch_readable` / `run_extract` / `save_scrape` / `run_scrape` / `list_scrapes`
+   MCP tools; **keep `query_dataset`** so a persona reacting to a Signal can pull the
+   records. Remove the now-dead management routes (keep `/api/scrape/query`).
+4. **Emit `.changed` only when `new+changed > 0`** (quiet no-op runs); `.error` always
+   emits on failure.
+
+**Emit point:** `engine/scraper.rs::config_run` (the single path both the scheduler
+tick and the manual "Run" flow through). Wizard Preview / Control-Room Test stay silent
+(no persist, no identity). Payload: `{ pipelineId, name, dataset, new, changed,
+unchanged, sampleKeys[], status }` (≤64KB).
+
+**Execution phases:** E1 emit on run · E2 catalog register + auto-subscribe on
+save/delete · E3 retire connector + MCP tools (keep query_dataset) · E4 verify the
+Signals rail surfaces scraper feeds (optional "Scraper" grouping) · E5 docs.
+
+---
+
 ## 1. The one reframe that decides everything
 
 Pumper's extensibility is **compile-time**: a "use case" is a Rust `ScrapeApp`
