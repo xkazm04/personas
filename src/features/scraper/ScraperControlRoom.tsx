@@ -1,10 +1,12 @@
-import { Database, Globe, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Database, FlaskConical, Globe, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 
-import type { ScraperConfig } from '@/api/scraper';
+import { previewScraperExtract, type PreviewRow, type ScraperConfig } from '@/api/scraper';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import Button from '@/features/shared/components/buttons/Button';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 
+import { PreviewResults } from './PreviewResults';
 import {
   cadenceLabel,
   parseStatus,
@@ -108,7 +110,30 @@ function Row({
 }) {
   const fields = ruleFields(config.rules);
   const status = parseStatus(config.lastStatus);
+
+  const [testOpen, setTestOpen] = useState(false);
+  const [testRows, setTestRows] = useState<PreviewRow[] | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+
+  const runTest = async () => {
+    const next = !testOpen;
+    setTestOpen(next);
+    if (next && testRows === null) {
+      setTesting(true);
+      setTestError(null);
+      try {
+        setTestRows(await previewScraperExtract(config.urls, config.rules, 1));
+      } catch (e) {
+        setTestError(e instanceof Error ? e.message : String(e));
+      } finally {
+        setTesting(false);
+      }
+    }
+  };
+
   return (
+    <>
     <tr className="group hover:bg-secondary/20 transition-colors">
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
@@ -152,6 +177,9 @@ function Row({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-70 transition-opacity group-hover:opacity-100">
+          <AsyncButton variant="ghost" size="sm" isLoading={testing} onClick={runTest} title="Dry-run — no records saved">
+            <FlaskConical className="size-3.5" /> Test
+          </AsyncButton>
           <AsyncButton variant="secondary" size="sm" isLoading={running} onClick={onRun}>
             <Play className="size-3.5" /> Run
           </AsyncButton>
@@ -164,6 +192,28 @@ function Row({
         </div>
       </td>
     </tr>
+    {testOpen && (
+      <tr>
+        <td colSpan={7} className="bg-background/30 px-4 pb-3">
+          <div className="rounded-interactive border border-primary/10 bg-secondary/15 p-3">
+            <div className="mb-2 flex items-center gap-1.5 typo-label text-muted-foreground">
+              <FlaskConical className="size-3.5" /> Test extraction — dry run, nothing saved
+            </div>
+            {testError ? (
+              <div className="flex items-start gap-2 typo-caption text-status-error">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <span>{testError}</span>
+              </div>
+            ) : testing ? (
+              <span className="typo-caption text-muted-foreground">Fetching {config.urls[0]}…</span>
+            ) : testRows ? (
+              <PreviewResults rows={testRows} fieldNames={fields} />
+            ) : null}
+          </div>
+        </td>
+      </tr>
+    )}
+    </>
   );
 }
 
