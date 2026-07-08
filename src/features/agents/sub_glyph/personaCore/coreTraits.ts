@@ -77,3 +77,20 @@ export const CONFLICT_DIRECTIVE: Record<string, string> = {
 export function traitById(id: string): CharacterTrait | undefined {
   return TRAIT_CATALOG.find((t) => t.id === id);
 }
+
+/** Dominant traits per archetype — loading a snapshot preloads these so a preset
+ *  arrives as a complete character rather than a blank slate. Hand-mapped from
+ *  each archetype's `stance` / `principles` / `conflictStyle` against the palette;
+ *  the distinctive sets are what make two snapshots feel like different people.
+ */
+export const ARCHETYPE_TRAITS: Record<string, string[]> = {
+  guardian: ["quality-gate", "evidence-first", "escalates", "human-closure", "no-destructive"],
+  analyst: ["evidence-first", "baseline-anchor", "states-confidence", "no-hype", "structured"],
+  scout: ["terse", "reports-gaps", "actionable", "silent-when-healthy"],
+  operator: ["idempotent", "single-truth", "no-destructive", "escalates", "silent-when-healthy"],
+  sentinel: ["silent-when-healthy", "conservative", "states-confidence", "reports-gaps"],
+  curator: ["single-truth", "idempotent", "structured", "reports-gaps"],
+  craftsman: ["learns", "structured", "human-closure", "no-hype"],
+  shipper: ["ships-fast", "tiered-autonomy", "challenges", "actionable"],
+  "chief-of-staff": ["terse", "learns", "escalates", "human-closure", "silent-when-healthy"],
+};

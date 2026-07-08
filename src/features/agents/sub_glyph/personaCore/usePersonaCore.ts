@@ -26,7 +26,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { listArchetypes, type Archetype } from "@/api/archetypes";
 import { DEFAULT_EFFORT, type EffortLevel } from "@/lib/models/modelCatalog";
 import { silentCatch } from "@/lib/silentCatch";
-import { TRAIT_CATALOG, CONFLICT_DIRECTIVE, traitById } from "./coreTraits";
+import { TRAIT_CATALOG, CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, traitById } from "./coreTraits";
 
 export type ModelTier = "haiku" | "sonnet" | "opus";
 export type ObsidianMode = "off" | "read" | "mirror";
@@ -134,6 +134,10 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
       archetypeId: a.id,
       disposition: coreNumber(a, "riskTolerance", prev.disposition),
       conflictStyle: coreString(a, "conflictStyle") ?? prev.conflictStyle,
+      // Preload the archetype's dominant traits so a snapshot lands as a complete
+      // character. A snapshot is a fresh starting point, so this replaces the
+      // current trait set (falls back to keeping it only for an unmapped archetype).
+      traits: ARCHETYPE_TRAITS[a.id] ?? prev.traits,
     }));
   }, [touch]);
 
