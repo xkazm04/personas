@@ -140,6 +140,9 @@ pub async fn start_build_session(
         mode,
         companion_session_id,
         context,
+        // orchestration: UI builds default to sequential; force via the
+        // PERSONAS_BUILD_ORCHESTRATION env var until a later phase surfaces it.
+        None,
     )?;
 
     Ok(session_id)
@@ -195,6 +198,7 @@ pub async fn start_build_session_headless(
         mode,
         companion_session_id,
         context,
+        None, // orchestration: env-driven for headless builds (see above)
     )?;
 
     Ok(session_id)

@@ -27,7 +27,7 @@ use crate::ActiveProcessRegistry;
 use super::super::cli_process::{read_line_limited, CliProcessDriver};
 use super::super::types::CliArgs;
 use super::events::{
-    cleanup_session, dual_emit, emit_error, emit_session_status, update_phase,
+    cleanup_session, dual_emit, emit_error, emit_session_status, record_build_usage, update_phase,
     update_phase_with_error,
 };
 use super::gates::{
@@ -36,8 +36,8 @@ use super::gates::{
     legacy_cell_to_v3_field, synthesize_gate_question, CapabilityGates, PendingGate,
 };
 use super::parser::{
-    map_capability_field_to_legacy_dimension, map_persona_field_to_legacy_dimension,
-    parse_build_line,
+    extract_result_usage, map_capability_field_to_legacy_dimension,
+    map_persona_field_to_legacy_dimension, parse_build_line,
 };
 use super::SessionHandle;
 
@@ -249,8 +249,20 @@ pub(super) async fn run_session(
     // and promote happen automatically; user is notified on terminal phase
     // via the BuildWatcher job + tauri-plugin-notification.
     one_shot: bool,
+    // Build orchestration variant ("sequential" | "multiagent"), already
+    // resolved + normalized by the caller. Phase 2: "multiagent" runs the same
+    // sequential resolution but tags CapabilityResolutionUpdate events with a
+    // lane (see `stamp_lanes`), so the switch is observable end-to-end without
+    // changing the built persona. Phases 3-4 make it actually fan out.
+    orchestration: String,
     handle_generation: u64,
 ) {
+    let multiagent = orchestration == "multiagent";
+    tracing::info!(
+        session_id = %session_id,
+        orchestration = %orchestration,
+        "build session starting"
+    );
     // Register run in ActiveProcessRegistry
     let _reg_flag = registry.register_run("build_session", &session_id);
 
@@ -452,6 +464,13 @@ pub(super) async fn run_session(
     }
     let session_exec_dir = SessionExecDir::new(session_exec_path);
 
+    // Build telemetry (Phase 0): sum CLI cost/tokens across resolution turns.
+    // Written to the session row after each turn so build-bench reads cumulative
+    // build cost. (One-shot test/fix-pass cost in oneshot.rs is a follow-up.)
+    let mut acc_cost_usd: f64 = 0.0;
+    let mut acc_input_tokens: i64 = 0;
+    let mut acc_output_tokens: i64 = 0;
+
     for turn in 0..MAX_TURNS {
         // Check cancellation
         if cancel_flag.load(Ordering::Acquire) {
@@ -602,6 +621,14 @@ pub(super) async fn run_session(
                                 turn_raw.push('\n');
                                 turn_events.extend(parse_build_line(&line, &session_id));
 
+                                // Telemetry (Phase 0): sum cost/tokens from the
+                                // stream-json `result` envelope for this turn.
+                                if let Some(u) = extract_result_usage(&line) {
+                                    acc_cost_usd += u.cost_usd;
+                                    acc_input_tokens += u.input_tokens;
+                                    acc_output_tokens += u.output_tokens;
+                                }
+
                                 // Mid-turn: surface behavior_core the instant it completes.
                                 if !early_core_emitted {
                                     if let Some(txt) = stream_delta_text(&line) {
@@ -635,6 +662,17 @@ pub(super) async fn run_session(
             }
         }
 
+        // Telemetry (Phase 0): persist cumulative cost/tokens + turn count so
+        // build-bench reads build cost/speed. Best-effort, after every turn.
+        record_build_usage(
+            &pool,
+            &session_id,
+            acc_cost_usd,
+            acc_input_tokens,
+            acc_output_tokens,
+            (turn + 1) as i64,
+        );
+
         // Wait for the CLI process to exit (don't use finish() which would
         // attempt dir cleanup — we reuse session_exec_dir across turns).
         match wait_for_driver_or_cancel(&mut driver, &cancel_flag).await {
@@ -651,6 +689,24 @@ pub(super) async fn run_session(
                     "Failed while waiting for CLI process to exit"
                 );
                 registry.clear_run_pid("build_session", &session_id);
+            }
+        }
+
+        // Phase 2 (build orchestration): in multiagent mode, attribute each
+        // capability resolution to a lane so the sequential→multiagent switch is
+        // observable in the event stream + telemetry. ZERO behavior change —
+        // sequential leaves `lane` None; the built persona is identical either
+        // way. `capability_id` is the lane key (Phase 4 = one sub-agent per lane).
+        if multiagent {
+            for ev in turn_events.iter_mut() {
+                if let BuildEvent::CapabilityResolutionUpdate {
+                    lane, capability_id, ..
+                } = ev
+                {
+                    if lane.is_none() {
+                        *lane = Some(format!("cap-{capability_id}"));
+                    }
+                }
             }
         }
 

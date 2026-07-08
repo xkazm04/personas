@@ -44,14 +44,24 @@ pub(super) fn update_phase(
     session_id: &str,
     phase: BuildPhase,
 ) -> Result<(), AppError> {
-    build_session_repo::update(
+    let res = build_session_repo::update(
         pool,
         session_id,
         &UpdateBuildSession {
             phase: Some(phase.as_str().to_string()),
             ..Default::default()
         },
-    )
+    );
+    // Telemetry (build-orchestration Phase 0): stamp a per-phase timestamp so
+    // build-bench can reconstruct per-phase wall-clock. Best-effort — never
+    // fail a phase transition on a timing write.
+    let _ = build_session_repo::append_phase_timing(
+        pool,
+        session_id,
+        phase.as_str(),
+        &chrono::Utc::now().to_rfc3339(),
+    );
+    res
 }
 
 /// Update the session phase to Failed and store the error message.
@@ -60,7 +70,7 @@ pub(super) fn update_phase_with_error(
     session_id: &str,
     error: &str,
 ) -> Result<(), AppError> {
-    build_session_repo::update(
+    let res = build_session_repo::update(
         pool,
         session_id,
         &UpdateBuildSession {
@@ -69,7 +79,38 @@ pub(super) fn update_phase_with_error(
             cli_pid: Some(None),
             ..Default::default()
         },
-    )
+    );
+    let _ = build_session_repo::append_phase_timing(
+        pool,
+        session_id,
+        BuildPhase::Failed.as_str(),
+        &chrono::Utc::now().to_rfc3339(),
+    );
+    res
+}
+
+/// Telemetry (build-orchestration Phase 0): persist cumulative build CLI
+/// cost/tokens + turn count on the session row. Best-effort — a failed write
+/// is logged by the repo layer and never affects the build.
+pub(super) fn record_build_usage(
+    pool: &DbPool,
+    session_id: &str,
+    cost_usd: f64,
+    input_tokens: i64,
+    output_tokens: i64,
+    num_turns: i64,
+) {
+    let _ = build_session_repo::update(
+        pool,
+        session_id,
+        &UpdateBuildSession {
+            total_cost_usd: Some(Some(cost_usd)),
+            input_tokens: Some(Some(input_tokens)),
+            output_tokens: Some(Some(output_tokens)),
+            num_turns: Some(Some(num_turns)),
+            ..Default::default()
+        },
+    );
 }
 
 /// Dual-emit a BuildEvent via both Channel (component-scoped) and Tauri events (global).

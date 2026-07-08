@@ -31,7 +31,16 @@ accepts_webhook_source: boolean,
  * builds, and when ambient context is disabled. Carries only matched
  * connector vocabulary — never raw ambient content.
  */
-suggested: Array<string>, } | { "type": "progress", session_id: string, dimension: string | null, message: string, percent: number | null, activity: string | null, } | { "type": "error", session_id: string, cell_key: string | null, message: string, retryable: boolean, } | { "type": "session_status", session_id: string, phase: string, resolved_count: number, total_count: number, } | { "type": "behavior_core_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_enumeration_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_resolution_update", session_id: string, capability_id: string, field: string, value: JsonValue, status: string, } | { "type": "persona_resolution_update", session_id: string, field: string, value: JsonValue, status: string, } | { "type": "clarifying_question_v3", session_id: string, 
+suggested: Array<string>, } | { "type": "progress", session_id: string, dimension: string | null, message: string, percent: number | null, activity: string | null, } | { "type": "error", session_id: string, cell_key: string | null, message: string, retryable: boolean, } | { "type": "session_status", session_id: string, phase: string, resolved_count: number, total_count: number, } | { "type": "behavior_core_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_enumeration_update", session_id: string, data: JsonValue, status: string, } | { "type": "capability_resolution_update", session_id: string, capability_id: string, field: string, value: JsonValue, status: string, 
+/**
+ * Build orchestration (Phase 1 groundwork): identifies the sub-agent
+ * lane that produced this resolution when the build fans out one agent
+ * per capability (Phase 4). `None` on the single-lane sequential build
+ * today — `skip_serializing_if` keeps the wire payload byte-identical
+ * until a producer sets it. `capability_id` is the natural discriminator;
+ * `lane` adds explicit agent attribution for telemetry + the streaming UI.
+ */
+lane: string | null, } | { "type": "persona_resolution_update", session_id: string, field: string, value: JsonValue, status: string, } | { "type": "clarifying_question_v3", session_id: string, 
 /**
  * One of: "mission" | "capability" | "field" | "connector_category"
  */

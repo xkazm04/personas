@@ -103,6 +103,12 @@ export interface CapabilityState {
   capability_summary: string;
   user_facing_goal?: string;
   enabled_by_default?: boolean;
+  /**
+   * Build orchestration (Phase 1 groundwork): the sub-agent lane that resolved
+   * this capability when the build fans out one agent per capability (Phase 4).
+   * `undefined`/`null` on the single-lane sequential build today.
+   */
+  lane?: string | null;
 
   suggested_trigger?: {
     trigger_type: "schedule" | "polling" | "webhook" | "manual" | "event";
@@ -217,6 +223,8 @@ export type BuildEvent =
       field: string;
       value: unknown;
       status: string;
+      /** Sub-agent lane (Phase 1 groundwork); set by the Phase 4 fan-out. */
+      lane?: string | null;
     }
   | {
       type: "persona_resolution_update";

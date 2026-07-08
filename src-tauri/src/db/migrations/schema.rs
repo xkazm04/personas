@@ -1473,6 +1473,14 @@ CREATE TABLE IF NOT EXISTS build_sessions (
     -- build-session promotion is run by exactly one instance.
     claimed_by_instance TEXT,
     claim_expires_at TEXT,
+    -- Build telemetry (build-orchestration Phase 0): an append-only per-phase
+    -- timing ledger + CLI usage/cost captured from the stream-json `result`
+    -- messages, so build SPEED + COST are measurable for the build-bench harness.
+    phase_timings_json TEXT,
+    total_cost_usd  REAL,
+    input_tokens    INTEGER,
+    output_tokens   INTEGER,
+    num_turns       INTEGER,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );

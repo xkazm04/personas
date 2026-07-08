@@ -1928,6 +1928,9 @@ struct BuildStartBody {
     /// Optional user-provided reference context to ground the build (UAT P7).
     #[serde(default)]
     context: Option<String>,
+    /// Build orchestration variant ("sequential" | "multiagent"); empty → sequential.
+    #[serde(default)]
+    orchestration: Option<String>,
 }
 
 async fn start_build(
@@ -1960,6 +1963,7 @@ async fn start_build(
         body.mode,
         body.companion_session_id,
         body.context,
+        body.orchestration,
     ) {
         Ok(sid) => ok_json(serde_json::json!({"session_id": sid})).into_response(),
         Err(e) => err_json(StatusCode::BAD_REQUEST, &e.to_string()).into_response(),
@@ -1992,6 +1996,15 @@ async fn build_status(
                 "error_message": session.error_message,
                 "created_at": session.created_at,
                 "updated_at": session.updated_at,
+                // Build telemetry (build-orchestration Phase 0).
+                "phase_timings": session
+                    .phase_timings_json
+                    .as_deref()
+                    .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()),
+                "cost_usd": session.total_cost_usd,
+                "input_tokens": session.input_tokens,
+                "output_tokens": session.output_tokens,
+                "num_turns": session.num_turns,
             }))
             .into_response()
         }

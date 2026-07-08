@@ -103,6 +103,47 @@ pub(super) fn parse_build_line(line: &str, session_id: &str) -> Vec<BuildEvent> 
     parse_json_object(obj, &json, session_id)
 }
 
+/// Build telemetry (Phase 0): cost + token usage pulled from a stream-json
+/// `result` envelope line. The parser normally discards these sibling fields
+/// (it only unwraps `result` text); this reads them so the runner can sum
+/// build cost across turns.
+pub(super) struct ResultUsage {
+    pub cost_usd: f64,
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+}
+
+/// Returns `Some` only for a `{"type":"result",...}` line carrying usage.
+pub(super) fn extract_result_usage(line: &str) -> Option<ResultUsage> {
+    let trimmed = line.trim();
+    if trimmed.len() < 12 || !trimmed.as_bytes().starts_with(b"{") {
+        return None;
+    }
+    let json: serde_json::Value = serde_json::from_str(trimmed).ok()?;
+    let obj = json.as_object()?;
+    if obj.get("type").and_then(|v| v.as_str()) != Some("result") {
+        return None;
+    }
+    let cost_usd = obj
+        .get("total_cost_usd")
+        .and_then(|v| v.as_f64())
+        .unwrap_or(0.0);
+    let usage = obj.get("usage");
+    let input_tokens = usage
+        .and_then(|u| u.get("input_tokens"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    let output_tokens = usage
+        .and_then(|u| u.get("output_tokens"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    Some(ResultUsage {
+        cost_usd,
+        input_tokens,
+        output_tokens,
+    })
+}
+
 /// Parse the LLM's actual text content (unwrapped from CLI envelope).
 /// Handles multiple JSON objects per response (e.g., 3 resolved dimensions + 1 question).
 fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
@@ -223,6 +264,8 @@ pub(super) fn parse_json_object(
                 field: field.clone(),
                 value: value.clone(),
                 status: status.clone(),
+                // Single-lane sequential build today; the fan-out (Phase 4) sets this.
+                lane: None,
             }];
             // Legacy mirror: map field → legacy dimension key and surface as CellUpdate.
             if let Some(legacy_key) = map_capability_field_to_legacy_dimension(&field) {
