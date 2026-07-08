@@ -3,6 +3,7 @@ import {
   foldByUseCase,
   windowSince,
   inferProvider,
+  fetchPaged,
   mapLangfuseObservations,
   mapLangSmithRuns,
   mapHeliconeRequests,
@@ -164,5 +165,42 @@ describe('mapHeliconeRequests', () => {
     );
     expect(rows).toHaveLength(1);
     expect(rows[0]!.provider).toBe('openai');
+  });
+});
+
+describe('fetchPaged', () => {
+  const pp = (name: string): LlmPinpoint => ({
+    useCaseName: name,
+    provider: 'x',
+    model: 'm',
+    calls: 1,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalCostUsd: 0,
+    costIsEstimate: true,
+  });
+
+  it('concatenates pages until next is null', async () => {
+    const pages: Array<{ items: LlmPinpoint[]; next: number | null }> = [
+      { items: [pp('a')], next: 1 },
+      { items: [pp('b')], next: 2 },
+      { items: [pp('c')], next: null },
+    ];
+    let i = 0;
+    const out = await fetchPaged<number>(async () => pages[i++]!);
+    expect(out.map((r) => r.useCaseName)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('stops at the page cap even if next never nulls', async () => {
+    const out = await fetchPaged<number>(async (c) => ({ items: [pp(`p${c ?? 0}`)], next: (c ?? 0) + 1 }));
+    expect(out).toHaveLength(5); // MAX_PAGES
+  });
+
+  it('stops on an empty page (paged past the window)', async () => {
+    let i = 0;
+    const out = await fetchPaged<number>(async () =>
+      i++ === 0 ? { items: [pp('a')], next: 1 } : { items: [], next: 2 },
+    );
+    expect(out.map((r) => r.useCaseName)).toEqual(['a']);
   });
 });

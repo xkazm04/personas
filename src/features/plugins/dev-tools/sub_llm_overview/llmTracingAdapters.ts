@@ -99,14 +99,38 @@ export async function fetchTracklightPinpoints(
 // ---------------------------------------------------------------------------
 
 /**
- * Max raw records fetched per tool in one page. Unlike LightTrack (which rolls
- * up server-side), the SaaS tools return raw per-call records; a very busy
- * project may exceed this within the window, in which case the rollup reflects
- * the most-recent PAGE_LIMIT calls. Kept modest so the response stays under the
- * API proxy's 2 MB body cap (LangSmith/Helicone rows can carry large payloads).
- * Cursor/offset pagination + field projection are follow-ups.
+ * Page size for the SaaS raw-record adapters. Unlike LightTrack (server-side
+ * rollup), these return raw per-call records — kept modest so each response
+ * stays under the proxy's 2 MB body cap (LangSmith/Helicone rows can be large).
  */
-const PAGE_LIMIT = 200;
+const PAGE_SIZE = 200;
+
+/**
+ * Hard cap on pages per fetch → up to PAGE_SIZE × MAX_PAGES records. Bounds
+ * latency and API calls for very high-volume projects.
+ */
+const MAX_PAGES = 5;
+
+/**
+ * Fetch up to MAX_PAGES pages of raw pinpoints and concatenate them. `fetchPage`
+ * returns this page's items plus the cursor for the NEXT page (a page number,
+ * offset, or opaque token) — or `null` when there's no next page. The loop stops
+ * on a `null` next, an empty page, or the page cap, so if a tool's next-page
+ * signal can't be determined it safely degrades to a single page.
+ */
+export async function fetchPaged<C>(
+  fetchPage: (cursor: C | null) => Promise<{ items: LlmPinpoint[]; next: C | null }>,
+): Promise<LlmPinpoint[]> {
+  const all: LlmPinpoint[] = [];
+  let cursor: C | null = null;
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const { items, next } = await fetchPage(cursor);
+    all.push(...items);
+    if (items.length === 0 || next == null) break;
+    cursor = next;
+  }
+  return all;
+}
 
 /** Coerce a number | numeric-string | anything into a finite number (else 0). */
 function toNum(v: unknown): number {
@@ -205,14 +229,24 @@ export async function fetchLangfusePinpoints(
   credentialId: string,
   since: string,
 ): Promise<LlmPinpoint[]> {
-  const path = `/api/public/v2/observations?type=GENERATION&fromStartTime=${encodeURIComponent(
-    since,
-  )}&limit=${PAGE_LIMIT}`;
-  const res = await executeApiRequest(credentialId, 'GET', path, {});
-  if (res.status >= 400) {
-    throw new Error(`Langfuse observations failed (${res.status}): ${res.body.slice(0, 200)}`);
-  }
-  return mapLangfuseObservations(JSON.parse(res.body), since);
+  // Page-based (`page`); `fromStartTime` scopes every page to the window, and we
+  // advance while `meta.totalPages` reports more.
+  return fetchPaged<number>(async (page) => {
+    const p = page ?? 1;
+    const path = `/api/public/v2/observations?type=GENERATION&fromStartTime=${encodeURIComponent(
+      since,
+    )}&limit=${PAGE_SIZE}&page=${p}`;
+    const res = await executeApiRequest(credentialId, 'GET', path, {});
+    if (res.status >= 400) {
+      throw new Error(`Langfuse observations failed (${res.status}): ${res.body.slice(0, 200)}`);
+    }
+    const parsed = JSON.parse(res.body);
+    const items = mapLangfuseObservations(parsed, since);
+    const totalPages = toNum(
+      (parsed as { meta?: { totalPages?: unknown } } | null)?.meta?.totalPages,
+    );
+    return { items, next: totalPages > p ? p + 1 : null };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -264,38 +298,47 @@ export async function fetchLangSmithPinpoints(
   since: string,
 ): Promise<LlmPinpoint[]> {
   // Root path matches the connector's healthcheck (`/sessions`). Some LangSmith
-  // deployments serve these under `/api/v1/...` — adjust here if a real
-  // workspace 404s (see the doc-derived caveat in the module header).
-  const body = JSON.stringify({
-    run_type: 'llm',
-    start_time: since,
-    limit: PAGE_LIMIT,
-    // Project only the fields we roll up — full runs carry inputs/outputs that
-    // would blow the proxy's 2 MB body cap. Unknown-field selects are ignored by
-    // the API, so this is safe even if the projection isn't honored.
-    select: [
-      'name',
-      'run_type',
-      'prompt_tokens',
-      'completion_tokens',
-      'total_cost',
-      'prompt_cost',
-      'completion_cost',
-      'start_time',
-      'extra',
-    ],
+  // deployments serve these under `/api/v1/...` — adjust here if a real workspace
+  // 404s (see the doc-derived caveat in the module header). Cursor-paginated via
+  // `cursors.next`.
+  return fetchPaged<string>(async (cursor) => {
+    const body = JSON.stringify({
+      run_type: 'llm',
+      start_time: since,
+      limit: PAGE_SIZE,
+      // Project only the fields we roll up — full runs carry inputs/outputs that
+      // would blow the proxy's 2 MB body cap. Unknown-field selects are ignored
+      // by the API, so this is safe even if the projection isn't honored.
+      select: [
+        'name',
+        'run_type',
+        'prompt_tokens',
+        'completion_tokens',
+        'total_cost',
+        'prompt_cost',
+        'completion_cost',
+        'start_time',
+        'extra',
+      ],
+      ...(cursor ? { cursor } : {}),
+    });
+    const res = await executeApiRequest(
+      credentialId,
+      'POST',
+      '/runs/query',
+      { 'Content-Type': 'application/json' },
+      body,
+    );
+    if (res.status >= 400) {
+      throw new Error(`LangSmith runs query failed (${res.status}): ${res.body.slice(0, 200)}`);
+    }
+    const parsed = JSON.parse(res.body);
+    const next = (parsed as { cursors?: { next?: unknown } } | null)?.cursors?.next;
+    return {
+      items: mapLangSmithRuns(parsed, since),
+      next: typeof next === 'string' && next ? next : null,
+    };
   });
-  const res = await executeApiRequest(
-    credentialId,
-    'POST',
-    '/runs/query',
-    { 'Content-Type': 'application/json' },
-    body,
-  );
-  if (res.status >= 400) {
-    throw new Error(`LangSmith runs query failed (${res.status}): ${res.body.slice(0, 200)}`);
-  }
-  return mapLangSmithRuns(JSON.parse(res.body), since);
 }
 
 // ---------------------------------------------------------------------------
@@ -345,23 +388,33 @@ export async function fetchHeliconePinpoints(
   credentialId: string,
   since: string,
 ): Promise<LlmPinpoint[]> {
-  const body = JSON.stringify({
-    filter: 'all',
-    limit: PAGE_LIMIT,
-    offset: 0,
-    sort: { created_at: 'desc' },
+  // Offset-paginated, newest-first. Helicone's raw query isn't time-scoped here,
+  // so we page until a page yields no in-window rows (all older than `since`) or
+  // the page is short.
+  return fetchPaged<number>(async (offset) => {
+    const off = offset ?? 0;
+    const body = JSON.stringify({
+      filter: 'all',
+      limit: PAGE_SIZE,
+      offset: off,
+      sort: { created_at: 'desc' },
+    });
+    const res = await executeApiRequest(
+      credentialId,
+      'POST',
+      '/v1/request/query',
+      { 'Content-Type': 'application/json' },
+      body,
+    );
+    if (res.status >= 400) {
+      throw new Error(`Helicone request query failed (${res.status}): ${res.body.slice(0, 200)}`);
+    }
+    const parsed = JSON.parse(res.body);
+    const raw = Array.isArray(parsed) ? parsed : (parsed as { data?: unknown[] } | null)?.data;
+    const pageLen = Array.isArray(raw) ? raw.length : 0;
+    const items = mapHeliconeRequests(parsed, since);
+    return { items, next: pageLen >= PAGE_SIZE && items.length > 0 ? off + PAGE_SIZE : null };
   });
-  const res = await executeApiRequest(
-    credentialId,
-    'POST',
-    '/v1/request/query',
-    { 'Content-Type': 'application/json' },
-    body,
-  );
-  if (res.status >= 400) {
-    throw new Error(`Helicone request query failed (${res.status}): ${res.body.slice(0, 200)}`);
-  }
-  return mapHeliconeRequests(JSON.parse(res.body), since);
 }
 
 // ---------------------------------------------------------------------------
