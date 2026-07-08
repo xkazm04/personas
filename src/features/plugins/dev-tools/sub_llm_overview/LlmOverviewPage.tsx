@@ -12,7 +12,7 @@
  * (this module's UI is slated for a `/prototype` visual iteration first — see the
  * feature plan). Layer 1 uses a plain control set for the same reason.
  */
-import { useCallback, type ReactNode } from 'react';
+import { useCallback, useState, type ReactNode } from 'react';
 import { BarChart3, RefreshCw, AlertCircle, Plug, Clock } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { updateProject } from '@/api/devTools/devTools';
@@ -23,6 +23,9 @@ import { Numeric } from '@/features/shared/components/display/Numeric';
 import { toastCatch } from '@/lib/silentCatch';
 import { useLlmPinpoints } from './useLlmPinpoints';
 import type { LlmPinpoint, LlmWindow } from './llmTracingAdapters';
+import type { MatrixVariantProps } from './matrixShared';
+import MatrixPatchbay from './LlmOverviewMatrixVariantPatchbay';
+import MatrixCoverage from './LlmOverviewMatrixVariantCoverage';
 
 const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
   { id: '24h', label: '24h' },
@@ -32,12 +35,57 @@ const WINDOW_TABS: SegmentedTab<LlmWindow>[] = [
 
 // ---------------------------------------------------------------------------
 // Layer 1 — projects × connector assignment matrix
+//
+// PROTOTYPE (/prototype pass): the matrix renders behind a temporary variant
+// switcher (Baseline / Patch bay / Coverage) so the direction can be A/B'd live.
+// Collapses to the winning variant at consolidation.
 // ---------------------------------------------------------------------------
+
+type MatrixVariantId = 'baseline' | 'patchbay' | 'coverage';
+
+const MATRIX_TABS: SegmentedTab<MatrixVariantId>[] = [
+  { id: 'baseline', label: 'Baseline' },
+  { id: 'patchbay', label: 'Patch bay' },
+  { id: 'coverage', label: 'Coverage' },
+];
+
+/** Baseline — the original flat table of rows + native selects (kept for A/B). */
+function MatrixBaseline({ projects, llmCreds, assign }: MatrixVariantProps) {
+  return (
+    <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40" data-testid="llm-overview-matrix">
+      <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
+        <Plug className="w-3.5 h-3.5 text-primary/60" />
+        <span className="typo-caption text-foreground">Project → LLM observability connector</span>
+      </div>
+      <div className="divide-y divide-primary/5">
+        {projects.map((p) => (
+          <div key={p.id} className="px-4 py-2 flex items-center gap-3">
+            <span className="typo-caption text-foreground truncate flex-1 min-w-0">{p.name}</span>
+            <select
+              data-testid={`llm-overview-assign-${p.id}`}
+              value={p.llm_tracking_credential_id ?? ''}
+              onChange={(e) => assign(p.id, e.target.value || null)}
+              className="appearance-none px-2.5 py-1 text-[11px] text-foreground bg-primary/5 border border-primary/10 rounded-input cursor-pointer hover:bg-primary/8 focus-ring"
+            >
+              <option value="">— Not assigned —</option>
+              {llmCreds.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.serviceType})
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function AssignmentMatrix() {
   const projects = useSystemStore((s) => s.projects);
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const { llmCreds } = useLlmPinpoints();
+  const [variant, setVariant] = useState<MatrixVariantId>('patchbay');
 
   const assign = useCallback(
     async (projectId: string, credId: string | null) => {
@@ -53,39 +101,35 @@ function AssignmentMatrix() {
 
   if (projects.length === 0) return null;
 
-  return (
-    <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40" data-testid="llm-overview-matrix">
-      <div className="px-4 py-2.5 border-b border-primary/10 flex items-center gap-2">
-        <Plug className="w-3.5 h-3.5 text-primary/60" />
-        <span className="typo-caption font-medium text-foreground">Project → LLM observability connector</span>
-      </div>
-      {llmCreds.length === 0 ? (
-        <div className="px-4 py-3 text-[11px] text-foreground/60">
+  if (llmCreds.length === 0) {
+    return (
+      <div className="mx-4 mt-3 rounded-card border border-primary/10 bg-secondary/40 px-4 py-3 flex items-center gap-2.5">
+        <Plug className="w-4 h-4 text-primary/50 shrink-0" />
+        <div className="text-[11px] text-foreground/60">
           No Langfuse / LangSmith / Helicone / LightTrack credential in your vault yet. Add one under
           Vault → Connectors, then assign it here.
         </div>
-      ) : (
-        <div className="divide-y divide-primary/5">
-          {projects.map((p) => (
-            <div key={p.id} className="px-4 py-2 flex items-center gap-3">
-              <span className="typo-caption text-foreground truncate flex-1 min-w-0">{p.name}</span>
-              <select
-                data-testid={`llm-overview-assign-${p.id}`}
-                value={p.llm_tracking_credential_id ?? ''}
-                onChange={(e) => assign(p.id, e.target.value || null)}
-                className="appearance-none px-2.5 py-1 text-[11px] text-foreground bg-primary/5 border border-primary/10 rounded-input cursor-pointer hover:bg-primary/8 focus-ring"
-              >
-                <option value="">— Not assigned —</option>
-                {llmCreds.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.serviceType})
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
+    );
+  }
+
+  const props: MatrixVariantProps = { projects, llmCreds, assign };
+  return (
+    <div>
+      <div className="mx-4 mt-2 flex justify-end">
+        <SegmentedTabs
+          tabs={MATRIX_TABS}
+          activeTab={variant}
+          onTabChange={setVariant}
+          variant="segment"
+          size="sm"
+          fullWidth={false}
+          ariaLabel="Matrix variant (prototype)"
+        />
+      </div>
+      {variant === 'baseline' && <MatrixBaseline {...props} />}
+      {variant === 'patchbay' && <MatrixPatchbay {...props} />}
+      {variant === 'coverage' && <MatrixCoverage {...props} />}
     </div>
   );
 }
