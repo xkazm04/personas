@@ -411,6 +411,11 @@ pub fn start_loops(
     // closing the DNS-rebinding TOCTOU window (CWE-367).
     let http = super::url_safety::build_ssrf_safe_client(Duration::from_secs(30));
 
+    // Ensure every existing scrape pipeline has its Signal feeds registered +
+    // subscribed (seeded/pre-feature configs included) so they surface in Studio.
+    #[cfg(feature = "scraper")]
+    super::scraper::reconcile_signal_feeds(&pool);
+
     // Assemble all reactive subscriptions
     #[allow(unused_mut)]
     let mut subscriptions: Vec<Box<dyn subscription::ReactiveSubscription>> = vec![

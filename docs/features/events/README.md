@@ -100,6 +100,30 @@ tags[], severity, release_version }`. This is independent of the cloud relay
 (`engine/shared_event_relay.rs`), which remains as a secondary path for
 cloud-fed feeds. Full design: [`docs/plans/curated-connector-events.md`](../../plans/curated-connector-events.md).
 
+## Scraper Signals (local scraper → Signals)
+
+The **local scraper** (Plugins → Scraper) is an event *producer*, not a
+connector: it never presents persona-invoked tools. Each saved scrape pipeline
+emits two events on the bus per run (from `engine/scraper.rs::config_run`, which
+both the cron scheduler and a manual "Run" flow through):
+
+- `shared:scrape.<configId>.changed` — fired when a run detects **new or changed**
+  records (silent on clean no-op runs). Payload: `{ pipelineId, name, dataset,
+  new, changed, unchanged, sampleKeys[], status }`.
+- `shared:scrape.<configId>.error` — fired when a run **fails** to fetch/extract.
+  Payload: `{ pipelineId, name, dataset, error, status }`.
+
+`<configId>` (a UUID) namespaces the events so pipelines never collide (canonical
+matching preserves `:`). On **save**, each pipeline registers its two feeds in
+`shared_event_catalog` (category `scraper`) and auto-subscribes them, so they
+appear as **Signal cards in Chain Studio** exactly like Marketplace feeds — arm a
+feed + target persona and the commit path writes an `event_listener` trigger on
+`shared:scrape.<configId>.<polarity>`. On **delete** the feeds are removed;
+`reconcile_signal_feeds` re-registers feeds for any pre-existing/seeded pipeline at
+startup. A persona reacting to a scrape Signal pulls the records with the
+`query_dataset` MCP tool (the one scraper tool kept after the connector pivot).
+Design: [`docs/plans/pumper-inbuilt-feasibility.md`](../../plans/pumper-inbuilt-feasibility.md) (Phase 1c).
+
 ## Trigger editor mechanics
 
 `sub_triggers` contains the reusable trigger list/detail/editing components:

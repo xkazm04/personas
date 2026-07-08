@@ -732,6 +732,25 @@ fn register_signal_feeds(pool: &DbPool, cfg: &ScraperConfig) -> Result<(), Strin
     Ok(())
 }
 
+/// Ensure every existing pipeline has its Signal feeds registered + subscribed.
+/// Run once at startup so seeded/example configs (inserted by raw SQL, not
+/// `config_save`) and pipelines saved before this feature existed still surface
+/// as Signal cards. Idempotent.
+pub fn reconcile_signal_feeds(pool: &DbPool) {
+    let configs = match config_list(pool) {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!("scrape signal reconcile: config_list failed: {e}");
+            return;
+        }
+    };
+    for cfg in &configs {
+        if let Err(e) = register_signal_feeds(pool, cfg) {
+            tracing::warn!(config_id = %cfg.id, "scrape signal reconcile failed: {e}");
+        }
+    }
+}
+
 /// Remove a pipeline's Signal feeds (catalog rows + subscriptions) on delete.
 fn deregister_signal_feeds(pool: &DbPool, config_id: &str) -> Result<(), String> {
     let conn = pool.get().map_err(|e| e.to_string())?;
