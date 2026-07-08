@@ -1,12 +1,12 @@
 /** PersonaCoreModal — the persona-core configurator, in /prototype mode.
  *
  *  Rethought (2026-07-08) against the real corpus: model tier × reasoning effort,
- *  a disposition slider + conflict style + a clickable character-trait palette,
- *  and orthogonal memory choices. Currently A/B-ing three LAYOUTS over the same
- *  shared blocks (coreSections):
- *   • Workbench (baseline) — wide 3-column: Character · Configuration · Memory.
- *   • Sheet — config on the left, a live plain-language character sheet on the right.
- *   • Guided — a stepped rail (one decision at a time) with live per-step summaries.
+ *  a disposition slider + conflict style + a clickable character-trait palette.
+ *  Memory is NOT here — the build surface's memory dimension owns it. All three
+ *  variants share the 3-column skeleton (Character · Configuration · Mentality):
+ *   • Workbench (baseline) — text-forward reference; wrapped chips + segments.
+ *   • Codex — ordered icon GRID: traits/conflict/model as aligned symbols, effort meter.
+ *   • Wheel — a radial character SIGIL is the star; icon-node traits light it up.
  *  The switcher is throwaway scaffolding; it goes away once a direction wins.
  */
 import { useState } from "react";
@@ -16,14 +16,14 @@ import Button from "@/features/shared/components/buttons/Button";
 import { RotateCcw } from "lucide-react";
 import type { PersonaCore } from "./usePersonaCore";
 import { CoreWorkbench } from "./CoreWorkbench";
-import { CoreSheet } from "./CoreSheet";
-import { CoreGuided } from "./CoreGuided";
+import { CoreCodex } from "./CoreCodex";
+import { CoreWheel } from "./CoreWheel";
 
-type VariantId = "workbench" | "sheet" | "guided";
+type VariantId = "workbench" | "codex" | "wheel";
 const VARIANTS: { id: VariantId; label: string; sub: string }[] = [
-  { id: "workbench", label: "Workbench", sub: "3-column, all visible" },
-  { id: "sheet", label: "Sheet", sub: "config + live character sheet" },
-  { id: "guided", label: "Guided", sub: "one decision at a time" },
+  { id: "workbench", label: "Workbench", sub: "text-forward baseline" },
+  { id: "codex", label: "Codex", sub: "ordered icon grid" },
+  { id: "wheel", label: "Wheel", sub: "radial character sigil" },
 ];
 
 export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore; isOpen: boolean; onClose: () => void }) {
@@ -56,10 +56,10 @@ export function PersonaCoreModal({ core, isOpen, onClose }: { core: PersonaCore;
           <div className="py-16 flex justify-center"><LoadingSpinner label="Loading mentalities…" /></div>
         ) : variant === "workbench" ? (
           <CoreWorkbench core={core} />
-        ) : variant === "sheet" ? (
-          <CoreSheet core={core} />
+        ) : variant === "codex" ? (
+          <CoreCodex core={core} />
         ) : (
-          <CoreGuided core={core} />
+          <CoreWheel core={core} />
         )}
 
         <div className="flex items-center justify-between gap-2 pt-1 border-t border-card-border/50">

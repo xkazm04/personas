@@ -12,15 +12,13 @@
  *     slider (risk + speed were near-collinear) plus a clickable trait palette and
  *     a conflict-style temperament. Same model + traits, different conflict style =
  *     genuinely different deliberation.
- *   • Memory is ORTHOGONAL FLAGS grounded in what's actually wired: remembers
- *     between runs (the real default-on store), reflect/self-improve, team ledger,
- *     and Obsidian. Knowledge-base grounding is intentionally omitted — runtime KB
- *     retrieval for personas is not implemented.
+ *  Memory is intentionally NOT configured here: the build surface has a dedicated
+ *  "memory" dimension that owns it, so persona-core neither surfaces memory nor
+ *  emits memory directives (that would double-configure and conflict).
  *
  *  Like before, the core doesn't run a bespoke pipeline: it augments the build
  *  intent with a directive block (the honest prototype path). Wiring these to real
- *  persona config — generation_settings.memories, model_profile, --effort — is the
- *  next-leverage follow-up flagged by the memory/model research.
+ *  persona config — model_profile, --effort — is the next-leverage follow-up.
  */
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { listArchetypes, type Archetype } from "@/api/archetypes";
@@ -29,18 +27,6 @@ import { silentCatch } from "@/lib/silentCatch";
 import { TRAIT_CATALOG, CONFLICT_DIRECTIVE, ARCHETYPE_TRAITS, traitById } from "./coreTraits";
 
 export type ModelTier = "haiku" | "sonnet" | "opus";
-export type ObsidianMode = "off" | "read" | "mirror";
-
-export interface MemoryConfig {
-  /** Learns facts/preferences/lessons between runs (the real default-on store). */
-  remembers: boolean;
-  /** Tidies its own memory + keeps a technique scratchpad it re-reads next run. */
-  reflect: boolean;
-  /** Contributes to / reads the team's shared ledger (only when it's in a team). */
-  team: boolean;
-  /** Obsidian vault: off, read-during-runs, or mirror-memories-out (manual sync). */
-  obsidian: ObsidianMode;
-}
 
 export interface PersonaCoreState {
   archetypeId: string | null;
@@ -49,7 +35,6 @@ export interface PersonaCoreState {
   traits: string[];             // selected trait ids from TRAIT_CATALOG
   model: ModelTier;
   effort: EffortLevel;
-  memory: MemoryConfig;
 }
 
 export const MODEL_TIERS: { id: ModelTier; label: string; blurb: string }[] = [
@@ -65,8 +50,6 @@ export const EFFORT_TIERS: { id: EffortLevel; label: string; blurb: string }[] =
   { id: "xhigh", label: "Max", blurb: "Maximum reasoning depth — slowest, most thorough" },
 ];
 
-const DEFAULT_MEMORY: MemoryConfig = { remembers: true, reflect: false, team: false, obsidian: "off" };
-
 const DEFAULT_CORE: PersonaCoreState = {
   archetypeId: null,
   disposition: 0.4,
@@ -74,7 +57,6 @@ const DEFAULT_CORE: PersonaCoreState = {
   traits: [],
   model: "sonnet",
   effort: DEFAULT_EFFORT,
-  memory: DEFAULT_MEMORY,
 };
 
 function coreNumber(a: Archetype, key: string, fallback: number): number {
@@ -103,7 +85,6 @@ export interface PersonaCore {
   toggleTrait: (id: string) => void;
   setModel: (m: ModelTier) => void;
   setEffort: (e: EffortLevel) => void;
-  setMemory: (patch: Partial<MemoryConfig>) => void;
   reset: () => void;
   launchAugmentation: () => string;
 }
@@ -148,7 +129,6 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
   })), [touch]);
   const setModel = useCallback((m: ModelTier) => touch((p) => ({ ...p, model: m })), [touch]);
   const setEffort = useCallback((e: EffortLevel) => touch((p) => ({ ...p, effort: e })), [touch]);
-  const setMemory = useCallback((patch: Partial<MemoryConfig>) => touch((p) => ({ ...p, memory: { ...p.memory, ...patch } })), [touch]);
   const reset = useCallback(() => { setState(DEFAULT_CORE); setConfigured(false); }, []);
 
   const preset = useMemo(() => archetypes.find((a) => a.id === state.archetypeId) ?? null, [archetypes, state.archetypeId]);
@@ -166,18 +146,12 @@ export function usePersonaCore(resetKey: string | null): PersonaCore {
     for (const id of state.traits) { const t = traitById(id); if (t) lines.push(t.directive); }
     const modelWord = state.model === "haiku" ? "Haiku (fast)" : state.model === "opus" ? "Opus (max reasoning)" : "Sonnet (balanced)";
     lines.push(`Model tier: ${modelWord}; reasoning effort: ${state.effort}`);
-    const m = state.memory;
-    lines.push(m.remembers ? "Memory: remembers facts, preferences, and lessons between runs" : "Memory: stateless — each run is independent, remembers nothing");
-    if (m.reflect) lines.push("Memory: periodically reflects on past runs and refines what it keeps");
-    if (m.team) lines.push("Memory: contributes to and reads the team's shared knowledge ledger");
-    if (m.obsidian === "read") lines.push("Memory: reads the connected Obsidian vault during runs");
-    if (m.obsidian === "mirror") lines.push("Memory: mirrors what it learns out to the connected Obsidian vault");
     return `\n---\nPersona core:\n${lines.map((l) => `- ${l}`).join("\n")}`;
   }, [configured, state, preset]);
 
   return {
     loading, archetypes, state, configured, preset,
-    applyPreset, setDisposition, setConflict, toggleTrait, setModel, setEffort, setMemory, reset, launchAugmentation,
+    applyPreset, setDisposition, setConflict, toggleTrait, setModel, setEffort, reset, launchAugmentation,
   };
 }
 
