@@ -94,11 +94,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### pumper-scraper-phase1 — declarative-extract core (datasets + run_extract/query_dataset) (session opus-4-8[1m])
-- Started: 2026-07-08. Status: started. Branch: master (per user preference; disciplined per-file staging).
-- Paths: src-tauri/src/db/migrations/initial.rs (scraper_records table), src-tauri/src/engine/scraper.rs (rusqlite dataset layer + run_extract + query_dataset, feature=scraper), src-tauri/src/engine/management_api.rs (/api/scrape/extract + /api/scrape/query routes), src-tauri/src/mcp_server/tools.rs (run_extract + query_dataset MCP tools), docs/plans/pumper-inbuilt-feasibility.md.
-- Note: Phase 1a of the Pumper-in-Personas plan. Change-detected datasets over rusqlite (D2, no sqlx) + pumper-core::extract declarative rules (CSS/regex/JSON-pointer) via the SSRF-safe Fetcher, forwarded through management routes (mcp bin has no engine). Config-persistence UI + scheduling + example scrapers deferred to Phase 1b.
-
 ### studio-chain-app — dual-dev: chain trade-signal app in Studio + harden Studio (session opus-4-8[1m])
 - Started: 2026-07-05. Completed: 2026-07-06. Commits: 5ee5408e8 (Studio hardening H8-H11 + logging + observer), b8e1c4b3a (dual-dev docs/driver). ChainSonar v1 (all 8 plan phases) SHIPPED — lives in its own project git at ~/.personas/projects/chainsonar (per-turn Studio snapshots), not this repo. Studio-repo work verified: tsc clean, eslint clean on changed files, clippy adds no findings (crate has ~452 pre-existing warnings + event-registry drift — out of scope).
 - Paths: src/features/studio/**, src/test/automation/bridge.ts, scripts/studio-chain.mjs, docs/plans/chain-signal-studio-app.md, docs/plans/studio-hardening-log.md, docs/concepts/web-build-best-practices.md, src-tauri/src/companion/session.rs (build doctrine/instruction only), src-tauri/src/webbuild/**.
@@ -888,6 +883,9 @@ timestamp — the next session can recognize it as abandoned.
   - **Note:** Aware of concurrent run on Lessons/releases. Will re-check ledger before any Phase 12 write.
 
 ## Recently completed (last 14 days)
+
+### pumper-scraper-phase1a — declarative-extract core (session opus-4-8[1m]) — completed (9f5b40122)
+- 2026-07-08: Phase 1a of Pumper-in-Personas. scraper_records change-detected table (rusqlite, no sqlx — D2); engine/scraper.rs upsert_record/run_extract/query_dataset (SSRF-safe http Fetcher + pumper_core::extract CSS/regex/JSON-pointer); management routes /api/scrape/{extract,query}; MCP tools run_extract + query_dataset (bridge-forwarded, connector-gated). Verified: dataset_change_detection unit test + scraper & default builds green. Deferred to 1b: config persistence + UI, cron scheduling, example scrapers. Plan: docs/plans/pumper-inbuilt-feasibility.md. Prior phases: Phase 0 (817b9ff31) + follow-ups (563157e9d) + live E2E (926e0b36e).
 
 ### prototype-shared-events — /prototype: Marketplace table variants + event-history modal (session opus-4-8[1m]) — round 1 merged to master
 - 2026-07-07: MERGED to master (7e1598795; round-1 feature f3ce3d77a) at user request ("put it to master") — worktree removed, junction deleted, branch deleted. Round 1 = tab switcher (Cards baseline default) over two directional TABLE variants on the shared UnifiedTable: **Registry** (dense sortable/filterable full catalog) + **Watchtower** (change-activity monitor: recency sort, summary snippet, watch-switch, accent-pinned, "Watching only"). Per-row action icon → EventHistoryModal (DetailModal timeline) backed by 2 new read-only commands (shared_events_list_firings + shared_events_change_activity; SharedEventChange/SharedEventFeedActivity models+bindings). 32 marketplace i18n keys × 14 locales. Green: cargo export_bindings, tsc, eslint(0 err), i18n strict. STILL A PROTOTYPE — both variants live behind the switcher pending the user's prune/fuse/refine decision; consolidation to one winner + delete losers is the next step. Design lineage: [[project_curated_connector_events]].
