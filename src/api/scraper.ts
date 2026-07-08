@@ -90,6 +90,23 @@ export const deleteScraperConfig = (id: string) =>
 export const runScraperExtract = (config: ScraperConfigInput) =>
   invokeWithTimeout<ExtractSummary>('scraper_run_extract', { config });
 
+/**
+ * Generate an extraction ruleset from a natural-language description via the
+ * Claude Code CLI. Pass a `url` to have the page's HTML fetched for grounding,
+ * or `sampleHtml` to supply it directly. Returns field → rule (Phase 1b-2).
+ * This call spawns a CLI model and can take ~10-40s.
+ */
+export const generateScraperRules = (
+  description: string,
+  url?: string,
+  sampleHtml?: string,
+) =>
+  invokeWithTimeout<ScrapeRuleSet>(
+    'scraper_generate_rules',
+    { description, url: url ?? null, sampleHtml: sampleHtml ?? null },
+    { timeoutMs: 120_000 },
+  );
+
 export const listScraperDatasets = () =>
   invokeWithTimeout<DatasetSummary[]>('scraper_list_datasets');
 

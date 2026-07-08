@@ -122,6 +122,19 @@ pub async fn fetch_readable(url: &str) -> Result<String, String> {
         .ok_or_else(|| "no readable content extracted".to_string())
 }
 
+/// Fetch a URL and return the raw HTML truncated to `max_chars` — used to
+/// ground the LLM pipeline builder in the real page structure (Phase 1b-2).
+pub async fn fetch_html_snippet(url: &str, max_chars: usize) -> Result<String, String> {
+    let f = fetcher();
+    let req = FetchRequest {
+        strategy: FetchStrategy::Http,
+        ..FetchRequest::new(url)
+    };
+    let outcome = f.fetch(req).await.map_err(|e| e.to_string())?;
+    let html = outcome.html.unwrap_or_default();
+    Ok(html.chars().take(max_chars).collect())
+}
+
 // ---------------------------------------------------------------------------
 // Declarative extract + change-detected datasets (Phase 1)
 // ---------------------------------------------------------------------------
